@@ -1,41 +1,59 @@
+function makeDropTarget() {
+  let dropEl = document.createElement('span')
+  dropEl.className = 'blocks-drop-target'
+  dropEl.appendChild(document.createTextNode(' '))
+  return dropEl
+}
 
 export var nodes = {
-  expression(node, cm) {
-    let el = document.createElement('span')
+  expression(node, cm, callback) {
+    let expressionEl = document.createElement('span')
+    expressionEl.id = `block-node-${node.id}`
+    expressionEl.className = 'blocks-expression'
+    expressionEl.draggable = true
+
     let operatorEl = document.createElement('span')
     operatorEl.className = 'blocks-operator'
     operatorEl.appendChild(document.createTextNode(node.func))
-    el.appendChild(operatorEl)
-    el.appendChild(document.createTextNode(' '))
-    el.className = 'blocks-expression'
+
+    expressionEl.appendChild(operatorEl)
+    expressionEl.appendChild(document.createTextNode(' '))
+    let argsEl = document.createElement('span')
+    argsEl.className = 'blocks-args'
+    argsEl.appendChild(makeDropTarget())
+    for (let i=0; i < node.args.length; i++) {
+      argsEl.appendChild(render(node.args[i], cm, callback))
+      argsEl.appendChild(makeDropTarget())
+    }
+    expressionEl.appendChild(argsEl)
+
     cm.markText(
       node.from,
       node.to,
-      {replacedWith: el}
+      {replacedWith: expressionEl}
     )
-    let argsEl = document.createElement('span')
-    argsEl.className = 'blocks-args'
-    el.appendChild(argsEl)
-    for (let i=0; i < node.args.length; i++) {
-      argsEl.appendChild(ast(node.args[i], cm))
-    }
-    return el
+
+    return expressionEl
   },
 
   literal(node, cm) {
-    let el = document.createElement('span')
-    el.appendChild(document.createTextNode(node.toString()))
-    el.className = 'blocks-literal'
+    let literalEl = document.createElement('span')
+    literalEl.id = `block-node-${node.id}`
+    literalEl.appendChild(document.createTextNode(node.toString()))
+    literalEl.className = 'blocks-literal'
+    literalEl.draggable = true
     cm.markText(
       node.from,
       node.to,
-      {replacedWith: el, inclusiveRight: false, inclusiveLeft: false}
+      {replacedWith: literalEl, inclusiveRight: false, inclusiveLeft: false}
     )
-    return el
+    return literalEl
   }
 }
 
-export default function ast(node, cm) {
-  return nodes[node.type](node, cm)
+export default function render(node, cm, callback) {
+  var nodeEl = nodes[node.type](node, cm, callback)
+  callback(node, nodeEl)
+  return nodeEl
 }
 

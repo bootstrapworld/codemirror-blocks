@@ -6,6 +6,7 @@
   border-radius: 500px 0px 0px 500px;
   margin: 5px;
   background: #ccc;
+  cursor: default;
 }
 
 .blocks-operator {
@@ -32,3 +33,21 @@
   margin: 5px;
 }
 
+
+.blocks-expression.blocks-selected {
+  border-color: red;
+}
+.blocks-expression.blocks-selected .blocks-operator {
+  border-color: red;
+}
+.blocks-literal.blocks-selected {
+  border: 1px solid red;
+}
+
+.blocks-literal.blocks-editing {
+  border: 1px solid green;
+}
+
+.blocks-over-target {
+  background-color: red;
+}

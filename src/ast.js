@@ -4,6 +4,10 @@ class ASTNode {
     this.to = to
     this.type = type
   }
+
+  get id() {
+    return `${this.from.line}-${this.from.ch}-${this.to.line}-${this.to.ch}`
+  }
 }
 
 export class Expression extends ASTNode {
