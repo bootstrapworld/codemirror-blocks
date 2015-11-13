@@ -2,27 +2,30 @@
 export var nodes = {
   expression(node, cm) {
     let el = document.createElement('span')
-    el.appendChild(document.createTextNode("("+node.func+" "))
-    el.style.color = 'lightgreen'
+    let operatorEl = document.createElement('span')
+    operatorEl.className = 'blocks-operator'
+    operatorEl.appendChild(document.createTextNode(node.func))
+    el.appendChild(operatorEl)
+    el.appendChild(document.createTextNode(' '))
+    el.className = 'blocks-expression'
     cm.markText(
       node.from,
       node.to,
       {replacedWith: el}
     )
+    let argsEl = document.createElement('span')
+    argsEl.className = 'blocks-args'
+    el.appendChild(argsEl)
     for (let i=0; i < node.args.length; i++) {
-      el.appendChild(ast(node.args[i], cm))
-      if (i < node.args.length - 1) {
-        el.appendChild(document.createTextNode(' '))
-      }
+      argsEl.appendChild(ast(node.args[i], cm))
     }
-    el.appendChild(document.createTextNode(`)`))
     return el
   },
 
   literal(node, cm) {
     let el = document.createElement('span')
     el.appendChild(document.createTextNode(node.toString()))
-    el.style.color = 'red'
+    el.className = 'blocks-literal'
     cm.markText(
       node.from,
       node.to,
