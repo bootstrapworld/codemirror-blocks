@@ -7,6 +7,7 @@ export default class CodeMirrorBlocks {
   constructor(cm, parser) {
     this.cm = cm
     this.parser = parser
+    this.ast = null
     this.blockMode = false
 
     this.cm.getWrapperElement().onkeydown = this.handleKeyDown.bind(this)
@@ -18,8 +19,7 @@ export default class CodeMirrorBlocks {
     }
     this.blockMode = mode
     if (this.blockMode) {
-      var ast = this.parser.parse(this.cm.getValue())
-      render(ast, this.cm, this.didRenderNode.bind(this))
+      this.render()
     } else {
       this.cm.getAllMarks().forEach(marker => marker.clear())
     }
@@ -27,6 +27,19 @@ export default class CodeMirrorBlocks {
 
   toggleBlockMode() {
     this.setBlockMode(!this.blockMode)
+  }
+
+  _clearMarks() {
+    let marks = this.cm.findMarks({line: 0, ch: 0}, {line: this.cm.lineCount(), ch: 0})
+    for (let mark of marks) {
+      mark.clear()
+    }
+  }
+
+  render() {
+    this.ast = this.parser.parse(this.cm.getValue())
+    this._clearMarks()
+    render(this.ast.rootNode, this.cm, this.didRenderNode.bind(this))
   }
 
   selectNode(node, nodeEl, event) {
@@ -70,8 +83,7 @@ export default class CodeMirrorBlocks {
     event.stopPropagation()
     nodeEl.classList.add('blocks-dragging')
     event.dataTransfer.effectAllowed = 'move'
-    //event.dataTransfer.setDragImage(nodeEl, -5, -5)
-    event.dataTransfer.setData('text', this.cm.getRange(node.from, node.to))
+    event.dataTransfer.setData('text', node.id)
   }
 
   handleDragEnter(node, nodeEl, event) {
@@ -88,6 +100,19 @@ export default class CodeMirrorBlocks {
     event.codemirrorIgnore = true
     event.preventDefault()
     event.target.classList.remove('blocks-over-target')
+    let sourceNode = this.ast.nodeMap.get(event.dataTransfer.getData('text'))
+    let sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to)
+    let destination = event.target.location
+    this.cm.operation(function() {
+      if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destination)) {
+        this.cm.replaceRange(' '+sourceNodeText, destination, destination)
+        this.cm.replaceRange('', sourceNode.from, sourceNode.to)
+      } else {
+        this.cm.replaceRange('', sourceNode.from, sourceNode.to)
+        this.cm.replaceRange(' '+sourceNodeText, destination, destination)
+      }
+    }.bind(this))
+    this.render()
   }
 
   didRenderNode(node, nodeEl) {
@@ -100,7 +125,8 @@ export default class CodeMirrorBlocks {
     case 'expression':
       nodeEl.onclick = this.selectNode.bind(this, node, nodeEl)
       nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl)
-      let dropTargetEls = nodeEl.querySelectorAll('.blocks-drop-target')
+      let dropTargetEls = nodeEl.querySelectorAll(
+        `#${nodeEl.id} > .blocks-args > .blocks-drop-target`)
       for (var i = 0; i < dropTargetEls.length; i++) {
         let el = dropTargetEls[i]
         el.ondragenter = this.handleDragEnter.bind(this, node, nodeEl)

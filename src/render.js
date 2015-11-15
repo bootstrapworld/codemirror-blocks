@@ -1,7 +1,8 @@
-function makeDropTarget() {
+function makeDropTarget(location) {
   let dropEl = document.createElement('span')
   dropEl.className = 'blocks-drop-target'
   dropEl.appendChild(document.createTextNode(' '))
+  dropEl.location = location
   return dropEl
 }
 
@@ -20,10 +21,20 @@ export var nodes = {
     expressionEl.appendChild(document.createTextNode(' '))
     let argsEl = document.createElement('span')
     argsEl.className = 'blocks-args'
-    argsEl.appendChild(makeDropTarget())
+    argsEl.appendChild(
+      makeDropTarget({
+        line: node.from.line,
+        ch: node.from.ch+1+node.func.length
+      })
+    )
     for (let i=0; i < node.args.length; i++) {
       argsEl.appendChild(render(node.args[i], cm, callback))
-      argsEl.appendChild(makeDropTarget())
+      argsEl.appendChild(
+        makeDropTarget({
+          line: node.args[i].to.line,
+          ch: node.args[i].to.ch
+        })
+      )
     }
     expressionEl.appendChild(argsEl)
 

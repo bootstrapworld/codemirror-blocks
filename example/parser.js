@@ -1,4 +1,4 @@
-import {Literal, Expression} from '../src/ast'
+import {AST, Literal, Expression} from '../src/ast'
 
 const TOKENS = {
   OPEN_PAREN: 'open-paren',
@@ -21,44 +21,55 @@ class Token {
 }
 
 export default class Parser {
-  getToken() {
+  getch() {
+    let ch = this.code[this.charIndex]
+    this.charIndex++
+    this.colIndex++
+    if (ch == '\n') {
+      this.lineIndex++
+      this.colIndex = 0
+    }
+    return ch
+  }
+
+  getToken(depth = 0) {
     const IDENTIFIER_RE = /[\w-+\/*]/
     if (this.charIndex >= this.code.length) {
       return new Token(
-        {line: this.lineIndex, ch: this.charIndex},
-        {line: this.lineIndex, ch: this.charIndex},
+        {line: this.lineIndex, ch: this.colIndex},
+        {line: this.lineIndex, ch: this.colIndex},
         TOKENS.EOF,
         ''
       )
     }
     if (this.code[this.charIndex] == '(') {
       let token = new Token(
-        {line: this.lineIndex, ch: this.charIndex},
-        {line: this.lineIndex, ch: this.charIndex+1},
+        {line: this.lineIndex, ch: this.colIndex},
+        {line: this.lineIndex, ch: this.colIndex + 1},
         TOKENS.OPEN_PAREN,
         '('
       )
-      this.charIndex++
+      this.getch()
       return token
     } else if (this.code[this.charIndex] == ')') {
       let token = new Token(
-        {line: this.lineIndex, ch: this.charIndex},
-        {line: this.lineIndex, ch: this.charIndex+1},
+        {line: this.lineIndex, ch: this.colIndex},
+        {line: this.lineIndex, ch: this.colIndex+1},
         TOKENS.CLOSE_PAREN,
         ')'
       )
-      this.charIndex++
+      this.getch()
       return token
     } else if (this.code[this.charIndex] == ' ') {
       while (this.code[this.charIndex] == ' ') {
-        this.charIndex++
+        this.getch()
       }
-      return this.getToken()
+      return this.getToken(depth+1)
     } else if (this.code[this.charIndex] >= '0' && this.code[this.charIndex] <= '9') {
-      let startIndex = this.charIndex
+      let startIndex = this.colIndex
       let number = ''
       while (this.code[this.charIndex] >= '0' && this.code[this.charIndex] <= '9') {
-        number += this.code[this.charIndex++]
+        number += this.getch()
       }
       return new Token(
         {line: this.lineIndex, ch: startIndex},
@@ -68,9 +79,9 @@ export default class Parser {
       )
     } else if (this.code[this.charIndex].match(IDENTIFIER_RE)) {
       let identifier = ''
-      let startIndex = this.charIndex
+      let startIndex = this.colIndex
       while (this.code[this.charIndex].match(IDENTIFIER_RE)) {
-        identifier += this.code[this.charIndex++]
+        identifier += this.getch()
       }
       return new Token(
         {line: this.lineIndex, ch: startIndex},
@@ -79,9 +90,8 @@ export default class Parser {
         identifier
       )
     } else if (this.code[this.charIndex] == '\n') {
-      this.charIndex++
-      this.lineIndex++
-      return this.getToken()
+      this.getch()
+      return this.getToken(depth+1)
     } else {
       throw new Error("parse error")
     }
@@ -91,8 +101,9 @@ export default class Parser {
     this.code = code
     this.charIndex = 0
     this.lineIndex = 0
+    this.colIndex = 0
 
-    return this.parseExpression()
+    return new AST(this.parseExpression())
   }
 
   parseExpression() {
@@ -110,6 +121,7 @@ export default class Parser {
       switch (currentToken.token) {
       case TOKENS.OPEN_PAREN:
         this.charIndex--
+        this.colIndex--
         args.push(this.parseExpression())
         break
       case TOKENS.NUMBER:
