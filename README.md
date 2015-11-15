@@ -18,3 +18,10 @@ To get your dev environment up and running, follow these steps
 4. browse to http://localhost:8080/webpack-dev-server/ and fire away!
 
 Library code is in the **src/** directory. An example of how it should be used is in the **example/** directory.
+
+## Updating demo on project site
+
+To update the demo on the project site with the latest version of the example in
+this repository, just run:
+
+  `./deploy-example.sh`
