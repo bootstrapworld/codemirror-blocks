@@ -1,4 +1,4 @@
-var path = require("path");
+var path = require("path")
 
 module.exports = {
   devtool: 'source-map',
@@ -7,7 +7,7 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, "build"),
-    publicPath: "/assets/",
+    publicPath: "/build/",
     filename: "[name].js"
   },
   module: {
@@ -16,4 +16,4 @@ module.exports = {
       { test: /\.css$/, loaders: ["style", "css"] }
     ]
   }
-};
+}
