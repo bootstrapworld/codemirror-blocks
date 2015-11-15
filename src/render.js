@@ -1,7 +1,7 @@
 function makeDropTarget(location) {
   let dropEl = document.createElement('span')
-  dropEl.className = 'blocks-drop-target'
-  dropEl.appendChild(document.createTextNode(' '))
+  dropEl.className = 'blocks-drop-target blocks-white-space'
+  dropEl.appendChild(document.createTextNode(''))
   dropEl.location = location
   return dropEl
 }

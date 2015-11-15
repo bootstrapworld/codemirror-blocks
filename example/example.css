@@ -30,7 +30,6 @@
   color: black;
   border-radius: 5px;
   padding: 5px;
-  margin: 5px;
 }
 
 
@@ -44,10 +43,39 @@
   border: 1px solid red;
 }
 
+.blocks-editing {
+  outline: 0;
+}
+
 .blocks-literal.blocks-editing {
   border: 1px solid green;
 }
 
 .blocks-over-target {
   background-color: red;
+}
+
+.blocks-white-space:before {
+  content: ' ';
+}
+.blocks-white-space {
+  padding: 5px;
+  border: 2px solid transparent;
+  font-weight: bold;
+}
+
+.blocks-white-space:hover {
+  border-color: black;
+  border-radius: 5px;
+}
+.blocks-white-space:hover:before {
+  content: '+';
+}
+
+.blocks-white-space.blocks-editing:before {
+  content: '';
+}
+.blocks-white-space.blocks-editing {
+  font-weight: normal;
+  margin: 15px;
 }

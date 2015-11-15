@@ -52,13 +52,34 @@ export default class CodeMirrorBlocks {
     nodeEl.contentEditable = false
     nodeEl.classList.remove('blocks-editing')
     this.cm.replaceRange(nodeEl.innerText, node.from, node.to)
-    let lines = nodeEl.innerText.split('\n')
-    node.to.line = node.from.line + lines.length - 1
-    if (lines.length == 1) {
-      node.to.ch = node.from.ch + nodeEl.innerText.length
-    } else {
-      node.to.ch = lines[lines.length-1].length
+    this.render()
+  }
+
+  editWhiteSpace(whiteSpaceEl, node, nodeEl, event) {
+    event.stopPropagation()
+    whiteSpaceEl.contentEditable = true
+    whiteSpaceEl.classList.add('blocks-editing')
+    whiteSpaceEl.onblur = this.saveWhiteSpace.bind(this, whiteSpaceEl, node, nodeEl)
+    whiteSpaceEl.onkeydown = function(e) {
+      e.stopPropagation()
+      e.codemirrorIgnore = true
+      if (e.which == RETURN_KEY || e.which == TAB_KEY) {
+        whiteSpaceEl.blur()
+      }
     }
+    let range = document.createRange()
+    range.setStart(whiteSpaceEl, 0)
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+  }
+
+  saveWhiteSpace(whiteSpaceEl, node, nodeEl, event) {
+    whiteSpaceEl.onkeydown = null
+    whiteSpaceEl.contentEditable = false
+    whiteSpaceEl.classList.remove('blocks-editing')
+    this.cm.replaceRange(
+      ' '+whiteSpaceEl.innerText, whiteSpaceEl.location, whiteSpaceEl.location)
+    this.render()
   }
 
   editNode(node, nodeEl, event) {
@@ -75,6 +96,7 @@ export default class CodeMirrorBlocks {
     }
     let range = document.createRange()
     range.setStart(nodeEl, 0)
+    range.setEnd(nodeEl, nodeEl.innerText.length)
     window.getSelection().removeAllRanges()
     window.getSelection().addRange(range)
   }
@@ -125,13 +147,23 @@ export default class CodeMirrorBlocks {
     case 'expression':
       nodeEl.onclick = this.selectNode.bind(this, node, nodeEl)
       nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl)
+
+      // set up drop targets
       let dropTargetEls = nodeEl.querySelectorAll(
         `#${nodeEl.id} > .blocks-args > .blocks-drop-target`)
-      for (var i = 0; i < dropTargetEls.length; i++) {
+      for (let i = 0; i < dropTargetEls.length; i++) {
         let el = dropTargetEls[i]
         el.ondragenter = this.handleDragEnter.bind(this, node, nodeEl)
         el.ondragleave = this.handleDragLeave.bind(this, node, nodeEl)
         el.ondrop = this.handleDrop.bind(this, node, nodeEl)
+      }
+
+      // set up white space
+      let whiteSpaceEls = nodeEl.querySelectorAll(
+        `#${nodeEl.id} > .blocks-args > .blocks-white-space`)
+      for (let i = 0; i < whiteSpaceEls.length; i++) {
+        let el = whiteSpaceEls[i]
+        el.onclick = this.editWhiteSpace.bind(this, el, node, nodeEl)
       }
       break
     }
