@@ -12,6 +12,7 @@ export default class CodeMirrorBlocks {
     this.blockMode = false
     this.selectedNodes = new Set()
     this.cm.getWrapperElement().onkeydown = this.handleKeyDown.bind(this)
+    this.cm.on('change', this.handleChange.bind(this))
   }
 
   setBlockMode(mode) {
@@ -28,6 +29,12 @@ export default class CodeMirrorBlocks {
 
   toggleBlockMode() {
     this.setBlockMode(!this.blockMode)
+  }
+
+  handleChange() {
+    if (this.blockMode) {
+      this.render()
+    }
   }
 
   _clearMarks() {
@@ -69,7 +76,6 @@ export default class CodeMirrorBlocks {
     nodeEl.contentEditable = false
     nodeEl.classList.remove('blocks-editing')
     this.cm.replaceRange(nodeEl.innerText, node.from, node.to)
-    this.render()
   }
 
   editWhiteSpace(whiteSpaceEl, node, nodeEl, event) {
@@ -96,7 +102,6 @@ export default class CodeMirrorBlocks {
     whiteSpaceEl.classList.remove('blocks-editing')
     this.cm.replaceRange(
       ' '+whiteSpaceEl.innerText, whiteSpaceEl.location, whiteSpaceEl.location)
-    this.render()
   }
 
   editNode(node, nodeEl, event) {
@@ -126,7 +131,6 @@ export default class CodeMirrorBlocks {
         this.cm.replaceRange('', node.from, node.to)
       }
     })
-    this.render()
   }
 
   handleDragStart(node, nodeEl, event) {
@@ -162,7 +166,6 @@ export default class CodeMirrorBlocks {
         this.cm.replaceRange(' '+sourceNodeText, destination, destination)
       }
     })
-    this.render()
   }
 
   didRenderNode(node, nodeEl) {
