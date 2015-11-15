@@ -48,7 +48,9 @@ export default class CodeMirrorBlocks {
     this.ast = this.parser.parse(this.cm.getValue())
     this.selectedNodes.clear()
     this._clearMarks()
-    render(this.ast.rootNode, this.cm, this.didRenderNode.bind(this))
+    for (let rootNode of this.ast.rootNodes) {
+      render(rootNode, this.cm, this.didRenderNode.bind(this))
+    }
   }
 
   toggleSelectNode(node, nodeEl, event) {

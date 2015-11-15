@@ -114,7 +114,11 @@ export default class Parser {
     this.lineIndex = 0
     this.colIndex = 0
 
-    return new AST(this.parseExpression())
+    let rootNodes = []
+    while (this.peekToken().token != TOKENS.EOF) {
+      rootNodes.push(this.parseExpression())
+    }
+    return new AST(rootNodes)
   }
 
   parseExpression() {

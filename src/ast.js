@@ -1,11 +1,13 @@
 import uuid from 'node-uuid'
 
 export class AST {
-  constructor(rootNode) {
+  constructor(rootNodes) {
     this.nodeMap = new Map()
-    this.rootNode = rootNode
-    for (let node of this.rootNode) {
-      this.nodeMap.set(node.id, node)
+    this.rootNodes = rootNodes
+    for (let rootNode of this.rootNodes) {
+      for (let node of rootNode) {
+        this.nodeMap.set(node.id, node)
+      }
     }
   }
 }
