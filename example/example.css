@@ -30,6 +30,7 @@
   color: black;
   border-radius: 5px;
   padding: 5px;
+  border: 1px solid transparent;
 }
 
 
@@ -40,7 +41,7 @@
   border-color: red;
 }
 .blocks-literal.blocks-selected {
-  border: 1px solid red;
+  border-color: red;
 }
 
 .blocks-editing {

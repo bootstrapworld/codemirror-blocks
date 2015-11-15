@@ -2,6 +2,7 @@ import render from './render'
 
 const RETURN_KEY = 13
 const TAB_KEY = 9
+const DELETE_KEY = 8
 
 export default class CodeMirrorBlocks {
   constructor(cm, parser) {
@@ -9,7 +10,7 @@ export default class CodeMirrorBlocks {
     this.parser = parser
     this.ast = null
     this.blockMode = false
-
+    this.selectedNodes = new Set()
     this.cm.getWrapperElement().onkeydown = this.handleKeyDown.bind(this)
   }
 
@@ -38,13 +39,29 @@ export default class CodeMirrorBlocks {
 
   render() {
     this.ast = this.parser.parse(this.cm.getValue())
+    this.selectedNodes.clear()
     this._clearMarks()
     render(this.ast.rootNode, this.cm, this.didRenderNode.bind(this))
+  }
+
+  toggleSelectNode(node, nodeEl, event) {
+    if (this.selectedNodes.has(node)) {
+      this.deselectNode(node, nodeEl, event)
+    } else {
+      this.selectNode(node, nodeEl, event)
+    }
   }
 
   selectNode(node, nodeEl, event) {
     event.stopPropagation()
     nodeEl.classList.add('blocks-selected')
+    this.selectedNodes.add(node)
+  }
+
+  deselectNode(node, nodeEl, event) {
+    event.stopPropagation()
+    nodeEl.classList.remove('blocks-selected')
+    this.selectedNodes.delete(node)
   }
 
   saveEdit(node, nodeEl, event) {
@@ -101,6 +118,17 @@ export default class CodeMirrorBlocks {
     window.getSelection().addRange(range)
   }
 
+  deleteSelectedNodes() {
+    let nodes = [...this.selectedNodes]
+    nodes.sort((a,b) => this.cm.indexFromPos(b.from) - this.cm.indexFromPos(a.from))
+    this.cm.operation(() => {
+      for (let node of nodes) {
+        this.cm.replaceRange('', node.from, node.to)
+      }
+    })
+    this.render()
+  }
+
   handleDragStart(node, nodeEl, event) {
     event.stopPropagation()
     nodeEl.classList.add('blocks-dragging')
@@ -125,7 +153,7 @@ export default class CodeMirrorBlocks {
     let sourceNode = this.ast.nodeMap.get(event.dataTransfer.getData('text'))
     let sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to)
     let destination = event.target.location
-    this.cm.operation(function() {
+    this.cm.operation(() => {
       if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destination)) {
         this.cm.replaceRange(' '+sourceNodeText, destination, destination)
         this.cm.replaceRange('', sourceNode.from, sourceNode.to)
@@ -133,7 +161,7 @@ export default class CodeMirrorBlocks {
         this.cm.replaceRange('', sourceNode.from, sourceNode.to)
         this.cm.replaceRange(' '+sourceNodeText, destination, destination)
       }
-    }.bind(this))
+    })
     this.render()
   }
 
@@ -141,7 +169,7 @@ export default class CodeMirrorBlocks {
     switch (node.type) {
     case 'literal':
       nodeEl.ondblclick = this.editNode.bind(this, node, nodeEl)
-      nodeEl.onclick = this.selectNode.bind(this, node, nodeEl)
+      nodeEl.onclick = this.toggleSelectNode.bind(this, node, nodeEl)
       nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl)
       break
     case 'expression':
@@ -169,7 +197,11 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  handleKeyDown(e) {
+  handleKeyDown(event) {
+    if (event.which == DELETE_KEY) {
+      event.preventDefault()
+      this.deleteSelectedNodes()
+    }
   }
 
 }
