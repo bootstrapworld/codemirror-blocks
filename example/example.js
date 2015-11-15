@@ -12,7 +12,7 @@ var cm = CodeMirror.fromTextArea(
   {theme:'3024-day'}
 )
 
-cm.setValue("(sum (+   (- 1 2)  3)\n (*  3  4)\n (/ 5 6))")
+cm.setValue("(sum (+   (- 1 2)  3)\n (*  3  4)\n (/ 5 6))\n(product 5 6 7)")
 //cm.setValue("(+ 1 2)")
 
 var blocks = new CodeMirrorBlocks(cm, new Parser())
