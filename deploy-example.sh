@@ -4,6 +4,7 @@ cp -R build/ build-copy
 cp example/index.html build-copy/
 echo "switching to gh-pages branch"
 git checkout -B gh-pages origin/gh-pages
+git pull
 rm -rf build
 mv build-copy/ build
 mv build/index.html example.html
