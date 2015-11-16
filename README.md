@@ -21,6 +21,9 @@ A library for making functional languages editable using visual blocks inside of
     import CodeMirrorBlocks from 'codemirror-blocks'
     import MyParser from './MyParser.js' //See example/parser.js for an example
 
+    // feel free to include the example css, or roll your own!
+    require('codemirror-blocks/example/example.css')
+
     let cm = CodeMirror.fromTextArea(document.getElementById('mytextarea'))
     let blocks = new CodeMirrorBlocks(cm, new MyParser())
     blocks.setBlockMode(true)
