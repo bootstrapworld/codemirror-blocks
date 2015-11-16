@@ -12,6 +12,7 @@ export default class CodeMirrorBlocks {
     this.blockMode = false
     this.selectedNodes = new Set()
     this.cm.getWrapperElement().onkeydown = this.handleKeyDown.bind(this)
+    this.cm.on('drop', (cm, event) => {console.log(cm,event); this.handleDrop(event)})
     this.cm.on('change', this.handleChange.bind(this))
   }
 
@@ -139,7 +140,8 @@ export default class CodeMirrorBlocks {
     event.stopPropagation()
     nodeEl.classList.add('blocks-dragging')
     event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text', node.id)
+    event.dataTransfer.setData('text/plain', this.cm.getRange(node.from, node.to))
+    event.dataTransfer.setData('text/id', node.id)
   }
 
   handleDragEnter(node, nodeEl, event) {
@@ -152,13 +154,16 @@ export default class CodeMirrorBlocks {
     event.target.classList.remove('blocks-over-target')
   }
 
-  handleDrop(node, nodeEl, event) {
-    event.codemirrorIgnore = true
+  handleDrop(event) {
     event.preventDefault()
-    event.target.classList.remove('blocks-over-target')
-    let sourceNode = this.ast.nodeMap.get(event.dataTransfer.getData('text'))
+    event.stopPropagation()
+    let sourceNode = this.ast.nodeMap.get(event.dataTransfer.getData('text/id'))
     let sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to)
     let destination = event.target.location
+    if (!destination) {
+      // event.target probably isn't a drop target, so just get the location from the event
+      destination = this.cm.coordsChar({left:event.pageX, top:event.pageY})
+    }
     this.cm.operation(() => {
       if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destination)) {
         this.cm.replaceRange(' '+sourceNodeText, destination, destination)
@@ -188,7 +193,7 @@ export default class CodeMirrorBlocks {
         let el = dropTargetEls[i]
         el.ondragenter = this.handleDragEnter.bind(this, node, nodeEl)
         el.ondragleave = this.handleDragLeave.bind(this, node, nodeEl)
-        el.ondrop = this.handleDrop.bind(this, node, nodeEl)
+        el.ondrop = this.handleDrop.bind(this)
       }
 
       // set up white space
