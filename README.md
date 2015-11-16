@@ -1,6 +1,30 @@
 # codemirror-blocks
 A library for making functional languages editable using visual blocks inside of codemirror
 
+## Usage
+
+1. Install this library with npm:
+
+    npm install --save codemirror-blocks
+
+2. Install the peer dependencies:
+
+    npm install --save babel-polyfill codemirror
+
+3. Make sure `babel-polyfill` is required at the top of your entry point:
+
+    require('babel-polyfill')
+
+4. Hook it up:
+
+    import CodeMirror from 'CodeMirror'
+    import CodeMirrorBlocks from 'codemirror-blocks'
+    import MyParser from './MyParser.js' //See example/parser.js for an example
+
+    let cm = CodeMirror.fromTextArea(document.getElementById('mytextarea'))
+    let blocks = new CodeMirrorBlocks(cm, new MyParser())
+    blocks.setBlockMode(true)
+
 ## Development
 
 To get your dev environment up and running, follow these steps
@@ -9,11 +33,11 @@ To get your dev environment up and running, follow these steps
 
 2. install dependencies with npm
 
-   `npm install`
+    npm install
 
 3. start the webpack development server
 
-  `npm start`
+    npm start
 
 4. browse to http://localhost:8080/webpack-dev-server/ and fire away!
 
@@ -24,4 +48,4 @@ Library code is in the **src/** directory. An example of how it should be used i
 To update the demo on the project site with the latest version of the example in
 this repository, just run:
 
-  `./deploy-example.sh`
+    ./deploy-example.sh
