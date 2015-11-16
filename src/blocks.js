@@ -183,7 +183,7 @@ export default class CodeMirrorBlocks {
       nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl)
       break
     case 'expression':
-      nodeEl.onclick = this.selectNode.bind(this, node, nodeEl)
+      nodeEl.onclick = this.toggleSelectNode.bind(this, node, nodeEl)
       nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl)
 
       // set up drop targets
