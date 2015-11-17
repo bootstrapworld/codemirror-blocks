@@ -157,11 +157,11 @@ export default class CodeMirrorBlocks {
   }
 
   findNodeFromEl(el) {
-    while (!el.classList.contains('blocks-node')) {
+    while (el !== document.body && !el.classList.contains('blocks-node')) {
       el = el.parentNode
     }
     let match = el.id.match(/block-node-(.*)/)
-    if (match.length > 1) {
+    if (match && match.length > 1) {
       return this.ast.nodeMap.get(match[1])
     }
   }
@@ -175,6 +175,9 @@ export default class CodeMirrorBlocks {
     if (!destination) {
       // event.target probably isn't a drop target, so just get the location from the event
       destination = this.cm.coordsChar({left:event.pageX, top:event.pageY})
+      if (destination.outside) {
+        sourceNodeText = '\n' + sourceNodeText
+      }
     }
     this.cm.operation(() => {
       let destinationNode = this.findNodeFromEl(event.target)
