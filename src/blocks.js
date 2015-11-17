@@ -5,14 +5,16 @@ const TAB_KEY = 9
 const DELETE_KEY = 8
 
 export default class CodeMirrorBlocks {
-  constructor(cm, parser) {
+  constructor(cm, parser, {willInsertNode, didInsertNode}) {
     this.cm = cm
     this.parser = parser
+    this.willInsertNode = willInsertNode
+    this.didInsertNode = didInsertNode
     this.ast = null
     this.blockMode = false
     this.selectedNodes = new Set()
     this.cm.getWrapperElement().onkeydown = this.handleKeyDown.bind(this)
-    this.cm.on('drop', (cm, event) => {console.log(cm,event); this.handleDrop(event)})
+    this.cm.on('drop', (cm, event) => this.handleDrop(event))
     this.cm.on('change', this.handleChange.bind(this))
   }
 
@@ -154,6 +156,16 @@ export default class CodeMirrorBlocks {
     event.target.classList.remove('blocks-over-target')
   }
 
+  findNodeFromEl(el) {
+    while (!el.classList.contains('blocks-node')) {
+      el = el.parentNode
+    }
+    let match = el.id.match(/block-node-(.*)/)
+    if (match.length > 1) {
+      return this.ast.nodeMap.get(match[1])
+    }
+  }
+
   handleDrop(event) {
     event.preventDefault()
     event.stopPropagation()
@@ -165,12 +177,31 @@ export default class CodeMirrorBlocks {
       destination = this.cm.coordsChar({left:event.pageX, top:event.pageY})
     }
     this.cm.operation(() => {
+      let destinationNode = this.findNodeFromEl(event.target)
+      if (this.willInsertNode) {
+        // give client code an opportunity to modify the sourceNodeText before
+        // it gets dropped in. For example, to add proper spacing
+        sourceNodeText = this.willInsertNode(
+          sourceNodeText,
+          sourceNode,
+          destination,
+          destinationNode
+        )
+      }
       if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destination)) {
-        this.cm.replaceRange(' '+sourceNodeText, destination, destination)
+        this.cm.replaceRange(sourceNodeText, destination, destination)
         this.cm.replaceRange('', sourceNode.from, sourceNode.to)
       } else {
         this.cm.replaceRange('', sourceNode.from, sourceNode.to)
-        this.cm.replaceRange(' '+sourceNodeText, destination, destination)
+        this.cm.replaceRange(sourceNodeText, destination, destination)
+      }
+      if (this.didInsertNode) {
+        this.didInsertNode(
+          sourceNodeText,
+          sourceNode,
+          destination,
+          destinationNode
+        )
       }
     })
   }

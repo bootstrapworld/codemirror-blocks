@@ -15,7 +15,24 @@ var cm = CodeMirror.fromTextArea(
 cm.setValue("(sum (+   (- 1 2)  3)\n (*  3  4)\n (/ 5 6))\n(product 5 6 7)")
 //cm.setValue("(+ 1 2)")
 
-var blocks = new CodeMirrorBlocks(cm, new Parser())
+var blocks = new CodeMirrorBlocks(
+  cm,
+  new Parser(),
+  {
+    willInsertNode(sourceNodeText, sourceNode, destination, destinationNode) {
+      let line = cm.getLine(destination.line)
+      if (destination.ch > 0 && line[destination.ch - 1].match(/[\w\d]/)) {
+        // previous character is a letter or number, so prefix a space
+        sourceNodeText = ' ' + sourceNodeText
+      }
+
+      if (destination.ch < line.length && line[destination.ch].match(/[\w\d]/)) {
+        // next character is a letter or a number, so append a space
+        sourceNodeText += ' '
+      }
+      return sourceNodeText
+    }
+  })
 blocks.setBlockMode(true)
 
 document.getElementById("blocks").onclick = function() {

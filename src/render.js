@@ -9,7 +9,6 @@ function makeDropTarget(location) {
 export var nodes = {
   expression(node, cm, callback) {
     let expressionEl = document.createElement('span')
-    expressionEl.id = `block-node-${node.id}`
     expressionEl.className = 'blocks-expression'
     expressionEl.draggable = true
 
@@ -21,11 +20,12 @@ export var nodes = {
     expressionEl.appendChild(document.createTextNode(' '))
     let argsEl = document.createElement('span')
     argsEl.className = 'blocks-args'
+    let location = Object.assign({}, node.to)
+    if (node.args.length > 0) {
+      Object.assign(location, node.args[0].from)
+    }
     argsEl.appendChild(
-      makeDropTarget({
-        line: node.from.line,
-        ch: node.from.ch+1+node.func.length
-      })
+      makeDropTarget(location)
     )
     for (let i=0; i < node.args.length; i++) {
       argsEl.appendChild(render(node.args[i], cm, callback))
@@ -49,7 +49,6 @@ export var nodes = {
 
   literal(node, cm) {
     let literalEl = document.createElement('span')
-    literalEl.id = `block-node-${node.id}`
     literalEl.appendChild(document.createTextNode(node.toString()))
     literalEl.className = 'blocks-literal'
     literalEl.draggable = true
@@ -64,6 +63,8 @@ export var nodes = {
 
 export default function render(node, cm, callback) {
   var nodeEl = nodes[node.type](node, cm, callback)
+  nodeEl.id = `block-node-${node.id}`
+  nodeEl.classList.add('blocks-node')
   callback(node, nodeEl)
   return nodeEl
 }
