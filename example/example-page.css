@@ -1,0 +1,23 @@
+body {
+  background-color: #ddd;
+  color: #333;
+  font-family: sans-serif;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+}
+
+.container .col {
+  width: 50%;
+  padding: 10px;
+}
+
+.container .col p {
+  font-weight: bold;
+}
+
+.CodeMirror {
+  box-shadow: 3px 4px 21px -4px rgba(0,0,0,0.75);
+}

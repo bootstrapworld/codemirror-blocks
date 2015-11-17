@@ -6,21 +6,28 @@ import Parser from './parser.js'
 import CodeMirrorBlocks from '../src/blocks.js'
 
 require('./example.css')
+require('./example-page.css')
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
   {theme:'3024-day'}
 )
 
+var cm2 = CodeMirror.fromTextArea(
+  document.getElementById('code2'),
+  {theme:'3024-day'}
+)
+
 cm.setValue("(sum (+   (- 1 2)  3)\n (*  3  4)\n (/ 5 6))\n(product 5 6 7)")
 //cm.setValue("(+ 1 2)")
+cm2.swapDoc(cm.getDoc().linkedDoc({sharedHist: true}))
 
 var blocks = new CodeMirrorBlocks(
-  cm,
+  cm2,
   new Parser(),
   {
     willInsertNode(sourceNodeText, sourceNode, destination, destinationNode) {
-      let line = cm.getLine(destination.line)
+      let line = cm2.getLine(destination.line)
       if (destination.ch > 0 && line[destination.ch - 1].match(/[\w\d]/)) {
         // previous character is a letter or number, so prefix a space
         sourceNodeText = ' ' + sourceNodeText
@@ -34,8 +41,3 @@ var blocks = new CodeMirrorBlocks(
     }
   })
 blocks.setBlockMode(true)
-
-document.getElementById("blocks").onclick = function() {
-  blocks.toggleBlockMode()
-  this.innerText = `Turn block mode ${blocks.blockMode ? "off" : "on"}`
-}

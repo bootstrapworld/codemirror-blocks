@@ -3,7 +3,7 @@
   align-items: stretch;
   color: black;
   border: 2px solid black;
-  border-radius: 500px 0px 0px 500px;
+  border-radius: 15px 0px 0px 15px;
   margin: 5px;
   background: #ccc;
   cursor: default;
@@ -21,6 +21,8 @@
 }
 
 .blocks-args {
+  display: inline-flex;
+  flex-wrap: wrap;
   flex-grow: 1;
   background: #eee;
 }
