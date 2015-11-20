@@ -5,7 +5,7 @@ const TAB_KEY = 9
 const DELETE_KEY = 8
 
 export default class CodeMirrorBlocks {
-  constructor(cm, parser, {willInsertNode, didInsertNode}) {
+  constructor(cm, parser, {willInsertNode, didInsertNode} = {}) {
     this.cm = cm
     this.parser = parser
     this.willInsertNode = willInsertNode
