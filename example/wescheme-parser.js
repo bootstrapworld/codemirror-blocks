@@ -25,7 +25,6 @@ export default class Parser {
   parse(code) {
     var ast = parse(lex(code, 'foo', true));
     var rootNodes = ast.map(parseNode);
-    console.log(rootNodes);
     return new AST(rootNodes);
   }
 
