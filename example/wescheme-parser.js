@@ -1,7 +1,7 @@
 import {AST, Expression, Literal} from '../src/ast'
-import {lex} from 'wescheme-js/lib/lex'
-import {parse} from 'wescheme-js/lib/parser'
-import * as structures from 'wescheme-js/lib/structures'
+import {lex} from 'wescheme-js/src/lex'
+import {parse} from 'wescheme-js/src/parser'
+import * as structures from 'wescheme-js/src/structures'
 
 function parseNode(node) {
   var from = {
