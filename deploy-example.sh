@@ -8,8 +8,10 @@ git pull
 rm -rf build
 mv build-copy/ build
 mv build/index.html example.html
+mv build/wescheme.html .
 git add build/
 git add example.html
+git add wescheme.html
 echo "committing changes"
 git commit -m "updating example page"
 echo "pushing changes to github"
