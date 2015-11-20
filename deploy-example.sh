@@ -2,6 +2,7 @@ echo "building static resources"
 npm run build
 cp -R build/ build-copy
 cp example/index.html build-copy/
+cp example/wescheme.html build-copy/
 echo "switching to gh-pages branch"
 git checkout -B gh-pages origin/gh-pages
 git pull
