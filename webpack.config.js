@@ -22,7 +22,9 @@ module.exports = {
         ],
         loader: "babel-loader"
       },
-      { test: /\.css$/, loaders: ["style", "css"] }
+      { test: /\.css$/, loaders: ["style", "css"] },
+      { test: /\.rkt$/, loader: 'raw' },
+      { test: /\.handlebars$/, loader: 'handlebars-loader'}
     ]
   }
 }

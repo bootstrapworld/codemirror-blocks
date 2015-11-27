@@ -4,6 +4,7 @@
   "description": "CoreMirror extension for using draggable blocks to write programming languages",
   "main": "lib/codemirror-blocks.js",
   "dependencies": {
+    "handlebars": "^4.0.5",
     "node-uuid": "^1.4.7"
   },
   "devDependencies": {
@@ -15,6 +16,8 @@
     "css-loader": "^0.23.0",
     "eslint": "^1.9.0",
     "eslint-loader": "^1.1.1",
+    "handlebars-loader": "^1.1.4",
+    "raw-loader": "^0.5.1",
     "style-loader": "^0.13.0",
     "webpack": "^1.12.6",
     "webpack-dev-server": "^1.12.1",

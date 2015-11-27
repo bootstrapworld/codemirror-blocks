@@ -1,3 +1,4 @@
+.blocks-struct,
 .blocks-expression {
   display: inline-flex;
   align-items: stretch;
@@ -27,12 +28,17 @@
   background: #eee;
 }
 
+.blocks-name,
 .blocks-literal {
   display: inline-block;
   color: black;
   border-radius: 5px;
   padding: 5px;
   border: 1px solid transparent;
+}
+
+.blocks-name {
+  color: red;
 }
 
 

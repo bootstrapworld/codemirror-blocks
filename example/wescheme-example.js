@@ -18,8 +18,10 @@ var cm2 = CodeMirror.fromTextArea(
   {theme:'3024-day'}
 );
 
-cm.setValue("(sum (+   (- 1 2)  3)\n (*  3  4)\n (/ 5 6))\n(product 5 6 7)");
-//cm.setValue("(+ 1 2)")
+var code = require('./ast-test.rkt');
+//var code = require('./cow-game.rkt');
+//var code = "(sum (+   (- 1 2)  3)\n (*  3  4)\n (/ 5 6))\n(product 5 6 7)"
+cm.setValue(code);
 cm2.swapDoc(cm.getDoc().linkedDoc({sharedHist: true}));
 
 var blocks = new CodeMirrorBlocks(cm2, new WeschemeParser());
