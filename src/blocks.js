@@ -4,6 +4,13 @@ const RETURN_KEY = 13
 const TAB_KEY = 9
 const DELETE_KEY = 8
 
+function getLocationFromEl(el) {
+  return {
+    line: parseInt(el.getAttribute('line')),
+    ch: parseInt(el.getAttribute('ch'))
+  };
+}
+
 export default class CodeMirrorBlocks {
   constructor(cm, parser, {willInsertNode, didInsertNode} = {}) {
     this.cm = cm
@@ -102,11 +109,12 @@ export default class CodeMirrorBlocks {
   }
 
   saveWhiteSpace(whiteSpaceEl, node, nodeEl, event) {
-    whiteSpaceEl.onkeydown = null
-    whiteSpaceEl.contentEditable = false
-    whiteSpaceEl.classList.remove('blocks-editing')
+    whiteSpaceEl.onkeydown = null;
+    whiteSpaceEl.contentEditable = false;
+    whiteSpaceEl.classList.remove('blocks-editing');
+    var location = getLocationFromEl(whiteSpaceEl);
     this.cm.replaceRange(
-      ' '+whiteSpaceEl.innerText, whiteSpaceEl.location, whiteSpaceEl.location)
+      ' '+whiteSpaceEl.innerText, location, location)
   }
 
   editNode(node, nodeEl, event) {
@@ -123,7 +131,7 @@ export default class CodeMirrorBlocks {
     }
     let range = document.createRange()
     range.setStart(nodeEl, 0)
-    range.setEnd(nodeEl, nodeEl.innerText.length)
+    range.setEnd(nodeEl, nodeEl.childNodes.length);
     window.getSelection().removeAllRanges()
     window.getSelection().addRange(range)
   }
@@ -171,7 +179,7 @@ export default class CodeMirrorBlocks {
     event.stopPropagation()
     let sourceNode = this.ast.nodeMap.get(event.dataTransfer.getData('text/id'))
     let sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to)
-    let destination = event.target.location
+    let destination = getLocationFromEl(event.target);
     if (!destination) {
       // event.target probably isn't a drop target, so just get the location from the event
       destination = this.cm.coordsChar({left:event.pageX, top:event.pageY})
