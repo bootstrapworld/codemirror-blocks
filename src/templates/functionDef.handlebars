@@ -1,10 +1,10 @@
-<span class="blocks-struct">
-  <span class="blocks-operator">define</span>
-  <span class="blocks-args">
-    <span class="blocks-name">{{node.name}}</span>
-    {{#each node.args}}
-    <span class="blocks-literal">{{this}}</span>
-    {{/each}}
-    {{{renderNode node.body cm callback}}}
-  </span>
+{{#> node type="functionDef"}}
+<span class="blocks-operator">define</span>
+<span class="blocks-args">
+  <span class="blocks-name">{{node.name}}</span>
+  {{#each node.args}}
+  <span class="blocks-literal">{{this}}</span>
+  {{/each}}
+  {{{renderNode node.body cm callback}}}
 </span>
+{{/node}}
