@@ -6,14 +6,6 @@ function createFragment(htmlStr) {
   return frag;
 }
 
-function makeDropTarget(location) {
-  let dropEl = document.createElement('span');
-  dropEl.className = 'blocks-drop-target blocks-white-space';
-  dropEl.appendChild(document.createTextNode(''));
-  dropEl.location = location;
-  return dropEl;
-}
-
 export var nodes = {
   expression: require('./templates/expression.handlebars'),
   functionDef: require('./templates/functionDef.handlebars'),

@@ -1,4 +1,5 @@
 .blocks-struct,
+.blocks-functionDef,
 .blocks-expression {
   display: inline-flex;
   align-items: stretch;

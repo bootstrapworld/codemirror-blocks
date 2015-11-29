@@ -45,7 +45,7 @@ function parseNode(node) {
   } else if (node instanceof structures.symbolExpr) {
     return new Literal(from, to, node.stx);
   } else if (node instanceof structures.literal) {
-    return new Literal(from, to, node.stx);
+    return new Literal(from, to, node);
   }
   console.log("!! No translator for", node)
   return null;
