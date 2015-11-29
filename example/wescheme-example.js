@@ -24,5 +24,20 @@ var code = require('./ast-test.rkt');
 cm.setValue(code);
 cm2.swapDoc(cm.getDoc().linkedDoc({sharedHist: true}));
 
-var blocks = new CodeMirrorBlocks(cm2, new WeschemeParser());
+var blocks = new CodeMirrorBlocks(
+  cm2,
+  new WeschemeParser(),
+  {
+    willInsertNode(sourceNodeText, sourceNode, destination) {
+      let line = cm2.getLine(destination.line);
+      let prev = line[destination.ch - 1];
+      let next = line[destination.ch];
+      return (
+        (/\s|[\(\[\{]/.test(prev) ? "":" ") +
+        sourceNodeText.trim() +
+        (/\s|[\)\]\}]/.test(next) ? "":" ")
+      );
+    }
+  }
+);
 blocks.setBlockMode(true);
