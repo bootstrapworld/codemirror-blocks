@@ -2,13 +2,15 @@
 .blocks-functionDef,
 .blocks-expression {
   display: inline-flex;
+  flex-direction: column;
   align-items: stretch;
   color: black;
   border: 2px solid black;
-  border-radius: 15px 0px 0px 15px;
+  border-radius: 15px;
   margin: 5px;
   background: #ccc;
   cursor: default;
+  overflow: hidden;
 }
 
 .blocks-operator {
@@ -16,10 +18,10 @@
   justify-content: center;
   flex-direction: column;
   font-weight: bold;
-  border-right: 2px solid black;
   padding: 5px;
-  min-width: 20px;
   text-align: center;
+  background: black;
+  color: white;
 }
 
 .blocks-args {

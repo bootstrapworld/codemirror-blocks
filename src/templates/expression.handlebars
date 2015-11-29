@@ -1,7 +1,5 @@
 {{#> node type="expression"}}
-<span class="blocks-operator">
-  {{node.func}}
-</span>
+<span class="blocks-operator">{{node.func}}</span>
 <span class="blocks-args">
   {{#if node.args.length}}
   {{> drop-target location=node.args.[0].from}}
