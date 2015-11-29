@@ -1,4 +1,4 @@
-import uuid from 'node-uuid'
+import uuid from 'node-uuid';
 
 export class AST {
   constructor(rootNodes) {

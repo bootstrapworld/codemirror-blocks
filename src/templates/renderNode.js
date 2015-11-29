@@ -4,4 +4,4 @@ module.exports = function(node) {
     return '';
   }
   return renderHTMLString(node);
-}
+};

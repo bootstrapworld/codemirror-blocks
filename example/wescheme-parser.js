@@ -70,7 +70,7 @@ function parseNode(node) {
     }
     return new Literal(from, to, node, dataType);
   }
-  console.log("!! No translator for", node)
+  console.log("!! No translator for", node);
   return null;
 }
 

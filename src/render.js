@@ -11,7 +11,7 @@ export var nodes = {
   functionDef: require('./templates/functionDef.handlebars'),
   struct: require('./templates/struct.handlebars'),
   literal: require('./templates/literal.handlebars')
-}
+};
 
 var nodesInRenderOrder = [];
 
@@ -31,7 +31,7 @@ export function renderHTMLString(node) {
 }
 
 export default function render(rootNode, cm, callback) {
-  nodesInRenderOrder = []
+  nodesInRenderOrder = [];
   var rootNodeFrag = createFragment(renderHTMLString(rootNode));
   for (let node of nodesInRenderOrder) {
     node.el = rootNodeFrag.getElementById(`block-node-${node.id}`);
