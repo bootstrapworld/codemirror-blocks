@@ -40,19 +40,29 @@
   border: 1px solid transparent;
 }
 
+.blocks-literal-number {
+  color: blue;
+}
+.blocks-literal-string {
+  color: green;
+}
+.blocks-literal-char {
+  color: lightblue;
+}
+.blocks-literal-boolean {
+  color: purple;
+}
+.blocks-literal-symbol {
+  color: lightblue;
+}
+
 .blocks-name {
   color: red;
 }
 
 
-.blocks-expression.blocks-selected {
-  border-color: red;
-}
-.blocks-expression.blocks-selected .blocks-operator {
-  border-color: red;
-}
-.blocks-literal.blocks-selected {
-  border-color: red;
+.blocks-selected {
+  border-color: orange;
 }
 
 .blocks-editing {
@@ -60,11 +70,12 @@
 }
 
 .blocks-literal.blocks-editing {
-  border: 1px solid green;
+  border: 2px solid orange;
 }
 
 .blocks-over-target {
-  background-color: red;
+  background-color: lightblue;
+  border-radius: 15px;
 }
 
 .blocks-white-space:before {

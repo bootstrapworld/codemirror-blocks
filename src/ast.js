@@ -79,9 +79,10 @@ export class FunctionDefinition extends ASTNode {
 }
 
 export class Literal extends ASTNode {
-  constructor(from, to, value) {
+  constructor(from, to, value, dataType='unknown') {
     super(from, to, 'literal');
     this.value = value;
+    this.dataType = dataType;
   }
 
   *[Symbol.iterator]() {

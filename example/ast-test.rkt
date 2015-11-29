@@ -1,4 +1,12 @@
-; This is a comment
+; This is a comment. It just stays where it is.
+
+; We can have literals of various types
+42   ; number
+"hello"   ; string
+#\m    ; character
+#t     ; boolean
+quuz   ; symbol
+
 
 ; let's define a variable or two
 (define FIRST-NAME "John")
