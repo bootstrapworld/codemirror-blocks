@@ -21,6 +21,20 @@ function parseNode(node) {
       node.func.stx,
       node.args.map(parseNode).filter(item => item !== null)
     );
+  } else if (node instanceof structures.andExpr) {
+    return new Expression(
+      from,
+      to,
+      "and",
+      node.exprs.map(parseNode).filter(item => item !== null)
+    );
+  } else if (node instanceof structures.orExpr) {
+    return new Expression(
+      from,
+      to,
+      "or",
+      node.exprs.map(parseNode).filter(item => item !== null)
+    );
   } else if (node instanceof structures.defVar) {
     return new Expression(
       from,
@@ -54,7 +68,6 @@ function parseNode(node) {
     } else if (node.val === types.FALSE || node.val === types.TRUE) {
       dataType = "boolean";
     }
-    console.log("type for node", node, "with value", node.val, "is", dataType);
     return new Literal(from, to, node, dataType);
   }
   console.log("!! No translator for", node)

@@ -39,6 +39,9 @@
   padding: 5px;
   border: 1px solid transparent;
 }
+.blocks-name {
+  color: #2e75b5;
+}
 
 .blocks-literal-number {
   color: blue;
@@ -47,17 +50,13 @@
   color: green;
 }
 .blocks-literal-char {
-  color: lightblue;
+  color: #2e75b5;
 }
 .blocks-literal-boolean {
   color: purple;
 }
 .blocks-literal-symbol {
-  color: lightblue;
-}
-
-.blocks-name {
-  color: red;
+  color: #2e75b5;
 }
 
 

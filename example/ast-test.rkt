@@ -7,14 +7,14 @@
 #t     ; boolean
 quuz   ; symbol
 
-
-; let's define a variable or two
+; we can define a variable or two
 (define FIRST-NAME "John")
 (define LAST-NAME "Doe")
 
 ; we can have structures
 (define-struct person (first-name last-name age country))
 
+; which we can then make instances of
 (define john (make-person FIRST-NAME LAST-NAME 28 "USA"))
 
 ; we can define functions
@@ -26,4 +26,9 @@ quuz   ; symbol
           (person-country p)
           (years-to-seconds (person-age p))))
 
+; and we can call functions
 (greet john)
+
+; we can also evaluate boolean expressions
+(and #t #f)
+(or #t #f)
