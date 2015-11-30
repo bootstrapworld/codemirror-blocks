@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/pcardune/codemirror-blocks.svg?branch=master)](https://travis-ci.org/pcardune/codemirror-blocks)
+[![Coverage Status](https://coveralls.io/repos/pcardune/codemirror-blocks/badge.svg?branch=master&service=github)](https://coveralls.io/github/pcardune/codemirror-blocks?branch=master)
+
 # codemirror-blocks
 A library for making functional languages editable using visual blocks inside of codemirror
 
