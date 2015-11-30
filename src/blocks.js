@@ -27,7 +27,6 @@ export default class CodeMirrorBlocks {
     this.ast = null;
     this.blockMode = false;
     this.selectedNodes = new Set();
-
     Object.assign(
       this.cm.getWrapperElement(),
       {
@@ -39,7 +38,10 @@ export default class CodeMirrorBlocks {
         ondblclick: this.nodeEventHandler({
           literal: this.editLiteral
         }),
-        ondragstart: this.nodeEventHandler(this.startDraggingNode)
+        ondragstart: this.nodeEventHandler(this.startDraggingNode),
+        // TODO: for some reason this never fires. Figure out why.
+        // ondragenter: this.nodeEventHandler(this.handleDragEnter),
+        ondragleave: this.nodeEventHandler(this.handleDragLeave)
       }
     );
     this.cm.on('drop', (cm, event) => this.handleDrop(event));
@@ -175,14 +177,18 @@ export default class CodeMirrorBlocks {
     event.dataTransfer.setData('text/id', node.id);
   }
 
-  handleDragEnter(node, nodeEl, event) {
-    event.stopPropagation();
-    event.target.classList.add('blocks-over-target');
+  handleDragEnter(node, event) {
+    if (event.target.classList.contains('blocks-drop-target')) {
+      event.stopPropagation();
+      event.target.classList.add('blocks-over-target');
+    }
   }
 
-  handleDragLeave(node, nodeEl, event) {
-    event.stopPropagation();
-    event.target.classList.remove('blocks-over-target');
+  handleDragLeave(node, event) {
+    if (event.target.classList.contains('blocks-drop-target')) {
+      event.stopPropagation();
+      event.target.classList.remove('blocks-over-target');
+    }
   }
 
   findNodeFromEl(el) {
@@ -265,8 +271,10 @@ export default class CodeMirrorBlocks {
         `#${nodeEl.id} > .blocks-args > .blocks-drop-target`);
       for (let i = 0; i < dropTargetEls.length; i++) {
         let el = dropTargetEls[i];
-        el.ondragenter = this.handleDragEnter.bind(this, node, nodeEl);
-        el.ondragleave = this.handleDragLeave.bind(this, node, nodeEl);
+        // TODO: for some reason, this is the only way to get dragenter
+        // to fire on these dom nodes. This shouldn't be necessary. See other
+        // TODO in this file.
+        el.ondragenter = this.handleDragEnter.bind(this, node);
         el.ondrop = this.handleDrop.bind(this);
       }
     }
@@ -300,6 +308,7 @@ export default class CodeMirrorBlocks {
         }
         if (handlers.default) {
           handlers.default.call(this, node, event);
+          return;
         }
       }
     }.bind(this);
