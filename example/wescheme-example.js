@@ -30,8 +30,8 @@ var blocks = new CodeMirrorBlocks(
   {
     willInsertNode(sourceNodeText, sourceNode, destination) {
       let line = cm2.getLine(destination.line);
-      let prev = line[destination.ch - 1];
-      let next = line[destination.ch];
+      let prev = line[destination.ch - 1] || '\n';
+      let next = line[destination.ch] || '\n';
       return (
         (/\s|[\(\[\{]/.test(prev) ? "":" ") +
         sourceNodeText.trim() +

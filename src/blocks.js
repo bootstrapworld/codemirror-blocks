@@ -5,9 +5,16 @@ const TAB_KEY = 9;
 const DELETE_KEY = 8;
 
 function getLocationFromEl(el) {
+  // TODO: it's kind of lame to have line and ch as attributes on random elements.
+  let line = el.getAttribute('line');
+  let ch = el.getAttribute('ch');
+  if (line === null || ch === null) {
+    // no location to get...
+    return null;
+  }
   return {
-    line: parseInt(el.getAttribute('line')),
-    ch: parseInt(el.getAttribute('ch'))
+    line: parseInt(line),
+    ch: parseInt(ch)
   };
 }
 
@@ -172,12 +179,20 @@ export default class CodeMirrorBlocks {
     if (match && match.length > 1) {
       return this.ast.nodeMap.get(match[1]);
     }
+    return null;
   }
 
   handleDrop(event) {
     event.preventDefault();
     event.stopPropagation();
-    let sourceNode = this.ast.nodeMap.get(event.dataTransfer.getData('text/id'));
+    let nodeId = event.dataTransfer.getData('text/id');
+    if (!nodeId) {
+      console.error("data transfer contains no node id. Not sure how to proceed.");
+    }
+    let sourceNode = this.ast.nodeMap.get(nodeId);
+    if (!sourceNode) {
+      console.error("node", nodeId, "not found in AST");
+    }
     let sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
     let destination = getLocationFromEl(event.target);
     if (!destination) {

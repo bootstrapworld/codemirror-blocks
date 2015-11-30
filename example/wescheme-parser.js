@@ -77,7 +77,7 @@ function parseNode(node) {
 export default class Parser {
 
   parse(code) {
-    var ast = parse(lex(code, 'foo', true));
+    var ast = parse(lex(code, 'foo'));
     var rootNodes = ast.map(parseNode).filter(item => item !== null);
     return new AST(rootNodes);
   }

@@ -70,7 +70,9 @@ export class FunctionDefinition extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
-    yield this.body;
+    for (let node of this.body) {
+      yield node;
+    }
   }
 
   toString() {
