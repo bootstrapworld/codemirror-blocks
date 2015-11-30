@@ -28,6 +28,7 @@ export default class CodeMirrorBlocks {
     this.blockMode = false;
     this.selectedNodes = new Set();
     this.cm.getWrapperElement().onkeydown = this.handleKeyDown.bind(this);
+    this.cm.getWrapperElement().onclick = this.handleClick.bind(this);
     this.cm.on('drop', (cm, event) => this.handleDrop(event));
     this.cm.on('change', this.handleChange.bind(this));
   }
@@ -70,23 +71,23 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  toggleSelectNode(node, nodeEl, event) {
+  toggleSelectNode(node, event) {
     if (this.selectedNodes.has(node)) {
-      this.deselectNode(node, nodeEl, event);
+      this.deselectNode(node, event);
     } else {
-      this.selectNode(node, nodeEl, event);
+      this.selectNode(node, event);
     }
   }
 
-  selectNode(node, nodeEl, event) {
+  selectNode(node, event) {
     event.stopPropagation();
-    nodeEl.classList.add('blocks-selected');
+    node.el.classList.add('blocks-selected');
     this.selectedNodes.add(node);
   }
 
-  deselectNode(node, nodeEl, event) {
+  deselectNode(node, event) {
     event.stopPropagation();
-    nodeEl.classList.remove('blocks-selected');
+    node.el.classList.remove('blocks-selected');
     this.selectedNodes.delete(node);
   }
 
@@ -247,11 +248,9 @@ export default class CodeMirrorBlocks {
     switch (node.type) {
     case 'literal':
       nodeEl.ondblclick = this.editNode.bind(this, node, nodeEl);
-      nodeEl.onclick = this.toggleSelectNode.bind(this, node, nodeEl);
       nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl);
       break;
     case 'expression':
-      nodeEl.onclick = this.toggleSelectNode.bind(this, node, nodeEl);
       nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl);
 
       // set up drop targets
@@ -279,6 +278,13 @@ export default class CodeMirrorBlocks {
     if (event.which == DELETE_KEY) {
       event.preventDefault();
       this.deleteSelectedNodes();
+    }
+  }
+
+  handleClick(event) {
+    let node = this.findNodeFromEl(event.target);
+    if (node) {
+      this.toggleSelectNode(node, event);
     }
   }
 
