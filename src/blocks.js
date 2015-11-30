@@ -27,9 +27,16 @@ export default class CodeMirrorBlocks {
     this.ast = null;
     this.blockMode = false;
     this.selectedNodes = new Set();
-    this.cm.getWrapperElement().onkeydown = this.handleKeyDown.bind(this);
-    this.cm.getWrapperElement().onclick = this.handleClick.bind(this);
-    this.cm.getWrapperElement().ondblclick = this.handleDblClick.bind(this);
+
+    Object.assign(
+      this.cm.getWrapperElement(),
+      {
+        onkeydown: this.handleKeyDown.bind(this),
+        onclick: this.nodeEventHandler(this.toggleSelectNode),
+        ondblclick: this.nodeEventHandler({literal: this.editLiteral}),
+        ondragstart: this.nodeEventHandler(this.startDraggingNode)
+      }
+    );
     this.cm.on('drop', (cm, event) => this.handleDrop(event));
     this.cm.on('change', this.handleChange.bind(this));
   }
@@ -126,7 +133,7 @@ export default class CodeMirrorBlocks {
       ' '+whiteSpaceEl.innerText, location, location);
   }
 
-  editNode(node, event) {
+  editLiteral(node, event) {
     event.stopPropagation();
     node.el.contentEditable = true;
     node.el.classList.add('blocks-editing');
@@ -155,9 +162,9 @@ export default class CodeMirrorBlocks {
     });
   }
 
-  handleDragStart(node, nodeEl, event) {
+  startDraggingNode(node, event) {
     event.stopPropagation();
-    nodeEl.classList.add('blocks-dragging');
+    node.el.classList.add('blocks-dragging');
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', this.cm.getRange(node.from, node.to));
     event.dataTransfer.setData('text/id', node.id);
@@ -247,11 +254,7 @@ export default class CodeMirrorBlocks {
 
   didRenderNode(node, nodeEl) {
     switch (node.type) {
-    case 'literal':
-      nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl);
-      break;
     case 'expression':
-      nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl);
 
       // set up drop targets
       let dropTargetEls = nodeEl.querySelectorAll(
@@ -274,6 +277,7 @@ export default class CodeMirrorBlocks {
     }
   }
 
+
   handleKeyDown(event) {
     if (event.which == DELETE_KEY) {
       event.preventDefault();
@@ -281,18 +285,22 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  handleClick(event) {
-    let node = this.findNodeFromEl(event.target);
-    if (node) {
-      this.toggleSelectNode(node, event);
+  nodeEventHandler(handlers) {
+    if (typeof handlers == 'function') {
+      handlers = {default: handlers};
     }
-  }
-
-  handleDblClick(event) {
-    let node = this.findNodeFromEl(event.target);
-    if (node && node.type == 'literal') {
-      this.editNode(node, event);
-    }
+    return function(event) {
+      let node = this.findNodeFromEl(event.target);
+      if (node) {
+        if (handlers[node.type]) {
+          handlers[node.type].call(this, node, event);
+          return;
+        }
+        if (handlers.default) {
+          handlers.default.call(this, node, event);
+        }
+      }
+    }.bind(this);
   }
 
 }
