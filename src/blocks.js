@@ -185,6 +185,7 @@ export default class CodeMirrorBlocks {
   handleDrop(event) {
     event.preventDefault();
     event.stopPropagation();
+    event.target.classList.remove('blocks-over-target');
     let nodeId = event.dataTransfer.getData('text/id');
     if (!nodeId) {
       console.error("data transfer contains no node id. Not sure how to proceed.");
@@ -202,6 +203,16 @@ export default class CodeMirrorBlocks {
         sourceNodeText = '\n' + sourceNodeText;
       }
     }
+    // TODO: figure out how to no-op more complicated changes that don't actually have any
+    // impact on the AST.  For example, start with:
+    //   (or #t #f)
+    // then try to move the #f over one space. It should be a no-op.
+    if ((destination.line == sourceNode.to.line && destination.ch == sourceNode.to.ch) ||
+        (destination.line == sourceNode.from.line && destination.ch == sourceNode.from.ch)) {
+      // destination is the same as source node location, so this should be a no-op.
+      return;
+    }
+
     this.cm.operation(() => {
       let destinationNode = this.findNodeFromEl(event.target);
       if (this.willInsertNode) {

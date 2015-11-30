@@ -32,11 +32,14 @@ var blocks = new CodeMirrorBlocks(
       let line = cm2.getLine(destination.line);
       let prev = line[destination.ch - 1] || '\n';
       let next = line[destination.ch] || '\n';
-      return (
-        (/\s|[\(\[\{]/.test(prev) ? "":" ") +
-        sourceNodeText.trim() +
-        (/\s|[\)\]\}]/.test(next) ? "":" ")
-      );
+      sourceNodeText = sourceNodeText.trim();
+      if (!/\s|[\(\[\{]/.test(prev)) {
+        sourceNodeText = ' ' + sourceNodeText;
+      }
+      if (!/\s|[\)\]\}]/.test(next)) {
+        sourceNodeText += ' ';
+      }
+      return sourceNodeText;
     }
   }
 );
