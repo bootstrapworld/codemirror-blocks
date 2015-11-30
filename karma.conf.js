@@ -1,6 +1,17 @@
 // Karma configuration
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
 var webpackConfig = require('./webpack.config.js');
+var envConfig = require('./env-config.js');
+var reporters = ['progress'];
+
+if (envConfig.runCoverage) {
+  //webpackConfig = require('./webpack/test-coverage.config');
+  reporters.push('coverage');
+
+  if (envConfig.isCI) {
+    reporters.push('coveralls');
+  }
+}
 
 module.exports = function(config) {
   config.set({
@@ -40,10 +51,14 @@ module.exports = function(config) {
       captureConsole: true
     },
 
-    // test results reporter to use
-    // possible values: 'dots', 'progress'
-    // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress'],
+    reporters: reporters,
+    coverageReporter: {
+      dir: '.coverage',
+      reporters: [
+        { type: 'html' },
+        { type: 'lcovonly' }
+      ]
+    },
 
     // web server port
     port: 9876,
@@ -64,16 +79,22 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
-
+    browsers: [ envConfig.isCI ? 'ChromeTravisCI' : envConfig.devBrowser ],
+    customLaunchers: {
+      ChromeTravisCI: {
+        base: 'Chrome',
+        flags: ['--no-sandbox']
+      }
+    },
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true,
+    singleRun: envConfig.isCI,
 
     // Concurrency level
     // how many browser should be started simultanous
     concurrency: Infinity,
+    captureTimeout: 60000,
     browserNoActivityTimeout: 60000 // 60 seconds
   });
 };
