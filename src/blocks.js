@@ -32,8 +32,13 @@ export default class CodeMirrorBlocks {
       this.cm.getWrapperElement(),
       {
         onkeydown: this.handleKeyDown.bind(this),
-        onclick: this.nodeEventHandler(this.toggleSelectNode),
-        ondblclick: this.nodeEventHandler({literal: this.editLiteral}),
+        onclick: this.nodeEventHandler({
+          whitespace: this.editWhiteSpace,
+          default: this.toggleSelectNode
+        }),
+        ondblclick: this.nodeEventHandler({
+          literal: this.editLiteral
+        }),
         ondragstart: this.nodeEventHandler(this.startDraggingNode)
       }
     );
@@ -106,11 +111,11 @@ export default class CodeMirrorBlocks {
     this.cm.replaceRange(nodeEl.innerText, node.from, node.to);
   }
 
-  editWhiteSpace(whiteSpaceEl, node, nodeEl, event) {
+  editWhiteSpace(whiteSpaceEl, event) {
     event.stopPropagation();
     whiteSpaceEl.contentEditable = true;
     whiteSpaceEl.classList.add('blocks-editing');
-    whiteSpaceEl.onblur = this.saveWhiteSpace.bind(this, whiteSpaceEl, node, nodeEl);
+    whiteSpaceEl.onblur = this.saveWhiteSpace.bind(this, whiteSpaceEl);
     whiteSpaceEl.onkeydown = function(e) {
       e.stopPropagation();
       e.codemirrorIgnore = true;
@@ -255,7 +260,6 @@ export default class CodeMirrorBlocks {
   didRenderNode(node, nodeEl) {
     switch (node.type) {
     case 'expression':
-
       // set up drop targets
       let dropTargetEls = nodeEl.querySelectorAll(
         `#${nodeEl.id} > .blocks-args > .blocks-drop-target`);
@@ -265,15 +269,6 @@ export default class CodeMirrorBlocks {
         el.ondragleave = this.handleDragLeave.bind(this, node, nodeEl);
         el.ondrop = this.handleDrop.bind(this);
       }
-
-      // set up white space
-      let whiteSpaceEls = nodeEl.querySelectorAll(
-        `#${nodeEl.id} > .blocks-args > .blocks-white-space`);
-      for (let i = 0; i < whiteSpaceEls.length; i++) {
-        let el = whiteSpaceEls[i];
-        el.onclick = this.editWhiteSpace.bind(this, el, node, nodeEl);
-      }
-      break;
     }
   }
 
@@ -292,6 +287,13 @@ export default class CodeMirrorBlocks {
     return function(event) {
       let node = this.findNodeFromEl(event.target);
       if (node) {
+        if (event.target.classList.contains('blocks-white-space')) {
+          // handle white space differently.
+          if (handlers.whitespace) {
+            handlers.whitespace.call(this, event.target, event);
+            return;
+          }
+        }
         if (handlers[node.type]) {
           handlers[node.type].call(this, node, event);
           return;
