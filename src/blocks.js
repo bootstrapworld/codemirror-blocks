@@ -29,6 +29,7 @@ export default class CodeMirrorBlocks {
     this.selectedNodes = new Set();
     this.cm.getWrapperElement().onkeydown = this.handleKeyDown.bind(this);
     this.cm.getWrapperElement().onclick = this.handleClick.bind(this);
+    this.cm.getWrapperElement().ondblclick = this.handleDblClick.bind(this);
     this.cm.on('drop', (cm, event) => this.handleDrop(event));
     this.cm.on('change', this.handleChange.bind(this));
   }
@@ -125,21 +126,21 @@ export default class CodeMirrorBlocks {
       ' '+whiteSpaceEl.innerText, location, location);
   }
 
-  editNode(node, nodeEl, event) {
+  editNode(node, event) {
     event.stopPropagation();
-    nodeEl.contentEditable = true;
-    nodeEl.classList.add('blocks-editing');
-    nodeEl.onblur = this.saveEdit.bind(this, node, nodeEl);
-    nodeEl.onkeydown = function(e) {
+    node.el.contentEditable = true;
+    node.el.classList.add('blocks-editing');
+    node.el.onblur = this.saveEdit.bind(this, node, node.el);
+    node.el.onkeydown = function(e) {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       if (e.which == RETURN_KEY || e.which == TAB_KEY) {
-        nodeEl.blur();
+        node.el.blur();
       }
     };
     let range = document.createRange();
-    range.setStart(nodeEl, 0);
-    range.setEnd(nodeEl, nodeEl.childNodes.length);
+    range.setStart(node.el, 0);
+    range.setEnd(node.el, node.el.childNodes.length);
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
   }
@@ -247,7 +248,6 @@ export default class CodeMirrorBlocks {
   didRenderNode(node, nodeEl) {
     switch (node.type) {
     case 'literal':
-      nodeEl.ondblclick = this.editNode.bind(this, node, nodeEl);
       nodeEl.ondragstart = this.handleDragStart.bind(this, node, nodeEl);
       break;
     case 'expression':
@@ -285,6 +285,13 @@ export default class CodeMirrorBlocks {
     let node = this.findNodeFromEl(event.target);
     if (node) {
       this.toggleSelectNode(node, event);
+    }
+  }
+
+  handleDblClick(event) {
+    let node = this.findNodeFromEl(event.target);
+    if (node && node.type == 'literal') {
+      this.editNode(node, event);
     }
   }
 
