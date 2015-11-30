@@ -41,10 +41,11 @@ export default class CodeMirrorBlocks {
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
         // TODO: for some reason this never fires. Figure out why.
         // ondragenter: this.nodeEventHandler(this.handleDragEnter),
-        ondragleave: this.nodeEventHandler(this.handleDragLeave)
+        ondragleave: this.nodeEventHandler(this.handleDragLeave),
+        ondrop: this.nodeEventHandler(this.dropOntoNode)
       }
     );
-    this.cm.on('drop', (cm, event) => this.handleDrop(event));
+    this.cm.on('drop', (cm, event) => this.dropOntoNode(null, event));
     this.cm.on('change', this.handleChange.bind(this));
   }
 
@@ -202,7 +203,7 @@ export default class CodeMirrorBlocks {
     return null;
   }
 
-  handleDrop(event) {
+  dropOntoNode(destinationNode, event) {
     event.preventDefault();
     event.stopPropagation();
     event.target.classList.remove('blocks-over-target');
@@ -234,7 +235,6 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm.operation(() => {
-      let destinationNode = this.findNodeFromEl(event.target);
       if (this.willInsertNode) {
         // give client code an opportunity to modify the sourceNodeText before
         // it gets dropped in. For example, to add proper spacing
@@ -275,7 +275,6 @@ export default class CodeMirrorBlocks {
         // to fire on these dom nodes. This shouldn't be necessary. See other
         // TODO in this file.
         el.ondragenter = this.handleDragEnter.bind(this, node);
-        el.ondrop = this.handleDrop.bind(this);
       }
     }
   }
