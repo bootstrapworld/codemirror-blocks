@@ -18,7 +18,8 @@ module.exports = {
         include: [
           path.resolve(__dirname, 'example'),
           path.resolve(__dirname, 'src'),
-          path.resolve(__dirname, 'node_modules', 'wescheme-js', 'src')
+          path.resolve(__dirname, 'node_modules', 'wescheme-js', 'src'),
+          path.resolve(__dirname, 'spec')
         ],
         loader: "babel-loader"
       },
