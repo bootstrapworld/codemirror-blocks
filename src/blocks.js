@@ -1,5 +1,4 @@
 import render from './render';
-require('../example/example.css');
 
 const RETURN_KEY = 13;
 const TAB_KEY = 9;

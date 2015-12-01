@@ -1,8 +1,13 @@
-import {AST, Expression, Literal, Struct, FunctionDefinition} from '../src/ast';
-import {lex} from 'wescheme-js/src/lex';
-import {parse} from 'wescheme-js/src/parser';
-var types = require('wescheme-js/src/runtime/types');
-import * as structures from 'wescheme-js/src/structures';
+import {AST, Expression, Literal, Struct, FunctionDefinition} from '../ast';
+
+try {
+  var lex = require('wescheme-js/src/lex').lex;
+  var parse = require('wescheme-js/src/parser').parse;
+  var types = require('wescheme-js/src/runtime/types');
+  var structures = require('wescheme-js/src/structures');
+}  catch (e) {
+  console.error('wescheme-js, which is required to use the wescheme blocks parser, does not appear to be installed.', e);
+}
 
 function parseNode(node) {
   var from = {
@@ -74,7 +79,7 @@ function parseNode(node) {
   return null;
 }
 
-export default class Parser {
+class Parser {
 
   parse(code) {
     var ast = parse(lex(code, 'foo'));
@@ -82,4 +87,12 @@ export default class Parser {
     return new AST(rootNodes);
   }
 
+}
+
+if (lex) {
+  module.exports = Parser;
+} else {
+  module.exports = function() {
+    throw new Error('wescheme-js must be installed to use the wescheme blocks parser');
+  };
 }

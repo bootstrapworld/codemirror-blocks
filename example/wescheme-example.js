@@ -2,10 +2,10 @@ import 'babel-polyfill';
 import CodeMirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
-import CodeMirrorBlocks from '../src/blocks.js';
-import WeschemeParser from './wescheme-parser.js';
+import CodeMirrorBlocks from '../src/blocks';
+import WeschemeParser from '../src/parsers/wescheme';
 
-require('./example.css');
+require('../src/css/example.css');
 require('./example-page.css');
 
 var cm = CodeMirror.fromTextArea(
