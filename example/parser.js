@@ -116,9 +116,31 @@ export default class Parser {
 
     let rootNodes = [];
     while (this.peekToken().token != TOKENS.EOF) {
-      rootNodes.push(this.parseExpression());
+      rootNodes.push(this.parseNextToken());
     }
     return new AST(rootNodes);
+  }
+
+  parseNextToken() {
+    switch (this.peekToken().token) {
+    case TOKENS.OPEN_PAREN:
+      return this.parseExpression();
+      break;
+    case TOKENS.NUMBER:
+      return this.parseLiteral();
+      break;
+    default:
+      throw new Error("Expected either a number or another expression");
+    }
+  }
+
+  parseLiteral() {
+    var literalToken = this.getToken();
+    return new Literal(
+      literalToken.from,
+      literalToken.to,
+      parseInt(literalToken.text)
+    );
   }
 
   parseExpression() {
@@ -132,23 +154,7 @@ export default class Parser {
     let identifierToken = this.getToken();
     var args = [];
     while (this.peekToken().token != TOKENS.CLOSE_PAREN) {
-      switch (this.peekToken().token) {
-      case TOKENS.OPEN_PAREN:
-        args.push(this.parseExpression());
-        break;
-      case TOKENS.NUMBER:
-        var literalToken = this.getToken();
-        args.push(
-          new Literal(
-            literalToken.from,
-            literalToken.to,
-            parseInt(literalToken.text)
-          )
-        );
-        break;
-      default:
-        throw new Error("Expected either a number or another expression");
-      }
+      args.push(this.parseNextToken())
     }
     let closeParenToken = this.getToken();
     return new Expression(token.from, closeParenToken.to, identifierToken.text, args);
