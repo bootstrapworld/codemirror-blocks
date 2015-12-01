@@ -47,6 +47,10 @@ To get your dev environment up and running, follow these steps
 
 4. browse to http://localhost:8080/webpack-dev-server/ and fire away!
 
+5. while you work, be sure to continuously run the unit tests with:
+
+    npm run test-watch
+
 Library code is in the **src/** directory. An example of how it should be used is in the **example/** directory.
 
 ## Updating demo on project site

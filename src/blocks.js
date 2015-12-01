@@ -263,12 +263,12 @@ export default class CodeMirrorBlocks {
     });
   }
 
-  didRenderNode(node, nodeEl) {
+  didRenderNode(node) {
     switch (node.type) {
     case 'expression':
       // set up drop targets
-      let dropTargetEls = nodeEl.querySelectorAll(
-        `#${nodeEl.id} > .blocks-args > .blocks-drop-target`);
+      let dropTargetEls = node.el.querySelectorAll(
+        `#${node.el.id} > .blocks-args > .blocks-drop-target`);
       for (let i = 0; i < dropTargetEls.length; i++) {
         let el = dropTargetEls[i];
         // TODO: for some reason, this is the only way to get dragenter

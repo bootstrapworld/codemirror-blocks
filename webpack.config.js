@@ -32,6 +32,9 @@ module.exports = {
           path.resolve(__dirname, 'node_modules', 'wescheme-js', 'src'),
           path.resolve(__dirname, 'spec')
         ],
+        exclude: [
+          path.resolve(__dirname, 'node_modules', 'wescheme-js', 'src', 'runtime', 'js-numbers.js')
+        ],
         loader: "babel-loader"
       },
       { test: /\.css$/, loaders: ["style", "css"] },
