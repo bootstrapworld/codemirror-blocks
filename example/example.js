@@ -1,5 +1,5 @@
 import 'babel-polyfill';
-import CodeMirror from 'CodeMirror';
+import CodeMirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
 import Parser from './parser.js';

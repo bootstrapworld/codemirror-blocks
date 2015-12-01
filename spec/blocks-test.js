@@ -2,7 +2,7 @@
 
 import {AST, Literal, Expression} from '../src/ast';
 import CodeMirrorBlocks from '../src/blocks';
-import CodeMirror from 'CodeMirror';
+import CodeMirror from 'codemirror';
 var render = require('../src/render');
 
 describe('The CodeMirrorBlocks Class', function() {
