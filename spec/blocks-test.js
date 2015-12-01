@@ -177,31 +177,49 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.literal.el.blur).toHaveBeenCalled();
     });
 
-    it('should edit whitespace on click', function() {
-      this.cm.setValue('(+ 1 2)');
-      let firstArg = this.blocks.ast.rootNodes[0].args[0];
-      let whiteSpaceEl = firstArg.el.nextElementSibling;
-      expect(whiteSpaceEl.classList).toContain('blocks-white-space');
-      expect(whiteSpaceEl.classList).not.toContain('blocks-editing');
-      whiteSpaceEl.dispatchEvent(click());
-      expect(whiteSpaceEl.classList).toContain('blocks-editing');
-      expect(whiteSpaceEl.contentEditable).toBe('true');
-    });
+    describe('whitespace', function() {
+      beforeEach(function() {
+        this.cm.setValue('(+ 1 2)');
+        let firstArg = this.blocks.ast.rootNodes[0].args[0];
+        this.whiteSpaceEl = firstArg.el.nextElementSibling;
+      });
 
-    it('should save whiteSpace on blur', function() {
-      this.cm.setValue('(+ 1 2)');
-      let firstArg = this.blocks.ast.rootNodes[0].args[0];
-      let whiteSpaceEl = firstArg.el.nextElementSibling;
-      whiteSpaceEl.dispatchEvent(click());
+      it('should edit whitespace on click', function() {
+        expect(this.whiteSpaceEl.classList).toContain('blocks-white-space');
+        expect(this.whiteSpaceEl.classList).not.toContain('blocks-editing');
+        this.whiteSpaceEl.dispatchEvent(click());
+        expect(this.whiteSpaceEl.classList).toContain('blocks-editing');
+        expect(this.whiteSpaceEl.contentEditable).toBe('true');
+      });
 
-      let selection = window.getSelection();
-      expect(selection.rangeCount).toEqual(1);
-      let range = selection.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(document.createTextNode('4253'));
+      it('should save whiteSpace on blur', function() {
+        this.whiteSpaceEl.dispatchEvent(click());
 
-      whiteSpaceEl.dispatchEvent(blur());
-      expect(this.cm.getValue()).toBe('(+ 1 4253 2)');
+        let selection = window.getSelection();
+        expect(selection.rangeCount).toEqual(1);
+        let range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode('4253'));
+
+        this.whiteSpaceEl.dispatchEvent(blur());
+        expect(this.cm.getValue()).toBe('(+ 1 4253 2)');
+      });
+
+      it('should blur whitespace you are editing on enter', function() {
+        this.whiteSpaceEl.dispatchEvent(click());
+
+        spyOn(this.whiteSpaceEl, 'blur');
+        this.whiteSpaceEl.dispatchEvent(keydown(13));
+        expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
+      });
+
+      it('should blur whitespace you are editing on tab', function() {
+        this.whiteSpaceEl.dispatchEvent(click());
+
+        spyOn(this.whiteSpaceEl, 'blur');
+        this.whiteSpaceEl.dispatchEvent(keydown(9));
+        expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
+      });
     });
 
     it('should set the right drag data on dragstart', function() {
