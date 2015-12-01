@@ -50,13 +50,13 @@
   color: green;
 }
 .blocks-literal-char {
-  color: #2e75b5;
+  color: orange;
 }
 .blocks-literal-boolean {
-  color: purple;
+  color: darkred;
 }
 .blocks-literal-symbol {
-  color: #2e75b5;
+  color: steelblue;
 }
 
 
