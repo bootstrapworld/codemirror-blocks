@@ -32,6 +32,12 @@ function dragstart() {
   };
   return event;
 }
+function dragenter() {
+  return new CustomEvent('dragenter', {bubbles: true});
+}
+function dragleave() {
+  return new CustomEvent('dragleave', {bubbles: true});
+}
 function drop(dataTransfer) {
   let event = new CustomEvent('drop', {bubbles: true});
   event.dataTransfer = dataTransfer;
@@ -43,23 +49,26 @@ describe('The CodeMirrorBlocks Class', function() {
     document.body.innerHTML = '<textarea id="code"></textarea>';
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
+    this.willInsertNode = (sourceNodeText, sourceNode, destination) => {
+      let line = this.cm.getLine(destination.line);
+      if (destination.ch > 0 && line[destination.ch - 1].match(/[\w\d]/)) {
+        // previous character is a letter or number, so prefix a space
+        sourceNodeText = ' ' + sourceNodeText;
+      }
+
+      if (destination.ch < line.length && line[destination.ch].match(/[\w\d]/)) {
+        // next character is a letter or a number, so append a space
+        sourceNodeText += ' ';
+      }
+      return sourceNodeText;
+    };
+    this.didInsertNode = function() {};
     this.blocks = new CodeMirrorBlocks(
       this.cm,
       this.parser,
       {
-        willInsertNode: (sourceNodeText, sourceNode, destination) => {
-          let line = this.cm.getLine(destination.line);
-          if (destination.ch > 0 && line[destination.ch - 1].match(/[\w\d]/)) {
-            // previous character is a letter or number, so prefix a space
-            sourceNodeText = ' ' + sourceNodeText;
-          }
-
-          if (destination.ch < line.length && line[destination.ch].match(/[\w\d]/)) {
-            // next character is a letter or a number, so append a space
-            sourceNodeText += ' ';
-          }
-          return sourceNodeText;
-        }
+        willInsertNode: this.willInsertNode,
+        didInsertNode: this.didInsertNode
       }
     );
   });
@@ -88,6 +97,13 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.ast).not.toBe(null);
       expect(this.blocks.ast.rootNodes).toEqual([]);
       expect(this.blocks.render).toHaveBeenCalled();
+    });
+
+    it("should do nothing if block mode does not change", function() {
+      this.blocks.setBlockMode(true);
+      spyOn(this.blocks, 'render');
+      this.blocks.setBlockMode(true);
+      expect(this.blocks.render).not.toHaveBeenCalled();
     });
 
     it("should automatically re-render when the content changes", function() {
@@ -119,6 +135,14 @@ describe('The CodeMirrorBlocks Class', function() {
         this.cm,
         jasmine.any(Function)
       );
+    });
+
+    it('should unrender itself when block mode is turned off', function() {
+      this.blocks.setBlockMode(true);
+      this.cm.setValue('1');
+      expect(this.cm.getAllMarks().length).toBe(1);
+      this.blocks.setBlockMode(false);
+      expect(this.cm.getAllMarks().length).toBe(0);
     });
   });
 
@@ -222,22 +246,60 @@ describe('The CodeMirrorBlocks Class', function() {
       });
     });
 
-    it('should set the right drag data on dragstart', function() {
-      this.literal.el.dispatchEvent(dragstart());
-      expect(this.literal.el.classList).toContain('blocks-dragging');
-    });
+    describe('dragging', function() {
+      beforeEach(function() {
+        this.cm.setValue('(+ 1 2 3)');
+        this.firstArg = this.blocks.ast.rootNodes[0].args[0];
+        this.secondArg = this.blocks.ast.rootNodes[0].args[1];
+        this.dropTargetEls = this.blocks.ast.rootNodes[0].el.querySelectorAll(
+          '.blocks-drop-target'
+        );
+      });
 
-    it('should update the text on drop', function() {
-      this.cm.setValue('(+ 1 2 3)');
-      let firstArg = this.blocks.ast.rootNodes[0].args[0];
-      let secondArg = this.blocks.ast.rootNodes[0].args[1];
-      let dropTargetEl = secondArg.el.nextElementSibling;
-      expect(dropTargetEl.classList).toContain('blocks-drop-target');
-      // drag the first arg to the drop target
-      let dragEvent = dragstart();
-      firstArg.el.dispatchEvent(dragEvent);
-      dropTargetEl.dispatchEvent(drop(dragEvent.dataTransfer));
-      expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('(+ 2 1 3)');
+      it('should set the right drag data on dragstart', function() {
+        this.firstArg.el.dispatchEvent(dragstart());
+        expect(this.firstArg.el.classList).toContain('blocks-dragging');
+      });
+
+      it('should set the right css class on dragenter', function() {
+        this.dropTargetEls[2].dispatchEvent(dragenter());
+        expect(this.dropTargetEls[2].classList).toContain('blocks-over-target');
+      });
+
+      it('should set the right css class on dragleave', function() {
+        this.dropTargetEls[2].dispatchEvent(dragenter());
+        this.dropTargetEls[2].dispatchEvent(dragleave());
+        expect(this.dropTargetEls[2].classList).not.toContain('blocks-over-target');
+      });
+
+      it('should update the text on drop to a later point in the file', function() {
+        expect(this.dropTargetEls[2].classList).toContain('blocks-drop-target');
+        // drag the first arg to the drop target
+        let dragEvent = dragstart();
+        this.firstArg.el.dispatchEvent(dragEvent);
+        this.dropTargetEls[2].dispatchEvent(drop(dragEvent.dataTransfer));
+        expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('(+ 2 1 3)');
+      });
+
+      it('should update the text on drop to an earlier point in the file', function() {
+        let dragEvent = dragstart();
+        this.secondArg.el.dispatchEvent(dragEvent);
+        this.dropTargetEls[0].dispatchEvent(drop(dragEvent.dataTransfer));
+        expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 2 1 3)');
+      });
+
+      it('should call willInsertNode before text is dropped and didInsertNode afterwards',
+        function() {
+          let dragEvent = dragstart();
+          spyOn(this, 'willInsertNode').and.callThrough();
+          spyOn(this, 'didInsertNode').and.callThrough();
+          this.secondArg.el.dispatchEvent(dragEvent);
+          this.dropTargetEls[0].dispatchEvent(drop(dragEvent.dataTransfer));
+          expect(this.willInsertNode).toHaveBeenCalled();
+          expect(this.didInsertNode).toHaveBeenCalled();
+        }
+      );
+
     });
 
   });
