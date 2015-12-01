@@ -1,4 +1,5 @@
 import render from './render';
+require('../example/example.css');
 
 const RETURN_KEY = 13;
 const TAB_KEY = 9;
@@ -217,6 +218,7 @@ export default class CodeMirrorBlocks {
     }
     let sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
     let destination = getLocationFromEl(event.target);
+
     if (!destination) {
       // event.target probably isn't a drop target, so just get the location from the event
       destination = this.cm.coordsChar({left:event.pageX, top:event.pageY});

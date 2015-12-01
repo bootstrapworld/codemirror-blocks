@@ -291,14 +291,26 @@ describe('The CodeMirrorBlocks Class', function() {
       it('should call willInsertNode before text is dropped and didInsertNode afterwards',
         function() {
           let dragEvent = dragstart();
-          spyOn(this, 'willInsertNode').and.callThrough();
-          spyOn(this, 'didInsertNode').and.callThrough();
+          spyOn(this.blocks, 'willInsertNode').and.callThrough();
+          spyOn(this.blocks, 'didInsertNode').and.callThrough();
           this.secondArg.el.dispatchEvent(dragEvent);
           this.dropTargetEls[0].dispatchEvent(drop(dragEvent.dataTransfer));
-          expect(this.willInsertNode).toHaveBeenCalled();
-          expect(this.didInsertNode).toHaveBeenCalled();
+          expect(this.blocks.willInsertNode).toHaveBeenCalled();
+          expect(this.blocks.didInsertNode).toHaveBeenCalled();
         }
       );
+
+      it('should move an item to the top level when dragged outside a node', function() {
+        let dragEvent = dragstart();
+        this.secondArg.el.dispatchEvent(dragEvent);
+        let dropEvent = drop(dragEvent.dataTransfer);
+        let nodeEl = this.blocks.ast.rootNodes[0].el;
+        let wrapperEl = this.cm.getWrapperElement();
+        dropEvent.pageX = wrapperEl.offsetLeft + wrapperEl.offsetWidth - 10;
+        dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
+        nodeEl.parentElement.dispatchEvent(dropEvent);
+        expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 3)\n2');
+      });
 
     });
 
