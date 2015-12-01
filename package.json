@@ -32,7 +32,9 @@
     "style-loader": "^0.13.0",
     "webpack": "^1.12.6",
     "webpack-dev-server": "^1.12.1",
-    "wescheme-js": "pcardune/wescheme-js"
+    "wescheme-js": "pcardune/wescheme-js",
+    "babel-polyfill": "^6.1.19",
+    "codemirror": "^5.8.0"
   },
   "peerDependencies": {
     "babel-polyfill": "^6.1.19",
