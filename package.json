@@ -34,14 +34,14 @@
     "style-loader": "^0.13.0",
     "webpack": "^1.12.6",
     "webpack-dev-server": "^1.12.1",
-    "wescheme-js": "pcardune/wescheme-js"
+    "wescheme-js": "bootstrapworld/wescheme-js"
   },
   "peerDependencies": {
     "babel-polyfill": "^6.1.19",
     "codemirror": "^5.8.0"
   },
   "optionalDependencies": {
-    "wescheme-js": "pcardune/wescheme-js"
+    "wescheme-js": "bootstrapworld/wescheme-js"
   },
   "scripts": {
     "compile": "babel -d lib/ src/",
