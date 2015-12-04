@@ -8,28 +8,28 @@ A library for making functional languages editable using visual blocks inside of
 
 1. Install this library with npm:
 
-    npm install --save codemirror-blocks
+        npm install --save codemirror-blocks
 
 2. Install the peer dependencies:
 
-    npm install --save babel-polyfill codemirror
+        npm install --save babel-polyfill codemirror
 
 3. Make sure `babel-polyfill` is required at the top of your entry point:
 
-    require('babel-polyfill')
+        require('babel-polyfill')
 
 4. Hook it up:
 
-    import CodeMirror from 'CodeMirror'
-    import CodeMirrorBlocks from 'codemirror-blocks'
-    import MyParser from './MyParser.js' //See example/parser.js for an example
+        import CodeMirror from 'CodeMirror'
+        import CodeMirrorBlocks from 'codemirror-blocks'
+        import MyParser from './MyParser.js' //See example/parser.js for an example
 
-    // feel free to include the example css, or roll your own!
-    require('codemirror-blocks/example/example.css')
+        // feel free to include the example css, or roll your own!
+        require('codemirror-blocks/example/example.css')
 
-    let cm = CodeMirror.fromTextArea(document.getElementById('mytextarea'))
-    let blocks = new CodeMirrorBlocks(cm, new MyParser())
-    blocks.setBlockMode(true)
+        let cm = CodeMirror.fromTextArea(document.getElementById('mytextarea'))
+        let blocks = new CodeMirrorBlocks(cm, new MyParser())
+        blocks.setBlockMode(true)
 
 ## Development
 
@@ -39,17 +39,17 @@ To get your dev environment up and running, follow these steps
 
 2. install dependencies with npm
 
-    npm install
+        npm install
 
-3. start the webpack development server
+3. start the webpack development server:
 
-    npm start
+        npm start
 
 4. browse to http://localhost:8080/webpack-dev-server/ and fire away!
 
 5. while you work, be sure to continuously run the unit tests with:
 
-    npm run test-watch
+        npm run test-watch
 
 Library code is in the **src/** directory. An example of how it should be used is in the **example/** directory.
 
