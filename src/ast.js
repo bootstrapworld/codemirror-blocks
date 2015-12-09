@@ -15,17 +15,18 @@ export class AST {
 }
 
 class ASTNode {
-  constructor(from, to, type) {
+  constructor(from, to, type, options) {
     this.from = from;
     this.to = to;
     this.type = type;
+    this.options = options;
     this.id = uuid.v4();
   }
 }
 
 export class Expression extends ASTNode {
-  constructor(from, to, func, args) {
-    super(from, to, 'expression');
+  constructor(from, to, func, args, options={}) {
+    super(from, to, 'expression', options);
     this.func = func;
     this.args = args;
   }
@@ -45,8 +46,8 @@ export class Expression extends ASTNode {
 }
 
 export class Struct extends ASTNode {
-  constructor(from, to, name, fields) {
-    super(from, to, 'struct');
+  constructor(from, to, name, fields, options={}) {
+    super(from, to, 'struct', options);
     this.name = name;
     this.fields = fields;
   }
@@ -61,8 +62,8 @@ export class Struct extends ASTNode {
 }
 
 export class FunctionDefinition extends ASTNode {
-  constructor(from, to, name, args, body) {
-    super(from, to, 'functionDef');
+  constructor(from, to, name, args, body, options={}) {
+    super(from, to, 'functionDef', options);
     this.name = name;
     this.args = args;
     this.body = body;
@@ -81,8 +82,8 @@ export class FunctionDefinition extends ASTNode {
 }
 
 export class Literal extends ASTNode {
-  constructor(from, to, value, dataType='unknown') {
-    super(from, to, 'literal');
+  constructor(from, to, value, dataType='unknown', options={}) {
+    super(from, to, 'literal', options);
     this.value = value;
     this.dataType = dataType;
   }

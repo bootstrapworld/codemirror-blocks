@@ -11,6 +11,7 @@ describe("The Literal Class", function() {
     expect(literal.to).toBe(to);
     expect(literal.value).toBe(11);
     expect(literal.dataType).toBe('number');
+    expect(literal.options).toEqual({});
   });
 
   it("should set a default data type of unknown if one isn't provided", function() {
@@ -22,6 +23,18 @@ describe("The Literal Class", function() {
     var literal = new Literal({line: 0, ch: 0}, {line: 0, ch: 2}, 11);
     expect([...literal]).toEqual([literal]);
   });
+
+  it("should take an optional options parameter in it's constructor", function() {
+    var literal = new Literal(
+      {line: 0, ch: 0},
+      {line: 0, ch: 2},
+      11,
+      'number',
+      {'aria-label':'11'}
+    );
+    expect(literal.options).toEqual({'aria-label':'11'});
+  });
+
 });
 
 describe("The Expression Class", function() {
@@ -35,7 +48,8 @@ describe("The Expression Class", function() {
       {line: 1, ch: 0},
       {line: 1, ch: 9},
       '+',
-      args
+      args,
+      {'aria-label':'+ expression'}
     );
     nestedExpression = new Expression(
       {line: 1, ch: 0},
@@ -59,6 +73,7 @@ describe("The Expression Class", function() {
   it("should take a function name and list of args in it's constructor", function() {
     expect(expression.args).toBe(args);
     expect(expression.func).toBe('+');
+    expect(expression.options).toEqual({'aria-label':'+ expression'});
   });
 
   it("should return itself and all sub-nodes when iterated over", function() {
