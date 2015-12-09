@@ -137,7 +137,8 @@ export default class Parser {
     return new Literal(
       literalToken.from,
       literalToken.to,
-      parseInt(literalToken.text)
+      parseInt(literalToken.text),
+      'number'
     );
   }
 
@@ -155,6 +156,11 @@ export default class Parser {
       args.push(this.parseNextToken());
     }
     let closeParenToken = this.getToken();
-    return new Expression(token.from, closeParenToken.to, identifierToken.text, args);
+    return new Expression(
+      token.from,
+      closeParenToken.to,
+      new Literal(identifierToken.from, identifierToken.to, identifierToken.text, 'symbol'),
+      args
+    );
   }
 }

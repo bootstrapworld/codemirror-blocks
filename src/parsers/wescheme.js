@@ -31,7 +31,7 @@ function parseNode(node) {
     return new Expression(
       from,
       to,
-      node.func.stx,
+      parseNode(node.func),
       node.args.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria(node.func.stx, node.args.length)}
     );
@@ -39,7 +39,13 @@ function parseNode(node) {
     return new Expression(
       from,
       to,
-      "and",
+      new Literal(
+        //TODO: don't guess where the and symbol is, need to parse it here.
+        {line:from.line, ch:from.ch+1},
+        {line:from.line, ch:from.ch+4},
+        "and",
+        "symbol"
+      ),
       node.exprs.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria('and', node.exprs.length)}
     );
@@ -47,7 +53,13 @@ function parseNode(node) {
     return new Expression(
       from,
       to,
-      "or",
+      new Literal(
+        //TODO: don't guess where the or symbol is, need to parse it here.
+        {line:from.line, ch:from.ch+1},
+        {line:from.line, ch:from.ch+3},
+        "or",
+        "symbol"
+      ),
       node.exprs.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria('or', node.exprs.length)}
     );
@@ -55,7 +67,13 @@ function parseNode(node) {
     return new Expression(
       from,
       to,
-      "define",
+      new Literal(
+        //TODO: don't guess where the or symbol is, need to parse it here.
+        {line:from.line, ch:from.ch+1},
+        {line:from.line, ch:from.ch+7},
+        "define",
+        "symbol"
+      ),
       [parseNode(node.name), parseNode(node.expr)]
     );
   } else if (node instanceof structures.defStruct) {

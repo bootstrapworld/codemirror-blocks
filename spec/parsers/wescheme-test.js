@@ -2,7 +2,7 @@
 
 import Parser from '../../src/parsers/wescheme';
 
-describe("The WeScheme Parser", function() {
+describe("The WeScheme Parser,", function() {
   beforeEach(function() {
     this.parser = new Parser();
   });
@@ -22,9 +22,57 @@ describe("The WeScheme Parser", function() {
     expect(ast.rootNodes[0].type).toBe('expression');
   });
 
-  it("should convert callExpresssions to expressions", function() {
-    let ast = this.parser.parse('(sum 1 2 3)');
-    expect(ast.rootNodes[0].type).toBe('expression');
+  describe("when parsing callExpressions,", function() {
+
+    beforeEach(function() {
+      this.ast = this.parser.parse('(sum 1 2 3)');
+    });
+
+    it("should convert callExpresssions to expressions", function() {
+      expect(this.ast.rootNodes[0].type).toBe('expression');
+    });
+
+    it("should convert the function symbol to a literal", function() {
+      expect(this.ast.rootNodes[0].func.type).toBe('literal');
+      expect(this.ast.rootNodes[0].func.dataType).toBe('symbol');
+    });
+
+  });
+
+  describe("when parsing andExpressions and orExpression,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse('(or true true) (and true true)');
+    });
+
+    it("should convert and/or expressions to expressions", function() {
+      expect(this.ast.rootNodes[0].type).toBe('expression');
+      expect(this.ast.rootNodes[1].type).toBe('expression');
+    });
+
+    it("should convert the function symbol to a literal", function() {
+      expect(this.ast.rootNodes[0].func.type).toBe('literal');
+      expect(this.ast.rootNodes[1].func.type).toBe('literal');
+      expect(this.ast.rootNodes[0].func.dataType).toBe('symbol');
+      expect(this.ast.rootNodes[1].func.dataType).toBe('symbol');
+      expect(this.ast.rootNodes[0].func.value).toBe('or');
+      expect(this.ast.rootNodes[1].func.value).toBe('and');
+    });
+  });
+
+  describe("when parsing defVar expressions,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse('(define foo "bar")');
+    });
+
+    it("should convert defVar expressions to expressions", function() {
+      expect(this.ast.rootNodes[0].type).toBe('expression');
+    });
+
+    it("should make the operator a symbol", function() {
+      expect(this.ast.rootNodes[0].func.type).toBe('literal');
+      expect(this.ast.rootNodes[0].func.dataType).toBe('symbol');
+      expect(this.ast.rootNodes[0].func.value).toBe('define');
+    });
   });
 
   describe("when setting aria-labels", function() {

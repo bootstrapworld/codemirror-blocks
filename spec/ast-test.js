@@ -54,7 +54,7 @@ describe("The Expression Class", function() {
     nestedExpression = new Expression(
       {line: 1, ch: 0},
       {line: 1, ch: 9},
-      '+',
+      new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol'),
       [
         new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 11),
         new Expression(
@@ -79,12 +79,14 @@ describe("The Expression Class", function() {
   it("should return itself and all sub-nodes when iterated over", function() {
     expect([...nestedExpression]).toEqual([
       nestedExpression,
+      nestedExpression.func,
       nestedExpression.args[0],
       nestedExpression.args[1],
       nestedExpression.args[1].args[0],
       nestedExpression.args[1].args[1]
     ]);
   });
+
 });
 
 describe("The AST Class", function() {

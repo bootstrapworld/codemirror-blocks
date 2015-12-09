@@ -33,6 +33,9 @@ export class Expression extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
+    if (this.func instanceof ASTNode) {
+      yield this.func;
+    }
     for (let arg of this.args) {
       for (let node of arg) {
         yield node;

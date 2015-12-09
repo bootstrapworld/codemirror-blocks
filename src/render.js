@@ -17,7 +17,8 @@ var nodesInRenderOrder = [];
 
 export function renderHTMLString(node) {
   if (nodes[node.type] === undefined) {
-    throw "Don't know how to render node: "+node.type;
+    debugger;
+    throw new Error("Don't know how to render node: "+node.type);
   }
   var nodeEl = nodes[node.type]({node});
   nodesInRenderOrder.push(node);
