@@ -1,6 +1,4 @@
-/* globals jasmine describe it expect beforeEach spyOn */
-import {AST, Literal, Expression} from '../src/ast';
-import CodeMirrorBlocks from '../src/blocks';
+/* globals describe it expect beforeEach */
 import CodeMirror from 'codemirror';
 import ExampleParser from '../example/parser';
 import render from '../src/render';
