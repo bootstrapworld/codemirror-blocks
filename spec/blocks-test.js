@@ -326,6 +326,13 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 3)\n2');
       });
 
+      it('should replace a literal that you drag onto', function() {
+        let dragEvent = dragstart();
+        this.firstArg.el.dispatchEvent(dragEvent);
+        this.secondArg.el.dispatchEvent(drop(dragEvent.dataTransfer));
+        expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('(+ 1 3)');
+      });
+
     });
 
   });

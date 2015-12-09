@@ -28,13 +28,6 @@ function findNearestNodeEl(el) {
   return el;
 }
 
-function isDropTarget(el) {
-  if (el.classList.contains('blocks-drop-target')) {
-    return true;
-  }
-  return !findNearestNodeEl(el); // things outside of nodes are drop targets
-}
-
 export default class CodeMirrorBlocks {
   constructor(cm, parser, {willInsertNode, didInsertNode} = {}) {
     this.cm = cm;
@@ -62,7 +55,7 @@ export default class CodeMirrorBlocks {
         ondrop: this.nodeEventHandler(this.dropOntoNode)
       }
     );
-    this.cm.on('drop', (cm, event) => this.dropOntoNode(null, event));
+    this.cm.on('drop', (cm, event) => this.nodeEventHandler(this.dropOntoNode, true)(event));
     this.cm.on('change', this.handleChange.bind(this));
   }
 
@@ -195,15 +188,26 @@ export default class CodeMirrorBlocks {
     event.dataTransfer.setData('text/id', node.id);
   }
 
+  isDropTarget(el) {
+    if (el.classList.contains('blocks-drop-target')) {
+      return true;
+    }
+    var node = this.findNodeFromEl(el);
+    if (node && node.type === 'literal') {
+      return true;
+    }
+    return !node; // things outside of nodes are drop targets
+  }
+
   handleDragEnter(node, event) {
-    if (isDropTarget(event.target)) {
+    if (this.isDropTarget(event.target)) {
       event.stopPropagation();
       event.target.classList.add('blocks-over-target');
     }
   }
 
   handleDragLeave(node, event) {
-    if (isDropTarget(event.target)) {
+    if (this.isDropTarget(event.target)) {
       event.stopPropagation();
       event.target.classList.remove('blocks-over-target');
     }
@@ -221,7 +225,7 @@ export default class CodeMirrorBlocks {
   }
 
   dropOntoNode(destinationNode, event) {
-    if (!isDropTarget(event.target)) {
+    if (!this.isDropTarget(event.target)) {
       // not a drop taret, just return
       return;
     }
@@ -237,6 +241,7 @@ export default class CodeMirrorBlocks {
       console.error("node", nodeId, "not found in AST");
     }
     let sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
+
     let destination = getLocationFromEl(event.target);
 
     if (!destination) {
@@ -257,30 +262,40 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm.operation(() => {
-      if (this.willInsertNode) {
-        // give client code an opportunity to modify the sourceNodeText before
-        // it gets dropped in. For example, to add proper spacing
-        sourceNodeText = this.willInsertNode(
-          sourceNodeText,
-          sourceNode,
-          destination,
-          destinationNode
-        );
-      }
-      if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destination)) {
-        this.cm.replaceRange(sourceNodeText, destination, destination);
-        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+      if (destinationNode && destinationNode.type == 'literal') {
+        if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destinationNode.from)) {
+          this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
+          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+        } else {
+          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+          this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
+        }
       } else {
-        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-        this.cm.replaceRange(sourceNodeText, destination, destination);
-      }
-      if (this.didInsertNode) {
-        this.didInsertNode(
-          sourceNodeText,
-          sourceNode,
-          destination,
-          destinationNode
-        );
+        if (this.willInsertNode) {
+          // give client code an opportunity to modify the sourceNodeText before
+          // it gets dropped in. For example, to add proper spacing
+          sourceNodeText = this.willInsertNode(
+            sourceNodeText,
+            sourceNode,
+            destination,
+            destinationNode
+          );
+        }
+        if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destination)) {
+          this.cm.replaceRange(sourceNodeText, destination);
+          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+        } else {
+          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+          this.cm.replaceRange(sourceNodeText, destination);
+        }
+        if (this.didInsertNode) {
+          this.didInsertNode(
+            sourceNodeText,
+            sourceNode,
+            destination,
+            destinationNode
+          );
+        }
       }
     });
   }
@@ -309,13 +324,13 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  nodeEventHandler(handlers) {
+  nodeEventHandler(handlers, callWithNullNode=false) {
     if (typeof handlers == 'function') {
       handlers = {default: handlers};
     }
     return function(event) {
       let node = this.findNodeFromEl(event.target);
-      if (node) {
+      if (node || callWithNullNode) {
         if (event.target.classList.contains('blocks-white-space')) {
           // handle white space differently.
           if (handlers.whitespace) {
@@ -323,7 +338,7 @@ export default class CodeMirrorBlocks {
             return;
           }
         }
-        if (handlers[node.type]) {
+        if (node && handlers[node.type]) {
           handlers[node.type].call(this, node, event);
           return;
         }
