@@ -45,5 +45,12 @@ describe("The WeScheme Parser", function() {
       expect(this.parser.parse('(print "hello" "world")').rootNodes[0].options['aria-label'])
                  .toBe('print expression, 2 arguments');
     });
+
+    it("should make and/or expressions just like regular expressions", function() {
+      expect(this.parser.parse('(and true true)').rootNodes[0].options['aria-label'])
+                 .toBe('and expression, 2 arguments');
+      expect(this.parser.parse('(or false true)').rootNodes[0].options['aria-label'])
+                 .toBe('or expression, 2 arguments');
+    });
   });
 });

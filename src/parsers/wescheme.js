@@ -9,6 +9,14 @@ try {
   console.error('wescheme-js, which is required to use the wescheme blocks parser, does not appear to be installed.', e);
 }
 
+function expressionAria(func, argCount) {
+  let aria = `${func} expression, ${argCount} argument`;
+  if (argCount != 1) {
+    aria += 's';
+  }
+  return aria;
+}
+
 function parseNode(node) {
   var from = {
     line: node.location.startRow - 1,
@@ -20,30 +28,28 @@ function parseNode(node) {
   };
 
   if (node instanceof structures.callExpr) {
-    var aria = `${node.func.stx} expression, ${node.args.length} argument`;
-    if (node.args.length != 1) {
-      aria += 's';
-    }
     return new Expression(
       from,
       to,
       node.func.stx,
       node.args.map(parseNode).filter(item => item !== null),
-      {'aria-label': aria}
+      {'aria-label': expressionAria(node.func.stx, node.args.length)}
     );
   } else if (node instanceof structures.andExpr) {
     return new Expression(
       from,
       to,
       "and",
-      node.exprs.map(parseNode).filter(item => item !== null)
+      node.exprs.map(parseNode).filter(item => item !== null),
+      {'aria-label': expressionAria('and', node.exprs.length)}
     );
   } else if (node instanceof structures.orExpr) {
     return new Expression(
       from,
       to,
       "or",
-      node.exprs.map(parseNode).filter(item => item !== null)
+      node.exprs.map(parseNode).filter(item => item !== null),
+      {'aria-label': expressionAria('or', node.exprs.length)}
     );
   } else if (node instanceof structures.defVar) {
     return new Expression(
@@ -71,7 +77,7 @@ function parseNode(node) {
     return new Literal(from, to, node.stx, "symbol", {'aria-label':node.stx});
   } else if (node instanceof structures.literal) {
     var dataType = typeof node.val;
-    var aria = node.toString();
+    let aria = node.toString();
     if (types.isString(node.val)) {
       dataType = "string";
       aria = `string ${node.val}`;
