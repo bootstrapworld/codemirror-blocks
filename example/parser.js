@@ -125,10 +125,8 @@ export default class Parser {
     switch (this.peekToken().token) {
     case TOKENS.OPEN_PAREN:
       return this.parseExpression();
-      break;
     case TOKENS.NUMBER:
       return this.parseLiteral();
-      break;
     default:
       throw new Error("Expected either a number or another expression");
     }
@@ -154,7 +152,7 @@ export default class Parser {
     let identifierToken = this.getToken();
     var args = [];
     while (this.peekToken().token != TOKENS.CLOSE_PAREN) {
-      args.push(this.parseNextToken())
+      args.push(this.parseNextToken());
     }
     let closeParenToken = this.getToken();
     return new Expression(token.from, closeParenToken.to, identifierToken.text, args);
