@@ -20,11 +20,16 @@ function parseNode(node) {
   };
 
   if (node instanceof structures.callExpr) {
+    var aria = `${node.func.stx} expression, ${node.args.length} argument`;
+    if (node.args.length != 1) {
+      aria += 's';
+    }
     return new Expression(
       from,
       to,
       node.func.stx,
-      node.args.map(parseNode).filter(item => item !== null)
+      node.args.map(parseNode).filter(item => item !== null),
+      {'aria-label': aria}
     );
   } else if (node instanceof structures.andExpr) {
     return new Expression(
@@ -63,17 +68,19 @@ function parseNode(node) {
       parseNode(node.body)
     );
   } else if (node instanceof structures.symbolExpr) {
-    return new Literal(from, to, node.stx, "symbol");
+    return new Literal(from, to, node.stx, "symbol", {'aria-label':node.stx});
   } else if (node instanceof structures.literal) {
     var dataType = typeof node.val;
+    var aria = node.toString();
     if (types.isString(node.val)) {
       dataType = "string";
+      aria = `string ${node.val}`;
     } else if (types.isChar(node.val)) {
       dataType = "char";
     } else if (node.val === types.FALSE || node.val === types.TRUE) {
       dataType = "boolean";
     }
-    return new Literal(from, to, node, dataType);
+    return new Literal(from, to, node, dataType, {'aria-label':aria});
   }
   console.log("!! No translator for", node);
   return null;

@@ -1,7 +1,6 @@
-/* globals describe it expect beforeEach jasmine */
+/* globals describe it expect beforeEach */
 
 import Parser from '../../src/parsers/wescheme';
-import {Expression} from '../../src/ast';
 
 describe("The WeScheme Parser", function() {
   beforeEach(function() {
@@ -26,5 +25,25 @@ describe("The WeScheme Parser", function() {
   it("should convert callExpresssions to expressions", function() {
     let ast = this.parser.parse('(sum 1 2 3)');
     expect(ast.rootNodes[0].type).toBe('expression');
+  });
+
+  describe("when setting aria-labels", function() {
+    it("should make symbols, numbers, and booleans be set to themselves", function() {
+      expect(this.parser.parse('1').rootNodes[0].options['aria-label']).toBe('1');
+      expect(this.parser.parse('symbol').rootNodes[0].options['aria-label']).toBe('symbol');
+      expect(this.parser.parse('#t').rootNodes[0].options['aria-label']).toBe('#t');
+    });
+
+    it("should make string values be set to 'string '+the contents of the string", function() {
+      expect(this.parser.parse('"hello"').rootNodes[0].options['aria-label'])
+                 .toBe('string hello');
+    });
+
+    it("should make expression (print 'hello') into 'print expression, 1 argument'", function() {
+      expect(this.parser.parse('(print "hello")').rootNodes[0].options['aria-label'])
+                 .toBe('print expression, 1 argument');
+      expect(this.parser.parse('(print "hello" "world")').rootNodes[0].options['aria-label'])
+                 .toBe('print expression, 2 arguments');
+    });
   });
 });
