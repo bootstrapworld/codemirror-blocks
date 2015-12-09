@@ -18,6 +18,23 @@ function getLocationFromEl(el) {
   };
 }
 
+function findNearestNodeEl(el) {
+  while (el !== document.body && !el.classList.contains('blocks-node')) {
+    el = el.parentNode;
+  }
+  if (el === document.body) {
+    return null;
+  }
+  return el;
+}
+
+function isDropTarget(el) {
+  if (el.classList.contains('blocks-drop-target')) {
+    return true;
+  }
+  return !findNearestNodeEl(el); // things outside of nodes are drop targets
+}
+
 export default class CodeMirrorBlocks {
   constructor(cm, parser, {willInsertNode, didInsertNode} = {}) {
     this.cm = cm;
@@ -179,31 +196,35 @@ export default class CodeMirrorBlocks {
   }
 
   handleDragEnter(node, event) {
-    if (event.target.classList.contains('blocks-drop-target')) {
+    if (isDropTarget(event.target)) {
       event.stopPropagation();
       event.target.classList.add('blocks-over-target');
     }
   }
 
   handleDragLeave(node, event) {
-    if (event.target.classList.contains('blocks-drop-target')) {
+    if (isDropTarget(event.target)) {
       event.stopPropagation();
       event.target.classList.remove('blocks-over-target');
     }
   }
 
   findNodeFromEl(el) {
-    while (el !== document.body && !el.classList.contains('blocks-node')) {
-      el = el.parentNode;
-    }
-    let match = el.id.match(/block-node-(.*)/);
-    if (match && match.length > 1) {
-      return this.ast.nodeMap.get(match[1]);
+    el = findNearestNodeEl(el);
+    if (el) {
+      let match = el.id.match(/block-node-(.*)/);
+      if (match && match.length > 1) {
+        return this.ast.nodeMap.get(match[1]);
+      }
     }
     return null;
   }
 
   dropOntoNode(destinationNode, event) {
+    if (!isDropTarget(event.target)) {
+      // not a drop taret, just return
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     event.target.classList.remove('blocks-over-target');

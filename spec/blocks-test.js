@@ -73,7 +73,7 @@ describe('The CodeMirrorBlocks Class', function() {
     );
   });
 
-  describe('constructor', function() {
+  describe('constructor,', function() {
 
     it("should take a codemirror instance and a parser instance", function() {
       expect(this.blocks.cm).toBe(this.cm);
@@ -88,7 +88,7 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
 
-  describe('rendering', function() {
+  describe('renderer,', function() {
 
     it("should render itself when block mode is turned on", function() {
       spyOn(this.blocks, 'render').and.callThrough();
@@ -146,7 +146,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
   });
 
-  describe('events', function() {
+  describe('events,', function() {
     beforeEach(function() {
       this.cm.setValue('11');
       this.blocks.setBlockMode(true);
@@ -201,7 +201,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.literal.el.blur).toHaveBeenCalled();
     });
 
-    describe('whitespace', function() {
+    describe('when dealing with whitespace,', function() {
       beforeEach(function() {
         this.cm.setValue('(+ 1 2)');
         let firstArg = this.blocks.ast.rootNodes[0].args[0];
@@ -246,9 +246,10 @@ describe('The CodeMirrorBlocks Class', function() {
       });
     });
 
-    describe('dragging', function() {
+    describe('when dealing with dragging,', function() {
       beforeEach(function() {
         this.cm.setValue('(+ 1 2 3)');
+        this.funcSymbol = this.blocks.ast.rootNodes[0].func;
         this.firstArg = this.blocks.ast.rootNodes[0].args[0];
         this.secondArg = this.blocks.ast.rootNodes[0].args[1];
         this.dropTargetEls = this.blocks.ast.rootNodes[0].el.querySelectorAll(
@@ -270,6 +271,19 @@ describe('The CodeMirrorBlocks Class', function() {
         this.dropTargetEls[2].dispatchEvent(dragenter());
         this.dropTargetEls[2].dispatchEvent(dragleave());
         expect(this.dropTargetEls[2].classList).not.toContain('blocks-over-target');
+      });
+
+      it('should do nothing when dragging over a non-drop target', function() {
+        this.blocks.ast.rootNodes[0].el.dispatchEvent(dragenter());
+        expect(this.blocks.ast.rootNodes[0].el.classList).not.toContain('blocks-over-target');
+      });
+
+      it('should do nothing when dropping onto a non-drop target', function() {
+        let dragEvent = dragstart();
+        this.firstArg.el.dispatchEvent(dragEvent);
+        var initialValue = this.cm.getValue();
+        this.blocks.ast.rootNodes[0].el.dispatchEvent(drop(dragEvent.dataTransfer));
+        expect(this.cm.getValue()).toBe(initialValue);
       });
 
       it('should update the text on drop to a later point in the file', function() {
