@@ -7,6 +7,7 @@ import WeschemeParser from '../src/parsers/wescheme';
 
 require('../src/css/example.css');
 require('./example-page.css');
+require('./wescheme.css');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
