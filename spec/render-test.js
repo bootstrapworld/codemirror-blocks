@@ -38,17 +38,17 @@ describe('The render module,', function() {
       this.expressionEls = this.fragment.querySelectorAll('span.blocks-expression');
     });
 
-    fit('should generate a span with the blocks-expression class', function() {
+    it('should generate a span with the blocks-expression class', function() {
       expect(this.expressionEls.length).toBe(1);
     });
 
-    fit('should render the expression operator', function() {
+    it('should render the expression operator', function() {
       var operatorEls = this.expressionEls[0].querySelectorAll('span.blocks-operator');
       expect(operatorEls.length).toBe(1);
       expect(operatorEls[0].querySelectorAll('span.blocks-literal').length).toBe(1);
     });
 
-    fit('should render a list of args', function() {
+    it('should render a list of args', function() {
       var argsEls = this.expressionEls[0].querySelectorAll('span.blocks-args');
       expect(argsEls.length).toBe(1);
       var argLiteralEls = argsEls[0].querySelectorAll('span.blocks-literal');
