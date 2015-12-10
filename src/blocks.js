@@ -185,6 +185,7 @@ export default class CodeMirrorBlocks {
     event.stopPropagation();
     node.el.classList.add('blocks-dragging');
     event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setDragImage(node.el, -5, -5);
     event.dataTransfer.setData('text/plain', this.cm.getRange(node.from, node.to));
     event.dataTransfer.setData('text/id', node.id);
   }
