@@ -28,7 +28,8 @@ function dragstart() {
     },
     getData(type) {
       return this.data[type];
-    }
+    },
+    setDragImage() {}
   };
   return event;
 }
