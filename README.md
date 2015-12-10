@@ -51,7 +51,12 @@ To get your dev environment up and running, follow these steps
 
         npm run test-watch
 
-Library code is in the **src/** directory. An example of how it should be used is in the **example/** directory.
+Library code is in the **src/** directory. An example of how it should be used
+is in the **example/** directory.
+
+6. documentation can be generated from the source code by running:
+
+        npm run docs
 
 ## Updating demo on project site
 
