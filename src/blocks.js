@@ -49,13 +49,14 @@ export default class CodeMirrorBlocks {
           literal: this.editLiteral
         }),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
-        // TODO: for some reason this never fires. Figure out why.
-        // ondragenter: this.nodeEventHandler(this.handleDragEnter),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
         ondrop: this.nodeEventHandler(this.dropOntoNode)
       }
     );
-    this.cm.on('drop', (cm, event) => this.nodeEventHandler(this.dropOntoNode, true)(event));
+    var dropHandler = this.nodeEventHandler(this.dropOntoNode, true);
+    var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
+    this.cm.on('drop', (cm, event) => dropHandler(event));
+    this.cm.on('dragenter', (cm, event) => dragEnterHandler(event));
     this.cm.on('change', this.handleChange.bind(this));
   }
 
@@ -93,7 +94,7 @@ export default class CodeMirrorBlocks {
     this.selectedNodes.clear();
     this._clearMarks();
     for (let rootNode of this.ast.rootNodes) {
-      render(rootNode, this.cm, this.didRenderNode.bind(this));
+      render(rootNode, this.cm);
     }
   }
 
@@ -202,7 +203,8 @@ export default class CodeMirrorBlocks {
   handleDragEnter(node, event) {
     if (this.isDropTarget(event.target)) {
       event.stopPropagation();
-      event.target.classList.add('blocks-over-target');
+      var el = node && this.isDropTarget(node.el) && node.el || event.target;
+      el.classList.add('blocks-over-target');
     }
   }
 
@@ -210,6 +212,9 @@ export default class CodeMirrorBlocks {
     if (this.isDropTarget(event.target)) {
       event.stopPropagation();
       event.target.classList.remove('blocks-over-target');
+      if (node) {
+        node.el.classList.remove('blocks-over-target');
+      }
     }
   }
 
@@ -299,23 +304,6 @@ export default class CodeMirrorBlocks {
       }
     });
   }
-
-  didRenderNode(node) {
-    switch (node.type) {
-    case 'expression':
-      // set up drop targets
-      let dropTargetEls = node.el.querySelectorAll(
-        `#${node.el.id} > .blocks-args > .blocks-drop-target`);
-      for (let i = 0; i < dropTargetEls.length; i++) {
-        let el = dropTargetEls[i];
-        // TODO: for some reason, this is the only way to get dragenter
-        // to fire on these dom nodes. This shouldn't be necessary. See other
-        // TODO in this file.
-        el.ondragenter = this.handleDragEnter.bind(this, node);
-      }
-    }
-  }
-
 
   handleKeyDown(event) {
     if (event.which == DELETE_KEY) {

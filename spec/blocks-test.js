@@ -118,8 +118,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(render.default).toHaveBeenCalled();
       expect(render.default).toHaveBeenCalledWith(
         this.blocks.ast.rootNodes[0],
-        this.cm,
-        jasmine.any(Function)
+        this.cm
       );
       render.default.calls.reset();
 
@@ -132,8 +131,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(render.default).toHaveBeenCalled();
       expect(render.default).toHaveBeenCalledWith(
         this.blocks.ast.rootNodes[0],
-        this.cm,
-        jasmine.any(Function)
+        this.cm
       );
     });
 

@@ -39,6 +39,9 @@
   padding: 5px;
   border: 1px solid transparent;
 }
+.blocks-literal * {
+  pointer-events: none;
+}
 .blocks-name {
   color: #2e75b5;
 }
@@ -75,6 +78,9 @@
 .blocks-over-target {
   background-color: lightblue;
   border-radius: 15px;
+}
+.blocks-literal.blocks-over-target {
+  background-color: red;
 }
 
 .blocks-white-space:before {

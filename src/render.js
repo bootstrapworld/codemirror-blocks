@@ -40,7 +40,9 @@ export default function render(rootNode, cm, callback) {
       continue;
     }
     node.el.draggable = true;
-    callback(node);
+    if (callback) {
+      callback(node);
+    }
   }
   cm.markText(rootNode.from, rootNode.to, {replacedWith: rootNodeFrag.firstChild.firstChild});
   return rootNodeFrag;
