@@ -106,6 +106,7 @@ export default class CodeMirrorBlocks {
 
   selectNode(node, event) {
     event.stopPropagation();
+    this.selectedNodes.forEach(node => this.deselectNode(node, event));
     node.el.classList.add('blocks-selected');
     this.selectedNodes.add(node);
   }

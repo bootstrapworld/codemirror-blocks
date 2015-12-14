@@ -159,6 +159,16 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.selectedNodes.has(this.literal)).toBe(false);
     });
 
+    it('should only allow one node to be selected at a time', function() {
+      this.cm.setValue('11 54');
+      var literal = this.blocks.ast.rootNodes[0];
+      var literal2 = this.blocks.ast.rootNodes[1];
+      literal.el.dispatchEvent(click());
+      literal2.el.dispatchEvent(click());
+      expect(this.blocks.selectedNodes.has(literal)).toBe(false);
+      expect(this.blocks.selectedNodes.has(literal2)).toBe(true);
+    });
+
     it('should delete selected nodes when the delete key is pressed', function() {
       expect(this.cm.getValue()).toBe('11');
       this.literal.el.dispatchEvent(click());
