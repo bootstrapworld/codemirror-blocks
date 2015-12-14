@@ -128,7 +128,6 @@ export default class CodeMirrorBlocks {
     nodeEl.onkeydown = null;
     nodeEl.contentEditable = false;
     nodeEl.classList.remove('blocks-invalid', 'blocks-editing');
-    nodeEl.title = '';
     this.cm.replaceRange(nodeEl.innerText, node.from, node.to);
   }
 
