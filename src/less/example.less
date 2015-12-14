@@ -119,20 +119,17 @@
   border-radius: @border-radius;
 
   &:hover {
-    border-color: black;
-    &:before {
-      content: '+';
-    }
+    background-color: @hover-drop-background-color;
   }
 
   &.blocks-editing {
     font-weight: normal;
     margin: 15px;
-    &:before {
-      content: '';
-    }
     &.blocks-error {
       border: @border-width solid @error-border-color;
+    }
+    &:hover {
+      background-color: transparent;
     }
   }
 

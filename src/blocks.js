@@ -41,12 +41,10 @@ export default class CodeMirrorBlocks {
       this.cm.getWrapperElement(),
       {
         onkeydown: this.handleKeyDown.bind(this),
-        onclick: this.nodeEventHandler({
-          whitespace: this.editWhiteSpace,
-          default: this.toggleSelectNode
-        }),
+        onclick: this.nodeEventHandler(this.toggleSelectNode),
         ondblclick: this.nodeEventHandler({
-          literal: this.editLiteral
+          literal: this.editLiteral,
+          whitespace: this.editWhiteSpace
         }),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),

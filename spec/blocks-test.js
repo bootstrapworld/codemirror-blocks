@@ -224,60 +224,58 @@ describe('The CodeMirrorBlocks Class', function() {
         this.whiteSpaceEl = firstArg.el.nextElementSibling;
       });
 
-      it('should edit whitespace on click', function() {
+      it('should edit whitespace on dblclick', function() {
         expect(this.whiteSpaceEl.classList).toContain('blocks-white-space');
         expect(this.whiteSpaceEl.classList).not.toContain('blocks-editing');
-        this.whiteSpaceEl.dispatchEvent(click());
+        this.whiteSpaceEl.dispatchEvent(dblclick());
         expect(this.whiteSpaceEl.classList).toContain('blocks-editing');
         expect(this.whiteSpaceEl.contentEditable).toBe('true');
       });
 
-      it('should save whiteSpace on blur', function() {
-        this.whiteSpaceEl.dispatchEvent(click());
-
-        let selection = window.getSelection();
-        expect(selection.rangeCount).toEqual(1);
-        let range = selection.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode('4253'));
-
-        this.whiteSpaceEl.dispatchEvent(blur());
-        expect(this.cm.getValue()).toBe('(+ 1 4253 2)');
-      });
-
-      it('should blur whitespace you are editing on enter', function() {
-        this.whiteSpaceEl.dispatchEvent(click());
-
-        spyOn(this.whiteSpaceEl, 'blur');
-        this.whiteSpaceEl.dispatchEvent(keydown(13));
-        expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
-      });
-
-      it('should blur whitespace you are editing on tab', function() {
-        this.whiteSpaceEl.dispatchEvent(click());
-
-        spyOn(this.whiteSpaceEl, 'blur');
-        this.whiteSpaceEl.dispatchEvent(keydown(9));
-        expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
-      });
-
-      describe('when "saving" bad whitepsace inputs,', function() {
+      describe('and specifically when editing it,', function() {
         beforeEach(function() {
-          spyOn(this.parser, 'parse').and.throwError("bad input");
-          spyOn(this.cm, 'replaceRange');
-          this.whiteSpaceEl.dispatchEvent(click());
+          this.whiteSpaceEl.dispatchEvent(dblclick());
+
+          let selection = window.getSelection();
+          expect(selection.rangeCount).toEqual(1);
+          let range = selection.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(document.createTextNode('4253'));
+        });
+
+        it('should save whiteSpace on blur', function() {
           this.whiteSpaceEl.dispatchEvent(blur());
+          expect(this.cm.getValue()).toBe('(+ 1 4253 2)');
         });
 
-        it('should not save anything', function() {
-          expect(this.cm.replaceRange).not.toHaveBeenCalled();
+        it('should blur whitespace you are editing on enter', function() {
+          spyOn(this.whiteSpaceEl, 'blur');
+          this.whiteSpaceEl.dispatchEvent(keydown(13));
+          expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
         });
 
-        it('should add a blocks-error class to the whitespace el', function() {
-          expect(this.whiteSpaceEl.classList).toContain('blocks-error');
+        it('should blur whitespace you are editing on tab', function() {
+          spyOn(this.whiteSpaceEl, 'blur');
+          this.whiteSpaceEl.dispatchEvent(keydown(9));
+          expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
+        });
+
+        describe('when "saving" bad whitepsace inputs,', function() {
+          beforeEach(function() {
+            spyOn(this.parser, 'parse').and.throwError("bad input");
+            spyOn(this.cm, 'replaceRange');
+            this.whiteSpaceEl.dispatchEvent(blur());
+          });
+
+          it('should not save anything', function() {
+            expect(this.cm.replaceRange).not.toHaveBeenCalled();
+          });
+
+          it('should add a blocks-error class to the whitespace el', function() {
+            expect(this.whiteSpaceEl.classList).toContain('blocks-error');
+          });
         });
       });
-
     });
 
     describe('when dealing with dragging,', function() {
