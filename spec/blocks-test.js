@@ -200,6 +200,23 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.literal.el.blur).toHaveBeenCalled();
     });
 
+    describe('when "saving" bad inputs,', function() {
+      beforeEach(function() {
+        spyOn(this.parser, 'parse').and.throwError("bad input");
+        spyOn(this.cm, 'replaceRange');
+        this.literal.el.dispatchEvent(dblclick());
+        this.literal.el.dispatchEvent(blur());
+      });
+
+      it('should not save anything', function() {
+        expect(this.cm.replaceRange).not.toHaveBeenCalled();
+      });
+
+      it('should add a blocks-error class to the node being edited', function() {
+        expect(this.literal.el.classList).toContain('blocks-error');
+      });
+    });
+
     describe('when dealing with whitespace,', function() {
       beforeEach(function() {
         this.cm.setValue('(+ 1 2)');
@@ -243,6 +260,24 @@ describe('The CodeMirrorBlocks Class', function() {
         this.whiteSpaceEl.dispatchEvent(keydown(9));
         expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
       });
+
+      describe('when "saving" bad whitepsace inputs,', function() {
+        beforeEach(function() {
+          spyOn(this.parser, 'parse').and.throwError("bad input");
+          spyOn(this.cm, 'replaceRange');
+          this.whiteSpaceEl.dispatchEvent(click());
+          this.whiteSpaceEl.dispatchEvent(blur());
+        });
+
+        it('should not save anything', function() {
+          expect(this.cm.replaceRange).not.toHaveBeenCalled();
+        });
+
+        it('should add a blocks-error class to the whitespace el', function() {
+          expect(this.whiteSpaceEl.classList).toContain('blocks-error');
+        });
+      });
+
     });
 
     describe('when dealing with dragging,', function() {

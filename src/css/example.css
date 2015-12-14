@@ -74,6 +74,9 @@
 .blocks-literal.blocks-editing {
   border: 2px solid orange;
 }
+.blocks-literal.blocks-editing.blocks-error {
+  border: 2px solid red;
+}
 
 .blocks-over-target {
   background-color: lightblue;
@@ -90,11 +93,11 @@
   padding: 5px;
   border: 2px solid transparent;
   font-weight: bold;
+  border-radius: 5px;
 }
 
 .blocks-white-space:hover {
   border-color: black;
-  border-radius: 5px;
 }
 .blocks-white-space:hover:before {
   content: '+';
@@ -106,4 +109,8 @@
 .blocks-white-space.blocks-editing {
   font-weight: normal;
   margin: 15px;
+
+}
+.blocks-white-space.blocks-editing.blocks-error {
+  border: 2px solid red;
 }

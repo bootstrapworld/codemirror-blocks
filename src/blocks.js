@@ -118,11 +118,36 @@ export default class CodeMirrorBlocks {
     this.selectedNodes.delete(node);
   }
 
-  saveEdit(node, nodeEl) {
+  saveEditableEl(nodeEl, text, range) {
+    this.cm.replaceRange(text, range.from, range.to);
     nodeEl.onkeydown = null;
     nodeEl.contentEditable = false;
     nodeEl.classList.remove('blocks-editing');
-    this.cm.replaceRange(nodeEl.innerText, node.from, node.to);
+    nodeEl.classList.remove('blocks-error');
+  }
+
+  checkEditableEl(nodeEl, text, range) {
+    var currentText = this.cm.getValue();
+    var startIndex = this.cm.indexFromPos(range.from);
+    var endIndex = this.cm.indexFromPos(range.to);
+    var newText = (currentText.slice(0, startIndex) +
+                   nodeEl.innerText +
+                   currentText.slice(endIndex));
+    try {
+      this.parser.parse(newText);
+      return true;
+    } catch (e) {
+      nodeEl.classList.add('blocks-error');
+      console.error("result doesn't parse", e);
+      return false;
+    }
+  }
+
+  saveEdit(node, nodeEl, event) {
+    event.preventDefault();
+    if (this.checkEditableEl(nodeEl, nodeEl.innerText, node)) {
+      this.saveEditableEl(nodeEl, nodeEl.innerText, node);
+    }
   }
 
   editWhiteSpace(whiteSpaceEl, event) {
@@ -134,6 +159,7 @@ export default class CodeMirrorBlocks {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       if (e.which == RETURN_KEY || e.which == TAB_KEY) {
+        e.preventDefault();
         whiteSpaceEl.blur();
       }
     };
@@ -144,12 +170,11 @@ export default class CodeMirrorBlocks {
   }
 
   saveWhiteSpace(whiteSpaceEl) {
-    whiteSpaceEl.onkeydown = null;
-    whiteSpaceEl.contentEditable = false;
-    whiteSpaceEl.classList.remove('blocks-editing');
     var location = getLocationFromEl(whiteSpaceEl);
-    this.cm.replaceRange(
-      ' '+whiteSpaceEl.innerText, location, location);
+    var range = {from:location, to:location};
+    if (this.checkEditableEl(whiteSpaceEl, ' '+whiteSpaceEl.innerText, range)) {
+      this.saveEditableEl(whiteSpaceEl, ' '+whiteSpaceEl.innerText, range);
+    }
   }
 
   editLiteral(node, event) {
@@ -161,6 +186,7 @@ export default class CodeMirrorBlocks {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       if (e.which == RETURN_KEY || e.which == TAB_KEY) {
+        e.preventDefault();
         node.el.blur();
       }
     };
