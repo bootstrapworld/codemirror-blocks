@@ -1,4 +1,11 @@
-import {AST, Expression, Literal, Struct, FunctionDefinition} from '../ast';
+import {
+  AST,
+  Expression,
+  Literal,
+  Struct,
+  FunctionDefinition,
+  Comment
+} from '../ast';
 
 try {
   var lex = require('wescheme-js/src/lex').lex;
@@ -105,6 +112,8 @@ function parseNode(node) {
       dataType = "boolean";
     }
     return new Literal(from, to, node, dataType, {'aria-label':aria});
+  } else if (node instanceof structures.comment) {
+    return new Comment(from, to, node.txt);
   }
   console.log("!! No translator for", node);
   return null;

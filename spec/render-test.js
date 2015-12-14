@@ -2,6 +2,7 @@
 import CodeMirror from 'codemirror';
 import ExampleParser from '../example/parser';
 import render from '../src/render';
+import {Comment} from '../src/ast';
 
 describe('The render module,', function() {
   beforeEach(function() {
@@ -53,6 +54,23 @@ describe('The render module,', function() {
       expect(argsEls.length).toBe(1);
       var argLiteralEls = argsEls[0].querySelectorAll('span.blocks-literal');
       expect(argLiteralEls.length).toBe(2);
+    });
+  });
+
+  describe('when rendering a comment,', function() {
+    beforeEach(function() {
+      this.comment = new Comment(
+        {line:0, ch:0}, {line:0, ch:18}, 'this is a comment');
+      this.fragment = render(this.comment, this.cm, function(){});
+      this.commentEls = this.fragment.querySelectorAll('span.blocks-comment');
+    });
+
+    it('should generate a span with the blocks-comment class', function() {
+      expect(this.commentEls.length).toBe(1);
+    });
+
+    it('should contain the comment itself within the span', function() {
+      expect(this.commentEls[0].innerText).toBe('this is a comment');
     });
   });
 });

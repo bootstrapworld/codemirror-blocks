@@ -10,7 +10,8 @@ export var nodes = {
   expression: require('./templates/expression.handlebars'),
   functionDef: require('./templates/functionDef.handlebars'),
   struct: require('./templates/struct.handlebars'),
-  literal: require('./templates/literal.handlebars')
+  literal: require('./templates/literal.handlebars'),
+  comment: require('./templates/comment.handlebars')
 };
 
 var nodesInRenderOrder = [];

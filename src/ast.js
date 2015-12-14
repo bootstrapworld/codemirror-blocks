@@ -128,3 +128,18 @@ export class Literal extends ASTNode {
     return `${this.value}`;
   }
 }
+
+export class Comment extends ASTNode {
+  constructor(from, to, comment, options={}) {
+    super(from, to, 'comment', options);
+    this.comment = comment;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+  }
+
+  toString() {
+    return `${this.comment}`;
+  }
+}
