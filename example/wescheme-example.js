@@ -5,7 +5,7 @@ import 'codemirror/theme/monokai.css';
 import CodeMirrorBlocks from '../src/blocks';
 import WeschemeParser from '../src/parsers/wescheme';
 
-require('../src/css/example.css');
+require('../src/less/example.less');
 require('./example-page.css');
 require('./wescheme.css');
 

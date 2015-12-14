@@ -5,7 +5,7 @@ import 'codemirror/theme/monokai.css';
 import Parser from './parser.js';
 import CodeMirrorBlocks from '../src/blocks.js';
 
-require('../src/css/example.css');
+require('../src/less/example.less');
 require('./example-page.css');
 
 var cm = CodeMirror.fromTextArea(
