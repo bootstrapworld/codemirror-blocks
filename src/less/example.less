@@ -1,3 +1,19 @@
+@border-radius: 5px;
+@border-width: 2px;
+
+// Colors:
+@literal-number-color: blue;
+@literal-string-color: green;
+@literal-char-color: orange;
+@literal-boolean-color: darkred;
+@literal-symbol-color: steelblue;
+@comment-color: #ccc;
+@editing-border-color: orange;
+@error-border-color: red;
+
+@hover-drop-background-color: lightblue;
+@hover-replace-background-color: red;
+
 .blocks-struct,
 .blocks-functionDef,
 .blocks-expression {
@@ -5,7 +21,7 @@
   flex-direction: column;
   align-items: stretch;
   color: black;
-  border: 2px solid black;
+  border: @border-width solid black;
   border-radius: 15px;
   margin: 5px;
   background: #ccc;
@@ -22,6 +38,10 @@
   text-align: center;
   background: black;
   color: white;
+
+  > .blocks-expression{
+    box-shadow: 0px 0px 10px 1px white;
+  }
 }
 
 .blocks-args {
@@ -37,53 +57,56 @@
   color: black;
   border-radius: 5px;
   padding: 5px;
-  border: 2px solid transparent;
+  border: @border-width solid transparent;
+
+  &.blocks-editing {
+    border-color: @editing-border-color;
+    &.blocks-error {
+      border-color: @error-border-color;
+    }
+  }
+
+  &.blocks-over-target {
+    background-color: @hover-replace-background-color;
+  }
+
+  * {
+    pointer-events: none;
+  }
+
+  .blocks-literal-number {
+    color: @literal-number-color;
+  }
+  .blocks-literal-string {
+    color: @literal-string-color;
+  }
+  .blocks-literal-char {
+    color: @literal-char-color;
+  }
+  .blocks-literal-boolean {
+    color: @literal-boolean-color;
+  }
+  .blocks-literal-symbol {
+    color: @literal-symbol-color;
+  }
+
 }
-.blocks-literal * {
-  pointer-events: none;
-}
+
 .blocks-name {
-  color: #2e75b5;
+  color: @literal-symbol-color;
 }
-
-.blocks-literal-number {
-  color: blue;
-}
-.blocks-literal-string {
-  color: green;
-}
-.blocks-literal-char {
-  color: orange;
-}
-.blocks-literal-boolean {
-  color: darkred;
-}
-.blocks-literal-symbol {
-  color: steelblue;
-}
-
 
 .blocks-selected {
-  border-color: orange;
+  border-color: @editing-border-color;
 }
 
 .blocks-editing {
   outline: 0;
 }
 
-.blocks-literal.blocks-editing {
-  border: 2px solid orange;
-}
-.blocks-literal.blocks-editing.blocks-error {
-  border: 2px solid red;
-}
-
 .blocks-over-target {
-  background-color: lightblue;
-  border-radius: 15px;
-}
-.blocks-literal.blocks-over-target {
-  background-color: red;
+  background-color: @hover-drop-background-color;
+  border-radius: @border-radius;
 }
 
 .blocks-white-space:before {
@@ -91,37 +114,31 @@
 }
 .blocks-white-space {
   padding: 5px;
-  border: 2px solid transparent;
+  border: @border-width solid transparent;
   font-weight: bold;
-  border-radius: 5px;
-}
+  border-radius: @border-radius;
 
-.blocks-white-space:hover {
-  border-color: black;
-}
+  &:hover {
+    border-color: black;
+    &:before {
+      content: '+';
+    }
+  }
 
-.blocks-white-space:hover:before {
-  content: '+';
-}
+  &.blocks-editing {
+    font-weight: normal;
+    margin: 15px;
+    &:before {
+      content: '';
+    }
+    &.blocks-error {
+      border: @border-width solid @error-border-color;
+    }
+  }
 
-.blocks-white-space.blocks-editing:before {
-  content: '';
-}
-
-.blocks-white-space.blocks-editing {
-  font-weight: normal;
-  margin: 15px;
-}
-
-.blocks-white-space.blocks-editing.blocks-error {
-  border: 2px solid red;
-}
-
-.blocks-operator > .blocks-expression{
-  box-shadow: 0px 0px 10px 1px white;
 }
 
 .blocks-comment {
-  color: #ccc;
+  color: @comment-color;
   font-style: italic;
 }
