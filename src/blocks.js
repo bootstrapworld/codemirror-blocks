@@ -134,9 +134,14 @@ export default class CodeMirrorBlocks {
                    currentText.slice(endIndex));
     try {
       this.parser.parse(newText);
+      nodeEl.title = '';
       return true;
     } catch (e) {
       nodeEl.classList.add('blocks-error');
+      let msg = eval('('+e+')')['dom-message'][2].slice(2);
+      // Use an error message, if one is available. Otherwise give a generic hint
+      nodeEl.title = "Error:" + (msg.every((element) => typeof element==="string") ?
+                                 msg : "Check your quotation marks, or any other symbols you've used");
       console.error("result doesn't parse", e);
       return false;
     }
