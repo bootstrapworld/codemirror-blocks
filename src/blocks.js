@@ -119,9 +119,16 @@ export default class CodeMirrorBlocks {
   }
 
   saveEdit(node, nodeEl) {
+    try{
+      this.parser.parse(nodeEl.innerText)
+    } catch(e) {
+      nodeEl.classList.add('blocks-invalid');
+      return;
+    }
     nodeEl.onkeydown = null;
     nodeEl.contentEditable = false;
-    nodeEl.classList.remove('blocks-editing');
+    nodeEl.classList.remove('blocks-invalid', 'blocks-editing');
+    nodeEl.title = '';
     this.cm.replaceRange(nodeEl.innerText, node.from, node.to);
   }
 
@@ -161,6 +168,7 @@ export default class CodeMirrorBlocks {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       if (e.which == RETURN_KEY || e.which == TAB_KEY) {
+        e.preventDefault();
         node.el.blur();
       }
     };
