@@ -127,6 +127,11 @@ class Parser {
     return new AST(rootNodes);
   }
 
+  getExceptionMessage(e){
+    let msg = JSON.parse(e)['dom-message'][2].slice(2);
+    return "Error: "+ (msg.every((element) => typeof element==="string") ?
+                       msg : "Check your quotation marks, or any other symbols you've used");
+  }
 }
 
 if (lex) {
