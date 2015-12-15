@@ -27,6 +27,7 @@
   background: #ccc;
   cursor: default;
   overflow: hidden;
+  cursor: move;
 }
 
 .blocks-operator {
@@ -34,7 +35,7 @@
   justify-content: center;
 /*  flex-direction: column; */
   font-weight: bold;
-  padding: 5px;
+  padding: 0px 5px;
   text-align: center;
   background: black;
   color: white;
@@ -124,7 +125,6 @@
 
   &.blocks-editing {
     font-weight: normal;
-    margin: 15px;
     &.blocks-error {
       border: @border-width solid @error-border-color;
     }
