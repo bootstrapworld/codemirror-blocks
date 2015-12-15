@@ -1,5 +1,4 @@
-/* globals jasmine describe it expect beforeEach spyOn */
-import {AST, Literal, Expression} from '../src/ast';
+/* globals jasmine describe it expect beforeEach afterEach spyOn */
 import CodeMirrorBlocks from '../src/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from '../example/parser';
@@ -44,6 +43,9 @@ function drop(dataTransfer) {
   event.dataTransfer = dataTransfer;
   return event;
 }
+function cut() {
+  return new CustomEvent('cut', {bubbles: true});
+}
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
@@ -72,6 +74,13 @@ describe('The CodeMirrorBlocks Class', function() {
         didInsertNode: this.didInsertNode
       }
     );
+  });
+
+  beforeEach(function() {
+    jasmine.clock().install();
+  });
+  afterEach(function() {
+    jasmine.clock().uninstall();
   });
 
   describe('constructor,', function() {
@@ -152,31 +161,54 @@ describe('The CodeMirrorBlocks Class', function() {
       this.literal = this.blocks.ast.rootNodes[0];
     });
 
-    it('should toggle node selection on click', function() {
-      this.literal.el.dispatchEvent(click());
-      expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
-      this.literal.el.dispatchEvent(click());
-      expect(this.blocks.selectedNodes.has(this.literal)).toBe(false);
-    });
+    describe("when dealing with node selection,", function() {
 
-    it('should only allow one node to be selected at a time', function() {
-      this.cm.setValue('11 54');
-      var literal = this.blocks.ast.rootNodes[0];
-      var literal2 = this.blocks.ast.rootNodes[1];
-      literal.el.dispatchEvent(click());
-      literal2.el.dispatchEvent(click());
-      expect(this.blocks.selectedNodes.has(literal)).toBe(false);
-      expect(this.blocks.selectedNodes.has(literal2)).toBe(true);
-    });
+      beforeEach(function() {
+        this.cm.setValue('11 54');
+        this.literal = this.blocks.ast.rootNodes[0];
+        this.literal2 = this.blocks.ast.rootNodes[1];
+      });
 
-    it('should delete selected nodes when the delete key is pressed', function() {
-      expect(this.cm.getValue()).toBe('11');
-      this.literal.el.dispatchEvent(click());
-      expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
-      this.cm.getWrapperElement().dispatchEvent(keydown(8));
-      expect(this.cm.getValue()).toBe('');
-    });
+      it('should toggle node selection on click', function() {
+        this.literal.el.dispatchEvent(click());
+        expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
+        this.literal.el.dispatchEvent(click());
+        expect(this.blocks.selectedNodes.has(this.literal)).toBe(false);
+      });
 
+      it('should only allow one node to be selected at a time', function() {
+        this.literal.el.dispatchEvent(click());
+        this.literal2.el.dispatchEvent(click());
+        expect(this.blocks.selectedNodes.has(this.literal)).toBe(false);
+        expect(this.blocks.selectedNodes.has(this.literal2)).toBe(true);
+      });
+
+      it('should delete selected nodes when the delete key is pressed', function() {
+        expect(this.cm.getValue()).toBe('11 54');
+        this.literal.el.dispatchEvent(click());
+        expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
+        this.cm.getWrapperElement().dispatchEvent(keydown(8));
+        expect(this.cm.getValue()).toBe(' 54');
+      });
+
+      describe('cut/copy', function() {
+        beforeEach(function() {
+          this.literal.el.dispatchEvent(click());
+          spyOn(document, 'execCommand');
+        });
+
+        it('should remove selected nodes on cut', function() {
+          console.log(this.blocks.ast);
+          document.dispatchEvent(cut());
+          expect(this.cm.getValue()).toBe(' 54');
+          expect(document.execCommand).toHaveBeenCalledWith('cut');
+        });
+
+        xit('should create an activeElement with the text to be copied', function() {
+          // TODO: figure out how to test this.
+        });
+      });
+    });
 
     it('should begin editing a node on double click', function() {
       this.literal.el.dispatchEvent(dblclick());

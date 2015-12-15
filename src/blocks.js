@@ -51,6 +51,13 @@ export default class CodeMirrorBlocks {
         ondrop: this.nodeEventHandler(this.dropOntoNode)
       }
     );
+    // TODO: don't do this, otherwise we copy/paste will only work
+    // when there is one instance of this class on a page.
+    Object.assign(document, {
+      oncut: this.handleCopyCut.bind(this),
+      oncopy: this.handleCopyCut.bind(this)
+    });
+
     var dropHandler = this.nodeEventHandler(this.dropOntoNode, true);
     var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
     this.cm.on('drop', (cm, event) => dropHandler(event));
@@ -109,12 +116,40 @@ export default class CodeMirrorBlocks {
     this.selectedNodes.forEach(node => this.deselectNode(node, event));
     node.el.classList.add('blocks-selected');
     this.selectedNodes.add(node);
+    node.el.focus();
   }
 
   deselectNode(node, event) {
     event.stopPropagation();
     node.el.classList.remove('blocks-selected');
     this.selectedNodes.delete(node);
+  }
+
+  handleCopyCut(event) {
+    var activeEl = document.activeElement;
+    if (this.selectedNodes.size == 0) {
+      return;
+    }
+    var node = this.selectedNodes.values().next().value;
+    event.stopPropagation();
+    var buffer = document.createElement('textarea');
+    document.body.appendChild(buffer);
+    buffer.style.opacity = "0";
+    buffer.style.position = "absolute";
+    buffer.innerText = this.cm.getRange(node.from, node.to);
+    buffer.select();
+    try {
+      document.execCommand && document.execCommand(event.type);
+    } catch (e) {
+      console.error("execCommand doesn't work in this browser :(", e);
+    }
+    setTimeout(() => {
+      activeEl.focus();
+      buffer.parentNode && buffer.parentNode.removeChild(buffer);
+    }, 200);
+    if (event.type == 'cut') {
+      this.cm.replaceRange('', node.from, node.to);
+    }
   }
 
   saveEditableEl(nodeEl, text, range) {
