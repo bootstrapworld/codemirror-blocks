@@ -31,6 +31,10 @@ export default class Parser {
     }
     return ch;
   }
+  
+  getExceptionMessage(e){
+    return e || "Parser error";
+  }
 
   getToken() {
     const IDENTIFIER_RE = /[\w-+\/*]/;

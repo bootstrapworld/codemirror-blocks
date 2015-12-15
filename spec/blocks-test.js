@@ -257,6 +257,10 @@ describe('The CodeMirrorBlocks Class', function() {
       it('should add a blocks-error class to the node being edited', function() {
         expect(this.literal.el.classList).toContain('blocks-error');
       });
+
+      it('should add the parse error as the title of the literal', function() {
+        expect(this.literal.el.title).toBe('Error: bad input');
+      });
     });
 
     describe('when dealing with whitespace,', function() {
