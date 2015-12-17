@@ -4,7 +4,8 @@ import {
   Literal,
   Struct,
   FunctionDefinition,
-  Comment
+  Comment,
+  VariableDefinition
 } from '../ast';
 
 try {
@@ -71,17 +72,11 @@ function parseNode(node) {
       {'aria-label': expressionAria('or', node.exprs.length)}
     );
   } else if (node instanceof structures.defVar) {
-    return new Expression(
+    return new VariableDefinition(
       from,
       to,
-      new Literal(
-        //TODO: don't guess where the or symbol is, need to parse it here.
-        {line:from.line, ch:from.ch+1},
-        {line:from.line, ch:from.ch+7},
-        "define",
-        "symbol"
-      ),
-      [parseNode(node.name), parseNode(node.expr)]
+      node.name.stx,
+      parseNode(node.expr)
     );
   } else if (node instanceof structures.defStruct) {
     return new Struct(

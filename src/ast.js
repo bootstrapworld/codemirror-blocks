@@ -93,6 +93,25 @@ export class Struct extends ASTNode {
   }
 }
 
+export class VariableDefinition extends ASTNode {
+  constructor(from, to, name, body, options={}) {
+    super(from, to, 'variableDef', options);
+    this.name = name;
+    this.body = body;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    for (let node of this.body) {
+      yield node;
+    }
+  }
+
+  toString() {
+    return `(define (${this.name} ${this.body})`;
+  }
+}
+
 export class FunctionDefinition extends ASTNode {
   constructor(from, to, name, args, body, options={}) {
     super(from, to, 'functionDef', options);

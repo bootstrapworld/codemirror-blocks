@@ -1,4 +1,6 @@
 .blocks-comment,
-.blocks-functionDef {
+.blocks-functionDef,
+.blocks-variableDef,
+.blocks-struct {
   display: none;
 }

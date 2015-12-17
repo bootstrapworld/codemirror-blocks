@@ -64,14 +64,10 @@ describe("The WeScheme Parser,", function() {
       this.ast = this.parser.parse('(define foo "bar")');
     });
 
-    it("should convert defVar expressions to expressions", function() {
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-    });
-
-    it("should make the operator a symbol", function() {
-      expect(this.ast.rootNodes[0].func.type).toBe('literal');
-      expect(this.ast.rootNodes[0].func.dataType).toBe('symbol');
-      expect(this.ast.rootNodes[0].func.value).toBe('define');
+    it("should convert defVar expressions to variableDef", function() {
+      expect(this.ast.rootNodes[0].type).toBe('variableDef');
+      expect(this.ast.rootNodes[0].name).toBe('foo');
+      expect(this.ast.rootNodes[0].body.type).toBe('literal');
     });
   });
 
