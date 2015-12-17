@@ -2,8 +2,9 @@ import {
   AST,
   Expression,
   Literal,
-  Struct,
+  StructDefinition,
   FunctionDefinition,
+  ValueDefinition,
   Comment
 } from '../ast';
 
@@ -71,24 +72,20 @@ function parseNode(node) {
       {'aria-label': expressionAria('or', node.exprs.length)}
     );
   } else if (node instanceof structures.defVar) {
-    return new Expression(
+    return new ValueDefinition(
       from,
       to,
-      new Literal(
-        //TODO: don't guess where the or symbol is, need to parse it here.
-        {line:from.line, ch:from.ch+1},
-        {line:from.line, ch:from.ch+7},
-        "define",
-        "symbol"
-      ),
-      [parseNode(node.name), parseNode(node.expr)]
+      node.name.stx, 
+      parseNode(node.expr),
+      {'read-only' : true}
     );
   } else if (node instanceof structures.defStruct) {
-    return new Struct(
+    return new StructDefinition(
       from,
       to,
       node.name.stx,
-      node.fields.map(parseNode).filter(item => item != null)
+      node.fields.map(parseNode).filter(item => item != null),
+      {'read-only' : true}
     );
   } else if (node instanceof structures.defFunc) {
     return new FunctionDefinition(
@@ -96,7 +93,8 @@ function parseNode(node) {
       to,
       node.name.stx,
       node.args.map(symbolNode => symbolNode.stx),
-      parseNode(node.body)
+      parseNode(node.body),
+      {'read-only' : true}
     );
   } else if (node instanceof structures.symbolExpr) {
     return new Literal(from, to, node.stx, "symbol", {'aria-label':node.stx});
@@ -127,10 +125,13 @@ class Parser {
     return new AST(rootNodes);
   }
 
+  // take 2009 WeScheme's highly-irregular structured error messages,
+  // and try to extract a readable text-only error message from them
   getExceptionMessage(e){
-    let msg = JSON.parse(e)['dom-message'][2].slice(2);
-    return "Error: "+ (msg.every((element) => typeof element==="string") ?
-                       msg : "Check your quotation marks, or any other symbols you've used");
+    var msg = JSON.parse(e)['dom-message'][2].slice(2);
+    return (msg.every((element) => typeof element==="string"))? msg 
+            : (msg[0] instanceof Array)? msg[0][2].substring(msg[0][2].indexOf("read: ")+6)
+            : "Check your quotation marks, or any other symbols you've used";
   }
 }
 
