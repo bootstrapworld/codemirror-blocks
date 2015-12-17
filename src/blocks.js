@@ -161,8 +161,15 @@ export default class CodeMirrorBlocks {
   }
 
   checkEditableEl(nodeEl, text, range) {
+    var currentProgram = this.cm.getValue();
+    var startIndex = this.cm.indexFromPos(range.from);
+    var endIndex = this.cm.indexFromPos(range.to);
+    var newProgram = (currentProgram.slice(0, startIndex) +
+                      nodeEl.innerText +
+                      currentProgram.slice(endIndex));
     try {
-      this.parser.parse(text); // parse the changed node's contents to check for errors
+      this.parser.parse(text);    // check just the new text
+      this.parser.parse(newProgram); // check the whole program, with the new text
       nodeEl.title = '';
       return true;
     } catch (e) {
