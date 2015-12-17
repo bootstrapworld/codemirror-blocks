@@ -116,7 +116,8 @@ export default class CodeMirrorBlocks {
     this.selectedNodes.forEach(node => this.deselectNode(node, event));
     node.el.classList.add('blocks-selected');
     this.selectedNodes.add(node);
-    node.el.focus();
+    // return focus back to codemirror so it continues capturing key event
+    this.cm.focus();
   }
 
   deselectNode(node, event) {

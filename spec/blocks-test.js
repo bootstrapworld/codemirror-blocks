@@ -191,6 +191,12 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue()).toBe(' 54');
       });
 
+      // for codemirror to capture key events, it must have focus. For Issue #8
+      it('should maintain focus on the codemirror instance', function() {
+        this.literal.el.dispatchEvent(click());
+        expect(this.cm.hasFocus()).toBe(true);
+      });
+
       describe('cut/copy', function() {
         beforeEach(function() {
           this.literal.el.dispatchEvent(click());
