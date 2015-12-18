@@ -13,13 +13,31 @@ export class AST {
     // that were parsed.
 
     this.rootNodes = rootNodes;
+
+    this.nextNodeMap = new WeakMap();
+    this.prevNodeMap = new WeakMap();
+
+    let lastNode = null;
     for (let rootNode of this.rootNodes) {
       for (let node of rootNode) {
         if (node) {
+          if (lastNode) {
+            this.nextNodeMap.set(lastNode, node);
+            this.prevNodeMap.set(node, lastNode);
+          }
           this.nodeMap.set(node.id, node);
+          lastNode = node;
         }
       }
     }
+  }
+
+  getNodeAfter(node) {
+    return this.nextNodeMap.get(node) || this.rootNodes[0];
+  }
+
+  getNodeBefore(node) {
+    return this.prevNodeMap.get(node) || this.rootNodes[this.rootNodes.length-1];
   }
 }
 

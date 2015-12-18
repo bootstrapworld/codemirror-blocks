@@ -13,9 +13,10 @@ function dblclick() {
 function blur() {
   return new Event('blur', {bubbles: true});
 }
-function keydown(which) {
+function keydown(which, other={}) {
   let event = new CustomEvent('keydown', {bubbles: true});
   event.which = which;
+  Object.assign(event, other);
   return event;
 }
 function dragstart() {
@@ -264,6 +265,30 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
         this.cm.getWrapperElement().dispatchEvent(keydown(8));
         expect(this.cm.getValue()).toBe(' 54');
+      });
+
+      it('should select the first node when tab is pressed', function() {
+        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
+      });
+
+      it('should select the next node when tab is pressed', function() {
+        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        expect(this.blocks.selectedNodes.has(this.literal)).toBe(false);
+        expect(this.blocks.selectedNodes.has(this.literal2)).toBe(true);
+      });
+
+      it('should select the last node when shift-tab is pressed', function() {
+        this.cm.getWrapperElement().dispatchEvent(keydown(9, {shiftKey:true}));
+        expect(this.blocks.selectedNodes.has(this.literal2)).toBe(true);
+      });
+
+      it('should select the previous node when shift-tab is pressed', function() {
+        this.cm.getWrapperElement().dispatchEvent(keydown(9, {shiftKey:true}));
+        this.cm.getWrapperElement().dispatchEvent(keydown(9, {shiftKey:true}));
+        expect(this.blocks.selectedNodes.has(this.literal2)).toBe(false);
+        expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
       });
 
       // for codemirror to capture key events, it must have focus. For Issue #8

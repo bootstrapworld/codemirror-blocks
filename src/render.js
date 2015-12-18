@@ -32,9 +32,14 @@ export function renderHTMLString(node) {
   return nodeEl;
 }
 
-export default function render(rootNode, cm, callback) {
+export default function render(rootNode, cm, options={}) {
   nodesInRenderOrder = [];
   var rootNodeFrag = createFragment(renderHTMLString(rootNode));
+  let hiddenTypes = null;
+  if (options.hideNodesOfType) {
+    hiddenTypes = new Set(options.hideNodesOfType);
+    console.log('hideNodesOfType',hiddenTypes);
+  }
   for (let node of nodesInRenderOrder) {
     node.el = rootNodeFrag.getElementById(`block-node-${node.id}`);
     if (!node.el) {
@@ -42,8 +47,8 @@ export default function render(rootNode, cm, callback) {
       continue;
     }
     node.el.draggable = true;
-    if (callback) {
-      callback(node);
+    if (hiddenTypes && hiddenTypes.has(node.type)) {
+      node.el.classList.add('blocks-hidden');
     }
   }
   cm.markText(rootNode.from, rootNode.to, {replacedWith: rootNodeFrag.firstChild.firstChild});

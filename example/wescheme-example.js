@@ -7,7 +7,6 @@ import WeschemeParser from '../src/parsers/wescheme';
 
 require('../src/less/example.less');
 require('./example-page.css');
-require('./wescheme.css');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
@@ -29,6 +28,7 @@ var blocks = new CodeMirrorBlocks(
   cm2,
   new WeschemeParser(),
   {
+    renderOptions:{hideNodesOfType: ['comment','functionDef','variableDef','struct']},
     willInsertNode(sourceNodeText, sourceNode, destination) {
       let line = cm2.getLine(destination.line);
       let prev = line[destination.ch - 1] || '\n';

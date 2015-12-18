@@ -53,11 +53,12 @@ export class BlockMarker {
 }
 
 export default class CodeMirrorBlocks {
-  constructor(cm, parser, {willInsertNode, didInsertNode} = {}) {
+  constructor(cm, parser, {willInsertNode, didInsertNode, renderOptions} = {}) {
     this.cm = cm;
     this.parser = parser;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
+    this.renderOptions = renderOptions;
     this.ast = null;
     this.blockMode = false;
     this.selectedNodes = new Set();
@@ -87,6 +88,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('drop', (cm, event) => dropHandler(event));
     this.cm.on('dragenter', (cm, event) => dragEnterHandler(event));
     this.cm.on('change', this.handleChange.bind(this));
+    this.cm.on('keydown', (cm, e) => this.handleKeyDown(e));
   }
 
   setBlockMode(mode) {
@@ -173,7 +175,7 @@ export default class CodeMirrorBlocks {
     this.selectedNodes.clear();
     this._clearMarks();
     for (let rootNode of this.ast.rootNodes) {
-      render(rootNode, this.cm);
+      render(rootNode, this.cm, this.renderOptions);
     }
   }
 
@@ -190,8 +192,32 @@ export default class CodeMirrorBlocks {
     this.selectedNodes.forEach(node => this.deselectNode(node, event));
     node.el.classList.add('blocks-selected');
     this.selectedNodes.add(node);
+    this.cm.scrollIntoView(node.from);
     // return focus back to codemirror so it continues capturing key event
     this.cm.focus();
+  }
+
+  isNodeHidden(node) {
+    return (node.el.classList.contains('blocks-hidden') ||
+      node.el.matches('.blocks-hidden *'));
+  }
+
+  selectNextNode(event) {
+    let selectedNode = this.selectedNodes.values().next().value;
+    let nextNode = this.ast.getNodeAfter(selectedNode);
+    while (this.isNodeHidden(nextNode)) {
+      nextNode = this.ast.getNodeAfter(nextNode);
+    }
+    this.selectNode(nextNode, event);
+  }
+
+  selectPrevNode(event) {
+    let selectedNode = this.selectedNodes.values().next().value;
+    let prevNode = this.ast.getNodeBefore(selectedNode);
+    while (this.isNodeHidden(prevNode)) {
+      prevNode = this.ast.getNodeBefore(prevNode);
+    }
+    this.selectNode(prevNode, event);
   }
 
   deselectNode(node, event) {
@@ -450,8 +476,19 @@ export default class CodeMirrorBlocks {
 
   handleKeyDown(event) {
     if (event.which == DELETE_KEY) {
+      if (this.selectedNodes.size) {
+        event.preventDefault();
+        this.deleteSelectedNodes();
+      }
+    } else if (event.which == TAB_KEY) {
       event.preventDefault();
-      this.deleteSelectedNodes();
+      event.stopPropagation();
+      event.codemirrorIgnore = true;
+      if (event.shiftKey) {
+        this.selectPrevNode(event);
+      } else {
+        this.selectNextNode(event);
+      }
     }
   }
 
