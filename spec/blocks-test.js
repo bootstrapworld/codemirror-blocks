@@ -1,5 +1,5 @@
 /* globals jasmine describe it expect beforeEach afterEach spyOn */
-import CodeMirrorBlocks from '../src/blocks';
+import CodeMirrorBlocks, {BlockMarker} from '../src/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from '../example/parser';
 var render = require('../src/render');
@@ -97,6 +97,81 @@ describe('The CodeMirrorBlocks Class', function() {
     });
   });
 
+  describe('text marking api,', function() {
+    beforeEach(function() {
+      this.cm.setValue('11 12 (+ 3 4 5)');
+      this.blocks.toggleBlockMode();
+      this.literal1 = this.blocks.ast.rootNodes[0];
+      this.literal2 = this.blocks.ast.rootNodes[1];
+      this.expression = this.blocks.ast.rootNodes[2];
+    });
+
+    it("should allow you to mark nodes with the markText method", function() {
+      this.blocks.markText(this.literal1.from, this.literal1.to, {css:"color: red"});
+      expect(this.literal1.el.style.color).toBe('red');
+    });
+
+    it("should return a BlockMarker object", function() {
+      let mark = this.blocks.markText(this.literal1.from, this.literal1.to, {css:"color: red"});
+      expect(mark).toEqual(jasmine.any(BlockMarker));
+    });
+
+    it("it should allow you to set a className value", function() {
+      this.blocks.markText(this.expression.from, this.expression.to, {className:"error"});
+      expect(this.expression.el.className).toMatch(/error/);
+    });
+
+    it("it should allow you to set a title value", function() {
+      this.blocks.markText(this.expression.from, this.expression.to, {title:"woot"});
+      expect(this.expression.el.title).toBe("woot");
+    });
+
+    describe("which provides some getters,", function() {
+      beforeEach(function() {
+        this.blocks.markText(this.literal1.from, this.literal1.to, {css:"color: red"});
+        this.blocks.markText(this.expression.from, this.expression.to, {title:"woot"});
+      });
+
+      it("should return marks with findMarks", function() {
+        let marks = this.blocks.findMarks(this.literal1.from, this.literal1.to);
+        expect(marks.length).toBe(1);
+
+        marks = this.blocks.findMarks(this.literal1.from, this.expression.to);
+        expect(marks.length).toBe(2);
+      });
+
+      it("should return marks with findMarksAt", function() {
+        let marks = this.blocks.findMarksAt(this.literal1.from, this.literal1.to);
+        expect(marks.length).toBe(1);
+      });
+
+      it("should return all marks with getAllMarks", function() {
+        let marks = this.blocks.getAllMarks();
+        expect(marks.length).toBe(2);
+      });
+    });
+
+    describe("which spits out BlockMarker objects,", function() {
+      beforeEach(function() {
+        this.mark = this.blocks.markText(
+          this.literal1.from, this.literal1.to, {css:"color: red"}
+        );
+      });
+
+      it("should expose a clear function to remove the mark", function() {
+        this.mark.clear();
+        expect(this.literal1.el.style.color).toBeFalsy();
+        expect(this.blocks.getAllMarks().length).toBe(0);
+      });
+
+      it("should expose a find function", function() {
+        expect(this.mark.find().from.line).toEqual(this.literal1.from.line);
+        expect(this.mark.find().from.ch).toEqual(this.literal1.from.ch);
+        expect(this.mark.find().to.line).toEqual(this.literal1.to.line);
+        expect(this.mark.find().to.ch).toEqual(this.literal1.to.ch);
+      });
+    });
+  });
 
   describe('renderer,', function() {
 
@@ -204,7 +279,6 @@ describe('The CodeMirrorBlocks Class', function() {
         });
 
         it('should remove selected nodes on cut', function() {
-          console.log(this.blocks.ast);
           document.dispatchEvent(cut());
           expect(this.cm.getValue()).toBe(' 54');
           expect(document.execCommand).toHaveBeenCalledWith('cut');

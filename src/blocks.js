@@ -28,6 +28,30 @@ function findNearestNodeEl(el) {
   return el;
 }
 
+const MARKER = Symbol("codemirror-blocks-marker");
+
+export class BlockMarker {
+  constructor(cmMarker, options){
+    this.cmMarker = cmMarker;
+    this.options = options;
+  }
+  clear() {
+    if (this.options.css) {
+      this.cmMarker.replacedWith.style.cssText = '';
+    }
+    if (this.options.title) {
+      this.cmMarker.replacedWith.title = '';
+    }
+    if (this.options.className) {
+      this.cmMarker.replacedWith.classList.remove(this.options.className);
+    }
+    delete this.cmMarker[MARKER];
+  }
+  find() {
+    return this.cmMarker.find();
+  }
+}
+
 export default class CodeMirrorBlocks {
   constructor(cm, parser, {willInsertNode, didInsertNode} = {}) {
     this.cm = cm;
@@ -85,6 +109,56 @@ export default class CodeMirrorBlocks {
     if (this.blockMode) {
       this.render();
     }
+  }
+
+  markText(from, to, options) {
+    let supportedOptions = new Set(['css','className','title']);
+    let hasOptions = false;
+    for (let option in options) {
+      hasOptions = true;
+      if (!supportedOptions.has(option)) {
+        throw new Error(`option "${option}" is not supported by markText`);
+      }
+    }
+
+    if (!hasOptions) {
+      return; // noop
+    }
+
+    let marks = this.cm.findMarks(from, to);
+    for (let mark of marks) {
+      if (mark.replacedWith && mark.replacedWith.classList.contains('blocks-node')) {
+        if (options.css) {
+          mark.replacedWith.style.cssText = options.css;
+        }
+        if (options.className) {
+          mark.replacedWith.className += ' '+options.className;
+        }
+        if (options.title) {
+          mark.replacedWith.title = options.title;
+        }
+        mark[MARKER] = new BlockMarker(mark, options);
+        return mark[MARKER]; // we should only find one that is a blocks-node
+      }
+    }
+    // didn't find a codemirror mark, just pass through.
+    this.cm.markText(from, to, options);
+  }
+
+  findMarks(from, to) {
+    return this.cm.findMarks(from, to)
+               .filter(mark => mark[MARKER])
+               .map(mark => mark[MARKER]);
+  }
+  findMarksAt(pos) {
+    return this.cm.findMarksAt(pos)
+               .filter(mark => mark[MARKER])
+               .map(mark => mark[MARKER]);
+  }
+  getAllMarks() {
+    return this.cm.getAllMarks()
+               .filter(mark => mark[MARKER])
+               .map(mark => mark[MARKER]);
   }
 
   _clearMarks() {
