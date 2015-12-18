@@ -38,7 +38,6 @@ export default function render(rootNode, cm, options={}) {
   let hiddenTypes = null;
   if (options.hideNodesOfType) {
     hiddenTypes = new Set(options.hideNodesOfType);
-    console.log('hideNodesOfType',hiddenTypes);
   }
   for (let node of nodesInRenderOrder) {
     node.el = rootNodeFrag.getElementById(`block-node-${node.id}`);
