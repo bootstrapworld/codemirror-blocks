@@ -45,6 +45,8 @@
   background: black;
   color: white;
 
+  .blocks-literal {color: white;}
+
   > .blocks-expression{
     box-shadow: 0px 0px 10px 1px white;
   }
@@ -56,14 +58,14 @@
   flex-grow: 1;
   background: #eee;
 }
-
 .blocks-name,
 .blocks-literal {
   display: inline-block;
   color: black;
   border-radius: 5px;
-  padding: 5px;
+  padding: 2px;
   border: @border-width solid transparent;
+  min-width: 10px;
 
   &.blocks-editing {
     border-color: @editing-border-color;
@@ -123,6 +125,8 @@
   border: @border-width solid transparent;
   font-weight: bold;
   border-radius: @border-radius;
+  margin-left: auto;
+  margin-right: auto;
 
   &:hover {
     background-color: @hover-drop-background-color;
