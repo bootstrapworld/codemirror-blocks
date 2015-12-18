@@ -175,7 +175,7 @@ export default class CodeMirrorBlocks {
     this.selectedNodes.clear();
     this._clearMarks();
     for (let rootNode of this.ast.rootNodes) {
-      render(rootNode, this.cm, this.renderOptions);
+      render(rootNode, this.cm, this.renderOptions || {});
     }
   }
 
