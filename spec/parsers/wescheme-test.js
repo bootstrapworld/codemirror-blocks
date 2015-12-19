@@ -37,6 +37,12 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].func.dataType).toBe('symbol');
     });
 
+    it("should support empty expressions", function() {
+      this.ast = this.parser.parse('()');
+      expect(this.ast.rootNodes[0].type).toBe('expression');
+      expect(this.ast.rootNodes[0].func).toBe(null);
+    });
+
   });
 
   describe("when parsing andExpressions and orExpression,", function() {

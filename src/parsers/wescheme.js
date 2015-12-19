@@ -39,9 +39,9 @@ function parseNode(node) {
     return new Expression(
       from,
       to,
-      parseNode(node.func),
+      node.func ? parseNode(node.func) : null,
       node.args.map(parseNode).filter(item => item !== null),
-      {'aria-label': expressionAria(node.func.stx, node.args.length)}
+      {'aria-label': expressionAria(node.func ? node.func.stx : 'empty', node.args.length)}
     );
   } else if (node instanceof structures.andExpr) {
     return new Expression(
