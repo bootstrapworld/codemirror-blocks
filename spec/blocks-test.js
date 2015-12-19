@@ -77,13 +77,6 @@ describe('The CodeMirrorBlocks Class', function() {
     );
   });
 
-  beforeEach(function() {
-    jasmine.clock().install();
-  });
-  afterEach(function() {
-    jasmine.clock().uninstall();
-  });
-
   describe('constructor,', function() {
 
     it("should take a codemirror instance and a parser instance", function() {
