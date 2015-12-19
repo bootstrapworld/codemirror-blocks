@@ -284,11 +284,11 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.getSelectedNode()).toBe(this.literal);
       });
 
-      // for codemirror to capture key events, it must have focus. For Issue #8
       it('should proxy keydown events on the selected node to codemirror', function() {
         spyOn(this.cm, 'execCommand');
         this.literal.el.dispatchEvent(click());
-        let event = keydown(90, {metaKey: true}); // Command-z: undo
+        let event = keydown(90, {ctrlKey: true}); // Ctrl-z: undo
+        CodeMirror.keyMap['default']["Ctrl-Z"] = "undo";
         expect(CodeMirror.keyMap['default'][CodeMirror.keyName(event)]).toBe('undo');
         this.literal.el.dispatchEvent(event);
         expect(this.cm.execCommand).toHaveBeenCalledWith('undo');
