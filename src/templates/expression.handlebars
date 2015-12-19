@@ -4,7 +4,7 @@
   {{#if node.args.length}}
   {{> drop-target location=node.args.[0].from}}
   {{else}}
-  {{> drop-target location=node.to}}
+  {{> drop-target location=node.func.to}}
   {{/if}}
   {{#each node.args}}
   {{{renderNode this ../cm ../callback}}}

@@ -36,10 +36,22 @@ function parseNode(node) {
   };
 
   if (node instanceof structures.callExpr) {
+
+    let func;
+    if (node.func) {
+      func = parseNode(node.func);
+    } else {
+      func = new Literal(
+        {line: from.line, ch: from.ch+1},
+        {line: from.line, ch: from.ch+1},
+        ' ',
+        'placeholder'
+      );
+    }
     return new Expression(
       from,
       to,
-      node.func ? parseNode(node.func) : null,
+      func,
       node.args.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria(node.func ? node.func.stx : 'empty', node.args.length)}
     );

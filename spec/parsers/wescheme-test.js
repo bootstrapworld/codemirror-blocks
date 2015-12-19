@@ -37,10 +37,11 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].func.dataType).toBe('symbol');
     });
 
-    it("should support empty expressions", function() {
+    it("should support empty expressions by generating a placeholder literal", function() {
       this.ast = this.parser.parse('()');
       expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func).toBe(null);
+      expect(this.ast.rootNodes[0].func.value).toBe(' ');
+      expect(this.ast.rootNodes[0].func.dataType).toBe('placeholder');
     });
 
   });
