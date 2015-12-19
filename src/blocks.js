@@ -1,8 +1,5 @@
 import render from './render';
-
-const RETURN_KEY = 13;
-const TAB_KEY = 9;
-const DELETE_KEY = 8;
+import CodeMirror from 'codemirror';
 
 function getLocationFromEl(el) {
   // TODO: it's kind of lame to have line and ch as attributes on random elements.
@@ -61,12 +58,15 @@ export default class CodeMirrorBlocks {
     this.renderOptions = renderOptions;
     this.ast = null;
     this.blockMode = false;
-    this.selectedNodes = new Set();
+    this.undoKeys = [];
+    this.redoKeys = [];
+    this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
+
     Object.assign(
       this.cm.getWrapperElement(),
       {
         onkeydown: this.handleKeyDown.bind(this),
-        onclick: this.nodeEventHandler(this.toggleSelectNode),
+        onclick: this.nodeEventHandler(this.selectNode),
         ondblclick: this.nodeEventHandler({
           literal: this.editLiteral,
           whitespace: this.editWhiteSpace
@@ -172,29 +172,20 @@ export default class CodeMirrorBlocks {
 
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
-    this.selectedNodes.clear();
     this._clearMarks();
     for (let rootNode of this.ast.rootNodes) {
       render(rootNode, this.cm, this.renderOptions || {});
     }
   }
 
-  toggleSelectNode(node, event) {
-    if (this.selectedNodes.has(node)) {
-      this.deselectNode(node, event);
-    } else {
-      this.selectNode(node, event);
-    }
+  getSelectedNode() {
+    return this.findNodeFromEl(document.activeElement);
   }
 
   selectNode(node, event) {
     event.stopPropagation();
-    this.selectedNodes.forEach(node => this.deselectNode(node, event));
-    node.el.classList.add('blocks-selected');
-    this.selectedNodes.add(node);
+    node.el.focus();
     this.cm.scrollIntoView(node.from);
-    // return focus back to codemirror so it continues capturing key event
-    this.cm.focus();
   }
 
   isNodeHidden(node) {
@@ -203,8 +194,7 @@ export default class CodeMirrorBlocks {
   }
 
   selectNextNode(event) {
-    let selectedNode = this.selectedNodes.values().next().value;
-    let nextNode = this.ast.getNodeAfter(selectedNode);
+    let nextNode = this.ast.getNodeAfter(this.getSelectedNode());
     while (this.isNodeHidden(nextNode)) {
       nextNode = this.ast.getNodeAfter(nextNode);
     }
@@ -212,26 +202,19 @@ export default class CodeMirrorBlocks {
   }
 
   selectPrevNode(event) {
-    let selectedNode = this.selectedNodes.values().next().value;
-    let prevNode = this.ast.getNodeBefore(selectedNode);
+    let prevNode = this.ast.getNodeBefore(this.getSelectedNode());
     while (this.isNodeHidden(prevNode)) {
       prevNode = this.ast.getNodeBefore(prevNode);
     }
     this.selectNode(prevNode, event);
   }
 
-  deselectNode(node, event) {
-    event.stopPropagation();
-    node.el.classList.remove('blocks-selected');
-    this.selectedNodes.delete(node);
-  }
-
   handleCopyCut(event) {
     var activeEl = document.activeElement;
-    if (this.selectedNodes.size == 0) {
+    if (!this.getSelectedNode()) {
       return;
     }
-    var node = this.selectedNodes.values().next().value;
+    var node = this.getSelectedNode();
     event.stopPropagation();
     var buffer = document.createElement('textarea');
     document.body.appendChild(buffer);
@@ -300,7 +283,8 @@ export default class CodeMirrorBlocks {
     whiteSpaceEl.onkeydown = function(e) {
       e.stopPropagation();
       e.codemirrorIgnore = true;
-      if (e.which == RETURN_KEY || e.which == TAB_KEY) {
+      let keyName = CodeMirror.keyName(e);
+      if (keyName == "Enter" || keyName == "Tab") {
         e.preventDefault();
         whiteSpaceEl.blur();
       }
@@ -327,7 +311,8 @@ export default class CodeMirrorBlocks {
     node.el.onkeydown = function(e) {
       e.stopPropagation();
       e.codemirrorIgnore = true;
-      if (e.which == RETURN_KEY || e.which == TAB_KEY) {
+      let keyName = CodeMirror.keyName(e);
+      if (keyName == "Enter" || keyName == "Tab") {
         e.preventDefault();
         node.el.blur();
       }
@@ -340,13 +325,10 @@ export default class CodeMirrorBlocks {
   }
 
   deleteSelectedNodes() {
-    let nodes = [...this.selectedNodes];
-    nodes.sort((a,b) => this.cm.indexFromPos(b.from) - this.cm.indexFromPos(a.from));
-    this.cm.operation(() => {
-      for (let node of nodes) {
-        this.cm.replaceRange('', node.from, node.to);
-      }
-    });
+    let node = this.getSelectedNode();
+    if (node) {
+      this.cm.replaceRange('', node.from, node.to);
+    }
   }
 
   startDraggingNode(node, event) {
@@ -475,20 +457,29 @@ export default class CodeMirrorBlocks {
   }
 
   handleKeyDown(event) {
-    if (event.which == DELETE_KEY) {
-      if (this.selectedNodes.size) {
-        event.preventDefault();
+    let keyName = CodeMirror.keyName(event);
+    let capture = true;
+    if (keyName == "Backspace") {
+      if (this.getSelectedNode()) {
         this.deleteSelectedNodes();
       }
-    } else if (event.which == TAB_KEY) {
+    } else if (keyName == "Tab") {
+      this.selectNextNode(event);
+    } else if (keyName == "Shift-Tab") {
+      this.selectPrevNode(event);
+    } else {
+      let command = this.keyMap[keyName];
+      if (typeof command == "string") {
+        this.cm.execCommand(command);
+      } else if (typeof command == "function") {
+        command(this.cm);
+      } else {
+        capture = false;
+      }
+    }
+    if (capture) {
       event.preventDefault();
       event.stopPropagation();
-      event.codemirrorIgnore = true;
-      if (event.shiftKey) {
-        this.selectPrevNode(event);
-      } else {
-        this.selectNextNode(event);
-      }
     }
   }
 

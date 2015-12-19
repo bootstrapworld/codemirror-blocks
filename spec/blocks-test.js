@@ -13,9 +13,9 @@ function dblclick() {
 function blur() {
   return new Event('blur', {bubbles: true});
 }
-function keydown(which, other={}) {
+function keydown(keyCode, other={}) {
   let event = new CustomEvent('keydown', {bubbles: true});
-  event.which = which;
+  event.which = event.keyCode = keyCode;
   Object.assign(event, other);
   return event;
 }
@@ -247,56 +247,58 @@ describe('The CodeMirrorBlocks Class', function() {
         this.literal2 = this.blocks.ast.rootNodes[1];
       });
 
-      it('should toggle node selection on click', function() {
-        this.literal.el.dispatchEvent(click());
-        expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
-        this.literal.el.dispatchEvent(click());
-        expect(this.blocks.selectedNodes.has(this.literal)).toBe(false);
-      });
-
       it('should only allow one node to be selected at a time', function() {
         this.literal.el.dispatchEvent(click());
         this.literal2.el.dispatchEvent(click());
-        expect(this.blocks.selectedNodes.has(this.literal)).toBe(false);
-        expect(this.blocks.selectedNodes.has(this.literal2)).toBe(true);
+        expect(this.blocks.getSelectedNode()).not.toBe(this.literal);
+        expect(this.blocks.getSelectedNode()).toBe(this.literal2);
+      });
+
+      it('should put focus on the selected node', function() {
+        this.literal.el.dispatchEvent(click());
+        expect(document.activeElement).toBe(this.literal.el);
       });
 
       it('should delete selected nodes when the delete key is pressed', function() {
         expect(this.cm.getValue()).toBe('11 54');
         this.literal.el.dispatchEvent(click());
-        expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
+        expect(this.blocks.getSelectedNode()).toBe(this.literal);
         this.cm.getWrapperElement().dispatchEvent(keydown(8));
         expect(this.cm.getValue()).toBe(' 54');
       });
 
       it('should select the first node when tab is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
-        expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
+        expect(this.blocks.getSelectedNode()).toBe(this.literal);
       });
 
       it('should select the next node when tab is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
-        expect(this.blocks.selectedNodes.has(this.literal)).toBe(false);
-        expect(this.blocks.selectedNodes.has(this.literal2)).toBe(true);
+        expect(this.blocks.getSelectedNode()).not.toBe(this.literal);
+        expect(this.blocks.getSelectedNode()).toBe(this.literal2);
       });
 
       it('should select the last node when shift-tab is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(9, {shiftKey:true}));
-        expect(this.blocks.selectedNodes.has(this.literal2)).toBe(true);
+        expect(this.blocks.getSelectedNode()).toBe(this.literal2);
       });
 
       it('should select the previous node when shift-tab is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(9, {shiftKey:true}));
         this.cm.getWrapperElement().dispatchEvent(keydown(9, {shiftKey:true}));
-        expect(this.blocks.selectedNodes.has(this.literal2)).toBe(false);
-        expect(this.blocks.selectedNodes.has(this.literal)).toBe(true);
+        expect(this.blocks.getSelectedNode()).not.toBe(this.literal2);
+        expect(this.blocks.getSelectedNode()).toBe(this.literal);
       });
 
       // for codemirror to capture key events, it must have focus. For Issue #8
-      it('should maintain focus on the codemirror instance', function() {
+      it('should proxy keydown events on the selected node to codemirror', function() {
+        spyOn(this.cm, 'execCommand');
         this.literal.el.dispatchEvent(click());
-        expect(this.cm.hasFocus()).toBe(true);
+        let event = keydown(90, {metaKey: true}); // Command-z: undo
+        expect(CodeMirror.keyMap['default'][CodeMirror.keyName(event)]).toBe('undo');
+        this.literal.el.dispatchEvent(event);
+        expect(this.cm.execCommand).toHaveBeenCalledWith('undo');
       });
 
       describe('cut/copy', function() {
