@@ -11,14 +11,14 @@ require('./example-page.css');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
-  {theme:'3024-day'},
-  {autoCloseBrackets: true}
+  {theme:'3024-day',
+   autoCloseBrackets: true}
 );
 
 var cm2 = CodeMirror.fromTextArea(
   document.getElementById('code2'),
-  {theme:'3024-day'},
-  {autoCloseBrackets: true}
+  {theme:'3024-day',
+   autoCloseBrackets: true}
 );
 
 var code = require('./ast-test.rkt');
