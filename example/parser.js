@@ -112,6 +112,10 @@ export default class Parser {
     return token;
   }
 
+  lex(code) {
+    return this.parse(code);
+  }
+
   parse(code) {
     this.code = code;
     this.charIndex = 0;
