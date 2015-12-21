@@ -2,6 +2,7 @@ import 'babel-polyfill';
 import CodeMirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
+import 'codemirror/addon/edit/closebrackets.js';
 import CodeMirrorBlocks from '../src/blocks';
 import WeschemeParser from '../src/parsers/wescheme';
 
@@ -10,12 +11,14 @@ require('./example-page.css');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
-  {theme:'3024-day'}
+  {theme:'3024-day'},
+  {autoCloseBrackets: true}
 );
 
 var cm2 = CodeMirror.fromTextArea(
   document.getElementById('code2'),
-  {theme:'3024-day'}
+  {theme:'3024-day'},
+  {autoCloseBrackets: true}
 );
 
 var code = require('./ast-test.rkt');
