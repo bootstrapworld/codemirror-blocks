@@ -71,6 +71,26 @@ class ASTNode {
   }
 }
 
+export class Unknown extends ASTNode {
+  constructor(from, to, elts, options={}) {
+    super(from, to, 'unknown', options);
+    this.elts = elts;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    for (let elt of this.elts) {
+      for (let node of elt) {
+        yield node;
+      }
+    }
+  }
+
+  toString() {
+    return `(${this.func} ${this.args.join(' ')})`;
+  }
+}
+
 export class Expression extends ASTNode {
   constructor(from, to, func, args, options={}) {
     super(from, to, 'expression', options);

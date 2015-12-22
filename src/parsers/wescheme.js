@@ -5,7 +5,8 @@ import {
   Struct,
   FunctionDefinition,
   Comment,
-  VariableDefinition
+  VariableDefinition,
+  Unknown
 } from '../ast';
 
 try {
@@ -120,6 +121,8 @@ function parseNode(node) {
     return new Literal(from, to, node, dataType, {'aria-label':aria});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
+  } else if (node instanceof structures.unsupportedExpr) {
+    return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null), {msg: node.errorMsg});
   }
   console.log("!! No translator for", node);
   return null;
@@ -134,14 +137,8 @@ class Parser {
   parse(code) {
 
     function fallback(sexp){
-      let guess;
-      if(sexp instanceof Array){
-        let func = parse(sexp[0]), args = parseStar(rest(sexp));
-        args.location = sexp.location;
-        guess = new structures.callExpr(func, args);
-      } else {
-        guess = parseExprSingleton(sexp);
-      }
+      var elts  = (sexp instanceof Array)? parseStar(sexp) : [parseExprSingleton(sexp)];
+      var guess = new structures.unsupportedExpr(elts, "Parse error");
       guess.location = sexp.location;
       return guess;
     }

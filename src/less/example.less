@@ -21,7 +21,8 @@
 .blocks-struct,
 .blocks-functionDef,
 .blocks-variableDef,
-.blocks-expression {
+.blocks-expression,
+.blocks-unknown {
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
@@ -144,7 +145,7 @@
   }
 
 }
-
+.blocks-unknown { opacity: 0.5; }
 .blocks-comment {
   color: @comment-color;
   font-style: italic;

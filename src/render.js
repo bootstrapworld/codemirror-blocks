@@ -7,6 +7,7 @@ function createFragment(htmlStr) {
 }
 
 export var nodes = {
+  unknown: require('./templates/unknown.handlebars'),
   expression: require('./templates/expression.handlebars'),
   functionDef: require('./templates/functionDef.handlebars'),
   variableDef: require('./templates/variableDef.handlebars'),

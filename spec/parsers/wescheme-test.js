@@ -126,133 +126,139 @@ describe("The WeScheme Parser,", function() {
 
     it("parse malformed defVar (define a)", function() {
       this.ast = this.parser.parse("(define a)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('define');
-      expect(this.ast.rootNodes[0].args.length).toBe(1);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('a');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('define');
+      expect(this.ast.rootNodes[0].elts.length).toBe(2);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
     });
 
     it("parse malformed defFun (define (a)", function() {
       this.ast = this.parser.parse("(define (a))");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('define');
-      expect(this.ast.rootNodes[0].args.length).toBe(1);
-      expect(this.ast.rootNodes[0].args[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].args[0].func.value).toBe('a');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('define');
+      expect(this.ast.rootNodes[0].elts.length).toBe(2);
+      expect(this.ast.rootNodes[0].elts[1].type).toBe('expression');
+      expect(this.ast.rootNodes[0].elts[1].func.value).toBe('a');
     });
 
     it("parse malformed defStruct (define-struct a (a b c) d)", function() {
       this.ast = this.parser.parse("(define-struct a (a b c) d)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('define-struct');
-      expect(this.ast.rootNodes[0].args.length).toBe(3);
-      expect(this.ast.rootNodes[0].args[0].type).toBe('literal');
-      expect(this.ast.rootNodes[0].args[1].type).toBe('expression');
-      expect(this.ast.rootNodes[0].args[2].value).toBe('d');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('define-struct');
+      expect(this.ast.rootNodes[0].elts.length).toBe(4);
+      expect(this.ast.rootNodes[0].elts[1].type).toBe('literal');
+      expect(this.ast.rootNodes[0].elts[2].type).toBe('expression');
+      expect(this.ast.rootNodes[0].elts[3].value).toBe('d');
     });
 
     it("parse malformed ifExpression (if)", function() {
       this.ast = this.parser.parse("(if)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('if');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('if');
     });
 
     it("parse malformed ifExpression (if a)", function() {
       this.ast = this.parser.parse("(if a)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('if');
-      expect(this.ast.rootNodes[0].args.length).toBe(1);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('a');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].type).toBe('literal');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('if');
+      expect(this.ast.rootNodes[0].elts.length).toBe(2);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
     });
 
     it("parse malformed ifExpression (if a b)", function() {
       this.ast = this.parser.parse("(if a b)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('if');
-      expect(this.ast.rootNodes[0].args.length).toBe(2);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('a');
-      expect(this.ast.rootNodes[0].args[1].value).toBe('b');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].type).toBe('literal');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('if');
+      expect(this.ast.rootNodes[0].elts.length).toBe(3);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
+      expect(this.ast.rootNodes[0].elts[2].value).toBe('b');
     });
 
     it("parse malformed condExpression (cond)", function() {
       this.ast = this.parser.parse("(cond)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('cond');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].type).toBe('literal');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('cond');
     });
 
     it("parse malformed condExpression (cond (a))", function() {
       this.ast = this.parser.parse("(cond (a))");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('cond');
-      expect(this.ast.rootNodes[0].args[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].args[0].func.value).toBe('a');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].type).toBe('literal');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('cond');
+      expect(this.ast.rootNodes[0].elts[1].type).toBe('expression');
+      expect(this.ast.rootNodes[0].elts[1].func.value).toBe('a');
     });
 
     it("parse malformed andExpression (and)", function() {
       this.ast = this.parser.parse("(and)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('and');
-      expect(this.ast.rootNodes[0].args.length).toBe(0);
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('and');
+      expect(this.ast.rootNodes[0].elts.length).toBe(1);
     });
 
-    it("parse malformed andExpression (or a)", function() {
+    it("parse malformed orExpression (or a)", function() {
       this.ast = this.parser.parse("(or a)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('or');
-      expect(this.ast.rootNodes[0].args.length).toBe(1);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('a');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].type).toBe('literal');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('or');
+      expect(this.ast.rootNodes[0].elts.length).toBe(2);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
     });
 
     it("parse malformed lambdaExpression (lambda a b)", function() {
       this.ast = this.parser.parse("(lambda a b)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('lambda');
-      expect(this.ast.rootNodes[0].args.length).toBe(2);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('a');
-      expect(this.ast.rootNodes[0].args[1].value).toBe('b');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].type).toBe('literal');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('lambda');
+      expect(this.ast.rootNodes[0].elts.length).toBe(3);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
+      expect(this.ast.rootNodes[0].elts[2].value).toBe('b');
     });
 
     it("parse malformed localExpression (local a b)", function() {
       this.ast = this.parser.parse("(local a b)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('local');
-      expect(this.ast.rootNodes[0].args.length).toBe(2);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('a');
-      expect(this.ast.rootNodes[0].args[1].value).toBe('b');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('local');
+      expect(this.ast.rootNodes[0].elts.length).toBe(3);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
+      expect(this.ast.rootNodes[0].elts[2].value).toBe('b');
     });
 
     it("parse malformed letrecExpression (letrec a b)", function() {
       this.ast = this.parser.parse("(letrec a b)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('letrec');
-      expect(this.ast.rootNodes[0].args.length).toBe(2);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('a');
-      expect(this.ast.rootNodes[0].args[1].value).toBe('b');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('letrec');
+      expect(this.ast.rootNodes[0].elts.length).toBe(3);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
+      expect(this.ast.rootNodes[0].elts[2].value).toBe('b');
     });
 
     it("parse malformed letExpression (let a b)", function() {
       this.ast = this.parser.parse("(let a b)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('let');
-      expect(this.ast.rootNodes[0].args.length).toBe(2);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('a');
-      expect(this.ast.rootNodes[0].args[1].value).toBe('b');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('let');
+      expect(this.ast.rootNodes[0].elts.length).toBe(3);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
+      expect(this.ast.rootNodes[0].elts[2].value).toBe('b');
     });
 
     it("parse malformed letStarExpression (let* a b)", function() {
       this.ast = this.parser.parse("(let* a b)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('let*');
-      expect(this.ast.rootNodes[0].args.length).toBe(2);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('a');
-      expect(this.ast.rootNodes[0].args[1].value).toBe('b');
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('let*');
+      expect(this.ast.rootNodes[0].elts.length).toBe(3);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
+      expect(this.ast.rootNodes[0].elts[2].value).toBe('b');
     });
 
     it("parse malformed beginExpression (begin)", function() {
       this.ast = this.parser.parse("(begin)");
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].func.value).toBe('begin');
-      expect(this.ast.rootNodes[0].args.length).toBe(0);
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('begin');
+      expect(this.ast.rootNodes[0].elts.length).toBe(1);
     });
 
   });
