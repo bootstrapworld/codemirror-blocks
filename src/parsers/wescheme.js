@@ -357,15 +357,7 @@ class Parser {
             : /* else */ parseExprSingleton(sexp);
         }
         // quote must have exactly one argument
-        if (sexp.length < 2) {
-          return fallback(sexp);
-        }
-        if (sexp.length > 2) {
-          var extraLocs = sexp.slice(1).map(function(sexp) {
-            return sexp.location;
-          });
-          return fallback(sexp);
-        }
+        if (sexp.length !== 2) { return fallback(sexp); }
         return new structures.quotedExpr(parseQuotedItem(sexp[1]));
       }
 
@@ -506,7 +498,7 @@ class Parser {
       var result;
       if ((typeof depth === 'undefined')
         || (sexp.length !== 2)){ 
-          return fallback(sexp);
+        return fallback(sexp);
       } else if (depth === 1) {
         result = new structures.unquotedExpr(parseExpr(sexp[1]));
         result.location = sexp[1].location;
@@ -636,7 +628,7 @@ class Parser {
       if ((sexp[1] instanceof Array) && isSymbolEqualTo(sexp[1][0], "lib")) {
         if ((sexp[1].length < 3)                // is it (require (lib)) or (require (lib <string>))
           || !rest(sexp[1]).every(isString)) {  // is it (require (lib not-strings))?
-        return fallback(sexp); 
+          return fallback(sexp); 
         } 
       } else if (((sexp[1] instanceof Array) && isSymbolEqualTo(sexp[1][0], "planet"))
                || (!(isSymbol(sexp[1]) || isString(sexp[1])))) { 
