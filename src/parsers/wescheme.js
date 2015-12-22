@@ -12,7 +12,6 @@ try {
   var lex = require('wescheme-js/src/lex').lex;
   var types = require('wescheme-js/src/runtime/types');
   var structures = require('wescheme-js/src/structures');
-  var throwError = structures.throwError;
 }  catch (e) {
   console.error('wescheme-js, which is required to use the wescheme blocks parser, does not appear to be installed.', e);
 }
@@ -137,7 +136,7 @@ class Parser {
     function fallback(sexp){
       let guess;
       if(sexp instanceof Array){
-        let func = parse(sexp[0]), args = parseStar(sexp.slice(1));
+        let func = parse(sexp[0]), args = parseStar(rest(sexp));
         args.location = sexp.location;
         guess = new structures.callExpr(func, args);
       } else {
@@ -166,6 +165,8 @@ class Parser {
       return x === y;
     }
 
+    function throwError(msg){ throw msg; }
+
 
     // PARSING ///////////////////////////////////////////
 
@@ -177,8 +178,7 @@ class Parser {
               isExpr(sexp) ? parseExpr(sexp) :
               isRequire(sexp) ? parseRequire(sexp) :
               isProvide(sexp) ? parseProvide(sexp) :
-              throwError(new types.Message(["Not a Definition, Expression, Library Require, or Provide"]),
-                         sexp.location);
+              throwError("ASSERTION: Something was lexed that is not in the language:\n " + sexp.toString);
       }
       return sexps.map(parseSExp);
     }
@@ -361,15 +361,13 @@ class Parser {
         }
         // quote must have exactly one argument
         if (sexp.length < 2) {
-          throwError(new types.Message([new types.ColoredPart(sexp[0].val, sexp[0].location), ": expected a single argument, but did not find one."]),
-            sexp.location);
+          return fallback(sexp);
         }
         if (sexp.length > 2) {
           var extraLocs = sexp.slice(1).map(function(sexp) {
             return sexp.location;
           });
-          throwError(new types.Message([new types.ColoredPart(sexp[0].val, sexp[0].location), ": expected a single argument, but found ", new types.MultiPart("more than one.", extraLocs, false)]),
-            sexp.location);
+          return fallback(sexp);
         }
         return new structures.quotedExpr(parseQuotedItem(sexp[1]));
       }
@@ -521,7 +519,7 @@ class Parser {
         result.location = sexp[1].location;
         return result;
       } else {
-        throwError(new types.Message(["ASSERTION FAILURE: depth should have been undefined, or a natural number"]), sexp.location);
+        throw "ASSERTION FAILURE: depth should have been undefined, or a natural number";
       }
     }
 
@@ -539,7 +537,7 @@ class Parser {
         result.location = sexp[1].location;
         return result;
       } else {
-        throwError(new types.Message(["ASSERTION FAILURE: depth should have been undefined, or a natural number"]), sexp.location);
+        throw "ASSERTION FAILURE: depth should have been undefined, or a natural number";
       }
     }
 
@@ -626,7 +624,7 @@ class Parser {
     }
 
     function parseIdExpr(sexp) {
-      return isSymbol(sexp) ? sexp : throwError(new types.Message(["ID"]), sexp.location);
+      return isSymbol(sexp) ? sexp : fallback(sexp);
     }
 
     function sexpIsCouple(sexp) { return ((isCons(sexp)) && ((sexp.length === 2))); }
