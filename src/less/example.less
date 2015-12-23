@@ -145,7 +145,11 @@
   }
 
 }
-.blocks-unknown { opacity: 0.5; }
+.blocks-unknown { 
+  border-width: 1px;
+  >.blocks-operator{ background: rgba(0,0,0,0.5); }
+  >.blocks-args    { background: rgba(255,190,190,0.5); }
+}
 .blocks-comment {
   color: @comment-color;
   font-style: italic;
