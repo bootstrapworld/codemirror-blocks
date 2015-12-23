@@ -293,6 +293,13 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.getSelectedNode()).toBe(this.literal);
       });
 
+      it('should toggle the editability of selected node when Enter is pressed', function() {
+        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        expect(this.blocks.getSelectedNode()).toBe(this.literal);
+        this.literal.el.dispatchEvent(keydown(13));
+        expect(this.literal.el.contentEditable).toBe('true');
+      });
+
       it('should proxy keydown events on the selected node to codemirror', function() {
         spyOn(this.cm, 'execCommand');
         this.literal.el.dispatchEvent(click());

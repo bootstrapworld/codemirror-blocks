@@ -460,6 +460,8 @@ export default class CodeMirrorBlocks {
       this.selectNextNode(event);
     } else if (keyName == "Shift-Tab") {
       this.selectPrevNode(event);
+    } else if (keyName == "Enter") {
+      this.editLiteral(this.getSelectedNode(), event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
