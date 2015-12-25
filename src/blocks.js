@@ -89,6 +89,12 @@ export default class CodeMirrorBlocks {
     this.cm.on('dragenter', (cm, event) => dragEnterHandler(event));
     this.cm.on('change', this.handleChange.bind(this));
     this.cm.on('keydown', (cm, e) => this.handleKeyDown(e));
+    this.cm.on('paste', (cm, e) => this.insertionQuarantine(e));
+  }
+
+  findNodeFromPos(pos) {
+    var marks = this.findMarksAt(pos);
+    console.log(marks);
   }
 
   setBlockMode(mode) {
@@ -265,6 +271,9 @@ export default class CodeMirrorBlocks {
     event.preventDefault();
     if (this.checkEditableEl(nodeEl, nodeEl.innerText, node)) {
       this.saveEditableEl(nodeEl, nodeEl.innerText, node);
+      if(node.quarantine){
+        nodeEl.parentNode.removeChild(nodeEl);
+      }
     }
   }
 
@@ -449,18 +458,54 @@ export default class CodeMirrorBlocks {
     });
   }
 
+  insertionQuarantine(text) {
+    console.log(text);
+      let cursor = this.cm.getCursor();
+      let filler = "\n".repeat(cursor.line) + " ".repeat(cursor.ch);
+      let ast = this.parser.parse(filler + "foo");          // make a fake literal
+      let node = ast.rootNodes[0];                          // get its node
+      node.quarantine = true;                               // mark it
+      let scroll = this.cm.getScrollerElement();            // calculate cursor position
+      let coords = this.cm.cursorCoords("local");
+      let offset = this.cm.getWrapperElement().getBoundingClientRect();
+      render(node, this.cm, this.renderOptions || {});      // render the DOM element
+      scroll.appendChild(node.el);                          // attach the DOM element
+      node.el.classList.add("quarantine");
+      node.el.style.left = (coords.left + scroll.scrollLeft - offset.left) + "px";
+      node.el.style.top  = (coords.top  + scroll.scrollTop  - offset.top)  + "px";
+      node.el.innerText = text;                             // fill it with what was typed
+      this.editLiteral(node, event);                        // switch to editing mode
+  }
+
   handleKeyDown(event) {
     let keyName = CodeMirror.keyName(event);
     let capture = true;
+    let selectedNode = this.getSelectedNode();
+
+    function isPrintable(event) {
+      if(event.metaKey) return false;
+      let keycode = event.keyCode;
+      return (keycode > 47 && keycode < 58)    || // number keys
+              keycode == 32                    || // spacebar
+              (keycode > 64 && keycode < 91)   || // letter keys
+              (keycode > 95 && keycode < 112)  || // numpad keys
+              (keycode > 185 && keycode < 193) || // ;=,-./` (in order)
+              (keycode > 218 && keycode < 223);   // [\]' (in order)
+    }
+
     if (keyName == "Backspace") {
-      if (this.getSelectedNode()) {
+      if (selectedNode) {
         this.deleteSelectedNodes();
+      } else {
+        capture = false;
       }
     } else if (keyName == "Tab") {
       this.selectNextNode(event);
     } else if (keyName == "Shift-Tab") {
       this.selectPrevNode(event);
-    } else if (keyName == "Enter" && this.getSelectedNode().type=="literal") {
+    } else if (keyName == "Enter" 
+              && selectedNode
+              && selectedNode.type == "literal") {
       this.editLiteral(this.getSelectedNode(), event);
     } else {
       let command = this.keyMap[keyName];
@@ -469,9 +514,14 @@ export default class CodeMirrorBlocks {
       } else if (typeof command == "function") {
         command(this.cm);
       } else {
+        // quarantine anything that would print
+        if(isPrintable(event)) {
+          this.insertionQuarantine(keyName);
+        }
         capture = false;
       }
     }
+
     if (capture) {
       event.preventDefault();
       event.stopPropagation();
