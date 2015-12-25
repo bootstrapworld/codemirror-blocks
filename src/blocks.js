@@ -89,12 +89,6 @@ export default class CodeMirrorBlocks {
     this.cm.on('dragenter', (cm, event) => dragEnterHandler(event));
     this.cm.on('change', this.handleChange.bind(this));
     this.cm.on('keydown', (cm, e) => this.handleKeyDown(e));
-    this.cm.on('paste', (cm, e) => this.insertionQuarantine(e));
-  }
-
-  findNodeFromPos(pos) {
-    var marks = this.findMarksAt(pos);
-    console.log(marks);
   }
 
   setBlockMode(mode) {
@@ -459,7 +453,6 @@ export default class CodeMirrorBlocks {
   }
 
   insertionQuarantine(text) {
-    console.log(text);
       let cursor = this.cm.getCursor();
       let filler = "\n".repeat(cursor.line) + " ".repeat(cursor.ch);
       let ast = this.parser.parse(filler + "foo");          // make a fake literal
@@ -486,7 +479,6 @@ export default class CodeMirrorBlocks {
       if(event.metaKey) return false;
       let keycode = event.keyCode;
       return (keycode > 47 && keycode < 58)    || // number keys
-              keycode == 32                    || // spacebar
               (keycode > 64 && keycode < 91)   || // letter keys
               (keycode > 95 && keycode < 112)  || // numpad keys
               (keycode > 185 && keycode < 193) || // ;=,-./` (in order)
