@@ -89,6 +89,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('dragenter', (cm, event) => dragEnterHandler(event));
     this.cm.on('change', this.handleChange.bind(this));
     this.cm.on('keydown', (cm, e) => this.handleKeyDown(e));
+    this.cm.on('keypress', (cm, e) => this.insertionQuarantine(e));
   }
 
   setBlockMode(mode) {
@@ -264,10 +265,9 @@ export default class CodeMirrorBlocks {
   saveEdit(node, nodeEl, event) {
     event.preventDefault();
     if (this.checkEditableEl(nodeEl, nodeEl.innerText, node)) {
+      // if the node is associated with a quarantine bookmark, clear it
+      if(node.quarantine){ node.quarantine.clear(); }
       this.saveEditableEl(nodeEl, nodeEl.innerText, node);
-      if(node.quarantine){
-        nodeEl.parentNode.removeChild(nodeEl);
-      }
     }
   }
 
@@ -314,7 +314,7 @@ export default class CodeMirrorBlocks {
       }
     };
     let range = document.createRange();
-    range.setStart(node.el, 0);
+    range.setStart(node.el, node.quarantine? 1 : 0);
     range.setEnd(node.el, node.el.childNodes.length);
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
@@ -452,22 +452,21 @@ export default class CodeMirrorBlocks {
     });
   }
 
-  insertionQuarantine(text) {
-      let cursor = this.cm.getCursor();
-      let filler = "\n".repeat(cursor.line) + " ".repeat(cursor.ch);
-      let ast = this.parser.parse(filler + "foo");          // make a fake literal
-      let node = ast.rootNodes[0];                          // get its node
-      node.quarantine = true;                               // mark it
-      let scroll = this.cm.getScrollerElement();            // calculate cursor position
-      let coords = this.cm.cursorCoords("local");
-      let offset = this.cm.getWrapperElement().getBoundingClientRect();
-      render(node, this.cm, this.renderOptions || {});      // render the DOM element
-      scroll.appendChild(node.el);                          // attach the DOM element
-      node.el.classList.add("quarantine");
-      node.el.style.left = (coords.left + scroll.scrollLeft - offset.left) + "px";
-      node.el.style.top  = (coords.top  + scroll.scrollTop  - offset.top)  + "px";
-      node.el.innerText = text;                             // fill it with what was typed
-      this.editLiteral(node, event);                        // switch to editing mode
+  insertionQuarantine(event) {      
+    let char = String.fromCharCode(event.which);
+    event.codemirrorIgnore = true;
+    event.preventDefault();
+    event.stopPropagation();
+    let cur  = this.cm.getCursor();
+    let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
+    let ast  = this.parser.parse(ws + "x");               // make a fake literal
+    let node = ast.rootNodes[0];                          // get its node
+    render(node, this.cm, this.renderOptions || {});      // render the DOM element
+    node.el.innerText = char;                             // replace "x" with the real character
+    let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
+    node.quarantine = mk;                                 // store the marker in the node
+    node.el.classList.add("blocks-quarantine");           // add className
+    setTimeout(() => {this.editLiteral(node, event);},25);// give the DOM a few ms, then edit
   }
 
   handleKeyDown(event) {
@@ -506,9 +505,9 @@ export default class CodeMirrorBlocks {
       } else if (typeof command == "function") {
         command(this.cm);
       } else {
-        // quarantine anything that would print
+        // printable keypresses are handled elsewhere
         if(isPrintable(event)) {
-          this.insertionQuarantine(keyName);
+          event.codemirrorIgnore = true;
         }
         capture = false;
       }
