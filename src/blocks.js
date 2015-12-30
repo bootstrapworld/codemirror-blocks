@@ -89,7 +89,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('dragenter', (cm, event) => dragEnterHandler(event));
     this.cm.on('change', this.handleChange.bind(this));
     this.cm.on('keydown', (cm, e) => this.handleKeyDown(e));
-    this.cm.on('keypress', (cm, e) => this.insertionQuarantine(e));
+    this.cm.on('beforeChange',(cm, change) => this.insertionQuarantine(change));
   }
 
   setBlockMode(mode) {
@@ -452,21 +452,22 @@ export default class CodeMirrorBlocks {
     });
   }
 
-  insertionQuarantine(event) {      
-    let char = String.fromCharCode(event.which);
-    event.codemirrorIgnore = true;
-    event.preventDefault();
-    event.stopPropagation();
+  insertionQuarantine(change) {
+    // We ONLY mess with typing and pasting at the top level
+    if(!["+input", "paste"].includes(change.origin)) return;
+    let text = change.text.join("\n");                    // grab the text being inserted
+    change.stopPropagation = change.cancel;               // fake a native event for editLiteral
+    change.stopPropagation();                             // cancel the change event
     let cur  = this.cm.getCursor();
     let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
     let ast  = this.parser.parse(ws + "x");               // make a fake literal
     let node = ast.rootNodes[0];                          // get its node
     render(node, this.cm, this.renderOptions || {});      // render the DOM element
-    node.el.innerText = char;                             // replace "x" with the real character
+    node.el.innerText = text;                             // replace "x" with the real character
     let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
     node.quarantine = mk;                                 // store the marker in the node
     node.el.classList.add("blocks-quarantine");           // add className
-    setTimeout(() => {this.editLiteral(node, event);},25);// give the DOM a few ms, then edit
+    setTimeout(() => {this.editLiteral(node, change);},25);// give the DOM a few ms, then edit
   }
 
   handleKeyDown(event) {
@@ -506,9 +507,7 @@ export default class CodeMirrorBlocks {
         command(this.cm);
       } else {
         // printable keypresses are handled elsewhere
-        if(isPrintable(event)) {
-          event.codemirrorIgnore = true;
-        }
+        if(isPrintable(event)) { event.codemirrorIgnore = true; }
         capture = false;
       }
     }
