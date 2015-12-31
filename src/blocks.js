@@ -78,6 +78,8 @@ export default class CodeMirrorBlocks {
     );
     // TODO: don't do this, otherwise we copy/paste will only work
     // when there is one instance of this class on a page.
+    // CM has added events for cut/copy/paste, as of 5.11.0. See:
+    // https://github.com/codemirror/CodeMirror/commit/2a7dc2be2fe149f0521741a6998c28dadafe77c0
     Object.assign(document, {
       oncut: this.handleCopyCut.bind(this),
       oncopy: this.handleCopyCut.bind(this)
@@ -452,22 +454,24 @@ export default class CodeMirrorBlocks {
     });
   }
 
+  // TODO: once CM 5.11 is released, we should make this a handler
+  // for keypress and paste events -- no more beforeChange!
   insertionQuarantine(change) {
     // We ONLY mess with typing and pasting at the top level
     if(!["+input", "paste"].includes(change.origin)) return;
     let text = change.text.join("\n");                    // grab the text being inserted
-    change.stopPropagation = change.cancel;               // fake a native event for editLiteral
-    change.stopPropagation();                             // cancel the change event
+    change.cancel();                                      // cancel the change event
+    change.stopPropagation = change.cancel;               // fake a native stopPropagation() for editLiteral
     let cur  = this.cm.getCursor();
     let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
     let ast  = this.parser.parse(ws + "x");               // make a fake literal
     let node = ast.rootNodes[0];                          // get its node
     render(node, this.cm, this.renderOptions || {});      // render the DOM element
     node.el.innerText = text;                             // replace "x" with the real character
+    node.el.classList.add("blocks-quarantine");           // add className
     let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
     node.quarantine = mk;                                 // store the marker in the node
-    node.el.classList.add("blocks-quarantine");           // add className
-    setTimeout(() => {this.editLiteral(node, change);},25);// give the DOM a few ms, then edit
+    setTimeout(() => {this.editLiteral(node,change);},25);// give the DOM a few ms, then edit
   }
 
   handleKeyDown(event) {
@@ -507,7 +511,7 @@ export default class CodeMirrorBlocks {
         command(this.cm);
       } else {
         // printable keypresses are handled elsewhere
-        if(isPrintable(event)) { event.codemirrorIgnore = true; }
+        //if(isPrintable(event)) { event.codemirrorIgnore = true; }
         capture = false;
       }
     }
