@@ -87,12 +87,13 @@ export default class CodeMirrorBlocks {
 
     var dropHandler = this.nodeEventHandler(this.dropOntoNode, true);
     var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
-    this.cm.on('drop', (cm, event) => dropHandler(event));
-    this.cm.on('dragenter', (cm, event) => dragEnterHandler(event));
-    this.cm.on('change', this.handleChange.bind(this));
-    this.cm.on('keydown', (cm, e) => this.handleKeyDown(e));
-    this.cm.on('paste', (cm, e) => this.insertionQuarantine(e));
-    this.cm.on('keypress',(cm, e) => this.insertionQuarantine(e));
+    this.cm.on('drop',      (cm, e) => dropHandler(e));
+    this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
+    this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
+    this.cm.on('paste',     (cm, e) => this.insertionQuarantine(e));
+    this.cm.on('keypress',  (cm, e) => this.insertionQuarantine(e));
+    this.cm.on('change',    this.handleChange.bind(this));
+    
   }
 
   setBlockMode(mode) {
