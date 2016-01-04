@@ -269,8 +269,10 @@ export default class CodeMirrorBlocks {
   saveEdit(node, nodeEl, event) {
     event.preventDefault();
     if (this.checkEditableEl(nodeEl, nodeEl.innerText, node)) {
-      // if the node is associated with a quarantine bookmark, clear it
-      if(node.quarantine){ node.quarantine.clear(); }
+      if(node.quarantine){ 
+        nodeEl.innerText += " "; // add space to avoid merging with nextSibling
+        node.quarantine.clear(); // get rid of the quarantine bookmark
+      }
       this.saveEditableEl(nodeEl, nodeEl.innerText, node);
     }
   }
@@ -466,6 +468,7 @@ export default class CodeMirrorBlocks {
     let node = ast.rootNodes[0];                          // get its node
     render(node, this.cm, this.renderOptions || {});      // render the DOM element
     node.el.innerText = text;                             // replace "x" with the real character
+    node.to.ch -= 1;                                      // force the width to be zero
     node.el.classList.add("blocks-quarantine");           // add className
     let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
     node.quarantine = mk;                                 // store the marker in the node
