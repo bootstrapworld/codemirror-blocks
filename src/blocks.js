@@ -91,7 +91,8 @@ export default class CodeMirrorBlocks {
     this.cm.on('dragenter', (cm, event) => dragEnterHandler(event));
     this.cm.on('change', this.handleChange.bind(this));
     this.cm.on('keydown', (cm, e) => this.handleKeyDown(e));
-    this.cm.on('beforeChange',(cm, change) => this.insertionQuarantine(change));
+    this.cm.on('paste', (cm, e) => this.insertionQuarantine(e));
+    this.cm.on('keypress',(cm, e) => this.insertionQuarantine(e));
   }
 
   setBlockMode(mode) {
@@ -454,14 +455,10 @@ export default class CodeMirrorBlocks {
     });
   }
 
-  // TODO: once CM 5.11 is released, we should make this a handler
-  // for keypress and paste events -- no more beforeChange!
-  insertionQuarantine(change) {
-    // We ONLY mess with typing and pasting at the top level
-    if(!["+input", "paste"].includes(change.origin)) return;
-    let text = change.text.join("\n");                    // grab the text being inserted
-    change.cancel();                                      // cancel the change event
-    change.stopPropagation = change.cancel;               // fake a native stopPropagation() for editLiteral
+  insertionQuarantine(e) {
+    e.preventDefault();
+    let text = (e.type == "keypress")? String.fromCharCode(e.which)
+             : e.clipboardData.getData('text/plain');  
     let cur  = this.cm.getCursor();
     let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
     let ast  = this.parser.parse(ws + "x");               // make a fake literal
@@ -471,7 +468,7 @@ export default class CodeMirrorBlocks {
     node.el.classList.add("blocks-quarantine");           // add className
     let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
     node.quarantine = mk;                                 // store the marker in the node
-    setTimeout(() => {this.editLiteral(node,change);},25);// give the DOM a few ms, then edit
+    setTimeout(() => { this.editLiteral(node, e); },25);  // give the DOM a few ms, then edit
   }
 
   handleKeyDown(event) {
@@ -482,7 +479,7 @@ export default class CodeMirrorBlocks {
     function isPrintable(event) {
       if(event.metaKey) return false;
       let keycode = event.keyCode;
-      return (keycode > 47 && keycode < 58)    || // number keys
+      return  (keycode > 47 && keycode < 58)   || // number keys
               (keycode > 64 && keycode < 91)   || // letter keys
               (keycode > 95 && keycode < 112)  || // numpad keys
               (keycode > 185 && keycode < 193) || // ;=,-./` (in order)

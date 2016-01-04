@@ -4,6 +4,8 @@
   "description": "CoreMirror extension for using draggable blocks to write programming languages",
   "main": "lib/codemirror-blocks.js",
   "dependencies": {
+    "babel-polyfill": "^6.3.14",
+    "codemirror": "^5.10.0",
     "handlebars": "^4.0.5",
     "node-uuid": "^1.4.7"
   },
@@ -41,7 +43,7 @@
   },
   "peerDependencies": {
     "babel-polyfill": "^6.1.19",
-    "codemirror": "^5.8.0"
+    "codemirror": "^5.10.0"
   },
   "optionalDependencies": {
     "wescheme-js": "bootstrapworld/wescheme-js"
