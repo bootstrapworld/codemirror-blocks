@@ -73,6 +73,7 @@ export default class CodeMirrorBlocks {
         }),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
+        ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondrop: this.nodeEventHandler(this.dropOntoNode)
       }
     );
@@ -331,6 +332,10 @@ export default class CodeMirrorBlocks {
     event.dataTransfer.setDragImage(node.el, -5, -5);
     event.dataTransfer.setData('text/plain', this.cm.getRange(node.from, node.to));
     event.dataTransfer.setData('text/id', node.id);
+  }
+
+  stopDraggingNode(node, event) {
+    node.el.classList.remove('blocks-dragging');
   }
 
   isDropTarget(el) {
