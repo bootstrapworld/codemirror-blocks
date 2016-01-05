@@ -34,6 +34,7 @@
   background: #ccc;
   overflow: hidden;
   cursor: move;
+  cursor: grab; /* for browsers that support it */
 }
 
 .blocks-operator {
@@ -174,4 +175,7 @@
   font-style: italic;
 }
 
-.blocks-dragging .blocks-white-space{ background-color: transparent; }
+.blocks-dragging {
+  cursor: grabbing; /* for browsers that support it */
+  .blocks-white-space{ background-color: transparent; }
+}
