@@ -33,8 +33,11 @@
   margin: 5px;
   background: #ccc;
   overflow: hidden;
-  cursor: move;
-  cursor: grab; /* for browsers that support it */
+  white-space: nowrap;
+
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
 }
 
 .blocks-operator {
@@ -58,7 +61,7 @@
   flex-wrap: wrap;
   flex-grow: 1;
   background: #eee;
-  padding: 5px;
+  padding: 8px 0px;
 
   > .blocks-literal, .blocks-white-space[contenteditable="true"] {
     background: white; border: 3px lightgray inset; 
@@ -72,7 +75,7 @@
   padding: 2px;
   border: @border-width solid transparent;
   min-width: 10px;
-  max-height: 1.5em;
+  height: 1.1em;
   cursor: hand;
 
   &.blocks-editing, &.blocks-quarantine {
@@ -142,10 +145,9 @@
   border: @border-width solid transparent;
   font-weight: bold;
   border-radius: @border-radius;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0px 2px;
   min-width: 10px;
-  max-height: 1.5em;
+  height: 1.1em;
   cursor: default;
 
 
@@ -156,6 +158,7 @@
 
   &.blocks-editing {
     font-weight: normal;
+    margin: 0px 5px;
     &.blocks-error {
       border: @border-width solid @error-border-color;
     }
@@ -176,6 +179,5 @@
 }
 
 .blocks-dragging {
-  cursor: grabbing; /* for browsers that support it */
   .blocks-white-space{ background-color: transparent; }
 }
