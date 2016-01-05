@@ -72,6 +72,7 @@
   border: @border-width solid transparent;
   min-width: 10px;
   max-height: 1.5em;
+  cursor: hand;
 
   &.blocks-editing, &.blocks-quarantine {
     border-color: @editing-border-color;
@@ -121,6 +122,8 @@
 
 .blocks-editing {
   outline: 0;
+  cursor: text;
+
 }
 
 .blocks-over-target {
@@ -172,4 +175,3 @@
 }
 
 .blocks-dragging .blocks-white-space{ background-color: transparent; }
-.quarantine{ position: absolute; z-index: 2; }
