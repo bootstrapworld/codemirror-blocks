@@ -72,6 +72,7 @@ export default class CodeMirrorBlocks {
           whitespace: this.editWhiteSpace
         }),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
+        ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
         ondrop: this.nodeEventHandler(this.dropOntoNode)
       }
@@ -286,7 +287,7 @@ export default class CodeMirrorBlocks {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       let keyName = CodeMirror.keyName(e);
-      if (keyName == "Enter" || keyName == "Tab") {
+      if (["Enter", "Tab", "Esc"].includes(keyName)) {
         e.preventDefault();
         whiteSpaceEl.blur();
       }
@@ -314,7 +315,7 @@ export default class CodeMirrorBlocks {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       let keyName = CodeMirror.keyName(e);
-      if (keyName == "Enter" || keyName == "Tab") {
+      if (["Enter", "Tab", "Esc"].includes(keyName)) {
         e.preventDefault();
         node.el.blur();
       }
@@ -340,6 +341,10 @@ export default class CodeMirrorBlocks {
     event.dataTransfer.setDragImage(node.el, -5, -5);
     event.dataTransfer.setData('text/plain', this.cm.getRange(node.from, node.to));
     event.dataTransfer.setData('text/id', node.id);
+  }
+
+  stopDraggingNode(node, event) {
+    node.el.classList.remove('blocks-dragging');
   }
 
   isDropTarget(el) {
