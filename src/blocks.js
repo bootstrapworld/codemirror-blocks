@@ -72,6 +72,7 @@ export default class CodeMirrorBlocks {
           whitespace: this.editWhiteSpace
         }),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
+        ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
         ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondrop: this.nodeEventHandler(this.dropOntoNode)
@@ -278,7 +279,7 @@ export default class CodeMirrorBlocks {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       let keyName = CodeMirror.keyName(e);
-      if (keyName == "Enter" || keyName == "Tab") {
+      if (["Enter", "Tab", "Esc"].includes(keyName)) {
         e.preventDefault();
         whiteSpaceEl.blur();
       }
@@ -306,7 +307,7 @@ export default class CodeMirrorBlocks {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       let keyName = CodeMirror.keyName(e);
-      if (keyName == "Enter" || keyName == "Tab") {
+      if (["Enter", "Tab", "Esc"].includes(keyName)) {
         e.preventDefault();
         node.el.blur();
       }
