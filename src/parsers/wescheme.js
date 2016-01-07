@@ -45,7 +45,9 @@ function parseNode(node) {
       func = new Blank(
         {line: from.line, ch: from.ch+1},
         {line: from.line, ch: from.ch+1},
-        '...'
+        '...',
+        'blank',
+        {'aria-label': 'blank'}
       );
     }
     return new Expression(
