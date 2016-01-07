@@ -8,4 +8,5 @@ import * as ast from './ast';
 export var AST = ast.AST;
 export var Expression = ast.Expression;
 export var Literal = ast.Literal;
+export var Blank = ast.Blank;
 export default CodeMirrorBlocks;

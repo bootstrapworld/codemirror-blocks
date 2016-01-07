@@ -69,6 +69,7 @@ export default class CodeMirrorBlocks {
         onclick: this.nodeEventHandler(this.selectNode),
         ondblclick: this.nodeEventHandler({
           literal: this.editLiteral,
+          blank: this.editLiteral,
           whitespace: this.editWhiteSpace
         }),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
@@ -344,7 +345,7 @@ export default class CodeMirrorBlocks {
       return true;
     }
     var node = this.findNodeFromEl(el);
-    if (node && node.type === 'literal') {
+    if (node && ['literal', 'blank'].includes(node.type)) {
       return true;
     }
     return !node; // things outside of nodes are drop targets
@@ -466,7 +467,8 @@ export default class CodeMirrorBlocks {
       this.selectNextNode(event);
     } else if (keyName == "Shift-Tab") {
       this.selectPrevNode(event);
-    } else if (keyName == "Enter" && this.getSelectedNode().type=="literal") {
+    } else if (keyName == "Enter" && 
+              ["literal", "blank"].includes(this.getSelectedNode().type)) {
       this.editLiteral(this.getSelectedNode(), event);
     } else {
       let command = this.keyMap[keyName];
@@ -496,6 +498,12 @@ export default class CodeMirrorBlocks {
           if (handlers.whitespace) {
             handlers.whitespace.call(this, event.target, event);
             return;
+          }
+        }
+        if(event.target.classList.contains('blocks-blank')) {
+          if(event.type == "dragstart"){ 
+            event.stopPropagation();
+            return false; 
           }
         }
         if (node && handlers[node.type]) {

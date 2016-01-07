@@ -200,3 +200,20 @@ export class Comment extends ASTNode {
     return `${this.comment}`;
   }
 }
+
+export class Blank extends ASTNode {
+  constructor(from, to, value, dataType='blank', options={}) {
+    super(from, to, 'blank', options);
+    this.value = value;
+    this.dataType = dataType;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+  }
+
+  toString() {
+    return `${this.value}`;
+  }
+}
+
