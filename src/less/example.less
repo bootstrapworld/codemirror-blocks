@@ -68,7 +68,8 @@
   }
 }
 .blocks-name,
-.blocks-literal {
+.blocks-literal,
+.blocks-blank {
   display: inline-block;
   color: black;
   border-radius: 5px;
@@ -180,4 +181,20 @@
 
 .blocks-dragging {
   .blocks-white-space{ background-color: transparent; }
+}
+
+.blocks-blank {
+  color: white;
+  background: gold;
+  cursor: hand;
+  &:after {
+    content: "?";
+    color: black;
+    display: inline-block;
+    width: 20px;
+  }
+  &.blocks-editing {
+    background: transparent; 
+    &:after{content: none; width: 0px; }
+  }
 }
