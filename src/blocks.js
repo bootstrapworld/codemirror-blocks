@@ -276,15 +276,7 @@ export default class CodeMirrorBlocks {
     whiteSpaceEl.contentEditable = true;
     whiteSpaceEl.classList.add('blocks-editing');
     whiteSpaceEl.onblur = this.saveWhiteSpace.bind(this, whiteSpaceEl);
-    whiteSpaceEl.onkeydown = function(e) {
-      e.stopPropagation();
-      e.codemirrorIgnore = true;
-      let keyName = CodeMirror.keyName(e);
-      if (["Enter", "Tab", "Esc"].includes(keyName)) {
-        e.preventDefault();
-        whiteSpaceEl.blur();
-      }
-    };
+    whiteSpaceEl.onkeydown = this.handleEditKeyDown.bind(whiteSpaceEl);
     let range = document.createRange();
     range.setStart(whiteSpaceEl, 0);
     window.getSelection().removeAllRanges();
@@ -299,20 +291,24 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  editLiteral(node, event) {
-    event.stopPropagation();
-    node.el.contentEditable = true;
-    node.el.classList.add('blocks-editing');
-    node.el.onblur = this.saveEdit.bind(this, node, node.el);
-    node.el.onkeydown = function(e) {
+  handleEditKeyDown(e) {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       let keyName = CodeMirror.keyName(e);
       if (["Enter", "Tab", "Esc"].includes(keyName)) {
+        if(keyName === "Esc") { this.innerText = this.oldText || ""; }
         e.preventDefault();
-        node.el.blur();
-      }
-    };
+        this.blur();
+      } 
+    }
+
+  editLiteral(node, event) {
+    event.stopPropagation();
+    node.el.oldText = this.cm.getRange(node.from, node.to);
+    node.el.contentEditable = true;
+    node.el.classList.add('blocks-editing');
+    node.el.onblur = this.saveEdit.bind(this, node, node.el);
+    node.el.onkeydown = this.handleEditKeyDown.bind(node.el);
     let range = document.createRange();
     range.setStart(node.el, 0);
     range.setEnd(node.el, node.el.childNodes.length);
