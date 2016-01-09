@@ -66,7 +66,8 @@ function parseNode(node) {
         {line:from.line, ch:from.ch+1},
         {line:from.line, ch:from.ch+4},
         "and",
-        "symbol"
+        "symbol",
+         {'aria-label': 'and'}
       ),
       node.exprs.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria('and', node.exprs.length)}
@@ -80,7 +81,8 @@ function parseNode(node) {
         {line:from.line, ch:from.ch+1},
         {line:from.line, ch:from.ch+3},
         "or",
-        "symbol"
+        "symbol",
+         {'aria-label': 'or'}
       ),
       node.exprs.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria('or', node.exprs.length)}
