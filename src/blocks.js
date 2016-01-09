@@ -197,7 +197,8 @@ export default class CodeMirrorBlocks {
   }
 
   selectNextNode(event) {
-    let nextNode = this.ast.getNodeAfter(this.getSelectedNode());
+    let nodeOrCursor = this.getSelectedNode() || this.cm.getCursor();
+    let nextNode = this.ast.getNodeAfter(nodeOrCursor);
     while (this.isNodeHidden(nextNode)) {
       nextNode = this.ast.getNodeAfter(nextNode);
     }
@@ -205,7 +206,8 @@ export default class CodeMirrorBlocks {
   }
 
   selectPrevNode(event) {
-    let prevNode = this.ast.getNodeBefore(this.getSelectedNode());
+    let nodeOrCursor = this.getSelectedNode() || this.cm.getCursor();
+    let prevNode = this.ast.getNodeBefore(nodeOrCursor);
     while (this.isNodeHidden(prevNode)) {
       prevNode = this.ast.getNodeBefore(prevNode);
     }

@@ -281,6 +281,20 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.getSelectedNode()).toBe(this.literal2);
       });
 
+      it('should select the node after the cursor when tab is pressed', function() {
+        this.cm.setCursor({line: 0, ch: 2});
+        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        expect(this.blocks.getSelectedNode()).not.toBe(this.literal);
+        expect(this.blocks.getSelectedNode()).toBe(this.literal2);
+      });
+
+      it('should select the node before the cursor when tab is pressed', function() {
+        this.cm.setCursor({line: 0, ch: 2});
+        this.cm.getWrapperElement().dispatchEvent(keydown(9, {shiftKey: true}));
+        expect(this.blocks.getSelectedNode()).not.toBe(this.literal2);
+        expect(this.blocks.getSelectedNode()).toBe(this.literal);
+      });
+
       it('should select the last node when shift-tab is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(9, {shiftKey:true}));
         expect(this.blocks.getSelectedNode()).toBe(this.literal2);
