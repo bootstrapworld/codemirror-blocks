@@ -3,3 +3,4 @@ build
 lib
 .coverage
 docs
+npm-debug.log
