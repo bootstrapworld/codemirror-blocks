@@ -483,22 +483,20 @@ export default class CodeMirrorBlocks {
 
   handleKeyDown(event) {
     let keyName = CodeMirror.keyName(event);
-    let capture = true;
     let selectedNode = this.getSelectedNode();
-
-    if (keyName == "Backspace") {
-      if (selectedNode) {
+    // Enter and Backspace behave differently if a node is selected
+    if(selectedNode){
+      if (keyName == "Enter" && 
+          ["literal", "blank"].includes(selectedNode.type)) {
+        this.editLiteral(selectedNode, event);
+      } else if (keyName == "Backspace") {
         this.deleteSelectedNodes();
-      } else {
-        capture = false;
       }
-    } else if (keyName == "Tab") {
+    }
+    if (keyName == "Tab") {
       this.selectNextNode(event);
     } else if (keyName == "Shift-Tab") {
       this.selectPrevNode(event);
-    } else if (keyName == "Enter" && 
-              ["literal", "blank"].includes(this.getSelectedNode().type)) {
-      this.editLiteral(this.getSelectedNode(), event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
@@ -506,13 +504,11 @@ export default class CodeMirrorBlocks {
       } else if (typeof command == "function") {
         command(this.cm);
       } else {
-        capture = false;
+        return; // return without cancelling the event
       }
     }
-    if (capture) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   nodeEventHandler(handlers, callWithNullNode=false) {
