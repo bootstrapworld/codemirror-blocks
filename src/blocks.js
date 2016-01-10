@@ -75,7 +75,6 @@ export default class CodeMirrorBlocks {
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
         ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
-        ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondrop: this.nodeEventHandler(this.dropOntoNode)
       }
     );
