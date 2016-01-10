@@ -1,7 +1,23 @@
 var path = require("path");
 var envConfig = require('./env-config.js');
 
-var preLoaders = [];
+var preLoaders = [{
+  test: /\.js$/,
+  include: [
+    path.resolve(__dirname, 'example'),
+    path.resolve(__dirname, 'src'),
+    path.resolve(__dirname, 'node_modules', 'wescheme-js', 'src'),
+    path.resolve(__dirname, 'spec')
+  ],
+  exclude: [
+    path.resolve(__dirname, 'node_modules', 'wescheme-js', 'src', 'runtime', 'js-numbers.js')
+  ],
+  loader: "babel",
+  query: {
+    cacheDirectory: true
+  }
+}];
+
 if (envConfig.runCoverage) {
   preLoaders.push({
     test: /\.js/,
@@ -24,29 +40,15 @@ module.exports = {
   },
   module: {
     loaders: [
-      {
-        test: /\.js$/,
-        include: [
-          path.resolve(__dirname, 'example'),
-          path.resolve(__dirname, 'src'),
-          path.resolve(__dirname, 'node_modules', 'wescheme-js', 'src'),
-          path.resolve(__dirname, 'spec')
-        ],
-        exclude: [
-          path.resolve(__dirname, 'node_modules', 'wescheme-js', 'src', 'runtime', 'js-numbers.js')
-        ],
-        loader: "babel",
-        query: {
-          cacheDirectory: true,
-          presets: ['es2015'],
-          sourceMaps: true
-        }
-      },
       { test: /\.less$/, loader: "style!css!less"},
       { test: /\.css$/, loaders: ["style", "css"] },
       { test: /\.rkt$/, loader: 'raw' },
       { test: /\.handlebars$/, loader: 'handlebars-loader'}
     ],
     preLoaders: preLoaders
+  },
+  babel: {
+    presets: ['es2015'],
+    sourceMaps: true
   }
 };
