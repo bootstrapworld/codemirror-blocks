@@ -19,6 +19,12 @@ function keydown(keyCode, other={}) {
   Object.assign(event, other);
   return event;
 }
+function keypress(keyCode, other={}) {
+  let event = new CustomEvent('keypress', {bubbles: true});
+  event.which = event.keyCode = keyCode;
+  Object.assign(event, other);
+  return event;
+}
 function dragstart() {
   let event = new CustomEvent('dragstart', {bubbles: true});
   event.dataTransfer = {
@@ -231,6 +237,40 @@ describe('The CodeMirrorBlocks Class', function() {
       this.blocks.setBlockMode(true);
       this.literal = this.blocks.ast.rootNodes[0];
     });
+
+    describe("when dealing with top-level input,", function() {
+
+      beforeEach(function() {
+        this.cm.setValue('42 11');
+      });
+
+      it('typing at the end of a line', function() {
+        spyOn(this.blocks, 'insertionQuarantine');
+        this.cm.setCursor({line: 0, ch: 5});
+        this.cm.getInputField().dispatchEvent(keypress(100));
+        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        // TODO: access the bookmark itself, and make sure it was added to CM with the right contents
+      });
+
+      it('typing at the beginning of a line', function() {
+        spyOn(this.blocks, 'insertionQuarantine');
+        this.cm.setCursor({line: 0, ch: 0});
+        this.cm.getInputField().dispatchEvent(keypress(100));
+        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        // TODO: access the bookmark itself, and make sure it was added to CM with the right contents
+      });
+
+      it('typing between two blocks on a line', function() {
+        spyOn(this.blocks, 'insertionQuarantine');
+        this.cm.setCursor({line: 0, ch: 3});
+        this.cm.getInputField().dispatchEvent(keypress(100));
+        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        // TODO: access the bookmark itself, and make sure it was added to CM with the right contents
+      });
+      
+      // TODO: figure out how to fire a paste event
+    });
+
 
     describe("when dealing with node selection,", function() {
 

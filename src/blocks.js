@@ -86,10 +86,12 @@ export default class CodeMirrorBlocks {
 
     var dropHandler = this.nodeEventHandler(this.dropOntoNode, true);
     var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
-    this.cm.on('drop', (cm, event) => dropHandler(event));
-    this.cm.on('dragenter', (cm, event) => dragEnterHandler(event));
-    this.cm.on('change', this.handleChange.bind(this));
-    this.cm.on('keydown', (cm, e) => this.handleKeyDown(e));
+    this.cm.on('drop',      (cm, e) => dropHandler(e));
+    this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
+    this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
+    this.cm.on('paste',     (cm, e) => this.insertionQuarantine(e));
+    this.cm.on('keypress',  (cm, e) => this.insertionQuarantine(e));
+    this.cm.on('change',    this.handleChange.bind(this));
   }
 
   setBlockMode(mode) {
@@ -270,6 +272,10 @@ export default class CodeMirrorBlocks {
   saveEdit(node, nodeEl, event) {
     event.preventDefault();
     if (this.checkEditableEl(nodeEl, nodeEl.innerText, node)) {
+      if(node.quarantine){ 
+        nodeEl.innerText += " "; // add space to avoid merging with nextSibling
+        node.quarantine.clear(); // get rid of the quarantine bookmark
+      }
       this.saveEditableEl(nodeEl, nodeEl.innerText, node);
     }
   }
@@ -317,7 +323,7 @@ export default class CodeMirrorBlocks {
       }
     };
     let range = document.createRange();
-    range.setStart(node.el, 0);
+    range.setStart(node.el, node.quarantine? 1 : 0);
     range.setEnd(node.el, node.el.childNodes.length);
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
@@ -459,18 +465,40 @@ export default class CodeMirrorBlocks {
     });
   }
 
+  insertionQuarantine(e) {
+    e.preventDefault();
+    let text = (e.type == "keypress")? String.fromCharCode(e.which)
+             : e.clipboardData.getData('text/plain');  
+    let cur  = this.cm.getCursor();
+    let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
+    let ast  = this.parser.parse(ws + "x");               // make a fake literal
+    let node = ast.rootNodes[0];                          // get its node
+    render(node, this.cm, this.renderOptions || {});      // render the DOM element
+    node.el.innerText = text;                             // replace "x" with the real string
+    node.to.ch -= 1;                                      // force the width to be zero
+    let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
+    node.quarantine = mk;                                 // store the marker in the node
+    setTimeout(() => { this.editLiteral(node, e); },25);  // give the DOM a few ms, then edit
+  }
+
   handleKeyDown(event) {
     let keyName = CodeMirror.keyName(event);
     let capture = true;
+    let selectedNode = this.getSelectedNode();
+
     if (keyName == "Backspace") {
-      if (this.getSelectedNode()) {
+      if (selectedNode) {
         this.deleteSelectedNodes();
+      } else {
+        capture = false;
       }
     } else if (keyName == "Tab") {
       this.selectNextNode(event);
     } else if (keyName == "Shift-Tab") {
       this.selectPrevNode(event);
-    } else if (keyName == "Enter" && this.getSelectedNode().type=="literal") {
+    } else if (keyName == "Enter" 
+              && selectedNode
+              && selectedNode.type == "literal") {
       this.editLiteral(this.getSelectedNode(), event);
     } else {
       let command = this.keyMap[keyName];
