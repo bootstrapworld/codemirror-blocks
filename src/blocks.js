@@ -238,11 +238,16 @@ export default class CodeMirrorBlocks {
   }
 
   saveEditableEl(nodeEl, text, range) {
-    this.cm.replaceRange(text, range.from, range.to);
+    // See http://stackoverflow.com/questions/21926083/failed-to-execute-removechild-on-node
+    // we have to remove the onblur handler first
+    // because the blur event will fire *again* when the node is removed from the dom
+    // which happens in this.cm.replaceRange.
+    nodeEl.onblur = null;
     nodeEl.onkeydown = null;
     nodeEl.contentEditable = false;
     nodeEl.classList.remove('blocks-editing');
     nodeEl.classList.remove('blocks-error');
+    this.cm.replaceRange(text, range.from, range.to);
   }
 
   checkEditableEl(nodeEl, text, range) {
