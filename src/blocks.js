@@ -485,15 +485,12 @@ export default class CodeMirrorBlocks {
     let keyName = CodeMirror.keyName(event);
     let selectedNode = this.getSelectedNode();
     // Enter and Backspace behave differently if a node is selected
-    if(selectedNode){
-      if (keyName == "Enter" && 
-          ["literal", "blank"].includes(selectedNode.type)) {
-        this.editLiteral(selectedNode, event);
-      } else if (keyName == "Backspace") {
-        this.deleteSelectedNodes();
-      }
-    }
-    if (keyName == "Tab") {
+    if (keyName == "Enter" && selectedNode &&
+        ["literal", "blank"].includes(selectedNode.type)) {
+      this.editLiteral(selectedNode, event);
+    } else if (keyName == "Backspace" && selectedNode) {
+      this.deleteSelectedNodes();
+    } else if (keyName == "Tab") {
       this.selectNextNode(event);
     } else if (keyName == "Shift-Tab") {
       this.selectPrevNode(event);
