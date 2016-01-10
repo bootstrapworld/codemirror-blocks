@@ -475,10 +475,10 @@ export default class CodeMirrorBlocks {
     let node = ast.rootNodes[0];                          // get its node
     render(node, this.cm, this.renderOptions || {});      // render the DOM element
     node.el.innerText = text;                             // replace "x" with the real string
-    node.to.ch -= 1;                                      // force the width to be zero
+    node.to.ch = node.from.ch;                            // force the width to be zero
     let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
     node.quarantine = mk;                                 // store the marker in the node
-    setTimeout(() => { this.editLiteral(node, e); },25);  // give the DOM a few ms, then edit
+    setTimeout(() => { this.editLiteral(node, e); }, 50); // give the DOM a few ms, then edit
   }
 
   handleKeyDown(event) {
