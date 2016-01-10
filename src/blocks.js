@@ -481,16 +481,6 @@ export default class CodeMirrorBlocks {
     let capture = true;
     let selectedNode = this.getSelectedNode();
 
-    function isPrintable(event) {
-      if(event.metaKey) return false;
-      let keycode = event.keyCode;
-      return  (keycode > 47 && keycode < 58)   || // number keys
-              (keycode > 64 && keycode < 91)   || // letter keys
-              (keycode > 95 && keycode < 112)  || // numpad keys
-              (keycode > 185 && keycode < 193) || // ;=,-./` (in order)
-              (keycode > 218 && keycode < 223);   // [\]' (in order)
-    }
-
     if (keyName == "Backspace") {
       if (selectedNode) {
         this.deleteSelectedNodes();
@@ -515,7 +505,6 @@ export default class CodeMirrorBlocks {
         capture = false;
       }
     }
-
     if (capture) {
       event.preventDefault();
       event.stopPropagation();
