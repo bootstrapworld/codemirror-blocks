@@ -35,7 +35,12 @@ module.exports = {
         exclude: [
           path.resolve(__dirname, 'node_modules', 'wescheme-js', 'src', 'runtime', 'js-numbers.js')
         ],
-        loader: "babel?cacheDirectory"
+        loader: "babel",
+        query: {
+          cacheDirectory: true,
+          presets: ['es2015'],
+          sourceMaps: true
+        }
       },
       { test: /\.less$/, loader: "style!css!less"},
       { test: /\.css$/, loaders: ["style", "css"] },

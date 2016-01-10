@@ -58,11 +58,6 @@
     "lint": "eslint . --ext .js || true",
     "docs": "docco src/*.js"
   },
-  "babel": {
-    "presets": [
-      "es2015"
-    ]
-  },
   "author": "Paul Carduner",
   "license": "MIT License"
 }
