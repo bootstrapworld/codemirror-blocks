@@ -69,11 +69,13 @@ export default class CodeMirrorBlocks {
         onclick: this.nodeEventHandler(this.selectNode),
         ondblclick: this.nodeEventHandler({
           literal: this.editLiteral,
+          blank: this.editLiteral,
           whitespace: this.editWhiteSpace
         }),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
         ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
+        ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondrop: this.nodeEventHandler(this.dropOntoNode)
       }
     );
@@ -197,7 +199,8 @@ export default class CodeMirrorBlocks {
   }
 
   selectNextNode(event) {
-    let nextNode = this.ast.getNodeAfter(this.getSelectedNode());
+    let nodeOrCursor = this.getSelectedNode() || this.cm.getCursor();
+    let nextNode = this.ast.getNodeAfter(nodeOrCursor);
     while (this.isNodeHidden(nextNode)) {
       nextNode = this.ast.getNodeAfter(nextNode);
     }
@@ -205,7 +208,8 @@ export default class CodeMirrorBlocks {
   }
 
   selectPrevNode(event) {
-    let prevNode = this.ast.getNodeBefore(this.getSelectedNode());
+    let nodeOrCursor = this.getSelectedNode() || this.cm.getCursor();
+    let prevNode = this.ast.getNodeBefore(nodeOrCursor);
     while (this.isNodeHidden(prevNode)) {
       prevNode = this.ast.getNodeBefore(prevNode);
     }
@@ -285,15 +289,7 @@ export default class CodeMirrorBlocks {
     whiteSpaceEl.contentEditable = true;
     whiteSpaceEl.classList.add('blocks-editing');
     whiteSpaceEl.onblur = this.saveWhiteSpace.bind(this, whiteSpaceEl);
-    whiteSpaceEl.onkeydown = function(e) {
-      e.stopPropagation();
-      e.codemirrorIgnore = true;
-      let keyName = CodeMirror.keyName(e);
-      if (["Enter", "Tab", "Esc"].includes(keyName)) {
-        e.preventDefault();
-        whiteSpaceEl.blur();
-      }
-    };
+    whiteSpaceEl.onkeydown = this.handleEditKeyDown.bind(whiteSpaceEl);
     let range = document.createRange();
     range.setStart(whiteSpaceEl, 0);
     window.getSelection().removeAllRanges();
@@ -308,20 +304,24 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  editLiteral(node, event) {
-    event.stopPropagation();
-    node.el.contentEditable = true;
-    node.el.classList.add('blocks-editing');
-    node.el.onblur = this.saveEdit.bind(this, node, node.el);
-    node.el.onkeydown = function(e) {
+  handleEditKeyDown(e) {
       e.stopPropagation();
       e.codemirrorIgnore = true;
       let keyName = CodeMirror.keyName(e);
       if (["Enter", "Tab", "Esc"].includes(keyName)) {
+        if(keyName === "Esc") { this.innerText = this.oldText || ""; }
         e.preventDefault();
-        node.el.blur();
-      }
-    };
+        this.blur();
+      } 
+    }
+
+  editLiteral(node, event) {
+    event.stopPropagation();
+    node.el.oldText = this.cm.getRange(node.from, node.to);
+    node.el.contentEditable = true;
+    node.el.classList.add('blocks-editing');
+    node.el.onblur = this.saveEdit.bind(this, node, node.el);
+    node.el.onkeydown = this.handleEditKeyDown.bind(node.el);
     let range = document.createRange();
     range.setStart(node.el, node.quarantine? 1 : 0);
     range.setEnd(node.el, node.el.childNodes.length);
@@ -354,7 +354,7 @@ export default class CodeMirrorBlocks {
       return true;
     }
     var node = this.findNodeFromEl(el);
-    if (node && node.type === 'literal') {
+    if (node && ['literal', 'blank'].includes(node.type)) {
       return true;
     }
     return !node; // things outside of nodes are drop targets
@@ -496,9 +496,8 @@ export default class CodeMirrorBlocks {
       this.selectNextNode(event);
     } else if (keyName == "Shift-Tab") {
       this.selectPrevNode(event);
-    } else if (keyName == "Enter" 
-              && selectedNode
-              && selectedNode.type == "literal") {
+    } else if (keyName == "Enter" && 
+              ["literal", "blank"].includes(this.getSelectedNode().type)) {
       this.editLiteral(this.getSelectedNode(), event);
     } else {
       let command = this.keyMap[keyName];
@@ -528,6 +527,12 @@ export default class CodeMirrorBlocks {
           if (handlers.whitespace) {
             handlers.whitespace.call(this, event.target, event);
             return;
+          }
+        }
+        if(event.target.classList.contains('blocks-blank')) {
+          if(event.type == "dragstart"){ 
+            event.stopPropagation();
+            return false; 
           }
         }
         if (node && handlers[node.type]) {

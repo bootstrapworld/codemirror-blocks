@@ -6,7 +6,8 @@ import {
   FunctionDefinition,
   Comment,
   VariableDefinition,
-  Unknown
+  Unknown,
+  Blank
 } from '../ast';
 
 try {
@@ -41,11 +42,12 @@ function parseNode(node) {
     if (node.func) {
       func = parseNode(node.func);
     } else {
-      func = new Literal(
+      func = new Blank(
         {line: from.line, ch: from.ch+1},
         {line: from.line, ch: from.ch+1},
-        ' ',
-        'placeholder'
+        '...',
+        'blank',
+        {'aria-label': 'blank'}
       );
     }
     return new Expression(
@@ -661,6 +663,7 @@ class Parser {
       provide.location = sexp.location;
       return provide;
     }
+
     var ast = parseStar(lex(code));
     var rootNodes = ast.map(parseNode).filter(item => item !== null);
     return new AST(rootNodes);

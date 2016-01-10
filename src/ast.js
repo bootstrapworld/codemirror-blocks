@@ -11,8 +11,9 @@ export class AST {
 
     // the `rootNodes` attribute simply contains a list of the top level nodes
     // that were parsed.
-
     this.rootNodes = rootNodes;
+    // the `reverseRootNodes` attribute is a shallow, reversed copy of the rootNodes
+    this.reverseRootNodes = rootNodes.slice().reverse();
 
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
@@ -32,12 +33,19 @@ export class AST {
     }
   }
 
-  getNodeAfter(node) {
-    return this.nextNodeMap.get(node) || this.rootNodes[0];
+  // returns -1 if a<b, 0 if a==b, and 1 if a>b
+  comparePos(a, b) { return a.line-b.line || a.ch-b.ch; }
+
+  getNodeAfter(selection) {
+    return this.nextNodeMap.get(selection)
+        || this.rootNodes.find((node) => this.comparePos(node.from, selection) >= 0)
+        || this.rootNodes[0];
   }
 
-  getNodeBefore(node) {
-    return this.prevNodeMap.get(node) || this.rootNodes[this.rootNodes.length-1];
+  getNodeBefore(selection) {
+    return this.prevNodeMap.get(selection) 
+        || this.reverseRootNodes.find((node) => this.comparePos(node.to, selection) <= 0)
+        || this.reverseRootNodes[0];
   }
 }
 
@@ -101,7 +109,7 @@ export class Expression extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     if (this.func instanceof ASTNode) {
-      yield this.func;
+      yield* this.func;
     }
     for (let arg of this.args) {
       for (let node of arg) {
@@ -200,3 +208,20 @@ export class Comment extends ASTNode {
     return `${this.comment}`;
   }
 }
+
+export class Blank extends ASTNode {
+  constructor(from, to, value, dataType='blank', options={}) {
+    super(from, to, 'blank', options);
+    this.value = value;
+    this.dataType = dataType;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+  }
+
+  toString() {
+    return `${this.value}`;
+  }
+}
+

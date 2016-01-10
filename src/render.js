@@ -13,7 +13,8 @@ export var nodes = {
   variableDef: require('./templates/variableDef.handlebars'),
   struct: require('./templates/struct.handlebars'),
   literal: require('./templates/literal.handlebars'),
-  comment: require('./templates/comment.handlebars')
+  comment: require('./templates/comment.handlebars'),
+  blank: require('./templates/blank.handlebars')
 };
 
 var nodesInRenderOrder = [];
