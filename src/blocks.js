@@ -255,7 +255,7 @@ export default class CodeMirrorBlocks {
     this.cm.replaceRange(text, range.from, range.to);
   }
 
-  checkEditableEl(nodeEl, text, range) {
+  checkEditableEl(nodeEl, text) {
     try {
       this.parser.lex(text);    // make sure the node itself is valid
       nodeEl.title = '';
@@ -274,8 +274,8 @@ export default class CodeMirrorBlocks {
 
   saveEdit(node, nodeEl, event) {
     event.preventDefault();
-    if (this.checkEditableEl(nodeEl, nodeEl.innerText, node)) {
-      if(node.quarantine){ 
+    if (this.checkEditableEl(nodeEl, nodeEl.innerText)) {
+      if(node.quarantine){
         nodeEl.innerText += " "; // add space to avoid merging with nextSibling
         node.quarantine.clear(); // get rid of the quarantine bookmark
       }
@@ -298,21 +298,21 @@ export default class CodeMirrorBlocks {
   saveWhiteSpace(whiteSpaceEl) {
     var location = getLocationFromEl(whiteSpaceEl);
     var range = {from:location, to:location};
-    if (this.checkEditableEl(whiteSpaceEl, ' '+whiteSpaceEl.innerText, range)) {
+    if (this.checkEditableEl(whiteSpaceEl, ' '+whiteSpaceEl.innerText)) {
       this.saveEditableEl(whiteSpaceEl, ' '+whiteSpaceEl.innerText, range);
     }
   }
 
   handleEditKeyDown(e) {
-      e.stopPropagation();
-      e.codemirrorIgnore = true;
-      let keyName = CodeMirror.keyName(e);
-      if (["Enter", "Tab", "Esc"].includes(keyName)) {
-        if(keyName === "Esc") { this.innerText = this.oldText || ""; }
-        e.preventDefault();
-        this.blur();
-      } 
+    e.stopPropagation();
+    e.codemirrorIgnore = true;
+    let keyName = CodeMirror.keyName(e);
+    if (["Enter", "Tab", "Esc"].includes(keyName)) {
+      if(keyName === "Esc") { this.innerText = this.oldText || ""; }
+      e.preventDefault();
+      this.blur();
     }
+  }
 
   editLiteral(node, event) {
     event.stopPropagation();
@@ -344,7 +344,7 @@ export default class CodeMirrorBlocks {
     event.dataTransfer.setData('text/id', node.id);
   }
 
-  stopDraggingNode(node, event) {
+  stopDraggingNode(node) {
     node.el.classList.remove('blocks-dragging');
   }
 
@@ -467,7 +467,7 @@ export default class CodeMirrorBlocks {
   insertionQuarantine(e) {
     e.preventDefault();
     let text = (e.type == "keypress")? String.fromCharCode(e.which)
-             : e.clipboardData.getData('text/plain');  
+             : e.clipboardData.getData('text/plain');
     let cur  = this.cm.getCursor();
     let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
     let ast  = this.parser.parse(ws + "x");               // make a fake literal
@@ -522,9 +522,9 @@ export default class CodeMirrorBlocks {
           }
         }
         if(event.target.classList.contains('blocks-blank')) {
-          if(event.type == "dragstart"){ 
+          if(event.type == "dragstart"){
             event.stopPropagation();
-            return false; 
+            return false;
           }
         }
         if (node && handlers[node.type]) {
