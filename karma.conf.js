@@ -1,10 +1,8 @@
 // Karma configuration
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
-var webpackConfig = require('./webpack.config.js');
+var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
 var reporters = ['progress'];
-
-webpackConfig.devtool = 'inline-source-map';
 
 if (envConfig.runCoverage) {
   //webpackConfig = require('./webpack/test-coverage.config');
