@@ -1,5 +1,5 @@
 @border-radius: 5px;
-@border-width: 2px;
+@border-width: 3px;
 
 // Colors:
 @literal-number-color: blue;
@@ -49,7 +49,10 @@
   background: black;
   color: white;
 
-  .blocks-literal {color: white; border: 3px inset; }
+  .blocks-literal {
+    color: white;
+    border: @border-width inset;
+  }
 
   > .blocks-expression{
     box-shadow: 0px 0px 10px 1px white;
@@ -64,7 +67,8 @@
   padding: 8px 0px;
 
   > .blocks-literal, .blocks-white-space[contenteditable="true"] {
-    background: white; border: 3px lightgray inset; 
+    background: white;
+    border: @border-width lightgray inset;
   }
 }
 .blocks-name,
@@ -168,7 +172,7 @@
   }
 
 }
-.blocks-unknown { 
+.blocks-unknown {
   border-width: 1px;
   >.blocks-operator{ background: rgba(0,0,0,0.5); }
   >.blocks-args    { background: rgba(255,190,190,0.5); }
@@ -193,7 +197,7 @@
     width: 20px;
   }
   &.blocks-editing {
-    background: transparent; 
+    background: transparent;
     &:after{content: none; width: 0px; }
   }
 }
