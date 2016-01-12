@@ -92,6 +92,8 @@ export default class CodeMirrorBlocks {
     this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
     this.cm.on('paste',     (cm, e) => this.insertionQuarantine(e));
     this.cm.on('keypress',  (cm, e) => this.insertionQuarantine(e));
+    this.cm.on('mousedown', (cm, e) => this.cancelIfErrorExists(e));
+    this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
   }
 
@@ -280,6 +282,10 @@ export default class CodeMirrorBlocks {
         node.quarantine.clear(); // get rid of the quarantine bookmark
       }
       this.saveEditableEl(nodeEl, nodeEl.innerText, node);
+    } else {
+      // If the node doesn't parse, wrest the focus back after a few ms
+      setTimeout(() => { this.editLiteral(node, event); }, 50);
+      this.hasInvalidEdit = true;
     }
   }
 
@@ -505,6 +511,13 @@ export default class CodeMirrorBlocks {
     }
     event.preventDefault();
     event.stopPropagation();
+  }
+
+  cancelIfErrorExists(event) {
+    if(this.hasInvalidEdit){
+      event.preventDefault();
+      event.stopPropagation();
+    }
   }
 
   nodeEventHandler(handlers, callWithNullNode=false) {
