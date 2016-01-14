@@ -119,8 +119,10 @@ function parseNode(node) {
       aria = `string ${node.val}`;
     } else if (types.isChar(node.val)) {
       dataType = "char";
+      aria = `char ${node.val}`;
     } else if (node.val === types.FALSE || node.val === types.TRUE) {
       dataType = "boolean";
+      aria = `${node.val}`;
     }
     return new Literal(from, to, node, dataType, {'aria-label':aria});
   } else if (node instanceof structures.comment) {
