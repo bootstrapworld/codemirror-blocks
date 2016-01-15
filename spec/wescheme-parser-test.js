@@ -4,54 +4,11 @@ import CodeMirror from 'codemirror';
 import ExampleParser from '../src/parsers/wescheme.js';
 var render = require('../src/render');
 
-function click() {
-  return new MouseEvent('click', {bubbles: true});
-}
-function dblclick() {
-  return new MouseEvent('dblclick', {bubbles: true});
-}
-function blur() {
-  return new Event('blur', {bubbles: true});
-}
 function keydown(keyCode, other={}) {
   let event = new CustomEvent('keydown', {bubbles: true});
   event.which = event.keyCode = keyCode;
   Object.assign(event, other);
   return event;
-}
-function keypress(keyCode, other={}) {
-  let event = new CustomEvent('keypress', {bubbles: true});
-  event.which = event.keyCode = keyCode;
-  Object.assign(event, other);
-  return event;
-}
-function dragstart() {
-  let event = new CustomEvent('dragstart', {bubbles: true});
-  event.dataTransfer = {
-    data: {},
-    setData(type, data) {
-      this.data[type] = data;
-    },
-    getData(type) {
-      return this.data[type];
-    },
-    setDragImage() {}
-  };
-  return event;
-}
-function dragenter() {
-  return new CustomEvent('dragenter', {bubbles: true});
-}
-function dragleave() {
-  return new CustomEvent('dragleave', {bubbles: true});
-}
-function drop(dataTransfer) {
-  let event = new CustomEvent('drop', {bubbles: true});
-  event.dataTransfer = dataTransfer;
-  return event;
-}
-function cut() {
-  return new CustomEvent('cut', {bubbles: true});
 }
 
 describe('The CodeMirrorBlocks Class', function() {
