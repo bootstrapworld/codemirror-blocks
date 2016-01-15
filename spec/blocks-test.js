@@ -1,4 +1,3 @@
-/* globals jasmine describe it expect beforeEach afterEach spyOn */
 import CodeMirrorBlocks, {BlockMarker} from '../src/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from '../example/parser';
@@ -267,7 +266,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
         // TODO: access the bookmark itself, and make sure it was added to CM with the right contents
       });
-      
+
       // TODO: figure out how to fire a paste event
     });
 

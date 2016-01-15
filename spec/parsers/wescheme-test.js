@@ -1,5 +1,3 @@
-/* globals describe it expect beforeEach */
-
 import Parser from '../../src/parsers/wescheme';
 
 describe("The WeScheme Parser,", function() {
