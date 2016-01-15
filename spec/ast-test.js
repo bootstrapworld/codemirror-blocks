@@ -1,5 +1,3 @@
-/* globals describe it expect beforeEach */
-
 import {AST, Literal, Expression} from '../src/ast';
 
 describe("The Literal Class", function() {

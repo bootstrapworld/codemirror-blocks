@@ -1,4 +1,3 @@
-/* globals describe it expect beforeEach */
 import CodeMirror from 'codemirror';
 import ExampleParser from '../example/parser';
 import render from '../src/render';
