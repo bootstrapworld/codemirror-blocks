@@ -282,6 +282,7 @@ export default class CodeMirrorBlocks {
         node.quarantine.clear(); // get rid of the quarantine bookmark
       }
       this.saveEditableEl(nodeEl, nodeEl.innerText, node);
+      this.hasInvalidEdit = false;
     } else {
       // If the node doesn't parse, wrest the focus back after a few ms
       setTimeout(() => { this.editLiteral(node, event); }, 50);
