@@ -388,7 +388,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.literal.el.contentEditable).toBe('true');
     });
 
-    it('should save an edited node on blur', function() {
+    it('should save a valid, edited node on blur', function() {
       this.literal.el.dispatchEvent(dblclick());
       let selection = window.getSelection();
       expect(selection.rangeCount).toEqual(1);
@@ -398,6 +398,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.cm.getValue()).toEqual('11');
       this.literal.el.dispatchEvent(blur());
       expect(this.cm.getValue()).toEqual('4253');
+      expect(this.blocks.hasInvalidEdit).toBe(false);
     });
 
     it('should blur the node being edited on tab', function() {
@@ -432,6 +433,10 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('should add the parse error as the title of the literal', function() {
         expect(this.literal.el.title).toBe('Error: bad input');
+      });
+
+      it('should set hasInvalidEdit to true', function() {
+        expect(this.blocks.hasInvalidEdit).toBe(true);
       });
     });
 
