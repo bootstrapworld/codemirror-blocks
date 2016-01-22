@@ -1,15 +1,24 @@
 <html>
   <body>
-    <h1>codemirror-blocks</h1>
-    <div class="container">
-      <div class="col">
-        <p>Edit using text...</p>
-        <textarea id="code">This is a test.</textarea>
+    <div class="container-fluid">
+      <div class="page-header">
+        <h1>codemirror-blocks</h1>
       </div>
-      <div class="col">
-        <p>or edit using blocks!</p>
-        <textarea id="code2">This is a test.</textarea>
-        <div id="toolbar"></div>
+      <div class="row">
+        <div class="col-md-6">
+          <p>Edit using text...</p>
+          <textarea id="code">This is a test.</textarea>
+        </div>
+        <div class="col-md-6">
+          <p>or edit using blocks!</p>
+          <div class="row">
+            <div class="col-md-4 toolbar-container">
+              <div id="toolbar"></div>
+            </div>
+            <div class="col-md-8 textarea-container">
+              <textarea id="code2">This is a test.</textarea>
+            </div>
+        </div>
       </div>
     </div>
     <script src="build/wescheme-example.js"></script>

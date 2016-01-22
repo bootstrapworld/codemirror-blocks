@@ -5,6 +5,7 @@
   "main": "lib/codemirror-blocks.js",
   "dependencies": {
     "babel-polyfill": "^6.3.14",
+    "bootstrap": "^3.3.6",
     "codemirror": "^5.11.0",
     "handlebars": "^4.0.5",
     "node-uuid": "^1.4.7",
@@ -27,6 +28,7 @@
     "eslint-loader": "^1.1.1",
     "eslint-plugin-react": "^3.15.0",
     "extract-text-webpack-plugin": "^1.0.1",
+    "file-loader": "^0.8.5",
     "handlebars-loader": "pcardune/handlebars-loader",
     "isparta-loader": "^2.0.0",
     "jasmine": "^2.3.2",
@@ -44,6 +46,7 @@
     "lodash": "^3.10.1",
     "raw-loader": "^0.5.1",
     "style-loader": "^0.13.0",
+    "url-loader": "^0.5.7",
     "webpack": "^1.12.6",
     "webpack-dev-server": "^1.12.1",
     "wescheme-js": "bootstrapworld/wescheme-js"

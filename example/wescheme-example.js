@@ -6,8 +6,7 @@ import 'codemirror/addon/edit/closebrackets.js';
 import CodeMirrorBlocks from '../src/blocks';
 import WeschemeParser from '../src/parsers/wescheme';
 
-require('../src/less/example.less');
-require('./example-page.css');
+require('./example-page.less');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),

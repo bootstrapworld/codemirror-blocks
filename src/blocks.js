@@ -184,9 +184,7 @@ export default class CodeMirrorBlocks {
     for (let rootNode of this.ast.rootNodes) {
       render(rootNode, this.cm, this.renderOptions || {});
     }
-    if (this.toolbarNode) {
-      ui.renderToolbarInto(this.toolbarNode);
-    }
+    ui.renderToolbarInto(this);
   }
 
   getSelectedNode() {

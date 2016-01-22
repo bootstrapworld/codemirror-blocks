@@ -1,0 +1,39 @@
+@import '../src/less/example.less';
+@import "~bootstrap/less/bootstrap";
+
+.CodeMirror {
+}
+
+.toolbar-container {
+  border: 1px solid #ddd;
+  border-right: 0px;
+  padding: 0px;
+  height: 302px;
+
+  .Toolbar {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+
+    .search-box {
+      padding: 5px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .primitives-box {
+      padding: 5px;
+      flex-grow: 1;
+      position: absolute;
+      top: 45px;
+      bottom: 0px;
+      width: 100%;
+      overflow: scroll;
+    }
+  }
+}
+.textarea-container {
+  border: 1px solid #ddd;
+  padding-left: 0px;
+}

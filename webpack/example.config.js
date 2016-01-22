@@ -3,7 +3,7 @@ var baseConfig = require('./base.config.js');
 
 // this is the config for generating the files needed to run the examples.
 module.exports = _.extend({}, baseConfig, {
-  devtool: 'source-map',
+  devtool: 'eval',
   entry: {
     "example": './example/example.js',
     "wescheme-example": './example/wescheme-example.js'
