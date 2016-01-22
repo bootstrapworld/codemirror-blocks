@@ -1,5 +1,6 @@
-import render from './render';
 import CodeMirror from 'codemirror';
+import render from './render';
+import * as ui from './ui';
 
 function getLocationFromEl(el) {
   // TODO: it's kind of lame to have line and ch as attributes on random elements.
@@ -50,9 +51,10 @@ export class BlockMarker {
 }
 
 export default class CodeMirrorBlocks {
-  constructor(cm, parser, {willInsertNode, didInsertNode, renderOptions} = {}) {
+  constructor(cm, parser, {toolbar, willInsertNode, didInsertNode, renderOptions} = {}) {
     this.cm = cm;
     this.parser = parser;
+    this.toolbarNode = toolbar;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
     this.renderOptions = renderOptions;
@@ -181,6 +183,9 @@ export default class CodeMirrorBlocks {
     this._clearMarks();
     for (let rootNode of this.ast.rootNodes) {
       render(rootNode, this.cm, this.renderOptions || {});
+    }
+    if (this.toolbarNode) {
+      ui.renderToolbarInto(this.toolbarNode);
     }
   }
 

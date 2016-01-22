@@ -31,7 +31,10 @@ var blocks = new CodeMirrorBlocks(
   cm2,
   new WeschemeParser(),
   {
-    renderOptions:{hideNodesOfType: ['comment','functionDef','variableDef','struct']},
+    renderOptions: {
+      hideNodesOfType: ['comment','functionDef','variableDef','struct']
+    },
+    toolbar: document.getElementById('toolbar'),
     willInsertNode(sourceNodeText, sourceNode, destination) {
       let line = cm2.getLine(destination.line);
       let prev = line[destination.ch - 1] || '\n';

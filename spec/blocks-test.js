@@ -55,7 +55,10 @@ function cut() {
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    document.body.innerHTML = '<textarea id="code"></textarea>';
+    document.body.innerHTML = `
+      <textarea id="code"></textarea>
+      <div id="toolbar"></div>
+    `;
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
     this.willInsertNode = (sourceNodeText, sourceNode, destination) => {
@@ -77,7 +80,8 @@ describe('The CodeMirrorBlocks Class', function() {
       this.parser,
       {
         willInsertNode: this.willInsertNode,
-        didInsertNode: this.didInsertNode
+        didInsertNode: this.didInsertNode,
+        toolbar: document.getElementById('toolbar')
       }
     );
   });
