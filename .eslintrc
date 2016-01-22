@@ -32,7 +32,9 @@
     "modules": true,
     "spread": true,
     "templateStrings": true,
+    "jsx": true,
   },
   "plugins": [
+    "react"
   ]
 }
