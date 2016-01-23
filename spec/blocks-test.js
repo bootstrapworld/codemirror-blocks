@@ -120,6 +120,13 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.expression.el.className).toMatch(/error/);
     });
 
+    it("it should allow you to set a className on a child node", function() {
+      let child = this.expression.args[2];
+      this.blocks.markText(child.from, child.to, {className:"error"});
+      expect(child.el.className).toMatch(/error/);
+      expect(this.expression.el.className).not.toMatch(/error/);
+    });
+    
     it("it should allow you to set a title value", function() {
       this.blocks.markText(this.expression.from, this.expression.to, {title:"woot"});
       expect(this.expression.el.title).toBe("woot");
