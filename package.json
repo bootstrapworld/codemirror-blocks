@@ -12,6 +12,7 @@
     "node-uuid": "^1.4.7",
     "react": "^0.14.6",
     "react-bootstrap": "^0.28.2",
+    "react-codemirror": "^0.2.5",
     "react-dom": "^0.14.6"
   },
   "devDependencies": {
