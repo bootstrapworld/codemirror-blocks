@@ -63,7 +63,7 @@
     "prepublish": "npm run compile",
     "test": "karma start --single-run",
     "test-watch": "karma start",
-    "start": "webpack-dev-server --content-base example/",
+    "start": "webpack-dev-server --config webpack/example.config.js",
     "build": "webpack",
     "lint": "eslint . --ext .js || true",
     "docs": "docco src/*.js"
