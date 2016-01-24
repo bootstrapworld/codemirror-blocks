@@ -472,6 +472,7 @@ export default class CodeMirrorBlocks {
   }
 
   insertionQuarantine(e) {
+    if(!this.blockMode) return;                           // bail if mode==false
     e.preventDefault();
     let text = (e.type == "keypress")? String.fromCharCode(e.which)
              : e.clipboardData.getData('text/plain');
