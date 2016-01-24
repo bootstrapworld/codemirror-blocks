@@ -10,6 +10,12 @@
   padding: 0px;
   height: 302px;
 
+  .Highlight {
+    .highlighted {
+      background-color: yellow;
+    }
+  }
+
   .Toolbar {
     display: flex;
     flex-direction: column;
@@ -23,13 +29,40 @@
     }
 
     .primitives-box {
-      padding: 5px;
       flex-grow: 1;
       position: absolute;
       top: 45px;
       bottom: 0px;
       width: 100%;
       overflow: scroll;
+    }
+
+    .PrimitiveList {
+      > .Primitive {
+        padding: 5px;
+        font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+        color: steelblue;
+        border: 0px;
+      }
+      > .PrimitiveGroup {
+        padding: 0px;
+        border: 0px;
+        border-bottom: 1px solid #ddd;
+        border-radius: 0px;
+        > .group-header {
+          padding: 5px;
+          background: #eee;
+          font-weight: bold;
+          cursor: pointer;
+          > .group-name {
+            display: inline-block;
+            margin-left: 5px;
+          }
+        }
+        > .PrimitiveList {
+          margin: 5px 0px 5px 20px;
+        }
+      }
     }
   }
 }

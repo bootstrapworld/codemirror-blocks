@@ -139,12 +139,25 @@ class WeschemeParser {
   get primitives() {
     return [
       {
-        name: 'math',
+        name: 'Math Functions',
         primitives: [
           '+',
           '-',
           '/',
-          '*'
+          '*',
+          'sqrt',
+          {
+            name: 'Trigonometry',
+            primitives: [
+              'sin',
+              'cos',
+              'tan',
+              'asin',
+              'acos',
+              'atan',
+              'atan2'
+            ]
+          }
         ]
       },
       'and',
