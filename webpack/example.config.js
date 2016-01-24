@@ -13,6 +13,14 @@ module.exports = _.extend({}, baseConfig, {
   },
   module: _.extend({}, baseConfig.module, {
     loaders: baseConfig.module.loaders.concat([
+      {
+        test: /\.js$/,
+        include: [
+          path.resolve(__dirname, '..', 'example'),
+          path.resolve(__dirname, '..', 'src')
+        ],
+        loader: 'react-hot'
+      },
       { test: /\.less$/, loader: "style!css!less"},
       { test: /\.css$/, loaders: ["style", "css"] },
       { test: /\.rkt$/, loader: 'raw' }
