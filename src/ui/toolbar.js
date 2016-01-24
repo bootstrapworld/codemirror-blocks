@@ -150,6 +150,10 @@ export var Toolbar = React.createClass({
     this.setState({search: event.target.value});
   },
 
+  clearSearch() {
+    this.setState({search: ''});
+  },
+
   render() {
     let parser = this.props.blocks.parser;
     let primitives = filterPrimitives(parser.primitives || [], this.state.search);
@@ -160,8 +164,11 @@ export var Toolbar = React.createClass({
                  placeholder="Search Primitives"
                  className="form-control"
                  value={this.state.search}
-                 onChange={this.changeSearch}
-                 />
+                 onChange={this.changeSearch} />
+
+          {this.state.search ?
+           <span className="glyphicon glyphicon-remove" onClick={this.clearSearch} />
+           : null}
         </div>
         <div className="primitives-box">
           <PrimitiveList primitives={primitives} highlight={this.state.search}/>

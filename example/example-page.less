@@ -23,12 +23,19 @@
     height: 100%;
     overflow: hidden;
 
-    .search-box {
+    > .search-box {
       padding: 5px;
       border-bottom: 1px solid #ddd;
+      .glyphicon {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        color: #777;
+        cursor: pointer;
+      }
     }
 
-    .primitives-box {
+    > .primitives-box {
       flex-grow: 1;
       position: absolute;
       top: 45px;
@@ -47,8 +54,6 @@
       > .PrimitiveGroup {
         padding: 0px;
         border: 0px;
-        border-bottom: 1px solid #ddd;
-        border-radius: 0px;
         > .group-header {
           padding: 5px;
           background: #eee;
