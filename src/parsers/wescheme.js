@@ -138,10 +138,15 @@ class WeschemeParser {
 
   get primitives() {
     return [
-      '+',
-      '-',
-      '/',
-      '*',
+      {
+        name: 'math',
+        primitives: [
+          '+',
+          '-',
+          '/',
+          '*'
+        ]
+      },
       'and',
       'or',
       'print-ln'
