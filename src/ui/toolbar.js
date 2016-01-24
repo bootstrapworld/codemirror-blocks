@@ -154,6 +154,13 @@ export var Toolbar = React.createClass({
     this.setState({search: ''});
   },
 
+  checkEscape(event) {
+    if (event.key == 'Escape') {
+      event.target.blur();
+      event.preventDefault();
+    }
+  },
+
   render() {
     let parser = this.props.blocks.parser;
     let primitives = filterPrimitives(parser.primitives || [], this.state.search);
@@ -164,6 +171,7 @@ export var Toolbar = React.createClass({
                  placeholder="Search Primitives"
                  className="form-control"
                  value={this.state.search}
+                 onKeyDown={this.checkEscape}
                  onChange={this.changeSearch} />
 
           {this.state.search ?
