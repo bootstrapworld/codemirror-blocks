@@ -120,7 +120,7 @@ export default class CodeMirrorBlocks {
   }
 
   markText(from, to, options) {
-    function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; };
+    function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
 
     let supportedOptions = new Set(['css','className','title']);
     let hasOptions = false;
