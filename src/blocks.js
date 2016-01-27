@@ -414,6 +414,10 @@ export default class CodeMirrorBlocks {
       console.error("data transfer contains no node id. Not sure how to proceed.");
     }
     let sourceNode = this.ast.nodeMap.get(nodeId);
+    // a node cannot be dropped into a child of itself
+    if(sourceNode.el.contains(destinationNode.el)) {
+      return;
+    }
     if (!sourceNode) {
       console.error("node", nodeId, "not found in AST");
     }
