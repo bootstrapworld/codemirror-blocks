@@ -414,13 +414,11 @@ export default class CodeMirrorBlocks {
       console.error("data transfer contains no node id. Not sure how to proceed.");
     }
     let sourceNode = this.ast.nodeMap.get(nodeId);
-    // a node cannot be dropped into a child of itself
-    if(sourceNode.el.contains(destinationNode.el)) {
-      return;
-    }
+    
     if (!sourceNode) {
       console.error("node", nodeId, "not found in AST");
     }
+
     let sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
 
     let destination = getLocationFromEl(event.target);
@@ -442,6 +440,10 @@ export default class CodeMirrorBlocks {
       return;
     }
 
+    // a node cannot be dropped into a child of itself
+    if(destinationNode && sourceNode.el.contains(destinationNode.el)) {
+      return;
+    }
     this.cm.operation(() => {
       if (destinationNode && destinationNode.type == 'literal') {
         if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destinationNode.from)) {
