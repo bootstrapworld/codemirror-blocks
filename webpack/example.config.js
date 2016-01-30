@@ -7,8 +7,10 @@ var baseConfig = require('./base.config.js');
 module.exports = _.extend({}, baseConfig, {
   devtool: 'eval',
   entry: {
+    "index": './example/index.js',
     "example": './example/example.js',
     "wescheme-example": './example/wescheme-example.js',
+    "editor-example": './example/editor-example.js',
     "third-party": ['react', 'react-dom', 'babel-polyfill', 'codemirror']
   },
   module: _.extend({}, baseConfig.module, {

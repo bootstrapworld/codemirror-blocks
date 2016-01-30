@@ -20,9 +20,27 @@
 
 .Editor {
   border: 1px solid #ddd;
+  > .row {
+    .toolbar-pane {
+      padding-right: 0px;
+    }
+    .codemirror-pane {
+      padding-left: 0px;
+    }
+  }
   .Toolbar {
     border-right: 1px solid #ddd;
     height: 302px;
+  }
+  .blocks-toggle-btn {
+    position: absolute;
+    right: 0px;
+    top: 5px;
+    right: 20px;
+    z-index: 100;
+    &:focus {
+      outline: 0;
+    }
   }
 }
 
