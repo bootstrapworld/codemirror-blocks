@@ -52,6 +52,6 @@ export default function render(rootNode, cm, options={}) {
       node.el.classList.add('blocks-hidden');
     }
   }
-  cm.markText(rootNode.from, rootNode.to, {replacedWith: rootNodeFrag.firstChild.firstChild});
+  cm.markText(rootNode.from, rootNode.to, {replacedWith: rootNodeFrag.firstChild.firstChild, node: rootNode});
   return rootNodeFrag;
 }
