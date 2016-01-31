@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {Toolbar} from './toolbar';
-import {Editor} from './editor';
+import Editor from './Editor';
 
 export function renderToolbarInto(blocks) {
   if (blocks.toolbarNode) {

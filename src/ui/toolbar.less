@@ -1,0 +1,60 @@
+.Highlight {
+  .highlighted {
+    background-color: yellow;
+  }
+}
+
+.Toolbar {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+
+  > .search-box {
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+    .glyphicon {
+      position: absolute;
+      right: 15px;
+      top: 15px;
+      color: #777;
+      cursor: pointer;
+    }
+  }
+
+  > .primitives-box {
+    flex-grow: 1;
+    position: absolute;
+    top: 45px;
+    bottom: 0px;
+    width: 100%;
+    overflow: scroll;
+  }
+
+  .PrimitiveList {
+    > .Primitive {
+      padding: 5px;
+      font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+      color: steelblue;
+      border: 0px;
+    }
+    > .PrimitiveGroup {
+      padding: 0px;
+      border: 0px;
+      > .group-header {
+        padding: 5px;
+        background: #eee;
+        font-weight: bold;
+        cursor: pointer;
+        > .group-name {
+          display: inline-block;
+          margin-left: 5px;
+        }
+      }
+      > .PrimitiveList {
+        margin: 5px 0px 5px 20px;
+      }
+    }
+  }
+}

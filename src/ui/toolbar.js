@@ -1,6 +1,8 @@
 import React from 'react';
 import classNames from 'classnames';
 
+require('./toolbar.less');
+
 function Highlight({children: text, highlight, className}) {
   const classes = classNames("Highlight", className);
   let startIndex = text.indexOf(highlight);

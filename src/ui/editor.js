@@ -4,7 +4,11 @@ import classNames from 'classnames';
 import CodeMirrorBlocks from '../blocks';
 import {Toolbar} from './toolbar';
 
-export var Editor = React.createClass({
+require('./Editor.less');
+
+export default React.createClass({
+  displayName: 'Editor',
+
   getDefaultProps() {
     return {
       options: {},
