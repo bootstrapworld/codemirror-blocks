@@ -73,13 +73,16 @@
 .blocks-name,
 .blocks-literal,
 .blocks-blank {
+  @height: 20px;
+
   display: inline-block;
   color: black;
   border-radius: 5px;
-  padding: 2px;
+  padding: 0px 2px;
   border: @border-width solid transparent;
   min-width: 10px;
-  height: 1.1em;
+  line-height: @height - @border-width * 2;
+  height: @height;
   cursor: hand;
 
   &.blocks-editing, &.blocks-quarantine {
