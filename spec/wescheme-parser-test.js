@@ -1,6 +1,6 @@
 import CodeMirrorBlocks from '../src/blocks';
 import CodeMirror from 'codemirror';
-import ExampleParser from '../src/parsers/wescheme.js';
+import ExampleParser from '../src/parsers/wescheme';
 
 function keydown(keyCode, other={}) {
   let event = new CustomEvent('keydown', {bubbles: true});

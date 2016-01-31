@@ -21,7 +21,7 @@ var configs = [
   }),
   _.extend({}, baseConfig, {
     entry: {
-      "WeschemeParser": './src/parsers/wescheme.js'
+      "WeschemeParser": './src/parsers/wescheme/index.js'
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),

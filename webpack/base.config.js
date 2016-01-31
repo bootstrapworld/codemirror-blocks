@@ -11,7 +11,8 @@ module.exports = {
       {test: /\.handlebars$/, loader: 'handlebars-loader'},
       {test:/.png$|.jpg$|.jpeg$|.gif$|.svg$/, loader: "url-loader?limit=10000"},
       {test:/.woff$|.woff2$/, loader: "url-loader?limit=10000"},
-      {test:/.ttf$|.eot$/, loader: "file-loader"}
+      {test:/.ttf$|.eot$/, loader: "file-loader"},
+      {test: /\.less$/, loader: "style!css!less"},
     ],
     preLoaders: [{
       test: /\.js$/,
