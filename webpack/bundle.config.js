@@ -1,12 +1,11 @@
 var _ = require('lodash');
 var path = require('path');
 var webpack = require('webpack');
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
 var baseConfig = require('./base.config.js');
 
 // this is the config for a single js file that can be included with a script tag
 var configs = [
-  _.extend({}, baseConfig, {
+  _.extend({}, baseConfig(), {
     entry: {
       "CodeMirrorBlocks": './src/codemirror-blocks.js'
     },
@@ -19,7 +18,7 @@ var configs = [
       'codemirror': 'CodeMirror'
     }
   }),
-  _.extend({}, baseConfig, {
+  _.extend({}, baseConfig(), {
     entry: {
       "WeschemeParser": './src/parsers/wescheme/index.js'
     },
@@ -41,20 +40,20 @@ configs = configs.concat(
       output: {
         filename: "[name].min.js"
       },
-      plugins: [
+      plugins: config.plugins.concat([
         new webpack.optimize.DedupePlugin(),
         new webpack.optimize.UglifyJsPlugin({
           compressor: {
             warnings: false
           }
         })
-      ]
+      ])
     });
   })
 );
 
 configs.push(
-  _.extend({}, baseConfig, {
+  _.extend({}, baseConfig({extractCSS:true}), {
     entry: {
       "example": './src/less/example.less'
     },
@@ -62,17 +61,6 @@ configs.push(
       path: path.resolve(__dirname, '..', "dist"),
       filename: "[name].css"
     },
-    module: _.extend({}, baseConfig.module, {
-      loaders: baseConfig.module.loaders.concat([
-        {
-          test: /\.less$/,
-          loader: ExtractTextPlugin.extract("style-loader", ["css-loader", "less-loader"])
-        }
-      ])
-    }),
-    plugins: [
-      new ExtractTextPlugin("[name].css")
-    ]
   })
 );
 module.exports = configs;

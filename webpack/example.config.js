@@ -1,7 +1,7 @@
 var _ = require('lodash');
 var path = require('path');
 var webpack = webpack = require('webpack');
-var baseConfig = require('./base.config.js');
+var baseConfig = require('./base.config.js')();
 
 // this is the config for generating the files needed to run the examples.
 module.exports = _.extend({}, baseConfig, {
@@ -23,18 +23,17 @@ module.exports = _.extend({}, baseConfig, {
         ],
         loader: 'react-hot'
       },
-      { test: /\.less$/, loader: "style!css!less"},
       { test: /\.css$/, loaders: ["style", "css"] },
       { test: /\.rkt$/, loader: 'raw' }
     ])
   }),
-  plugins: [
+  plugins: baseConfig.plugins.concat([
     new webpack.optimize.CommonsChunkPlugin({
       name:'third-party',
       minChunks: Infinity
     }),
     new webpack.HotModuleReplacementPlugin()
-  ],
+  ]),
   devServer: {
     hot: true,
     inline: true,
