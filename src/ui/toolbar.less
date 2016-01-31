@@ -25,4 +25,31 @@
     width: 100%;
     overflow: scroll;
   }
+  > .selected-primitive {
+    display: none;
+  }
+
+  &.has-selected {
+    @footer-height: 41px;
+    > .primitives-box {
+      bottom: @footer-height;
+    }
+
+    > .selected-primitive {
+      display: block;
+      border-top: 1px solid #ddd;
+      width: 100%;
+      padding: 5px;
+      height: @footer-height;
+      position: absolute;
+      bottom: 0px;
+      .contract-header {
+        font-size: 10px;
+        font-weight: bold;
+        background: #ddd;
+        margin: -5px -5px 0;
+        padding: 3px;
+      }
+    }
+  }
 }

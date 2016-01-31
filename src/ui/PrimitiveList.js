@@ -5,14 +5,15 @@ import Highlight from './Highlight';
 
 require('./PrimitiveList.less');
 
-function Primitive({primitive, highlight}) {
+function Primitive({primitive, highlight, className, onClick}) {
   let returnType = null;
   let argumentTypes = null;
   if (typeof primitive == 'object') {
     primitive = primitive.name;
   }
   return (
-    <li className="Primitive list-group-item">
+    <li className={classNames(className, "Primitive list-group-item")}
+        onClick={onClick}>
       <Highlight highlight={highlight}>{primitive}</Highlight>
     </li>
   );
@@ -26,7 +27,9 @@ var PrimitiveGroup = React.createClass({
         name: '',
         primitives: []
       },
-      highlight: ''
+      highlight: '',
+      onSelect: null,
+      selected: null,
     };
   },
 
@@ -41,7 +44,7 @@ var PrimitiveGroup = React.createClass({
   },
 
   render() {
-    let {group, highlight} = this.props;
+    let {group, highlight, onSelect, selected} = this.props;
     let expanded = this.state.expanded || this.props.highlight;
     let expandoClass = classNames(
       'glyphicon',
@@ -54,39 +57,68 @@ var PrimitiveGroup = React.createClass({
           <Highlight className="group-name" highlight={highlight}>{group.name}</Highlight>
         </div>
         {expanded ?
-          <PrimitiveList primitives={group.primitives}
-                         highlight={highlight}/>
+          <PrimitiveList
+            primitives={group.primitives}
+            highlight={highlight}
+            onSelect={onSelect}
+            selected={selected}
+          />
           : null}
       </li>
     );
   }
 });
 
-export default function PrimitiveList({primitives, highlight}) {
-  let nodes = [];
-  for (let primitive of primitives) {
-    if (typeof primitive == 'string') {
-      nodes.push(
-        <Primitive key={primitive}
-                   primitive={primitive}
-                   highlight={highlight}/>
-      );
-    } else if (typeof primitive == 'object') {
-      if (primitive.primitives) {
-        // this is a group.
-        nodes.push(
-          <PrimitiveGroup key={primitive.name} group={primitive} highlight={highlight} />
-        );
-      } else {
-        // this is just a primitive with additional config
-        nodes.push(
-          <Primitive key={primitive.name}
-                     primitive={primitive}
-                     highlight={highlight}/>);
+export default React.createClass({
+  displayName: 'PrimitiveList',
+
+  getInitialProps() {
+    return {
+      primitive: null,
+      highlight: '',
+      onSelect: null,
+      selected: null,
+    };
+  },
+
+  render() {
+    const {primitives, highlight, selected} = this.props;
+    const onSelect = this.props.onSelect || function(){};
+    let nodes = [];
+    for (let primitive of primitives) {
+      let key = primitive;
+      if (typeof primitive == 'object') {
+        key = primitive.name;
+        if (primitive.primitives) {
+          // this is a group.
+          nodes.push(
+            <PrimitiveGroup
+              key={key}
+              group={primitive}
+              highlight={highlight}
+              onSelect={onSelect}
+              selected={selected}
+            />
+          );
+          continue;
+        }
+      } else if (typeof primitive !== 'string') {
+        console.error("can't understand primitive", primitive);
+        continue;
       }
-    } else {
-      console.error("can't understand primitive", primitive);
+      nodes.push(
+        <Primitive
+          key={key}
+          primitive={primitive}
+          highlight={highlight}
+          onClick={() => onSelect(primitive)}
+          className={selected == primitive && 'selected'}
+        />
+      );
+
     }
+    return (
+      <ul className="PrimitiveList list-group">{nodes}</ul>
+    );
   }
-  return <ul className="PrimitiveList list-group">{nodes}</ul>;
-}
+});

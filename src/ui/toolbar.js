@@ -1,5 +1,7 @@
 import React from 'react';
 import PrimitiveList from './PrimitiveList';
+import PrimitiveBlock from './PrimitiveBlock';
+import classNames from 'classnames';
 
 require('./Toolbar.less');
 
@@ -41,7 +43,8 @@ export default React.createClass({
 
   getInitialState() {
     return {
-      search: ''
+      search: '',
+      selectedPrimitive: null,
     };
   },
 
@@ -60,11 +63,19 @@ export default React.createClass({
     }
   },
 
+  selectPrimitive(selectedPrimitive) {
+    if (selectedPrimitive === this.state.selectedPrimitive) {
+      selectedPrimitive = null;
+    }
+    this.setState({selectedPrimitive});
+  },
+
   render() {
     let parser = this.props.blocks.parser;
     let primitives = filterPrimitives(parser.primitives || [], this.state.search);
+    let selected = this.state.selectedPrimitive;
     return (
-      <div className="blocks-ui Toolbar">
+      <div className={classNames('blocks-ui Toolbar', {'has-selected':!!selected})}>
         <div className="search-box">
           <input type="search"
                  placeholder="Search Primitives"
@@ -78,7 +89,16 @@ export default React.createClass({
            : null}
         </div>
         <div className="primitives-box">
-          <PrimitiveList primitives={primitives} highlight={this.state.search}/>
+          <PrimitiveList
+            primitives={primitives}
+            highlight={this.state.search}
+            onSelect={this.selectPrimitive}
+            selected={this.state.selectedPrimitive}
+          />
+        </div>
+        <div className="selected-primitive">
+          <div className="contract-header">Contract</div>
+          <PrimitiveBlock primitive={selected} />
         </div>
       </div>
     );
