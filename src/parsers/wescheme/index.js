@@ -8,7 +8,9 @@ import {
   VariableDefinition,
   Unknown,
   Blank
-} from '../ast';
+} from '../../ast';
+
+import PRIMITIVES from './primitives';
 
 try {
   var lex = require('wescheme-js/src/lex').lex;
@@ -137,6 +139,7 @@ function parseNode(node) {
 class WeschemeParser {
 
   get primitives() {
+    return PRIMITIVES;
     return [
       {
         name: 'Math Functions',
