@@ -2,7 +2,7 @@ import React from 'react';
 import CodeMirror from 'react-codemirror';
 import classNames from 'classnames';
 import CodeMirrorBlocks from '../blocks';
-import {Toolbar} from './toolbar';
+import Toolbar from './Toolbar';
 
 require('./Editor.less');
 

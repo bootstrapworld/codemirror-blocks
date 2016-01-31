@@ -1,0 +1,25 @@
+.PrimitiveList {
+  > .Primitive {
+    padding: 5px;
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+    color: steelblue;
+    border: 0px;
+  }
+  > .PrimitiveGroup {
+    padding: 0px;
+    border: 0px;
+    > .group-header {
+      padding: 5px;
+      background: #eee;
+      font-weight: bold;
+      cursor: pointer;
+      > .group-name {
+        display: inline-block;
+        margin-left: 5px;
+      }
+    }
+    > .PrimitiveList {
+      margin: 5px 0px 5px 20px;
+    }
+  }
+}
