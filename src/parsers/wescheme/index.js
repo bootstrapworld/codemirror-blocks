@@ -138,9 +138,29 @@ function parseNode(node) {
 
 class WeschemeParser {
 
+  getASTNodeForPrimitive(primitive) {
+    return new Expression(
+      {line:0, ch:0},
+      {line:0, ch:0},
+      new Literal(
+        {line: 0, ch: 0},
+        {line:0, ch:0},
+        primitive.name,
+        'symbol'
+      ),
+      primitive.argumentTypes.map(() =>
+        new Blank(
+          {line: 0, ch: 0},
+          {line: 0, ch: 0},
+          ''
+        )
+      )
+    );
+  }
+
   get primitives() {
-    return PrimitiveGroup.fromConfig(PRIMITIVES_CONFIG);
-    return PrimitiveGroup.fromConfig({
+    return PrimitiveGroup.fromConfig(this, PRIMITIVES_CONFIG);
+    return PrimitiveGroup.fromConfig(this, {
       name: 'root',
       primitives: [
         {

@@ -1,12 +1,20 @@
 export class Primitive {
-  constructor(name, {argumentTypes, returnType}={}) {
-    this.name = name,
+  constructor(parser, name, {argumentTypes, returnType}={}) {
+    this.parser = parser;
+    this.name = name;
     this.argumentTypes = argumentTypes || [];
     this.returnType = returnType;
   }
 
-  static fromConfig(config) {
+  getASTNode() {
+    if (this.parser.getASTNodeForPrimitive) {
+      return this.parser.getASTNodeForPrimitive(this);
+    }
+  }
+
+  static fromConfig(parser, config) {
     return new Primitive(
+      parser,
       config.name,
       {
         argumentTypes: config.argumentTypes,
@@ -17,7 +25,8 @@ export class Primitive {
 }
 
 export class PrimitiveGroup {
-  constructor(name, primitives=[]) {
+  constructor(parser, name, primitives=[]) {
+    this.parser = parser;
     this.name = name;
     this.primitives = primitives;
   }
@@ -40,10 +49,10 @@ export class PrimitiveGroup {
         }
       }
     }
-    return new PrimitiveGroup(this.name, result);
+    return new PrimitiveGroup(this.parser, this.name, result);
   }
 
-  static fromConfig(config) {
+  static fromConfig(parser, config) {
     var {name, primitives} = config;
     if (!name) {
       throw new Error('No name specified for primitive group');
@@ -59,14 +68,14 @@ export class PrimitiveGroup {
       } else if (typeof item == 'object') {
         if (item.primitives) {
           // it's a group
-          items.push(PrimitiveGroup.fromConfig(item));
+          items.push(PrimitiveGroup.fromConfig(parser, item));
         } else {
-          items.push(Primitive.fromConfig(item));
+          items.push(Primitive.fromConfig(parser, item));
         }
       } else {
         throw new Error(`Unable to understand config object of type ${typeof item}`);
       }
     }
-    return new PrimitiveGroup(name, items);
+    return new PrimitiveGroup(parser, name, items);
   }
 }
