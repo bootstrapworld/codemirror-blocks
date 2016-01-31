@@ -9,8 +9,8 @@ import {
   Unknown,
   Blank
 } from '../../ast';
-
-import PRIMITIVES from './primitives';
+import {PrimitiveGroup} from '../primitives';
+import PRIMITIVES_CONFIG from './primitives-config';
 
 try {
   var lex = require('wescheme-js/src/lex').lex;
@@ -139,34 +139,37 @@ function parseNode(node) {
 class WeschemeParser {
 
   get primitives() {
-    return PRIMITIVES;
-    return [
-      {
-        name: 'Math Functions',
-        primitives: [
-          '+',
-          '-',
-          '/',
-          '*',
-          'sqrt',
-          {
-            name: 'Trigonometry',
-            primitives: [
-              'sin',
-              'cos',
-              'tan',
-              'asin',
-              'acos',
-              'atan',
-              'atan2'
-            ]
-          }
-        ]
-      },
-      'and',
-      'or',
-      'print-ln'
-    ];
+    return PrimitiveGroup.fromConfig(PRIMITIVES_CONFIG);
+    return PrimitiveGroup.fromConfig({
+      name: 'root',
+      primitives: [
+        {
+          name: 'Math Functions',
+          primitives: [
+            '+',
+            '-',
+            '/',
+            '*',
+            'sqrt',
+            {
+              name: 'Trigonometry',
+              primitives: [
+                'sin',
+                'cos',
+                'tan',
+                'asin',
+                'acos',
+                'atan',
+                'atan2'
+              ]
+            }
+          ]
+        },
+        'and',
+        'or',
+        'print-ln'
+      ]
+    });
   }
 
   lex(code) {

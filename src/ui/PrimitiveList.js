@@ -1,25 +1,21 @@
 import React from 'react';
 import classNames from 'classnames';
 
+import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
 import Highlight from './Highlight';
 
 require('./PrimitiveList.less');
 
 function Primitive({primitive, highlight, className, onClick}) {
-  let returnType = null;
-  let argumentTypes = null;
-  if (typeof primitive == 'object') {
-    primitive = primitive.name;
-  }
   return (
     <li className={classNames(className, "Primitive list-group-item")}
         onClick={onClick}>
-      <Highlight highlight={highlight}>{primitive}</Highlight>
+      <Highlight highlight={highlight}>{primitive.name}</Highlight>
     </li>
   );
 }
 
-var PrimitiveGroup = React.createClass({
+const PrimitiveGroup = React.createClass({
 
   getDefaultProps() {
     return {
@@ -69,7 +65,7 @@ var PrimitiveGroup = React.createClass({
   }
 });
 
-export default React.createClass({
+const PrimitiveList = React.createClass({
   displayName: 'PrimitiveList',
 
   getInitialProps() {
@@ -86,29 +82,22 @@ export default React.createClass({
     const onSelect = this.props.onSelect || function(){};
     let nodes = [];
     for (let primitive of primitives) {
-      let key = primitive;
-      if (typeof primitive == 'object') {
-        key = primitive.name;
-        if (primitive.primitives) {
-          // this is a group.
-          nodes.push(
-            <PrimitiveGroup
-              key={key}
-              group={primitive}
-              highlight={highlight}
-              onSelect={onSelect}
-              selected={selected}
-            />
-          );
-          continue;
-        }
-      } else if (typeof primitive !== 'string') {
-        console.error("can't understand primitive", primitive);
+      if (primitive instanceof PrimitiveGroupModel) {
+        // this is a group.
+        nodes.push(
+          <PrimitiveGroup
+            key={primitive.name}
+            group={primitive}
+            highlight={highlight}
+            onSelect={onSelect}
+            selected={selected}
+          />
+        );
         continue;
       }
       nodes.push(
         <Primitive
-          key={key}
+          key={primitive.name}
           primitive={primitive}
           highlight={highlight}
           onClick={() => onSelect(primitive)}
@@ -122,3 +111,5 @@ export default React.createClass({
     );
   }
 });
+
+export default PrimitiveList;

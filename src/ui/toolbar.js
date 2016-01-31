@@ -5,33 +5,6 @@ import classNames from 'classnames';
 
 require('./Toolbar.less');
 
-function filterPrimitives(primitives, search) {
-  let result = [];
-  for (let primitive of primitives) {
-    if (typeof primitive == 'string') {
-      if (primitive.indexOf(search) >= 0) {
-        result.push(primitive);
-      }
-    } else if (typeof primitive == 'object') {
-      // either a group or a primitive config
-      if (primitive.name.indexOf(search) >= 0) {
-        // let's display the entire group and/or primitive
-        result.push(primitive);
-      } else if (primitive.primitives) {
-        // it's a group with a name that doesn't match
-        // let's see if child primitives/groups match
-        let filtered = filterPrimitives(primitive.primitives, search);
-        if (filtered.length > 0) {
-          // great, lets return a new group with just the sub-primitives
-          // that matched
-          result.push({name: primitive.name, primitives: filtered});
-        }
-      }
-    }
-  }
-  return result;
-}
-
 export default React.createClass({
   displayName: 'Toolbar',
 
@@ -72,7 +45,10 @@ export default React.createClass({
 
   render() {
     let parser = this.props.blocks.parser;
-    let primitives = filterPrimitives(parser.primitives || [], this.state.search);
+    let primitives = [];
+    if (parser.primitives) {
+      primitives = parser.primitives.filter(this.state.search).primitives;
+    }
     let selected = this.state.selectedPrimitive;
     return (
       <div className={classNames('blocks-ui Toolbar', {'has-selected':!!selected})}>
