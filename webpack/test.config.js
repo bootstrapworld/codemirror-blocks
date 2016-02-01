@@ -1,6 +1,6 @@
 var path = require("path");
 var _ = require('lodash');
-var baseConfig = require('./base.config.js');
+var baseConfig = require('./base.config.js')();
 var envConfig = require('../env-config.js');
 
 var preLoaders = baseConfig.module.preLoaders.concat();

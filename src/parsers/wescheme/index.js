@@ -8,7 +8,9 @@ import {
   VariableDefinition,
   Unknown,
   Blank
-} from '../ast';
+} from '../../ast';
+import {PrimitiveGroup} from '../primitives';
+import PRIMITIVES_CONFIG from './primitives-config';
 
 try {
   var lex = require('wescheme-js/src/lex').lex;
@@ -134,7 +136,61 @@ function parseNode(node) {
   return null;
 }
 
-class Parser {
+class WeschemeParser {
+
+  getASTNodeForPrimitive(primitive) {
+    return new Expression(
+      {line:0, ch:0},
+      {line:0, ch:0},
+      new Literal(
+        {line: 0, ch: 0},
+        {line:0, ch:0},
+        primitive.name,
+        'symbol'
+      ),
+      primitive.argumentTypes.map(() =>
+        new Blank(
+          {line: 0, ch: 0},
+          {line: 0, ch: 0},
+          ''
+        )
+      )
+    );
+  }
+
+  get primitives() {
+    return PrimitiveGroup.fromConfig(this, PRIMITIVES_CONFIG);
+    return PrimitiveGroup.fromConfig(this, {
+      name: 'root',
+      primitives: [
+        {
+          name: 'Math Functions',
+          primitives: [
+            '+',
+            '-',
+            '/',
+            '*',
+            'sqrt',
+            {
+              name: 'Trigonometry',
+              primitives: [
+                'sin',
+                'cos',
+                'tan',
+                'asin',
+                'acos',
+                'atan',
+                'atan2'
+              ]
+            }
+          ]
+        },
+        'and',
+        'or',
+        'print-ln'
+      ]
+    });
+  }
 
   lex(code) {
     return lex(code);
@@ -159,7 +215,7 @@ class Parser {
 
     function isCons(x) { return x instanceof Array && x.length >= 1; }
     function rest(ls) { return ls.slice(1); }
-    
+
     // isSymbolEqualTo : symbolExpr symbolExpr -> Boolean
     // are these all symbols of the same value?
     function isSymbolEqualTo(x, y) {
@@ -219,16 +275,16 @@ class Parser {
           || (!isSymbol(sexp[1]))             // is the structure name there?
           || (!(sexp[2] instanceof Array))    // is the structure name followed by a list?
           || !sexp[2].every(isSymbol)) {      // too many expressions?
-          return fallback(sexp); 
-        } 
+          return fallback(sexp);
+        }
         return new structures.defStruct(parseIdExpr(sexp[1]), sexp[2].map(parseIdExpr), sexp);
       }
 
       function parseMultiDef(sexp) {
         if ((sexp.length !== 3)               // is it the wrong # of parts?
           || !(sexp[1] instanceof Array)) {   // is it (define-values <not a list> )?
-          return fallback(sexp); 
-        } 
+          return fallback(sexp);
+        }
         return new structures.defVars(sexp[1].map(parseIdExpr), parseExpr(sexp[2]), sexp);
       }
 
@@ -240,8 +296,8 @@ class Parser {
             || (!isSymbol(sexp[1][0]))        // is the first element in the list a symbol?
             || (!sexp[1].every(isSymbol))     // is the next element a list of not-all-symbols?
             || (sexp.length !== 3)) {         // is it the wrong # of parts?
-            return fallback(sexp); 
-          } 
+            return fallback(sexp);
+          }
           var args = rest(sexp[1]).map(parseIdExpr);
           args.location = sexp[1].location;
           return new structures.defFunc(parseIdExpr(sexp[1][0]), args, parseExpr(sexp[2]), sexp);
@@ -249,8 +305,8 @@ class Parser {
         // If it's (define x ...)
         if (isSymbol(sexp[1])) {
           if ((sexp.length !== 3)) {           // is it the wrong # of parts?
-            return fallback(sexp); 
-          } 
+            return fallback(sexp);
+          }
           return new structures.defVar(parseIdExpr(sexp[1]), parseExpr(sexp[2]), sexp);
         }
         // if it's neither form of define...
@@ -282,7 +338,7 @@ class Parser {
         if (isSymbolEqualTo(sexp[0], "unquote")             // improper unquote
           || isSymbolEqualTo(sexp[0], "unquote-splicing")   // improper unquote-splicing
           || isSymbolEqualTo(sexp[0], "else")) {            // improper else
-          return fallback(sexp); 
+          return fallback(sexp);
         }
         return isCons(sexp) ? new structures.callExpr(parseExpr(sexp[0]), rest(sexp).map(parseExpr), sexp[0]) : fallback(sexp);
       }
@@ -302,8 +358,8 @@ class Parser {
         if ((sexp.length !== 3)                   // is it the wrong # of parts?
           || !(sexp[1] instanceof Array)          // is it just (local <not-list>)?
           || !sexp[1].every(isDefinition)) {      // is it a list of not-all-definitions?
-          return fallback(sexp); 
-        } 
+          return fallback(sexp);
+        }
         return new structures.localExpr(sexp[1].map(parseDefinition), parseExpr(sexp[2]), sexp[0]);
       }
 
@@ -311,8 +367,8 @@ class Parser {
         if ((sexp.length !== 3)                   // is it the wrong # of parts?
           || !(sexp[1] instanceof Array)          // is it just (letrec <not-list>)?
           || !sexp[1].every(sexpIsCouple)) {      // is it a list of not-all-bindings?
-          return fallback(sexp); 
-        } 
+          return fallback(sexp);
+        }
         return new structures.letrecExpr(sexp[1].map(parseBinding), parseExpr(sexp[2]), sexp[0]);
       }
 
@@ -320,8 +376,8 @@ class Parser {
         if ((sexp.length !== 3)                   // is it the wrong # of parts?
           || !(sexp[1] instanceof Array)          // is it just (let <not-list>)?
           || !sexp[1].every(sexpIsCouple)) {      // is it a list of not-all-bindings?
-          return fallback(sexp); 
-        } 
+          return fallback(sexp);
+        }
         return new structures.letExpr(sexp[1].map(parseBinding), parseExpr(sexp[2]), sexp);
       }
 
@@ -446,13 +502,13 @@ class Parser {
     function parseCaseExpr(sexp) {
       // is it the wrong # of parts?
       if (sexp.length !== 3) { return fallback(sexp); }
-      
+
       function checkCaseCouple(clause) {
         if (!(clause instanceof Array)
             || (clause.length !== 2)
             || !((clause[0] instanceof Array)
-               || (isSymbol(clause[0]) && isSymbolEqualTo(clause[0], "else")))) { 
-          throw "ParseError"; 
+               || (isSymbol(clause[0]) && isSymbolEqualTo(clause[0], "else")))) {
+          throw "ParseError";
         }
       }
 
@@ -503,7 +559,7 @@ class Parser {
     function parseUnquoteExpr(sexp, depth) {
       var result;
       if ((typeof depth === 'undefined')
-        || (sexp.length !== 2)){ 
+        || (sexp.length !== 2)){
         return fallback(sexp);
       } else if (depth === 1) {
         result = new structures.unquotedExpr(parseExpr(sexp[1]));
@@ -573,7 +629,7 @@ class Parser {
       depth = (typeof depth === 'undefined') ? 0 : depth;
       if ((sexp.length !== 2)  // quasiquote must have exactly one argument
        // if the argument is (unquote-splicing....), throw an error
-       || (isCons(sexp[1]) && isSymbolEqualTo(sexp[1][0], "unquote-splicing"))) { 
+       || (isCons(sexp[1]) && isSymbolEqualTo(sexp[1][0], "unquote-splicing"))) {
         return fallback(sexp);
       }
 
@@ -634,10 +690,10 @@ class Parser {
       if ((sexp[1] instanceof Array) && isSymbolEqualTo(sexp[1][0], "lib")) {
         if ((sexp[1].length < 3)                // is it (require (lib)) or (require (lib <string>))
           || !rest(sexp[1]).every(isString)) {  // is it (require (lib not-strings))?
-          return fallback(sexp); 
-        } 
+          return fallback(sexp);
+        }
       } else if (((sexp[1] instanceof Array) && isSymbolEqualTo(sexp[1][0], "planet"))
-               || (!(isSymbol(sexp[1]) || isString(sexp[1])))) { 
+               || (!(isSymbol(sexp[1]) || isString(sexp[1])))) {
         return fallback(sexp); // if it's (require (planet...))
       }
       var req = new structures.requireExpr(sexp[1], sexp[0]);
@@ -673,14 +729,14 @@ class Parser {
 
   getExceptionMessage(e){
     let msg = JSON.parse(e)['dom-message'][2].slice(2);
-    return (msg.every((element) => typeof element==="string"))? msg 
+    return (msg.every((element) => typeof element==="string"))? msg
             : (msg[0] instanceof Array)? msg[0][2].substring(msg[0][2].indexOf("read: ")+6)
             : "Check your quotation marks, or any other symbols you've used";
   }
 }
 
 if (lex) {
-  module.exports = Parser;
+  module.exports = WeschemeParser;
 } else {
   module.exports = function() {
     throw new Error('wescheme-js must be installed to use the wescheme blocks parser');

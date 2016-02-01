@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <title>Simple Example</title>
+    <script src="build/third-party.js"></script>
+  </head>
+  <body>
+    <div class="container simple-example">
+      <div class="page-header">
+        <h1><a href="/">codemirror-blocks</a> <small>Simple Example</small></h1>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>
+            This example uses a simple s-expression parser defined in
+            <a href="parser.js">parser.js</a>. The basic syntax is:
+            <pre><code>expr ::= list | number
+list ::= '(' symbol expr* ')'
+symbol ::= ['A'-'Z''a'-'z']+
+number ::= ['0'-'9']+</code></pre>
+            To check out another example using a much more advanced parser, go to the
+            <a href="wescheme.html">wescheme example</a>.
+          </p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <p>Edit using text...</p>
+          <textarea id="code">This is a test.</textarea>
+        </div>
+        <div class="col-md-6">
+          <p>or edit using blocks!</p>
+          <textarea id="code2">This is a test.</textarea>
+        </div>
+      </div>
+    </div>
+    <script src="build/example.js"></script>
+  </body>
+</html>

@@ -5,7 +5,6 @@ var envConfig = require('./env-config.js');
 var reporters = ['dots'];
 
 if (envConfig.runCoverage) {
-  //webpackConfig = require('./webpack/test-coverage.config');
   reporters.push('coverage');
 
   if (envConfig.isCI) {

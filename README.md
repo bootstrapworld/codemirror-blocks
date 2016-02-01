@@ -45,7 +45,7 @@ To get your dev environment up and running, follow these steps
 
         npm start
 
-4. browse to http://localhost:8080/webpack-dev-server/ and fire away!
+4. browse to http://localhost:8080/ and fire away!
 
 5. while you work, be sure to continuously run the unit tests with:
 

@@ -1,5 +1,6 @@
-import render from './render';
 import CodeMirror from 'codemirror';
+import render from './render';
+import * as ui from './ui';
 
 function getLocationFromEl(el) {
   // TODO: it's kind of lame to have line and ch as attributes on random elements.
@@ -50,9 +51,10 @@ export class BlockMarker {
 }
 
 export default class CodeMirrorBlocks {
-  constructor(cm, parser, {willInsertNode, didInsertNode, renderOptions} = {}) {
+  constructor(cm, parser, {toolbar, willInsertNode, didInsertNode, renderOptions} = {}) {
     this.cm = cm;
     this.parser = parser;
+    this.toolbarNode = toolbar;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
     this.renderOptions = renderOptions;
@@ -189,6 +191,7 @@ export default class CodeMirrorBlocks {
     for (let rootNode of this.ast.rootNodes) {
       render(rootNode, this.cm, this.renderOptions || {});
     }
+    ui.renderToolbarInto(this);
   }
 
   getSelectedNode() {
@@ -410,16 +413,22 @@ export default class CodeMirrorBlocks {
     event.stopPropagation();
     event.target.classList.remove('blocks-over-target');
     let nodeId = event.dataTransfer.getData('text/id');
-    if (!nodeId) {
+    let sourceNodeText = event.dataTransfer.getData('text/plain');
+    let sourceNodeJSON = event.dataTransfer.getData('text/json');
+    let sourceNode = null;
+
+    if (nodeId) {
+      sourceNode = this.ast.nodeMap.get(nodeId);
+      if (sourceNode) {
+        sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
+      } else {
+        console.error("node", nodeId, "not found in AST");
+      }
+    } else if (sourceNodeJSON) {
+      sourceNode = JSON.parse(sourceNodeJSON);
+    } else {
       console.error("data transfer contains no node id. Not sure how to proceed.");
     }
-    let sourceNode = this.ast.nodeMap.get(nodeId);
-    
-    if (!sourceNode) {
-      console.error("node", nodeId, "not found in AST");
-    }
-
-    let sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
 
     let destination = getLocationFromEl(event.target);
 
@@ -441,7 +450,7 @@ export default class CodeMirrorBlocks {
     }
 
     // a node cannot be dropped into a child of itself
-    if(destinationNode && sourceNode.el.contains(destinationNode.el)) {
+    if(destinationNode && sourceNode.el && sourceNode.el.contains(destinationNode.el)) {
       return;
     }
     this.cm.operation(() => {
