@@ -62,8 +62,7 @@
     "wescheme-js": "bootstrapworld/wescheme-js"
   },
   "scripts": {
-    "compile": "babel -d lib/ src/",
-    "prepublish": "npm run compile",
+    "prepublish": "npm run build",
     "test": "karma start --single-run",
     "test-watch": "karma start",
     "start": "webpack-dev-server --config webpack/example.config.js",
