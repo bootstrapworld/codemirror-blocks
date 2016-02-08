@@ -1,3 +1,4 @@
+[![Gitter](https://badges.gitter.im/bootstrapworld/codemirror-blocks.svg)](https://gitter.im/bootstrapworld/codemirror-blocks?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Build Status](https://travis-ci.org/bootstrapworld/codemirror-blocks.svg?branch=master)](https://travis-ci.org/bootstrapworld/codemirror-blocks)
 [![Coverage Status](https://coveralls.io/repos/bootstrapworld/codemirror-blocks/badge.svg?branch=master&service=github)](https://coveralls.io/github/bootstrapworld/codemirror-blocks?branch=master)
 
