@@ -37,7 +37,7 @@ export class PrimitiveGroup {
     }
     let result = [];
     for (let primitive of this.primitives) {
-      if (primitive.name.indexOf(search) >= 0) {
+      if (primitive.name.toLowerCase().indexOf(search.toLowerCase()) >= 0) {
         // let's display the entire group and/or primitive
         result.push(primitive);
       } else if (primitive instanceof PrimitiveGroup) {
@@ -64,7 +64,7 @@ export class PrimitiveGroup {
     const items = [];
     for (let item of primitives) {
       if (typeof item == 'string') {
-        items.push(new Primitive(item));
+        items.push(new Primitive(parser, item));
       } else if (typeof item == 'object') {
         if (item.primitives) {
           // it's a group
