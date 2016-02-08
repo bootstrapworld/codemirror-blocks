@@ -106,9 +106,14 @@ describe("The PrimitiveGroup Class's", function() {
       expect(() => PrimitiveGroup.fromConfig({}, {})).toThrow();
     });
 
-    it("should throw an error is a config isn't understood", function() {
+    it("should still work if no primitives are given", function() {
+      expect(() => PrimitiveGroup.fromConfig({}, {name:'foo'})).not.toThrow();
+    });
+
+    it("should throw an error if a config isn't understood", function() {
       expect(() => PrimitiveGroup.fromConfig({}, {name:'foo', primitives:[1]})).toThrow();
     });
+
   });
 
   describe("filter method", function() {
@@ -133,6 +138,10 @@ describe("The PrimitiveGroup Class's", function() {
       expect(filteredGroup.primitives.length).toEqual(1);
       expect(filteredGroup.primitives[0].name).toBe('String Manipulation');
       expect(filteredGroup.primitives[0].primitives.length).toBe(2);
+    });
+
+    it("should return itself when given an empty search string", function() {
+      expect(this.group.filter('')).toBe(this.group);
     });
   });
 

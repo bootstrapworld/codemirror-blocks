@@ -25,7 +25,7 @@ export class Primitive {
 }
 
 export class PrimitiveGroup {
-  constructor(parser, name, primitives=[]) {
+  constructor(parser, name, primitives) {
     this.parser = parser;
     this.name = name;
     this.primitives = primitives;
