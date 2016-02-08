@@ -2,6 +2,8 @@
 [![Coverage Status](https://coveralls.io/repos/bootstrapworld/codemirror-blocks/badge.svg?branch=master&service=github)](https://coveralls.io/github/bootstrapworld/codemirror-blocks?branch=master)
 
 # codemirror-blocks
+
+[![Join the chat at https://gitter.im/bootstrapworld/codemirror-blocks](https://badges.gitter.im/bootstrapworld/codemirror-blocks.svg)](https://gitter.im/bootstrapworld/codemirror-blocks?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 A library for making functional languages editable using visual blocks inside of codemirror
 
 ## Usage
