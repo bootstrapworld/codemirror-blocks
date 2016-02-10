@@ -18,7 +18,13 @@ var cm = CodeMirror.fromTextArea(
 var cm2 = CodeMirror.fromTextArea(
   document.getElementById('code2'),
   {theme:'3024-day',
-   autoCloseBrackets: true}
+   autoCloseBrackets: false,
+   extraKeys: {
+     "Shift-9" : function(cm){
+       cm.replaceSelection("(...)");
+     }
+   }
+ }
 );
 
 var code = require('./ast-test.rkt');
