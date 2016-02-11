@@ -1,7 +1,7 @@
 {
   "name": "codemirror-blocks",
   "version": "0.0.1",
-  "description": "CoreMirror extension for using draggable blocks to write programming languages",
+  "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "lib/codemirror-blocks.js",
   "dependencies": {
     "babel-polyfill": "^6.3.14",
@@ -66,6 +66,7 @@
     "test": "karma start --single-run",
     "test-watch": "karma start",
     "start": "webpack-dev-server --config webpack/example.config.js",
+    "heroku-server": "webpack-dev-server --config webpack/example.config.js --host 0.0.0.0 --port 80",
     "build": "webpack",
     "lint": "eslint . --ext .js || true",
     "docs": "docco src/*.js"
