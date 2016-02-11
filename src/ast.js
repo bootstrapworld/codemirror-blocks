@@ -1,5 +1,10 @@
 import uuid from 'node-uuid';
 
+function comparePos(a, b) {
+  return a.line - b.line || a.ch - b.ch;
+}
+
+
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
 // required to spit out an `AST` instance.
 export class AST {
@@ -33,18 +38,15 @@ export class AST {
     }
   }
 
-  // returns -1 if a<b, 0 if a==b, and 1 if a>b
-  comparePos(a, b) { return a.line-b.line || a.ch-b.ch; }
-
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)
-        || this.rootNodes.find((node) => this.comparePos(node.from, selection) >= 0)
+        || this.rootNodes.find(node => comparePos(node.from, selection) >= 0)
         || this.rootNodes[0];
   }
 
   getNodeBefore(selection) {
-    return this.prevNodeMap.get(selection) 
-        || this.reverseRootNodes.find((node) => this.comparePos(node.to, selection) <= 0)
+    return this.prevNodeMap.get(selection)
+        || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0)
         || this.reverseRootNodes[0];
   }
 }

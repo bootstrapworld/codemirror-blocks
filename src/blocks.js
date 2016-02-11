@@ -209,22 +209,25 @@ export default class CodeMirrorBlocks {
       node.el.matches('.blocks-hidden *'));
   }
 
-  selectNextNode(event) {
+  _getNextUnhiddenNode({reverse}={}) {
+    let getNextNode = reverse ?
+                      this.ast.getNodeBefore.bind(this.ast) :
+                      this.ast.getNodeAfter.bind(this.ast);
+
     let nodeOrCursor = this.getSelectedNode() || this.cm.getCursor();
-    let nextNode = this.ast.getNodeAfter(nodeOrCursor);
+    let nextNode = getNextNode(nodeOrCursor);
     while (this.isNodeHidden(nextNode)) {
-      nextNode = this.ast.getNodeAfter(nextNode);
+      nextNode = getNextNode(nextNode);
     }
-    this.selectNode(nextNode, event);
+    return nextNode;
+  }
+
+  selectNextNode(event) {
+    this.selectNode(this._getNextUnhiddenNode(), event);
   }
 
   selectPrevNode(event) {
-    let nodeOrCursor = this.getSelectedNode() || this.cm.getCursor();
-    let prevNode = this.ast.getNodeBefore(nodeOrCursor);
-    while (this.isNodeHidden(prevNode)) {
-      prevNode = this.ast.getNodeBefore(prevNode);
-    }
-    this.selectNode(prevNode, event);
+    this.selectNode(this._getNextUnhiddenNode({reverse: true}), event);
   }
 
   handleCopyCut(event) {
