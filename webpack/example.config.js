@@ -1,6 +1,7 @@
 var _ = require('lodash');
 var path = require('path');
 var webpack = webpack = require('webpack');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
 var baseConfig = require('./base.config.js')();
 
 // this is the config for generating the files needed to run the examples.
@@ -32,7 +33,27 @@ module.exports = _.extend({}, baseConfig, {
       name:'third-party',
       minChunks: Infinity
     }),
-    new webpack.HotModuleReplacementPlugin()
+    new webpack.HotModuleReplacementPlugin(),
+    new HtmlWebpackPlugin({
+      filename: 'index.html',
+      template: 'example/index.html',
+      inject: false,
+    }),
+    new HtmlWebpackPlugin({
+      filename: 'simple.html',
+      template: 'example/simple.html',
+      inject: false,
+    }),
+    new HtmlWebpackPlugin({
+      filename: 'wescheme.html',
+      template: 'example/wescheme.html',
+      inject: false,
+    }),
+    new HtmlWebpackPlugin({
+      filename: 'editor.html',
+      template: 'example/editor.html',
+      inject: false,
+    }),
   ]),
   devServer: {
     hot: true,

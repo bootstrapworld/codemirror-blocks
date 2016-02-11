@@ -29,9 +29,11 @@
     "eslint": "^1.9.0",
     "eslint-loader": "^1.1.1",
     "eslint-plugin-react": "^3.15.0",
+    "express": "^4.13.4",
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.8.5",
     "handlebars-loader": "pcardune/handlebars-loader",
+    "html-webpack-plugin": "^2.8.1",
     "isparta-loader": "^2.0.0",
     "jasmine": "^2.3.2",
     "jasmine-core": "^2.3.4",
@@ -51,7 +53,7 @@
     "style-loader": "^0.13.0",
     "url-loader": "^0.5.7",
     "webpack": "^1.12.6",
-    "webpack-dev-server": "^1.12.1",
+    "webpack-dev-server": "^1.14.1",
     "wescheme-js": "bootstrapworld/wescheme-js"
   },
   "peerDependencies": {
@@ -66,7 +68,7 @@
     "test": "karma start --single-run",
     "test-watch": "karma start",
     "start": "webpack-dev-server --config webpack/example.config.js",
-    "heroku-server": "webpack-dev-server --config webpack/example.config.js --host 0.0.0.0 --port 80",
+    "heroku-server": "node heroku-server.js",
     "build": "webpack",
     "lint": "eslint . --ext .js || true",
     "docs": "docco src/*.js"
