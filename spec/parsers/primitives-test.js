@@ -45,7 +45,7 @@ describe("The Primitive Class's", function() {
 
   });
 
-  describe("getASTNode method", function() {
+  describe("getASTNode and getLiteralNode method", function() {
     beforeEach(function() {
       this.parser = {};
       this.primitive = new Primitive(this.parser, 'add');
@@ -55,6 +55,12 @@ describe("The Primitive Class's", function() {
       expect(this.primitive.getASTNode()).toBeUndefined();
       this.parser.getASTNodeForPrimitive = () => 'foo';
       expect(this.primitive.getASTNode()).toBe('foo');
+    });
+
+    it("should delegate to the parsers getLiteralNodeForPrimitive method if available", function() {
+      expect(this.primitive.getLiteralNode()).toBeUndefined();
+      this.parser.getLiteralNodeForPrimitive = () => 'foo';
+      expect(this.primitive.getLiteralNode()).toBe('foo');
     });
   });
 

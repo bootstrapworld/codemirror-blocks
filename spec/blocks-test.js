@@ -130,7 +130,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(child.el.className).toMatch(/error/);
       expect(this.expression.el.className).not.toMatch(/error/);
     });
-    
+
     it("it should allow you to set a title value", function() {
       this.blocks.markText(this.expression.from, this.expression.to, {title:"woot"});
       expect(this.expression.el.title).toBe("woot");
@@ -597,6 +597,25 @@ describe('The CodeMirrorBlocks Class', function() {
         this.firstArg.el.dispatchEvent(dragEvent);
         this.secondArg.el.dispatchEvent(drop(dragEvent.dataTransfer));
         expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('(+ 1 3)');
+      });
+
+      it('should support dragging plain text to replace a literal', function() {
+        let dragEvent = dragstart();
+        dragEvent.dataTransfer.setData('text/plain', '5000');
+        this.firstArg.el.dispatchEvent(drop(dragEvent.dataTransfer));
+        expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('(+ 5000 2 3)');
+      });
+
+      it('should support dragging plain text onto some whitespace', function() {
+        let dragEvent = dragstart();
+        dragEvent.dataTransfer.setData('text/plain', '5000');
+        let dropEvent = drop(dragEvent.dataTransfer);
+        let nodeEl = this.blocks.ast.rootNodes[0].el;
+        let wrapperEl = this.cm.getWrapperElement();
+        dropEvent.pageX = wrapperEl.offsetLeft + wrapperEl.offsetWidth - 10;
+        dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
+        nodeEl.parentElement.dispatchEvent(dropEvent);
+        expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
 
     });
