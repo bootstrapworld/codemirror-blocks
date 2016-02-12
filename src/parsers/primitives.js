@@ -12,6 +12,12 @@ export class Primitive {
     }
   }
 
+  getLiteralNode() {
+    if (this.parser.getLiteralNodeForPrimitive) {
+      return this.parser.getLiteralNodeForPrimitive(this);
+    }
+  }
+
   static fromConfig(parser, config) {
     return new Primitive(
       parser,

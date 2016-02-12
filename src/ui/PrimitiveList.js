@@ -2,18 +2,23 @@ import React from 'react';
 import classNames from 'classnames';
 
 import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
+import {RenderedBlockNode} from './PrimitiveBlock';
 import Highlight from './Highlight';
 
 require('./PrimitiveList.less');
 
-function Primitive({primitive, highlight, className, onClick}) {
-  return (
-    <li className={classNames(className, "Primitive list-group-item")}
-        onClick={onClick}>
-      <Highlight highlight={highlight}>{primitive.name}</Highlight>
-    </li>
-  );
-}
+const Primitive = React.createClass({
+  render() {
+    var {primitive, highlight, className, onClick} = this.props;
+    let astNode = primitive.getLiteralNode();
+    return (
+      <li className={classNames(className, "Primitive list-group-item")}
+          onClick={onClick}>
+        <RenderedBlockNode node={astNode} text={primitive.name} />
+      </li>
+    );
+  },
+});
 
 const PrimitiveGroup = React.createClass({
 
