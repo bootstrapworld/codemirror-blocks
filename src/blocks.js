@@ -429,8 +429,8 @@ export default class CodeMirrorBlocks {
       }
     } else if (sourceNodeJSON) {
       sourceNode = JSON.parse(sourceNodeJSON);
-    } else {
-      console.error("data transfer contains no node id. Not sure how to proceed.");
+    } else if (!sourceNodeText) {
+      console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
 
     let destination = getLocationFromEl(event.target);
@@ -446,16 +446,29 @@ export default class CodeMirrorBlocks {
     // impact on the AST.  For example, start with:
     //   (or #t #f)
     // then try to move the #f over one space. It should be a no-op.
-    if ((destination.line == sourceNode.to.line && destination.ch == sourceNode.to.ch) ||
-        (destination.line == sourceNode.from.line && destination.ch == sourceNode.from.ch)) {
+    if (sourceNode &&
+        ((destination.line == sourceNode.to.line && destination.ch == sourceNode.to.ch) ||
+         (destination.line == sourceNode.from.line && destination.ch == sourceNode.from.ch))) {
       // destination is the same as source node location, so this should be a no-op.
       return;
     }
 
     // a node cannot be dropped into a child of itself
-    if(destinationNode && sourceNode.el && sourceNode.el.contains(destinationNode.el)) {
+    if(destinationNode &&
+       sourceNode &&
+       sourceNode.el &&
+       sourceNode.el.contains(destinationNode.el)) {
       return;
     }
+    if (!sourceNode) {
+      if (destinationNode) {
+        this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
+      } else {
+        this.cm.replaceRange(sourceNodeText, destination);
+      }
+      return;
+    }
+
     this.cm.operation(() => {
       if (destinationNode && destinationNode.type == 'literal') {
         if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destinationNode.from)) {
