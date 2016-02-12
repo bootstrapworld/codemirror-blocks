@@ -61,10 +61,6 @@ export default React.createClass({
     }
 
     this.astNode = primitive.getASTNode();
-    if (this.astNode) {
-      return <RenderedBlockNode node={this.astNode} />;
-    }
-
-    return <div/>;
+    return <RenderedBlockNode node={this.astNode} text={primitive.name} />;
   }
 });
