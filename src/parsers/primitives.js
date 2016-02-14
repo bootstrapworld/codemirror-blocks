@@ -1,6 +1,6 @@
 export class Primitive {
   constructor(parser, name, {argumentTypes, returnType}={}) {
-    this.parser = parser;
+    this.parser = parser || {};
     this.name = name;
     this.argumentTypes = argumentTypes || [];
     this.returnType = returnType;
@@ -9,6 +9,12 @@ export class Primitive {
   getASTNode() {
     if (this.parser.getASTNodeForPrimitive) {
       return this.parser.getASTNodeForPrimitive(this);
+    }
+  }
+
+  getLiteralNode() {
+    if (this.parser.getLiteralNodeForPrimitive) {
+      return this.parser.getLiteralNodeForPrimitive(this);
     }
   }
 

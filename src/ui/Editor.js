@@ -9,11 +9,18 @@ require('./Editor.less');
 export default React.createClass({
   displayName: 'Editor',
 
+  propTypes: {
+    options:React.PropTypes.object,
+    cmOptions: React.PropTypes.object,
+    parser: React.PropTypes.shape({
+      parse: React.PropTypes.func.isRequired,
+    }).isRequired,
+  },
+
   getDefaultProps() {
     return {
       options: {},
       cmOptions: {},
-      parser: {}
     };
   },
 
@@ -54,7 +61,7 @@ export default React.createClass({
       <div className="Editor">
         <div className="row">
           <div className="col-xs-3 toolbar-pane">
-            <Toolbar blocks={blocks}/>
+            <Toolbar primitives={blocks.parser.primitives}/>
           </div>
           <div className="col-xs-9 codemirror-pane">
             <CodeMirror ref="cm" options={this.props.cmOptions}/>

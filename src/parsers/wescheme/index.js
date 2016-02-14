@@ -158,6 +158,15 @@ class WeschemeParser {
     );
   }
 
+  getLiteralNodeForPrimitive(primitive) {
+    return new Literal(
+      {line: 0, ch: 0},
+      {line:0, ch:0},
+      primitive.name,
+      'symbol'
+    );
+  }
+
   get primitives() {
     return PrimitiveGroup.fromConfig(this, PRIMITIVES_CONFIG);
     return PrimitiveGroup.fromConfig(this, {

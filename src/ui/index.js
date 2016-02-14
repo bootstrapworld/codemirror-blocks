@@ -5,7 +5,7 @@ import Editor from './Editor';
 
 export function renderToolbarInto(blocks) {
   if (blocks.toolbarNode) {
-    ReactDOM.render(<Toolbar blocks={blocks} />, blocks.toolbarNode);
+    ReactDOM.render(<Toolbar primitives={blocks.parser.primitives} />, blocks.toolbarNode);
   }
 }
 

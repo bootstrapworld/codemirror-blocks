@@ -3,55 +3,18 @@ import CodeMirror from 'codemirror';
 import ExampleParser from '../example/parser';
 var render = require('../src/render');
 
-function click() {
-  return new MouseEvent('click', {bubbles: true});
-}
-function dblclick() {
-  return new MouseEvent('dblclick', {bubbles: true});
-}
-function blur() {
-  return new Event('blur', {bubbles: true});
-}
-function keydown(keyCode, other={}) {
-  let event = new CustomEvent('keydown', {bubbles: true});
-  event.which = event.keyCode = keyCode;
-  Object.assign(event, other);
-  return event;
-}
-function keypress(keyCode, other={}) {
-  let event = new CustomEvent('keypress', {bubbles: true});
-  event.which = event.keyCode = keyCode;
-  Object.assign(event, other);
-  return event;
-}
-function dragstart() {
-  let event = new CustomEvent('dragstart', {bubbles: true});
-  event.dataTransfer = {
-    data: {},
-    setData(type, data) {
-      this.data[type] = data;
-    },
-    getData(type) {
-      return this.data[type];
-    },
-    setDragImage() {}
-  };
-  return event;
-}
-function dragenter() {
-  return new CustomEvent('dragenter', {bubbles: true});
-}
-function dragleave() {
-  return new CustomEvent('dragleave', {bubbles: true});
-}
-function drop(dataTransfer) {
-  let event = new CustomEvent('drop', {bubbles: true});
-  event.dataTransfer = dataTransfer;
-  return event;
-}
-function cut() {
-  return new CustomEvent('cut', {bubbles: true});
-}
+import {
+  click,
+  dblclick,
+  blur,
+  keydown,
+  keypress,
+  dragstart,
+  dragenter,
+  dragleave,
+  drop,
+  cut,
+} from './events';
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
@@ -130,7 +93,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(child.el.className).toMatch(/error/);
       expect(this.expression.el.className).not.toMatch(/error/);
     });
-    
+
     it("it should allow you to set a title value", function() {
       this.blocks.markText(this.expression.from, this.expression.to, {title:"woot"});
       expect(this.expression.el.title).toBe("woot");
@@ -597,6 +560,25 @@ describe('The CodeMirrorBlocks Class', function() {
         this.firstArg.el.dispatchEvent(dragEvent);
         this.secondArg.el.dispatchEvent(drop(dragEvent.dataTransfer));
         expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('(+ 1 3)');
+      });
+
+      it('should support dragging plain text to replace a literal', function() {
+        let dragEvent = dragstart();
+        dragEvent.dataTransfer.setData('text/plain', '5000');
+        this.firstArg.el.dispatchEvent(drop(dragEvent.dataTransfer));
+        expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('(+ 5000 2 3)');
+      });
+
+      it('should support dragging plain text onto some whitespace', function() {
+        let dragEvent = dragstart();
+        dragEvent.dataTransfer.setData('text/plain', '5000');
+        let dropEvent = drop(dragEvent.dataTransfer);
+        let nodeEl = this.blocks.ast.rootNodes[0].el;
+        let wrapperEl = this.cm.getWrapperElement();
+        dropEvent.pageX = wrapperEl.offsetLeft + wrapperEl.offsetWidth - 10;
+        dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
+        nodeEl.parentElement.dispatchEvent(dropEvent);
+        expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
 
     });

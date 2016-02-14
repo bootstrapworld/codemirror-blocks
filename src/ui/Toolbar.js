@@ -1,16 +1,21 @@
 import React from 'react';
+import classNames from 'classnames';
 import PrimitiveList from './PrimitiveList';
 import PrimitiveBlock from './PrimitiveBlock';
-import classNames from 'classnames';
+import {PrimitiveGroup} from '../parsers/primitives';
 
 require('./Toolbar.less');
 
 export default React.createClass({
   displayName: 'Toolbar',
 
+  propTypes: {
+    primitives: React.PropTypes.instanceOf(PrimitiveGroup)
+  },
+
   getDefaultProps() {
     return {
-      blocks: {parser:{}}
+      primitives: null
     };
   },
 
@@ -44,10 +49,9 @@ export default React.createClass({
   },
 
   render() {
-    let parser = this.props.blocks.parser;
     let primitives = [];
-    if (parser.primitives) {
-      primitives = parser.primitives.filter(this.state.search).primitives;
+    if (this.props.primitives) {
+      primitives = this.props.primitives.filter(this.state.search).primitives;
     }
     let selected = this.state.selectedPrimitive;
     return (
