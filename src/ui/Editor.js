@@ -54,7 +54,7 @@ export default React.createClass({
       <div className="Editor">
         <div className="row">
           <div className="col-xs-3 toolbar-pane">
-            <Toolbar blocks={blocks}/>
+            <Toolbar primitives={blocks.parser.primitives}/>
           </div>
           <div className="col-xs-9 codemirror-pane">
             <CodeMirror ref="cm" options={this.props.cmOptions}/>
