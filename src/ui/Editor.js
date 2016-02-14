@@ -9,11 +9,18 @@ require('./Editor.less');
 export default React.createClass({
   displayName: 'Editor',
 
+  propTypes: {
+    options:React.PropTypes.object,
+    cmOptions: React.PropTypes.object,
+    parser: React.PropTypes.shape({
+      parse: React.PropTypes.func.isRequired,
+    }).isRequired,
+  },
+
   getDefaultProps() {
     return {
       options: {},
       cmOptions: {},
-      parser: {}
     };
   },
 
