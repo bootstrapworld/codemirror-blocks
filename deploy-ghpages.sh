@@ -1,13 +1,12 @@
 #!/bin/bash
-set -e # exit with nonzero exit code if anything fails
-set -x # spit out commands as they are being run
+set -ev # exit with nonzero exit code if anything fails
 
 # clear and re-create the out directory
 rm -rf out || exit 0;
 mkdir out;
 
 # run our compile script, discussed above
-jekyll build --baseurl "/codemirror-blocks"
+jekyll build
 npm run build
 cp -R build site-build/examples
 npm run docs
@@ -31,3 +30,5 @@ git commit -m "Deploy to GitHub Pages"
 # will be lost, since we are overwriting it.) We redirect any output to
 # /dev/null to hide any sensitive credential data that might otherwise be exposed.
 git push --force --quiet "https://${GH_TOKEN}@${GH_REF}" master:gh-pages > /dev/null 2>&1
+
+echo "gh-pages branch successfully updated"
