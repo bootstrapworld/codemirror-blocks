@@ -63,6 +63,17 @@ describe('The CodeMirrorBlocks Class', function() {
     });
   });
 
+  describe('constructor,', function() {
+    it('should optionally take a string identifier for a built in parser', function() {
+      expect(() => new CodeMirrorBlocks(this.cm, 'foo')).toThrowError(
+        'Could not create CodeMirrorBlocks instance. Unknown parser: "foo"'
+      );
+      CodeMirrorBlocks.parsers = {foo: () => this.parser};
+      var blocks = new CodeMirrorBlocks(this.cm, 'foo');
+      expect(blocks.parser).toBe(this.parser);
+    });
+  });
+
   describe('text marking api,', function() {
     beforeEach(function() {
       this.cm.setValue('11 12 (+ 3 4 5)');

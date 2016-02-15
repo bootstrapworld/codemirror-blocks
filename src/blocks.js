@@ -51,7 +51,27 @@ export class BlockMarker {
 }
 
 export default class CodeMirrorBlocks {
+  static fromTextArea(textarea, parser, options={}) {
+    return new CodeMirrorBlocks(
+      CodeMirror.fromTextArea(textarea),
+      parser,
+      options
+    );
+  }
+
   constructor(cm, parser, {toolbar, willInsertNode, didInsertNode, renderOptions} = {}) {
+
+    var parsers = CodeMirrorBlocks.parsers || {};
+    if (typeof parser == 'string') {
+      if (parsers[parser]) {
+        parser = parsers[parser]();
+      } else {
+        throw new Error(
+          `Could not create CodeMirrorBlocks instance. Unknown parser: "${parser}"`
+        );
+      }
+    }
+
     this.cm = cm;
     this.parser = parser;
     this.toolbarNode = toolbar;

@@ -1,8 +1,9 @@
 import 'babel-polyfill';
 import CodeMirrorBlocks from './blocks';
+import WeschemeParser from './parsers/wescheme';
 CodeMirrorBlocks.ast = require('./ast');
 CodeMirrorBlocks.parsers = {
-  WeschemeParser: require('./parsers/wescheme')
+  wescheme: (...args) => new WeschemeParser(...args)
 };
 CodeMirrorBlocks.CodeMirror = require('codemirror');
 module.exports = CodeMirrorBlocks;
