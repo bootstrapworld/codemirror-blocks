@@ -20,6 +20,21 @@ var configs = [
   }),
   _.extend({}, baseConfig(), {
     entry: {
+      "CodeMirrorBlocks-all": [
+        'codemirror',
+        'babel-polyfill',
+        './src/codemirror-blocks.js',
+        './src/parsers/wescheme/index.js',
+      ]
+    },
+    output: {
+      path: path.resolve(__dirname, '..', "dist"),
+      filename: "[name].js",
+      library: "CodeMirrorBlocks",
+    },
+  }),
+  _.extend({}, baseConfig(), {
+    entry: {
       "WeschemeParser": './src/parsers/wescheme/index.js'
     },
     output: {
