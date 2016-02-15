@@ -37,22 +37,26 @@ module.exports = _.extend({}, baseConfig, {
     new HtmlWebpackPlugin({
       filename: 'index.html',
       template: 'example/index.html',
-      inject: false,
+      inject: 'body',
+      chunks: ['third-party','index'],
     }),
     new HtmlWebpackPlugin({
       filename: 'simple.html',
       template: 'example/simple.html',
-      inject: false,
+      inject: 'body',
+      chunks: ['third-party','example'],
     }),
     new HtmlWebpackPlugin({
       filename: 'wescheme.html',
       template: 'example/wescheme.html',
-      inject: false,
+      inject: 'body',
+      chunks: ['third-party','wescheme-example'],
     }),
     new HtmlWebpackPlugin({
       filename: 'editor.html',
       template: 'example/editor.html',
-      inject: false,
+      inject: 'body',
+      chunks: ['third-party','editor-example'],
     }),
   ]),
   devServer: {

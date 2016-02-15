@@ -22,7 +22,6 @@ module.exports = function(config) {
   return {
     output: {
       path: path.resolve(__dirname, '..', "build"),
-      publicPath: "/",
       filename: "[name].js"
     },
     module: {
