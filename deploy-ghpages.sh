@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e # exit with nonzero exit code if anything fails
+set -x # spit out commands as they are being run
 
 # clear and re-create the out directory
 rm -rf out || exit 0;
