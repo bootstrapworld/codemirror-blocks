@@ -3,9 +3,9 @@
 	<nav id="nav">
 		<ul>
 			{% assign current = page.url | downcase | split: '/' %}
-			<li {% if current[1] == 'index.html' %}class='current'{% endif %}><a href="/index.html">Homepage</a></li>
-			<li {% if current[1] == 'docs' %}class='current'{% endif %}><a href="/docs">Docs</a></li>
-			<li {% if current[1] == 'examples' %}class='current'{% endif %}><a href="/examples">Examples</a></li>
+			<li {% if current[1] == 'index.html' %}class='current'{% endif %}><a href="{{site.baseurl}}/index.html">Homepage</a></li>
+			<li {% if current[1] == 'docs' %}class='current'{% endif %}><a href="{{site.baseurl}}/docs">Docs</a></li>
+			<li {% if current[1] == 'examples' %}class='current'{% endif %}><a href="{{site.baseurl}}/examples">Examples</a></li>
 			<li><a href="http://github.com/bootstrapworld/codemirror-blocks">Github</a></li>
 		</ul>
 	</nav>
