@@ -9,6 +9,7 @@ mkdir out;
 jekyll build
 npm run build
 cp -R build site-build/examples
+cp -R dist site-build/
 npm run docs
 cp -R docs site-build/
 
