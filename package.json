@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "lib/codemirror-blocks.js",
+  "engines": {
+    "node": "5.x",
+    "npm": "3.x"
+  },
   "dependencies": {
     "babel-polyfill": "^6.3.14",
     "bootstrap": "^3.3.6",
