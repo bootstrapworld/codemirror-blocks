@@ -1,4 +1,5 @@
 import CodeMirror from 'codemirror';
+import ee from 'event-emitter';
 import render from './render';
 import * as ui from './ui';
 
@@ -50,6 +51,9 @@ export class BlockMarker {
   }
 }
 
+export const EVENT_DRAG_START = 'dragstart';
+export const EVENT_DRAG_END = 'dragend';
+
 export default class CodeMirrorBlocks {
   static fromTextArea(textarea, parser, options={}) {
     return new CodeMirrorBlocks(
@@ -83,6 +87,7 @@ export default class CodeMirrorBlocks {
     this.undoKeys = [];
     this.redoKeys = [];
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
+    this.events = ee({});
 
     Object.assign(
       this.cm.getWrapperElement(),
@@ -117,6 +122,18 @@ export default class CodeMirrorBlocks {
     this.cm.on('mousedown', (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
+  }
+
+  on(event, listener) {
+    this.events.on(event, listener);
+  }
+
+  off(event, listener) {
+    this.events.off(event, listener);
+  }
+
+  emit(event, ...args) {
+    this.events.emit(event, ...args);
   }
 
   setBlockMode(mode) {
@@ -367,11 +384,18 @@ export default class CodeMirrorBlocks {
     window.getSelection().addRange(range);
   }
 
-  deleteSelectedNodes() {
-    let node = this.getSelectedNode();
+  deleteNode(node) {
     if (node) {
       this.cm.replaceRange('', node.from, node.to);
     }
+  }
+
+  deleteNodeWithId(nodeId) {
+    this.deleteNode(this.ast.nodeMap.get(nodeId));
+  }
+
+  deleteSelectedNodes() {
+    this.deleteNode(this.getSelectedNode());
   }
 
   startDraggingNode(node, event) {
@@ -381,10 +405,12 @@ export default class CodeMirrorBlocks {
     event.dataTransfer.setDragImage(node.el, -5, -5);
     event.dataTransfer.setData('text/plain', this.cm.getRange(node.from, node.to));
     event.dataTransfer.setData('text/id', node.id);
+    this.emit(EVENT_DRAG_START, this, node, event);
   }
 
-  stopDraggingNode(node) {
+  stopDraggingNode(node, event) {
     node.el.classList.remove('blocks-dragging');
+    this.emit(EVENT_DRAG_END, this, node, event);
   }
 
   isDropTarget(el) {
@@ -428,6 +454,7 @@ export default class CodeMirrorBlocks {
   }
 
   dropOntoNode(destinationNode, event) {
+    this.emit(EVENT_DRAG_END, this, event);
     if (!this.isDropTarget(event.target)) {
       // not a drop taret, just return
       return;

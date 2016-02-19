@@ -1,16 +1,41 @@
 .Editor {
   border: 1px solid #ddd;
+  height: 302px;
   > .row {
     .toolbar-pane {
+      border-right: 1px solid #ddd;
       padding-right: 0px;
+      height: 100%;
+
+      > .TrashCan {
+        height: 0px;
+        opacity: 0;
+      }
+      > .Toolbar {
+        height: 100%;
+        opacity: 1;
+      }
+      > .TrashCan,
+      > .Toolbar {
+        transition: opacity .25s, transform .15s;
+      }
+
+      &.show-trashcan {
+        > .TrashCan {
+          height: 100%;
+          opacity: 1;
+          transform: scale(1);
+        }
+        > .Toolbar {
+          height: 0px;
+          opacity: 0;
+        }
+      }
+
     }
     .codemirror-pane {
       padding-left: 0px;
     }
-  }
-  .Toolbar {
-    border-right: 1px solid #ddd;
-    height: 302px;
   }
   .blocks-toggle-btn {
     position: absolute;
