@@ -10,6 +10,7 @@ describe('The Editor component,', function() {
   beforeEach(function() {
     this.parser = new WeschemeParser();
     this.editor = TestUtils.renderIntoDocument(<Editor parser={this.parser} />);
+    this.blocks = this.editor.getCodeMirrorBlocks();
   });
 
   it("should create a CodeMirrorBlocks instance for you", function() {
@@ -18,7 +19,7 @@ describe('The Editor component,', function() {
   });
 
   it("should toggle block state when the toggle button is clicked", function() {
-    let blocks = this.editor.getCodeMirrorBlocks();
+    let blocks = this.blocks;
     spyOn(blocks, 'toggleBlockMode');
     let toggle = TestUtils.findRenderedDOMComponentWithClass(this.editor, 'blocks-toggle-btn');
     TestUtils.Simulate.click(toggle);
@@ -26,21 +27,28 @@ describe('The Editor component,', function() {
   });
 
   it("should show the trash can when a drag start event is emitted", function() {
-    this.editor.getCodeMirrorBlocks().emit(EVENT_DRAG_START);
+    this.blocks.emit(EVENT_DRAG_START);
     expect(this.editor.state.showTrashCan).toBe(true);
   });
 
   it("should hide the trash can when a drag end event is emitted", function() {
-    this.editor.getCodeMirrorBlocks().emit(EVENT_DRAG_END);
+    this.blocks.emit(EVENT_DRAG_END);
     expect(this.editor.state.showTrashCan).toBe(false);
   });
 
   it("should delete the node that gets dragged on the trash can and hide the trash can", function() {
-    spyOn(this.editor.getCodeMirrorBlocks(), 'deleteNodeWithId');
+    spyOn(this.blocks, 'deleteNodeWithId').and.callThrough();
     let trashCan = TestUtils.findRenderedComponentWithType(this.editor, TrashCan);
     trashCan.props.onDrop('some-node-id');
     expect(this.editor.state.showTrashCan).toBe(false);
-    expect(this.editor.getCodeMirrorBlocks().deleteNodeWithId)
+    expect(this.blocks.deleteNodeWithId)
       .toHaveBeenCalledWith('some-node-id');
+  });
+
+  it("should unregister it's listeners when unmounted", function() {
+    spyOn(this.blocks, 'off').and.callThrough();
+    this.editor.componentWillUnmount();
+    expect(this.blocks.off.calls.argsFor(0)).toEqual([EVENT_DRAG_START, jasmine.any(Function)]);
+    expect(this.blocks.off.calls.argsFor(1)).toEqual([EVENT_DRAG_END, jasmine.any(Function)]);
   });
 });

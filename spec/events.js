@@ -19,10 +19,10 @@ export function keypress(keyCode, other={}) {
   Object.assign(event, other);
   return event;
 }
-export function dragstart() {
+export function dragstart(data={}) {
   let event = new CustomEvent('dragstart', {bubbles: true});
   event.dataTransfer = {
-    data: {},
+    data,
     setData(type, data) {
       this.data[type] = data;
     },
@@ -31,6 +31,7 @@ export function dragstart() {
     },
     setDragImage() {}
   };
+
   return event;
 }
 export function dragenter() {
