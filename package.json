@@ -71,7 +71,7 @@
     "test-watch": "karma start",
     "start": "webpack-dev-server --config webpack/example.config.js",
     "heroku-server": "node heroku-server.js",
-    "build": "webpack --progress",
+    "build": "webpack",
     "lint": "eslint . --ext .js || true",
     "docs": "docco src/*.js",
     "site": "jekyll serve --baseurl \"\""
