@@ -3,11 +3,16 @@
   "version": "0.0.1",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "lib/codemirror-blocks.js",
+  "engines": {
+    "node": "5.x",
+    "npm": "3.x"
+  },
   "dependencies": {
     "babel-polyfill": "^6.3.14",
     "bootstrap": "^3.3.6",
     "classnames": "^2.2.3",
     "codemirror": "^5.11.0",
+    "event-emitter": "^0.3.4",
     "handlebars": "^4.0.5",
     "node-uuid": "^1.4.7",
     "react": "^0.14.6",
@@ -70,7 +75,7 @@
     "test-watch": "karma start",
     "start": "webpack-dev-server --config webpack/example.config.js",
     "heroku-server": "node heroku-server.js",
-    "build": "webpack --progress",
+    "build": "webpack",
     "lint": "eslint . --ext .js || true",
     "docs": "docco src/*.js",
     "site": "jekyll serve --baseurl \"\""
