@@ -55,25 +55,34 @@ export const EVENT_DRAG_START = 'dragstart';
 export const EVENT_DRAG_END = 'dragend';
 
 export default class CodeMirrorBlocks {
-  static fromTextArea(textarea, parser, options={}) {
+  static fromTextArea(textarea, language, options={}) {
     return new CodeMirrorBlocks(
       CodeMirror.fromTextArea(textarea),
-      parser,
+      language,
       options
     );
   }
 
-  constructor(cm, parser, {toolbar, willInsertNode, didInsertNode, renderOptions} = {}) {
+  static addLanguage(name, languageDefinition) {
+    if (CodeMirrorBlocks.languages[name]) {
+      throw new Error(`language ${name} has already been added.`);
+    }
+    CodeMirrorBlocks.languages[name] = languageDefinition;
+    return languageDefinition;
+  }
 
-    var parsers = CodeMirrorBlocks.parsers || {};
-    if (typeof parser == 'string') {
-      if (parsers[parser]) {
-        parser = parsers[parser]();
+  constructor(cm, languageOrParser, {toolbar, willInsertNode, didInsertNode, renderOptions} = {}) {
+    let parser;
+    if (typeof languageOrParser == 'string') {
+      if (CodeMirrorBlocks.languages[languageOrParser]) {
+        parser = CodeMirrorBlocks.languages[languageOrParser].parser();
       } else {
         throw new Error(
-          `Could not create CodeMirrorBlocks instance. Unknown parser: "${parser}"`
+          `Could not create CodeMirrorBlocks instance. Unknown language: "${languageOrParser}"`
         );
       }
+    } else {
+      parser = languageOrParser;
     }
 
     this.cm = cm;
@@ -637,5 +646,6 @@ export default class CodeMirrorBlocks {
       }
     }.bind(this);
   }
-
 }
+
+CodeMirrorBlocks.languages = {};

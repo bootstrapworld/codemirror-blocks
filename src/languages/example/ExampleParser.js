@@ -1,4 +1,4 @@
-import {AST, Literal, Expression} from '../src/ast';
+import {AST, Literal, Expression} from '../../ast';
 
 const TOKENS = {
   OPEN_PAREN: 'open-paren',
@@ -20,7 +20,7 @@ class Token {
   }
 }
 
-export default class Parser {
+export default class ExampleParser {
   getch() {
     let ch = this.code[this.charIndex];
     this.charIndex++;
@@ -31,7 +31,7 @@ export default class Parser {
     }
     return ch;
   }
-  
+
   getExceptionMessage(e){
     return e || "Parser error";
   }
