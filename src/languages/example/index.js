@@ -6,13 +6,13 @@ export default CodeMirrorBlocks.addLanguage(
   {
     name: 'Example',
     description: 'An example language that illustrates how to add support for new languages',
-    parser() {
+    getParser() {
       return new ExampleParser();
     },
-    renderers() {
+    getRenderers() {
       return {};
     },
-    css() {
+    getCSS() {
       return null;
     }
   });

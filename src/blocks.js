@@ -1,3 +1,4 @@
+// TODO: move this file to CodeMirrorBlocks.js
 import CodeMirror from 'codemirror';
 import ee from 'event-emitter';
 import render from './render';
@@ -67,6 +68,18 @@ export default class CodeMirrorBlocks {
     if (CodeMirrorBlocks.languages[name]) {
       throw new Error(`language ${name} has already been added.`);
     }
+    if (!languageDefinition.name) {
+      throw new Error(`language definition for ${name} is missing a 'name' attribute.`);
+    }
+    if (!languageDefinition.getParser) {
+      throw new Error(`language definition for ${name} is missing a 'getParser' function.`);
+    }
+    let parser = languageDefinition.getParser();
+    if (!(parser && typeof parser.parse == 'function')) {
+      throw new Error(
+        `getParser() function for language ${name} must return an object with a 'parse' function.`
+      );
+    }
     CodeMirrorBlocks.languages[name] = languageDefinition;
     return languageDefinition;
   }
@@ -76,7 +89,7 @@ export default class CodeMirrorBlocks {
     if (typeof languageOrParser == 'string') {
       if (CodeMirrorBlocks.languages[languageOrParser]) {
         this.language = CodeMirrorBlocks.languages[languageOrParser];
-        parser = this.language.parser();
+        parser = this.language.getParser();
       } else {
         throw new Error(
           `Could not create CodeMirrorBlocks instance. Unknown language: "${languageOrParser}"`

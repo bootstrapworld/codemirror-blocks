@@ -6,13 +6,13 @@ export default CodeMirrorBlocks.addLanguage(
   {
     name: 'WeScheme',
     description: 'The WeScheme language',
-    parser() {
+    getParser() {
       return new WeschemeParser();
     },
-    renderers() {
+    getRenderers() {
       return {};
     },
-    css() {
+    getCSS() {
       return null;
     }
   });

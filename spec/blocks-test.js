@@ -72,7 +72,7 @@ describe('The CodeMirrorBlocks Class', function() {
         'foo',
         {
           name: 'Foo',
-          parser: () => {
+          getParser: () => {
             return this.parser;
           }
         }
@@ -80,6 +80,35 @@ describe('The CodeMirrorBlocks Class', function() {
       var blocks = new CodeMirrorBlocks(this.cm, 'foo');
       expect(blocks.language.name).toBe('Foo');
       expect(blocks.parser).toBe(this.parser);
+    });
+  });
+
+  describe('addLanguage function,', function() {
+    beforeEach(function() {
+      delete CodeMirrorBlocks.languages.foo;
+      CodeMirrorBlocks.addLanguage('foo', {name:'foo', getParser() {return {parse(){}};}});
+    });
+    afterEach(function() {
+      delete CodeMirrorBlocks.languages.foo;
+      delete CodeMirrorBlocks.languages.bar;
+    });
+    it('should throw an error if the language has already been defined', function() {
+      expect(() => CodeMirrorBlocks.addLanguage('foo', {}))
+        .toThrowError('language foo has already been added.');
+    });
+    it('should throw an error if the language is missing a name', function() {
+      expect(() => CodeMirrorBlocks.addLanguage('bar', {}))
+        .toThrowError('language definition for bar is missing a \'name\' attribute.');
+    });
+    it('should throw an error if the language is missing a getParser function', function() {
+      expect(() => CodeMirrorBlocks.addLanguage('bar', {name:'Bar Language'}))
+        .toThrowError('language definition for bar is missing a \'getParser\' function.');
+    });
+    it('should throw an error if the getParser function does not return a proper obj', function() {
+      expect(() => CodeMirrorBlocks.addLanguage('bar', {name:'Bar Language', getParser(){}}))
+        .toThrowError(
+          'getParser() function for language bar must return an object with a \'parse\' function.'
+        );
     });
   });
 
