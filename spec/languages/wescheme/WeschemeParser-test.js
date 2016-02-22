@@ -1,8 +1,8 @@
-import Parser from '../../src/languages/wescheme/WeschemeParser';
+import WeschemeParser from '../../../src/languages/wescheme/WeschemeParser';
 
 describe("The WeScheme Parser,", function() {
   beforeEach(function() {
-    this.parser = new Parser();
+    this.parser = new WeschemeParser();
   });
 
   it("should set the appropriate data type for literals", function() {
