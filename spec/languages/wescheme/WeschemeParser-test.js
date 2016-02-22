@@ -1,4 +1,4 @@
-import WeschemeParser from '../../../src/languages/wescheme/WeschemeParser';
+import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
 
 describe("The WeScheme Parser,", function() {
   beforeEach(function() {

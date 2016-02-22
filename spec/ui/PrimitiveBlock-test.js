@@ -2,11 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import TestUtils from 'react-addons-test-utils';
 
-import {Literal} from '../../src/ast';
+import {Literal} from 'codemirror-blocks/ast';
 import {dragstart} from '../events';
-import {Primitive} from '../../src/parsers/primitives';
-import PrimitiveBlock from '../../src/ui/PrimitiveBlock';
-import {RenderedBlockNode} from '../../src/ui/PrimitiveBlock';
+import {Primitive} from 'codemirror-blocks/parsers/primitives';
+import PrimitiveBlock from 'codemirror-blocks/ui/PrimitiveBlock';
+import {RenderedBlockNode} from 'codemirror-blocks/ui/PrimitiveBlock';
 
 describe('The PrimitiveBlock component,', function() {
   beforeEach(function() {

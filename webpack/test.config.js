@@ -15,6 +15,11 @@ if (envConfig.runCoverage) {
 
 // this is the config for generating the files needed to run the examples.
 module.exports = _.extend({}, baseConfig, {
+  resolve: {
+    alias: {
+      'codemirror-blocks': path.resolve(__dirname, '..', 'src')
+    },
+  },
   devtool: 'inline-source-map',
   module: _.extend({}, baseConfig.module, {
     preLoaders: preLoaders

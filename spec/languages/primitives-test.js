@@ -1,4 +1,4 @@
-import {Primitive, PrimitiveGroup} from '../../src/parsers/primitives';
+import {Primitive, PrimitiveGroup} from 'codemirror-blocks/parsers/primitives';
 
 describe("The Primitive Class's", function() {
   describe("constructor,", function() {

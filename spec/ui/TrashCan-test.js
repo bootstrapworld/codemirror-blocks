@@ -2,7 +2,7 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
 import {dragstart, drop} from '../events';
-import TrashCan from '../../src/ui/TrashCan';
+import TrashCan from 'codemirror-blocks/ui/TrashCan';
 
 describe('The TrashCan component,', function() {
   beforeEach(function() {

@@ -1,10 +1,10 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
-import Editor from '../../src/ui/Editor';
-import TrashCan from '../../src/ui/TrashCan';
-import '../../src/languages/wescheme';
-import {EVENT_DRAG_START, EVENT_DRAG_END} from '../../src/blocks';
+import Editor from 'codemirror-blocks/ui/Editor';
+import TrashCan from 'codemirror-blocks/ui/TrashCan';
+import 'codemirror-blocks/languages/wescheme';
+import {EVENT_DRAG_START, EVENT_DRAG_END} from 'codemirror-blocks/blocks';
 
 describe('The Editor component,', function() {
   beforeEach(function() {
