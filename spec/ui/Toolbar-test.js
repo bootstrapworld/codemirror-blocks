@@ -1,8 +1,8 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
-import {Primitive, PrimitiveGroup} from '../../src/parsers/primitives';
-import Toolbar from '../../src/ui/Toolbar';
+import {Primitive, PrimitiveGroup} from 'codemirror-blocks/parsers/primitives';
+import Toolbar from 'codemirror-blocks/ui/Toolbar';
 
 describe('The Toolbar component,', function() {
   beforeEach(function() {

@@ -2,8 +2,8 @@ import 'babel-polyfill';
 import CodeMirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
-import Parser from './parser.js';
 import CodeMirrorBlocks from '../src/blocks.js';
+import '../src/languages/example';
 
 require('./example-page.less');
 
@@ -23,7 +23,7 @@ cm2.swapDoc(cm.getDoc().linkedDoc({sharedHist: true}));
 
 var blocks = new CodeMirrorBlocks(
   cm2,
-  new Parser(),
+  'example',
   {
     willInsertNode(sourceNodeText, sourceNode, destination) {
       let line = cm2.getLine(destination.line);

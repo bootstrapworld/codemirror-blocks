@@ -1,7 +1,7 @@
-import CodeMirrorBlocks, {BlockMarker} from '../src/blocks';
+import CodeMirrorBlocks, {BlockMarker} from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
-import ExampleParser from '../example/parser';
-var render = require('../src/render');
+import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
+var render = require('codemirror-blocks/render');
 
 import {
   click,
@@ -64,13 +64,51 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   describe('constructor,', function() {
-    it('should optionally take a string identifier for a built in parser', function() {
+    it('should optionally take a string identifier for a built in language', function() {
       expect(() => new CodeMirrorBlocks(this.cm, 'foo')).toThrowError(
-        'Could not create CodeMirrorBlocks instance. Unknown parser: "foo"'
+        'Could not create CodeMirrorBlocks instance. Unknown language: "foo"'
       );
-      CodeMirrorBlocks.parsers = {foo: () => this.parser};
+      CodeMirrorBlocks.addLanguage(
+        'foo',
+        {
+          name: 'Foo',
+          getParser: () => {
+            return this.parser;
+          }
+        }
+      );
       var blocks = new CodeMirrorBlocks(this.cm, 'foo');
+      expect(blocks.language.name).toBe('Foo');
       expect(blocks.parser).toBe(this.parser);
+    });
+  });
+
+  describe('addLanguage function,', function() {
+    beforeEach(function() {
+      delete CodeMirrorBlocks.languages.foo;
+      CodeMirrorBlocks.addLanguage('foo', {name:'foo', getParser() {return {parse(){}};}});
+    });
+    afterEach(function() {
+      delete CodeMirrorBlocks.languages.foo;
+      delete CodeMirrorBlocks.languages.bar;
+    });
+    it('should throw an error if the language has already been defined', function() {
+      expect(() => CodeMirrorBlocks.addLanguage('foo', {}))
+        .toThrowError('language foo has already been added.');
+    });
+    it('should throw an error if the language is missing a name', function() {
+      expect(() => CodeMirrorBlocks.addLanguage('bar', {}))
+        .toThrowError('language definition for bar is missing a \'name\' attribute.');
+    });
+    it('should throw an error if the language is missing a getParser function', function() {
+      expect(() => CodeMirrorBlocks.addLanguage('bar', {name:'Bar Language'}))
+        .toThrowError('language definition for bar is missing a \'getParser\' function.');
+    });
+    it('should throw an error if the getParser function does not return a proper obj', function() {
+      expect(() => CodeMirrorBlocks.addLanguage('bar', {name:'Bar Language', getParser(){}}))
+        .toThrowError(
+          'getParser() function for language bar must return an object with a \'parse\' function.'
+        );
     });
   });
 

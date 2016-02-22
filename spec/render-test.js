@@ -1,7 +1,7 @@
 import CodeMirror from 'codemirror';
-import ExampleParser from '../example/parser';
-import render from '../src/render';
-import {Comment} from '../src/ast';
+import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
+import render from 'codemirror-blocks/render';
+import {Comment} from 'codemirror-blocks/ast';
 
 describe('The render module,', function() {
   beforeEach(function() {

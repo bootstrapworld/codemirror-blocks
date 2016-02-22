@@ -1,8 +1,8 @@
-import Parser from '../../src/parsers/wescheme';
+import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
 
 describe("The WeScheme Parser,", function() {
   beforeEach(function() {
-    this.parser = new Parser();
+    this.parser = new WeschemeParser();
   });
 
   it("should set the appropriate data type for literals", function() {

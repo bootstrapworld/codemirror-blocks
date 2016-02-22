@@ -14,9 +14,7 @@ export default React.createClass({
   propTypes: {
     options:React.PropTypes.object,
     cmOptions: React.PropTypes.object,
-    parser: React.PropTypes.shape({
-      parse: React.PropTypes.func.isRequired,
-    }).isRequired,
+    language: React.PropTypes.string.isRequired,
   },
 
   getDefaultProps() {
@@ -35,7 +33,7 @@ export default React.createClass({
   componentDidMount() {
     this.blocks = new CodeMirrorBlocks(
       this.getCodeMirror(),
-      this.props.parser,
+      this.props.language,
       this.props.options
     );
     this.blocks.setBlockMode(true);
@@ -68,7 +66,7 @@ export default React.createClass({
   hideTrashCan() {
     this.setState({showTrashCan:false});
   },
-  
+
   toggleBlocks() {
     this.blocks.toggleBlockMode();
     this.forceUpdate();

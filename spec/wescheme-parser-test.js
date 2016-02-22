@@ -1,6 +1,6 @@
-import CodeMirrorBlocks from '../src/blocks';
+import CodeMirrorBlocks from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
-import ExampleParser from '../src/parsers/wescheme';
+import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
 
 function keydown(keyCode, other={}) {
   let event = new CustomEvent('keydown', {bubbles: true});
@@ -13,7 +13,7 @@ describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
     document.body.innerHTML = '<textarea id="code"></textarea>';
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
-    this.parser = new ExampleParser();
+    this.parser = new WeschemeParser();
     this.willInsertNode = (sourceNodeText, sourceNode, destination) => {
       let line = this.cm.getLine(destination.line);
       if (destination.ch > 0 && line[destination.ch - 1].match(/[\w\d]/)) {

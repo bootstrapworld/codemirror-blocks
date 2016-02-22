@@ -1,4 +1,4 @@
-import {AST, Literal, Expression} from '../src/ast';
+import {AST, Literal, Expression} from 'codemirror-blocks/ast';
 
 describe("The Literal Class", function() {
   it("should be constructed with a value and data type", function() {
