@@ -1,4 +1,4 @@
-import Parser from '../../src/parsers/wescheme';
+import Parser from '../../src/languages/wescheme/WeschemeParser';
 
 describe("The WeScheme Parser,", function() {
   beforeEach(function() {

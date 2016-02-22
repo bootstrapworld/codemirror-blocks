@@ -75,7 +75,8 @@ export default class CodeMirrorBlocks {
     let parser;
     if (typeof languageOrParser == 'string') {
       if (CodeMirrorBlocks.languages[languageOrParser]) {
-        parser = CodeMirrorBlocks.languages[languageOrParser].parser();
+        this.language = CodeMirrorBlocks.languages[languageOrParser];
+        parser = this.language.parser();
       } else {
         throw new Error(
           `Could not create CodeMirrorBlocks instance. Unknown language: "${languageOrParser}"`

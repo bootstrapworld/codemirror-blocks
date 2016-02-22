@@ -9,7 +9,7 @@ import {
   Unknown,
   Blank
 } from '../../ast';
-import {PrimitiveGroup} from '../primitives';
+import {PrimitiveGroup} from '../../parsers/primitives';
 import PRIMITIVES_CONFIG from './primitives-config';
 
 try {

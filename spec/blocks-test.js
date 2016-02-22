@@ -1,6 +1,6 @@
 import CodeMirrorBlocks, {BlockMarker} from '../src/blocks';
 import CodeMirror from 'codemirror';
-import ExampleParser from '../example/parser';
+import ExampleParser from '../src/languages/example/ExampleParser';
 var render = require('../src/render');
 
 import {
@@ -64,12 +64,21 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   describe('constructor,', function() {
-    it('should optionally take a string identifier for a built in parser', function() {
+    it('should optionally take a string identifier for a built in language', function() {
       expect(() => new CodeMirrorBlocks(this.cm, 'foo')).toThrowError(
-        'Could not create CodeMirrorBlocks instance. Unknown parser: "foo"'
+        'Could not create CodeMirrorBlocks instance. Unknown language: "foo"'
       );
-      CodeMirrorBlocks.parsers = {foo: () => this.parser};
+      CodeMirrorBlocks.addLanguage(
+        'foo',
+        {
+          name: 'Foo',
+          parser: () => {
+            return this.parser;
+          }
+        }
+      );
       var blocks = new CodeMirrorBlocks(this.cm, 'foo');
+      expect(blocks.language.name).toBe('Foo');
       expect(blocks.parser).toBe(this.parser);
     });
   });

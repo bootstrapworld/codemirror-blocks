@@ -1,5 +1,5 @@
 import CodeMirror from 'codemirror';
-import ExampleParser from '../example/parser';
+import ExampleParser from '../src/languages/example/ExampleParser';
 import render from '../src/render';
 import {Comment} from '../src/ast';
 

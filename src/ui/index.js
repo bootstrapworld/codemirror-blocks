@@ -9,9 +9,9 @@ export function renderToolbarInto(blocks) {
   }
 }
 
-export function renderEditorInto(node, parser, options, cmOptions) {
+export function renderEditorInto(node, language, options, cmOptions) {
   return ReactDOM.render(
-    <Editor parser={parser} options={options} cmOptions={cmOptions}/>,
+    <Editor language={language} options={options} cmOptions={cmOptions}/>,
     node
   );
 }

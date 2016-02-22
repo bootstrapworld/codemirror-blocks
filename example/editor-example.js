@@ -2,7 +2,7 @@ import 'babel-polyfill';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
 import 'codemirror/addon/edit/closebrackets.js';
-import WeschemeParser from '../src/parsers/wescheme';
+import '../src/languages/wescheme';
 import {renderEditorInto} from '../src/ui';
 
 require('./example-page.less');
@@ -31,7 +31,7 @@ const options = {
 
 let editor = renderEditorInto(
   document.getElementById('editor'),
-  new WeschemeParser(),
+  'wescheme',
   options
 );
 editor.getCodeMirror().setValue(code);

@@ -3,19 +3,18 @@ import TestUtils from 'react-addons-test-utils';
 
 import Editor from '../../src/ui/Editor';
 import TrashCan from '../../src/ui/TrashCan';
-import WeschemeParser from '../../src/parsers/wescheme';
+import '../../src/languages/wescheme';
 import {EVENT_DRAG_START, EVENT_DRAG_END} from '../../src/blocks';
 
 describe('The Editor component,', function() {
   beforeEach(function() {
-    this.parser = new WeschemeParser();
-    this.editor = TestUtils.renderIntoDocument(<Editor parser={this.parser} />);
+    this.editor = TestUtils.renderIntoDocument(<Editor language="wescheme" />);
     this.blocks = this.editor.getCodeMirrorBlocks();
   });
 
   it("should create a CodeMirrorBlocks instance for you", function() {
     let blocks = this.editor.getCodeMirrorBlocks();
-    expect(blocks.parser).toBe(this.parser);
+    expect(blocks.language.name).toBe('WeScheme');
   });
 
   it("should toggle block state when the toggle button is clicked", function() {

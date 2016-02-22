@@ -4,8 +4,7 @@ import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
 import 'codemirror/addon/edit/closebrackets.js';
 import CodeMirrorBlocks from '../src/blocks';
-import WeschemeParser from '../src/parsers/wescheme';
-import {renderEditorInto} from '../src/ui';
+import '../src/languages/wescheme';
 
 require('./example-page.less');
 
@@ -51,5 +50,5 @@ const options = {
     return sourceNodeText;
   }
 };
-var blocks = new CodeMirrorBlocks(cm2, new WeschemeParser(), options);
+var blocks = new CodeMirrorBlocks(cm2, 'wescheme', options);
 blocks.setBlockMode(true);
