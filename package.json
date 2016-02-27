@@ -61,7 +61,6 @@
     "webpack": "^1.12.6",
     "webpack-dev-server": "^1.14.1",
     "wescheme-js": "bootstrapworld/wescheme-js",
-    "bower":"^1.7.7",
     "vulcanize": ">= 1.4.2"
   },
   "peerDependencies": {
