@@ -8,3 +8,4 @@ dist
 site-build
 .sass-cache
 vendors
+site/app/bower_components
