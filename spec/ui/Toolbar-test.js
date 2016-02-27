@@ -47,7 +47,7 @@ describe('The Toolbar component,', function() {
     expect(this.toolbar.state.selectedPrimitive).toBe(null);
   });
 
-  it('should not clear the search box when escape is pressed', function() {
+  fit('should not clear the search box when escape is pressed', function() {
     this.toolbar.setState({search:'foo'});
     TestUtils.Simulate.keyDown(this.searchInput, {key:'Escape'});
     expect(this.searchInput.value).toBe('foo');

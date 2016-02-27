@@ -1,7 +1,6 @@
 import CodeMirrorBlocks, {BlockMarker} from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
-var render = require('codemirror-blocks/render');
 
 import {
   click,

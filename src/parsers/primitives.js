@@ -1,6 +1,9 @@
+import {getLanguage} from '../languages';
+
 export class Primitive {
-  constructor(parser, name, {argumentTypes, returnType}={}) {
-    this.parser = parser || {};
+  constructor(languageId, name, {argumentTypes, returnType}={}) {
+    this.languageId = languageId || {};
+    this.parser = languageId ? getLanguage(languageId).getParser() : null;
     this.name = name;
     this.argumentTypes = argumentTypes || [];
     this.returnType = returnType;
@@ -18,9 +21,9 @@ export class Primitive {
     }
   }
 
-  static fromConfig(parser, config) {
+  static fromConfig(languageId, config) {
     return new Primitive(
-      parser,
+      languageId,
       config.name,
       {
         argumentTypes: config.argumentTypes,
@@ -31,8 +34,8 @@ export class Primitive {
 }
 
 export class PrimitiveGroup {
-  constructor(parser, name, primitives) {
-    this.parser = parser;
+  constructor(languageId, name, primitives) {
+    this.languageId = languageId;
     this.name = name;
     this.primitives = primitives;
   }
@@ -55,10 +58,10 @@ export class PrimitiveGroup {
         }
       }
     }
-    return new PrimitiveGroup(this.parser, this.name, result);
+    return new PrimitiveGroup(this.languageId, this.name, result);
   }
 
-  static fromConfig(parser, config) {
+  static fromConfig(languageId, config) {
     var {name, primitives} = config;
     if (!name) {
       throw new Error('No name specified for primitive group');
@@ -70,18 +73,18 @@ export class PrimitiveGroup {
     const items = [];
     for (let item of primitives) {
       if (typeof item == 'string') {
-        items.push(new Primitive(parser, item));
+        items.push(new Primitive(languageId, item));
       } else if (typeof item == 'object') {
         if (item.primitives) {
           // it's a group
-          items.push(PrimitiveGroup.fromConfig(parser, item));
+          items.push(PrimitiveGroup.fromConfig(languageId, item));
         } else {
-          items.push(Primitive.fromConfig(parser, item));
+          items.push(Primitive.fromConfig(languageId, item));
         }
       } else {
         throw new Error(`Unable to understand config object of type ${typeof item}`);
       }
     }
-    return new PrimitiveGroup(parser, name, items);
+    return new PrimitiveGroup(languageId, name, items);
   }
 }

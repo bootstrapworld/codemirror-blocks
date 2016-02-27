@@ -9,7 +9,7 @@ require('./PrimitiveList.less');
 
 const Primitive = React.createClass({
   render() {
-    var {primitive, highlight, className, onClick} = this.props;
+    var {primitive, className, onClick} = this.props;
     let astNode = primitive.getLiteralNode();
     return (
       <li className={classNames(className, "Primitive list-group-item")}

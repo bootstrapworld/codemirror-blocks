@@ -168,8 +168,8 @@ class WeschemeParser {
   }
 
   get primitives() {
-    return PrimitiveGroup.fromConfig(this, PRIMITIVES_CONFIG);
-    return PrimitiveGroup.fromConfig(this, {
+    return PrimitiveGroup.fromConfig('wescheme', PRIMITIVES_CONFIG);
+    return PrimitiveGroup.fromConfig('wescheme', {
       name: 'root',
       primitives: [
         {
