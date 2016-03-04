@@ -9,7 +9,7 @@ export default CodeMirrorBlocks.languages.addLanguage(
     getParser() {
       return new ExampleParser();
     },
-    getRenderers() {
+    getRenderOptions() {
       return {};
     },
     getCSS() {

@@ -7,9 +7,10 @@ function createFragment(htmlStr) {
 }
 
 export default class Renderer {
-  constructor(cm, {hideNodesOfType} = {}) {
+  constructor(cm, {hideNodesOfType, extraRenderers} = {}) {
     this.cm = cm;
     this.hideNodesOfType = hideNodesOfType;
+    this.extraRenderers = extraRenderers || {};
     this.nodeRenderers = {
       unknown: require('./templates/unknown.handlebars'),
       expression: require('./templates/expression.handlebars'),
@@ -23,11 +24,14 @@ export default class Renderer {
   }
 
   renderHTMLString(node) {
-    if (this.nodeRenderers[node.type] === undefined) {
-      throw new Error("Don't know how to render node: "+node.type);
+    var renderer = this.extraRenderers[node.type];
+    if (!renderer) {
+      renderer = this.nodeRenderers[node.type];
     }
-    var renderer = this;
-    var nodeEl = this.nodeRenderers[node.type](
+    if (renderer === undefined) {
+      throw new Error("Don't know how to render node of type: "+node.type);
+    }
+    var nodeEl = renderer(
       {node},
       {
         helpers: {

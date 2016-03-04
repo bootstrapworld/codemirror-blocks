@@ -4,6 +4,7 @@ import ee from 'event-emitter';
 import Renderer from './Renderer';
 import * as languages from './languages';
 import * as ui from './ui';
+import merge from './merge';
 
 function getLocationFromEl(el) {
   // TODO: it's kind of lame to have line and ch as attributes on random elements.
@@ -90,7 +91,7 @@ export default class CodeMirrorBlocks {
     this.toolbarNode = toolbar;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
-    this.renderOptions = renderOptions;
+    this.renderOptions = renderOptions || {};
     this.ast = null;
     this.blockMode = false;
     this.undoKeys = [];
@@ -234,7 +235,12 @@ export default class CodeMirrorBlocks {
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
-    var renderer = new Renderer(this.cm, this.renderOptions || {});
+
+    var renderOptions = this.renderOptions;
+    if (this.language && this.language.getRenderOptions) {
+      renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
+    }
+    var renderer = new Renderer(this.cm, renderOptions);
     for (let rootNode of this.ast.rootNodes) {
       renderer.render(rootNode);
     }

@@ -1,7 +1,6 @@
 import WeschemeParser from './WeschemeParser';
 import CodeMirrorBlocks from '../../blocks';
 
-
 export default CodeMirrorBlocks.languages.addLanguage(
   {
     id: 'wescheme',
@@ -10,7 +9,7 @@ export default CodeMirrorBlocks.languages.addLanguage(
     getParser() {
       return new WeschemeParser();
     },
-    getRenderers() {
+    getRendererOptions() {
       return {};
     },
     getCSS() {
