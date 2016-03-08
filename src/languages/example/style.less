@@ -1,0 +1,179 @@
+.blocks-language-example {
+  @border-radius: 5px;
+  @border-width: 1px;
+
+  // Colors:
+  @literal-number-color: blue;
+  @literal-string-color: green;
+  @literal-char-color: orange;
+  @literal-boolean-color: darkred;
+  @literal-symbol-color: steelblue;
+  @comment-color: #ccc;
+  @editing-border-color: orange;
+  @error-border-color: red;
+  @border-hint: rgba(255, 165, 0, 0.3);
+
+  @hover-drop-background-color: lightblue;
+  @hover-replace-background-color: red;
+
+  .blocks-hidden {
+    display: none !important;
+  }
+
+  .blocks-struct,
+  .blocks-functionDef,
+  .blocks-variableDef,
+  .blocks-expression,
+  .blocks-unknown {
+    display: inline-flex;
+    align-items: stretch;
+    color: black;
+    border: @border-width solid black;
+    border-radius: 15px;
+    background: #eee;
+    overflow: hidden;
+    white-space: nowrap;
+
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+  }
+
+  .blocks-operator {
+    display: flex;
+    justify-content: center;
+    font-weight: bold;
+    padding: 3px 5px;
+    text-align: center;
+    background: #ccc;
+    color: white;
+
+    > .blocks-literal {
+      color: white;
+    }
+
+  }
+
+  .blocks-args {
+    display: inline-flex;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    padding: 3px 0px;
+
+    > .blocks-literal, .blocks-white-space[contenteditable="true"] {
+      background: white;
+      border: @border-width lightgray solid;
+      border-radius: 0px;
+      padding: 0 5px;
+    }
+  }
+  .blocks-name,
+  .blocks-literal,
+  .blocks-blank {
+    @height: 20px;
+
+    display: inline-block;
+    color: black;
+    border-radius: 5px;
+    padding: 0px 2px;
+    border: @border-width solid transparent;
+    min-width: 10px;
+    line-height: @height - @border-width * 2;
+    height: @height;
+    cursor: hand;
+
+    &.blocks-editing, &.blocks-quarantine {
+      border-color: @editing-border-color;
+      &.blocks-error {
+        border-color: @error-border-color;
+      }
+    }
+
+    &:hover {
+      border: 1px solid red;
+    }
+
+    &.blocks-over-target {
+      background-color: @hover-replace-background-color;
+    }
+
+    * {
+      pointer-events: none;
+    }
+
+    .blocks-literal-number {
+      color: @literal-number-color;
+    }
+    .blocks-literal-string {
+      color: @literal-string-color;
+    }
+    .blocks-literal-char {
+      color: @literal-char-color;
+    }
+    .blocks-literal-boolean {
+      color: @literal-boolean-color;
+    }
+    .blocks-literal-symbol {
+      color: @literal-symbol-color;
+    }
+
+  }
+
+  .blocks-name {
+    color: @literal-symbol-color;
+  }
+
+  .blocks-node:focus {
+    border-color: @editing-border-color;
+    outline: 0;
+  }
+
+  .blocks-editing {
+    outline: 0;
+    cursor: text;
+
+  }
+
+  .blocks-over-target {
+    background-color: @hover-drop-background-color;
+    border-radius: @border-radius;
+  }
+
+  .blocks-white-space {
+    padding: 2px;
+    font-weight: bold;
+    border-radius: @border-radius;
+    width: 20px;
+    min-height: 1em;
+    cursor: default;
+
+    &:hover {
+      cursor: hand;
+    }
+
+    &.blocks-editing {
+      font-weight: normal;
+      margin: 0px 5px;
+      &.blocks-error {
+        border: @border-width solid @error-border-color;
+      }
+      &:hover {
+        background-color: transparent;
+      }
+    }
+
+  }
+  .blocks-unknown {
+    border-width: 1px;
+    >.blocks-operator{ background: rgba(0,0,0,0.5); }
+    >.blocks-args    { background: rgba(255,190,190,0.5); }
+  }
+  .blocks-comment {
+    color: @comment-color;
+    font-style: italic;
+  }
+
+  .blocks-dragging {
+    .blocks-white-space{ background-color: transparent; }
+  }
+}

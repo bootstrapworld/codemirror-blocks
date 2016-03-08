@@ -1,6 +1,7 @@
 import ExampleParser from './ExampleParser';
 import CodeMirrorBlocks from '../../blocks';
 
+require('./style.less');
 export default CodeMirrorBlocks.languages.addLanguage(
   {
     id: 'example',
@@ -12,7 +13,4 @@ export default CodeMirrorBlocks.languages.addLanguage(
     getRenderOptions() {
       return {};
     },
-    getCSS() {
-      return null;
-    }
   });

@@ -99,6 +99,9 @@ export default class CodeMirrorBlocks {
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
 
+    if (this.language) {
+      this.cm.getWrapperElement().classList.add(`blocks-language-${this.language.id}`);
+    }
     Object.assign(
       this.cm.getWrapperElement(),
       {
