@@ -25,5 +25,12 @@ export function addLanguage(languageDefinition) {
 }
 
 export function getLanguage(languageId) {
+  if (!LANGUAGES[languageId]) {
+    console.warn('Trying to get language', languageId, 'but it hasn\'t been added yet');
+  }
   return LANGUAGES[languageId];
+}
+
+export function removeLanguage(languageId) {
+  delete LANGUAGES[languageId];
 }

@@ -5,7 +5,10 @@ import Editor from './Editor';
 
 export function renderToolbarInto(blocks) {
   if (blocks.toolbarNode) {
-    return ReactDOM.render(<Toolbar primitives={blocks.parser.primitives} />, blocks.toolbarNode);
+    return ReactDOM.render(
+      <Toolbar primitives={blocks.parser.primitives} renderer={blocks.renderer} />,
+      blocks.toolbarNode
+    );
   }
 }
 

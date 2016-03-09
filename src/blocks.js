@@ -99,6 +99,11 @@ export default class CodeMirrorBlocks {
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
 
+    if (this.language && this.language.getRenderOptions) {
+      renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
+    }
+    this.renderer = new Renderer(this.cm, renderOptions);
+
     if (this.language) {
       this.cm.getWrapperElement().classList.add(`blocks-language-${this.language.id}`);
     }
@@ -239,13 +244,8 @@ export default class CodeMirrorBlocks {
     this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
 
-    var renderOptions = this.renderOptions;
-    if (this.language && this.language.getRenderOptions) {
-      renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
-    }
-    var renderer = new Renderer(this.cm, renderOptions);
     for (let rootNode of this.ast.rootNodes) {
-      renderer.render(rootNode);
+      this.renderer.render(rootNode);
     }
     ui.renderToolbarInto(this);
   }

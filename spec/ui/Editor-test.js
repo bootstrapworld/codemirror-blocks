@@ -14,7 +14,7 @@ describe('The Editor component,', function() {
 
   it("should create a CodeMirrorBlocks instance for you", function() {
     let blocks = this.editor.getCodeMirrorBlocks();
-    expect(blocks.language.name).toBe('WeScheme');
+    expect(blocks.language.id).toBe('wescheme');
   });
 
   it("should toggle block state when the toggle button is clicked", function() {

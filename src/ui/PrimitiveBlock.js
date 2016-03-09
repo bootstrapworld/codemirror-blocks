@@ -29,10 +29,13 @@ function onDragStart(node, text, event) {
 export var RenderedBlockNode = React.createClass({
   displayName: 'RenderedBlockNode',
 
+  contextTypes: {
+    renderer: React.PropTypes.instanceOf(Renderer).isRequired,
+  },
+
   propTypes: {
     node: React.PropTypes.instanceOf(ASTNode),
     text: React.PropTypes.string,
-    renderer: React.PropTypes.instanceOf(Renderer).isRequired,
   },
 
   getDefaultProps() {
@@ -56,7 +59,7 @@ export var RenderedBlockNode = React.createClass({
 
   render() {
     if (this.props.node) {
-      let html = {__html:this.props.renderer.renderHTMLString(this.props.node)};
+      let html = {__html:this.context.renderer.renderHTMLString(this.props.node)};
       return <span className="RenderedBlockNode" dangerouslySetInnerHTML={html} ref="root" />;
     } else {
       return (
@@ -73,13 +76,11 @@ export default React.createClass({
 
   propTypes: {
     primitive: React.PropTypes.instanceOf(Primitive),
-    renderer: React.PropTypes.instanceOf(Renderer).isRequired,
   },
 
   getDefaultProps() {
     return {
       primitive: null,
-      renderer: null
     };
   },
 
@@ -91,7 +92,6 @@ export default React.createClass({
     this.astNode = this.props.primitive.getASTNode();
     return (
         <RenderedBlockNode
-           renderer={this.props.renderer}
            node={this.astNode}
            text={this.props.primitive.name}
            />

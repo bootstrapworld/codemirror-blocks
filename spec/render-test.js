@@ -15,7 +15,7 @@ describe('The render module,', function() {
     beforeEach(function() {
       this.literal = this.parser.parse('1').rootNodes[0];
       this.literal.options['aria-label'] = '1';
-      this.fragment = this.renderer.render(this.literal, this.cm);
+      this.fragment = this.renderer.render(this.literal);
       this.literalEls = this.fragment.querySelectorAll('span.blocks-literal');
     });
 
@@ -35,7 +35,7 @@ describe('The render module,', function() {
   describe('when rendering an expression,', function() {
     beforeEach(function() {
       this.expression = this.parser.parse('(+ 1 2)').rootNodes[0];
-      this.fragment = this.renderer.render(this.expression, this.cm);
+      this.fragment = this.renderer.render(this.expression);
       this.expressionEls = this.fragment.querySelectorAll('span.blocks-expression');
     });
 
@@ -61,7 +61,7 @@ describe('The render module,', function() {
     beforeEach(function() {
       this.comment = new Comment(
         {line:0, ch:0}, {line:0, ch:18}, 'this is a comment');
-      this.fragment = this.renderer.render(this.comment, this.cm);
+      this.fragment = this.renderer.render(this.comment);
       this.commentEls = this.fragment.querySelectorAll('span.blocks-comment');
     });
 
@@ -77,7 +77,8 @@ describe('The render module,', function() {
   describe('when specifying the hideNodesOfType option,', function() {
     beforeEach(function() {
       this.literal = this.parser.parse('1').rootNodes[0];
-      this.fragment = this.renderer.render(this.literal, this.cm, {hideNodesOfType:['literal']});
+      this.renderer = new Renderer(this.cm, {hideNodesOfType:['literal']});
+      this.fragment = this.renderer.render(this.literal);
       this.literalEls = this.fragment.querySelectorAll('span.blocks-literal');
     });
 

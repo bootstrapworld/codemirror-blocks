@@ -21,6 +21,7 @@ export default class Renderer {
       comment: require('./templates/comment.handlebars'),
       blank: require('./templates/blank.handlebars')
     };
+    this._nodesInRenderOrder = [];
   }
 
   renderHTMLString(node) {

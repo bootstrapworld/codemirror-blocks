@@ -2,6 +2,7 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
 import {Primitive, PrimitiveGroup} from 'codemirror-blocks/parsers/primitives';
+import Renderer from 'codemirror-blocks/Renderer';
 import Toolbar from 'codemirror-blocks/ui/Toolbar';
 
 describe('The Toolbar component,', function() {
@@ -13,12 +14,15 @@ describe('The Toolbar component,', function() {
         primitives:['foo','bar']
       }
     );
-    this.toolbar = TestUtils.renderIntoDocument(<Toolbar primitives={this.primitives}/>);
+    this.renderer = new Renderer();
+    this.toolbar = TestUtils.renderIntoDocument(
+      <Toolbar primitives={this.primitives} renderer={this.renderer}/>
+    );
     this.searchInput = TestUtils.findRenderedDOMComponentWithTag(this.toolbar, 'input');
   });
 
   it('should render without errors when no primitives are given', function() {
-    TestUtils.renderIntoDocument(<Toolbar/>);
+    TestUtils.renderIntoDocument(<Toolbar renderer={this.renderer}/>);
   });
 
   it('should render a search box', function() {
@@ -47,7 +51,7 @@ describe('The Toolbar component,', function() {
     expect(this.toolbar.state.selectedPrimitive).toBe(null);
   });
 
-  fit('should not clear the search box when escape is pressed', function() {
+  it('should not clear the search box when escape is pressed', function() {
     this.toolbar.setState({search:'foo'});
     TestUtils.Simulate.keyDown(this.searchInput, {key:'Escape'});
     expect(this.searchInput.value).toBe('foo');

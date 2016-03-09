@@ -1,6 +1,7 @@
 import CodeMirrorBlocks, {BlockMarker} from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
+import {addLanguage} from 'codemirror-blocks/languages';
 
 import {
   click,
@@ -67,9 +68,9 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(() => new CodeMirrorBlocks(this.cm, 'foo')).toThrowError(
         'Could not create CodeMirrorBlocks instance. Unknown language: "foo"'
       );
-      CodeMirrorBlocks.addLanguage(
-        'foo',
+      addLanguage(
         {
+          id: 'foo',
           name: 'Foo',
           getParser: () => {
             return this.parser;
@@ -79,35 +80,6 @@ describe('The CodeMirrorBlocks Class', function() {
       var blocks = new CodeMirrorBlocks(this.cm, 'foo');
       expect(blocks.language.name).toBe('Foo');
       expect(blocks.parser).toBe(this.parser);
-    });
-  });
-
-  describe('addLanguage function,', function() {
-    beforeEach(function() {
-      delete CodeMirrorBlocks.languages.foo;
-      CodeMirrorBlocks.addLanguage('foo', {name:'foo', getParser() {return {parse(){}};}});
-    });
-    afterEach(function() {
-      delete CodeMirrorBlocks.languages.foo;
-      delete CodeMirrorBlocks.languages.bar;
-    });
-    it('should throw an error if the language has already been defined', function() {
-      expect(() => CodeMirrorBlocks.addLanguage('foo', {}))
-        .toThrowError('language foo has already been added.');
-    });
-    it('should throw an error if the language is missing a name', function() {
-      expect(() => CodeMirrorBlocks.addLanguage('bar', {}))
-        .toThrowError('language definition for bar is missing a \'name\' attribute.');
-    });
-    it('should throw an error if the language is missing a getParser function', function() {
-      expect(() => CodeMirrorBlocks.addLanguage('bar', {name:'Bar Language'}))
-        .toThrowError('language definition for bar is missing a \'getParser\' function.');
-    });
-    it('should throw an error if the getParser function does not return a proper obj', function() {
-      expect(() => CodeMirrorBlocks.addLanguage('bar', {name:'Bar Language', getParser(){}}))
-        .toThrowError(
-          'getParser() function for language bar must return an object with a \'parse\' function.'
-        );
     });
   });
 
@@ -213,7 +185,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it("should automatically re-render when the content changes", function() {
-      spyOn(render, 'default');
+      spyOn(this.blocks.renderer, 'render');
       this.blocks.toggleBlockMode();
 
       // change the document once...
@@ -221,13 +193,11 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.ast.rootNodes.length).toBe(1);
       expect(this.blocks.ast.rootNodes[0].type).toBe('literal');
       expect(this.blocks.ast.rootNodes[0].value).toBe(11);
-      expect(render.default).toHaveBeenCalled();
-      expect(render.default).toHaveBeenCalledWith(
-        this.blocks.ast.rootNodes[0],
-        this.cm,
-        {}
+      expect(this.blocks.renderer.render).toHaveBeenCalled();
+      expect(this.blocks.renderer.render).toHaveBeenCalledWith(
+        this.blocks.ast.rootNodes[0]
       );
-      render.default.calls.reset();
+      this.blocks.renderer.render.calls.reset();
 
       // change the document again
       this.cm.setValue('5432');
@@ -235,11 +205,9 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.ast.rootNodes.length).toBe(1);
       expect(this.blocks.ast.rootNodes[0].type).toBe('literal');
       expect(this.blocks.ast.rootNodes[0].value).toBe(5432);
-      expect(render.default).toHaveBeenCalled();
-      expect(render.default).toHaveBeenCalledWith(
-        this.blocks.ast.rootNodes[0],
-        this.cm,
-        {}
+      expect(this.blocks.renderer.render).toHaveBeenCalled();
+      expect(this.blocks.renderer.render).toHaveBeenCalledWith(
+        this.blocks.ast.rootNodes[0]
       );
     });
 
