@@ -6,5 +6,5 @@ var context = require.context('.', true, /.*-test.js$/);
 context.keys().forEach(context);
 
 // require all the files in the spec/docs folder that end with .js
-context = require.context('./docs', true, /.*.js$/);
-context.keys().forEach(context);
+//context = require.context('./docs', true, /.*.js$/);
+//context.keys().forEach(context);
