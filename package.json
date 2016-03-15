@@ -61,7 +61,7 @@
     "url-loader": "^0.5.7",
     "webpack": "^1.12.6",
     "webpack-dev-server": "^1.14.1",
-    "wescheme-js": "bootstrapworld/wescheme-js"
+    "wescheme-js": "bootstrapworld/wescheme-js#c80eb0"
   },
   "peerDependencies": {
     "babel-polyfill": "^6.1.19",
