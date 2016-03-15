@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import PrimitiveList from './PrimitiveList';
 import PrimitiveBlock from './PrimitiveBlock';
 import {PrimitiveGroup} from '../parsers/primitives';
+import Renderer from '../Renderer';
 
 require('./Toolbar.less');
 
@@ -10,12 +11,23 @@ export default React.createClass({
   displayName: 'Toolbar',
 
   propTypes: {
-    primitives: React.PropTypes.instanceOf(PrimitiveGroup)
+    primitives: React.PropTypes.instanceOf(PrimitiveGroup),
+    renderer: React.PropTypes.instanceOf(Renderer).isRequired,
+  },
+
+  childContextTypes: {
+    renderer: React.PropTypes.instanceOf(Renderer).isRequired,
   },
 
   getDefaultProps() {
     return {
       primitives: null
+    };
+  },
+
+  getChildContext() {
+    return {
+      renderer: this.props.renderer,
     };
   },
 
@@ -78,7 +90,7 @@ export default React.createClass({
         </div>
         <div className="selected-primitive">
           <div className="contract-header">Contract</div>
-          <PrimitiveBlock primitive={selected} />
+          <PrimitiveBlock primitive={selected}/>
         </div>
       </div>
     );

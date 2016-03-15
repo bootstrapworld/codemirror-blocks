@@ -1,8 +1,10 @@
 // TODO: move this file to CodeMirrorBlocks.js
 import CodeMirror from 'codemirror';
 import ee from 'event-emitter';
-import render from './render';
+import Renderer from './Renderer';
+import * as languages from './languages';
 import * as ui from './ui';
+import merge from './merge';
 
 function getLocationFromEl(el) {
   // TODO: it's kind of lame to have line and ch as attributes on random elements.
@@ -57,54 +59,39 @@ export const EVENT_DRAG_END = 'dragend';
 
 export default class CodeMirrorBlocks {
   static fromTextArea(textarea, language, options={}) {
-    return new CodeMirrorBlocks(
+    var blocks = new CodeMirrorBlocks(
       CodeMirror.fromTextArea(textarea),
       language,
       options
     );
+    blocks.setBlockMode(true);
+    return blocks;
   }
 
-  static addLanguage(name, languageDefinition) {
-    if (CodeMirrorBlocks.languages[name]) {
-      throw new Error(`language ${name} has already been added.`);
-    }
-    if (!languageDefinition.name) {
-      throw new Error(`language definition for ${name} is missing a 'name' attribute.`);
-    }
-    if (!languageDefinition.getParser) {
-      throw new Error(`language definition for ${name} is missing a 'getParser' function.`);
-    }
-    let parser = languageDefinition.getParser();
-    if (!(parser && typeof parser.parse == 'function')) {
-      throw new Error(
-        `getParser() function for language ${name} must return an object with a 'parse' function.`
-      );
-    }
-    CodeMirrorBlocks.languages[name] = languageDefinition;
-    return languageDefinition;
+  static get languages() {
+    return languages;
   }
 
   constructor(cm, languageOrParser, {toolbar, willInsertNode, didInsertNode, renderOptions} = {}) {
-    let parser;
     if (typeof languageOrParser == 'string') {
-      if (CodeMirrorBlocks.languages[languageOrParser]) {
-        this.language = CodeMirrorBlocks.languages[languageOrParser];
-        parser = this.language.getParser();
+      if (CodeMirrorBlocks.languages.getLanguage(languageOrParser)) {
+        this.language = CodeMirrorBlocks.languages.getLanguage(languageOrParser);
+        this.parser = this.language.getParser();
       } else {
         throw new Error(
           `Could not create CodeMirrorBlocks instance. Unknown language: "${languageOrParser}"`
         );
       }
     } else {
-      parser = languageOrParser;
+      this.language = null;
+      this.parser = languageOrParser;
     }
 
     this.cm = cm;
-    this.parser = parser;
     this.toolbarNode = toolbar;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
-    this.renderOptions = renderOptions;
+    this.renderOptions = renderOptions || {};
     this.ast = null;
     this.blockMode = false;
     this.undoKeys = [];
@@ -112,6 +99,14 @@ export default class CodeMirrorBlocks {
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
 
+    if (this.language && this.language.getRenderOptions) {
+      renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
+    }
+    this.renderer = new Renderer(this.cm, renderOptions);
+
+    if (this.language) {
+      this.cm.getWrapperElement().classList.add(`blocks-language-${this.language.id}`);
+    }
     Object.assign(
       this.cm.getWrapperElement(),
       {
@@ -248,8 +243,9 @@ export default class CodeMirrorBlocks {
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
+
     for (let rootNode of this.ast.rootNodes) {
-      render(rootNode, this.cm, this.renderOptions || {});
+      this.renderer.render(rootNode);
     }
     ui.renderToolbarInto(this);
   }
@@ -661,5 +657,3 @@ export default class CodeMirrorBlocks {
     }.bind(this);
   }
 }
-
-CodeMirrorBlocks.languages = {};

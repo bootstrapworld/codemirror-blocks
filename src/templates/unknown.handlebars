@@ -1,5 +1,5 @@
 {{#> node type="unknown" title=node.msg}}
-<span class="blocks-operator">{{{renderNode node.elts.[0] cm callback}}}</span>
+<span class="blocks-operator">{{{renderNode node.elts.[0]}}}</span>
 <span class="blocks-args">
   {{#if node.elts.length}}
   {{> drop-target location=node.args.[0].from}}
@@ -8,7 +8,7 @@
   {{/if}}
   {{#each node.elts}}
   {{#unless @first}}
-	  {{{renderNode this ../cm ../callback}}}
+	  {{{renderNode this}}}
 	  {{> drop-target location=this.to}}
   {{/unless}}
   {{/each}}

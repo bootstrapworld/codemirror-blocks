@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {renderHTMLString} from '../render';
+import {ASTNode} from '../ast';
+import Renderer from '../Renderer';
+import {Primitive} from '../parsers/primitives';
 
 require('./PrimitiveBlock.less');
 
@@ -26,6 +28,24 @@ function onDragStart(node, text, event) {
 
 export var RenderedBlockNode = React.createClass({
   displayName: 'RenderedBlockNode',
+
+  contextTypes: {
+    renderer: React.PropTypes.instanceOf(Renderer).isRequired,
+  },
+
+  propTypes: {
+    node: React.PropTypes.instanceOf(ASTNode),
+    text: React.PropTypes.string,
+  },
+
+  getDefaultProps() {
+    return {
+      node: null,
+      text: '',
+      renderer: null,
+    };
+  },
+
   componentDidMount() {
     if (this.refs.root) {
       let el = ReactDOM.findDOMNode(this.refs.root);
@@ -39,7 +59,7 @@ export var RenderedBlockNode = React.createClass({
 
   render() {
     if (this.props.node) {
-      let html = {__html:renderHTMLString(this.props.node)};
+      let html = {__html:this.context.renderer.renderHTMLString(this.props.node)};
       return <span className="RenderedBlockNode" dangerouslySetInnerHTML={html} ref="root" />;
     } else {
       return (
@@ -54,13 +74,27 @@ export var RenderedBlockNode = React.createClass({
 export default React.createClass({
   displayName: 'PrimitiveBlock',
 
+  propTypes: {
+    primitive: React.PropTypes.instanceOf(Primitive),
+  },
+
+  getDefaultProps() {
+    return {
+      primitive: null,
+    };
+  },
+
   render() {
-    const {primitive} = this.props;
-    if (!primitive) {
+    if (!this.props.primitive) {
       return <div/>;
     }
 
-    this.astNode = primitive.getASTNode();
-    return <RenderedBlockNode node={this.astNode} text={primitive.name} />;
+    this.astNode = this.props.primitive.getASTNode();
+    return (
+        <RenderedBlockNode
+           node={this.astNode}
+           text={this.props.primitive.name}
+           />
+    );
   }
 });
