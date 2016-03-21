@@ -22,6 +22,7 @@ before_install:
 notifications:
   email:
     - paul@carduner.net
+    - schanzer@bootstrapworld.org
   webhooks:
     urls:
       - 'https://webhooks.gitter.im/e/6184180c077043a1109a'
