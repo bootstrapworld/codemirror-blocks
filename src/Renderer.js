@@ -55,15 +55,20 @@ export default class Renderer {
     return nodeEl;
   }
 
-  // textToBlocks : CodeMirror [AST] -> ...
-  // consumes an array of ASTs, produces an array of DOM trees where the children are
-  // ordered according to their source locations
-  textToBlocks(rootNodes) {
-    // take note of the CM offsets
-    var parent = this.cm.getScrollerElement(), cm = this.cm;
+  // extract all the literals, create clones, and absolutely position 
+  // them at their original locations
+  animateTransition(ast, toBlocks) {
+    var that = this, rootNodes = ast.rootNodes;
+    // take note of the parent elt, CM offsets, and literals from the AST
+    var cm = this.cm, parent = this.cm.getScrollerElement();
     let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
+    var literals = rootNodes.reduce((acc, r) => {
+      return acc.concat(Array.from(r).filter((n) => n.type==="literal"));
+    }, []);
 
-    function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
+
+    // toDom : AST Node -> DOM Node
+    // given a literal AST node, make a DOM node with the same srcLoc info
     function toDom(astNode) {
       let el = document.createElement("span");
       el.from = astNode.from; el.to = astNode.to;
@@ -71,59 +76,56 @@ export default class Renderer {
       return el;
     }
 
-    // extract all the literals, and absolutely position them at their original source locations
-    function attachLiteralsAtTextPositions(rootNodes) {
-      var clones = rootNodes.reduce((acc, r) => {
-        var flattened = Array.from(r).sort((a, b) => poscmp(a.from, a.from));
-        return acc.concat(flattened.filter((n) => n.type==="literal").map(toDom));
-      }, []);
-      clones.forEach((clone) => {
-        var tm = cm.markText(clone.from, clone.to, { replacedWith: clone });
-        let {left, top, width, height} = clone.getBoundingClientRect();
-        clone.className = "transition";
-        clone.style.top = (top - offsetTop) + parent.scrollTop  + "px";
-        clone.style.left= (left- offsetLeft)+ parent.scrollLeft + "px";
-        clone.style.width     = width  + "px";
-        clone.style.height    = height + "px";
-        clone.style.display   = "inline-block";
-        clone.style.position  = "absolute";
-        clone.style.animation = "none";
-        tm.clear();
-        parent.appendChild(clone);
-      });
-      return clones;
+    // assignPosition : DOM Node, {styles} - > Void
+    // given a DOM node and some position info, necessary style properties
+    function assignPosition(node, {left, top, width, height}){
+      node.style.top    = (top - offsetTop) + parent.scrollTop  + "px";
+      node.style.left   = (left- offsetLeft)+ parent.scrollLeft + "px";
+      node.style.width  = width  + "px";
+      node.style.height = height + "px";
+      node.style.display   = "inline-block";
+      node.style.position  = "absolute";
+      node.style.animation = "none";
+      node.className   = "transition";
     }
-    // extract all the literals from a rendered DOM tree, 
-    // and tell the clones to move to their positions
-    function animateTransition(clones, rootNodes) {
-      for (let node of rootNodes) { if(node.el) node.el.style.animationName = "fadein"; }
-      var literals = rootNodes.reduce((acc, r) => {
-        return acc.concat(Array.from(r).filter((n) => n.type==="literal"));
-      }, []);
-      literals.forEach(function(node, i) {
-        // Don't animate if we're going to or from an invisible node
-        if(!clones[i] || (node.el.offsetWidth === 0 && node.el.offsetHeight === 0)) {
-          if(clones[i]) clones[i].remove(); 
-        } else {
-          let {left, top, width, height} = node.el.getBoundingClientRect();
-          clones[i].style.top  = (top - offsetTop) + parent.scrollTop + "px";
-          clones[i].style.left = (left- offsetLeft)+ parent.scrollLeft+ "px";
-          clones[i].style.width   = width  + "px";
-          clones[i].style.height  = height + "px";
-        }
-      });
+
+    // for each literal, figure out where belongs and then add a clone there
+    var clones = literals.map(function(literal) {
+      var clone = toDom(literal); // make the clone
+      if(toBlocks){
+        literal.el = clone; // if it's not yet rendered, use the clone as the element
+        var tm = cm.markText(literal.from, literal.to, { replacedWith: literal.el });
+      }
+      assignPosition(clone, literal.el.getBoundingClientRect()); // assign the location
+      if(toBlocks) { tm.clear(); }
+      parent.appendChild(clone);
+      return clone;
+    });
+
+    // render or clear the original AST
+    if(toBlocks) { 
+      for(let root of rootNodes){
+        that.render(root); 
+        root.el.style.animationName = "fadein"; 
+      }
+    } else { 
+      cm.getAllMarks().forEach(marker => marker.clear()); 
     }
-    // attach the clones in Text Position
-    var clones = attachLiteralsAtTextPositions(rootNodes);
-    // render the blocks
-    for(let r of rootNodes) this.render(r);
-    // animate the clones from text position to block position
-    animateTransition(clones, rootNodes);
-    // remove all the clones and any animation effects
+
+    // find out where each literal *is* post-rendering, and move the corresponding clone
+    literals.forEach((literal, i) => {
+      if(!toBlocks){
+        literal.el = toDom(literal);
+        var tm = cm.markText(clones[i].from, clones[i].to, { replacedWith: literal.el });
+      }
+      assignPosition(clones[i], literal.el.getBoundingClientRect());
+      if(!toBlocks) { tm.clear(); }
+    });
+
     setTimeout(function() {
-      for (let node of rootNodes) { node.el.style.animationName = ""; }
+      for (let node of rootNodes) { if(node.el) node.el.style.animationName = ""; }
       for (let c of clones) { if(c) c.remove(); }
-      }, 1000);
+    }, 1000);
   }
 
   render(rootNode) {
