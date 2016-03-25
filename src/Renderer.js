@@ -55,6 +55,70 @@ export default class Renderer {
     return nodeEl;
   }
 
+  // textToBlocks : CodeMirror [AST] -> ...
+  // consumes an array of ASTs, produces an array of DOM trees where the children are
+  // ordered according to their source locations
+  textToBlocks(rootNodes) {
+    // take note of the CM offsets
+    var parent = this.cm.getScrollerElement();
+    let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
+
+    function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
+
+    // flatten each AST into a collection of literal nodes, sorted by source location
+    // then substitute each literal in CM with the literal node
+    rootNodes.forEach((r) => {
+      function toDom(astNode) {
+        let el = document.createElement("span");
+        el.from = astNode.from; el.to = astNode.to;
+        el.appendChild(document.createTextNode(astNode.value.toString()));
+        return el;
+      }
+      var flattened = Array.from(r).sort((a, b) => poscmp(a.from, a.from)),
+          clones = flattened.filter((n) => n.type==="literal").map(toDom);
+      // 1) mark every CM literal with a widget for it's clone
+      // 2) annotate the node with it's position
+      // 3) figure out the parent-relative position of the clone
+      // 4) get rid of the marker, and add the clone to the parent
+      clones.forEach((clone) => {
+        var tm = this.cm.markText(clone.from, clone.to, { replacedWith: clone });
+        let {left, top, width, height} = clone.getBoundingClientRect();
+        clone.className = "transition";
+        clone.style.top = (top - offsetTop) + parent.scrollTop  + "px";
+        clone.style.left= (left- offsetLeft)+ parent.scrollLeft + "px";
+        clone.style.width     = width  + "px";
+        clone.style.height    = height + "px";
+        clone.style.display   = "inline-block";
+        clone.style.position  = "absolute";
+        clone.style.animation = "none";
+        tm.clear();
+        parent.appendChild(clone);
+        
+      });
+
+      this.render(r);
+      for (let node of rootNodes) { if(node.el) node.el.style.animationName = "fadein"; }
+      let targetLiterals = Array.from(r).filter((n) => n.type==="literal");
+      targetLiterals.forEach(function(node, i){
+      // Don't animate if we're going to or from an invisible node
+      if(!clones[i] || (node.el.offsetWidth === 0 && node.el.offsetHeight === 0)) {
+        if(clones[i]) clones[i].remove(); 
+      } else {
+        let {left, top, width, height} = node.el.getBoundingClientRect();
+        clones[i].style.top  = (top - offsetTop) + parent.scrollTop + "px";
+        clones[i].style.left = (left- offsetLeft)+ parent.scrollLeft+ "px";
+        clones[i].style.width   = width  + "px";
+        clones[i].style.height  = height + "px";
+      }
+    });
+    // remove all the clones
+    setTimeout(function() {
+      for (let node of rootNodes) { node.el.style.animationName = ""; }
+      for (let c of clones) { if(c) c.remove(); }
+      }, 1000);
+    });  
+  }
+
   render(rootNode) {
     this._nodesInRenderOrder = [];
     var rootNodeFrag = createFragment(this.renderHTMLString(rootNode));
