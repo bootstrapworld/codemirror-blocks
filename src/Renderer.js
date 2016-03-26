@@ -92,10 +92,10 @@ export default class Renderer {
     }
 
     // 1) get all the literals from the AST, and make clones of them
-    var literals = rootNodes.reduce((acc, r) => {
+    let literals = rootNodes.reduce((acc, r) => {
       return acc.concat(Array.from(r).filter((n) => n.type==="literal"));
     }, []);
-    var clones = literals.map(toDom);
+    let clones = literals.map(toDom);
 
     // 2) move each clone to the *origin* location of the corresponding literal 
     literals.forEach(function(literal, i) {

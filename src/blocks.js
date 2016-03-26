@@ -157,17 +157,10 @@ export default class CodeMirrorBlocks {
   setBlockMode(mode) {
     if (mode === this.blockMode) {
       return;
-    }
-    if(mode && this.blockMode == false){
-      this.ast = this.parser.parse(this.cm.getValue());
-      this.renderer.textToBlocks(this.ast.rootNodes);
-      return;
-    }
-    this.blockMode = mode;
-    if (this.blockMode) {
-      this.render();
     } else {
-      this.cm.getAllMarks().forEach(marker => marker.clear());
+      this.blockMode = mode;
+      if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
+      this.renderer.animateTransition(this.ast, mode);
     }
   }
 
