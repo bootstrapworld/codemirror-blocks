@@ -157,12 +157,10 @@ export default class CodeMirrorBlocks {
   setBlockMode(mode) {
     if (mode === this.blockMode) {
       return;
-    }
-    this.blockMode = mode;
-    if (this.blockMode) {
-      this.render();
     } else {
-      this.cm.getAllMarks().forEach(marker => marker.clear());
+      this.blockMode = mode;
+      if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
+      this.renderer.animateTransition(this.ast, mode);
     }
   }
 
@@ -583,7 +581,7 @@ export default class CodeMirrorBlocks {
     let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
     let ast  = this.parser.parse(ws + "x");               // make a fake literal
     let node = ast.rootNodes[0];                          // get its node
-    render(node, this.cm, this.renderOptions || {});      // render the DOM element
+    this.renderer.render(node, this.cm, this.renderOptions || {});      // render the DOM element
     node.el.innerText = text;                             // replace "x" with the real string
     node.to.ch = node.from.ch;                            // force the width to be zero
     let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
