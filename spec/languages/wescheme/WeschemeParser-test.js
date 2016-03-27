@@ -76,6 +76,11 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
+  /* 
+   * The WeScheme parser ignores comments at the lexing stage.
+   * This may change in a future release, but for now these
+   * tests are commented out
+   
   describe("when parsing comments,", function() {
     beforeEach(function() {
       this.ast = this.parser.parse(';this is a comment');
@@ -89,7 +94,7 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].comment).toBe('this is a comment');
     });
   });
-
+  */
   describe("when setting aria-labels", function() {
     it("should make symbols, and numbers be set to themselves", function() {
       expect(this.parser.parse('1').rootNodes[0].options['aria-label']).toBe('1');
