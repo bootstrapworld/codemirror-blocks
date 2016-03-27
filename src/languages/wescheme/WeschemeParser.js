@@ -130,6 +130,7 @@ function parseNode(node) {
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
   } else if (node instanceof structures.unsupportedExpr) {
+    if(node.val.constructor !== Array) return null;
     return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null), {msg: node.errorMsg});
   }
   console.log("!! No translator for", node);

@@ -41,7 +41,6 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].func.value).toBe('...');
       expect(this.ast.rootNodes[0].func.dataType).toBe('blank');
     });
-
   });
 
   describe("when parsing andExpressions and orExpression,", function() {
@@ -64,7 +63,7 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
-  describe("when parsing defVar expressions,", function() {
+  describe("when parsing variable definitions,", function() {
     beforeEach(function() {
       this.ast = this.parser.parse('(define foo "bar")');
     });
@@ -80,7 +79,7 @@ describe("The WeScheme Parser,", function() {
    * The WeScheme parser ignores comments at the lexing stage.
    * This may change in a future release, but for now these
    * tests are commented out
-   
+
   describe("when parsing comments,", function() {
     beforeEach(function() {
       this.ast = this.parser.parse(';this is a comment');
@@ -95,6 +94,128 @@ describe("The WeScheme Parser,", function() {
     });
   });
   */
+
+  describe("when parsing struct definitions,", function() {
+
+    beforeEach(function() {
+      this.ast = this.parser.parse('(define-struct 3d-point (x y z))');
+    });
+
+    it("should convert defStruct to struct", function() {
+      expect(this.ast.rootNodes[0].type).toBe('struct');
+    });
+
+    it("should convert the struct name correctly", function() {
+      expect(this.ast.rootNodes[0].name).toBe('3d-point');
+    });
+
+    it("should parse fields correctly", function() {
+      expect(this.ast.rootNodes[0].fields.length).toBe(3);
+      expect(this.ast.rootNodes[0].fields[0].value).toBe('x');
+      expect(this.ast.rootNodes[0].fields[2].value).toBe('z');
+    });
+  });
+
+  describe("when parsing function definitions,", function() {
+
+    beforeEach(function() {
+      this.ast = this.parser.parse('(define (add2 x) (+ x 2))');
+    });
+
+    it("should convert defFunc to functionDefinition", function() {
+      expect(this.ast.rootNodes[0].type).toBe('functionDef');
+    });
+
+    it("should convert the function name correctly", function() {
+      expect(this.ast.rootNodes[0].name).toBe('add2');
+    });
+
+    it("should convert the function argument correctly", function() {
+      expect(this.ast.rootNodes[0].args.length).toBe(1);
+      expect(this.ast.rootNodes[0].args[0]).toBe('x');
+    });
+
+    it("should convert the function body correctly", function() {
+      expect(this.ast.rootNodes[0].body.type).toBe('expression');
+    });
+  });
+
+  describe("when parsing expressions that are unsupported in the block language,", function() {
+
+    it("should ignore defVars", function() {
+      this.ast = this.parser.parse('(define-values (a b c) (1 2 3))');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore lambdaExpr", function() {
+      this.ast = this.parser.parse('(lambda (x) (x x))');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore localExpr", function() {
+      this.ast = this.parser.parse('(local [(define x 2)] x)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore letExpr", function() {
+      this.ast = this.parser.parse('(let ((x 42)) x)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore letStar", function() {
+      this.ast = this.parser.parse('(let* ((x 42)) x)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore letrectExpr", function() {
+      this.ast = this.parser.parse('(letrec ((x 42)) x)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore ifExpr", function() {
+      this.ast = this.parser.parse('(if (> 0 1) x y)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore letStar", function() {
+      this.ast = this.parser.parse('(begin (+ 1 2) (+ 3 4) 5)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore whenExpr", function() {
+      this.ast = this.parser.parse('(when (> 3 2) x)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore quotedExpr", function() {
+      this.ast = this.parser.parse('\'(+ 4 2)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore unquotedExpr", function() {
+      this.ast = this.parser.parse('\',42');
+      console.log(this.ast.rootNodes[0]);
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore quasiquotedExpr", function() {
+      this.ast = this.parser.parse('`42');
+      console.log(this.ast.rootNodes[0]);
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore unquoteSplice", function() {
+      this.ast = this.parser.parse('`#(1 ,@(list 1 2) 4)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore condExpr", function() {
+      this.ast = this.parser.parse('(cond [true 1] [false 2])');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore caseExpr", function() {
+      this.ast = this.parser.parse('(case 9 [(1) "a"])');
+      console.log(this.ast.rootNodes[0]);
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore require", function() {
+      this.ast = this.parser.parse('(require 2htdp/image)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+    it("should ignore provide", function() {
+      this.ast = this.parser.parse('(provide nori)');
+      expect(this.ast.rootNodes.length).toBe(0);
+    });
+
+  });
+
   describe("when setting aria-labels", function() {
     it("should make symbols, and numbers be set to themselves", function() {
       expect(this.parser.parse('1').rootNodes[0].options['aria-label']).toBe('1');
