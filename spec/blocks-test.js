@@ -169,12 +169,12 @@ describe('The CodeMirrorBlocks Class', function() {
   describe('renderer,', function() {
 
     it("should render itself when block mode is turned on", function() {
-      spyOn(this.blocks, 'render').and.callThrough();
+      spyOn(this.blocks.renderer, 'animateTransition').and.callThrough();
       this.blocks.toggleBlockMode();
       expect(this.blocks.blockMode).toBe(true);
       expect(this.blocks.ast).not.toBe(null);
       expect(this.blocks.ast.rootNodes).toEqual([]);
-      expect(this.blocks.render).toHaveBeenCalled();
+      expect(this.blocks.renderer.animateTransition).toHaveBeenCalled();
     });
 
     it("should do nothing if block mode does not change", function() {
