@@ -58,10 +58,11 @@ export default class Renderer {
   // extract all the literals, create clones, and absolutely position 
   // them at their original locations
   animateTransition(ast, toBlocks) {
-    var that = this, rootNodes = ast.rootNodes;
+    let that = this, rootNodes = ast.rootNodes;
     // take note of the parent elt, CM offsets, and literals from the AST
-    var cm = this.cm, parent = this.cm.getScrollerElement();
+    let cm = this.cm, parent = this.cm.getScrollerElement();
     let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
+    let cloneParent = parent.appendChild(document.createElement("div"));
 
     // toDom : AST Node -> DOM Node
     // given a literal AST node, make a DOM node with the same srcLoc info
@@ -73,34 +74,37 @@ export default class Renderer {
 
     // given a literal, a clone, and whether we're coming from text...
     // position the clone over the currently-rendered literal
+    // unless the literal is offscreen, in which case fade out the clone
     function assignClonePosition(literal, clone, fromText) {
       if(fromText){ // if we're coming from text, fake a literal to get coords
         literal.el = toDom(literal);
         var tm = cm.markText(literal.from, literal.to, { replacedWith: literal.el });
       }
-      // assign the location and other style info
-      let {left, top, width, height} = literal.el.getBoundingClientRect(); 
-      clone.style.top    = (top - offsetTop) + parent.scrollTop  + "px";
-      clone.style.left   = (left- offsetLeft)+ parent.scrollLeft + "px";
-      clone.style.width      = width  + "px";
-      clone.style.height     = height + "px";
-      clone.style.display    = "inline-block";
-      clone.style.position   = "absolute";
-      clone.style.animation  = "none";
-      clone.className        = "transition";
+      if(literal.el.offsetWidth === 0 && literal.el.offsetHeight === 0) {
+        clone.style.animationName = "fadeout";
+        clone.style.whiteSpace    = "pre";
+      } else {
+        // assign the location and other style info
+        let {left, top, width, height} = literal.el.getBoundingClientRect(); 
+        clone.style.width  = width  + "px";
+        clone.style.height = height + "px";
+        clone.style.top    = (top - offsetTop) + parent.scrollTop  + "px";
+        clone.style.left   = (left- offsetLeft)+ parent.scrollLeft + "px";
+        clone.className    = "transition";
+      }
       if(fromText) { tm.clear(); } // clean up the faked marker
     }
 
     // 1) get all the literals from the AST, and make clones of them
     let literals = rootNodes.reduce((acc, r) => {
-      return acc.concat(Array.from(r).filter((n) => n.type==="literal"));
+      return acc.concat(Array.from(r).filter(n => n.type==="literal"));
     }, []);
     let clones = literals.map(toDom);
 
     // 2) move each clone to the *origin* location of the corresponding literal 
     literals.forEach(function(literal, i) {
       assignClonePosition(literal, clones[i], toBlocks);
-      parent.appendChild(clones[i]);
+      cloneParent.appendChild(clones[i]);
     });
 
     // 3) render or clear the original AST
@@ -118,7 +122,7 @@ export default class Renderer {
     // 5) clean up after ourselves
     setTimeout(function() {
       for (let node of rootNodes) { if(node.el) node.el.style.animationName = ""; }
-      for (let c of clones) { if(c) c.remove(); }
+      cloneParent.remove();
     }, 1000);
   }
 

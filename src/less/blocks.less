@@ -1,13 +1,22 @@
 
 .blocks-node, .transition { 
   animation-duration: 1.5s; 
-  transition: left 1s linear,
-              top 1s linear, 
-              height 1s linear,
-              width 1s linear; 
+  transition: 	left 1s linear,
+              	top 1s linear, 
+              	height 1s linear,
+              	width 1s linear; 
+}
+.transition {
+	display:	inline-block;
+	position:	absolute;
 }
 @keyframes fadein {
     0% { opacity: 0; }
    50% { opacity: 0; }
   100% { opacity: 1; }
+}
+@keyframes fadeout {
+    0% { opacity: 1; }
+   50% { opacity: 0; }
+  100% { opacity: 0; }
 }
