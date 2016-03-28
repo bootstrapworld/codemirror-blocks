@@ -3,7 +3,6 @@ import classNames from 'classnames';
 
 import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
 import {RenderedBlockNode} from './PrimitiveBlock';
-import Highlight from './Highlight';
 
 require('./PrimitiveList.less');
 
@@ -28,7 +27,6 @@ const PrimitiveGroup = React.createClass({
         name: '',
         primitives: []
       },
-      highlight: '',
       onSelect: null,
       selected: null,
     };
@@ -45,8 +43,8 @@ const PrimitiveGroup = React.createClass({
   },
 
   render() {
-    let {group, highlight, onSelect, selected} = this.props;
-    let expanded = this.state.expanded || this.props.highlight;
+    let {group, onSelect, selected} = this.props;
+    let expanded = this.state.expanded;
     let expandoClass = classNames(
       'glyphicon',
       expanded ? 'glyphicon-minus' : 'glyphicon-plus'
@@ -55,12 +53,10 @@ const PrimitiveGroup = React.createClass({
       <li className="PrimitiveGroup list-group-item">
         <div onClick={this.toggleExpanded} className="group-header">
           <span className={expandoClass} aria-hidden="true"/>
-          <Highlight className="group-name" highlight={highlight}>{group.name}</Highlight>
         </div>
         {expanded ?
           <PrimitiveList
             primitives={group.primitives}
-            highlight={highlight}
             onSelect={onSelect}
             selected={selected}
           />
@@ -76,14 +72,13 @@ const PrimitiveList = React.createClass({
   getInitialProps() {
     return {
       primitive: null,
-      highlight: '',
       onSelect: null,
       selected: null,
     };
   },
 
   render() {
-    const {primitives, highlight, selected} = this.props;
+    const {primitives, selected} = this.props;
     const onSelect = this.props.onSelect || function(){};
     let nodes = [];
     for (let primitive of primitives) {
@@ -93,7 +88,6 @@ const PrimitiveList = React.createClass({
           <PrimitiveGroup
             key={primitive.name}
             group={primitive}
-            highlight={highlight}
             onSelect={onSelect}
             selected={selected}
           />
@@ -104,7 +98,6 @@ const PrimitiveList = React.createClass({
         <Primitive
           key={primitive.name}
           primitive={primitive}
-          highlight={highlight}
           onClick={() => onSelect(primitive)}
           className={selected == primitive && 'selected'}
         />

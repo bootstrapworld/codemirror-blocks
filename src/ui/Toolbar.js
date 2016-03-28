@@ -83,7 +83,6 @@ export default React.createClass({
         <div className="primitives-box">
           <PrimitiveList
             primitives={primitives}
-            highlight={this.state.search}
             onSelect={this.selectPrimitive}
             selected={this.state.selectedPrimitive}
           />
