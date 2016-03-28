@@ -58,9 +58,8 @@ export default class Renderer {
   // extract all the literals, create clones, and absolutely position 
   // them at their original locations
   animateTransition(ast, toBlocks) {
-    let that = this, rootNodes = ast.rootNodes;
-    // take note of the parent elt, CM offsets, and literals from the AST
-    let cm = this.cm, parent = this.cm.getScrollerElement();
+    // take note of the parent elt, CM offsets, and rootNodes
+    let cm = this.cm, parent = this.cm.getScrollerElement(), rootNodes = ast.rootNodes;
     let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
     let cloneParent = parent.appendChild(document.createElement("div"));
 
@@ -96,9 +95,7 @@ export default class Renderer {
     }
 
     // 1) get all the literals from the AST, and make clones of them
-    let literals = rootNodes.reduce((acc, r) => {
-      return acc.concat(Array.from(r).filter(n => n.type==="literal"));
-    }, []);
+    let literals=rootNodes.reduce((acc,r)=>acc.concat(Array.from(r).filter(n=>n.type=="literal")),[]);
     let clones = literals.map(toDom);
 
     // 2) move each clone to the *origin* location of the corresponding literal 
@@ -109,19 +106,22 @@ export default class Renderer {
 
     // 3) render or clear the original AST
     if(toBlocks) { 
-      rootNodes.forEach(r => { that.render(r);  r.el.style.animationName = "fadein"; });
+      rootNodes.forEach(r => { 
+        this.render(r);  
+        r.el.style.animationName = "fadein"; 
+      });
     } else { 
       cm.getAllMarks().forEach(marker => marker.clear()); 
     }
 
     // 4) move each clone to the *destination* location of the corresponding literal 
-    literals.forEach((literal, i) => {
-      assignClonePosition(literal, clones[i], !toBlocks);
-    });
+    literals.forEach((literal, i) => assignClonePosition(literal, clones[i], !toBlocks));
 
-    // 5) clean up after ourselves
+    // 5) Clean up after ourselves. The 1000ms should match the transition length defined in blocks.less
     setTimeout(function() {
-      for (let node of rootNodes) { if(node.el) node.el.style.animationName = ""; }
+      for (let node of rootNodes) { 
+        if(node.el) node.el.style.animationName = ""; 
+      }
       cloneParent.remove();
     }, 1000);
   }
