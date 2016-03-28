@@ -64,7 +64,6 @@ function parseNode(node) {
       from,
       to,
       new Literal(
-        //TODO: don't guess where the and symbol is, need to parse it here.
         {line:from.line, ch:from.ch+1},
         {line:from.line, ch:from.ch+4},
         "and",
@@ -79,7 +78,6 @@ function parseNode(node) {
       from,
       to,
       new Literal(
-        //TODO: don't guess where the or symbol is, need to parse it here.
         {line:from.line, ch:from.ch+1},
         {line:from.line, ch:from.ch+3},
         "or",
@@ -464,7 +462,7 @@ class WeschemeParser {
       if (sexp.length < 3) { return fallback(sexp); }  // is it just (when)?
       var exprs = sexp.slice(2),
         result = new structures.whenUnlessExpr(parseExpr(sexp[1]), parse(exprs), sexp[0]);
-      exprs.location = exprs[0].location; // FIXME: merge the locations
+      exprs.location = exprs[0].location;
       result.location = sexp.location;
       return result;
     }
