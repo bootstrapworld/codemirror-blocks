@@ -13,6 +13,13 @@ describe("The WeScheme Parser,", function() {
     expect(this.parser.parse('foo').rootNodes[0].dataType).toBe('symbol');
   });
 
+  it("should treat vector literals like expressions", function() {
+    let ast = this.parser.parse('#(1 3)');
+    expect(ast.rootNodes[0].type).toBe('expression');
+    ast = this.parser.parse('#9(#f)');
+    expect(ast.rootNodes[0].type).toBe('expression');
+  });
+
   it("should treat booleans expression like regular expressions", function() {
     let ast = this.parser.parse('(or #t #f)');
     expect(ast.rootNodes[0].type).toBe('expression');
@@ -183,17 +190,19 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore unquotedExpr", function() {
-      this.ast = this.parser.parse('\',42');
-      console.log(this.ast.rootNodes[0]);
+      this.ast = this.parser.parse('\',(42 43 44)');
+      expect(this.ast.rootNodes.length).toBe(0);
+      this.ast = this.parser.parse('`(1 `,(+ 1 ,(+ 2 3)) 4)');
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore quasiquotedExpr", function() {
       this.ast = this.parser.parse('`42');
-      console.log(this.ast.rootNodes[0]);
+      expect(this.ast.rootNodes.length).toBe(0);
+      this.ast = this.parser.parse('`(1 ```,,@,,@(list (+ 1 2)) 4)');
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore unquoteSplice", function() {
-      this.ast = this.parser.parse('`#(1 ,@(list 1 2) 4)');
+      this.ast = this.parser.parse('`#(1 ,@(list 1 \'2) 4)');
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore condExpr", function() {
@@ -255,6 +264,14 @@ describe("The WeScheme Parser,", function() {
       this.ast = this.parser.parse("(define a)");
       expect(this.ast.rootNodes[0].type).toBe('unknown');
       expect(this.ast.rootNodes[0].elts[0].value).toBe('define');
+      expect(this.ast.rootNodes[0].elts.length).toBe(2);
+      expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
+    });
+
+    it("parse malformed defVars (define-values a)", function() {
+      this.ast = this.parser.parse("(define-values a)");
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('define-values');
       expect(this.ast.rootNodes[0].elts.length).toBe(2);
       expect(this.ast.rootNodes[0].elts[1].value).toBe('a');
     });
@@ -388,5 +405,18 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].elts.length).toBe(1);
     });
 
+    it("parse malformed requireExpression (requre)", function() {
+      this.ast = this.parser.parse("(require)");
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('require');
+      expect(this.ast.rootNodes[0].elts.length).toBe(1);
+    });
+
+    it("parse malformed else (else)", function() {
+      this.ast = this.parser.parse("(else)");
+      expect(this.ast.rootNodes[0].type).toBe('unknown');
+      expect(this.ast.rootNodes[0].elts[0].value).toBe('else');
+      expect(this.ast.rootNodes[0].elts.length).toBe(1);
+    });
   });
 });

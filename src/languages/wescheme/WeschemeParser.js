@@ -487,7 +487,7 @@ class WeschemeParser {
           result = parseExpr(clause[1]),
           cpl = new structures.couple(test, result);
         // the only un-parenthesized keyword allowed in the first slot is 'else'
-        if ((structures.keywords.indexOf(test.val) > -1) && (test.val !== "else")) { throw "ParseError"; }
+        if (structures.keywords.includes(test.val) && (test.val !== "else")) { throw "ParseError"; }
         test.isClause = true; // used to determine appropriate "else" use during desugaring
         cpl.location = clause.location;
         return cpl;
