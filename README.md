@@ -60,6 +60,14 @@ is in the **example/** directory.
 
         npm run docs
 
+7. you can generate local coverage reports in the .coverage/ folder by running:
+
+        COVERAGE=true npm test
+
+8. you can generate a static, minified ball of JS and CSS in the dist/ folder by running:
+
+        npm run build
+
 ## Updating demo on project site
 
 To update the demo on the project site with the latest version of the example in
