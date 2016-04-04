@@ -78,7 +78,6 @@
     "heroku-server": "node heroku-server.js",
     "build": "webpack",
     "lint": "eslint . --ext .js || true",
-//    "docs": "docco spec/docs/*.js", // TODO: add documentation!
     "site": "jekyll serve --baseurl \"\""
   },
   "author": "Paul Carduner",
