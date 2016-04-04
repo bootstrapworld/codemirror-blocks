@@ -10,8 +10,8 @@ jekyll build
 npm run build
 cp -R build site-build/examples
 cp -R dist site-build/
-npm run docs
-cp -R docs site-build/
+#npm run docs
+#cp -R docs site-build/
 
 # go to the out directory and create a *new* Git repo
 cd site-build

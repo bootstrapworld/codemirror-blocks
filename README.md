@@ -56,15 +56,11 @@ To get your dev environment up and running, follow these steps
 Library code is in the **src/** directory. An example of how it should be used
 is in the **example/** directory.
 
-6. documentation can be generated from the source code by running:
-
-        npm run docs
-
-7. you can generate local coverage reports in the .coverage/ folder by running:
+6. you can generate local coverage reports in the **.coverage/** folder by running:
 
         COVERAGE=true npm test
 
-8. you can generate a static, minified ball of JS and CSS in the dist/ folder by running:
+7. you can generate a static, minified ball of JS and CSS in the **dist/** folder by running:
 
         npm run build
 
