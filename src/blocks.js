@@ -470,7 +470,7 @@ export default class CodeMirrorBlocks {
     return null;
   }
 
-  dropOntoNode(destinationNode, event) {
+  dropOntoNode(_, event) {
     this.emit(EVENT_DRAG_END, this, event);
     if (!this.isDropTarget(event.target)) {
       // not a drop taret, just return
@@ -479,40 +479,37 @@ export default class CodeMirrorBlocks {
     event.preventDefault();
     event.stopPropagation();
     event.target.classList.remove('blocks-over-target');
-    let nodeId = event.dataTransfer.getData('text/id');
+    // look up the source information: ID, text, JSON, and the node itself
+    let sourceId       = event.dataTransfer.getData('text/id');
     let sourceNodeText = event.dataTransfer.getData('text/plain');
     let sourceNodeJSON = event.dataTransfer.getData('text/json');
-    let sourceNode = null;
-
-    if (nodeId) {
-      sourceNode = this.ast.nodeMap.get(nodeId);
-      if (sourceNode) {
-        sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
-      } else {
-        console.error("node", nodeId, "not found in AST");
-      }
+    let sourceNode     = this.ast.nodeMap.get(sourceId);
+    if (sourceNode) {
+      sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
     } else if (sourceNodeJSON) {
       sourceNode = JSON.parse(sourceNodeJSON);
     } else if (!sourceNodeText) {
       console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
 
-    let destination = getLocationFromEl(event.target);
-
-    if (!destination) {
-      // event.target probably isn't a drop target, so just get the location from the event
-      destination = this.cm.coordsChar({left:event.pageX, top:event.pageY});
-      if (destination.outside) {
+    // look up the destination information: ID, starting location
+    let destinationId   = event.target.id.substring(11);      // remove "blocks-node-" from the front
+    let destinationNode = this.ast.nodeMap.get(destinationId);// when dropping onto an existing node, get that Node
+    let destFromEl      = getLocationFromEl(event.target);    // when dropping onto whitespace, get the location of that space
+    let insertAt        = (destinationNode && destinationNode.from) // if we have a pre-existing node, use its start location
+                        || getLocationFromEl(event.target)          // if we have a drop target, grab that location
+                        || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
+    if (insertAt.outside) {         // if we're coming from outside
         sourceNodeText = '\n' + sourceNodeText;
-      }
     }
+
     // TODO: figure out how to no-op more complicated changes that don't actually have any
     // impact on the AST.  For example, start with:
     //   (or #t #f)
     // then try to move the #f over one space. It should be a no-op.
     if (sourceNode &&
-        ((destination.line == sourceNode.to.line && destination.ch == sourceNode.to.ch) ||
-         (destination.line == sourceNode.from.line && destination.ch == sourceNode.from.ch))) {
+        ((insertAt.line == sourceNode.to.line && insertAt.ch == sourceNode.to.ch) ||
+         (insertAt.line == sourceNode.from.line && insertAt.ch == sourceNode.from.ch))) {
       // destination is the same as source node location, so this should be a no-op.
       return;
     }
@@ -528,7 +525,7 @@ export default class CodeMirrorBlocks {
       if (destinationNode) {
         this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
       } else {
-        this.cm.replaceRange(sourceNodeText, destination);
+        this.cm.replaceRange(sourceNodeText, insertAt);
       }
       return;
     }
@@ -549,22 +546,22 @@ export default class CodeMirrorBlocks {
           sourceNodeText = this.willInsertNode(
             sourceNodeText,
             sourceNode,
-            destination,
+            insertAt,
             destinationNode
           );
         }
-        if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destination)) {
-          this.cm.replaceRange(sourceNodeText, destination);
+        if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(insertAt)) {
+          this.cm.replaceRange(sourceNodeText, insertAt);
           this.cm.replaceRange('', sourceNode.from, sourceNode.to);
         } else {
           this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-          this.cm.replaceRange(sourceNodeText, destination);
+          this.cm.replaceRange(sourceNodeText, insertAt);
         }
         if (this.didInsertNode) {
           this.didInsertNode(
             sourceNodeText,
             sourceNode,
-            destination,
+            insertAt,
             destinationNode
           );
         }
