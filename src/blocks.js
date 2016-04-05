@@ -174,9 +174,9 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  markText(from, to, options) {
-    function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
+  poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
 
+  markText(from, to, options) {
     let supportedOptions = new Set(['css','className','title']);
     let hasOptions = false;
     for (let option in options) {
@@ -195,7 +195,7 @@ export default class CodeMirrorBlocks {
     for (let mark of marks) {
       if (mark.replacedWith && mark.replacedWith.classList.contains('blocks-node')) {
         for(let node of mark.node){
-          if((poscmp(from, node.from) < 1) && (poscmp(to, node.to) > -1)){
+          if((this.poscmp(from, node.from) < 1) && (this.poscmp(to, node.to) > -1)){
             if (options.css) {
               node.el.style.cssText = options.css;
             }
@@ -492,78 +492,64 @@ export default class CodeMirrorBlocks {
       console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
 
-    // look up the destination information: ID, starting location
-    let destinationId   = event.target.id.substring(11);      // remove "blocks-node-" from the front
-    let destinationNode = this.ast.nodeMap.get(destinationId);// when dropping onto an existing node, get that Node
-    let insertAt        = (destinationNode && destinationNode.from) // if we have a pre-existing node, use its start location
+    // look up the destination information: ID, Node, destFrom and destTo
+    let destinationId   = event.target.id.substring(11);            // remove "blocks-node-" from the front
+    let destinationNode = this.ast.nodeMap.get(destinationId);      // when dropping onto an existing node, get that Node
+    let destFrom        = (destinationNode && destinationNode.from) // if we have a pre-existing node, use its start location
                         || getLocationFromEl(event.target)          // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
-    if (insertAt.outside) {         // if we're coming from outside
-        sourceNodeText = '\n' + sourceNodeText;
+    let destTo        = (destinationNode && destinationNode.to) || destFrom; // destFrom = destTo for insertion
+    // if we're coming from outside
+    if (destFrom.outside) {
+      sourceNodeText = '\n' + sourceNodeText;
     }
 
+    // check for no-ops
     // TODO: figure out how to no-op more complicated changes that don't actually have any
     // impact on the AST.  For example, start with:
     //   (or #t #f)
-    // then try to move the #f over one space. It should be a no-op.
-    if (sourceNode &&
-        ((insertAt.line == sourceNode.to.line && insertAt.ch == sourceNode.to.ch) ||
-         (insertAt.line == sourceNode.from.line && insertAt.ch == sourceNode.from.ch))) {
-      // destination is the same as source node location, so this should be a no-op.
-      return;
-    }
-
-    // a node cannot be dropped into a child of itself
-    if(destinationNode &&
-       sourceNode &&
-       sourceNode.el &&
-       sourceNode.el.contains(destinationNode.el)) {
-      return;
-    }
-    if (!sourceNode) {
-      if (destinationNode) {
-        this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
-      } else {
-        this.cm.replaceRange(sourceNodeText, insertAt);
+    // then try to move the #f over one space. It should be a no-op.  
+    if (sourceNode) {
+      if( (this.poscmp(destFrom, sourceNode.from) > -1) && 
+          (this.poscmp(destTo,   sourceNode.to  ) <  1)) {
+        // destination range falls within the source range, so this should be a no-op.
+        return;
       }
+    } else {
+      // if we're inserting/replacing from outsider the editor, just do it and return
+      this.cm.replaceRange(sourceNodeText, destFrom, destTo);
       return;
     }
 
+    // Call willInsertNode and didInsertNode on either side of the replacement operation
+    // if we're not replacing a literal
     this.cm.operation(() => {
-      if (destinationNode && destinationNode.type == 'literal') {
-        if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destinationNode.from)) {
-          this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
-          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-        } else {
-          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-          this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
-        }
+      if (this.willInsertNode &&
+          !(destinationNode && destinationNode.type=='literal')) {
+        // give client code an opportunity to modify the sourceNodeText before
+        // it gets dropped in. For example, to add proper spacing
+        sourceNodeText = this.willInsertNode(
+          sourceNodeText,
+          sourceNode,
+          destFrom,
+          destinationNode
+        );
+      }
+      if (this.poscmp(sourceNode.from, destFrom) < 0) {
+        this.cm.replaceRange(sourceNodeText, destFrom, destTo);
+        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
       } else {
-        if (this.willInsertNode) {
-          // give client code an opportunity to modify the sourceNodeText before
-          // it gets dropped in. For example, to add proper spacing
-          sourceNodeText = this.willInsertNode(
-            sourceNodeText,
-            sourceNode,
-            insertAt,
-            destinationNode
-          );
-        }
-        if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(insertAt)) {
-          this.cm.replaceRange(sourceNodeText, insertAt);
-          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-        } else {
-          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-          this.cm.replaceRange(sourceNodeText, insertAt);
-        }
-        if (this.didInsertNode) {
-          this.didInsertNode(
-            sourceNodeText,
-            sourceNode,
-            insertAt,
-            destinationNode
-          );
-        }
+        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+        this.cm.replaceRange(sourceNodeText, destFrom, destTo);
+      }
+      if (this.didInsertNode &&
+          !(destinationNode && destinationNode.type=='literal')) {
+        this.didInsertNode(
+          sourceNodeText,
+          sourceNode,
+          destFrom,
+          destinationNode
+        );
       }
     });
   }
