@@ -495,7 +495,6 @@ export default class CodeMirrorBlocks {
     // look up the destination information: ID, starting location
     let destinationId   = event.target.id.substring(11);      // remove "blocks-node-" from the front
     let destinationNode = this.ast.nodeMap.get(destinationId);// when dropping onto an existing node, get that Node
-    let destFromEl      = getLocationFromEl(event.target);    // when dropping onto whitespace, get the location of that space
     let insertAt        = (destinationNode && destinationNode.from) // if we have a pre-existing node, use its start location
                         || getLocationFromEl(event.target)          // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
