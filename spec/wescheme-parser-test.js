@@ -4,8 +4,6 @@ import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser'
 
 import { 
   dragstart,
-  dragenter,
-  dragleave,
   drop
 } from './events';
 
