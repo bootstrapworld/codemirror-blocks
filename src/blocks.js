@@ -20,6 +20,10 @@ function getLocationFromEl(el) {
   };
 }
 
+
+// give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
+function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
+
 function findNearestNodeEl(el) {
   while (el !== document.body && !el.classList.contains('blocks-node')) {
     el = el.parentNode;
@@ -174,8 +178,6 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
-
   markText(from, to, options) {
     let supportedOptions = new Set(['css','className','title']);
     let hasOptions = false;
@@ -195,7 +197,7 @@ export default class CodeMirrorBlocks {
     for (let mark of marks) {
       if (mark.replacedWith && mark.replacedWith.classList.contains('blocks-node')) {
         for(let node of mark.node){
-          if((this.poscmp(from, node.from) < 1) && (this.poscmp(to, node.to) > -1)){
+          if((poscmp(from, node.from) < 1) && (poscmp(to, node.to) > -1)){
             if (options.css) {
               node.el.style.cssText = options.css;
             }
@@ -493,9 +495,11 @@ export default class CodeMirrorBlocks {
     }
 
     // look up the destination information: ID, Node, destFrom and destTo
-    let destinationId   = event.target.id.substring(11);            // remove "blocks-node-" from the front
+    let destinationId   = event.target.id.match(/block-node-(.*)/); // does it have an id?
+    if(destinationId) destinationId = destinationId[1];             // if so, use it  
+    
     let destinationNode = this.ast.nodeMap.get(destinationId);      // when dropping onto an existing node, get that Node
-    let destFrom        = (destinationNode && destinationNode.from) // if we have a pre-existing node, use its start location
+    let destFrom        = (destinationNode && destinationNode.from) // if we have an existing node, use its start location
                         || getLocationFromEl(event.target)          // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
     let destTo        = (destinationNode && destinationNode.to) || destFrom; // destFrom = destTo for insertion
@@ -510,8 +514,8 @@ export default class CodeMirrorBlocks {
     //   (or #t #f)
     // then try to move the #f over one space. It should be a no-op.  
     if (sourceNode) {
-      if( (this.poscmp(destFrom, sourceNode.from) > -1) && 
-          (this.poscmp(destTo,   sourceNode.to  ) <  1)) {
+      if( (poscmp(destFrom, sourceNode.from) > -1) && 
+          (poscmp(destTo,   sourceNode.to  ) <  1)) {
         // destination range falls within the source range, so this should be a no-op.
         return;
       }
@@ -535,7 +539,7 @@ export default class CodeMirrorBlocks {
           destinationNode
         );
       }
-      if (this.poscmp(sourceNode.from, destFrom) < 0) {
+      if (poscmp(sourceNode.from, destFrom) < 0) {
         this.cm.replaceRange(sourceNodeText, destFrom, destTo);
         this.cm.replaceRange('', sourceNode.from, sourceNode.to);
       } else {
