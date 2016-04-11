@@ -251,7 +251,7 @@ export default class CodeMirrorBlocks {
   }
 
   getSelectedNode() {
-    return this.findNodeFromEl(document.activeElement);
+    return this.findNearestNodeFromEl(document.activeElement);
   }
 
   selectNode(node, event) {
@@ -436,7 +436,7 @@ export default class CodeMirrorBlocks {
     if (el.classList.contains('blocks-drop-target')) {
       return true;
     }
-    var node = this.findNodeFromEl(el);
+    var node = this.findNearestNodeFromEl(el);
     if (node && ['literal', 'blank'].includes(node.type)) {
       return true;
     }
@@ -462,14 +462,16 @@ export default class CodeMirrorBlocks {
   }
 
   findNodeFromEl(el) {
-    el = findNearestNodeEl(el);
-    if (el) {
+    if(el){
       let match = el.id.match(/block-node-(.*)/);
-      if (match && match.length > 1) {
-        return this.ast.nodeMap.get(match[1]);
-      }
+      return match && (match.length > 1) && this.ast.nodeMap.get(match[1]);
+    } else {
+      return null;
     }
-    return null;
+  }
+
+  findNearestNodeFromEl(el) {
+    return this.findNodeFromEl(findNearestNodeEl(el)) || null;
   }
 
   dropOntoNode(_, event) {
@@ -494,11 +496,8 @@ export default class CodeMirrorBlocks {
       console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
 
-    // look up the destination information: ID, Node, destFrom and destTo
-    let destinationId   = event.target.id.match(/block-node-(.*)/); // does it have an id?
-    if(destinationId) destinationId = destinationId[1];             // if so, use it  
-    
-    let destinationNode = this.ast.nodeMap.get(destinationId);      // when dropping onto an existing node, get that Node
+    // look up the destination information: ID, Node, destFrom and destTo    
+    let destinationNode = this.findNodeFromEl(event.target);        // when dropping onto an existing node, get that Node
     let destFrom        = (destinationNode && destinationNode.from) // if we have an existing node, use its start location
                         || getLocationFromEl(event.target)          // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
@@ -614,7 +613,7 @@ export default class CodeMirrorBlocks {
       handlers = {default: handlers};
     }
     return function(event) {
-      let node = this.findNodeFromEl(event.target);
+      let node = this.findNearestNodeFromEl(event.target);
       if (node || callWithNullNode) {
         if (event.target.classList.contains('blocks-white-space')) {
           // handle white space differently.
