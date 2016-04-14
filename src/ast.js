@@ -155,6 +155,9 @@ export class VariableDefinition extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
+    for (let node of this.args) {
+      yield node;
+    }
     for (let node of this.body) {
       yield node;
     }
