@@ -10,6 +10,7 @@ module.exports = _.extend({}, baseConfig, {
   entry: {
     "index": './example/index.js',
     "example": './example/example.js',
+    "fullscheme-example": './example/fullscheme-example.js',
     "wescheme-example": './example/wescheme-example.js',
     "editor-example": './example/editor-example.js',
     "third-party": ['react', 'react-dom', 'babel-polyfill', 'codemirror']
@@ -45,6 +46,12 @@ module.exports = _.extend({}, baseConfig, {
       template: 'example/simple.html',
       inject: 'body',
       chunks: ['third-party','example'],
+    }),
+    new HtmlWebpackPlugin({
+      filename: 'fullscheme.html',
+      template: 'example/fullscheme.html',
+      inject: 'body',
+      chunks: ['third-party','fullscheme-example'],
     }),
     new HtmlWebpackPlugin({
       filename: 'wescheme.html',
