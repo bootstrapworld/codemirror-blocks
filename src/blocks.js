@@ -20,7 +20,6 @@ function getLocationFromEl(el) {
   };
 }
 
-
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
 
@@ -461,17 +460,16 @@ export default class CodeMirrorBlocks {
     }
   }
 
+  // return the AST node that exactly matches the element, or null
   findNodeFromEl(el) {
-    if(el){
+    if(el) {
       let match = el.id.match(/block-node-(.*)/);
       return match && (match.length > 1) && this.ast.nodeMap.get(match[1]);
-    } else {
-      return null;
     }
   }
-
+  // return the AST node that best matches the element, or null
   findNearestNodeFromEl(el) {
-    return this.findNodeFromEl(findNearestNodeEl(el)) || null;
+    return this.findNodeFromEl(findNearestNodeEl(el));
   }
 
   dropOntoNode(_, event) {
@@ -511,33 +509,29 @@ export default class CodeMirrorBlocks {
     // TODO: figure out how to no-op more complicated changes that don't actually have any
     // impact on the AST.  For example, start with:
     //   (or #t #f)
-    // then try to move the #f over one space. It should be a no-op.  
-    if (sourceNode) {
-      if( (poscmp(destFrom, sourceNode.from) > -1) && 
-          (poscmp(destTo,   sourceNode.to  ) <  1)) {
-        // destination range falls within the source range, so this should be a no-op.
-        return;
-      }
-    } else {
-      // if we're inserting/replacing from outsider the editor, just do it and return
+    //   then try to move the #f over one space. It should be a no-op.  
+    if (sourceNode &&                                   // If there's a sourceNode, &
+        (poscmp(destFrom, sourceNode.from) > -1) &&     // dest range is in-between source range,
+        (poscmp(destTo,   sourceNode.to  ) <  1)) {     // it's a no-op.
+      return;
+    } 
+    // if we're inserting/replacing from outsider the editor, just do it and return
+    if (!sourceNode) {
       this.cm.replaceRange(sourceNodeText, destFrom, destTo);
       return;
+    }
+
+    // if f is defined and the destination is a non-literal node, apply it
+    // otherwise return the sourceNodeText unmodified
+    function maybeApplyClientFn(f) {
+      return (f && !(destinationNode && destinationNode.type == "literal"))? 
+        f(sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
     }
 
     // Call willInsertNode and didInsertNode on either side of the replacement operation
     // if we're not replacing a literal
     this.cm.operation(() => {
-      if (this.willInsertNode &&
-          !(destinationNode && destinationNode.type=='literal')) {
-        // give client code an opportunity to modify the sourceNodeText before
-        // it gets dropped in. For example, to add proper spacing
-        sourceNodeText = this.willInsertNode(
-          sourceNodeText,
-          sourceNode,
-          destFrom,
-          destinationNode
-        );
-      }
+      sourceNodeText = maybeApplyClientFn(this.willInsertNode);
       if (poscmp(sourceNode.from, destFrom) < 0) {
         this.cm.replaceRange(sourceNodeText, destFrom, destTo);
         this.cm.replaceRange('', sourceNode.from, sourceNode.to);
@@ -545,15 +539,7 @@ export default class CodeMirrorBlocks {
         this.cm.replaceRange('', sourceNode.from, sourceNode.to);
         this.cm.replaceRange(sourceNodeText, destFrom, destTo);
       }
-      if (this.didInsertNode &&
-          !(destinationNode && destinationNode.type=='literal')) {
-        this.didInsertNode(
-          sourceNodeText,
-          sourceNode,
-          destFrom,
-          destinationNode
-        );
-      }
+      maybeApplyClientFn(this.didInsertNode);
     });
   }
 
