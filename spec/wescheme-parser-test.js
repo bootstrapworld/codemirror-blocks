@@ -2,6 +2,11 @@ import CodeMirrorBlocks from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
 
+import { 
+  dragstart,
+  drop
+} from './events';
+
 function keydown(keyCode, other={}) {
   let event = new CustomEvent('keydown', {bubbles: true});
   event.which = event.keyCode = keyCode;
@@ -68,9 +73,23 @@ describe('The CodeMirrorBlocks Class', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
         expect(this.blocks.getSelectedNode()).toBe(this.exp.args[0]);
       });
-
     });
 
+    describe('when dealing with dragging,', function() {
+      beforeEach(function() {
+        this.cm.setValue('(+ 1 2 3 4)');
+        this.funcSymbol = this.blocks.ast.rootNodes[0].func;
+        this.firstArg = this.blocks.ast.rootNodes[0].args[0];
+        this.fourthArg = this.blocks.ast.rootNodes[0].args[3];
+      });
+
+      it('should be able to drop the function on top of the last arg', function() {
+        let dragEvent = dragstart();
+        this.funcSymbol.el.dispatchEvent(dragEvent);
+        this.fourthArg.el.dispatchEvent(drop(dragEvent.dataTransfer));
+        expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('( 1 2 3 +)');
+      });
+    });
 
   });
 });
