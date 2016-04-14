@@ -1,5 +1,4 @@
 import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
-import { dragstart, drop } from '../../events';
 
 describe("The WeScheme Parser,", function() {
   beforeEach(function() {
