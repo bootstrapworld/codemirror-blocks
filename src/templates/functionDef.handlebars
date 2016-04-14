@@ -1,18 +1,18 @@
 {{#> node type="functionDef"}}
 <span class="blocks-operator">
 	define
-	<span class="blocks-name">(</span>
+	(
 	{{{renderNode node.name}}}
   	{{#if node.args.length}}
-  	{{> drop-target location=node.args.[0].from}}
+  		{{> drop-target location=node.args.[0].from}}
   	{{else}}
-  	{{> drop-target location=node.func.to}}
+  		{{> drop-target location=node.func.to}}
   	{{/if}}
   	{{#each node.args}}
-  	{{{renderNode this}}}
+  		{{{renderNode this}}}
   	{{> drop-target location=this.to}}
   	{{/each}}
-	<span class="blocks-name">)</span>
+	)
 </span>
 <span class="blocks-args">
   {{{renderNode node.body}}}

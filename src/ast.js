@@ -179,9 +179,7 @@ export class FunctionDefinition extends ASTNode {
     for (let node of this.args) {
       yield node;
     }
-    for (let node of this.body) {
-      yield node;
-    }
+    yield this.body;
   }
 
   toString() {
