@@ -176,9 +176,10 @@ export class FunctionDefinition extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
-    for (let node of this.body) {
+    for (let node of this.args) {
       yield node;
     }
+    yield this.body;
   }
 
   toString() {
