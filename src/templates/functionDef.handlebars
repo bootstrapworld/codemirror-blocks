@@ -1,9 +1,9 @@
 {{#> node type="functionDef"}}
 <span class="blocks-operator">define</span>
 <span class="blocks-args">
-  <span class="blocks-name">{{node.name}}</span>
+  {{{renderNode node.name}}}
   {{#each node.args}}
-  <span class="blocks-literal">{{this}}</span>
+  	{{{renderNode this}}}
   {{/each}}
   {{{renderNode node.body}}}
 </span>

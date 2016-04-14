@@ -134,6 +134,10 @@ export class Struct extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
+    yield this.name;
+    for (let node of this.fields) {
+      yield node;
+    }
   }
 
   toString() {
@@ -150,6 +154,7 @@ export class VariableDefinition extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
+    yield this.name;
     for (let node of this.body) {
       yield node;
     }
@@ -170,6 +175,7 @@ export class FunctionDefinition extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
+    yield this.name;
     for (let node of this.body) {
       yield node;
     }

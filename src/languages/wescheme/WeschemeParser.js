@@ -91,22 +91,22 @@ function parseNode(node) {
     return new VariableDefinition(
       from,
       to,
-      node.name.stx,
+      parseNode(node.name),
       parseNode(node.expr)
     );
   } else if (node instanceof structures.defStruct) {
     return new Struct(
       from,
       to,
-      node.name.stx,
+      parseNode(node.name),
       node.fields.map(parseNode).filter(item => item != null)
     );
   } else if (node instanceof structures.defFunc) {
     return new FunctionDefinition(
       from,
       to,
-      node.name.stx,
-      node.args.map(symbolNode => symbolNode.stx),
+      parseNode(node.name),
+      node.args.map(parseNode),
       parseNode(node.body)
     );
   } else if (node instanceof structures.symbolExpr) {

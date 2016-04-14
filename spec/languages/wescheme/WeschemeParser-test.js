@@ -77,7 +77,7 @@ describe("The WeScheme Parser,", function() {
 
     it("should convert defVar expressions to variableDef", function() {
       expect(this.ast.rootNodes[0].type).toBe('variableDef');
-      expect(this.ast.rootNodes[0].name).toBe('foo');
+      expect(this.ast.rootNodes[0].name.value).toBe('foo');
       expect(this.ast.rootNodes[0].body.type).toBe('literal');
     });
   });
@@ -113,7 +113,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the struct name correctly", function() {
-      expect(this.ast.rootNodes[0].name).toBe('3d-point');
+      expect(this.ast.rootNodes[0].name.value).toBe('3d-point');
     });
 
     it("should parse fields correctly", function() {
@@ -134,12 +134,12 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the function name correctly", function() {
-      expect(this.ast.rootNodes[0].name).toBe('add2');
+      expect(this.ast.rootNodes[0].name.value).toBe('add2');
     });
 
     it("should convert the function argument correctly", function() {
       expect(this.ast.rootNodes[0].args.length).toBe(1);
-      expect(this.ast.rootNodes[0].args[0]).toBe('x');
+      expect(this.ast.rootNodes[0].args[0].value).toBe('x');
     });
 
     it("should convert the function body correctly", function() {

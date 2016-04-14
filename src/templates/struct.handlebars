@@ -1,9 +1,9 @@
 {{#> node type="struct"}}
 <span class="blocks-operator">define-struct</span>
 <span class="blocks-args">
-  <span class="blocks-name">{{node.name}}</span>
+  {{{renderNode node.name}}}
   {{#each node.fields}}
-  <span class="blocks-literal">{{this}}</span>
+  	{{{renderNode this}}}
   {{/each}}
 </span>
 {{/node}}
