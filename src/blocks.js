@@ -20,6 +20,9 @@ function getLocationFromEl(el) {
   };
 }
 
+// give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
+function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
+
 function findNearestNodeEl(el) {
   while (el !== document.body && !el.classList.contains('blocks-node')) {
     el = el.parentNode;
@@ -175,8 +178,6 @@ export default class CodeMirrorBlocks {
   }
 
   markText(from, to, options) {
-    function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
-
     let supportedOptions = new Set(['css','className','title']);
     let hasOptions = false;
     for (let option in options) {
@@ -249,7 +250,7 @@ export default class CodeMirrorBlocks {
   }
 
   getSelectedNode() {
-    return this.findNodeFromEl(document.activeElement);
+    return this.findNearestNodeFromEl(document.activeElement);
   }
 
   selectNode(node, event) {
@@ -434,7 +435,7 @@ export default class CodeMirrorBlocks {
     if (el.classList.contains('blocks-drop-target')) {
       return true;
     }
-    var node = this.findNodeFromEl(el);
+    var node = this.findNearestNodeFromEl(el);
     if (node && ['literal', 'blank'].includes(node.type)) {
       return true;
     }
@@ -459,18 +460,19 @@ export default class CodeMirrorBlocks {
     }
   }
 
+  // return the AST node that exactly matches the element, or null
   findNodeFromEl(el) {
-    el = findNearestNodeEl(el);
-    if (el) {
+    if(el) {
       let match = el.id.match(/block-node-(.*)/);
-      if (match && match.length > 1) {
-        return this.ast.nodeMap.get(match[1]);
-      }
+      return match && (match.length > 1) && this.ast.nodeMap.get(match[1]);
     }
-    return null;
+  }
+  // return the AST node that best matches the element, or null
+  findNearestNodeFromEl(el) {
+    return this.findNodeFromEl(findNearestNodeEl(el));
   }
 
-  dropOntoNode(destinationNode, event) {
+  dropOntoNode(_, event) {
     this.emit(EVENT_DRAG_END, this, event);
     if (!this.isDropTarget(event.target)) {
       // not a drop taret, just return
@@ -479,96 +481,65 @@ export default class CodeMirrorBlocks {
     event.preventDefault();
     event.stopPropagation();
     event.target.classList.remove('blocks-over-target');
-    let nodeId = event.dataTransfer.getData('text/id');
+    // look up the source information: ID, text, JSON, and the node itself
+    let sourceId       = event.dataTransfer.getData('text/id');
     let sourceNodeText = event.dataTransfer.getData('text/plain');
     let sourceNodeJSON = event.dataTransfer.getData('text/json');
-    let sourceNode = null;
-
-    if (nodeId) {
-      sourceNode = this.ast.nodeMap.get(nodeId);
-      if (sourceNode) {
-        sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
-      } else {
-        console.error("node", nodeId, "not found in AST");
-      }
+    let sourceNode     = this.ast.nodeMap.get(sourceId);
+    if (sourceNode) {
+      sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
     } else if (sourceNodeJSON) {
       sourceNode = JSON.parse(sourceNodeJSON);
     } else if (!sourceNodeText) {
       console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
 
-    let destination = getLocationFromEl(event.target);
-
-    if (!destination) {
-      // event.target probably isn't a drop target, so just get the location from the event
-      destination = this.cm.coordsChar({left:event.pageX, top:event.pageY});
-      if (destination.outside) {
-        sourceNodeText = '\n' + sourceNodeText;
-      }
+    // look up the destination information: ID, Node, destFrom and destTo    
+    let destinationNode = this.findNodeFromEl(event.target);        // when dropping onto an existing node, get that Node
+    let destFrom        = (destinationNode && destinationNode.from) // if we have an existing node, use its start location
+                        || getLocationFromEl(event.target)          // if we have a drop target, grab that location
+                        || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
+    let destTo        = (destinationNode && destinationNode.to) || destFrom; // destFrom = destTo for insertion
+    // if we're coming from outside
+    if (destFrom.outside) {
+      sourceNodeText = '\n' + sourceNodeText;
     }
+
+    // check for no-ops
     // TODO: figure out how to no-op more complicated changes that don't actually have any
     // impact on the AST.  For example, start with:
     //   (or #t #f)
-    // then try to move the #f over one space. It should be a no-op.
-    if (sourceNode &&
-        ((destination.line == sourceNode.to.line && destination.ch == sourceNode.to.ch) ||
-         (destination.line == sourceNode.from.line && destination.ch == sourceNode.from.ch))) {
-      // destination is the same as source node location, so this should be a no-op.
+    //   then try to move the #f over one space. It should be a no-op.  
+    if (sourceNode &&                                   // If there's a sourceNode, &
+        (poscmp(destFrom, sourceNode.from) > -1) &&     // dest range is in-between source range,
+        (poscmp(destTo,   sourceNode.to  ) <  1)) {     // it's a no-op.
       return;
-    }
-
-    // a node cannot be dropped into a child of itself
-    if(destinationNode &&
-       sourceNode &&
-       sourceNode.el &&
-       sourceNode.el.contains(destinationNode.el)) {
-      return;
-    }
+    } 
+    // if we're inserting/replacing from outsider the editor, just do it and return
     if (!sourceNode) {
-      if (destinationNode) {
-        this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
-      } else {
-        this.cm.replaceRange(sourceNodeText, destination);
-      }
+      this.cm.replaceRange(sourceNodeText, destFrom, destTo);
       return;
     }
 
+    // if f is defined and the destination is a non-literal node, apply it
+    // otherwise return the sourceNodeText unmodified
+    function maybeApplyClientFn(f) {
+      return (f && !(destinationNode && destinationNode.type == "literal"))? 
+        f(sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
+    }
+
+    // Call willInsertNode and didInsertNode on either side of the replacement operation
+    // if we're not replacing a literal
     this.cm.operation(() => {
-      if (destinationNode && destinationNode.type == 'literal') {
-        if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destinationNode.from)) {
-          this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
-          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-        } else {
-          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-          this.cm.replaceRange(sourceNodeText, destinationNode.from, destinationNode.to);
-        }
+      sourceNodeText = maybeApplyClientFn(this.willInsertNode);
+      if (poscmp(sourceNode.from, destFrom) < 0) {
+        this.cm.replaceRange(sourceNodeText, destFrom, destTo);
+        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
       } else {
-        if (this.willInsertNode) {
-          // give client code an opportunity to modify the sourceNodeText before
-          // it gets dropped in. For example, to add proper spacing
-          sourceNodeText = this.willInsertNode(
-            sourceNodeText,
-            sourceNode,
-            destination,
-            destinationNode
-          );
-        }
-        if (this.cm.indexFromPos(sourceNode.from) < this.cm.indexFromPos(destination)) {
-          this.cm.replaceRange(sourceNodeText, destination);
-          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-        } else {
-          this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-          this.cm.replaceRange(sourceNodeText, destination);
-        }
-        if (this.didInsertNode) {
-          this.didInsertNode(
-            sourceNodeText,
-            sourceNode,
-            destination,
-            destinationNode
-          );
-        }
+        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+        this.cm.replaceRange(sourceNodeText, destFrom, destTo);
       }
+      maybeApplyClientFn(this.didInsertNode);
     });
   }
 
@@ -628,7 +599,7 @@ export default class CodeMirrorBlocks {
       handlers = {default: handlers};
     }
     return function(event) {
-      let node = this.findNodeFromEl(event.target);
+      let node = this.findNearestNodeFromEl(event.target);
       if (node || callWithNullNode) {
         if (event.target.classList.contains('blocks-white-space')) {
           // handle white space differently.
