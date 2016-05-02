@@ -79,8 +79,9 @@
     border: @border-width solid transparent;
     min-width: 10px;
     line-height: @height - @border-width * 2;
-    height: @height;
+    height: @height * 2;
     cursor: hand;
+    text-align: center;
 
     &.blocks-editing, &.blocks-quarantine {
       border-color: @editing-border-color;
@@ -99,6 +100,12 @@
 
     * {
       pointer-events: none;
+    }
+
+    > .data-type {
+      font-size: 8px;
+      font-weight: normal;
+      color: black;
     }
 
     .blocks-literal-number {

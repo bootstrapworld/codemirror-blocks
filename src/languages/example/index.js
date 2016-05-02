@@ -11,6 +11,10 @@ export default CodeMirrorBlocks.languages.addLanguage(
       return new ExampleParser();
     },
     getRenderOptions() {
-      return {};
+      return {
+        extraRenderers: {
+          literal: require('./templates/literal.handlebars'),
+        },
+      };
     },
   });
