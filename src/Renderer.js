@@ -7,10 +7,11 @@ function createFragment(htmlStr) {
 }
 
 export default class Renderer {
-  constructor(cm, {hideNodesOfType, extraRenderers} = {}) {
+  constructor(cm, {hideNodesOfType, extraRenderers, printASTNode} = {}) {
     this.cm = cm;
     this.hideNodesOfType = hideNodesOfType;
     this.extraRenderers = extraRenderers || {};
+    this.printASTNode = printASTNode || (node => node.toString());
     this.nodeRenderers = {
       unknown: require('./templates/unknown.handlebars'),
       expression: require('./templates/expression.handlebars'),
@@ -55,7 +56,7 @@ export default class Renderer {
     return nodeEl;
   }
 
-  // extract all the literals, create clones, and absolutely position 
+  // extract all the literals, create clones, and absolutely position
   // them at their original locations
   animateTransition(ast, toBlocks) {
     // take note of the parent elt, CM offsets, and rootNodes
@@ -65,9 +66,9 @@ export default class Renderer {
 
     // toDom : AST Node -> DOM Node
     // given a literal AST node, make a DOM node with the same srcLoc info
-    function toDom(literal) {
+    var toDom = (literal) => {
       let el = document.createElement("span");
-      el.appendChild(document.createTextNode(literal.value.toString()));
+      el.appendChild(document.createTextNode(this.printASTNode(literal)));
       return el;
     }
 
@@ -84,7 +85,7 @@ export default class Renderer {
         clone.style.whiteSpace    = "pre";
       } else {
         // assign the location and other style info
-        let {left, top, width, height} = literal.el.getBoundingClientRect(); 
+        let {left, top, width, height} = literal.el.getBoundingClientRect();
         clone.style.width  = width  + "px";
         clone.style.height = height + "px";
         clone.style.top    = (top - offsetTop) + parent.scrollTop  + "px";
@@ -98,29 +99,29 @@ export default class Renderer {
     let literals=rootNodes.reduce((acc,r)=>acc.concat(Array.from(r).filter(n=>n.type=="literal")),[]);
     let clones = literals.map(toDom);
 
-    // 2) move each clone to the *origin* location of the corresponding literal 
+    // 2) move each clone to the *origin* location of the corresponding literal
     literals.forEach(function(literal, i) {
       assignClonePosition(literal, clones[i], toBlocks);
       cloneParent.appendChild(clones[i]);
     });
 
     // 3) render or clear the original AST
-    if(toBlocks) { 
-      rootNodes.forEach(r => { 
-        this.render(r);  
-        r.el.style.animationName = "fadein"; 
+    if(toBlocks) {
+      rootNodes.forEach(r => {
+        this.render(r);
+        r.el.style.animationName = "fadein";
       });
-    } else { 
-      cm.getAllMarks().forEach(marker => marker.clear()); 
+    } else {
+      cm.getAllMarks().forEach(marker => marker.clear());
     }
 
-    // 4) move each clone to the *destination* location of the corresponding literal 
+    // 4) move each clone to the *destination* location of the corresponding literal
     literals.forEach((literal, i) => assignClonePosition(literal, clones[i], !toBlocks));
 
     // 5) Clean up after ourselves. The 1000ms should match the transition length defined in blocks.less
     setTimeout(function() {
-      for (let node of rootNodes) { 
-        if(node.el) node.el.style.animationName = ""; 
+      for (let node of rootNodes) {
+        if(node.el) node.el.style.animationName = "";
       }
       cloneParent.remove();
     }, 1000);
