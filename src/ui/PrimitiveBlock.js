@@ -6,7 +6,7 @@ import {Primitive} from '../parsers/primitives';
 
 require('./PrimitiveBlock.less');
 
-function onDragStart(node, text, event) {
+function onDragStart(node, text, renderer, event) {
   let el = event.target;
   while (el.parentNode && !el.parentNode.classList.contains('RenderedBlockNode')) {
     el = el.parentNode;
@@ -19,7 +19,7 @@ function onDragStart(node, text, event) {
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setDragImage(el, -5, -5);
   if (node || text) {
-    event.dataTransfer.setData('text/plain', node && node.toString() || text);
+    event.dataTransfer.setData('text/plain', node && renderer.printASTNode(node) || text);
   }
   if (node) {
     event.dataTransfer.setData('text/json', JSON.stringify(node));
@@ -52,7 +52,7 @@ export var RenderedBlockNode = React.createClass({
       el.firstChild.draggable = true;
       el.firstChild.addEventListener(
         'dragstart',
-        onDragStart.bind(null, this.props.node, this.props.text)
+        onDragStart.bind(null, this.props.node, this.props.text, this.context.renderer)
       );
     }
   },

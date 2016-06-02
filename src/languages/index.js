@@ -20,6 +20,7 @@ export function addLanguage(languageDefinition) {
       `getParser() function for language ${id} must return an object with a 'parse' function.`
     );
   }
+
   LANGUAGES[id] = languageDefinition;
   return languageDefinition;
 }
