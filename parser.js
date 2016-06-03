@@ -1,6 +1,5 @@
 function parseLambda() {
   return {
-  	//var parseVarname
     type: "lambda",
     vars: delimited("(", ")", ",", parseVarname),
     body: parseExpression()
