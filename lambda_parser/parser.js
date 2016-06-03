@@ -1,3 +1,5 @@
+//adapted from http://lisperator.net/pltut/parser/the-parser
+
 function parseLambda() {
   return {
     type: "lambda",
