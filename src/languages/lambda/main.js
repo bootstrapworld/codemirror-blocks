@@ -1,3 +1,6 @@
-import Parser from "code.js";
+import Parser from "./code"; //buggy
 
-var ast = parse(TokenStream(InputStream(code)));
+export default function main(code) {
+  var ast = Parser.parse(Parser.TokenStream(Parser.InputStream(code)));
+  return ast;
+}
