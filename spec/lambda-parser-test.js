@@ -1,29 +1,24 @@
 //test suite for the lambda parser in src/langauges
 
+import main from 'codemirror-blocks/langauges/lambda/main'
+
 var codeUnits = [
 123.5,
 "Hello World!",
 true,
 false,
 foo,
-lambda (x) 10,
-foo(a, 1),
-if foo then bar else baz,
-if foo then bar,
-a = 10,
-x + y * z,
-
-
-a = 5; //???
+'lambda (x) 10',
+'foo(a, 1)',
+'if foo then bar else baz',
+'if foo then bar',
+'a = 10',
+'x + y * z',
+`a = 5;
 b = a * 2;
-a + b;
-
-,
-let (a = 10, b = a * 10) {
-  a + b;
-},
-
-]
+a + b;`,
+`let (a = 10, b = a * 10) {
+	a + b;}`]
 
 var astUnits = [
 { type: "num", value: 123.5 },
@@ -124,14 +119,14 @@ var astUnits = [
   }
 }]
 
-describe("test suite", function(){
+fdescribe("test suite", function(){
 
 	var parserAst;
 	var correctAst;
 
 	for (var i = 0; i < codeUnits.length; i++) {
 
-		parserAst = main.run(codeUnits[i])
+		parserAst = main(codeUnits[i])
 		correctAst = astUnits[i]
 
 		it("tests" + codeUnits[i], function(){
@@ -139,31 +134,6 @@ describe("test suite", function(){
 		});
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+fdescribe("fail test", function(){
+	it(expect(false).toBe(true))
+});
