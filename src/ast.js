@@ -25,7 +25,6 @@ export class AST {
 
     let lastNode = null;
     for (let rootNode of this.rootNodes) {
-      console.log(rootNode);
       for (let node of rootNode) {
         if (node) {
           if (lastNode) {
