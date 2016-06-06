@@ -25,6 +25,7 @@ export class AST {
 
     let lastNode = null;
     for (let rootNode of this.rootNodes) {
+      console.log(rootNode);
       for (let node of rootNode) {
         if (node) {
           if (lastNode) {
@@ -37,7 +38,7 @@ export class AST {
       }
     }
   }
-
+ 
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)
         || this.rootNodes.find(node => comparePos(node.from, selection) >= 0)
