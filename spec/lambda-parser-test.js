@@ -138,7 +138,7 @@ describe("test suite", function() {
   }
 });
 
-xdescribe("single test", function() {
+xdescribe("single test", function() { //for debugging purposes
   it("123.5 num test", function() {
     expect(main('123.5')).toEqual({ 'type': "num", value: 123.5 });
   });
