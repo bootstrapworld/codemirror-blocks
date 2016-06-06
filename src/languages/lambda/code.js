@@ -192,7 +192,7 @@ export default class Parser {
         if (!input.eof()) skipPunc(";");
       }
       return prog[0];
-      //return { type: "prog", prog: prog };
+      //return { type: "prog", prog: prog }; incorrectly makes the correct object a subset of prog
     }
     function parseProg() {
       var prog = delimited("{", "}", ";", parseExpression);

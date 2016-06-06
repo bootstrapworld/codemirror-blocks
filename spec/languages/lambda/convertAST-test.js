@@ -1,6 +1,6 @@
 import convertAST from 'codemirror-blocks/languages/lambda/convertAST';
 
-xdescribe('the convertAST function for lambda to codemirror-blocks', function() {
+describe('the convertAST function for lambda to codemirror-blocks', function() {
 
   it("should convert number to literal", function(){
     this.AST = { type: "num", value: 123.5 };
