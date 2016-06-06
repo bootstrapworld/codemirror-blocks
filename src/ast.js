@@ -37,7 +37,7 @@ export class AST {
       }
     }
   }
-
+ 
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)
         || this.rootNodes.find(node => comparePos(node.from, selection) >= 0)
