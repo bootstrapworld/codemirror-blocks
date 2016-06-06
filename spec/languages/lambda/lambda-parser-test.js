@@ -5,26 +5,26 @@ import parseString from 'codemirror-blocks/languages/lambda/parser.js';
 var testData = [
   {
     input: '123.5',
-    output: { type: "num", 'value': 123.5 }
+    'output': { type: "num", 'value': 123.5 }
   },
   {
-    input: `"Hello World!"`,
+    'input': `"Hello World!"`,
     output: { type: "str", value: "Hello World!" }
   },
   {
-    input: 'true',
+    'input': 'true',
     output: { type: "bool", value: true }
   },
   {
-    input: 'false',
+    'input': 'false',
     output: { type: "bool", value: false }
   },
   {
-    input: 'foo',
+    'input': 'foo',
     output: { type: "var", value: "foo" }
   },
   {
-    input: 'lambda (x) 10',
+    'input': 'lambda (x) 10',
     output: { 
       type: "lambda",
       vars: [ "x" ],
@@ -32,7 +32,7 @@ var testData = [
     }
   },
   {
-    input: 'foo(a, 1)',
+    'input': 'foo(a, 1)',
     output: {
       "type": "call",
       "func": { "type": "var", "value": "foo" },
@@ -40,7 +40,7 @@ var testData = [
     }
   },
   {
-    input: 'if foo then bar else baz',
+    'input': 'if foo then bar else baz',
     output: {
       "type": "if",
       "cond": { "type": "var", "value": "foo" },
@@ -49,7 +49,7 @@ var testData = [
     }
   },
   {
-    input: 'if foo then bar',
+    'input': 'if foo then bar',
     output: {
       "type": "if",
       "cond": { "type": "var", "value": "foo" },
@@ -57,7 +57,7 @@ var testData = [
     }
   },
   {
-    input: 'a = 10',
+    'input': 'a = 10',
     output: {
       "type": "assign",
       "operator": "=",
@@ -66,7 +66,7 @@ var testData = [
     }
   },
   {
-    input: 'x + y * z',
+    'input': 'x + y * z',
     output: {
       "type": "binary",
       "operator": "+",
@@ -80,7 +80,7 @@ var testData = [
     }
   },
   {
-    input: `a = 5;
+    'input': `a = 5;
             b = a * 2;
             a + b;`,
     output: {
@@ -113,7 +113,7 @@ var testData = [
     }
   },
   {
-    input: `let (a = 10, b = a * 10) {a + b;}`,
+    'input': `let (a = 10, b = a * 10) {a + b;}`,
     output: {
       "type": "let",
       "vars": [
@@ -143,16 +143,10 @@ var testData = [
 
 fdescribe("lambda parser test suite", function() {
 
-  for (var i = 0; i < testData.length; i++) {
+  for (var i = 0; i < testData.length - 1; i++) {
 
     it("testing" + " " + testData[i].input, function() {
       expect(parseString(testData[i].input)).toEqual(testData[i].output);
     });
   }
-});
-
-xdescribe("single test", function() { //for debugging purposes
-  it("123.5 num test", function() {
-    expect(parseString('123.5')).toEqual({ 'type': "num", value: 123.5 });
-  });
 });
