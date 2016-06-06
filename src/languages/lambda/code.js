@@ -1,5 +1,3 @@
-"use strict";
-
 /* -----[ the parser ]----- */
 
 export default class Parser {
