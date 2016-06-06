@@ -1,4 +1,4 @@
-import Parser from "./code"; //buggy
+import Parser from "./code";
 
 export default function main(code) {
   var ast = Parser.parse(Parser.TokenStream(Parser.InputStream(code)));
