@@ -21,12 +21,12 @@ var codeUnits = [
   	a + b;}`];
 
 var astUnits = [
-{ type: "num", value: 123.5 },
+{ type: "num", 'value': 123.5 },
 { type: "str", value: "Hello World!" },
 { type: "bool", value: true },
 { type: "bool", value: false },
 { type: "var", value: "foo" }, 
-{  type: "lambda",
+{ type: "lambda",
   vars: [ "x" ],
   body: { type: "num", value: 10 }
 },
@@ -119,7 +119,7 @@ var astUnits = [
     }
   }];
 
-fdescribe("test suite", function() {
+describe("test suite", function() {
 
   var parserAst;
   var correctAst;
@@ -140,15 +140,15 @@ fdescribe("test suite", function() {
 
 xdescribe("single test", function() {
   it("123.5 num test", function() {
-    expect(main(codeUnits[0])).toBe(astUnits[0]);
+    expect(main('123.5')).toEqual({ 'type': "num", value: 123.5 });
   });
 });
 
-xdescribe("testing tests", function(){
-  xit("for true equals true", function() {
+xdescribe("testing tests", function() {
+  it("for true equals true", function() {
     expect(true).toBe(true);
   });
-  xit("for false equals true", function() {
+  it("for false equals true", function() {
     expect(false).toBe(true);
   });
 });
