@@ -192,14 +192,14 @@ function parse(input) {
       prog.push(parseExpression());
       if (!input.eof()) skipPunc(";");
     }
-    return prog[0];
-    //return { type: "prog", prog: prog }; incorrectly makes the correct object a subset of prog
+    return prog[0]; //parseProg()
+    //return { type: "prog", prog: prog }; // incorrectly makes the correct object a subobject of prog
   }
   function parseProg() {
     var prog = delimited("{", "}", ";", parseExpression);
     if (prog.length == 0) return FALSE;
     if (prog.length == 1) return prog[0];
-    return { type: "prog", prog: prog };
+    return { type: "prog", prog: prog }; //return { type: "prog", prog: prog };
   }
   function parseExpression() {
     return maybeCall(function(){

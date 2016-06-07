@@ -27,6 +27,7 @@ var testData = [
     'input': 'lambda (x) 10',
     output: { 
       type: "lambda",
+      name: null,
       vars: [ "x" ],
       body: { type: "num", value: 10 }
     }
@@ -80,9 +81,15 @@ var testData = [
     }
   },
   {
+<<<<<<< HEAD
     'input': `a = 5;
             b = a * 2;
             a + b;`,
+=======
+    input: `a = 5;
+    b = a * 2;
+    a + b;`.split(';'),
+>>>>>>> blimpich-fixingClosure
     output: {
       "type": "prog",
       "prog": [
@@ -142,11 +149,10 @@ var testData = [
 ];
 
 fdescribe("lambda parser test suite", function() {
-
-  for (var i = 0; i < testData.length - 1; i++) {
-
-    it("testing" + " " + testData[i].input, function() {
-      expect(parseString(testData[i].input)).toEqual(testData[i].output);
+    
+  testData.forEach(function(data) {
+    it("testing" + " " + data.input, function() {
+      expect(parseString(data.input)).toEqual(data.output);
     });
-  }
+  });
 });
