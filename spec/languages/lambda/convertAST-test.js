@@ -33,9 +33,7 @@ describe('the convertAST function for lambda to codemirror-blocks', function() {
 
     it("should convert lambda to function definitions", function() {
       this.AST = { type: "lambda", name: { value: "add2" }, vars: ["x"], body: { type: "num", value: 1 } };
-      console.log(this.AST);
       this.cAST = convertAST(this.AST);
-      console.log(this.cAST);
       expect(this.cAST.rootNodes[0].type).toBe('functionDef');
       expect(this.cAST.rootNodes[0].name.value).toBe('add2');
       expect(this.cAST.rootNodes[0].args.length).toBe(1);
@@ -43,4 +41,21 @@ describe('the convertAST function for lambda to codemirror-blocks', function() {
       expect(this.cAST.rootNodes[0].body.type).toBe('number');
     });
   });
+
+  fdescribe("when parsing assignment and expressions", function() {
+    it("should convert Function calls to expressions", function() {
+      this.AST = { "type": "call", "func": { "type": "var", "value": "foo" }, "args": [ { "type": "var", "value": "a" }, { "type": "num", "value": 1 } ] };
+      this.cAST = convertAST(this.AST);
+      expect(this.ast.rootNodes[0].type).toBe('expression');
+      expect(this.ast.rootNodes[0].func.type).toBe('literal');
+      expect(this.ast.rootNodes[0].func.dataType).toBe('symbol');
+      //Empty expression
+      this.AST = { "type": "call", "func": { "type": "var", "value": "foo" }, "args": [] };
+      this.cAST = convertAST(this.AST);
+      expect(this.ast.rootNodes[0].type).toBe('expression');
+      expect(this.ast.rootNodes[0].func.value).toBe('...');
+      expect(this.ast.rootNodes[0].func.dataType).toBe('blank');
+    });
+  });
+
 });
