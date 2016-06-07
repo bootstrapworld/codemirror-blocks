@@ -56,7 +56,7 @@ export class AST {
 class ASTNode {
   constructor(from, to, type, options) {
 
-    // The `from` and `to` attributes are objects containing the start and end
+    // The `from` and `to` attributes are objects containing th eclstart and end
     // positions of this node within the source document. They are in the format
     // of `{line: <line>, ch: <column>}`.
     this.from = from;
@@ -179,9 +179,38 @@ export class FunctionDefinition extends ASTNode {
     }
     yield this.body;
   }
+}
+
+//TODO: make this work
+export class Conditional extends ASTNode {
+  constructor(from, to, ifStatement, thenStatement, elseStatement, options={}) {
+    super(from, to, 'conditional', options);
+    this.ifStatement = ifStatement;
+    this.thenStatement = thenStatement;
+    this.elseStatement = elseStatement;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    yield this.name;
+    for (let node of this.ifStatement) {
+      yield node;
+    }
+    for (let node of this.thenStatement) {
+      yield node;
+    }
+    if (this.elseStatement) {
+      for (let node of this.elseStatement) {
+        yield node;
+      }
+    }
+  }
 
   toString() {
-    return `(define (${this.name} ${this.args.join(' ')}) ${this.body})`;
+    if (!this.elseStatement) {
+      return `if (${this.ifStatement}) { ${this.thenStatement.join(' ')} }`;
+    }
+    return `if (${this.ifStatement}) { ${this.thenStatement.join(' ')} } else { ${this.body} })`;
   }
 }
 
