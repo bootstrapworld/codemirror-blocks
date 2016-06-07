@@ -143,16 +143,14 @@ var testData = [
 
 fdescribe("lambda parser test suite", function() {
 
-  for (var i = 0; i < testData.length; i++) {
+  function accessData(i) {
+    return testData[i];
+  }
+
+  for (var i = 0; i < testData.length - 1; i++) {
 
     it("testing" + " " + testData[i].input, function() {
-      expect(parseString(testData[i].input)).toEqual(testData[i].output);
+      expect(parseString(accessData(i).input)).toEqual(accessData(i).output);
     });
   }
-});
-
-xdescribe("single test", function() { //for debugging purposes
-  it("123.5 num test", function() {
-    expect(parseString('123.5')).toEqual({ 'type': "num", value: 123.5 });
-  });
 });
