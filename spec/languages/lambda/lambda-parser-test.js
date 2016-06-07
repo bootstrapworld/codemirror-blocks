@@ -81,15 +81,9 @@ var testData = [
     }
   },
   {
-<<<<<<< HEAD
     'input': `a = 5;
             b = a * 2;
             a + b;`,
-=======
-    input: `a = 5;
-    b = a * 2;
-    a + b;`.split(';'),
->>>>>>> blimpich-fixingClosure
     output: {
       "type": "prog",
       "prog": [
