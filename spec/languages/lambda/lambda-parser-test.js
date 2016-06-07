@@ -27,6 +27,7 @@ var testData = [
     input: 'lambda (x) 10',
     output: { 
       type: "lambda",
+      name: null,
       vars: [ "x" ],
       body: { type: "num", value: 10 }
     }
@@ -81,8 +82,8 @@ var testData = [
   },
   {
     input: `a = 5;
-            b = a * 2;
-            a + b;`,
+    b = a * 2;
+    a + b;`.split(';'),
     output: {
       "type": "prog",
       "prog": [
@@ -143,14 +144,15 @@ var testData = [
 
 fdescribe("lambda parser test suite", function() {
 
-  function accessData(i) {
-    return testData[i];
-  }
 
-  for (var i = 0; i < testData.length - 1; i++) {
-
-    it("testing" + " " + testData[i].input, function() {
-      expect(parseString(accessData(i).input)).toEqual(accessData(i).output);
+  //for (var i = 0; i < testData.length - 1; i++) {
+  //  console.log("testing" + " " + parseString(testData.input));
+  //  console.log("testing" + " " + testData.output);
+  //}
+    
+  testData.forEach(function(data) {
+    it("testing" + " " + data.input, function() {
+      expect(parseString(data.input)).toEqual(data.output);
     });
-  }
+  });
 });
