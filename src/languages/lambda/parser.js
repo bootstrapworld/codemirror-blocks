@@ -1,11 +1,13 @@
+//adapted from http://lisperator.net/pltut/
+
 /* -----[ the parser ]----- */
 
 export default function parseString(code) {
-  var ast = parse(tokenStream(inputStream(code)));
-  return ast;
+  return parse(tokenStream(inputStream(code)));
 }
 
 function parse(input) {
+  var fromLocation, toLocation;
   var PRECEDENCE = {
     "=": 1,
     "||": 2,
@@ -36,24 +38,29 @@ function parse(input) {
     if (isKw(kw)) input.next();
     else input.croak("Expecting keyword: \"" + kw + "\"");
   }
-  function skipOp(op) {
-    if (isOp(op)) input.next();
-    else input.croak("Expecting operator: \"" + op + "\"");
-  }
+  // function skipOp(op) {
+  //   if (isOp(op)) input.next();
+  //   else input.croak("Expecting operator: \"" + op + "\"");
+  // }
   function unexpected() {
     input.croak("Unexpected token: " + JSON.stringify(input.peek()));
   }
   function maybeBinary(left, myPrec) {
+    var from = fromLocation;
     var tok = isOp();
     if (tok) {
       var hisPrec = PRECEDENCE[tok.value];
       if (hisPrec > myPrec) {
         input.next();
+        var right =  maybeBinary(parseAtom(), hisPrec);
+        toLocation = input.pos().to;
         return maybeBinary({
+          from: from,
+          to: toLocation,
           type     : tok.value == "=" ? "assign" : "binary",
           operator : tok.value,
           left     : left,
-          right    : maybeBinary(parseAtom(), hisPrec)
+          right    : right
         }, myPrec);
       }
     }
@@ -72,16 +79,23 @@ function parse(input) {
     return a;
   }
   function parseCall(func) {
+    var from = fromLocation;
+    var args =  delimited("(", ")", ",", parseExpression);
+    toLocation = input.pos().to;
     return {
-      type: "call",
+      from: from,
+      to: toLocation,
+      type: "expression",
       func: func,
-      args: delimited("(", ")", ",", parseExpression),
+      args: args
     };
   }
   function parseVarname() {
+    var from = input.pos().from;
     var name = input.next();
-    if (name.type != "var") input.croak("Expecting variable name");
-    return name.value;
+    var to = input.pos().to;
+    if (name.type != "symbol") input.croak("Expecting variable name");
+    return { from, to, name };
   }
   function parseVardef() {
     var name = parseVarname(), def;
@@ -89,17 +103,22 @@ function parse(input) {
       input.next();
       def = parseExpression();
     }
-    return { name: name, def: def };
+    toLocation = input.pos().to;
+    return { from: fromLocation, to: toLocation, name: name, def: def };
   }
   function parseLet() {
+    var from = fromLocation;
     skipKw("let");
-    if (input.peek().type == "var") {
+    if (input.peek().type == "symbol") {
       var name = input.next().value;
       var defs = delimited("(", ")", ",", parseVardef);
+      toLocation = input.pos().to;
       return {
+        from: from,   
+        to: toLocation,
         type: "call",
         func: {
-          type: "lambda",
+          type: "functionDef",
           name: name,
           vars: defs.map(function(def){ return def.name;}),
           body: parseExpression(),
@@ -107,45 +126,65 @@ function parse(input) {
         args: defs.map(function(def){ return def.def || FALSE;})
       };
     }
+    var vars = delimited("(", ")", ",", parseVardef);
+    toLocation = input.pos().to;
     return {
+      from: from,
+      to  : toLocation,
       type: "let",
-      vars: delimited("(", ")", ",", parseVardef),
+      vars: vars,
       body: parseExpression(),
     };
   }
   function parseIf() {
+    var from = fromLocation;
     skipKw("if");
     var cond = parseExpression();
     if (!isPunc("{")) skipKw("then");
     var then = parseExpression();
+    toLocation = input.pos().to;
     var ret = {
-      type: "if",
+      from: from,
+      to  : toLocation,
+      type: "conditional",
       cond: cond,
       then: then,
     };
     if (isKw("else")) {
       input.next();
+      toLocation = input.pos().to;
+      ret.to = toLocation;
       ret.else = parseExpression();
     }
     return ret;
   }
   function parseLambda() {
+    var from = fromLocation;
+    var name = input.peek().type == "symbol" ? input.next().value : null;
+    var vars = delimited("(", ")", ",", parseVarname);
+    var body = parseExpression();
+    toLocation = input.pos().to;
     return {
-      type: "lambda",
-      name: input.peek().type == "var" ? input.next().value : null,
-      vars: delimited("(", ")", ",", parseVarname),
-      body: parseExpression()
+      from: from,
+      to: toLocation,
+      type: "functionDef",
+      name: name,
+      vars: vars,
+      body: body
     };
   }
   function parseBool() {
+    toLocation = input.pos().to;
     return {
+      from  : fromLocation,
+      to    : toLocation,
       type  : "bool",
       value : input.next().value == "true"
     };
   }
   function parseRaw() {
     skipKw("js:raw");
-    if (input.peek().type != "str")
+    if (input.peek().type != "string")
       input.croak("js:raw must be a plain string");
     return {
       type : "raw",
@@ -157,6 +196,7 @@ function parse(input) {
     return isPunc("(") ? parseCall(expr) : expr;
   }
   function parseAtom() {
+    fromLocation = input.pos().from;
     return maybeCall(function(){
       if (isPunc("(")) {
         input.next();
@@ -167,7 +207,10 @@ function parse(input) {
       if (isPunc("{")) return parseProg();
       if (isOp("!")) {
         input.next();
+        toLocation = input.pos().to;
         return {
+          from: fromLocation,
+          to: toLocation,
           type: "not",
           body: parseExpression()
         };
@@ -176,13 +219,14 @@ function parse(input) {
       if (isKw("if")) return parseIf();
       if (isKw("true") || isKw("false")) return parseBool();
       if (isKw("js:raw")) return parseRaw();
-      if (isKw("lambda") || isKw("Î»")) {
+      if (isKw("lambda") || isKw("λ")) {
         input.next();
         return parseLambda();
       }
       var tok = input.next();
-      if (tok.type == "var" || tok.type == "num" || tok.type == "str")
+      if (tok.type == "symbol" || tok.type == "number" || tok.type == "string") {
         return tok;
+      }
       unexpected();
     });
   }
@@ -196,10 +240,12 @@ function parse(input) {
     //return { type: "prog", prog: prog }; // incorrectly makes the correct object a subobject of prog
   }
   function parseProg() {
+    var from = fromLocation;
     var prog = delimited("{", "}", ";", parseExpression);
     if (prog.length == 0) return FALSE;
     if (prog.length == 1) return prog[0];
-    return { type: "prog", prog: prog }; //return { type: "prog", prog: prog };
+    toLocation = input.pos().to;
+    return { from: from, to: toLocation, type: "prog", prog: prog }; //return { type: "prog", prog: prog };
   }
   function parseExpression() {
     return maybeCall(function(){
@@ -211,8 +257,9 @@ function parse(input) {
 /* -----[ parser utils ]----- */
 
 function inputStream(input) {
-  var pos = 0, line = 1, col = 0;
+  var pos = 0, ln = 0, col = 0;
   return {
+    inputPos   : inputPos,
     next  : next,
     peek  : peek,
     eof   : eof,
@@ -220,7 +267,7 @@ function inputStream(input) {
   };
   function next() {
     var ch = input.charAt(pos++);
-    if (ch == "\n") line++, col = 0; else col++;
+    if (ch == "\n") ln++, col = 0; else col++;
     return ch;
   }
   function peek() {
@@ -230,14 +277,19 @@ function inputStream(input) {
     return peek() == "";
   }
   function croak(msg) {
-    throw new Error(msg + " (" + line + ":" + col + ")");
+    throw new Error(msg + " (" + ln + ":" + col + ")");
+  }
+  function inputPos() {
+    return { line: ln, ch: col };
   }
 }
 
 function tokenStream(input) {
   var current = null;
-  var keywords = " let if then else lambda Î» true false js:raw ";
+  var fromLocation, toLocation;
+  var keywords = " let if then else lambda λ true false js:raw ";
   return {
+    pos   : pos,
     next  : next,
     peek  : peek,
     eof   : eof,
@@ -250,7 +302,7 @@ function tokenStream(input) {
     return /[0-9]/i.test(ch);
   }
   function isIdStart(ch) {
-    return /[a-zÎ»_]/i.test(ch);
+    return /[a-zλ_]/i.test(ch);
   }
   function isId(ch) {
     return isIdStart(ch) || "?!-<:>=0123456789".indexOf(ch) >= 0;
@@ -280,12 +332,16 @@ function tokenStream(input) {
       }
       return isDigit(ch);
     });
-    return { type: "num", value: parseFloat(number) };
+    toLocation = input.inputPos();
+    return { from: fromLocation, to: toLocation, type: "number", value: parseFloat(number) };
   }
   function readIdent() {
     var id = readWhite(isId);
+    toLocation = input.inputPos();
     return {
-      type  : isKeyword(id) ? "kw" : "var",
+      from  : fromLocation,
+      to    : toLocation,
+      type  : isKeyword(id) ? "kw" : "symbol",
       value : id
     };
   }
@@ -308,7 +364,9 @@ function tokenStream(input) {
     return str;
   }
   function readString() {
-    return { type: "str", value: readEscaped('"') };
+    var string = readEscaped('"');
+    toLocation = input.inputPos();
+    return { from: fromLocation, to: toLocation, type: "string", value: string };
   }
   function skipComment() {
     readWhite(function(ch){ return ch != "\n";});
@@ -322,14 +380,25 @@ function tokenStream(input) {
       skipComment();
       return readNext();
     }
-    if (ch == '"') return readString();
-    if (isDigit(ch)) return readNumber();
+    fromLocation = input.inputPos();
+    if (ch == '"') {
+      toLocation = input.inputPos();
+      return readString();
+    }
+    if (isDigit(ch)) {
+      toLocation = input.inputPos();
+      return readNumber();
+    }
     if (isIdStart(ch)) return readIdent();
     if (isPunc(ch)) return {
+      from  : fromLocation,
+      to    : toLocation,
       type  : "punc",
       value : input.next()
     };
     if (isOpChar(ch)) return {
+      from  : fromLocation,
+      to    : toLocation,
       type  : "op",
       value : readWhite(isOpChar)
     };
@@ -345,5 +414,8 @@ function tokenStream(input) {
   }
   function eof() {
     return peek() == null;
+  }
+  function pos() {
+    return { from: fromLocation, to: toLocation };
   }
 }
