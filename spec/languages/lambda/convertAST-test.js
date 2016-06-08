@@ -29,7 +29,7 @@ describe('the convertAST function for lambda to codemirror-blocks', function() {
     expect(this.cAST.rootNodes[0].value).toBe('foo');
   });
 
-  fdescribe("when parsing function definitions,", function() {
+  describe("when parsing function definitions,", function() {
 
     it("should convert lambda to function definitions", function() {
       this.AST = { type: "lambda", name: { value: "add2" }, vars: ["x"], body: { type: "num", value: 1 } };
@@ -42,7 +42,7 @@ describe('the convertAST function for lambda to codemirror-blocks', function() {
     });
   });
 
-  fdescribe("when parsing assignment and expressions", function() {
+  describe("when parsing assignment and expressions", function() {
     it("should convert Function calls to expressions", function() {
       this.AST = { "type": "call", "func": { "type": "var", "value": "foo" }, "args": [ { "type": "var", "value": "a" }, { "type": "num", "value": 1 } ] };
       this.cAST = convertAST(this.AST);
