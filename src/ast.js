@@ -184,7 +184,7 @@ export class FunctionDefinition extends ASTNode {
 //TODO: make this work
 export class Conditional extends ASTNode {
   constructor(from, to, condStatement, thenStatement, elseStatement, options={}) {
-    super(from, to, 'condStatementitional', options);
+    super(from, to, 'conditional', options);
     this.condStatement = condStatement;
     this.thenStatement = thenStatement;
     this.elseStatement = elseStatement;
