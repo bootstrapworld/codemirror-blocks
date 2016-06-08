@@ -142,7 +142,7 @@ var testData = [
   }
 ];
 
-fdescribe("lambda parser test suite", function() {
+xdescribe("lambda parser test suite", function() {
     
   testData.forEach(function(data) {
     it("testing" + " " + data.input, function() {
