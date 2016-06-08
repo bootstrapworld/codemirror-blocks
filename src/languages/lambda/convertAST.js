@@ -1,4 +1,5 @@
 import {AST, Literal, FunctionDefinition, Expression, Blank} from '../../ast';
+
 export default function convertAST(ast){
 
   //Type Conversion
@@ -9,7 +10,9 @@ export default function convertAST(ast){
     "boolean": "bool",
     "var": "symbol",
     "lambda": "functionDef",
-    "call": "expression"
+    "call": "expression",
+    //checkpoint
+    assign: "assignment"
   };
 
   //Const-Var/Literal Conversion
@@ -46,8 +49,10 @@ export default function convertAST(ast){
     else {
       ast.vars = { type: "expression", data: "...", dataType: "blank"}
     }
+  }
 
   //Assignment/Expression Conversion
+
 
 
   var rootNodes = [
