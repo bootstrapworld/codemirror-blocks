@@ -1,3 +1,5 @@
+//adapted from http://lisperator.net/pltut/
+
 /* -----[ the parser ]----- */
 
 export default function parseString(code) {
@@ -6,6 +8,7 @@ export default function parseString(code) {
 }
 
 function parse(input) {
+  var fromLocation, toLocation;
   var PRECEDENCE = {
     "=": 1,
     "||": 2,
@@ -49,7 +52,10 @@ function parse(input) {
       var hisPrec = PRECEDENCE[tok.value];
       if (hisPrec > myPrec) {
         input.next();
+        toLocation = input.pos().to;
         return maybeBinary({
+          from: fromLocation,
+          to: toLocation,
           type     : tok.value == "=" ? "assign" : "binary",
           operator : tok.value,
           left     : left,
@@ -72,7 +78,10 @@ function parse(input) {
     return a;
   }
   function parseCall(func) {
+    toLocation = input.pos().to;
     return {
+      from: fromLocation,
+      to: toLocation,
       type: "call",
       func: func,
       args: delimited("(", ")", ",", parseExpression),
@@ -89,14 +98,18 @@ function parse(input) {
       input.next();
       def = parseExpression();
     }
-    return { name: name, def: def };
+    toLocation = input.pos().to;
+    return { from: fromLocation, to: toLocation, name: name, def: def };
   }
   function parseLet() {
     skipKw("let");
     if (input.peek().type == "var") {
       var name = input.next().value;
       var defs = delimited("(", ")", ",", parseVardef);
+      toLocation = input.pos().to;
       return {
+        from: fromLocation,
+        to: toLocation,
         type: "call",
         func: {
           type: "lambda",
@@ -107,7 +120,10 @@ function parse(input) {
         args: defs.map(function(def){ return def.def || FALSE;})
       };
     }
+    toLocation = input.pos().to;
     return {
+      from: fromLocation,
+      to  : toLocation,
       type: "let",
       vars: delimited("(", ")", ",", parseVardef),
       body: parseExpression(),
@@ -118,19 +134,27 @@ function parse(input) {
     var cond = parseExpression();
     if (!isPunc("{")) skipKw("then");
     var then = parseExpression();
+    toLocation = input.pos().to;
     var ret = {
+      from: fromLocation,
+      to  : toLocation,
       type: "if",
       cond: cond,
       then: then,
     };
     if (isKw("else")) {
       input.next();
+      toLocation = input.pos().to;
+      ret.to = toLocation;
       ret.else = parseExpression();
     }
     return ret;
   }
   function parseLambda() {
+    toLocation = input.pos().to;
     return {
+      from: fromLocation,
+      to: toLocation,
       type: "lambda",
       name: input.peek().type == "var" ? input.next().value : null,
       vars: delimited("(", ")", ",", parseVarname),
@@ -138,7 +162,10 @@ function parse(input) {
     };
   }
   function parseBool() {
+    toLocation = input.pos().to;
     return {
+      from  : fromLocation,
+      to    : toLocation,
       type  : "bool",
       value : input.next().value == "true"
     };
@@ -157,6 +184,7 @@ function parse(input) {
     return isPunc("(") ? parseCall(expr) : expr;
   }
   function parseAtom() {
+    fromLocation = input.pos().from;
     return maybeCall(function(){
       if (isPunc("(")) {
         input.next();
@@ -167,7 +195,10 @@ function parse(input) {
       if (isPunc("{")) return parseProg();
       if (isOp("!")) {
         input.next();
+        toLocation = input.pos().to;
         return {
+          from: fromLocation,
+          to: toLocation,
           type: "not",
           body: parseExpression()
         };
@@ -176,12 +207,14 @@ function parse(input) {
       if (isKw("if")) return parseIf();
       if (isKw("true") || isKw("false")) return parseBool();
       if (isKw("js:raw")) return parseRaw();
-      if (isKw("lambda") || isKw("Î»")) {
+      if (isKw("lambda") || isKw("λ")) {
         input.next();
         return parseLambda();
       }
       var tok = input.next();
       if (tok.type == "var" || tok.type == "num" || tok.type == "str")
+        tok.to = toLocation;
+        tok.from = fromLocation;
         return tok;
       unexpected();
     });
@@ -199,7 +232,8 @@ function parse(input) {
     var prog = delimited("{", "}", ";", parseExpression);
     if (prog.length == 0) return FALSE;
     if (prog.length == 1) return prog[0];
-    return { type: "prog", prog: prog }; //return { type: "prog", prog: prog };
+    toLocation = input.pos().to;
+    return { from: fromLocation, to: toLocation, type: "prog", prog: prog }; //return { type: "prog", prog: prog };
   }
   function parseExpression() {
     return maybeCall(function(){
@@ -207,11 +241,14 @@ function parse(input) {
     });
   }
 }
-
+  
+  function pos() {
+    return {from: fromLocation, to: toLocation }
+  }
 /* -----[ parser utils ]----- */
 
 function inputStream(input) {
-  var pos = 0, line = 1, col = 0;
+  var pos = 0, ln = 1, col = 0;
   return {
     next  : next,
     peek  : peek,
@@ -220,7 +257,7 @@ function inputStream(input) {
   };
   function next() {
     var ch = input.charAt(pos++);
-    if (ch == "\n") line++, col = 0; else col++;
+    if (ch == "\n") ln++, col = 0; else col++;
     return ch;
   }
   function peek() {
@@ -230,13 +267,17 @@ function inputStream(input) {
     return peek() == "";
   }
   function croak(msg) {
-    throw new Error(msg + " (" + line + ":" + col + ")");
+    throw new Error(msg + " (" + ln + ":" + col + ")");
+  }
+  function pos() {
+    return { line: ln, ch: column }
   }
 }
 
 function tokenStream(input) {
   var current = null;
-  var keywords = " let if then else lambda Î» true false js:raw ";
+  var fromLocation, toLocation;
+  var keywords = " let if then else lambda λ true false js:raw ";
   return {
     next  : next,
     peek  : peek,
@@ -250,7 +291,7 @@ function tokenStream(input) {
     return /[0-9]/i.test(ch);
   }
   function isIdStart(ch) {
-    return /[a-zÎ»_]/i.test(ch);
+    return /[a-zλ_]/i.test(ch);
   }
   function isId(ch) {
     return isIdStart(ch) || "?!-<:>=0123456789".indexOf(ch) >= 0;
@@ -322,6 +363,7 @@ function tokenStream(input) {
       skipComment();
       return readNext();
     }
+    fromLocation = input.pos();
     if (ch == '"') return readString();
     if (isDigit(ch)) return readNumber();
     if (isIdStart(ch)) return readIdent();
@@ -333,6 +375,7 @@ function tokenStream(input) {
       type  : "op",
       value : readWhite(isOpChar)
     };
+    toLocation = input.pos()
     input.croak("Can't handle character: " + ch);
   }
   function peek() {
@@ -345,5 +388,8 @@ function tokenStream(input) {
   }
   function eof() {
     return peek() == null;
+  }
+  function pos() {
+    return { from: fromLocation, to: toLocation }
   }
 }
