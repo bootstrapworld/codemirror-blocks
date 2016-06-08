@@ -3,8 +3,7 @@
 /* -----[ the parser ]----- */
 
 export default function parseString(code) {
-  var ast = parse(tokenStream(inputStream(code)));
-  return ast;
+  return parse(tokenStream(inputStream(code)));
 }
 
 function parse(input) {
@@ -39,27 +38,29 @@ function parse(input) {
     if (isKw(kw)) input.next();
     else input.croak("Expecting keyword: \"" + kw + "\"");
   }
-  function skipOp(op) {
-    if (isOp(op)) input.next();
-    else input.croak("Expecting operator: \"" + op + "\"");
-  }
+  // function skipOp(op) {
+  //   if (isOp(op)) input.next();
+  //   else input.croak("Expecting operator: \"" + op + "\"");
+  // }
   function unexpected() {
     input.croak("Unexpected token: " + JSON.stringify(input.peek()));
   }
   function maybeBinary(left, myPrec) {
+    var from = fromLocation;
     var tok = isOp();
     if (tok) {
       var hisPrec = PRECEDENCE[tok.value];
       if (hisPrec > myPrec) {
         input.next();
+        var right =  maybeBinary(parseAtom(), hisPrec);
         toLocation = input.pos().to;
         return maybeBinary({
-          from: fromLocation,
+          from: from,
           to: toLocation,
           type     : tok.value == "=" ? "assign" : "binary",
           operator : tok.value,
           left     : left,
-          right    : maybeBinary(parseAtom(), hisPrec)
+          right    : right
         }, myPrec);
       }
     }
@@ -78,19 +79,23 @@ function parse(input) {
     return a;
   }
   function parseCall(func) {
+    var from = fromLocation;
+    var args =  delimited("(", ")", ",", parseExpression);
     toLocation = input.pos().to;
     return {
-      from: fromLocation,
+      from: from,
       to: toLocation,
-      type: "call",
+      type: "expression",
       func: func,
-      args: delimited("(", ")", ",", parseExpression),
+      args: args
     };
   }
   function parseVarname() {
+    var from = input.pos().from;
     var name = input.next();
-    if (name.type != "var") input.croak("Expecting variable name");
-    return name.value;
+    var to = input.pos().to;
+    if (name.type != "symbol") input.croak("Expecting variable name");
+    return { from, to, name };
   }
   function parseVardef() {
     var name = parseVarname(), def;
@@ -102,17 +107,18 @@ function parse(input) {
     return { from: fromLocation, to: toLocation, name: name, def: def };
   }
   function parseLet() {
+    var from = fromLocation;
     skipKw("let");
-    if (input.peek().type == "var") {
+    if (input.peek().type == "symbol") {
       var name = input.next().value;
       var defs = delimited("(", ")", ",", parseVardef);
       toLocation = input.pos().to;
       return {
-        from: fromLocation,
+        from: from,   
         to: toLocation,
         type: "call",
         func: {
-          type: "lambda",
+          type: "functionDef",
           name: name,
           vars: defs.map(function(def){ return def.name;}),
           body: parseExpression(),
@@ -120,25 +126,27 @@ function parse(input) {
         args: defs.map(function(def){ return def.def || FALSE;})
       };
     }
+    var vars = delimited("(", ")", ",", parseVardef);
     toLocation = input.pos().to;
     return {
-      from: fromLocation,
+      from: from,
       to  : toLocation,
       type: "let",
-      vars: delimited("(", ")", ",", parseVardef),
+      vars: vars,
       body: parseExpression(),
     };
   }
   function parseIf() {
+    var from = fromLocation;
     skipKw("if");
     var cond = parseExpression();
     if (!isPunc("{")) skipKw("then");
     var then = parseExpression();
     toLocation = input.pos().to;
     var ret = {
-      from: fromLocation,
+      from: from,
       to  : toLocation,
-      type: "if",
+      type: "conditional",
       cond: cond,
       then: then,
     };
@@ -151,14 +159,18 @@ function parse(input) {
     return ret;
   }
   function parseLambda() {
+    var from = fromLocation;
+    var name = input.peek().type == "symbol" ? input.next().value : null;
+    var vars = delimited("(", ")", ",", parseVarname);
+    var body = parseExpression();
     toLocation = input.pos().to;
     return {
-      from: fromLocation,
+      from: from,
       to: toLocation,
-      type: "lambda",
-      name: input.peek().type == "var" ? input.next().value : null,
-      vars: delimited("(", ")", ",", parseVarname),
-      body: parseExpression()
+      type: "functionDef",
+      name: name,
+      vars: vars,
+      body: body
     };
   }
   function parseBool() {
@@ -172,7 +184,7 @@ function parse(input) {
   }
   function parseRaw() {
     skipKw("js:raw");
-    if (input.peek().type != "str")
+    if (input.peek().type != "string")
       input.croak("js:raw must be a plain string");
     return {
       type : "raw",
@@ -212,10 +224,9 @@ function parse(input) {
         return parseLambda();
       }
       var tok = input.next();
-      if (tok.type == "var" || tok.type == "num" || tok.type == "str")
-        tok.to = toLocation;
-        tok.from = fromLocation;
+      if (tok.type == "symbol" || tok.type == "number" || tok.type == "string") {
         return tok;
+      }
       unexpected();
     });
   }
@@ -229,11 +240,12 @@ function parse(input) {
     //return { type: "prog", prog: prog }; // incorrectly makes the correct object a subobject of prog
   }
   function parseProg() {
+    var from = fromLocation;
     var prog = delimited("{", "}", ";", parseExpression);
     if (prog.length == 0) return FALSE;
     if (prog.length == 1) return prog[0];
     toLocation = input.pos().to;
-    return { from: fromLocation, to: toLocation, type: "prog", prog: prog }; //return { type: "prog", prog: prog };
+    return { from: from, to: toLocation, type: "prog", prog: prog }; //return { type: "prog", prog: prog };
   }
   function parseExpression() {
     return maybeCall(function(){
@@ -241,15 +253,13 @@ function parse(input) {
     });
   }
 }
-  
-  function pos() {
-    return {from: fromLocation, to: toLocation }
-  }
+
 /* -----[ parser utils ]----- */
 
 function inputStream(input) {
-  var pos = 0, ln = 1, col = 0;
+  var pos = 0, ln = 0, col = 0;
   return {
+    inputPos   : inputPos,
     next  : next,
     peek  : peek,
     eof   : eof,
@@ -269,8 +279,8 @@ function inputStream(input) {
   function croak(msg) {
     throw new Error(msg + " (" + ln + ":" + col + ")");
   }
-  function pos() {
-    return { line: ln, ch: column }
+  function inputPos() {
+    return { line: ln, ch: col };
   }
 }
 
@@ -279,6 +289,7 @@ function tokenStream(input) {
   var fromLocation, toLocation;
   var keywords = " let if then else lambda λ true false js:raw ";
   return {
+    pos   : pos,
     next  : next,
     peek  : peek,
     eof   : eof,
@@ -321,12 +332,16 @@ function tokenStream(input) {
       }
       return isDigit(ch);
     });
-    return { type: "num", value: parseFloat(number) };
+    toLocation = input.inputPos();
+    return { from: fromLocation, to: toLocation, type: "number", value: parseFloat(number) };
   }
   function readIdent() {
     var id = readWhite(isId);
+    toLocation = input.inputPos();
     return {
-      type  : isKeyword(id) ? "kw" : "var",
+      from  : fromLocation,
+      to    : toLocation,
+      type  : isKeyword(id) ? "kw" : "symbol",
       value : id
     };
   }
@@ -349,7 +364,9 @@ function tokenStream(input) {
     return str;
   }
   function readString() {
-    return { type: "str", value: readEscaped('"') };
+    var string = readEscaped('"');
+    toLocation = input.inputPos();
+    return { from: fromLocation, to: toLocation, type: "string", value: string };
   }
   function skipComment() {
     readWhite(function(ch){ return ch != "\n";});
@@ -363,19 +380,28 @@ function tokenStream(input) {
       skipComment();
       return readNext();
     }
-    fromLocation = input.pos();
-    if (ch == '"') return readString();
-    if (isDigit(ch)) return readNumber();
+    fromLocation = input.inputPos();
+    if (ch == '"') {
+      toLocation = input.inputPos();
+      return readString();
+    }
+    if (isDigit(ch)) {
+      toLocation = input.inputPos();
+      return readNumber();
+    }
     if (isIdStart(ch)) return readIdent();
     if (isPunc(ch)) return {
+      from  : fromLocation,
+      to    : toLocation,
       type  : "punc",
       value : input.next()
     };
     if (isOpChar(ch)) return {
+      from  : fromLocation,
+      to    : toLocation,
       type  : "op",
       value : readWhite(isOpChar)
     };
-    toLocation = input.pos()
     input.croak("Can't handle character: " + ch);
   }
   function peek() {
@@ -390,6 +416,6 @@ function tokenStream(input) {
     return peek() == null;
   }
   function pos() {
-    return { from: fromLocation, to: toLocation }
+    return { from: fromLocation, to: toLocation };
   }
 }
