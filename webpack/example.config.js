@@ -13,7 +13,8 @@ module.exports = _.extend({}, baseConfig, {
     "fullscheme-example": './example/fullscheme-example.js',
     "wescheme-example": './example/wescheme-example.js',
     "editor-example": './example/editor-example.js',
-    "third-party": ['react', 'react-dom', 'babel-polyfill', 'codemirror']
+    "lambda-example": './example/languages/lambda.js',
+    "third-party": ['react', 'react-dom', 'babel-polyfill', 'codemirror'],
   },
   module: _.extend({}, baseConfig.module, {
     loaders: baseConfig.module.loaders.concat([
@@ -64,6 +65,12 @@ module.exports = _.extend({}, baseConfig, {
       template: 'example/editor.html',
       inject: 'body',
       chunks: ['third-party','editor-example'],
+    }),
+    new HtmlWebpackPlugin({
+      filename: 'languages/lambda.html',
+      template: 'example/languages/lambda.html',
+      inject: 'body',
+      chunks: ['third-party','lambda-example'],
     }),
   ]),
   devServer: {
