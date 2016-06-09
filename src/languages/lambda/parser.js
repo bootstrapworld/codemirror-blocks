@@ -1,9 +1,22 @@
+import {AST, Prog, Literal} from '../../ast';
+
 //adapted from http://lisperator.net/pltut/
 
 /* -----[ the parser ]----- */
 
 export default function parseString(code) {
-  return parse(tokenStream(inputStream(code)));
+  return new AST([convertAST(parse(tokenStream(inputStream(code))))]);
+}
+
+function convertAST(lambdaNode) {
+  switch (lambdaNode.type) {
+    case 'prog':
+      return new Prog(lambdaNode.from, lambdaNode.to, lambdaNode.prog.map(convertAST));
+    case 'number':
+      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.value, 'number');
+    default:
+      throw new Error("Don't know how to convert node of type "+ lambdaNode.type);
+  }
 }
 
 function parse(input) {
@@ -114,7 +127,7 @@ function parse(input) {
       var defs = delimited("(", ")", ",", parseVardef);
       toLocation = input.pos().to;
       return {
-        from: from,   
+        from: from,
         to: toLocation,
         type: "call",
         func: {
@@ -236,8 +249,7 @@ function parse(input) {
       prog.push(parseExpression());
       if (!input.eof()) skipPunc(";");
     }
-    return prog[0]; //parseProg()
-    //return { type: "prog", prog: prog }; // incorrectly makes the correct object a subobject of prog
+    return { from: input.pos().from, to: input.pos().to, type: "prog", prog: prog };
   }
   function parseProg() {
     var from = fromLocation;
@@ -286,7 +298,7 @@ function inputStream(input) {
 
 function tokenStream(input) {
   var current = null;
-  var fromLocation, toLocation;
+  var fromLocation = input.inputPos(), toLocation = input.inputPos();
   var keywords = " let if then else lambda λ true false js:raw ";
   return {
     pos   : pos,
