@@ -162,8 +162,14 @@ export default class CodeMirrorBlocks {
       return;
     } else {
       this.blockMode = mode;
-      if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
-      this.renderer.animateTransition(this.ast, mode);
+      this.render();
+      return;
+      // TODO (pcarduner): figure out why emmanuel put this here...
+      // and write failing test.
+//      if (!this.ast) {
+//        this.ast = this.parser.parse(this.cm.getValue());
+//      }
+//      this.renderer.animateTransition(this.ast, mode);
     }
   }
 
@@ -494,7 +500,7 @@ export default class CodeMirrorBlocks {
       console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
 
-    // look up the destination information: ID, Node, destFrom and destTo    
+    // look up the destination information: ID, Node, destFrom and destTo
     let destinationNode = this.findNodeFromEl(event.target);        // when dropping onto an existing node, get that Node
     let destFrom        = (destinationNode && destinationNode.from) // if we have an existing node, use its start location
                         || getLocationFromEl(event.target)          // if we have a drop target, grab that location
@@ -509,12 +515,12 @@ export default class CodeMirrorBlocks {
     // TODO: figure out how to no-op more complicated changes that don't actually have any
     // impact on the AST.  For example, start with:
     //   (or #t #f)
-    //   then try to move the #f over one space. It should be a no-op.  
+    //   then try to move the #f over one space. It should be a no-op.
     if (sourceNode &&                                   // If there's a sourceNode, &
         (poscmp(destFrom, sourceNode.from) > -1) &&     // dest range is in-between source range,
         (poscmp(destTo,   sourceNode.to  ) <  1)) {     // it's a no-op.
       return;
-    } 
+    }
     // if we're inserting/replacing from outsider the editor, just do it and return
     if (!sourceNode) {
       this.cm.replaceRange(sourceNodeText, destFrom, destTo);
@@ -524,7 +530,7 @@ export default class CodeMirrorBlocks {
     // if f is defined and the destination is a non-literal node, apply it
     // otherwise return the sourceNodeText unmodified
     function maybeApplyClientFn(f) {
-      return (f && !(destinationNode && destinationNode.type == "literal"))? 
+      return (f && !(destinationNode && destinationNode.type == "literal"))?
         f(sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
     }
 
