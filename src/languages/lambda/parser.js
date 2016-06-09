@@ -1,4 +1,4 @@
-import {AST, Prog, Literal} from '../../ast';
+import {AST, Prog, Literal, VariableDefinition, FunctionDefinition, Assignment, Expression, Binary, Conditional} from '../../ast';
 
 //adapted from http://lisperator.net/pltut/
 
@@ -14,6 +14,26 @@ function convertAST(lambdaNode) {
       return new Prog(lambdaNode.from, lambdaNode.to, lambdaNode.prog.map(convertAST));
     case 'number':
       return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.value, 'number');
+    case 'string':
+      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.value, 'string');
+    case 'symbol':
+      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.value, 'symbol');
+    case 'bool':
+      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.value, 'bool');
+    case 'variableDef':
+      return new VariableDefinition(lambdaNode.from, lambdaNode.to, lambdaNode.name, lambdaNode.body);
+    case 'functionDef':
+      return new FunctionDefinition(lambdaNode.from, lambdaNode.to, lambdaNode.name, lambdaNode.vars, lambdaNode.body);
+    case 'expression':
+      return new Expression(lambdaNode.from, lambdaNode.to, lambdaNode.func, lambdaNode.args);
+    case 'assign':
+      return new Assignment(lambdaNode.from, lambdaNode.to, lambdaNode.operator, lambdaNode.left, lambdaNode.right);
+    case 'binary':
+      return new Binary(lambdaNode.from, lambdaNode.to, lambdaNode.operator, lambdaNode.left, lambdaNode.right);
+    case 'let':
+      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.vars, lambdaNode.body);
+    case 'conditional':
+      return new Conditional(lambdaNode.from, lambdaNode.to, lambdaNode.cond, lambdaNode.then, lambdaNode.else);
     default:
       throw new Error("Don't know how to convert node of type "+ lambdaNode.type);
   }
@@ -108,16 +128,16 @@ function parse(input) {
     var name = input.next();
     var to = input.pos().to;
     if (name.type != "symbol") input.croak("Expecting variable name");
-    return { from, to, name };
+    return { from, to, type: 'literal', dataType: 'symbol', name };
   }
   function parseVardef() {
-    var name = parseVarname(), def;
+    var name = parseVarname(), body;
     if (isOp("=")) {
       input.next();
-      def = parseExpression();
+      body = parseExpression();
     }
     toLocation = input.pos().to;
-    return { from: fromLocation, to: toLocation, name: name, def: def };
+    return { from: fromLocation, to: toLocation, name: name, type: 'variableDef', body: body };
   }
   function parseLet() {
     var from = fromLocation;
