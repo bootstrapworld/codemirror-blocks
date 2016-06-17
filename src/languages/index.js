@@ -35,3 +35,7 @@ export function getLanguage(languageId) {
 export function removeLanguage(languageId) {
   delete LANGUAGES[languageId];
 }
+
+export function getLanguages() {
+  return Object.values(LANGUAGES);
+}
