@@ -4,6 +4,7 @@ import 'codemirror/theme/monokai.css';
 import 'codemirror/addon/edit/closebrackets.js';
 import '../src/languages/wescheme';
 import '../src/languages/example';
+import '../src/languages/lambda';
 import {renderEditorInto} from '../src/ui';
 import CodemirrorBlocks from '../src/blocks.js';
 import React from 'react';
