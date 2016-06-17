@@ -24,29 +24,92 @@ export default function parseString(code) {
 function convertAST(lambdaNode) {
   switch (lambdaNode.type) {
     case 'prog':
-      return new Prog(lambdaNode.from, lambdaNode.to, lambdaNode.prog.map(convertAST));
+      return new Prog(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.prog.map(convertAST)
+      );
     case 'number':
-      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.value, 'number');
+      return new Literal(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.value,
+        'number'
+      );
     case 'string':
-      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.value, 'string');
+      return new Literal(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.value,
+        'string'
+      );
     case 'symbol':
-      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.value, 'symbol');
+      return new Literal(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.value,
+        'symbol'
+      );
     case 'bool':
-      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.value, 'bool');
+      return new Literal(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.value,
+        'bool'
+      );
     case 'variableDef':
-      return new VariableDefinition(lambdaNode.from, lambdaNode.to, lambdaNode.name, lambdaNode.body);
+      return new VariableDefinition(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.name,
+        lambdaNode.body.map(convertAST)
+      );
     case 'functionDef':
-      return new FunctionDefinition(lambdaNode.from, lambdaNode.to, lambdaNode.name, lambdaNode.vars, lambdaNode.body);
+      return new FunctionDefinition(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.name,
+        lambdaNode.vars.map(convertAST),
+        lambdaNode.body.map(convertAST)
+      );
     case 'expression':
-      return new Expression(lambdaNode.from, lambdaNode.to, lambdaNode.func, lambdaNode.args);
+      return new Expression(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.func,
+        lambdaNode.args.map(convertAST)
+      );
     case 'assign':
-      return new Assignment(lambdaNode.from, lambdaNode.to, lambdaNode.operator, lambdaNode.left, lambdaNode.right);
+      return new Assignment(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.operator,
+        lambdaNode.left.map(convertAST),
+        lambdaNode.right.map(convertAST)
+      );
     case 'binary':
-      return new Binary(lambdaNode.from, lambdaNode.to, lambdaNode.operator, convertAST(lambdaNode.left), convertAST(lambdaNode.right));
+      return new Binary(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.operator,
+        lambdaNode.left.map(convertAST),
+        lambdaNode.right.map(convertAST)
+      );
     case 'let':
-      return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.vars, lambdaNode.body);
+      return new Literal(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.vars.map(convertAST),
+        lambdaNode.body.map(convertAST)
+      );
     case 'conditional':
-      return new Conditional(lambdaNode.from, lambdaNode.to, lambdaNode.cond, lambdaNode.then, lambdaNode.else);
+      return new Conditional(
+        lambdaNode.from,
+        lambdaNode.to,
+        lambdaNode.cond.map(convertAST),
+        lambdaNode.then.map(convertAST),
+        lambdaNode.else.map(convertAST)
+      );
     default:
       throw new Error("Don't know how to convert node of type "+ lambdaNode.type);
   }
