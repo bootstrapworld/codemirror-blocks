@@ -3,7 +3,12 @@ import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
 import 'codemirror/addon/edit/closebrackets.js';
 import '../src/languages/wescheme';
+import '../src/languages/example';
+import '../src/languages/lambda';
 import {renderEditorInto} from '../src/ui';
+import CodemirrorBlocks from '../src/blocks.js';
+import React from 'react';
+import ReactDOM from 'react-dom';
 
 require('./example-page.less');
 
@@ -35,3 +40,26 @@ let editor = renderEditorInto(
   options
 );
 editor.getCodeMirror().setValue(code);
+
+ReactDOM.render((
+  <select onChange={function(event){
+    ReactDOM.unmountComponentAtNode(document.getElementById('editor'));
+    var editor = renderEditorInto(
+        document.getElementById('editor'),
+        event.target.value,
+        options
+    );
+    var exampleCode = CodemirrorBlocks.languages.getLanguage(event.target.value).example;
+    editor.getCodeMirror().setValue(exampleCode || "");
+  }}>
+    <option>
+      Choose Language...
+    </option>
+    {CodemirrorBlocks.languages.getLanguages().map(
+       language => (
+         <option value={language.id} key={language.id}>{language.name}</option>
+       )
+     )}
+  </select>
+),document.getElementById('language-selector')
+);

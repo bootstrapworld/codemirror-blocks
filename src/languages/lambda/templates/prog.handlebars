@@ -1,7 +1,6 @@
-{{#> ../../../templates/node type="literal"}}
-<div style="border: 1px solid red;">
-  {{#each node.prog}}
-  {{{renderNode this}}}
-  {{/each}}
-</div>
+{{#> ../../../templates/node type="prog"}}
+<h4>Your Lambda Program</h4>
+{{#each node.prog}}
+{{{renderNode this}}}
+{{/each}}
 {{/../../../templates/node}}
