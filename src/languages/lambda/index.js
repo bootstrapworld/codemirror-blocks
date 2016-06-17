@@ -7,7 +7,7 @@ export default CodeMirrorBlocks.languages.addLanguage(
     id: 'lambda',
     name: 'Lambda',
     description: 'A simple language taken from lisperator.net',
-    example: "1",
+    example: "1+1*2",
     getParser() {
       return {
         parse: parseString,
@@ -16,7 +16,8 @@ export default CodeMirrorBlocks.languages.addLanguage(
     getRenderOptions() {
       return {
         extraRenderers: {
-          prog: require('./templates/prog.handlebars')
+          prog: require('./templates/prog.handlebars'),
+          binary: require('./templates/binary.handlebars'),
         }
       };
     },

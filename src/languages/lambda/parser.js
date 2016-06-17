@@ -42,7 +42,7 @@ function convertAST(lambdaNode) {
     case 'assign':
       return new Assignment(lambdaNode.from, lambdaNode.to, lambdaNode.operator, lambdaNode.left, lambdaNode.right);
     case 'binary':
-      return new Binary(lambdaNode.from, lambdaNode.to, lambdaNode.operator, lambdaNode.left, lambdaNode.right);
+      return new Binary(lambdaNode.from, lambdaNode.to, lambdaNode.operator, convertAST(lambdaNode.left), convertAST(lambdaNode.right));
     case 'let':
       return new Literal(lambdaNode.from, lambdaNode.to, lambdaNode.vars, lambdaNode.body);
     case 'conditional':
