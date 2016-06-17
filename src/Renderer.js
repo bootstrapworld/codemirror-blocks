@@ -1,3 +1,5 @@
+import {ASTNode} from './ast';
+
 function createFragment(htmlStr) {
   var frag = document.createDocumentFragment();
   var temp = document.createElement('div');
@@ -26,6 +28,9 @@ export default class Renderer {
   }
 
   renderHTMLString(node) {
+    if (typeof node !== "object" || !node instanceof ASTNode) {
+      throw new Error("Expected ASTNode but got "+node);
+    }
     var renderer = this.extraRenderers[node.type];
     if (!renderer) {
       renderer = this.nodeRenderers[node.type];
