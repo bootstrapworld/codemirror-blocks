@@ -53,7 +53,7 @@ export class AST {
 
 // Every node in the AST inherits from the `ASTNode` class, which is used to
 // house some common attributes.
-class ASTNode {
+export class ASTNode {
   constructor(from, to, type, options) {
 
     // The `from` and `to` attributes are objects containing the start and end
@@ -231,4 +231,3 @@ export class Blank extends ASTNode {
     return `${this.value}`;
   }
 }
-
