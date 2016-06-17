@@ -22,7 +22,8 @@ module.exports = function(config) {
   return {
     output: {
       path: path.resolve(__dirname, '..', "build"),
-      filename: "[name].js"
+      filename: "[name].js",
+      publicPath: '/',
     },
     module: {
       loaders: loaders,
