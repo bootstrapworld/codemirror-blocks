@@ -21,6 +21,10 @@ export default function parseString(code) {
   return new AST([convertAST(parse(tokenStream(inputStream(code))))]);
 }
 
+export function parseToIntermediateAST(code) {
+  return parse(tokenStream(inputStream(code)));
+}
+
 function convertAST(lambdaNode) {
   switch (lambdaNode.type) {
     case 'prog':
@@ -29,21 +33,21 @@ function convertAST(lambdaNode) {
         lambdaNode.to,
         lambdaNode.prog.map(convertAST)
       );
-    case 'number':
+    case 'num':
       return new Literal(
         lambdaNode.from,
         lambdaNode.to,
         lambdaNode.value,
         'number'
       );
-    case 'string':
+    case 'str':
       return new Literal(
         lambdaNode.from,
         lambdaNode.to,
         lambdaNode.value,
         'string'
       );
-    case 'symbol':
+    case 'var':
       return new Literal(
         lambdaNode.from,
         lambdaNode.to,
@@ -57,14 +61,14 @@ function convertAST(lambdaNode) {
         lambdaNode.value,
         'bool'
       );
-    case 'variableDef':
+    case 'def':
       return new VariableDefinition(
         lambdaNode.from,
         lambdaNode.to,
         lambdaNode.name,
         lambdaNode.body.map(convertAST)
       );
-    case 'functionDef':
+    case 'lambda':
       return new FunctionDefinition(
         lambdaNode.from,
         lambdaNode.to,
@@ -72,7 +76,7 @@ function convertAST(lambdaNode) {
         lambdaNode.vars.map(convertAST),
         lambdaNode.body.map(convertAST)
       );
-    case 'expression':
+    case 'call':
       return new Expression(
         lambdaNode.from,
         lambdaNode.to,
@@ -102,7 +106,7 @@ function convertAST(lambdaNode) {
         lambdaNode.vars.map(convertAST),
         lambdaNode.body.map(convertAST)
       );
-    case 'conditional':
+    case 'if':
       return new Conditional(
         lambdaNode.from,
         lambdaNode.to,
@@ -194,7 +198,7 @@ function parse(input) {
     return {
       from: from,
       to: toLocation,
-      type: "expression",
+      type: "call",
       func: func,
       args: args
     };
@@ -203,8 +207,8 @@ function parse(input) {
     var from = input.pos().from;
     var name = input.next();
     var to = input.pos().to;
-    if (name.type != "symbol") input.croak("Expecting variable name");
-    return { from, to, type: 'literal', dataType: 'symbol', name };
+    if (name.type != "var") input.croak("Expecting variable name");
+    return { from, to, type: 'literal', dataType: 'var', name };
   }
   function parseVardef() {
     var name = parseVarname(), body;
@@ -213,12 +217,12 @@ function parse(input) {
       body = parseExpression();
     }
     toLocation = input.pos().to;
-    return { from: fromLocation, to: toLocation, name: name, type: 'variableDef', body: body };
+    return { from: fromLocation, to: toLocation, name: name, type: 'def', body: body };
   }
   function parseLet() {
     var from = fromLocation;
     skipKw("let");
-    if (input.peek().type == "symbol") {
+    if (input.peek().type == "var") {
       var name = input.next().value;
       var defs = delimited("(", ")", ",", parseVardef);
       toLocation = input.pos().to;
@@ -227,7 +231,7 @@ function parse(input) {
         to: toLocation,
         type: "call",
         func: {
-          type: "functionDef",
+          type: "lambda",
           name: name,
           vars: defs.map(function(def){ return def.name;}),
           body: parseExpression(),
@@ -255,7 +259,7 @@ function parse(input) {
     var ret = {
       from: from,
       to  : toLocation,
-      type: "conditional",
+      type: "if",
       cond: cond,
       then: then,
     };
@@ -269,14 +273,14 @@ function parse(input) {
   }
   function parseLambda() {
     var from = fromLocation;
-    var name = input.peek().type == "symbol" ? input.next().value : null;
+    var name = input.peek().type == "var" ? input.next().value : null;
     var vars = delimited("(", ")", ",", parseVarname);
     var body = parseExpression();
     toLocation = input.pos().to;
     return {
       from: from,
       to: toLocation,
-      type: "functionDef",
+      type: "lambda",
       name: name,
       vars: vars,
       body: body
@@ -293,7 +297,7 @@ function parse(input) {
   }
   function parseRaw() {
     skipKw("js:raw");
-    if (input.peek().type != "string")
+    if (input.peek().type != "str")
       input.croak("js:raw must be a plain string");
     return {
       type : "raw",
@@ -333,7 +337,7 @@ function parse(input) {
         return parseLambda();
       }
       var tok = input.next();
-      if (tok.type == "symbol" || tok.type == "number" || tok.type == "string") {
+      if (tok.type == "var" || tok.type == "num" || tok.type == "str") {
         return tok;
       }
       unexpected();
@@ -441,7 +445,7 @@ function tokenStream(input) {
       return isDigit(ch);
     });
     toLocation = input.inputPos();
-    return { from: fromLocation, to: toLocation, type: "number", value: parseFloat(number) };
+    return { from: fromLocation, to: toLocation, type: "num", value: parseFloat(number) };
   }
   function readIdent() {
     var id = readWhite(isId);
@@ -449,7 +453,7 @@ function tokenStream(input) {
     return {
       from  : fromLocation,
       to    : toLocation,
-      type  : isKeyword(id) ? "kw" : "symbol",
+      type  : isKeyword(id) ? "kw" : "var",
       value : id
     };
   }
@@ -474,7 +478,7 @@ function tokenStream(input) {
   function readString() {
     var string = readEscaped('"');
     toLocation = input.inputPos();
-    return { from: fromLocation, to: toLocation, type: "string", value: string };
+    return { from: fromLocation, to: toLocation, type: "str", value: string };
   }
   function skipComment() {
     readWhite(function(ch){ return ch != "\n";});
