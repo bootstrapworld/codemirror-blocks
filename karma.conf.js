@@ -2,7 +2,7 @@
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
 var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
-var reporters = ['dots'];
+var reporters = ['jasmine-diff', 'dots'];
 
 if (envConfig.runCoverage) {
   reporters.push('coverage');
@@ -57,6 +57,9 @@ module.exports = function(config) {
         { type: 'html' },
         { type: 'lcovonly' }
       ]
+    },
+    jasmineDiffReporter: {
+      pretty: true,
     },
 
     // web server port
