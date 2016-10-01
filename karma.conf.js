@@ -46,8 +46,8 @@ module.exports = function(config) {
       noInfo: true
     },
     client: {
-      // log console output in our test console
-      captureConsole: true
+      // don't log console output in our test console
+      captureConsole: false
     },
 
     reporters: reporters,
