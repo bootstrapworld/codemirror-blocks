@@ -82,7 +82,7 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
-  /* 
+  /*
    * The WeScheme parser ignores comments at the lexing stage.
    * This may change in a future release, but for now these
    * tests are commented out
@@ -147,6 +147,32 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
+  describe("when parsing if definitions,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse('(if (> 0 1) x y)');
+    });
+
+    it("should convert ifExpr to ifExpression", function() {
+      expect(this.ast.rootNodes[0].type).toBe('ifExpression');
+    });
+
+    it("should convert the test expression correctly", function() {
+      expect(this.ast.rootNodes[0].testExpr.type).toBe('expression');
+    });
+
+    it("should convert the then expression correctly", function() {
+      expect(this.ast.rootNodes[0].thenExpr.type).toBe('literal');
+      expect(this.ast.rootNodes[0].thenExpr.dataType).toBe('symbol');
+      expect(this.ast.rootNodes[0].thenExpr.value).toBe('x');
+    });
+
+    it("should convert the else expression correctly", function() {
+      expect(this.ast.rootNodes[0].elseExpr.type).toBe('literal');
+      expect(this.ast.rootNodes[0].elseExpr.dataType).toBe('symbol');
+      expect(this.ast.rootNodes[0].elseExpr.value).toBe('y');
+    });
+  });
+
   describe("when parsing expressions that are unsupported in the block language,", function() {
 
     it("should ignore defVars", function() {
@@ -171,10 +197,6 @@ describe("The WeScheme Parser,", function() {
     });
     it("should ignore letrectExpr", function() {
       this.ast = this.parser.parse('(letrec ((x 42)) x)');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
-    it("should ignore ifExpr", function() {
-      this.ast = this.parser.parse('(if (> 0 1) x y)');
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore letStar", function() {

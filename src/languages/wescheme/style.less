@@ -24,6 +24,7 @@
   .blocks-functionDef,
   .blocks-variableDef,
   .blocks-expression,
+  .blocks-ifExpression,
   .blocks-unknown {
     display: inline-flex;
     flex-direction: column;
@@ -39,6 +40,32 @@
     cursor: grab;
     cursor: -moz-grab;
     cursor: -webkit-grab;
+  }
+
+  .blocks-ifExpression {
+    border-radius: 0px;
+    background: white;
+    > .blocks-operator {
+      justify-content: flex-start;
+    }
+    > .blocks-cond-table {
+      margin: 5px;
+      .blocks-cond-row {
+        border-top: 1px solid #aaa;
+        > .blocks-cond-predicate {
+          text-align: center;
+          &.blocks-cond-else {
+            color: #777;
+          }
+        }
+        > td {
+          padding: 5px 0px;
+        }
+      }
+      .blocks-cond-row:first-child {
+        border-top: 0px;
+      }
+    }
   }
 
   .blocks-operator {
