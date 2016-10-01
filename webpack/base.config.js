@@ -44,10 +44,5 @@ module.exports = function(config) {
       }]
     },
     plugins: plugins,
-    babel: {
-      plugins: ['transform-react-jsx'],
-      presets: ['es2015'],
-      sourceMaps: true
-    }
   };
 };
