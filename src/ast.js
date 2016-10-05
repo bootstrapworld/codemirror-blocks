@@ -185,6 +185,26 @@ export class FunctionDefinition extends ASTNode {
   }
 }
 
+export class IfExpression extends ASTNode {
+  constructor(from, to, testExpr, thenExpr, elseExpr, options={}) {
+    super(from, to, 'ifExpression', options);
+    this.testExpr = testExpr;
+    this.thenExpr = thenExpr;
+    this.elseExpr = elseExpr;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    yield this.testExpr;
+    yield this.thenExpr;
+    yield this.elseExpr;
+  }
+
+  toString() {
+    return `(if ${this.testExpr} ${this.thenExpr} ${this.elseExpr})`;
+  }
+}
+
 export class Literal extends ASTNode {
   constructor(from, to, value, dataType='unknown', options={}) {
     super(from, to, 'literal', options);

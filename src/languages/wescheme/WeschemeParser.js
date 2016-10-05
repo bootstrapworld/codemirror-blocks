@@ -4,6 +4,7 @@ import {
   Literal,
   Struct,
   FunctionDefinition,
+  IfExpression,
   Comment,
   VariableDefinition,
   Unknown,
@@ -108,6 +109,14 @@ function parseNode(node) {
       parseNode(node.name),
       node.args.map(parseNode),
       parseNode(node.body)
+    );
+  } else if (node instanceof structures.ifExpr) {
+    return new IfExpression(
+      from,
+      to,
+      parseNode(node.predicate),
+      parseNode(node.consequence),
+      parseNode(node.alternative),
     );
   } else if (node instanceof structures.symbolExpr) {
     return new Literal(from, to, node.stx, "symbol", {'aria-label':node.stx});
@@ -241,11 +250,11 @@ class WeschemeParser {
     function parseStar(sexps) {
       function parseSExp(sexp) {
         return isComment(sexp) ? sexp :
-              isDefinition(sexp) ? parseDefinition(sexp) :
-              isExpr(sexp) ? parseExpr(sexp) :
-              isRequire(sexp) ? parseRequire(sexp) :
-              isProvide(sexp) ? parseProvide(sexp) :
-              throwError("ASSERTION: Something was lexed that is not in the language:\n " + sexp.toString);
+               isDefinition(sexp) ? parseDefinition(sexp) :
+               isExpr(sexp) ? parseExpr(sexp) :
+               isRequire(sexp) ? parseRequire(sexp) :
+               isProvide(sexp) ? parseProvide(sexp) :
+               throwError(`ASSERTION: Something was lexed that is not in the language:\n ${sexp}`);
       }
       return sexps.map(parseSExp);
     }

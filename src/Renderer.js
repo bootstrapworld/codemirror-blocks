@@ -19,6 +19,7 @@ export default class Renderer {
       expression: require('./templates/expression.handlebars'),
       functionDef: require('./templates/functionDef.handlebars'),
       variableDef: require('./templates/variableDef.handlebars'),
+      ifExpression: require('./templates/ifExpression.handlebars'),
       struct: require('./templates/struct.handlebars'),
       literal: require('./templates/literal.handlebars'),
       comment: require('./templates/comment.handlebars'),
