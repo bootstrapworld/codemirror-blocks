@@ -6,7 +6,6 @@ function comparePos(a, b) {
 
 // given a list of sibling nodes and a parent, assign prev/next/parent pointers
 function setNavigationPointers(nodes, parent) {
-  /*
   let lastSeen = null;
   nodes.forEach((node, i) => {
       node.parent = parent;
@@ -14,7 +13,6 @@ function setNavigationPointers(nodes, parent) {
       node.nextSibling = nodes[i+1];
       lastSeen = node;
     });
-    */
 }
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are

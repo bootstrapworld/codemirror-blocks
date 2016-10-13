@@ -50,6 +50,7 @@ describe("The Expression Class", function() {
       args,
       {'aria-label':'+ expression'}
     );
+    // (+ 11 (- 15 35))
     nestedExpression = new Expression(
       {line: 1, ch: 0},
       {line: 1, ch: 9},
@@ -81,6 +82,7 @@ describe("The Expression Class", function() {
       nestedExpression.func,
       nestedExpression.args[0],
       nestedExpression.args[1],
+      nestedExpression.args[1].func,
       nestedExpression.args[1].args[0],
       nestedExpression.args[1].args[1]
     ]);
