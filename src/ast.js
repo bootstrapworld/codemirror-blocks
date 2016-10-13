@@ -4,6 +4,18 @@ function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
 
+// given a list of sibling nodes and a parent, assign prev/next/parent pointers
+function setNavigationPointers(nodes, parent) {
+  /*
+  let lastSeen = null;
+  nodes.forEach((node, i) => {
+      node.parent = parent;
+      node.prevSibling = lastSeen;
+      node.nextSibling = nodes[i+1];
+      lastSeen = node;
+    });
+    */
+}
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
 // required to spit out an `AST` instance.
@@ -23,6 +35,7 @@ export class AST {
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
 
+    setNavigationPointers(this.rootNodes);
     let lastNode = null;
     for (let rootNode of this.rootNodes) {
       for (let node of rootNode) {
@@ -85,6 +98,10 @@ export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
     super(from, to, 'unknown', options);
     this.elts = elts;
+
+    // set navigation pointers
+    this.firstChild = elts[0];
+    setNavigationPointers(this.elts, this);
   }
 
   *[Symbol.iterator]() {
@@ -106,6 +123,10 @@ export class Expression extends ASTNode {
     super(from, to, 'expression', options);
     this.func = func;
     this.args = args;
+
+    // set navigation pointers
+    this.firstChild = this.func;
+    setNavigationPointers([func].concat(args), this);
   }
 
   *[Symbol.iterator]() {
@@ -130,6 +151,10 @@ export class Struct extends ASTNode {
     super(from, to, 'struct', options);
     this.name = name;
     this.fields = fields;
+
+    // set navigation pointers
+    this.firstChild = name;
+    setNavigationPointers([name].concat(fields), this);
   }
 
   *[Symbol.iterator]() {
@@ -150,6 +175,10 @@ export class VariableDefinition extends ASTNode {
     super(from, to, 'variableDef', options);
     this.name = name;
     this.body = body;
+
+    // set navigation pointers
+    this.firstChild = name;
+    setNavigationPointers([name, body], this);
   }
 
   *[Symbol.iterator]() {
@@ -169,6 +198,10 @@ export class FunctionDefinition extends ASTNode {
     this.name = name;
     this.args = args;
     this.body = body;
+
+    // set navigation pointers
+    this.firstChild = name;
+    setNavigationPointers([name, args, body], this);
   }
 
   *[Symbol.iterator]() {
@@ -191,6 +224,11 @@ export class IfExpression extends ASTNode {
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
+
+    // set navigation pointers
+    this.firstChild = testExpr;
+    setNavigationPointers([testExpr, thenExpr, elseExpr], this);
+
   }
 
   *[Symbol.iterator]() {

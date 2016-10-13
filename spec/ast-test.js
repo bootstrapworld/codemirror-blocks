@@ -36,8 +36,9 @@ describe("The Literal Class", function() {
 });
 
 describe("The Expression Class", function() {
-  var expression, args, nestedExpression;
+  var expression, func, args, nestedExpression;
   beforeEach(function() {
+    func = new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol');
     args = [
       new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 11),
       new Literal({line: 1, ch: 6}, {line: 0, ch: 8}, 22)
@@ -45,7 +46,7 @@ describe("The Expression Class", function() {
     expression = new Expression(
       {line: 1, ch: 0},
       {line: 1, ch: 9},
-      '+',
+      func,
       args,
       {'aria-label':'+ expression'}
     );
@@ -58,7 +59,7 @@ describe("The Expression Class", function() {
         new Expression(
           {line: 1, ch: 0},
           {line: 1, ch: 9},
-          '-',
+          new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '-', 'symbol'),
           [
             new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 15),
             new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 35)
@@ -70,7 +71,7 @@ describe("The Expression Class", function() {
 
   it("should take a function name and list of args in it's constructor", function() {
     expect(expression.args).toBe(args);
-    expect(expression.func).toBe('+');
+    expect(expression.func).toBe(func);
     expect(expression.options).toEqual({'aria-label':'+ expression'});
   });
 
@@ -100,7 +101,7 @@ describe("The AST Class", function() {
       new Expression(
         {line: 1, ch: 0},
         {line: 1, ch: 9},
-        '+',
+        new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol'),
         [
           new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 11),
           new Literal({line: 1, ch: 6}, {line: 0, ch: 8}, 22)
