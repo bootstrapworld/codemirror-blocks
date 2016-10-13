@@ -43,6 +43,7 @@ describe("The Expression Class", function() {
       new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 11),
       new Literal({line: 1, ch: 6}, {line: 0, ch: 8}, 22)
     ];
+    // (+ 11 22)
     expression = new Expression(
       {line: 1, ch: 0},
       {line: 1, ch: 9},
