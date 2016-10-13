@@ -566,10 +566,10 @@ export default class CodeMirrorBlocks {
     } else if (navigationKeys.includes(keyName)) {
       let newNode = false;
       switch (keyName) {
-        case "Up":        newNode = currentNode.parent;       break;
-        case "Down":      newNode = currentNode.firstChild;   break;
-        case "Left":      newNode = currentNode.prevSibling;  break;
-        case "Right":     newNode = currentNode.nextSibling;  break;
+        case "Up":        newNode = selectedNode.parent;       break;
+        case "Down":      newNode = selectedNode.firstChild;   break;
+        case "Left":      newNode = selectedNode.prevSibling;  break;
+        case "Right":     newNode = selectedNode.nextSibling;  break;
         case "Tab":       newNode = this._getNextUnhiddenNode();break;
         case "Shift-Tab": newNode = this._getNextUnhiddenNode({reverse: true});
       }
