@@ -101,6 +101,7 @@ export default class CodeMirrorBlocks {
     this.redoKeys = [];
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
+    this.cm.getWrapperElement().role = "application";
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -277,12 +278,20 @@ export default class CodeMirrorBlocks {
     return nextNode;
   }
 
-  selectNextNode(event) {
-    this.selectNode(this._getNextUnhiddenNode(), event);
-  }
-
-  selectPrevNode(event) {
-    this.selectNode(this._getNextUnhiddenNode({reverse: true}), event);
+  handleNavigation(keyName, event) {
+    let currentNode = this.getSelectedNode();
+    let newNode = false;
+    switch (keyName) {
+//      case "Up":        newNode = currentNode.parent;       break;
+//      case "Down":      newNode = currentNode.firstChild;   break;
+//      case "Left":      newNode = currentNode.prevSibling;  break;
+//      case "Right":     newNode = currentNode.nextSibling;  break;
+      case "Tab":       newNode = this._getNextUnhiddenNode();break;
+      case "Shift-Tab": newNode = this._getNextUnhiddenNode({reverse: true});
+    }
+    if(newNode) {
+      this.selectNode(newNode, event);  
+    }
   }
 
   handleCopyCut(event) {
@@ -551,8 +560,8 @@ export default class CodeMirrorBlocks {
     let cur  = this.cm.getCursor();
     let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
     let ast  = this.parser.parse(ws + "x");               // make a fake literal
-    let node = ast.rootNodes[0];                          // get its node
-    this.renderer.render(node, this.cm, this.renderOptions || {});      // render the DOM element
+    let node = ast.rootNodes[0];                          // get its node and render it
+    this.renderer.render(node, this.cm, this.renderOptions || {});
     node.el.innerText = text;                             // replace "x" with the real string
     node.to.ch = node.from.ch;                            // force the width to be zero
     let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
@@ -561,6 +570,7 @@ export default class CodeMirrorBlocks {
   }
 
   handleKeyDown(event) {
+    let navigationKeys = ["Up","Down","Left","Right","Tab","Shift-Tab"];
     let keyName = CodeMirror.keyName(event);
     let selectedNode = this.getSelectedNode();
     // Enter and Backspace behave differently if a node is selected
@@ -569,10 +579,8 @@ export default class CodeMirrorBlocks {
       this.editLiteral(selectedNode, event);
     } else if (keyName == "Backspace" && selectedNode) {
       this.deleteSelectedNodes();
-    } else if (keyName == "Tab") {
-      this.selectNextNode(event);
-    } else if (keyName == "Shift-Tab") {
-      this.selectPrevNode(event);
+    } else if (navigationKeys.includes(keyName) && selectedNode) {
+      this.handleNavigation(keyName, event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
