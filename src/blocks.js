@@ -278,22 +278,6 @@ export default class CodeMirrorBlocks {
     return nextNode;
   }
 
-  handleNavigation(keyName, event) {
-    let currentNode = this.getSelectedNode();
-    let newNode = false;
-    switch (keyName) {
-//      case "Up":        newNode = currentNode.parent;       break;
-//      case "Down":      newNode = currentNode.firstChild;   break;
-//      case "Left":      newNode = currentNode.prevSibling;  break;
-//      case "Right":     newNode = currentNode.nextSibling;  break;
-      case "Tab":       newNode = this._getNextUnhiddenNode();break;
-      case "Shift-Tab": newNode = this._getNextUnhiddenNode({reverse: true});
-    }
-    if(newNode) {
-      this.selectNode(newNode, event);  
-    }
-  }
-
   handleCopyCut(event) {
     var activeEl = document.activeElement;
     if (!this.getSelectedNode()) {
@@ -579,8 +563,19 @@ export default class CodeMirrorBlocks {
       this.editLiteral(selectedNode, event);
     } else if (keyName == "Backspace" && selectedNode) {
       this.deleteSelectedNodes();
-    } else if (navigationKeys.includes(keyName) && selectedNode) {
-      this.handleNavigation(keyName, event);
+    } else if (navigationKeys.includes(keyName)) {
+      let newNode = false;
+      switch (keyName) {
+        case "Up":        newNode = currentNode.parent;       break;
+        case "Down":      newNode = currentNode.firstChild;   break;
+        case "Left":      newNode = currentNode.prevSibling;  break;
+        case "Right":     newNode = currentNode.nextSibling;  break;
+        case "Tab":       newNode = this._getNextUnhiddenNode();break;
+        case "Shift-Tab": newNode = this._getNextUnhiddenNode({reverse: true});
+      }
+      if(newNode) {
+        this.selectNode(newNode, event);  
+      }
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
