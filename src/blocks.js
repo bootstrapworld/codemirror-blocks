@@ -256,8 +256,8 @@ export default class CodeMirrorBlocks {
 
   selectNode(node, event) {
     event.stopPropagation();
-    node.el.focus();
     this.cm.scrollIntoView(node.from);
+    node.el.focus();
   }
 
   isNodeHidden(node) {
@@ -265,17 +265,13 @@ export default class CodeMirrorBlocks {
       node.el.matches('.blocks-hidden *'));
   }
 
-  _getNextUnhiddenNode({reverse}={}) {
-    let getNextNode = reverse ?
-                      this.ast.getNodeBefore.bind(this.ast) :
-                      this.ast.getNodeAfter.bind(this.ast);
-
+  _getNextUnhiddenNode(nextFn) {
     let nodeOrCursor = this.getSelectedNode() || this.cm.getCursor();
-    let nextNode = getNextNode(nodeOrCursor);
-    while (this.isNodeHidden(nextNode)) {
-      nextNode = getNextNode(nextNode);
+    let nextNode = nextFn(nodeOrCursor);
+    while (nextNode && this.isNodeHidden(nextNode)) {
+      nextNode = nextFn(nextNode);
     }
-    return nextNode;
+    return nextNode || nodeOrCursor;
   }
 
   handleCopyCut(event) {
@@ -554,28 +550,30 @@ export default class CodeMirrorBlocks {
   }
 
   handleKeyDown(event) {
-    let navigationKeys = ["Up","Down","Left","Right","Tab","Shift-Tab"];
     let keyName = CodeMirror.keyName(event);
     let selectedNode = this.getSelectedNode();
-    // Enter and Backspace behave differently if a node is selected
-    if (keyName == "Enter" && selectedNode &&
+    let arrowHandlers = {
+      Up:   this.ast.getParent, 
+      Down: this.ast.getChild, 
+      Left: this.ast.getPrevSibling,
+      Right:this.ast.getNextSibling
+    };
+    // Arrows, Enter and Backspace behave differently if a node is selected
+    if(arrowHandlers[keyName] && selectedNode) {
+      let searchFn = arrowHandlers[keyName].bind(this.ast);
+      this.selectNode(this._getNextUnhiddenNode(searchFn), event);
+    } else if (keyName == "Enter" && selectedNode &&
         ["literal", "blank"].includes(selectedNode.type)) {
       this.editLiteral(selectedNode, event);
     } else if (keyName == "Backspace" && selectedNode) {
       this.deleteSelectedNodes();
-    } else if (navigationKeys.includes(keyName)) {
-      let newNode = false;
-      switch (keyName) {
-        case "Up":        newNode = selectedNode.parent;       break;
-        case "Down":      newNode = selectedNode.firstChild;   break;
-        case "Left":      newNode = selectedNode.prevSibling;  break;
-        case "Right":     newNode = selectedNode.nextSibling;  break;
-        case "Tab":       newNode = this._getNextUnhiddenNode();break;
-        case "Shift-Tab": newNode = this._getNextUnhiddenNode({reverse: true});
-      }
-      if(newNode) {
-        this.selectNode(newNode, event);  
-      }
+    // Tab and Shift-Tab work no matter what
+    } else if (keyName === "Tab") {
+      let searchFn = this.ast.getNodeAfter.bind(this.ast);
+      this.selectNode(this._getNextUnhiddenNode(searchFn), event);
+    } else if (keyName === "Shift-Tab") {
+      let searchFn = this.ast.getNodeBefore.bind(this.ast);
+      this.selectNode(this._getNextUnhiddenNode(searchFn), event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {

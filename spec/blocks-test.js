@@ -370,6 +370,55 @@ describe('The CodeMirrorBlocks Class', function() {
           // TODO: figure out how to test this.
         });
       });
+
+      describe('tree navigation', function() {
+        beforeEach(function() {
+          this.cm.setValue('(+ 1 2 3) 99');
+          this.firstRoot = this.blocks.ast.rootNodes[0];
+          this.secondRoot = this.blocks.ast.rootNodes[1];
+          this.funcSymbol = this.blocks.ast.rootNodes[0].func;
+          this.firstArg = this.blocks.ast.rootNodes[0].args[0];
+          this.secondArg = this.blocks.ast.rootNodes[0].args[1];
+          this.thirdArg = this.blocks.ast.rootNodes[0].args[2];
+        });
+
+        it('left-arrow should navigate to the next sibling, but not beyond it', function() {
+          this.secondRoot.el.dispatchEvent(click());
+          expect(document.activeElement).toBe(this.secondRoot.el);
+          this.firstRoot.el.dispatchEvent(keydown(37));
+          expect(document.activeElement).toBe(this.firstRoot.el);
+          this.secondRoot.el.dispatchEvent(keydown(37));
+          expect(document.activeElement).toBe(this.firstRoot.el);
+        });
+
+        it('right-arrow should navigate to the next sibling, but not beyond it', function() {
+          this.firstRoot.el.dispatchEvent(click());
+          expect(document.activeElement).toBe(this.firstRoot.el);
+          this.firstRoot.el.dispatchEvent(keydown(39));
+          expect(document.activeElement).toBe(this.secondRoot.el);
+          this.secondRoot.el.dispatchEvent(keydown(39));
+          expect(document.activeElement).toBe(this.secondRoot.el);
+        });
+
+        it('down-arrow should navigate to the child, if one exists', function() {
+          this.firstRoot.el.dispatchEvent(click());
+          expect(document.activeElement).toBe(this.firstRoot.el);
+          this.firstRoot.el.dispatchEvent(keydown(40));
+          expect(document.activeElement).toBe(this.funcSymbol.el);
+          this.secondRoot.el.dispatchEvent(keydown(40));
+          expect(document.activeElement).toBe(this.funcSymbol.el);
+        });
+
+        it('up-arrow should navigate to the parent, if one exists', function() {
+          this.secondArg.el.dispatchEvent(click());
+          expect(document.activeElement).toBe(this.secondArg.el);
+          this.secondArg.el.dispatchEvent(keydown(38));
+          expect(document.activeElement).toBe(this.firstRoot.el);
+          this.firstRoot.el.dispatchEvent(keydown(38));
+          expect(document.activeElement).toBe(this.firstRoot.el);
+        });
+        
+      });
     });
 
     it('should begin editing a node on double click', function() {

@@ -6,13 +6,7 @@ function comparePos(a, b) {
 
 // given a list of sibling nodes and a parent, assign prev/next/parent pointers
 function setNavigationPointers(nodes, parent) {
-  let lastSeen = null;
-  nodes.forEach((node, i) => {
-      node.parent = parent;
-      node.prevSibling = lastSeen;
-      node.nextSibling = nodes[i+1];
-      lastSeen = node;
-    });
+  nodes.forEach(node => node.parent = parent);
 }
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
@@ -33,7 +27,6 @@ export class AST {
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
 
-    setNavigationPointers(this.rootNodes);
     let lastNode = null;
     for (let rootNode of this.rootNodes) {
       for (let node of rootNode) {
@@ -46,6 +39,35 @@ export class AST {
           lastNode = node;
         }
       }
+    }
+  }
+
+  getNextSibling(node) {
+    return this.getSibling(node, true);
+  }
+
+  getPrevSibling(node) {
+    return this.getSibling(node, false);
+  }
+
+  getChild(node) {
+    return node.firstChild || node;
+  }
+
+  getParent(node) {
+    return node.parent || node;
+  }
+
+  // if it's not a root node, return the next sibling
+  // if it's a rootnode, go to the next one
+  // if neither are possible, stay put
+  getSibling(node, forward) {
+    if(node.parent) {
+      let next = forward? this.getNodeAfter(node) : this.getNodeBefore(node);
+      return (next.parent === node.parent)? next : node;
+    } else { 
+      let roots = forward? this.rootNodes : this.reverseRootNodes;
+      return roots[roots.indexOf(node)+1] || node;
     }
   }
 
@@ -199,7 +221,7 @@ export class FunctionDefinition extends ASTNode {
 
     // set navigation pointers
     this.firstChild = name;
-    setNavigationPointers([name, args, body], this);
+    setNavigationPointers([name].concat(args).concat([body]), this);
   }
 
   *[Symbol.iterator]() {
