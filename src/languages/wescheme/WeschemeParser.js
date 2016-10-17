@@ -21,12 +21,37 @@ try {
   console.error('wescheme-js, which is required to use the wescheme blocks parser, does not appear to be installed.', e);
 }
 
-function expressionAria(func, argCount) {
-  let aria = `${func} expression, ${argCount} argument`;
-  if (argCount != 1) {
-    aria += 's';
+let symbolMap = new Map();
+symbolMap.set("*", "multiply");
+symbolMap.set("-", "subtract");
+symbolMap.set("/", "divide");
+
+// symbolAria : String -> String
+function symbolAria(str) {
+  // if there's no str available, it's an anonymous function
+  if(!str) {
+    return "anonymous function";
+  // make sure it's a string (in the event of a number in the fn position
+  } else {
+    str = str.toString();
   }
-  return aria;
+
+  if(symbolMap.get(str)) { 
+    // translate simple symbols
+    return symbolMap.get(str);
+  } else {
+    // speak special chars, scheme-style
+    return str.replace("?", "-huh?-").replace("!","-bang-");  
+  }
+}
+
+// expressionAria: String Array -> String
+function expressionAria(func, args) {
+  return symbolAria(func) + ' expression, ' + pluralize('argument', args);
+}
+
+function pluralize(noun, set) {
+  return set.length + ' ' + noun + (set.length!=1? 's' : '');
 }
 
 function parseNode(node) {
@@ -58,7 +83,7 @@ function parseNode(node) {
       to,
       func,
       node.args.map(parseNode).filter(item => item !== null),
-      {'aria-label': expressionAria(node.func ? node.func.stx : 'empty', node.args.length)}
+      {'aria-label': expressionAria(node.func ? node.func.val : 'empty', node.args)}
     );
   } else if (node instanceof structures.andExpr) {
     return new Expression(
@@ -72,7 +97,7 @@ function parseNode(node) {
          {'aria-label': 'and'}
       ),
       node.exprs.map(parseNode).filter(item => item !== null),
-      {'aria-label': expressionAria('and', node.exprs.length)}
+      {'aria-label': expressionAria('and', node.exprs)}
     );
   } else if (node instanceof structures.orExpr) {
     return new Expression(
@@ -86,21 +111,23 @@ function parseNode(node) {
          {'aria-label': 'or'}
       ),
       node.exprs.map(parseNode).filter(item => item !== null),
-      {'aria-label': expressionAria('or', node.exprs.length)}
+      {'aria-label': expressionAria('or', node.exprs)}
     );
   } else if (node instanceof structures.defVar) {
     return new VariableDefinition(
       from,
       to,
       parseNode(node.name),
-      parseNode(node.expr)
+      parseNode(node.expr),
+      {'aria-label':node.name.val+': a value definition'}
     );
   } else if (node instanceof structures.defStruct) {
     return new Struct(
       from,
       to,
       parseNode(node.name),
-      node.fields.map(parseNode).filter(item => item != null)
+      node.fields.map(parseNode).filter(item => item != null),
+      {'aria-label':node.name.val+': a structure definition with ' + pluralize('field', node.fields)}
     );
   } else if (node instanceof structures.defFunc) {
     return new FunctionDefinition(
@@ -108,7 +135,8 @@ function parseNode(node) {
       to,
       parseNode(node.name),
       node.args.map(parseNode),
-      parseNode(node.body)
+      parseNode(node.body),
+      {'aria-label':node.name.val+': a function definition with '+pluralize('argument', node.args)}
     );
   } else if (node instanceof structures.ifExpr) {
     return new IfExpression(
@@ -119,7 +147,8 @@ function parseNode(node) {
       parseNode(node.alternative),
     );
   } else if (node instanceof structures.symbolExpr) {
-    return new Literal(from, to, node.stx, "symbol", {'aria-label':node.stx});
+    let aria = symbolAria(node.val);
+    return new Literal(from, to, node.val, "symbol", {'aria-label': aria});
   } else if (node instanceof structures.literal) {
     var dataType = typeof node.val;
     let aria = node.toString();
@@ -127,8 +156,8 @@ function parseNode(node) {
       dataType = "string";
       aria = `string ${node.val}`;
     } else if (types.isChar(node.val)) {
-      dataType = "char";
-      aria = `char ${node.val}`;
+      dataType = "character";
+      aria = `character ${node.val.val}`;
     } else if (node.val === types.FALSE || node.val === types.TRUE) {
       dataType = "boolean";
       aria = `${node.val}`;
@@ -138,7 +167,8 @@ function parseNode(node) {
     return new Comment(from, to, node.txt);
   } else if (node instanceof structures.unsupportedExpr) {
     if(node.val.constructor !== Array) return null;
-    return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null), {msg: node.errorMsg});
+    return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null), 
+                      {msg: node.errorMsg, 'aria-label': 'invalid expression'});
   }
   console.log("!! No translator for", node);
   return null;
