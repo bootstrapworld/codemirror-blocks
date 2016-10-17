@@ -9,7 +9,7 @@ describe("The WeScheme Parser,", function() {
     expect(this.parser.parse('#t').rootNodes[0].dataType).toBe('boolean');
     expect(this.parser.parse('1').rootNodes[0].dataType).toBe('number');
     expect(this.parser.parse('"hello"').rootNodes[0].dataType).toBe('string');
-    expect(this.parser.parse('#\\m').rootNodes[0].dataType).toBe('char');
+    expect(this.parser.parse('#\\m').rootNodes[0].dataType).toBe('character');
     expect(this.parser.parse('foo').rootNodes[0].dataType).toBe('symbol');
   });
 
@@ -274,6 +274,19 @@ describe("The WeScheme Parser,", function() {
                  .toBe('and expression, 2 arguments');
       expect(this.parser.parse('(or false true)').rootNodes[0].options['aria-label'])
                  .toBe('or expression, 2 arguments');
+    });
+
+    it("should turn symbols into readable words", function() {
+      expect(this.parser.parse('(* 1 2)').rootNodes[0].options['aria-label'])
+                 .toBe('multiply expression, 2 arguments');
+      expect(this.parser.parse('(/ 1 2)').rootNodes[0].options['aria-label'])
+                 .toBe('divide expression, 2 arguments');
+      expect(this.parser.parse('(foo? 0)').rootNodes[0].options['aria-label'])
+                 .toBe('foo-huh?- expression, 1 argument');
+      expect(this.parser.parse('(set! x 2)').rootNodes[0].options['aria-label'])
+                 .toBe('set-bang- expression, 2 arguments');                 
+      expect(this.parser.parse('#(1 2)').rootNodes[0].options['aria-label'])
+                 .toBe('vector expression, 2 arguments');                 
     });
   });
 
