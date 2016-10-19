@@ -282,9 +282,9 @@ describe("The WeScheme Parser,", function() {
       expect(this.parser.parse('(/ 1 2)').rootNodes[0].options['aria-label'])
                  .toBe('divide expression, 2 arguments');
       expect(this.parser.parse('(foo? 0)').rootNodes[0].options['aria-label'])
-                 .toBe('foo-huh?- expression, 1 argument');
+                 .toBe('foo huh expression, 1 argument');
       expect(this.parser.parse('(set! x 2)').rootNodes[0].options['aria-label'])
-                 .toBe('set-bang- expression, 2 arguments');                 
+                 .toBe('set bang expression, 2 arguments');                 
       expect(this.parser.parse('#(1 2)').rootNodes[0].options['aria-label'])
                  .toBe('vector expression, 2 arguments');                 
     });
