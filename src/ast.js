@@ -4,9 +4,17 @@ function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
 
-// given a list of sibling nodes and a parent, assign prev/next/parent pointers
+// given a list of sibling nodes and a parent, assign the parent
+// and sibling pointers
 function setNavigationPointers(nodes, parent) {
-  nodes.forEach(node => node.parent = parent);
+  let lastNode = false;
+  nodes.forEach((node, i) => {
+    node.prevSibling = lastNode;
+    node.nextSibling = nodes[i+1];
+    node.parent = parent
+    lastNode = node;
+  });
+  if(parent) { parent.firstChild = nodes[0]; }
 }
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
@@ -26,6 +34,7 @@ export class AST {
 
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
+    setNavigationPointers(this.rootNodes, false);
 
     let lastNode = null;
     for (let rootNode of this.rootNodes) {
@@ -43,11 +52,11 @@ export class AST {
   }
 
   getNextSibling(node) {
-    return this.getSibling(node, true);
+    return node.nextSibling || node;
   }
 
   getPrevSibling(node) {
-    return this.getSibling(node, false);
+    return node.prevSibling || node;
   }
 
   getChild(node) {
@@ -56,19 +65,6 @@ export class AST {
 
   getParent(node) {
     return node.parent || node;
-  }
-
-  // if it's not a root node, return the next sibling
-  // if it's a rootnode, go to the next one
-  // if neither are possible, stay put
-  getSibling(node, forward) {
-    if(node.parent) {
-      let next = forward? this.getNodeAfter(node) : this.getNodeBefore(node);
-      return (next.parent === node.parent)? next : node;
-    } else { 
-      let roots = forward? this.rootNodes : this.reverseRootNodes;
-      return roots[roots.indexOf(node)+1] || node;
-    }
   }
 
   getNodeAfter(selection) {
@@ -118,9 +114,6 @@ export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
     super(from, to, 'unknown', options);
     this.elts = elts;
-
-    // set navigation pointers
-    this.firstChild = elts[0];
     setNavigationPointers(this.elts, this);
   }
 
@@ -143,9 +136,6 @@ export class Expression extends ASTNode {
     super(from, to, 'expression', options);
     this.func = func;
     this.args = args;
-
-    // set navigation pointers
-    this.firstChild = this.func;
     setNavigationPointers([func].concat(args), this);
   }
 
@@ -171,9 +161,6 @@ export class Struct extends ASTNode {
     super(from, to, 'struct', options);
     this.name = name;
     this.fields = fields;
-
-    // set navigation pointers
-    this.firstChild = name;
     setNavigationPointers([name].concat(fields), this);
   }
 
@@ -195,16 +182,13 @@ export class VariableDefinition extends ASTNode {
     super(from, to, 'variableDef', options);
     this.name = name;
     this.body = body;
-
-    // set navigation pointers
-    this.firstChild = name;
     setNavigationPointers([name, body], this);
   }
 
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
-    yield this.body;
+    yield* this.body;
   }
 
   toString() {
@@ -218,9 +202,6 @@ export class FunctionDefinition extends ASTNode {
     this.name = name;
     this.args = args;
     this.body = body;
-
-    // set navigation pointers
-    this.firstChild = name;
     setNavigationPointers([name].concat(args).concat([body]), this);
   }
 
@@ -230,7 +211,7 @@ export class FunctionDefinition extends ASTNode {
     for (let node of this.args) {
       yield node;
     }
-    yield this.body;
+    yield* this.body;
   }
 
   toString() {
@@ -244,9 +225,6 @@ export class IfExpression extends ASTNode {
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
-
-    // set navigation pointers
-    this.firstChild = testExpr;
     setNavigationPointers([testExpr, thenExpr, elseExpr], this);
 
   }
