@@ -101,7 +101,10 @@ export default class CodeMirrorBlocks {
     this.redoKeys = [];
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
-    this.cm.getWrapperElement().role = "application";
+    this.wrapper = cm.getWrapperElement();
+    this.scroller = cm.getScrollerElement();
+    this.wrapper.setAttribute("role", "application");
+    this.scroller.setAttribute("role", "combobox");
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -109,10 +112,10 @@ export default class CodeMirrorBlocks {
     this.renderer = new Renderer(this.cm, renderOptions);
 
     if (this.language) {
-      this.cm.getWrapperElement().classList.add(`blocks-language-${this.language.id}`);
+      this.wrapper.classList.add(`blocks-language-${this.language.id}`);
     }
     Object.assign(
-      this.cm.getWrapperElement(),
+      this.wrapper,
       {
         onkeydown: this.handleKeyDown.bind(this),
         onclick: this.nodeEventHandler(this.selectNode),
@@ -258,6 +261,7 @@ export default class CodeMirrorBlocks {
     event.stopPropagation();
     this.cm.scrollIntoView(node.from);
     node.el.focus();
+    this.scroller.setAttribute("aria-activedescendent", node.el.id);
   }
 
   isNodeHidden(node) {

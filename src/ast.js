@@ -51,6 +51,10 @@ export class AST {
     }
   }
 
+  // Traversal
+  // The family tree should be navigable via ancestor/sibling
+  // relationships, or via a pre-order walk. If a move is invalid, 
+  // each function returns the current node
   getNextSibling(node) {
     return node.nextSibling || node;
   }
