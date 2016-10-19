@@ -41,7 +41,7 @@ function symbolAria(str) {
     return symbolMap.get(str);
   } else {
     // speak special chars, scheme-style
-    return str.replace("?", "-huh?-").replace("!","-bang-");  
+    return str.replace("?", " huh").replace("!"," bang");  
   }
 }
 
@@ -119,7 +119,7 @@ function parseNode(node) {
       to,
       parseNode(node.name),
       parseNode(node.expr),
-      {'aria-label':node.name.val+': a value definition'}
+      {'aria-label': symbolAria(node.name.val)+': a value definition'}
     );
   } else if (node instanceof structures.defStruct) {
     return new Struct(
@@ -127,7 +127,7 @@ function parseNode(node) {
       to,
       parseNode(node.name),
       node.fields.map(parseNode).filter(item => item != null),
-      {'aria-label':node.name.val+': a structure definition with ' + pluralize('field', node.fields)}
+      {'aria-label':symbolAria(node.name.val)+': a structure definition with ' + pluralize('field', node.fields)}
     );
   } else if (node instanceof structures.defFunc) {
     return new FunctionDefinition(
@@ -136,7 +136,7 @@ function parseNode(node) {
       parseNode(node.name),
       node.args.map(parseNode),
       parseNode(node.body),
-      {'aria-label':node.name.val+': a function definition with '+pluralize('argument', node.args)}
+      {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('argument', node.args)}
     );
   } else if (node instanceof structures.ifExpr) {
     return new IfExpression(
@@ -147,8 +147,7 @@ function parseNode(node) {
       parseNode(node.alternative),
     );
   } else if (node instanceof structures.symbolExpr) {
-    let aria = symbolAria(node.val);
-    return new Literal(from, to, node.val, "symbol", {'aria-label': aria});
+    return new Literal(from, to, node.val, "symbol", {'aria-label': symbolAria(node.val)});
   } else if (node instanceof structures.literal) {
     var dataType = typeof node.val;
     let aria = node.toString();
