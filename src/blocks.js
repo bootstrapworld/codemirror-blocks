@@ -97,14 +97,12 @@ export default class CodeMirrorBlocks {
     this.renderOptions = renderOptions || {};
     this.ast = null;
     this.blockMode = false;
-    this.undoKeys = [];
-    this.redoKeys = [];
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
     this.wrapper = cm.getWrapperElement();
     this.scroller = cm.getScrollerElement();
     this.wrapper.setAttribute("role", "application");
-    this.scroller.setAttribute("role", "combobox");
+    this.scroller.setAttribute("role", "tree");
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
