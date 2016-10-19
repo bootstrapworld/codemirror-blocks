@@ -120,9 +120,7 @@ export class Unknown extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     for (let elt of this.elts) {
-      for (let node of elt) {
-        yield node;
-      }
+      yield* elt;
     }
   }
 
@@ -145,9 +143,7 @@ export class Expression extends ASTNode {
       yield* this.func;
     }
     for (let arg of this.args) {
-      for (let node of arg) {
-        yield node;
-      }
+      yield* arg;
     }
   }
 
