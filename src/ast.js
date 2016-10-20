@@ -11,7 +11,7 @@ function setNavigationPointers(nodes, parent) {
   nodes.forEach((node, i) => {
     node.prevSibling = lastNode;
     node.nextSibling = nodes[i+1];
-    node.parent = parent
+    node.parent = parent;
     lastNode = node;
   });
   if(parent) { parent.firstChild = nodes[0]; }
