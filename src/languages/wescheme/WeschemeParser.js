@@ -40,8 +40,14 @@ function symbolAria(str) {
     // translate simple symbols
     return symbolMap.get(str);
   } else {
-    // speak special chars, scheme-style
-    return str.replace("?", " huh").replace("!"," bang");  
+    // pronounce special chars, scheme-style
+    str = str.replace("?", " huh").replace("!"," bang");
+    // pronounce quotes
+    str = str.replace("\"", " quote");
+    // pronounce braces
+    str = str.replace("(", " open paren").replace(")", " close paren");
+    str = str.replace("[", " open bracket").replace("]", " close bracket");
+    return str;
   }
 }
 
@@ -775,9 +781,10 @@ class WeschemeParser {
 
   getExceptionMessage(e){
     let msg = JSON.parse(e)['dom-message'][2].slice(2);
-    return (msg.every((element) => typeof element==="string"))? msg
+    let txt = (msg.every((element) => typeof element==="string"))? msg
             : (msg[0] instanceof Array)? msg[0][2].substring(msg[0][2].indexOf("read: ")+6)
             : "Check your quotation marks, or any other symbols you've used";
+    return symbolAria(txt);
   }
 }
 

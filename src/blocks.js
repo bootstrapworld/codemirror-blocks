@@ -91,7 +91,7 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm = cm;
-    this.toolbarNode = toolbar;
+    this.toolbarNode = toolbar; 
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
     this.renderOptions = renderOptions || {};
@@ -103,6 +103,11 @@ export default class CodeMirrorBlocks {
     this.scroller = cm.getScrollerElement();
     this.wrapper.setAttribute("role", "application");
     this.scroller.setAttribute("role", "tree");
+    // Add a live region to the wrapper, for error alerts
+    this.ariaError = document.createElement("input");
+    this.ariaError.classList.add("ariaError");
+    this.ariaError.setAttribute("role", "alert");
+    this.wrapper.appendChild(this.ariaError);
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -323,8 +328,12 @@ export default class CodeMirrorBlocks {
       return true;
     } catch (e) {
       nodeEl.classList.add('blocks-error');
+      let errorTxt = this.parser.getExceptionMessage(e);
       try {
-        nodeEl.title = this.parser.getExceptionMessage(e);
+        nodeEl.title = errorTxt;
+        // set the txt to "" for 500ms to get the screen reader to read all changes
+        this.ariaError.setAttribute("value", "");
+        setTimeout(()=>this.ariaError.setAttribute("value", errorTxt), 500);
       } catch (e) {
         console.error(e);
       }
