@@ -104,7 +104,7 @@ describe("The AST Class", function() {
       new Expression(
         {line: 1, ch: 0},
         {line: 1, ch: 9},
-        '+',
+        new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol'),
         [
           new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 11),
           new Literal({line: 1, ch: 6}, {line: 0, ch: 8}, 22)

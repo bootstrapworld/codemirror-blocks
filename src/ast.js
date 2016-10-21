@@ -4,6 +4,18 @@ function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
 
+// given a list of sibling nodes and a parent, assign the parent
+// and sibling pointers
+function setNavigationPointers(nodes, parent) {
+  let lastNode = false;
+  nodes.forEach((node, i) => {
+    node.prevSibling = lastNode;
+    node.nextSibling = nodes[i+1];
+    node.parent = parent;
+    lastNode = node;
+  });
+  if(parent) { parent.firstChild = nodes[0]; }
+}
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
 // required to spit out an `AST` instance.
@@ -22,6 +34,7 @@ export class AST {
 
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
+    setNavigationPointers(this.rootNodes, false);
 
     let lastNode = null;
     for (let rootNode of this.rootNodes) {
@@ -36,6 +49,26 @@ export class AST {
         }
       }
     }
+  }
+
+  // Traversal
+  // The family tree should be navigable via ancestor/sibling
+  // relationships, or via a pre-order walk. If a move is invalid, 
+  // each function returns the current node
+  getNextSibling(node) {
+    return node.nextSibling || node;
+  }
+
+  getPrevSibling(node) {
+    return node.prevSibling || node;
+  }
+
+  getChild(node) {
+    return node.firstChild || node;
+  }
+
+  getParent(node) {
+    return node.parent || node;
   }
 
   getNodeAfter(selection) {
@@ -85,14 +118,13 @@ export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
     super(from, to, 'unknown', options);
     this.elts = elts;
+    setNavigationPointers(this.elts, this);
   }
 
   *[Symbol.iterator]() {
     yield this;
     for (let elt of this.elts) {
-      for (let node of elt) {
-        yield node;
-      }
+      yield* elt;
     }
   }
 
@@ -106,6 +138,7 @@ export class Expression extends ASTNode {
     super(from, to, 'expression', options);
     this.func = func;
     this.args = args;
+    setNavigationPointers([func].concat(args), this);
   }
 
   *[Symbol.iterator]() {
@@ -114,9 +147,7 @@ export class Expression extends ASTNode {
       yield* this.func;
     }
     for (let arg of this.args) {
-      for (let node of arg) {
-        yield node;
-      }
+      yield* arg;
     }
   }
 
@@ -130,6 +161,7 @@ export class Struct extends ASTNode {
     super(from, to, 'struct', options);
     this.name = name;
     this.fields = fields;
+    setNavigationPointers([name].concat(fields), this);
   }
 
   *[Symbol.iterator]() {
@@ -150,12 +182,13 @@ export class VariableDefinition extends ASTNode {
     super(from, to, 'variableDef', options);
     this.name = name;
     this.body = body;
+    setNavigationPointers([name, body], this);
   }
 
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
-    yield this.body;
+    yield* this.body;
   }
 
   toString() {
@@ -169,6 +202,7 @@ export class FunctionDefinition extends ASTNode {
     this.name = name;
     this.args = args;
     this.body = body;
+    setNavigationPointers([name].concat(args).concat([body]), this);
   }
 
   *[Symbol.iterator]() {
@@ -177,7 +211,7 @@ export class FunctionDefinition extends ASTNode {
     for (let node of this.args) {
       yield node;
     }
-    yield this.body;
+    yield* this.body;
   }
 
   toString() {
@@ -191,6 +225,8 @@ export class IfExpression extends ASTNode {
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
+    setNavigationPointers([testExpr, thenExpr, elseExpr], this);
+
   }
 
   *[Symbol.iterator]() {

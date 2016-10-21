@@ -6,7 +6,7 @@ module.exports = function(config) {
   var plugins = [];
   var loaders = [
     {test: /\.handlebars$/, loader: 'handlebars-loader?knownHelpers=renderNode'},
-    {test:/.png$|.jpg$|.jpeg$|.gif$|.svg$/, loader: "url-loader?limit=10000"},
+    {test:/.png$|.jpg$|.jpeg$|.gif$|.svg$|.wav$/, loader: "url-loader?limit=10000"},
     {test:/.woff$|.woff2$/, loader: "url-loader?limit=10000"},
     {test:/.ttf$|.eot$/, loader: "file-loader"},
   ];

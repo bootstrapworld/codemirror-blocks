@@ -5,6 +5,7 @@ import Renderer from './Renderer';
 import * as languages from './languages';
 import * as ui from './ui';
 import merge from './merge';
+var beepSound = require('./beep.wav');
 
 function getLocationFromEl(el) {
   // TODO: it's kind of lame to have line and ch as attributes on random elements.
@@ -33,6 +34,7 @@ function findNearestNodeEl(el) {
   return el;
 }
 
+const BEEP = new Audio(beepSound);  
 const MARKER = Symbol("codemirror-blocks-marker");
 
 export class BlockMarker {
@@ -91,16 +93,23 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm = cm;
-    this.toolbarNode = toolbar;
+    this.toolbarNode = toolbar; 
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
     this.renderOptions = renderOptions || {};
     this.ast = null;
     this.blockMode = false;
-    this.undoKeys = [];
-    this.redoKeys = [];
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
+    this.wrapper = cm.getWrapperElement();
+    this.scroller = cm.getScrollerElement();
+    this.wrapper.setAttribute("role", "application");
+    this.scroller.setAttribute("role", "tree");
+    // Add a live region to the wrapper, for error alerts
+    this.ariaError = document.createElement("input");
+    this.ariaError.classList.add("ariaError");
+    this.ariaError.setAttribute("role", "alert");
+    this.wrapper.appendChild(this.ariaError);
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -108,10 +117,10 @@ export default class CodeMirrorBlocks {
     this.renderer = new Renderer(this.cm, renderOptions);
 
     if (this.language) {
-      this.cm.getWrapperElement().classList.add(`blocks-language-${this.language.id}`);
+      this.wrapper.classList.add(`blocks-language-${this.language.id}`);
     }
     Object.assign(
-      this.cm.getWrapperElement(),
+      this.wrapper,
       {
         onkeydown: this.handleKeyDown.bind(this),
         onclick: this.nodeEventHandler(this.selectNode),
@@ -255,8 +264,9 @@ export default class CodeMirrorBlocks {
 
   selectNode(node, event) {
     event.stopPropagation();
-    node.el.focus();
     this.cm.scrollIntoView(node.from);
+    node.el.focus();
+    this.scroller.setAttribute("aria-activedescendent", node.el.id);
   }
 
   isNodeHidden(node) {
@@ -264,25 +274,13 @@ export default class CodeMirrorBlocks {
       node.el.matches('.blocks-hidden *'));
   }
 
-  _getNextUnhiddenNode({reverse}={}) {
-    let getNextNode = reverse ?
-                      this.ast.getNodeBefore.bind(this.ast) :
-                      this.ast.getNodeAfter.bind(this.ast);
-
+  _getNextUnhiddenNode(nextFn) {
     let nodeOrCursor = this.getSelectedNode() || this.cm.getCursor();
-    let nextNode = getNextNode(nodeOrCursor);
-    while (this.isNodeHidden(nextNode)) {
-      nextNode = getNextNode(nextNode);
+    let nextNode = nextFn(nodeOrCursor);
+    while (nextNode && this.isNodeHidden(nextNode)) {
+      nextNode = nextFn(nextNode);
     }
-    return nextNode;
-  }
-
-  selectNextNode(event) {
-    this.selectNode(this._getNextUnhiddenNode(), event);
-  }
-
-  selectPrevNode(event) {
-    this.selectNode(this._getNextUnhiddenNode({reverse: true}), event);
+    return nextNode || nodeOrCursor;
   }
 
   handleCopyCut(event) {
@@ -332,8 +330,12 @@ export default class CodeMirrorBlocks {
       return true;
     } catch (e) {
       nodeEl.classList.add('blocks-error');
+      let errorTxt = this.parser.getExceptionMessage(e);
       try {
-        nodeEl.title = this.parser.getExceptionMessage(e);
+        nodeEl.title = errorTxt;
+        // set the txt to "" for 500ms to get the screen reader to read all changes
+        this.ariaError.setAttribute("value", "");
+        setTimeout(()=>this.ariaError.setAttribute("value", errorTxt), 500);
       } catch (e) {
         console.error(e);
       }
@@ -551,8 +553,8 @@ export default class CodeMirrorBlocks {
     let cur  = this.cm.getCursor();
     let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
     let ast  = this.parser.parse(ws + "x");               // make a fake literal
-    let node = ast.rootNodes[0];                          // get its node
-    this.renderer.render(node, this.cm, this.renderOptions || {});      // render the DOM element
+    let node = ast.rootNodes[0];                          // get its node and render it
+    this.renderer.render(node, this.cm, this.renderOptions || {});
     node.el.innerText = text;                             // replace "x" with the real string
     node.to.ch = node.from.ch;                            // force the width to be zero
     let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
@@ -563,16 +565,30 @@ export default class CodeMirrorBlocks {
   handleKeyDown(event) {
     let keyName = CodeMirror.keyName(event);
     let selectedNode = this.getSelectedNode();
-    // Enter and Backspace behave differently if a node is selected
-    if (keyName == "Enter" && selectedNode &&
+    let arrowHandlers = {
+      Up:   this.ast.getParent, 
+      Down: this.ast.getChild, 
+      Left: this.ast.getPrevSibling,
+      Right:this.ast.getNextSibling
+    };
+    // Arrows, Enter and Backspace behave differently if a node is selected
+    if(arrowHandlers[keyName] && selectedNode) {
+      let searchFn = arrowHandlers[keyName].bind(this.ast);
+      let nextNode = this._getNextUnhiddenNode(searchFn);
+      if(nextNode === selectedNode){ BEEP.play(); }
+      this.selectNode(nextNode, event);
+    } else if (keyName == "Enter" && selectedNode &&
         ["literal", "blank"].includes(selectedNode.type)) {
       this.editLiteral(selectedNode, event);
     } else if (keyName == "Backspace" && selectedNode) {
       this.deleteSelectedNodes();
-    } else if (keyName == "Tab") {
-      this.selectNextNode(event);
-    } else if (keyName == "Shift-Tab") {
-      this.selectPrevNode(event);
+    // Tab and Shift-Tab work no matter what
+    } else if (keyName === "Tab") {
+      let searchFn = this.ast.getNodeAfter.bind(this.ast);
+      this.selectNode(this._getNextUnhiddenNode(searchFn), event);
+    } else if (keyName === "Shift-Tab") {
+      let searchFn = this.ast.getNodeBefore.bind(this.ast);
+      this.selectNode(this._getNextUnhiddenNode(searchFn), event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
