@@ -57,7 +57,7 @@ function expressionAria(func, args) {
 }
 
 function pluralize(noun, set) {
-  return set.length + ' ' + noun + (set.length!=1? 's' : '');
+  return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
 function parseNode(node) {
