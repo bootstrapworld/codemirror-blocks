@@ -40,9 +40,9 @@ To get your dev environment up and running, follow these steps
 
 1. Checkout the repository in your favorite manner
 
-2. install dependencies with npm
+2. install dependencies with [yarn](https://yarnpkg.com/)
 
-        npm install
+        yarn
 
 3. start the webpack development server:
 
