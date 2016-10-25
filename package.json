@@ -4,7 +4,7 @@
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "lib/codemirror-blocks.js",
   "engines": {
-    "node": "5.x",
+    "node": "6.x",
     "npm": "3.x"
   },
   "dependencies": {
