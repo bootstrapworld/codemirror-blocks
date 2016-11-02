@@ -20,6 +20,8 @@ export default class Renderer {
       functionDef: require('./templates/functionDef.handlebars'),
       variableDef: require('./templates/variableDef.handlebars'),
       ifExpression: require('./templates/ifExpression.handlebars'),
+      condExpression: require('./templates/condExpression.handlebars'),
+      condClause: require('./templates/condClause.handlebars'),
       struct: require('./templates/struct.handlebars'),
       literal: require('./templates/literal.handlebars'),
       comment: require('./templates/comment.handlebars'),
