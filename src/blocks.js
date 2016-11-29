@@ -563,6 +563,7 @@ export default class CodeMirrorBlocks {
   }
 
   handleKeyDown(event) {
+    if(!this.blockMode) return;                           // bail if mode==false
     let keyName = CodeMirror.keyName(event);
     let selectedNode = this.getSelectedNode();
     let arrowHandlers = {
