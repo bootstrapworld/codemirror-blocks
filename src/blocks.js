@@ -37,7 +37,7 @@ function findNearestNodeEl(el) {
 const BEEP = new Audio(beepSound);
 function playBeep() {
   BEEP.pause();
-  BEEP.currentTime = 0
+  BEEP.currentTime = 0;
   BEEP.play();
 }
 
@@ -172,7 +172,6 @@ export default class CodeMirrorBlocks {
   }
 
   setBlockMode(mode) {
-    console.log(mode);
     if (mode === this.blockMode) {
       return;
     } else {

@@ -8,22 +8,22 @@ function comparePos(a, b) {
 // and sibling pointers
 function setChildAttributes(nodes, parent) {
   let lastNode = false;
-  let depth = (parent? parent.depth+1 : 1); // if parent=false, depth=1
+  let level = (parent? parent.level+1 : 1); // if parent=false, depth=1
   nodes.forEach((node, i) => {
     node.prevSibling= lastNode;
     node.nextSibling= nodes[i+1];
     node.parent     = parent;
     node.setSize    = nodes.length; // track aria-setsize
     node.posInSet   = i+1;          // track aria-posinset: position in set is 1-indexed, NOT 0-indexed
-    node.depth      = depth;        // track aria-depth
+    node.level      = level;        // track aria-level
     lastNode        = node;
   });
   if(parent) { parent.firstChild = nodes[0]; }
   
   // have each child initialize itself
   nodes.forEach(node => {
-    var children = node.getChildren();
-    if(children) { setChildAttributes(children, node); }
+    var children = [...node].slice(1); // the first elt is always the parent
+    if(children.length > 1) { setChildAttributes(children, node); }
   });
 }
 
@@ -129,10 +129,6 @@ export class Unknown extends ASTNode {
     this.elts = elts;
   }
 
-  getChildren() {
-    return this.elts;
-  }
-
   *[Symbol.iterator]() {
     yield this;
     for (let elt of this.elts) {
@@ -152,17 +148,13 @@ export class Expression extends ASTNode {
     this.args = args;
   }
 
-  getChildren() {
-    return [this.func].concat(this.args);
-  }
-
   *[Symbol.iterator]() {
     yield this;
     if (this.func instanceof ASTNode) {
-      yield* this.func;
+      yield this.func;
     }
     for (let arg of this.args) {
-      yield* arg;
+      yield arg;
     }
   }
 
@@ -176,10 +168,6 @@ export class Struct extends ASTNode {
     super(from, to, 'struct', options);
     this.name = name;
     this.fields = fields;
-  }
-
-  getChildren() {
-    return [this.name].concat(this.fields);
   }
 
   *[Symbol.iterator]() {
@@ -202,14 +190,10 @@ export class VariableDefinition extends ASTNode {
     this.body = body;
   }
 
-  getChildren() {
-    return [this.name, this.body];
-  }
-
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
-    yield* this.body;
+    yield this.body;
   }
 
   toString() {
@@ -225,17 +209,13 @@ export class FunctionDefinition extends ASTNode {
     this.body = body;
   }
 
-  getChildren() {
-    return [this.name].concat(this.args).concat([this.body]);
-  }
-
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
     for (let node of this.args) {
       yield node;
     }
-    yield* this.body;
+    yield this.body;
   }
 
   toString() {
@@ -249,10 +229,6 @@ export class IfExpression extends ASTNode {
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
-  }
-
-  getChildren() {
-    return [this.testExpr, this.thenExpr, this.elseExpr];
   }
 
   *[Symbol.iterator]() {
@@ -274,10 +250,6 @@ export class Literal extends ASTNode {
     this.dataType = dataType;
   }
 
-  getChildren() {
-    return false; 
-  }
-
   *[Symbol.iterator]() {
     yield this;
   }
@@ -291,10 +263,6 @@ export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
     super(from, to, 'comment', options);
     this.comment = comment;
-  }
-
-  getChildren() {
-    return false; 
   }
 
   *[Symbol.iterator]() {
@@ -315,10 +283,6 @@ export class Blank extends ASTNode {
 
   initializeChildAttributes(){
     this.depth = this.parent.depth + 1;
-  }
-
-  getChildren() { 
-    return false; 
   }
 
   *[Symbol.iterator]() {
