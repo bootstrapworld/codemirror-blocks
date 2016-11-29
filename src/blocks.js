@@ -34,7 +34,13 @@ function findNearestNodeEl(el) {
   return el;
 }
 
-const BEEP = new Audio(beepSound);  
+const BEEP = new Audio(beepSound);
+function playBeep() {
+  BEEP.pause();
+  BEEP.currentTime = 0
+  BEEP.play();
+}
+
 const MARKER = Symbol("codemirror-blocks-marker");
 
 export class BlockMarker {
@@ -104,7 +110,6 @@ export default class CodeMirrorBlocks {
     this.wrapper = cm.getWrapperElement();
     this.scroller = cm.getScrollerElement();
     this.wrapper.setAttribute("role", "application");
-    this.scroller.setAttribute("role", "tree");
     // Add a live region to the wrapper, for error alerts
     this.ariaError = document.createElement("input");
     this.ariaError.classList.add("ariaError");
@@ -167,10 +172,13 @@ export default class CodeMirrorBlocks {
   }
 
   setBlockMode(mode) {
+    console.log(mode);
     if (mode === this.blockMode) {
       return;
     } else {
       this.blockMode = mode;
+      if(mode) { this.scroller.setAttribute("role", "tree"); }
+      else { this.scroller.removeAttribute("role"); }
       if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
       this.renderer.animateTransition(this.ast, mode);
     }
@@ -567,16 +575,16 @@ export default class CodeMirrorBlocks {
     let keyName = CodeMirror.keyName(event);
     let selectedNode = this.getSelectedNode();
     let arrowHandlers = {
-      Up:   this.ast.getParent, 
-      Down: this.ast.getChild, 
-      Left: this.ast.getPrevSibling,
-      Right:this.ast.getNextSibling
+      Left:  this.ast.getParent, 
+      Right: this.ast.getChild, 
+      Up:    this.ast.getPrevSibling,
+      Down:  this.ast.getNextSibling
     };
     // Arrows, Enter and Backspace behave differently if a node is selected
     if(arrowHandlers[keyName] && selectedNode) {
       let searchFn = arrowHandlers[keyName].bind(this.ast);
       let nextNode = this._getNextUnhiddenNode(searchFn);
-      if(nextNode === selectedNode){ BEEP.play(); }
+      if(nextNode === selectedNode){ playBeep(); }
       this.selectNode(nextNode, event);
     } else if (keyName == "Enter" && selectedNode &&
         ["literal", "blank"].includes(selectedNode.type)) {
