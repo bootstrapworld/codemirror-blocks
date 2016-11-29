@@ -224,7 +224,7 @@ export class CondClause extends ASTNode {
     super(from, to, 'condClause', options);
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
-    setNavigationPointers([testExpr, ...thenExprs], this)
+    setNavigationPointers([testExpr, ...thenExprs], this);
   }
 
   *[Symbol.iterator]() {
@@ -242,7 +242,7 @@ export class CondExpression extends ASTNode {
   constructor(from, to, clauses, options={}) {
     super(from, to, 'condExpression', options);
     this.clauses = clauses;
-    setNavigationPointers(clauses, this)
+    setNavigationPointers(clauses, this);
   }
 
   *[Symbol.iterator]() {
