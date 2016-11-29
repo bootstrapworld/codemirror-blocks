@@ -147,7 +147,7 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
-  fdescribe("when parsing cond expressions,", function() {
+  describe("when parsing cond expressions,", function() {
     beforeEach(function() {
       this.ast = this.parser.parse(`
 (cond
@@ -253,10 +253,6 @@ describe("The WeScheme Parser,", function() {
     });
     it("should ignore unquoteSplice", function() {
       this.ast = this.parser.parse('`#(1 ,@(list 1 \'2) 4)');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
-    it("should ignore condExpr", function() {
-      this.ast = this.parser.parse('(cond [true 1] [false 2])');
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore caseExpr", function() {
