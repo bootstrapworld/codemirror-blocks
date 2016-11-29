@@ -26,6 +26,25 @@ var cm2 = CodeMirror.fromTextArea(
  }
 );
 
+var focusCarousel = [cm, cm2, document.getElementById("mode")];
+var currentFocusId = null;
+document.addEventListener("keydown", function(e){
+  var mode = document.getElementById("mode");
+  if(e.key == "F6") {
+    if(currentFocusId === "code"){
+      currentFocusId = e.shiftKey? "mode" : "code2";
+      (e.shiftKey? mode : cm2).focus();
+    } else if(currentFocusId === "code2"){
+      currentFocusId = e.shiftKey? "code" : "mode";
+      (e.shiftKey? cm : mode).focus();
+    } else {
+      currentFocusId = e.shiftKey? "code2" : "code";
+      (e.shiftKey? cm2 : cm).focus();
+    } 
+  }
+});
+
+
 var code = require('./ast-test.rkt');
 //var code = require('./cow-game.rkt');
 //var code = "(sum (+   (- 1 2)  3)\n (*  3  4)\n (/ 5 6))\n(product 5 6 7)"

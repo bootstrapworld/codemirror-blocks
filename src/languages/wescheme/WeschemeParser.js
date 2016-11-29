@@ -174,13 +174,13 @@ function parseNode(node) {
     let aria = node.toString();
     if (types.isString(node.val)) {
       dataType = "string";
-      aria = `string ${node.val}`;
+      aria = `${node.val}, a String`;
     } else if (types.isChar(node.val)) {
       dataType = "character";
-      aria = `character ${node.val.val}`;
+      aria = `${node.val.val}, a Character`;
     } else if (node.val === types.FALSE || node.val === types.TRUE) {
       dataType = "boolean";
-      aria = `${node.val}`;
+      aria = `${node.val}, a Boolean`;
     }
     return new Literal(from, to, node, dataType, {'aria-label':aria});
   } else if (node instanceof structures.comment) {

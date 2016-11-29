@@ -282,12 +282,12 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should make boolean values be set to 'true' or 'false'", function() {
-      expect(this.parser.parse('#t').rootNodes[0].options['aria-label']).toBe('true');
+      expect(this.parser.parse('#t').rootNodes[0].options['aria-label']).toBe('true, a Boolean');
     });
 
     it("should make string values be set to 'string '+the contents of the string", function() {
       expect(this.parser.parse('"hello"').rootNodes[0].options['aria-label'])
-                 .toBe('string hello');
+                 .toBe('hello, a String');
     });
 
     it("should make expression (print 'hello') into 'print expression, 1 argument'", function() {
