@@ -37,7 +37,7 @@ function findNearestNodeEl(el) {
 const BEEP = new Audio(beepSound);
 function playBeep() {
   BEEP.pause();
-  BEEP.currentTime = 0;
+  if(BEEP.readyState > 0){ BEEP.currentTime = 0; }
   BEEP.play();
 }
 
