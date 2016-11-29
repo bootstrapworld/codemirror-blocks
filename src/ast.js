@@ -6,15 +6,25 @@ function comparePos(a, b) {
 
 // given a list of sibling nodes and a parent, assign the parent
 // and sibling pointers
-function setNavigationPointers(nodes, parent) {
+function setChildAttributes(nodes, parent) {
   let lastNode = false;
+  let depth = (parent? parent.depth+1 : 1); // if parent=false, depth=1
   nodes.forEach((node, i) => {
-    node.prevSibling = lastNode;
-    node.nextSibling = nodes[i+1];
-    node.parent = parent;
-    lastNode = node;
+    node.prevSibling= lastNode;
+    node.nextSibling= nodes[i+1];
+    node.parent     = parent;
+    node.setSize    = nodes.length; // track aria-setsize
+    node.posInSet   = i+1;          // track aria-posinset: position in set is 1-indexed, NOT 0-indexed
+    node.depth      = depth;        // track aria-depth
+    lastNode        = node;
   });
   if(parent) { parent.firstChild = nodes[0]; }
+  
+  // have each child initialize itself
+  nodes.forEach(node => {
+    var children = node.getChildren();
+    if(children) { setChildAttributes(children, node); }
+  });
 }
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
@@ -23,7 +33,6 @@ export class AST {
   constructor(rootNodes) {
 
     // the `nodeMap` attribute can be used to look up nodes by their id.
-
     this.nodeMap = new Map();
 
     // the `rootNodes` attribute simply contains a list of the top level nodes
@@ -34,7 +43,7 @@ export class AST {
 
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
-    setNavigationPointers(this.rootNodes, false);
+    setChildAttributes(this.rootNodes, false);
 
     let lastNode = null;
     for (let rootNode of this.rootNodes) {
@@ -118,7 +127,10 @@ export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
     super(from, to, 'unknown', options);
     this.elts = elts;
-    setNavigationPointers(this.elts, this);
+  }
+
+  getChildren() {
+    return this.elts;
   }
 
   *[Symbol.iterator]() {
@@ -138,7 +150,10 @@ export class Expression extends ASTNode {
     super(from, to, 'expression', options);
     this.func = func;
     this.args = args;
-    setNavigationPointers([func].concat(args), this);
+  }
+
+  getChildren() {
+    return [this.func].concat(this.args);
   }
 
   *[Symbol.iterator]() {
@@ -161,7 +176,10 @@ export class Struct extends ASTNode {
     super(from, to, 'struct', options);
     this.name = name;
     this.fields = fields;
-    setNavigationPointers([name].concat(fields), this);
+  }
+
+  getChildren() {
+    return [this.name].concat(this.fields);
   }
 
   *[Symbol.iterator]() {
@@ -182,7 +200,10 @@ export class VariableDefinition extends ASTNode {
     super(from, to, 'variableDef', options);
     this.name = name;
     this.body = body;
-    setNavigationPointers([name, body], this);
+  }
+
+  getChildren() {
+    return [this.name, this.body];
   }
 
   *[Symbol.iterator]() {
@@ -202,7 +223,10 @@ export class FunctionDefinition extends ASTNode {
     this.name = name;
     this.args = args;
     this.body = body;
-    setNavigationPointers([name].concat(args).concat([body]), this);
+  }
+
+  getChildren() {
+    return [this.name].concat(this.args).concat([this.body]);
   }
 
   *[Symbol.iterator]() {
@@ -225,8 +249,10 @@ export class IfExpression extends ASTNode {
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
-    setNavigationPointers([testExpr, thenExpr, elseExpr], this);
+  }
 
+  getChildren() {
+    return [this.testExpr, this.thenExpr, this.elseExpr];
   }
 
   *[Symbol.iterator]() {
@@ -248,6 +274,10 @@ export class Literal extends ASTNode {
     this.dataType = dataType;
   }
 
+  getChildren() {
+    return false; 
+  }
+
   *[Symbol.iterator]() {
     yield this;
   }
@@ -261,6 +291,10 @@ export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
     super(from, to, 'comment', options);
     this.comment = comment;
+  }
+
+  getChildren() {
+    return false; 
   }
 
   *[Symbol.iterator]() {
@@ -277,6 +311,14 @@ export class Blank extends ASTNode {
     super(from, to, 'blank', options);
     this.value = value;
     this.dataType = dataType;
+  }
+
+  initializeChildAttributes(){
+    this.depth = this.parent.depth + 1;
+  }
+
+  getChildren() { 
+    return false; 
   }
 
   *[Symbol.iterator]() {
