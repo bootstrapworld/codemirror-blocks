@@ -147,6 +147,34 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
+  describe("when parsing cond expressions,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse(`
+(cond
+   [(positive? -5) (error "doesn't get here")]
+   [(zero? -5) (error "doesn't get here, either")]
+   [(positive? 5) #t])
+`
+      );
+    });
+
+    it("should convert condExpr to condExpression", function() {
+      expect(this.ast.rootNodes[0].type).toBe('condExpression');
+    });
+
+    it("should convert the clauses correctly", function() {
+      const clauses = this.ast.rootNodes[0].clauses;
+      expect(clauses.length).toBe(3);
+      expect(clauses[0].type).toBe('condClause');
+    });
+
+    it("should have a sane toString method", function() {
+      expect(this.ast.rootNodes[0].toString()).toEqual(
+        `(cond [(positive? -5) (error "doesn't get here")] [(zero? -5) (error "doesn't get here, either")] [(positive? 5) #t])`
+      );
+    });
+  });
+
   describe("when parsing if definitions,", function() {
     beforeEach(function() {
       this.ast = this.parser.parse('(if (> 0 1) x y)');
@@ -227,10 +255,6 @@ describe("The WeScheme Parser,", function() {
       this.ast = this.parser.parse('`#(1 ,@(list 1 \'2) 4)');
       expect(this.ast.rootNodes.length).toBe(0);
     });
-    it("should ignore condExpr", function() {
-      this.ast = this.parser.parse('(cond [true 1] [false 2])');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
     it("should ignore caseExpr", function() {
       this.ast = this.parser.parse('(case 9 [(1) "a"])');
       console.log(this.ast.rootNodes[0]);
@@ -284,9 +308,9 @@ describe("The WeScheme Parser,", function() {
       expect(this.parser.parse('(foo? 0)').rootNodes[0].options['aria-label'])
                  .toBe('foo huh expression, 1 argument');
       expect(this.parser.parse('(set! x 2)').rootNodes[0].options['aria-label'])
-                 .toBe('set bang expression, 2 arguments');                 
+                 .toBe('set bang expression, 2 arguments');
       expect(this.parser.parse('#(1 2)').rootNodes[0].options['aria-label'])
-                 .toBe('vector expression, 2 arguments');                 
+                 .toBe('vector expression, 2 arguments');
     });
   });
 

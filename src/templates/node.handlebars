@@ -1,1 +1,1 @@
-<span class="blocks-node blocks-{{type}}" tabindex="1" role="treeitem" aria-label="{{node.options.aria-label}}" id="block-node-{{node.id}}">{{> @partial-block}}</span>
+<{{#if tag}}{{tag}}{{else}}span{{/if}} class="blocks-node blocks-{{type}}" tabindex="1" role="treeitem" aria-label="{{node.options.aria-label}}" id="block-node-{{node.id}}">{{> @partial-block}}</{{#if tag}}{{tag}}{{else}}span{{/if}}>

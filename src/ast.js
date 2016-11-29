@@ -53,7 +53,7 @@ export class AST {
 
   // Traversal
   // The family tree should be navigable via ancestor/sibling
-  // relationships, or via a pre-order walk. If a move is invalid, 
+  // relationships, or via a pre-order walk. If a move is invalid,
   // each function returns the current node
   getNextSibling(node) {
     return node.nextSibling || node;
@@ -216,6 +216,48 @@ export class FunctionDefinition extends ASTNode {
 
   toString() {
     return `(define (${this.name} ${this.args.join(' ')}) ${this.body})`;
+  }
+}
+
+export class CondClause extends ASTNode {
+  constructor(from, to, testExpr, thenExprs, options={}) {
+    super(from, to, 'condClause', options);
+    this.testExpr = testExpr;
+    this.thenExprs = thenExprs;
+    setNavigationPointers([testExpr, ...thenExprs], this);
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    yield this.testExpr;
+    yield* this.thenExprs;
+  }
+
+  toString() {
+    return `[${this.testExpr} ${this.thenExprs.join(' ')}]`;
+  }
+}
+
+export class CondExpression extends ASTNode {
+  constructor(from, to, clauses, options={}) {
+    super(from, to, 'condExpression', options);
+    this.clauses = clauses;
+    setNavigationPointers(clauses, this);
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    yield* this.clauses;
+  }
+
+  // TODO: ditch this and fix condExpression.handlebars to look this up itself.
+  get firstClause() {
+    return this.clauses[0];
+  }
+
+  toString() {
+    const clauses = this.clauses.map(c => c.toString()).join(' ');
+    return `(cond ${clauses})`;
   }
 }
 

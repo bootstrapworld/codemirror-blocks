@@ -1,0 +1,10 @@
+{{#> node type="condClause" tag="tr"}}
+<td class="blocks-cond-predicate">
+  {{{renderNode node.testExpr}}}
+</td>
+<td class="blocks-cond-result">
+  {{#each node.thenExprs}}
+  {{{renderNode this}}}
+  {{/each}}
+</td>
+{{/node}}

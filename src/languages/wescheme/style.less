@@ -25,6 +25,7 @@
   .blocks-variableDef,
   .blocks-expression,
   .blocks-ifExpression,
+  .blocks-condExpression,
   .blocks-unknown {
     display: inline-flex;
     flex-direction: column;
@@ -42,6 +43,7 @@
     cursor: -webkit-grab;
   }
 
+  .blocks-condExpression,
   .blocks-ifExpression {
     border-radius: 0px;
     background: white;
@@ -50,6 +52,17 @@
     }
     > .blocks-cond-table {
       margin: 5px;
+      .blocks-cond-drop-row {
+        .blocks-white-space {
+          display: block;
+        }
+      }
+      .blocks-condClause {
+        border: @border-width solid transparent;
+        &:focus {
+          border-color: @editing-border-color;
+        }
+      }
       .blocks-cond-row {
         border-top: 1px solid #aaa;
         > .blocks-cond-predicate {
