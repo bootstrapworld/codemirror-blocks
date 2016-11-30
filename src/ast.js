@@ -11,7 +11,7 @@ function setChildAttributes(nodes, parent) {
   let level = (parent? parent.level+1 : 1); // if parent=false, depth=1
   nodes.forEach((node, i) => {
     node.prevSibling= lastNode;
-    node.nextSibling= nodes[i+1];
+    node.nextSibling= nodes[i+1] || false;
     node.parent     = parent;
     node.setSize    = nodes.length; // track aria-setsize
     node.posInSet   = i+1;          // track aria-posinset: position in set is 1-indexed, NOT 0-indexed

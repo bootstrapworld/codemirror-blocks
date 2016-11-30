@@ -38,7 +38,8 @@ const BEEP = new Audio(beepSound);
 function playBeep() {
   BEEP.pause();
   if(BEEP.readyState > 0){ BEEP.currentTime = 0; }
-  BEEP.play();
+  // From https://stackoverflow.com/questions/36803176/how-to-prevent-the-play-request-was-interrupted-by-a-call-to-pause-error
+  setTimeout(function () { BEEP.play(); }, 150);
 }
 
 const MARKER = Symbol("codemirror-blocks-marker");
@@ -111,10 +112,10 @@ export default class CodeMirrorBlocks {
     this.scroller = cm.getScrollerElement();
     this.wrapper.setAttribute("role", "application");
     // Add a live region to the wrapper, for error alerts
-    this.ariaError = document.createElement("input");
-    this.ariaError.classList.add("ariaError");
-    this.ariaError.setAttribute("role", "alert");
-    this.wrapper.appendChild(this.ariaError);
+    this.announcements = document.createElement("span");
+    this.announcements.setAttribute("role", "log");
+    this.announcements.setAttribute("aria-live", "additions");
+    this.wrapper.appendChild(this.announcements);
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -169,6 +170,12 @@ export default class CodeMirrorBlocks {
 
   emit(event, ...args) {
     this.events.emit(event, ...args);
+  }
+
+  say(text){
+    let announcement = document.createTextNode(text);
+    this.announcements.appendChild(announcement);
+    setTimeout(() => this.announcements.removeChild(announcement), 500);
   }
 
   setBlockMode(mode) {
@@ -270,6 +277,10 @@ export default class CodeMirrorBlocks {
   }
 
   selectNode(node, event) {
+    let selectedNode = this.getSelectedNode();
+    if(node == selectedNode){
+        this.say(node.el.getAttribute("aria-label"));
+    }
     event.stopPropagation();
     this.cm.scrollIntoView(node.from);
     node.el.focus();
@@ -340,9 +351,7 @@ export default class CodeMirrorBlocks {
       let errorTxt = this.parser.getExceptionMessage(e);
       try {
         nodeEl.title = errorTxt;
-        // set the txt to "" for 500ms to get the screen reader to read all changes
-        this.ariaError.setAttribute("value", "");
-        setTimeout(()=>this.ariaError.setAttribute("value", errorTxt), 500);
+        this.say(errorTxt);
       } catch (e) {
         console.error(e);
       }
