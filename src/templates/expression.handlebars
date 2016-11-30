@@ -1,4 +1,5 @@
 {{#> node type="expression"}}
+<div role="group">
 <span class="blocks-operator">{{{renderNode node.func}}}</span>
 <span class="blocks-args">
   {{#if node.args.length}}
@@ -10,5 +11,6 @@
   {{{renderNode this}}}
   {{> drop-target location=this.to}}
   {{/each}}
+</div>
 </span>
 {{/node}}

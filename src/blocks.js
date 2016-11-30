@@ -277,8 +277,7 @@ export default class CodeMirrorBlocks {
   }
 
   selectNode(node, event) {
-    let selectedNode = this.getSelectedNode();
-    if(node == selectedNode){
+    if(node == this.getSelectedNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
     event.stopPropagation();

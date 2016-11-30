@@ -13,9 +13,9 @@ function setChildAttributes(nodes, parent) {
     node.prevSibling= lastNode;
     node.nextSibling= nodes[i+1] || false;
     node.parent     = parent;
-    node.setSize    = nodes.length; // track aria-setsize
-    node.posInSet   = i+1;          // track aria-posinset: position in set is 1-indexed, NOT 0-indexed
-    node.level      = level;        // track aria-level
+    //node.setSize    = nodes.length; // track aria-setsize
+    //node.posInSet   = i+1;          // track aria-posinset: position in set is 1-indexed, NOT 0-indexed
+    //node.level      = level;        // track aria-level
     lastNode        = node;
   });
   if(parent) { parent.firstChild = nodes[0]; }
