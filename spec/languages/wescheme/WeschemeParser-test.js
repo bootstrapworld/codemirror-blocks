@@ -147,6 +147,26 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
+  describe("when parsing lambda expressions,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse(`(lambda (x y) (+ x y))`);
+    });
+
+    it("should convert lambdaExpr to lambdaExpression", function() {
+      expect(this.ast.rootNodes[0].type).toBe('lambdaExpression');
+    });
+
+    it("should convert the arguments correctly", function() {
+      expect(this.ast.rootNodes[0].args.length).toBe(2);
+      expect(this.ast.rootNodes[0].args[0].value).toBe('x');
+      expect(this.ast.rootNodes[0].args[1].value).toBe('y');
+    });
+
+    it("should convert the body correctly", function() {
+      expect(this.ast.rootNodes[0].body.type).toBe('expression');
+    });
+  });
+
   describe("when parsing cond expressions,", function() {
     beforeEach(function() {
       this.ast = this.parser.parse(`
@@ -205,10 +225,6 @@ describe("The WeScheme Parser,", function() {
 
     it("should ignore defVars", function() {
       this.ast = this.parser.parse('(define-values (a b c) (1 2 3))');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
-    it("should ignore lambdaExpr", function() {
-      this.ast = this.parser.parse('(lambda (x) (x x))');
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore localExpr", function() {

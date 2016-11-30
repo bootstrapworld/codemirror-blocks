@@ -18,6 +18,7 @@ export default class Renderer {
       unknown: require('./templates/unknown.handlebars'),
       expression: require('./templates/expression.handlebars'),
       functionDef: require('./templates/functionDef.handlebars'),
+      lambdaExpression: require('./templates/lambdaExpression.handlebars'),
       variableDef: require('./templates/variableDef.handlebars'),
       ifExpression: require('./templates/ifExpression.handlebars'),
       condExpression: require('./templates/condExpression.handlebars'),

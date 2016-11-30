@@ -196,6 +196,27 @@ export class VariableDefinition extends ASTNode {
   }
 }
 
+export class LambdaExpression extends ASTNode {
+  constructor(from, to, args, body, options={}) {
+    super(from, to, 'lambdaExpression', options);
+    this.args = args;
+    this.body = body;
+    setNavigationPointers([...args, body], this);
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    for (let node of this.args) {
+      yield node;
+    }
+    yield* this.body;
+  }
+
+  toString() {
+    return `(lambda (${this.args.join(' ')}) ${this.body})`;
+  }
+}
+
 export class FunctionDefinition extends ASTNode {
   constructor(from, to, name, args, body, options={}) {
     super(from, to, 'functionDef', options);
