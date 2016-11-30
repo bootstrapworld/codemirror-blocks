@@ -1,5 +1,6 @@
 .blocks-language-wescheme {
   @border-radius: 5px;
+  @large-border-radius: 15px;
   @border-width: 3px;
 
   // Colors:
@@ -22,6 +23,7 @@
 
   .blocks-struct,
   .blocks-functionDef,
+  .blocks-lambdaExpression,
   .blocks-variableDef,
   .blocks-expression,
   .blocks-ifExpression,
@@ -41,6 +43,10 @@
     cursor: grab;
     cursor: -moz-grab;
     cursor: -webkit-grab;
+  }
+
+  .blocks-lambdaExpression {
+    border-radius: @large-border-radius @large-border-radius 0px 0px;
   }
 
   .blocks-condExpression,

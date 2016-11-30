@@ -6,6 +6,7 @@ import {
   FunctionDefinition,
   IfExpression,
   CondExpression,
+  LambdaExpression,
   CondClause,
   Comment,
   VariableDefinition,
@@ -145,6 +146,14 @@ function parseNode(node) {
       node.args.map(parseNode),
       parseNode(node.body),
       {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('argument', node.args)}
+    );
+  } else if (node instanceof structures.lambdaExpr) {
+    return new LambdaExpression(
+      from,
+      to,
+      node.args.map(parseNode),
+      parseNode(node.body),
+      {'aria-label':'a lambda definition with '+pluralize('argument', node.args)}
     );
   } else if (node instanceof structures.condExpr) {
     return new CondExpression(

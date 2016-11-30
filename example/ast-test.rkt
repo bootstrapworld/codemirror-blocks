@@ -16,6 +16,9 @@ quuz   ; symbol
    [(zero? -5) (error "doesn't get here, either")]
    [(positive? 5) #t])
 
+; we can have lambda expressions
+(lambda (x y) (+ x y))
+
 ; we can define a variable or two
 (define FIRST-NAME "John")
 (define LAST-NAME "Doe")
