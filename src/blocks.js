@@ -110,6 +110,7 @@ export default class CodeMirrorBlocks {
     this.events = ee({});
     this.wrapper = cm.getWrapperElement();
     this.wrapper.setAttribute("role", "tree");
+    this.wrapper.setAttribute("aria-label", "Text E");
     this.scroller = cm.getScrollerElement();
     this.scroller.setAttribute("role", "group");
     // Add a live region to the wrapper, for error alerts
@@ -184,8 +185,8 @@ export default class CodeMirrorBlocks {
       return;
     } else {
       this.blockMode = mode;
-      if(mode) { this.scroller.setAttribute("role", "tree"); }
-      else { this.scroller.removeAttribute("role"); }
+      if(mode) { this.wrapper.setAttribute("role", "tree"); }
+      else { this.wrapper.removeAttribute("role"); }
       if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
       this.renderer.animateTransition(this.ast, mode);
     }
