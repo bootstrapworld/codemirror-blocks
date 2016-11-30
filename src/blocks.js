@@ -109,8 +109,9 @@ export default class CodeMirrorBlocks {
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
     this.wrapper = cm.getWrapperElement();
+    this.wrapper.setAttribute("role", "tree");
     this.scroller = cm.getScrollerElement();
-    this.wrapper.setAttribute("role", "application");
+    this.scroller.setAttribute("role", "group");
     // Add a live region to the wrapper, for error alerts
     this.announcements = document.createElement("span");
     this.announcements.setAttribute("role", "log");
