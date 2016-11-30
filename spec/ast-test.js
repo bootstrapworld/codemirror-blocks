@@ -77,15 +77,12 @@ describe("The Expression Class", function() {
     expect(expression.options).toEqual({'aria-label':'+ expression'});
   });
 
-  it("should return itself and all sub-nodes when iterated over", function() {
+  it("should return only itself and it's children when iterated over", function() {
     expect([...nestedExpression]).toEqual([
       nestedExpression,
       nestedExpression.func,
       nestedExpression.args[0],
-      nestedExpression.args[1],
-      nestedExpression.args[1].func,
-      nestedExpression.args[1].args[0],
-      nestedExpression.args[1].args[1]
+      nestedExpression.args[1]
     ]);
   });
 
