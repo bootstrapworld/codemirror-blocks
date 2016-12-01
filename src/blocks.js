@@ -39,7 +39,7 @@ function playBeep() {
   BEEP.pause();
   if(BEEP.readyState > 0){ BEEP.currentTime = 0; }
   // From https://stackoverflow.com/questions/36803176/how-to-prevent-the-play-request-was-interrupted-by-a-call-to-pause-error
-  setTimeout(function () { BEEP.play(); }, 150);
+  setTimeout(function () { BEEP.play(); }, 50);
 }
 
 const MARKER = Symbol("codemirror-blocks-marker");
@@ -109,10 +109,8 @@ export default class CodeMirrorBlocks {
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
     this.wrapper = cm.getWrapperElement();
-    this.wrapper.setAttribute("role", "tree");
-    this.wrapper.setAttribute("aria-label", "Text E");
+    this.wrapper.setAttribute("aria-label", "Text Editor");
     this.scroller = cm.getScrollerElement();
-    this.scroller.setAttribute("role", "group");
     // Add a live region to the wrapper, for error alerts
     this.announcements = document.createElement("span");
     this.announcements.setAttribute("role", "log");
@@ -140,7 +138,7 @@ export default class CodeMirrorBlocks {
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
         ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
-        ondrop: this.nodeEventHandler(this.dropOntoNode)
+        ondrop: this.nodeEventHandler(this.dropOntoNode),
       }
     );
     // TODO: don't do this, otherwise we copy/paste will only work
@@ -160,6 +158,12 @@ export default class CodeMirrorBlocks {
     this.cm.on('mousedown', (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
+    this.cm.on('focus',     (cm, e) => {
+      if(this.ast && this.ast.rootNodes.length > 0){
+        this.ast.rootNodes[0].el.click();
+        this.ast.rootNodes[0].el.focus();
+      }
+    });
   }
 
   on(event, listener) {
@@ -176,6 +180,7 @@ export default class CodeMirrorBlocks {
 
   say(text){
     let announcement = document.createTextNode(text);
+    console.log(text);
     this.announcements.appendChild(announcement);
     setTimeout(() => this.announcements.removeChild(announcement), 500);
   }
@@ -185,8 +190,15 @@ export default class CodeMirrorBlocks {
       return;
     } else {
       this.blockMode = mode;
-      if(mode) { this.wrapper.setAttribute("role", "tree"); }
-      else { this.wrapper.removeAttribute("role"); }
+      if(mode) { 
+        this.wrapper.setAttribute("role", "tree"); 
+        this.wrapper.setAttribute("aria-label", "Block Editor");
+        this.scroller.setAttribute("role", "group");
+      } else { 
+        this.wrapper.removeAttribute("role"); 
+        this.wrapper.setAttribute("aria-label", "Text Editor");
+        this.scroller.removeAttribute("role");
+      }
       if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
       this.renderer.animateTransition(this.ast, mode);
     }
@@ -369,6 +381,7 @@ export default class CodeMirrorBlocks {
       }
       this.saveEditableEl(nodeEl, nodeEl.innerText, node);
       this.hasInvalidEdit = false;
+      this.say("saved "+nodeEl.innerText);
     } else {
       // If the node doesn't parse, wrest the focus back after a few ms
       setTimeout(() => { this.editLiteral(node, event); }, 50);
@@ -405,10 +418,12 @@ export default class CodeMirrorBlocks {
       e.preventDefault();
       this.blur();
     }
+    return true;
   }
 
   editLiteral(node, event) {
     event.stopPropagation();
+    this.say("editing "+node.el.getAttribute("aria-label"));
     node.el.oldText = this.cm.getRange(node.from, node.to);
     node.el.contentEditable = true;
     node.el.classList.add('blocks-editing');
@@ -589,11 +604,12 @@ export default class CodeMirrorBlocks {
       Up:    this.ast.getPrevSibling,
       Down:  this.ast.getNextSibling
     };
-    // Arrows, Enter and Backspace behave differently if a node is selected
+    // Arrows, Enter, Backspacea and Space behave differently if a node is selected
     if(arrowHandlers[keyName] && selectedNode) {
       let searchFn = arrowHandlers[keyName].bind(this.ast);
       let nextNode = this._getNextUnhiddenNode(searchFn);
       if(nextNode === selectedNode){ playBeep(); }
+      this.clearSelection();
       this.selectNode(nextNode, event);
     } else if (keyName == "Enter" && selectedNode &&
         ["literal", "blank"].includes(selectedNode.type)) {
@@ -607,6 +623,11 @@ export default class CodeMirrorBlocks {
     } else if (keyName === "Shift-Tab") {
       let searchFn = this.ast.getNodeBefore.bind(this.ast);
       this.selectNode(this._getNextUnhiddenNode(searchFn), event);
+    // Space toggles selection
+    } else if (keyName === "Space" && selectedNode) {
+      let state = selectedNode.el.getAttribute("aria-selected");
+      this.clearSelection();
+      selectedNode.el.setAttribute("aria-selected", state==="false");
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
@@ -619,6 +640,11 @@ export default class CodeMirrorBlocks {
     }
     event.preventDefault();
     event.stopPropagation();
+  }
+
+  clearSelection() {
+    var selectedNodes = document.querySelectorAll("[aria-selected='true']");
+    selectedNodes.forEach((n) => n.setAttribute("aria-selected", false));
   }
 
   cancelIfErrorExists(event) {
