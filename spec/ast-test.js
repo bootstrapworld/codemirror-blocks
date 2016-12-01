@@ -99,9 +99,6 @@ describe("The Expression Class", function() {
     expect(expression.args[1].parent).toEqual(expression);
     expect(expression.args[1].prevSibling).toEqual(expression.args[0]);
     expect(expression.args[1].nextSibling).toEqual(false);
-    //expect(expression.args[1]).toEqual(nestedExpression);
-    //expect(nestedExpression.firstChild).toEqual(nestedExpression.func);
-
   });
 
 });
