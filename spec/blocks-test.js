@@ -24,6 +24,7 @@ const DOWN_KEY  = 40;
 const DELETE_KEY=  8;
 const TAB_KEY   =  9;
 const ENTER_KEY = 13;
+const SPACE_KEY = 32;
 const ESC_KEY   = 27;
 
 describe('The CodeMirrorBlocks Class', function() {
@@ -271,7 +272,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
 
-    describe("when dealing with node selection,", function() {
+    describe("when dealing with node activation,", function() {
 
       beforeEach(function() {
         this.cm.setValue('11 54');
@@ -279,34 +280,34 @@ describe('The CodeMirrorBlocks Class', function() {
         this.literal2 = this.blocks.ast.rootNodes[1];
       });
 
-      it('should only allow one node to be selected at a time', function() {
+      it('should only allow one node to be active at a time', function() {
         this.literal.el.dispatchEvent(click());
         this.literal2.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).not.toBe(this.literal);
         expect(this.blocks.getActiveNode()).toBe(this.literal2);
       });
 
-      it('should put focus on the selected node', function() {
+      it('should put focus on the active node', function() {
         this.literal.el.dispatchEvent(click());
         expect(document.activeElement).toBe(this.literal.el);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
 
-      it('should delete selected nodes when the delete key is pressed', function() {
+      it('should not delete active nodes when the delete key is pressed', function() {
         expect(this.cm.getValue()).toBe('11 54');
         this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.cm.getWrapperElement().dispatchEvent(keydown(DELETE_KEY));
-        expect(this.cm.getValue()).toBe(' 54');
+        expect(this.cm.getValue()).toBe('11 54');
       });
 
-      it('should select the first node when tab is pressed', function() {
+      it('should activate the first node when tab is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
 
-      it('should select the next node when tab is pressed', function() {
+      it('should activate the next node when tab is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal);
@@ -314,7 +315,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
       });
 
-      it('should select the node after the cursor when tab is pressed', function() {
+      it('should activate the node after the cursor when tab is pressed', function() {
         this.cm.setCursor({line: 0, ch: 2});
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal);
@@ -322,7 +323,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
       });
 
-      it('should select the node before the cursor when tab is pressed', function() {
+      it('should activate the node before the cursor when tab is pressed', function() {
         this.cm.setCursor({line: 0, ch: 2});
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey: true}));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal2);
@@ -330,13 +331,13 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
 
-      it('should select the last node when shift-tab is pressed', function() {
+      it('should activate the last node when shift-tab is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey:true}));
         expect(this.blocks.getActiveNode()).toBe(this.literal2);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
       });
 
-      it('should select the previous node when shift-tab is pressed', function() {
+      it('should activate the previous node when shift-tab is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey:true}));
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey:true}));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal2);
@@ -344,14 +345,14 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
 
-      it('should toggle the editability of selected node when Enter is pressed', function() {
+      it('should toggle the editability of activated node when Enter is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER_KEY));
         expect(this.literal.el.contentEditable).toBe('true');
       });
 
-      it('should cancel the editability of selected node when Esc is pressed', function() {
+      it('should cancel the editability of activated node when Esc is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER_KEY));
@@ -361,7 +362,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue()).toBe('11 54');
       });
 
-      it('should proxy keydown events on the selected node to codemirror', function() {
+      it('should proxy keydown events on the active node to codemirror', function() {
         spyOn(this.cm, 'execCommand');
         this.literal.el.dispatchEvent(click());
         let event = keydown(90, {ctrlKey: true}); // Ctrl-z: undo
@@ -373,7 +374,8 @@ describe('The CodeMirrorBlocks Class', function() {
 
       describe('cut/copy', function() {
         beforeEach(function() {
-          this.literal.el.dispatchEvent(click());
+          this.literal.el.dispatchEvent(click());            // activate the node,
+          this.literal.el.dispatchEvent(keydown(SPACE_KEY)); // then select it
           spyOn(document, 'execCommand');
         });
 

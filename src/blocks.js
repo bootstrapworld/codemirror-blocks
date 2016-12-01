@@ -38,7 +38,7 @@ const BEEP = new Audio(beepSound);
 function playBeep() {
   BEEP.pause();
   if(BEEP.readyState > 0){ BEEP.currentTime = 0; }
-  // From https://stackoverflow.com/questions/36803176/how-to-prevent-the-play-request-was-interrupted-by-a-call-to-pause-error
+  // Resolves race condition. See https://stackoverflow.com/questions/36803176
   setTimeout(function () { BEEP.play(); }, 50);
 }
 
@@ -116,6 +116,8 @@ export default class CodeMirrorBlocks {
     this.announcements.setAttribute("role", "log");
     this.announcements.setAttribute("aria-live", "additions");
     this.wrapper.appendChild(this.announcements);
+    // Track all selected nodes in our own set
+    this.selectedNodes = new Set();
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -135,6 +137,7 @@ export default class CodeMirrorBlocks {
           blank: this.editLiteral,
           whitespace: this.editWhiteSpace
         }),
+        onpaste: this.nodeEventHandler(this.handlePaste),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
         ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
@@ -153,13 +156,13 @@ export default class CodeMirrorBlocks {
     this.cm.on('drop',      (cm, e) => dropHandler(e));
     this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
     this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
-    this.cm.on('paste',     (cm, e) => this.insertionQuarantine(e));
+    this.cm.on('paste',     (cm, e) => this.handlePaste(e));
     this.cm.on('keypress',  (cm, e) => this.insertionQuarantine(e));
     this.cm.on('mousedown', (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
-      if(!e.relatedTarget) {  // bail if this is the result of a click 
+      if(this.blockMode && !e.relatedTarget) {  // bail if this is the result of a click 
         setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
       }
     });
@@ -180,6 +183,7 @@ export default class CodeMirrorBlocks {
   say(text){
     let announcement = document.createTextNode(text);
     this.announcements.appendChild(announcement);
+    console.log(text);
     setTimeout(() => this.announcements.removeChild(announcement), 500);
   }
 
@@ -292,6 +296,14 @@ export default class CodeMirrorBlocks {
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
+    // if shift is down, add node to selection
+    if(event.shiftKey) {
+      this.addToSelection(node);
+    }
+    // clicking on a non-selected node without the altKey clears selection
+    else if(!event.altKey && !this.selectedNodes.has(node)) { 
+      this.clearSelection(); 
+    }
     event.stopPropagation();
     this.cm.scrollIntoView(node.from);
     node.el.focus();
@@ -312,18 +324,22 @@ export default class CodeMirrorBlocks {
     return nextNode || nodeOrCursor;
   }
 
+  // if any nodes are selected, copy all of their text ranges to a buffer
+  // copy the buffer to the clipboard. Remove the original text onCut
   handleCopyCut(event) {
-    var activeEl = document.activeElement;
-    if (!this.getActiveNode()) {
+    if (this.selectedNodes.size === 0) {
       return;
     }
-    var node = this.getActiveNode();
+    var activeEl = this.getActiveNode().el;
     event.stopPropagation();
     var buffer = document.createElement('textarea');
     document.body.appendChild(buffer);
     buffer.style.opacity = "0";
     buffer.style.position = "absolute";
-    buffer.innerText = this.cm.getRange(node.from, node.to);
+    // copy the contents to the buffer *in order*
+    [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from)).forEach(n => {
+      buffer.value += this.cm.getRange(n.from, n.to) + " ";
+    });
     buffer.select();
     try {
       document.execCommand && document.execCommand(event.type);
@@ -335,7 +351,21 @@ export default class CodeMirrorBlocks {
       buffer.parentNode && buffer.parentNode.removeChild(buffer);
     }, 200);
     if (event.type == 'cut') {
-      this.cm.replaceRange('', node.from, node.to);
+      this.selectedNodes.forEach(n => this.cm.replaceRange('', n.from, n.to));
+      this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
+    }
+  }
+
+  handlePaste(event) {
+    console.log("pasting");
+    // we're pasting and there's an active node
+    if(this.getActiveNode()) {
+      console.log('pasting on active node');
+    } 
+    // we're pasting into CM
+    else {
+      console.log('pasting at CM cursor');
+      this.insertionQuarantine(event);
     }
   }
 
@@ -434,18 +464,23 @@ export default class CodeMirrorBlocks {
     window.getSelection().addRange(range);
   }
 
+  // remove node contents from CM
   deleteNode(node) {
     if (node) {
       this.cm.replaceRange('', node.from, node.to);
     }
   }
 
+  // remove the node from the selection, then from CM
   deleteNodeWithId(nodeId) {
+    this.selectedNodes.delete(this.ast.nodeMap.get(nodeId));
     this.deleteNode(this.ast.nodeMap.get(nodeId));
   }
 
+  // empty the selection, and delete all the nodes
   deleteSelectedNodes() {
-    this.deleteNode(this.getActiveNode());
+    this.selectedNodes.clear();
+    this.selectedNodes.forEach(n => this.deleteNode(n));
   }
 
   startDraggingNode(node, event) {
@@ -578,6 +613,7 @@ export default class CodeMirrorBlocks {
   insertionQuarantine(e) {
     if(!this.blockMode) return;                           // bail if mode==false
     e.preventDefault();
+    this.clearSelection();                                // clear the previous selection
     let text = (e.type == "keypress")? String.fromCharCode(e.which)
              : e.clipboardData.getData('text/plain');
     let cur  = this.cm.getCursor();
@@ -607,8 +643,6 @@ export default class CodeMirrorBlocks {
       let searchFn = arrowHandlers[event.keyCode].bind(this.ast);
       let nextNode = this._getNextUnhiddenNode(searchFn);
       if(nextNode === activeNode){ playBeep(); }
-      if(event.shiftKey) { nextNode.el.setAttribute("aria-selected", true); }
-      else if(!event.altKey) { this.clearSelection(); }
       this.activateNode(nextNode, event);
     } 
     // Enter should toggle editing
@@ -618,13 +652,14 @@ export default class CodeMirrorBlocks {
     }
     // Space toggles node selection
     else if (keyName === "Space" && activeNode) {
-      let state = activeNode.el.getAttribute("aria-selected") == "true";
-      this.clearSelection();
-      activeNode.el.setAttribute("aria-selected", !state);
-      this.say(activeNode.el.getAttribute("aria-label")+" "+(state? "un" : "")+"selected");
+      if(this.selectedNodes.has(activeNode)) { 
+        this.removeFromSelection(activeNode);
+      } else {
+        this.addToSelection(activeNode);
+      }
     }
     // Backspace should delete selected nodes
-    else if (keyName == "Backspace" && activeNode) {
+    else if (keyName == "Backspace") {
       this.deleteSelectedNodes();
     } 
     // Tab and Shift-Tab work no matter what
@@ -648,9 +683,39 @@ export default class CodeMirrorBlocks {
     event.stopPropagation();
   }
 
+  // unset the aria attribute, and remove the node from the set
+  removeFromSelection(node) {
+    node.el.setAttribute("aria-selected", false);
+    this.selectedNodes.delete(node);
+    this.say(node.el.getAttribute("aria-label")+" unselected");
+  }
+
+  // add the node to the selected set, and set the aria attribute
+  // make sure selectedNodes never contains a child and its ancestor
+  addToSelection(node) {
+    // if this is an ancestor of nodes in the set, remove them first
+    this.selectedNodes.forEach(n => {
+      if(node.el.contains(n.el)) { this.removeFromSelection(n); }
+    });
+    // bail if an ancestor is already in the set
+    var ancestor = false;
+    this.selectedNodes.forEach(n => ancestor = ancestor || n.el.contains(node.el));
+    if(ancestor) {
+      this.say("an ancestor is already selected");
+      return true;
+    }
+    node.el.setAttribute("aria-selected", true);
+    this.selectedNodes.add(node);
+    this.say(node.el.getAttribute("aria-label")+" selected");
+    console.log('adding '+node.options["aria-label"]+' to selection. '
+     + this.selectedNodes.size + ' nodes selected');
+  }
+
+  // unset the aria attribute, and empty the set
   clearSelection() {
-    var selectedNodes = document.querySelectorAll("[aria-selected='true']");
-    selectedNodes.forEach((n) => n.setAttribute("aria-selected", false));
+    this.selectedNodes.forEach((n) => n.el.setAttribute("aria-selected", false));
+    this.selectedNodes.clear();
+    this.say("selection cleared");
   }
 
   cancelIfErrorExists(event) {
