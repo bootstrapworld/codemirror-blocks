@@ -597,40 +597,43 @@ export default class CodeMirrorBlocks {
     let keyName = CodeMirror.keyName(event);
     let selectedNode = this.getSelectedNode();
     let arrowHandlers = {
-      Left:       this.ast.getParent, 
-      "Alt-Left": this.ast.getParent,
-      Right:      this.ast.getChild,
-      "Alt-Right":this.ast.getChild,
-      Up:         this.ast.getPrevSibling,
-      "Alt-Up":   this.ast.getPrevSibling,
-      Down:       this.ast.getNextSibling,
-      "Alt-Down": this.ast.getNextSibling
+      37: this.ast.getParent,
+      39: this.ast.getChild,
+      38: this.ast.getPrevSibling,
+      40: this.ast.getNextSibling
     };
-    // Arrows, Enter, Backspacea and Space behave differently if a node is selected
-    if(arrowHandlers[keyName] && selectedNode) {
-      let searchFn = arrowHandlers[keyName].bind(this.ast);
+    // Arrows can move the active element, modify the selection
+    if(arrowHandlers[event.keyCode] && selectedNode) {
+      let searchFn = arrowHandlers[event.keyCode].bind(this.ast);
       let nextNode = this._getNextUnhiddenNode(searchFn);
       if(nextNode === selectedNode){ playBeep(); }
-      if(!event.altKey) { this.clearSelection(); }
+      if(event.shiftKey) { nextNode.el.setAttribute("aria-selected", true); }
+      else if(!event.altKey) { this.clearSelection(); }
       this.selectNode(nextNode, event);
-    } else if (keyName == "Enter" && selectedNode &&
+    } 
+    // Enter should toggle editing
+    else if (keyName == "Enter" && selectedNode &&
         ["literal", "blank"].includes(selectedNode.type)) {
       this.editLiteral(selectedNode, event);
-    } else if (keyName == "Backspace" && selectedNode) {
+    }
+    // Space toggles node selection
+    else if (keyName === "Space" && selectedNode) {
+      let state = selectedNode.el.getAttribute("aria-selected") == "true";
+      this.clearSelection();
+      selectedNode.el.setAttribute("aria-selected", !state);
+      this.say(selectedNode.el.getAttribute("aria-label")+" "+(state? "un" : "")+"selected");
+    }
+    // Backspace should delete selected nodes
+    else if (keyName == "Backspace" && selectedNode) {
       this.deleteSelectedNodes();
+    } 
     // Tab and Shift-Tab work no matter what
-    } else if (keyName === "Tab") {
+    else if (keyName === "Tab") {
       let searchFn = this.ast.getNodeAfter.bind(this.ast);
       this.selectNode(this._getNextUnhiddenNode(searchFn), event);
     } else if (keyName === "Shift-Tab") {
       let searchFn = this.ast.getNodeBefore.bind(this.ast);
       this.selectNode(this._getNextUnhiddenNode(searchFn), event);
-    // Space toggles selection
-    } else if (keyName === "Space" && selectedNode) {
-      let state = selectedNode.el.getAttribute("aria-selected") == "true";
-      this.clearSelection();
-      selectedNode.el.setAttribute("aria-selected", !state);
-      this.say(selectedNode.el.getAttribute("aria-label")+" "+(state? "un" : "")+"selected");
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
