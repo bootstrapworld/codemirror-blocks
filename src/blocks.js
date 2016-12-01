@@ -180,7 +180,6 @@ export default class CodeMirrorBlocks {
 
   say(text){
     let announcement = document.createTextNode(text);
-    console.log(text);
     this.announcements.appendChild(announcement);
     setTimeout(() => this.announcements.removeChild(announcement), 500);
   }
@@ -599,17 +598,21 @@ export default class CodeMirrorBlocks {
     let keyName = CodeMirror.keyName(event);
     let selectedNode = this.getSelectedNode();
     let arrowHandlers = {
-      Left:  this.ast.getParent, 
-      Right: this.ast.getChild, 
-      Up:    this.ast.getPrevSibling,
-      Down:  this.ast.getNextSibling
+      Left:       this.ast.getParent, 
+      "Alt-Left": this.ast.getParent,
+      Right:      this.ast.getChild,
+      "Alt-Right":this.ast.getChild,
+      Up:         this.ast.getPrevSibling,
+      "Alt-Up":   this.ast.getPrevSibling,
+      Down:       this.ast.getNextSibling,
+      "Alt-Down": this.ast.getNextSibling
     };
     // Arrows, Enter, Backspacea and Space behave differently if a node is selected
     if(arrowHandlers[keyName] && selectedNode) {
       let searchFn = arrowHandlers[keyName].bind(this.ast);
       let nextNode = this._getNextUnhiddenNode(searchFn);
       if(nextNode === selectedNode){ playBeep(); }
-      this.clearSelection();
+      if(!event.altKey) { this.clearSelection(); }
       this.selectNode(nextNode, event);
     } else if (keyName == "Enter" && selectedNode &&
         ["literal", "blank"].includes(selectedNode.type)) {
@@ -625,9 +628,10 @@ export default class CodeMirrorBlocks {
       this.selectNode(this._getNextUnhiddenNode(searchFn), event);
     // Space toggles selection
     } else if (keyName === "Space" && selectedNode) {
-      let state = selectedNode.el.getAttribute("aria-selected");
+      let state = selectedNode.el.getAttribute("aria-selected") == "true";
       this.clearSelection();
-      selectedNode.el.setAttribute("aria-selected", state==="false");
+      selectedNode.el.setAttribute("aria-selected", !state);
+      this.say(selectedNode.el.getAttribute("aria-label")+" "+(state? "un" : "")+"selected");
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
