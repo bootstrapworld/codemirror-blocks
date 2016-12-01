@@ -148,6 +148,7 @@ export default class Renderer {
       }
       node.el.draggable = true;
       if (hiddenTypes && hiddenTypes.has(node.type)) {
+        node.el.removeAttribute("role"); // hidden nodes should not show up in the ARIA tree
         node.el.classList.add('blocks-hidden');
       }
     }

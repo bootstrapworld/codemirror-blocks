@@ -82,8 +82,9 @@ describe('The render module,', function() {
       this.literalEls = this.fragment.querySelectorAll('span.blocks-literal');
     });
 
-    it('should add the blocks-hidden class', function() {
+    it('should add the blocks-hidden class, and remove role=treeitem', function() {
       expect(this.literalEls[0].classList.contains('blocks-hidden')).toBe(true);
+      expect(this.literalEls[0].getAttribute("role").toBe(null);
     });
   });
 
