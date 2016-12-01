@@ -336,10 +336,12 @@ export default class CodeMirrorBlocks {
     document.body.appendChild(buffer);
     buffer.style.opacity = "0";
     buffer.style.position = "absolute";
+    var clipboardText = "";
     // copy the contents to the buffer *in order*
     [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from)).forEach(n => {
-      buffer.value += this.cm.getRange(n.from, n.to) + " ";
+      clipboardText += this.cm.getRange(n.from, n.to) + " ";
     });
+    buffer.value = clipboardText;
     buffer.select();
     try {
       document.execCommand && document.execCommand(event.type);
@@ -354,6 +356,7 @@ export default class CodeMirrorBlocks {
       this.selectedNodes.forEach(n => this.cm.replaceRange('', n.from, n.to));
       this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
     }
+    this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboardText);
   }
 
   handlePaste(event) {
@@ -706,9 +709,7 @@ export default class CodeMirrorBlocks {
     }
     node.el.setAttribute("aria-selected", true);
     this.selectedNodes.add(node);
-    this.say(node.el.getAttribute("aria-label")+" selected");
-    console.log('adding '+node.options["aria-label"]+' to selection. '
-     + this.selectedNodes.size + ' nodes selected');
+    this.say(node.el.getAttribute("aria-label")+" added to selection");
   }
 
   // unset the aria attribute, and empty the set
