@@ -160,8 +160,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
       if(this.ast && this.ast.rootNodes.length > 0){
-        this.ast.rootNodes[0].el.click();
-        this.ast.rootNodes[0].el.focus();
+        this.selectNode(this.ast.rootNodes[0], e);
       }
     });
   }
@@ -190,13 +189,13 @@ export default class CodeMirrorBlocks {
     } else {
       this.blockMode = mode;
       if(mode) { 
-        this.wrapper.setAttribute("role", "tree"); 
-        this.wrapper.setAttribute("aria-label", "Block Editor");
+        this.wrapper.setAttribute( "role", "tree"); 
         this.scroller.setAttribute("role", "group");
+        this.wrapper.setAttribute("aria-label", "Block Editor");
       } else { 
-        this.wrapper.removeAttribute("role"); 
-        this.wrapper.setAttribute("aria-label", "Text Editor");
+        this.wrapper.removeAttribute( "role"); 
         this.scroller.removeAttribute("role");
+        this.wrapper.setAttribute("aria-label", "Text Editor");
       }
       if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
       this.renderer.animateTransition(this.ast, mode);
