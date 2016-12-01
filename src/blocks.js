@@ -129,7 +129,7 @@ export default class CodeMirrorBlocks {
       this.wrapper,
       {
         onkeydown: this.handleKeyDown.bind(this),
-        onclick: this.nodeEventHandler(this.activateToNode),
+        onclick: this.nodeEventHandler(this.activateNode),
         ondblclick: this.nodeEventHandler({
           literal: this.editLiteral,
           blank: this.editLiteral,
@@ -159,8 +159,8 @@ export default class CodeMirrorBlocks {
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
-      if(this.ast && this.ast.rootNodes.length > 0){
-        this.moveC(this.ast.rootNodes[0], e);
+      if(!e.relatedTarget) {  // bail if this is the result of a click 
+        setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
       }
     });
   }
@@ -288,7 +288,7 @@ export default class CodeMirrorBlocks {
     return this.findNearestNodeFromEl(document.activeElement);
   }
 
-  activateToNode(node, event) {
+  activateNode(node, event) {
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
@@ -609,7 +609,7 @@ export default class CodeMirrorBlocks {
       if(nextNode === activeNode){ playBeep(); }
       if(event.shiftKey) { nextNode.el.setAttribute("aria-selected", true); }
       else if(!event.altKey) { this.clearSelection(); }
-      this.activateToNode(nextNode, event);
+      this.activateNode(nextNode, event);
     } 
     // Enter should toggle editing
     else if (keyName == "Enter" && activeNode &&
@@ -630,10 +630,10 @@ export default class CodeMirrorBlocks {
     // Tab and Shift-Tab work no matter what
     else if (keyName === "Tab") {
       let searchFn = this.ast.getNodeAfter.bind(this.ast);
-      this.activateToNode(this._getNextUnhiddenNode(searchFn), event);
+      this.activateNode(this._getNextUnhiddenNode(searchFn), event);
     } else if (keyName === "Shift-Tab") {
       let searchFn = this.ast.getNodeBefore.bind(this.ast);
-      this.activateToNode(this._getNextUnhiddenNode(searchFn), event);
+      this.activateNode(this._getNextUnhiddenNode(searchFn), event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
