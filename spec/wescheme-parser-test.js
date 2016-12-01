@@ -61,17 +61,17 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('should allow tabbing forward through expressions in the function position', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
-        expect(this.blocks.getSelectedNode()).toBe(this.exp);
+        expect(this.blocks.getActiveNode()).toBe(this.exp);
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
-        expect(this.blocks.getSelectedNode()).toBe(this.funExp);
+        expect(this.blocks.getActiveNode()).toBe(this.funExp);
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
-        expect(this.blocks.getSelectedNode()).toBe(this.funExp.func);
+        expect(this.blocks.getActiveNode()).toBe(this.funExp.func);
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
-        expect(this.blocks.getSelectedNode()).toBe(this.funExp.args[0]);
+        expect(this.blocks.getActiveNode()).toBe(this.funExp.args[0]);
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
-        expect(this.blocks.getSelectedNode()).toBe(this.funExp.args[1]);
+        expect(this.blocks.getActiveNode()).toBe(this.funExp.args[1]);
         this.cm.getWrapperElement().dispatchEvent(keydown(9));
-        expect(this.blocks.getSelectedNode()).toBe(this.exp.args[0]);
+        expect(this.blocks.getActiveNode()).toBe(this.exp.args[0]);
       });
     });
 

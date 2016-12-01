@@ -129,7 +129,7 @@ export default class CodeMirrorBlocks {
       this.wrapper,
       {
         onkeydown: this.handleKeyDown.bind(this),
-        onclick: this.nodeEventHandler(this.selectNode),
+        onclick: this.nodeEventHandler(this.activateToNode),
         ondblclick: this.nodeEventHandler({
           literal: this.editLiteral,
           blank: this.editLiteral,
@@ -160,7 +160,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
       if(this.ast && this.ast.rootNodes.length > 0){
-        this.selectNode(this.ast.rootNodes[0], e);
+        this.moveC(this.ast.rootNodes[0], e);
       }
     });
   }
@@ -284,12 +284,12 @@ export default class CodeMirrorBlocks {
     ui.renderToolbarInto(this);
   }
 
-  getSelectedNode() {
+  getActiveNode() {
     return this.findNearestNodeFromEl(document.activeElement);
   }
 
-  selectNode(node, event) {
-    if(node == this.getSelectedNode()){
+  activateToNode(node, event) {
+    if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
     event.stopPropagation();
@@ -304,7 +304,7 @@ export default class CodeMirrorBlocks {
   }
 
   _getNextUnhiddenNode(nextFn) {
-    let nodeOrCursor = this.getSelectedNode() || this.cm.getCursor();
+    let nodeOrCursor = this.getActiveNode() || this.cm.getCursor();
     let nextNode = nextFn(nodeOrCursor);
     while (nextNode && this.isNodeHidden(nextNode)) {
       nextNode = nextFn(nextNode);
@@ -314,10 +314,10 @@ export default class CodeMirrorBlocks {
 
   handleCopyCut(event) {
     var activeEl = document.activeElement;
-    if (!this.getSelectedNode()) {
+    if (!this.getActiveNode()) {
       return;
     }
-    var node = this.getSelectedNode();
+    var node = this.getActiveNode();
     event.stopPropagation();
     var buffer = document.createElement('textarea');
     document.body.appendChild(buffer);
@@ -445,7 +445,7 @@ export default class CodeMirrorBlocks {
   }
 
   deleteSelectedNodes() {
-    this.deleteNode(this.getSelectedNode());
+    this.deleteNode(this.getActiveNode());
   }
 
   startDraggingNode(node, event) {
@@ -595,7 +595,7 @@ export default class CodeMirrorBlocks {
   handleKeyDown(event) {
     if(!this.blockMode) return;                           // bail if mode==false
     let keyName = CodeMirror.keyName(event);
-    let selectedNode = this.getSelectedNode();
+    let activeNode = this.getActiveNode();
     let arrowHandlers = {
       37: this.ast.getParent,
       39: this.ast.getChild,
@@ -603,37 +603,37 @@ export default class CodeMirrorBlocks {
       40: this.ast.getNextSibling
     };
     // Arrows can move the active element, modify the selection
-    if(arrowHandlers[event.keyCode] && selectedNode) {
+    if(arrowHandlers[event.keyCode] && activeNode) {
       let searchFn = arrowHandlers[event.keyCode].bind(this.ast);
       let nextNode = this._getNextUnhiddenNode(searchFn);
-      if(nextNode === selectedNode){ playBeep(); }
+      if(nextNode === activeNode){ playBeep(); }
       if(event.shiftKey) { nextNode.el.setAttribute("aria-selected", true); }
       else if(!event.altKey) { this.clearSelection(); }
-      this.selectNode(nextNode, event);
+      this.activateToNode(nextNode, event);
     } 
     // Enter should toggle editing
-    else if (keyName == "Enter" && selectedNode &&
-        ["literal", "blank"].includes(selectedNode.type)) {
-      this.editLiteral(selectedNode, event);
+    else if (keyName == "Enter" && activeNode &&
+        ["literal", "blank"].includes(activeNode.type)) {
+      this.editLiteral(activeNode, event);
     }
     // Space toggles node selection
-    else if (keyName === "Space" && selectedNode) {
-      let state = selectedNode.el.getAttribute("aria-selected") == "true";
+    else if (keyName === "Space" && activeNode) {
+      let state = activeNode.el.getAttribute("aria-selected") == "true";
       this.clearSelection();
-      selectedNode.el.setAttribute("aria-selected", !state);
-      this.say(selectedNode.el.getAttribute("aria-label")+" "+(state? "un" : "")+"selected");
+      activeNode.el.setAttribute("aria-selected", !state);
+      this.say(activeNode.el.getAttribute("aria-label")+" "+(state? "un" : "")+"selected");
     }
     // Backspace should delete selected nodes
-    else if (keyName == "Backspace" && selectedNode) {
+    else if (keyName == "Backspace" && activeNode) {
       this.deleteSelectedNodes();
     } 
     // Tab and Shift-Tab work no matter what
     else if (keyName === "Tab") {
       let searchFn = this.ast.getNodeAfter.bind(this.ast);
-      this.selectNode(this._getNextUnhiddenNode(searchFn), event);
+      this.activateToNode(this._getNextUnhiddenNode(searchFn), event);
     } else if (keyName === "Shift-Tab") {
       let searchFn = this.ast.getNodeBefore.bind(this.ast);
-      this.selectNode(this._getNextUnhiddenNode(searchFn), event);
+      this.activateToNode(this._getNextUnhiddenNode(searchFn), event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
