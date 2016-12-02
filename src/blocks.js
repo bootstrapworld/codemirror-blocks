@@ -155,7 +155,7 @@ export default class CodeMirrorBlocks {
     var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
     this.cm.on('drop',      (cm, e) => dropHandler(e));
     this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
-    this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
+    this.cm.on('inputread',   (cm, e) => this.handleKeyDown(e));
     this.cm.on('paste',     (cm, e) => this.handlePaste(e));
     this.cm.on('keypress',  (cm, e) => this.insertionQuarantine(e));
     this.cm.on('mousedown', (cm, e) => this.cancelIfErrorExists(e));
@@ -194,9 +194,11 @@ export default class CodeMirrorBlocks {
     } else {
       this.blockMode = mode;
       if(mode) { 
-        this.scroller.setAttribute( "role", "tree"); 
+        this.wrapper.setAttribute( "role", "tree"); 
+        this.scroller.setAttribute("role", "group");
         this.wrapper.setAttribute("aria-label", "Block Editor");
       } else { 
+        this.wrapper.removeAttribute( "role"); 
         this.scroller.removeAttribute("role");
         this.wrapper.setAttribute("aria-label", "Text Editor");
       }
