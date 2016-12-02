@@ -162,7 +162,8 @@ export default class CodeMirrorBlocks {
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
-      if(this.blockMode && !e.relatedTarget) {  // bail if this is the result of a click 
+      if(this.blockMode && !e.relatedTarget && this.ast.rootNodes
+          && this.ast.rootNode.length > 0) {  // bail if this is the result of a click 
         setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
       }
     });
@@ -449,7 +450,6 @@ export default class CodeMirrorBlocks {
       e.preventDefault();
       this.blur();
     }
-    return true;
   }
 
   editLiteral(node, event) {
@@ -714,9 +714,11 @@ export default class CodeMirrorBlocks {
 
   // unset the aria attribute, and empty the set
   clearSelection() {
-    this.selectedNodes.forEach((n) => n.el.setAttribute("aria-selected", false));
-    this.selectedNodes.clear();
-    this.say("selection cleared");
+    if(this.selectedNodes.size > 0){
+      this.selectedNodes.forEach((n) => n.el.setAttribute("aria-selected", false));
+      this.selectedNodes.clear()
+      this.say("selection cleared");
+    } 
   }
 
   cancelIfErrorExists(event) {

@@ -154,18 +154,18 @@
     color: @literal-symbol-color;
   }
 
+  .blocks-node:focus {
+    border-style: solid;
+    border-color: @editing-border-color;
+    outline: 0;
+  }
   .blocks-node[aria-selected^="true"] {
     border-style: dotted;
     border-color: @editing-border-color;
     outline: 0;
     box-shadow: 5px 5px 5px #888888;
   }
-.blocks-node:focus {
-    border-style: solid;
-    border-color: @editing-border-color;
-    outline: 0;
-  }
-  
+
   .blocks-editing {
     outline: 0;
     cursor: text;
