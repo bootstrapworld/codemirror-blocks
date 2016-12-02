@@ -385,6 +385,14 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(document.execCommand).toHaveBeenCalledWith('cut');
         });
 
+        it('should remove multiple selected nodes on cut', function() {
+          this.literal2.el.dispatchEvent(keydown(DOWN_KEY, {shiftKey: true}));
+          expect(this.blocks.selectedNodes.size).toBe(2);
+          document.dispatchEvent(cut());
+          expect(this.cm.getValue()).toBe(' ');
+          expect(document.execCommand).toHaveBeenCalledWith('cut');
+        });
+
         xit('should create an activeElement with the text to be copied', function() {
           // TODO: figure out how to test this.
         });
@@ -450,6 +458,83 @@ describe('The CodeMirrorBlocks Class', function() {
         });
         
       });
+    });
+
+    describe("when dealing with node selection, ", function() {
+
+      beforeEach(function() {
+        this.cm.setValue('11 54 (+ 1 2)');
+        this.literal  = this.blocks.ast.rootNodes[0];
+        this.literal2 = this.blocks.ast.rootNodes[1];
+        this.expr     = this.blocks.ast.rootNodes[2];
+        this.literal.el.dispatchEvent(click());
+        this.literal.el.dispatchEvent(keydown(SPACE_KEY));
+      });
+
+      it('space key toggles selection on and off', function() {
+        expect(this.literal.el.getAttribute("aria-selected")).toBe('true');
+        expect(this.blocks.selectedNodes.size).toBe(1);
+        this.literal.el.dispatchEvent(keydown(SPACE_KEY));
+        expect(this.literal.el.getAttribute("aria-selected")).toBe('false');
+        expect(this.blocks.selectedNodes.size).toBe(0);
+      });
+
+      it('arrow clears selection & changes active ', function() {
+        this.literal.el.dispatchEvent(keydown(DOWN_KEY));
+        expect(this.literal.el.getAttribute("aria-selected")).toBe('false');
+        expect(this.literal2.el.getAttribute("aria-selected")).toBe('false');
+        expect(document.activeElement).toBe(this.literal2.el);
+        expect(this.blocks.selectedNodes.size).toBe(0);
+      });
+
+
+      it('shift-arrow extends selection & changes active ', function() {
+        this.literal.el.dispatchEvent(keydown(DOWN_KEY, {shiftKey: true}));
+        expect(this.literal2.el.getAttribute("aria-selected")).toBe('true');
+        expect(document.activeElement).toBe(this.literal2.el);
+        expect(this.blocks.selectedNodes.size).toBe(2);
+      });
+
+      it('alt-arrow preserves selection & changes active ', function() {
+        this.literal.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
+        expect(this.literal.el.getAttribute("aria-selected")).toBe('true');
+        expect(this.literal2.el.getAttribute("aria-selected")).toBe('false');
+        expect(document.activeElement).toBe(this.literal2.el);
+        expect(this.blocks.selectedNodes.size).toBe(1);
+      });
+
+      it('allow multiple, non-contiguous selection ', function() {
+        this.literal.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
+        this.literal2.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true})); // skip literal2
+        this.expr.el.dispatchEvent(keydown(SPACE_KEY)); // toggle selection on expression
+        expect(this.literal.el.getAttribute("aria-selected")).toBe('true');
+        expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
+        expect(document.activeElement).toBe(this.expr.el);
+        expect(this.blocks.selectedNodes.size).toBe(2);
+      });
+
+      it('selecting a parent, then child should just select the parent ', function() {
+        this.expr.el.dispatchEvent(click());
+        this.expr.el.dispatchEvent(keydown(SPACE_KEY));
+        this.expr.el.dispatchEvent(keydown(RIGHT_KEY, {altKey: true}));
+        this.expr.func.el.dispatchEvent(keydown(SPACE_KEY));
+        expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
+        expect(this.expr.func.el.getAttribute("aria-selected")).toBe('false');
+        expect(document.activeElement).toBe(this.expr.func.el);
+        expect(this.blocks.selectedNodes.size).toBe(1);
+      });
+
+      it('selecting a child, then parent should just select the parent ', function() {
+        this.expr.func.el.dispatchEvent(click());
+        this.expr.func.el.dispatchEvent(keydown(SPACE_KEY));
+        this.expr.func.el.dispatchEvent(keydown(LEFT_KEY, {altKey: true}));
+        this.expr.el.dispatchEvent(keydown(SPACE_KEY));
+        expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
+        expect(this.expr.func.el.getAttribute("aria-selected")).toBe('false');
+        expect(document.activeElement).toBe(this.expr.el);
+        expect(this.blocks.selectedNodes.size).toBe(1);
+      });
+
     });
 
     it('should begin editing a node on double click', function() {

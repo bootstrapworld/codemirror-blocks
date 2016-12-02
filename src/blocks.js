@@ -337,10 +337,9 @@ export default class CodeMirrorBlocks {
     buffer.style.opacity = "0";
     buffer.style.position = "absolute";
     var clipboardText = "";
-    // copy the contents to the buffer *in order*
-    [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from)).forEach(n => {
-      clipboardText += this.cm.getRange(n.from, n.to) + " ";
-    });
+    // copy the contents to the buffer first-to-last
+    var selectedNodes = [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from));
+    selectedNodes.forEach(n => clipboardText += this.cm.getRange(n.from, n.to) + " ");
     buffer.value = clipboardText;
     buffer.select();
     try {
@@ -353,7 +352,8 @@ export default class CodeMirrorBlocks {
       buffer.parentNode && buffer.parentNode.removeChild(buffer);
     }, 200);
     if (event.type == 'cut') {
-      this.selectedNodes.forEach(n => this.cm.replaceRange('', n.from, n.to));
+      // delete last-to-first to preserve the from/to indices
+      selectedNodes.reverse().forEach(n => this.cm.replaceRange('', n.from, n.to));
       this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
     }
     this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboardText);
