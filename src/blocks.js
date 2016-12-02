@@ -306,7 +306,6 @@ export default class CodeMirrorBlocks {
             && !this.selectedNodes.has(node)) { 
       this.clearSelection(); 
     }
-    node.el.setAttribute("contentEditable", "true");
     event.stopPropagation();
     this.cm.scrollIntoView(node.from);
     node.el.focus();
