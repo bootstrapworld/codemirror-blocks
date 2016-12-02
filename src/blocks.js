@@ -302,7 +302,8 @@ export default class CodeMirrorBlocks {
       this.addToSelection(node);
     }
     // clicking on a non-selected node without the altKey clears selection
-    else if(!event.altKey && !this.selectedNodes.has(node)) { 
+    else if((this.selectedNodes.size > 0) && !event.altKey 
+            && !this.selectedNodes.has(node)) { 
       this.clearSelection(); 
     }
     event.stopPropagation();
@@ -691,6 +692,7 @@ export default class CodeMirrorBlocks {
   removeFromSelection(node) {
     node.el.setAttribute("aria-selected", false);
     this.selectedNodes.delete(node);
+    node.el.setAttribute("aria-label", node.options["aria-label"]);
     this.say(node.el.getAttribute("aria-label")+" unselected");
   }
 
@@ -709,6 +711,7 @@ export default class CodeMirrorBlocks {
       return true;
     }
     node.el.setAttribute("aria-selected", true);
+    node.el.setAttribute("aria-label", "selected "+node.options["aria-label"]);
     this.selectedNodes.add(node);
     this.say(node.el.getAttribute("aria-label")+" added to selection");
   }
@@ -716,8 +719,7 @@ export default class CodeMirrorBlocks {
   // unset the aria attribute, and empty the set
   clearSelection() {
     if(this.selectedNodes.size > 0){
-      this.selectedNodes.forEach((n) => n.el.setAttribute("aria-selected", false));
-      this.selectedNodes.clear()
+      this.selectedNodes.forEach((n) => removeFromSelection(n));
       this.say("selection cleared");
     } 
   }
