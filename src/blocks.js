@@ -306,6 +306,7 @@ export default class CodeMirrorBlocks {
             && !this.selectedNodes.has(node)) { 
       this.clearSelection(); 
     }
+    node.el.setAttribute("contentEditable", "true");
     event.stopPropagation();
     this.cm.scrollIntoView(node.from);
     node.el.focus();
@@ -675,7 +676,6 @@ export default class CodeMirrorBlocks {
       this.activateNode(this._getNextUnhiddenNode(searchFn), event);
     } else {
       let command = this.keyMap[keyName];
-      console.log(command);
       if (typeof command == "string") {
         this.cm.execCommand(command);
       } else if (typeof command == "function") {
@@ -713,13 +713,12 @@ export default class CodeMirrorBlocks {
     node.el.setAttribute("aria-selected", true);
     node.el.setAttribute("aria-label", "selected "+node.options["aria-label"]);
     this.selectedNodes.add(node);
-    this.say(node.el.getAttribute("aria-label")+" added to selection");
   }
 
   // unset the aria attribute, and empty the set
   clearSelection() {
     if(this.selectedNodes.size > 0){
-      this.selectedNodes.forEach((n) => removeFromSelection(n));
+      this.selectedNodes.forEach((n) => this.removeFromSelection(n));
       this.say("selection cleared");
     } 
   }
