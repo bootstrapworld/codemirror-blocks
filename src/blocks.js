@@ -163,7 +163,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
       if(this.blockMode && !e.relatedTarget && this.ast.rootNodes
-          && this.ast.rootNode.length > 0) {  // bail if this is the result of a click 
+          && this.ast.rootNodes.length > 0) {  // bail if this is the result of a click 
         setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
       }
     });
@@ -194,11 +194,9 @@ export default class CodeMirrorBlocks {
     } else {
       this.blockMode = mode;
       if(mode) { 
-        this.wrapper.setAttribute( "role", "tree"); 
-        this.scroller.setAttribute("role", "group");
+        this.scroller.setAttribute( "role", "tree"); 
         this.wrapper.setAttribute("aria-label", "Block Editor");
       } else { 
-        this.wrapper.removeAttribute( "role"); 
         this.scroller.removeAttribute("role");
         this.wrapper.setAttribute("aria-label", "Text Editor");
       }
@@ -674,6 +672,7 @@ export default class CodeMirrorBlocks {
       this.activateNode(this._getNextUnhiddenNode(searchFn), event);
     } else {
       let command = this.keyMap[keyName];
+      console.log(command);
       if (typeof command == "string") {
         this.cm.execCommand(command);
       } else if (typeof command == "function") {
