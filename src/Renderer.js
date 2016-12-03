@@ -1,3 +1,7 @@
+import React, {Component} from 'react';
+import ReactDOM from 'react-dom';
+
+import Expression from './components/Expression';
 import {ASTNode} from './ast';
 
 function createFragment(htmlStr) {
@@ -16,7 +20,7 @@ export default class Renderer {
     this.printASTNode = printASTNode || (node => node.toString());
     this.nodeRenderers = {
       unknown: require('./templates/unknown.handlebars'),
-      expression: require('./templates/expression.handlebars'),
+      expression: Expression,
       functionDef: require('./templates/functionDef.handlebars'),
       lambdaExpression: require('./templates/lambdaExpression.handlebars'),
       variableDef: require('./templates/variableDef.handlebars'),
@@ -31,6 +35,30 @@ export default class Renderer {
     this._nodesInRenderOrder = [];
   }
 
+  renderNode = (node) => {
+    if (!node) {
+      return '';
+    }
+    return this.renderHTMLString(node);
+  }
+
+  renderNodeForReact = (node) => {
+    var Renderer = this.extraRenderers[node.type];
+    if (Renderer.prototype instanceof Component) {
+      return (
+        <Renderer
+          node={node}
+          helpers={{
+            renderNode: this.renderNode,
+            renderNodeForReact: this.renderNodeForReact,
+          }}
+        />
+      );
+    } else {
+      return <span dangerouslySetInnerHTML={{__html: this.renderNode(node)}}/>;
+    }
+  }
+
   renderHTMLString(node) {
     if (typeof node !== "object" || !node instanceof ASTNode) {
       throw new Error("Expected ASTNode but got "+node);
@@ -42,16 +70,20 @@ export default class Renderer {
     if (renderer === undefined) {
       throw new Error("Don't know how to render node of type: "+node.type);
     }
+    if (renderer.prototype instanceof Component) {
+      const RenderComponent = renderer;
+      renderer = ({node}, {helpers}) => {
+        const container = document.createElement('span');
+        ReactDOM.render(<RenderComponent node={node} helpers={helpers}/>, container);
+        return container.innerHTML;
+      }
+    }
     var nodeEl = renderer(
       {node},
       {
         helpers: {
-          renderNode: (node) => {
-            if (!node) {
-              return '';
-            }
-            return this.renderHTMLString(node);
-          }
+          renderNode: this.renderNode,
+          renderNodeForReact: this.renderNodeForReact,
         }
       }
     );
