@@ -44,7 +44,7 @@ export default class Renderer {
 
   renderNodeForReact = (node) => {
     var Renderer = this.extraRenderers[node.type];
-    if (Renderer.prototype instanceof Component) {
+    if (Renderer && Renderer.prototype instanceof Component) {
       return (
         <Renderer
           node={node}

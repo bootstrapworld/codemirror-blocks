@@ -9,8 +9,8 @@ var beepSound = require('./beep.wav');
 
 function getLocationFromEl(el) {
   // TODO: it's kind of lame to have line and ch as attributes on random elements.
-  let line = el.getAttribute('line');
-  let ch = el.getAttribute('ch');
+  let line = el.dataset.line || el.getAttribute('line');
+  let ch = el.dataset.ch || el.getAttribute('ch');
   if (line === null || ch === null) {
     // no location to get...
     return null;
