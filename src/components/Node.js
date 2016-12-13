@@ -1,7 +1,13 @@
-import React, {PureComponent} from 'react';
+import React, {PureComponent, PropTypes} from 'react';
+
+import {ASTNode} from '../ast';
 
 export default class Node extends PureComponent {
-
+  static propTypes = {
+    type: PropTypes.string.isRequired,
+    node: PropTypes.instanceOf(ASTNode),
+    children: PropTypes.node.isRequired,
+  }
   render() {
     const {type, node, children} = this.props;
     return (

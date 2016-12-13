@@ -1,9 +1,13 @@
-import React, {Component} from 'react';
-import ReactDOM from 'react-dom';
+import React, {Component, PropTypes} from 'react';
 
 import Node from '../../../components/Node';
+import {Literal as LiteralASTNode} from '../../../ast';
 
 export default class Literal extends Component {
+  static propTypes = {
+    node: PropTypes.instanceOf(LiteralASTNode),
+  }
+
   render() {
     const {node} = this.props;
     return (
