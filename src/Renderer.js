@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 
 import Expression from './components/Expression';
+import Literal from './components/Literal';
 import {ASTNode} from './ast';
 
 function createFragment(htmlStr) {
@@ -28,7 +29,7 @@ export default class Renderer {
       condExpression: require('./templates/condExpression.handlebars'),
       condClause: require('./templates/condClause.handlebars'),
       struct: require('./templates/struct.handlebars'),
-      literal: require('./templates/literal.handlebars'),
+      literal: Literal,
       comment: require('./templates/comment.handlebars'),
       blank: require('./templates/blank.handlebars')
     };
