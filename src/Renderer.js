@@ -1,12 +1,19 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 
-import Expression from './components/Expression';
-import Unknown from './components/Unknown';
-import Literal from './components/Literal';
-import Blank from './components/Blank';
-import Comment from './components/Comment';
-import {ASTNode} from './ast';
+import Expression       from './components/Expression';
+import IfExpression     from './components/IfExpression';
+import LambdaExpression from './components/LambdaExpression';
+import CondExpression   from './components/CondExpression';
+import CondClause       from './components/CondClause';
+import Unknown          from './components/Unknown';
+import Literal          from './components/Literal';
+import Blank            from './components/Blank';
+import Comment          from './components/Comment';
+import StructDefinition from './components/StructDef';
+import VariableDefinition from './components/VariableDef';
+import FunctionDefinition from './components/FunctionDef';
+import {ASTNode}        from './ast';
 
 function createFragment(htmlStr) {
   var frag = document.createDocumentFragment();
@@ -25,13 +32,13 @@ export default class Renderer {
     this.nodeRenderers = {
       unknown: Unknown,
       expression: Expression,
-      functionDef: require('./templates/functionDef.handlebars'),
-      lambdaExpression: require('./templates/lambdaExpression.handlebars'),
-      variableDef: require('./templates/variableDef.handlebars'),
-      ifExpression: require('./templates/ifExpression.handlebars'),
-      condExpression: require('./templates/condExpression.handlebars'),
-      condClause: require('./templates/condClause.handlebars'),
-      struct: require('./templates/struct.handlebars'),
+      functionDef: FunctionDefinition,
+      lambdaExpression: LambdaExpression,
+      variableDef: VariableDefinition,
+      ifExpression: IfExpression,
+      condExpression: CondExpression,
+      condClause: CondClause,
+      struct: StructDefinition,
       literal: Literal,
       comment: Comment,
       blank: Blank
