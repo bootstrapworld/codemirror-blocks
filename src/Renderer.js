@@ -2,7 +2,10 @@ import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 
 import Expression from './components/Expression';
+import Unknown from './components/Unknown';
 import Literal from './components/Literal';
+import Blank from './components/Blank';
+import Comment from './components/Comment';
 import {ASTNode} from './ast';
 
 function createFragment(htmlStr) {
@@ -20,7 +23,7 @@ export default class Renderer {
     this.extraRenderers = extraRenderers || {};
     this.printASTNode = printASTNode || (node => node.toString());
     this.nodeRenderers = {
-      unknown: require('./templates/unknown.handlebars'),
+      unknown: Unknown,
       expression: Expression,
       functionDef: require('./templates/functionDef.handlebars'),
       lambdaExpression: require('./templates/lambdaExpression.handlebars'),
@@ -30,8 +33,8 @@ export default class Renderer {
       condClause: require('./templates/condClause.handlebars'),
       struct: require('./templates/struct.handlebars'),
       literal: Literal,
-      comment: require('./templates/comment.handlebars'),
-      blank: require('./templates/blank.handlebars')
+      comment: Comment,
+      blank: Blank
     };
     this._nodesInRenderOrder = [];
   }
