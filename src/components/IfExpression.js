@@ -21,9 +21,11 @@ export default class IfExpression extends Component {
           <tbody>
             <tr className="blocks-cond-row">
               <td className="blocks-cond-predicate">
+                <DropTarget location={node.testExpr.from} />
                 {helpers.renderNodeForReact(node.testExpr)}
               </td>
               <td className="blocks-cond-result">
+                <DropTarget location={node.thenExpr.from} />
                 {helpers.renderNodeForReact(node.thenExpr)}
               </td>
             </tr>
@@ -32,6 +34,7 @@ export default class IfExpression extends Component {
                 else
               </td>
               <td className="blocks-cond-result">
+                <DropTarget location={node.elseExpr.from} />
                 {helpers.renderNodeForReact(node.elseExpr)}
               </td>
             </tr>

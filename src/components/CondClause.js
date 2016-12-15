@@ -18,13 +18,14 @@ export default class CondClause extends Component {
       <tbody>
         <tr>
           <td className="blocks-cond-predicate">
+              <DropTarget location={node.testExpr.from} />
               {helpers.renderNodeForReact(node.testExpr)}
           </td>
           <td className="blocks-cond-result">
               {node.thenExprs.map((thenExpr, index) => (
                <span key={index}>
+                 <DropTarget location={thenExpr.from} />
                  {helpers.renderNodeForReact(thenExpr)}
-                 <DropTarget location={thenExpr.to} />
                </span>))}
           </td>
         </tr>

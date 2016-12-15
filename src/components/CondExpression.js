@@ -20,7 +20,7 @@ export default class CondExpression extends Component {
         <span className="blocks-operator">cond</span>
           <table className="blocks-cond-table">
             {node.clauses.map((clause, index) => 
-              <CondClause node={clause} key={index} helpers={helpers}/>)
+               <CondClause node={clause} key={index} helpers={helpers}/>)
               }
         </table>
       </Node>

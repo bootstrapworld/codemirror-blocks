@@ -153,7 +153,7 @@ export default class Renderer {
       if(["literal", "blank"].includes(node.type)){
         return flat.concat([node]);
       } else {
-        return [...node].reduce(flatten, flat);
+        return [...node].slice(1).reduce(flatten, flat);
       }
     }
 
