@@ -111,6 +111,7 @@ export default class Renderer {
   // extract all the literals, create clones, and absolutely position
   // them at their original locations
   animateTransition(ast, toBlocks) {
+    window.ast = ast;
     // take note of the parent elt, CM offsets, and rootNodes
     let cm = this.cm, parent = this.cm.getScrollerElement(), rootNodes = ast.rootNodes;
     let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
@@ -147,8 +148,17 @@ export default class Renderer {
       if(fromText) { tm.clear(); } // clean up the faked marker
     }
 
+    // extract all the literals and blanks from a rootNode
+    function flatten(flat, node) {
+      if(["literal", "blank"].includes(node.type)){
+        return flat.concat([node]);
+      } else {
+        return [...node].reduce(flatten, flat);
+      }
+    }
+
     // 1) get all the literals from the AST, and make clones of them
-    let literals=rootNodes.reduce((acc,r)=>acc.concat(Array.from(r).filter(n=>n.type=="literal")),[]);
+    let literals = ast.rootNodes.reduce(flatten, []);
     let clones = literals.map(toDom);
 
     // 2) move each clone to the *origin* location of the corresponding literal
