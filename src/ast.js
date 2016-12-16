@@ -14,6 +14,8 @@ function setChildAttributes(nodes, parent) {
     node.nextSibling= nodes[i+1] || false;
     node.parent     = parent;
     lastNode        = node;
+    node.options["aria-setsize"] = nodes.length;
+    node.options["aria-posinset"] = i+1;
   });
   if(parent) { parent.firstChild = nodes[0]; }
   
@@ -151,7 +153,7 @@ export class Expression extends ASTNode {
       yield* this.func;
     }
     for (let arg of this.args) {
-      yield arg;
+      yield* arg;
     }
   }
 
@@ -190,7 +192,7 @@ export class VariableDefinition extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
-    yield this.body;
+    yield* this.body;
   }
 
   toString() {
@@ -212,7 +214,7 @@ export class FunctionDefinition extends ASTNode {
     for (let node of this.args) {
       yield node;
     }
-    yield this.body;
+    yield* this.body;
   }
 
   toString() {
@@ -230,9 +232,9 @@ export class IfExpression extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
-    yield this.testExpr;
-    yield this.thenExpr;
-    yield this.elseExpr;
+    yield* this.testExpr;
+    yield* this.thenExpr;
+    yield* this.elseExpr;
   }
 
   toString() {

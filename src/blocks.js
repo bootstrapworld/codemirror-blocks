@@ -42,6 +42,10 @@ function playBeep() {
   setTimeout(function () { BEEP.play(); }, 50);
 }
 
+const ISMAC = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i)?true:false;
+const MODKEY = ISMAC? "Alt" : "Ctrl";
+
+
 const MARKER = Symbol("codemirror-blocks-marker");
 
 export class BlockMarker {
@@ -297,10 +301,6 @@ export default class CodeMirrorBlocks {
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
-    // if shift is down, add node to selection
-    if(event.shiftKey) {
-      this.addToSelection(node);
-    }
     // clicking on a non-selected node without the altKey clears selection
     else if((this.selectedNodes.size > 0) && !event.altKey 
             && !this.selectedNodes.has(node)) { 
@@ -475,16 +475,12 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  // remove the node from the selection, then from CM
-  deleteNodeWithId(nodeId) {
-    this.selectedNodes.delete(this.ast.nodeMap.get(nodeId));
-    this.deleteNode(this.ast.nodeMap.get(nodeId));
-  }
-
   // empty the selection, and delete all the nodes
   deleteSelectedNodes() {
-    this.selectedNodes.clear();
+    let nodeCount = this.selectedNodes.size;
     this.selectedNodes.forEach(n => this.deleteNode(n));
+    this.selectedNodes.clear();
+    this.say("deleted "+nodeCount+" item"+(nodeCount==1? "" : "s"));
   }
 
   startDraggingNode(node, event) {
@@ -654,16 +650,25 @@ export default class CodeMirrorBlocks {
         ["literal", "blank"].includes(activeNode.type)) {
       this.editLiteral(activeNode, event);
     }
-    // Space toggles node selection
-    else if (keyName === "Space" && activeNode) {
+    // Mod-Space adds to node selection
+    else if (keyName == (MODKEY+"-Space") && activeNode) {
       if(this.selectedNodes.has(activeNode)) { 
         this.removeFromSelection(activeNode);
       } else {
         this.addToSelection(activeNode);
       }
     }
+    // Space clears selection and selects active node
+    else if (keyName == "Space" && activeNode) {
+      if(this.selectedNodes.has(activeNode)) { 
+        this.clearSelection();
+      } else {
+        this.clearSelection();
+        this.addToSelection(activeNode);
+      }
+    }
     // Backspace should delete selected nodes
-    else if (keyName == "Backspace") {
+    else if (keyName == "Backspace" && this.selectedNodes.size > 0) {
       this.deleteSelectedNodes();
     } 
     // Tab and Shift-Tab work no matter what
@@ -688,11 +693,13 @@ export default class CodeMirrorBlocks {
   }
 
   // unset the aria attribute, and remove the node from the set
-  removeFromSelection(node) {
-    node.el.setAttribute("aria-selected", false);
+  removeFromSelection(node, speakEachOne=true) {
     this.selectedNodes.delete(node);
     node.el.setAttribute("aria-label", node.options["aria-label"]);
-    this.say(node.el.getAttribute("aria-label")+" unselected");
+    if(speakEachOne) {
+      this.say(node.el.getAttribute("aria-label")+" unselected");
+    }
+    node.el.removeAttribute("aria-selected");
   }
 
   // add the node to the selected set, and set the aria attribute
@@ -717,7 +724,7 @@ export default class CodeMirrorBlocks {
   // unset the aria attribute, and empty the set
   clearSelection() {
     if(this.selectedNodes.size > 0){
-      this.selectedNodes.forEach((n) => this.removeFromSelection(n));
+      this.selectedNodes.forEach((n) => this.removeFromSelection(n, false));
       this.say("selection cleared");
     } 
   }
