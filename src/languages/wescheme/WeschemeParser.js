@@ -177,7 +177,11 @@ function parseNode(node) {
       parseNode(node.alternative),
     );
   } else if (node instanceof structures.symbolExpr) {
-    return new Literal(from, to, node.val, "symbol", {'aria-label': symbolAria(node.val)});
+    if(node.val === "...") {
+      return new Blank(from, to, node.val, "symbol", {'aria-label': "blank"});
+    } else {
+      return new Literal(from, to, node.val, "symbol", {'aria-label': symbolAria(node.val)});
+    }
   } else if (node instanceof structures.literal) {
     var dataType = typeof node.val;
     let aria = node.toString();
