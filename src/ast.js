@@ -280,10 +280,6 @@ export class Blank extends ASTNode {
     this.dataType = dataType;
   }
 
-  initializeChildAttributes(){
-    this.depth = this.parent.depth + 1;
-  }
-
   *[Symbol.iterator]() {
     yield this;
   }
