@@ -1,0 +1,239 @@
+<!DOCTYPE HTML>
+<!--
+Linear by TEMPLATED
+templated.co @templatedco
+Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+-->
+<html>
+<head>
+	<title>codemirror-blocks</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="description" content="" />
+	<meta name="keywords" content="" />
+	<link href='http://fonts.googleapis.com/css?family=Roboto:400,100,300,700,500,900' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script src="/codemirror-blocks/assets/js/skel.min.js"></script>
+	<script src="/codemirror-blocks/assets/js/skel-panels.min.js"></script>
+  <script>
+    /*
+	Linear by TEMPLATED
+    templated.co @templatedco
+    Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+*/
+
+skel.init({
+	prefix: '/codemirror-blocks/assets/css/style',
+	resetCSS: true,
+	boxModel: 'border',
+	grid: {
+		gutters: 50
+	},
+	breakpoints: {
+		'mobile': {
+			range: '-480',
+			lockViewport: true,
+			containers: 'fluid',
+			grid: {
+				collapse: true,
+				gutters: 10
+			}
+		},
+		'desktop': {
+			range: '481-',
+			containers: 1200
+		},
+		'1000px': {
+			range: '481-1200',
+			containers: 960
+		}
+	}
+}, {
+	panels: {
+		panels: {
+			navPanel: {
+				breakpoints: 'mobile',
+				position: 'left',
+				style: 'reveal',
+				size: '80%',
+				html: '<div data-action="navList" data-args="nav"></div>'
+			}
+		},
+		overlays: {
+			titleBar: {
+				breakpoints: 'mobile',
+				position: 'top-left',
+				height: 44,
+				width: '100%',
+				html: '<span class="toggle" data-action="togglePanel" data-args="navPanel"></span>' +
+ '<span class="title" data-action="copyHTML" data-args="logo"></span>'
+			}
+		}
+	}
+
+
+    });
+  </script>
+	<noscript>
+		<link rel="stylesheet" href="/codemirror-blocks/assets/css/skel-noscript.css" />
+		<link rel="stylesheet" href="/codemirror-blocks/assets/css/style.css" />
+		<link rel="stylesheet" href="/codemirror-blocks/assets/css/style-desktop.css" />
+	</noscript>
+</head>
+<body>
+
+	<!-- Header -->
+	<div id="header">
+		<div id="nav-wrapper">
+	<!-- Nav -->
+	<nav id="nav">
+		<ul>
+			
+			<li class='current'><a href="/codemirror-blocks/index.html">Homepage</a></li>
+			<li ><a href="/codemirror-blocks/docs">Docs</a></li>
+			<li ><a href="/codemirror-blocks/examples">Examples</a></li>
+			<li><a href="http://github.com/bootstrapworld/codemirror-blocks">Github</a></li>
+		</ul>
+	</nav>
+</div>
+
+		<div class="container">
+
+			<!-- Logo -->
+			<div id="logo">
+				<h1><a href="#">codemirror-blocks</a></h1>
+				<span class="tag">drag-and-drop editing for functional programming languages</span>
+			</div>
+		</div>
+	</div>
+	<!-- Header -->
+	<!-- Featured -->
+<div id="featured">
+	<div class="container">
+		<header>
+			<h2>Welcome to codemirror-blocks</h2>
+		</header>
+		<p>
+      <strong>codemirror-blocks</strong>
+      is a javascript library for building block based code editors backed by
+      functional programming languages.  It's built on top of the popular
+      <a href="http://codemirror.net/">codemirror</a> text editor and is
+      designed to be very extensible. Check out the simple example below:
+    </p>
+    <div style="width: 500px; margin: auto;">
+      <iframe width="100%" height="350" src="//jsfiddle.net/4brjvk6h/5/embedded/js,html,result/dark/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+    </div>
+		<hr />
+		<div class="row">
+			<section class="4u">
+				<span class="pennant"><span class="fa fa-bolt"></span></span>
+				<h3>Check out the Examples</h3>
+				<p>
+          codemirror-blocks comes with a number of built-in goodies that do a
+          good job of showing off what the library is capable of.
+        </p>
+				<a href="examples/" class="button button-style1">See Examples</a>
+			</section>
+			<section class="4u">
+				<span class="pennant"><span class="fa fa-file-code-o"></span></span>
+				<h3>Read the Docs</h3>
+				<p>
+          Learn how to write your own parsers and renderers for use with <strong>codemirror-blocks</strong>,
+          or how to use one of the built-in ones.
+        </p>
+				<a href="docs/" class="button button-style1">Read the Docs</a>
+			</section>
+			<section class="4u">
+				<span class="pennant"><span class="fa fa-commenting-o"></span></span>
+				<h3>Get in touch</h3>
+				<p>
+          Have a question or a comment? Just want to send funny jokes our way? Visit us on our gitter channel.
+        </p>
+				<a href="https://gitter.im/bootstrapworld/codemirror-blocks" target="_blank" class="button button-style1">Talk to us</a>
+			</section>
+
+		</div>
+	</div>
+</div>
+
+<!-- Main -->
+	<!--div id="main">
+		<div id="content" class="container">
+
+			<div class="row">
+				<section class="6u">
+					<a href="#" class="image full"><img src="/assets/images/pic01.jpg" alt=""></a>
+					<header>
+						<h2>Mauris vulputate dolor</h2>
+					</header>
+					<p>In posuere eleifend odio. Quisque semper augue mattis wisi. Maecenas ligula. Pellentesque viverra vulputate enim. Aliquam erat volutpat. Donec leo, vivamus fermentum nibh in augue praesent a lacus at urna congue rutrum.</p>
+				</section>
+				<section class="6u">
+					<a href="#" class="image full"><img src="/assets/images/pic02.jpg" alt=""></a>
+					<header>
+						<h2>Mauris vulputate dolor</h2>
+					</header>
+					<p>In posuere eleifend odio. Quisque semper augue mattis wisi. Maecenas ligula. Pellentesque viverra vulputate enim. Aliquam erat volutpat. Donec leo, vivamus fermentum nibh in augue praesent a lacus at urna congue rutrum.</p>
+				</section>
+			</div>
+
+			<div class="row">
+				<section class="6u">
+					<a href="#" class="image full"><img src="/assets/images/pic03.jpg" alt=""></a>
+					<header>
+						<h2>Mauris vulputate dolor</h2>
+					</header>
+					<p>In posuere eleifend odio. Quisque semper augue mattis wisi. Maecenas ligula. Pellentesque viverra vulputate enim. Aliquam erat volutpat. Donec leo, vivamus fermentum nibh in augue praesent a lacus at urna congue rutrum.</p>
+				</section>
+				<section class="6u">
+					<a href="#" class="image full"><img src="/assets/images/pic04.jpg" alt=""></a>
+					<header>
+						<h2>Mauris vulputate dolor</h2>
+					</header>
+					<p>In posuere eleifend odio. Quisque semper augue mattis wisi. Maecenas ligula. Pellentesque viverra vulputate enim. Aliquam erat volutpat. Donec leo, vivamus fermentum nibh in augue praesent a lacus at urna congue rutrum.</p>
+				</section>
+			</div>
+
+		</div>
+	</div-->
+
+
+	<!-- Tweet -->
+	<!-- div id="tweet">
+		<div class="container">
+			<section>
+				<blockquote>Some marketing quote here.</blockquote>
+			</section>
+		</div>
+	</div-->
+
+
+<!-- Footer -->
+<!--div id="footer">
+	<div class="container">
+		<section>
+			<header>
+				<h2>Get in touch</h2>
+				<span class="byline">Contributions and bug reports always welcome!</span>
+			</header>
+			<ul class="contact">
+				<li>
+          <a href="http://github.com/bootstrapworld/codemirror-blocks" class="fa fa-github">
+            <span>Github</span>
+          </a>
+        </li>
+			</ul>
+		</section>
+	</div>
+</div-->
+
+<!-- Copyright -->
+<div id="copyright">
+	<div class="container">
+		Design: <a href="http://templated.co">TEMPLATED</a>
+		Jekyll Template: <a href="http://cloudcannon.com">Cloud Cannon</a>
+	</div>
+</div>
+
+</body>
+</html>
