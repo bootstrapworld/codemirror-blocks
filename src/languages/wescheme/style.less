@@ -154,16 +154,16 @@
     color: @literal-symbol-color;
   }
 
-  .blocks-node:focus {
-    border-style: solid;
-    border-color: @editing-border-color;
-    outline: 0;
-  }
   .blocks-node[aria-selected^="true"] {
     border-style: dotted;
     border-color: @editing-border-color;
     outline: 0;
     box-shadow: 5px 5px 5px #888888;
+  }
+  .blocks-node:focus {
+    border-style: solid;
+    border-color: @editing-border-color;
+    outline: 0;
   }
 
   .blocks-editing {
@@ -190,7 +190,6 @@
     margin: 0px 5px;
     min-width: 15px;
     display: inline-block;
-    height: 2em;
     cursor: default;
     vertical-align: middle;
     transition: min-width .5s;
