@@ -14,8 +14,8 @@ function setChildAttributes(nodes, parent) {
     node.nextSibling= nodes[i+1] || false;
     node.parent     = parent;
     lastNode        = node;
-    node.options["aria-setsize"] = nodes.length;
-    node.options["aria-posinset"] = i+1;
+    //node.options["aria-setsize"] = nodes.length;
+    //node.options["aria-posinset"] = i+1;
   });
   if(parent) { parent.firstChild = nodes[0]; }
   

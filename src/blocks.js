@@ -298,18 +298,18 @@ export default class CodeMirrorBlocks {
   }
 
   activateNode(node, event) {
+    var prevSelected = this.getActiveNode();
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
-    // clicking on a non-selected node without the altKey clears selection
-    else if((this.selectedNodes.size > 0) && !event.altKey 
-            && !this.selectedNodes.has(node)) { 
+    // if there's a selection and the altKey isn't pressed, clear selection
+    if((this.selectedNodes.size > 0) && !event.altKey) { 
       this.clearSelection(); 
     }
-    event.stopPropagation();
-    this.cm.scrollIntoView(node.from);
     node.el.focus();
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
+    event.stopPropagation();
+    this.cm.scrollIntoView(node.from);
   }
 
   isNodeHidden(node) {
@@ -695,11 +695,10 @@ export default class CodeMirrorBlocks {
   // unset the aria attribute, and remove the node from the set
   removeFromSelection(node, speakEachOne=true) {
     this.selectedNodes.delete(node);
-    node.el.setAttribute("aria-label", node.options["aria-label"]);
     if(speakEachOne) {
-      this.say(node.el.getAttribute("aria-label")+" unselected");
+      this.say(node.options["aria-label"]+" unselected");
     }
-    node.el.removeAttribute("aria-selected");
+    node.el.setAttribute("aria-selected", "false");
   }
 
   // add the node to the selected set, and set the aria attribute
@@ -717,7 +716,6 @@ export default class CodeMirrorBlocks {
       return true;
     }
     node.el.setAttribute("aria-selected", true);
-    node.el.setAttribute("aria-label", "selected "+node.options["aria-label"]);
     this.selectedNodes.add(node);
   }
 

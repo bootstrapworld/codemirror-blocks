@@ -150,6 +150,7 @@ export default class Renderer {
       if (hiddenTypes && hiddenTypes.has(node.type)) {
         node.el.removeAttribute("role"); // hidden nodes should not show up in the ARIA tree
         node.el.classList.add('blocks-hidden');
+        node.el.setAttribute("role", "presentation");
       }
     }
     this.cm.markText(
