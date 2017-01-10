@@ -298,7 +298,6 @@ export default class CodeMirrorBlocks {
   }
 
   activateNode(node, event) {
-    var prevSelected = this.getActiveNode();
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
