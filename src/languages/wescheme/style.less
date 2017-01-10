@@ -110,7 +110,7 @@
     display: inline-flex;
     flex-wrap: wrap;
     flex-grow: 1;
-    padding: 8px 0px;
+    padding: 8px 8px 8px 0px;
 
     > .blocks-literal, .blocks-white-space[contenteditable="true"] {
       background: white;
@@ -200,18 +200,26 @@
     font-weight: bold;
     border-radius: @border-radius;
     margin: 0px 5px;
-    min-width: 10px;
-    height: 1.1em;
+    min-width: 15px;
+    display: inline-block;
+    height: 2em;
     cursor: default;
+    vertical-align: middle;
+    transition: min-width .5s;
 
     &:hover {
       background-color: @hover-drop-background-color;
       cursor: hand;
+      background: white;
+      min-width: 20px;
+      border-style: inset;
     }
 
     &.blocks-editing {
       font-weight: normal;
       margin: 0px 5px;
+      min-width: 20px;
+      border-style: inset;
       &.blocks-error {
         border: @border-width solid @error-border-color;
       }
