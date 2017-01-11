@@ -150,7 +150,7 @@ export class Expression extends ASTNode {
       yield* this.func;
     }
     for (let arg of this.args) {
-      yield* arg;
+      yield arg;
     }
   }
 

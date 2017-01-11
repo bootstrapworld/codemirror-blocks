@@ -44,7 +44,7 @@ function playBeep() {
 
 const ISMAC = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i)?true:false;
 const MODKEY = ISMAC? "Alt" : "Ctrl";
-
+const CTRLKEY = ISMAC? "Cmd" : "Ctrl";
 
 const MARKER = Symbol("codemirror-blocks-marker");
 
@@ -122,6 +122,12 @@ export default class CodeMirrorBlocks {
     this.wrapper.appendChild(this.announcements);
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
+    // Offscreen buffer for copy/cut/paste operations
+    this.buffer = document.createElement('textarea');
+    this.buffer.style.opacity = 0;
+    this.buffer.style.height = "1px";
+    this.buffer.onchange = () => { this.buffer.value = "" }
+    document.body.appendChild(this.buffer);
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -141,7 +147,7 @@ export default class CodeMirrorBlocks {
           blank: this.editLiteral,
           whitespace: this.editWhiteSpace
         }),
-        onpaste: this.nodeEventHandler(this.handlePaste),
+        onpaste: this.nodeEventHandler(this.insertionQuarantine),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
         ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
@@ -160,7 +166,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('drop',      (cm, e) => dropHandler(e));
     this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
     this.cm.on('inputread',   (cm, e) => this.handleKeyDown(e));
-    this.cm.on('paste',     (cm, e) => this.handlePaste(e));
+    this.cm.on('paste',     (cm, e) => this.insertionQuarantine(e));
     this.cm.on('keypress',  (cm, e) => this.insertionQuarantine(e));
     this.cm.on('mousedown', (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
@@ -201,10 +207,12 @@ export default class CodeMirrorBlocks {
         this.wrapper.setAttribute( "role", "tree"); 
         this.scroller.setAttribute("role", "group");
         this.wrapper.setAttribute("aria-label", "Block Editor");
+        this.say("Switching to Block Mode");
       } else { 
         this.wrapper.removeAttribute( "role"); 
         this.scroller.removeAttribute("role");
         this.wrapper.setAttribute("aria-label", "Text Editor");
+        this.say("Switching to Text Mode");
       }
       if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
       this.renderer.animateTransition(this.ast, mode);
@@ -333,44 +341,26 @@ export default class CodeMirrorBlocks {
     }
     var activeEl = this.getActiveNode().el;
     event.stopPropagation();
-    var buffer = document.createElement('textarea');
-    document.body.appendChild(buffer);
-    buffer.style.opacity = "0";
-    buffer.style.position = "absolute";
+    
     var clipboardText = "";
     // copy the contents to the buffer first-to-last
     var selectedNodes = [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from));
     selectedNodes.forEach(n => clipboardText += this.cm.getRange(n.from, n.to) + " ");
-    buffer.value = clipboardText;
-    buffer.select();
+    this.buffer.value = clipboardText;
+    this.buffer.select();
     try {
       document.execCommand && document.execCommand(event.type);
     } catch (e) {
       console.error("execCommand doesn't work in this browser :(", e);
     }
-    setTimeout(() => {
-      activeEl.focus();
-      buffer.parentNode && buffer.parentNode.removeChild(buffer);
-    }, 200);
+    // put focus back on activeEl, and clear the buffer
+    setTimeout(() => { activeEl.focus() }, 200);
     if (event.type == 'cut') {
       // delete last-to-first to preserve the from/to indices
       selectedNodes.reverse().forEach(n => this.cm.replaceRange('', n.from, n.to));
       this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
     }
     this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboardText);
-  }
-
-  handlePaste(event) {
-    console.log("pasting");
-    // we're pasting and there's an active node
-    if(this.getActiveNode()) {
-      console.log('pasting on active node');
-    } 
-    // we're pasting into CM
-    else {
-      console.log('pasting at CM cursor');
-      this.insertionQuarantine(event);
-    }
   }
 
   saveEditableEl(nodeEl, text, range) {
@@ -472,6 +462,10 @@ export default class CodeMirrorBlocks {
     if (node) {
       this.cm.replaceRange('', node.from, node.to);
     }
+  }
+  
+  deleteNodeWithId(nodeId) {
+    this.deleteNode(this.ast.nodeMap.get(nodeId));
   }
 
   // empty the selection, and delete all the nodes
@@ -649,14 +643,6 @@ export default class CodeMirrorBlocks {
         ["literal", "blank"].includes(activeNode.type)) {
       this.editLiteral(activeNode, event);
     }
-    // Mod-Space adds to node selection
-    else if (keyName == (MODKEY+"-Space") && activeNode) {
-      if(this.selectedNodes.has(activeNode)) { 
-        this.removeFromSelection(activeNode);
-      } else {
-        this.addToSelection(activeNode);
-      }
-    }
     // Space clears selection and selects active node
     else if (keyName == "Space" && activeNode) {
       if(this.selectedNodes.has(activeNode)) { 
@@ -666,10 +652,36 @@ export default class CodeMirrorBlocks {
         this.addToSelection(activeNode);
       }
     }
+    // Mod-Space toggles node selection, preserving earlier selection
+    else if (keyName == (MODKEY+"-Space") && activeNode) {
+      if(this.selectedNodes.has(activeNode)) { 
+        this.removeFromSelection(activeNode);
+      } else {
+        this.addToSelection(activeNode);
+      }
+    }
     // Backspace should delete selected nodes
     else if (keyName == "Backspace" && this.selectedNodes.size > 0) {
       this.deleteSelectedNodes();
     } 
+    // Ctrl-[ and Ctrl-] move cursor outside of block
+    else if (keyName === "Ctrl-[" && activeNode) {
+      this.cm.focus();
+      this.cm.setCursor(activeNode.from);
+    }
+    else if (keyName === "Ctrl-]" && activeNode) {
+      this.cm.focus();
+      this.cm.setCursor(activeNode.to);
+    }
+    // shift focus to buffer for the *real* paste event to fire
+    // then replace or insert, then reset the buffer
+    else if (keyName == CTRLKEY+"-V") {
+      this.cm.replaceRange("", activeNode.from, 
+        this.selectedNodes.has(activeNode)? activeNode.to : activeNode.from);
+      this.cm.focus();
+      this.cm.setCursor(activeNode.from);
+      return;
+    }
     // Tab and Shift-Tab work no matter what
     else if (keyName === "Tab") {
       let searchFn = this.ast.getNodeAfter.bind(this.ast);
