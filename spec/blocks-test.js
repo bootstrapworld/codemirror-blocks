@@ -386,7 +386,8 @@ describe('The CodeMirrorBlocks Class', function() {
         });
 
         it('should remove multiple selected nodes on cut', function() {
-          this.literal2.el.dispatchEvent(keydown(DOWN_KEY, {shiftKey: true}));
+          this.literal2.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
+          this.literal2.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true}));
           expect(this.blocks.selectedNodes.size).toBe(2);
           document.dispatchEvent(cut());
           expect(this.cm.getValue()).toBe(' ');
@@ -487,14 +488,6 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.selectedNodes.size).toBe(0);
       });
 
-
-      it('shift-arrow extends selection & changes active ', function() {
-        this.literal.el.dispatchEvent(keydown(DOWN_KEY, {shiftKey: true}));
-        expect(this.literal2.el.getAttribute("aria-selected")).toBe('true');
-        expect(document.activeElement).toBe(this.literal2.el);
-        expect(this.blocks.selectedNodes.size).toBe(2);
-      });
-
       it('alt-arrow preserves selection & changes active ', function() {
         this.literal.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
         expect(this.literal.el.getAttribute("aria-selected")).toBe('true');
@@ -506,7 +499,7 @@ describe('The CodeMirrorBlocks Class', function() {
       it('allow multiple, non-contiguous selection ', function() {
         this.literal.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
         this.literal2.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true})); // skip literal2
-        this.expr.el.dispatchEvent(keydown(SPACE_KEY)); // toggle selection on expression
+        this.expr.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true})); // toggle selection on expr
         expect(this.literal.el.getAttribute("aria-selected")).toBe('true');
         expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
         expect(document.activeElement).toBe(this.expr.el);
@@ -517,7 +510,7 @@ describe('The CodeMirrorBlocks Class', function() {
         this.expr.el.dispatchEvent(click());
         this.expr.el.dispatchEvent(keydown(SPACE_KEY));
         this.expr.el.dispatchEvent(keydown(RIGHT_KEY, {altKey: true}));
-        this.expr.func.el.dispatchEvent(keydown(SPACE_KEY));
+        this.expr.func.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true}));
         expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
         expect(this.expr.func.el.getAttribute("aria-selected")).toBe('false');
         expect(document.activeElement).toBe(this.expr.func.el);
