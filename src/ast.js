@@ -8,14 +8,11 @@ function comparePos(a, b) {
 // and sibling pointers
 function setChildAttributes(nodes, parent) {
   let lastNode = false;
-  //let level = (parent? parent.level+1 : 1); // if parent=false, depth=1
   nodes.forEach((node, i) => {
     node.prevSibling= lastNode;
     node.nextSibling= nodes[i+1] || false;
     node.parent     = parent;
     lastNode        = node;
-    //node.options["aria-setsize"] = nodes.length;
-    //node.options["aria-posinset"] = i+1;
   });
   if(parent) { parent.firstChild = nodes[0]; }
   
