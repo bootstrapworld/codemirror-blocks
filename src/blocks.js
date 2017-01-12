@@ -147,7 +147,7 @@ export default class CodeMirrorBlocks {
           blank: this.editLiteral,
           whitespace: this.editWhiteSpace
         }),
-        onpaste: this.nodeEventHandler(this.insertionQuarantine),
+        onpaste: this.nodeEventHandler(this.handleTopLevelEntry),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
         ondragend: this.nodeEventHandler(this.stopDraggingNode),
         ondragleave: this.nodeEventHandler(this.handleDragLeave),
@@ -165,10 +165,11 @@ export default class CodeMirrorBlocks {
     var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
     this.cm.on('drop',      (cm, e) => dropHandler(e));
     this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
-    this.cm.on('inputread',   (cm, e) => this.handleKeyDown(e));
-    this.cm.on('paste',     (cm, e) => this.insertionQuarantine(e));
-    this.cm.on('keypress',  (cm, e) => this.insertionQuarantine(e));
-    this.cm.on('mousedown', (cm, e) => this.cancelIfErrorExists(e));
+    this.cm.on('inputread', (cm, e) => this.handleKeyDown(e));
+    this.cm.on('paste',     (cm, e) => this.handleTopLevelEntry(e));
+    this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
+    this.cm.on('mousedown', (cm, e) => {this.toggleDraggable(e); this.cancelIfErrorExists(e)});
+    this.cm.on('mouseup',   (cm, e) => this.toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
@@ -217,6 +218,13 @@ export default class CodeMirrorBlocks {
       if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
       this.renderer.animateTransition(this.ast, mode);
     }
+  }
+
+  // FF & WK don't like draggable and contenteditable to mix, so we need
+  // to turn draggable on and off based on mousedown/up events
+  toggleDraggable(e) {
+    if(e.target.draggable) {e.target.removeAttribute("draggable");} 
+    else { e.target.setAttribute("draggable", true); }
   }
 
   toggleBlockMode() {
@@ -342,11 +350,10 @@ export default class CodeMirrorBlocks {
     var activeEl = this.getActiveNode().el;
     event.stopPropagation();
     
-    var clipboardText = "";
     // copy the contents to the buffer first-to-last
-    var selectedNodes = [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from));
-    selectedNodes.forEach(n => clipboardText += this.cm.getRange(n.from, n.to) + " ");
-    this.buffer.value = clipboardText;
+    var sel = [...this.selectedNodes].sort((a,b) => poscmp(b.from, a.from));
+    var clipboard = sel.reduce((s,n)=>s+this.cm.getRange(n.from, n.to)+" ","");
+    this.buffer.value = clipboard;
     this.buffer.select();
     try {
       document.execCommand && document.execCommand(event.type);
@@ -354,13 +361,28 @@ export default class CodeMirrorBlocks {
       console.error("execCommand doesn't work in this browser :(", e);
     }
     // put focus back on activeEl, and clear the buffer
-    setTimeout(() => { activeEl.focus() }, 200);
+    setTimeout(() => { activeEl.focus(); }, 200);
     if (event.type == 'cut') {
       // delete last-to-first to preserve the from/to indices
-      selectedNodes.reverse().forEach(n => this.cm.replaceRange('', n.from, n.to));
+      sel.forEach(n => this.cm.replaceRange('', n.from, n.to));
       this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
     }
-    this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboardText);
+    this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboard);
+  }
+
+  handlePaste(e) {
+    let that = this, activeNode = this.getActiveNode();
+    this.buffer.focus();
+    setTimeout(() => {
+      let data = that.buffer.value;
+      if(that.selectedNodes.has(activeNode)) {
+        activeNode.el.textContent = data;
+        return this.editLiteral(activeNode, e);
+      }
+      this.cm.focus();
+      this.cm.setCursor(activeNode.from);
+      this.insertionQuarantine(data, e);
+    }, 50);
   }
 
   saveEditableEl(nodeEl, text, range) {
@@ -443,18 +465,23 @@ export default class CodeMirrorBlocks {
   }
 
   editLiteral(node, event) {
+    node.el.draggable = false; // defend against webkit
+    console.log('starting editLiteral. draggable is ', node.el.draggable);
     event.stopPropagation();
     this.say("editing "+node.el.getAttribute("aria-label"));
     node.el.oldText = this.cm.getRange(node.from, node.to);
+    console.log('setting class, contentEditable and blur/key events');
     node.el.contentEditable = true;
     node.el.classList.add('blocks-editing');
     node.el.onblur = this.saveEdit.bind(this, node, node.el);
     node.el.onkeydown = this.handleEditKeyDown.bind(node.el);
     let range = document.createRange();
     range.setStart(node.el, node.quarantine? 1 : 0);
-    range.setEnd(node.el, node.el.childNodes.length);
+    range.setEnd(node.el, node.el.children.length);
+    console.log('built range: ', range);
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
+    node.el.focus();
   }
 
   // remove node contents from CM
@@ -463,7 +490,7 @@ export default class CodeMirrorBlocks {
       this.cm.replaceRange('', node.from, node.to);
     }
   }
-  
+
   deleteNodeWithId(nodeId) {
     this.deleteNode(this.ast.nodeMap.get(nodeId));
   }
@@ -603,12 +630,16 @@ export default class CodeMirrorBlocks {
     });
   }
 
-  insertionQuarantine(e) {
+  handleTopLevelEntry(e) {
     if(!this.blockMode) return;                           // bail if mode==false
     e.preventDefault();
     this.clearSelection();                                // clear the previous selection
     let text = (e.type == "keypress")? String.fromCharCode(e.which)
              : e.clipboardData.getData('text/plain');
+    this.insertionQuarantine(text, e);    
+  }
+
+  insertionQuarantine(text, e) {
     let cur  = this.cm.getCursor();
     let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
     let ast  = this.parser.parse(ws + "x");               // make a fake literal
@@ -675,12 +706,8 @@ export default class CodeMirrorBlocks {
     }
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
-    else if (keyName == CTRLKEY+"-V") {
-      this.cm.replaceRange("", activeNode.from, 
-        this.selectedNodes.has(activeNode)? activeNode.to : activeNode.from);
-      this.cm.focus();
-      this.cm.setCursor(activeNode.from);
-      return;
+    else if (keyName == CTRLKEY+"-V" && activeNode) {
+      return this.handlePaste(event);
     }
     // Tab and Shift-Tab work no matter what
     else if (keyName === "Tab") {
