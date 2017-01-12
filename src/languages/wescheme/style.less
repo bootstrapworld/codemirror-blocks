@@ -111,10 +111,12 @@
     min-width: 10px;
     line-height: @height - @border-width * 2;
     height: @height;
+    cursor: pointer;
     cursor: hand;
 
     &.blocks-editing, &.blocks-quarantine {
       border-color: @editing-border-color;
+      cursor: text;
       &.blocks-error {
         border-color: @error-border-color;
       }
@@ -166,7 +168,7 @@
     outline: 0;
   }
 
-  .blocks-editing {
+  .blocks-editing * {
     outline: 0;
     cursor: text;
 
@@ -183,7 +185,7 @@
 
 
   .blocks-white-space {
-    padding: 2px;
+    padding: 0px;
     border: @border-width dotted lightgray;
     font-weight: bold;
     border-radius: @border-radius;
@@ -191,15 +193,18 @@
     min-width: 15px;
     display: inline-block;
     cursor: default;
+    height: 22px;
     vertical-align: middle;
+    text-align: center;
     transition: min-width .5s;
 
     &:hover {
       background-color: @hover-drop-background-color;
-      cursor: hand;
       background: white;
       min-width: 20px;
       border-style: inset;
+      cursor: pointer;
+      cursor: hand;
     }
 
     &.blocks-editing {
@@ -213,6 +218,7 @@
       &:hover {
         background-color: transparent;
       }
+      cursor: text;
     }
 
   }
