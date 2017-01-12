@@ -464,46 +464,44 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     describe('When dealing with whitespace focusing', function() {
-        beforeEach(function() {
-          this.cm.setValue('(+ 1 2) 99');
-          this.firstRoot  = this.blocks.ast.rootNodes[0];
-          this.secondRoot = this.blocks.ast.rootNodes[1];
-          this.funcSymbol = this.blocks.ast.rootNodes[0].func;
-          this.firstArg   = this.blocks.ast.rootNodes[0].args[0];
-          this.secondArg  = this.blocks.ast.rootNodes[0].args[1];
-          this.firstWS    = this.firstArg.el.previousElementSibling;
-          this.secondWS    = this.firstArg.el.nextElementSibling;
-        });
+      beforeEach(function() {
+        this.cm.setValue('(+ 1 2) 99');
+        this.firstRoot  = this.blocks.ast.rootNodes[0];
+        this.secondRoot = this.blocks.ast.rootNodes[1];
+        this.funcSymbol = this.blocks.ast.rootNodes[0].func;
+        this.firstArg   = this.blocks.ast.rootNodes[0].args[0];
+        this.secondArg  = this.blocks.ast.rootNodes[0].args[1];
+        this.firstWS    = this.firstArg.el.previousElementSibling;
+        this.secondWS    = this.firstArg.el.nextElementSibling;
+      });
 
-        it('Ctrl-[ should jump to the left of a top-level node', function() {
-          this.firstRoot.el.dispatchEvent(click());
-          this.firstRoot.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
-          let cursor = this.cm.getCursor();
-          expect(cursor.line).toBe(0);
-          expect(cursor.ch).toBe(0);
-        });
+      it('Ctrl-[ should jump to the left of a top-level node', function() {
+        this.firstRoot.el.dispatchEvent(click());
+        this.firstRoot.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
+        let cursor = this.cm.getCursor();
+        expect(cursor.line).toBe(0);
+        expect(cursor.ch).toBe(0);
+      });
 
-        it('Ctrl-] should jump to the right of a top-level node', function() {
-          this.firstRoot.el.dispatchEvent(click());
-          this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
-          let cursor = this.cm.getCursor();
-          expect(cursor.line).toBe(0);
-          expect(cursor.ch).toBe(7);
-        });
+      it('Ctrl-] should jump to the right of a top-level node', function() {
+        this.firstRoot.el.dispatchEvent(click());
+        this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
+        let cursor = this.cm.getCursor();
+        expect(cursor.line).toBe(0);
+        expect(cursor.ch).toBe(7);
+      });
 
-        it('Ctrl-[ should jump to the whitespace to the left', function() {
-          this.firstArg.el.dispatchEvent(click());
-          this.firstArg.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
-          let cursor = this.cm.getCursor();
-          expect(document.activeElement).toBe(this.firstWS);
-        });
+      it('Ctrl-[ should jump to the whitespace to the left', function() {
+        this.firstArg.el.dispatchEvent(click());
+        this.firstArg.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
+        expect(document.activeElement).toBe(this.firstWS);
+      });
 
-        it('Ctrl-] should jump to the whitespace to the left', function() {
-          this.firstArg.el.dispatchEvent(click());
-          this.firstArg.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
-          let cursor = this.cm.getCursor();
-          expect(document.activeElement).toBe(this.secondWS);
-        });
+      it('Ctrl-] should jump to the whitespace to the left', function() {
+        this.firstArg.el.dispatchEvent(click());
+        this.firstArg.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
+        expect(document.activeElement).toBe(this.secondWS);
+      });
     });
 
     describe("when dealing with node selection, ", function() {

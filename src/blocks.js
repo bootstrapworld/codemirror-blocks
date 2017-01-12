@@ -657,7 +657,7 @@ export default class CodeMirrorBlocks {
       40: this.ast.getNextSibling
     };
     function moveCursorAdjacent(node, cursor) {
-       if(node) {
+      if(node) {
         that.editWhiteSpace(node, event);
       } else {
         that.cm.focus();
