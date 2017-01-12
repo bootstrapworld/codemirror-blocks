@@ -126,7 +126,7 @@ export default class CodeMirrorBlocks {
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
     this.buffer.style.height = "1px";
-    this.buffer.onchange = () => { this.buffer.value = "" }
+    this.buffer.onchange = () => { this.buffer.value = ""; };
     document.body.appendChild(this.buffer);
 
     if (this.language && this.language.getRenderOptions) {
@@ -168,7 +168,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('inputread', (cm, e) => this.handleKeyDown(e));
     this.cm.on('paste',     (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
-    this.cm.on('mousedown', (cm, e) => {this.toggleDraggable(e); this.cancelIfErrorExists(e)});
+    this.cm.on('mousedown', (cm, e) => {this.toggleDraggable(e); this.cancelIfErrorExists(e);});
     this.cm.on('mouseup',   (cm, e) => this.toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
@@ -321,15 +321,15 @@ export default class CodeMirrorBlocks {
     this.cm.scrollIntoView(node.from);
   }
 
-  isNodeHidden(node) {
-    return (node.el.classList.contains('blocks-hidden') ||
-      node.el.matches('.blocks-hidden *'));
+  isNodeLocked(node) {
+    return (node.el.classList.contains('blocks-locked') ||
+      node.el.matches('.blocks-locked *'));
   }
 
-  _getNextUnhiddenNode(nextFn) {
+  _getNextUnlockedNode(nextFn) {
     let nodeOrCursor = this.getActiveNode() || this.cm.getCursor();
     let nextNode = nextFn(nodeOrCursor);
-    while (nextNode && this.isNodeHidden(nextNode)) {
+    while (nextNode && this.isNodeLocked(nextNode)) {
       nextNode = nextFn(nextNode);
     }
     return nextNode || nodeOrCursor;
@@ -667,7 +667,7 @@ export default class CodeMirrorBlocks {
     // Arrows can move the active element, modify the selection
     if(arrowHandlers[event.keyCode] && activeNode) {
       let searchFn = arrowHandlers[event.keyCode].bind(this.ast);
-      let nextNode = this._getNextUnhiddenNode(searchFn);
+      let nextNode = this._getNextUnlockedNode(searchFn);
       if(nextNode === activeNode){ playBeep(); }
       this.activateNode(nextNode, event);
     } 
@@ -713,10 +713,10 @@ export default class CodeMirrorBlocks {
     // Tab and Shift-Tab work no matter what
     else if (keyName === "Tab") {
       let searchFn = this.ast.getNodeAfter.bind(this.ast);
-      this.activateNode(this._getNextUnhiddenNode(searchFn), event);
+      this.activateNode(this._getNextUnlockedNode(searchFn), event);
     } else if (keyName === "Shift-Tab") {
       let searchFn = this.ast.getNodeBefore.bind(this.ast);
-      this.activateNode(this._getNextUnhiddenNode(searchFn), event);
+      this.activateNode(this._getNextUnlockedNode(searchFn), event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {

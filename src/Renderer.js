@@ -9,9 +9,9 @@ function createFragment(htmlStr) {
 }
 
 export default class Renderer {
-  constructor(cm, {hideNodesOfType, extraRenderers, printASTNode} = {}) {
+  constructor(cm, {lockNodesOfType, extraRenderers, printASTNode} = {}) {
     this.cm = cm;
-    this.hideNodesOfType = hideNodesOfType;
+    this.lockNodesOfType = lockNodesOfType;
     this.extraRenderers = extraRenderers || {};
     this.printASTNode = printASTNode || (node => node.toString());
     this.nodeRenderers = {
@@ -136,9 +136,9 @@ export default class Renderer {
   render(rootNode) {
     this._nodesInRenderOrder = [];
     var rootNodeFrag = createFragment(this.renderHTMLString(rootNode));
-    let hiddenTypes = null;
-    if (this.hideNodesOfType) {
-      hiddenTypes = new Set(this.hideNodesOfType);
+    let lockedTypes = null;
+    if (this.lockNodesOfType) {
+      lockedTypes = new Set(this.lockNodesOfType);
     }
     for (let node of this._nodesInRenderOrder) {
       node.el = rootNodeFrag.getElementById(`block-node-${node.id}`);
@@ -146,9 +146,9 @@ export default class Renderer {
         console.warn("!! Didn't find a dom node for node", node);
         continue;
       }
-      if (hiddenTypes && hiddenTypes.has(node.type)) {
-        node.el.removeAttribute("role"); // hidden nodes should not show up in the ARIA tree
-        node.el.classList.add('blocks-hidden');
+      if (lockedTypes && lockedTypes.has(node.type)) {
+        node.el.removeAttribute("role"); // locked nodes should not show up in the ARIA tree
+        node.el.classList.add('blocks-locked');
         node.el.setAttribute("role", "presentation");
       }
     }

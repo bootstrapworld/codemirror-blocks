@@ -74,16 +74,16 @@ describe('The render module,', function() {
     });
   });
 
-  describe('when specifying the hideNodesOfType option,', function() {
+  describe('when specifying the lockNodesOfType option,', function() {
     beforeEach(function() {
       this.literal = this.parser.parse('1').rootNodes[0];
-      this.renderer = new Renderer(this.cm, {hideNodesOfType:['literal']});
+      this.renderer = new Renderer(this.cm, {lockNodesOfType:['literal']});
       this.fragment = this.renderer.render(this.literal);
       this.literalEls = this.fragment.querySelectorAll('span.blocks-literal');
     });
 
-    it('should add the blocks-hidden class, and remove role=treeitem', function() {
-      expect(this.literalEls[0].classList.contains('blocks-hidden')).toBe(true);
+    it('should add the blocks-locked class, and remove role=treeitem', function() {
+      expect(this.literalEls[0].classList.contains('blocks-locked')).toBe(true);
       expect(this.literalEls[0].getAttribute("role")).toBe("presentation");
     });
   });
