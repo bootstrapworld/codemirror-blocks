@@ -381,6 +381,7 @@ export default class CodeMirrorBlocks {
   handlePaste(e) {
     let that = this, activeNode = this.getActiveNode();
     this.buffer.focus();
+    activeNode.el.previousElementSibling
     setTimeout(() => {
       let text = that.buffer.value;
       try { 
@@ -390,10 +391,15 @@ export default class CodeMirrorBlocks {
       // if there's an error, use the insertion quarantine
       } catch(error) {
         if(that.selectedNodes.has(activeNode)) {
-          dest.el.innerText = text;
-          dest.quarantine = {clear:()=>{}}; // simulate insertionQuarantine
+          activeNode.el.innerText = text;
+          activeNode.quarantine = {clear:()=>{}}; // simulate insertionQuarantine
           that.editLiteral(activeNode, e);
           that.saveEdit(activeNode, activeNode.el, e);
+        } else if(activeNode.el.previousElementSibling) {
+          let whiteSpaceEl = activeNode.el.previousElementSibling;
+          whiteSpaceEl.innerText = text;
+          that.editWhiteSpace(whiteSpaceEl, e);
+          that.saveWhiteSpace(whiteSpaceEl);
         } else {
           that.cm.focus();
           that.cm.setCursor(activeNode.from);
