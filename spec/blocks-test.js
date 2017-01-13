@@ -24,9 +24,11 @@ const DOWN_KEY  = 40;
 const DELETE_KEY=  8;
 const ENTER_KEY = 13;
 const SPACE_KEY = 32;
+const HOME_KEY  = 36;
+const END_KEY   = 35;
 const ESC_KEY   = 27;
-const LEFTBRACKET=219;
-const RIGHTBRACKET=221;
+const LEFTBRACE = 219;
+const RIGHTBRACE= 221;
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
@@ -323,24 +325,10 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.getActiveNode()).toBe(this.literal2);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
       });
-
+/*
       it('should activate the node before the cursor when up is pressed', function() {
         this.cm.setCursor({line: 0, ch: 2});
         this.cm.getWrapperElement().dispatchEvent(keydown(UP_KEY));
-        expect(this.blocks.getActiveNode()).not.toBe(this.literal2);
-        expect(this.blocks.getActiveNode()).toBe(this.literal);
-        expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
-      });
-/*
-      it('should activate the last node when end is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(RIGHT_KEY, {metaKey:true}));
-        expect(this.blocks.getActiveNode()).toBe(this.literal2);
-        expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
-      });
-
-      it('should activate the first node when home is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey:true}));
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey:true}));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal2);
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
@@ -443,10 +431,16 @@ describe('The CodeMirrorBlocks Class', function() {
           this.secondRoot.el.dispatchEvent(click());
           this.secondRoot.el.dispatchEvent(keydown(LEFT_KEY));
           expect(this.secondRoot.el.getAttribute("aria-expanded")).toBe(null);
-          
         });
 
-        it('right-arrow should expand a block, it can be', function() {
+        it('left-arrow should collapse a block & activate parent', function() {
+          this.secondArg.el.dispatchEvent(click());
+          this.secondArg.el.dispatchEvent(keydown(LEFT_KEY));
+          expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
+          expect(document.activeElement).toBe(this.firstRoot.el);
+        });
+
+        it('right-arrow should expand a block, or shift focus to 1st child', function() {
           this.firstRoot.el.dispatchEvent(click());
           this.firstRoot.el.dispatchEvent(keydown(LEFT_KEY));
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
@@ -455,7 +449,21 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("true");
           this.firstRoot.el.dispatchEvent(keydown(RIGHT_KEY));
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("true");
+          expect(document.activeElement).toBe(this.funcSymbol.el);
+        });
+
+        it('home should activate the first visible node', function() {
+          this.secondRoot.el.dispatchEvent(click());
+          this.secondRoot.el.dispatchEvent(keydown(HOME_KEY));
           expect(document.activeElement).toBe(this.firstRoot.el);
+          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
+        });
+
+        it('end should activate the last visible node', function() {
+          this.secondRoot.el.dispatchEvent(click());
+          this.secondRoot.el.dispatchEvent(keydown(END_KEY));
+          expect(document.activeElement).toBe(this.secondRoot.el);
+          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.secondRoot.el.id);
         });
 
       });
@@ -475,7 +483,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-[ should jump to the left of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
-        this.firstRoot.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
+        this.firstRoot.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
         let cursor = this.cm.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(0);
@@ -483,7 +491,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-] should jump to the right of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
-        this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
+        this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
         let cursor = this.cm.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(7);
@@ -491,13 +499,13 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-[ should jump to the whitespace to the left', function() {
         this.firstArg.el.dispatchEvent(click());
-        this.firstArg.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
+        this.firstArg.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
         expect(document.activeElement).toBe(this.firstWS);
       });
 
       it('Ctrl-] should jump to the whitespace to the left', function() {
         this.firstArg.el.dispatchEvent(click());
-        this.firstArg.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
+        this.firstArg.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
         expect(document.activeElement).toBe(this.secondWS);
       });
     });

@@ -385,8 +385,8 @@ export default class CodeMirrorBlocks {
       let text = that.buffer.value;
       try { 
         that.parser.lex(text);   // make sure the node itself is valid}
-        that.cm.replaceRange(text, dest.from, 
-          that.selectedNodes.has(activeNode)? dest.to : dest.from);
+        that.cm.replaceRange(text, activeNode.from, 
+          that.selectedNodes.has(activeNode)? activeNode.to : activeNode.from);
       // if there's an error, use the insertion quarantine
       } catch(error) {
         if(that.selectedNodes.has(activeNode)) {
