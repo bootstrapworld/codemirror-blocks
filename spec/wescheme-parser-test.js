@@ -6,6 +6,7 @@ import {
   dragstart,
   drop
 } from './events';
+const DOWN_KEY  = 40;
 
 function keydown(keyCode, other={}) {
   let event = new CustomEvent('keydown', {bubbles: true});
@@ -60,17 +61,17 @@ describe('The CodeMirrorBlocks Class', function() {
       });
 
       it('should allow tabbing forward through expressions in the function position', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.exp);
-        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.funExp);
-        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.funExp.func);
-        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.funExp.args[0]);
-        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.funExp.args[1]);
-        this.cm.getWrapperElement().dispatchEvent(keydown(9));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.exp.args[0]);
       });
     });

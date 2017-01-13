@@ -16,10 +16,6 @@
   @hover-drop-background-color: lightblue;
   @hover-replace-background-color: red;
 
-  .blocks-hidden {
-    display: none !important;
-  }
-
   .blocks-struct,
   .blocks-functionDef,
   .blocks-variableDef,
@@ -36,6 +32,7 @@
     background: #eee;
     overflow: hidden;
     white-space: nowrap;
+    transition: all 0.5s;
 
     cursor: grab;
     cursor: -moz-grab;
@@ -251,4 +248,23 @@
       &:after{content: none; width: 0px; }
     }
   }
+  .blocks-node[aria-expanded="false"] {
+    height: 30px;
+    min-width: 50px;
+    background: black;
+    * { display: none;}
+    *:first-child{ display: inline-block; padding-right: 25px;}
+  }
+  .blocks-node[aria-expanded="false"]::after{
+    position:relative; 
+    top: -24px; 
+    text-align: right;
+    padding-right: 5px;
+    content: "\21E8";
+    color: white;
+  }
+  .blocks-locked {
+    opacity: 0.5;
+  }
+  .blocks-locked::after{ content: "\26D4" !important; }
 }

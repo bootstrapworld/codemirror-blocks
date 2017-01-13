@@ -149,6 +149,7 @@ export default class Renderer {
       if (lockedTypes && lockedTypes.has(node.type)) {
         node.el.removeAttribute("role"); // locked nodes should not show up in the ARIA tree
         node.el.classList.add('blocks-locked');
+        node.el.setAttribute('aria-expanded', "false");
         node.el.setAttribute("role", "presentation");
       }
     }

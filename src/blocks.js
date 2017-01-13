@@ -46,8 +46,11 @@ const ISMAC = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i)?true:false;
 const MODKEY = ISMAC? "Alt" : "Ctrl";
 const CTRLKEY = ISMAC? "Cmd" : "Ctrl";
 
-const MARKER = Symbol("codemirror-blocks-marker");
+function isExpandable(type) {
+  return !["blank", "literal", "comment"].includes(type);
+}
 
+const MARKER = Symbol("codemirror-blocks-marker");
 export class BlockMarker {
   constructor(cmMarker, options){
     this.cmMarker = cmMarker;
@@ -308,6 +311,7 @@ export default class CodeMirrorBlocks {
   }
 
   activateNode(node, event) {
+    console.log('activating', node);
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
@@ -323,7 +327,7 @@ export default class CodeMirrorBlocks {
 
   isNodeLocked(node) {
     return (node.el.classList.contains('blocks-locked') ||
-      node.el.matches('.blocks-locked *'));
+      node.el.matches('[aria-expanded="false"] *'));
   }
 
   _getNextUnlockedNode(nextFn) {
@@ -646,16 +650,10 @@ export default class CodeMirrorBlocks {
   }
 
   handleKeyDown(event) {
-    if(!this.blockMode) return;                           // bail if mode==false
+    if(!this.blockMode) return; // bail if mode==false
     let that = this;
     let keyName = CodeMirror.keyName(event);
-    let activeNode = this.getActiveNode();
-    let arrowHandlers = {
-      37: this.ast.getParent,
-      39: this.ast.getChild,
-      38: this.ast.getPrevSibling,
-      40: this.ast.getNextSibling
-    };
+    var activeNode = this.getActiveNode();
     function moveCursorAdjacent(node, cursor) {
       if(node) {
         that.editWhiteSpace(node, event);
@@ -664,13 +662,54 @@ export default class CodeMirrorBlocks {
         that.cm.setCursor(cursor);
       }
     }
-    // Arrows can move the active element, modify the selection
-    if(arrowHandlers[event.keyCode] && activeNode) {
-      let searchFn = arrowHandlers[event.keyCode].bind(this.ast);
-      let nextNode = this._getNextUnlockedNode(searchFn);
-      if(nextNode === activeNode){ playBeep(); }
-      this.activateNode(nextNode, event);
-    } 
+    // Collapse active node if possible, otherwise collapse and activate parent
+    if (event.keyCode == 37) {
+      if(isExpandable(activeNode.type) && 
+         (activeNode.el.getAttribute("aria-expanded")=="true" || 
+          !activeNode.el.hasAttribute("aria-expanded"))) {
+        activeNode.el.setAttribute("aria-expanded", "false");
+      } else if(activeNode.parent){
+        console.log('here');
+        activeNode.parent.el.setAttribute("aria-expanded", "false");
+        this.activateNode(activeNode.parent, event);
+      }
+    }
+    // Expand active node if possible
+    else if (event.keyCode == 39) {
+      if(isExpandable(activeNode.type)){
+        activeNode.el.setAttribute("aria-expanded", "true");
+      }
+    }
+    // Go to next visible node
+    else if (event.keyCode == 40) {
+      let searchFn = this.ast.getNodeAfter.bind(this.ast);
+      let node = this._getNextUnlockedNode(searchFn);
+      if(node === activeNode) { playBeep(); }
+      else { this.activateNode(node, event); }
+    }
+    // Go to previous visible node
+    else if (event.keyCode == 38) {
+      let searchFn = this.ast.getNodeBefore.bind(this.ast);
+      let node = this._getNextUnlockedNode(searchFn);
+      if(node === activeNode) { playBeep(); }
+      else { this.activateNode(node, event); }
+    }
+    // Go to the first node in the tree (depth-first)
+    else if (keyName == "Home" && activeNode) {
+      this.activateNode(this.ast.rootNodes[0], event);
+    }
+    // Go to the last visible node in the tree (depth-first)
+    else if (keyName == "End" && activeNode) {
+      let lastExpr = [...this.ast.reverseRootNodes[0]];
+      let lastNode = lastExpr[lastExpr.length-1];
+      this.activateNode(lastNode, event);
+      if(this.isNodeLocked(lastNode)) {
+        console.log('locked! walking backwards');
+        let searchFn = this.ast.getNodeBefore.bind(this.ast);
+        var lastNode = this._getNextUnlockedNode(searchFn);
+        this.activateNode(lastNode, event);
+      }
+    }
     // Enter should toggle editing
     else if (keyName == "Enter" && activeNode &&
         ["literal", "blank"].includes(activeNode.type)) {
@@ -707,16 +746,8 @@ export default class CodeMirrorBlocks {
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
     else if (keyName == CTRLKEY+"-V" && activeNode) {
-      console.log(event);
-      return this.handlePaste(event);
-    }
-    // Tab and Shift-Tab work no matter what
-    else if (keyName === "Tab") {
-      let searchFn = this.ast.getNodeAfter.bind(this.ast);
-      this.activateNode(this._getNextUnlockedNode(searchFn), event);
-    } else if (keyName === "Shift-Tab") {
-      let searchFn = this.ast.getNodeBefore.bind(this.ast);
-      this.activateNode(this._getNextUnlockedNode(searchFn), event);
+      if(!["blank", "literal"].includes(activeNode.type)){ playBeep(); }
+      else { return this.handlePaste(event); }
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {

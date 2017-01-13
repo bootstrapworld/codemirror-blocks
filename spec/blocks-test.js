@@ -22,7 +22,6 @@ const UP_KEY    = 38;
 const RIGHT_KEY = 39;
 const DOWN_KEY  = 40;
 const DELETE_KEY=  8;
-const TAB_KEY   =  9;
 const ENTER_KEY = 13;
 const SPACE_KEY = 32;
 const ESC_KEY   = 27;
@@ -303,59 +302,59 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue()).toBe('11 54');
       });
 
-      it('should activate the first node when tab is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
+      it('should activate the first node when down is pressed', function() {
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
 
-      it('should activate the next node when tab is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
+      it('should activate the next node when down is pressed', function() {
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal);
         expect(this.blocks.getActiveNode()).toBe(this.literal2);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
       });
 
-      it('should activate the node after the cursor when tab is pressed', function() {
+      it('should activate the node after the cursor when down is pressed', function() {
         this.cm.setCursor({line: 0, ch: 2});
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal);
         expect(this.blocks.getActiveNode()).toBe(this.literal2);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
       });
 
-      it('should activate the node before the cursor when tab is pressed', function() {
+      it('should activate the node before the cursor when up is pressed', function() {
         this.cm.setCursor({line: 0, ch: 2});
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey: true}));
+        this.cm.getWrapperElement().dispatchEvent(keydown(UP_KEY));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal2);
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
-
-      it('should activate the last node when shift-tab is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey:true}));
+/*
+      it('should activate the last node when end is pressed', function() {
+        this.cm.getWrapperElement().dispatchEvent(keydown(RIGHT_KEY, {metaKey:true}));
         expect(this.blocks.getActiveNode()).toBe(this.literal2);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
       });
 
-      it('should activate the previous node when shift-tab is pressed', function() {
+      it('should activate the first node when home is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey:true}));
         this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY, {shiftKey:true}));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal2);
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
-
+*/
       it('should toggle the editability of activated node when Enter is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER_KEY));
         expect(this.literal.el.contentEditable).toBe('true');
       });
 
       it('should cancel the editability of activated node when Esc is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(TAB_KEY));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER_KEY));
         expect(this.literal.el.contentEditable).toBe('true');
@@ -410,9 +409,11 @@ describe('The CodeMirrorBlocks Class', function() {
           this.firstArg   = this.blocks.ast.rootNodes[0].args[0];
           this.secondArg  = this.blocks.ast.rootNodes[0].args[1];
           this.thirdArg   = this.blocks.ast.rootNodes[0].args[2];
+          this.firstRoot.el.dispatchEvent(click());
+          this.firstRoot.el.dispatchEvent(keydown(LEFT_KEY));
         });
 
-        it('up-arrow should navigate to the previous sibling, but not beyond it', function() {
+        it('up-arrow should navigate to the previous visible node, but not beyond it', function() {
           this.secondRoot.el.dispatchEvent(click());
           expect(document.activeElement).toBe(this.secondRoot.el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.secondRoot.el.id);
@@ -427,7 +428,6 @@ describe('The CodeMirrorBlocks Class', function() {
         it('down-arrow should navigate to the next sibling, but not beyond it', function() {
           this.firstRoot.el.dispatchEvent(click());
           expect(document.activeElement).toBe(this.firstRoot.el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
           this.firstRoot.el.dispatchEvent(keydown(DOWN_KEY));
           expect(document.activeElement).toBe(this.secondRoot.el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.secondRoot.el.id);
@@ -436,30 +436,28 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.secondRoot.el.id);
         });
 
-        it('right-arrow should navigate to the child, if one exists', function() {
+        it('left-arrow should collapse a block, if it can be', function() {
           this.firstRoot.el.dispatchEvent(click());
-          expect(document.activeElement).toBe(this.firstRoot.el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
-          this.firstRoot.el.dispatchEvent(keydown(RIGHT_KEY));
-          expect(document.activeElement).toBe(this.funcSymbol.el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.funcSymbol.el.id);
-          this.secondRoot.el.dispatchEvent(keydown(RIGHT_KEY));
-          expect(document.activeElement).toBe(this.funcSymbol.el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.funcSymbol.el.id);
+          this.firstRoot.el.dispatchEvent(keydown(LEFT_KEY));
+          expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
+          this.secondRoot.el.dispatchEvent(click());
+          this.secondRoot.el.dispatchEvent(keydown(LEFT_KEY));
+          expect(this.secondRoot.el.getAttribute("aria-expanded")).toBe(null);
+          
         });
 
-        it('left-arrow should navigate to the parent, if one exists', function() {
-          this.secondArg.el.dispatchEvent(click());
-          expect(document.activeElement).toBe(this.secondArg.el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.secondArg.el.id);
-          this.secondArg.el.dispatchEvent(keydown(LEFT_KEY));
-          expect(document.activeElement).toBe(this.firstRoot.el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
+        it('right-arrow should expand a block, it can be', function() {
+          this.firstRoot.el.dispatchEvent(click());
           this.firstRoot.el.dispatchEvent(keydown(LEFT_KEY));
+          expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
+          this.firstRoot.el.dispatchEvent(keydown(RIGHT_KEY));
           expect(document.activeElement).toBe(this.firstRoot.el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
+          expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("true");
+          this.firstRoot.el.dispatchEvent(keydown(RIGHT_KEY));
+          expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("true");
+          expect(document.activeElement).toBe(this.firstRoot.el);
         });
-        
+
       });
     });
 
@@ -552,7 +550,7 @@ describe('The CodeMirrorBlocks Class', function() {
       it('selecting a parent, then child should just select the parent ', function() {
         this.expr.el.dispatchEvent(click());
         this.expr.el.dispatchEvent(keydown(SPACE_KEY));
-        this.expr.el.dispatchEvent(keydown(RIGHT_KEY, {altKey: true}));
+        this.expr.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
         this.expr.func.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true}));
         expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
         expect(this.expr.func.el.getAttribute("aria-selected")).toBe('false');
@@ -563,7 +561,7 @@ describe('The CodeMirrorBlocks Class', function() {
       it('selecting a child, then parent should just select the parent ', function() {
         this.expr.func.el.dispatchEvent(click());
         this.expr.func.el.dispatchEvent(keydown(SPACE_KEY));
-        this.expr.func.el.dispatchEvent(keydown(LEFT_KEY, {altKey: true}));
+        this.expr.func.el.dispatchEvent(keydown(UP_KEY, {altKey: true}));
         this.expr.el.dispatchEvent(keydown(SPACE_KEY));
         expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
         expect(this.expr.func.el.getAttribute("aria-selected")).toBe('false');
@@ -592,10 +590,10 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.hasInvalidEdit).toBe(false);
     });
 
-    it('should blur the node being edited on tab', function() {
+    it('should blur the node being edited on esc', function() {
       this.literal.el.dispatchEvent(dblclick());
       spyOn(this.literal.el, 'blur');
-      this.literal.el.dispatchEvent(keydown(TAB_KEY));
+      this.literal.el.dispatchEvent(keydown(ESC_KEY));
       expect(this.literal.el.blur).toHaveBeenCalled();
     });
 
@@ -668,9 +666,9 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
         });
 
-        it('should blur whitespace you are editing on tab', function() {
+        it('should blur whitespace you are editing on enter', function() {
           spyOn(this.whiteSpaceEl, 'blur');
-          this.whiteSpaceEl.dispatchEvent(keydown(TAB_KEY));
+          this.whiteSpaceEl.dispatchEvent(keydown(ENTER_KEY));
           expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
         });
 

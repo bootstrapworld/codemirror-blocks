@@ -56,36 +56,14 @@ export class AST {
     }
   }
 
-  // Traversal
-  // The family tree should be navigable via ancestor/sibling
-  // relationships, or via a pre-order walk. If a move is invalid, 
-  // each function returns the current node
-  getNextSibling(node) {
-    return node.nextSibling || node;
-  }
-
-  getPrevSibling(node) {
-    return node.prevSibling || node;
-  }
-
-  getChild(node) {
-    return node.firstChild || node;
-  }
-
-  getParent(node) {
-    return node.parent || node;
-  }
-
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)
-        || this.rootNodes.find(node => comparePos(node.from, selection) >= 0)
-        || this.rootNodes[0];
+        || this.rootNodes.find(node => comparePos(node.from, selection) >= 0);
   }
 
   getNodeBefore(selection) {
     return this.prevNodeMap.get(selection)
-        || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0)
-        || this.reverseRootNodes[0];
+        || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0);
   }
 }
 
