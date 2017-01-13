@@ -1,7 +1,7 @@
 {{#> node type="functionDef"}}
 <span class="blocks-operator">
-	define
-	(
+	<span>define</span>
+	<span>(</span>
 	{{{renderNode node.name}}}
   	{{#if node.args.length}}
   		{{> drop-target location=node.args.[0].from}}
@@ -12,7 +12,7 @@
   		{{{renderNode this}}}
   	{{> drop-target location=this.to}}
   	{{/each}}
-	)
+	<span>)</span>
 </span>
 <span class="blocks-args">
   {{{renderNode node.body}}}

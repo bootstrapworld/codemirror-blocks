@@ -1,6 +1,6 @@
 .blocks-language-wescheme {
   @border-radius: 5px;
-  @border-width: 3px;
+  @border-width: 2px;
 
   // Colors:
   @literal-number-color: blue;
@@ -28,7 +28,7 @@
     color: black;
     border: @border-width solid black;
     border-radius: 15px;
-    margin: 5px;
+    margin: 2px;
     background: #eee;
     overflow: hidden;
     white-space: nowrap;
@@ -69,7 +69,7 @@
     display: flex;
     justify-content: center;
     font-weight: bold;
-    padding: 3px 5px;
+    padding: 1px 5px;
     text-align: center;
     background: black;
     color: white;
@@ -88,7 +88,7 @@
     display: inline-flex;
     flex-wrap: wrap;
     flex-grow: 1;
-    padding: 8px 8px 8px 0px;
+    padding: 1px 1px 1px 0px;
 
     > .blocks-literal, .blocks-white-space[contenteditable="true"] {
       background: white;
@@ -251,16 +251,22 @@
   .blocks-node[aria-expanded="false"] {
     height: 30px;
     min-width: 50px;
+    padding: 3px;
     background: black;
     * { display: none;}
-    *:first-child{ display: inline-block; padding-right: 25px;}
+    *:first-child { 
+      display: inline-block; 
+      padding-right: 15px; 
+      border: none;
+      color: lightgray;
+    }
   }
   .blocks-node[aria-expanded="false"]::after{
     position:relative; 
-    top: -24px; 
+    top: -22px; 
     text-align: right;
     padding-right: 5px;
-    content: "\21E8";
+    content: "\27F7";
     color: white;
   }
   .blocks-locked {

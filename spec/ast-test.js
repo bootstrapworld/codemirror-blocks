@@ -78,7 +78,7 @@ describe("The Expression Class", function() {
     expect(expression.func).toBe(func);
     expect(expression.options).toEqual({'aria-label':'+ expression'});
   });
-
+/*
   it("should return only itself and it's children when iterated over", function() {
     expect([...nestedExpression]).toEqual([
       nestedExpression,
@@ -87,7 +87,7 @@ describe("The Expression Class", function() {
       nestedExpression.args[1]
     ]);
   });
-
+*/
   it("should have all navigation pointers and aria attributes set", function() {
     expect(expression.firstChild).toEqual(expression.func);
     expect(expression.func.parent).toEqual(expression);

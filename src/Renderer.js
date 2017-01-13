@@ -150,6 +150,7 @@ export default class Renderer {
         node.el.removeAttribute("role"); // locked nodes should not show up in the ARIA tree
         node.el.classList.add('blocks-locked');
         node.el.setAttribute('aria-expanded', "false");
+        node.el.setAttribute('aria-disabled', "true");
         node.el.setAttribute("role", "presentation");
       }
     }

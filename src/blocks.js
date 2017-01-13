@@ -42,13 +42,14 @@ function playBeep() {
   setTimeout(function () { BEEP.play(); }, 50);
 }
 
-const ISMAC = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i)?true:false;
-const MODKEY = ISMAC? "Alt" : "Ctrl";
+const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i)?true:false;
+const MODKEY  = ISMAC? "Alt" : "Ctrl";
 const CTRLKEY = ISMAC? "Cmd" : "Ctrl";
-
-function isExpandable(type) {
-  return !["blank", "literal", "comment"].includes(type);
-}
+const DELETEKEY = ISMAC? "Backspace" : "Delete";
+const LEFT    = 37;
+const RIGHT   = 39;
+const UP      = 40;
+const DOWN    = 38;
 
 const MARKER = Symbol("codemirror-blocks-marker");
 export class BlockMarker {
@@ -121,7 +122,7 @@ export default class CodeMirrorBlocks {
     // Add a live region to the wrapper, for error alerts
     this.announcements = document.createElement("span");
     this.announcements.setAttribute("role", "log");
-    this.announcements.setAttribute("aria-live", "additions");
+    this.announcements.setAttribute("aria-live", "assertive");
     this.wrapper.appendChild(this.announcements);
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
@@ -311,7 +312,7 @@ export default class CodeMirrorBlocks {
   }
 
   activateNode(node, event) {
-    console.log('activating', node);
+    event.stopPropagation();
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
@@ -319,31 +320,40 @@ export default class CodeMirrorBlocks {
     if((this.selectedNodes.size > 0) && !event.altKey) { 
       this.clearSelection(); 
     }
-    node.el.focus();
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
-    event.stopPropagation();
     this.cm.scrollIntoView(node.from);
+    node.el.focus();
   }
 
-  isNodeLocked(node) {
-    return (node.el.classList.contains('blocks-locked') ||
-      node.el.matches('[aria-expanded="false"] *'));
+  isNodeExpandable(node) {
+    return !["blank", "literal", "comment"].includes(node.type) && 
+         !node.el.getAttribute("aria-disabled");
+  }
+  isNodeEditable(node) {
+    return ["blank", "literal"].includes(node.type);
   }
 
-  _getNextUnlockedNode(nextFn) {
-    let nodeOrCursor = this.getActiveNode() || this.cm.getCursor();
-    let nextNode = nextFn(nodeOrCursor);
-    while (nextNode && this.isNodeLocked(nextNode)) {
+  isNodeHidden(node) {
+    return node.el.matches('[aria-expanded="false"] *');
+  }
+
+  _getNextVisibleNode(nextFn, 
+    from = this.getActiveNode() || this.cm.getCursor()) {
+    let nextNode = nextFn(from);
+    while (nextNode && this.isNodeHidden(nextNode)) {
       nextNode = nextFn(nextNode);
+      console.log('next');
     }
-    return nextNode || nodeOrCursor;
+    return nextNode || from;
   }
 
   // if any nodes are selected, copy all of their text ranges to a buffer
   // copy the buffer to the clipboard. Remove the original text onCut
   handleCopyCut(event) {
     if (this.selectedNodes.size === 0) {
-      return;
+      let activeNode = this.getActiveNode();
+      if(!activeNode) return;
+      else this.addToSelection(activeNode);
     }
     var activeEl = this.getActiveNode().el;
     event.stopPropagation();
@@ -372,15 +382,24 @@ export default class CodeMirrorBlocks {
     let that = this, activeNode = this.getActiveNode();
     this.buffer.focus();
     setTimeout(() => {
-      let data = that.buffer.value;
-      if(that.selectedNodes.has(activeNode)) {
-        activeNode.el.textContent = data;
-        activeNode.quarantine = true; // set cursor at the end
-        return this.editLiteral(activeNode, e);
+      let text = that.buffer.value;
+      try { 
+        that.parser.lex(text);   // make sure the node itself is valid}
+        that.cm.replaceRange(text, dest.from, 
+          that.selectedNodes.has(activeNode)? dest.to : dest.from);
+      // if there's an error, use the insertion quarantine
+      } catch(error) {
+        if(that.selectedNodes.has(activeNode)) {
+          dest.el.innerText = text;
+          dest.quarantine = {clear:()=>{}}; // simulate insertionQuarantine
+          that.editLiteral(activeNode, e);
+          that.saveEdit(activeNode, activeNode.el, e);
+        } else {
+          that.cm.focus();
+          that.cm.setCursor(activeNode.from);
+          that.insertionQuarantine(text, e);
+        }
       }
-      this.cm.focus();
-      this.cm.setCursor(activeNode.from);
-      this.insertionQuarantine(data, e);
     }, 50);
   }
 
@@ -446,10 +465,11 @@ export default class CodeMirrorBlocks {
   }
 
   saveWhiteSpace(whiteSpaceEl) {
-    var location = getLocationFromEl(whiteSpaceEl);
-    var range = {from:location, to:location};
-    if (this.checkEditableEl(whiteSpaceEl, ' '+whiteSpaceEl.innerText)) {
-      this.saveEditableEl(whiteSpaceEl, ' '+whiteSpaceEl.innerText, range);
+    let location = getLocationFromEl(whiteSpaceEl);
+    let range = {from:location, to:location};
+    let text = this.willInsertNode(whiteSpaceEl.innerText, whiteSpaceEl, range.from, range.to);
+    if (this.checkEditableEl(whiteSpaceEl, text)) {
+      this.saveEditableEl(whiteSpaceEl, text, range);
     }
   }
 
@@ -655,44 +675,44 @@ export default class CodeMirrorBlocks {
     let keyName = CodeMirror.keyName(event);
     var activeNode = this.getActiveNode();
     function moveCursorAdjacent(node, cursor) {
-      if(node) {
-        that.editWhiteSpace(node, event);
-      } else {
-        that.cm.focus();
-        that.cm.setCursor(cursor);
-      }
+      if(node) { that.editWhiteSpace(node, event); } 
+      else { that.cm.focus(); that.cm.setCursor(cursor); }
     }
-    // Collapse active node if possible, otherwise collapse and activate parent
-    if (event.keyCode == 37) {
-      if(isExpandable(activeNode.type) && 
-         (activeNode.el.getAttribute("aria-expanded")=="true" || 
-          !activeNode.el.hasAttribute("aria-expanded"))) {
+    function switchNodes(searchFn) {
+      let node = that._getNextVisibleNode(searchFn);
+      if(node === activeNode) { playBeep(); }
+      else { that.activateNode(node, event); }
+    }
+    // Collapse block if possible, otherwise focus on parent
+    if (event.keyCode == LEFT) {
+      if(this.isNodeExpandable(activeNode) && 
+         !(activeNode.el.getAttribute("aria-expanded")=="false")) {
         activeNode.el.setAttribute("aria-expanded", "false");
       } else if(activeNode.parent){
-        console.log('here');
-        activeNode.parent.el.setAttribute("aria-expanded", "false");
         this.activateNode(activeNode.parent, event);
+      } else {
+        playBeep();
       }
     }
-    // Expand active node if possible
-    else if (event.keyCode == 39) {
-      if(isExpandable(activeNode.type)){
-        activeNode.el.setAttribute("aria-expanded", "true");
+    // Expand block if possible, otherwise descend to firstChild
+    else if (event.keyCode == RIGHT) {
+      if(this.isNodeExpandable(activeNode)) {
+        if (activeNode.el.getAttribute("aria-expanded")=="false") {
+          activeNode.el.setAttribute("aria-expanded", "true");
+        } else if(activeNode.firstChild) {
+          this.activateNode(activeNode.firstChild, event);
+        }
+      } else {
+        playBeep();
       }
     }
     // Go to next visible node
-    else if (event.keyCode == 40) {
-      let searchFn = this.ast.getNodeAfter.bind(this.ast);
-      let node = this._getNextUnlockedNode(searchFn);
-      if(node === activeNode) { playBeep(); }
-      else { this.activateNode(node, event); }
+    else if (event.keyCode == UP) {
+      switchNodes(this.ast.getNodeAfter.bind(this.ast));
     }
     // Go to previous visible node
-    else if (event.keyCode == 38) {
-      let searchFn = this.ast.getNodeBefore.bind(this.ast);
-      let node = this._getNextUnlockedNode(searchFn);
-      if(node === activeNode) { playBeep(); }
-      else { this.activateNode(node, event); }
+    else if (event.keyCode == DOWN) {;
+      switchNodes(this.ast.getNodeBefore.bind(this.ast));
     }
     // Go to the first node in the tree (depth-first)
     else if (keyName == "Home" && activeNode) {
@@ -701,18 +721,16 @@ export default class CodeMirrorBlocks {
     // Go to the last visible node in the tree (depth-first)
     else if (keyName == "End" && activeNode) {
       let lastExpr = [...this.ast.reverseRootNodes[0]];
-      let lastNode = lastExpr[lastExpr.length-1];
-      this.activateNode(lastNode, event);
-      if(this.isNodeLocked(lastNode)) {
-        console.log('locked! walking backwards');
+      var lastNode = lastExpr[lastExpr.length-1];
+      if(this.isNodeHidden(lastNode)) {
         let searchFn = this.ast.getNodeBefore.bind(this.ast);
-        var lastNode = this._getNextUnlockedNode(searchFn);
-        this.activateNode(lastNode, event);
+        lastNode = this._getNextVisibleNode(searchFn, lastNode);
       }
+      this.activateNode(lastNode, event);
     }
     // Enter should toggle editing
     else if (keyName == "Enter" && activeNode &&
-        ["literal", "blank"].includes(activeNode.type)) {
+        this.isNodeEditable(activeNode)) {
       this.editLiteral(activeNode, event);
     }
     // Space clears selection and selects active node
@@ -733,8 +751,9 @@ export default class CodeMirrorBlocks {
       }
     }
     // Backspace should delete selected nodes
-    else if (keyName == "Backspace" && this.selectedNodes.size > 0) {
-      this.deleteSelectedNodes();
+    else if (keyName == DELETEKEY) {
+      if(this.selectedNodes.size == 0) { playBeep(); }
+      else { this.deleteSelectedNodes(); }
     } 
     // Ctrl-[ and Ctrl-] move cursor to adjacent whitespace or cursor position
     else if (keyName === "Ctrl-[" && activeNode) {
@@ -746,8 +765,7 @@ export default class CodeMirrorBlocks {
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
     else if (keyName == CTRLKEY+"-V" && activeNode) {
-      if(!["blank", "literal"].includes(activeNode.type)){ playBeep(); }
-      else { return this.handlePaste(event); }
+      return this.handlePaste(event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {

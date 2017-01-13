@@ -155,6 +155,8 @@ function parseNode(node) {
   } else if (node instanceof structures.symbolExpr) {
     if(node.val == "...") {
       return new Blank(from, to, node.val, "symbol", {'aria-label': "blank"});
+    } else if (["true","false"].includes(node.val)) {
+      return new Literal(from, to, node.val, "boolean",{'aria-label': symbolAria(node.val)});
     } else {
       return new Literal(from, to, node.val, "symbol", {'aria-label': symbolAria(node.val)});
     }
