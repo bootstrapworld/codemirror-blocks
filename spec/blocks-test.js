@@ -576,7 +576,6 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(document.activeElement).toBe(this.expr.el);
         expect(this.blocks.selectedNodes.size).toBe(1);
       });
-
     });
 
     it('should begin editing a node on double click', function() {

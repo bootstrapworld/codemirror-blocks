@@ -70,8 +70,11 @@ function parseNode(node) {
     ch: node.location.endCol
   };
 
-  if (node instanceof structures.callExpr) {
+  let code = node.toString();
+  let truncatedCode = (code.length > 140)? (code.substring(0, 140) + "...") : code;
+  let description = node.comment || truncatedCode;
 
+  if (node instanceof structures.callExpr) {
     let func;
     if (node.func) {
       func = parseNode(node.func);
@@ -89,7 +92,8 @@ function parseNode(node) {
       to,
       func,
       node.args.map(parseNode).filter(item => item !== null),
-      {'aria-label': expressionAria(node.func ? node.func.val : 'empty', node.args)}
+      {'aria-label': expressionAria(node.func ? node.func.val : 'empty', node.args)
+      ,'aria-describedby' : description}
     );
   } else if (node instanceof structures.andExpr) {
     return new Expression(
@@ -125,7 +129,8 @@ function parseNode(node) {
       to,
       parseNode(node.name),
       parseNode(node.expr),
-      {'aria-label': symbolAria(node.name.val)+': a value definition'}
+      {'aria-label': symbolAria(node.name.val)+': a value definition'
+      ,'aria-describedby' : description}
     );
   } else if (node instanceof structures.defStruct) {
     return new Struct(
@@ -133,7 +138,8 @@ function parseNode(node) {
       to,
       parseNode(node.name),
       node.fields.map(parseNode).filter(item => item != null),
-      {'aria-label':symbolAria(node.name.val)+': a structure definition with ' + pluralize('field', node.fields)}
+      {'aria-label':symbolAria(node.name.val)+': a structure definition with ' + pluralize('field', node.fields)
+      ,'aria-describedby' : description}
     );
   } else if (node instanceof structures.defFunc) {
     return new FunctionDefinition(
@@ -142,7 +148,8 @@ function parseNode(node) {
       parseNode(node.name),
       node.args.map(parseNode),
       parseNode(node.body),
-      {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('argument', node.args)}
+      {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('argument', node.args)
+      ,'aria-describedby' : description}
     );
   } else if (node instanceof structures.ifExpr) {
     return new IfExpression(
@@ -151,14 +158,17 @@ function parseNode(node) {
       parseNode(node.predicate),
       parseNode(node.consequence),
       parseNode(node.alternative),
+      {'aria-describedby' : description}
     );
   } else if (node instanceof structures.symbolExpr) {
+    let opts = {'aria-label' : symbolAria(node.val)
+               ,'aria-describedby' : description};
     if(node.val == "...") {
       return new Blank(from, to, node.val, "symbol", {'aria-label': "blank"});
     } else if (["true","false"].includes(node.val)) {
-      return new Literal(from, to, node.val, "boolean",{'aria-label': symbolAria(node.val)});
+      return new Literal(from, to, node.val, "boolean", opts);
     } else {
-      return new Literal(from, to, node.val, "symbol", {'aria-label': symbolAria(node.val)});
+      return new Literal(from, to, node.val, "symbol", opts);
     }
   } else if (node instanceof structures.literal) {
     var dataType = typeof node.val;
@@ -173,7 +183,8 @@ function parseNode(node) {
       dataType = "boolean";
       aria = `${node.val}, a Boolean`;
     }
-    return new Literal(from, to, node, dataType, {'aria-label':aria});
+    return new Literal(from, to, node, dataType
+                      , {'aria-label':aria, 'aria-describedby': node.comment});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
   } else if (node instanceof structures.unsupportedExpr) {
@@ -290,12 +301,14 @@ class WeschemeParser {
     // parse* : sexp list -> Program list
     function parseStar(sexps) {
       function parseSExp(sexp) {
-        return isComment(sexp) ? sexp :
+        var p= isComment(sexp) ? sexp :
                isDefinition(sexp) ? parseDefinition(sexp) :
                isExpr(sexp) ? parseExpr(sexp) :
                isRequire(sexp) ? parseRequire(sexp) :
                isProvide(sexp) ? parseProvide(sexp) :
                throwError(`ASSERTION: Something was lexed that is not in the language:\n ${sexp}`);
+        p.comment = sexp.comment;
+        return p;
       }
       return sexps.map(parseSExp);
     }
@@ -385,8 +398,10 @@ class WeschemeParser {
     }
 
     function parseExpr(sexp) {
-      return isCons(sexp) ? parseExprList(sexp) :
-        parseExprSingleton(sexp);
+      var p = isCons(sexp) ? parseExprList(sexp) :
+                             parseExprSingleton(sexp);
+      if(!isComment(p)) p.comment = sexp.comment;
+      return p;
     }
 
     // parseExprList : SExp -> AST
@@ -729,6 +744,7 @@ class WeschemeParser {
                       isSymbolEqualTo("empty", sexp) ? new structures.callExpr(new structures.symbolExpr("list"), []) :
                       new structures.callExpr(null, []);
       singleton.location = sexp.location;
+      if(!isComment(sexp)) singleton.comment = sexp.comment;
       return singleton;
     }
 
@@ -780,8 +796,8 @@ class WeschemeParser {
       return provide;
     }
 
-    var ast = parseStar(lex(code));
-    var rootNodes = ast.map(parseNode).filter(item => item !== null);
+    let ast = parseStar(lex(code));
+    let rootNodes = ast.map(parseNode).filter(item => item !== null);
     return new AST(rootNodes);
   }
 

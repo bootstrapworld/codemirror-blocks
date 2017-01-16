@@ -91,6 +91,32 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('( 1 2 3 +)');
       });
     });
+  });
+
+  describe('when parsing code with comments,', function() {
+    beforeEach(function() {
+      this.cm.setValue(`;top-line
+(+ ; plus
+
+; multi
+;lines
+1 (* 2 7) 3 4)`);
+      this.blocks.setBlockMode(true);
+      this.expr = this.blocks.ast.rootNodes[0];
+      this.funcSymbol = this.blocks.ast.rootNodes[0].func;
+      this.firstArg = this.blocks.ast.rootNodes[0].args[0];
+      this.secondArg = this.blocks.ast.rootNodes[0].args[1];
+    });
+
+    it('code is described by a comment that sits directly to the right', function() {
+      expect(this.funcSymbol.options['aria-describedby'].txt).toBe('plus');
+    });
+    it('contiguous line comments are merged', function() {
+      expect(this.firstArg.options['aria-describedby'].txt).toBe('multi\nlines');
+    });
+    it('expressions are described by themselves if there are no available comments', function() {
+      expect(this.secondArg.options['aria-describedby'].txt).toBe(undefined);
+    });
 
   });
 });
