@@ -53,7 +53,7 @@ function symbolAria(str) {
 
 // expressionAria: String Array -> String
 function expressionAria(func, args) {
-  return symbolAria(func) + ' expression, ' + pluralize('argument', args);
+  return symbolAria(func) + ' expression, ' + pluralize('input', args);
 }
 
 function pluralize(noun, set) {
@@ -148,7 +148,7 @@ function parseNode(node) {
       parseNode(node.name),
       node.args.map(parseNode),
       parseNode(node.body),
-      {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('argument', node.args)
+      {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('input', node.args)
       ,'aria-describedby' : description}
     );
   } else if (node instanceof structures.ifExpr) {
