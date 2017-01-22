@@ -262,31 +262,31 @@ describe("The WeScheme Parser,", function() {
                  .toBe('hello, a String');
     });
 
-    it("should make expression (print 'hello') into 'print expression, 1 argument'", function() {
+    it("should make expression (print 'hello') into 'print expression, 1 input'", function() {
       expect(this.parser.parse('(print "hello")').rootNodes[0].options['aria-label'])
-                 .toBe('print expression, 1 argument');
+                 .toBe('print expression, 1 input');
       expect(this.parser.parse('(print "hello" "world")').rootNodes[0].options['aria-label'])
-                 .toBe('print expression, 2 arguments');
+                 .toBe('print expression, 2 inputs');
     });
 
     it("should make and/or expressions just like regular expressions", function() {
       expect(this.parser.parse('(and true true)').rootNodes[0].options['aria-label'])
-                 .toBe('and expression, 2 arguments');
+                 .toBe('and expression, 2 inputs');
       expect(this.parser.parse('(or false true)').rootNodes[0].options['aria-label'])
-                 .toBe('or expression, 2 arguments');
+                 .toBe('or expression, 2 inputs');
     });
 
     it("should turn symbols into readable words", function() {
       expect(this.parser.parse('(* 1 2)').rootNodes[0].options['aria-label'])
-                 .toBe('multiply expression, 2 arguments');
+                 .toBe('multiply expression, 2 inputs');
       expect(this.parser.parse('(/ 1 2)').rootNodes[0].options['aria-label'])
-                 .toBe('divide expression, 2 arguments');
+                 .toBe('divide expression, 2 inputs');
       expect(this.parser.parse('(foo? 0)').rootNodes[0].options['aria-label'])
-                 .toBe('foo huh expression, 1 argument');
+                 .toBe('foo huh expression, 1 input');
       expect(this.parser.parse('(set! x 2)').rootNodes[0].options['aria-label'])
-                 .toBe('set bang expression, 2 arguments');                 
+                 .toBe('set bang expression, 2 inputs');                 
       expect(this.parser.parse('#(1 2)').rootNodes[0].options['aria-label'])
-                 .toBe('vector expression, 2 arguments');                 
+                 .toBe('vector expression, 2 inputs');                 
     });
   });
 

@@ -84,7 +84,6 @@ describe('The render module,', function() {
 
     it('should add the blocks-locked class, and remove role=treeitem', function() {
       expect(this.literalEls[0].classList.contains('blocks-locked')).toBe(true);
-      expect(this.literalEls[0].getAttribute("role")).toBe("presentation");
     });
   });
 
