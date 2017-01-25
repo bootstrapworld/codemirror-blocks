@@ -37,6 +37,8 @@
     cursor: grab;
     cursor: -moz-grab;
     cursor: -webkit-grab;
+
+    user-select: none;
   }
 
   .blocks-ifExpression {
@@ -209,6 +211,7 @@
       margin: 0px 5px;
       min-width: 20px;
       border-style: inset;
+      outline: 0;
       &.blocks-error {
         border: @border-width solid @error-border-color;
       }

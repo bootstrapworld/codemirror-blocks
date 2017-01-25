@@ -149,7 +149,7 @@ export default class CodeMirrorBlocks {
         ondblclick: this.nodeEventHandler({
           literal: this.editLiteral,
           blank: this.editLiteral,
-          whitespace: this.editWhiteSpace
+          whitespace: this.insertionQuarantine.bind(this, ""),
         }),
         onpaste: this.nodeEventHandler(this.handleTopLevelEntry),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
@@ -176,6 +176,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('mouseup',   (cm, e) => this.toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
+    this.cm.setOption('viewportMargin', Infinity);
   }
 
   on(event, listener) {
@@ -192,8 +193,8 @@ export default class CodeMirrorBlocks {
 
   say(text){
     let announcement = document.createTextNode(text);
-    this.announcements.appendChild(announcement);
     console.log(text);
+    setTimeout(() => this.announcements.appendChild(announcement), 200);
     setTimeout(() => this.announcements.removeChild(announcement), 500);
   }
 
@@ -317,7 +318,7 @@ export default class CodeMirrorBlocks {
       this.say(node.el.getAttribute("aria-label"));
     }
     // if there's a selection and the altKey isn't pressed, clear selection
-    if((this.selectedNodes.size > 0) && !event.altKey) { 
+    if((this.selectedNodes.size > 0) && !(ISMAC? event.altKey : event.ctrlKey)) { 
       this.clearSelection(); 
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
@@ -342,7 +343,6 @@ export default class CodeMirrorBlocks {
     let nextNode = nextFn(from);
     while (nextNode && this.isNodeHidden(nextNode)) {
       nextNode = nextFn(nextNode);
-      console.log('next');
     }
     return nextNode || from;
   }
@@ -350,17 +350,19 @@ export default class CodeMirrorBlocks {
   // if any nodes are selected, copy all of their text ranges to a buffer
   // copy the buffer to the clipboard. Remove the original text onCut
   handleCopyCut(event) {
-    if (this.selectedNodes.size === 0) {
-      let activeNode = this.getActiveNode();
-      if(!activeNode) return;
-      else this.addToSelection(activeNode);
-    }
-    var activeEl = this.getActiveNode().el;
     event.stopPropagation();
+    let activeNode = this.getActiveNode();
+    if(!activeNode) return;
+    var clipboard;
+    // If nothing is selected, set the clipboard to the text of the active node
+    if (this.selectedNodes.size === 0) {
+      clipboard = this.cm.getRange(activeNode.from, activeNode.to);
+    // Otherwise copy the contents to the buffer first-to-last
+    } else {
+      var sel = [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from));
+      clipboard = sel.reduce((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
+    }
     
-    // copy the contents to the buffer first-to-last
-    var sel = [...this.selectedNodes].sort((a,b) => poscmp(b.from, a.from));
-    var clipboard = sel.reduce((s,n)=>s+this.cm.getRange(n.from, n.to)+" ","");
     this.buffer.value = clipboard;
     this.buffer.select();
     try {
@@ -369,7 +371,7 @@ export default class CodeMirrorBlocks {
       console.error("execCommand doesn't work in this browser :(", e);
     }
     // put focus back on activeEl, and clear the buffer
-    setTimeout(() => { activeEl.focus(); }, 200);
+    setTimeout(() => { activeNode.el.focus(); }, 200);
     if (event.type == 'cut') {
       // delete last-to-first to preserve the from/to indices
       sel.forEach(n => this.cm.replaceRange('', n.from, n.to));
@@ -381,101 +383,41 @@ export default class CodeMirrorBlocks {
   handlePaste(e) {
     let that = this, activeNode = this.getActiveNode();
     this.buffer.focus();
-    activeNode.el.previousElementSibling
     setTimeout(() => {
       let text = that.buffer.value;
-      try { 
-        that.parser.lex(text);   // make sure the node itself is valid}
-        that.cm.replaceRange(text, activeNode.from, 
-          that.selectedNodes.has(activeNode)? activeNode.to : activeNode.from);
-      // if there's an error, use the insertion quarantine
-      } catch(error) {
-        if(that.selectedNodes.has(activeNode)) {
-          activeNode.el.innerText = text;
-          activeNode.quarantine = {clear:()=>{}}; // simulate insertionQuarantine
-          that.editLiteral(activeNode, e);
-          that.saveEdit(activeNode, activeNode.el, e);
-        } else if(activeNode.el.previousElementSibling) {
-          let whiteSpaceEl = activeNode.el.previousElementSibling;
-          whiteSpaceEl.innerText = text;
-          that.editWhiteSpace(whiteSpaceEl, e);
-          that.saveWhiteSpace(whiteSpaceEl);
-        } else {
-          that.cm.focus();
-          that.cm.setCursor(activeNode.from);
-          that.insertionQuarantine(text, e);
-        }
-      }
+      let dest = that.selectedNodes.has(activeNode)? activeNode 
+            : activeNode.el.nextElementSibling ? activeNode.el.nextElementSibling
+            : activeNode.to;
+      this.clearSelection();
+      let node = that.insertionQuarantine(text, dest, e);
+      that.buffer.value = ""; // empty the buffer
+      // save the node
+      setTimeout(() => node.el.blur(), 50);
     }, 50);
   }
 
-  saveEditableEl(nodeEl, text, range) {
-    // See http://stackoverflow.com/questions/21926083/failed-to-execute-removechild-on-node
-    // we have to remove the onblur handler first
-    // because the blur event will fire *again* when the node is removed from the dom
-    // which happens in this.cm.replaceRange.
-    nodeEl.onblur = null;
-    nodeEl.onkeydown = null;
-    nodeEl.contentEditable = false;
-    nodeEl.classList.remove('blocks-editing');
-    nodeEl.classList.remove('blocks-error');
-    this.cm.replaceRange(text, range.from, range.to);
-  }
-
-  checkEditableEl(nodeEl, text) {
-    try {
-      this.parser.lex(text);    // make sure the node itself is valid
-      nodeEl.title = '';
-      return true;
-    } catch (e) {
-      nodeEl.classList.add('blocks-error');
-      let errorTxt = this.parser.getExceptionMessage(e);
-      try {
-        nodeEl.title = errorTxt;
-        this.say(errorTxt);
-      } catch (e) {
-        console.error(e);
-      }
-      return false;
-    }
-  }
-
+  // saveEdit : ASTNode DOMNode Event -> Void
+  // If not, set the error state and maintain focus
+  // set this.hasInvalidEdit to the appropriate value
   saveEdit(node, nodeEl, event) {
     event.preventDefault();
-    if (this.checkEditableEl(nodeEl, nodeEl.innerText)) {
-      if(node.quarantine){
-        nodeEl.innerText += " "; // add space to avoid merging with nextSibling
-        node.quarantine.clear(); // get rid of the quarantine bookmark
-      }
-      this.saveEditableEl(nodeEl, nodeEl.innerText, node);
-      this.hasInvalidEdit = false;
+    try {
+      var text = nodeEl.innerText;                    // Sanitize the text
+      if(node.from === node.to) text = this.willInsertNode(text, nodeEl, node.from, node.to);
+      this.parser.lex(nodeEl.innerText);              // If the node contents will lex...
+      this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
+      nodeEl.title = '';                              // 2) Clear the title
+      if(node.quarantine){ node.quarantine.clear(); } // 3) Maybe get rid of the quarantine bookmark
+      this.cm.replaceRange(text, node.from, node.to); // 4) Commit the changes to CM
       this.say("saved "+nodeEl.innerText);
-    } else {
-      // If the node doesn't parse, wrest the focus back after a few ms
-      setTimeout(() => { this.editLiteral(node, event); }, 50);
-      this.hasInvalidEdit = true;
-    }
-  }
-
-  editWhiteSpace(whiteSpaceEl, event) {
-    event.stopPropagation();
-    whiteSpaceEl.contentEditable = true;
-    whiteSpaceEl.classList.add('blocks-editing');
-    whiteSpaceEl.onblur = this.saveWhiteSpace.bind(this, whiteSpaceEl);
-    whiteSpaceEl.onkeydown = this.handleEditKeyDown.bind(whiteSpaceEl);
-    let range = document.createRange();
-    range.setStart(whiteSpaceEl, 0);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-    whiteSpaceEl.focus();
-  }
-
-  saveWhiteSpace(whiteSpaceEl) {
-    let location = getLocationFromEl(whiteSpaceEl);
-    let range = {from:location, to:location};
-    let text = this.willInsertNode(whiteSpaceEl.innerText, whiteSpaceEl, range.from, range.to);
-    if (this.checkEditableEl(whiteSpaceEl, text)) {
-      this.saveEditableEl(whiteSpaceEl, text, range);
+    } catch(e) {                                      // If the node contents will NOT lex...
+      this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
+      nodeEl.classList.add('blocks-error');           // 2) Set the error state
+      nodeEl.draggable = false;            // 3) remove draggable to work around WK/FF bug
+      let errorTxt = this.parser.getExceptionMessage(e);
+      nodeEl.title = errorTxt;                        // 4) Make the title the error msg
+      setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
+      this.say(errorTxt);
     }
   }
 
@@ -491,7 +433,7 @@ export default class CodeMirrorBlocks {
   }
 
   editLiteral(node, event) {
-    node.el.draggable = false; // defend against webkit
+    //node.el.draggable = false; // defend against webkit
     event.stopPropagation();
     this.say("editing "+node.el.getAttribute("aria-label"));
     node.el.oldText = this.cm.getRange(node.from, node.to);
@@ -659,20 +601,45 @@ export default class CodeMirrorBlocks {
     this.clearSelection();                                // clear the previous selection
     let text = (e.type == "keypress")? String.fromCharCode(e.which)
              : e.clipboardData.getData('text/plain');
-    this.insertionQuarantine(text, e);    
+    let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
+    // try automatically rendering the pasted text
+    if(e.type !== "keypress") { setTimeout(() => node.el.blur(), 20); }
   }
 
-  insertionQuarantine(text, e) {
-    let cur  = this.cm.getCursor();
-    let ws = "\n".repeat(cur.line) + " ".repeat(cur.ch);  // make filler whitespace
-    let ast  = this.parser.parse(ws + "x");               // make a fake literal
-    let node = ast.rootNodes[0];                          // get its node and render it
-    this.renderer.render(node, this.cm, this.renderOptions || {});
-    node.el.innerText = text;                             // replace "x" with the real string
-    node.to.ch = node.from.ch;                            // force the width to be zero
-    let mk = this.cm.setBookmark(cur, {widget: node.el}); // add the node as a bookmark
-    node.quarantine = mk;                                 // store the marker in the node
-    setTimeout(() => { this.editLiteral(node, e); }, 10); // give the DOM a few ms, then edit
+  // insertionQuarantine : String [ASTNode | DOMNode | Cursor] Event -> Void
+  // Consumes a String, a Destination, and an event.
+  // Inserts a literal at the from Destination with the String (or, if false,
+  // DOMNode contents), allowing the user to edit. onBlur(), The contents
+  // text is checked for lexability and inserted in the From/To range.
+  insertionQuarantine(text, dest, event) {
+    console.log('quarantine called with "'+text+'"', dest);
+    let ast  = this.parser.parse("0");
+    let literal = ast.rootNodes[0];
+    literal.options['aria-label'] = text;
+    this.renderer.render(literal, this.cm, this.renderOptions || {});
+    if(dest.type) {
+      text = text || this.cm.getRange(dest.from, dest.to);
+      let parent = dest.el.parentNode;
+      literal.from = dest.from; literal.to = dest.to;
+      parent.insertBefore(literal.el, dest.el);
+      parent.removeChild(dest.el);
+    } else if(dest.nodeType) {
+      literal.el.classList.add("blocks-white-space");
+      let parent = dest.parentNode;
+      literal.to = literal.from = getLocationFromEl(dest);
+      parent.insertBefore(literal.el, dest);
+      parent.removeChild(dest);
+    } else if(dest.line !== undefined){
+      literal.to = literal.from = dest;
+      let mk = this.cm.setBookmark(dest, {widget: literal.el});
+      literal.quarantine = mk;
+    } else {
+      throw "insertionQuarantine given a destination of unknown type";
+    }
+    literal.el.draggable = false;
+    literal.el.innerText = text;
+    setTimeout(() => this.editLiteral(literal, event), 10);
+    return literal;
   }
 
   handleKeyDown(event) {
@@ -681,7 +648,7 @@ export default class CodeMirrorBlocks {
     let keyName = CodeMirror.keyName(event);
     var activeNode = this.getActiveNode();
     function moveCursorAdjacent(node, cursor) {
-      if(node) { that.editWhiteSpace(node, event); } 
+      if(node) { that.insertionQuarantine("", node, event); } 
       else { that.cm.focus(); that.cm.setCursor(cursor); }
     }
     function switchNodes(searchFn) {
@@ -738,6 +705,10 @@ export default class CodeMirrorBlocks {
     else if (keyName == "Enter" && activeNode &&
         this.isNodeEditable(activeNode)) {
       this.editLiteral(activeNode, event);
+    }
+    //
+    else if (keyName == CTRLKEY+"-Enter") {
+      this.insertionQuarantine(false, activeNode, event);
     }
     // Space clears selection and selects active node
     else if (keyName == "Space" && activeNode) {
