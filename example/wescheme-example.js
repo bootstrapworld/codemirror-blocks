@@ -13,7 +13,6 @@ var cm = CodeMirror.fromTextArea(
   {theme:'3024-day',
    autoCloseBrackets: true}
 );
-console.log(CodeMirror.version);
 var cm2 = CodeMirror.fromTextArea(
   document.getElementById('code2'),
   {theme:'3024-day',

@@ -62,12 +62,8 @@ export class AST {
   }
 
   getNodeBefore(selection) {
-    console.log('In getNodeBefore. selection is', selection);
     return this.prevNodeMap.get(selection)
-        || this.reverseRootNodes.find(node => {
-          console.log('comparing', node.to, selection);
-          comparePos(node.to, selection) <= 0
-        });
+        || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0);
   }
 }
 
