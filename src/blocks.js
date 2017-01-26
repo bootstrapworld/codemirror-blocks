@@ -270,7 +270,6 @@ export default class CodeMirrorBlocks {
   }
 
   isNodeHidden(node) {
-    console.log(node);
     return (node.el.classList.contains('blocks-hidden') ||
       node.el.matches('.blocks-hidden *'));
   }

@@ -46,13 +46,6 @@ export default class Renderer {
     this._nodesInRenderOrder = [];
   }
 
-  renderNode = (node) => {
-    if (!node) {
-      return '';
-    }
-    return this.renderHTMLString(node);
-  }
-
   renderNodeForReact = (node) => {
     var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
     if (Renderer && Renderer.prototype instanceof Component) {
@@ -60,53 +53,12 @@ export default class Renderer {
       return (
         <Renderer
           node={node}
-          helpers={{
-            renderNode: this.renderNode,
-            renderNodeForReact: this.renderNodeForReact,
-          }}
+          helpers={{renderNodeForReact: this.renderNodeForReact}}
         />
       );
     } else {
       throw "No React renderer exists for this node type";
     }
-  }
-
-  renderHTMLString(node) {
-    if (typeof node !== "object" || !node instanceof ASTNode) {
-      throw new Error("Expected ASTNode but got "+node);
-    }
-    var renderer = this.extraRenderers[node.type];
-    if (!renderer) {
-      renderer = this.nodeRenderers[node.type];
-    }
-    if (renderer === undefined) {
-      throw new Error("Don't know how to render node of type: "+node.type);
-    }
-    if (renderer.prototype instanceof Component) {
-      const RenderComponent = renderer;
-      renderer = ({node}, {helpers}) => {
-        const container = document.createElement('span');
-        ReactDOM.render(<RenderComponent node={node} helpers={helpers}/>, container);
-        return container.innerHTML;
-      }
-    }
-    var nodeEl = renderer(
-      {node},
-      {
-        helpers: {
-          renderNode: this.renderNode,
-          renderNodeForReact: this.renderNodeForReact,
-        }
-      }
-    );
-    this._nodesInRenderOrder.push(node);
-    if (typeof nodeEl !== 'string') {
-      console.warn("AST node renderers should return html strings. node:", node);
-      var temp = document.createElement('div');
-      temp.appendChild(nodeEl);
-      return temp.innerHTML;
-    }
-    return nodeEl;
   }
 
   // extract all the literals, create clones, and absolutely position
@@ -192,13 +144,22 @@ export default class Renderer {
 
   render(rootNode) {
     this._nodesInRenderOrder = [];
-    var rootNodeFrag = createFragment(this.renderHTMLString(rootNode));
+    var container = document.createElement("span");
+    this.cm.markText(
+      rootNode.from,
+      rootNode.to,
+      {
+        replacedWith: container,
+        node: rootNode
+      }
+    );
+    ReactDOM.render(this.renderNodeForReact(rootNode), container);
     let hiddenTypes = null;
     if (this.hideNodesOfType) {
       hiddenTypes = new Set(this.hideNodesOfType);
     }
     for (let node of this._nodesInRenderOrder) {
-      node.el = rootNodeFrag.getElementById(`block-node-${node.id}`);
+      node.el = container.firstChild;
       if (!node.el) {
         console.warn("!! Didn't find a dom node for node", node);
         continue;
@@ -208,14 +169,7 @@ export default class Renderer {
         node.el.classList.add('blocks-hidden');
       }
     }
-    this.cm.markText(
-      rootNode.from,
-      rootNode.to,
-      {
-        replacedWith: rootNodeFrag.firstChild.firstChild,
-        node: rootNode
-      }
-    );
-    return rootNodeFrag;
+    
+    return container.firstChild;
   }
 }
