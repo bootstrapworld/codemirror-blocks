@@ -49,7 +49,7 @@ export default class Renderer {
   renderNodeForReact = (node) => {
     var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
     if (Renderer && Renderer.prototype instanceof Component) {
-    this._nodesInRenderOrder.push(node);
+      this._nodesInRenderOrder.push(node);
       return (
         <Renderer
           node={node}
@@ -57,7 +57,7 @@ export default class Renderer {
         />
       );
     } else {
-      throw "No React renderer exists for this node type";
+      throw new Error("Don't know how to render node of type: "+node.type);
     }
   }
 
@@ -144,22 +144,19 @@ export default class Renderer {
 
   render(rootNode) {
     this._nodesInRenderOrder = [];
-    var container = document.createElement("span");
-    this.cm.markText(
-      rootNode.from,
-      rootNode.to,
-      {
-        replacedWith: container,
-        node: rootNode
-      }
-    );
+    if (typeof rootNode !== "object" || !rootNode instanceof ASTNode) {
+      throw new Error("Expected ASTNode but got "+rootNode);
+    }
+    const container = document.createElement('span');
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
+    this._nodesInRenderOrder.push(rootNode);
+    var rootNodeFrag = createFragment(container.innerHTML);
     let hiddenTypes = null;
     if (this.hideNodesOfType) {
       hiddenTypes = new Set(this.hideNodesOfType);
     }
     for (let node of this._nodesInRenderOrder) {
-      node.el = container.firstChild;
+      node.el = rootNodeFrag.getElementById(`block-node-${node.id}`);
       if (!node.el) {
         console.warn("!! Didn't find a dom node for node", node);
         continue;
@@ -169,7 +166,15 @@ export default class Renderer {
         node.el.classList.add('blocks-hidden');
       }
     }
-    
-    return container.firstChild;
+    console.log(container.firstChild, rootNodeFrag.firstChild.firstChild);
+    this.cm.markText(
+      rootNode.from,
+      rootNode.to,
+      {
+        replacedWith: rootNodeFrag.firstChild.firstChild,
+        node: rootNode
+      }
+    );
+    return rootNodeFrag;
   }
 }
