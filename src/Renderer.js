@@ -48,6 +48,9 @@ export default class Renderer {
 
   renderNodeForReact = (node) => {
     var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
+    if (Renderer === undefined) {
+      throw new Error("Don't know how to render node of type: "+node.type);
+    }
     if (Renderer && Renderer.prototype instanceof Component) {
       this._nodesInRenderOrder.push(node);
       return (
@@ -166,7 +169,6 @@ export default class Renderer {
         node.el.classList.add('blocks-hidden');
       }
     }
-    console.log(container.firstChild, rootNodeFrag.firstChild.firstChild);
     this.cm.markText(
       rootNode.from,
       rootNode.to,

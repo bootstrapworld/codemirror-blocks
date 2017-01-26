@@ -512,7 +512,7 @@ describe('The CodeMirrorBlocks Class', function() {
       beforeEach(function() {
         this.cm.setValue('(+ 1 2)');
         let firstArg = this.blocks.ast.rootNodes[0].args[0];
-        this.whiteSpaceEl = firstArg.el.parentNode.nextElementSibling;
+        this.whiteSpaceEl = firstArg.el.nextElementSibling;
       });
 
       it('should edit whitespace on dblclick', function() {
