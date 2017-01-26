@@ -54,8 +54,9 @@ export default class Renderer {
   }
 
   renderNodeForReact = (node) => {
-    var Renderer = this.extraRenderers[node.type];
+    var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
     if (Renderer && Renderer.prototype instanceof Component) {
+    this._nodesInRenderOrder.push(node);
       return (
         <Renderer
           node={node}
@@ -66,7 +67,7 @@ export default class Renderer {
         />
       );
     } else {
-      return <span dangerouslySetInnerHTML={{__html: this.renderNode(node)}}/>;
+      throw "No React renderer exists for this node type";
     }
   }
 

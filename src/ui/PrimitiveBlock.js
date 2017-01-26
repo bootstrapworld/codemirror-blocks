@@ -59,8 +59,9 @@ export var RenderedBlockNode = React.createClass({
 
   render() {
     if (this.props.node) {
-      let html = {__html:this.context.renderer.renderHTMLString(this.props.node)};
-      return <span className="RenderedBlockNode" dangerouslySetInnerHTML={html} ref="root" />;
+      return (<span className="RenderedBlockNode" ref="root">
+        {this.context.renderer.renderNodeForReact(this.props.node)}
+      </span>);
     } else {
       return (
         <span className="RenderedBlockNode" ref="root">
