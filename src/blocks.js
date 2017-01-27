@@ -177,13 +177,9 @@ export default class CodeMirrorBlocks {
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
-      if(this.ast && this.ast.rootNodes.length > 0){
-        e.preventDefault(); e.stopPropagation();
-        this.wrapper.blur();
-        e.codemirrorIgnore = true;
-        this.activateNode(this.ast.rootNodes[0], e);
-        return false;
-      } else {return true;}
+      if(e.relatedTarget) {  // bail if this is the result of a click 
+        setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
+      }
     });
     // make sure all the nodes are rendered, so screenreaders can count them correcly
     this.cm.setOption('viewportMargin', Infinity);

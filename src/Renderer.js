@@ -32,10 +32,7 @@ export default class Renderer {
     if (typeof node !== "object" || !node instanceof ASTNode) {
       throw new Error("Expected ASTNode but got "+node);
     }
-    var renderer = this.extraRenderers[node.type];
-    if (!renderer) {
-      renderer = this.nodeRenderers[node.type];
-    }
+    var renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
     if (renderer === undefined) {
       throw new Error("Don't know how to render node of type: "+node.type);
     }
@@ -147,11 +144,9 @@ export default class Renderer {
         continue;
       }
       if (lockedTypes && lockedTypes.has(node.type)) {
-        node.el.removeAttribute("role"); // locked nodes should not show up in the ARIA tree
         node.el.classList.add('blocks-locked');
         node.el.setAttribute('aria-expanded', "false");
         node.el.setAttribute('aria-disabled', "true");
-        node.el.setAttribute("role", "presentation");
       }
     }
     this.cm.markText(
