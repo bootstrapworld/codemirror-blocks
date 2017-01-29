@@ -60,6 +60,19 @@ function pluralize(noun, set) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
+// makeComment : WeSchemeComment -> ASTNodeComment
+function makeComment(node, truncatedCode) {
+  var from = {
+    line: (node.comment || node).location.startRow - 1,
+    ch: (node.comment || node).location.startCol
+  };
+  var to = {
+    line: (node.comment || node).location.endRow - 1,
+    ch: (node.comment || node).location.endCol
+  }; 
+  return new Comment(from, to, node.comment? "has comment: "+node.comment.txt : truncatedCode);
+}
+
 function parseNode(node) {
   var from = {
     line: node.location.startRow - 1,
@@ -72,7 +85,7 @@ function parseNode(node) {
 
   let code = node.toString();
   let truncatedCode = (code.length > 140)? (code.substring(0, 140) + "...") : code;
-  let description = node.comment || truncatedCode;
+  let description = makeComment(node, truncatedCode);
 
   if (node instanceof structures.callExpr) {
     let func;
@@ -93,7 +106,7 @@ function parseNode(node) {
       func,
       node.args.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria(node.func ? node.func.val : 'empty', node.args)
-      ,'aria-describedby' : description}
+      ,'comment' : description}
     );
   } else if (node instanceof structures.andExpr) {
     return new Expression(
@@ -130,7 +143,7 @@ function parseNode(node) {
       parseNode(node.name),
       parseNode(node.expr),
       {'aria-label': symbolAria(node.name.val)+': a value definition'
-      ,'aria-describedby' : description}
+      ,'comment' : description}
     );
   } else if (node instanceof structures.defStruct) {
     return new Struct(
@@ -139,7 +152,7 @@ function parseNode(node) {
       parseNode(node.name),
       node.fields.map(parseNode).filter(item => item != null),
       {'aria-label':symbolAria(node.name.val)+': a structure definition with ' + pluralize('field', node.fields)
-      ,'aria-describedby' : description}
+      ,'comment' : description}
     );
   } else if (node instanceof structures.defFunc) {
     return new FunctionDefinition(
@@ -149,7 +162,7 @@ function parseNode(node) {
       node.args.map(parseNode),
       parseNode(node.body),
       {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('input', node.args)
-      ,'aria-describedby' : description}
+      ,'comment' : description}
     );
   } else if (node instanceof structures.ifExpr) {
     return new IfExpression(
@@ -158,11 +171,11 @@ function parseNode(node) {
       parseNode(node.predicate),
       parseNode(node.consequence),
       parseNode(node.alternative),
-      {'aria-describedby' : description}
+      {'comment' : description}
     );
   } else if (node instanceof structures.symbolExpr) {
     let opts = {'aria-label' : symbolAria(node.val)
-               ,'aria-describedby' : description};
+               ,'comment' : description};
     if(node.val == "...") {
       return new Blank(from, to, node.val, "symbol", {'aria-label': "blank"});
     } else if (["true","false"].includes(node.val)) {
@@ -184,7 +197,7 @@ function parseNode(node) {
       aria = `${node.val}, a Boolean`;
     }
     return new Literal(from, to, node, dataType
-                      , {'aria-label':aria, 'aria-describedby': node.comment});
+                      , {'aria-label':aria, 'comment': makeComment(node)});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
   } else if (node instanceof structures.unsupportedExpr) {
