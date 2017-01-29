@@ -180,7 +180,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('focus',     (cm, e) => {
       // bail if this is the result of a click
       if(e.relatedTarget && e.relatedTarget.nodeName === "TEXTAREA") { 
-       setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
+        setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
       }
     });
     // make sure all the nodes are rendered, so screenreaders can count them correcly
@@ -700,7 +700,7 @@ export default class CodeMirrorBlocks {
       switchNodes(this.ast.getNodeAfter.bind(this.ast));
     }
     // Go to previous visible node
-    else if (event.keyCode == DOWN) {;
+    else if (event.keyCode == DOWN) {
       switchNodes(this.ast.getNodeBefore.bind(this.ast));
     }
     // Go to the first node in the tree (depth-first)
