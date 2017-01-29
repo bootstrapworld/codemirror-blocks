@@ -263,11 +263,15 @@
     padding: 3px;
     background: black;
     * { display: none;}
-    *:first-child { 
-      display: inline-block; 
-      padding-right: 15px; 
+    .blocks-operator, .blocks-operator * { 
+      display: inline;
+      padding: 0px;
+      margin: 0px;
       border: none;
       color: lightgray;
+    }
+    .blocks-operator {
+      margin-right: 22px;
     }
   }
   .blocks-node[aria-expanded="false"]::after{
