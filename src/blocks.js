@@ -150,6 +150,7 @@ export default class CodeMirrorBlocks {
           literal: this.editLiteral,
           blank: this.editLiteral,
           whitespace: this.insertionQuarantine.bind(this, ""),
+          default: this.maybeChangeNodeExpanded
         }),
         onpaste: this.nodeEventHandler(this.handleTopLevelEntry),
         ondragstart: this.nodeEventHandler(this.startDraggingNode),
@@ -361,7 +362,7 @@ export default class CodeMirrorBlocks {
     if(!activeNode) return;
     var clipboard;
     // If nothing is selected, set the clipboard to the text of the active node
-    if (this.selectedNodes.size === 0) {
+    if (event.type == 'copy' && this.selectedNodes.size === 0) {
       clipboard = this.cm.getRange(activeNode.from, activeNode.to);
     // Otherwise copy the contents to the buffer first-to-last
     } else {
@@ -445,6 +446,7 @@ export default class CodeMirrorBlocks {
     node.el.oldText = this.cm.getRange(node.from, node.to);
     node.el.contentEditable = true;
     node.el.classList.add('blocks-editing');
+    node.el.setAttribute('role','textbox');
     node.el.onblur = this.saveEdit.bind(this, node, node.el);
     node.el.onkeydown = this.handleEditKeyDown.bind(node.el);
     let range = document.createRange();
@@ -612,6 +614,20 @@ export default class CodeMirrorBlocks {
     if(e.type !== "keypress") { setTimeout(() => node.el.blur(), 20); }
   }
 
+  // If it's an expandable node, set to makeExpanded (or toggle)
+  // return true if there's been a change
+  maybeChangeNodeExpanded(node, makeExpanded) {
+    if(!this.isNodeExpandable(node)) return false;
+    // treat anything other than false as true (even undefined)
+    let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
+    if(makeExpanded == isExpanded) {
+      return false;
+    } else {
+      node.el.setAttribute("aria-expanded", !isExpanded);
+      return true;
+    }
+  }
+
   // insertionQuarantine : String [ASTNode | DOMNode | Cursor] Event -> Void
   // Consumes a String, a Destination, and an event.
   // Inserts a literal at the from Destination with the String (or, if false,
@@ -662,28 +678,18 @@ export default class CodeMirrorBlocks {
       if(node === activeNode) { playBeep(); }
       else { that.activateNode(node, event); }
     }
+
     // Collapse block if possible, otherwise focus on parent
     if (event.keyCode == LEFT) {
-      if(this.isNodeExpandable(activeNode) && 
-         !(activeNode.el.getAttribute("aria-expanded")=="false")) {
-        activeNode.el.setAttribute("aria-expanded", "false");
-      } else if(activeNode.parent){
-        this.activateNode(activeNode.parent, event);
-      } else {
-        playBeep();
-      }
+      return this.maybeChangeNodeExpanded(activeNode, false) 
+          || (activeNode.parent && this.activateNode(activeNode.parent, event))
+          || playBeep();
     }
     // Expand block if possible, otherwise descend to firstChild
     else if (event.keyCode == RIGHT) {
-      if(this.isNodeExpandable(activeNode)) {
-        if (activeNode.el.getAttribute("aria-expanded")=="false") {
-          activeNode.el.setAttribute("aria-expanded", "true");
-        } else if(activeNode.firstChild) {
-          this.activateNode(activeNode.firstChild, event);
-        }
-      } else {
-        playBeep();
-      }
+      return this.maybeChangeNodeExpanded(activeNode, true)
+          || (activeNode.firstChild && this.activateNode(activeNode.firstChild, event))
+          || playBeep();
     }
     // Go to next visible node
     else if (event.keyCode == UP) {
@@ -707,10 +713,13 @@ export default class CodeMirrorBlocks {
       }
       this.activateNode(lastNode, event);
     }
-    // Enter should toggle editing
-    else if (keyName == "Enter" && activeNode &&
-        this.isNodeEditable(activeNode)) {
-      this.editLiteral(activeNode, event);
+    // Enter should toggle editing on editable nodes, or toggle expanding
+    else if (keyName == "Enter" && activeNode) {
+      if(this.isNodeEditable(activeNode)){
+        this.insertionQuarantine(false, activeNode, event);
+      } else {
+        this.maybeChangeNodeExpanded(activeNode);
+      }
     }
     //
     else if (keyName == CTRLKEY+"-Enter") {
