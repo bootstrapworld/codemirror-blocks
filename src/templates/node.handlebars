@@ -1,7 +1,7 @@
 <span 	class="blocks-node blocks-{{type}}" 
 		tabindex="1" role="treeitem" 
 		aria-label="{{node.options.aria-label}}"
-		aria-describedby="{{node.options.aria-describedby}}"
+		aria-describedby="block-node-{{node.options.comment.id}}"
 		aria-multiselectable="true"
 		aria-selected="false"
-		id="block-node-{{node.id}}">{{> @partial-block}}</span>
+		id="block-node-{{node.id}}">{{> @partial-block}}{{{renderNode node.options.comment}}}</span>

@@ -1,6 +1,6 @@
 .blocks-language-wescheme {
   @border-radius: 5px;
-  @border-width: 2px;
+  @border-width: 3px;
 
   // Colors:
   @literal-number-color: blue;
@@ -230,6 +230,12 @@
   .blocks-comment {
     color: @comment-color;
     font-style: italic;
+    width: 0px !important;
+    min-width: 0px !important;
+    height: 0px !important;
+    display: none !important;
+    padding: 0px !important;
+    margin: 0px !important;
   }
 
   .blocks-dragging {

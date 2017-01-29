@@ -71,7 +71,7 @@ export class AST {
 // house some common attributes.
 export class ASTNode {
   constructor(from, to, type, options) {
-
+    
     // The `from` and `to` attributes are objects containing the start and end
     // positions of this node within the source document. They are in the format
     // of `{line: <line>, ch: <column>}`.
@@ -94,6 +94,11 @@ export class ASTNode {
     // Every node also has a globally unique `id` which can be used to look up
     // it's corresponding DOM element, or to look it up in `AST.nodeMap`
     this.id = uuid.v4();
+
+    // If there's a comment, generate a corresponding ASTNode
+    if(options.comment) {
+      this.comment = options.comment;
+    }
   }
 }
 
