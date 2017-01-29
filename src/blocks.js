@@ -178,8 +178,9 @@ export default class CodeMirrorBlocks {
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
-      if(e.relatedTarget) {  // bail if this is the result of a click 
-        setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
+      // bail if this is the result of a click
+      if(e.relatedTarget && e.relatedTarget.nodeName === "TEXTAREA") { 
+       setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
       }
     });
     // make sure all the nodes are rendered, so screenreaders can count them correcly
@@ -358,13 +359,19 @@ export default class CodeMirrorBlocks {
   // copy the buffer to the clipboard. Remove the original text onCut
   handleCopyCut(event) {
     event.stopPropagation();
-    let activeNode = this.getActiveNode();
+    var clipboard, activeNode = this.getActiveNode();
     if(!activeNode) return;
-    var clipboard;
-    // If nothing is selected, set the clipboard to the text of the active node
-    if (event.type == 'copy' && this.selectedNodes.size === 0) {
-      clipboard = this.cm.getRange(activeNode.from, activeNode.to);
-    // Otherwise copy the contents to the buffer first-to-last
+
+    // If nothing is selected, say "nothing selected" for cut
+    // or copy the clipboard to the text of the active node
+    if(this.selectedNodes.size === 0) {
+      if(event.type == 'cut') {
+        this.say("Nothing selected");
+        return false;
+      } else if(event.type == 'copy') {
+        clipboard = this.cm.getRange(activeNode.from, activeNode.to);
+      }
+    // Otherwise copy the contents of selection to the buffer, first-to-last
     } else {
       var sel = [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from));
       clipboard = sel.reduce((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
@@ -620,12 +627,10 @@ export default class CodeMirrorBlocks {
     if(!this.isNodeExpandable(node)) return false;
     // treat anything other than false as true (even undefined)
     let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
-    if(makeExpanded == isExpanded) {
-      return false;
-    } else {
+    if(makeExpanded !== isExpanded) {
       node.el.setAttribute("aria-expanded", !isExpanded);
-      return true;
     }
+    return makeExpanded !== isExpanded;
   }
 
   // insertionQuarantine : String [ASTNode | DOMNode | Cursor] Event -> Void
@@ -634,7 +639,6 @@ export default class CodeMirrorBlocks {
   // DOMNode contents), allowing the user to edit. onBlur(), The contents
   // text is checked for lexability and inserted in the From/To range.
   insertionQuarantine(text, dest, event) {
-    console.log('quarantine called with "'+text+'"', dest);
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
     literal.options['aria-label'] = text;
