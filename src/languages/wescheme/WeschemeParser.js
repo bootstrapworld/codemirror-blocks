@@ -70,7 +70,7 @@ function makeComment(node) {
     line: (node.comment || node).location.endRow - 1,
     ch: (node.comment || node).location.endCol
   }; 
-  return new Comment(from, to, "has comment: "+node.comment.txt : truncatedCode);
+  return new Comment(from, to, "has comment: "+node.comment.txt);
 }
 
 function parseNode(node) {
@@ -83,7 +83,6 @@ function parseNode(node) {
     ch: node.location.endCol
   };
 
-  let code = node.toString();
   let description = node.comment? makeComment(node) : false;
 
   if (node instanceof structures.callExpr) {
