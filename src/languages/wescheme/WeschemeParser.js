@@ -177,7 +177,8 @@ function parseNode(node) {
     return new CondExpression(
       from,
       to,
-      node.clauses.map(parseNode)
+      node.clauses.map(parseNode),
+      {'aria-label':'a cond block with '+pluralize('clause', node.clauses)}
     );
   } else if (node instanceof structures.couple) {
     return new CondClause(
@@ -185,6 +186,7 @@ function parseNode(node) {
       to,
       parseNode(node.first),
       [parseNode(node.second)],
+      {'aria-label':'condition'}
     );
   } else if (node instanceof structures.ifExpr) {
     return new IfExpression(

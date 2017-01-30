@@ -16,9 +16,8 @@ export default CodeMirrorBlocks.languages.addLanguage(
     getRenderOptions() {
       return {
         extraRenderers: {
-          prog: require('./templates/prog.handlebars'),
+          prog: require('./components/prog.js'),
 
-          //          binary: require('./templates/binary.handlebars'),
         }
       };
     },

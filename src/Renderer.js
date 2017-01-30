@@ -46,7 +46,7 @@ export default class Renderer {
     this._nodesInRenderOrder = [];
   }
 
-  renderNodeForReact = (node) => {
+  renderNodeForReact = (node, key) => {
     var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
     if (Renderer === undefined) {
       throw new Error("Don't know how to render node of type: "+node.type);
@@ -57,6 +57,7 @@ export default class Renderer {
         <Renderer
           node={node}
           helpers={{renderNodeForReact: this.renderNodeForReact}}
+          key = {key}
         />
       );
     } else {

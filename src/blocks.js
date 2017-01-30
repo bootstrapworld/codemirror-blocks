@@ -666,6 +666,7 @@ export default class CodeMirrorBlocks {
     }
     literal.el.draggable = false;
     literal.el.innerText = text;
+    literal.el.setAttribute("aria-label", text);
     setTimeout(() => this.editLiteral(literal, event), 10);
     return literal;
   }
