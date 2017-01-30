@@ -1,5 +1,6 @@
 import 'babel-polyfill';
 import CodeMirror from 'codemirror';
+import 'codemirror/addon/search/searchcursor.js';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
 import CodeMirrorBlocks from '../src/blocks.js';

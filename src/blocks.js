@@ -124,6 +124,7 @@ export default class CodeMirrorBlocks {
     this.announcements.setAttribute("role", "log");
     this.announcements.setAttribute("aria-live", "assertive");
     this.wrapper.appendChild(this.announcements);
+    this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
     // Offscreen buffer for copy/cut/paste operations
@@ -178,8 +179,9 @@ export default class CodeMirrorBlocks {
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    this.handleChange.bind(this));
     this.cm.on('focus',     (cm, e) => {
-      // bail if this is the result of a click
-      if(e.relatedTarget && e.relatedTarget.nodeName === "TEXTAREA") { 
+      // override CM's natural onFocus behavior, activating the first node
+      if(this.ast.rootNodes.length > 0 && e.relatedTarget 
+          && e.relatedTarget.nodeName === "TEXTAREA") { 
         setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
       }
     });
@@ -673,6 +675,9 @@ export default class CodeMirrorBlocks {
     let that = this;
     let keyName = CodeMirror.keyName(event);
     var activeNode = this.getActiveNode();
+    // clear searches every half-second
+    setTimeout(() => this.searchString = "", 750);
+
     function moveCursorAdjacent(node, cursor) {
       if(node) { that.insertionQuarantine("", node, event); } 
       else { that.cm.focus(); that.cm.setCursor(cursor); }
@@ -768,9 +773,18 @@ export default class CodeMirrorBlocks {
         this.cm.execCommand(command);
       } else if (typeof command == "function") {
         command(this.cm);
-      } else {
-        return; // return without cancelling the event
+        // if it's an ASCII character, try building up a search string
+      } else if(/^[\x00-\xFF]$/.test(keyName)){
+        this.searchString += keyName;
+        var searchCursor = this.cm.getSearchCursor(this.searchString.toLowerCase());
+        if(!searchCursor.findNext()) { playBeep(); }
+        else { 
+          let marks = this.cm.findMarksAt(searchCursor.from());
+          if(marks.length === 0) { playBeep(); }
+          else { this.activateNode(this.findNodeFromEl(marks[0].replacedWith), event); }
+        }
       }
+      return; // return without cancelling the event
     }
     event.preventDefault();
     event.stopPropagation();
