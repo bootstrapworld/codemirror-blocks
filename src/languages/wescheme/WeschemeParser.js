@@ -61,7 +61,7 @@ function pluralize(noun, set) {
 }
 
 // makeComment : WeSchemeComment -> ASTNodeComment
-function makeComment(node, truncatedCode) {
+function makeComment(node) {
   var from = {
     line: (node.comment || node).location.startRow - 1,
     ch: (node.comment || node).location.startCol
@@ -70,7 +70,7 @@ function makeComment(node, truncatedCode) {
     line: (node.comment || node).location.endRow - 1,
     ch: (node.comment || node).location.endCol
   }; 
-  return new Comment(from, to, node.comment? "has comment: "+node.comment.txt : truncatedCode);
+  return new Comment(from, to, "has comment: "+node.comment.txt : truncatedCode);
 }
 
 function parseNode(node) {
@@ -84,8 +84,7 @@ function parseNode(node) {
   };
 
   let code = node.toString();
-  let truncatedCode = (code.length > 140)? (code.substring(0, 140) + "...") : code;
-  let description = makeComment(node, truncatedCode);
+  let description = node.comment? makeComment(node) : false;
 
   if (node instanceof structures.callExpr) {
     let func;
@@ -197,7 +196,7 @@ function parseNode(node) {
       aria = `${node.val}, a Boolean`;
     }
     return new Literal(from, to, node, dataType
-                      , {'aria-label':aria, 'comment': makeComment(node)});
+                      , {'aria-label':aria, 'comment': description});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
   } else if (node instanceof structures.unsupportedExpr) {

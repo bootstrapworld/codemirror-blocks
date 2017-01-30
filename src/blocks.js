@@ -730,7 +730,7 @@ export default class CodeMirrorBlocks {
         this.maybeChangeNodeExpanded(activeNode);
       }
     }
-    //
+    // Ctrl/Cmd-Enter should toggle editing on non-editable nodes
     else if (keyName == CTRLKEY+"-Enter") {
       this.insertionQuarantine(false, activeNode, event);
     }
