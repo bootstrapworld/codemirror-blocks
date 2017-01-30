@@ -10,6 +10,6 @@ export default class Comment extends PureComponent {
     const {node} = this.props;
     return (<span className="blocks-comment">
         {node.comment.toString()}
-        </span>)
+        </span>);
   }
 }

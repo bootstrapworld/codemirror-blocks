@@ -1,7 +1,5 @@
 import React, {Component, PropTypes} from 'react';
-
 import {Blank as ASTBlankNode} from '../ast';
-import Node from './Node';
 
 export default class Blank extends Component {
   static propTypes = {

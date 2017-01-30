@@ -1,7 +1,6 @@
 import React, {Component, PropTypes} from 'react';
 
 import {CondClause as ASTCondClauseNode} from '../ast';
-import Node from './Node';
 import DropTarget from './DropTarget';
 
 export default class CondClause extends Component {

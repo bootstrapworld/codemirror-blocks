@@ -2,8 +2,6 @@ import React, {Component, PropTypes} from 'react';
 
 import {CondExpression as ASTCondExpressionNode} from '../ast';
 import Node from './Node';
-import DropTarget from './DropTarget';
-import CondClause from './CondClause';
 
 export default class CondExpression extends Component {
   static propTypes = {

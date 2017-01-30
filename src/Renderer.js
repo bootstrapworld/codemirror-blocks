@@ -148,7 +148,7 @@ export default class Renderer {
 
   render(rootNode) {
     this._nodesInRenderOrder = [];
-    if (typeof rootNode !== "object" || !rootNode instanceof ASTNode) {
+    if (typeof rootNode !== "object" || !(rootNode instanceof ASTNode)) {
       throw new Error("Expected ASTNode but got "+rootNode);
     }
     const container = document.createElement('span');

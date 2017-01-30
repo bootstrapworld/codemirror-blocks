@@ -2,7 +2,6 @@ import React, {Component, PropTypes} from 'react';
 
 import {VariableDefinition as ASTVariableDefinitionNode} from '../ast';
 import Node from './Node';
-import DropTarget from './DropTarget';
 
 export default class VariableDefinition extends Component {
   static propTypes = {
