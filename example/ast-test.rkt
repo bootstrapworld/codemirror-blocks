@@ -7,6 +7,18 @@
 #t     ; boolean
 quuz   ; symbol
 
+; we can have if expressions
+(if (positive? -5) (error "doesn't get here") 2)
+
+; we can have cond expressions
+(cond
+   [(positive? -5) (error "doesn't get here")]
+   [(zero? -5) (error "doesn't get here, either")]
+   [(positive? 5) #t])
+
+; we can have lambda expressions
+(lambda (x y) (+ x y))
+
 ; we can define a variable or two
 (define FIRST-NAME "John")
 (define LAST-NAME "Doe")

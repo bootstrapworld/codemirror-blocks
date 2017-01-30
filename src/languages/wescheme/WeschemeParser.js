@@ -5,6 +5,9 @@ import {
   Struct,
   FunctionDefinition,
   IfExpression,
+  CondExpression,
+  LambdaExpression,
+  CondClause,
   Comment,
   VariableDefinition,
   Unknown,
@@ -36,7 +39,7 @@ function symbolAria(str) {
     str = str.toString();
   }
 
-  if(symbolMap.get(str)) { 
+  if(symbolMap.get(str)) {
     // translate simple symbols
     return symbolMap.get(str);
   } else {
@@ -162,6 +165,27 @@ function parseNode(node) {
       {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('input', node.args)
       ,'comment' : description}
     );
+  } else if (node instanceof structures.lambdaExpr) {
+    return new LambdaExpression(
+      from,
+      to,
+      node.args.map(parseNode),
+      parseNode(node.body),
+      {'aria-label':'a lambda definition with '+pluralize('argument', node.args)}
+    );
+  } else if (node instanceof structures.condExpr) {
+    return new CondExpression(
+      from,
+      to,
+      node.clauses.map(parseNode)
+    );
+  } else if (node instanceof structures.couple) {
+    return new CondClause(
+      from,
+      to,
+      parseNode(node.first),
+      [parseNode(node.second)],
+    );
   } else if (node instanceof structures.ifExpr) {
     return new IfExpression(
       from,
@@ -200,7 +224,7 @@ function parseNode(node) {
     return new Comment(from, to, node.txt);
   } else if (node instanceof structures.unsupportedExpr) {
     if(node.val.constructor !== Array) return null;
-    return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null), 
+    return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
                       {msg: node.errorMsg, 'aria-label': 'invalid expression'});
   }
   console.log("!! No translator for", node);

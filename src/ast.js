@@ -180,6 +180,26 @@ export class VariableDefinition extends ASTNode {
   }
 }
 
+export class LambdaExpression extends ASTNode {
+  constructor(from, to, args, body, options={}) {
+    super(from, to, 'lambdaExpression', options);
+    this.args = args;
+    this.body = body;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    for (let node of this.args) {
+      yield node;
+    }
+    yield* this.body;
+  }
+
+  toString() {
+    return `(lambda (${this.args.join(' ')}) ${this.body})`;
+  }
+}
+
 export class FunctionDefinition extends ASTNode {
   constructor(from, to, name, args, body, options={}) {
     super(from, to, 'functionDef', options);
@@ -199,6 +219,46 @@ export class FunctionDefinition extends ASTNode {
 
   toString() {
     return `(define (${this.name} ${this.args.join(' ')}) ${this.body})`;
+  }
+}
+
+export class CondClause extends ASTNode {
+  constructor(from, to, testExpr, thenExprs, options={}) {
+    super(from, to, 'condClause', options);
+    this.testExpr = testExpr;
+    this.thenExprs = thenExprs;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    yield this.testExpr;
+    yield* this.thenExprs;
+  }
+
+  toString() {
+    return `[${this.testExpr} ${this.thenExprs.join(' ')}]`;
+  }
+}
+
+export class CondExpression extends ASTNode {
+  constructor(from, to, clauses, options={}) {
+    super(from, to, 'condExpression', options);
+    this.clauses = clauses;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    yield* this.clauses;
+  }
+
+  // TODO: ditch this and fix condExpression.handlebars to look this up itself.
+  get firstClause() {
+    return this.clauses[0];
+  }
+
+  toString() {
+    const clauses = this.clauses.map(c => c.toString()).join(' ');
+    return `(cond ${clauses})`;
   }
 }
 

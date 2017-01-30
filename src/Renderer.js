@@ -1,4 +1,19 @@
-import {ASTNode} from './ast';
+import React, {Component} from 'react';
+import ReactDOM from 'react-dom';
+
+import Expression       from './components/Expression';
+import IfExpression     from './components/IfExpression';
+import LambdaExpression from './components/LambdaExpression';
+import CondExpression   from './components/CondExpression';
+import CondClause       from './components/CondClause';
+import Unknown          from './components/Unknown';
+import Literal          from './components/Literal';
+import Blank            from './components/Blank';
+import Comment          from './components/Comment';
+import StructDefinition from './components/StructDef';
+import VariableDefinition from './components/VariableDef';
+import FunctionDefinition from './components/FunctionDef';
+import {ASTNode}        from './ast';
 
 function createFragment(htmlStr) {
   var frag = document.createDocumentFragment();
@@ -15,53 +30,44 @@ export default class Renderer {
     this.extraRenderers = extraRenderers || {};
     this.printASTNode = printASTNode || (node => node.toString());
     this.nodeRenderers = {
-      unknown: require('./templates/unknown.handlebars'),
-      expression: require('./templates/expression.handlebars'),
-      functionDef: require('./templates/functionDef.handlebars'),
-      variableDef: require('./templates/variableDef.handlebars'),
-      ifExpression: require('./templates/ifExpression.handlebars'),
-      struct: require('./templates/struct.handlebars'),
-      literal: require('./templates/literal.handlebars'),
-      comment: require('./templates/comment.handlebars'),
-      blank: require('./templates/blank.handlebars')
+      unknown: Unknown,
+      expression: Expression,
+      functionDef: FunctionDefinition,
+      lambdaExpression: LambdaExpression,
+      variableDef: VariableDefinition,
+      ifExpression: IfExpression,
+      condExpression: CondExpression,
+      condClause: CondClause,
+      struct: StructDefinition,
+      literal: Literal,
+      comment: Comment,
+      blank: Blank
     };
     this._nodesInRenderOrder = [];
   }
 
-  renderHTMLString(node) {
-    if (typeof node !== "object" || !node instanceof ASTNode) {
-      throw new Error("Expected ASTNode but got "+node);
-    }
-    var renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
-    if (renderer === undefined) {
+  renderNodeForReact = (node) => {
+    var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
+    if (Renderer === undefined) {
       throw new Error("Don't know how to render node of type: "+node.type);
     }
-    var nodeEl = renderer(
-      {node},
-      {
-        helpers: {
-          renderNode: (node) => {
-            if (!node) {
-              return '';
-            }
-            return this.renderHTMLString(node);
-          }
-        }
-      }
-    );
-    this._nodesInRenderOrder.push(node);
-    if (typeof nodeEl !== 'string') {
-      console.warn("AST node renderers should return html strings. node:", node);
-      var temp = document.createElement('div');
-      temp.appendChild(nodeEl);
-      return temp.innerHTML;
+    if (Renderer && Renderer.prototype instanceof Component) {
+      this._nodesInRenderOrder.push(node);
+      return (
+        <Renderer
+          node={node}
+          helpers={{renderNodeForReact: this.renderNodeForReact}}
+        />
+      );
+    } else {
+      throw new Error("Don't know how to render node of type: "+node.type);
     }
-    return nodeEl;
   }
 
   // extract all the literals, create clones, and absolutely position
   // them at their original locations
   animateTransition(ast, toBlocks) {
+    window.ast = ast;
     // take note of the parent elt, CM offsets, and rootNodes
     let cm = this.cm, parent = this.cm.getScrollerElement(), rootNodes = ast.rootNodes;
     let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
@@ -98,8 +104,17 @@ export default class Renderer {
       if(fromText) { tm.clear(); } // clean up the faked marker
     }
 
+    // extract all the literals and blanks from a rootNode
+    function flatten(flat, node) {
+      if(["literal", "blank"].includes(node.type)){
+        return flat.concat([node]);
+      } else {
+        return [...node].slice(1).reduce(flatten, flat);
+      }
+    }
+
     // 1) get all the literals from the AST, and make clones of them
-    let literals=rootNodes.reduce((acc,r)=>acc.concat(Array.from(r).filter(n=>n.type=="literal")),[]);
+    let literals = ast.rootNodes.reduce(flatten, []);
     let clones = literals.map(toDom);
 
     // 2) move each clone to the *origin* location of the corresponding literal
@@ -132,7 +147,13 @@ export default class Renderer {
 
   render(rootNode) {
     this._nodesInRenderOrder = [];
-    var rootNodeFrag = createFragment(this.renderHTMLString(rootNode));
+    if (typeof rootNode !== "object" || !rootNode instanceof ASTNode) {
+      throw new Error("Expected ASTNode but got "+rootNode);
+    }
+    const container = document.createElement('span');
+    ReactDOM.render(this.renderNodeForReact(rootNode), container);
+    this._nodesInRenderOrder.push(rootNode);
+    var rootNodeFrag = createFragment(container.innerHTML);
     let lockedTypes = null;
     if (this.lockNodesOfType) {
       lockedTypes = new Set(this.lockNodesOfType);

@@ -1,5 +1,6 @@
 import ExampleParser from './ExampleParser';
 import CodeMirrorBlocks from '../../blocks';
+import Literal from './components/Literal';
 
 require('./style.less');
 export default CodeMirrorBlocks.languages.addLanguage(
@@ -13,7 +14,7 @@ export default CodeMirrorBlocks.languages.addLanguage(
     getRenderOptions() {
       return {
         extraRenderers: {
-          literal: require('./templates/literal.handlebars'),
+          literal: Literal,
         },
       };
     },

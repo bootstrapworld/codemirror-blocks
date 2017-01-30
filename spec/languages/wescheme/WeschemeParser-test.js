@@ -147,6 +147,54 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
+  describe("when parsing lambda expressions,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse(`(lambda (x y) (+ x y))`);
+    });
+
+    it("should convert lambdaExpr to lambdaExpression", function() {
+      expect(this.ast.rootNodes[0].type).toBe('lambdaExpression');
+    });
+
+    it("should convert the arguments correctly", function() {
+      expect(this.ast.rootNodes[0].args.length).toBe(2);
+      expect(this.ast.rootNodes[0].args[0].value).toBe('x');
+      expect(this.ast.rootNodes[0].args[1].value).toBe('y');
+    });
+
+    it("should convert the body correctly", function() {
+      expect(this.ast.rootNodes[0].body.type).toBe('expression');
+    });
+  });
+
+  describe("when parsing cond expressions,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse(`
+(cond
+   [(positive? -5) (error "doesn't get here")]
+   [(zero? -5) (error "doesn't get here, either")]
+   [(positive? 5) #t])
+`
+      );
+    });
+
+    it("should convert condExpr to condExpression", function() {
+      expect(this.ast.rootNodes[0].type).toBe('condExpression');
+    });
+
+    it("should convert the clauses correctly", function() {
+      const clauses = this.ast.rootNodes[0].clauses;
+      expect(clauses.length).toBe(3);
+      expect(clauses[0].type).toBe('condClause');
+    });
+
+    it("should have a sane toString method", function() {
+      expect(this.ast.rootNodes[0].toString()).toEqual(
+        `(cond [(positive? -5) (error "doesn't get here")] [(zero? -5) (error "doesn't get here, either")] [(positive? 5) #t])`
+      );
+    });
+  });
+
   describe("when parsing if definitions,", function() {
     beforeEach(function() {
       this.ast = this.parser.parse('(if (> 0 1) x y)');
@@ -177,10 +225,6 @@ describe("The WeScheme Parser,", function() {
 
     it("should ignore defVars", function() {
       this.ast = this.parser.parse('(define-values (a b c) (1 2 3))');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
-    it("should ignore lambdaExpr", function() {
-      this.ast = this.parser.parse('(lambda (x) (x x))');
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore localExpr", function() {
@@ -225,10 +269,6 @@ describe("The WeScheme Parser,", function() {
     });
     it("should ignore unquoteSplice", function() {
       this.ast = this.parser.parse('`#(1 ,@(list 1 \'2) 4)');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
-    it("should ignore condExpr", function() {
-      this.ast = this.parser.parse('(cond [true 1] [false 2])');
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore caseExpr", function() {
