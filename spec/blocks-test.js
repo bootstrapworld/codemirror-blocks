@@ -31,7 +31,7 @@ const LEFTBRACE = 219;
 const RIGHTBRACE= 221;
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 1000;
+const DELAY = 750;
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
@@ -247,31 +247,26 @@ describe('The CodeMirrorBlocks Class', function() {
     describe("when dealing with top-level input,", function() {
 
       beforeEach(function() {
+        spyOn(this.blocks, 'insertionQuarantine');
         this.cm.setValue('42 11');
       });
 
       it('typing at the end of a line', function() {
-        spyOn(this.blocks, 'insertionQuarantine');
         this.cm.setCursor({line: 0, ch: 5});
         this.cm.getInputField().dispatchEvent(keypress(100));
         expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-        // TODO: access the bookmark itself, and make sure it was added to CM with the right contents
       });
 
       it('typing at the beginning of a line', function() {
-        spyOn(this.blocks, 'insertionQuarantine');
         this.cm.setCursor({line: 0, ch: 0});
         this.cm.getInputField().dispatchEvent(keypress(100));
         expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-        // TODO: access the bookmark itself, and make sure it was added to CM with the right contents
       });
 
       it('typing between two blocks on a line', function() {
-        spyOn(this.blocks, 'insertionQuarantine');
         this.cm.setCursor({line: 0, ch: 3});
         this.cm.getInputField().dispatchEvent(keypress(100));
         expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-        // TODO: access the bookmark itself, and make sure it was added to CM with the right contents
       });
 
       // TODO: figure out how to fire a paste event
@@ -280,6 +275,7 @@ describe('The CodeMirrorBlocks Class', function() {
     describe("when dealing with node activation,", function() {
 
       beforeEach(function() {
+        spyOn(this.blocks, 'insertionQuarantine');
         this.cm.setValue('11 54');
         this.literal = this.blocks.ast.rootNodes[0];
         this.literal2 = this.blocks.ast.rootNodes[1];
@@ -298,14 +294,14 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
 
-      it('should not delete active nodes when the delete key is pressed', function() {
+      it('should not delete active nodes when the delete key is pressed', function(done) {
         expect(this.cm.getValue()).toBe('11 54');
         this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.cm.getWrapperElement().dispatchEvent(keydown(DELETE_KEY));
         setTimeout(() => {
           expect(this.cm.getValue()).toBe('11 54');
-          //done();  
+          done();  
         }, DELAY);
         
       });
@@ -340,18 +336,25 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
       
-      it('should toggle the editability of activated node when Enter is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
+      it('should toggle the editability of activated node when Enter is pressed', function(done) {
+        this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER_KEY));
-        expect(this.literal.el.contentEditable).toBe('true');
+        setTimeout(() => {
+          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+          done();  
+        }, DELAY);
+        
       });
 
-      it('should cancel the editability of activated node when Esc is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
+      it('should cancel the editability of activated node when Esc is pressed', function(done) {
+        this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER_KEY));
-        expect(this.literal.el.contentEditable).toBe('true');
+        setTimeout(() => {
+          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+          done();  
+        }, DELAY);
         this.literal.el.dispatchEvent(keydown(68));
         this.literal.el.dispatchEvent(keydown(ESC_KEY));
         expect(this.cm.getValue()).toBe('11 54');
@@ -499,6 +502,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('arrow clears selection & changes active ', function() {
         this.literal.el.dispatchEvent(keydown(DOWN_KEY));
+        console.log(this.literal2.el.getAttribute("aria-selected"));
         expect(this.literal.el.getAttribute("aria-selected")).toBe('false');
         expect(this.literal2.el.getAttribute("aria-selected")).toBe('false');
         expect(document.activeElement).toBe(this.literal2.el);
@@ -605,7 +609,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.hasInvalidEdit).toBe(true);
       });
     });
-  
+
     describe('when dealing with whitespace,', function() {
       beforeEach(function() {
         spyOn(this.blocks, 'insertionQuarantine');
@@ -634,13 +638,19 @@ describe('The CodeMirrorBlocks Class', function() {
       it('Ctrl-[ should activate a quarantine to the left', function() {
         this.firstArg.el.dispatchEvent(click());
         this.firstArg.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        setTimeout(() => {
+          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+          done()
+        }, DELAY);
       });
 
       it('Ctrl-] should activate a quarantine to the right', function() {
         this.firstArg.el.dispatchEvent(click());
         this.firstArg.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        setTimeout(() => {
+          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+          done()
+        }, DELAY);
       });
       
       // TODO(Emmanuel) Now that we're using insertionQuarantines for
@@ -712,8 +722,7 @@ describe('The CodeMirrorBlocks Class', function() {
             }, DELAY);
           });
         });
-      });
-      
+      });      
     });
 
     describe('when dealing with dragging,', function() {
