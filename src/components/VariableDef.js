@@ -15,7 +15,7 @@ export default class VariableDefinition extends Component {
     const {node, helpers} = this.props;
     return (
       <Node type="variableDef" node={node}>
-        <span className="blocks-operator">define &nbsp; {helpers.renderNodeForReact(node.name)}</span>
+        <span className="blocks-operator">define {helpers.renderNodeForReact(node.name)}</span>
         <span className="blocks-args">
           {helpers.renderNodeForReact(node.body)}
         </span>

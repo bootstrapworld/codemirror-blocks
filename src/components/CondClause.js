@@ -22,9 +22,6 @@ export default class CondClause extends Component {
         aria-label={node.options['aria-label']}
         id={`block-node-${node.id}`}>
         <tr>
-          <td>Test</td><td>Result</td>
-        </tr>
-        <tr>
           <td className="blocks-cond-predicate">
               <DropTarget location={node.testExpr.from} />
               {helpers.renderNodeForReact(node.testExpr)}

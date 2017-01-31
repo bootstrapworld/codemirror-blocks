@@ -17,7 +17,7 @@ export default class FunctionDefinition extends Component {
     return (
       <Node type="functionDef" node={node}>
         <span className="blocks-operator">
-          define &nbsp; (
+          define (
             <DropTarget location={node.name.from} />
             {helpers.renderNodeForReact(node.name)}
             <DropTarget location={node.args.length ? node.args[0].from : node.func.to} />

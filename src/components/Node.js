@@ -16,6 +16,8 @@ export default class Node extends PureComponent {
         tabIndex="1"
         role="treeitem"
         aria-label={node.options['aria-label']}
+        aria-selected="false"
+        aria-multiselectable="true"
         id={`block-node-${node.id}`}
       >
         {children}

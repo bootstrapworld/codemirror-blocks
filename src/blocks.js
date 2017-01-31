@@ -690,13 +690,13 @@ export default class CodeMirrorBlocks {
     }
 
     // Collapse block if possible, otherwise focus on parent
-    if (event.keyCode == LEFT) {
+    if (event.keyCode == LEFT && activeNode) {
       return this.maybeChangeNodeExpanded(activeNode, false) 
           || (activeNode.parent && this.activateNode(activeNode.parent, event))
           || playBeep();
     }
     // Expand block if possible, otherwise descend to firstChild
-    else if (event.keyCode == RIGHT) {
+    else if (event.keyCode == RIGHT && activeNode) {
       return this.maybeChangeNodeExpanded(activeNode, true)
           || (activeNode.firstChild && this.activateNode(activeNode.firstChild, event))
           || playBeep();
@@ -732,7 +732,7 @@ export default class CodeMirrorBlocks {
       }
     }
     // Ctrl/Cmd-Enter should toggle editing on non-editable nodes
-    else if (keyName == CTRLKEY+"-Enter") {
+    else if (keyName == CTRLKEY+"-Enter" && activeNode) {
       this.insertionQuarantine(false, activeNode, event);
     }
     // Space clears selection and selects active node
@@ -753,7 +753,7 @@ export default class CodeMirrorBlocks {
       }
     }
     // Backspace should delete selected nodes
-    else if (keyName == DELETEKEY) {
+    else if (keyName == DELETEKEY && activeNode) {
       if(this.selectedNodes.size == 0) { playBeep(); }
       else { this.deleteSelectedNodes(); }
     } 
@@ -774,8 +774,8 @@ export default class CodeMirrorBlocks {
         this.cm.execCommand(command);
       } else if (typeof command == "function") {
         command(this.cm);
-        // if it's an ASCII character, try building up a search string
-      } else if(/^[\x00-\xFF]$/.test(keyName)){
+        // if it's an ASCII character and search is installed, try building up a search string
+      } else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode){
         this.searchString += keyName;
         var searchCursor = this.cm.getSearchCursor(this.searchString.toLowerCase());
         if(!searchCursor.findNext()) { playBeep(); }

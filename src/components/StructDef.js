@@ -17,7 +17,7 @@ export default class StructDefinition extends Component {
     return (
       <Node type="struct" node={node}>
         <span className="blocks-operator">
-          define-struct &nbsp; {helpers.renderNodeForReact(node.name)}
+          define-struct {helpers.renderNodeForReact(node.name)}
         </span>
         <span className="blocks-args">
           <DropTarget location={node.fields.length ? node.fields[0].from : node.name.to} />

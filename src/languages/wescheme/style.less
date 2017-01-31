@@ -67,10 +67,12 @@
         display: block;
         padding: 3px;
         text-align: center;
+        min-width: 200px;
         &:focus {
           border-color: @editing-border-color;
         }
       }
+      .blocks-condClause::before{content: "test \00A0  \2192 \00A0  result";}
       .blocks-cond-row {
         border-top: 1px solid #aaa;
         > .blocks-cond-predicate {
@@ -281,7 +283,7 @@
   }
   .blocks-node[aria-expanded="false"] {
     height: 30px;
-    min-width: 50px;
+    min-width: 75px;
     padding: 3px;
     background: black;
     position: relative;
