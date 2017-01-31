@@ -64,6 +64,8 @@
       }
       .blocks-condClause {
         border: @border-width inset gray;
+        display: block;
+        padding: 3px;
         text-align: center;
         &:focus {
           border-color: @editing-border-color;
@@ -282,6 +284,7 @@
     min-width: 50px;
     padding: 3px;
     background: black;
+    position: relative;
     * { display: none;}
     .blocks-operator, .blocks-operator * { 
       display: inline;
@@ -289,16 +292,15 @@
       margin: 0px;
       border: none;
       color: lightgray;
+      line-height: 20px;
     }
     .blocks-operator {
       margin-right: 22px;
     }
   }
   .blocks-node[aria-expanded="false"]::after{
-    position:relative; 
-    top: -22px; 
-    text-align: right;
-    padding-right: 5px;
+    position:absolute; 
+    right: 5px;
     content: "\27F7";
     color: white;
   }
