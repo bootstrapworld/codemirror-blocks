@@ -384,7 +384,7 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(document.execCommand).toHaveBeenCalledWith('cut');
         });
 
-        it('should remove multiple selected nodes on cut', function() {
+        it('should remove multiple selected nodes on cut', function(done) {
           this.literal2.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
           this.literal2.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true}));
           expect(this.blocks.selectedNodes.size).toBe(2);
@@ -635,28 +635,28 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(cursor.ch).toBe(7);
       });
 
-      it('Ctrl-[ should activate a quarantine to the left', function() {
+      it('Ctrl-[ should activate a quarantine to the left', function(done) {
         this.firstArg.el.dispatchEvent(click());
         this.firstArg.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
         setTimeout(() => {
           expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done()
+          done();
         }, DELAY);
       });
 
-      it('Ctrl-] should activate a quarantine to the right', function() {
+      it('Ctrl-] should activate a quarantine to the right', function(done) {
         this.firstArg.el.dispatchEvent(click());
         this.firstArg.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
         setTimeout(() => {
           expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done()
+          done();
         }, DELAY);
       });
       
       // TODO(Emmanuel) Now that we're using insertionQuarantines for
       //  whitespace, we need to figure out how to test them better
       
-      it('should activate a quarantine on dblclick', function() {
+      it('should activate a quarantine on dblclick', function(done) {
         this.whiteSpaceEl.dispatchEvent(dblclick());
         setTimeout(() => {
           expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
@@ -677,7 +677,7 @@ describe('The CodeMirrorBlocks Class', function() {
           }, DELAY);
         });
 
-        it('should save whiteSpace on blur', function() {
+        it('should save whiteSpace on blur', function(done) {
           this.whiteSpaceEl.dispatchEvent(blur());
           setTimeout(() => {
             expect(this.cm.getValue()).toBe('(+ 1 4253 2)');
@@ -685,7 +685,7 @@ describe('The CodeMirrorBlocks Class', function() {
           }, DELAY);
         });
 
-        it('should blur whitespace you are editing on enter', function() {
+        it('should blur whitespace you are editing on enter', function(done) {
           spyOn(this.whiteSpaceEl, 'blur');
           this.whiteSpaceEl.dispatchEvent(keydown(ENTER_KEY));
           setTimeout(() => {
@@ -694,7 +694,7 @@ describe('The CodeMirrorBlocks Class', function() {
           }, DELAY);
         });
 
-        it('should blur whitespace you are editing on enter', function() {
+        it('should blur whitespace you are editing on enter', function(done) {
           spyOn(this.whiteSpaceEl, 'blur');
           this.whiteSpaceEl.dispatchEvent(keydown(ENTER_KEY));
           setTimeout(() => {
@@ -715,7 +715,7 @@ describe('The CodeMirrorBlocks Class', function() {
             expect(this.cm.replaceRange).not.toHaveBeenCalled();
           });
 
-          it('should add a blocks-error class to the whitespace el', function() {
+          it('should add a blocks-error class to the whitespace el', function(done) {
             setTimeout(() => {
               expect(this.whiteSpaceEl.classList).toContain('blocks-error');
               done();
