@@ -231,7 +231,7 @@ export class CondClause extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
-    yield this.testExpr;
+    yield* this.testExpr;
     yield* this.thenExprs;
   }
 
@@ -248,7 +248,9 @@ export class CondExpression extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
-    yield* this.clauses;
+    for (let clause of this.clauses) {
+      yield* clause;
+    }
   }
 
   // TODO: ditch this and fix condExpression.handlebars to look this up itself.

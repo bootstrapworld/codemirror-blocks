@@ -17,7 +17,7 @@ export default class LambdaExpression extends Component {
     return (
       <Node type="lambdaExpression" node={node}>
         <span className="blocks-operator">
-          lambda &nbsp; (
+            &lambda; (
             <DropTarget location={node.args.length ? node.args[0].from : node.func.to} />
             {node.args.map((arg, index) => (
               <span key={index}>

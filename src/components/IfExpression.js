@@ -12,11 +12,15 @@ export default class IfExpression extends Component {
     }).isRequired
   }
 
+  clickHandler(){
+    this.setState({moo: 3});
+  }
+
   render() {
     const {node, helpers} = this.props;
     return (
       <Node type="ifExpression" node={node}>
-        <span className="blocks-operator">if</span>
+        <span className="blocks-operator" onClick={this.clickHandler}>if</span>
         <table className="blocks-cond-table">
           <tbody>
             <tr className="blocks-cond-row">

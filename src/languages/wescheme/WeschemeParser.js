@@ -75,8 +75,8 @@ function makeComment(node) {
   }; 
   return new Comment(from, to, "has comment: "+node.comment.txt);
 }
-
-function parseNode(node) {
+// parseNode : WeSchemeNode Number -> ASTNode
+function parseNode(node, i) {
   var from = {
     line: node.location.startRow - 1,
     ch: node.location.startCol
@@ -171,7 +171,7 @@ function parseNode(node) {
       to,
       node.args.map(parseNode),
       parseNode(node.body),
-      {'aria-label':'a lambda definition with '+pluralize('argument', node.args)}
+      {'aria-label':'a function with '+pluralize('argument', node.args)}
     );
   } else if (node instanceof structures.condExpr) {
     return new CondExpression(
@@ -186,7 +186,7 @@ function parseNode(node) {
       to,
       parseNode(node.first),
       [parseNode(node.second)],
-      {'aria-label':'condition'}
+      {'aria-label':'condition '+(i+1)}
     );
   } else if (node instanceof structures.ifExpr) {
     return new IfExpression(
@@ -195,7 +195,7 @@ function parseNode(node) {
       parseNode(node.predicate),
       parseNode(node.consequence),
       parseNode(node.alternative),
-      {'comment' : description}
+      {'aria-label': "an if block", 'comment' : description}
     );
   } else if (node instanceof structures.symbolExpr) {
     let opts = {'aria-label' : symbolAria(node.val)
