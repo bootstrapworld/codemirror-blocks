@@ -80,7 +80,7 @@ export default class Renderer {
       let el = document.createElement("span");
       el.appendChild(document.createTextNode(this.printASTNode(literal)));
       return el;
-    }
+    };
 
     // given a literal, a clone, and whether we're coming from text...
     // position the clone over the currently-rendered literal
