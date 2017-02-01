@@ -86,7 +86,7 @@ function parseNode(node, i) {
     ch: node.location.endCol
   };
 
-  let description = node.comment? makeComment(node) : false;
+  let comment = node.comment? makeComment(node) : false;
 
   if (node instanceof structures.callExpr) {
     let func;
@@ -107,7 +107,7 @@ function parseNode(node, i) {
       func,
       node.args.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria(node.func ? node.func.val : 'empty', node.args)
-      ,'comment' : description}
+      ,'comment' : comment}
     );
   } else if (node instanceof structures.andExpr) {
     return new Expression(
@@ -144,7 +144,7 @@ function parseNode(node, i) {
       parseNode(node.name),
       parseNode(node.expr),
       {'aria-label': symbolAria(node.name.val)+': a value definition'
-      ,'comment' : description}
+      ,'comment' : comment}
     );
   } else if (node instanceof structures.defStruct) {
     return new Struct(
@@ -153,7 +153,7 @@ function parseNode(node, i) {
       parseNode(node.name),
       node.fields.map(parseNode).filter(item => item != null),
       {'aria-label':symbolAria(node.name.val)+': a structure definition with ' + pluralize('field', node.fields)
-      ,'comment' : description}
+      ,'comment' : comment}
     );
   } else if (node instanceof structures.defFunc) {
     return new FunctionDefinition(
@@ -163,7 +163,7 @@ function parseNode(node, i) {
       node.args.map(parseNode),
       parseNode(node.body),
       {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('input', node.args)
-      ,'comment' : description}
+      ,'comment' : comment}
     );
   } else if (node instanceof structures.lambdaExpr) {
     return new LambdaExpression(
@@ -195,11 +195,11 @@ function parseNode(node, i) {
       parseNode(node.predicate),
       parseNode(node.consequence),
       parseNode(node.alternative),
-      {'aria-label': "an if block", 'comment' : description}
+      {'aria-label': "an if block", 'comment' : comment}
     );
   } else if (node instanceof structures.symbolExpr) {
     let opts = {'aria-label' : symbolAria(node.val)
-               ,'comment' : description};
+               ,'comment' : comment};
     if(node.val == "...") {
       return new Blank(from, to, node.val, "symbol", {'aria-label': "blank"});
     } else if (["true","false"].includes(node.val)) {
@@ -221,7 +221,7 @@ function parseNode(node, i) {
       aria = `${node.val}, a Boolean`;
     }
     return new Literal(from, to, node, dataType
-                      , {'aria-label':aria, 'comment': description});
+                      , {'aria-label':aria, 'comment': comment});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
   } else if (node instanceof structures.unsupportedExpr) {

@@ -94,11 +94,6 @@ export class ASTNode {
     // Every node also has a globally unique `id` which can be used to look up
     // it's corresponding DOM element, or to look it up in `AST.nodeMap`
     this.id = uuid.v4();
-
-    // If there's a comment, generate a corresponding ASTNode
-    if(options.comment) {
-      this.comment = options.comment;
-    }
   }
 }
 

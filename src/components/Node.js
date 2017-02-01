@@ -19,6 +19,7 @@ export default class Node extends PureComponent {
         aria-selected="false"
         aria-multiselectable="true"
         id={`block-node-${node.id}`}
+        aria-describedby={node.options.comment? `block-node-${node.options.comment.id}`: undefined}
       >
         {children}
       </span>

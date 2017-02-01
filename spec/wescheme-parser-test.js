@@ -109,13 +109,15 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('code is described by a comment that sits directly to the right', function() {
-      expect(this.funcSymbol.options['aria-describedby'].txt).toBe('plus');
+      expect(this.funcSymbol.el.getAttribute('aria-describedby')).toBe(
+        'block-node-'+this.funcSymbol.options.comment.id);
     });
     it('contiguous line comments are merged', function() {
-      expect(this.firstArg.options['aria-describedby'].txt).toBe('multi\nlines');
+      expect(this.firstArg.el.getAttribute('aria-describedby')).toBe(
+        'block-node-'+this.firstArg.options.comment.id);
     });
     it('expressions are described by themselves if there are no available comments', function() {
-      expect(this.secondArg.options['aria-describedby'].txt).toBe(undefined);
+      expect(this.secondArg.el.getAttribute('aria-describedby')).toBe(null);
     });
 
   });
