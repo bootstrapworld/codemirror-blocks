@@ -3,7 +3,8 @@ import {Blank as ASTBlankNode} from '../ast';
 
 export default class Blank extends Component {
   static propTypes = {
-    node: PropTypes.instanceOf(ASTBlankNode).isRequired
+    node: PropTypes.instanceOf(ASTBlankNode).isRequired,
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
   render() {
     const {node} = this.props;

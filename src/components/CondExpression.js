@@ -8,13 +8,14 @@ export default class CondExpression extends Component {
     node: PropTypes.instanceOf(ASTCondExpressionNode).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired
+    }).isRequired,
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
   render() {
-    const {node, helpers} = this.props;
+    const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="condExpression" node={node}>
+      <Node type="condExpression" node={node} lockedTypes={lockedTypes}>
         <span className="blocks-operator">cond</span>
           <table className="blocks-cond-table">
             {node.clauses.map((clause, index) => 

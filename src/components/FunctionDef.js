@@ -9,13 +9,14 @@ export default class FunctionDefinition extends Component {
     node: PropTypes.instanceOf(ASTFunctionDefinitionNode).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired
+    }).isRequired,
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
   render() {
-    const {node, helpers} = this.props;
+    const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="functionDef" node={node}>
+      <Node type="functionDef" node={node} lockedTypes={lockedTypes}>
         <span className="blocks-operator">
           define (
             <DropTarget location={node.name.from} />

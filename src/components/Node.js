@@ -9,10 +9,12 @@ export default class Node extends PureComponent {
     children: PropTypes.node.isRequired,
   }
   render() {
-    const {type, node, children} = this.props;
+    const {type, node, lockedTypes, children} = this.props;
+    let locked = lockedTypes.includes(type);
+    let classes = `blocks-node blocks-${type} ` + (locked? "blocks-locked" : "")
     return (
       <span
-        className={`blocks-node blocks-${type}`}
+        className={classes}
         tabIndex="1"
         role="treeitem"
         aria-label={node.options['aria-label']}
@@ -20,6 +22,9 @@ export default class Node extends PureComponent {
         aria-multiselectable="true"
         id={`block-node-${node.id}`}
         aria-describedby={node.options.comment? `block-node-${node.options.comment.id}`: undefined}
+        ref = {(el) => node.el = el }
+        aria-disabled={locked? "true": undefined}
+        aria-expanded={locked? "false": undefined}
       >
         {children}
       </span>

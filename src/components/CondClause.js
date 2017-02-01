@@ -8,11 +8,12 @@ export default class CondClause extends Component {
     node: PropTypes.instanceOf(ASTCondClauseNode).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired
+    }).isRequired,
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
   render() {
-    const {node, helpers} = this.props;
+    const {node, helpers, lockedTypes} = this.props;
     return (
       <tbody 
         type="condClause" 

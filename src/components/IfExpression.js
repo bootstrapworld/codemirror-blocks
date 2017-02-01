@@ -9,18 +9,15 @@ export default class IfExpression extends Component {
     node: PropTypes.instanceOf(ASTIfExpressionNode).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired
-  }
-
-  clickHandler(){
-    this.setState({moo: 3});
+    }).isRequired,
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
   render() {
-    const {node, helpers} = this.props;
+    const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="ifExpression" node={node}>
-        <span className="blocks-operator" onClick={this.clickHandler}>if</span>
+      <Node type="ifExpression" node={node} lockedTypes={lockedTypes}>
+        <span className="blocks-operator">if</span>
         <table className="blocks-cond-table">
           <tbody>
             <tr className="blocks-cond-row">

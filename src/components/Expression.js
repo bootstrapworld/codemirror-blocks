@@ -9,22 +9,23 @@ export default class Expression extends Component {
     node: PropTypes.instanceOf(ASTExpressionNode).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired
+    }).isRequired,
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
   render() {
-    const {node, helpers} = this.props;
+    const {node, helpers, lockedTypes} = this.props;
+    const argNodes = [];
+    node.args.forEach((arg, index) => {
+      argNodes.push(helpers.renderNodeForReact(arg, 'node-'+index));
+      argNodes.push(<DropTarget location={arg.to} key={'drop-'+index} />);
+    });
     return (
-      <Node type="expression" node={node}>
+      <Node type="expression" node={node} lockedTypes={lockedTypes}>
         <span className="blocks-operator">{helpers.renderNodeForReact(node.func)}</span>
         <span className="blocks-args">
           <DropTarget location={node.args.length ? node.args[0].from : node.func.to} />
-          {node.args.map((arg, index) => (
-             <span key={index}>
-               {helpers.renderNodeForReact(arg)}
-               <DropTarget location={arg.to} />
-             </span>
-           ))}
+          {argNodes}
         </span>
       </Node>
     );

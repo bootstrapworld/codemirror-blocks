@@ -9,24 +9,25 @@ export default class Unknown extends Component {
     node: PropTypes.instanceOf(ASTUnknownNode).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired
+    }).isRequired,
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
   render() {
-    const {node, helpers} = this.props;
+    const {node, helpers, lockedTypes} = this.props;
     let firstElt = node.elts[0];
     let restElts = node.elts.slice(1);
+    const childNodes = [];
+    restElts.forEach((arg, index) => {
+      childNodes.push(helpers.renderNodeForReact(arg, 'node-'+index));
+      childNodes.push(<DropTarget location={arg.to} key={'drop-'+index} />);
+    });
     return (
-      <Node type="Unknown" node={node}>
+      <Node type="Unknown" node={node} lockedTypes={lockedTypes}>
         <span className="blocks-operator">{helpers.renderNodeForReact(firstElt)}</span>
         <span className="blocks-args">
           <DropTarget location={restElts.length ? firstElt.from : firstElt.to} />
-          {restElts.map((elt, index) => (
-             <span key={index}>
-               {helpers.renderNodeForReact(elt)}
-               <DropTarget location={elt.to} />
-             </span>
-           ))}
+          {childNodes}
         </span>
       </Node>
     );

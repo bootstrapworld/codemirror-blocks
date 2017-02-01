@@ -15,16 +15,8 @@ import VariableDefinition from './components/VariableDef';
 import FunctionDefinition from './components/FunctionDef';
 import {ASTNode}        from './ast';
 
-function createFragment(htmlStr) {
-  var frag = document.createDocumentFragment();
-  var temp = document.createElement('div');
-  temp.innerHTML = htmlStr;
-  frag.appendChild(temp);
-  return frag;
-}
-
 export default class Renderer {
-  constructor(cm, {lockNodesOfType, extraRenderers, printASTNode} = {}) {
+  constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
     this.cm = cm;
     this.lockNodesOfType = lockNodesOfType;
     this.extraRenderers = extraRenderers || {};
@@ -43,7 +35,6 @@ export default class Renderer {
       comment: Comment,
       blank: Blank
     };
-    this._nodesInRenderOrder = [];
   }
 
   renderNodeForReact = (node, key) => {
@@ -52,12 +43,12 @@ export default class Renderer {
       throw new Error("Don't know how to render node of type: "+node.type);
     }
     if (Renderer && Renderer.prototype instanceof Component) {
-      this._nodesInRenderOrder.push(node);
       return (
         <Renderer
           node={node}
           helpers={{renderNodeForReact: this.renderNodeForReact}}
           key = {key}
+          lockedTypes = {this.lockNodesOfType}
         />
       );
     } else {
@@ -147,38 +138,19 @@ export default class Renderer {
   }
 
   render(rootNode) {
-    this._nodesInRenderOrder = [];
     if (typeof rootNode !== "object" || !(rootNode instanceof ASTNode)) {
       throw new Error("Expected ASTNode but got "+rootNode);
     }
     const container = document.createElement('span');
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
-    this._nodesInRenderOrder.push(rootNode);
-    var rootNodeFrag = createFragment(container.innerHTML);
-    let lockedTypes = null;
-    if (this.lockNodesOfType) {
-      lockedTypes = new Set(this.lockNodesOfType);
-    }
-    for (let node of this._nodesInRenderOrder) {
-      node.el = rootNodeFrag.getElementById(`block-node-${node.id}`);
-      if (!node.el) {
-        console.warn("!! Didn't find a dom node for node", node);
-        continue;
-      }
-      if (lockedTypes && lockedTypes.has(node.type)) {
-        node.el.classList.add('blocks-locked');
-        node.el.setAttribute('aria-expanded', "false");
-        node.el.setAttribute('aria-disabled', "true");
-      }
-    }
     this.cm.markText(
       rootNode.from,
       rootNode.to,
       {
-        replacedWith: rootNodeFrag.firstChild.firstChild,
+        replacedWith: container.firstChild,
         node: rootNode
       }
     );
-    return rootNodeFrag;
+    return container;
   }
 }

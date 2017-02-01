@@ -4,7 +4,8 @@ import {ASTNode} from '../ast';
 
 export default class Comment extends PureComponent {
   static propTypes = {
-    node: PropTypes.instanceOf(ASTNode)
+    node: PropTypes.instanceOf(ASTNode),
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
   render() {
     const {node} = this.props;

@@ -8,13 +8,14 @@ export default class VariableDefinition extends Component {
     node: PropTypes.instanceOf(ASTVariableDefinitionNode).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired
+    }).isRequired,
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
   render() {
-    const {node, helpers} = this.props;
+    const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="variableDef" node={node}>
+      <Node type="variableDef" node={node} lockedTypes={lockedTypes}>
         <span className="blocks-operator">define {helpers.renderNodeForReact(node.name)}</span>
         <span className="blocks-args">
           {helpers.renderNodeForReact(node.body)}

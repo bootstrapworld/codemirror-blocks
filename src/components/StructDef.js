@@ -9,13 +9,14 @@ export default class StructDefinition extends Component {
     node: PropTypes.instanceOf(ASTStructDefinitionNode).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired
+    }).isRequired,
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
   render() {
-    const {node, helpers} = this.props;
+    const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="struct" node={node}>
+      <Node type="struct" node={node} lockedTypes={lockedTypes}>
         <span className="blocks-operator">
           define-struct {helpers.renderNodeForReact(node.name)}
         </span>
