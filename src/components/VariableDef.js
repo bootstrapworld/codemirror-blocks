@@ -15,7 +15,7 @@ export default class VariableDefinition extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="variableDef" node={node} lockedTypes={lockedTypes}>
+      <Node type="variableDef" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">define {helpers.renderNodeForReact(node.name)}</span>
         <span className="blocks-args">
           {helpers.renderNodeForReact(node.body)}

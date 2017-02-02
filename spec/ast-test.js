@@ -70,7 +70,7 @@ describe("The Expression Class", function() {
       ]
     );
     // build the AST, thereby assigning parent/child/sibling relationships
-    var ast = new AST([expression]);
+    new AST([expression]);
   });
 
   it("should take a function name and list of args in it's constructor", function() {
@@ -78,16 +78,19 @@ describe("The Expression Class", function() {
     expect(expression.func).toBe(func);
     expect(expression.options).toEqual({'aria-label':'+ expression'});
   });
-/*
-  it("should return only itself and it's children when iterated over", function() {
+
+  it("should return itself and it's descendants when iterated over", function() {
     expect([...nestedExpression]).toEqual([
       nestedExpression,
       nestedExpression.func,
       nestedExpression.args[0],
-      nestedExpression.args[1]
+      nestedExpression.args[1],
+      nestedExpression.args[1].func,
+      nestedExpression.args[1].args[0],
+      nestedExpression.args[1].args[1]
     ]);
   });
-*/
+
   it("should have all navigation pointers and aria attributes set", function() {
     expect(expression.firstChild).toEqual(expression.func);
     expect(expression.func.parent).toEqual(expression);

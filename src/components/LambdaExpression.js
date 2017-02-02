@@ -21,7 +21,7 @@ export default class LambdaExpression extends Component {
       argNodes.push(<DropTarget location={arg.to} key={'drop-'+index} />);
     });
     return (
-      <Node type="lambdaExpression" node={node} lockedTypes={lockedTypes}>
+      <Node type="lambdaExpression" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
             &lambda; (
             <DropTarget location={node.args.length ? node.args[0].from : node.func.to} />

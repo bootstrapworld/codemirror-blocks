@@ -15,12 +15,12 @@ export default class CondExpression extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="condExpression" node={node} lockedTypes={lockedTypes}>
+      <Node type="condExpression" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">cond</span>
-          <table className="blocks-cond-table">
-            {node.clauses.map((clause, index) => 
-               helpers.renderNodeForReact(clause, index))
-              }
+        <table className="blocks-cond-table">
+          {node.clauses.map((clause, index) => 
+             helpers.renderNodeForReact(clause, index))
+            }
         </table>
       </Node>
     );

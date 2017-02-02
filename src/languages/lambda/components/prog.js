@@ -6,10 +6,13 @@ import {Literal as LiteralASTNode} from '../../../ast';
 export default class Literal extends Component {
   static propTypes = {
     node: PropTypes.instanceOf(LiteralASTNode),
+    helpers: PropTypes.shape({
+      renderNodeForReact: PropTypes.func.isRequired,
+    }).isRequired
   }
 
   render() {
-    const {node} = this.props;
+    const {node, helpers} = this.props;
     return (
       <Node type="prog" node={node}>
         <h4>Your Lambda Program</h4>

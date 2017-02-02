@@ -13,7 +13,7 @@ export default class CondClause extends Component {
   }
 
   render() {
-    const {node, helpers, lockedTypes} = this.props;
+    const {node, helpers} = this.props;
     return (
       <tbody 
         type="condClause" 
@@ -21,7 +21,8 @@ export default class CondClause extends Component {
         tabIndex="1"
         role="treeitem"
         aria-label={node.options['aria-label']}
-        id={`block-node-${node.id}`}>
+        id={`block-node-${node.id}`}
+        ref = {(el) => node.el = el }>
         <tr>
           <td className="blocks-cond-predicate">
               <DropTarget location={node.testExpr.from} />

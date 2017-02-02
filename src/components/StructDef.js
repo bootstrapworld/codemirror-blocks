@@ -16,7 +16,7 @@ export default class StructDefinition extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="struct" node={node} lockedTypes={lockedTypes}>
+      <Node type="struct" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           define-struct {helpers.renderNodeForReact(node.name)}
         </span>

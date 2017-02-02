@@ -37,7 +37,7 @@ export default class Renderer {
     };
   }
 
-  renderNodeForReact = (node, key) => {
+  renderNodeForReact(node, key) {
     var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
     if (Renderer === undefined) {
       throw new Error("Don't know how to render node of type: "+node.type);
@@ -141,16 +141,18 @@ export default class Renderer {
     if (typeof rootNode !== "object" || !(rootNode instanceof ASTNode)) {
       throw new Error("Expected ASTNode but got "+rootNode);
     }
-    const container = document.createElement('span');
+    var container = document.createElement('span');
+
+    // render into the container
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
     this.cm.markText(
       rootNode.from,
       rootNode.to,
       {
-        replacedWith: container.firstChild,
+        replacedWith: container,
         node: rootNode
       }
     );
-    return container;
+    return container.firstChild;
   }
 }

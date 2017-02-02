@@ -16,7 +16,7 @@ export default class FunctionDefinition extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="functionDef" node={node} lockedTypes={lockedTypes}>
+      <Node type="functionDef" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           define (
             <DropTarget location={node.name.from} />
