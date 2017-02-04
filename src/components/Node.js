@@ -16,6 +16,7 @@ export default class Node extends PureComponent {
     const {type, node, lockedTypes, helpers, children} = this.props;
     let locked = lockedTypes.includes(type);
     let classes = `blocks-node blocks-${type} ` + (locked? "blocks-locked" : "");
+    let comment = node.options.comment;
     return (
       <span
         className={classes}
@@ -31,7 +32,7 @@ export default class Node extends PureComponent {
         ref = {(el) => node.el = el }
       >
         {children}
-        {node.options.comment? helpers.renderNodeForReact(node.options.comment) : undefined }
+        {comment? helpers.renderNodeForReact(comment) : undefined }
       </span>
     );
   }

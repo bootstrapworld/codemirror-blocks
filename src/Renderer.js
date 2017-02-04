@@ -37,7 +37,7 @@ export default class Renderer {
     };
   }
 
-  renderNodeForReact(node, key) {
+  renderNodeForReact = (node, key) => {
     var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
     if (Renderer === undefined) {
       throw new Error("Don't know how to render node of type: "+node.type);
@@ -137,22 +137,31 @@ export default class Renderer {
     }, 1000);
   }
 
-  render(rootNode) {
+  renderAST(ast) {
+    // get all marks for rendered nodes, and see if we can recycle them
+    var marks = this.cm.getAllMarks().filter((m) => m.node && m.replacedWith);
+    ast.rootNodes.forEach((rootNode, i) => {
+      var container = marks[i]? marks[i].replacedWith : false;
+      this.render(rootNode, container);
+    });
+  }
+
+  render(rootNode, container) {
     if (typeof rootNode !== "object" || !(rootNode instanceof ASTNode)) {
       throw new Error("Expected ASTNode but got "+rootNode);
     }
-    var container = document.createElement('span');
-
+    // if we can't recycle an existing container, 
+    // make a new one and mark CM with it
+    if(!container) {  
+      container = document.createElement('span');
+      this.cm.markText(
+        rootNode.from,
+        rootNode.to,
+        { replacedWith: container, node: rootNode }
+      );
+    }
     // render into the container
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
-    this.cm.markText(
-      rootNode.from,
-      rootNode.to,
-      {
-        replacedWith: container,
-        node: rootNode
-      }
-    );
     return container.firstChild;
   }
 }

@@ -312,9 +312,7 @@ export default class CodeMirrorBlocks {
     this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
 
-    for (let rootNode of this.ast.rootNodes) {
-      this.renderer.render(rootNode);
-    }
+    this.renderer.renderAST(this.ast);
     ui.renderToolbarInto(this);
   }
 
