@@ -12,6 +12,14 @@ export default class Node extends PureComponent {
     }).isRequired,
     lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
+
+  constructor() {
+    super();
+    this.state = {
+      expanded: true
+    };
+  }
+
   render() {
     const {type, node, lockedTypes, helpers, children} = this.props;
     let locked = lockedTypes.includes(type);
