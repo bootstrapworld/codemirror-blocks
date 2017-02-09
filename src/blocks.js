@@ -310,8 +310,7 @@ export default class CodeMirrorBlocks {
 
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
-    this._clearMarks();
-
+    //this._clearMarks();
     this.renderer.renderAST(this.ast);
     ui.renderToolbarInto(this);
   }

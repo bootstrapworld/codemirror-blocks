@@ -15,6 +15,9 @@ import VariableDefinition from './components/VariableDef';
 import FunctionDefinition from './components/FunctionDef';
 import {ASTNode}        from './ast';
 
+// give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
+function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
+
 export default class Renderer {
   constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
     this.cm = cm;
@@ -139,29 +142,33 @@ export default class Renderer {
 
   renderAST(ast) {
     // get all marks for rendered nodes, and see if we can recycle them
-    var marks = this.cm.getAllMarks().filter((m) => m.node && m.replacedWith);
-    ast.rootNodes.forEach((rootNode, i) => {
-      var container = marks[i]? marks[i].replacedWith : false;
+    var marks = this.cm.getAllMarks().filter((m) => m.replacedWith);
+    ast.rootNodes.forEach(rootNode => {
+      if (typeof rootNode !== "object" || !(rootNode instanceof ASTNode)) {
+        throw new Error("Expected ASTNode but got "+rootNode);
+      }
+      var container;
+      if(marks[0] && 
+        (poscmp(marks[0].node.from, rootNode.from) == 0) && 
+        (poscmp(marks[0].node.to  , rootNode.to  ) == 0)) {
+          // it's a match! remove it and keep going
+          container = marks.shift().replacedWith;
+      }
       this.render(rootNode, container);
     });
   }
 
+  // if we can't recycle an existing container, make a new one and mark CM with it
   render(rootNode, container) {
-    if (typeof rootNode !== "object" || !(rootNode instanceof ASTNode)) {
-      throw new Error("Expected ASTNode but got "+rootNode);
-    }
-    // if we can't recycle an existing container, 
-    // make a new one and mark CM with it
-    if(!container) {  
+    if(!container) {
+      console.log('generating new React Component for', rootNode);
       container = document.createElement('span');
-      this.cm.markText(
-        rootNode.from,
-        rootNode.to,
-        { replacedWith: container, node: rootNode }
-      );
+      this.cm.markText(rootNode.from, rootNode.to,
+                       {replacedWith: container, node: rootNode} );
+    } else {
+      console.log("recycling React Component for", rootNode);
     }
-    // render into the container
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
-    return container.firstChild;
+    return container;
   }
 }
