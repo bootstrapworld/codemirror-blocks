@@ -71,5 +71,6 @@ const options = {
 };
 var blocks = new CodeMirrorBlocks(cm2, 'wescheme', options);
 blocks.setBlockMode(true);
+window.blocks = blocks;
 
 document.getElementById('mode').onchange = function(e){ blocks.setBlockMode(e.target.checked); };

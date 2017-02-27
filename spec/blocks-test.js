@@ -65,7 +65,7 @@ describe('The CodeMirrorBlocks Class', function() {
       }
     );
   });
-
+/*
   describe('constructor,', function() {
 
     it("should take a codemirror instance and a parser instance", function() {
@@ -212,7 +212,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.ast.rootNodes[0].value).toBe(11);
       expect(this.blocks.renderer.render).toHaveBeenCalled();
       expect(this.blocks.renderer.render).toHaveBeenCalledWith(
-        this.blocks.ast.rootNodes[0]
+        this.blocks.ast.rootNodes[0], false // not recycling = false
       );
       this.blocks.renderer.render.calls.reset();
 
@@ -224,7 +224,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.ast.rootNodes[0].value).toBe(5432);
       expect(this.blocks.renderer.render).toHaveBeenCalled();
       expect(this.blocks.renderer.render).toHaveBeenCalledWith(
-        this.blocks.ast.rootNodes[0]
+        this.blocks.ast.rootNodes[0], false // not recycling = false
       );
     });
 
@@ -236,14 +236,14 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.cm.getAllMarks().length).toBe(0);
     });
   });
-
+*/
   describe('events,', function() {
     beforeEach(function() {
       this.cm.setValue('11');
       this.blocks.setBlockMode(true);
       this.literal = this.blocks.ast.rootNodes[0];
     });
-    
+    /*
     describe("when dealing with top-level input,", function() {
 
       beforeEach(function() {
@@ -552,15 +552,16 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.selectedNodes.size).toBe(1);
       });
     });
-
+    
     it('should begin editing a node on double click', function() {
       this.literal.el.dispatchEvent(dblclick());
       expect(this.literal.el.classList).toContain('blocks-editing');
       expect(this.literal.el.contentEditable).toBe('true');
     });
-/*
+    
     it('should save a valid, edited node on blur', function() {
       this.literal.el.dispatchEvent(dblclick());
+      console.warn(this.cm.getValue());
       setTimeout(() => {
         let selection = window.getSelection();
         expect(selection.rangeCount).toEqual(1);
@@ -568,12 +569,13 @@ describe('The CodeMirrorBlocks Class', function() {
         range.deleteContents();
         range.insertNode(document.createTextNode('4253'));
         expect(this.cm.getValue()).toEqual('11');
-        this.literal.el.dispatchEvent(blur());
+        console.warn(document.activeElement.textContent);
+        document.activeElement.dispatchEvent(blur());
         expect(this.cm.getValue()).toEqual('4253');
         expect(this.blocks.hasInvalidEdit).toBe(false);
       }, DELAY);
     });
-
+    
     it('should blur the node being edited on esc', function() {
       this.literal.el.dispatchEvent(dblclick());
       spyOn(this.literal.el, 'blur');
@@ -587,7 +589,8 @@ describe('The CodeMirrorBlocks Class', function() {
       this.literal.el.dispatchEvent(keydown(ENTER_KEY));
       expect(this.literal.el.blur).toHaveBeenCalled();
     });
-*/
+    
+    
     describe('when "saving" bad inputs,', function() {
       beforeEach(function() {
         spyOn(this.parser, 'parse').and.throwError("bad input");
@@ -612,7 +615,8 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.hasInvalidEdit).toBe(true);
       });
     });
-
+    */
+    
     describe('when dealing with whitespace,', function() {
       beforeEach(function() {
         spyOn(this.blocks, 'insertionQuarantine');
@@ -621,7 +625,7 @@ describe('The CodeMirrorBlocks Class', function() {
         this.firstArg = this.blocks.ast.rootNodes[0].args[0];
         this.whiteSpaceEl = this.firstArg.el.nextElementSibling;
       });
-      
+      /*
       it('Ctrl-[ should jump to the left of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
         this.firstRoot.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
@@ -629,7 +633,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(0);
       });
-
+      
       it('Ctrl-] should jump to the right of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
         this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
@@ -637,7 +641,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(7);
       });
-
+      
       it('Ctrl-[ should activate a quarantine to the left', function(done) {
         this.firstArg.el.dispatchEvent(click());
         this.firstArg.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
@@ -655,7 +659,7 @@ describe('The CodeMirrorBlocks Class', function() {
           done();
         }, DELAY);
       });
-      
+      */
       // TODO(Emmanuel) Now that we're using insertionQuarantines for
       //  whitespace, we need to figure out how to test them better
       
@@ -666,12 +670,13 @@ describe('The CodeMirrorBlocks Class', function() {
           done();
         }, DELAY);
       });
-    
+      
       describe('and specifically when editing it,', function() {
         beforeEach(function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
-
+          
           setTimeout(() => {
+            expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
             let selection = window.getSelection();
             expect(selection.rangeCount).toEqual(1);
             let range = selection.getRangeAt(0);
@@ -681,32 +686,24 @@ describe('The CodeMirrorBlocks Class', function() {
         });
 
         it('should save whiteSpace on blur', function(done) {
-          this.whiteSpaceEl.dispatchEvent(blur());
+           // commented out because the quarantine *replaces* the original element
+          //this.whiteSpaceEl.dispatchEvent(blur());
+          this.cm.getWrapperElement().dispatchEvent(click());
           setTimeout(() => {
             expect(this.cm.getValue()).toBe('(+ 1 4253 2)');
             done();
-          }, DELAY);
+          }, 3000);
         });
 
         it('should blur whitespace you are editing on enter', function(done) {
-          spyOn(this.whiteSpaceEl, 'blur');
-          this.whiteSpaceEl.dispatchEvent(keydown(ENTER_KEY));
+          spyOn(this.blocks, 'handleChange');
+          document.activeElement.dispatchEvent(keydown(ENTER_KEY));
           setTimeout(() => {
-            expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
+            expect(this.blocks.handleChange).toHaveBeenCalled();
             done();
           }, DELAY);
         });
-
-        it('should blur whitespace you are editing on enter', function(done) {
-          spyOn(this.whiteSpaceEl, 'blur');
-          this.whiteSpaceEl.dispatchEvent(keydown(ENTER_KEY));
-          setTimeout(() => {
-            expect(this.whiteSpaceEl.blur).toHaveBeenCalled();
-            done();
-          }, DELAY);
-        });
-      
-
+        
         describe('when "saving" bad whitepsace inputs,', function() {
           beforeEach(function() {
             spyOn(this.parser, 'parse').and.throwError("bad input");
@@ -715,7 +712,7 @@ describe('The CodeMirrorBlocks Class', function() {
           });
 
           it('should not save anything', function() {
-            expect(this.cm.replaceRange).not.toHaveBeenCalled();
+            expect(this.blocks.replaceRange).not.toHaveBeenCalled();
           });
 
           it('should add a blocks-error class to the whitespace el', function(done) {
@@ -725,9 +722,10 @@ describe('The CodeMirrorBlocks Class', function() {
             }, DELAY);
           });
         });
-      });      
+      });
+      
     });
-
+    /*
     describe('when dealing with dragging,', function() {
       beforeEach(function() {
         this.cm.setValue('(+ 1 2 3)');
@@ -834,6 +832,6 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
     });
-
+    */
   });
 });

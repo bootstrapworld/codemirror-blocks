@@ -147,7 +147,7 @@ export default class Renderer {
       if (typeof rootNode !== "object" || !(rootNode instanceof ASTNode)) {
         throw new Error("Expected ASTNode but got "+rootNode);
       }
-      var container;
+      var container = false;
       if(marks[0] && 
         (poscmp(marks[0].node.from, rootNode.from) == 0) && 
         (poscmp(marks[0].node.to  , rootNode.to  ) == 0)) {
@@ -161,12 +161,12 @@ export default class Renderer {
   // if we can't recycle an existing container, make a new one and mark CM with it
   render(rootNode, container) {
     if(!container) {
-      console.log('generating new React Component for', rootNode);
+      //console.log('generating new React Component for', rootNode);
       container = document.createElement('span');
       this.cm.markText(rootNode.from, rootNode.to,
                        {replacedWith: container, node: rootNode} );
     } else {
-      console.log("recycling React Component for", rootNode);
+      //console.log("recycling React Component for", rootNode);
     }
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
     return container;

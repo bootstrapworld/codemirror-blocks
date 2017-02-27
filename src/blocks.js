@@ -59,13 +59,13 @@ export class BlockMarker {
   }
   clear() {
     if (this.options.css) {
-      this.cmMarker.replacedWith.style.cssText = '';
+      this.cmMarker.replacedWith.firstChild.style.cssText = '';
     }
     if (this.options.title) {
-      this.cmMarker.replacedWith.title = '';
+      this.cmMarker.replacedWith.firstChild.title = '';
     }
     if (this.options.className) {
-      this.cmMarker.replacedWith.classList.remove(this.options.className);
+      this.cmMarker.replacedWith.firstChild.classList.remove(this.options.className);
     }
     delete this.cmMarker[MARKER];
   }
@@ -263,7 +263,7 @@ export default class CodeMirrorBlocks {
     let marks = this.cm.findMarks(from, to);
     // find marks that are blocks, and apply the styling to node between [from, to]
     for (let mark of marks) {
-      if (mark.replacedWith && mark.replacedWith.classList.contains('blocks-node')) {
+      if (mark.replacedWith && mark.replacedWith.firstChild.classList.contains('blocks-node')) {
         for(let node of mark.node){
           if((poscmp(from, node.from) < 1) && (poscmp(to, node.to) > -1)){
             if (options.css) {
@@ -310,7 +310,7 @@ export default class CodeMirrorBlocks {
 
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
-    //this._clearMarks();
+    this._clearMarks();
     this.renderer.renderAST(this.ast);
     ui.renderToolbarInto(this);
   }
@@ -372,7 +372,7 @@ export default class CodeMirrorBlocks {
       }
     // Otherwise copy the contents of selection to the buffer, first-to-last
     } else {
-      var sel = [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from));
+      var sel = [...this.selectedNodes].sort((b,a) => poscmp(a.from, b.from));
       clipboard = sel.reduce((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
     }
     
@@ -641,7 +641,7 @@ export default class CodeMirrorBlocks {
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
     literal.options['aria-label'] = text;
-    this.renderer.render(literal, this.cm, this.renderOptions || {});
+    this.renderer.renderAST(ast, this.cm, this.renderOptions || {});
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
@@ -649,6 +649,7 @@ export default class CodeMirrorBlocks {
       parent.insertBefore(literal.el, dest.el);
       parent.removeChild(dest.el);
     } else if(dest.nodeType) {
+      console.log("insertionQuarantine called on whitespace with", dest);
       literal.el.classList.add("blocks-white-space");
       let parent = dest.parentNode;
       literal.to = literal.from = getLocationFromEl(dest);
