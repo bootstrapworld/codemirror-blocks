@@ -140,7 +140,7 @@ export default class Renderer {
     }, 1000);
   }
 
-  renderAST(ast) {
+  renderAST(ast, lastActiveNodeKey) {
     // get all marks for rendered nodes, and see if we can recycle them
     var marks = this.cm.getAllMarks().filter((m) => m.replacedWith);
     ast.rootNodes.forEach(rootNode => {

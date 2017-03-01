@@ -12,6 +12,7 @@ function setChildAttributes(nodes, parent) {
     node.prevSibling= lastNode;
     node.nextSibling= nodes[i+1] || false;
     node.parent     = parent;
+    node.id         = parent? parent.id + (","+i) : i.toString();
     lastNode        = node;
   });
   if(parent) { parent.firstChild = nodes[0]; }
@@ -65,6 +66,19 @@ export class AST {
     return this.prevNodeMap.get(selection)
         || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0);
   }
+
+  getClosestNodeFromKey(key) {
+    let node = this.nodeMap.get(key.toString());
+    if(node) {
+      console.log("found exactly what I was looking for: '"+key+"'");
+      return node;
+    } else {
+      var keyArray = key.split(',');
+      keyArray.splice(-1,1);
+      console.log("no exact match. looking for parent with key: '"+keyArray.join(',')+"'");
+      if(keyArray.length > 0) return this.getClosestNodeFromKey(keyArray.join(','));
+    }
+  }
 }
 
 // Every node in the AST inherits from the `ASTNode` class, which is used to
@@ -93,7 +107,7 @@ export class ASTNode {
 
     // Every node also has a globally unique `id` which can be used to look up
     // it's corresponding DOM element, or to look it up in `AST.nodeMap`
-    this.id = uuid.v4();
+    this.id = null; // the id is set by setChildAttributes()
   }
 }
 

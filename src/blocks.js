@@ -127,6 +127,8 @@ export default class CodeMirrorBlocks {
     this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
+    // Track lastActiveNodeKey
+    this.lastActiveNodeKey = 0;
     // Offscreen buffer for copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
@@ -182,7 +184,7 @@ export default class CodeMirrorBlocks {
       // override CM's natural onFocus behavior, activating the first node
       if(this.ast.rootNodes.length > 0 && e.relatedTarget 
           && e.relatedTarget.nodeName === "TEXTAREA") { 
-        setTimeout(() => { this.activateNode(this.ast.rootNodes[0], e); }, 10);
+        setTimeout(() => { this.activateNode(this.ast.keyMap(0), e); }, 10);
       }
     });
     // make sure all the nodes are rendered, so screenreaders can count them correcly
@@ -240,7 +242,7 @@ export default class CodeMirrorBlocks {
     this.setBlockMode(!this.blockMode);
   }
 
-  handleChange() {
+  handleChange(cm, e) {
     if (this.blockMode) {
       this.render();
     }
@@ -311,7 +313,7 @@ export default class CodeMirrorBlocks {
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
-    this.renderer.renderAST(this.ast);
+    this.renderer.renderAST(this.ast, this.lastActiveNodeKey);
     ui.renderToolbarInto(this);
   }
 
@@ -331,6 +333,7 @@ export default class CodeMirrorBlocks {
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     this.cm.scrollIntoView(node.from);
     node.el.focus();
+    this.lastActiveNodeKey = node.key;
   }
 
   isNodeExpandable(node) {
@@ -773,7 +776,9 @@ export default class CodeMirrorBlocks {
       } else if (typeof command == "function") {
         command(this.cm);
         // if it's an ASCII character and search is installed, try building up a search string
-      } else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode){
+      } 
+      /*
+      else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode){
         this.searchString += keyName;
         var searchCursor = this.cm.getSearchCursor(this.searchString.toLowerCase());
         if(!searchCursor.findNext()) { playBeep(); }
@@ -783,6 +788,7 @@ export default class CodeMirrorBlocks {
           else { this.activateNode(this.findNodeFromEl(marks[0].replacedWith), event); }
         }
       }
+      */
       return; // return without cancelling the event
     }
     event.preventDefault();
