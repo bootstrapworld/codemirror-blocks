@@ -67,16 +67,18 @@ export class AST {
         || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0);
   }
 
-  getClosestNodeFromKey(key) {
-    let node = this.nodeMap.get(key.toString());
-    if(node) {
-      console.log("found exactly what I was looking for: '"+key+"'");
-      return node;
+  getClosestNodeFromKey(keyArray) {
+    // if we have no valid key, give up
+    if(keyArray.length == 0) return false;
+    // if we're at the root level, count backwards till we find something
+    if(keyArray.length == 1 && keyArray[0] >= 0) {
+      return this.nodeMap.get(keyArray[0].toString())
+          || this.getClosestNodeFromKey([keyArray[0] - 1]);
+    // if we're at a child, go up to a generation until we find something
     } else {
-      var keyArray = key.split(',');
-      keyArray.splice(-1,1);
-      console.log("no exact match. looking for parent with key: '"+keyArray.join(',')+"'");
-      if(keyArray.length > 0) return this.getClosestNodeFromKey(keyArray.join(','));
+      let parentArray = keyArray.slice(0, keyArray.length-1);
+      return this.nodeMap.get(keyArray.join(','))
+          || this.getClosestNodeFromKey(parentArray);
     }
   }
 }

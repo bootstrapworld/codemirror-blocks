@@ -140,7 +140,7 @@ export default class Renderer {
     }, 1000);
   }
 
-  renderAST(ast, lastActiveNodeKey) {
+  renderAST(ast, restoreFocusToBlock) {
     // get all marks for rendered nodes, and see if we can recycle them
     var marks = this.cm.getAllMarks().filter((m) => m.replacedWith);
     ast.rootNodes.forEach(rootNode => {
@@ -156,6 +156,13 @@ export default class Renderer {
       }
       this.render(rootNode, container);
     });
+    // Try to restore the cursor focus
+    if(!restoreFocusToBlock) return;
+    setTimeout(()=>{
+      let node = ast.getClosestNodeFromKey(restoreFocusToBlock.split(','));
+      if(node) { node.el.click(); }
+      else { this.cm.focus(); }
+    }, 100);
   }
 
   // if we can't recycle an existing container, make a new one and mark CM with it

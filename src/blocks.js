@@ -127,8 +127,8 @@ export default class CodeMirrorBlocks {
     this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track lastActiveNodeKey
-    this.lastActiveNodeKey = 0;
+    // Track lastActiveNodeId
+    this.lastActiveNodeId = 0;
     // Offscreen buffer for copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
@@ -313,7 +313,7 @@ export default class CodeMirrorBlocks {
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
-    this.renderer.renderAST(this.ast, this.lastActiveNodeKey);
+    this.renderer.renderAST(this.ast, this.lastActiveNodeId);
     ui.renderToolbarInto(this);
   }
 
@@ -333,7 +333,7 @@ export default class CodeMirrorBlocks {
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     this.cm.scrollIntoView(node.from);
     node.el.focus();
-    this.lastActiveNodeKey = node.key;
+    this.lastActiveNodeId = node.id;
   }
 
   isNodeExpandable(node) {
@@ -644,7 +644,7 @@ export default class CodeMirrorBlocks {
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
     literal.options['aria-label'] = text;
-    this.renderer.renderAST(ast, this.cm, this.renderOptions || {});
+    this.renderer.renderAST(ast);
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
