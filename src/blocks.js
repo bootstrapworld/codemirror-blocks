@@ -518,10 +518,10 @@ export default class CodeMirrorBlocks {
   // every whitespace element has a previous and/or next sibling
   // use that to determine the location
   getLocationFromWhitespace(el) {
-    let prevEl = el.previousElementSibling,
-        nextEl = el.nextElementSibling;
-    let prev   = prevEl? this.findNodeFromEl(prevEl) : false,
-        next   = nextEl? this.findNodeFromEl(nextEl) : false;
+    let prevEl = el.previousElementSibling;
+    let nextEl = el.nextElementSibling;
+    let prev   = prevEl? this.findNodeFromEl(prevEl) : false;
+    let next   = nextEl? this.findNodeFromEl(nextEl) : false;
     // return the end of the previous sibling (if it exists)
     // if not, return the start of the next sibling
     return prev? prev.to : next.from;
