@@ -7,20 +7,6 @@ import * as ui from './ui';
 import merge from './merge';
 var beepSound = require('./beep.wav');
 
-function getLocationFromEl(el) {
-  // TODO: it's kind of lame to have line and ch as attributes on random elements.
-  let line = el.dataset.line || el.getAttribute('line');
-  let ch = el.dataset.ch || el.getAttribute('ch');
-  if (line === null || ch === null) {
-    // no location to get...
-    return null;
-  }
-  return {
-    line: parseInt(line),
-    ch: parseInt(ch)
-  };
-}
-
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
 
@@ -529,6 +515,18 @@ export default class CodeMirrorBlocks {
     }
   }
 
+  // every whitespace element has a previous and/or next sibling
+  // use that to determine the location
+  getLocationFromWhitespace(el) {
+    let prevEl = el.previousElementSibling,
+        nextEl = el.nextElementSibling;
+    let prev   = prevEl? this.findNodeFromEl(prevEl) : false,
+        next   = nextEl? this.findNodeFromEl(nextEl) : false;
+    // return the end of the previous sibling (if it exists)
+    // if not, return the start of the next sibling
+    return prev? prev.to : next.from;
+  }
+
   // return the AST node that exactly matches the element, or null
   findNodeFromEl(el) {
     if(el) {
@@ -566,7 +564,7 @@ export default class CodeMirrorBlocks {
     // look up the destination information: ID, Node, destFrom and destTo
     let destinationNode = this.findNodeFromEl(event.target);        // when dropping onto an existing node, get that Node
     let destFrom        = (destinationNode && destinationNode.from) // if we have an existing node, use its start location
-                        || getLocationFromEl(event.target)          // if we have a drop target, grab that location
+                        || this.getLocationFromWhitespace(event.target)          // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
     let destTo        = (destinationNode && destinationNode.to) || destFrom; // destFrom = destTo for insertion
     // if we're coming from outside
@@ -655,7 +653,7 @@ export default class CodeMirrorBlocks {
       console.log("insertionQuarantine called on whitespace with", dest);
       literal.el.classList.add("blocks-white-space");
       let parent = dest.parentNode;
-      literal.to = literal.from = getLocationFromEl(dest);
+      literal.to = literal.from = this.getLocationFromWhitespace(dest);
       parent.insertBefore(literal.el, dest);
       parent.removeChild(dest);
     } else if(dest.line !== undefined){
