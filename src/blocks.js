@@ -228,7 +228,7 @@ export default class CodeMirrorBlocks {
     this.setBlockMode(!this.blockMode);
   }
 
-  handleChange(cm, e) {
+  handleChange(cm) {
     if (this.blockMode) {
       this.render();
     }
