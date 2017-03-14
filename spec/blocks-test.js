@@ -694,12 +694,12 @@ describe('The CodeMirrorBlocks Class', function() {
         });
         
         it('should blur whitespace you are editing on enter', function(done) {
-           this.whiteSpaceEl.dispatchEvent(dblclick());
-            setTimeout(() => {
-              document.activeElement.dispatchEvent(keydown(ENTER_KEY));
-              expect(this.blocks.handleChange).toHaveBeenCalled();
-              done();
-            }, DELAY);
+          this.whiteSpaceEl.dispatchEvent(dblclick());
+          setTimeout(() => {
+            document.activeElement.dispatchEvent(keydown(ENTER_KEY));
+            expect(this.blocks.handleChange).toHaveBeenCalled();
+            done();
+          }, DELAY);
         });
         /*
         describe('when "saving" bad whitepsace inputs,', function() {
