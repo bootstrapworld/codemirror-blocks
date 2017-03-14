@@ -41,19 +41,20 @@ describe('The CodeMirrorBlocks Class', function() {
     `;
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
-    this.willInsertNode = (sourceNodeText, sourceNode, destination) => {
+    this.willInsertNode = function(sourceNodeText, sourceNode, destination) {
       let line = this.cm.getLine(destination.line);
-      if (destination.ch > 0 && line[destination.ch - 1].match(/[\w\d]/)) {
-        // previous character is a letter or number, so prefix a space
+      let prev = line[destination.ch - 1] || '\n';
+      let next = line[destination.ch] || '\n';
+      sourceNodeText = sourceNodeText.trim();
+      if (!/\s|[\(\[\{]/.test(prev)) {
         sourceNodeText = ' ' + sourceNodeText;
       }
-
-      if (destination.ch < line.length && line[destination.ch].match(/[\w\d]/)) {
-        // next character is a letter or a number, so append a space
+      if (!/\s|[\)\]\}]/.test(next)) {
         sourceNodeText += ' ';
       }
       return sourceNodeText;
     };
+
     this.didInsertNode = function() {};
     this.blocks = new CodeMirrorBlocks(
       this.cm,
@@ -64,8 +65,12 @@ describe('The CodeMirrorBlocks Class', function() {
         toolbar: document.getElementById('toolbar')
       }
     );
+    spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
+    spyOn(this.blocks, 'saveEdit').and.callThrough();
+    spyOn(this.blocks, 'handleChange').and.callThrough();
+    spyOn(this.cm,     'replaceRange').and.callThrough();
   });
-/*
+  
   describe('constructor,', function() {
 
     it("should take a codemirror instance and a parser instance", function() {
@@ -236,18 +241,17 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.cm.getAllMarks().length).toBe(0);
     });
   });
-*/
+  
   describe('events,', function() {
     beforeEach(function() {
       this.cm.setValue('11');
       this.blocks.setBlockMode(true);
       this.literal = this.blocks.ast.rootNodes[0];
     });
-    /*
+
     describe("when dealing with top-level input,", function() {
 
       beforeEach(function() {
-        spyOn(this.blocks, 'insertionQuarantine');
         this.cm.setValue('42 11');
       });
 
@@ -275,7 +279,6 @@ describe('The CodeMirrorBlocks Class', function() {
     describe("when dealing with node activation,", function() {
 
       beforeEach(function() {
-        spyOn(this.blocks, 'insertionQuarantine');
         this.cm.setValue('11 54');
         this.literal = this.blocks.ast.rootNodes[0];
         this.literal2 = this.blocks.ast.rootNodes[1];
@@ -553,48 +556,56 @@ describe('The CodeMirrorBlocks Class', function() {
       });
     });
     
-    it('should begin editing a node on double click', function() {
+    it('should begin editing a node on double click', function(done) {
       this.literal.el.dispatchEvent(dblclick());
-      expect(this.literal.el.classList).toContain('blocks-editing');
-      expect(this.literal.el.contentEditable).toBe('true');
+      setTimeout(() => {
+        expect(document.activeElement.classList).toContain('blocks-editing');
+        expect(document.activeElement.contentEditable).toBe('true');
+        done();
+      }, DELAY);
     });
     
-    it('should save a valid, edited node on blur', function() {
+    it('should save a valid, edited node on blur', function(done) {
       this.literal.el.dispatchEvent(dblclick());
-      console.warn(this.cm.getValue());
       setTimeout(() => {
         let selection = window.getSelection();
         expect(selection.rangeCount).toEqual(1);
         let range = selection.getRangeAt(0);
         range.deleteContents();
-        range.insertNode(document.createTextNode('4253'));
+        range.insertNode(document.createTextNode('9'));
         expect(this.cm.getValue()).toEqual('11');
-        console.warn(document.activeElement.textContent);
         document.activeElement.dispatchEvent(blur());
-        expect(this.cm.getValue()).toEqual('4253');
+        expect(this.cm.getValue()).toEqual('911');
         expect(this.blocks.hasInvalidEdit).toBe(false);
+        done();
+      }, DELAY);
+    });
+  
+    it('should blur the node being edited on esc', function(done) {
+      this.literal.el.dispatchEvent(dblclick());
+      setTimeout(() => {
+        let quarantine = document.activeElement;
+        spyOn(quarantine, 'blur');
+        quarantine.dispatchEvent(keydown(ESC_KEY));
+        expect(quarantine.blur).toHaveBeenCalled();
+        done();
       }, DELAY);
     });
     
-    it('should blur the node being edited on esc', function() {
+    it('should blur the node being edited on enter', function(done) {
       this.literal.el.dispatchEvent(dblclick());
-      spyOn(this.literal.el, 'blur');
-      this.literal.el.dispatchEvent(keydown(ESC_KEY));
-      expect(this.literal.el.blur).toHaveBeenCalled();
+      setTimeout(() => {
+        let quarantine = document.activeElement;
+        spyOn(quarantine, 'blur');
+        quarantine.dispatchEvent(keydown(ENTER_KEY));
+        expect(quarantine.blur).toHaveBeenCalled();
+        done();
+      }, DELAY);
     });
-
-    it('should blur the node being edited on enter', function() {
-      this.literal.el.dispatchEvent(dblclick());
-      spyOn(this.literal.el, 'blur');
-      this.literal.el.dispatchEvent(keydown(ENTER_KEY));
-      expect(this.literal.el.blur).toHaveBeenCalled();
-    });
-    
-    
+    /*
     describe('when "saving" bad inputs,', function() {
       beforeEach(function() {
         spyOn(this.parser, 'parse').and.throwError("bad input");
-        spyOn(this.cm, 'replaceRange');
         this.literal.el.dispatchEvent(dblclick());
         this.literal.el.dispatchEvent(blur());
       });
@@ -616,16 +627,14 @@ describe('The CodeMirrorBlocks Class', function() {
       });
     });
     */
-    
     describe('when dealing with whitespace,', function() {
       beforeEach(function() {
-        spyOn(this.blocks, 'insertionQuarantine');
         this.cm.setValue('(+ 1 2)');
         this.firstRoot = this.blocks.ast.rootNodes[0];
         this.firstArg = this.blocks.ast.rootNodes[0].args[0];
         this.whiteSpaceEl = this.firstArg.el.nextElementSibling;
       });
-      /*
+
       it('Ctrl-[ should jump to the left of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
         this.firstRoot.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
@@ -659,9 +668,6 @@ describe('The CodeMirrorBlocks Class', function() {
           done();
         }, DELAY);
       });
-      */
-      // TODO(Emmanuel) Now that we're using insertionQuarantines for
-      //  whitespace, we need to figure out how to test them better
       
       it('should activate a quarantine on dblclick', function(done) {
         this.whiteSpaceEl.dispatchEvent(dblclick());
@@ -670,62 +676,53 @@ describe('The CodeMirrorBlocks Class', function() {
           done();
         }, DELAY);
       });
-      
+
       describe('and specifically when editing it,', function() {
-        beforeEach(function() {
+        it('should save whiteSpace on blur', function(done) {
           this.whiteSpaceEl.dispatchEvent(dblclick());
-          
           setTimeout(() => {
-            expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
             let selection = window.getSelection();
             expect(selection.rangeCount).toEqual(1);
             let range = selection.getRangeAt(0);
             range.deleteContents();
             range.insertNode(document.createTextNode('4253'));
-          }, DELAY);
-        });
-
-        it('should save whiteSpace on blur', function(done) {
-           // commented out because the quarantine *replaces* the original element
-          //this.whiteSpaceEl.dispatchEvent(blur());
-          this.cm.getWrapperElement().dispatchEvent(click());
-          setTimeout(() => {
+            document.activeElement.dispatchEvent(blur());
             expect(this.cm.getValue()).toBe('(+ 1 4253 2)');
-            done();
-          }, 3000);
-        });
-
-        it('should blur whitespace you are editing on enter', function(done) {
-          spyOn(this.blocks, 'handleChange');
-          document.activeElement.dispatchEvent(keydown(ENTER_KEY));
-          setTimeout(() => {
-            expect(this.blocks.handleChange).toHaveBeenCalled();
+            expect(this.blocks.hasInvalidEdit).toBe(false);
             done();
           }, DELAY);
         });
         
+        it('should blur whitespace you are editing on enter', function(done) {
+           this.whiteSpaceEl.dispatchEvent(dblclick());
+            setTimeout(() => {
+              document.activeElement.dispatchEvent(keydown(ENTER_KEY));
+              expect(this.blocks.handleChange).toHaveBeenCalled();
+              done();
+            }, DELAY);
+        });
+        /*
         describe('when "saving" bad whitepsace inputs,', function() {
           beforeEach(function() {
             spyOn(this.parser, 'parse').and.throwError("bad input");
-            spyOn(this.cm, 'replaceRange');
-            this.whiteSpaceEl.dispatchEvent(blur());
+            document.activeElement.dispatchEvent(blur());
           });
 
           it('should not save anything', function() {
-            expect(this.blocks.replaceRange).not.toHaveBeenCalled();
+            expect(this.cm.replaceRange).not.toHaveBeenCalled();
           });
 
           it('should add a blocks-error class to the whitespace el', function(done) {
             setTimeout(() => {
-              expect(this.whiteSpaceEl.classList).toContain('blocks-error');
+              expect(document.activeElement.classList).toContain('blocks-error');
               done();
             }, DELAY);
           });
         });
-      });
-      
+        */
+      });    
     });
-    /*
+    
     describe('when dealing with dragging,', function() {
       beforeEach(function() {
         this.cm.setValue('(+ 1 2 3)');
@@ -765,7 +762,7 @@ describe('The CodeMirrorBlocks Class', function() {
         this.blocks.ast.rootNodes[0].el.dispatchEvent(drop(dragEvent.dataTransfer));
         expect(this.cm.getValue()).toBe(initialValue);
       });
-
+/*        
       it('should update the text on drop to a later point in the file', function() {
         expect(this.dropTargetEls[2].classList).toContain('blocks-drop-target');
         // drag the first arg to the drop target
@@ -805,7 +802,7 @@ describe('The CodeMirrorBlocks Class', function() {
         nodeEl.parentElement.dispatchEvent(dropEvent);
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 3)\n2');
       });
-
+*/
       it('should replace a literal that you drag onto', function() {
         let dragEvent = dragstart();
         this.firstArg.el.dispatchEvent(dragEvent);
@@ -831,7 +828,8 @@ describe('The CodeMirrorBlocks Class', function() {
         nodeEl.parentElement.dispatchEvent(dropEvent);
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
+      
     });
-    */
+    
   });
 });

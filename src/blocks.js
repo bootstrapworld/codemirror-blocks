@@ -133,12 +133,12 @@ export default class CodeMirrorBlocks {
     Object.assign(
       this.wrapper,
       {
-        onkeydown: (n, e) => this.handleKeyDown(n, e),
+        onkeydown: ((n, e) => this.handleKeyDown(n, e)),
         onclick: this.nodeEventHandler(this.activateNode),
         ondblclick: this.nodeEventHandler({
-          literal: (n, e) => this.insertionQuarantine(false, n, e),
+          literal: ((n, e) => this.insertionQuarantine(false, n, e)),
           blank: this.editLiteral,
-          whitespace: (n, e) => this.insertionQuarantine("", n, e),
+          whitespace: ((n, e) => this.insertionQuarantine("", n, e)),
           default: this.maybeChangeNodeExpanded
         }),
         onpaste: this.nodeEventHandler(this.handleTopLevelEntry),
@@ -377,7 +377,6 @@ export default class CodeMirrorBlocks {
     if (event.type == 'cut') {
       // delete last-to-first to preserve the from/to indices
       sel.forEach(n => {
-        console.log('DELETE', n.id);
         this.cm.replaceRange('', n.from, n.to);
       });
       this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
@@ -458,7 +457,6 @@ export default class CodeMirrorBlocks {
   // remove node contents from CM
   deleteNode(node) {
     if (node) {
-      console.log('DELETE', node.id);
       this.cm.replaceRange('', node.from, node.to);
     }
   }
@@ -587,14 +585,6 @@ export default class CodeMirrorBlocks {
     }
     // if we're inserting/replacing from outsider the editor, just do it and return
     if (!sourceNode) {
-      if(destinationNode) {
-        console.log('UPDATE', destinationNode.id);
-      } else {
-        console.log('INSERT BEFORE child:', 
-        this.ast.getNodeAfter(destFrom) && this.ast.getNodeAfter(destFrom).id, 
-        'parent:', 
-        null);
-      }
       this.cm.replaceRange(sourceNodeText, destFrom, destTo);
       return;
     }
@@ -610,14 +600,7 @@ export default class CodeMirrorBlocks {
     // if we're not replacing a literal
     this.cm.operation(() => {
       sourceNodeText = maybeApplyClientFn(this.willInsertNode);
-
-      if(destinationNode) {
-        console.log('REPLACE', destinationNode.id, 'with', sourceNode.id);
-      } else {
-        console.log('MOVE', sourceNode.id, 'before:',
-          this.ast.getNodeAfter(destFrom) && this.ast.getNodeAfter(destFrom).id,
-          'parent', null);
-      }
+      console.log('willInsertNode returned');
       if (poscmp(sourceNode.from, destFrom) < 0) {
         this.cm.replaceRange(sourceNodeText, destFrom, destTo);
         this.cm.replaceRange('', sourceNode.from, sourceNode.to);
@@ -663,27 +646,18 @@ export default class CodeMirrorBlocks {
     literal.options['aria-label'] = text;
     this.renderer.renderAST(ast);
     if(dest.type) {
-      console.log('UPDATE', dest.id);
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
       literal.from = dest.from; literal.to = dest.to;
       parent.insertBefore(literal.el, dest.el);
       parent.removeChild(dest.el);
     } else if(dest.nodeType) {
-      console.log('INSERT BEFORE child:', 
-        dest.nextElementSibling && dest.nextElementSibling.id, 
-        'parent:', 
-        findNearestNodeEl(dest) && findNearestNodeEl(dest).id);
       literal.el.classList.add("blocks-white-space");
       let parent = dest.parentNode;
       literal.to = literal.from = this.getLocationFromWhitespace(dest);
       parent.insertBefore(literal.el, dest);
       parent.removeChild(dest);
     } else if(dest.line !== undefined){
-      console.log('INSERT BEFORE child:', 
-        this.ast.getNodeAfter(dest) && this.ast.getNodeAfter(dest).id, 
-        'parent: ', 
-        null);
       literal.to = literal.from = dest;
       let mk = this.cm.setBookmark(dest, {widget: literal.el});
       literal.quarantine = mk;
