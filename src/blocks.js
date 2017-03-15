@@ -376,8 +376,10 @@ export default class CodeMirrorBlocks {
     setTimeout(() => { activeNode.el.focus(); }, 200);
     if (event.type == 'cut') {
       // delete last-to-first to preserve the from/to indices
-      sel.forEach(n => {
-        this.cm.replaceRange('', n.from, n.to);
+      this.cm.operation(() => {
+        sel.forEach(n => {
+          this.cm.replaceRange('', n.from, n.to);
+        });
       });
       this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
     }
