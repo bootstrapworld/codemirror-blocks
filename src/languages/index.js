@@ -1,4 +1,4 @@
-const LANGUAGES = {};
+export const LANGUAGES = {};
 
 export function addLanguage(languageDefinition) {
   var id = languageDefinition.id;
