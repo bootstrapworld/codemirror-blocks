@@ -354,6 +354,17 @@ export default class CodeMirrorBlocks {
     return node.el.matches('[aria-expanded="false"] *');
   }
 
+  isDropTarget(el) {
+    if (el.classList.contains('blocks-drop-target')) {
+      return true;
+    }
+    var node = this.findNearestNodeFromEl(el);
+    if (node && ['literal', 'blank'].includes(node.type)) {
+      return true;
+    }
+    return !node; // things outside of nodes are drop targets
+  }
+
   // _getNextVisibleNode : (ASTNode -> ASTNode) ASTNode -> ASTNode
   // Consumes a search function and an ASTNode. Searches forward
   // and produces the next visible node
@@ -517,17 +528,6 @@ export default class CodeMirrorBlocks {
     this.emit(EVENT_DRAG_END, this, node, event);
   }
 
-  isDropTarget(el) {
-    if (el.classList.contains('blocks-drop-target')) {
-      return true;
-    }
-    var node = this.findNearestNodeFromEl(el);
-    if (node && ['literal', 'blank'].includes(node.type)) {
-      return true;
-    }
-    return !node; // things outside of nodes are drop targets
-  }
-
   handleDragEnter(node, event) {
     if (this.isDropTarget(event.target)) {
       event.stopPropagation();
@@ -554,9 +554,6 @@ export default class CodeMirrorBlocks {
     let nextEl = el.nextElementSibling;
     let prev   = prevEl? this.findNodeFromEl(prevEl) : false;
     let next   = nextEl? this.findNodeFromEl(nextEl) : false;
-    // return the end of the previous sibling (if it exists)
-    // if not, return the start of the next sibling (if it exists)
-    // if not, we're at the top level so return null
     return prev? prev.to 
         :  next? next.from
         :  null;
@@ -727,14 +724,16 @@ export default class CodeMirrorBlocks {
 
     // Collapse block if possible, otherwise focus on parent
     if (event.keyCode == LEFT && activeNode) {
+      let parent = this.ast.getNodeParent(activeNode);
       return this.maybeChangeNodeExpanded(activeNode, false) 
-          || (activeNode.parent && this.activateNode(activeNode.parent, event))
+          || (parent && this.activateNode(parent, event))
           || playBeep();
     }
     // Expand block if possible, otherwise descend to firstChild
     else if (event.keyCode == RIGHT && activeNode) {
+      let firstChild = this.ast.getNodeFirstChild(activeNode);
       return this.maybeChangeNodeExpanded(activeNode, true)
-          || (activeNode.firstChild && this.activateNode(activeNode.firstChild, event))
+          || (firstChild && this.activateNode(firstChild, event))
           || playBeep();
     }
     // Go to next visible node

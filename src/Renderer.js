@@ -159,7 +159,7 @@ export default class Renderer {
     // Try to restore the cursor focus
     if(!restoreFocusToBlock) return;
     setTimeout(()=>{
-      let node = ast.getClosestNodeFromKey(restoreFocusToBlock.split(','));
+      let node = ast.getClosestNodeFromPath(restoreFocusToBlock.split(','));
       if(node) { node.el.click(); }
       else { this.cm.focus(); }
     }, 100);

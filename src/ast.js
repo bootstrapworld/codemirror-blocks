@@ -4,33 +4,11 @@ function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
 
-// given a list of sibling nodes and a parent, assign the parent
-// and sibling pointers
-function setChildAttributes(nodes, parent) {
-  let lastNode = false;
-  nodes.forEach((node, i) => {
-    node.prevSibling= lastNode;
-    node.nextSibling= nodes[i+1] || false;
-    node.parent     = parent;
-    node.id         = parent? parent.id + (","+i) : i.toString();
-    node.options["aria-setsize"] = nodes.length;
-    node.options["aria-posinset"] = i;
-    node.options["aria-level"] = parent? parent.id.split(",").length : 0;
-    lastNode        = node;
-  });
-  if(parent) { parent.firstChild = nodes[0]; }
-  
-  // have each child initialize itself
-  nodes.forEach(node => {
-    var children = [...node].slice(1); // the first elt is always the parent
-    if(children.length > 1) { setChildAttributes(children, node); }
-  });
-}
-
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
 // required to spit out an `AST` instance.
 export class AST {
   constructor(rootNodes) {
+    let that =  this;
 
     // the `nodeMap` attribute can be used to look up nodes by their id.
     this.nodeMap = new Map();
@@ -43,45 +21,67 @@ export class AST {
 
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
-    setChildAttributes(this.rootNodes, false);
 
     let lastNode = null;
-    for (let rootNode of this.rootNodes) {
-      for (let node of rootNode) {
-        if (node) {
-          if (lastNode) {
-            this.nextNodeMap.set(lastNode, node);
-            this.prevNodeMap.set(node, lastNode);
-          }
-          this.nodeMap.set(node.id, node);
-          lastNode = node;
-        }
-      }
-    }
-  }
 
+    // annotateNodes : ASTNodes ASTNode -> Void
+    // walk through the siblings, assigning aria-* attributes
+    // and populating various maps for tree navigation
+    function annotateNodes(nodes, parent) {
+      nodes.forEach((node, i) => {
+        node.id         = parent? parent.id + (","+i) : i.toString();
+        node.options["aria-setsize"]  = nodes.length;
+        node.options["aria-posinset"] = i;
+        node.options["aria-level"]    = parent? parent.id.split(",").length : 0;
+        if (lastNode) {
+          that.nextNodeMap.set(lastNode, node);
+          that.prevNodeMap.set(node, lastNode);
+        }
+        that.nodeMap.set(node.id, node);
+        lastNode = node;
+      });
+      
+      // have each child initialize itself
+      nodes.forEach(node => {
+        var children = [...node].slice(1); // the first elt is always the parent
+        if(children.length > 1) { annotateNodes(children, node); }
+      });
+    }
+    annotateNodes(this.rootNodes);
+  }
+  // return the next node or false
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)
         || this.rootNodes.find(node => comparePos(node.from, selection) >= 0);
   }
-
+  // return the previous node or false
   getNodeBefore(selection) {
     return this.prevNodeMap.get(selection)
         || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0);
   }
-
-  getClosestNodeFromKey(keyArray) {
+  // return the parent or false
+  getNodeParent(node) {
+    let path = node.id.split(",");
+    path.pop();
+    return this.nodeMap.get(path.join(",")); 
+  }
+  // return the first child, if it exists
+  getNodeFirstChild(node) {
+    return this.nodeMap.get(node.id+",0");
+  }
+  
+  getClosestNodeFromPath(keyArray) {
     // if we have no valid key, give up
     if(keyArray.length == 0) return false;
     // if we're at the root level, count backwards till we find something
     if(keyArray.length == 1 && keyArray[0] >= 0) {
       return this.nodeMap.get(keyArray[0].toString())
-          || this.getClosestNodeFromKey([keyArray[0] - 1]);
+          || this.getClosestNodeFromPath([keyArray[0] - 1]);
     // if we're at a child, go up to a generation until we find something
     } else {
       let parentArray = keyArray.slice(0, keyArray.length-1);
       return this.nodeMap.get(keyArray.join(','))
-          || this.getClosestNodeFromKey(parentArray);
+          || this.getClosestNodeFromPath(parentArray);
     }
   }
 }
