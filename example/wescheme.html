@@ -1,23 +1,26 @@
-<html>
+<!DOCTYPE html> 
+<html lang="en">
   <head>
+    <meta charset="utf-8"/>
     <title>WeScheme Example</title>
   </head>
   <body>
     <div class="container wescheme-example">
       <div class="page-header">
-        <h1><a href="/">codemirror-blocks</a> <small>WeScheme Example</small></h1>
+        <h1>WeScheme Example</h1>
+        <a href="/">codemirror-blocks</a> 
       </div>
       <div class="row">
         <div class="col-md-6">
-          <p>Edit using text...</p>
+          <label for="code">Edit using text...</label>
           <textarea id="code">This is a test.</textarea>
         </div>
         <div class="col-md-6">
           <div>
-            <p>or edit using blocks!</p>
+            <label for="code2">Or edit using blocks!</label>
             <textarea id="code2">This is a test.</textarea>
           </div>
-          <label><input type="checkbox" aria-label="Block Mode" id="mode" />Block Mode</label>
+          <input type="checkbox" aria-label="Block Mode" id="mode" checked="checked"/><label for="mode">Block Mode</label>
         </div>
       </div>
     </div>
