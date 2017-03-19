@@ -134,19 +134,19 @@ export default class CodeMirrorBlocks {
     Object.assign(
       this.wrapper,
       {
-        onkeydown: ((n, e) => this.handleKeyDown(n, e)),
-        onclick: this.nodeEventHandler(this.activateNode),
+        onkeydown:  ((n, e) => this.handleKeyDown(n, e)),
+        onclick:    this.nodeEventHandler(this.activateNode),
         ondblclick: this.nodeEventHandler({
-          literal: ((n, e) => this.insertionQuarantine(false, n, e)),
-          blank: this.editLiteral,
+          literal:    ((n, e) => this.insertionQuarantine(false, n, e)),
+          blank:      this.editLiteral,
           whitespace: ((n, e) => this.insertionQuarantine("", n, e)),
-          default: this.maybeChangeNodeExpanded
+          default:    this.maybeChangeNodeExpanded
         }),
-        onpaste: this.nodeEventHandler(this.handleTopLevelEntry),
-        ondragstart: this.nodeEventHandler(this.startDraggingNode),
-        ondragend: this.nodeEventHandler(this.stopDraggingNode),
-        ondragleave: this.nodeEventHandler(this.handleDragLeave),
-        ondrop: this.nodeEventHandler(this.dropOntoNode),
+        onpaste:      this.nodeEventHandler(this.handleTopLevelEntry),
+        ondragstart:  this.nodeEventHandler(this.startDraggingNode),
+        ondragend:    this.nodeEventHandler(this.stopDraggingNode),
+        ondragleave:  this.nodeEventHandler(this.handleDragLeave),
+        ondrop:       this.nodeEventHandler(this.dropOntoNode),
       }
     );
     // TODO: don't do this, otherwise we copy/paste will only work
@@ -166,14 +166,17 @@ export default class CodeMirrorBlocks {
     this.cm.on('mouseup',   (cm, e) => this.toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    (cm, e) => this.handleChange(e));
+    // mousedown events should impact dragging, focus-if-error, and click events
     this.cm.on('mousedown', (cm, e) => {
       this.toggleDraggable(e); 
       this.cancelIfErrorExists(e);
       this.mouseUsed = true;
       setTimeout(() => this.mouseUsed = false, 200);
     });
+    // override CM's natural onFocus behavior, activating the last focused node
+    // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
-      // override CM's natural onFocus behavior, activating the last focused node
+      
       if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
         let focusNode = this.lastActiveNodeId || "0"; 
         setTimeout(() => { this.activateNode(this.ast.nodeMap.get(focusNode), e); }, 10);
@@ -193,6 +196,8 @@ export default class CodeMirrorBlocks {
     this.events.emit(event, ...args);
   }
 
+  // say : String -> Void
+  // add text to the announcements element, and log it to the console
   say(text){
     let announcement = document.createTextNode(text);
     console.log(text);
@@ -200,6 +205,8 @@ export default class CodeMirrorBlocks {
     setTimeout(() => this.announcements.removeChild(announcement), 500);
   }
 
+  // setBlockMode : String -> Void
+  // Toggle CM attributes, and announce the mode change
   setBlockMode(mode) {
     if (mode === this.blockMode) {
       return;
@@ -221,6 +228,10 @@ export default class CodeMirrorBlocks {
     }
   }
 
+  toggleBlockMode() {
+    this.setBlockMode(!this.blockMode);
+  }
+
   // FF & WK don't like draggable and contenteditable to mix, so we need
   // to turn draggable on and off based on mousedown/up events
   toggleDraggable(e) {
@@ -228,11 +239,9 @@ export default class CodeMirrorBlocks {
     else { e.target.setAttribute("draggable", true); }
   }
 
-  toggleBlockMode() {
-    this.setBlockMode(!this.blockMode);
-  }
-
-  handleChange(cm) {
+  // handleChange : CM CM-Change-Event -> Void
+  // if blocks mode is enabled, re-render the blocks
+  handleChange(cm, changeEvent) {
     if (this.blockMode) {
       this.render();
     }
@@ -300,6 +309,8 @@ export default class CodeMirrorBlocks {
     }
   }
 
+  // render : Void -> Void
+  // re-parse the document, then replace and re-render the resulting AST
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
@@ -307,10 +318,14 @@ export default class CodeMirrorBlocks {
     ui.renderToolbarInto(this);
   }
 
+  // getActiveNode : Void -> ASTNode
+  // get the ASTNode corresponing to the currently-active DOMNode
   getActiveNode() {
     return this.findNearestNodeFromEl(document.activeElement);
   }
 
+  // activateNode : ASTNode Event -> Boolean
+  // activate and announce the given node, optionally changing selection
   activateNode(node, event) {
     event.stopPropagation();
     if(node == this.getActiveNode()){
@@ -339,6 +354,9 @@ export default class CodeMirrorBlocks {
     return node.el.matches('[aria-expanded="false"] *');
   }
 
+  // _getNextVisibleNode : (ASTNode -> ASTNode) ASTNode -> ASTNode
+  // Consumes a search function and an ASTNode. Searches forward
+  // and produces the next visible node
   _getNextVisibleNode(nextFn, 
     from = this.getActiveNode() || this.cm.getCursor()) {
     let nextNode = nextFn(from);
@@ -348,6 +366,7 @@ export default class CodeMirrorBlocks {
     return nextNode || from;
   }
 
+  // handleCopyCut : Event -> Void
   // if any nodes are selected, copy all of their text ranges to a buffer
   // copy the buffer to the clipboard. Remove the original text onCut
   handleCopyCut(event) {
@@ -380,7 +399,7 @@ export default class CodeMirrorBlocks {
     // put focus back on activeEl, and clear the buffer
     setTimeout(() => { activeNode.el.focus(); }, 200);
     if (event.type == 'cut') {
-      // delete last-to-first to preserve the from/to indices
+      // batch-delete last-to-first, to preserve the from/to indices
       this.cm.operation(() => {
         sel.forEach(n => this.cm.replaceRange('', n.from, n.to));
       });
@@ -389,6 +408,8 @@ export default class CodeMirrorBlocks {
     this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboard);
   }
 
+  // handlePaste : Event -> Void
+  // paste to a hidden buffer, then grab the text and deal with it manually
   handlePaste(e) {
     let that = this, activeNode = this.getActiveNode();
     this.buffer.focus();
@@ -430,6 +451,8 @@ export default class CodeMirrorBlocks {
     }
   }
 
+  // handleEditKeyDown : Event -> Voic
+  // Trap Enter, Tab and Esc keys. Let the rest pass through
   handleEditKeyDown(e) {
     e.stopPropagation();
     e.codemirrorIgnore = true;
@@ -441,6 +464,8 @@ export default class CodeMirrorBlocks {
     }
   }
 
+  // editLiteral : ASTNode Event -> Void
+  // Set the appropriate attributes and event handlers
   editLiteral(node, event) {
     event.stopPropagation();
     this.say("editing "+node.el.getAttribute("aria-label"));
@@ -458,6 +483,7 @@ export default class CodeMirrorBlocks {
     node.el.focus();
   }
 
+  // deleteNode : ASTNode -> Void
   // remove node contents from CM
   deleteNode(node) {
     if (node) { this.cm.replaceRange('', node.from, node.to); }
@@ -467,7 +493,8 @@ export default class CodeMirrorBlocks {
     this.deleteNode(this.ast.nodeMap.get(nodeId));
   }
 
-  // empty the selection, and delete all the nodes
+  // deleteSelectedNodes : Void -> Void
+  // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let nodeCount = this.selectedNodes.size;
     this.selectedNodes.forEach(n => this.deleteNode(n));
@@ -519,8 +546,9 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  // every whitespace element has a previous and/or next sibling
-  // use that to determine the location
+  // getLocationFromWhiteSpace : DOMNode -> {line, ch} | null
+  // Consumes a DOMNode. If it's a whitespace element, produce
+  // the the location of the prev/next sibling. Otherwise return null
   getLocationFromWhitespace(el) {
     let prevEl = el.previousElementSibling;
     let nextEl = el.nextElementSibling;
@@ -534,14 +562,16 @@ export default class CodeMirrorBlocks {
         :  null;
   }
 
-  // return the AST node that exactly matches the element, or null
+  // findNodeFromEl : DOMNode -> ASTNode
+  // return the AST node that *exactly* matches the element, or null
   findNodeFromEl(el) {
     if(el) {
       let match = el.id.match(/block-node-(.*)/);
       return match && (match.length > 1) && this.ast.nodeMap.get(match[1]);
     }
   }
-  // return the AST node that best matches the element, or null
+  // findNearestNodeFromEl : DOMNode -> ASTNode
+  // return the AST node that *best** matches the element, or null
   findNearestNodeFromEl(el) {
     return this.findNodeFromEl(findNearestNodeEl(el));
   }
@@ -599,7 +629,7 @@ export default class CodeMirrorBlocks {
     }
 
     // Call willInsertNode and didInsertNode on either side of the replacement operation
-    // if we're not replacing a literal
+    // if we're not replacing a literal. Use cm.operation to batch these two
     this.cm.operation(() => {
       sourceNodeText = maybeApplyClientFn(this.willInsertNode);
       if (poscmp(sourceNode.from, destFrom) < 0) {
@@ -613,6 +643,8 @@ export default class CodeMirrorBlocks {
     });
   }
 
+  // handleTopLevelEntry : Event -> Void
+  // quarantine a keypress or paste entry at the CM level
   handleTopLevelEntry(e) {
     if(!this.blockMode) return;                           // bail if mode==false
     e.preventDefault();
@@ -840,6 +872,9 @@ export default class CodeMirrorBlocks {
     }
   }
 
+  // nodeEventHandler : {HandlerFn} Boolean -> *
+  // Dispatch pattern that recieves a handler object, and
+  // calls an event handler for the given node type
   nodeEventHandler(handlers, callWithNullNode=false) {
     if (typeof handlers == 'function') {
       handlers = {default: handlers};
