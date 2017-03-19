@@ -5,19 +5,20 @@ import Renderer from './Renderer';
 import * as languages from './languages';
 import * as ui from './ui';
 import merge from './merge';
+
 var beepSound = require('./beep.wav');
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
 
+// findNearestNodeEl : DOM -> DOM
+// Consumes a DOM node, and produces the ancestor associated
+// with an ASTNode
 function findNearestNodeEl(el) {
   while (el !== document.body && !el.classList.contains('blocks-node')) {
     el = el.parentNode;
   }
-  if (el === document.body) {
-    return null;
-  }
-  return el;
+  return el === document.body? null : el;
 }
 
 const BEEP = new Audio(beepSound);
@@ -162,19 +163,22 @@ export default class CodeMirrorBlocks {
     this.cm.on('inputread', (cm, e) => this.handleKeyDown(e));
     this.cm.on('paste',     (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
-    this.cm.on('mousedown', (cm, e) => {this.toggleDraggable(e); this.cancelIfErrorExists(e);});
     this.cm.on('mouseup',   (cm, e) => this.toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('change',    (cm, e) => this.handleChange(e));
+    this.cm.on('mousedown', (cm, e) => {
+      this.toggleDraggable(e); 
+      this.cancelIfErrorExists(e);
+      this.mouseUsed = true;
+      setTimeout(() => this.mouseUsed = false, 200);
+    });
     this.cm.on('focus',     (cm, e) => {
-      // override CM's natural onFocus behavior, activating the first node
-      if(this.ast.rootNodes.length > 0 && e.relatedTarget 
-          && e.relatedTarget.nodeName === "TEXTAREA") { 
-        setTimeout(() => { this.activateNode(this.ast.keyMap(0), e); }, 10);
+      // override CM's natural onFocus behavior, activating the last focused node
+      if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
+        let focusNode = this.lastActiveNodeId || "0"; 
+        setTimeout(() => { this.activateNode(this.ast.nodeMap.get(focusNode), e); }, 10);
       }
     });
-    // make sure all the nodes are rendered, so screenreaders can count them correcly
-    this.cm.setOption('viewportMargin', Infinity);
   }
 
   on(event, listener) {
@@ -203,7 +207,7 @@ export default class CodeMirrorBlocks {
       this.blockMode = mode;
       if(mode) { 
         this.wrapper.setAttribute( "role", "tree"); 
-        this.scroller.setAttribute("role", "group");
+        this.scroller.setAttribute("role", "presentation");
         this.wrapper.setAttribute("aria-label", "Block Editor");
         this.say("Switching to Block Mode");
       } else { 
@@ -320,6 +324,7 @@ export default class CodeMirrorBlocks {
     this.cm.scrollIntoView(node.from);
     node.el.focus();
     this.lastActiveNodeId = node.id;
+    return true;
   }
 
   isNodeExpandable(node) {
@@ -377,9 +382,7 @@ export default class CodeMirrorBlocks {
     if (event.type == 'cut') {
       // delete last-to-first to preserve the from/to indices
       this.cm.operation(() => {
-        sel.forEach(n => {
-          this.cm.replaceRange('', n.from, n.to);
-        });
+        sel.forEach(n => this.cm.replaceRange('', n.from, n.to));
       });
       this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
     }
@@ -408,7 +411,7 @@ export default class CodeMirrorBlocks {
   saveEdit(node, nodeEl, event) {
     event.preventDefault();
     try {
-      var text = nodeEl.innerText;                    // Sanitize the text
+      var text = nodeEl.innerText;                    // If inserting (from==to), sanitize
       if(node.from === node.to) text = this.willInsertNode(text, nodeEl, node.from, node.to);
       this.parser.lex(nodeEl.innerText);              // If the node contents will lex...
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
@@ -419,7 +422,7 @@ export default class CodeMirrorBlocks {
     } catch(e) {                                      // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
-      nodeEl.draggable = false;            // 3) remove draggable to work around WK/FF bug
+      nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
       let errorTxt = this.parser.getExceptionMessage(e);
       nodeEl.title = errorTxt;                        // 4) Make the title the error msg
       setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
@@ -439,7 +442,6 @@ export default class CodeMirrorBlocks {
   }
 
   editLiteral(node, event) {
-    //node.el.draggable = false; // defend against webkit
     event.stopPropagation();
     this.say("editing "+node.el.getAttribute("aria-label"));
     node.el.oldText = this.cm.getRange(node.from, node.to);
@@ -458,9 +460,7 @@ export default class CodeMirrorBlocks {
 
   // remove node contents from CM
   deleteNode(node) {
-    if (node) {
-      this.cm.replaceRange('', node.from, node.to);
-    }
+    if (node) { this.cm.replaceRange('', node.from, node.to); }
   }
 
   deleteNodeWithId(nodeId) {
@@ -602,7 +602,6 @@ export default class CodeMirrorBlocks {
     // if we're not replacing a literal
     this.cm.operation(() => {
       sourceNodeText = maybeApplyClientFn(this.willInsertNode);
-      console.log('willInsertNode returned');
       if (poscmp(sourceNode.from, destFrom) < 0) {
         this.cm.replaceRange(sourceNodeText, destFrom, destTo);
         this.cm.replaceRange('', sourceNode.from, sourceNode.to);
@@ -647,18 +646,21 @@ export default class CodeMirrorBlocks {
     let literal = ast.rootNodes[0];
     literal.options['aria-label'] = text;
     this.renderer.renderAST(ast);
+    // if we're inserting into an existing ASTNode
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
       literal.from = dest.from; literal.to = dest.to;
       parent.insertBefore(literal.el, dest.el);
       parent.removeChild(dest.el);
+    // if we're inserting into a whitespace node
     } else if(dest.nodeType) {
       literal.el.classList.add("blocks-white-space");
       let parent = dest.parentNode;
       literal.to = literal.from = this.getLocationFromWhitespace(dest);
       parent.insertBefore(literal.el, dest);
       parent.removeChild(dest);
+    // if we're inserting into a toplevel CM cursor
     } else if(dest.line !== undefined){
       literal.to = literal.from = dest;
       let mk = this.cm.setBookmark(dest, {widget: literal.el});

@@ -37,6 +37,9 @@ export default class Node extends PureComponent {
         aria-describedby={node.options.comment? `block-node-${node.options.comment.id}`: undefined}
         aria-disabled={locked? "true": undefined}
         aria-expanded={locked? "false": undefined}
+        aria-setsize = { node.options["aria-setsize"] }
+        aria-posinset = { node.options["aria-posinset"] }
+        aria-level = { node.options["aria-level"] }
         ref = {(el) => node.el = el }
       >
         {children}
