@@ -220,7 +220,7 @@ function parseNode(node, i) {
       dataType = "boolean";
       aria = `${node.val}, a Boolean`;
     }
-    return new Literal(from, to, node, dataType
+    return new Literal(from, to, node.toString(), dataType
                       , {'aria-label':aria, 'comment': comment});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
