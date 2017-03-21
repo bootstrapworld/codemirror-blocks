@@ -7,6 +7,8 @@ import * as ui from './ui';
 import merge from './merge';
 
 var beepSound = require('./beep.wav');
+var jsonpatch = require('fast-json-patch');
+
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
@@ -365,18 +367,6 @@ export default class CodeMirrorBlocks {
     return !node; // things outside of nodes are drop targets
   }
 
-  // _getNextVisibleNode : (ASTNode -> ASTNode) ASTNode -> ASTNode
-  // Consumes a search function and an ASTNode. Searches forward
-  // and produces the next visible node
-  _getNextVisibleNode(nextFn, 
-    from = this.getActiveNode() || this.cm.getCursor()) {
-    let nextNode = nextFn(from);
-    while (nextNode && this.isNodeHidden(nextNode)) {
-      nextNode = nextFn(nextNode);
-    }
-    return nextNode || from;
-  }
-
   // handleCopyCut : Event -> Void
   // if any nodes are selected, copy all of their text ranges to a buffer
   // copy the buffer to the clipboard. Remove the original text onCut
@@ -709,7 +699,7 @@ export default class CodeMirrorBlocks {
     let that = this;
     let keyName = CodeMirror.keyName(event);
     var activeNode = this.getActiveNode();
-    // clear searches every half-second
+    // clear searches every 3/4s-second
     setTimeout(() => this.searchString = "", 750);
 
     function moveCursorAdjacent(node, cursor) {
@@ -717,7 +707,8 @@ export default class CodeMirrorBlocks {
       else { that.cm.focus(); that.cm.setCursor(cursor); }
     }
     function switchNodes(searchFn) {
-      let node = that._getNextVisibleNode(searchFn);
+      let node = that.ast.getNextMatchingNode(
+        searchFn, that.isNodeHidden, that.getActiveNode() || that.cm.getCursor());
       if(node === activeNode) { playBeep(); }
       else { that.activateNode(node, event); }
     }
@@ -731,7 +722,8 @@ export default class CodeMirrorBlocks {
     }
     // Expand block if possible, otherwise descend to firstChild
     else if (event.keyCode == RIGHT && activeNode) {
-      let firstChild = this.ast.getNodeFirstChild(activeNode);
+      let firstChild = this.isNodeExpandable(activeNode) 
+        && this.ast.getNodeFirstChild(activeNode);
       return this.maybeChangeNodeExpanded(activeNode, true)
           || (firstChild && this.activateNode(firstChild, event))
           || playBeep();
@@ -754,7 +746,8 @@ export default class CodeMirrorBlocks {
       var lastNode = lastExpr[lastExpr.length-1];
       if(this.isNodeHidden(lastNode)) {
         let searchFn = (cur => this.ast.getNodeBefore(cur));
-        lastNode = this._getNextVisibleNode(searchFn, lastNode);
+        let lastNode = that.ast.getNextMatchingNode(
+          searchFn, that.isNodeHidden, that.getActiveNode());
       }
       this.activateNode(lastNode, event);
     }
