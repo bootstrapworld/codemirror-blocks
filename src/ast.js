@@ -29,22 +29,18 @@ export class AST {
     // and populating various maps for tree navigation
     function annotateNodes(nodes, parent) {
       nodes.forEach((node, i) => {
-        node.id         = parent? parent.id + (","+i) : i.toString();
-        node.options["aria-setsize"]  = nodes.length;
-        node.options["aria-posinset"] = i;
-        node.options["aria-level"]    = parent? parent.id.split(",").length : 0;
+        node.id = parent? parent.id + (","+i) : i.toString();
+        node["aria-setsize"]  = nodes.length;
+        node["aria-posinset"] = i;
+        node["aria-level"]    = parent? parent.id.split(",").length : 0;
         if (lastNode) {
           that.nextNodeMap.set(lastNode, node);
           that.prevNodeMap.set(node, lastNode);
         }
         that.nodeMap.set(node.id, node);
         lastNode = node;
-      });
-      
-      // have each child initialize itself
-      nodes.forEach(node => {
         var children = [...node].slice(1); // the first elt is always the parent
-        if(children.length > 1) { annotateNodes(children, node); }
+        annotateNodes(children, node);
       });
     }
     annotateNodes(this.rootNodes);
@@ -52,12 +48,14 @@ export class AST {
   // return the next node or false
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)
-        || this.rootNodes.find(node => comparePos(node.from, selection) >= 0);
+        || this.rootNodes.find(node => comparePos(node.from, selection) >= 0)
+        || false;
   }
   // return the previous node or false
   getNodeBefore(selection) {
     return this.prevNodeMap.get(selection)
-        || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0);
+        || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0)
+        || false;
   }
   // return the parent or false
   getNodeParent(node) {
@@ -69,7 +67,7 @@ export class AST {
   getNodeFirstChild(node) {
     return this.nodeMap.get(node.id+",0");
   }
-  
+
   getClosestNodeFromPath(keyArray) {
     // if we have no valid key, give up
     if(keyArray.length == 0) return false;
@@ -83,6 +81,17 @@ export class AST {
       return this.nodeMap.get(keyArray.join(','))
           || this.getClosestNodeFromPath(parentArray);
     }
+  }
+
+  // getNextMatchingNode : (ASTNode->ASTNode) (ASTNode->Bool) ASTNode -> ASTNode
+  // Consumes a search function, a test function, and a starting ASTNode. 
+  // Calls searchFn(Start) over and over until testFn(Node)==true 
+  getNextMatchingNode(searchFn, testFn, start) {
+    let nextNode = searchFn(start);
+    while (nextNode && testFn(nextNode)) {
+      nextNode = searchFn(nextNode);
+    }
+    return nextNode || start;
   }
 }
 
@@ -125,7 +134,7 @@ export class Unknown extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     for (let elt of this.elts) {
-      yield* elt;
+      yield elt;
     }
   }
 
@@ -143,9 +152,9 @@ export class Expression extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
-    yield* this.func;
+    yield this.func;
     for (let arg of this.args) {
-      yield* arg;
+      yield arg;
     }
   }
 
@@ -184,7 +193,7 @@ export class VariableDefinition extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
-    yield* this.body;
+    yield this.body;
   }
 
   toString() {
@@ -204,7 +213,7 @@ export class LambdaExpression extends ASTNode {
     for (let node of this.args) {
       yield node;
     }
-    yield* this.body;
+    yield this.body;
   }
 
   toString() {
@@ -226,7 +235,7 @@ export class FunctionDefinition extends ASTNode {
     for (let node of this.args) {
       yield node;
     }
-    yield* this.body;
+    yield this.body;
   }
 
   toString() {
@@ -243,8 +252,8 @@ export class CondClause extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
-    yield* this.testExpr;
-    yield* this.thenExprs;
+    yield this.testExpr;
+    yield this.thenExprs;
   }
 
   toString() {
@@ -261,7 +270,7 @@ export class CondExpression extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     for (let clause of this.clauses) {
-      yield* clause;
+      yield clause;
     }
   }
 
@@ -286,9 +295,9 @@ export class IfExpression extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
-    yield* this.testExpr;
-    yield* this.thenExpr;
-    yield* this.elseExpr;
+    yield this.testExpr;
+    yield this.thenExpr;
+    yield this.elseExpr;
   }
 
   toString() {

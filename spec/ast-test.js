@@ -36,7 +36,7 @@ describe("The Literal Class", function() {
 });
 
 describe("The Expression Class", function() {
-  var expression, func, args, nestedExpression;
+  var expression, func, args, nestedExpression, ast;
   beforeEach(function() {
     func = new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol');
     args = [
@@ -70,7 +70,7 @@ describe("The Expression Class", function() {
       ]
     );
     // build the AST, thereby assigning parent/child/sibling relationships
-    new AST([expression]);
+    ast = new AST([expression]);
   });
 
   it("should take a function name and list of args in it's constructor", function() {
@@ -84,24 +84,20 @@ describe("The Expression Class", function() {
       nestedExpression,
       nestedExpression.func,
       nestedExpression.args[0],
-      nestedExpression.args[1],
-      nestedExpression.args[1].func,
-      nestedExpression.args[1].args[0],
-      nestedExpression.args[1].args[1]
+      nestedExpression.args[1]
     ]);
   });
 
   it("should have all navigation pointers and aria attributes set", function() {
-    expect(expression.firstChild).toEqual(expression.func);
-    expect(expression.func.parent).toEqual(expression);
-    expect(expression.func.prevSibling).toEqual(false);
-    expect(expression.func.nextSibling).toEqual(expression.args[0]);
-    expect(expression.args[0].parent).toEqual(expression);
-    expect(expression.args[0].prevSibling).toEqual(expression.func);
-    expect(expression.args[0].nextSibling).toEqual(expression.args[1]);
-    expect(expression.args[1].parent).toEqual(expression);
-    expect(expression.args[1].prevSibling).toEqual(expression.args[0]);
-    expect(expression.args[1].nextSibling).toEqual(false);
+    expect(ast.getNodeFirstChild(expression)).toEqual(expression.func);
+    expect(ast.getNodeParent(expression.func)).toEqual(expression);
+    expect(ast.getNodeAfter(expression.func)).toEqual(expression.args[0]);
+    expect(ast.getNodeParent(expression.args[0])).toEqual(expression);
+    expect(ast.getNodeBefore(expression.args[0])).toEqual(expression.func);
+    expect(ast.getNodeAfter(expression.args[0])).toEqual(expression.args[1]);
+    expect(ast.getNodeParent(expression.args[1])).toEqual(expression);
+    expect(ast.getNodeBefore(expression.args[1])).toEqual(expression.args[0]);
+    expect(ast.getNodeAfter(expression.args[1])).toEqual(false);
   });
 
 });
