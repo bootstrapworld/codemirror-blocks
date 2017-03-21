@@ -23,6 +23,8 @@ export default class Node extends PureComponent {
   render() {
     const {type, node, lockedTypes, helpers, children} = this.props;
     let locked = lockedTypes.includes(type);
+    // blanks, comments, and literals, can't be expanded.
+    let expandable = !["blank", "comment", "literal"].includes(node.type);
     let classes = `blocks-node blocks-${type} ` + (locked? "blocks-locked" : "");
     let comment = node.options.comment;
     return (
