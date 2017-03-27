@@ -181,6 +181,7 @@ export default class CodeMirrorBlocks {
       
       if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
         let focusNode = this.lastActiveNodeId || "0"; 
+        console.log(this.lastActiveNodeId);
         setTimeout(() => { this.activateNode(this.ast.nodeMap.get(focusNode), e); }, 10);
       }
     });
@@ -386,10 +387,11 @@ export default class CodeMirrorBlocks {
       }
     // Otherwise copy the contents of selection to the buffer, first-to-last
     } else {
-      var sel = [...this.selectedNodes].sort((b,a) => poscmp(a.from, b.from));
+      var sel = [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from));
       clipboard = sel.reduce((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
     }
-    
+
+    this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboard);
     this.buffer.value = clipboard;
     this.buffer.select();
     try {
@@ -406,7 +408,6 @@ export default class CodeMirrorBlocks {
       });
       this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
     }
-    this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboard);
   }
 
   // handlePaste : Event -> Void
@@ -435,7 +436,7 @@ export default class CodeMirrorBlocks {
     try {
       var text = nodeEl.innerText;                    // If inserting (from==to), sanitize
       if(node.from === node.to) text = this.willInsertNode(text, nodeEl, node.from, node.to);
-      this.parser.lex(nodeEl.innerText);              // If the node contents will lex...
+      this.parser.parse(nodeEl.innerText);            // If the node contents will parse
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
       nodeEl.title = '';                              // 2) Clear the title
       if(node.quarantine){ node.quarantine.clear(); } // 3) Maybe get rid of the quarantine bookmark
@@ -472,6 +473,7 @@ export default class CodeMirrorBlocks {
     this.say("editing "+node.el.getAttribute("aria-label"));
     node.el.oldText = this.cm.getRange(node.from, node.to);
     node.el.contentEditable = true;
+    node.el.spellcheck = false;
     node.el.classList.add('blocks-editing');
     node.el.setAttribute('role','textbox');
     node.el.onblur    = (e => this.saveEdit(node, node.el, e));
