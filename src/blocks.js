@@ -144,7 +144,6 @@ export default class CodeMirrorBlocks {
           whitespace: ((n, e) => this.insertionQuarantine("", n, e)),
           default:    this.maybeChangeNodeExpanded
         }),
-        onpaste:      this.nodeEventHandler(this.handleTopLevelEntry),
         ondragstart:  this.nodeEventHandler(this.startDraggingNode),
         ondragend:    this.nodeEventHandler(this.stopDraggingNode),
         ondragleave:  this.nodeEventHandler(this.handleDragLeave),
@@ -449,7 +448,7 @@ export default class CodeMirrorBlocks {
       let errorTxt = this.parser.getExceptionMessage(e);
       nodeEl.title = errorTxt;                        // 4) Make the title the error msg
       setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
-      this.say(errorTxt);
+      this.say("Error: "+errorTxt);
     }
   }
 
