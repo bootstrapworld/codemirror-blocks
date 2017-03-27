@@ -30,7 +30,7 @@ export default class Node extends PureComponent {
     return (
       <span
         className={classes}
-        tabIndex="1"
+        tabIndex="-1"
         role="treeitem"
         aria-label={node.options['aria-label']}
         aria-selected="false"
@@ -38,7 +38,7 @@ export default class Node extends PureComponent {
         id={`block-node-${node.id}`}
         aria-describedby={node.options.comment? `block-node-${node.options.comment.id}`: undefined}
         aria-disabled={locked? "true": undefined}
-        aria-expanded={locked? "false": undefined}
+        aria-expanded={locked? "false": expandable? "true" : undefined}
         aria-setsize = { node["aria-setsize"] }
         aria-posinset = { node["aria-posinset"] }
         aria-level = { node["aria-level"] }
