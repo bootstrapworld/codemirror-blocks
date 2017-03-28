@@ -386,8 +386,8 @@ export default class CodeMirrorBlocks {
       }
     // Otherwise copy the contents of selection to the buffer, first-to-last
     } else {
-      var sel = [...this.selectedNodes].sort((a,b) => poscmp(a.from, b.from));
-      clipboard = sel.reduce((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
+      var sel = [...this.selectedNodes].sort((b,a) => poscmp(a.from, b.from));
+      clipboard = sel.reduceRight((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
     }
 
     this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboard);
