@@ -31,8 +31,8 @@ export class AST {
       nodes.forEach((node, i) => {
         node.id = parent? parent.id + (","+i) : i.toString();
         node["aria-setsize"]  = nodes.length;
-        node["aria-posinset"] = i;
-        node["aria-level"]    = parent? parent.id.split(",").length : 0;
+        node["aria-posinset"] = i+1;
+        node["aria-level"]    = 1+(parent? parent.id.split(",").length : 0);
         if (lastNode) {
           that.nextNodeMap.set(lastNode, node);
           that.prevNodeMap.set(node, lastNode);

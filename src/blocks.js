@@ -699,6 +699,7 @@ export default class CodeMirrorBlocks {
     if(!this.blockMode) return; // bail if mode==false
     let that = this;
     let keyName = CodeMirror.keyName(event);
+    console.log(keyName);
     var activeNode = this.getActiveNode();
     // clear searches every 3/4s-second
     setTimeout(() => this.searchString = "", 750);
@@ -714,31 +715,8 @@ export default class CodeMirrorBlocks {
       else { that.activateNode(node, event); }
     }
 
-    // Collapse block if possible, otherwise focus on parent
-    if (event.keyCode == LEFT && activeNode) {
-      let parent = this.ast.getNodeParent(activeNode);
-      return this.maybeChangeNodeExpanded(activeNode, false) 
-          || (parent && this.activateNode(parent, event))
-          || playBeep();
-    }
-    // Expand block if possible, otherwise descend to firstChild
-    else if (event.keyCode == RIGHT && activeNode) {
-      let firstChild = this.isNodeExpandable(activeNode) 
-        && this.ast.getNodeFirstChild(activeNode);
-      return this.maybeChangeNodeExpanded(activeNode, true)
-          || (firstChild && this.activateNode(firstChild, event))
-          || playBeep();
-    }
-    // Go to next visible node
-    else if (event.keyCode == UP) {
-      switchNodes(cur => this.ast.getNodeAfter(cur));
-    }
-    // Go to previous visible node
-    else if (event.keyCode == DOWN) {
-      switchNodes(cur => this.ast.getNodeBefore(cur));
-    }
-    // Go to the first node in the tree (depth-first)
-    else if (keyName == "Home" && activeNode) {
+     // Go to the first node in the tree (depth-first)
+    if (keyName == "Home" && activeNode) {
       this.activateNode(this.ast.rootNodes[0], event);
     }
     // Go to the last visible node in the tree (depth-first)
@@ -793,11 +771,45 @@ export default class CodeMirrorBlocks {
     else if (keyName === "Ctrl-]" && activeNode) {
       moveCursorAdjacent(activeNode.el.nextElementSibling, activeNode.to);
     }
+    // Shift-Left and Shift-Right toggle global expansion
+    else if (keyName === "Shift-Left" && activeNode) {
+      let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
+      [].forEach.call(elts, e => e.setAttribute("aria-expanded", false));
+      let rootId = activeNode.id.split(",")[0]; // put focus on containing rootNode
+      this.activateNode(this.ast.nodeMap.get(rootId), event)
+    }
+    else if (keyName === "Shift-Right" && activeNode) {
+      let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
+      [].forEach.call(elts, e => e.setAttribute("aria-expanded", true));
+    }
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
     else if (keyName == CTRLKEY+"-V" && activeNode) {
       return this.handlePaste(event);
-    } else {
+    }
+    // Collapse block if possible, otherwise focus on parent
+    else if (event.keyCode == LEFT && activeNode) {
+      let parent = this.ast.getNodeParent(activeNode);
+      return this.maybeChangeNodeExpanded(activeNode, false) 
+          || (parent && this.activateNode(parent, event))
+          || playBeep();
+    }
+    // Expand block if possible, otherwise descend to firstChild
+    else if (event.keyCode == RIGHT && activeNode) {
+      let firstChild = this.isNodeExpandable(activeNode) 
+        && this.ast.getNodeFirstChild(activeNode);
+      return this.maybeChangeNodeExpanded(activeNode, true)
+          || (firstChild && this.activateNode(firstChild, event))
+          || playBeep();
+    }
+    // Go to next visible node
+    else if (event.keyCode == UP) {
+      switchNodes(cur => this.ast.getNodeAfter(cur));
+    }
+    // Go to previous visible node
+    else if (event.keyCode == DOWN) {
+      switchNodes(cur => this.ast.getNodeBefore(cur));
+   } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
         this.cm.execCommand(command);
