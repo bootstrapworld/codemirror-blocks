@@ -41,7 +41,7 @@ describe('The CodeMirrorBlocks Class', function() {
     `;
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
-    this.willInsertNode = function(sourceNodeText, sourceNode, destination) {
+    this.willInsertNode = (sourceNodeText, sourceNode, destination) => {
       let line = this.cm.getLine(destination.line);
       let prev = line[destination.ch - 1] || '\n';
       let next = line[destination.ch] || '\n';
@@ -66,7 +66,6 @@ describe('The CodeMirrorBlocks Class', function() {
       }
     );
     spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
-    spyOn(this.blocks, 'saveEdit').and.callThrough();
     spyOn(this.blocks, 'handleChange').and.callThrough();
     spyOn(this.cm,     'replaceRange').and.callThrough();
   });
@@ -508,7 +507,6 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('arrow clears selection & changes active ', function() {
         this.literal.el.dispatchEvent(keydown(DOWN_KEY));
-        console.log(this.literal2.el.getAttribute("aria-selected"));
         expect(this.literal.el.getAttribute("aria-selected")).toBe('false');
         expect(this.literal2.el.getAttribute("aria-selected")).toBe('false');
         expect(document.activeElement).toBe(this.literal2.el);
@@ -575,7 +573,7 @@ describe('The CodeMirrorBlocks Class', function() {
         range.insertNode(document.createTextNode('9'));
         expect(this.cm.getValue()).toEqual('11');
         document.activeElement.dispatchEvent(blur());
-        expect(this.cm.getValue()).toEqual('911');
+        expect(this.cm.getValue()).toEqual('9');
         expect(this.blocks.hasInvalidEdit).toBe(false);
         done();
       }, DELAY);
@@ -602,31 +600,29 @@ describe('The CodeMirrorBlocks Class', function() {
         done();
       }, DELAY);
     });
-    /*
+    
     describe('when "saving" bad inputs,', function() {
-      beforeEach(function() {
-        spyOn(this.parser, 'parse').and.throwError("bad input");
+      beforeEach(function(done) {
         this.literal.el.dispatchEvent(dblclick());
-        this.literal.el.dispatchEvent(blur());
+        setTimeout(() => {
+          let selection = window.getSelection();
+          expect(selection.rangeCount).toEqual(1);
+          let range = selection.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(document.createTextNode('"moo'));
+          document.activeElement.dispatchEvent(blur());
+          done();
+        }, DELAY);
       });
 
-      it('should not save anything', function() {
+      it('should not save anything & set all error state', function() {
         expect(this.cm.replaceRange).not.toHaveBeenCalled();
-      });
-
-      it('should add a blocks-error class to the node being edited', function() {
-        expect(this.literal.el.classList).toContain('blocks-error');
-      });
-
-      it('should add the parse error as the title of the literal', function() {
-        expect(this.literal.el.title).toBe('Error: bad input');
-      });
-
-      it('should set hasInvalidEdit to true', function() {
+        expect(document.activeElement.classList).toContain('blocks-error');
+        expect(document.activeElement.title).toBe('Error: parse error');
         expect(this.blocks.hasInvalidEdit).toBe(true);
       });
     });
-    */
+
     describe('when dealing with whitespace,', function() {
       beforeEach(function() {
         this.cm.setValue('(+ 1 2)');
@@ -701,25 +697,30 @@ describe('The CodeMirrorBlocks Class', function() {
             done();
           }, DELAY);
         });
-        /*
+        
         describe('when "saving" bad whitepsace inputs,', function() {
-          beforeEach(function() {
-            spyOn(this.parser, 'parse').and.throwError("bad input");
-            document.activeElement.dispatchEvent(blur());
-          });
-
-          it('should not save anything', function() {
-            expect(this.cm.replaceRange).not.toHaveBeenCalled();
-          });
-
-          it('should add a blocks-error class to the whitespace el', function(done) {
+          beforeEach(function(done) {
+            this.whiteSpaceEl.dispatchEvent(dblclick());
             setTimeout(() => {
-              expect(document.activeElement.classList).toContain('blocks-error');
+              let selection = window.getSelection();
+              expect(selection.rangeCount).toEqual(1);
+              let range = selection.getRangeAt(0);
+              range.deleteContents();
+              range.insertNode(document.createTextNode('"moo'));
+              document.activeElement.dispatchEvent(blur());
               done();
             }, DELAY);
           });
+
+          it('should not save anything & set all error state', function() {
+            console.error(document.activeElement);
+            expect(this.cm.replaceRange).not.toHaveBeenCalled();
+            expect(document.activeElement.classList).toContain('blocks-error');
+            expect(document.activeElement.title).toBe('Error: parse error');
+            expect(this.blocks.hasInvalidEdit).toBe(true);
+          });
         });
-        */
+        
       });    
     });
     
@@ -762,7 +763,7 @@ describe('The CodeMirrorBlocks Class', function() {
         this.blocks.ast.rootNodes[0].el.dispatchEvent(drop(dragEvent.dataTransfer));
         expect(this.cm.getValue()).toBe(initialValue);
       });
-/*        
+        
       it('should update the text on drop to a later point in the file', function() {
         expect(this.dropTargetEls[2].classList).toContain('blocks-drop-target');
         // drag the first arg to the drop target
@@ -800,9 +801,9 @@ describe('The CodeMirrorBlocks Class', function() {
         dropEvent.pageX = wrapperEl.offsetLeft + wrapperEl.offsetWidth - 10;
         dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
         nodeEl.parentElement.dispatchEvent(dropEvent);
-        expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 3)\n2');
+        expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 3) 2');
       });
-*/
+
       it('should replace a literal that you drag onto', function() {
         let dragEvent = dragstart();
         this.firstArg.el.dispatchEvent(dragEvent);
