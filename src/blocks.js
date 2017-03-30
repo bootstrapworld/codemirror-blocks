@@ -140,7 +140,7 @@ export default class CodeMirrorBlocks {
         onclick:    this.nodeEventHandler(this.activateNode),
         ondblclick: this.nodeEventHandler({
           literal:    ((n, e) => this.insertionQuarantine(false, n, e)),
-          blank:      this.editLiteral,
+          blank:      ((n, e) => this.insertionQuarantine(false, n, e)),
           whitespace: ((n, e) => this.insertionQuarantine("", n, e)),
           default:    this.maybeChangeNodeExpanded
         }),
