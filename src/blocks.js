@@ -241,7 +241,7 @@ export default class CodeMirrorBlocks {
 
   // handleChange : CM CM-Change-Event -> Void
   // if blocks mode is enabled, re-render the blocks
-  handleChange(cm) {
+  handleChange() {
     if (this.blockMode) {
       this.render();
     }
