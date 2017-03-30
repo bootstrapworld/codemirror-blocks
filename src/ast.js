@@ -1,5 +1,3 @@
-import uuid from 'node-uuid';
-
 function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
@@ -253,7 +251,9 @@ export class CondClause extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     yield this.testExpr;
-    yield this.thenExprs;
+    for(let thenExpr of this.thenExprs) {
+      yield thenExpr;
+    }
   }
 
   toString() {
