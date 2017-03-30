@@ -177,10 +177,8 @@ export default class CodeMirrorBlocks {
     // override CM's natural onFocus behavior, activating the last focused node
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
-      
       if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
         let focusNode = this.lastActiveNodeId || "0"; 
-        console.log(this.lastActiveNodeId);
         setTimeout(() => { this.activateNode(this.ast.nodeMap.get(focusNode), e); }, 10);
       }
     });
@@ -243,7 +241,7 @@ export default class CodeMirrorBlocks {
 
   // handleChange : CM CM-Change-Event -> Void
   // if blocks mode is enabled, re-render the blocks
-  handleChange(cm, changeEvent) {
+  handleChange(cm) {
     if (this.blockMode) {
       this.render();
     }
@@ -479,7 +477,8 @@ export default class CodeMirrorBlocks {
     node.el.onkeydown = this.handleEditKeyDown;
     let range = document.createRange();
     range.setStart(node.el, node.quarantine? 1 : 0);
-    range.setEnd(node.el, node.quarantine? 1 : node.el.children.length);
+    let end = Math.min(node.toString().length, node.el.innerText.length);
+    range.setEnd(node.el, node.quarantine? 1 : end);
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
     node.el.focus();
@@ -699,14 +698,14 @@ export default class CodeMirrorBlocks {
     if(!this.blockMode) return; // bail if mode==false
     let that = this;
     let keyName = CodeMirror.keyName(event);
-    console.log(keyName);
     var activeNode = this.getActiveNode();
     // clear searches every 3/4s-second
     setTimeout(() => this.searchString = "", 750);
 
     function moveCursorAdjacent(node, cursor) {
       if(node) { that.insertionQuarantine("", node, event); } 
-      else { that.cm.focus(); that.cm.setCursor(cursor); }
+      // set mouseUsed to simulate click-to-focus
+      else { that.mouseUsed = true; that.cm.focus(); that.cm.setCursor(cursor); }
     }
     function switchNodes(searchFn) {
       let node = that.ast.getNextMatchingNode(
@@ -725,7 +724,7 @@ export default class CodeMirrorBlocks {
       var lastNode = lastExpr[lastExpr.length-1];
       if(this.isNodeHidden(lastNode)) {
         let searchFn = (cur => this.ast.getNodeBefore(cur));
-        let lastNode = that.ast.getNextMatchingNode(
+        lastNode = that.ast.getNextMatchingNode(
           searchFn, that.isNodeHidden, that.getActiveNode());
       }
       this.activateNode(lastNode, event);
@@ -776,7 +775,7 @@ export default class CodeMirrorBlocks {
       let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
       [].forEach.call(elts, e => e.setAttribute("aria-expanded", false));
       let rootId = activeNode.id.split(",")[0]; // put focus on containing rootNode
-      this.activateNode(this.ast.nodeMap.get(rootId), event)
+      this.activateNode(this.ast.nodeMap.get(rootId), event);
     }
     else if (keyName === "Shift-Right" && activeNode) {
       let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
@@ -809,7 +808,7 @@ export default class CodeMirrorBlocks {
     // Go to previous visible node
     else if (event.keyCode == DOWN) {
       switchNodes(cur => this.ast.getNodeBefore(cur));
-   } else {
+    } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
         this.cm.execCommand(command);
