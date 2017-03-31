@@ -116,14 +116,14 @@ export default class CodeMirrorBlocks {
     this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track lastActiveNodeId (default to 0)
-    this.lastActiveNodeId = 0;
+    // Track lastActiveNodeId
+    this.lastActiveNodeId = null;
     // Offscreen buffer for copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
     this.buffer.style.height = "1px";
     this.buffer.onchange = () => { this.buffer.value = ""; };
-    this.wrapper.appendChild(this.buffer);
+    document.body.appendChild(this.buffer);
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -198,8 +198,9 @@ export default class CodeMirrorBlocks {
 
   // say : String -> Void
   // add text to the announcements element, and log it to the console
+  // append a comma to distinguish between adjaced commands
   say(text){
-    let announcement = document.createTextNode(text);
+    let announcement = document.createTextNode(text+", ");
     console.log(text);
     setTimeout(() => this.announcements.appendChild(announcement), 200);
     setTimeout(() => this.announcements.removeChild(announcement), 500);
@@ -312,10 +313,7 @@ export default class CodeMirrorBlocks {
   // render : Void -> Void
   // re-parse the document, then replace and re-render the resulting AST
   render() {
-    // patch this.ast, preserving as much as possible
-    let newAST = this.parser.parse(this.cm.getValue());
-    let patches = jsonpatch.compare(this.ast, newAST);
-    jsonpatch.apply(this.ast, patches);
+    this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
     this.renderer.renderAST(this.ast, this.lastActiveNodeId);
     ui.renderToolbarInto(this);
@@ -428,10 +426,10 @@ export default class CodeMirrorBlocks {
     }, 50);
   }
 
-  // saveEdit : ASTNode DOMNode Event -> Void
+  // saveEdit : ASTNode DOMNode Event Verb -> Void
   // If not, set the error state and maintain focus
   // set this.hasInvalidEdit to the appropriate value
-  saveEdit(node, nodeEl, event) {
+  saveEdit(node, nodeEl, event, verb) {
     event.preventDefault();
     try {
       var text = nodeEl.innerText;                    // If inserting (from==to), sanitize
@@ -439,10 +437,11 @@ export default class CodeMirrorBlocks {
       this.parser.parse(nodeEl.innerText);            // If the node contents will parse
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
       nodeEl.title = '';                              // 2) Clear the title
+      this.say((node.quarantine? "inserted " : "changed ")+text);
       if(node.quarantine){ node.quarantine.clear(); } // 3) Maybe get rid of the quarantine bookmark
       this.cm.replaceRange(text, node.from, node.to); // 4) Commit the changes to CM
-      this.say("saved "+nodeEl.innerText);
-    } catch(e) {                                      // If the node contents will NOT lex...
+    }  
+    catch(e) {                                        // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
@@ -454,13 +453,13 @@ export default class CodeMirrorBlocks {
   }
 
   // handleEditKeyDown : Event -> Voic
-  // Trap Enter, Tab and Esc keys. Let the rest pass through
+  // Trap Enter, Tab and Esc, Shift-Esc keys. Let the rest pass through
   handleEditKeyDown(e) {
     e.stopPropagation();
     e.codemirrorIgnore = true;
     let keyName = CodeMirror.keyName(e);
-    if (["Enter", "Tab", "Esc"].includes(keyName)) {
-      if(keyName === "Esc") { this.innerText = this.oldText || ""; }
+    if (["Enter", "Tab", "Esc", "Shift-Esc"].includes(keyName)) {
+      if(["Esc", "Shift-Esc"].includes(keyName)) { this.innerText = this.oldText || ""; }
       e.preventDefault();
       this.blur();
     }
@@ -775,12 +774,15 @@ export default class CodeMirrorBlocks {
     }
     // Shift-Left and Shift-Right toggle global expansion
     else if (keyName === "Shift-Left" && activeNode) {
+      this.say("All blocks collapsed");
       let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
       [].forEach.call(elts, e => e.setAttribute("aria-expanded", false));
       let rootId = activeNode.id.split(",")[0]; // put focus on containing rootNode
-      this.activateNode(this.ast.nodeMap.get(rootId), event);
+      // shift focus if rootId !== activeNodeId
+      if(rootId !== activeNode.id) this.activateNode(this.ast.nodeMap.get(rootId), event);
     }
     else if (keyName === "Shift-Right" && activeNode) {
+      this.say("All blocks expanded");
       let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
       [].forEach.call(elts, e => e.setAttribute("aria-expanded", true));
     }
