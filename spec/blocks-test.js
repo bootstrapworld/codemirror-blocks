@@ -579,13 +579,12 @@ describe('The CodeMirrorBlocks Class', function() {
       }, DELAY);
     });
   
-    it('should blur the node being edited on esc', function(done) {
+    it('should return the node being edited on esc', function(done) {
       this.literal.el.dispatchEvent(dblclick());
       setTimeout(() => {
         let quarantine = document.activeElement;
-        spyOn(quarantine, 'blur');
         quarantine.dispatchEvent(keydown(ESC_KEY));
-        expect(quarantine.blur).toHaveBeenCalled();
+        expect(this.cm.getValue()).toEqual('11');
         done();
       }, DELAY);
     });

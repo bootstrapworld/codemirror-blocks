@@ -437,9 +437,9 @@ export default class CodeMirrorBlocks {
       this.parser.parse(nodeEl.innerText);            // If the node contents will parse
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
       nodeEl.title = '';                              // 2) Clear the title
-      this.say((node.quarantine? "inserted " : "changed ")+text);
-      if(node.quarantine){ node.quarantine.clear(); } // 3) Maybe get rid of the quarantine bookmark
-      this.cm.replaceRange(text, node.from, node.to); // 4) Commit the changes to CM
+      if(node.quarantine){ node.quarantine.clear(); } // 4) Maybe get rid of the quarantine bookmark
+      this.cm.replaceRange(text, node.from, node.to); // 5) Commit the changes to CM
+      this.say((nodeEl.originalEl? "changed " : "inserted ")+text);
     }  
     catch(e) {                                        // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
@@ -452,16 +452,22 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  // handleEditKeyDown : Event -> Voic
+  // handleEditKeyDown : ASTNode DOMNode Event -> Void
   // Trap Enter, Tab and Esc, Shift-Esc keys. Let the rest pass through
-  handleEditKeyDown(e) {
+  handleEditKeyDown(node, nodeEl, e) {
     e.stopPropagation();
     e.codemirrorIgnore = true;
     let keyName = CodeMirror.keyName(e);
     if (["Enter", "Tab", "Esc", "Shift-Esc"].includes(keyName)) {
-      if(["Esc", "Shift-Esc"].includes(keyName)) { this.innerText = this.oldText || ""; }
       e.preventDefault();
-      this.blur();
+      if(["Esc", "Shift-Esc"].includes(keyName)) { 
+        this.say("cancelled");
+        nodeEl.onblur = null;
+        nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
+        nodeEl.parentNode.removeChild(nodeEl);
+      } else {
+        nodeEl.blur();
+      }
     }
   }
 
@@ -476,7 +482,7 @@ export default class CodeMirrorBlocks {
     node.el.classList.add('blocks-editing');
     node.el.setAttribute('role','textbox');
     node.el.onblur    = (e => this.saveEdit(node, node.el, e));
-    node.el.onkeydown = this.handleEditKeyDown;
+    node.el.onkeydown = (e => this.handleEditKeyDown(node, node.el, e));
     let range = document.createRange();
     range.setStart(node.el, node.quarantine? 1 : 0);
     let end = Math.min(node.toString().length, node.el.innerText.length);
@@ -672,6 +678,7 @@ export default class CodeMirrorBlocks {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
       literal.from = dest.from; literal.to = dest.to;
+      literal.el.originalEl = dest.el;
       parent.insertBefore(literal.el, dest.el);
       parent.removeChild(dest.el);
     // if we're inserting into a whitespace node
@@ -679,6 +686,7 @@ export default class CodeMirrorBlocks {
       literal.el.classList.add("blocks-white-space");
       let parent = dest.parentNode;
       literal.to = literal.from = this.getLocationFromWhitespace(dest);
+      literal.el.originalEl = dest.el;
       parent.insertBefore(literal.el, dest);
       parent.removeChild(dest);
     // if we're inserting into a toplevel CM cursor
