@@ -116,14 +116,14 @@ export default class CodeMirrorBlocks {
     this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track lastActiveNodeId
+    // Track lastActiveNodeId (default to 0)
     this.lastActiveNodeId = 0;
     // Offscreen buffer for copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
     this.buffer.style.height = "1px";
     this.buffer.onchange = () => { this.buffer.value = ""; };
-    document.body.appendChild(this.buffer);
+    this.wrapper.appendChild(this.buffer);
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -312,7 +312,10 @@ export default class CodeMirrorBlocks {
   // render : Void -> Void
   // re-parse the document, then replace and re-render the resulting AST
   render() {
-    this.ast = this.parser.parse(this.cm.getValue());
+    // patch this.ast, preserving as much as possible
+    let newAST = this.parser.parse(this.cm.getValue());
+    let patches = jsonpatch.compare(this.ast, newAST);
+    jsonpatch.apply(this.ast, patches);
     this._clearMarks();
     this.renderer.renderAST(this.ast, this.lastActiveNodeId);
     ui.renderToolbarInto(this);
