@@ -40,25 +40,6 @@ export default class Renderer {
     };
   }
 
-  renderNodeForReact = (node, key) => {
-    var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
-    if (Renderer === undefined) {
-      throw new Error("Don't know how to render node of type: "+node.type);
-    }
-    if (Renderer && Renderer.prototype instanceof Component) {
-      return (
-        <Renderer
-          node={node}
-          helpers={{renderNodeForReact: this.renderNodeForReact}}
-          key = {key}
-          lockedTypes = {this.lockNodesOfType}
-        />
-      );
-    } else {
-      throw new Error("Don't know how to render node of type: "+node.type);
-    }
-  }
-
   // extract all the literals, create clones, and absolutely position
   // them at their original locations
   animateTransition(ast, toBlocks) {
@@ -144,15 +125,15 @@ export default class Renderer {
     // get all marks for rendered nodes, and see if we can recycle them
     var marks = this.cm.getAllMarks().filter((m) => m.replacedWith);
     ast.rootNodes.forEach(rootNode => {
-      if (typeof rootNode !== "object" || !(rootNode instanceof ASTNode)) {
+      if (typeof rootNode !== "object" || !rootNode.type) {
         throw new Error("Expected ASTNode but got "+rootNode);
       }
       var container = false;
       if(marks[0] && 
         (poscmp(marks[0].node.from, rootNode.from) == 0) && 
         (poscmp(marks[0].node.to  , rootNode.to  ) == 0)) {
-          // it's a match! remove it and keep going
-          container = marks.shift().replacedWith;
+        // it's a match! remove it and keep going
+        container = marks.shift().replacedWith;
       }
       this.render(rootNode, container);
     });
@@ -177,5 +158,24 @@ export default class Renderer {
     }
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
     return container;
+  }
+
+  renderNodeForReact = (node, key) => {
+    var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
+    if (Renderer === undefined) {
+      throw new Error("Don't know how to render node of type: "+node.type);
+    }
+    if (Renderer && Renderer.prototype instanceof Component) {
+      return (
+        <Renderer
+          node={node}
+          helpers={{renderNodeForReact: this.renderNodeForReact}}
+          key = {key}
+          lockedTypes = {this.lockNodesOfType}
+        />
+      );
+    } else {
+      throw new Error("Don't know how to render node of type: "+node.type);
+    }
   }
 }
