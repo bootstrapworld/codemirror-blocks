@@ -1,3 +1,5 @@
+var jsonpatch = require('fast-json-patch');
+
 function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
@@ -6,43 +8,55 @@ function comparePos(a, b) {
 // required to spit out an `AST` instance.
 export class AST {
   constructor(rootNodes) {
-    let that =  this;
-
-    // the `nodeMap` attribute can be used to look up nodes by their id.
-    this.nodeMap = new Map();
-
     // the `rootNodes` attribute simply contains a list of the top level nodes
     // that were parsed.
     this.rootNodes = rootNodes;
     // the `reverseRootNodes` attribute is a shallow, reversed copy of the rootNodes
     this.reverseRootNodes = rootNodes.slice().reverse();
 
+    // the `nodeMap` attribute can be used to look up nodes by their id.
+    // the other nodeMaps make it easy to determine node order
+    this.nodeMap = new Map();
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
 
-    let lastNode = null;
-
-    // annotateNodes : ASTNodes ASTNode -> Void
-    // walk through the siblings, assigning aria-* attributes
-    // and populating various maps for tree navigation
-    function annotateNodes(nodes, parent) {
-      nodes.forEach((node, i) => {
-        node.id = parent? parent.id + (","+i) : i.toString();
-        node["aria-setsize"]  = nodes.length;
-        node["aria-posinset"] = i+1;
-        node["aria-level"]    = 1+(parent? parent.id.split(",").length : 0);
-        if (lastNode) {
-          that.nextNodeMap.set(lastNode, node);
-          that.prevNodeMap.set(node, lastNode);
-        }
-        that.nodeMap.set(node.id, node);
-        lastNode = node;
-        var children = [...node].slice(1); // the first elt is always the parent
-        annotateNodes(children, node);
-      });
-    }
-    annotateNodes(this.rootNodes);
+    this.lastNode = null;
+    this.annotateNodes();
   }
+
+  // annotateNodes : ASTNodes ASTNode -> Void
+  // walk through the siblings, assigning aria-* attributes
+  // and populating various maps for tree navigation
+  annotateNodes(nodes=this.rootNodes, parent=false) {
+    nodes.forEach((node, i) => {
+      node.id = parent? parent.id + (","+i) : i.toString();
+      node["aria-setsize"]  = nodes.length;
+      node["aria-posinset"] = i+1;
+      node["aria-level"]    = 1+(parent? parent.id.split(",").length : 0);
+      if (this.lastNode) {
+        this.nextNodeMap.set(this.lastNode, node);
+        this.prevNodeMap.set(node, this.lastNode);
+      }
+      this.nodeMap.set(node.id, node);
+      this.lastNode = node;
+      var children = [...node].slice(1); // the first elt is always the parent
+      this.annotateNodes(children, node);
+    });
+  } 
+
+  // given a new AST, patch this one to match (preserve all rendered DOM elements, though!)
+  patch(newAST) {
+    var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
+    // don't remove references to DOM elements
+    patches = patches.filter(p => p.path.split('/').pop() !== "el");
+    jsonpatch.apply(this.rootNodes, patches);
+    // refresh nodeMaps and re-annotate
+    this.nodeMap = new Map();
+    this.prevNodeMap = new WeakMap();
+    this.nextNodeMap = new WeakMap();
+    this.annotateNodes();
+  }
+
   // return the next node or false
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)

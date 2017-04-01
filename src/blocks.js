@@ -6,10 +6,6 @@ import * as languages from './languages';
 import * as ui from './ui';
 import merge from './merge';
 
-var beepSound = require('./beep.wav');
-var jsonpatch = require('fast-json-patch');
-
-
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
 
@@ -23,6 +19,7 @@ function findNearestNodeEl(el) {
   return el === document.body? null : el;
 }
 
+var beepSound = require('./beep.wav');
 const BEEP = new Audio(beepSound);
 function playBeep() {
   BEEP.pause();
@@ -311,9 +308,11 @@ export default class CodeMirrorBlocks {
   }
 
   // render : Void -> Void
-  // re-parse the document, then replace and re-render the resulting AST
+  // re-parse the document, then patch and re-render the resulting AST
   render() {
-    this.ast = this.parser.parse(this.cm.getValue());
+    let newAST = this.parser.parse(this.cm.getValue());
+    //this.ast.patch(newAST);
+    this.ast = newAST;
     this._clearMarks();
     this.renderer.renderAST(this.ast, this.lastActiveNodeId);
     ui.renderToolbarInto(this);
@@ -429,7 +428,7 @@ export default class CodeMirrorBlocks {
   // saveEdit : ASTNode DOMNode Event Verb -> Void
   // If not, set the error state and maintain focus
   // set this.hasInvalidEdit to the appropriate value
-  saveEdit(node, nodeEl, event, verb) {
+  saveEdit(node, nodeEl, event) {
     event.preventDefault();
     try {
       var text = nodeEl.innerText;                    // If inserting (from==to), sanitize
