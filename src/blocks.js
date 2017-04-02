@@ -459,11 +459,14 @@ export default class CodeMirrorBlocks {
     let keyName = CodeMirror.keyName(e);
     if (["Enter", "Tab", "Esc", "Shift-Esc"].includes(keyName)) {
       e.preventDefault();
+      // To cancel, remove the blur handler, (maybe) reinsert the original DOM Elt
+      // delete the editing quarantine and activate the original
       if(["Esc", "Shift-Esc"].includes(keyName)) { 
         this.say("cancelled");
         nodeEl.onblur = null;
-        nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
+        if(nodeEl.originalEl) { nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl); }
         nodeEl.parentNode.removeChild(nodeEl);
+        this.activateNode(this.ast.nodeMap.get(this.lastActiveNodeId), e);
       } else {
         nodeEl.blur();
       }
@@ -544,16 +547,21 @@ export default class CodeMirrorBlocks {
   }
 
   // getLocationFromWhiteSpace : DOMNode -> {line, ch} | null
-  // Consumes a DOMNode. If it's a whitespace element, produce
-  // the the location of the prev/next sibling. Otherwise return null
+  // If the input isn't a whitespace element, bail
+  // If there's a previous sibling, return it's .to
+  // If there's a next sibling, return it's .from
+  // If it's the first WS after a function, return it's .to
+  // Otherwise, return the character *after* the parent's .from
   getLocationFromWhitespace(el) {
+    if(!el.classList.contains('blocks-white-space')) return;
     let prevEl = el.previousElementSibling;
+    if(prevEl) { return this.findNodeFromEl(prevEl).to; }
     let nextEl = el.nextElementSibling;
-    let prev   = prevEl? this.findNodeFromEl(prevEl) : false;
-    let next   = nextEl? this.findNodeFromEl(nextEl) : false;
-    return prev? prev.to 
-        :  next? next.from
-        :  null;
+    if(nextEl) { return this.findNodeFromEl(nextEl).from; }
+    let parent = this.findNearestNodeFromEl(findNearestNodeEl(el));
+    let func   = this.ast.getNodeFirstChild(parent);
+    if(func)   { return func.to; }
+    return { line: parent.from.line, ch: parent.from.ch+1 };
   }
 
   // findNodeFromEl : DOMNode -> ASTNode
@@ -641,10 +649,12 @@ export default class CodeMirrorBlocks {
   // quarantine a keypress or paste entry at the CM level
   handleTopLevelEntry(e) {
     if(!this.blockMode) return;                           // bail if mode==false
-    e.preventDefault();
     this.clearSelection();                                // clear the previous selection
     let text = (e.type == "keypress")? String.fromCharCode(e.which)
              : e.clipboardData.getData('text/plain');
+    // let pure whitespace pass through
+    if(!text.replace(/\s/g, '').length) return;
+    e.preventDefault();
     let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
     // try automatically rendering the pasted text
     if(e.type !== "keypress") { setTimeout(() => node.el.blur(), 20); }
@@ -677,7 +687,7 @@ export default class CodeMirrorBlocks {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
       literal.from = dest.from; literal.to = dest.to;
-      literal.el.originalEl = dest.el;
+      literal.el.originalEl = dest.el; // save the original DOM El
       parent.insertBefore(literal.el, dest.el);
       parent.removeChild(dest.el);
     // if we're inserting into a whitespace node
@@ -685,7 +695,7 @@ export default class CodeMirrorBlocks {
       literal.el.classList.add("blocks-white-space");
       let parent = dest.parentNode;
       literal.to = literal.from = this.getLocationFromWhitespace(dest);
-      literal.el.originalEl = dest.el;
+      literal.el.originalEl = dest; // save the original DOM El
       parent.insertBefore(literal.el, dest);
       parent.removeChild(dest);
     // if we're inserting into a toplevel CM cursor

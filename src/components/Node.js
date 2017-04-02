@@ -26,7 +26,9 @@ export default class Node extends PureComponent {
     // blanks, comments, and literals, can't be expanded.
     let expandable = !["blank", "comment", "literal"].includes(node.type);
     let classes = `blocks-node blocks-${type} ` + (locked? "blocks-locked" : "");
-    let comment = node.options.comment;
+    if(node.options.comment){
+      node.options.comment.id = "block-node-"+node.id+"-comment";
+    }
     return (
       <span
         className={classes}
@@ -45,7 +47,7 @@ export default class Node extends PureComponent {
         ref = {(el) => node.el = el }
       >
         {children}
-        {comment? helpers.renderNodeForReact(comment) : undefined }
+        {node.options.comment? helpers.renderNodeForReact(node.options.comment) : undefined }
       </span>
     );
   }
