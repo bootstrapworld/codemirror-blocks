@@ -13,7 +13,6 @@ import Comment          from './components/Comment';
 import StructDefinition from './components/StructDef';
 import VariableDefinition from './components/VariableDef';
 import FunctionDefinition from './components/FunctionDef';
-import {ASTNode}        from './ast';
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
@@ -123,7 +122,7 @@ export default class Renderer {
 
   renderAST(ast, restoreFocusToBlock) {
     // get all marks for rendered nodes, and see if we can recycle them
-    var marks = this.cm.getAllMarks().filter((m) => m.replacedWith);
+    var marks = this.cm.getAllMarks().filter(m => m.replacedWith);
     ast.rootNodes.forEach(rootNode => {
       if (typeof rootNode !== "object" || !rootNode.type) {
         throw new Error("Expected ASTNode but got "+rootNode);

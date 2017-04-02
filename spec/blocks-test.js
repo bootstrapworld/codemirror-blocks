@@ -624,10 +624,12 @@ describe('The CodeMirrorBlocks Class', function() {
 
     describe('when dealing with whitespace,', function() {
       beforeEach(function() {
-        this.cm.setValue('(+ 1 2)');
+        this.cm.setValue('(+ 1 2) (+)');
         this.firstRoot = this.blocks.ast.rootNodes[0];
         this.firstArg = this.blocks.ast.rootNodes[0].args[0];
         this.whiteSpaceEl = this.firstArg.el.nextElementSibling;
+        this.blank = this.blocks.ast.rootNodes[1];
+        this.blankWS = this.blank.el.querySelectorAll('.blocks-white-space')[0];
       });
 
       it('Ctrl-[ should jump to the left of a top-level node', function() {
@@ -663,6 +665,15 @@ describe('The CodeMirrorBlocks Class', function() {
           done();
         }, DELAY);
       });
+
+      it('Ctrl-] should activate a quarantine in the first arg position', function(done) {
+        this.blank.func.el.dispatchEvent(click());
+        this.blank.func.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
+        setTimeout(() => {
+          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+          done();
+        }, DELAY);
+      });
       
       it('should activate a quarantine on dblclick', function(done) {
         this.whiteSpaceEl.dispatchEvent(dblclick());
@@ -682,7 +693,7 @@ describe('The CodeMirrorBlocks Class', function() {
             range.deleteContents();
             range.insertNode(document.createTextNode('4253'));
             document.activeElement.dispatchEvent(blur());
-            expect(this.cm.getValue()).toBe('(+ 1 4253 2)');
+            expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
             expect(this.blocks.hasInvalidEdit).toBe(false);
             done();
           }, DELAY);

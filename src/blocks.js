@@ -793,7 +793,7 @@ export default class CodeMirrorBlocks {
       let parent = this.ast.getNodeParent(activeNode);
       let nextWS = activeNode.el.nextElementSibling ||
         parent && parent.el.querySelectorAll(".blocks-white-space")[0];
-      moveCursorAdjacent(activeNode.el.nextElementSibling, activeNode.to);
+      moveCursorAdjacent(nextWS, activeNode.to);
     }
     // Shift-Left and Shift-Right toggle global expansion
     else if (keyName === "Shift-Left" && activeNode) {
