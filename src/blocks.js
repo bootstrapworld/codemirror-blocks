@@ -436,8 +436,8 @@ export default class CodeMirrorBlocks {
       this.parser.parse(nodeEl.innerText);            // If the node contents will parse
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
       nodeEl.title = '';                              // 2) Clear the title
-      if(node.quarantine){ node.quarantine.clear(); } // 4) Maybe get rid of the quarantine bookmark
-      this.cm.replaceRange(text, node.from, node.to); // 5) Commit the changes to CM
+      if(node.quarantine){ node.quarantine.clear(); } // 3) Maybe get rid of the quarantine bookmark
+      this.cm.replaceRange(text, node.from, node.to); // 4) Commit the changes to CM
       this.say((nodeEl.originalEl? "changed " : "inserted ")+text);
     }  
     catch(e) {                                        // If the node contents will NOT lex...
@@ -690,6 +690,7 @@ export default class CodeMirrorBlocks {
       literal.el.originalEl = dest.el; // save the original DOM El
       parent.insertBefore(literal.el, dest.el);
       parent.removeChild(dest.el);
+      this.lastActiveNodeId = dest.id; // remember what we were editing
     // if we're inserting into a whitespace node
     } else if(dest.nodeType) {
       literal.el.classList.add("blocks-white-space");
@@ -782,11 +783,16 @@ export default class CodeMirrorBlocks {
       if(this.selectedNodes.size == 0) { playBeep(); }
       else { this.deleteSelectedNodes(); }
     } 
-    // Ctrl-[ and Ctrl-] move cursor to adjacent whitespace or cursor position
+    // Ctrl-[ moves the cursor to previous whitespace or cursor position
     else if (keyName === "Ctrl-[" && activeNode) {
       moveCursorAdjacent(activeNode.el.previousElementSibling, activeNode.from);
     }
+    // Ctrl-] moves the cursor to next whitespace or cursor position,
+    // taking special care of 0-argument expressions
     else if (keyName === "Ctrl-]" && activeNode) {
+      let parent = this.ast.getNodeParent(activeNode);
+      let nextWS = activeNode.el.nextElementSibling ||
+        parent && parent.el.querySelectorAll(".blocks-white-space")[0];
       moveCursorAdjacent(activeNode.el.nextElementSibling, activeNode.to);
     }
     // Shift-Left and Shift-Right toggle global expansion
