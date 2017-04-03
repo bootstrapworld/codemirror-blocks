@@ -69,6 +69,12 @@ export class AST {
         || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0)
         || false;
   }
+  // return the node containing the cursor, or false
+  getNodeContaining(cursor, nodes = this.rootNodes) {
+    let n = nodes.find(node => comparePos(node.to, cursor) >= 0);
+    return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)));
+  }
+
   // return the parent or false
   getNodeParent(node) {
     let path = node.id.split(",");

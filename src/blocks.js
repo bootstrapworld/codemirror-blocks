@@ -842,20 +842,16 @@ export default class CodeMirrorBlocks {
         this.cm.execCommand(command);
       } else if (typeof command == "function") {
         command(this.cm);
-        
       } 
       // if it's an ASCII character and search is installed, try building up a search string
       else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode){
         this.searchString += keyName;
         console.log('search string is', this.searchString);
-        var searchCursor = this.cm.getSearchCursor(this.searchString.toLowerCase());
-        if(!searchCursor.findNext()) { playBeep(); }
+        this.searchCursor = this.cm.getSearchCursor(this.searchString.toLowerCase());
+        if(!this.searchCursor.findNext()) { playBeep(); }
         else {
-          console.log('match at cursor', searchCursor.from());
-          let root = this.ast.getNodeAfter(searchCursor.from());
-          let match = [...root].find(node => poscmp(node.from, searchCursor.from()) >= 0);
-          console.log('match at node,', match, match.el);
-          this.activateNode(match, event); 
+          console.log('match at cursor', this.searchCursor.from());
+          this.activateNode(this.ast.getNodeContaining(this.searchCursor.from()), event); 
         }
       }
       
