@@ -56,7 +56,7 @@
       justify-content: flex-start;
     }
     > .blocks-cond-table {
-      margin: 5px;
+      margin: 1px;
       .blocks-cond-drop-row {
         .blocks-white-space {
           display: block;
@@ -72,7 +72,9 @@
           border-color: @editing-border-color;
         }
       }
-      .blocks-condClause::before{content: "test \00A0  \2192 \00A0  result";}
+      .blocks-condClause:first-of-type::before{
+        content: "test \00A0  \2192 \00A0  result";
+      }
       .blocks-cond-row {
         border-top: 1px solid #aaa;
         > .blocks-cond-predicate {
@@ -82,7 +84,7 @@
           }
         }
         > td {
-          padding: 5px 0px;
+          padding: 2px 0px;
         }
       }
       .blocks-cond-row:first-child {
@@ -104,8 +106,8 @@
       color: white;
       border: @border-width inset;
     }
-
-    > .blocks-expression{
+    > .blocks-lambdaExpression,
+    > .blocks-expression {
       box-shadow: 0px 0px 10px 1px white;
     }
   }

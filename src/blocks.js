@@ -842,20 +842,23 @@ export default class CodeMirrorBlocks {
         this.cm.execCommand(command);
       } else if (typeof command == "function") {
         command(this.cm);
-        // if it's an ASCII character and search is installed, try building up a search string
+        
       } 
-      /*
+      // if it's an ASCII character and search is installed, try building up a search string
       else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode){
         this.searchString += keyName;
+        console.log('search string is', this.searchString);
         var searchCursor = this.cm.getSearchCursor(this.searchString.toLowerCase());
         if(!searchCursor.findNext()) { playBeep(); }
-        else { 
-          let marks = this.cm.findMarksAt(searchCursor.from());
-          if(marks.length === 0) { playBeep(); }
-          else { this.activateNode(this.findNodeFromEl(marks[0].replacedWith), event); }
+        else {
+          console.log('match at cursor', searchCursor.from());
+          let root = this.ast.getNodeAfter(searchCursor.from());
+          let match = [...root].find(node => poscmp(node.from, searchCursor.from()) >= 0);
+          console.log('match at node,', match, match.el);
+          this.activateNode(match, event); 
         }
       }
-      */
+      
       return; // return without cancelling the event
     }
     event.preventDefault();
