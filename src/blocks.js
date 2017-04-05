@@ -743,13 +743,14 @@ export default class CodeMirrorBlocks {
     // If there's a node at that location, make sure
     // it's visible and activate it. If not, beep!
     function showAndActivate(exists, event){
-      that.resetSearchTime(); // reset the timer
-      if(!exists) { playBeep(); return}
+      that.resetSearchTime();             // reset the timer
+      if(!exists) { playBeep(); return; } // beep if it doesn't exist
       else {
-        let node = that.ast.getNodeContaining(that.searchCursor.from())
-        var parent = node;
-        while(parent = that.ast.getNodeParent(parent)) {
+        let node = that.ast.getNodeContaining(that.searchCursor.from());
+        var parent = that.ast.getNodeParent(node);
+        while(parent) {
           that.maybeChangeNodeExpanded(parent, true); 
+          parent = that.ast.getNodeParent(parent);
         }
         that.activateNode(node, event);
       }
