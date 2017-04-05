@@ -42,7 +42,7 @@ export default class Renderer {
   // extract all the literals, create clones, and absolutely position
   // them at their original locations
   animateTransition(ast, toBlocks) {
-    window.ast = ast;
+    let that = this;
     // take note of the parent elt, CM offsets, and rootNodes
     let cm = this.cm, parent = this.cm.getScrollerElement(), rootNodes = ast.rootNodes;
     let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
@@ -83,10 +83,17 @@ export default class Renderer {
     function flatten(flat, node) {
       if(["literal", "blank"].includes(node.type)){
         return flat.concat([node]);
+      // don't descend inside locked nodes
+      } else if(that.lockNodesOfType.includes(node.type)) {
+        return flat;
       } else {
         return [...node].slice(1).reduce(flatten, flat);
       }
     }
+
+    // 0) Optimization: limit the number of lines CM is rendering
+    let originalViewportMargin = that.cm.getOption("viewportMargin")
+    that.cm.setOption("viewportMargin", 20);
 
     // 1) get all the literals from the AST, and make clones of them
     let literals = ast.rootNodes.reduce(flatten, []);
@@ -118,6 +125,7 @@ export default class Renderer {
       }
       cloneParent.remove();
     }, 1000);
+    that.cm.setOption("viewportMargin", originalViewportMargin);
   }
 
   renderAST(ast, restoreFocusToBlock) {

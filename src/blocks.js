@@ -94,6 +94,7 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm = cm;
+    this.cm.setOption("viewportMargin", Infinity);
     this.toolbarNode = toolbar;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
