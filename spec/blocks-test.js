@@ -723,7 +723,6 @@ describe('The CodeMirrorBlocks Class', function() {
           });
 
           it('should not save anything & set all error state', function() {
-            console.error(document.activeElement);
             expect(this.cm.replaceRange).not.toHaveBeenCalled();
             expect(document.activeElement.classList).toContain('blocks-error');
             expect(document.activeElement.title).toBe('Error: parse error');
