@@ -57,6 +57,10 @@ export class AST {
     this.annotateNodes();
   }
 
+  getNodeById(id) {
+    return this.nodeMap.get(id);
+  }
+
   // return the next node or false
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)

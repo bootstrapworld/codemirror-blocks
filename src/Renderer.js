@@ -92,7 +92,7 @@ export default class Renderer {
     }
 
     // 0) Optimization: limit the number of lines CM is rendering
-    let originalViewportMargin = that.cm.getOption("viewportMargin")
+    let originalViewportMargin = that.cm.getOption("viewportMargin");
     that.cm.setOption("viewportMargin", 20);
 
     // 1) get all the literals from the AST, and make clones of them

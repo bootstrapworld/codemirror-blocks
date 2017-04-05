@@ -177,7 +177,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('focus',     (cm, e) => {
       if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
         let focusNode = this.lastActiveNodeId || "0"; 
-        setTimeout(() => { this.activateNode(this.ast.nodeMap.get(focusNode), e); }, 10);
+        setTimeout(() => { this.activateNode(this.ast.getNodeById(focusNode), e); }, 10);
       }
     });
   }
@@ -467,7 +467,7 @@ export default class CodeMirrorBlocks {
         nodeEl.onblur = null;
         if(nodeEl.originalEl) { nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl); }
         nodeEl.parentNode.removeChild(nodeEl);
-        this.activateNode(this.ast.nodeMap.get(this.lastActiveNodeId), e);
+        this.activateNode(this.ast.getNodeById(this.lastActiveNodeId), e);
       } else {
         nodeEl.blur();
       }
@@ -502,7 +502,7 @@ export default class CodeMirrorBlocks {
   }
 
   deleteNodeWithId(nodeId) {
-    this.deleteNode(this.ast.nodeMap.get(nodeId));
+    this.deleteNode(this.ast.getNodeById(nodeId));
   }
 
   // deleteSelectedNodes : Void -> Void
@@ -570,7 +570,7 @@ export default class CodeMirrorBlocks {
   findNodeFromEl(el) {
     if(el) {
       let match = el.id.match(/block-node-(.*)/);
-      return match && (match.length > 1) && this.ast.nodeMap.get(match[1]);
+      return match && (match.length > 1) && this.ast.getNodeById(match[1]);
     }
   }
   // findNearestNodeFromEl : DOMNode -> ASTNode
@@ -592,7 +592,7 @@ export default class CodeMirrorBlocks {
     let sourceId       = event.dataTransfer.getData('text/id');
     let sourceNodeText = event.dataTransfer.getData('text/plain');
     let sourceNodeJSON = event.dataTransfer.getData('text/json');
-    let sourceNode     = this.ast.nodeMap.get(sourceId);
+    let sourceNode     = this.ast.getNodeById(sourceId);
     if (sourceNode) {
       sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
     } else if (sourceNodeJSON) {
@@ -735,9 +735,9 @@ export default class CodeMirrorBlocks {
     function showAndActivate(exists) {
       clearTimeout(that.searchTimer); // reset the timer for 1sec
       that.searchTimer = setTimeout(() => {
-          that.searchString = that.searchCursor = "";
-          that.say('Search cleared');
-        }, 1000);
+        that.searchString = that.searchCursor = "";
+        that.say('Search cleared');
+      }, 1000);
       if(!exists) { playBeep(); return; } // beep if there's nothing to show
       let node = that.ast.getNodeContaining(that.searchCursor.from());
       var ancestors = [], p = that.ast.getNodeParent(node);
@@ -826,7 +826,7 @@ export default class CodeMirrorBlocks {
       [].forEach.call(elts, e => e.setAttribute("aria-expanded", false));
       let rootId = activeNode.id.split(",")[0]; // put focus on containing rootNode
       // shift focus if rootId !== activeNodeId
-      if(rootId !== activeNode.id) this.activateNode(this.ast.nodeMap.get(rootId), event);
+      if(rootId !== activeNode.id) this.activateNode(this.ast.getNodeById(rootId), event);
     }
     else if (keyName === "Shift-Right" && activeNode) {
       this.say("All blocks expanded");
