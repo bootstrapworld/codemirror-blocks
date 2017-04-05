@@ -204,15 +204,6 @@ export default class CodeMirrorBlocks {
     setTimeout(() => this.announcements.removeChild(announcement), 500);
   }
 
-  // Reset the timer to clear the seach string in one second
-  resetSearchTime() {
-    clearTimeout(this.searchTimer);
-    this.searchTimer = setTimeout(() => {
-      this.searchString = this.searchCursor = "";
-      this.say('Search cleared');
-    }, 1000);
-  }
-
   // setBlockMode : String -> Void
   // Toggle CM attributes, and announce the mode change
   setBlockMode(mode) {
@@ -741,20 +732,23 @@ export default class CodeMirrorBlocks {
       if(node === activeNode) { playBeep(); }
       else { that.activateNode(node, event); }
     }
-    // If there's a node at that location, make sure
-    // it's visible and activate it. If not, beep!
-    function showAndActivate(exists, event){
-      that.resetSearchTime();             // reset the timer
-      if(!exists) { playBeep(); return; } // beep if it doesn't exist
-      else {
-        let node = that.ast.getNodeContaining(that.searchCursor.from());
-        var parent = that.ast.getNodeParent(node);
-        while(parent) {
-          that.maybeChangeNodeExpanded(parent, true); 
-          parent = that.ast.getNodeParent(parent);
-        }
-        that.activateNode(node, event);
+    function showAndActivate(exists) {
+      clearTimeout(that.searchTimer); // reset the timer for 1sec
+      that.searchTimer = setTimeout(() => {
+          that.searchString = that.searchCursor = "";
+          that.say('Search cleared');
+        }, 1000);
+      if(!exists) { playBeep(); return; } // beep if there's nothing to show
+      let node = that.ast.getNodeContaining(that.searchCursor.from());
+      var ancestors = [], p = that.ast.getNodeParent(node);
+      while(p) { ancestors.push(p); p = that.ast.getNodeParent(p); }
+      ancestors.reverse();  // put ancestors in oldest-first order
+      if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) {
+        node = ancestors[0];
+      } else {
+        ancestors.forEach(a => that.maybeChangeNodeExpanded(a, true)); 
       }
+      that.activateNode(node, event);
     }
 
      // Go to the first node in the tree (depth-first)
@@ -774,10 +768,10 @@ export default class CodeMirrorBlocks {
     }
     // if there's a search string, Enter and Shift-Enter go to next/prev
     else if (this.searchString && keyName == "Enter" && activeNode) {
-      showAndActivate(this.searchCursor.findNext(), event);
+      showAndActivate(this.searchCursor.findNext());
     }
     else if (this.searchString && keyName == "Shift-Enter" && activeNode) {
-      showAndActivate(this.searchCursor.findPrevious(), event);
+      showAndActivate(this.searchCursor.findPrevious());
     }
     // Enter should toggle editing on editable nodes, or toggle expanding
     else if (keyName == "Enter" && activeNode) {
@@ -877,8 +871,8 @@ export default class CodeMirrorBlocks {
       else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode) {
         this.searchString += keyName;
         this.say('Searching for '+this.searchString);
-        this.searchCursor = this.cm.getSearchCursor(this.searchString.toLowerCase());
-        showAndActivate(this.searchCursor.findNext(), event);
+        this.searchCursor = this.cm.getSearchCursor(this.searchString, activeNode.from, true);
+        showAndActivate(this.searchCursor.findNext());
       }
       
       return; // return without cancelling the event
