@@ -21,12 +21,10 @@ function onDragStart(node, text, renderer, event) {
   if (node || text) {
     event.dataTransfer.setData('text/plain', node && renderer.printASTNode(node) || text);
   }
-  // temporarily remove the el to prevent a circular reference
   if (node) {
-    let savedEl = node.el;
-    node.el = null;
-    event.dataTransfer.setData('text/json', JSON.stringify(node));
-    node.el = savedEl;
+    // Don't translate node.el (prevents a circular reference)
+    function skipEl(key, val) { if (key === "el") return undefined; }
+    event.dataTransfer.setData('text/json', JSON.stringify(node, skipEl));
   }
 }
 
