@@ -24,7 +24,7 @@ function onDragStart(node, text, renderer, event) {
   if (node) {
     // Don't translate node.el (prevents a circular reference)
     event.dataTransfer.setData('text/json', 
-      JSON.stringify(node, k => { if (key === "el") return undefined; }));
+      JSON.stringify(node, k => { if (k === "el") return undefined; }));
   }
 }
 
