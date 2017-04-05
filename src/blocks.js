@@ -203,6 +203,15 @@ export default class CodeMirrorBlocks {
     setTimeout(() => this.announcements.removeChild(announcement), 500);
   }
 
+  // Reset the timer to clear the seach string in one second
+  resetSearchTime() {
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.searchString = this.searchCursor = "";
+      this.say('Search cleared');
+    }, 1000);
+  }
+
   // setBlockMode : String -> Void
   // Toggle CM attributes, and announce the mode change
   setBlockMode(mode) {
@@ -719,8 +728,6 @@ export default class CodeMirrorBlocks {
     let that = this;
     let keyName = CodeMirror.keyName(event);
     var activeNode = this.getActiveNode();
-    // clear searches every 3/4s-second
-    setTimeout(() => this.searchString = "", 750);
 
     function moveCursorAdjacent(node, cursor) {
       if(node) { that.insertionQuarantine("", node, event); } 
@@ -732,6 +739,20 @@ export default class CodeMirrorBlocks {
         searchFn, that.isNodeHidden, that.getActiveNode() || that.cm.getCursor());
       if(node === activeNode) { playBeep(); }
       else { that.activateNode(node, event); }
+    }
+    // If there's a node at that location, make sure
+    // it's visible and activate it. If not, beep!
+    function showAndActivate(exists, event){
+      that.resetSearchTime(); // reset the timer
+      if(!exists) { playBeep(); return}
+      else {
+        let node = that.ast.getNodeContaining(that.searchCursor.from())
+        var parent = node;
+        while(parent = that.ast.getNodeParent(parent)) {
+          that.maybeChangeNodeExpanded(parent, true); 
+        }
+        that.activateNode(node, event);
+      }
     }
 
      // Go to the first node in the tree (depth-first)
@@ -749,6 +770,13 @@ export default class CodeMirrorBlocks {
       }
       this.activateNode(lastNode, event);
     }
+    // if there's a search string, Enter and Shift-Enter go to next/prev
+    else if (this.searchString && keyName == "Enter" && activeNode) {
+      showAndActivate(this.searchCursor.findNext(), event);
+    }
+    else if (this.searchString && keyName == "Shift-Enter" && activeNode) {
+      showAndActivate(this.searchCursor.findPrevious(), event);
+    }
     // Enter should toggle editing on editable nodes, or toggle expanding
     else if (keyName == "Enter" && activeNode) {
       if(this.isNodeEditable(activeNode)){
@@ -762,7 +790,7 @@ export default class CodeMirrorBlocks {
       this.insertionQuarantine(false, activeNode, event);
     }
     // Space clears selection and selects active node
-    else if (keyName == "Space" && activeNode) {
+    else if (keyName == "Space" && activeNode && !this.searchString) {
       if(this.selectedNodes.has(activeNode)) { 
         this.clearSelection();
       } else {
@@ -779,7 +807,7 @@ export default class CodeMirrorBlocks {
       }
     }
     // Backspace should delete selected nodes
-    else if (keyName == DELETEKEY && activeNode) {
+    else if (keyName == DELETEKEY && activeNode && !this.searchString) {
       if(this.selectedNodes.size == 0) { playBeep(); }
       else { this.deleteSelectedNodes(); }
     } 
@@ -844,15 +872,11 @@ export default class CodeMirrorBlocks {
         command(this.cm);
       } 
       // if it's an ASCII character and search is installed, try building up a search string
-      else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode){
+      else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode) {
         this.searchString += keyName;
-        console.log('search string is', this.searchString);
+        this.say('Searching for '+this.searchString);
         this.searchCursor = this.cm.getSearchCursor(this.searchString.toLowerCase());
-        if(!this.searchCursor.findNext()) { playBeep(); }
-        else {
-          console.log('match at cursor', this.searchCursor.from());
-          this.activateNode(this.ast.getNodeContaining(this.searchCursor.from()), event); 
-        }
+        showAndActivate(this.searchCursor.findNext(), event);
       }
       
       return; // return without cancelling the event
