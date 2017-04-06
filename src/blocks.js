@@ -671,6 +671,7 @@ export default class CodeMirrorBlocks {
     if(makeExpanded !== isExpanded) {
       node.el.setAttribute("aria-expanded", !isExpanded);
     }
+    this.cm.refresh();
     return makeExpanded !== isExpanded;
   }
 
@@ -825,6 +826,7 @@ export default class CodeMirrorBlocks {
       let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
       [].forEach.call(elts, e => e.setAttribute("aria-expanded", false));
       let rootId = activeNode.id.split(",")[0]; // put focus on containing rootNode
+      this.cm.refresh();
       // shift focus if rootId !== activeNodeId
       if(rootId !== activeNode.id) this.activateNode(this.ast.getNodeById(rootId), event);
     }
@@ -832,6 +834,7 @@ export default class CodeMirrorBlocks {
       this.say("All blocks expanded");
       let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
       [].forEach.call(elts, e => e.setAttribute("aria-expanded", true));
+      this.cm.refresh();
     }
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
