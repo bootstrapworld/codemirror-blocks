@@ -437,7 +437,7 @@ export default class CodeMirrorBlocks {
       this.parser.parse(nodeEl.innerText);            // If the node contents will parse
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
       nodeEl.title = '';                              // 2) Clear the title
-      if(node.quarantine){ node.quarantine.clear(); } // 3) Maybe get rid of the quarantine bookmark
+      if(node.insertion){ node.insertion.clear(); }   // 3) Maybe get rid of the insertion bookmark
       this.cm.replaceRange(text, node.from, node.to); // 4) Commit the changes to CM
       this.say((nodeEl.originalEl? "changed " : "inserted ")+text);
     }  
@@ -460,14 +460,16 @@ export default class CodeMirrorBlocks {
     let keyName = CodeMirror.keyName(e);
     if (["Enter", "Tab", "Esc", "Shift-Esc"].includes(keyName)) {
       e.preventDefault();
-      // To cancel, remove the blur handler, (maybe) reinsert the original DOM Elt
-      // delete the editing quarantine and activate the original
+      // To cancel, (maybe) reinsert the original DOM Elt and activate the original
+      // then remove the blur handler and the insertion node
       if(["Esc", "Shift-Esc"].includes(keyName)) { 
+        if(!node.insertion) {
+          nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
+          this.activateNode(this.ast.getNodeById(this.lastActiveNodeId), e);
+        }
         this.say("cancelled");
         nodeEl.onblur = null;
-        if(nodeEl.originalEl) { nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl); }
         nodeEl.parentNode.removeChild(nodeEl);
-        this.activateNode(this.ast.getNodeById(this.lastActiveNodeId), e);
       } else {
         nodeEl.blur();
       }
@@ -479,7 +481,6 @@ export default class CodeMirrorBlocks {
   editLiteral(node, event) {
     event.stopPropagation();
     this.say("editing "+node.el.getAttribute("aria-label"));
-    node.el.oldText = this.cm.getRange(node.from, node.to);
     node.el.contentEditable = true;
     node.el.spellcheck = false;
     node.el.classList.add('blocks-editing');
@@ -487,9 +488,9 @@ export default class CodeMirrorBlocks {
     node.el.onblur    = (e => this.saveEdit(node, node.el, e));
     node.el.onkeydown = (e => this.handleEditKeyDown(node, node.el, e));
     let range = document.createRange();
-    range.setStart(node.el, node.quarantine? 1 : 0);
+    range.setStart(node.el, node.insertion? 1 : 0);
     let end = Math.min(node.toString().length, node.el.innerText.length);
-    range.setEnd(node.el, node.quarantine? 1 : end);
+    range.setEnd(node.el, node.insertion? 1 : end);
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
     node.el.focus();
@@ -509,7 +510,7 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let nodeCount = this.selectedNodes.size;
-    this.selectedNodes.forEach(n => this.deleteNode(n));
+    this.cm.operation(() => this.selectedNodes.forEach(this.deleteNode));
     this.selectedNodes.clear();
     this.say("deleted "+nodeCount+" item"+(nodeCount==1? "" : "s"));
   }
@@ -606,7 +607,7 @@ export default class CodeMirrorBlocks {
     let destFrom        = (destinationNode && destinationNode.from) // if we have an existing node, use its start location
                         || this.getLocationFromWhitespace(event.target)          // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
-    let destTo        = (destinationNode && destinationNode.to) || destFrom; // destFrom = destTo for insertion
+    let destTo        = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
     // if we're coming from outside
     if (destFrom.outside) {
       sourceNodeText = '\n' + sourceNodeText;
@@ -624,8 +625,8 @@ export default class CodeMirrorBlocks {
       return;
     }
 
-    // if f is defined and the destination is a non-literal node, apply it
-    // otherwise return the sourceNodeText unmodified
+    // If f is defined and the destination is a non-literal node, apply it.
+    // Otherwise return the sourceNodeText unmodified
     function maybeApplyClientFn(f) {
       return (f && !(destinationNode && destinationNode.type == "literal"))?
         f(sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
@@ -657,7 +658,7 @@ export default class CodeMirrorBlocks {
     if(!text.replace(/\s/g, '').length) return;
     e.preventDefault();
     let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
-    // try automatically rendering the pasted text
+    // try automatically rendering the pasted text (give the DOM 20ms to catch up)
     if(e.type !== "keypress") { setTimeout(() => node.el.blur(), 20); }
   }
 
@@ -675,9 +676,8 @@ export default class CodeMirrorBlocks {
 
   // insertionQuarantine : String [ASTNode | DOMNode | Cursor] Event -> Void
   // Consumes a String, a Destination, and an event.
-  // Inserts a literal at the from Destination with the String (or, if false,
-  // DOMNode contents), allowing the user to edit. onBlur(), The contents
-  // text is checked for lexability and inserted in the From/To range.
+  // Hides the original node and inserts a literal at the Destination 
+  // with the String (or, if false, DOMNode contents), allowing the user to edit.
   insertionQuarantine(text, dest, event) {
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
@@ -704,7 +704,7 @@ export default class CodeMirrorBlocks {
     } else if(dest.line !== undefined){
       literal.to = literal.from = dest;
       let mk = this.cm.setBookmark(dest, {widget: literal.el});
-      literal.quarantine = mk;
+      literal.insertion = mk;
     } else {
       throw "insertionQuarantine given a destination of unknown type";
     }
@@ -874,44 +874,38 @@ export default class CodeMirrorBlocks {
         this.searchCursor = this.cm.getSearchCursor(this.searchString, activeNode.from, true);
         showAndActivate(this.searchCursor.findNext());
       }
-      
       return; // return without cancelling the event
     }
     event.preventDefault();
     event.stopPropagation();
   }
 
-  // unset the aria attribute, and remove the node from the set
+  // unset the aria-selected attribute, and remove the node from the set
   removeFromSelection(node, speakEachOne=true) {
     this.selectedNodes.delete(node);
-    if(speakEachOne) {
-      this.say(node.options["aria-label"]+" unselected");
-    }
+    if(speakEachOne) { this.say(node.options["aria-label"]+" unselected"); }
     node.el.setAttribute("aria-selected", "false");
   }
 
   // add the node to the selected set, and set the aria attribute
-  // make sure selectedNodes never contains a child and its ancestor
+  // make sure selectedNodes never contains both a child and its ancestor
   addToSelection(node) {
+    let selected = [...this.selectedNodes];
     // if this is an ancestor of nodes in the set, remove them first
-    this.selectedNodes.forEach(n => {
-      if(node.el.contains(n.el)) { this.removeFromSelection(n); }
-    });
+    selected.filter(n => node.el.contains(n.el)).forEach(this.removeFromSelection);
     // bail if an ancestor is already in the set
-    var ancestor = false;
-    this.selectedNodes.forEach(n => ancestor = ancestor || n.el.contains(node.el));
-    if(ancestor) {
+    if(selected.find(n => n.el.contains(node.el))) {
       this.say("an ancestor is already selected");
-      return true;
+    } else {
+      node.el.setAttribute("aria-selected", true);
+      this.selectedNodes.add(node);
     }
-    node.el.setAttribute("aria-selected", true);
-    this.selectedNodes.add(node);
   }
 
   // unset the aria attribute, and empty the set
   clearSelection() {
-    if(this.selectedNodes.size > 0){
-      this.selectedNodes.forEach((n) => this.removeFromSelection(n, false));
+    if(this.selectedNodes.size > 0) {
+      this.selectedNodes.forEach(n => this.removeFromSelection(n, false));
       this.say("selection cleared");
     } 
   }
