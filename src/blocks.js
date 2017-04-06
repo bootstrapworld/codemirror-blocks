@@ -139,8 +139,7 @@ export default class CodeMirrorBlocks {
         ondblclick: this.nodeEventHandler({
           literal:    ((n, e) => this.insertionQuarantine(false, n, e)),
           blank:      ((n, e) => this.insertionQuarantine(false, n, e)),
-          whitespace: ((n, e) => this.insertionQuarantine("", n, e)),
-          default:    this.maybeChangeNodeExpanded
+          whitespace: ((n, e) => this.insertionQuarantine("", n, e))
         }),
         ondragstart:  this.nodeEventHandler(this.startDraggingNode),
         ondragend:    this.nodeEventHandler(this.stopDraggingNode),
@@ -662,19 +661,6 @@ export default class CodeMirrorBlocks {
     if(e.type !== "keypress") { setTimeout(() => node.el.blur(), 20); }
   }
 
-  // If it's an expandable node, set to makeExpanded (or toggle)
-  // return true if there's been a change
-  maybeChangeNodeExpanded(node, makeExpanded) {
-    if(!this.isNodeExpandable(node)) return false;
-    // treat anything other than false as true (even undefined)
-    let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
-    if(makeExpanded !== isExpanded) {
-      node.el.setAttribute("aria-expanded", !isExpanded);
-    }
-    this.cm.refresh();
-    return makeExpanded !== isExpanded;
-  }
-
   // insertionQuarantine : String [ASTNode | DOMNode | Cursor] Event -> Void
   // Consumes a String, a Destination, and an event.
   // Hides the original node and inserts a literal at the Destination 
@@ -751,6 +737,18 @@ export default class CodeMirrorBlocks {
       }
       that.activateNode(node, event);
     }
+    // If it's an expandable node, set to makeExpanded (or toggle)
+    // return true if there's been a change
+    function maybeChangeNodeExpanded(node, makeExpanded) {
+      if(!that.isNodeExpandable(node)) return false;
+      // treat anything other than false as true (even undefined)
+      let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
+      if(makeExpanded !== isExpanded) {
+        node.el.setAttribute("aria-expanded", !isExpanded);
+      }
+      that.cm.refresh();
+      return makeExpanded !== isExpanded;
+    }
 
      // Go to the first node in the tree (depth-first)
     if (keyName == "Home" && activeNode) {
@@ -779,7 +777,7 @@ export default class CodeMirrorBlocks {
       if(this.isNodeEditable(activeNode)){
         this.insertionQuarantine(false, activeNode, event);
       } else {
-        this.maybeChangeNodeExpanded(activeNode);
+        maybeChangeNodeExpanded(activeNode);
       }
     }
     // Ctrl/Cmd-Enter should toggle editing on non-editable nodes
@@ -844,7 +842,7 @@ export default class CodeMirrorBlocks {
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {
       let parent = this.ast.getNodeParent(activeNode);
-      return this.maybeChangeNodeExpanded(activeNode, false) 
+      return maybeChangeNodeExpanded(activeNode, false) 
           || (parent && this.activateNode(parent, event))
           || playBeep();
     }
@@ -852,7 +850,7 @@ export default class CodeMirrorBlocks {
     else if (event.keyCode == RIGHT && activeNode) {
       let firstChild = this.isNodeExpandable(activeNode) 
         && this.ast.getNodeFirstChild(activeNode);
-      return this.maybeChangeNodeExpanded(activeNode, true)
+      return maybeChangeNodeExpanded(activeNode, true)
           || (firstChild && this.activateNode(firstChild, event))
           || playBeep();
     }
