@@ -2,7 +2,6 @@ import 'babel-polyfill';
 import CodeMirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
-import 'codemirror/addon/edit/closebrackets.js';
 import 'codemirror/addon/search/searchcursor.js';
 import CodeMirrorBlocks from '../src/blocks';
 import '../src/languages/wescheme';
@@ -11,19 +10,11 @@ require('./example-page.less');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
-  {theme:'3024-day',
-   autoCloseBrackets: true}
+  {theme:'3024-day'}
 );
 var cm2 = CodeMirror.fromTextArea(
   document.getElementById('code2'),
-  {theme:'3024-day',
-   autoCloseBrackets: false,
-   extraKeys: {
-     "Shift-9" : function(cm){
-       cm.replaceSelection("(...)");
-     }
-   }
- }
+  {theme:'3024-day'}
 );
 
 var focusCarousel = [cm, cm2, document.getElementById("mode")];

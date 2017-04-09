@@ -2,7 +2,6 @@ import 'babel-polyfill';
 import CodeMirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
-import 'codemirror/addon/edit/closebrackets.js';
 import 'codemirror/addon/search/searchcursor.js';
 import CodeMirrorBlocks from '../src/blocks';
 import '../src/languages/wescheme';

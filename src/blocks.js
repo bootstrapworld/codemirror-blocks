@@ -115,7 +115,7 @@ export default class CodeMirrorBlocks {
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
     // Track lastActiveNodeId
-    this.lastActiveNodeId = null;
+    this.lastActiveNodeId = false;
     // Offscreen buffer for copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
@@ -299,7 +299,6 @@ export default class CodeMirrorBlocks {
                .filter(mark => mark[MARKER])
                .map(mark => mark[MARKER]);
   }
-
   _clearMarks() {
     let marks = this.cm.findMarks({line: 0, ch: 0}, {line: this.cm.lineCount(), ch: 0});
     for (let mark of marks) {
@@ -310,9 +309,7 @@ export default class CodeMirrorBlocks {
   // render : Void -> Void
   // re-parse the document, then patch and re-render the resulting AST
   render() {
-    let newAST = this.parser.parse(this.cm.getValue());
-    //this.ast.patch(newAST);
-    this.ast = newAST;
+    this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
     this.renderer.renderAST(this.ast, this.lastActiveNodeId);
     ui.renderToolbarInto(this);
@@ -509,7 +506,7 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let nodeCount = this.selectedNodes.size;
-    this.cm.operation(() => this.selectedNodes.forEach(this.deleteNode));
+    this.cm.operation(() => this.selectedNodes.forEach(n=>this.deleteNode(n)));
     this.selectedNodes.clear();
     this.say("deleted "+nodeCount+" item"+(nodeCount==1? "" : "s"));
   }
@@ -651,14 +648,25 @@ export default class CodeMirrorBlocks {
   handleTopLevelEntry(e) {
     if(!this.blockMode) return;                           // bail if mode==false
     this.clearSelection();                                // clear the previous selection
-    let text = (e.type == "keypress")? String.fromCharCode(e.which)
+    var text = (e.type == "keypress")? String.fromCharCode(e.which)
              : e.clipboardData.getData('text/plain');
+    let openBrace = ["(","[","{"].includes(text);
     // let pure whitespace pass through
     if(!text.replace(/\s/g, '').length) return;
     e.preventDefault();
-    let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
+    
+    // open-bracket inserts an empty expression with a black
+    let match = {"(": ")", "[":"]", "{": "}"};
+    if (openBrace) { text = text + "..." + match[text]; }
+
     // try automatically rendering the pasted text (give the DOM 20ms to catch up)
-    if(e.type !== "keypress") { setTimeout(() => node.el.blur(), 20); }
+    let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
+    if(e.type !== "keypress" || openBrace) { 
+      let id = this.ast.getNodeBefore(this.cm.getCursor()).id;
+      // move the focus to the new node, or it's first child if it's an openBrace
+      this.lastActiveNodeId = Number(id) + 1 + (openBrace? ",0" : "");
+      setTimeout(() => node.el.blur(), 20); 
+    }
   }
 
   // insertionQuarantine : String [ASTNode | DOMNode | Cursor] Event -> Void
@@ -669,7 +677,7 @@ export default class CodeMirrorBlocks {
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
     literal.options['aria-label'] = text;
-    this.renderer.renderAST(ast);
+    this.renderer.render(ast.rootNodes[0], false);
     // if we're inserting into an existing ASTNode
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
@@ -805,7 +813,7 @@ export default class CodeMirrorBlocks {
     else if (keyName == DELETEKEY && activeNode && !this.searchString) {
       if(this.selectedNodes.size == 0) { playBeep(); }
       else { this.deleteSelectedNodes(); }
-    } 
+    }
     // Ctrl-[ moves the cursor to previous whitespace or cursor position
     else if (keyName === "Ctrl-[" && activeNode) {
       moveCursorAdjacent(activeNode.el.previousElementSibling, activeNode.from);
