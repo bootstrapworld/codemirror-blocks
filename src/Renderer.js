@@ -16,6 +16,7 @@ import FunctionDefinition from './components/FunctionDef';
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
+function poseq(a, b) { return poscmp(a,b)===0; }
 
 export default class Renderer {
   constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
@@ -130,19 +131,13 @@ export default class Renderer {
 
   renderAST(ast, restoreFocusToBlock) {
     // get all marks for rendered nodes, and see if we can recycle them
-    var marks = this.cm.getAllMarks().filter(m => m.replacedWith);
-    ast.rootNodes.forEach(rootNode => {
+    var markers = this.cm.getAllMarks().filter(m => m.node);
+    //console.log("there are "+markers.length+" markers and "+ast.rootNodes.length+" roots", markers);
+    ast.rootNodes.forEach((rootNode, i) => {
       if (typeof rootNode !== "object" || !rootNode.type) {
         throw new Error("Expected ASTNode but got "+rootNode);
       }
-      var container = false;
-      if(marks[0] && 
-        (poscmp(marks[0].node.from, rootNode.from) == 0) && 
-        (poscmp(marks[0].node.to  , rootNode.to  ) == 0)) {
-        // it's a match! remove it and keep going
-        container = marks.shift().replacedWith;
-      }
-      this.render(rootNode, container);
+      this.render(rootNode, markers[i] || false);
     });
     // Try to restore the cursor focus
     if(!restoreFocusToBlock) return;
@@ -150,18 +145,18 @@ export default class Renderer {
       let node = ast.getClosestNodeFromPath(restoreFocusToBlock.split(','));
       if(node) { node.el.click(); }
       else { this.cm.focus(); }
-    }, 100);
+    }, 150);
   }
 
   // if we can't recycle an existing container, make a new one and mark CM with it
-  render(rootNode, container) {
-    if(!container) {
-      //console.log('generating new React Component for', rootNode);
-      container = document.createElement('span');
+  render(rootNode, marker) {
+    let container = marker? marker.replacedWith : document.createElement('span');
+    let {from, to} = marker? marker.find() : {null, null};
+    // if the marker needs to be resized or created, replace it and recycle the container
+    if(!marker || !(poseq(from, rootNode.from) && poseq(to, rootNode.to))) {
+      if(marker) marker.clear();
       this.cm.markText(rootNode.from, rootNode.to,
                        {replacedWith: container, node: rootNode} );
-    } else {
-      //console.log("recycling React Component for", rootNode);
     }
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
     return container;

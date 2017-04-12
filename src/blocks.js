@@ -310,7 +310,9 @@ export default class CodeMirrorBlocks {
   // re-parse the document, then patch and re-render the resulting AST
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
-    this._clearMarks();
+    //this._clearMarks();
+    this.ast.patch(this.parser.parse(this.cm.getValue()));
+    //console.log('patched AST is ', this.ast.rootNodes);
     this.renderer.renderAST(this.ast, this.lastActiveNodeId);
     ui.renderToolbarInto(this);
   }
@@ -422,7 +424,7 @@ export default class CodeMirrorBlocks {
     }, 50);
   }
 
-  // saveEdit : ASTNode DOMNode Event Verb -> Void
+  // saveEdit : ASTNode DOMNode Event -> Void
   // If not, set the error state and maintain focus
   // set this.hasInvalidEdit to the appropriate value
   saveEdit(node, nodeEl, event) {
@@ -435,9 +437,8 @@ export default class CodeMirrorBlocks {
       nodeEl.title = '';                              // 2) Clear the title
       if(node.insertion){ node.insertion.clear(); }   // 3) Maybe get rid of the insertion bookmark
       this.cm.replaceRange(text, node.from, node.to); // 4) Commit the changes to CM
-      this.say((nodeEl.originalEl? "changed " : "inserted ")+text);
-    }  
-    catch(e) {                                        // If the node contents will NOT lex...
+      this.say((nodeEl.originalEl? "changed " : "inserted ") + text);
+    } catch(e) {                                      // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
@@ -655,15 +656,15 @@ export default class CodeMirrorBlocks {
     if(!text.replace(/\s/g, '').length) return;
     e.preventDefault();
     
-    // open-bracket inserts an empty expression with a black
+    // if open-bracket, modify text to be an empty expression with a blank
     let match = {"(": ")", "[":"]", "{": "}"};
     if (openBrace) { text = text + "..." + match[text]; }
-
-    // try automatically rendering the pasted text (give the DOM 20ms to catch up)
     let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
+    
+    // try automatically rendering (give the DOM 20ms to catch up)
     if(e.type !== "keypress" || openBrace) { 
       let id = this.ast.getNodeBefore(this.cm.getCursor()).id;
-      // move the focus to the new node, or it's first child if it's an openBrace
+      // move the focus to the new node, or its first child if it's an openBrace
       this.lastActiveNodeId = Number(id) + 1 + (openBrace? ",0" : "");
       setTimeout(() => node.el.blur(), 20); 
     }
@@ -676,8 +677,9 @@ export default class CodeMirrorBlocks {
   insertionQuarantine(text, dest, event) {
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
+    literal.id="quarantine";
     literal.options['aria-label'] = text;
-    this.renderer.render(ast.rootNodes[0], false);
+    this.renderer.render(literal);
     // if we're inserting into an existing ASTNode
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
