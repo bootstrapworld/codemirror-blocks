@@ -310,8 +310,8 @@ export default class CodeMirrorBlocks {
   // re-parse the document, then patch and re-render the resulting AST
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
-    //this._clearMarks();
-    this.ast.patch(this.parser.parse(this.cm.getValue()));
+    this._clearMarks();
+    //this.ast.patch(this.parser.parse(this.cm.getValue()));
     //console.log('patched AST is ', this.ast.rootNodes);
     this.renderer.renderAST(this.ast, this.lastActiveNodeId);
     ui.renderToolbarInto(this);
@@ -743,7 +743,7 @@ export default class CodeMirrorBlocks {
       if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) {
         node = ancestors[0];
       } else {
-        ancestors.forEach(a => that.maybeChangeNodeExpanded(a, true)); 
+        ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); 
       }
       that.activateNode(node, event);
     }
