@@ -5,6 +5,8 @@
 [![Code Climate](https://codeclimate.com/github/bootstrapworld/codemirror-blocks/badges/gpa.svg)](https://codeclimate.com/github/bootstrapworld/codemirror-blocks)
 
 # codemirror-blocks
+
+[![Join the chat at https://gitter.im/bootstrapworld/codemirror-blocks](https://badges.gitter.im/bootstrapworld/codemirror-blocks.svg)](https://gitter.im/bootstrapworld/codemirror-blocks?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 A library for making functional languages editable using visual blocks inside of codemirror
 
 ## Usage
