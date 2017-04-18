@@ -5,9 +5,12 @@ set -ev # exit with nonzero exit code if anything fails
 rm -rf out || exit 0;
 mkdir out;
 
+
+
 # run our compile script, discussed above
 jekyll build
 npm run build
+
 cp -R build site-build/examples
 cp -R dist site-build/
 #npm run docs

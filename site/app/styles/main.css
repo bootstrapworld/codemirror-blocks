@@ -1,0 +1,34 @@
+
+
+body {
+  background: #EBEDE5;
+  font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: #333;
+}
+
+img {
+  width:100%
+}
+
+h1 {
+  color:#613872;
+}
+
+paper-material {
+  margin-bottom: 48px;
+}
+.drawer {
+  background: #EBEDE5;
+}
+.paper-toolbar-0 {
+  background: #613872;
+  box-shadow:0 0 4px rgba(0,0,0,.14),0 4px 8px rgba(0,0,0,.28);
+}
+
+#drawerToolbar {
+  color:#fff;
+}
+
+#topbar span {
+  color:#fff;
+}
