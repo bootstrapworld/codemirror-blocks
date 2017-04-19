@@ -96,8 +96,8 @@ function convertAST(lambdaNode) {
         lambdaNode.from,
         lambdaNode.to,
         lambdaNode.operator,
-        lambdaNode.left.map(convertAST),
-        lambdaNode.right.map(convertAST)
+        lambdaNode.left,
+        lambdaNode.right
       );
     case 'let':
       return new Literal(
