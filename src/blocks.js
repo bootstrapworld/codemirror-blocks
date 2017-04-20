@@ -648,6 +648,11 @@ export default class CodeMirrorBlocks {
   // quarantine a keypress or paste entry at the CM level
   handleTopLevelEntry(e) {
     if(!this.blockMode) return;                           // bail if mode==false
+    // Firefox workaround: skip kepress events that are actual clipboard events
+    if(e.type == "keypress" && ["c","v","x"].includes(e.key) 
+      && ((ISMAC && e.metaKey) || (!ISMAC && e.ctrlKey))) {
+        return false;
+    }
     this.clearSelection();                                // clear the previous selection
     var text = (e.type == "keypress")? String.fromCharCode(e.which)
              : e.clipboardData.getData('text/plain');
