@@ -151,7 +151,7 @@ export default class Renderer {
   // if we can't recycle an existing container, make a new one and mark CM with it
   render(rootNode, marker) {
     let container = marker? marker.replacedWith : document.createElement('span');
-    let {from, to} = marker? marker.find() : {null, null};
+    let {from, to} = marker? marker.find() : {from: null, to: null};
     // if the marker needs to be resized or created, replace it and recycle the container
     if(!marker || !(poseq(from, rootNode.from) && poseq(to, rootNode.to))) {
       if(marker) marker.clear();
