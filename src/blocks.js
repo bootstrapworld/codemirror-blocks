@@ -651,7 +651,7 @@ export default class CodeMirrorBlocks {
     // Firefox workaround: skip kepress events that are actual clipboard events
     if(e.type == "keypress" && ["c","v","x"].includes(e.key) 
       && ((ISMAC && e.metaKey) || (!ISMAC && e.ctrlKey))) {
-        return false;
+      return false;
     }
     this.clearSelection();                                // clear the previous selection
     var text = (e.type == "keypress")? String.fromCharCode(e.which)
@@ -742,8 +742,9 @@ export default class CodeMirrorBlocks {
       }, 1000);
       if(!exists) { playBeep(); return; } // beep if there's nothing to show
       let node = that.ast.getNodeContaining(that.searchCursor.from());
-      var ancestors = [], p = that.ast.getNodeParent(node);
+      var ancestors = [node], p = that.ast.getNodeParent(node);
       while(p) { ancestors.push(p); p = that.ast.getNodeParent(p); }
+
       ancestors.reverse();  // put ancestors in oldest-first order
       if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) {
         node = ancestors[0];
