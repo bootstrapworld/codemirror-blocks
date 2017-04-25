@@ -198,14 +198,14 @@ function parseNode(node, i) {
       {'aria-label': "an if block", 'comment' : comment}
     );
   } else if (node instanceof structures.symbolExpr) {
-    let opts = {'aria-label' : symbolAria(node.val)
-               ,'comment' : comment};
     if(node.val == "...") {
       return new Blank(from, to, node.val, "symbol", {'aria-label': "blank"});
     } else if (["true","false"].includes(node.val)) {
-      return new Literal(from, to, node.val, "boolean", opts);
+      return new Literal(from, to, node.val, "boolean", 
+        {'aria-label': symbolAria(node.val)+', a Boolean', 'comment': comment});
     } else {
-      return new Literal(from, to, node.val, "symbol", opts);
+      return new Literal(from, to, node.val, "symbol", 
+        {'aria-label': symbolAria(node.val), 'comment': comment});
     }
   } else if (node instanceof structures.literal) {
     var dataType = typeof node.val;
