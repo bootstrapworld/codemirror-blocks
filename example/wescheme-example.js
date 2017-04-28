@@ -40,6 +40,7 @@ var code = require('./react-test.rkt');
 //var code = require('./cow-game.rkt');
 //var code = "(sum (+   (- 1 2)  3)\n (*  3  4)\n (/ 5 6))\n(product 5 6 7)"
 cm.setValue(code);
+cm.doc.clearHistory();
 cm2.swapDoc(cm.getDoc().linkedDoc({sharedHist: true}));
 
 const options = {
