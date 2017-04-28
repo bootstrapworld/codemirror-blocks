@@ -98,7 +98,7 @@ function parseNode(node, i) {
         {line: from.line, ch: from.ch+1},
         '...',
         'blank',
-        {'aria-label': 'blank'}
+        {'aria-label': '*blank*'}
       );
     }
     return new Expression(
