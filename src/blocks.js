@@ -193,14 +193,14 @@ export default class CodeMirrorBlocks {
     this.events.emit(event, ...args);
   }
 
-  // say : String -> Void
+  // say : String Number -> Void
   // add text to the announcements element, and log it to the console
   // append a comma to distinguish between adjaced commands
-  say(text){
+  say(text, delay=200){
     let announcement = document.createTextNode(text+", ");
     console.log(text);
-    setTimeout(() => this.announcements.appendChild(announcement), 200);
-    setTimeout(() => this.announcements.removeChild(announcement), 500);
+    setTimeout(() => this.announcements.appendChild(announcement), delay);
+    setTimeout(() => this.announcements.removeChild(announcement), delay+300);
   }
 
   // setBlockMode : String -> Void
@@ -432,7 +432,9 @@ export default class CodeMirrorBlocks {
     try {
       var text = nodeEl.innerText;                    // If inserting (from==to), sanitize
       if(node.from === node.to) text = this.willInsertNode(text, nodeEl, node.from, node.to);
-      this.parser.parse(nodeEl.innerText);            // If the node contents will parse
+      this.parser.parse(nodeEl.innerText);            // Make sure the node contents will parse
+      this.lastActiveNodeId = this.getPathFromEl(nodeEl);
+      console.log(this.lastActiveNodeId);
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
       nodeEl.title = '';                              // 2) Clear the title
       if(node.insertion){ node.insertion.clear(); }   // 3) Maybe get rid of the insertion bookmark
@@ -459,13 +461,13 @@ export default class CodeMirrorBlocks {
       e.preventDefault();
       // To cancel, (maybe) reinsert the original DOM Elt and activate the original
       // then remove the blur handler and the insertion node
-      if(["Esc", "Shift-Esc"].includes(keyName)) { 
+      if(["Esc", "Shift-Esc"].includes(keyName)) {
+        nodeEl.onblur = null;
         if(!node.insertion) {
           nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
           this.activateNode(this.ast.getNodeById(this.lastActiveNodeId), e);
         }
         this.say("cancelled");
-        nodeEl.onblur = null;
         nodeEl.parentNode.removeChild(nodeEl);
       } else {
         nodeEl.blur();
@@ -545,22 +547,36 @@ export default class CodeMirrorBlocks {
     }
   }
 
+  // getPathFromEl : DOMNode -> String
+  // return the path from a nodeEl, or the path to a node inserted at the WS
+  getPathFromEl(el) {
+    if(!el.classList.contains('blocks-white-space')) return el.id;
+    let prevNode = el.previousElementSibling; // is there a previous element?
+    let nextNode = el.nextElementSibling;
+    let parentNode = this.findNearestNodeFromEl(el.parentNode).el;
+    let path = this.findNodeFromEl(prevNode || nextNode || parentNode).id.split(',');
+    if(prevNode) { path[path.length-1] = Number(path[path.length-1]) + 1; }
+    else if(nextNode) { path[path.length-1] = 1; }
+    else { path[path.length] = 1; }
+    return path.join(',');
+  }
+
   // getLocationFromWhiteSpace : DOMNode -> {line, ch} | null
   // If the input isn't a whitespace element, bail
-  // If there's a previous sibling, return it's .to
-  // If there's a next sibling, return it's .from
-  // If it's the first WS after a function, return it's .to
+  // If there's a previous sibling or func, return it's .to
   // Otherwise, return the character *after* the parent's .from
   getLocationFromWhitespace(el) {
     if(!el.classList.contains('blocks-white-space')) return;
-    let prevEl = el.previousElementSibling;
-    if(prevEl) { return this.findNodeFromEl(prevEl).to; }
-    let nextEl = el.nextElementSibling;
-    if(nextEl) { return this.findNodeFromEl(nextEl).from; }
-    let parent = this.findNearestNodeFromEl(findNearestNodeEl(el));
-    let func   = this.ast.getNodeFirstChild(parent);
-    if(func)   { return func.to; }
-    return { line: parent.from.line, ch: parent.from.ch+1 };
+    let pathArray = this.getPathFromEl(el).split(',');
+    if(pathArray[pathArray.length-1] === 1) {
+      pathArray.pop(); // pop to the parent
+      let parent = this.ast.getNodeById(pathArray.join(','));
+      let func   = this.ast.getNodeFirstChild(parent);
+      return func? func.to : { line: parent.from.line, ch: parent.from.ch+1 };
+    } else {
+      pathArray[pathArray.length-1]--; // drop to the previous sibling
+      return this.ast.getNodeById(pathArray.join(',')).to;
+    }
   }
 
   // findNodeFromEl : DOMNode -> ASTNode
@@ -656,21 +672,20 @@ export default class CodeMirrorBlocks {
     this.clearSelection();                                // clear the previous selection
     var text = (e.type == "keypress")? String.fromCharCode(e.which)
              : e.clipboardData.getData('text/plain');
-    let openBrace = ["(","[","{"].includes(text);
     // let pure whitespace pass through
     if(!text.replace(/\s/g, '').length) return;
     e.preventDefault();
     
     // if open-bracket, modify text to be an empty expression with a blank
-    let match = {"(": ")", "[":"]", "{": "}"};
-    if (openBrace) { text = text + "..." + match[text]; }
+    //let match = {"(": ")", "[":"]", "{": "}"};
+    //if (openBrace) { text = text + "..." + match[text]; }
     let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
     
     // try automatically rendering (give the DOM 20ms to catch up)
-    if(e.type !== "keypress" || openBrace) { 
-      let id = this.ast.getNodeBefore(this.cm.getCursor()).id;
+    if(e.type !== "keypress") { 
+      // let id = this.ast.getNodeBefore(this.cm.getCursor()).id;
       // move the focus to the new node, or its first child if it's an openBrace
-      this.lastActiveNodeId = Number(id) + 1 + (openBrace? ",0" : "");
+      // this.lastActiveNodeId = Number(id) + 1 + (openBrace? ",0" : "");
       setTimeout(() => node.el.blur(), 20); 
     }
   }
@@ -682,9 +697,9 @@ export default class CodeMirrorBlocks {
   insertionQuarantine(text, dest, event) {
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
-    literal.id="quarantine";
     literal.options['aria-label'] = text;
     this.renderer.render(literal);
+    literal.el.classList.add("quarantine");
     // if we're inserting into an existing ASTNode
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
@@ -693,7 +708,7 @@ export default class CodeMirrorBlocks {
       literal.el.originalEl = dest.el; // save the original DOM El
       parent.insertBefore(literal.el, dest.el);
       parent.removeChild(dest.el);
-      this.lastActiveNodeId = dest.id; // remember what we were editing
+      literal.el.id = this.lastActiveNodeId = dest.id; // remember what we were editing
     // if we're inserting into a whitespace node
     } else if(dest.nodeType) {
       literal.el.classList.add("blocks-white-space");
@@ -738,9 +753,8 @@ export default class CodeMirrorBlocks {
       clearTimeout(that.searchTimer); // reset the timer for 1sec
       that.searchTimer = setTimeout(() => {
         that.searchString = that.searchCursor = "";
-        that.say('Search cleared');
-      }, 1000);
-      if(!exists) { playBeep(); return; } // beep if there's nothing to show
+      }, 1500);
+      if(!exists) { playBeep(); return false; } // beep if there's nothing to show
       let node = that.ast.getNodeContaining(that.searchCursor.from());
       var ancestors = [node], p = that.ast.getNodeParent(node);
       while(p) { ancestors.push(p); p = that.ast.getNodeParent(p); }
@@ -752,6 +766,7 @@ export default class CodeMirrorBlocks {
         ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); 
       }
       that.activateNode(node, event);
+      return true;
     }
     // If it's an expandable node, set to makeExpanded (or toggle)
     // return true if there's been a change
@@ -775,18 +790,20 @@ export default class CodeMirrorBlocks {
       let lastExpr = [...this.ast.reverseRootNodes[0]];
       var lastNode = lastExpr[lastExpr.length-1];
       if(this.isNodeHidden(lastNode)) {
-        let searchFn = (cur => this.ast.getNodeBefore(cur));
+        let searchFn = (cur => this.ast.getNodeParent(cur));
         lastNode = that.ast.getNextMatchingNode(
           searchFn, that.isNodeHidden, that.getActiveNode());
-      }
+      }      
       this.activateNode(lastNode, event);
     }
     // if there's a search string, Enter and Shift-Enter go to next/prev
     else if (this.searchString && keyName == "Enter" && activeNode) {
-      showAndActivate(this.searchCursor.findNext());
+      if(!showAndActivate(this.searchCursor.findNext())) 
+        this.searchCursor.findPrevious();
     }
     else if (this.searchString && keyName == "Shift-Enter" && activeNode) {
-      showAndActivate(this.searchCursor.findPrevious());
+      if(!showAndActivate(this.searchCursor.findPrevious()))
+        this.searchCursor.findNext();
     }
     // Enter should toggle editing on editable nodes, or toggle expanding
     else if (keyName == "Enter" && activeNode) {
@@ -818,7 +835,8 @@ export default class CodeMirrorBlocks {
       }
     }
     // Backspace should delete selected nodes
-    else if (keyName == DELETEKEY && activeNode && !this.searchString) {
+    else if ([DELETEKEY, CTRLKEY+"-"+DELETEKEY].includes(keyName)
+              && activeNode && !this.searchString) {
       if(this.selectedNodes.size == 0) { playBeep(); }
       else { this.deleteSelectedNodes(); }
     }
@@ -850,6 +868,14 @@ export default class CodeMirrorBlocks {
       [].forEach.call(elts, e => e.setAttribute("aria-expanded", true));
       this.cm.refresh();
     }
+    // if open-bracket, modify text to be an empty expression with a blank
+    else if (["(","[","{"].includes(event.key)) {
+      let closeBrace = {"(": ")", "[":"]", "{": "}"};
+      let path = activeNode.id.split(',');
+      path[path.length-1]++; // add an adjacent sibling
+      this.lastActiveNodeId = path.join(','); // move the focus to the new node
+      this.cm.replaceRange(event.key + closeBrace[event.key], activeNode.to);
+    }
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
     else if (keyName == CTRLKEY+"-V" && activeNode) {
@@ -878,6 +904,15 @@ export default class CodeMirrorBlocks {
     else if (event.keyCode == DOWN) {
       switchNodes(cur => this.ast.getNodeBefore(cur));
     } else {
+      // Announce undo and redo (or beep if there's nothing)
+      if (keyName == CTRLKEY+"-Z" && activeNode) { 
+        if(this.cm.historySize().undo > 0) this.say("undo");
+        else playBeep();
+      }
+      if ((ISMAC && keyName=="Cmd-Opt-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
+        if(this.cm.historySize().redo > 0) this.say("redo");
+        else playBeep();
+      }
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
         this.cm.execCommand(command);
@@ -887,7 +922,7 @@ export default class CodeMirrorBlocks {
       // if it's an ASCII character and search is installed, try building up a search string
       else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode) {
         this.searchString += keyName;
-        this.say('Searching for '+this.searchString);
+        this.say('Searching for '+this.searchString, 0);
         this.searchCursor = this.cm.getSearchCursor(this.searchString, activeNode.from, true);
         showAndActivate(this.searchCursor.findNext());
       }
