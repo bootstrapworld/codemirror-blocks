@@ -91,13 +91,21 @@ export class AST {
   }
 
   getClosestNodeFromPath(keyArray) {
+    // return the node, if the key is valid
+    if(this.nodeMap.get(keyArray.join(","))) {
+      return this.nodeMap.get(keyArray.join(","));
+    }
     // if we have no valid key, give up
     if(keyArray.length == 0) return false;
     // if we're at the root level, count backwards till we find something
     if(keyArray.length == 1 && keyArray[0] >= 0) {
       return this.nodeMap.get(keyArray[0].toString())
           || this.getClosestNodeFromPath([keyArray[0] - 1]);
-    // if we're at a child, go up to a generation until we find something
+    // if we're at a child go to the previous sibling
+    } else if(keyArray[keyArray.length-1] > 0) {
+      keyArray[keyArray.length-1]--;
+      return this.nodeMap.get(keyArray.join(','));
+    // if we're at the first child, go up a generation
     } else {
       let parentArray = keyArray.slice(0, keyArray.length-1);
       return this.nodeMap.get(keyArray.join(','))
