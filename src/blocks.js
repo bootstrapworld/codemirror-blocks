@@ -549,12 +549,12 @@ export default class CodeMirrorBlocks {
   // getPathFromEl : DOMNode -> String
   // return the path from a nodeEl, or the path to a node inserted at the WS
   getPathFromEl(el) {
-      if(!el.classList.contains('blocks-white-space')) return el.id;
-      let path = this.findNearestNodeFromEl(el.parentNode).id.split(',');
-      let prevEl = el.previousElementSibling;
-      path[path.length] = (!prevEl) ? 1 // 1 if there's no prev elt, otherwise prevIdx+1
-        : Number(this.findNodeFromEl(prevEl).id.split(',').pop()) +1;
-      return path.join(',');
+    if(!el.classList.contains('blocks-white-space')) return el.id;
+    let path = this.findNearestNodeFromEl(el.parentNode).id.split(',');
+    let prevNode = this.findNodeFromEl(el.previousElementSibling);
+    // the childIdx is the previous sibling's index+1, or 1 if it doesn't exist
+    path[path.length] = prevNode ? Number(prevNode.id.split(',').pop())+1 : 1;
+    return path.join(',');
   }
 
   // getLocationFromWhiteSpace : DOMNode -> {line, ch} | null
