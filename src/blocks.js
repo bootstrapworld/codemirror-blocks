@@ -434,7 +434,6 @@ export default class CodeMirrorBlocks {
       if(node.from === node.to) text = this.willInsertNode(text, nodeEl, node.from, node.to);
       this.parser.parse(nodeEl.innerText);            // Make sure the node contents will parse
       this.lastActiveNodeId = this.getPathFromEl(nodeEl);
-      console.log(this.lastActiveNodeId);
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
       nodeEl.title = '';                              // 2) Clear the title
       if(node.insertion){ node.insertion.clear(); }   // 3) Maybe get rid of the insertion bookmark
@@ -676,16 +675,10 @@ export default class CodeMirrorBlocks {
     if(!text.replace(/\s/g, '').length) return;
     e.preventDefault();
     
-    // if open-bracket, modify text to be an empty expression with a blank
-    //let match = {"(": ")", "[":"]", "{": "}"};
-    //if (openBrace) { text = text + "..." + match[text]; }
     let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
     
     // try automatically rendering (give the DOM 20ms to catch up)
     if(e.type !== "keypress") { 
-      // let id = this.ast.getNodeBefore(this.cm.getCursor()).id;
-      // move the focus to the new node, or its first child if it's an openBrace
-      // this.lastActiveNodeId = Number(id) + 1 + (openBrace? ",0" : "");
       setTimeout(() => node.el.blur(), 20); 
     }
   }
