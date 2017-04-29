@@ -549,15 +549,12 @@ export default class CodeMirrorBlocks {
   // getPathFromEl : DOMNode -> String
   // return the path from a nodeEl, or the path to a node inserted at the WS
   getPathFromEl(el) {
-    if(!el.classList.contains('blocks-white-space')) return el.id;
-    let prevNode = el.previousElementSibling; // is there a previous element?
-    let nextNode = el.nextElementSibling;
-    let parentNode = this.findNearestNodeFromEl(el.parentNode).el;
-    let path = this.findNodeFromEl(prevNode || nextNode || parentNode).id.split(',');
-    if(prevNode) { path[path.length-1] = Number(path[path.length-1]) + 1; }
-    else if(nextNode) { path[path.length-1] = 1; }
-    else { path[path.length] = 1; }
-    return path.join(',');
+      if(!el.classList.contains('blocks-white-space')) return el.id;
+      let path = this.findNearestNodeFromEl(el.parentNode).id.split(',');
+      let prevEl = el.previousElementSibling;
+      path[path.length] = (!prevEl) ? 1 // 1 if there's no prev elt, otherwise prevIdx+1
+        : Number(this.findNodeFromEl(prevEl).id.split(',').pop()) +1;
+      return path.join(',');
   }
 
   // getLocationFromWhiteSpace : DOMNode -> {line, ch} | null
@@ -566,16 +563,14 @@ export default class CodeMirrorBlocks {
   // Otherwise, return the character *after* the parent's .from
   getLocationFromWhitespace(el) {
     if(!el.classList.contains('blocks-white-space')) return;
-    let pathArray = this.getPathFromEl(el).split(',');
-    if(pathArray[pathArray.length-1] === 1) {
-      pathArray.pop(); // pop to the parent
-      let parent = this.ast.getNodeById(pathArray.join(','));
-      let func   = this.ast.getNodeFirstChild(parent);
-      return func? func.to : { line: parent.from.line, ch: parent.from.ch+1 };
-    } else {
-      pathArray[pathArray.length-1]--; // drop to the previous sibling
-      return this.ast.getNodeById(pathArray.join(',')).to;
-    }
+    let prevEl = el.previousElementSibling;
+    if(prevEl) { return this.findNodeFromEl(prevEl).to; }
+    let nextEl = el.nextElementSibling;
+    if(nextEl) { return this.findNodeFromEl(nextEl).from; }
+    let parent = this.findNearestNodeFromEl(findNearestNodeEl(el));
+    let func   = this.ast.getNodeFirstChild(parent);
+    if(func)   { return func.to; }
+    return { line: parent.from.line, ch: parent.from.ch+1 };
   }
 
   // findNodeFromEl : DOMNode -> ASTNode
