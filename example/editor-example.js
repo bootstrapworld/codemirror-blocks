@@ -40,7 +40,7 @@ let editor = renderEditorInto(
   options
 );
 editor.getCodeMirror().setValue(code);
-cm.doc.clearHistory();
+editor.doc.clearHistory();
 
 ReactDOM.render((
   <select onChange={function(event){
