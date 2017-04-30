@@ -114,8 +114,8 @@ export default class CodeMirrorBlocks {
     this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track lastActiveNodeId
-    this.lastActiveNodeId = false;
+    // Track path to last active node
+    this.pathToActiveNode = false;
     // Offscreen buffer for copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
@@ -175,7 +175,7 @@ export default class CodeMirrorBlocks {
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
       if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
-        let focusNode = this.lastActiveNodeId || "0"; 
+        let focusNode = this.pathToActiveNode || "0"; 
         setTimeout(() => { this.activateNode(this.ast.getNodeById(focusNode), e); }, 10);
       }
     });
@@ -313,7 +313,7 @@ export default class CodeMirrorBlocks {
     this._clearMarks();
     //this.ast.patch(this.parser.parse(this.cm.getValue()));
     //console.log('patched AST is ', this.ast.rootNodes);
-    this.renderer.renderAST(this.ast, this.lastActiveNodeId);
+    this.renderer.renderAST(this.ast, this.pathToActiveNode);
     ui.renderToolbarInto(this);
   }
 
@@ -337,7 +337,7 @@ export default class CodeMirrorBlocks {
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     this.cm.scrollIntoView(node.from);
     node.el.focus();
-    this.lastActiveNodeId = node.id;
+    this.pathToActiveNode = node.id;
     return true;
   }
 
@@ -431,13 +431,15 @@ export default class CodeMirrorBlocks {
     event.preventDefault();
     try {
       var text = nodeEl.innerText;                    // If inserting (from==to), sanitize
+      var path = node.path.split(',').map(Number);    // Extract and expand the path
+      let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
+      path[path.length-1] += roots.length;            // adjust the path based on parsed text
       if(node.from === node.to) text = this.willInsertNode(text, nodeEl, node.from, node.to);
-      this.parser.parse(nodeEl.innerText);            // Make sure the node contents will parse
-      this.lastActiveNodeId = this.getPathFromEl(nodeEl);
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
-      nodeEl.title = '';                              // 2) Clear the title
-      if(node.insertion){ node.insertion.clear(); }   // 3) Maybe get rid of the insertion bookmark
-      this.cm.replaceRange(text, node.from, node.to); // 4) Commit the changes to CM
+      this.pathToActiveNode = path.join(',');         // 2) Set the path for re-focus
+      nodeEl.title = '';                              // 3) Clear the title
+      if(node.insertion){ node.insertion.clear(); }   // 4) Maybe get rid of the insertion bookmark
+      this.cm.replaceRange(text, node.from, node.to); // 5) Commit the changes to CM
       this.say((nodeEl.originalEl? "changed " : "inserted ") + text);
     } catch(e) {                                      // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
@@ -464,7 +466,7 @@ export default class CodeMirrorBlocks {
         nodeEl.onblur = null;
         if(!node.insertion) {
           nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
-          this.activateNode(this.ast.getNodeById(this.lastActiveNodeId), e);
+          this.activateNode(this.ast.getNodeById(node.path), e);
         }
         this.say("cancelled");
         nodeEl.parentNode.removeChild(nodeEl);
@@ -544,17 +546,6 @@ export default class CodeMirrorBlocks {
         node.el.classList.remove('blocks-over-target');
       }
     }
-  }
-
-  // getPathFromEl : DOMNode -> String
-  // return the path from a nodeEl, or the path to a node inserted at the WS
-  getPathFromEl(el) {
-    if(!el.classList.contains('blocks-white-space')) return el.id;
-    let path = this.findNearestNodeFromEl(el.parentNode).id.split(',');
-    let prevNode = this.findNodeFromEl(el.previousElementSibling);
-    // the childIdx is the previous sibling's index+1, or 1 if it doesn't exist
-    path[path.length] = prevNode ? Number(prevNode.id.split(',').pop())+1 : 1;
-    return path.join(',');
   }
 
   // getLocationFromWhiteSpace : DOMNode -> {line, ch} | null
@@ -657,25 +648,21 @@ export default class CodeMirrorBlocks {
   // handleTopLevelEntry : Event -> Void
   // quarantine a keypress or paste entry at the CM level
   handleTopLevelEntry(e) {
-    if(!this.blockMode) return;                           // bail if mode==false
+    if(!this.blockMode) return; // bail if mode==false
+    this.clearSelection();      // clear the previous selection
     // Firefox workaround: skip kepress events that are actual clipboard events
     if(e.type == "keypress" && ["c","v","x"].includes(e.key) 
       && ((ISMAC && e.metaKey) || (!ISMAC && e.ctrlKey))) {
       return false;
     }
-    this.clearSelection();                                // clear the previous selection
     var text = (e.type == "keypress")? String.fromCharCode(e.which)
              : e.clipboardData.getData('text/plain');
-    // let pure whitespace pass through
-    if(!text.replace(/\s/g, '').length) return;
+    if(!text.replace(/\s/g, '').length) return; // let pure whitespace pass through
     e.preventDefault();
-    
     let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
     
     // try automatically rendering (give the DOM 20ms to catch up)
-    if(e.type !== "keypress") { 
-      setTimeout(() => node.el.blur(), 20); 
-    }
+    if(e.type !== "keypress") { setTimeout(() => node.el.blur(), 20); }
   }
 
   // insertionQuarantine : String [ASTNode | DOMNode | Cursor] Event -> Void
@@ -688,26 +675,33 @@ export default class CodeMirrorBlocks {
     literal.options['aria-label'] = text;
     this.renderer.render(literal);
     literal.el.classList.add("quarantine");
-    // if we're inserting into an existing ASTNode
+    // if we're editing an existing ASTNode
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
       literal.from = dest.from; literal.to = dest.to;
+      literal.path = dest.id; // save the path for returning focus
       literal.el.originalEl = dest.el; // save the original DOM El
       parent.insertBefore(literal.el, dest.el);
       parent.removeChild(dest.el);
-      literal.el.id = this.lastActiveNodeId = dest.id; // remember what we were editing
     // if we're inserting into a whitespace node
     } else if(dest.nodeType) {
       literal.el.classList.add("blocks-white-space");
       let parent = dest.parentNode;
       literal.to = literal.from = this.getLocationFromWhitespace(dest);
-      literal.el.originalEl = dest; // save the original DOM El
+      // calculate the path to a node inserted at the WS location, for focus
+      let path = this.findNearestNodeFromEl(dest.parentNode).id.split(',');
+      let prevNode = this.findNodeFromEl(dest.previousElementSibling);
+      path[path.length] = prevNode ? Number(prevNode.id.split(',').pop()) : 0;
+      literal.path = path.join(','); // save path for focus
+      literal.el.originalEl = dest;  // save the original DOM El
       parent.insertBefore(literal.el, dest);
       parent.removeChild(dest);
     // if we're inserting into a toplevel CM cursor
     } else if(dest.line !== undefined){
       literal.to = literal.from = dest;
+      // calculate the path, for focus
+      literal.path = String((Number(this.ast.getNodeBefore(dest).id)||0));
       let mk = this.cm.setBookmark(dest, {widget: literal.el});
       literal.insertion = mk;
     } else {
@@ -861,7 +855,7 @@ export default class CodeMirrorBlocks {
       let closeBrace = {"(": ")", "[":"]", "{": "}"};
       let path = activeNode.id.split(',');
       path[path.length-1]++; // add an adjacent sibling
-      this.lastActiveNodeId = path.join(','); // move the focus to the new node
+      this.pathToActiveNode = path.join(','); // move the focus to the new node
       this.cm.replaceRange(event.key + closeBrace[event.key], activeNode.to);
     }
     // shift focus to buffer for the *real* paste event to fire
