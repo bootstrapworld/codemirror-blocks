@@ -383,8 +383,8 @@ export default class CodeMirrorBlocks {
       }
     // Otherwise copy the contents of selection to the buffer, first-to-last
     } else {
-      var sel = [...this.selectedNodes].sort((b,a) => poscmp(a.from, b.from));
-      clipboard = sel.reduceRight((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
+      let sel = [...this.selectedNodes].sort((a, b) => poscmp(a.from, b.from));
+      clipboard = sel.reduce((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
     }
 
     this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboard);
@@ -397,13 +397,7 @@ export default class CodeMirrorBlocks {
     }
     // put focus back on activeEl, and clear the buffer
     setTimeout(() => { activeNode.el.focus(); }, 200);
-    if (event.type == 'cut') {
-      // batch-delete last-to-first, to preserve the from/to indices
-      this.cm.operation(() => {
-        sel.forEach(n => this.cm.replaceRange('', n.from, n.to));
-      });
-      this.selectedNodes.clear(); // clear any pointers to the now-destroyed nodes
-    }
+    if (event.type == 'cut') { this.deleteSelectedNodes(); } // delete all those nodes
   }
 
   // handlePaste : Event -> Void
@@ -509,10 +503,11 @@ export default class CodeMirrorBlocks {
   // deleteSelectedNodes : Void -> Void
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
-    let nodeCount = this.selectedNodes.size;
-    this.cm.operation(() => this.selectedNodes.forEach(n=>this.deleteNode(n)));
+    let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
+    this.pathToActiveNode = this.ast.getNodeBefore(sel[sel.length-1]).id;
+    this.cm.operation(() => sel.forEach(n=>this.deleteNode(n)));
     this.selectedNodes.clear();
-    this.say("deleted "+nodeCount+" item"+(nodeCount==1? "" : "s"));
+    this.say("deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
   }
 
   startDraggingNode(node, event) {
