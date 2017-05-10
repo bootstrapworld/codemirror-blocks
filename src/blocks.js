@@ -193,10 +193,15 @@ export default class CodeMirrorBlocks {
     this.events.emit(event, ...args);
   }
 
+  // mute : -> Void
+  mute() { this.muteAnnouncements = true; }
+  unmute() { this.muteAnnouncements = false; }
+
   // say : String Number -> Void
   // add text to the announcements element, and log it to the console
   // append a comma to distinguish between adjaced commands
   say(text, delay=200){
+    if(this.muteAnnouncements) return;
     let announcement = document.createTextNode(text+", ");
     console.log(text);
     setTimeout(() => this.announcements.appendChild(announcement), delay);
@@ -404,17 +409,19 @@ export default class CodeMirrorBlocks {
   // paste to a hidden buffer, then grab the text and deal with it manually
   handlePaste(e) {
     let that = this, activeNode = this.getActiveNode();
+    this.mute();
     this.buffer.focus();
     setTimeout(() => {
       let text = that.buffer.value;
       let dest = that.selectedNodes.has(activeNode)? activeNode 
             : activeNode.el.nextElementSibling ? activeNode.el.nextElementSibling
             : activeNode.to;
+            // 
       this.clearSelection();
       let node = that.insertionQuarantine(text, dest, e);
       that.buffer.value = ""; // empty the buffer
       // save the node
-      setTimeout(() => node.el.blur(), 50);
+      setTimeout(() => { this.unmute(); node.el.blur(); }, 50);
     }, 50);
   }
 
@@ -425,14 +432,16 @@ export default class CodeMirrorBlocks {
     event.preventDefault();
     try {
       var text = nodeEl.innerText;                    // If inserting (from==to), sanitize
-      var path = node.path.split(',').map(Number);    // Extract and expand the path
       let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
-      path[path.length-1] += roots.length;            // adjust the path based on parsed text
       if(node.from === node.to) text = this.willInsertNode(text, nodeEl, node.from, node.to);
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
-      this.pathToActiveNode = path.join(',');         // 2) Set the path for re-focus
-      nodeEl.title = '';                              // 3) Clear the title
-      if(node.insertion){ node.insertion.clear(); }   // 4) Maybe get rid of the insertion bookmark
+      nodeEl.title = '';                              // 2) Clear the title
+      if(node.insertion) {                            // 3) If we're inserting (instead of editing)
+        node.insertion.clear();                         // clear the CM marker
+        var path = node.path.split(',').map(Number);    // Extract and expand the path
+        path[path.length-1] += roots.length;            // adjust the path based on parsed text
+        this.pathToActiveNode = path.join(',');         // Set the path for re-focus
+      }   
       this.cm.replaceRange(text, node.from, node.to); // 5) Commit the changes to CM
       this.say((nodeEl.originalEl? "changed " : "inserted ") + text);
     } catch(e) {                                      // If the node contents will NOT lex...
@@ -452,7 +461,7 @@ export default class CodeMirrorBlocks {
     e.stopPropagation();
     e.codemirrorIgnore = true;
     let keyName = CodeMirror.keyName(e);
-    if (["Enter", "Tab", "Esc", "Shift-Esc"].includes(keyName)) {
+    if (["Enter", "Tab", "Shift-Tab", "Esc", "Shift-Esc"].includes(keyName)) {
       e.preventDefault();
       // To cancel, (maybe) reinsert the original DOM Elt and activate the original
       // then remove the blur handler and the insertion node
@@ -464,6 +473,8 @@ export default class CodeMirrorBlocks {
         }
         this.say("cancelled");
         nodeEl.parentNode.removeChild(nodeEl);
+      } else if(["Tab", "Shift-Tab"].includes(keyName) && this.hasInvalidEdit) {
+        this.say(nodeEl.title);
       } else {
         nodeEl.blur();
       }
@@ -504,7 +515,7 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
-    this.pathToActiveNode = this.ast.getNodeBefore(sel[sel.length-1]).id;
+    this.pathToActiveNode = this.ast.getNodeBefore(this.ast.getNodeAfter(sel[sel.length-1])).id;
     this.cm.operation(() => sel.forEach(n=>this.deleteNode(n)));
     this.selectedNodes.clear();
     this.say("deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
