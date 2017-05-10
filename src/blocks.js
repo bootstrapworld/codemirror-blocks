@@ -416,7 +416,7 @@ export default class CodeMirrorBlocks {
       let dest = that.selectedNodes.has(activeNode)? activeNode 
             : activeNode.el.nextElementSibling ? activeNode.el.nextElementSibling
             : activeNode.to;
-            // 
+            console.log(dest);
       this.clearSelection();
       let node = that.insertionQuarantine(text, dest, e);
       that.buffer.value = ""; // empty the buffer
@@ -515,7 +515,7 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
-    this.pathToActiveNode = this.ast.getNodeBefore(this.ast.getNodeAfter(sel[sel.length-1])).id;
+    this.pathToActiveNode = sel[sel.length-1].id; // point to the first node
     this.cm.operation(() => sel.forEach(n=>this.deleteNode(n)));
     this.selectedNodes.clear();
     this.say("deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
@@ -706,8 +706,8 @@ export default class CodeMirrorBlocks {
     // if we're inserting into a toplevel CM cursor
     } else if(dest.line !== undefined){
       literal.to = literal.from = dest;
-      // calculate the path, for focus
-      literal.path = String((Number(this.ast.getNodeBefore(dest).id)||0));
+      // calculate the path for focus (-1 if it's the first node)
+      literal.path = String(this.ast.getNodeBefore(dest).id || -1);
       let mk = this.cm.setBookmark(dest, {widget: literal.el});
       literal.insertion = mk;
     } else {
