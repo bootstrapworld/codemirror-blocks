@@ -193,7 +193,7 @@ export default class CodeMirrorBlocks {
     this.events.emit(event, ...args);
   }
 
-  // mute : -> Void
+  // muting and unmuting, to cut down on chattier compound operations
   mute() { this.muteAnnouncements = true; }
   unmute() { this.muteAnnouncements = false; }
 
@@ -413,10 +413,9 @@ export default class CodeMirrorBlocks {
     this.buffer.focus();
     setTimeout(() => {
       let text = that.buffer.value;
-      let dest = that.selectedNodes.has(activeNode)? activeNode 
-            : activeNode.el.nextElementSibling ? activeNode.el.nextElementSibling
-            : activeNode.to;
-            console.log(dest);
+      let dest = (that.selectedNodes.has(activeNode) && activeNode) // replace selected node
+           || this.getNextWhitespaceAfterNode(activeNode)       // insert into next WS
+           || activeNode.to;                                    // insert at top level
       this.clearSelection();
       let node = that.insertionQuarantine(text, dest, e);
       that.buffer.value = ""; // empty the buffer
@@ -568,6 +567,11 @@ export default class CodeMirrorBlocks {
     let func   = this.ast.getNodeFirstChild(parent);
     if(func)   { return func.to; }
     return { line: parent.from.line, ch: parent.from.ch+1 };
+  }
+
+  getNextWhitespaceAfterNode(node) {
+    let parent = this.ast.getNodeParent(node), next = node.el.nextElementSibling;
+    return parent && (next || parent.el.querySelectorAll(".blocks-white-space")[0]);
   }
 
   // findNodeFromEl : DOMNode -> ASTNode
@@ -835,9 +839,7 @@ export default class CodeMirrorBlocks {
     // Ctrl-] moves the cursor to next whitespace or cursor position,
     // taking special care of 0-argument expressions
     else if (keyName === "Ctrl-]" && activeNode) {
-      let parent = this.ast.getNodeParent(activeNode);
-      let nextWS = activeNode.el.nextElementSibling ||
-        parent && parent.el.querySelectorAll(".blocks-white-space")[0];
+      let nextWS = this.getNextWhitespaceAfterNode(activeNode);
       moveCursorAdjacent(nextWS, activeNode.to);
     }
     // Shift-Left and Shift-Right toggle global expansion
