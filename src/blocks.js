@@ -660,7 +660,7 @@ export default class CodeMirrorBlocks {
   handleTopLevelEntry(e) {
     if(!this.blockMode) return; // bail if mode==false
     this.clearSelection();      // clear the previous selection
-    // Firefox workaround: skip kepress events that are actual clipboard events
+    // Firefox workaround: skip kepress events that are actually clipboard events
     if(e.type == "keypress" && ["c","v","x"].includes(e.key) 
       && ((ISMAC && e.metaKey) || (!ISMAC && e.ctrlKey))) {
       return false;
@@ -805,7 +805,7 @@ export default class CodeMirrorBlocks {
         maybeChangeNodeExpanded(activeNode);
       }
     }
-    // Ctrl/Cmd-Enter should toggle editing on non-editable nodes
+    // Ctrl/Cmd-Enter should force-allow editing on ANY node
     else if (keyName == CTRLKEY+"-Enter" && activeNode) {
       this.insertionQuarantine(false, activeNode, event);
     }
