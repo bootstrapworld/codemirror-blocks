@@ -413,9 +413,9 @@ export default class CodeMirrorBlocks {
     this.buffer.focus();
     setTimeout(() => {
       let text = that.buffer.value;
-      let dest = (that.selectedNodes.has(activeNode) && activeNode) // replace selected node
-           || this.getNextWhitespaceAfterNode(activeNode)       // insert into next WS
-           || activeNode.to;                                    // insert at top level
+      let dest = (that.selectedNodes.has(activeNode) && activeNode) // we're replacing a selected node
+           || this.getNextWhitespaceAfterNode(activeNode)           // ...or inserting into next WS
+           || activeNode.to;                                        // ...or inserting at top level
       this.clearSelection();
       let node = that.insertionQuarantine(text, dest, e);
       that.buffer.value = ""; // empty the buffer
