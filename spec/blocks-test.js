@@ -687,12 +687,13 @@ describe('The CodeMirrorBlocks Class', function() {
         it('should save whiteSpace on blur', function(done) {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           setTimeout(() => {
+            let quarantine = document.querySelectorAll('.quarantine')[0];
             let selection = window.getSelection();
             expect(selection.rangeCount).toEqual(1);
             let range = selection.getRangeAt(0);
             range.deleteContents();
             range.insertNode(document.createTextNode('4253'));
-            document.activeElement.dispatchEvent(blur());
+            quarantine.dispatchEvent(blur());
             expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
             expect(this.blocks.hasInvalidEdit).toBe(false);
             done();
@@ -712,20 +713,22 @@ describe('The CodeMirrorBlocks Class', function() {
           beforeEach(function(done) {
             this.whiteSpaceEl.dispatchEvent(dblclick());
             setTimeout(() => {
+              let quarantine = document.querySelectorAll('.quarantine')[0];
               let selection = window.getSelection();
               expect(selection.rangeCount).toEqual(1);
               let range = selection.getRangeAt(0);
               range.deleteContents();
               range.insertNode(document.createTextNode('"moo'));
-              document.activeElement.dispatchEvent(blur());
+              quarantine.dispatchEvent(blur());
               done();
             }, DELAY);
           });
 
           it('should not save anything & set all error state', function() {
+            let quarantine = document.querySelectorAll('.quarantine')[0];
             expect(this.cm.replaceRange).not.toHaveBeenCalled();
-            expect(document.activeElement.classList).toContain('blocks-error');
-            expect(document.activeElement.title).toBe('Error: parse error');
+            expect(quarantine.classList).toContain('blocks-error');
+            expect(quarantine.title).toBe('Error: parse error');
             expect(this.blocks.hasInvalidEdit).toBe(true);
           });
         });
