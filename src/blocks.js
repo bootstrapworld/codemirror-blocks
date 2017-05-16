@@ -114,8 +114,8 @@ export default class CodeMirrorBlocks {
     this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track path to last active node
-    this.pathToActiveNode = false;
+    // Track path to last active node, and a history
+    this.focusHistory = {done: ["0"], undone: []};
     // Offscreen buffer for copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
@@ -163,7 +163,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('mouseup',   (cm, e) => this.toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
-    this.cm.on('change',    (cm, e) => this.handleChange(e));
+    this.cm.on('change',    (cm, e) => this.handleChange(cm, e));
     // mousedown events should impact dragging, focus-if-error, and click events
     this.cm.on('mousedown', (cm, e) => {
       this.toggleDraggable(e); 
@@ -175,7 +175,7 @@ export default class CodeMirrorBlocks {
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
       if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
-        let focusNode = this.pathToActiveNode || "0"; 
+        let focusNode = this.focusHistory.done[0]; // grab the currently-focused node 
         setTimeout(() => { this.activateNode(this.ast.getNodeById(focusNode), e); }, 10);
       }
     });
@@ -193,13 +193,21 @@ export default class CodeMirrorBlocks {
     this.events.emit(event, ...args);
   }
 
+  // called anytime we update the underlying CM value
+  // destorys the redo history and updates the undo history
+  commitChange(changes) {
+    this.focusHistory.done.unshift(this.focusHistory.done[0]);
+    this.focusHistory.undone = [];
+    this.cm.operation(changes);
+  }
+
   // muting and unmuting, to cut down on chattier compound operations
   mute() { this.muteAnnouncements = true; }
   unmute() { this.muteAnnouncements = false; }
 
   // say : String Number -> Void
   // add text to the announcements element, and log it to the console
-  // append a comma to distinguish between adjaced commands
+  // append a comma to distinguish between adjacent commands
   say(text, delay=200){
     if(this.muteAnnouncements) return;
     let announcement = document.createTextNode(text+", ");
@@ -318,7 +326,7 @@ export default class CodeMirrorBlocks {
     this._clearMarks();
     //this.ast.patch(this.parser.parse(this.cm.getValue()));
     //console.log('patched AST is ', this.ast.rootNodes);
-    this.renderer.renderAST(this.ast, this.pathToActiveNode);
+    this.renderer.renderAST(this.ast, this.focusHistory.done[0]);
     ui.renderToolbarInto(this);
   }
 
@@ -342,7 +350,8 @@ export default class CodeMirrorBlocks {
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     this.cm.scrollIntoView(node.from);
     node.el.focus();
-    this.pathToActiveNode = node.id;
+    this.focusHistory.done[0] = node.id;
+    console.log(this.focusHistory);
     return true;
   }
 
@@ -439,10 +448,13 @@ export default class CodeMirrorBlocks {
         node.insertion.clear();                         // clear the CM marker
         var path = node.path.split(',').map(Number);    // Extract and expand the path
         path[path.length-1] += roots.length;            // adjust the path based on parsed text
-        this.pathToActiveNode = path.join(',');         // Set the path for re-focus
-      }   
-      this.cm.replaceRange(text, node.from, node.to); // 5) Commit the changes to CM
-      this.say((nodeEl.originalEl? "changed " : "inserted ") + text);
+        
+      }
+      this.commitChange(() => {
+        this.cm.replaceRange(text, node.from, node.to);
+        if(path) this.focusHistory.done[0] = path.join(',');     // Set the path for re-focus
+      }); 
+      this.say((node.insertion? "inserted " : "changed ") + text);
     } catch(e) {                                      // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
@@ -466,7 +478,7 @@ export default class CodeMirrorBlocks {
       // then remove the blur handler and the insertion node
       if(["Esc", "Shift-Esc"].includes(keyName)) {
         nodeEl.onblur = null;
-        if(!node.insertion) {
+        if(nodeEl.originalEl) {
           nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
           this.activateNode(this.ast.getNodeById(node.path), e);
         }
@@ -492,9 +504,9 @@ export default class CodeMirrorBlocks {
     node.el.onblur    = (e => this.saveEdit(node, node.el, e));
     node.el.onkeydown = (e => this.handleEditKeyDown(node, node.el, e));
     let range = document.createRange();
-    range.setStart(node.el, node.insertion? 1 : 0);
     let end = Math.min(node.toString().length, node.el.innerText.length);
-    range.setEnd(node.el, node.insertion? 1 : end);
+    range.setStart(node.el, node.insertion? end : 0);
+    range.setEnd(node.el, end);
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
     node.el.focus();
@@ -503,7 +515,7 @@ export default class CodeMirrorBlocks {
   // deleteNode : ASTNode -> Void
   // remove node contents from CM
   deleteNode(node) {
-    if (node) { this.cm.replaceRange('', node.from, node.to); }
+    if (node) { this.commitChange(()=>this.cm.replaceRange('', node.from, node.to)); }
   }
 
   deleteNodeWithId(nodeId) {
@@ -514,8 +526,8 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
-    this.pathToActiveNode = sel[sel.length-1].id; // point to the first node
-    this.cm.operation(() => sel.forEach(n=>this.deleteNode(n)));
+    this.focusHistory.done[0] = sel[sel.length-1].id; // point to the first node
+    this.commitChange(() => sel.forEach(n => this.deleteNode(n)));
     this.selectedNodes.clear();
     this.say("deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
   }
@@ -629,7 +641,7 @@ export default class CodeMirrorBlocks {
     }
     // if we're inserting/replacing from outsider the editor, just do it and return
     if (!sourceNode) {
-      this.cm.replaceRange(sourceNodeText, destFrom, destTo);
+      this.commitChange(()=>this.cm.replaceRange(sourceNodeText, destFrom, destTo));
       return;
     }
 
@@ -641,8 +653,8 @@ export default class CodeMirrorBlocks {
     }
 
     // Call willInsertNode and didInsertNode on either side of the replacement operation
-    // if we're not replacing a literal. Use cm.operation to batch these two
-    this.cm.operation(() => {
+    // if we're not replacing a literal.
+    this.commitChange(() => {
       sourceNodeText = maybeApplyClientFn(this.willInsertNode);
       if (poscmp(sourceNode.from, destFrom) < 0) {
         this.cm.replaceRange(sourceNodeText, destFrom, destTo);
@@ -707,6 +719,7 @@ export default class CodeMirrorBlocks {
       literal.el.originalEl = dest;  // save the original DOM El
       parent.insertBefore(literal.el, dest);
       parent.removeChild(dest);
+      literal.insertion = {clear: () => {}}; // make a dummy marker
     // if we're inserting into a toplevel CM cursor
     } else if(dest.line !== undefined){
       literal.to = literal.from = dest;
@@ -860,11 +873,11 @@ export default class CodeMirrorBlocks {
     }
     // if open-bracket, modify text to be an empty expression with a blank
     else if (["(","[","{"].includes(event.key)) {
-      let closeBrace = {"(": ")", "[":"]", "{": "}"};
+      let close = {"(": ")", "[":"]", "{": "}"};
       let path = activeNode.id.split(',');
       path[path.length-1]++; // add an adjacent sibling
-      this.pathToActiveNode = path.join(','); // move the focus to the new node
-      this.cm.replaceRange(event.key + closeBrace[event.key], activeNode.to);
+      this.focusHistory.done[0] = path.join(','); // move the focus to the new node
+      this.commitChange(() => this.cm.replaceRange(event.key+close[event.key], activeNode.to));
     }
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
@@ -896,11 +909,17 @@ export default class CodeMirrorBlocks {
     } else {
       // Announce undo and redo (or beep if there's nothing)
       if (keyName == CTRLKEY+"-Z" && activeNode) { 
-        if(this.cm.historySize().undo > 0) this.say("undo");
+        if(this.cm.historySize().undo > 0) { 
+          this.say("undo");
+          this.focusHistory.undone.unshift(this.focusHistory.done.shift());
+        }
         else playBeep();
       }
-      if ((ISMAC && keyName=="Cmd-Opt-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
-        if(this.cm.historySize().redo > 0) this.say("redo");
+      if ((ISMAC && keyName=="Shift-Cmd-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
+        if(this.cm.historySize().redo > 0) {
+          this.say("redo");
+          this.focusHistory.done.unshift(this.focusHistory.undone.shift());
+        }
         else playBeep();
       }
       let command = this.keyMap[keyName];

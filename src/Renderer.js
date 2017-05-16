@@ -143,7 +143,7 @@ export default class Renderer {
     if(!restoreFocusToBlock) return;
     setTimeout(() => {
       let node = ast.getClosestNodeFromPath(restoreFocusToBlock.split(','));
-      if(node) { node.el.click(); }
+      if(node && node.el) { node.el.click(); }
       else { this.cm.focus(); }
     }, 150);
   }
