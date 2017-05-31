@@ -114,8 +114,9 @@ export default class CodeMirrorBlocks {
     this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track history with path/announcement pairs
-    this.focusHistory = {done: [{path: "0"}], undone: []};
+    // Track focus and history with path/announcement pairs
+    this.focusHistory = {done: [], undone: []};
+    this.focusPath = "0";
     // Offscreen buffer for copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
@@ -175,7 +176,7 @@ export default class CodeMirrorBlocks {
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
       if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
-        let focusNode = this.focusHistory.done[0].path; // grab the currently-focused node 
+        let focusNode = this.focusPath; // grab the currently-focused node 
         setTimeout(() => { this.activateNode(this.ast.getNodeById(focusNode), e); }, 10);
       }
     });
@@ -196,8 +197,7 @@ export default class CodeMirrorBlocks {
   // called anytime we update the underlying CM value
   // destorys the redo history and updates the undo history
   commitChange(changes, announcement=false) {
-    this.focusHistory.done.unshift({path: this.focusHistory.done[0].path, 
-                                    announcement: announcement});
+    this.focusHistory.done.unshift({path: this.focusPath, announcement: announcement});
     this.focusHistory.undone = [];
     this.cm.operation(changes);
     if (announcement) this.say(announcement);
@@ -328,7 +328,7 @@ export default class CodeMirrorBlocks {
     this._clearMarks();
     //this.ast.patch(this.parser.parse(this.cm.getValue()));
     //console.log('patched AST is ', this.ast.rootNodes);
-    this.renderer.renderAST(this.ast, this.focusHistory.done[0].path);
+    this.renderer.renderAST(this.ast, this.focusPath);
     ui.renderToolbarInto(this);
   }
 
@@ -352,7 +352,7 @@ export default class CodeMirrorBlocks {
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     this.cm.scrollIntoView(node.from);
     node.el.focus();
-    this.focusHistory.done[0].path = node.id;
+    this.focusPath = node.id;
     return true;
   }
 
@@ -423,9 +423,11 @@ export default class CodeMirrorBlocks {
     this.buffer.focus();
     setTimeout(() => {
       let text = that.buffer.value;
-      let dest = (that.selectedNodes.has(activeNode) && activeNode) // we're replacing a selected node
-           || this.getNextWhitespaceAfterNode(activeNode)           // ...or inserting into next WS
-           || activeNode.to;                                        // ...or inserting at top level
+      let dest = (that.selectedNodes.has(activeNode) && activeNode)   // we're replacing a selected node
+           || (!e.shiftKey && this.getWhitespaceAfterNode(activeNode))// ...or inserting into next WS
+           || (e.shiftKey && this.getWhitespaceBeforeNode(activeNode))// ...or inserting into prev WS
+           || (!e.shiftKey && activeNode.to)                          // ...or inserting after at the top level
+           || (e.shiftKey && activeNode.from);                        // ...or inserting before at the top level
       this.clearSelection();
       let node = that.insertionQuarantine(text, dest, e);
       that.buffer.value = ""; // empty the buffer
@@ -450,11 +452,11 @@ export default class CodeMirrorBlocks {
         var path = node.path.split(',').map(Number);    // Extract and expand the path
         path[path.length-1] += roots.length;            // adjust the path based on parsed text
       }
-      this.commitChange(() => {
-          this.cm.replaceRange(text, node.from, node.to);
-          if(path) this.focusHistory.done[0].path = path.join(','); // Set the path for re-focus
-        }, 
-        (node.insertion? "inserted " : "changed ") + text);
+      this.commitChange(() => { // make the change, and set the path for re-focus
+        this.cm.replaceRange(text, node.from, node.to);
+        if(path) this.focusHistory.done[0].path = this.focusPath = path.join(',');
+      }, 
+      (node.insertion? "inserted " : "changed ") + text);
     } catch(e) {                                      // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
@@ -526,7 +528,7 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
-    this.focusHistory.done[0].path = sel[sel.length-1].id; // point to the first node
+    this.focusPath = sel[sel.length-1].id; // point to the first node
     this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
     this.selectedNodes.clear();
@@ -581,9 +583,13 @@ export default class CodeMirrorBlocks {
     return { line: parent.from.line, ch: parent.from.ch+1 };
   }
 
-  getNextWhitespaceAfterNode(node) {
+  getWhitespaceAfterNode(node) {
     let parent = this.ast.getNodeParent(node), next = node.el.nextElementSibling;
     return parent && (next || parent.el.querySelectorAll(".blocks-white-space")[0]);
+  }
+  getWhitespaceBeforeNode(node) {
+    let parent = this.ast.getNodeParent(node), prev = node.el.previousElementSibling;
+    return parent && prev;
   }
 
   // findNodeFromEl : DOMNode -> ASTNode
@@ -683,10 +689,7 @@ export default class CodeMirrorBlocks {
              : e.clipboardData.getData('text/plain');
     if(!text.replace(/\s/g, '').length) return; // let pure whitespace pass through
     e.preventDefault();
-    let node = this.insertionQuarantine(text, this.cm.getCursor(), e);
-    
-    // try automatically rendering (give the DOM 20ms to catch up)
-    if(e.type !== "keypress") { setTimeout(() => node.el.blur(), 20); }
+    this.insertionQuarantine(text, this.cm.getCursor(), e);
   }
 
   // insertionQuarantine : String [ASTNode | DOMNode | Cursor] Event -> Void
@@ -854,7 +857,7 @@ export default class CodeMirrorBlocks {
     // Ctrl-] moves the cursor to next whitespace or cursor position,
     // taking special care of 0-argument expressions
     else if (keyName === "Ctrl-]" && activeNode) {
-      let nextWS = this.getNextWhitespaceAfterNode(activeNode);
+      let nextWS = this.getWhitespaceAfterNode(activeNode);
       moveCursorAdjacent(nextWS, activeNode.to);
     }
     // Shift-Left and Shift-Right toggle global expansion
@@ -884,7 +887,7 @@ export default class CodeMirrorBlocks {
     }
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
-    else if (keyName == CTRLKEY+"-V" && activeNode) {
+    else if ([CTRLKEY+"-V", "Shift-"+CTRLKEY+"-V"].includes(keyName) && activeNode) {
       return this.handlePaste(event);
     }
     // Collapse block if possible, otherwise focus on parent
@@ -915,6 +918,7 @@ export default class CodeMirrorBlocks {
         if(this.cm.historySize().undo > 0) { 
           this.say("undo " + this.focusHistory.done[0].announcement);
           this.focusHistory.undone.unshift(this.focusHistory.done.shift());
+          this.focusPath = this.focusHistory.undone[0].path;
         }
         else playBeep();
       }
@@ -922,6 +926,7 @@ export default class CodeMirrorBlocks {
         if(this.cm.historySize().redo > 0) {
           this.say("redo " + this.focusHistory.undone[0].announcement);
           this.focusHistory.done.unshift(this.focusHistory.undone.shift());
+          this.focusPath = this.focusHistory.done[0].path;
         }
         else playBeep();
       }
