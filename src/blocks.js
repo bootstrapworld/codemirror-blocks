@@ -31,7 +31,7 @@ function playBeep() {
 const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i)?true:false;
 const MODKEY  = ISMAC? "Alt" : "Ctrl";
 const CTRLKEY = ISMAC? "Cmd" : "Ctrl";
-const DELETEKEY = ISMAC? "Backspace" : "Delete";
+const DELETEKEY=ISMAC? "Backspace" : "Delete";
 const LEFT    = 37;
 const RIGHT   = 39;
 const UP      = 40;
@@ -114,8 +114,8 @@ export default class CodeMirrorBlocks {
     this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track path to last active node, and a history
-    this.focusHistory = {done: ["0"], undone: []};
+    // Track history with path/announcement pairs
+    this.focusHistory = {done: [{path: "0"}], undone: []};
     // Offscreen buffer for copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
@@ -175,7 +175,7 @@ export default class CodeMirrorBlocks {
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
       if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
-        let focusNode = this.focusHistory.done[0]; // grab the currently-focused node 
+        let focusNode = this.focusHistory.done[0].path; // grab the currently-focused node 
         setTimeout(() => { this.activateNode(this.ast.getNodeById(focusNode), e); }, 10);
       }
     });
@@ -195,10 +195,12 @@ export default class CodeMirrorBlocks {
 
   // called anytime we update the underlying CM value
   // destorys the redo history and updates the undo history
-  commitChange(changes) {
-    this.focusHistory.done.unshift(this.focusHistory.done[0]);
+  commitChange(changes, announcement=false) {
+    this.focusHistory.done.unshift({path: this.focusHistory.done[0].path, 
+                                    announcement: announcement});
     this.focusHistory.undone = [];
     this.cm.operation(changes);
+    if (announcement) this.say(announcement);
   }
 
   // muting and unmuting, to cut down on chattier compound operations
@@ -326,7 +328,7 @@ export default class CodeMirrorBlocks {
     this._clearMarks();
     //this.ast.patch(this.parser.parse(this.cm.getValue()));
     //console.log('patched AST is ', this.ast.rootNodes);
-    this.renderer.renderAST(this.ast, this.focusHistory.done[0]);
+    this.renderer.renderAST(this.ast, this.focusHistory.done[0].path);
     ui.renderToolbarInto(this);
   }
 
@@ -350,8 +352,7 @@ export default class CodeMirrorBlocks {
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     this.cm.scrollIntoView(node.from);
     node.el.focus();
-    this.focusHistory.done[0] = node.id;
-    console.log(this.focusHistory);
+    this.focusHistory.done[0].path = node.id;
     return true;
   }
 
@@ -448,13 +449,12 @@ export default class CodeMirrorBlocks {
         node.insertion.clear();                         // clear the CM marker
         var path = node.path.split(',').map(Number);    // Extract and expand the path
         path[path.length-1] += roots.length;            // adjust the path based on parsed text
-        
       }
       this.commitChange(() => {
-        this.cm.replaceRange(text, node.from, node.to);
-        if(path) this.focusHistory.done[0] = path.join(',');     // Set the path for re-focus
-      }); 
-      this.say((node.insertion? "inserted " : "changed ") + text);
+          this.cm.replaceRange(text, node.from, node.to);
+          if(path) this.focusHistory.done[0].path = path.join(','); // Set the path for re-focus
+        }, 
+        (node.insertion? "inserted " : "changed ") + text);
     } catch(e) {                                      // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
@@ -526,10 +526,10 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
-    this.focusHistory.done[0] = sel[sel.length-1].id; // point to the first node
-    this.commitChange(() => sel.forEach(n => this.deleteNode(n)));
+    this.focusHistory.done[0].path = sel[sel.length-1].id; // point to the first node
+    this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
+      "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
     this.selectedNodes.clear();
-    this.say("deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
   }
 
   startDraggingNode(node, event) {
@@ -641,7 +641,8 @@ export default class CodeMirrorBlocks {
     }
     // if we're inserting/replacing from outsider the editor, just do it and return
     if (!sourceNode) {
-      this.commitChange(()=>this.cm.replaceRange(sourceNodeText, destFrom, destTo));
+      this.commitChange( () => this.cm.replaceRange(sourceNodeText, destFrom, destTo),
+        "inserted "+sourceNodeText);
       return;
     }
 
@@ -664,7 +665,8 @@ export default class CodeMirrorBlocks {
         this.cm.replaceRange(sourceNodeText, destFrom, destTo);
       }
       maybeApplyClientFn(this.didInsertNode);
-    });
+    },
+    "dragged sourceNodeText");
   }
 
   // handleTopLevelEntry : Event -> Void
@@ -872,12 +874,13 @@ export default class CodeMirrorBlocks {
       this.cm.refresh();
     }
     // if open-bracket, modify text to be an empty expression with a blank
-    else if (["(","[","{"].includes(event.key)) {
+    else if (!this.searchString && ["(","[","{"].includes(event.key)) {
       let close = {"(": ")", "[":"]", "{": "}"};
       let path = activeNode.id.split(',');
       path[path.length-1]++; // add an adjacent sibling
-      this.focusHistory.done[0] = path.join(','); // move the focus to the new node
-      this.commitChange(() => this.cm.replaceRange(event.key+close[event.key], activeNode.to));
+      this.focusHistory.done[0].path = path.join(','); // move the focus to the new node
+      this.commitChange(() => this.cm.replaceRange(event.key+close[event.key], activeNode.to),
+        "inserted empty expression");
     }
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
@@ -910,14 +913,14 @@ export default class CodeMirrorBlocks {
       // Announce undo and redo (or beep if there's nothing)
       if (keyName == CTRLKEY+"-Z" && activeNode) { 
         if(this.cm.historySize().undo > 0) { 
-          this.say("undo");
+          this.say("undo " + this.focusHistory.done[0].announcement);
           this.focusHistory.undone.unshift(this.focusHistory.done.shift());
         }
         else playBeep();
       }
       if ((ISMAC && keyName=="Shift-Cmd-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
         if(this.cm.historySize().redo > 0) {
-          this.say("redo");
+          this.say("redo " + this.focusHistory.undone[0].announcement);
           this.focusHistory.done.unshift(this.focusHistory.undone.shift());
         }
         else playBeep();
@@ -929,8 +932,8 @@ export default class CodeMirrorBlocks {
         command(this.cm);
       } 
       // if it's an ASCII character and search is installed, try building up a search string
-      else if(this.cm.getSearchCursor && /^[\x00-\xFF]$/.test(keyName) && activeNode) {
-        this.searchString += keyName;
+      else if(this.cm.getSearchCursor && activeNode && /^[ -~]$/.test(event.key)) {
+        this.searchString += event.key;
         this.say('Searching for '+this.searchString, 0);
         this.searchCursor = this.cm.getSearchCursor(this.searchString, activeNode.from, true);
         showAndActivate(this.searchCursor.findNext());
