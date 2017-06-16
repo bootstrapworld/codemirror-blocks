@@ -176,8 +176,7 @@ export default class CodeMirrorBlocks {
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
       if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
-        let focusNode = this.focusPath; // grab the currently-focused node 
-        setTimeout(() => { this.activateNode(this.ast.getNodeById(focusNode), e); }, 10);
+        setTimeout(() => { this.activateNode(this.ast.getNodeById(this.focusPath), e); }, 10);
       }
     });
   }
@@ -747,6 +746,7 @@ export default class CodeMirrorBlocks {
     let that = this;
     let keyName = CodeMirror.keyName(event);
     var activeNode = this.getActiveNode();
+    console.log(keyName);
 
     function moveCursorAdjacent(node, cursor) {
       if(node) { that.insertionQuarantine("", node, event); } 
@@ -920,7 +920,7 @@ export default class CodeMirrorBlocks {
           this.focusHistory.undone.unshift(this.focusHistory.done.shift());
           this.focusPath = this.focusHistory.undone[0].path;
         }
-        else playBeep();
+        else { playBeep() };
       }
       if ((ISMAC && keyName=="Shift-Cmd-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
         if(this.cm.historySize().redo > 0) {
@@ -928,7 +928,7 @@ export default class CodeMirrorBlocks {
           this.focusHistory.done.unshift(this.focusHistory.undone.shift());
           this.focusPath = this.focusHistory.done[0].path;
         }
-        else playBeep();
+        else { playBeep(); }
       }
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
@@ -937,7 +937,8 @@ export default class CodeMirrorBlocks {
         command(this.cm);
       } 
       // if it's an ASCII character and search is installed, try building up a search string
-      else if(this.cm.getSearchCursor && activeNode && /^[ -~]$/.test(event.key)) {
+      else if(this.cm.getSearchCursor && activeNode && /^[ -~]$/.test(event.key)
+        && ((ISMAC && !event.metaKey) || (!ISMAC && !event.ctrlKey))) {
         this.searchString += event.key;
         this.say('Searching for '+this.searchString, 0);
         this.searchCursor = this.cm.getSearchCursor(this.searchString, activeNode.from, true);
