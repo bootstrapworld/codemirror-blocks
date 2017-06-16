@@ -22,7 +22,11 @@ export default class Expression extends Component {
     });
     return (
       <Node type="expression" node={node} lockedTypes={lockedTypes} helpers={helpers}>
-        <span className="blocks-operator">{helpers.renderNodeForReact(node.func)}</span>
+        <span className="blocks-operator">
+          <DropTarget location={node.func.from} />
+          {helpers.renderNodeForReact(node.func)}
+          <DropTarget location={node.func.to} />
+        </span>
         <span className="blocks-args">
           <DropTarget location={node.args.length ? node.args[0].from : node.func.to} />
           {argNodes}

@@ -753,14 +753,14 @@ describe('The CodeMirrorBlocks Class', function() {
       });
 
       it('should set the right css class on dragenter', function() {
-        this.dropTargetEls[2].dispatchEvent(dragenter());
-        expect(this.dropTargetEls[2].classList).toContain('blocks-over-target');
+        this.dropTargetEls[3].dispatchEvent(dragenter());
+        expect(this.dropTargetEls[3].classList).toContain('blocks-over-target');
       });
 
       it('should set the right css class on dragleave', function() {
-        this.dropTargetEls[2].dispatchEvent(dragenter());
-        this.dropTargetEls[2].dispatchEvent(dragleave());
-        expect(this.dropTargetEls[2].classList).not.toContain('blocks-over-target');
+        this.dropTargetEls[3].dispatchEvent(dragenter());
+        this.dropTargetEls[3].dispatchEvent(dragleave());
+        expect(this.dropTargetEls[3].classList).not.toContain('blocks-over-target');
       });
 
       it('should do nothing when dragging over a non-drop target', function() {
@@ -777,18 +777,18 @@ describe('The CodeMirrorBlocks Class', function() {
       });
         
       it('should update the text on drop to a later point in the file', function() {
-        expect(this.dropTargetEls[2].classList).toContain('blocks-drop-target');
+        expect(this.dropTargetEls[4].classList).toContain('blocks-drop-target');
         // drag the first arg to the drop target
         let dragEvent = dragstart();
         this.firstArg.el.dispatchEvent(dragEvent);
-        this.dropTargetEls[2].dispatchEvent(drop(dragEvent.dataTransfer));
+        this.dropTargetEls[4].dispatchEvent(drop(dragEvent.dataTransfer));
         expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('(+ 2 1 3)');
       });
 
       it('should update the text on drop to an earlier point in the file', function() {
         let dragEvent = dragstart();
         this.secondArg.el.dispatchEvent(dragEvent);
-        this.dropTargetEls[0].dispatchEvent(drop(dragEvent.dataTransfer));
+        this.dropTargetEls[1].dispatchEvent(drop(dragEvent.dataTransfer));
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 2 1 3)');
       });
 
@@ -798,7 +798,7 @@ describe('The CodeMirrorBlocks Class', function() {
           spyOn(this.blocks, 'willInsertNode').and.callThrough();
           spyOn(this.blocks, 'didInsertNode').and.callThrough();
           this.secondArg.el.dispatchEvent(dragEvent);
-          this.dropTargetEls[0].dispatchEvent(drop(dragEvent.dataTransfer));
+          this.dropTargetEls[1].dispatchEvent(drop(dragEvent.dataTransfer));
           expect(this.blocks.willInsertNode).toHaveBeenCalled();
           expect(this.blocks.didInsertNode).toHaveBeenCalled();
         }
@@ -841,7 +841,7 @@ describe('The CodeMirrorBlocks Class', function() {
         nodeEl.parentElement.dispatchEvent(dropEvent);
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
-      
+    
     });
     
   });

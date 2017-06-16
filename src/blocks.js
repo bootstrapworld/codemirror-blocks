@@ -117,11 +117,10 @@ export default class CodeMirrorBlocks {
     // Track focus and history with path/announcement pairs
     this.focusHistory = {done: [], undone: []};
     this.focusPath = "0";
-    // Offscreen buffer for copy/cut/paste operations
+    // Offscreen buffer for handling native copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
     this.buffer.style.height = "1px";
-    this.buffer.onchange = () => { this.buffer.value = ""; };
     document.body.appendChild(this.buffer);
 
     if (this.language && this.language.getRenderOptions) {
@@ -344,6 +343,7 @@ export default class CodeMirrorBlocks {
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
+//    setTimeout(() => this.say("Use enter to edit"), 1250);
     // if there's a selection and the altKey isn't pressed, clear selection
     if((this.selectedNodes.size > 0) && !(ISMAC? event.altKey : event.ctrlKey)) { 
       this.clearSelection(); 
@@ -383,7 +383,8 @@ export default class CodeMirrorBlocks {
   // copy the buffer to the clipboard. Remove the original text onCut
   handleCopyCut(event) {
     event.stopPropagation();
-    var clipboard, activeNode = this.getActiveNode();
+    let activeNode = this.getActiveNode();
+    var clipboard;
     if(!activeNode) return;
 
     // If nothing is selected, say "nothing selected" for cut
@@ -567,19 +568,14 @@ export default class CodeMirrorBlocks {
   }
 
   // getLocationFromWhiteSpace : DOMNode -> {line, ch} | null
-  // If the input isn't a whitespace element, bail
-  // If there's a previous sibling or func, return it's .to
-  // Otherwise, return the character *after* the parent's .from
+  // invariant: all whitespace nodes have a previousSibling, nextSibling, or both
   getLocationFromWhitespace(el) {
-    if(!el.classList.contains('blocks-white-space')) return;
-    let prevEl = el.previousElementSibling;
-    if(prevEl) { return this.findNodeFromEl(prevEl).to; }
-    let nextEl = el.nextElementSibling;
-    if(nextEl) { return this.findNodeFromEl(nextEl).from; }
-    let parent = this.findNearestNodeFromEl(findNearestNodeEl(el));
-    let func   = this.ast.getNodeFirstChild(parent);
-    if(func)   { return func.to; }
-    return { line: parent.from.line, ch: parent.from.ch+1 };
+    // If the input isn't a whitespace element, bail
+    if(!el.classList.contains('blocks-white-space')) return; 
+    let prev = el.previousElementSibling, next = el.nextElementSibling;
+    if(prev) { return this.findNodeFromEl(prev).to;   }  // If there's a previous sibling, return it's .to
+    if(next) { return this.findNodeFromEl(next).from; }  // If there's a next sibling, return it's .from
+    throw "A WS element had neither a previous nor next sibling";
   }
 
   getWhitespaceAfterNode(node) {
@@ -628,9 +624,9 @@ export default class CodeMirrorBlocks {
     }
 
     // look up the destination information: ID, Node, destFrom and destTo
-    let destinationNode = this.findNodeFromEl(event.target);        // when dropping onto an existing node, get that Node
-    let destFrom        = (destinationNode && destinationNode.from) // if we have an existing node, use its start location
-                        || this.getLocationFromWhitespace(event.target)          // if we have a drop target, grab that location
+    let destinationNode = this.findNodeFromEl(event.target);            // when dropping onto an existing node, get that Node
+    let destFrom        = (destinationNode && destinationNode.from)     // if we have an existing node, use its start location
+                        || this.getLocationFromWhitespace(event.target) // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
     let destTo        = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
     // if we're coming from outside
@@ -746,7 +742,6 @@ export default class CodeMirrorBlocks {
     let that = this;
     let keyName = CodeMirror.keyName(event);
     var activeNode = this.getActiveNode();
-    console.log(keyName);
 
     function moveCursorAdjacent(node, cursor) {
       if(node) { that.insertionQuarantine("", node, event); } 
@@ -920,7 +915,7 @@ export default class CodeMirrorBlocks {
           this.focusHistory.undone.unshift(this.focusHistory.done.shift());
           this.focusPath = this.focusHistory.undone[0].path;
         }
-        else { playBeep() };
+        else { playBeep(); }
       }
       if ((ISMAC && keyName=="Shift-Cmd-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
         if(this.cm.historySize().redo > 0) {
