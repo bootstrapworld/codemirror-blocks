@@ -345,7 +345,8 @@ export default class CodeMirrorBlocks {
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
-//    setTimeout(() => this.say("Use enter to edit"), 1250);
+    if(this.isNodeEditable(node)) setTimeout(() => this.say("Use enter to edit"), 1250);
+    
     // if there's a selection and the altKey isn't pressed, clear selection
     if((this.selectedNodes.size > 0) && !(ISMAC? event.altKey : event.ctrlKey)) { 
       this.clearSelection(); 
@@ -499,7 +500,7 @@ export default class CodeMirrorBlocks {
   // Set the appropriate attributes and event handlers
   editLiteral(node, event) {
     event.stopPropagation();
-    this.say("editing "+node.el.getAttribute("aria-label"));
+    this.say("editing "+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel.");
     node.el.contentEditable = true;
     node.el.spellcheck = false;
     node.el.classList.add('blocks-editing');
