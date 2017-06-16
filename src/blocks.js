@@ -117,6 +117,8 @@ export default class CodeMirrorBlocks {
     // Track focus and history with path/announcement pairs
     this.focusHistory = {done: [], undone: []};
     this.focusPath = "0";
+    // Internal clipboard for non-native operations (*groan*)
+    this.clipboard = "";
     // Offscreen buffer for handling native copy/cut/paste operations
     this.buffer = document.createElement('textarea');
     this.buffer.style.opacity = 0;
@@ -384,7 +386,6 @@ export default class CodeMirrorBlocks {
   handleCopyCut(event) {
     event.stopPropagation();
     let activeNode = this.getActiveNode();
-    var clipboard;
     if(!activeNode) return;
 
     // If nothing is selected, say "nothing selected" for cut
@@ -394,16 +395,16 @@ export default class CodeMirrorBlocks {
         this.say("Nothing selected");
         return false;
       } else if(event.type == 'copy') {
-        clipboard = this.cm.getRange(activeNode.from, activeNode.to);
+        this.clipboard = this.cm.getRange(activeNode.from, activeNode.to);
       }
     // Otherwise copy the contents of selection to the buffer, first-to-last
     } else {
       let sel = [...this.selectedNodes].sort((a, b) => poscmp(a.from, b.from));
-      clipboard = sel.reduce((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
+      this.clipboard = sel.reduce((s,n) => s + this.cm.getRange(n.from, n.to)+" ","");
     }
 
-    this.say((event.type == 'cut'? 'cut ' : 'copied ') + clipboard);
-    this.buffer.value = clipboard;
+    this.say((event.type == 'cut'? 'cut ' : 'copied ') + this.clipboard);
+    this.buffer.value = this.clipboard;
     this.buffer.select();
     try {
       document.execCommand && document.execCommand(event.type);
@@ -422,7 +423,7 @@ export default class CodeMirrorBlocks {
     this.mute();
     this.buffer.focus();
     setTimeout(() => {
-      let text = that.buffer.value;
+      let text = that.buffer.value || this.clipboard;
       let dest = (that.selectedNodes.has(activeNode) && activeNode)   // we're replacing a selected node
            || (!e.shiftKey && this.getWhitespaceAfterNode(activeNode))// ...or inserting into next WS
            || (e.shiftKey && this.getWhitespaceBeforeNode(activeNode))// ...or inserting into prev WS
