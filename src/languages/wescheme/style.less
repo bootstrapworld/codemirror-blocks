@@ -1,7 +1,7 @@
 .blocks-language-wescheme {
   @border-radius: 5px;
   @large-border-radius: 15px;
-  @border-width: 3px;
+  @border-width: 2px;
 
   // Colors:
   @literal-number-color: blue;
@@ -9,7 +9,7 @@
   @literal-char-color: orange;
   @literal-boolean-color: darkred;
   @literal-symbol-color: steelblue;
-  @comment-color: #ccc;
+  @comment-color: black;
   @editing-border-color: orange;
   @error-border-color: red;
   @border-hint: rgba(255, 165, 0, 0.3);
@@ -267,16 +267,17 @@
   
   .blocks-comment {
     color: @comment-color;
+    background: yellow;
     font-style: italic;
-    width: 0px !important;
-    min-width: 0px !important;
-    height: 0px !important;
-    display: none !important;
-    position: relative;
-    padding: 0px !important;
-    margin: 0px !important;
-    border: solid 2px red;
+    display: none;
+    position: absolute;
+    left: 50px;
+    max-width: 300px;
+    border-radius: 15px;
+    height: 50px;
+    text-align: center;
   }
+  /* .blocks-node:focus .blocks-comment{ display: block; } */
 
   .blocks-dragging {
     .blocks-white-space{ background-color: transparent; }

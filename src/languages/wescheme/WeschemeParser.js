@@ -73,7 +73,7 @@ function makeComment(node) {
     line: (node.comment || node).location.endRow - 1,
     ch: (node.comment || node).location.endCol
   }; 
-  return new Comment(from, to, "has comment: "+node.comment.txt);
+  return new Comment(from, to, node.comment.txt);
 }
 // parseNode : WeSchemeNode Number -> ASTNode
 function parseNode(node, i) {
