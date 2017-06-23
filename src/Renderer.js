@@ -82,14 +82,9 @@ export default class Renderer {
 
     // extract all the literals and blanks from a rootNode
     function flatten(flat, node) {
-      if(["literal", "blank"].includes(node.type)){
-        return flat.concat([node]);
-      // don't descend inside locked nodes
-      } else if(that.lockNodesOfType.includes(node.type)) {
-        return flat;
-      } else {
-        return [...node].slice(1).reduce(flatten, flat);
-      }
+      return ["literal", "blank"].includes(node.type)? flat.concat([node])
+                : that.lockNodesOfType.includes(node.type)? flat // pass over locked nodes
+                : [...node].slice(1).reduce(flatten, flat);
     }
 
     // 0) Optimization: limit the number of lines CM is rendering
