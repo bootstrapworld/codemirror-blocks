@@ -137,7 +137,7 @@ export default class CodeMirrorBlocks {
       this.wrapper,
       {
         onkeydown:  ((n, e) => this.handleKeyDown(n, e)),
-        onclick:    this.nodeEventHandler(this.activateNode),
+        onclick:    ((n, e) => {if(this.blockMode) this.nodeEventHandler(this.activateNode); }),
         ondblclick: this.nodeEventHandler({
           literal:    ((n, e) => this.insertionQuarantine(false, n, e)),
           blank:      ((n, e) => this.insertionQuarantine(false, n, e)),
@@ -230,13 +230,13 @@ export default class CodeMirrorBlocks {
         this.scroller.setAttribute("role", "presentation");
         this.wrapper.setAttribute("aria-label", "Block Editor");
         this.say("Switching to Block Mode");
+        this.ast = this.parser.parse(this.cm.getValue());
       } else { 
         this.wrapper.removeAttribute( "role"); 
         this.scroller.removeAttribute("role");
         this.wrapper.setAttribute("aria-label", "Text Editor");
         this.say("Switching to Text Mode");
       }
-      if(!this.ast) this.ast = this.parser.parse(this.cm.getValue());
       this.renderer.animateTransition(this.ast, mode);
     }
   }
@@ -322,7 +322,7 @@ export default class CodeMirrorBlocks {
   }
 
   // render : Void -> Void
-  // re-parse the document, then patch and re-render the resulting AST
+  // re-parse the document, then (ideally) patch and re-render the resulting AST
   render() {
     this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
@@ -345,7 +345,9 @@ export default class CodeMirrorBlocks {
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
-    if(this.isNodeEditable(node)) setTimeout(() => this.say("Use enter to edit"), 1250);
+    if(this.isNodeEditable(node) && !node.el.classList.contains("blocks-editing")) {
+      setTimeout(() => this.say("Use enter to edit"), 1250);
+    } 
     
     // if there's a selection and the altKey isn't pressed, clear selection
     if((this.selectedNodes.size > 0) && !(ISMAC? event.altKey : event.ctrlKey)) { 
@@ -500,7 +502,8 @@ export default class CodeMirrorBlocks {
   // Set the appropriate attributes and event handlers
   editLiteral(node, event) {
     event.stopPropagation();
-    this.say("editing "+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel.");
+    let action = node.el.getAttribute("aria-label") == ""? "inserting" : "editing";
+    this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel.");
     node.el.contentEditable = true;
     node.el.spellcheck = false;
     node.el.classList.add('blocks-editing');
@@ -669,7 +672,7 @@ export default class CodeMirrorBlocks {
       }
       maybeApplyClientFn(this.didInsertNode);
     },
-    "dragged sourceNodeText");
+    "dragged "+sourceNodeText);
   }
 
   // handleTopLevelEntry : Event -> Void
@@ -874,7 +877,7 @@ export default class CodeMirrorBlocks {
       this.cm.refresh();
     }
     // if open-bracket, modify text to be an empty expression with a blank
-    else if (!this.searchString && ["(","[","{"].includes(event.key)) {
+    else if (!this.searchString && ["(","[","{"].includes(event.key) && activeNode) {
       let close = {"(": ")", "[":"]", "{": "}"};
       let path = activeNode.id.split(',');
       path[path.length-1]++; // add an adjacent sibling
