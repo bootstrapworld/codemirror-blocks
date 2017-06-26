@@ -380,10 +380,14 @@ describe('The CodeMirrorBlocks Class', function() {
           spyOn(document, 'execCommand');
         });
 
-        it('should remove selected nodes on cut', function() {
+        it('should remove selected nodes on cut', function(done) {
           document.dispatchEvent(cut());
-          expect(this.cm.getValue()).toBe(' 54');
-          expect(document.execCommand).toHaveBeenCalledWith('cut');
+          setTimeout(() => {
+            expect(this.cm.getValue()).toBe(' 54');
+            expect(document.execCommand).toHaveBeenCalledWith('cut');
+            expect(this.blocks.getActiveNode()).toBe(this.blocks.ast.rootNodes[0]); // focus should shift
+            done();
+          }, DELAY)
         });
 
         it('should remove multiple selected nodes on cut', function(done) {
