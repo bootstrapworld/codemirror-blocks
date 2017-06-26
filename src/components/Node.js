@@ -31,20 +31,20 @@ export default class Node extends PureComponent {
     }
     return (
       <span
-        className={classes}
-        tabIndex="-1"
-        role="treeitem"
-        aria-label={node.options['aria-label']}
-        aria-selected="false"
-        aria-multiselectable="true"
-        id={`block-node-${node.id}`}
-        aria-describedby={node.options.comment? `block-node-${node.options.comment.id}`: undefined}
-        aria-disabled={locked? "true": undefined}
-        aria-expanded={locked? "false": expandable? "true" : undefined}
-        aria-setsize = { node["aria-setsize"] }
-        aria-posinset = { node["aria-posinset"] }
-        aria-level = { node["aria-level"] }
-        ref = {(el) => node.el = el }
+        id              = { `block-node-${node.id}` }
+        className       = { classes }
+        ref             = { (el) => node.el = el }
+        tabIndex        = "-1"
+        role            = "treeitem"
+        aria-selected   = "false"
+        aria-label      = { node.options['aria-label'] }
+        aria-describedby= { node.options.comment? `block-node-${node.options.comment.id}`: undefined}
+        aria-disabled   = { locked? "true": undefined }
+        aria-expanded   = { locked? "false": expandable? "true" : undefined}
+        aria-setsize    = { node["aria-setsize"]  }
+        aria-posinset   = { node["aria-posinset"] }
+        aria-level      = { node["aria-level"]    }
+        aria-multiselectable = "true"
       >
         {children}
         {node.options.comment? helpers.renderNodeForReact(node.options.comment) : undefined }
