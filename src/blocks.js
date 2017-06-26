@@ -453,10 +453,10 @@ export default class CodeMirrorBlocks {
         path[path.length-1] += roots.length;            // adjust the path based on parsed text
       }
       this.commitChange(() => { // make the change, and set the path for re-focus
-          this.cm.replaceRange(text, node.from, node.to);
-          if(path) this.focusHistory.done[0].path = this.focusPath = path.join(',');
-        }, 
-        (node.insertion? "inserted " : "changed ") + text);
+        this.cm.replaceRange(text, node.from, node.to);
+        if(path) this.focusHistory.done[0].path = this.focusPath = path.join(',');
+      }, 
+      (node.insertion? "inserted " : "changed ") + text);
     } catch(e) {                                      // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
@@ -629,7 +629,7 @@ export default class CodeMirrorBlocks {
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
     let destTo        = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
     this.focusPath    = (destinationNode && destinationNode.id)     // if we have an existing node, use its start location
-                        || this.getPathFromWhitespace(event.target) // if we have a drop target, grab that location
+                        || this.getPathFromWhitespace(event.target);// if we have a drop target, grab that location
     // if we're coming from outside
     if (destFrom.outside) {
       sourceNodeText = '\n' + sourceNodeText;
