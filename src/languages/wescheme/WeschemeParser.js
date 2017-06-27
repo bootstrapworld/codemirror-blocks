@@ -209,7 +209,6 @@ function parseNode(node, i) {
     }
   } else if (node instanceof structures.literal) {
     var dataType = typeof node.val;
-    console.log(node.val);
     let aria = node.toString();
     if (types.isString(node.val)) {
       dataType = "string";
@@ -223,7 +222,6 @@ function parseNode(node, i) {
     } else if (node.val.isRational && node.val.isRational()){
       dataType = "number";
       aria = `${String(node.val.numerator())} over ${String(node.val.denominator())}, a Rational`;
-      console.log(aria);
     }
     return new Literal(from, to, node.toString(), dataType
                       , {'aria-label':aria, 'comment': comment});

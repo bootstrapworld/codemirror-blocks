@@ -346,7 +346,8 @@ export default class CodeMirrorBlocks {
       this.say(node.el.getAttribute("aria-label"));
     }
     if(this.isNodeEditable(node) && !node.el.classList.contains("blocks-editing")) {
-      setTimeout(() => this.say("Use enter to edit"), 1250);
+      clearTimeout(this.queuedAnnoucement);
+      this.queuedAnnoucement = setTimeout(() => { this.say("Use enter to edit"); }, 1250);
     } 
     
     // if there's a selection and the altKey isn't pressed, clear selection
@@ -499,7 +500,7 @@ export default class CodeMirrorBlocks {
   editLiteral(node, event) {
     event.stopPropagation();
     let action = node.el.getAttribute("aria-label") == ""? "inserting" : "editing";
-    this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel.");
+    this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel");
     node.el.contentEditable = true;
     node.el.spellcheck = false;
     node.el.classList.add('blocks-editing');
