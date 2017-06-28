@@ -108,7 +108,7 @@ export default class CodeMirrorBlocks {
     this.toolbarNode = toolbar;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
-    this.renderOptions = renderOptions || {};
+    this.renderOptions = renderOptions || {lockNodesOfType: []};
     this.ast = null;
     this.blockMode = false;
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
@@ -753,16 +753,14 @@ export default class CodeMirrorBlocks {
       if(node === activeNode) { playBeep(); }
       else { that.activateNode(node, event); }
     }
-    function showAndActivate(exists) {
-      clearTimeout(that.searchTimer); // reset the timer for 1sec
-      that.searchTimer = setTimeout(() => {
-        that.searchString = that.searchCursor = "";
-      }, 1500);
-      if(!exists) { playBeep(); return false; } // beep if there's nothing to show
-      let node = that.ast.getNodeContaining(that.searchCursor.from());
+    function showNextMatch(moveCursorFn) {
+      clearTimeout(that.searchTimer); // reset the timer for 1.5sec
+      that.searchTimer = setTimeout(() => that.searchString = that.searchCursor = "", 1500);
+      var node, more; // iterate until there's no match or a node is found
+      while((more=moveCursorFn()) && !(node=that.ast.getNodeContaining(that.searchCursor.from()))){}
+      if(!more || !node) { playBeep(); return false; } // beep if there's nothing to show
       var ancestors = [node], p = that.ast.getNodeParent(node);
       while(p) { ancestors.push(p); p = that.ast.getNodeParent(p); }
-
       ancestors.reverse();  // put ancestors in oldest-first order
       if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) {
         node = ancestors[0];
@@ -785,7 +783,7 @@ export default class CodeMirrorBlocks {
       return makeExpanded !== isExpanded;
     }
 
-     // Go to the first node in the tree (depth-first)
+    // Go to the first node in the tree (depth-first)
     if (keyName == "Home" && activeNode) {
       this.activateNode(this.ast.rootNodes[0], event);
     }
@@ -802,11 +800,11 @@ export default class CodeMirrorBlocks {
     }
     // if there's a search string, Enter and Shift-Enter go to next/prev
     else if (this.searchString && keyName == "Enter" && activeNode) {
-      if(!showAndActivate(this.searchCursor.findNext())) 
+      if(!showNextMatch(() => this.searchCursor.findNext()))
         this.searchCursor.findPrevious();
     }
     else if (this.searchString && keyName == "Shift-Enter" && activeNode) {
-      if(!showAndActivate(this.searchCursor.findPrevious()))
+      if(!showNextMatch(() => this.searchCursor.findPrevious()))
         this.searchCursor.findNext();
     }
     // Enter should toggle editing on editable nodes, or toggle expanding
@@ -934,7 +932,7 @@ export default class CodeMirrorBlocks {
         this.searchString += event.key;
         this.say('Searching for '+this.searchString, 0);
         this.searchCursor = this.cm.getSearchCursor(this.searchString, activeNode.from, true);
-        showAndActivate(this.searchCursor.findNext());
+        showNextMatch(() => this.searchCursor.findNext());
       }
       return; // return without cancelling the event
     }

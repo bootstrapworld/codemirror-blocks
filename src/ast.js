@@ -75,7 +75,8 @@ export class AST {
   }
   // return the node containing the cursor, or false
   getNodeContaining(cursor, nodes = this.rootNodes) {
-    let n = nodes.find(node => comparePos(node.to, cursor) >= 0);
+    let n = nodes.find(node => comparePos(node.from, cursor) <= 0 
+                            && comparePos(node.to, cursor) >= 0);
     return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)));
   }
 
