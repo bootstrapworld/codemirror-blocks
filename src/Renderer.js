@@ -154,6 +154,7 @@ export default class Renderer {
                        {replacedWith: container, node: rootNode} );
     }
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
+    container.className = 'react-container';
     return container;
   }
 

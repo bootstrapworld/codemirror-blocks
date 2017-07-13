@@ -17,6 +17,8 @@
   @hover-drop-background-color: lightblue;
   @hover-replace-background-color: red;
 
+  .react-container{ position: relative; }
+
   .blocks-struct,
   .blocks-functionDef,
   .blocks-lambdaExpression,
@@ -191,7 +193,7 @@
   .blocks-name {
     color: @literal-symbol-color;
   }
-
+  
   .blocks-node[aria-selected^="true"] {
     border-style: dotted;
     border-color: @editing-border-color;
@@ -267,17 +269,36 @@
   
   .blocks-comment {
     color: @comment-color;
-    background: yellow;
-    font-style: italic;
+    background-color: #444;
     display: none;
     position: absolute;
-    left: 50px;
+    color: #ddd;
+    padding: 2px 10px;
+    border-radius: 5px;
     max-width: 300px;
-    border-radius: 15px;
-    height: 50px;
-    text-align: center;
+    line-height: 20px;
+    box-shadow: 0px 0px 20px #999;
+    margin-left: 15px;
+    border: 1px solid #333;
+    text-shadow: 0 0 1px #000;
+    margin-bottom: -5px;
+    bottom: 0px;
+    left: 100%;
+    white-space: pre-line;
+    word-break: normal;
+    z-index: 999;
   }
-  /* .blocks-node:focus .blocks-comment{ display: block; } */
+  .blocks-comment::before {
+    content: "";
+    width: 0px;
+    height: 0px;
+    border: 0.8em solid transparent;
+    position: absolute;
+    left: -20px;
+    bottom: 5%;
+    border-right: 10px solid #444;
+  }
+/*  .blocks-node:focus > .blocks-comment{ display: inline-table; }  */
 
   .blocks-dragging {
     .blocks-white-space{ background-color: transparent; }
@@ -303,7 +324,6 @@
     min-width: 75px;
     padding: 3px;
     background: black;
-    position: relative;
     * { display: none;}
     .blocks-operator, .blocks-operator * { 
       display: inline;
