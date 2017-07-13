@@ -48,7 +48,7 @@ export class AST {
   patch(newAST) {
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
     // don't remove references to DOM elements
-    patches = patches.filter(p => p.path.split('/').pop() !== "el");
+    patches = patches.filter(p => !['el', 'collapsed'].includes(p.path.split('/').pop()));
     jsonpatch.apply(this.rootNodes, patches);
     // refresh nodeMaps and re-annotate
     this.nodeMap = new Map();

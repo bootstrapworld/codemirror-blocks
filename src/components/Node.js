@@ -13,13 +13,6 @@ export default class Node extends PureComponent {
     lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
-  constructor() {
-    super();
-    this.state = {
-      expanded: true
-    };
-  }
-
   render() {
     const {type, node, lockedTypes, helpers, children} = this.props;
     let locked = lockedTypes.includes(type);
@@ -40,7 +33,7 @@ export default class Node extends PureComponent {
         aria-label      = { node.options['aria-label'] }
         aria-describedby= { node.options.comment? `block-node-${node.options.comment.id}`: undefined}
         aria-disabled   = { locked? "true": undefined }
-        aria-expanded   = { locked? "false": expandable? "true" : undefined}
+        aria-expanded   = { locked? "false": expandable? (node.collapsed ? "false" : "true") : undefined}
         aria-setsize    = { node["aria-setsize"]  }
         aria-posinset   = { node["aria-posinset"] }
         aria-level      = { node["aria-level"]    }
