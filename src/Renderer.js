@@ -153,6 +153,11 @@ export default class Renderer {
       this.cm.markText(rootNode.from, rootNode.to,
                        {replacedWith: container, node: rootNode} );
     }
+    // make comments disappear
+    if(rootNode.options.comment) {
+      this.cm.markText(rootNode.options.comment.from, rootNode.options.comment.to,
+        {replacedWith: document.createElement('span')})
+    }
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
     container.className = 'react-container';
     return container;
