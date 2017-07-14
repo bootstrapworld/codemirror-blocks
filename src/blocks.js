@@ -324,9 +324,9 @@ export default class CodeMirrorBlocks {
   // render : Void -> Void
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render() {
-    this.ast = this.parser.parse(this.cm.getValue());
+    //this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
-    //this.ast.patch(this.parser.parse(this.cm.getValue()));
+    this.ast.patch(this.parser.parse(this.cm.getValue()));
     //console.log('patched AST is ', this.ast.rootNodes);
     this.renderer.renderAST(this.ast, this.focusPath);
     ui.renderToolbarInto(this);
@@ -778,6 +778,7 @@ export default class CodeMirrorBlocks {
       let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
       if(makeExpanded !== isExpanded) {
         node.el.setAttribute("aria-expanded", !isExpanded);
+        node.collapsed = isExpanded;
       }
       that.cm.refresh();
       return makeExpanded !== isExpanded;
