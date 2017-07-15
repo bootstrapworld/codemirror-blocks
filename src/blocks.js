@@ -856,7 +856,7 @@ export default class CodeMirrorBlocks {
     else if (keyName === "Shift-Left" && activeNode) {
       this.say("All blocks collapsed");
       let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
-      [].forEach.call(elts, e => e.setAttribute("aria-expanded", false));
+      [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), false));
       let rootId = activeNode.id.split(",")[0]; // put focus on containing rootNode
       // shift focus if rootId !== activeNodeId
       if(rootId !== activeNode.id) this.activateNode(this.ast.getNodeById(rootId), event);
@@ -865,7 +865,7 @@ export default class CodeMirrorBlocks {
     else if (keyName === "Shift-Right" && activeNode) {
       this.say("All blocks expanded");
       let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
-      [].forEach.call(elts, e => e.setAttribute("aria-expanded", true));
+      [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), true));
       this.cm.refresh(); // update the CM display, since line heights may have changed
     }
     // if open-bracket, modify text to be an empty expression with a blank
