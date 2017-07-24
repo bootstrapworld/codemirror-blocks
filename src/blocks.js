@@ -324,10 +324,12 @@ export default class CodeMirrorBlocks {
   // render : Void -> Void
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render() {
-    //this.ast = this.parser.parse(this.cm.getValue());
     this._clearMarks();
     this.ast.patch(this.parser.parse(this.cm.getValue()));
-    //console.log('patched AST is ', this.ast.rootNodes);
+    if(this.rememberToCollapse){
+      this.ast.getNodeById(this.rememberToCollapse).collapsed = true;
+      this.rememberToCollapse = false;
+    }
     this.renderer.renderAST(this.ast, this.focusPath);
     ui.renderToolbarInto(this);
   }
@@ -345,7 +347,8 @@ export default class CodeMirrorBlocks {
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
-    if(this.isNodeEditable(node) && !node.el.classList.contains("blocks-editing")) {
+    if(this.isNodeEditable(node) && !(node.el.getAttribute("aria-expanded")=="false")
+      && !node.el.classList.contains("blocks-editing")) {
       clearTimeout(this.queuedAnnoucement);
       this.queuedAnnoucement = setTimeout(() => { this.say("Use enter to edit"); }, 1250);
     } 
@@ -603,10 +606,8 @@ export default class CodeMirrorBlocks {
 
   dropOntoNode(_, event) {
     this.emit(EVENT_DRAG_END, this, event);
-    if (!this.isDropTarget(event.target)) {
-      // not a drop taret, just return
-      return;
-    }
+    // not a drop target, just return
+    if (!this.isDropTarget(event.target)) { return; }
     event.preventDefault();
     event.stopPropagation();
     event.target.classList.remove('blocks-over-target');
@@ -615,6 +616,8 @@ export default class CodeMirrorBlocks {
     let sourceNodeText = event.dataTransfer.getData('text/plain');
     let sourceNodeJSON = event.dataTransfer.getData('text/json');
     let sourceNode     = this.ast.getNodeById(sourceId);
+    var rememberToCollapse = false;
+
     if (sourceNode) {
       sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
     } else if (sourceNodeJSON) {
@@ -629,8 +632,29 @@ export default class CodeMirrorBlocks {
                         || this.getLocationFromWhitespace(event.target) // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
     let destTo        = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
-    this.focusPath    = (destinationNode && destinationNode.id)     // if we have an existing node, use its start location
-                        || this.getPathFromWhitespace(event.target);// if we have a drop target, grab that location
+
+    // Determine the path to the newly-dropped node
+    var destPath      = (destinationNode && destinationNode.id) 
+                        || this.getPathFromWhitespace(event.target)
+                        || String(this.ast.getNodeBefore(this.cm.coordsChar({left:event.pageX, top:event.pageY})).id || -1);
+    // Transform the path to an array of child indices
+    destPath = destPath.split(',').map(Number);
+    // if we're inserting, add 1 to the last child
+    if(!destinationNode) { destPath[destPath.length-1]++; }
+  
+    // Special handling if the sourceNode is coming from within the document
+    if(sourceNode) {
+      let sourcePath = sourceNode.id.split(',').map(Number);
+      // If the source is within the document, and comes before the dest, adjust dest path accordingly
+      for(var i = 0; i < destPath.length; i++) {
+        if((sourcePath.length == i+1) && (sourcePath[i] < destPath[i])) { destPath[i]--; break; }
+      }
+      // temporarily expand, and remember to re-collapse after patch
+      if(sourceNode.collapsed) this.rememberToCollapse = destPath.join(',');
+      sourceNode.collapsed = false;
+    }
+    this.focusPath = destPath.join(',');
+    
     // if we're coming from outside
     if (destFrom.outside) {
       sourceNodeText = '\n' + sourceNodeText;
@@ -654,6 +678,13 @@ export default class CodeMirrorBlocks {
     function maybeApplyClientFn(f) {
       return (f && !(destinationNode && destinationNode.type == "literal"))?
         f(sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
+    }
+
+    // Update AST manually, to preserve collapsing state through the next patch
+    if(sourceNode) {
+      console.log('updating AST manually on drop');
+      let path = this.focusPath.split(',');
+      if(path.length == 1) this.ast.rootNodes.splice(path[0], 0, sourceNode);
     }
 
     // Call willInsertNode and didInsertNode on either side of the replacement operation
