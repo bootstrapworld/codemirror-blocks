@@ -625,36 +625,29 @@ export default class CodeMirrorBlocks {
       console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
 
-    // look up the destination information: ID, Node, destFrom and destTo
+    // look up the destination information: Node, destFrom, destTo, and destPath
     let destinationNode = this.findNodeFromEl(event.target);            // when dropping onto an existing node, get that Node
     let destFrom        = (destinationNode && destinationNode.from)     // if we have an existing node, use its start location
                         || this.getLocationFromWhitespace(event.target) // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
-    let destTo        = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
-
-    // Determine the path to the newly-dropped node
-    var destPath      = (destinationNode && destinationNode.id) 
+    let destTo          = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
+    var destPath        = (destinationNode && destinationNode.id) 
                         || this.getPathFromWhitespace(event.target)
                         || String(this.ast.getNodeBefore(this.cm.coordsChar({left:event.pageX, top:event.pageY})).id || -1);
-    // Transform the path to an array of child indices
     destPath = destPath.split(',').map(Number);
-    // if we're inserting, add 1 to the last child
+
+    // if we're inserting, add 1 to the last child of the path
     if(!destinationNode) { destPath[destPath.length-1]++; }
   
     // Special handling if the sourceNode is coming from within the document
     if(sourceNode) {
       let sourcePath = sourceNode.id.split(',').map(Number);
-      console.log('moving ' +sourceNode.id + ' to ' + destPath.join(','));
       // if the sourecepath ends at a younger sibling of any destination ancestor, decrement that ancestor's order
       for(var i = 0; i < Math.min(sourcePath.length, destPath.length); i++) {
-        console.log('ancestor['+i+']. Source: '+sourcePath[i]+' Dest:'+destPath[i]);
-        if((sourcePath[i] <  destPath[i]) && (sourcePath.length == (i+1))) { destPath[i]--; console.log('ADJUSTING!');}
-      }
-      console.log('moving ' +sourceNode.id + ' to ' + destPath.join(','));
-      
+        if((sourcePath[i] <  destPath[i]) && (sourcePath.length == (i+1))) { destPath[i]--; }
+      }      
       // check for no-ops: we have to use textCoords instead of ASTpaths, to allow shifting a block within whitespace
       if ((poscmp(destFrom, sourceNode.from) > -1) && (poscmp(destTo, sourceNode.to) <  1)) { return; }
-      
       // temporarily expand the source node, but remember to re-collapse after patch
       if(sourceNode.collapsed) this.rememberToCollapse = destPath.join(',');
       sourceNode.collapsed = false;
