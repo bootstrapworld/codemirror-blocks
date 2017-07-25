@@ -616,7 +616,6 @@ export default class CodeMirrorBlocks {
     let sourceNodeText = event.dataTransfer.getData('text/plain');
     let sourceNodeJSON = event.dataTransfer.getData('text/json');
     let sourceNode     = this.ast.getNodeById(sourceId);
-    var rememberToCollapse = false;
 
     if (sourceNode) {
       sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
@@ -645,11 +644,18 @@ export default class CodeMirrorBlocks {
     // Special handling if the sourceNode is coming from within the document
     if(sourceNode) {
       let sourcePath = sourceNode.id.split(',').map(Number);
-      // If the source is within the document, and comes before the dest, adjust dest path accordingly
-      for(var i = 0; i < destPath.length; i++) {
-        if((sourcePath.length == i+1) && (sourcePath[i] < destPath[i])) { destPath[i]--; break; }
+      console.log('moving ' +sourceNode.id + ' to ' + destPath.join(','));
+      // if the sourecepath ends at a younger sibling of any destination ancestor, decrement that ancestor's order
+      for(var i = 0; i < Math.min(sourcePath.length, destPath.length); i++) {
+        console.log('ancestor['+i+']. Source: '+sourcePath[i]+' Dest:'+destPath[i]);
+        if((sourcePath[i] <  destPath[i]) && (sourcePath.length == (i+1))) { destPath[i]--; console.log('ADJUSTING!');}
       }
-      // temporarily expand, and remember to re-collapse after patch
+      console.log('moving ' +sourceNode.id + ' to ' + destPath.join(','));
+      
+      // check for no-ops: we have to use textCoords instead of ASTpaths, to allow shifting a block within whitespace
+      if ((poscmp(destFrom, sourceNode.from) > -1) && (poscmp(destTo, sourceNode.to) <  1)) { return; }
+      
+      // temporarily expand the source node, but remember to re-collapse after patch
       if(sourceNode.collapsed) this.rememberToCollapse = destPath.join(',');
       sourceNode.collapsed = false;
     }
@@ -660,13 +666,7 @@ export default class CodeMirrorBlocks {
       sourceNodeText = '\n' + sourceNodeText;
     }
 
-    // check for no-ops
-    if (sourceNode &&                                   // If there's a sourceNode, &
-        (poscmp(destFrom, sourceNode.from) > -1) &&     // dest range is in-between source range,
-        (poscmp(destTo,   sourceNode.to  ) <  1)) {     // it's a no-op.
-      return;
-    }
-    // if we're inserting/replacing from outsider the editor, just do it and return
+    // if we're inserting/replacing from outside the editor, just do it and return
     if (!sourceNode) {
       this.commitChange( () => this.cm.replaceRange(sourceNodeText, destFrom, destTo),
         "inserted "+sourceNodeText);
@@ -678,13 +678,6 @@ export default class CodeMirrorBlocks {
     function maybeApplyClientFn(f) {
       return (f && !(destinationNode && destinationNode.type == "literal"))?
         f(sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
-    }
-
-    // Update AST manually, to preserve collapsing state through the next patch
-    if(sourceNode) {
-      console.log('updating AST manually on drop');
-      let path = this.focusPath.split(',');
-      if(path.length == 1) this.ast.rootNodes.splice(path[0], 0, sourceNode);
     }
 
     // Call willInsertNode and didInsertNode on either side of the replacement operation
