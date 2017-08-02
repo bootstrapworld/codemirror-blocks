@@ -4,6 +4,16 @@ function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
 
+function castToASTNode(o) {
+  // Cast generic Objects to the appropriate ASTNodes, and update AST
+  if(o.type && (o.type !== o.constructor.name.toLowerCase())) {
+    let desiredType = o.type.charAt(0).toUpperCase() + o.type.slice(1);
+    o.__proto__ = eval(desiredType).prototype;              // cast the node itself
+    [...o].forEach(castToASTNode);                          // cast all the node's children
+    if(o.options.comment) castToASTNode(o.options.comment); // be sure to catch the comment!
+  }
+}
+
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
 // required to spit out an `AST` instance.
 export class AST {
@@ -50,7 +60,9 @@ export class AST {
     // don't remove references to DOM elements
     patches = patches.filter(p => !['el', 'collapsed'].includes(p.path.split('/').pop()));
     jsonpatch.apply(this.rootNodes, patches);
-    // refresh nodeMaps and re-annotate
+    this.rootNodes.forEach(castToASTNode);
+    // refresh lastNode, nodeMaps and re-annotate
+    delete this.lastNode;
     this.nodeMap = new Map();
     this.prevNodeMap = new WeakMap();
     this.nextNodeMap = new WeakMap();

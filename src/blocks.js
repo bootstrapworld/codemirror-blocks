@@ -41,8 +41,8 @@ const CTRLKEY = ISMAC? "Cmd" : "Ctrl";
 const DELETEKEY=ISMAC? "Backspace" : "Delete";
 const LEFT    = 37;
 const RIGHT   = 39;
-const UP      = 40;
-const DOWN    = 38;
+const DOWN    = 40;
+const UP      = 38;
 // open/close delimeters
 const openDelims = ["(","[","{"];
 const closeDelims = {"(": ")", "[":"]", "{": "}"};
@@ -324,10 +324,12 @@ export default class CodeMirrorBlocks {
   // render : Void -> Void
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render() {
-    //this.ast = this.parser.parse(this.cm.getValue());
-    this._clearMarks();
-    this.ast.patch(this.parser.parse(this.cm.getValue()));
-    //console.log('patched AST is ', this.ast.rootNodes);
+    try {
+      this._clearMarks();
+      this.ast.patch(this.parser.parse(this.cm.getValue()));
+    } catch(e) {
+      console.error("PATCHING ERROR:\n", e)
+    }
     this.renderer.renderAST(this.ast, this.focusPath);
     ui.renderToolbarInto(this);
   }
@@ -897,11 +899,11 @@ export default class CodeMirrorBlocks {
           || playBeep();
     }
     // Go to next visible node
-    else if (event.keyCode == UP) {
+    else if (event.keyCode == DOWN) {
       switchNodes(cur => this.ast.getNodeAfter(cur));
     }
     // Go to previous visible node
-    else if (event.keyCode == DOWN) {
+    else if (event.keyCode == UP) {
       switchNodes(cur => this.ast.getNodeBefore(cur));
     } else {
       // Announce undo and redo (or beep if there's nothing)
