@@ -324,11 +324,11 @@ export default class CodeMirrorBlocks {
   // render : Void -> Void
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render() {
-    try {
-      this._clearMarks();
-      this.ast.patch(this.parser.parse(this.cm.getValue()));
-    } catch(e) {
-      console.error("PATCHING ERROR:\n", e)
+    this._clearMarks();
+    this.ast.patch(this.parser.parse(this.cm.getValue()));
+    if(this.rememberToCollapse){
+      this.ast.getNodeById(this.rememberToCollapse).collapsed = true;
+      this.rememberToCollapse = false;
     }
     this.renderer.renderAST(this.ast, this.focusPath);
     ui.renderToolbarInto(this);
@@ -347,7 +347,8 @@ export default class CodeMirrorBlocks {
     if(node == this.getActiveNode()){
       this.say(node.el.getAttribute("aria-label"));
     }
-    if(this.isNodeEditable(node) && !node.el.classList.contains("blocks-editing")) {
+    if(this.isNodeEditable(node) && !(node.el.getAttribute("aria-expanded")=="false")
+      && !node.el.classList.contains("blocks-editing")) {
       clearTimeout(this.queuedAnnoucement);
       this.queuedAnnoucement = setTimeout(() => { this.say("Use enter to edit"); }, 1250);
     } 
@@ -605,10 +606,8 @@ export default class CodeMirrorBlocks {
 
   dropOntoNode(_, event) {
     this.emit(EVENT_DRAG_END, this, event);
-    if (!this.isDropTarget(event.target)) {
-      // not a drop taret, just return
-      return;
-    }
+    // not a drop target, just return
+    if (!this.isDropTarget(event.target)) { return; }
     event.preventDefault();
     event.stopPropagation();
     event.target.classList.remove('blocks-over-target');
@@ -617,6 +616,7 @@ export default class CodeMirrorBlocks {
     let sourceNodeText = event.dataTransfer.getData('text/plain');
     let sourceNodeJSON = event.dataTransfer.getData('text/json');
     let sourceNode     = this.ast.getNodeById(sourceId);
+
     if (sourceNode) {
       sourceNodeText = this.cm.getRange(sourceNode.from, sourceNode.to);
     } else if (sourceNodeJSON) {
@@ -625,26 +625,41 @@ export default class CodeMirrorBlocks {
       console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
 
-    // look up the destination information: ID, Node, destFrom and destTo
+    // look up the destination information: Node, destFrom, destTo, and destPath
     let destinationNode = this.findNodeFromEl(event.target);            // when dropping onto an existing node, get that Node
     let destFrom        = (destinationNode && destinationNode.from)     // if we have an existing node, use its start location
                         || this.getLocationFromWhitespace(event.target) // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
-    let destTo        = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
-    this.focusPath    = (destinationNode && destinationNode.id)     // if we have an existing node, use its start location
-                        || this.getPathFromWhitespace(event.target);// if we have a drop target, grab that location
+    let destTo          = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
+    var destPath        = (destinationNode && destinationNode.id) 
+                        || this.getPathFromWhitespace(event.target)
+                        || String(this.ast.getNodeBefore(this.cm.coordsChar({left:event.pageX, top:event.pageY})).id || -1);
+    destPath = destPath.split(',').map(Number);
+
+    // if we're inserting, add 1 to the last child of the path
+    if(!destinationNode) { destPath[destPath.length-1]++; }
+  
+    // Special handling if the sourceNode is coming from within the document
+    if(sourceNode) {
+      let sourcePath = sourceNode.id.split(',').map(Number);
+      // if the sourecepath ends at a younger sibling of any destination ancestor, decrement that ancestor's order
+      for(var i = 0; i < Math.min(sourcePath.length, destPath.length); i++) {
+        if((sourcePath[i] <  destPath[i]) && (sourcePath.length == (i+1))) { destPath[i]--; }
+      }      
+      // check for no-ops: we have to use textCoords instead of ASTpaths, to allow shifting a block within whitespace
+      if ((poscmp(destFrom, sourceNode.from) > -1) && (poscmp(destTo, sourceNode.to) <  1)) { return; }
+      // temporarily expand the source node, but remember to re-collapse after patch
+      if(sourceNode.collapsed) this.rememberToCollapse = destPath.join(',');
+      sourceNode.collapsed = false;
+    }
+    this.focusPath = destPath.join(',');
+    
     // if we're coming from outside
     if (destFrom.outside) {
       sourceNodeText = '\n' + sourceNodeText;
     }
 
-    // check for no-ops
-    if (sourceNode &&                                   // If there's a sourceNode, &
-        (poscmp(destFrom, sourceNode.from) > -1) &&     // dest range is in-between source range,
-        (poscmp(destTo,   sourceNode.to  ) <  1)) {     // it's a no-op.
-      return;
-    }
-    // if we're inserting/replacing from outsider the editor, just do it and return
+    // if we're inserting/replacing from outside the editor, just do it and return
     if (!sourceNode) {
       this.commitChange( () => this.cm.replaceRange(sourceNodeText, destFrom, destTo),
         "inserted "+sourceNodeText);
