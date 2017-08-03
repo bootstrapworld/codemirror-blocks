@@ -387,7 +387,7 @@ describe('The CodeMirrorBlocks Class', function() {
             expect(document.execCommand).toHaveBeenCalledWith('cut');
             expect(this.blocks.getActiveNode()).toBe(this.blocks.ast.rootNodes[0]); // focus should shift
             done();
-          }, DELAY)
+          }, DELAY);
         });
 
         it('should remove multiple selected nodes on cut', function(done) {

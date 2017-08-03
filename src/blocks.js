@@ -781,7 +781,7 @@ export default class CodeMirrorBlocks {
       clearTimeout(that.searchTimer); // reset the timer for 1.5sec
       that.searchTimer = setTimeout(() => that.searchString = that.searchCursor = "", 1500);
       var node, more; // iterate until there's no match or a node is found
-      while((more=moveCursorFn()) && !(node=that.ast.getNodeContaining(that.searchCursor.from()))){}
+      while((more=moveCursorFn()) && !(node=that.ast.getNodeContaining(that.searchCursor.from()))){ /* no-op */}
       if(!more || !node) { playBeep(); return false; } // beep if there's nothing to show
       var ancestors = [node], p = that.ast.getNodeParent(node);
       while(p) { ancestors.push(p); p = that.ast.getNodeParent(p); }

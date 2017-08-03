@@ -147,16 +147,16 @@ export default class Renderer {
   render(rootNode, marker) {
     let container = marker? marker.replacedWith : document.createElement('span');
     let {from, to} = marker? marker.find() : {from: null, to: null};
-    // if the marker needs to be resized or created, replace it and recycle the container
+    // if the marker needs to be created or resized, replace it and recycle the container
     if(!marker || !(poseq(from, rootNode.from) && poseq(to, rootNode.to))) {
       if(marker) marker.clear();
       this.cm.markText(rootNode.from, rootNode.to,
                        {replacedWith: container, node: rootNode} );
     }
-    // make comments disappear
+    // REVISIT: make comments disappear by adding an empty span
     if(rootNode.options.comment) {
       this.cm.markText(rootNode.options.comment.from, rootNode.options.comment.to,
-        {replacedWith: document.createElement('span')})
+        { replacedWith: document.createElement('span') });
     }
     ReactDOM.render(this.renderNodeForReact(rootNode), container);
     container.className = 'react-container';
@@ -164,6 +164,7 @@ export default class Renderer {
   }
 
   renderNodeForReact = (node, key) => {
+    this.renderNodeForReact.defaultProps = { displayName: 'ASTNode Renderer' };
     var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
     if (Renderer === undefined) {
       throw new Error("Don't know how to render node of type: "+node.type);
@@ -175,6 +176,7 @@ export default class Renderer {
           helpers={{renderNodeForReact: this.renderNodeForReact}}
           key = {key}
           lockedTypes = {this.lockNodesOfType}
+          displayName = "Node"
         />
       );
     } else {

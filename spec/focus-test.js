@@ -1,33 +1,17 @@
-import CodeMirrorBlocks, {BlockMarker} from 'codemirror-blocks/blocks';
+import CodeMirrorBlocks from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
-import {addLanguage} from 'codemirror-blocks/languages';
 
 import {
   click,
-  dblclick,
   blur,
   keydown,
-  keypress,
-  dragstart,
-  dragenter,
-  dragleave,
-  drop,
-  cut,
 } from './events';
 
 // keycodes
-const LEFT_KEY  = 37;
-const UP_KEY    = 38;
-const RIGHT_KEY = 39;
 const DOWN_KEY  = 40;
 const DELETE_KEY=  8;
-const ENTER_KEY = 13;
 const SPACE_KEY = 32;
-const HOME_KEY  = 36;
-const END_KEY   = 35;
-const ESC_KEY   = 27;
-const LEFTBRACE = 219;
 const RIGHTBRACE= 221;
 
 // ms delay to let the DOM catch up before testing

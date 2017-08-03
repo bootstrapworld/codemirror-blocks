@@ -269,36 +269,6 @@ class WeschemeParser {
 
   get primitives() {
     return PrimitiveGroup.fromConfig('wescheme', PRIMITIVES_CONFIG);
-    return PrimitiveGroup.fromConfig('wescheme', {
-      name: 'root',
-      primitives: [
-        {
-          name: 'Math Functions',
-          primitives: [
-            '+',
-            '-',
-            '/',
-            '*',
-            'sqrt',
-            {
-              name: 'Trigonometry',
-              primitives: [
-                'sin',
-                'cos',
-                'tan',
-                'asin',
-                'acos',
-                'atan',
-                'atan2'
-              ]
-            }
-          ]
-        },
-        'and',
-        'or',
-        'print-ln'
-      ]
-    });
   }
 
   lex(code) {
