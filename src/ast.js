@@ -4,14 +4,15 @@ function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
 
+// Cast an object to the appropriate ASTNode, and traverse its children
+// REVISIT: should we be using Object.setPrototypeOf() here? And good god, eval()?!?
 function castToASTNode(o) {
-  // Cast generic Objects to the appropriate ASTNodes, and update AST
-  if(o.type && (o.type !== o.constructor.name.toLowerCase())) {
+  if(o.type !== o.constructor.name.toLowerCase()) {
     let desiredType = o.type.charAt(0).toUpperCase() + o.type.slice(1);
     o.__proto__ = eval(desiredType).prototype;              // cast the node itself
-    [...o].forEach(castToASTNode);                          // cast all the node's children
-    if(o.options.comment) castToASTNode(o.options.comment); // be sure to catch the comment!
+    if(o.options.comment) castToASTNode(o.options.comment); // cast the comment, if it exists
   }
+  [...o].slice(1).forEach(castToASTNode);                   // traverse children
 }
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
@@ -57,11 +58,11 @@ export class AST {
   // given a new AST, patch this one to match (preserve all rendered DOM elements, though!)
   patch(newAST) {
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
-    // don't remove references to DOM elements
+    // preserve existing DOM elts, and collapsed state
     patches = patches.filter(p => !['el', 'collapsed'].includes(p.path.split('/').pop()));
     jsonpatch.apply(this.rootNodes, patches);
     this.rootNodes.forEach(castToASTNode);
-    // refresh lastNode, nodeMaps and re-annotate
+    // reset and re-annotate
     delete this.lastNode;
     this.nodeMap = new Map();
     this.prevNodeMap = new WeakMap();

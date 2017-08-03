@@ -207,6 +207,7 @@ export default class CodeMirrorBlocks {
   // called anytime we update the underlying CM value
   // destorys the redo history and updates the undo history
   commitChange(changes, announcement=false) {
+    console.log('commiting change. saving focus at ', this.focusPath);
     this.focusHistory.done.unshift({path: this.focusPath, announcement: announcement});
     this.focusHistory.undone = [];
     this.cm.operation(changes);
@@ -429,9 +430,9 @@ export default class CodeMirrorBlocks {
       let text = that.buffer.value || this.clipboard;
       let dest = (that.selectedNodes.has(activeNode) && activeNode)   // we're either replacing a selected node
            || (!e.shiftKey && activeNode.el.nextElementSibling)       // ...or inserting into next WS
-           || (e.shiftKey && activeNode.el.previousElementSibling)    // ...or inserting into prev WS
+           || (e.shiftKey  && activeNode.el.previousElementSibling)   // ...or inserting into prev WS
            || (!e.shiftKey && activeNode.to)                          // ...or inserting after at the top level
-           || (e.shiftKey && activeNode.from);                        // ...or inserting before at the top level
+           || (e.shiftKey  && activeNode.from);                       // ...or inserting before at the top level
       this.clearSelection();
       let node = that.insertionQuarantine(text, dest, e);
       that.buffer.value = ""; // empty the buffer
@@ -458,7 +459,7 @@ export default class CodeMirrorBlocks {
       }
       this.commitChange(() => { // make the change, and set the path for re-focus
         this.cm.replaceRange(text, node.from, node.to);
-        if(path) this.focusHistory.done[0].path = this.focusPath = path.join(',');
+        if(path) this.focusPath = path.join(',');
       }, 
       (node.insertion? "inserted " : "changed ") + text);
     } catch(e) {                                      // If the node contents will NOT lex...
@@ -575,18 +576,23 @@ export default class CodeMirrorBlocks {
   // getLocationFromWhiteSpace : DOMNode -> {line, ch} | null
   getLocationFromWhitespace(el) {
     if(!el.classList.contains('blocks-white-space')) return; 
-    let prev = el.previousElementSibling, next = el.nextElementSibling;
-    if(prev) { return this.findNodeFromEl(prev).to;   }  // If there's a previous sibling, return it's .to
-    if(next) { return this.findNodeFromEl(next).from; }  // If there's a next sibling, return it's .from
+    let prevEl = el.previousElementSibling, nextEl = el.nextElementSibling;
+    if(prevEl) { return this.findNodeFromEl(prevEl).to;   }  // If there's a previous sibling, return it's .to
+    if(nextEl) { return this.findNodeFromEl(nextEl).from; }  // If there's a next sibling, return it's .from
     throw "IMPOSSIBLE: A WS element had neither a previous nor next sibling";
   }
 
-  // getPathFromWhiteSpace : DOMNode -> Path | null
+  // getPathFromWhiteSpace : DOMNode -> Path | #f
+  // REVISIT: As of c917d4b8d374de215f66806dc9fd3dcdc2788f90, whitespaces can be wrapped around any span,
+  // which means headers (fn position, cond, if) can have WS. As a result, we need to consider *three* cases
   getPathFromWhitespace(el) {
-    if(!el.classList.contains('blocks-white-space')) return;
-    let path = this.findNearestNodeFromEl(el.parentNode).id.split(',');
+    if(!el.classList.contains('blocks-white-space')) return false;
+    let path     = this.findNearestNodeFromEl(el.parentNode).id.split(','); // get the parent path
     let prevNode = this.findNodeFromEl(el.previousElementSibling);
-    path[path.length] = prevNode ? Number(prevNode.id.split(',').pop()) : 0;
+    let nextNode = this.findNodeFromEl(el.nextElementSibling);
+    path[path.length] = prevNode ? Number(prevNode.id.split(',').pop()) // "insert after previous"
+      : nextNode? nextNode.id.split(',').pop() - 1                      // "insert before next"
+      : 0;                                                              // "insert at parent's beginning"
     return path.join(',');
   }
 
@@ -737,6 +743,7 @@ export default class CodeMirrorBlocks {
       literal.insertion = {clear: () => {}}; // make a dummy marker
     // if we're inserting into a toplevel CM cursor
     } else if(dest.line !== undefined){
+      console.log(dest, this.ast.getNodeBefore(dest));
       literal.to = literal.from = dest;
       // calculate the path for focus (-1 if it's the first node)
       literal.path = String(this.ast.getNodeBefore(dest).id || -1);
@@ -927,6 +934,7 @@ export default class CodeMirrorBlocks {
           this.say("undo " + this.focusHistory.done[0].announcement);
           this.focusHistory.undone.unshift(this.focusHistory.done.shift());
           this.focusPath = this.focusHistory.undone[0].path;
+          console.log('restoring focus to', this.focusPath);
         }
         else { playBeep(); }
       }
