@@ -178,7 +178,7 @@ function parseNode(node, i) {
       from,
       to,
       node.clauses.map(parseNode),
-      {'aria-label':'a cond block with '+pluralize('clause', node.clauses)}
+      {'aria-label':'a conditional expression with '+pluralize('clause', node.clauses)}
     );
   } else if (node instanceof structures.couple) {
     return new CondClause(
@@ -186,7 +186,7 @@ function parseNode(node, i) {
       to,
       parseNode(node.first),
       [parseNode(node.second)],
-      {'aria-label':'condition '+(i+1)}
+      {'aria-label':'ltion '+(i+1)}
     );
   } else if (node instanceof structures.ifExpr) {
     return new IfExpression(
