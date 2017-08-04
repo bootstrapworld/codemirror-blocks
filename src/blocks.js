@@ -124,6 +124,8 @@ export default class CodeMirrorBlocks {
     this.searchString = "";
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
+    // Track paths that should be collapsed after a render
+    this.pathsToCollapseAfterRender = [];
     // Track focus and history with path/announcement pairs
     this.focusHistory = {done: [], undone: []};
     this.focusPath = "0";
@@ -326,11 +328,9 @@ export default class CodeMirrorBlocks {
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render() {
     this._clearMarks();
-    this.ast.patch(this.parser.parse(this.cm.getValue()));
-    if(this.rememberToCollapse){
-      this.ast.getNodeById(this.rememberToCollapse).collapsed = true;
-      this.rememberToCollapse = false;
-    }
+    this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()));
+    this.pathsToCollapseAfterRender.forEach(p => this.ast.getNodeById(p).collapsed = true);
+    this.pathsToCollapseAfterRender = [];
     this.renderer.renderAST(this.ast, this.focusPath);
     ui.renderToolbarInto(this);
   }
@@ -654,9 +654,11 @@ export default class CodeMirrorBlocks {
       }      
       // check for no-ops: we have to use textCoords instead of ASTpaths, to allow shifting a block within whitespace
       if ((poscmp(destFrom, sourceNode.from) > -1) && (poscmp(destTo, sourceNode.to) <  1)) { return; }
-      // temporarily expand the source node, but remember to re-collapse after patch
-      if(sourceNode.collapsed) this.rememberToCollapse = destPath.join(',');
-      sourceNode.collapsed = false;
+      // Remember to re-collapse any dragged nodes after patch
+      let elts = sourceNode.el.querySelectorAll("[aria-expanded=false]");
+      let collapsedPaths = [].map.call(elts, elt => this.findNodeFromEl(elt).id.split(','));
+      if(sourceNode.collapsed) collapsedPaths.push(sourceNode.id.split(','));
+      this.pathsToCollapseAfterRender = collapsedPaths.map(p => destPath.concat(p.slice(destPath.length)).join(','));
     }
     this.focusPath = destPath.join(',');
     
@@ -743,7 +745,6 @@ export default class CodeMirrorBlocks {
       literal.insertion = {clear: () => {}}; // make a dummy marker
     // if we're inserting into a toplevel CM cursor
     } else if(dest.line !== undefined){
-      console.log(dest, this.ast.getNodeBefore(dest));
       literal.to = literal.from = dest;
       // calculate the path for focus (-1 if it's the first node)
       literal.path = String(this.ast.getNodeBefore(dest).id || -1);
@@ -816,10 +817,11 @@ export default class CodeMirrorBlocks {
     else if (keyName == "End" && activeNode) {
       let lastExpr = [...this.ast.reverseRootNodes[0]];
       var lastNode = lastExpr[lastExpr.length-1];
+      console.log(lastNode);
       if(this.isNodeHidden(lastNode)) {
         let searchFn = (cur => this.ast.getNodeParent(cur));
         lastNode = that.ast.getNextMatchingNode(
-          searchFn, that.isNodeHidden, that.getActiveNode());
+          searchFn, that.isNodeHidden, lastNode);
       }      
       this.activateNode(lastNode, event);
     }

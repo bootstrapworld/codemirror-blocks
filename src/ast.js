@@ -55,19 +55,16 @@ export class AST {
     });
   } 
 
-  // given a new AST, patch this one to match (preserve all rendered DOM elements, though!)
+  // patch : AST -> AST
+  // given a new AST, return a new one patched from the current one
+  // taking care to preserve all rendered DOM elements, though!
   patch(newAST) {
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
     // preserve existing DOM elts, and collapsed state
     patches = patches.filter(p => !['el', 'collapsed'].includes(p.path.split('/').pop()));
     jsonpatch.apply(this.rootNodes, patches);
     this.rootNodes.forEach(castToASTNode);
-    // reset and re-annotate
-    delete this.lastNode;
-    this.nodeMap = new Map();
-    this.prevNodeMap = new WeakMap();
-    this.nextNodeMap = new WeakMap();
-    this.annotateNodes();
+    return new AST(this.rootNodes);
   }
 
   getNodeById(id) {

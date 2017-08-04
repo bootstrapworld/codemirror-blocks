@@ -176,7 +176,6 @@ export default class Renderer {
           helpers={{renderNodeForReact: this.renderNodeForReact}}
           key = {key}
           lockedTypes = {this.lockNodesOfType}
-          displayName = "Node"
         />
       );
     } else {
