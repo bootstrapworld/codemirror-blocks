@@ -328,10 +328,14 @@ export default class CodeMirrorBlocks {
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render() {
     this._clearMarks();
-    this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()));
-    this.pathsToCollapseAfterRender.forEach(p => this.ast.getNodeById(p).collapsed = true);
-    this.pathsToCollapseAfterRender = [];
-    this.renderer.renderAST(this.ast, this.focusPath);
+    try{
+      this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()));
+      this.pathsToCollapseAfterRender.forEach(p => this.ast.getNodeById(p).collapsed = true);
+      this.pathsToCollapseAfterRender = [];
+      this.renderer.renderAST(this.ast, this.focusPath);
+    } catch (e){
+      console.error(e);
+    }
     ui.renderToolbarInto(this);
   }
 
@@ -817,7 +821,6 @@ export default class CodeMirrorBlocks {
     else if (keyName == "End" && activeNode) {
       let lastExpr = [...this.ast.reverseRootNodes[0]];
       var lastNode = lastExpr[lastExpr.length-1];
-      console.log(lastNode);
       if(this.isNodeHidden(lastNode)) {
         let searchFn = (cur => this.ast.getNodeParent(cur));
         lastNode = that.ast.getNextMatchingNode(

@@ -204,9 +204,28 @@ export class Expression extends ASTNode {
   }
 }
 
-export class Struct extends ASTNode {
+export class IdentifierList extends ASTNode {
+  constructor(from, to, kind, ids, options={}) {
+    super(from, to, 'identifierList', options);
+    this.kind = kind;
+    this.ids = ids;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    for (let id of this.ids) {
+      yield id;
+    }
+  }
+
+  toString() {
+    return `(${this.ids.join(' ')})`;
+  }
+}
+
+export class StructDefinition extends ASTNode {
   constructor(from, to, name, fields, options={}) {
-    super(from, to, 'struct', options);
+    super(from, to, 'structDefinition', options);
     this.name = name;
     this.fields = fields;
   }
@@ -214,9 +233,7 @@ export class Struct extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
-    for (let node of this.fields) {
-      yield node;
-    }
+    yield this.fields;
   }
 
   toString() {
@@ -226,7 +243,7 @@ export class Struct extends ASTNode {
 
 export class VariableDefinition extends ASTNode {
   constructor(from, to, name, body, options={}) {
-    super(from, to, 'variableDef', options);
+    super(from, to, 'variableDefinition', options);
     this.name = name;
     this.body = body;
   }
@@ -251,9 +268,7 @@ export class LambdaExpression extends ASTNode {
 
   *[Symbol.iterator]() {
     yield this;
-    for (let node of this.args) {
-      yield node;
-    }
+    yield this.args;
     yield this.body;
   }
 
@@ -264,7 +279,7 @@ export class LambdaExpression extends ASTNode {
 
 export class FunctionDefinition extends ASTNode {
   constructor(from, to, name, args, body, options={}) {
-    super(from, to, 'functionDef', options);
+    super(from, to, 'functionDefinition', options);
     this.name = name;
     this.args = args;
     this.body = body;
@@ -273,9 +288,7 @@ export class FunctionDefinition extends ASTNode {
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
-    for (let node of this.args) {
-      yield node;
-    }
+    yield this.args;
     yield this.body;
   }
 

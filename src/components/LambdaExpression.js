@@ -15,17 +15,12 @@ export default class LambdaExpression extends Component {
 
   render() {
     const {node, helpers, lockedTypes} = this.props;
-    const argNodes = [];
-    node.args.forEach((arg, index) => {
-      argNodes.push(helpers.renderNodeForReact(arg, 'node-'+index));
-      argNodes.push(<DropTarget location={arg.to} key={'drop-'+index} />);
-    });
     return (
       <Node type="lambdaExpression" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
             &lambda; (
-            <DropTarget location={node.args.length ? node.args[0].from : node.func.to} />
-            {argNodes}
+            <DropTarget location={node.args.ids[0].from} />
+            {helpers.renderNodeForReact(node.args)}
             )
         </span>
         <span className="blocks-args">

@@ -21,13 +21,7 @@ export default class FunctionDefinition extends Component {
           define (
             <DropTarget location={node.name.from} />
             {helpers.renderNodeForReact(node.name)}
-            <DropTarget location={node.args.length ? node.args[0].from : node.func.to} />
-            {node.args.map((arg, index) => (
-              <span key={index}>
-                {helpers.renderNodeForReact(arg)}
-                <DropTarget location={arg.to} />
-              </span>
-              ))}
+            {helpers.renderNodeForReact(node.args)}
             )
         </span>
         <span className="blocks-args">

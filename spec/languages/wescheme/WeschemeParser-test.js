@@ -76,7 +76,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert defVar expressions to variableDef", function() {
-      expect(this.ast.rootNodes[0].type).toBe('variableDef');
+      expect(this.ast.rootNodes[0].type).toBe('variableDefinition');
       expect(this.ast.rootNodes[0].name.value).toBe('foo');
       expect(this.ast.rootNodes[0].body.type).toBe('literal');
     });
@@ -109,7 +109,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert defStruct to struct", function() {
-      expect(this.ast.rootNodes[0].type).toBe('struct');
+      expect(this.ast.rootNodes[0].type).toBe('structDefinition');
     });
 
     it("should convert the struct name correctly", function() {
@@ -117,9 +117,9 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should parse fields correctly", function() {
-      expect(this.ast.rootNodes[0].fields.length).toBe(3);
-      expect(this.ast.rootNodes[0].fields[0].value).toBe('x');
-      expect(this.ast.rootNodes[0].fields[2].value).toBe('z');
+      expect(this.ast.rootNodes[0].fields.ids.length).toBe(3);
+      expect(this.ast.rootNodes[0].fields.ids[0].value).toBe('x');
+      expect(this.ast.rootNodes[0].fields.ids[2].value).toBe('z');
     });
   });
 
@@ -130,7 +130,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert defFunc to functionDefinition", function() {
-      expect(this.ast.rootNodes[0].type).toBe('functionDef');
+      expect(this.ast.rootNodes[0].type).toBe('functionDefinition');
     });
 
     it("should convert the function name correctly", function() {
@@ -138,8 +138,8 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the function argument correctly", function() {
-      expect(this.ast.rootNodes[0].args.length).toBe(1);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('x');
+      expect(this.ast.rootNodes[0].args.ids.length).toBe(1);
+      expect(this.ast.rootNodes[0].args.ids[0].value).toBe('x');
     });
 
     it("should convert the function body correctly", function() {
@@ -157,9 +157,9 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the arguments correctly", function() {
-      expect(this.ast.rootNodes[0].args.length).toBe(2);
-      expect(this.ast.rootNodes[0].args[0].value).toBe('x');
-      expect(this.ast.rootNodes[0].args[1].value).toBe('y');
+      expect(this.ast.rootNodes[0].args.ids.length).toBe(2);
+      expect(this.ast.rootNodes[0].args.ids[0].value).toBe('x');
+      expect(this.ast.rootNodes[0].args.ids[1].value).toBe('y');
     });
 
     it("should convert the body correctly", function() {

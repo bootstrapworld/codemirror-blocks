@@ -2,7 +2,8 @@ import {
   AST,
   Expression,
   Literal,
-  Struct,
+  StructDefinition,
+  IdentifierList,
   FunctionDefinition,
   IfExpression,
   CondExpression,
@@ -77,15 +78,19 @@ function makeComment(node) {
 }
 // parseNode : WeSchemeNode Number -> ASTNode
 function parseNode(node, i) {
-  var from = {
-    line: node.location.startRow - 1,
-    ch: node.location.startCol
-  };
-  var to = {
-    line: node.location.endRow - 1,
-    ch: node.location.endCol
-  };
+  function locationFromNode(node) {
+    var from = {
+      line: node.location.startRow - 1,
+      ch: node.location.startCol
+    };
+    var to = {
+      line: node.location.endRow - 1,
+      ch: node.location.endCol
+    };
+    return {from, to};
+  }
 
+  let {from, to} = locationFromNode(node);
   let comment = node.comment? makeComment(node) : false;
 
   if (node instanceof structures.callExpr) {
@@ -147,29 +152,43 @@ function parseNode(node, i) {
       ,'comment' : comment}
     );
   } else if (node instanceof structures.defStruct) {
-    return new Struct(
+    let fieldsLoc = locationFromNode(node.fields);
+    let fields = new IdentifierList(
+      fieldsLoc.from, fieldsLoc.to, 'fields', node.fields.map(parseNode),
+      {'aria-label': pluralize('field', node.fields),'comment' : node.fields.comment? makeComment(node.fields) : false}
+    );
+    return new StructDefinition(
       from,
       to,
       parseNode(node.name),
-      node.fields.map(parseNode).filter(item => item != null),
+      fields,
       {'aria-label':symbolAria(node.name.val)+': a structure definition with ' + pluralize('field', node.fields)
       ,'comment' : comment}
     );
   } else if (node instanceof structures.defFunc) {
+    let argsLoc = locationFromNode(node.args);
+    let args = new IdentifierList(
+      argsLoc.from, argsLoc.to, 'arguments', node.args.map(parseNode),
+      {'aria-label': pluralize('argument', node.args),'comment' : node.args.comment? makeComment(node.args) : false}
+    );
     return new FunctionDefinition(
       from,
       to,
       parseNode(node.name),
-      node.args.map(parseNode),
+      args,
       parseNode(node.body),
-      {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('input', node.args)
-      ,'comment' : comment}
+      {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('argument', node.args)
+      ,'comment' :   comment}
     );
-  } else if (node instanceof structures.lambdaExpr) {
+  } else if (node instanceof structures.lambdaExpr) {let argsLoc = locationFromNode(node.args);
+    let args = new IdentifierList(
+      argsLoc.from, argsLoc.to, 'arguments', node.args.map(parseNode),
+      {'aria-label': pluralize('argument', node.args),'comment' : node.args.comment? makeComment(node.args) : false}
+    );
     return new LambdaExpression(
       from,
       to,
-      node.args.map(parseNode),
+      args,
       parseNode(node.body),
       {'aria-label':'a function with '+pluralize('argument', node.args)}
     );
@@ -186,7 +205,7 @@ function parseNode(node, i) {
       to,
       parseNode(node.first),
       [parseNode(node.second)],
-      {'aria-label':'ltion '+(i+1)}
+      {'aria-label':'condition '+(i+1)}
     );
   } else if (node instanceof structures.ifExpr) {
     return new IfExpression(
@@ -358,7 +377,9 @@ class WeschemeParser {
           || !sexp[2].every(isSymbol)) {      // too many expressions?
           return fallback(sexp);
         }
-        return new structures.defStruct(parseIdExpr(sexp[1]), sexp[2].map(parseIdExpr), sexp);
+        let fields = sexp[2].map(parseIdExpr);
+        fields.location = sexp[2].location;
+        return new structures.defStruct(parseIdExpr(sexp[1]), fields, sexp);
       }
 
       function parseMultiDef(sexp) {
@@ -380,7 +401,15 @@ class WeschemeParser {
             return fallback(sexp);
           }
           var args = rest(sexp[1]).map(parseIdExpr);
-          args.location = sexp[1].location;
+          // construct the location manually, excluding the func name
+          args.location = {
+            startCol : args[0].location.startCol,
+            startRow : args[0].location.startRow,
+            startChar: args[0].location.startChar,
+            endCol   : args[args.length-1].location.endCol,
+            endRow   : args[args.length-1].location.endRow,
+            endChar  : args[args.length-1].location.endChar
+          }
           return new structures.defFunc(parseIdExpr(sexp[1][0]), args, parseExpr(sexp[2]), sexp);
         }
         // If it's (define x ...)

@@ -10,6 +10,7 @@ import Unknown          from './components/Unknown';
 import Literal          from './components/Literal';
 import Blank            from './components/Blank';
 import Comment          from './components/Comment';
+import IdentifierList from './components/IdentifierList';
 import StructDefinition from './components/StructDef';
 import VariableDefinition from './components/VariableDef';
 import FunctionDefinition from './components/FunctionDef';
@@ -27,13 +28,14 @@ export default class Renderer {
     this.nodeRenderers = {
       unknown: Unknown,
       expression: Expression,
-      functionDef: FunctionDefinition,
+      functionDefinition: FunctionDefinition,
       lambdaExpression: LambdaExpression,
-      variableDef: VariableDefinition,
+      variableDefinition: VariableDefinition,
+      identifierList : IdentifierList,
       ifExpression: IfExpression,
       condExpression: CondExpression,
       condClause: CondClause,
-      struct: StructDefinition,
+      structDefinition: StructDefinition,
       literal: Literal,
       comment: Comment,
       blank: Blank

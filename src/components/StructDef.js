@@ -1,6 +1,6 @@
 import React, {Component, PropTypes} from 'react';
 
-import {Struct as ASTStructDefinitionNode} from '../ast';
+import {StructDefinition as ASTStructDefinitionNode} from '../ast';
 import Node from './Node';
 import DropTarget from './DropTarget';
 
@@ -20,15 +20,7 @@ export default class StructDefinition extends Component {
         <span className="blocks-operator">
           define-struct {helpers.renderNodeForReact(node.name)}
         </span>
-        <span className="blocks-args">
-          <DropTarget location={node.fields.length ? node.fields[0].from : node.name.to} />
-          {node.fields.map((field, index) => (
-            <span key={index}>
-              {helpers.renderNodeForReact(field)}
-              <DropTarget location={field.to} />
-            </span>
-            ))}
-        </span>
+        {helpers.renderNodeForReact(node.fields)}
       </Node>
     );
   }

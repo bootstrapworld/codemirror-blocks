@@ -422,7 +422,6 @@ describe('The CodeMirrorBlocks Class', function() {
           this.thirdArg   = this.blocks.ast.rootNodes[0].args[2];
           this.firstRoot.el.dispatchEvent(click());
           this.firstRoot.el.dispatchEvent(keydown(LEFT_KEY));
-          this.thirdRoot.el.dispatchEvent(keydown(LEFT_KEY));
         });
 
         it('up-arrow should navigate to the previous visible node, but not beyond it', function() {
@@ -486,8 +485,8 @@ describe('The CodeMirrorBlocks Class', function() {
         it('end should activate the last visible node', function() {
           this.secondRoot.el.dispatchEvent(click());
           this.secondRoot.el.dispatchEvent(keydown(END_KEY));
-          expect(document.activeElement).toBe(this.thirdRoot.el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.el.id);
+          expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
+          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
         });
       });
     });
