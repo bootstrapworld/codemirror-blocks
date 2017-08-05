@@ -237,7 +237,7 @@ export class StructDefinition extends ASTNode {
   }
 
   toString() {
-    return `(define-struct ${this.name} ${this.fields.join(' ')})`;
+    return `(define-struct ${this.name} ${this.fields.toString()})`;
   }
 }
 
@@ -273,7 +273,7 @@ export class LambdaExpression extends ASTNode {
   }
 
   toString() {
-    return `(lambda (${this.args.join(' ')}) ${this.body})`;
+    return `(lambda (${this.args.toString()}) ${this.body})`;
   }
 }
 
@@ -293,7 +293,7 @@ export class FunctionDefinition extends ASTNode {
   }
 
   toString() {
-    return `(define (${this.name} ${this.args.join(' ')}) ${this.body})`;
+    return `(define (${this.name} ${this.args.toString()}) ${this.body})`;
   }
 }
 
