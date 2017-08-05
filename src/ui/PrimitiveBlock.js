@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
 import {ASTNode} from '../ast';
 import Renderer from '../Renderer';
@@ -32,12 +33,12 @@ export var RenderedBlockNode = React.createClass({
   displayName: 'RenderedBlockNode',
 
   contextTypes: {
-    renderer: React.PropTypes.instanceOf(Renderer).isRequired,
+    renderer: PropTypes.instanceOf(Renderer).isRequired,
   },
 
   propTypes: {
-    node: React.PropTypes.instanceOf(ASTNode),
-    text: React.PropTypes.string,
+    node: PropTypes.instanceOf(ASTNode),
+    text: PropTypes.string,
   },
 
   getDefaultProps() {
@@ -78,7 +79,7 @@ export default React.createClass({
   displayName: 'PrimitiveBlock',
 
   propTypes: {
-    primitive: React.PropTypes.instanceOf(Primitive),
+    primitive: PropTypes.instanceOf(Primitive),
   },
 
   getDefaultProps() {

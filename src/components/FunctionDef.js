@@ -1,4 +1,5 @@
-import React, {Component, PropTypes} from 'react';
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 
 import {FunctionDefinition as ASTFunctionDefinitionNode} from '../ast';
 import Node from './Node';

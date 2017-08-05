@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import PrimitiveList from './PrimitiveList';
 import PrimitiveBlock from './PrimitiveBlock';
@@ -11,12 +12,12 @@ export default React.createClass({
   displayName: 'Toolbar',
 
   propTypes: {
-    primitives: React.PropTypes.instanceOf(PrimitiveGroup),
-    renderer: React.PropTypes.instanceOf(Renderer).isRequired,
+    primitives: PropTypes.instanceOf(PrimitiveGroup),
+    renderer: PropTypes.instanceOf(Renderer).isRequired,
   },
 
   childContextTypes: {
-    renderer: React.PropTypes.instanceOf(Renderer).isRequired,
+    renderer: PropTypes.instanceOf(Renderer).isRequired,
   },
 
   getDefaultProps() {

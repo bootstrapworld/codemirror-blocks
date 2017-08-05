@@ -1,7 +1,9 @@
-import React, {Component, PropTypes} from 'react';
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 
 import {VariableDefinition as ASTVariableDefinitionNode} from '../ast';
 import Node from './Node';
+import DropTarget from './DropTarget';
 
 export default class VariableDefinition extends Component {
   static propTypes = {
@@ -16,7 +18,12 @@ export default class VariableDefinition extends Component {
     const {node, helpers, lockedTypes} = this.props;
     return (
       <Node type="variableDef" node={node} lockedTypes={lockedTypes} helpers={helpers}>
-        <span className="blocks-operator">define {helpers.renderNodeForReact(node.name)}</span>
+        <span className="blocks-operator">
+          define 
+          <DropTarget location={node.name.from} />
+          {helpers.renderNodeForReact(node.name)}
+          <DropTarget location={node.name.to} />
+        </span>
         <span className="blocks-args">
           {helpers.renderNodeForReact(node.body)}
         </span>

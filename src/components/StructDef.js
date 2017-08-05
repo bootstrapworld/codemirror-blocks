@@ -1,4 +1,5 @@
-import React, {Component, PropTypes} from 'react';
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 
 import {StructDefinition as ASTStructDefinitionNode} from '../ast';
 import Node from './Node';
@@ -18,7 +19,10 @@ export default class StructDefinition extends Component {
     return (
       <Node type="struct" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
-          define-struct {helpers.renderNodeForReact(node.name)}
+          define-struct 
+          <DropTarget location={node.name.from} />
+          {helpers.renderNodeForReact(node.name)}
+          <DropTarget location={node.name.to} />
         </span>
         {helpers.renderNodeForReact(node.fields)}
       </Node>
