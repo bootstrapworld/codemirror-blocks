@@ -219,7 +219,7 @@ export class IdentifierList extends ASTNode {
   }
 
   toString() {
-    return `(${this.ids.join(' ')})`;
+    return `${this.ids.join(' ')}`;
   }
 }
 
@@ -237,7 +237,7 @@ export class StructDefinition extends ASTNode {
   }
 
   toString() {
-    return `(define-struct ${this.name} ${this.fields.toString()})`;
+    return `(define-struct ${this.name} (${this.fields.toString()}))`;
   }
 }
 
@@ -255,7 +255,7 @@ export class VariableDefinition extends ASTNode {
   }
 
   toString() {
-    return `(define (${this.name} ${this.body})`;
+    return `(define ${this.name} ${this.body})`;
   }
 }
 
