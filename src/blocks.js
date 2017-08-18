@@ -799,6 +799,7 @@ export default class CodeMirrorBlocks {
         node = ancestors[0];
       } else {
         ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); 
+        that.cm.refresh();
       }
       that.activateNode(node, event);
       return true;
@@ -813,7 +814,6 @@ export default class CodeMirrorBlocks {
         node.el.setAttribute("aria-expanded", !isExpanded);
         node.collapsed = isExpanded;
       }
-      that.cm.refresh();
       return makeExpanded !== isExpanded;
     }
 
@@ -847,6 +847,7 @@ export default class CodeMirrorBlocks {
         this.insertionQuarantine(false, activeNode, event);
       } else {
         maybeChangeNodeExpanded(activeNode);
+        that.cm.refresh();
       }
     }
     // Ctrl/Cmd-Enter should force-allow editing on ANY node
@@ -889,10 +890,10 @@ export default class CodeMirrorBlocks {
       this.say("All blocks collapsed");
       let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
       [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), false));
+      this.cm.refresh(); // update the CM display, since line heights may have changed
       let rootId = activeNode.id.split(",")[0]; // put focus on containing rootNode
       // shift focus if rootId !== activeNodeId
       if(rootId !== activeNode.id) this.activateNode(this.ast.getNodeById(rootId), event);
-      this.cm.refresh(); // update the CM display, since line heights may have changed
     }
     else if (keyName === "Shift-Right" && activeNode) {
       this.say("All blocks expanded");
@@ -926,7 +927,7 @@ export default class CodeMirrorBlocks {
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {
       let parent = this.ast.getNodeParent(activeNode);
-      return maybeChangeNodeExpanded(activeNode, false) 
+      return (maybeChangeNodeExpanded(activeNode, false) && this.cm.refresh() && true)
           || (parent && this.activateNode(parent, event))
           || playBeep();
     }
@@ -934,7 +935,7 @@ export default class CodeMirrorBlocks {
     else if (event.keyCode == RIGHT && activeNode) {
       let firstChild = this.isNodeExpandable(activeNode) 
         && this.ast.getNodeFirstChild(activeNode);
-      return maybeChangeNodeExpanded(activeNode, true)
+      return (maybeChangeNodeExpanded(activeNode, true) && this.cm.refresh() && true)
           || (firstChild && this.activateNode(firstChild, event))
           || playBeep();
     }
