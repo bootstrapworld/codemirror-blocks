@@ -368,19 +368,23 @@ export default class CodeMirrorBlocks {
     this.focusPath = node.id;
     return true;
   }
-
+  // is this a node that can be collapsed or expanded?
   isNodeExpandable(node) {
-    return !["blank", "literal", "comment"].includes(node.type) && 
+    return !["blank", "literal", "comment", "identifierList"].includes(node.type) && 
          !node.el.getAttribute("aria-disabled");
   }
   isNodeEditable(node) {
     return ["blank", "literal"].includes(node.type);
   }
-
+  // are any of the node's ancestors collapsed?
   isNodeHidden(node) {
     return node.el.matches('[aria-expanded="false"] *');
   }
-
+  // is the node itself - or any of its ancestors - locked?
+  isNodeLocked(node) {
+    return node.el.matches('[aria-disabled="true"], [aria-disabled="true"] *');
+  }
+  // is the node a drop target or a top-level CM element?
   isDropTarget(el) {
     let node = this.findNearestNodeFromEl(el);
     return el.classList.contains('blocks-drop-target') 
@@ -877,7 +881,6 @@ export default class CodeMirrorBlocks {
       moveCursorAdjacent(activeNode.el.previousElementSibling, activeNode.from);
     }
     // Ctrl-] moves the cursor to next whitespace or cursor position,
-    // taking special care of 0-argument expressions
     else if (keyName === "Ctrl-]" && activeNode) {
       moveCursorAdjacent(activeNode.el.nextElementSibling, activeNode.to);
     }
@@ -896,6 +899,16 @@ export default class CodeMirrorBlocks {
       let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
       [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), true));
       this.cm.refresh(); // update the CM display, since line heights may have changed
+    }
+    else if (keyName === "Shift-PageUp" && activeNode) {
+      let searchFn = (cur => this.ast.getNodeBefore(cur));
+      lastNode = that.ast.getNextMatchingNode(searchFn, that.isNodeLocked, activeNode);
+      this.activateNode(lastNode, event);
+    }
+    else if (keyName === "Shift-PageDown" && activeNode) {
+      let searchFn = (cur => this.ast.getNodeAfter(cur));
+      lastNode = that.ast.getNextMatchingNode(searchFn, that.isNodeLocked, activeNode);
+      this.activateNode(lastNode, event);
     }
     // if open-bracket, modify text to be an empty expression with a blank
     else if (!this.searchString && openDelims.includes(event.key) && activeNode) {
