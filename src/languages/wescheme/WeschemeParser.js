@@ -409,7 +409,7 @@ class WeschemeParser {
             endCol   : args[args.length-1].location.endCol,
             endRow   : args[args.length-1].location.endRow,
             endChar  : args[args.length-1].location.endChar
-          }
+          };
           return new structures.defFunc(parseIdExpr(sexp[1][0]), args, parseExpr(sexp[2]), sexp);
         }
         // If it's (define x ...)
