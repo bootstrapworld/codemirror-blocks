@@ -776,7 +776,9 @@ export default class CodeMirrorBlocks {
     var activeNode = this.getActiveNode();
     // used for lightweigh refresh when the AST hasn't changed
     function refreshCM(){
-      that.cm.refresh(); return true;
+      that.cm.refresh(); 
+      that.cm.scrollIntoView(activeNode.from);
+      return true;
     }
     // used to create an insertion node
     function moveCursorAdjacent(node, cursor) {
@@ -899,6 +901,7 @@ export default class CodeMirrorBlocks {
       let rootId = activeNode.id.split(",")[0]; // put focus on containing rootNode
       // shift focus if rootId !== activeNodeId
       if(rootId !== activeNode.id) this.activateNode(this.ast.getNodeById(rootId), event);
+      else this.cm.scrollIntoView(activeNode.from);
     }
     else if (keyName === "Shift-Right" && activeNode) {
       this.say("All blocks expanded");
