@@ -909,14 +909,18 @@ export default class CodeMirrorBlocks {
       [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), true));
       refreshCM(); // update the CM display, since line heights may have changed
     }
+    // active the previous non-locked, non-hidden node
     else if (keyName === "Shift-PageUp" && activeNode) {
-      let searchFn = (cur => this.ast.getNodeBefore(cur));
-      lastNode = that.ast.getNextMatchingNode(searchFn, that.isNodeLocked, activeNode);
+      let searchFn = (cur => this.ast.getNodeBefore(cur)),
+          testFn   = (node => that.isNodeLocked(node) || that.isNodeHidden(node));
+      lastNode = that.ast.getNextMatchingNode(searchFn, testFn, activeNode);
       this.activateNode(lastNode, event);
     }
+    // active the previous non-locked, non-hidden node
     else if (keyName === "Shift-PageDown" && activeNode) {
-      let searchFn = (cur => this.ast.getNodeAfter(cur));
-      lastNode = that.ast.getNextMatchingNode(searchFn, that.isNodeLocked, activeNode);
+      let searchFn = (cur => this.ast.getNodeAfter(cur)),
+          testFn   = (node => that.isNodeLocked(node) || that.isNodeHidden(node));
+      lastNode = that.ast.getNextMatchingNode(searchFn, testFn, activeNode);
       this.activateNode(lastNode, event);
     }
     // if open-bracket, modify text to be an empty expression with a blank
