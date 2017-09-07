@@ -21,7 +21,8 @@
     "react": "^15.3.2",
     "react-bootstrap": "^0.30.3",
     "react-codemirror": "^0.2.6",
-    "react-dom": "^15.3.2"
+    "react-dom": "^15.3.2",
+    "prop-types": "^15.5.10"
   },
   "devDependencies": {
     "babel-cli": "^6.16.0",
@@ -58,6 +59,7 @@
     "less": "^2.7.1",
     "less-loader": "^2.2.3",
     "lodash": "^4.16.2",
+    "prop-types": "^15.5.10",
     "raw-loader": "^0.5.1",
     "react-addons-test-utils": "^15.3.2",
     "react-hot-loader": "^3.0.0-beta.5",

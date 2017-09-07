@@ -20,7 +20,6 @@ export default class LambdaExpression extends Component {
       <Node type="lambdaExpression" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
             &lambda; (
-            <DropTarget location={node.args.ids[0].from} />
             {helpers.renderNodeForReact(node.args)}
             )
         </span>
