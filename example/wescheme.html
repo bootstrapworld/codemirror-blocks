@@ -21,12 +21,15 @@
           transition: all .5s;
           padding: 10px;
       }
-
-      #helpDialog h2{font-size: 1.5em;}
-      #helpDialog .shortcuts{min-width: ;}
+      .screenreader{ visibility: hidden; height: 0px; display: block;}
+      #helpDialog{text-align: center;}
+      #helpDialog h2{font-size: 1.5em; }
+      #helpDialog .shortcuts{min-width: 90%;}
       #helpDialog .shortcuts td:first-child{padding-right: 20px;}
-      #helpDialog .shortcuts td:last-child{text-align: right;}
-      #helpDialog .shortcutGroup {width: 45%; display: inline-block; text-align: left; vertical-align: top; }
+      #helpDialog .shortcuts td:last-child,
+      #helpDialog .shortcuts th:last-child{text-align: right;}
+      #helpDialog .shortcuts thead{display: none;}
+      #helpDialog .shortcutGroup {width: 80%; display: inline-block; text-align: left; vertical-align: top; }
       kbd{
           display:inline-block;
           padding:2px 3px;
@@ -62,55 +65,67 @@
       </div>
     </div>
 
-    <div id="helpDialog" tabindex="-1">
+    <div id="helpDialog" tabindex="-1" role="document">
       <h1>Blocks Help</h1>
-      Note: on MacOS, <kbd>Cmd</kbd> replaces <kbd>Ctrl</kbd>.
-      <br/>
+      <span style="display: block;">Note: on MacOS, <kbd>Cmd</kbd> replaces <kbd>Ctrl</kbd>.</span>
+      <span class="screenreader">
+        Screenreader users: Make sure to either increase your screenreader's verbosity, or character over the shortcut column in the tables below. Some shortcuts use punctuation keys that may not always be spoken.
+      </span>
       <div class="shortcutGroup" tabindex="-1">
         <h2>Navigation</h2>
         <table class="shortcuts">
-          <tr><td>Previous block</td>        <td><kbd>Up</kbd></td></tr>
-          <tr><td>Next block</td>            <td><kbd>Down</kbd></td></tr>
-          <tr><td>Collapse block</td>        <td><kbd>Left</kbd></td></tr>
-          <tr><td>Expand block</td>          <td><kbd>Right</kbd></td></tr>
-          <tr><td>Expand all</td>            <td><kbd>Shift-Left</kbd></td></tr>
-          <tr><td>Collapse all</td>          <td><kbd>Shift-Right</kbd></td></tr>
-          <tr><td>First visible block</td>   <td><kbd>Home</kbd></td></tr>
-          <tr><td>Last visible block</td>    <td><kbd>End</kbd></td></tr>
+          <thead><tr><th>Command</th>           <th>Shortcut</th></tr></thead> 
+          <tbody>         
+          <tr><td>Previous Block</td>           <td><kbd>Up</kbd></td></tr>
+          <tr><td>Next Block</td>               <td><kbd>Down</kbd></td></tr>
+          <tr><td>Collapse Block</td>           <td><kbd>Left</kbd></td></tr>
+          <tr><td>Expand Block</td>             <td><kbd>Right</kbd></td></tr>
+          <tr><td>Expand All</td>               <td><kbd>Shift-Left</kbd></td></tr>
+          <tr><td>Collapse All</td>             <td><kbd>Shift-Right</kbd></td></tr>
+          <tr><td>First Visible Block</td>      <td><kbd>Home</kbd></td></tr>
+          <tr><td>Last Visible Block</td>       <td><kbd>End</kbd></td></tr>
+          </tbody>
         </table>
       </div>
 
       <div class="shortcutGroup" tabindex="-1">
         <h2>Editing</h2>
         <table class="shortcuts">
-          <tr><td>Toggle Editing</td>         <td><kbd>Enter</kbd> or <kbd>Return</kbd></td></tr>
-          <tr><td>Cancel Editing</td>         <td><kbd>ESC</kbd> or <kbd>Shift-ESC</kbd></td></tr>
-          <tr><td>Edit any block</td>         <td><kbd>Ctrl-Enter</kbd></td></tr>
-          <tr><td>Insert Left</td>            <td><kbd aria-label="open bracket">Ctrl-[</kbd></td></tr>
-          <tr><td>Insert Right</td>           <td><kbd aria-label="close bracket">Ctrl-]</kbd></td></tr>
-          <tr><td>Collapse all</td>           <td>Shift-Right</td></tr>
-          <tr><td>Start new Expression</td><td><kbd aria-label="open parenthesis">(</kbd></td></tr>
+          <thead><tr><th>Command</th>           <th>Shortcut</th></tr></thead>
+          <tbody>
+          <tr><td>Edit a Literal</td>           <td><kbd>Enter</kbd> or <kbd>Return</kbd></td></tr>
+          <tr><td>Edit any Block</td>           <td><kbd>Ctrl-Enter</kbd></td></tr>
+          <tr><td>Cancel Editing</td>           <td><kbd>ESC</kbd> or <kbd>Shift-ESC</kbd></td></tr>
+          <tr><td>Insert Before</td>            <td><kbd>Ctrl-[</kbd></td></tr>
+          <tr><td>Insert After</td>             <td><kbd>Ctrl-]</kbd></td></tr>
+          <tr><td>Start New Expression</td>     <td><kbd>(</kbd></td></tr>
+          <tr><td>Delete Selected Blocks</td>   <td><kbd>Delete</kbd></td></tr>
+          </tbody>
         </table>
       </div>
-
       <br/>
       <div class="shortcutGroup" tabindex="-1">
         <h2>Selection and Cut/Copy/Paste</h2>
         <table class="shortcuts">
+          <thead><tr><th>Command</th>           <th>Shortcut</th></tr></thead>
+          <tbody>
           <tr><td>Toggle selection</td>         <td><kbd>Space</kbd></td></tr>
-          <tr><td>Navigate and keep selection</td><td><kbd>Alt-Down</kbd>, <kbd>Alt-Up</kbd>, etc.</td></tr>
-          <tr><td>Cut/Copy/Paste</td>           <td><kbd>Ctrl-X</kbd>/<kbd>Ctrl-C</kbd>/<kbd>Ctrl-V</kbd></td></tr>
-          <tr><td>Delete selection</td>         <td><kbd>Del</kbd> or <kbd>Backspace</kbd></td></tr>
+          <tr><td>Navigate and keep selection</td><td><kbd>Ctrl</kbd>+Navigate</kbd> (<kbd>Cmd</kbd> onMac)</td></tr>
+          <tr><td>Cut / Copy / Paste</td>       <td><kbd>Ctrl-X</kbd> / <kbd>Ctrl-C</kbd> / <kbd>Ctrl-V</kbd></td></tr>
           <tr><td>Paste before active node</td> <td><kbd>Shift-Ctrl-V</kbd></td></tr>
+          </tbody>
         </table>
       </div>
 
       <div class="shortcutGroup" tabindex="-1">
         <h2>Search</h2>
         <table class="shortcuts">
-          <tr><td>Start searching</td>          <td><kbd>Begin typing</kbd></td></tr>
-          <tr><td>Find next</td>                <td><kbd>Enter</kbd></td></tr>
-          <tr><td>Find previous</td>            <td><kbd>Shift-Enter</kbd></td></tr>
+          <thead><tr><th>Command</th>           <th>Shortcut</th></tr></thead>
+          <tbody>
+          <tr><td>Enter Search Mode</td>        <td>Just start typing!</td></tr>
+          <tr><td>Find next</td>                <td><kbd>Enter</kbd> (in search mode)</td></tr>
+          <tr><td>Find previous</td>            <td><kbd>Shift-Enter</kbd> (in search mode)</td></tr>
+          </tbody>
         </table>
       </div>
     </div>

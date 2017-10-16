@@ -14,33 +14,35 @@ export default class CondClause extends Component {
   }
 
   render() {
-    const {node, helpers} = this.props;
+    const {node, helpers, lockedTypes} = this.props;
+    console.log(node);
     return (
-      <tbody 
+      <div 
         type="condClause" 
         className={`blocks-node blocks-${node.type}`}
         tabIndex="1"
         role="treeitem"
         aria-label={node.options['aria-label']}
+        aria-level={node['aria-level']}
         id={`block-node-${node.id}`}
         ref = {(el) => node.el = el }>
-        <tr>
-          <td className="blocks-cond-predicate">
+        <div className="blocks-cond-row">
+          <div className="blocks-cond-predicate">
               <DropTarget location={node.testExpr.from} />
               {helpers.renderNodeForReact(node.testExpr)}
-          </td>
-          <td className="blocks-cond-result">
+          </div>
+          <div className="blocks-cond-result">
               {node.thenExprs.map((thenExpr, index) => (
                <span key={index}>
                  <DropTarget location={thenExpr.from} />
                  {helpers.renderNodeForReact(thenExpr)}
                </span>))}
-          </td>
-        </tr>
-        <tr className="blocks-cond-drop-row">
-          <td colSpan="2"><DropTarget location={node.from} /></td>
-        </tr>
-      </tbody>
+          </div>
+        </div>
+        <div className="blocks-cond-drop-row">
+          <DropTarget location={node.from} />
+        </div>
+      </div>
     );
   }
 }
