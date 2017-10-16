@@ -42,6 +42,20 @@
           border-radius:3px;
           box-shadow:inset 0 -1px 0 black;
       }
+
+      @media print{
+        #helpDialog{ 
+          font-size:    16px; 
+          position:     absolute; 
+          top:          0px;
+          left:         0px;
+          outline:      0px; 
+          width:        100%;
+          background:   white !important;
+          opacity:      1;
+          z-index:      99;
+        }
+      }
     </style>
   </head>
   <body>
@@ -66,8 +80,8 @@
     </div>
 
     <div id="helpDialog" tabindex="-1" role="document">
-      <h1>Blocks Help</h1>
-      <span style="display: block;">Note: on MacOS, <kbd>Cmd</kbd> replaces <kbd>Ctrl</kbd>.</span>
+      <h1>Blocks Shortcuts</h1>
+      <span style="display: block;">(Note: on MacOS, <kbd>Cmd</kbd> replaces <kbd>Ctrl</kbd>.)</span>
       <span class="screenreader">
         Screenreader users: Make sure to either increase your screenreader's verbosity, or character over the shortcut column in the tables below. Some shortcuts use punctuation keys that may not always be spoken.
       </span>
