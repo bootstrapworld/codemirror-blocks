@@ -23,7 +23,9 @@
       }
 
       #helpDialog h2{font-size: 1.5em;}
-      #helpDialog .shortcuts {list-style-type: none; display: inline-block; padding: 0px;}
+      #helpDialog .shortcuts{min-width: ;}
+      #helpDialog .shortcuts td:first-child{padding-right: 20px;}
+      #helpDialog .shortcuts td:last-child{text-align: right;}
       #helpDialog .shortcutGroup {width: 45%; display: inline-block; text-align: left; vertical-align: top; }
       kbd{
           display:inline-block;
@@ -62,50 +64,54 @@
 
     <div id="helpDialog" tabindex="-1">
       <h1>Blocks Help</h1>
+      Note: on MacOS, <kbd>Cmd</kbd> replaces <kbd>Ctrl</kbd>.
+      <br/>
       <div class="shortcutGroup" tabindex="-1">
         <h2>Navigation</h2>
-        <ul class="shortcuts">
-          <li>Previous block  - <kbd>Up</kbd></li>
-          <li>Next block      - <kbd>Down</kbd></li>
-          <li>Collapse block  - <kbd>Left</kbd></li>
-          <li>Expand block    - <kbd>Right</kbd></li>
-          <li>Collapse all    - <kbd>Shift-Left</kbd></li>
-          <li>Expand all      - <kbd>Shift-Right</kbd></li>
-          <li>First visible block - <kbd>Home</kbd></li>
-          <li>Last visible block  - <kbd>End</kbd></li>
-        </ul>
+        <table class="shortcuts">
+          <tr><td>Previous block</td>        <td><kbd>Up</kbd></td></tr>
+          <tr><td>Next block</td>            <td><kbd>Down</kbd></td></tr>
+          <tr><td>Collapse block</td>        <td><kbd>Left</kbd></td></tr>
+          <tr><td>Expand block</td>          <td><kbd>Right</kbd></td></tr>
+          <tr><td>Expand all</td>            <td><kbd>Shift-Left</kbd></td></tr>
+          <tr><td>Collapse all</td>          <td><kbd>Shift-Right</kbd></td></tr>
+          <tr><td>First visible block</td>   <td><kbd>Home</kbd></td></tr>
+          <tr><td>Last visible block</td>    <td><kbd>End</kbd></td></tr>
+        </table>
       </div>
 
       <div class="shortcutGroup" tabindex="-1">
         <h2>Editing</h2>
-        <ul class="shortcuts">
-          <li>Toggle Editing  - <kbd>Enter</kbd> or <kbd>Return</kbd></li>
-          <li>Cancel Editing  - <kbd>ESC</kbd> or <kbd>Shift-ESC</kbd></li>
-          <li>Edit any block  - <kbd>Cmd-Enter</kbd> (Mac) or <kbd>Ctrl-Enter</kbd> (PC)</li>
-          <li>Insert Left     - <kbd aria-label="open bracket">Ctrl-[</kbd></li>
-          <li>Insert Right    - <kbd aria-label="close bracket">Ctrl-]</kbd></li>
-          <li>Start new Expression - <kbd aria-label="open parenthesis">(</kbd></li>
-        </ul>
+        <table class="shortcuts">
+          <tr><td>Toggle Editing</td>         <td><kbd>Enter</kbd> or <kbd>Return</kbd></td></tr>
+          <tr><td>Cancel Editing</td>         <td><kbd>ESC</kbd> or <kbd>Shift-ESC</kbd></td></tr>
+          <tr><td>Edit any block</td>         <td><kbd>Ctrl-Enter</kbd></td></tr>
+          <tr><td>Insert Left</td>            <td><kbd aria-label="open bracket">Ctrl-[</kbd></td></tr>
+          <tr><td>Insert Right</td>           <td><kbd aria-label="close bracket">Ctrl-]</kbd></td></tr>
+          <tr><td>Collapse all</td>           <td>Shift-Right</td></tr>
+          <tr><td>Start new Expression</td><td><kbd aria-label="open parenthesis">(</kbd></td></tr>
+        </table>
       </div>
+
       <br/>
       <div class="shortcutGroup" tabindex="-1">
         <h2>Selection and Cut/Copy/Paste</h2>
-        <ul class="shortcuts">
-          <li>Toggle selection - <kbd>Space</kbd></li>
-          <li>Navigate and keep selection - <kbd>Alt-Down</kbd>, <kbd>Alt-Up</kbd>, etc.</li>
-          <li>Cut/Copy/Paste - <kbd>Ctrl-X</kbd>/<kbd>Ctrl-C</kbd>/<kbd>Ctrl-V</kbd></li>
-          <li>Delete selection - <kbd>Del</kbd> or <kbd>Backspace</kbd></li>
-          <li>Paste before active node - <kbd>Shift-Ctrl-V</kbd></li>
-        </ul>
+        <table class="shortcuts">
+          <tr><td>Toggle selection</td>         <td><kbd>Space</kbd></td></tr>
+          <tr><td>Navigate and keep selection</td><td><kbd>Alt-Down</kbd>, <kbd>Alt-Up</kbd>, etc.</td></tr>
+          <tr><td>Cut/Copy/Paste</td>           <td><kbd>Ctrl-X</kbd>/<kbd>Ctrl-C</kbd>/<kbd>Ctrl-V</kbd></td></tr>
+          <tr><td>Delete selection</td>         <td><kbd>Del</kbd> or <kbd>Backspace</kbd></td></tr>
+          <tr><td>Paste before active node</td> <td><kbd>Shift-Ctrl-V</kbd></td></tr>
+        </table>
       </div>
 
       <div class="shortcutGroup" tabindex="-1">
         <h2>Search</h2>
-        <ul class="shortcuts">
-          <li>Start searching - Begin typing. Focus will jump to first matching node.</li>
-          <li>Find next - <kbd>Enter</kbd></li>
-          <li>Find previous - <kbd>Shift-Enter</kbd></li>
-        </ul>
+        <table class="shortcuts">
+          <tr><td>Start searching</td>          <td><kbd>Begin typing</kbd></td></tr>
+          <tr><td>Find next</td>                <td><kbd>Enter</kbd></td></tr>
+          <tr><td>Find previous</td>            <td><kbd>Shift-Enter</kbd></td></tr>
+        </table>
       </div>
     </div>
   </body>
