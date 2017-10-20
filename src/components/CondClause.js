@@ -15,7 +15,6 @@ export default class CondClause extends Component {
 
   render() {
     const {node, helpers, lockedTypes} = this.props;
-    console.log(node);
     return (
       <div 
         type="condClause" 

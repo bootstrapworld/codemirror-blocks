@@ -77,11 +77,12 @@ function makeComment(node) {
   return new Comment(from, to, node.comment.txt);
 }
 
+// enumerateIdentifierList : [Literals] -> String
+// do the right thing with commas, "and", etc
 function enumerateIdentifierList(lst) {
   lst = lst.slice(0);
-  //last = lst.pop();
-  if(lst.length > 1) lst.splice(lst.length-1, 0, "and");
-  return lst.join(', ');
+  var last = lst.pop();
+  return (lst.length == 0)? last.toString() : lst.join(', ') + " and "+last.toString();
 }
 
 // parseNode : WeSchemeNode Number -> ASTNode
