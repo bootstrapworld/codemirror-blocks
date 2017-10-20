@@ -76,6 +76,13 @@ function makeComment(node) {
   }; 
   return new Comment(from, to, node.comment.txt);
 }
+
+function enumerateIdentifierList(lst) {
+  lst = lst.slice(0);
+  if(lst.length > 1) lst.splice(lst.length-1, 0, "and");
+  return lst.join(' ');
+}
+
 // parseNode : WeSchemeNode Number -> ASTNode
 function parseNode(node, i) {
   function locationFromNode(node) {
@@ -155,7 +162,8 @@ function parseNode(node, i) {
     let fieldsLoc = locationFromNode(node.fields);
     let fields = new IdentifierList(
       fieldsLoc.from, fieldsLoc.to, 'fields', node.fields.map(parseNode),
-      {'aria-label': pluralize('field', node.fields),'comment' : node.fields.comment? makeComment(node.fields) : false}
+      {'aria-label': pluralize('field', node.fields)+": "+enumerateIdentifierList(node.fields)
+      ,'comment' : node.fields.comment? makeComment(node.fields) : false}
     );
     return new StructDefinition(
       from,
@@ -168,8 +176,9 @@ function parseNode(node, i) {
   } else if (node instanceof structures.defFunc) {
     let argsLoc = locationFromNode(node.args);
     let args = new IdentifierList(
-      argsLoc.from, argsLoc.to, 'arguments', node.args.map(parseNode),
-      {'aria-label': pluralize('argument', node.args),'comment' : node.args.comment? makeComment(node.args) : false}
+      argsLoc.from, argsLoc.to, 'arguments:', node.args.map(parseNode),
+      {'aria-label': pluralize('argument', node.args) + ": " + enumerateIdentifierList(node.args)
+      ,'comment' : node.args.comment? makeComment(node.args) : false}
     );
     return new FunctionDefinition(
       from,
@@ -177,20 +186,26 @@ function parseNode(node, i) {
       parseNode(node.name),
       args,
       parseNode(node.body),
-      {'aria-label':symbolAria(node.name.val)+': a function definition with '+pluralize('argument', node.args)
+      {'aria-label':symbolAria(node.name.val)
+        + ': a function definition with '
+        + pluralize('argument', node.args)
+        + ": "+enumerateIdentifierList(node.args)
       ,'comment' :   comment}
     );
   } else if (node instanceof structures.lambdaExpr) {let argsLoc = locationFromNode(node.args);
     let args = new IdentifierList(
       argsLoc.from, argsLoc.to, 'arguments', node.args.map(parseNode),
-      {'aria-label': pluralize('argument', node.args),'comment' : node.args.comment? makeComment(node.args) : false}
+      {'aria-label': pluralize('argument', node.args)+": "+enumerateIdentifierList(node.args)
+      ,'comment' : node.args.comment? makeComment(node.args) : false}
     );
     return new LambdaExpression(
       from,
       to,
       args,
       parseNode(node.body),
-      {'aria-label':'a function with '+pluralize('argument', node.args)}
+      {'aria-label':'an anonymous function with '
+       + pluralize('argument', node.args)
+       + ": " + enumerateIdentifierList(node.args)}
     );
   } else if (node instanceof structures.condExpr) {
     return new CondExpression(
