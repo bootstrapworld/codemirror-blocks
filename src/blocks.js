@@ -30,6 +30,7 @@ var beepSound = require('./beep.wav');
 const BEEP = new Audio(beepSound);
 function playBeep() {
   BEEP.pause();
+  console.log("BEEP!");
   if(BEEP.readyState > 0){ BEEP.currentTime = 0; }
   // Resolves race condition. See https://stackoverflow.com/questions/36803176
   setTimeout(function () { BEEP.play(); }, 50);
@@ -370,7 +371,7 @@ export default class CodeMirrorBlocks {
   }
   // is this a node that can be collapsed or expanded?
   isNodeExpandable(node) {
-    return !["blank", "literal", "comment", "identifierList"].includes(node.type) && 
+    return !["blank", "literal", "comment"].includes(node.type) && 
          !node.el.getAttribute("aria-disabled");
   }
   isNodeEditable(node) {
@@ -808,6 +809,7 @@ export default class CodeMirrorBlocks {
         ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); 
         refreshCM();
       }
+      // TODO: jump to containing node if it's the name of a definition, or in fn position of an expr
       that.activateNode(node, event);
       return true;
     }
@@ -935,6 +937,19 @@ export default class CodeMirrorBlocks {
     // then replace or insert, then reset the buffer
     else if ([CTRLKEY+"-V", "Shift-"+CTRLKEY+"-V"].includes(keyName) && activeNode) {
       return this.handlePaste(event);
+    }
+    // speak parents: "<label>, at level N, inside <label>, at level N-1...""
+    else if (keyName == "\\") {
+      var parents = [node], node = activeNode;
+      while(node = this.ast.getNodeParent(node)){
+        parents.push(node.options['aria-label'] + ", at level "+node["aria-level"]);
+      }
+      if(parents.length > 0) this.say(parents.join(", inside "));
+      else playBeep();
+    }
+    // Have the subtree read itself intelligently
+    else if (keyName == "Shift-\\") {
+      this.say(activeNode.toDescription());
     }
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {

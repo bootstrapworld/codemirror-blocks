@@ -79,8 +79,9 @@ function makeComment(node) {
 
 function enumerateIdentifierList(lst) {
   lst = lst.slice(0);
+  //last = lst.pop();
   if(lst.length > 1) lst.splice(lst.length-1, 0, "and");
-  return lst.join(' ');
+  return lst.join(', ');
 }
 
 // parseNode : WeSchemeNode Number -> ASTNode
@@ -170,7 +171,10 @@ function parseNode(node, i) {
       to,
       parseNode(node.name),
       fields,
-      {'aria-label':symbolAria(node.name.val)+': a structure definition with ' + pluralize('field', node.fields)
+      {'aria-label':symbolAria(node.name.val)
+        + ': a structure definition with ' 
+        + pluralize('field', node.fields)
+        + ": " + enumerateIdentifierList(node.fields)
       ,'comment' : comment}
     );
   } else if (node instanceof structures.defFunc) {

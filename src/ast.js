@@ -140,7 +140,7 @@ export class AST {
 // house some common attributes.
 export class ASTNode {
   constructor(from, to, type, options) {
-    
+
     // The `from` and `to` attributes are objects containing the start and end
     // positions of this node within the source document. They are in the format
     // of `{line: <line>, ch: <column>}`.
@@ -164,6 +164,10 @@ export class ASTNode {
     // it's corresponding DOM element, or to look it up in `AST.nodeMap`
     this.id = null; // the id is set by setChildAttributes()
   }
+
+  toDescription(){
+    return this.options["aria-label"];
+  }
 }
 
 export class Unknown extends ASTNode {
@@ -177,6 +181,11 @@ export class Unknown extends ASTNode {
     for (let elt of this.elts) {
       yield elt;
     }
+  }
+
+  toDescription(){
+    return `an unknown expression with ${this.elts.length} children:
+            ${this.elts.map(e => e.toDescription())}`;
   }
 
   toString() {
@@ -197,6 +206,11 @@ export class Expression extends ASTNode {
     for (let arg of this.args) {
       yield arg;
     }
+  }
+
+  toDescription(){
+    return `(applying the function ${this.func.toDescription()} to ${this.args.length} arguments: 
+            ${this.args.map(a => a.toDescription())})`;
   }
 
   toString() {
@@ -236,6 +250,11 @@ export class StructDefinition extends ASTNode {
     yield this.fields;
   }
 
+  toDescription(){
+    return `define ${this.name.toDescription()} to be a structure with ${this.fields.ids.length} fields: 
+            ${this.fields.ids.map(f => f.toDescription())}`;
+  }
+
   toString() {
     return `(define-struct ${this.name} (${this.fields.toString()}))`;
   }
@@ -246,6 +265,10 @@ export class VariableDefinition extends ASTNode {
     super(from, to, 'variableDefinition', options);
     this.name = name;
     this.body = body;
+  }
+
+  toDescription(){
+    return "define "+this.name.toDescription()+" to be the result of:"+this.body.toDescription();
   }
 
   *[Symbol.iterator]() {
@@ -272,6 +295,12 @@ export class LambdaExpression extends ASTNode {
     yield this.body;
   }
 
+  toDescription(){
+    return `an anonymous function with ${this.args.ids.length} arguments: 
+            ${this.args.ids.map(a => a.toDescription())}. The body of the function is:
+            ${this.body.toDescription()}`;
+  }
+
   toString() {
     return `(lambda (${this.args.toString()}) ${this.body})`;
   }
@@ -290,6 +319,12 @@ export class FunctionDefinition extends ASTNode {
     yield this.name;
     yield this.args;
     yield this.body;
+  }
+
+  toDescription(){
+    return `define ${this.name} to be a function with ${this.args.ids.length} arguments: 
+            ${this.args.ids.map(a => a.toDescription())}. The body of the function is:
+            ${this.body.toDescription()}`;
   }
 
   toString() {
@@ -312,6 +347,10 @@ export class CondClause extends ASTNode {
     }
   }
 
+  toDescription(){
+    return `condition: if ${this.testExpr} then ${this.thenExprs.map(te => te.toDescription())}.`;
+  }
+
   toString() {
     return `[${this.testExpr} ${this.thenExprs.join(' ')}]`;
   }
@@ -330,9 +369,9 @@ export class CondExpression extends ASTNode {
     }
   }
 
-  // TODO: ditch this and fix condExpression.handlebars to look this up itself.
-  get firstClause() {
-    return this.clauses[0];
+  toDescription(){
+    return `a conditional expression with ${this.clauses.length} conditions: 
+            ${this.clauses.map(c => c.toDescription())}.`;
   }
 
   toString() {
@@ -354,6 +393,11 @@ export class IfExpression extends ASTNode {
     yield this.testExpr;
     yield this.thenExpr;
     yield this.elseExpr;
+  }
+
+  toDescription(){
+    return `an if expression: if ${this.testExpr.toDescription()}, then ${this.thenExpr.toDescription()}
+            else ${this.elseExpr}`;
   }
 
   toString() {
