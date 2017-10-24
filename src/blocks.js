@@ -949,7 +949,7 @@ export default class CodeMirrorBlocks {
     }
     // Have the subtree read itself intelligently
     else if (keyName == "Shift-\\") {
-      this.say(activeNode.toDescription());
+      this.say(activeNode.toDescription(activeNode['aria-level']));
     }
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {

@@ -15,6 +15,19 @@ function castToASTNode(o) {
   [...o].slice(1).forEach(castToASTNode);                   // traverse children
 }
 
+function enumerateList(lst) {
+  lst = lst.slice(0);
+  var last = lst.pop();
+  return (lst.length == 0)? last.toString() : lst.join(', ') + " and "+last.toString();
+}
+
+function pluralize(noun, set) {
+  return set.length+' '+noun+(set.length != 1? 's' : '');
+}
+
+const descDepth = 2;
+
+
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
 // required to spit out an `AST` instance.
 export class AST {
@@ -165,7 +178,7 @@ export class ASTNode {
     this.id = null; // the id is set by setChildAttributes()
   }
 
-  toDescription(){
+  toDescription(level){
     return this.options["aria-label"];
   }
 }
@@ -183,9 +196,10 @@ export class Unknown extends ASTNode {
     }
   }
 
-  toDescription(){
-    return `an unknown expression with ${this.elts.length} children:
-            ${this.elts.map(e => e.toDescription())}`;
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return `an unknown expression with ${pluralize("children", this.elts)} `+ 
+      this.elts.map((e, i, elts)  => (elts.length>1? (i+1) + ": " : "")+ e.toDescription(level)).join(", ");
   }
 
   toString() {
@@ -208,9 +222,11 @@ export class Expression extends ASTNode {
     }
   }
 
-  toDescription(){
-    return `(applying the function ${this.func.toDescription()} to ${this.args.length} arguments: 
-            ${this.args.map(a => a.toDescription())})`;
+  // only read one level down
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return `applying the function ${this.func.toDescription()} to ${pluralize("argument", this.args)} `+
+      this.args.map((a, i, args)  => (args.length>1? (i+1) + ": " : "")+ a.toDescription(level)).join(", ");
   }
 
   toString() {
@@ -232,6 +248,11 @@ export class IdentifierList extends ASTNode {
     }
   }
 
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return enumerateList(this.ids);
+  }
+
   toString() {
     return `${this.ids.join(' ')}`;
   }
@@ -250,9 +271,10 @@ export class StructDefinition extends ASTNode {
     yield this.fields;
   }
 
-  toDescription(){
-    return `define ${this.name.toDescription()} to be a structure with ${this.fields.ids.length} fields: 
-            ${this.fields.ids.map(f => f.toDescription())}`;
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return `define ${this.name.toDescription(level)} to be a structure with ${pluralize("field", this.fields.ids)}: 
+            ${this.fields.toDescription(level)}`;
   }
 
   toString() {
@@ -267,8 +289,9 @@ export class VariableDefinition extends ASTNode {
     this.body = body;
   }
 
-  toDescription(){
-    return "define "+this.name.toDescription()+" to be the result of:"+this.body.toDescription();
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return `define ${this.name} to be the result of: ${this.body.toDescription(level)}`;
   }
 
   *[Symbol.iterator]() {
@@ -295,10 +318,11 @@ export class LambdaExpression extends ASTNode {
     yield this.body;
   }
 
-  toDescription(){
-    return `an anonymous function with ${this.args.ids.length} arguments: 
-            ${this.args.ids.map(a => a.toDescription())}. The body of the function is:
-            ${this.body.toDescription()}`;
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return `an anonymous function of ${pluralize("argument", this.args.ids)}: 
+            ${this.args.toDescription(level)}, with body:
+            ${this.body.toDescription(level)}`;
   }
 
   toString() {
@@ -321,10 +345,11 @@ export class FunctionDefinition extends ASTNode {
     yield this.body;
   }
 
-  toDescription(){
-    return `define ${this.name} to be a function with ${this.args.ids.length} arguments: 
-            ${this.args.ids.map(a => a.toDescription())}. The body of the function is:
-            ${this.body.toDescription()}`;
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return `define ${this.name} to be a function of ${pluralize("argument", this.args.ids)}: 
+            ${this.args.toDescription(level)}, with body:
+            ${this.body.toDescription(level)}`;
   }
 
   toString() {
@@ -347,8 +372,9 @@ export class CondClause extends ASTNode {
     }
   }
 
-  toDescription(){
-    return `condition: if ${this.testExpr} then ${this.thenExprs.map(te => te.toDescription())}.`;
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return `condition: if ${this.testExpr.toDescription(level)} then ${this.thenExprs.map(te => te.toDescription(level))}.`;
   }
 
   toString() {
@@ -369,9 +395,10 @@ export class CondExpression extends ASTNode {
     }
   }
 
-  toDescription(){
-    return `a conditional expression with ${this.clauses.length} conditions: 
-            ${this.clauses.map(c => c.toDescription())}.`;
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return `a conditional expression with ${pluralize("condition", this.clauses)}: 
+            ${this.clauses.map(c => c.toDescription(level))}.`;
   }
 
   toString() {
@@ -395,9 +422,10 @@ export class IfExpression extends ASTNode {
     yield this.elseExpr;
   }
 
-  toDescription(){
-    return `an if expression: if ${this.testExpr.toDescription()}, then ${this.thenExpr.toDescription()}
-            else ${this.elseExpr}`;
+  toDescription(level){
+    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    return `an if expression: if ${this.testExpr.toDescription(level)}, then ${this.thenExpr.toDescription(level)} `+
+            `else ${this.elseExpr.toDescription(level)}`;
   }
 
   toString() {
