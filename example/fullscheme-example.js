@@ -26,8 +26,8 @@ var cm2 = CodeMirror.fromTextArea(
  }
 );
 
-var code = require('./ast-test.rkt');
-//var code = require('./cow-game.rkt');
+//var code = require('./ast-test.rkt');
+var code = require('./cow-game.rkt');
 //var code = "(sum (+   (- 1 2)  3)\n (*  3  4)\n (/ 5 6))\n(product 5 6 7)"
 cm.setValue(code);
 cm.doc.clearHistory();
