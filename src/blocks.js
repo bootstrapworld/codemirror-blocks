@@ -512,7 +512,7 @@ export default class CodeMirrorBlocks {
   // Set the appropriate attributes and event handlers
   editLiteral(node, event) {
     event.stopPropagation();
-    let action = node.el.getAttribute("aria-label") == ""? "inserting" : "editing";
+    let action = node.el.getAttribute("aria-label") == ""? "inserting " : "editing ";
     this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel");
     node.el.contentEditable = true;
     node.el.spellcheck = false;
