@@ -45,6 +45,7 @@ export default class Renderer {
   // extract all the literals, create clones, and absolutely position
   // them at their original locations
   animateTransition(ast, toBlocks) {
+    let start = Date.now();
     let that = this;
     // take note of the parent elt, CM offsets, and rootNodes
     let cm = this.cm, parent = this.cm.getScrollerElement(), rootNodes = ast.rootNodes;
@@ -59,27 +60,31 @@ export default class Renderer {
       return el;
     };
 
-    // given a literal, a clone, and whether we're coming from text...
-    // position the clone over the currently-rendered literal
+    // given literals, clones, and whether we're coming from text...
+    // position the clones over the currently-rendered literals
     // unless the literal is offscreen, in which case fade out the clone
-    function assignClonePosition(literal, clone, fromText) {
-      if(fromText){ // if we're coming from text, fake a literal to get coords
-        literal.el = toDom(literal);
-        var tm = cm.markText(literal.from, literal.to, { replacedWith: literal.el });
+    function assignClonePosition(literals, clones, fromText=!toBlocks) {
+      if(fromText) { // if we're coming from text, fake a literal to get coords
+        cm.operation(() => literals.forEach((literal, i) => {
+            literal.el = toDom(literal);
+            literal.marker = cm.markText(literal.from, literal.to, { replacedWith: literal.el });
+        }));
       }
-      if(literal.el.offsetWidth === 0 && literal.el.offsetHeight === 0) {
-        clone.style.animationName = "fadeout";
-        clone.style.whiteSpace    = "pre";
-      } else {
-        // assign the location and other style info
-        let {left, top, width, height} = literal.el.getBoundingClientRect();
-        clone.style.width  = width  + "px";
-        clone.style.height = height + "px";
-        clone.style.top    = (top - offsetTop) + parent.scrollTop  + "px";
-        clone.style.left   = (left- offsetLeft)+ parent.scrollLeft + "px";
-        clone.className    = "transition";
-      }
-      if(fromText) { tm.clear(); } // clean up the faked marker
+      clones.forEach((clone, i) => {
+        if(literals[i].el.offsetWidth === 0 && literals[i].el.offsetHeight === 0) {
+          clone.style.animationName = "fadeout";
+          clone.style.whiteSpace    = "pre";
+        } else {
+          // assign the location and other style info
+          let {left, top, width, height} = literals[i].el.getBoundingClientRect();
+          clone.style.width  = width  + "px";
+          clone.style.height = height + "px";
+          clone.style.top    = (top - offsetTop) + parent.scrollTop  + "px";
+          clone.style.left   = (left- offsetLeft)+ parent.scrollLeft + "px";
+          clone.className    = "transition";
+        }
+      });
+      if(fromText) { cm.operation(() => literals.forEach(l => l.marker.clear())); } // clear markers
     }
 
     // extract all the literals and blanks from a rootNode
@@ -98,10 +103,8 @@ export default class Renderer {
     let clones = literals.map(toDom);
 
     // 2) move each clone to the *origin* location of the corresponding literal
-    literals.forEach(function(literal, i) {
-      assignClonePosition(literal, clones[i], toBlocks);
-      cloneParent.appendChild(clones[i]);
-    });
+    assignClonePosition(literals, clones, toBlocks);
+    clones.forEach(c => cloneParent.appendChild(c));
 
     // 3) render or clear the original AST
     if(toBlocks) {
@@ -114,7 +117,7 @@ export default class Renderer {
     }
 
     // 4) move each clone to the *destination* location of the corresponding literal
-    literals.forEach((literal, i) => assignClonePosition(literal, clones[i], !toBlocks));
+    assignClonePosition(literals, clones, !toBlocks);
 
     // 5) Clean up after ourselves. The 1000ms should match the transition length defined in blocks.less
     setTimeout(function() {
@@ -124,6 +127,7 @@ export default class Renderer {
       cloneParent.remove();
     }, 1000);
     that.cm.setOption("viewportMargin", originalViewportMargin);
+    console.log('animateTransition: '+(Date.now() - start)/1000 + 'ms');
   }
 
   renderAST(ast, restoreFocusToBlock) {

@@ -75,7 +75,7 @@ export class AST {
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
     // preserve existing DOM elts, and collapsed state
     patches = patches.filter(p => !['el', 'collapsed'].includes(p.path.split('/').pop()));
-    jsonpatch.applyPatch(this.rootNodes, patches);
+    jsonpatch.applyPatch(this.rootNodes, patches, false); // false = don't validate patches
     this.rootNodes.forEach(castToASTNode);
     return new AST(this.rootNodes);
   }

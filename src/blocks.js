@@ -328,16 +328,18 @@ export default class CodeMirrorBlocks {
   // render : Void -> Void
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render() {
+    let start = Date.now();
     this._clearMarks();
     try{
       this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()));
       this.pathsToCollapseAfterRender.forEach(p => this.ast.getNodeById(p).collapsed = true);
       this.pathsToCollapseAfterRender = [];
-      this.renderer.renderAST(this.ast, this.focusPath);
+      this.cm.operation(() => this.renderer.renderAST(this.ast, this.focusPath));
     } catch (e){
       console.error(e);
     }
     ui.renderToolbarInto(this);
+    console.log('re-render time: '+(Date.now() - start)/1000 + 'ms');
   }
 
   // getActiveNode : Void -> ASTNode
