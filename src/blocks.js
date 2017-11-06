@@ -798,7 +798,7 @@ export default class CodeMirrorBlocks {
     }
     function showNextMatch(moveCursorFn) {
       clearTimeout(that.searchTimer); // reset the timer for 1.5sec
-      that.searchTimer = setTimeout(() => that.searchString = that.searchCursor = "", 1500);
+      that.searchTimer = setTimeout(() => that.searchString = that.searchCursor = "", 2500);
       var node, more; // iterate until there's no match or a node is found
       while((more=moveCursorFn()) && !(node=that.ast.getNodeContaining(that.searchCursor.from()))){ /* no-op */}
       if(!more || !node) { playBeep(); return false; } // beep if there's nothing to show
@@ -946,7 +946,7 @@ export default class CodeMirrorBlocks {
       while(node = this.ast.getNodeParent(node)){
         parents.push(node.options['aria-label'] + ", at level "+node["aria-level"]);
       }
-      if(parents.length > 0) this.say(parents.join(", inside "));
+      if(parents.length > 1) this.say(parents.join(", inside "));
       else playBeep();
     }
     // Have the subtree read itself intelligently

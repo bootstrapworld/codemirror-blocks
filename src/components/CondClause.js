@@ -22,6 +22,7 @@ export default class CondClause extends Component {
         tabIndex="1"
         role="treeitem"
         aria-label={node.options['aria-label']}
+        aria-expanded   = { node.collapsed ? "false" : "true" }
         aria-level={node['aria-level']}
         id={`block-node-${node.id}`}
         ref = {(el) => node.el = el }>
