@@ -22,7 +22,7 @@ export default class FunctionDefinition extends Component {
           define (
             <DropTarget location={node.name.from} />
             {helpers.renderNodeForReact(node.name)}
-            {helpers.renderNodeForReact(node.args)}
+            {helpers.renderNodeForReact(node.params)}
             )
         </span>
         <span className="blocks-args">

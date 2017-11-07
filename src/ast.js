@@ -338,29 +338,29 @@ export class LambdaExpression extends ASTNode {
 }
 
 export class FunctionDefinition extends ASTNode {
-  constructor(from, to, name, args, body, options={}) {
+  constructor(from, to, name, params, body, options={}) {
     super(from, to, 'functionDefinition', options);
     this.name = name;
-    this.args = args;
+    this.params = params;
     this.body = body;
   }
 
   *[Symbol.iterator]() {
     yield this;
     yield this.name;
-    yield this.args;
+    yield this.params;
     yield this.body;
   }
 
   toDescription(level){
     if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
     return `define ${this.name} to be a function of 
-            ${this.args.toDescription(level)}, with body:
+            ${this.params.toDescription(level)}, with body:
             ${this.body.toDescription(level)}`;
   }
 
   toString() {
-    return `(define (${this.name} ${this.args.toString()}) ${this.body})`;
+    return `(define (${this.name} ${this.params.toString()}) ${this.body})`;
   }
 }
 
