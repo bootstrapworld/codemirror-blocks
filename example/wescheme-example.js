@@ -10,11 +10,11 @@ require('./example-page.less');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
-  {theme:'3024-day'}
+  {lineNumbers: true, theme:'3024-day'}
 );
 var cm2 = CodeMirror.fromTextArea(
   document.getElementById('code2'),
-  {theme:'3024-day'}
+  {lineNumbers: true, theme:'3024-day'}
 );
 
 var focusCarousel = [cm, cm2, document.getElementById("mode")];

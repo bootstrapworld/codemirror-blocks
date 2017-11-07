@@ -40,6 +40,7 @@ let editor = renderEditorInto(
   options
 );
 editor.getCodeMirror().setValue(code);
+editor.getCodeMirror().setOption("lineNumbers", true);
 editor.getCodeMirror().doc.clearHistory();
 
 ReactDOM.render((
