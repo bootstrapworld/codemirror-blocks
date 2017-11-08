@@ -97,9 +97,11 @@ export default class Renderer {
     // 0) Optimization: limit the number of lines CM is rendering
     let originalViewportMargin = that.cm.getOption("viewportMargin");
     that.cm.setOption("viewportMargin", 20);
-
-    // 1) get all the literals from the AST, and make clones of them
+    let vp = cm.getViewport();
+    
+    // 1) get all the *visible* literals from the AST, and make clones of them
     let literals = ast.rootNodes.reduce(flatten, []);
+    //                .filter(l => (l.from.line >= vp.from) && (l.to.line <= vp.to));
     let clones = literals.map(toDom);
 
     // 2) move each clone to the *origin* location of the corresponding literal

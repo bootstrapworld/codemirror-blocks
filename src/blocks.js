@@ -178,7 +178,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
-    this.cm.on('change',    (cm, e) => this.handleChange(cm, e));
+    this.cm.on('changes',    (cm, e) => this.handleChange(cm, e));
     // mousedown events should impact dragging, focus-if-error, and click events
     this.cm.on('mousedown', (cm, e) => {
       toggleDraggable(e); 
@@ -189,7 +189,7 @@ export default class CodeMirrorBlocks {
     // override CM's natural onFocus behavior, activating the last focused node
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
-      if(this.ast.rootNodes.length > 0 && !this.mouseUsed) {
+      if(this.blockMode && this.ast.rootNodes.length > 0 && !this.mouseUsed) {
         setTimeout(() => { this.activateNode(this.ast.getNodeById(this.focusPath), e); }, 10);
       }
     });
@@ -256,9 +256,9 @@ export default class CodeMirrorBlocks {
     this.setBlockMode(!this.blockMode);
   }
 
-  // handleChange : CM CM-Change-Event -> Void
+  // handleChange : CM CM-Change-Events -> Void
   // if blocks mode is enabled, re-render the blocks
-  handleChange() {
+  handleChange(_, change) {
     if (this.blockMode) {
       this.render();
     }
@@ -546,7 +546,9 @@ export default class CodeMirrorBlocks {
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
     this.focusPath = sel[sel.length-1].id; // point to the first node
-    this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
+    let cmSelections = sel.map(s => {return {anchor: s.from, head: s.to}});
+    let blanks = sel.map(s => "");
+    this.commitChange(() => {this.cm.setSelections(cmSelections); this.cm.replaceSelections(blanks)},
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
     this.selectedNodes.clear();
   }

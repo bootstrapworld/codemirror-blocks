@@ -335,28 +335,26 @@
     height: 30px;
     min-width: 75px;
     padding: 3px;
-    background: black;
+    background: linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1), rgba(0,0,0,0));
     * { display: none;}
     .blocks-operator, .blocks-operator * { 
       display: inline;
       padding: 0px;
       margin: 0px;
       border: none;
-      color: lightgray;
+      font-weight: bold;
       line-height: 20px;
-    }
-    >.blocks-operator {
-      margin-right: 22px;
+      color: white;
+      background: none;
+      text-align: left;
     }
   }
-  .blocks-node[aria-expanded="false"]::after{
-    position:absolute; 
-    right: 5px;
-    content: "\27F7";
-    color: white;
+  .blocks-node[aria-expanded="true"] .blocks-identifierlist[aria-expanded="false"]:before{
+      content: "...";
+      color: white;
   }
   .blocks-locked {
     opacity: 0.5;
   }
-  .blocks-locked::after{ content: "\1f512" !important; }
+  .blocks-locked::after{ content: "\1f512" !important; z-index: 99;}
 }
