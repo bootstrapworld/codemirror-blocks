@@ -546,9 +546,7 @@ export default class CodeMirrorBlocks {
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
     this.focusPath = sel[sel.length-1].id; // point to the first node
-    let cmSelections = sel.map(s => {return {anchor: s.from, head: s.to}});
-    let blanks = sel.map(s => "");
-    this.commitChange(() => {this.cm.setSelections(cmSelections); this.cm.replaceSelections(blanks)},
+    this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
     this.selectedNodes.clear();
   }
