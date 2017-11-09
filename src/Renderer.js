@@ -84,7 +84,8 @@ export default class Renderer {
           clone.className    = "transition";
         }
       });
-      if(fromText) { cm.operation(() => literals.forEach(l => l.marker.clear())); } // clear markers
+      // clear markers
+      if(fromText) { cm.operation(() => literals.forEach(l => {l.marker.clear(); delete l.marker;})); } 
     }
 
     // extract all the literals and blanks from a rootNode
