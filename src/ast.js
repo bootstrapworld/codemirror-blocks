@@ -178,7 +178,7 @@ export class ASTNode {
     this.id = null; // the id is set by setChildAttributes()
   }
 
-  toDescription(level){
+  toDescription(){
     return this.options["aria-label"];
   }
 }
@@ -297,7 +297,7 @@ export class VariableDefinition extends ASTNode {
 
   toDescription(level){
     if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
-    let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:"
+    let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:";
     return `define ${this.name} to be ${insert} ${this.body.toDescription(level)}`;
   }
 

@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 
 import {LambdaExpression as ASTLambdaExpressionNode} from '../ast';
 import Node from './Node';
-import DropTarget from './DropTarget';
 
 export default class LambdaExpression extends Component {
   static propTypes = {

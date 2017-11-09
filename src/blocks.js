@@ -258,7 +258,7 @@ export default class CodeMirrorBlocks {
 
   // handleChange : CM CM-Change-Events -> Void
   // if blocks mode is enabled, re-render the blocks
-  handleChange(_, change) {
+  handleChange() {
     if (this.blockMode) {
       this.render();
     }
@@ -916,14 +916,14 @@ export default class CodeMirrorBlocks {
     // active the previous non-locked, non-hidden node
     else if (keyName === "Shift-PageUp" && activeNode) {
       let searchFn = (cur => this.ast.getNodeBefore(cur)),
-          testFn   = (node => that.isNodeLocked(node) || that.isNodeHidden(node));
+        testFn   = (node => that.isNodeLocked(node) || that.isNodeHidden(node));
       lastNode = that.ast.getNextMatchingNode(searchFn, testFn, activeNode);
       this.activateNode(lastNode, event);
     }
     // active the previous non-locked, non-hidden node
     else if (keyName === "Shift-PageDown" && activeNode) {
       let searchFn = (cur => this.ast.getNodeAfter(cur)),
-          testFn   = (node => that.isNodeLocked(node) || that.isNodeHidden(node));
+        testFn   = (node => that.isNodeLocked(node) || that.isNodeHidden(node));
       lastNode = that.ast.getNextMatchingNode(searchFn, testFn, activeNode);
       this.activateNode(lastNode, event);
     }

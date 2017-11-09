@@ -65,9 +65,9 @@ export default class Renderer {
     // unless the literal is offscreen, in which case fade out the clone
     function assignClonePosition(literals, clones, fromText=!toBlocks) {
       if(fromText) { // if we're coming from text, fake a literal to get coords
-        cm.operation(() => literals.forEach((literal, i) => {
-            literal.el = toDom(literal);
-            literal.marker = cm.markText(literal.from, literal.to, { replacedWith: literal.el });
+        cm.operation(() => literals.forEach(literal => {
+          literal.el = toDom(literal);
+          literal.marker = cm.markText(literal.from, literal.to, { replacedWith: literal.el });
         }));
       }
       clones.forEach((clone, i) => {
@@ -96,8 +96,6 @@ export default class Renderer {
 
     // 0) Optimization: limit the number of lines CM is rendering
     let originalViewportMargin = that.cm.getOption("viewportMargin");
-    that.cm.setOption("viewportMargin", 20);
-    let vp = cm.getViewport();
     
     // 1) get all the *visible* literals from the AST, and make clones of them
     let literals = ast.rootNodes.reduce(flatten, []);

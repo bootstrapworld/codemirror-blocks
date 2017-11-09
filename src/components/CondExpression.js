@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 
 import {CondExpression as ASTCondExpressionNode} from '../ast';
 import Node from './Node';
-import DropTarget from './DropTarget';
 
 export default class CondExpression extends Component {
   static propTypes = {
