@@ -161,15 +161,17 @@
     cursor: hand;
     transition: all 0.5s;
 
-    &.blocks-editing, &.blocks-quarantine {
+    &.blocks-editing, &.quarantine {
       border-color: @editing-border-color;
       cursor: text;
-      min-height: @height;
-      height: auto;
-      display: inline-table;
+      display:inline-table;
       &.blocks-error {
         border-color: @error-border-color;
       }
+    }
+    &.blocks-editing.quarantine:empty {
+      display: block;
+      width: 15px;
     }
 
     &:hover {
