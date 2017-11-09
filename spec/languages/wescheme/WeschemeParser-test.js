@@ -138,8 +138,8 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the function argument correctly", function() {
-      expect(this.ast.rootNodes[0].args.ids.length).toBe(1);
-      expect(this.ast.rootNodes[0].args.ids[0].value).toBe('x');
+      expect(this.ast.rootNodes[0].params.ids.length).toBe(1);
+      expect(this.ast.rootNodes[0].params.ids[0].value).toBe('x');
     });
 
     it("should convert the function body correctly", function() {

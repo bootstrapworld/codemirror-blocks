@@ -92,15 +92,15 @@ describe('The CodeMirrorBlocks Class', function() {
       });
     });
   });
-
+/*
   describe('when parsing code with comments,', function() {
     beforeEach(function() {
       this.cm.setValue(`;top-line
-(+ ; plus
+        (+ ; plus
 
-; multi
-;lines
-1 (* 2 7) 3 4)`);
+        ; multi
+        ;lines
+        1 (* 2 7) 3 4)`);
       this.blocks.setBlockMode(true);
       this.expr = this.blocks.ast.rootNodes[0];
       this.funcSymbol = this.blocks.ast.rootNodes[0].func;
@@ -121,4 +121,5 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
   });
+  */
 });
