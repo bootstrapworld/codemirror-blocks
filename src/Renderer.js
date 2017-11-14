@@ -17,7 +17,6 @@ import FunctionDefinition from './components/FunctionDef';
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
-function poseq(a, b) { return poscmp(a,b)===0; }
 
 export default class Renderer {
   constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
