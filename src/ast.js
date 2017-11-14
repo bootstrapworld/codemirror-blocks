@@ -74,10 +74,25 @@ export class AST {
     });
   } 
 
-  // patch : AST -> AST
+  // patch : AST ChangeObj -> AST
   // given a new AST, return a new one patched from the current one
   // taking care to preserve all rendered DOM elements, though!
-  patch(newAST) {
+  patch(newAST, {from, to, text, removed}) {
+    // REPORT THE CHANGE VIA RAW POSNS
+    //if(text.toString()   =="") console.log(i+ ': DELETE '+removed.join(""));
+    //else if(removed.toString()=="") console.log(i+ ': INSERT '+text.join(""));
+    //else console.log(i+ ': CHANGE '+removed.join("")+' TO '+ text.join(""));
+    let fromNode      = this.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
+    let fromPos       = fromNode? fromNode.from : from;               // if so, use that node's .from
+    var insertedToPos = {line: from.line + text.length-1,             // compute insert-to position
+                         ch: text[text.length-1].length + ((text.length==1)? from.ch : 0)};
+    // get an array of removed roots and inserted roots
+    let removedRoots  = this.getRootNodesTouching(from, to);
+    let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
+    // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
+    for(var i = 0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
+    //console.log('starting at index'+(i)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
+    this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
     // preserve existing DOM elts, node IDs, and collapsed state
     patches = patches.filter(p => ['aria-level', 'aria-setsize', 'aria-posinset', 'line', 'ch'].includes(p.path.split('/').pop()));

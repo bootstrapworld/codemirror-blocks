@@ -331,25 +331,9 @@ export default class CodeMirrorBlocks {
     let start = Date.now();
     try{
       this.cm.operation(() => {
-        // apply each change to the AST, and render
-        changes.forEach(({from, to, text, removed}, i) => {
-          let newAST = this.parser.parse(this.cm.getValue());
-          // REPORT THE CHANGE VIA RAW POSNS
-          //if(text.toString()   =="") console.log(i+ ': DELETE '+removed.join(""));
-          //else if(removed.toString()=="") console.log(i+ ': INSERT '+text.join(""));
-          //else console.log(i+ ': CHANGE '+removed.join("")+' TO '+ text.join(""));
-          let fromNode      = this.ast.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
-          let fromPos       = fromNode? fromNode.from : from;                 // if so, use that node's .from
-          var insertedToPos = {line: from.line + text.length-1,             // compute insert-to position
-                              ch: text[text.length-1].length + ((text.length==1)? from.ch : 0)};
-          // get an array of removed roots and inserted roots
-          let removedRoots  = this.ast.getRootNodesTouching(from, to);
-          let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
-          // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
-          for(i = 0; i<this.ast.rootNodes.length; i++){ if(poscmp(fromPos, this.ast.rootNodes[i].from)<=0) break;  }
-          //console.log('starting at index'+(i)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
-          this.ast.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
-          this.ast = this.ast.patch(newAST);
+        // for each change, patch the AST and render dirty rootNodes
+        changes.forEach((c, i) => {
+          this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), c);
           // remove CM marks for deleted nodes and render the dirty/inserted ones
           // TODO: maybe just-render dirty nodes? in theory, removed ones should be gone anyway, right...?
           //removedRoots.forEach(r => this.cm.findMarks(r.from, r.to).filter(m => m.node).forEach(m => m.clear()));
