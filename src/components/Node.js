@@ -27,7 +27,7 @@ export default class Node extends PureComponent {
       <span
         id              = { `block-node-${node.id}` }
         className       = { classes }
-        ref             = { (el) => { node.el = el} }
+        ref             = { (el) => { node.el = el; } }
         tabIndex        = "-1"
         role            = "treeitem"
         aria-selected   = "false"

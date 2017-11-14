@@ -332,8 +332,8 @@ export default class CodeMirrorBlocks {
     try{
       this.cm.operation(() => {
         // for each change, patch the AST and render dirty rootNodes
-        changes.forEach((c, i) => {
-          this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), c);
+        changes.forEach(change => {
+          this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), change);
           // remove CM marks for deleted nodes and render the dirty/inserted ones
           // TODO: maybe just-render dirty nodes? in theory, removed ones should be gone anyway, right...?
           //removedRoots.forEach(r => this.cm.findMarks(r.from, r.to).filter(m => m.node).forEach(m => m.clear()));
@@ -617,8 +617,8 @@ export default class CodeMirrorBlocks {
     let prevNode = this.findNodeFromEl(el.previousElementSibling);
     let nextNode = this.findNodeFromEl(el.nextElementSibling);
     path[path.length] = prevNode ? Number(prevNode.path.split(',').pop())     // "insert after previous"
-      : nextNode? nextNode.path.split(',').pop() - 1                          // "insert before next"
-      : 0;                                                                    // "insert at parent's beginning"
+        : nextNode? nextNode.path.split(',').pop() - 1                        // "insert before next"
+        : 0;                                                                  // "insert at parent's beginning"
     return path.join(',');
   }
 

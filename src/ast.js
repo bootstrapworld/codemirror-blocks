@@ -77,15 +77,14 @@ export class AST {
   // patch : AST ChangeObj -> AST
   // given a new AST, return a new one patched from the current one
   // taking care to preserve all rendered DOM elements, though!
-  patch(newAST, {from, to, text, removed}) {
+  patch(newAST, {from, to, text}) {
     // REPORT THE CHANGE VIA RAW POSNS
     //if(text.toString()   =="") console.log(i+ ': DELETE '+removed.join(""));
     //else if(removed.toString()=="") console.log(i+ ': INSERT '+text.join(""));
     //else console.log(i+ ': CHANGE '+removed.join("")+' TO '+ text.join(""));
     let fromNode      = this.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
     let fromPos       = fromNode? fromNode.from : from;               // if so, use that node's .from
-    var insertedToPos = {line: from.line + text.length-1,             // compute insert-to position
-                         ch: text[text.length-1].length + ((text.length==1)? from.ch : 0)};
+    var insertedToPos = {line: from.line+text.length-1, ch: text[text.length-1].length+((text.length==1)? from.ch : 0)};
     // get an array of removed roots and inserted roots
     let removedRoots  = this.getRootNodesTouching(from, to);
     let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
@@ -208,7 +207,7 @@ export class ASTNode {
 
     // Every node also has a globally unique `id` which can be used to look up
     // it's corresponding DOM element, or to look it up in `AST.nodeIdMap`
-    this.id = uuid.v4();; // generate a unique ID
+    this.id = uuid.v4(); // generate a unique ID
   }
 
   toDescription(){
