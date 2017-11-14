@@ -331,35 +331,28 @@ export default class CodeMirrorBlocks {
     let start = Date.now();
     try{
       this.cm.operation(() => {
-        // patch the AST
-        // clear any damaged markers
-        changes.forEach((c, i) => {
+        // apply each change to the AST, and render
+        changes.forEach(({from, to, text, removed}, i) => {
           let newAST = this.parser.parse(this.cm.getValue());
           // REPORT THE CHANGE VIA RAW POSNS
-          //console.log('RAW CHANGE DIFF');
-          //if(c.text.toString()   =="") console.log(i+ ': DELETE '+c.removed.join(""));
-          //else if(c.removed.toString()=="") console.log(i+ ': INSERT '+c.text.join(""));
-          //else console.log(i+ ': CHANGE '+c.removed.join("")+' TO '+ c.text.join(""));
-          let fromNode = this.ast.getRootNodesTouching(c.from, c.from)[0];
-          let from = fromNode? fromNode.from : c.from;
-          var removedTo = {line: c.from.line+c.removed.length-1,
-                           ch: (c.removed.length==1)? c.from.ch + c.removed[0].length
-                                                       : c.removed[c.removed.length-1]};
-          var insertedTo= {line: c.from.line + c.text.length-1,
-                           ch: (c.text.length==c.removed.length)? c.from.ch + c.text[c.text.length-1].length
-                                                        : c.text[c.text.length-1].length};
-          let removedToNode = this.ast.getRootNodesTouching(removedTo, removedTo)[0];
-          removedTo =  removedToNode? removedToNode.from : removedTo;
-          let removedRoots = this.ast.getRootNodesTouching(c.from, removedTo);
-          // REPORT THE CHANGE VIA NODES
-          //console.log('NODE CHANGE DIFF');
-          let insertedRoots = newAST.getRootNodesTouching(from, insertedTo).map(r => {r.dirty=true; return r;});
-          for(i = 0; i<this.ast.rootNodes.length; i++){ if(poscmp(from, this.ast.rootNodes[i].from)<0) break;  }
-          //console.log('starting at index'+(i-1)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
-          this.ast.rootNodes.splice(i-1, removedRoots.length, ...insertedRoots); // do the AST splice
-          this.ast = this.ast.patch(newAST); // patch with newAST positions, aria attributes, etc
-          // remove CM marks for deleted nodes and render the inserted ones
-          removedRoots.forEach(r => this.cm.findMarks(r.from, r.to).filter(m => m.node).forEach(m => m.clear()));
+          //if(text.toString()   =="") console.log(i+ ': DELETE '+removed.join(""));
+          //else if(removed.toString()=="") console.log(i+ ': INSERT '+text.join(""));
+          //else console.log(i+ ': CHANGE '+removed.join("")+' TO '+ text.join(""));
+          let fromNode      = this.ast.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
+          let fromPos       = fromNode? fromNode.from : from;                 // if so, use that node's .from
+          var insertedToPos = {line: from.line + text.length-1,             // compute insert-to position
+                              ch: text[text.length-1].length + ((text.length==1)? from.ch : 0)};
+          // get an array of removed roots and inserted roots
+          let removedRoots  = this.ast.getRootNodesTouching(from, to);
+          let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
+          // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
+          for(i = 0; i<this.ast.rootNodes.length; i++){ if(poscmp(fromPos, this.ast.rootNodes[i].from)<=0) break;  }
+          //console.log('starting at index'+(i)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
+          this.ast.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
+          this.ast = this.ast.patch(newAST);
+          // remove CM marks for deleted nodes and render the dirty/inserted ones
+          // TODO: maybe just-render dirty nodes? in theory, removed ones should be gone anyway, right...?
+          //removedRoots.forEach(r => this.cm.findMarks(r.from, r.to).filter(m => m.node).forEach(m => m.clear()));
           this.ast.rootNodes.filter(r => r.dirty).forEach(r => { this.renderer.render(r); delete r.dirty; });
           //console.log('FINAL, RENDERED AST IS', this.ast.rootNodes);
         });

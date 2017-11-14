@@ -136,7 +136,7 @@ export default class Renderer {
   // TODO: recycle rootNode.replacedWith, to make use of React's magic
   render(rootNode, quarantine=false) {
     var marker = this.cm.findMarksAt(rootNode.from).filter(m => m.node)[0];
-    let container = document.createElement('span')
+    let container = /*marker? marker.replacedWith : */document.createElement('span');
     if(marker && !quarantine) marker.clear();
     this.cm.markText(rootNode.from, rootNode.to, {replacedWith: container, node: rootNode} );
     
