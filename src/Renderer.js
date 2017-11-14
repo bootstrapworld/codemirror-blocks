@@ -15,9 +15,6 @@ import StructDefinition from './components/StructDef';
 import VariableDefinition from './components/VariableDef';
 import FunctionDefinition from './components/FunctionDef';
 
-// give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
-function poscmp(a, b) { return a.line - b.line || a.ch - b.ch; }
-
 export default class Renderer {
   constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
     this.cm = cm;
