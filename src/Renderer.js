@@ -71,10 +71,10 @@ export default class Renderer {
         }));
       }
       clones.forEach((clone, i) => {
-        if(literals[i].el.offsetWidth === 0 && literals[i].el.offsetHeight === 0) {
+        if(literals[i].el && literals[i].el.offsetWidth === 0 && literals[i].el.offsetHeight === 0) {
           clone.style.animationName = "fadeout";
           clone.style.whiteSpace    = "pre";
-        } else {
+        } else if(literals[i].el){
           // assign the location and other style info
           let {left, top, width, height} = literals[i].el.getBoundingClientRect();
           clone.style.width  = width  + "px";
@@ -97,6 +97,7 @@ export default class Renderer {
 
     // 0) Optimization: limit the number of lines CM is rendering
     let originalViewportMargin = that.cm.getOption("viewportMargin");
+    that.cm.setOption("viewportMargin", 20);
     
     // 1) get all the *visible* literals from the AST, and make clones of them
     let literals = ast.rootNodes.reduce(flatten, []);
@@ -131,35 +132,14 @@ export default class Renderer {
     console.log('animateTransition: '+(Date.now() - start)/1000 + 'ms');
   }
 
-  renderAST(ast, restoreFocusToBlock) {
-    // get all marks for rendered nodes, and see if we can recycle them
-    var markers = this.cm.getAllMarks().filter(m => m.node);
-    //console.log("there are "+markers.length+" markers and "+ast.rootNodes.length+" roots", markers);
-    ast.rootNodes.forEach((rootNode, i) => {
-      if (typeof rootNode !== "object" || !rootNode.type) {
-        throw new Error("Expected ASTNode but got "+rootNode);
-      }
-      this.render(rootNode, markers[i] || false);
-    });
-    // Try to restore the cursor focus
-    if(!restoreFocusToBlock) return;
-    setTimeout(() => {
-      let node = ast.getClosestNodeFromPath(restoreFocusToBlock.split(','));
-      if(node && node.el) { node.el.click(); }
-      else { this.cm.focus(); }
-    }, 150);
-  }
-
-  // if we can't recycle an existing container, make a new one and mark CM with it
-  render(rootNode, marker) {
-    let container = marker? marker.replacedWith : document.createElement('span');
-    let {from, to} = marker? marker.find() : {from: null, to: null};
-    // if the marker needs to be created or resized, replace it and recycle the container
-    if(!marker || !(poseq(from, rootNode.from) && poseq(to, rootNode.to))) {
-      if(marker) marker.clear();
-      this.cm.markText(rootNode.from, rootNode.to,
-                       {replacedWith: container, node: rootNode} );
-    }
+  // Render the rootNode into a new marker, clearing any old ones
+  // TODO: recycle rootNode.replacedWith, to make use of React's magic
+  render(rootNode, quarantine=false) {
+    var marker = this.cm.findMarksAt(rootNode.from).filter(m => m.node)[0];
+    let container = document.createElement('span')
+    if(marker && !quarantine) marker.clear();
+    this.cm.markText(rootNode.from, rootNode.to, {replacedWith: container, node: rootNode} );
+    
     // REVISIT: make comments disappear by adding an empty span
     if(rootNode.options.comment) {
       this.cm.markText(rootNode.options.comment.from, rootNode.options.comment.to,

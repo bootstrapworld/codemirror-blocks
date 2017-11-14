@@ -190,7 +190,7 @@ export default class CodeMirrorBlocks {
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
       if(this.blockMode && this.ast.rootNodes.length > 0 && !this.mouseUsed) {
-        setTimeout(() => { this.activateNode(this.ast.getNodeById(this.focusPath), e); }, 10);
+        setTimeout(() => { this.activateNode(this.ast.getNodeByPath(this.focusPath), e); }, 10);
       }
     });
   }
@@ -258,9 +258,9 @@ export default class CodeMirrorBlocks {
 
   // handleChange : CM CM-Change-Events -> Void
   // if blocks mode is enabled, re-render the blocks
-  handleChange() {
+  handleChange(_, changes) {
     if (this.blockMode) {
-      this.render();
+      this.render(changes);
     }
   }
 
@@ -325,16 +325,53 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  // render : Void -> Void
+  // render : [Changes] -> Void
   // re-parse the document, then (ideally) patch and re-render the resulting AST
-  render() {
+  render(changes) {
     let start = Date.now();
-    this._clearMarks();
     try{
-      this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()));
-      this.pathsToCollapseAfterRender.forEach(p => this.ast.getNodeById(p).collapsed = true);
-      this.pathsToCollapseAfterRender = [];
-      this.cm.operation(() => this.renderer.renderAST(this.ast, this.focusPath));
+      this.cm.operation(() => {
+        // patch the AST
+        // clear any damaged markers
+        changes.forEach((c, i) => {
+          let newAST = this.parser.parse(this.cm.getValue());
+          // REPORT THE CHANGE VIA RAW POSNS
+          //console.log('RAW CHANGE DIFF');
+          //if(c.text.toString()   =="") console.log(i+ ': DELETE '+c.removed.join(""));
+          //else if(c.removed.toString()=="") console.log(i+ ': INSERT '+c.text.join(""));
+          //else console.log(i+ ': CHANGE '+c.removed.join("")+' TO '+ c.text.join(""));
+          let fromNode = this.ast.getRootNodesTouching(c.from, c.from)[0];
+          let from = fromNode? fromNode.from : c.from;
+          var removedTo = {line: c.from.line+c.removed.length-1,
+                           ch: (c.removed.length==1)? c.from.ch + c.removed[0].length
+                                                       : c.removed[c.removed.length-1]};
+          var insertedTo= {line: c.from.line + c.text.length-1,
+                           ch: (c.text.length==c.removed.length)? c.from.ch + c.text[c.text.length-1].length
+                                                        : c.text[c.text.length-1].length};
+          let removedToNode = this.ast.getRootNodesTouching(removedTo, removedTo)[0];
+          removedTo =  removedToNode? removedToNode.from : removedTo;
+          let removedRoots = this.ast.getRootNodesTouching(c.from, removedTo);
+          // REPORT THE CHANGE VIA NODES
+          //console.log('NODE CHANGE DIFF');
+          let insertedRoots = newAST.getRootNodesTouching(from, insertedTo).map(r => {r.dirty=true; return r;});
+          for(i = 0; i<this.ast.rootNodes.length; i++){ if(poscmp(from, this.ast.rootNodes[i].from)<0) break;  }
+          //console.log('starting at index'+(i-1)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
+          this.ast.rootNodes.splice(i-1, removedRoots.length, ...insertedRoots); // do the AST splice
+          this.ast = this.ast.patch(newAST); // patch with newAST positions, aria attributes, etc
+          // remove CM marks for deleted nodes and render the inserted ones
+          removedRoots.forEach(r => this.cm.findMarks(r.from, r.to).filter(m => m.node).forEach(m => m.clear()));
+          this.ast.rootNodes.filter(r => r.dirty).forEach(r => { this.renderer.render(r); delete r.dirty; });
+          //console.log('FINAL, RENDERED AST IS', this.ast.rootNodes);
+        });
+        this.pathsToCollapseAfterRender.forEach(p => this.ast.getNodeById(p).collapsed = true);
+        this.pathsToCollapseAfterRender = [];
+      });
+      // reset the cursor
+      setTimeout(() => {
+        let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
+        if(node && node.el) { node.el.click(); }
+        else { this.cm.focus(); }
+      }, 150);
     } catch (e){
       console.error(e);
     }
@@ -368,7 +405,7 @@ export default class CodeMirrorBlocks {
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     this.cm.scrollIntoView(node.from);
     node.el.focus();
-    this.focusPath = node.id;
+    this.focusPath = node.path;
     return true;
   }
   // is this a node that can be collapsed or expanded?
@@ -474,6 +511,7 @@ export default class CodeMirrorBlocks {
       }, 
       (node.insertion? "inserted " : "changed ") + text);
     } catch(e) {                                      // If the node contents will NOT lex...
+      console.log(e);
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
@@ -498,7 +536,7 @@ export default class CodeMirrorBlocks {
         nodeEl.onblur = null;
         if(nodeEl.originalEl) {
           nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
-          this.activateNode(this.ast.getNodeById(nodeEl.originalPath), e);
+          this.activateNode(this.ast.getNodeByPath(node.path), e);
         }
         this.say("cancelled");
         nodeEl.parentNode.removeChild(nodeEl);
@@ -545,7 +583,7 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
-    this.focusPath = sel[sel.length-1].id; // point to the first node
+    this.focusPath = sel[sel.length-1].path; // point to the first node
     this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
     this.selectedNodes.clear();
@@ -598,12 +636,12 @@ export default class CodeMirrorBlocks {
   // which means headers (fn position, cond, if) can have WS. As a result, we need to consider *three* cases
   getPathFromWhitespace(el) {
     if(!el.classList.contains('blocks-white-space')) return false;
-    let path     = this.findNearestNodeFromEl(el.parentNode).id.split(','); // get the parent path
+    let path     = this.findNearestNodeFromEl(el.parentNode).path.split(','); // get the parent path
     let prevNode = this.findNodeFromEl(el.previousElementSibling);
     let nextNode = this.findNodeFromEl(el.nextElementSibling);
-    path[path.length] = prevNode ? Number(prevNode.id.split(',').pop()) // "insert after previous"
-      : nextNode? nextNode.id.split(',').pop() - 1                      // "insert before next"
-      : 0;                                                              // "insert at parent's beginning"
+    path[path.length] = prevNode ? Number(prevNode.path.split(',').pop())     // "insert after previous"
+      : nextNode? nextNode.path.split(',').pop() - 1                          // "insert before next"
+      : 0;                                                                    // "insert at parent's beginning"
     return path.join(',');
   }
 
@@ -648,9 +686,9 @@ export default class CodeMirrorBlocks {
                         || this.getLocationFromWhitespace(event.target) // if we have a drop target, grab that location
                         || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
     let destTo          = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
-    var destPath        = (destinationNode && destinationNode.id) 
+    var destPath        = (destinationNode && destinationNode.path) 
                         || this.getPathFromWhitespace(event.target)
-                        || String(this.ast.getNodeBefore(this.cm.coordsChar({left:event.pageX, top:event.pageY})).id || -1);
+                        || String(this.ast.getNodeBefore(this.cm.coordsChar({left:event.pageX, top:event.pageY})).path || -1);
     destPath = destPath.split(',').map(Number);
 
     // if we're inserting, add 1 to the last child of the path
@@ -658,7 +696,7 @@ export default class CodeMirrorBlocks {
   
     // Special handling if the sourceNode is coming from within the document
     if(sourceNode) {
-      let sourcePath = sourceNode.id.split(',').map(Number);
+      let sourcePath = sourceNode.path.split(',').map(Number);
       // if the sourecepath ends at a younger sibling of any destination ancestor, decrement that ancestor's order
       for(var i = 0; i < Math.min(sourcePath.length, destPath.length); i++) {
         if((sourcePath[i] <  destPath[i]) && (sourcePath.length == (i+1))) { destPath[i]--; }
@@ -667,8 +705,8 @@ export default class CodeMirrorBlocks {
       if ((poscmp(destFrom, sourceNode.from) > -1) && (poscmp(destTo, sourceNode.to) <  1)) { return; }
       // Remember to re-collapse any dragged nodes after patch
       let elts = sourceNode.el.querySelectorAll("[aria-expanded=false]");
-      let collapsedPaths = [].map.call(elts, elt => this.findNodeFromEl(elt).id.split(','));
-      if(sourceNode.collapsed) collapsedPaths.push(sourceNode.id.split(','));
+      let collapsedPaths = [].map.call(elts, elt => this.findNodeFromEl(elt).path.split(','));
+      if(sourceNode.collapsed) collapsedPaths.push(sourceNode.path.split(','));
       this.pathsToCollapseAfterRender = collapsedPaths.map(p => destPath.concat(p.slice(destPath.length)).join(','));
     }
     this.focusPath = destPath.join(',');
@@ -733,14 +771,14 @@ export default class CodeMirrorBlocks {
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
     literal.options['aria-label'] = text;
-    this.renderer.render(literal);
+    this.renderer.render(literal, true);
     literal.el.classList.add("quarantine");
     // if we're editing an existing ASTNode
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
       literal.from = dest.from; literal.to = dest.to;
-      literal.path = dest.id; // save the path for returning focus
+      literal.path = dest.path; // save the path for returning focus
       literal.el.originalEl = dest.el; // save the original DOM El
       parent.insertBefore(literal.el, dest.el);
       parent.removeChild(dest.el);
@@ -758,7 +796,7 @@ export default class CodeMirrorBlocks {
     } else if(dest.line !== undefined){
       literal.to = literal.from = dest;
       // calculate the path for focus (-1 if it's the first node)
-      literal.path = String(this.ast.getNodeBefore(dest).id || -1);
+      literal.path = String(this.ast.getNodeBefore(dest).path || -1);
       let mk = this.cm.setBookmark(dest, {widget: literal.el});
       literal.insertion = mk;
     } else {
@@ -902,9 +940,9 @@ export default class CodeMirrorBlocks {
       let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
       [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), false));
       refreshCM(); // update the CM display, since line heights may have changed
-      let rootId = activeNode.id.split(",")[0]; // put focus on containing rootNode
+      let rootPath = activeNode.path.split(",")[0]; // put focus on containing rootNode
       // shift focus if rootId !== activeNodeId
-      if(rootId !== activeNode.id) this.activateNode(this.ast.getNodeById(rootId), event);
+      if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
       else this.cm.scrollIntoView(activeNode.from);
     }
     else if (keyName === "Shift-Right" && activeNode) {
@@ -929,7 +967,7 @@ export default class CodeMirrorBlocks {
     }
     // if open-bracket, modify text to be an empty expression with a blank
     else if (!this.searchString && openDelims.includes(event.key) && activeNode) {
-      let path = activeNode.id.split(',');
+      let path = activeNode.path.split(',');
       path[path.length-1]++; // add an adjacent sibling
       this.focusPath = path.join(','); // put focus on new sibling
       this.commitChange(() => this.cm.replaceRange(event.key+closeDelims[event.key], activeNode.to),
