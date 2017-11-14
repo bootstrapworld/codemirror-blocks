@@ -472,7 +472,7 @@ export default class CodeMirrorBlocks {
   saveEdit(node, nodeEl, event) {
     event.preventDefault();
     try {
-      var text = nodeEl.innerText;
+      var text = nodeEl.textContent;
       let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
       if(node.from === node.to) text = this.willInsertNode(text, nodeEl, node.from, node.to); // sanitize
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit

@@ -1,4 +1,4 @@
-import uuid from 'node-uuid';
+const uuidv4 = require('uuid/v4');
 var jsonpatch = require('fast-json-patch');
 
 function comparePos(a, b) {
@@ -93,7 +93,7 @@ export class AST {
     //console.log('starting at index'+(i)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
     this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
-    // preserve existing DOM elts, node IDs, and collapsed state
+    // only update aria attributes and position fields
     patches = patches.filter(p => ['aria-level', 'aria-setsize', 'aria-posinset', 'line', 'ch'].includes(p.path.split('/').pop()));
     jsonpatch.applyPatch(this.rootNodes, patches, false); // false = don't validate patches
     this.rootNodes.forEach(castToASTNode);
@@ -207,7 +207,7 @@ export class ASTNode {
 
     // Every node also has a globally unique `id` which can be used to look up
     // it's corresponding DOM element, or to look it up in `AST.nodeIdMap`
-    this.id = uuid.v4(); // generate a unique ID
+    this.id = uuidv4(); // generate a unique ID
   }
 
   toDescription(){
