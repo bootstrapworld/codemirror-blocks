@@ -216,7 +216,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.ast.rootNodes[0].value).toBe(11);
       expect(this.blocks.renderer.render).toHaveBeenCalled();
       expect(this.blocks.renderer.render).toHaveBeenCalledWith(
-        this.blocks.ast.rootNodes[0], false // not recycling = false
+        this.blocks.ast.rootNodes[0]
       );
       this.blocks.renderer.render.calls.reset();
 
@@ -228,7 +228,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.ast.rootNodes[0].value).toBe(5432);
       expect(this.blocks.renderer.render).toHaveBeenCalled();
       expect(this.blocks.renderer.render).toHaveBeenCalledWith(
-        this.blocks.ast.rootNodes[0], false // not recycling = false
+        this.blocks.ast.rootNodes[0]
       );
     });
 
