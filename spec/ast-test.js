@@ -123,9 +123,9 @@ describe("The AST Class", function() {
       )
     ];
     var ast = new AST(nodes);
-    expect(ast.nodeMap.get(nodes[0].id)).toBe(nodes[0]);
-    expect(ast.nodeMap.get(nodes[1].id)).toBe(nodes[1]);
-    expect(ast.nodeMap.get(nodes[1].args[0].id)).toBe(nodes[1].args[0]);
-    expect(ast.nodeMap.get(nodes[1].args[1].id)).toBe(nodes[1].args[1]);
+    expect(ast.nodeIdMap.get(nodes[0].id)).toBe(nodes[0]);
+    expect(ast.nodeIdMap.get(nodes[1].id)).toBe(nodes[1]);
+    expect(ast.nodeIdMap.get(nodes[1].args[0].id)).toBe(nodes[1].args[0]);
+    expect(ast.nodeIdMap.get(nodes[1].args[1].id)).toBe(nodes[1].args[1]);
   });
 });

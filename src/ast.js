@@ -1,7 +1,11 @@
+const uuidv4 = require('uuid/v4');
 var jsonpatch = require('fast-json-patch');
 
 function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
+}
+function posWithinNode(pos, node){
+  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) >= 0);
 }
 
 // Cast an object to the appropriate ASTNode, and traverse its children
@@ -38,9 +42,10 @@ export class AST {
     // the `reverseRootNodes` attribute is a shallow, reversed copy of the rootNodes
     this.reverseRootNodes = rootNodes.slice().reverse();
 
-    // the `nodeMap` attribute can be used to look up nodes by their id.
+    // the `nodeIdMap` attribute can be used to look up nodes by their id.
     // the other nodeMaps make it easy to determine node order
-    this.nodeMap = new Map();
+    this.nodeIdMap = new Map();
+    this.nodePathMap = new Map();
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
 
@@ -53,7 +58,7 @@ export class AST {
   // and populating various maps for tree navigation
   annotateNodes(nodes=this.rootNodes, parent=false) {
     nodes.forEach((node, i) => {
-      node.id = parent? parent.id + (","+i) : i.toString();
+      node.path = parent? parent.path + (","+i) : i.toString();
       node["aria-setsize"]  = nodes.length;
       node["aria-posinset"] = i+1;
       node["aria-level"]    = 1+(parent? parent.id.split(",").length : 0);
@@ -61,27 +66,41 @@ export class AST {
         this.nextNodeMap.set(this.lastNode, node);
         this.prevNodeMap.set(node, this.lastNode);
       }
-      this.nodeMap.set(node.id, node);
+      this.nodeIdMap.set(node.id, node);
+      this.nodePathMap.set(node.path, node);
       this.lastNode = node;
       var children = [...node].slice(1); // the first elt is always the parent
       this.annotateNodes(children, node);
     });
   } 
 
-  // patch : AST -> AST
+  // patch : AST ChangeObj -> AST
   // given a new AST, return a new one patched from the current one
   // taking care to preserve all rendered DOM elements, though!
-  patch(newAST) {
+  patch(newAST, {from, to, text}) {
+    let fromNode      = this.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
+    let fromPos       = fromNode? fromNode.from : from;               // if so, use that node's .from
+    var insertedToPos = {line: from.line+text.length-1, ch: text[text.length-1].length+((text.length==1)? from.ch : 0)};
+    // get an array of removed roots and inserted roots
+    let removedRoots  = this.getRootNodesTouching(from, to);
+    let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
+    // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
+    for(var i = 0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
+    //console.log('starting at index'+(i)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
+    this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
-    // preserve existing DOM elts, and collapsed state
-    patches = patches.filter(p => !['el', 'collapsed'].includes(p.path.split('/').pop()));
+    // only update aria attributes and position fields
+    patches = patches.filter(p => ['aria-level','aria-setsize','aria-posinset','line','ch'].includes(p.path.split('/').pop()));
     jsonpatch.applyPatch(this.rootNodes, patches, false); // false = don't validate patches
     this.rootNodes.forEach(castToASTNode);
     return new AST(this.rootNodes);
   }
 
   getNodeById(id) {
-    return this.nodeMap.get(id);
+    return this.nodeIdMap.get(id);
+  }
+  getNodeByPath(path) {
+    return this.nodePathMap.get(path);
   }
 
   // return the next node or false
@@ -98,41 +117,45 @@ export class AST {
   }
   // return the node containing the cursor, or false
   getNodeContaining(cursor, nodes = this.rootNodes) {
-    let n = nodes.find(node => comparePos(node.from, cursor) <= 0 
-                            && comparePos(node.to, cursor) >= 0);
-    return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)));
+    let n = nodes.find(node => posWithinNode(cursor, node));
+    return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)) || n);
   }
-
+  // return all the root nodes that contain the given positions, or fall between them
+  getRootNodesTouching(start, end, rootNodes=this.rootNodes){
+    return rootNodes.filter(node =>
+      posWithinNode(start, node) || posWithinNode(end, node) ||
+      ( (comparePos(start, node.from) < 0) && (comparePos(end, node.to) > 0) ));
+  }
   // return the parent or false
   getNodeParent(node) {
-    let path = node.id.split(",");
+    let path = node.path.split(",");
     path.pop();
-    return this.nodeMap.get(path.join(",")); 
+    return this.nodePathMap.get(path.join(",")); 
   }
   // return the first child, if it exists
   getNodeFirstChild(node) {
-    return this.nodeMap.get(node.id+",0");
+    return this.nodePathMap.get(node.path+",0");
   }
 
   getClosestNodeFromPath(keyArray) {
     // return the node, if the key is valid
-    if(this.nodeMap.get(keyArray.join(","))) {
-      return this.nodeMap.get(keyArray.join(","));
+    if(this.nodePathMap.get(keyArray.join(","))) {
+      return this.nodePathMap.get(keyArray.join(","));
     }
     // if we have no valid key, give up
     if(keyArray.length == 0) return false;
     // if we're at the root level, count backwards till we find something
     if(keyArray.length == 1 && keyArray[0] >= 0) {
-      return this.nodeMap.get(keyArray[0].toString())
+      return this.nodePathMap.get(keyArray[0].toString())
           || this.getClosestNodeFromPath([keyArray[0] - 1]);
     // if we're at a child go to the previous sibling
     } else if(keyArray[keyArray.length-1] > 0) {
       keyArray[keyArray.length-1]--;
-      return this.nodeMap.get(keyArray.join(','));
+      return this.nodePathMap.get(keyArray.join(','));
     // if we're at the first child, go up a generation
     } else {
       let parentArray = keyArray.slice(0, keyArray.length-1);
-      return this.nodeMap.get(keyArray.join(','))
+      return this.nodePathMap.get(keyArray.join(','))
           || this.getClosestNodeFromPath(parentArray);
     }
   }
@@ -174,8 +197,8 @@ export class ASTNode {
     this.options = options;
 
     // Every node also has a globally unique `id` which can be used to look up
-    // it's corresponding DOM element, or to look it up in `AST.nodeMap`
-    this.id = null; // the id is set by setChildAttributes()
+    // it's corresponding DOM element, or to look it up in `AST.nodeIdMap`
+    this.id = uuidv4(); // generate a unique ID
   }
 
   toDescription(){

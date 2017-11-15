@@ -27,14 +27,14 @@ export default class Node extends PureComponent {
       <span
         id              = { `block-node-${node.id}` }
         className       = { classes }
-        ref             = { (el) => node.el = el }
+        ref             = { (el) => { node.el = el; } }
         tabIndex        = "-1"
         role            = "treeitem"
         aria-selected   = "false"
         aria-label      = { node.options['aria-label'] }
         aria-describedby= { node.options.comment? `block-node-${node.options.comment.id}`: undefined}
         aria-disabled   = { locked? "true": undefined }
-        aria-expanded   = { locked? "false": expandable? (node.collapsed ? "false" : "true") : undefined}
+        aria-expanded   = { expandable? (node.collapsed ? "false" : "true") : undefined}
         aria-setsize    = { node["aria-setsize"]  }
         aria-posinset   = { node["aria-posinset"] }
         aria-level      = { node["aria-level"]    }
