@@ -334,14 +334,8 @@ export default class CodeMirrorBlocks {
         // for each change, patch the AST and render dirty rootNodes
         changes.forEach(change => {
           this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), change);
-          // remove CM marks for deleted nodes and render the dirty/inserted ones
-          // TODO: maybe just-render dirty nodes? in theory, removed ones should be gone anyway, right...?
-          //removedRoots.forEach(r => this.cm.findMarks(r.from, r.to).filter(m => m.node).forEach(m => m.clear()));
           this.ast.rootNodes.filter(r => r.dirty).forEach(r => { this.renderer.render(r); delete r.dirty; });
-          //console.log('FINAL, RENDERED AST IS', this.ast.rootNodes);
         });
-        this.pathsToCollapseAfterRender.forEach(p => this.ast.getNodeById(p).collapsed = true);
-        this.pathsToCollapseAfterRender = [];
       });
       // reset the cursor
       setTimeout(() => {
@@ -482,6 +476,8 @@ export default class CodeMirrorBlocks {
         var path = node.path.split(',').map(Number);    // Extract and expand the path
         path[path.length-1] += roots.length;            // adjust the path based on parsed text
       }
+      if(nodeEl.originalEl) nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
+      nodeEl.parentNode.removeChild(nodeEl);
       this.commitChange(() => { // make the change, and set the path for re-focus
         this.cm.replaceRange(text, node.from, node.to);
         if(path) this.focusPath = path.join(',');

@@ -78,10 +78,6 @@ export class AST {
   // given a new AST, return a new one patched from the current one
   // taking care to preserve all rendered DOM elements, though!
   patch(newAST, {from, to, text}) {
-    // REPORT THE CHANGE VIA RAW POSNS
-    //if(text.toString()   =="") console.log(i+ ': DELETE '+removed.join(""));
-    //else if(removed.toString()=="") console.log(i+ ': INSERT '+text.join(""));
-    //else console.log(i+ ': CHANGE '+removed.join("")+' TO '+ text.join(""));
     let fromNode      = this.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
     let fromPos       = fromNode? fromNode.from : from;               // if so, use that node's .from
     var insertedToPos = {line: from.line+text.length-1, ch: text[text.length-1].length+((text.length==1)? from.ch : 0)};
@@ -94,7 +90,7 @@ export class AST {
     this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
     // only update aria attributes and position fields
-    patches = patches.filter(p => ['aria-level', 'aria-setsize', 'aria-posinset', 'line', 'ch'].includes(p.path.split('/').pop()));
+    patches = patches.filter(p => ['aria-level','aria-setsize','aria-posinset','line','ch'].includes(p.path.split('/').pop()));
     jsonpatch.applyPatch(this.rootNodes, patches, false); // false = don't validate patches
     this.rootNodes.forEach(castToASTNode);
     return new AST(this.rootNodes);
@@ -123,11 +119,6 @@ export class AST {
   getNodeContaining(cursor, nodes = this.rootNodes) {
     let n = nodes.find(node => posWithinNode(cursor, node));
     return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)) || n);
-  }
-  // return the root node containing the cursor, or false
-  getRootNodeContaining(cursor){
-    var node = this.getNodeContaining(cursor);
-    return node? this.nodePathMap.get(node.path.split(',')[0]) : false;
   }
   // return all the root nodes that contain the given positions, or fall between them
   getRootNodesTouching(start, end, rootNodes=this.rootNodes){

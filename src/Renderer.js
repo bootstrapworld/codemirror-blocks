@@ -125,7 +125,7 @@ export default class Renderer {
 
     // 5) Clean up after ourselves. The 1000ms should match the transition length defined in blocks.less
     setTimeout(function() {
-      rootNodes.forEach(r => delete r.el.style.animationName);
+      rootNodes.forEach(r => {if(r.el) r.el.style.animationName="";});
       cloneParent.remove();
     }, 1000);
     that.cm.setOption("viewportMargin", originalViewportMargin);
@@ -133,10 +133,10 @@ export default class Renderer {
   }
 
   // Render the rootNode into a new marker, clearing any old ones
-  // TODO: recycle rootNode.replacedWith, to make use of React's magic
   render(rootNode, quarantine=false) {
     var marker = this.cm.findMarksAt(rootNode.from).filter(m => m.node)[0];
-    let container = /*marker? marker.replacedWith : */document.createElement('span');
+    // recycle the container, if we can
+    let container = (marker && !quarantine)? marker.replacedWith : document.createElement('span');
     if(marker && !quarantine) marker.clear();
     this.cm.markText(rootNode.from, rootNode.to, {replacedWith: container, node: rootNode} );
     
@@ -162,6 +162,7 @@ export default class Renderer {
           node={node}
           helpers={{renderNodeForReact: this.renderNodeForReact}}
           key = {key}
+          dirty = {node.dirty}
           lockedTypes = {this.lockNodesOfType}
         />
       );
