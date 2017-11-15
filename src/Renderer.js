@@ -159,10 +159,9 @@ export default class Renderer {
     if (Renderer && Renderer.prototype instanceof Component) {
       return (
         <Renderer
-          node={node}
-          helpers={{renderNodeForReact: this.renderNodeForReact}}
-          key = {key}
-          dirty = {node.dirty}
+          node        = {node}
+          helpers     = {{renderNodeForReact: this.renderNodeForReact}}
+          key         = {key}
           lockedTypes = {this.lockNodesOfType}
         />
       );
