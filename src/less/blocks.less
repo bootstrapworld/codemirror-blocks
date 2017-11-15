@@ -1,15 +1,15 @@
 
-.blocks-node, .transition { 
-  animation-duration: 1.5s; 
-  transition: 	left 1s linear,
-              	top 1s linear, 
-              	height 1s linear,
-              	width 1s linear; 
+.blocks-node{ 
+  animation-duration: 1s; 
 }
-.transition {
-	display:	inline-block;
-	position:	absolute;
+#clones * { 
+  display:  inline-block;
+  position: absolute;
+  will-change: transform; 
 }
+#clones .box{ border: dotted 1px lightgray; border-radius: 15px; }
+#clones.animate * { transition: all 1s linear; transform: none !important;}
+
 @keyframes fadein {
     0% { opacity: 0; }
    50% { opacity: 0; }
@@ -17,6 +17,6 @@
 }
 @keyframes fadeout {
     0% { opacity: 1; }
-   50% { opacity: 0; }
+   50% { opacity: 1; }
   100% { opacity: 0; }
 }

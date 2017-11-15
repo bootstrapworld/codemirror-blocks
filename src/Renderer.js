@@ -38,8 +38,7 @@ export default class Renderer {
     };
   }
 
-  // extract all the literals, create clones, and absolutely position
-  // them at their original locations
+  // make code "float" between text/blocks
   animateTransition(ast, toBlocks) {
     let start = Date.now();
     let that = this;
@@ -47,85 +46,90 @@ export default class Renderer {
     let cm = this.cm, parent = this.cm.getScrollerElement(), rootNodes = ast.rootNodes;
     let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
     let cloneParent = parent.appendChild(document.createElement("div"));
+    cloneParent.id="clones";
 
     // toDom : AST Node -> DOM Node
-    // given a literal AST node, make a DOM node with the same srcLoc info
-    var toDom = (literal) => {
+    // given a node AST node, make a DOM node with the same text contents
+    var toDom = (node) => {
       let el = document.createElement("span");
-      el.appendChild(document.createTextNode(this.printASTNode(literal)));
+      el.className = 'blocks-node-'+node.type;
+      el.appendChild(document.createTextNode(this.printASTNode(node)));
       return el;
     };
 
-    // given literals, clones, and whether we're coming from text...
-    // position the clones over the currently-rendered literals
-    // unless the literal is offscreen, in which case fade out the clone
-    function assignClonePosition(literals, clones, fromText=!toBlocks) {
-      if(fromText) { // if we're coming from text, fake a literal to get coords
-        cm.operation(() => literals.forEach(literal => {
-          literal.el = toDom(literal);
-          literal.marker = cm.markText(literal.from, literal.to, { replacedWith: literal.el });
+    // given nodes, clones, whether we're in text or block mode, and whether it's a precalc..
+    // position the clones over the currently-rendered nodes (wrap all marking in a cm.operation)
+    // unless the node is offscreen, in which case fade out the clone
+    // uses the FLIP method described at https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
+    function assignClonePosition(nodes, clones, textPosition, precalc) {
+      if(textPosition) { // if we're computing text positions, mark them
+        cm.operation(() => nodes.forEach(node => {
+          node.el = toDom(node);
+          node.marker = cm.markText(node.from, node.to, { replacedWith: node.el });
         }));
       }
       clones.forEach((clone, i) => {
-        if(literals[i].el && literals[i].el.offsetWidth === 0 && literals[i].el.offsetHeight === 0) {
+        let node=nodes[i];
+        if(node.el && node.el.offsetWidth === 0 && node.el.offsetHeight === 0) {
           clone.style.animationName = "fadeout";
           clone.style.whiteSpace    = "pre";
-        } else if(literals[i].el){
-          // assign the location and other style info
-          let {left, top, width, height} = literals[i].el.getBoundingClientRect();
-          clone.style.width  = width  + "px";
-          clone.style.height = height + "px";
-          clone.style.top    = (top - offsetTop) + parent.scrollTop  + "px";
-          clone.style.left   = (left- offsetLeft)+ parent.scrollLeft + "px";
-          clone.className    = "transition";
+        } else {
+          // compute left, top, width and height
+          let {left, top, width, height} = node.el.getBoundingClientRect();
+          top  = (top  - offsetTop)  + parent.scrollTop;
+          left = (left - offsetLeft) + parent.scrollLeft;
+          if(precalc){
+            node.top = top; node.left = left; node.width = width; node.height = height;
+          } else {
+            //clone.style.width  = width  + "px";
+            //clone.style.height = height + "px";
+            clone.style.top    = top    + "px";
+            clone.style.left   = left   + "px";
+            clone.style.transform = 'translate('+(node.left-left)+'px,'+(node.top-top)+'px) ';
+                                //+'scale('+(node.width/width)+', '+(node.height/height)+')'; 
+          }
         }
       });
-      // clear markers
-      if(fromText) { cm.operation(() => literals.forEach(l => {l.marker.clear(); delete l.marker;})); } 
+      // if we were messing with text positions, clear markers
+      if(textPosition) { cm.operation(() => nodes.forEach(n => {n.marker.clear(); delete n.marker;})); } 
     }
 
     // extract all the literals and blanks from a rootNode
     function flatten(flat, node) {
-      return ["literal", "blank"].includes(node.type)? flat.concat([node])
-                : that.lockNodesOfType.includes(node.type)? flat // pass over locked nodes
-                : [...node].slice(1).reduce(flatten, flat);
+      return ["literal", "blank"].includes(node.type)? flat.concat([node])      // add literals and blanks
+                : that.lockNodesOfType.includes(node.type)? flat.concat([node]) // Perf: don't bother looking inside
+                : [...node].slice(1).reduce(flatten, flat);                     // look inside
     }
 
-    // 0) Optimization: limit the number of lines CM is rendering
+    // 1) Limit the number of lines CM is rendering (perf), and extract visible nodes, & make clones 
     let originalViewportMargin = that.cm.getOption("viewportMargin");
     that.cm.setOption("viewportMargin", 20);
-    
-    // 1) get all the *visible* literals from the AST, and make clones of them
-    let literals = ast.rootNodes.reduce(flatten, []);
-    //                .filter(l => (l.from.line >= vp.from) && (l.to.line <= vp.to));
-    let clones = literals.map(toDom);
+    let {from, to} = that.cm.getViewport();
+    let nodes = ast.getRootNodesTouching({line: from, ch: 0}, {line: to, ch: 0}).reduce(flatten, []);
+    let clones = nodes.map(toDom);
 
-    // 2) move each clone to the *origin* location of the corresponding literal
-    assignClonePosition(literals, clones, toBlocks);
+    // 2) pre-calculate starting positions (F)
+    assignClonePosition(nodes, clones, toBlocks, true);
     clones.forEach(c => cloneParent.appendChild(c));
 
     // 3) render or clear the original AST
     if(toBlocks) {
-      rootNodes.forEach(r => {
-        this.render(r);
-        r.el.style.animationName = "fadein";
-      });
+      rootNodes.forEach(r => { this.render(r); r.el.style.animationName = "fadein"; });
     } else {
       cm.getAllMarks().forEach(marker => marker.clear());
     }
 
-    // 4) move each clone to the *destination* location of the corresponding literal
-    assignClonePosition(literals, clones, !toBlocks);
+    // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
+    assignClonePosition(nodes, clones, !toBlocks, false);
+    cloneParent.classList.add("animate");
 
     // 5) Clean up after ourselves. The 1000ms should match the transition length defined in blocks.less
     setTimeout(function() {
-      for (let node of rootNodes) {
-        if(node.el) node.el.style.animationName = "";
-      }
+      rootNodes.forEach(r => delete r.el.style.animationName);
       cloneParent.remove();
     }, 1000);
     that.cm.setOption("viewportMargin", originalViewportMargin);
-    console.log('animateTransition: '+(Date.now() - start)/1000 + 'ms');
+    console.log('animateTransition took: '+(Date.now() - start)/1000 + 'ms');
   }
 
   // Render the rootNode into a new marker, clearing any old ones
