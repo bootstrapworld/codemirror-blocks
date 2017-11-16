@@ -79,7 +79,7 @@ export class AST {
   // taking care to preserve all rendered DOM elements, though!
   patch(newAST, {from, to, text}) {
     let fromNode      = this.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
-    let fromPos       = fromNode? fromNode.from : from;               // if so, use that node's .from
+    let fromPos       = fromNode? fromNode.from : from;           // if so, use that node's .from
     var insertedToPos = {line: from.line+text.length-1, ch: text[text.length-1].length+((text.length==1)? from.ch : 0)};
     // get an array of removed roots and inserted roots
     let removedRoots  = this.getRootNodesTouching(from, to);

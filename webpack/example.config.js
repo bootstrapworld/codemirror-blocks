@@ -6,7 +6,7 @@ var baseConfig = require('./base.config.js')();
 
 // this is the config for generating the files needed to run the examples.
 module.exports = _.extend({}, baseConfig, {
-  devtool: 'eval',
+  devtool: 'cheap-module-source-map',
   entry: {
     "index": './example/index.js',
     "example": './example/example.js',
@@ -57,6 +57,11 @@ module.exports = _.extend({}, baseConfig, {
       inject: 'body',
       chunks: ['third-party','editor-example'],
     }),
+    new webpack.DefinePlugin({
+    'process.env': {
+      'NODE_ENV': JSON.stringify('production')
+    },
+  })
   ]),
   devServer: {
     hot: true,
