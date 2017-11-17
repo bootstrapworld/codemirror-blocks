@@ -122,14 +122,14 @@
       background: black;
       border: dotted 2px darkgray;
     }
-    .blocks-literal {
-      color: white;
-      border: @border-width inset;
-    }
-    > .blocks-lambdaExpression,
-    > .blocks-expression {
+    > .blocks-node {
       box-shadow: 0px 0px 10px 1px white;
     }
+    .blocks-literal, .blocks-identifierlist {
+      color: white;
+      box-shadow: none;
+    }
+    .blocks-literal{ border: @border-width inset; }
   }
 
   .blocks-args {
