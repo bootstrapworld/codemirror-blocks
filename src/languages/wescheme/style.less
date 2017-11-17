@@ -79,16 +79,11 @@
           text-align: left;
           display: block;
           border-top: 1px solid #aaa;
-          .blocks-cond-predicate {
+          .blocks-cond-predicate, .blocks-cond-result {
             display: inline-block;
-            min-width: 45%;
             &.blocks-cond-else {
               color: #777;
             }
-          }
-          .blocks-cond-result{
-            display: inline-block;
-            width: 45%;
           }
         }
         .blocks-cond-row:first-child {
@@ -218,6 +213,11 @@
     border-style: solid;
     border-color: @editing-border-color;
     outline: 0;
+  }
+  .blocks-identifierlist:focus{
+    border-style: none;
+    background: @editing-border-color;
+    border-radius: 15px;
   }
 
   .blocks-editing * {
