@@ -105,7 +105,8 @@ export default class Renderer {
     let originalViewportMargin = that.cm.getOption("viewportMargin");
     that.cm.setOption("viewportMargin", 20);
     let {from, to} = that.cm.getViewport();
-    let nodes = ast.getRootNodesTouching({line: from, ch: 0}, {line: to, ch: 0}).reduce(flatten, []);
+    let viewportNodes = ast.getRootNodesTouching({line: from, ch: 0}, {line: to, ch: 0});
+    let nodes = viewportNodes.reduce(flatten, []);
     let clones = nodes.map(toDom);
 
     // 2) pre-calculate starting positions (F)
@@ -113,11 +114,14 @@ export default class Renderer {
     clones.forEach(c => cloneParent.appendChild(c));
 
     // 3) render or clear the original AST
+    let renderStart = Date.now();
     if(toBlocks) {
-      rootNodes.forEach(r => { this.render(r); r.el.style.animationName = "fadein"; });
+      parent.classList.add('fadein');
+      rootNodes.forEach(r => this.render(r));
     } else {
       cm.getAllMarks().forEach(marker => marker.clear());
     }
+    console.log('rendering took: '+(Date.now() - renderStart)/1000 + 'ms');
 
     // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
     assignClonePosition(nodes, clones, !toBlocks, false);
@@ -125,27 +129,32 @@ export default class Renderer {
 
     // 5) Clean up after ourselves. The 1000ms should match the transition length defined in blocks.less
     setTimeout(function() {
-      rootNodes.forEach(r => {if(r.el) r.el.style.animationName="";});
+      parent.classList.remove('fadein');
       cloneParent.remove();
     }, 1000);
     that.cm.setOption("viewportMargin", originalViewportMargin);
     console.log('animateTransition took: '+(Date.now() - start)/1000 + 'ms');
   }
 
-  // Render the rootNode into a new marker, clearing any old ones
-  render(rootNode, quarantine=false) {
-    var marker = this.cm.findMarksAt(rootNode.from).filter(m => m.node)[0];
-    // recycle the container, if we can
-    let container = (marker && !quarantine)? marker.replacedWith : document.createElement('span');
-    if(marker && !quarantine) marker.clear();
-    this.cm.markText(rootNode.from, rootNode.to, {replacedWith: container, node: rootNode} );
-    
-    // REVISIT: make comments disappear by adding an empty span
-    if(rootNode.options.comment) {
-      this.cm.markText(rootNode.options.comment.from, rootNode.options.comment.to,
-        { replacedWith: document.createElement('span') });
+  // Render the node, recycling a container whenever possible
+  render(node, quarantine=false) {
+    var container;
+    if(node["aria-level"] == 1) { // if it's a root node, reset the marker but save the container
+      let marker = this.cm.findMarksAt(node.from).filter(m => m.node)[0];
+      // recycle the container, if we can
+      container = (marker && !quarantine)? marker.replacedWith : document.createElement('span');
+      if(marker && !quarantine) marker.clear();
+      this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
+      
+      // REVISIT: make comments disappear by adding an empty span
+      if(node.options.comment) {
+        this.cm.markText(node.options.comment.from, node.options.comment.to,
+          { replacedWith: document.createElement('span') });
+      }
+    } else { // otherwise just render in-place
+      container = node.el.parentNode;
     }
-    ReactDOM.render(this.renderNodeForReact(rootNode), container);
+    ReactDOM.render(this.renderNodeForReact(node), container);
     container.className = 'react-container';
     return container;
   }
