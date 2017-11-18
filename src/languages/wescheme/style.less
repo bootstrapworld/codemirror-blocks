@@ -363,6 +363,7 @@
     padding: 3px;
     background: linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1), rgba(0,0,0,0));
     * { display: none;}
+
     .blocks-operator, .blocks-operator * { 
       display: inline;
       padding: 0px;
@@ -373,6 +374,12 @@
       color: white;
       background: none;
       text-align: left;
+    }
+    
+    &.blocks-identifierlist:focus{
+      border-style: none;
+      background: @editing-border-color;
+      border-radius: 15px;
     }
   }
   .blocks-node[aria-expanded="true"] .blocks-identifierlist[aria-expanded="false"]:before{
