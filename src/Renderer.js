@@ -44,6 +44,7 @@ export default class Renderer {
     let that = this;
     // take note of the parent elt, CM offsets, and rootNodes
     let cm = this.cm, parent = this.cm.getScrollerElement(), rootNodes = ast.rootNodes;
+    let lines = parent.getElementsByClassName("CodeMirror-lines")[0];
     let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
     let cloneParent = parent.appendChild(document.createElement("div"));
     cloneParent.id="clones";
@@ -60,7 +61,8 @@ export default class Renderer {
     // given nodes, clones, whether we're in text or block mode, and whether it's a precalc..
     // position the clones over the currently-rendered nodes (wrap all marking in a cm.operation)
     // unless the node is offscreen, in which case fade out the clone
-    // uses the FLIP method described at https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
+    // uses the FLIP method described at:
+    // https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
     function assignClonePosition(nodes, clones, textPosition, precalc) {
       if(textPosition) { // if we're computing text positions, mark them
         cm.operation(() => nodes.forEach(node => {
@@ -71,20 +73,19 @@ export default class Renderer {
       clones.forEach((clone, i) => {
         let node=nodes[i];
         if(node.el && node.el.offsetWidth === 0 && node.el.offsetHeight === 0) {
-          clone.style.animationName = "fadeout";
+          clone.classList.add("fadeout");
           clone.style.whiteSpace    = "pre";
         } else {
-          // compute left, top, width and height
           let {left, top, width, height} = node.el.getBoundingClientRect();
           top  = (top  - offsetTop)  + parent.scrollTop;
           left = (left - offsetLeft) + parent.scrollLeft;
-          if(precalc){
+          if(precalc){ // pre-compute left, top, width and height
             node.top = top; node.left = left; node.width = width; node.height = height;
-          } else {
-            //clone.style.width  = width  + "px";
-            //clone.style.height = height + "px";
+          } else {     // compute the GPU-accelerated transition
             clone.style.top    = top    + "px";
             clone.style.left   = left   + "px";
+            //clone.style.width  = width  + "px";
+            //clone.style.height = height + "px";
             clone.style.transform = 'translate('+(node.left-left)+'px,'+(node.top-top)+'px) ';
                                 //+'scale('+(node.width/width)+', '+(node.height/height)+')'; 
           }
@@ -115,23 +116,20 @@ export default class Renderer {
 
     // 3) render or clear the original AST
     let renderStart = Date.now();
-    if(toBlocks) {
-      parent.classList.add('fadein');
-      rootNodes.forEach(r => this.render(r));
-    } else {
-      cm.getAllMarks().forEach(marker => marker.clear());
-    }
+    lines.classList.add('fadein');
+    if(toBlocks) { rootNodes.forEach(r => this.render(r));                  }
+    else { cm.getAllMarks().filter(m => m.node).forEach(m => m.clear()); }
     console.log('rendering took: '+(Date.now() - renderStart)/1000 + 'ms');
 
     // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
     assignClonePosition(nodes, clones, !toBlocks, false);
     cloneParent.classList.add("animate");
 
-    // 5) Clean up after ourselves. The 1000ms should match the transition length defined in blocks.less
-    setTimeout(function() {
-      parent.classList.remove('fadein');
+    // 5) Clean up after ourselves. The 1500ms should match the transition length defined in blocks.less
+    setTimeout(() => {
+      lines.classList.remove('fadein');
       cloneParent.remove();
-    }, 1000);
+    }, 1500);
     that.cm.setOption("viewportMargin", originalViewportMargin);
     console.log('animateTransition took: '+(Date.now() - start)/1000 + 'ms');
   }

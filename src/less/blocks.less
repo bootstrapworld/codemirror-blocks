@@ -1,7 +1,10 @@
-
-.fadein .blocks-node{
+.CodeMirror-lines.fadein, .fadein .blocks-node{
   animation-name: fadein;
-  animation-duration: 1s; 
+  animation-duration: 1.5s; 
+}
+.fadeout{
+  animation-name: fadein;
+  animation-duration: 1.5s; 
 }
 #clones * { 
   display:  inline-block;
@@ -14,10 +17,12 @@
 @keyframes fadein {
     0% { opacity: 0; }
    50% { opacity: 0; }
+   70% { opacity: 0; }
   100% { opacity: 1; }
 }
 @keyframes fadeout {
     0% { opacity: 1; }
-   50% { opacity: 1; }
+   50% { opacity: 0; }
+   70% { opacity: 0; }
   100% { opacity: 0; }
 }
