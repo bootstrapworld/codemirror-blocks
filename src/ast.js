@@ -61,7 +61,7 @@ export class AST {
       node.path = parent? parent.path + (","+i) : i.toString();
       node["aria-setsize"]  = nodes.length;
       node["aria-posinset"] = i+1;
-      node["aria-level"]    = 1+(parent? parent.id.split(",").length : 0);
+      node["aria-level"]    = 1+(parent? parent.path.split(",").length : 0);
       if (this.lastNode) {
         this.nextNodeMap.set(this.lastNode, node);
         this.prevNodeMap.set(node, this.lastNode);
@@ -81,19 +81,35 @@ export class AST {
     let fromNode      = this.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
     let fromPos       = fromNode? fromNode.from : from;           // if so, use that node's .from
     var insertedToPos = {line: from.line+text.length-1, ch: text[text.length-1].length+((text.length==1)? from.ch : 0)};
-    // get an array of removed roots and inserted roots
-    let removedRoots  = this.getRootNodesTouching(from, to);
-    let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
-    // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
-    for(var i = 0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
-    //console.log('starting at index'+(i)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
-    this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
-    var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
+    let ancestorPath  = this.getCommonAncestorPath(this.getNodeContaining(from), this.getNodeContaining(to));
+    var pathArray, patches, dirty;
+    // Patch the subtree. Mark all ancestors as dirty
+    if(ancestorPath && (pathArray = ancestorPath.split(',')).length > 1) {
+      // if it's an insertion or deletion, skip to the parent
+      if((comparePos(from,to)==0) || (text.length==1 && text[0]=="")) { 
+        pathArray.pop(); ancestorPath = pathArray.join(','); 
+      }
+      patches = jsonpatch.compare(this.getNodeByPath(ancestorPath), newAST.getNodeByPath(ancestorPath));
+      patches = patches.filter(p => p.path.split('/').pop() !== 'el');        // save the DOM element for rendering
+      jsonpatch.applyPatch(this.getNodeByPath(ancestorPath), patches, false); // Perf: false = don't validate patches
+      dirty = [this.getNodeByPath(pathArray.join(','))];
+    } 
+    // Get an array of removed and inserted roots, and do the splice. Mark all inserted roots as dirty
+    else {
+      let removedRoots  = this.getRootNodesTouching(from, to);
+      let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos);
+      for(var i = 0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
+      this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
+      dirty = insertedRoots;
+    }
     // only update aria attributes and position fields
+    patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
     patches = patches.filter(p => ['aria-level','aria-setsize','aria-posinset','line','ch'].includes(p.path.split('/').pop()));
-    jsonpatch.applyPatch(this.rootNodes, patches, false); // false = don't validate patches
-    this.rootNodes.forEach(castToASTNode);
-    return new AST(this.rootNodes);
+    jsonpatch.applyPatch(this.rootNodes, patches, false); // Perf: false = don't validate patches
+    this.rootNodes.forEach(castToASTNode);                // ensure the correct nodeTypes
+    let ast = new AST(this.rootNodes);                    // build a new AST from the modified rootNodesit
+    ast.dirty = dirty;                                    // store references to the dirty nodes
+    return ast;
   }
 
   getNodeById(id) {
@@ -125,6 +141,14 @@ export class AST {
     return rootNodes.filter(node =>
       posWithinNode(start, node) || posWithinNode(end, node) ||
       ( (comparePos(start, node.from) < 0) && (comparePos(end, node.to) > 0) ));
+  }
+  // return the common ancestor containing two nodes, or false
+  // if two nodes are given, walk their paths to find the nearest common ancestor
+  getCommonAncestorPath(n1, n2) {
+    if(!n1 || !n2) return false;
+    let p1 = n1.path.split(','), p2 = n2.path.split(','), i = -1;
+    while((p1[i+1] == p2[i+1]) && i<Math.min(p1.length, p2.length)){ i++; }
+    return i==-1? false : p1.slice(0, i+1).join(',');
   }
   // return the parent or false
   getNodeParent(node) {

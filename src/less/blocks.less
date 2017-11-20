@@ -12,7 +12,8 @@
   will-change: transform; 
 }
 #clones .box{ border: dotted 1px lightgray; border-radius: 15px; }
-#clones.animate * { transition: all 1s linear; transform: none !important;}
+#clones .box *{ visibility: hidden; }
+#clones.animate * { transition: transform 1.0s linear; transform: none !important;}
 
 @keyframes fadein {
     0% { opacity: 0; }

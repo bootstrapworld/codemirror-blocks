@@ -333,7 +333,7 @@ export default class CodeMirrorBlocks {
         // for each change, patch the AST and render dirty rootNodes
         changes.forEach(change => {
           this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), change);
-          this.ast.rootNodes.filter(r => r.dirty).forEach(r => { this.renderer.render(r); delete r.dirty; });
+          this.ast.dirty.forEach(r => { this.renderer.render(r); });
         });
       });
       // reset the cursor
@@ -342,6 +342,8 @@ export default class CodeMirrorBlocks {
         if(node && node.el) { node.el.click(); }
         else { this.cm.focus(); }
       }, 150);
+      // clean up dirty nodes, now that they've been rendered
+      delete this.ast.dirty;
     } catch (e){
       console.error(e);
     }
@@ -971,8 +973,10 @@ export default class CodeMirrorBlocks {
     }
     // speak parents: "<label>, at level N, inside <label>, at level N-1...""
     else if (keyName == "\\") {
-      var parents = [node], node = activeNode;
+      var node = activeNode;
+      var parents = [node.options['aria-label'] + ", at level "+node["aria-level"]];
       while(node = this.ast.getNodeParent(node)){
+        console.log(node);
         parents.push(node.options['aria-label'] + ", at level "+node["aria-level"]);
       }
       if(parents.length > 1) this.say(parents.join(", inside "));
