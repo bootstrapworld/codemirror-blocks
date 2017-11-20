@@ -31,7 +31,6 @@ var cm2 = CodeMirror.fromTextArea(
 );
 
 
-var focusCarousel = [cm, cm2, document.getElementById("mode")];
 var currentFocusId = null;
 document.addEventListener("keydown", function(e){
   var mode = document.getElementById("mode");
