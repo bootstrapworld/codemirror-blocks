@@ -55,7 +55,7 @@ export default class Renderer {
     // given a node AST node, make a DOM node with the same text contents
     var toDom = (node) => {
       let el = document.createElement("span");
-      el.className = 'blocks-node-'+node.type;
+      el.className = !["literal", "blank"].includes(node.type)? 'box' : 'literal';
       el.appendChild(document.createTextNode(this.printASTNode(node)));
       return el;
     };
@@ -83,13 +83,15 @@ export default class Renderer {
           left = (left - offsetLeft) + parent.scrollLeft;
           if(precalc){ // pre-compute left, top, width and height
             node.top = top; node.left = left; node.width = width; node.height = height;
+            if(clone.className=='box') console.log('precalc:', top, left, width, height);
           } else {     // compute the GPU-accelerated transition
             clone.style.top    = top    + "px";
             clone.style.left   = left   + "px";
             //clone.style.width  = width  + "px";
             //clone.style.height = height + "px";
             clone.style.transform = 'translate('+(node.left-left)+'px,'+(node.top-top)+'px) ';
-                                //+'scale('+(node.width/width)+', '+(node.height/height)+')'; 
+                                    //'scale('+(node.width/width)+', '+(node.height/height)+')';
+            if(clone.className=='box') console.log(clone, top, left, clone.style.transform);
           }
         }
       });
@@ -101,7 +103,7 @@ export default class Renderer {
     function flatten(flat, node) {
       return ["literal", "blank"].includes(node.type)? flat.concat([node])      // add literals and blanks
                 : that.lockNodesOfType.includes(node.type)? flat.concat([node]) // Perf: don't bother looking inside
-                : [...node].slice(1).reduce(flatten, flat);                     // look inside
+                : [...node].slice(1).reduce(flatten, flat).concat([node]);      // look inside
     }
 
     // 1) Limit the number of lines CM is rendering (perf), and extract visible nodes, & make clones 
@@ -109,22 +111,27 @@ export default class Renderer {
     that.cm.setOption("viewportMargin", 20);
     let {from, to} = that.cm.getViewport();
     let viewportNodes = ast.getRootNodesTouching({line: from, ch: 0}, {line: to, ch: 0});
-    let nodes = viewportNodes.reduce(flatten, []);
-    let clones = nodes.map(toDom);
-
+    let literals = viewportNodes.reduce(flatten, []).filter(n => ["literal", "blank"].includes(n.type));
+    let boxes    = viewportNodes.reduce(flatten, []).filter(n => !["literal", "blank"].includes(n.type));
+    let l_clones = literals.map(toDom);
+    //let b_clones = boxes.map(toDom);
+    
     // 2) pre-calculate starting positions (F)
-    assignClonePosition(nodes, clones, toBlocks, true);
-    clones.forEach(c => cloneParent.appendChild(c));
+    assignClonePosition(literals, l_clones, toBlocks, true);
+    //assignClonePosition(boxes, b_clones, toBlocks, true);
+    l_clones.forEach(c => cloneParent.appendChild(c));
+    //b_clones.forEach(c => cloneParent.appendChild(c));
 
     // 3) render or clear the original AST
     let renderStart = Date.now();
     lines.classList.add('fadein');
-    if(toBlocks) { rootNodes.forEach(r => this.render(r));                  }
+    if(toBlocks) { rootNodes.forEach(r => this.render(r));               }
     else { cm.getAllMarks().filter(m => m.node).forEach(m => m.clear()); }
     console.log('rendering took: '+(Date.now() - renderStart)/1000 + 'ms');
 
     // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
-    assignClonePosition(nodes, clones, !toBlocks, false);
+    assignClonePosition(literals, l_clones, !toBlocks, false);
+    //assignClonePosition(boxes, b_clones, !toBlocks, false);
     cloneParent.classList.add("animate");
 
     // 5) Clean up after ourselves. The 1500ms should match the transition length defined in blocks.less
@@ -139,10 +146,16 @@ export default class Renderer {
   // Render the node, recycling a container whenever possible
   render(node, quarantine=false) {
     var container;
-    if(node["aria-level"] == 1) { // if it's a root node, reset the marker but save the container
+    if(node["aria-level"] && node["aria-level"] > 1) { // render in-place 
+      container = document.createElement('span');
+      node.el.parentNode.replaceChild(container, node.el);        // REVISIT: there *has* to be a better way
+      ReactDOM.render(this.renderNodeForReact(node), container);  // REVISIT
+      container.parentNode.replaceChild(container.firstChild, container); // REVISIT
+    } else { // if it's a root node, reset the marker but save the container
       let marker = this.cm.findMarksAt(node.from).filter(m => m.node)[0];
       // recycle the container, if we can
       container = (marker && !quarantine)? marker.replacedWith : document.createElement('span');
+      container.className = 'react-container';
       if(marker && !quarantine) marker.clear();
       this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
       
@@ -151,11 +164,8 @@ export default class Renderer {
         this.cm.markText(node.options.comment.from, node.options.comment.to,
           { replacedWith: document.createElement('span') });
       }
-    } else { // otherwise just render in-place
-      container = node.el.parentNode;
+      ReactDOM.render(this.renderNodeForReact(node), container);
     }
-    ReactDOM.render(this.renderNodeForReact(node), container);
-    container.className = 'react-container';
     return container;
   }
 
