@@ -27,3 +27,8 @@
    70% { opacity: 0; }
   100% { opacity: 0; }
 }
+
+/* locked and collapsed nodes should not be editable */
+.blocks-node[aria-expanded="false"] *, .blocks-locked * { 
+  pointer-events : none; cursor: hand;
+}

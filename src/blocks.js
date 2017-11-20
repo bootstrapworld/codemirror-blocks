@@ -177,7 +177,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
-    this.cm.on('changes',    (cm, e) => this.handleChange(cm, e));
+    this.cm.on('changes',   (cm, e) => this.handleChange(cm, e));
     // mousedown events should impact dragging, focus-if-error, and click events
     this.cm.on('mousedown', (cm, e) => {
       toggleDraggable(e); 
