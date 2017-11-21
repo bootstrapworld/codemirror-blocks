@@ -375,19 +375,19 @@ export default class CodeMirrorBlocks {
       this.clearSelection(); 
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
-    var {top, bottom, left, right} = node.el.getBoundingClientRect();
+    var rect = node.el.getBoundingClientRect();
     // if the element is outside of CM's viewport, scroll to that line and recalaculate
     if((left+right+top+bottom) == 0) {
       this.cm.scrollIntoView(node.from);
-      var {top, bottom, left, right} = node.el.getBoundingClientRect();
+      rect = node.el.getBoundingClientRect();
     }
     let offset = this.wrapper.getBoundingClientRect();
     let scroll = this.cm.getScrollInfo();
-    top    = top    + scroll.top  - offset.top; 
-    bottom = bottom + scroll.top  - offset.top;
-    left   = left   + scroll.left - offset.left; 
-    right  = right  + scroll.left - offset.left;
-    this.cm.scrollIntoView({top, bottom, left, right}, 100);
+    let top    = rect.top    + scroll.top  - offset.top,
+      bottom = rect.bottom + scroll.top  - offset.top,
+      left   = rect.left   + scroll.left - offset.left,
+      right  = rect.right  + scroll.left - offset.left;
+    this.cm.scrollIntoView({top, bottom, left, right}, 50);
     node.el.focus();
     this.focusPath = node.path;
     return true;
@@ -973,11 +973,10 @@ export default class CodeMirrorBlocks {
     }
     // speak parents: "<label>, at level N, inside <label>, at level N-1...""
     else if (keyName == "\\") {
-      var node = activeNode;
-      var parents = [node.options['aria-label'] + ", at level "+node["aria-level"]];
-      while(node = this.ast.getNodeParent(node)){
-        console.log(node);
+      var node = activeNode, parents = [];
+      while(node){ // walk up the tree, pushing label/level descriptions
         parents.push(node.options['aria-label'] + ", at level "+node["aria-level"]);
+        node = this.ast.getNodeParent(node);
       }
       if(parents.length > 1) this.say(parents.join(", inside "));
       else playBeep();
