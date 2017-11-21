@@ -3,17 +3,18 @@
   animation-duration: 1.5s; 
 }
 .fadeout{
-  animation-name: fadein;
+  animation-name: fadeout;
   animation-duration: 1.5s; 
 }
 #clones * { 
   display:  inline-block;
   position: absolute;
-  will-change: transform; 
+  will-change: transform;
+  transform-origin: top left;
 }
-#clones .box{ border: dotted 1px lightgray; border-radius: 15px; }
-#clones .box *{ visibility: hidden; }
+#clones .box{ border: dashed 1px gray; border-radius: 15px; color: transparent;}
 #clones.animate * { transition: transform 1.0s linear; transform: none !important;}
+#clones.animate.blocks .literal {margin-left: 4px;}
 
 @keyframes fadein {
     0% { opacity: 0; }
