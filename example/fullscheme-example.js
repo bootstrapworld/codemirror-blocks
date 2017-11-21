@@ -10,10 +10,10 @@ require('./example-page.less');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
-  {theme:'3024-day',
-  lineNumbers: true,
-  autoCloseBrackets: true,
-  viewportMargin: 10}
+  { theme:'3024-day',
+    lineNumbers: true,
+    autoCloseBrackets: true,
+    viewportMargin: 10}
 );
 
 var cm2 = CodeMirror.fromTextArea(
