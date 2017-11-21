@@ -46,6 +46,7 @@ export default class Renderer {
     let that = this;
     // take note of the parent elt, CM offsets, and rootNodes
     let cm = this.cm, parent = this.cm.getScrollerElement(), rootNodes = ast.rootNodes;
+    let parentScrollTop = parent.scrollTop, parentScrollLeft = parent.scrollLeft;
     let lines = parent.getElementsByClassName("CodeMirror-lines")[0];
     let {left: offsetLeft, top: offsetTop} = parent.getBoundingClientRect();
     let cloneParent = parent.appendChild(document.createElement("div"));
@@ -67,7 +68,7 @@ export default class Renderer {
     // https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
     function assignClonePosition(nodes, clones, textPosition, precalc, shiftY=0) {
       if(textPosition) { // if we're computing text positions, mark them
-        cm.operation(() => nodes.forEach(node => {
+        cm.operation(() => nodes.forEach(node => { // Perf: batch-mark without repaints
           node.el = toDom(node);
           node.marker = cm.markText(node.from, node.to, { replacedWith: node.el });
         }));
@@ -79,31 +80,26 @@ export default class Renderer {
           clone.style.whiteSpace = "pre";
         } else {
           let {left, top, width, height} = node.el.getBoundingClientRect();
-          top  = (top  - offsetTop)  + parent.scrollTop;
-          left = (left - offsetLeft) + parent.scrollLeft;
+          top  = (top  - offsetTop)  + parentScrollTop;
+          left = (left - offsetLeft) + parentScrollLeft;
           if(precalc){ // pre-compute left, top, width and height
             node.top = top; node.left = left; node.width = width; node.height = height;
-            if(clone.className=='box') console.log('precalc:', top, left, width, height);
           } else {     // compute the GPU-accelerated transition
             clone.style.top    = top    + "px";
             clone.style.left   = left   + "px";
-            //clone.style.width  = width  + "px";
-            //clone.style.height = height + "px";
             clone.style.transform = 'translate('+(node.left-left)+'px,'+(node.top+shiftY-top)+'px) ';
-              //'scale('+(node.width/width)+', '+(node.height/height)+')';
-            if(clone.className=='box') console.log(clone, top, left, clone.style.transform);
           }
         }
       });
-      // if we were messing with text positions, clear markers
-      if(textPosition) { cm.operation(() => nodes.forEach(n => {n.marker.clear(); delete n.marker;})); } 
+      // if we were messing with text positions, clear markers. Perf: batch-clear them without repaint
+      if(textPosition) { cm.operation(() => nodes.forEach(n => {n.marker.clear(); delete n.marker;})); }
     }
 
     // extract all the literals and blanks from a rootNode
     function flatten(flat, node) {
       return ["literal", "blank"].includes(node.type)? flat.concat([node])  // nothing inside literals and blanks
           : that.lockNodesOfType.includes(node.type)? flat.concat([node])   // Perf: don't bother looking inside
-          : [...node].slice(1).reduce(flatten, flat).concat([node]);        // look inside
+          : [...node].slice(1).reduce(flatten, flat);                       // look inside
     }
 
     // 1) Limit the number of lines CM is rendering (perf), and extract visible nodes, & make clones 
@@ -111,33 +107,28 @@ export default class Renderer {
     that.cm.setOption("viewportMargin", 20);
     let {from, to} = that.cm.getViewport();
     let viewportNodes = ast.getRootNodesTouching({line: from, ch: 0}, {line: to, ch: 0});
-    let literals = viewportNodes.reduce(flatten, []).filter(n => ["literal", "blank"].includes(n.type));
-    //let boxes    = viewportNodes.reduce(flatten, []).filter(n => !["literal", "blank"].includes(n.type));
-    let l_clones = literals.map(toDom);
-    //let b_clones = boxes.map(toDom);
+    let literals = viewportNodes.reduce(flatten, []);
+    let clones = literals.map(toDom);
     
     // 2) pre-calculate starting positions (F)
-    assignClonePosition(literals, l_clones, toBlocks, true);
-    //assignClonePosition(boxes, b_clones, toBlocks, true);
-    l_clones.forEach(c => cloneParent.appendChild(c));
-    //b_clones.forEach(c => cloneParent.appendChild(c));
-
+    assignClonePosition(literals, clones, toBlocks, true);
+    let startScroll = that.cm.getScrollInfo().top, topLine = cm.lineAtHeight(startScroll ,"local");
+    for(var i=0; i<ast.rootNodes.length; i++){ if(topLine < ast.rootNodes[i].from.line) break; }
+    let canary=ast.rootNodes[Math.max(i-1,0)].from || 0, startY=cm.cursorCoords(canary, "local").top;
+    
     // 3) render or clear the original AST, and compute how much we'll need to scroll
     let renderStart = Date.now();
-    var startScroll = that.cm.getScrollInfo().top, topLine = cm.lineAtHeight(startScroll ,"local");
-    for(var i=0; i<ast.rootNodes.length; i++){ if(topLine < ast.rootNodes[i].from.line) break; }
-    let canary = ast.rootNodes[i].from, startY = cm.cursorCoords(canary, "local").top;
     lines.classList.add('fadein');
     if(toBlocks) { rootNodes.forEach(r => this.render(r));               }
     else { cm.getAllMarks().filter(m => m.node).forEach(m => m.clear()); }
-    let endY = cm.cursorCoords(canary, "local").top, shiftY = endY-startY;
-    cm.scrollTo(null, startScroll+shiftY);
     console.log('rendering took: '+(Date.now() - renderStart)/1000 + 'ms');
 
     // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
-    assignClonePosition(literals, l_clones, !toBlocks, false, shiftY);
-    //assignClonePosition(boxes, b_clones, !toBlocks, false);
-    cloneParent.classList.add("animate");
+    assignClonePosition(literals, clones, !toBlocks, false, shiftY);
+    clones.forEach(c => cloneParent.appendChild(c));
+    let endY = cm.cursorCoords(canary, "local").top, shiftY = endY-startY;
+    cm.scrollTo(null, startScroll+shiftY);
+    setTimeout(()=>cloneParent.classList.add("animate",toBlocks? "blocks" : "text"), 50)
 
     // 5) Clean up after ourselves. The 1500ms should match the transition length defined in blocks.less
     setTimeout(() => {
