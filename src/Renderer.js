@@ -63,7 +63,7 @@ export default class Renderer {
     // unless the node is offscreen, in which case fade out the clone
     // uses the FLIP method described at:
     // https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
-    function assignClonePosition(nodes, clones, textPosition, precalc) {
+    function assignClonePosition(nodes, clones, textPosition, precalc, shiftY=0) {
       if(textPosition) { // if we're computing text positions, mark them
         cm.operation(() => nodes.forEach(node => {
           node.el = toDom(node);
@@ -71,10 +71,10 @@ export default class Renderer {
         }));
       }
       clones.forEach((clone, i) => {
-        let node=nodes[i];
+        let node = nodes[i];
         if(node.el && node.el.offsetWidth === 0 && node.el.offsetHeight === 0) {
           clone.classList.add("fadeout");
-          clone.style.whiteSpace    = "pre";
+          clone.style.whiteSpace = "pre";
         } else {
           let {left, top, width, height} = node.el.getBoundingClientRect();
           top  = (top  - offsetTop)  + parent.scrollTop;
@@ -87,7 +87,7 @@ export default class Renderer {
             clone.style.left   = left   + "px";
             //clone.style.width  = width  + "px";
             //clone.style.height = height + "px";
-            clone.style.transform = 'translate('+(node.left-left)+'px,'+(node.top-top)+'px) ';
+            clone.style.transform = 'translate('+(node.left-left)+'px,'+(node.top+shiftY-top)+'px) ';
                                     //'scale('+(node.width/width)+', '+(node.height/height)+')';
             if(clone.className=='box') console.log(clone, top, left, clone.style.transform);
           }
@@ -110,7 +110,7 @@ export default class Renderer {
     let {from, to} = that.cm.getViewport();
     let viewportNodes = ast.getRootNodesTouching({line: from, ch: 0}, {line: to, ch: 0});
     let literals = viewportNodes.reduce(flatten, []).filter(n => ["literal", "blank"].includes(n.type));
-    let boxes    = viewportNodes.reduce(flatten, []).filter(n => !["literal", "blank"].includes(n.type));
+    //let boxes    = viewportNodes.reduce(flatten, []).filter(n => !["literal", "blank"].includes(n.type));
     let l_clones = literals.map(toDom);
     //let b_clones = boxes.map(toDom);
     
@@ -120,15 +120,20 @@ export default class Renderer {
     l_clones.forEach(c => cloneParent.appendChild(c));
     //b_clones.forEach(c => cloneParent.appendChild(c));
 
-    // 3) render or clear the original AST
+    // 3) render or clear the original AST, and compute how much we'll need to scroll
     let renderStart = Date.now();
+    var startScroll = that.cm.getScrollInfo().top, topLine = cm.lineAtHeight(startScroll ,"local");
+    for(var i=0; i<ast.rootNodes.length; i++){ if(topLine < ast.rootNodes[i].from.line) break; }
+    let canary = ast.rootNodes[i].from, startY = cm.cursorCoords(canary, "local").top;
     lines.classList.add('fadein');
     if(toBlocks) { rootNodes.forEach(r => this.render(r));               }
     else { cm.getAllMarks().filter(m => m.node).forEach(m => m.clear()); }
+    let endY = cm.cursorCoords(canary, "local").top, shiftY = endY-startY;
+    cm.scrollTo(null, startScroll+shiftY);
     console.log('rendering took: '+(Date.now() - renderStart)/1000 + 'ms');
 
     // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
-    assignClonePosition(literals, l_clones, !toBlocks, false);
+    assignClonePosition(literals, l_clones, !toBlocks, false, shiftY);
     //assignClonePosition(boxes, b_clones, !toBlocks, false);
     cloneParent.classList.add("animate");
 
@@ -136,6 +141,7 @@ export default class Renderer {
     setTimeout(() => {
       lines.classList.remove('fadein');
       cloneParent.remove();
+      cm.refresh();
     }, 1500);
     that.cm.setOption("viewportMargin", originalViewportMargin);
     console.log('animateTransition took: '+(Date.now() - start)/1000 + 'ms');

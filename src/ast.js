@@ -98,7 +98,7 @@ export class AST {
     else {
       let removedRoots  = this.getRootNodesTouching(from, to);
       let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos);
-      for(var i = 0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
+      for(var i=0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
       this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
       dirty = insertedRoots;
     }
