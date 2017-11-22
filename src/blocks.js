@@ -387,7 +387,7 @@ export default class CodeMirrorBlocks {
       bottom = rect.bottom + scroll.top  - offset.top,
       left   = rect.left   + scroll.left - offset.left,
       right  = rect.right  + scroll.left - offset.left;
-    this.cm.scrollIntoView({top, bottom, left, right}, 50);
+    this.cm.scrollIntoView({top, bottom, left, right}, 20);
     node.el.focus();
     this.focusPath = node.path;
     return true;
@@ -501,10 +501,11 @@ export default class CodeMirrorBlocks {
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
-      let errorTxt = this.parser.getExceptionMessage(e);
+      var errorTxt = "Error: "+this.parser.getExceptionMessage(e);
+      errorTxt    += ".\n\nTo cancel this edit, type Shift-Escape";
       nodeEl.title = errorTxt;                        // 4) Make the title the error msg
       setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
-      this.say("Error: "+errorTxt);
+      this.say(errorTxt);
     }
   }
 
