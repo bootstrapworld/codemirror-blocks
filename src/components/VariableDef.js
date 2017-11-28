@@ -17,7 +17,7 @@ export default class VariableDefinition extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="variableDef" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           define 
           <DropTarget location={node.name.from} />
