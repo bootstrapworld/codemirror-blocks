@@ -377,7 +377,7 @@ export default class CodeMirrorBlocks {
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     var rect = node.el.getBoundingClientRect();
     // if the element is outside of CM's viewport, scroll to that line and recalaculate
-    if((left+right+top+bottom) == 0) {
+    if((rect.left + rect.right + rect.top + rect.bottom) == 0) {
       this.cm.scrollIntoView(node.from);
       rect = node.el.getBoundingClientRect();
     }
@@ -387,7 +387,7 @@ export default class CodeMirrorBlocks {
       bottom = rect.bottom + scroll.top  - offset.top,
       left   = rect.left   + scroll.left - offset.left,
       right  = rect.right  + scroll.left - offset.left;
-    this.cm.scrollIntoView({top, bottom, left, right}, 20);
+    this.cm.scrollIntoView({top, bottom, left, right}, 100);
     node.el.focus();
     this.focusPath = node.path;
     return true;
@@ -722,13 +722,8 @@ export default class CodeMirrorBlocks {
     // if we're not replacing a literal.
     this.commitChange(() => {
       sourceNodeText = maybeApplyClientFn(this.willInsertNode);
-      if (poscmp(sourceNode.from, destFrom) < 0) {
-        this.cm.replaceRange(sourceNodeText, destFrom, destTo);
-        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-      } else {
-        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-        this.cm.replaceRange(sourceNodeText, destFrom, destTo);
-      }
+      this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+      this.cm.replaceRange(sourceNodeText, destFrom, destTo);
       maybeApplyClientFn(this.didInsertNode);
     },
     "dragged "+sourceNodeText);
