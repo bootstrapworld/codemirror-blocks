@@ -341,7 +341,7 @@ export default class CodeMirrorBlocks {
         let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
         if(node && node.el) { node.el.click(); }
         else { this.cm.focus(); }
-      }, 150);
+      }, 100);
       // clean up dirty nodes, now that they've been rendered
       delete this.ast.dirty;
     } catch (e){
@@ -387,7 +387,7 @@ export default class CodeMirrorBlocks {
       bottom = rect.bottom + scroll.top  - offset.top,
       left   = rect.left   + scroll.left - offset.left,
       right  = rect.right  + scroll.left - offset.left;
-    this.cm.scrollIntoView({top, bottom, left, right}, 100);
+    this.cm.scrollIntoView({top, bottom, left, right}, 20);
     node.el.focus();
     this.focusPath = node.path;
     return true;

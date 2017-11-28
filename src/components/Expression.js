@@ -22,7 +22,7 @@ export default class Expression extends Component {
       argNodes.push(<DropTarget location={arg.to} key={'drop-'+index} />);
     });
     return (
-      <Node type="expression" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           <DropTarget location={node.func.from} />
           {helpers.renderNodeForReact(node.func)}

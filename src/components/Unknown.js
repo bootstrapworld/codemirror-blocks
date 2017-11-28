@@ -24,7 +24,7 @@ export default class Unknown extends Component {
       childNodes.push(<DropTarget location={arg.to} key={'drop-'+index} />);
     });
     return (
-      <Node type="unknown" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">{helpers.renderNodeForReact(firstElt)}</span>
         <span className="blocks-args">
           <DropTarget location={restElts.length ? firstElt.from : firstElt.to} />
