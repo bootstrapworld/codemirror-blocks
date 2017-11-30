@@ -330,14 +330,18 @@ export default class CodeMirrorBlocks {
     let start = Date.now();
     try{
       this.cm.operation(() => {
-        // for each change, patch the AST and render dirty rootNodes
-        changes.forEach(change => {
+        // Changes are always batched end-to-start, but we want to apply them start-to-end.
+        // Appy them in reverse order, and patching the AST and render dirty node.
+        // REVISIT: don't bother painting until all updates are done
+        let dirty = changes.reduceRight((dirty, change) => {
           this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), change);
-          this.ast.dirty.forEach(r => { this.renderer.render(r); });
-        });
+          this.ast.dirty.forEach(node => { this.renderer.render(node); });
+        }, []);
+        
       });
       // reset the cursor
       setTimeout(() => {
+        console.log(this.focusPath, this.ast);
         let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
         if(node && node.el) { node.el.click(); }
         else { this.cm.focus(); }
@@ -501,7 +505,7 @@ export default class CodeMirrorBlocks {
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
-      var errorTxt = "Error: "+this.parser.getExceptionMessage(e);
+      var errorTxt = this.parser.getExceptionMessage(e);
       errorTxt    += ".\n\nTo cancel this edit, type Shift-Escape";
       nodeEl.title = errorTxt;                        // 4) Make the title the error msg
       setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
@@ -717,13 +721,17 @@ export default class CodeMirrorBlocks {
       return (f && !(destinationNode && destinationNode.type == "literal"))?
         f(sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
     }
-
     // Call willInsertNode and didInsertNode on either side of the replacement operation
     // if we're not replacing a literal.
     this.commitChange(() => {
       sourceNodeText = maybeApplyClientFn(this.willInsertNode);
-      this.cm.replaceRange('', sourceNode.from, sourceNode.to);
-      this.cm.replaceRange(sourceNodeText, destFrom, destTo);
+      if (poscmp(sourceNode.from, destFrom) < 0) {
+        this.cm.replaceRange(sourceNodeText, destFrom, destTo);
+        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+      } else {
+        this.cm.replaceRange('', sourceNode.from, sourceNode.to);
+        this.cm.replaceRange(sourceNodeText, destFrom, destTo);
+      }
       maybeApplyClientFn(this.didInsertNode);
     },
     "dragged "+sourceNodeText);

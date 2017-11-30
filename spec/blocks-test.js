@@ -622,7 +622,7 @@ describe('The CodeMirrorBlocks Class', function() {
       it('should not save anything & set all error state', function() {
         expect(this.cm.replaceRange).not.toHaveBeenCalled();
         expect(document.activeElement.classList).toContain('blocks-error');
-        expect(document.activeElement.title).toBe('Error: parse error');
+        expect(document.activeElement.title).toBe('Error: parse error.\n\nTo cancel this edit, type Shift-Escape');
         expect(this.blocks.hasInvalidEdit).toBe(true);
       });
     });
@@ -733,7 +733,7 @@ describe('The CodeMirrorBlocks Class', function() {
             let quarantine = document.querySelectorAll('.blocks-editing')[0];
             expect(this.cm.replaceRange).not.toHaveBeenCalled();
             expect(quarantine.classList).toContain('blocks-error');
-            expect(quarantine.title).toBe('Error: parse error');
+            expect(quarantine.title).toBe('Error: parse error.\n\nTo cancel this edit, type Shift-Escape');
             expect(this.blocks.hasInvalidEdit).toBe(true);
           });
         });
