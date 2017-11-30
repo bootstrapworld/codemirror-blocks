@@ -114,7 +114,8 @@ export default class Renderer {
     assignClonePosition(literals, clones, toBlocks, true);
     let startScroll = that.cm.getScrollInfo().top, topLine = cm.lineAtHeight(startScroll ,"local");
     for(var i=0; i<ast.rootNodes.length; i++){ if(topLine < ast.rootNodes[i].from.line) break; }
-    let canary=ast.rootNodes[Math.max(i-1,0)].from || 0, startY=cm.cursorCoords(canary, "local").top;
+    let startRoot = ast.rootNodes[Math.max(i-1,0)], canary = startRoot? startRoot.from : 0;
+    let startY = cm.cursorCoords(canary, "local").top;
     
     // 3) render or clear the original AST, and compute how much we'll need to scroll
     let renderStart = Date.now();
@@ -128,7 +129,7 @@ export default class Renderer {
     clones.forEach(c => cloneParent.appendChild(c));
     let endY = cm.cursorCoords(canary, "local").top, shiftY = endY-startY;
     cm.scrollTo(null, startScroll+shiftY);
-    setTimeout(()=>cloneParent.classList.add("animate",toBlocks? "blocks" : "text"), 50)
+    setTimeout(() => cloneParent.classList.add("animate",toBlocks? "blocks" : "text"), 50);
 
     // 5) Clean up after ourselves. The 1500ms should match the transition length defined in blocks.less
     setTimeout(() => {
