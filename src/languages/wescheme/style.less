@@ -376,9 +376,12 @@
       border-radius: 15px;
     }
   }
-  .blocks-node[aria-expanded="true"] .blocks-identifierList[aria-expanded="false"]:before{
-      content: "...";
-      color: white;
+  .blocks-node[aria-expanded="true"] .blocks-identifierList[aria-expanded="false"]{
+      height: auto;
+      &:before{
+        content: "...";
+        color: white;
+      }
   }
   .blocks-locked {
     opacity: 0.5;
