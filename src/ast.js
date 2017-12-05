@@ -53,6 +53,10 @@ export class AST {
     this.annotateNodes();
   }
 
+  toString() {
+    return this.rootNodes.map(r => r.toString()).join('\n');
+  }
+
   // annotateNodes : ASTNodes ASTNode -> Void
   // walk through the siblings, assigning aria-* attributes
   // and populating various maps for tree navigation
@@ -74,41 +78,48 @@ export class AST {
     });
   } 
 
-  // patch : AST ChangeObj -> AST
-  // given a new AST, return a new one patched from the current one
-  // taking care to preserve all rendered DOM elements, though!
-  patch(newAST, {from, to, text}) {
-    let fromNode      = this.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
-    let fromPos       = fromNode? fromNode.from : from;           // if so, use that node's .from
-    var insertedToPos = {line: from.line+text.length-1, ch: text[text.length-1].length+((text.length==1)? from.ch : 0)};
-    let ancestorPath  = this.getCommonAncestorPath(this.getNodeContaining(from), this.getNodeContaining(to));
-    var pathArray, patches, dirty;
-    // Patch the subtree. Mark all ancestors as dirty
-    if(ancestorPath && (pathArray = ancestorPath.split(',')).length > 1) {
-      // if it's an insertion or deletion, skip to the parent
-      if((comparePos(from,to)==0) || (text.length==1 && text[0]=="")) { 
-        pathArray.pop(); ancestorPath = pathArray.join(','); 
+  // patch : AST [ChangeObj] -> AST
+  // Given a new AST and some CM change objects, return a new AST patched from the current one.
+  // Take care to preserve all rendered DOM elements, though!
+  patch(newAST, changes) {
+    var ast, patches, pathArray, dirty = new Set();
+    let fields = ['aria-level','aria-setsize','aria-label','aria-posinset','line','ch'];
+    // ORDER MATTERS: pure-removals first, remove-and-insert next, then pure-insertions last
+    changes = changes.sort((a, b) => (a.removed.join("") !== "")? -1 : (a.text.join("") !== "")? 1 :0);
+    changes.forEach(({from, to, text, removed}) => {
+      let lastText = text[text.length-1], lastRemoved = removed[removed.length-1];
+      var insertedToPos = {
+        line: from.line + (text.length - removed.length), 
+        ch: lastText.length + (text.length==removed.length==1)? from.ch+lastText.length-lastRemoved.length : 0
+      };
+      // before selecting nodes, adjust ranges for removed text based on whitespace padding
+      let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
+      if(startWS) { from.ch = from.ch + startWS[0].length; }
+      if(endWS)   { to.ch   = to.ch   - endWS[0].length;   }
+      let fromNode      = this.getRootNodesTouching(from, from)[0];             // is there a containing rootNode?
+      let fromPos       = fromNode? fromNode.from : from;                       // if so, use that node's .from
+      let ancestorPath  = this.getCommonAncestorPath(this.getNodeContaining(from), this.getNodeContaining(to));
+      if(ancestorPath && (pathArray = ancestorPath.split(',')).length > 1) {    // patch the subtree
+        // if it's an insertion or deletion, set the path to the *parent*
+        if((comparePos(from,to)==0) || (text.join("")=="")) { ancestorPath = pathArray.slice(0,-1).join(','); }
+        patches = jsonpatch.compare(this.getNodeByPath(ancestorPath), newAST.getNodeByPath(ancestorPath));
+        patches = patches.filter(p => p.path.split('/').pop() !== 'el');        // Save the DOM element for rendering
+        jsonpatch.applyPatch(this.getNodeByPath(ancestorPath), patches, false); // Perf: false = don't validate patches
+        castToASTNode(this.getNodeByPath(ancestorPath));                        // Ensure the correct nodeTypes
+        dirty.add(this.getNodeByPath(ancestorPath));
+      } else {                                                                  // splice new roots into this.rootNodes
+        let removedRoots  = this.getRootNodesTouching(from, to);
+        let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos);
+        for(var i=0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
+        this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
+        insertedRoots.forEach(n => dirty.add(n));
       }
-      patches = jsonpatch.compare(this.getNodeByPath(ancestorPath), newAST.getNodeByPath(ancestorPath));
-      patches = patches.filter(p => p.path.split('/').pop() !== 'el');        // save the DOM element for rendering
-      jsonpatch.applyPatch(this.getNodeByPath(ancestorPath), patches, false); // Perf: false = don't validate patches
-      dirty = [this.getNodeByPath(pathArray.join(','))];
-    } 
-    // Get an array of removed and inserted roots, and do the splice. Mark all inserted roots as dirty
-    else {
-      let removedRoots  = this.getRootNodesTouching(from, to);
-      let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos);
-      for(var i=0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
-      this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
-      dirty = insertedRoots;
-    }
-    // only update aria attributes and position fields
+    });
     patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
-    patches = patches.filter(p => ['aria-level','aria-setsize','aria-posinset','line','ch'].includes(p.path.split('/').pop()));
-    jsonpatch.applyPatch(this.rootNodes, patches, false); // Perf: false = don't validate patches
-    this.rootNodes.forEach(castToASTNode);                // ensure the correct nodeTypes
-    let ast = new AST(this.rootNodes);                    // build a new AST from the modified rootNodesit
-    ast.dirty = dirty;                                    // store references to the dirty nodes
+    patches = patches.filter(p => fields.includes(p.path.split('/').pop()));    // only patch fields we care about
+    jsonpatch.applyPatch(this.rootNodes, patches, false);                       // Perf: false = don't validate patches
+    ast = new AST(this.rootNodes);                                              // build new AST from patched rootNodes
+    ast.dirty = dirty;                                                          // track nodes that need (re-)rendering
     return ast;
   }
 

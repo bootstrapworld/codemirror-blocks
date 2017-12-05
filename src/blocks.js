@@ -329,25 +329,18 @@ export default class CodeMirrorBlocks {
   render(changes) {
     let start = Date.now();
     try{
+      // batch-apply the changes, then re-render dirty nodes
       this.cm.operation(() => {
-        // Changes are always batched end-to-start, but we want to apply them start-to-end.
-        // Appy them in reverse order, and patching the AST and render dirty node.
-        // REVISIT: don't bother painting until all updates are done
-        let dirty = changes.reduceRight((dirty, change) => {
-          this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), change);
-          this.ast.dirty.forEach(node => { this.renderer.render(node); });
-        }, []);
-        
+        this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), changes);
+        this.ast.dirty.forEach(node => this.renderer.render(node));
       });
       // reset the cursor
       setTimeout(() => {
-        console.log(this.focusPath, this.ast);
         let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
         if(node && node.el) { node.el.click(); }
         else { this.cm.focus(); }
+        delete this.ast.dirty; // remove dirty nodeset, now that they've been rendered
       }, 100);
-      // clean up dirty nodes, now that they've been rendered
-      delete this.ast.dirty;
     } catch (e){
       console.error(e);
     }
