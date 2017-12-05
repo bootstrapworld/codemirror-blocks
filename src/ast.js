@@ -85,7 +85,7 @@ export class AST {
     var ast, patches, pathArray, dirty = new Set();
     let fields = ['aria-level','aria-setsize','aria-label','aria-posinset','line','ch'];
     // ORDER MATTERS: pure-removals first, remove-and-insert next, then pure-insertions last
-    changes = changes.sort((a, b) => (a.removed.join("") !== "")? -1 : (a.text.join("") !== "")? 1 :0);
+    changes = changes.sort(a => (a.removed.join("") !== "")? -1 : (a.text.join("") !== "")? 1 :0);
     changes.forEach(({from, to, text, removed}) => {
       let lastText = text[text.length-1], lastRemoved = removed[removed.length-1];
       var insertedToPos = {
