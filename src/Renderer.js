@@ -143,17 +143,15 @@ export default class Renderer {
 
   // Render the node, recycling a container whenever possible
   render(node, quarantine=false) {
-    var container;
+    var container = document.createElement('span');
     if(node["aria-level"] && node["aria-level"] > 1) { // render in-place 
       container = document.createElement('span');
-      node.el.parentNode.replaceChild(container, node.el);        // REVISIT: there *has* to be a better way
-      ReactDOM.render(this.renderNodeForReact(node), container);  // REVISIT
+      node.el.parentNode.replaceChild(container, node.el);                // REVISIT: there *has* to be a better way
+      ReactDOM.render(this.renderNodeForReact(node), container);          // REVISIT
       container.parentNode.replaceChild(container.firstChild, container); // REVISIT
     } else { // if it's a root node, reset the marker but save the container
-      let marker = this.cm.findMarksAt(node.from).filter(m => m.node)[0];
-      // recycle the container, if we can
-      container = (marker && !quarantine)? marker.replacedWith : document.createElement('span');
       container.className = 'react-container';
+      let marker = this.cm.findMarksAt(node.from).filter(m => m.node)[0];
       if(marker && !quarantine) marker.clear();
       this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
       
