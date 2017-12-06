@@ -116,7 +116,7 @@ export class AST {
       return [c].concat(changes);                                               // add the new change to the list
     }
     // apply an annotated change, by either patching a subtree or splicing roots
-    function applyChange({from, to, text, removed, adjFrom, insertedToPos, path}) {
+    function applyChange({from, to, text, adjFrom, insertedToPos, path}) {
       if(path && (pathArray = path.split(',')).length > 1) {                    // PATCH A SUBTREE
         // if it's an insertion or deletion, set the path to the *parent*
         if((comparePos(from,to)==0) || (text.join("")=="")) { path = pathArray.slice(0,-1).join(','); }
