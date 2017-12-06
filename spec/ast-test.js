@@ -192,6 +192,7 @@ describe("AST Patching", function() {
     this.parser = new WeschemeParser();
     this.ast = this.parser.parse('42\n\n(+ 1 (* 2 3))\n\n"hello"');
   });
+
   it("should correctly change a root-level literal", function() {
     var newAST = this.parser.parse('41\n\n(+ 1 (* 2 3))\n\n"hello"');
     let change = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: ["41"], removed: ["42"] };
@@ -201,6 +202,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[0].value).toBe("41");
     expect(this.ast.rootNodes[1].type).toBe("expression");
   });
+
   it("should correctly change child node", function() {
     var newAST = this.parser.parse('41\n\n(foo bar baz)\n\n"hello"');
     let change = { from: {line: 2, ch:0}, to: {line:2, ch:13}, text: ["(foo bar baz)"], removed: ["(+ 1 (* 2 3)))"] };
@@ -211,6 +213,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].func.value).toBe("foo");
     expect(this.ast.rootNodes[1].args.length).toBe(2);
   });
+
   it("should correctly delete root node", function() {
     var newAST = this.parser.parse('42\n\n(+ 1 (* 1 2 3))\n\n');
     let change = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
@@ -219,6 +222,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[0].type).toBe("literal");
     expect(this.ast.rootNodes[1].type).toBe("expression");
   });
+
   it("should correctly delete non-root node", function() {
     var newAST = this.parser.parse('42\n\n(+ 1)\n\n"hello"');
     let change = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
@@ -230,7 +234,8 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args.length).toBe(1);
     expect(this.ast.rootNodes[1].args[0].value).toBe("1");
   });
-  it("should correctly move roots forward on-drag", function() {
+
+  it("should correctly move roots forward", function() {
     var newAST = this.parser.parse('\n\n(+ 1 (* 2 3))\n42\n"hello"');
     let change1 = { from: {line: 3, ch:0}, to: {line:3, ch:0}, text: ["42"], removed: [""] };
     let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
@@ -242,7 +247,8 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].value).toBe("42");
     expect(this.ast.rootNodes[2].value).toBe('"hello"');
   });
-  it("should correctly move roots backward on-drag", function() {
+
+  it("should correctly move roots backward", function() {
     var newAST = this.parser.parse('42\n"hello"\n(+ 1 (* 3 2))\n\n');
     let change1 = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
     let change2 = { from: {line: 1, ch:0}, to: {line:1, ch:0}, text: ['"hello"'], removed: [""] };
@@ -252,7 +258,8 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].value).toBe('"hello"');
     expect(this.ast.rootNodes[2].type).toBe("expression");
   });
-  it("should correctly swap non-root siblings on-drag", function() {
+
+  it("should correctly swap non-root siblings", function() {
     var newAST = this.parser.parse('42\n\n(+ 1 (* 3 2))\n\n"hello"');
     let change1 = { from: {line: 2, ch:10}, to: {line:2, ch:11}, text: [""], removed: ["3"] };
     let change2 = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["3 "], removed: [""] };
@@ -264,7 +271,8 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args[1].args[0].value).toBe("3");
     expect(this.ast.rootNodes[1].args[1].args[1].value).toBe("2");
   });
-  it("should correctly swap non-literal siblings on-drag", function() {
+
+  it("should correctly swap non-literal siblings", function() {
     var newAST = this.parser.parse('42\n\n(+ (* 3 2) 1)\n\n"hello"');
     let change1 = { from: {line: 2, ch:11}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
     let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:3}, text: ["(* 2 3)"], removed: [""] };
@@ -276,7 +284,8 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args[0].type).toBe("expression");
     expect(this.ast.rootNodes[1].args[1].type).toBe("literal");
   });
-  it("should correctly move nodes up to parent level on-drag", function() {
+
+  it("should correctly move nodes up to parent level", function() {
     var newAST = this.parser.parse('42\n\n(+ 1 2 (* 3))\n\n"hello"');
     let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:9}, text: [""], removed: ["2"] };
     let change2 = { from: {line: 2, ch:4}, to: {line:2, ch:4}, text: [" 2"], removed: [""] };
@@ -291,7 +300,8 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args[2].args[0].value).toBe("3");
     expect(this.ast.rootNodes[1].args[2].args.length).toBe(1);
   });
-  it("should correctly move nodes down to child level on-drag", function() {
+
+  it("should correctly move nodes down to child level", function() {
     var newAST = this.parser.parse('42\n\n(+ (* 1 2 3))\n\n"hello"');
     let change1 = { from: {line: 2, ch:11}, to: {line:2, ch:11}, text: [" 1"], removed: [""] };
     let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:4}, text: [""], removed: ["1"] };
@@ -303,5 +313,34 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args[0].type).toBe("expression");
     expect(this.ast.rootNodes[1].args[0].args[0].value).toBe("1");
     expect(this.ast.rootNodes[1].args[0].args.length).toBe(3);
+  });
+
+  it("should correctly promote non-root nodes to root nodes", function() {
+    var newAST = this.parser.parse('42\n\n(+ (* 1 2 3))\n\n"hello"');
+    let change1 = { from: {line: 2, ch:13}, to: {line:2, ch:13}, text: [" 1"], removed: [""] };
+    let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:4}, text: [""], removed: ["1"] };
+    this.ast = this.ast.patch(newAST, [change1, change2]);
+    expect(this.ast.rootNodes.length).toBe(3);
+    expect(this.ast.rootNodes[0].type).toBe("literal");
+    expect(this.ast.rootNodes[1].type).toBe("expression");
+    expect(this.ast.rootNodes[2].type).toBe("literal");
+    expect(this.ast.rootNodes[2].value).toBe('"hello"');
+    expect(this.ast.rootNodes[1].args.length).toBe(1);
+  });
+
+  it("should correctly move nodes down to child level", function() {
+    this.ast = this.parser.parse('(+ 1 (* 3 5 (- 2 9)))');
+    var newAST = this.parser.parse('(+ (* 3 5 (- 1 2 9)))');
+    let change1 = { from: {line: 0, ch:15}, to: {line:0, ch:15}, text: ["1 "], removed: [""] };
+    let change2 = { from: {line: 0, ch:4}, to: {line:0, ch:21}, text: [""], removed: ["1"] };
+    this.ast = this.ast.patch(newAST, [change1, change2]);
+    expect(this.ast.rootNodes.length).toBe(1);
+    expect(this.ast.rootNodes[0].type).toBe("expression");
+    expect(this.ast.rootNodes[0].args.length).toBe(1);
+    expect(this.ast.rootNodes[0].args[0].type).toBe("expression");
+    expect(this.ast.rootNodes[0].args[0].args.length).toBe(3);
+    expect(this.ast.rootNodes[0].args[0].args[2].type).toBe("expression");
+    expect(this.ast.rootNodes[0].args[0].args[2].args.length).toBe(3);
+    expect(this.ast.rootNodes[0].args[0].args[2].args[0].value).toBe("1");
   });
 });

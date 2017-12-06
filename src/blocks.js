@@ -209,7 +209,6 @@ export default class CodeMirrorBlocks {
   // called anytime we update the underlying CM value
   // destorys the redo history and updates the undo history
   commitChange(changes, announcement=false) {
-    console.log('commiting change. saving focus at ', this.focusPath);
     this.focusHistory.done.unshift({path: this.focusPath, announcement: announcement});
     this.focusHistory.undone = [];
     this.cm.operation(changes);
@@ -217,7 +216,7 @@ export default class CodeMirrorBlocks {
   }
 
   // muting and unmuting, to cut down on chattier compound operations
-  mute()   { this.muteAnnouncements = true; }
+  mute()   { this.muteAnnouncements = true;  }
   unmute() { this.muteAnnouncements = false; }
 
   // say : String Number -> Void
@@ -332,7 +331,7 @@ export default class CodeMirrorBlocks {
       // batch-apply the changes, then re-render dirty nodes
       this.cm.operation(() => {
         this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), changes);
-        this.ast.dirty.forEach(node => this.renderer.render(node));
+        this.ast.dirtyPaths.forEach(p => this.renderer.render(this.ast.getNodeByPath(p)));
       });
       // reset the cursor
       setTimeout(() => {
