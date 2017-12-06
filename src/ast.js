@@ -29,8 +29,15 @@ function pluralize(noun, set) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
-const descDepth = 1;
+function commonSubstring(s1, s2) {
+  if(!s1 || !s2) return false;
+  let i = 0, len = Math.min(s1.length, s2.length);
+  while(i<len && s1.charAt(i) == s2.charAt(i)){ i++; } 
+  return s1.substring(0, i) || false; 
+}
 
+const descDepth = 1;
+const fields = ['aria-level','aria-setsize','aria-label','aria-posinset','line','ch'];
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
 // required to spit out an `AST` instance.
@@ -82,11 +89,9 @@ export class AST {
   // Given a new AST and some CM change objects, return a new AST patched from the current one.
   // Take care to preserve all rendered DOM elements, though!
   patch(newAST, changes) {
-    var ast, patches, pathArray, dirty = new Set();
-    let fields = ['aria-level','aria-setsize','aria-label','aria-posinset','line','ch'];
-    // ORDER MATTERS: pure-removals first, remove-and-insert next, then pure-insertions last
-    changes = changes.sort(a => (a.removed.join("") !== "")? -1 : (a.text.join("") !== "")? 1 :0);
-    changes.forEach(({from, to, text, removed}) => {
+    var ast, patches, pathArray, that = this, dirtyPaths = new Set();
+    // annotate a changeObject with adjFrom, insertedToPos, and common ancestor path information
+    function annotateChanges({from, to, text, removed}) {
       let lastText = text[text.length-1], lastRemoved = removed[removed.length-1];
       var insertedToPos = {
         line: from.line + (text.length - removed.length), 
@@ -96,30 +101,47 @@ export class AST {
       let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
       if(startWS) { from.ch = from.ch + startWS[0].length; }
       if(endWS)   { to.ch   = to.ch   - endWS[0].length;   }
-      let fromNode      = this.getRootNodesTouching(from, from)[0];             // is there a containing rootNode?
-      let fromPos       = fromNode? fromNode.from : from;                       // if so, use that node's .from
-      let ancestorPath  = this.getCommonAncestorPath(this.getNodeContaining(from), this.getNodeContaining(to));
-      if(ancestorPath && (pathArray = ancestorPath.split(',')).length > 1) {    // patch the subtree
+      let fromNode = that.getRootNodesTouching(from, from)[0];                 // is there a containing rootNode?
+      let adjFrom  = fromNode? fromNode.from : from;                           // if so, use that node's .from
+      return {
+        from: from, to: to, text: text, removed: removed, adjFrom: adjFrom, insertedToPos: insertedToPos,
+        path: that.getCommonAncestorPath(that.getNodeContaining(from), newAST.getNodeContaining(to))
+      };
+    }
+    // given a path-ordered list of changes and new change, either add the change or combine it with an existing one
+    function coalescePaths(changes, c) {
+      if(changes.length == 0) return [c];                                       // if this is our only change, add it
+      let common = changes[0].path && c.path && commonSubstring(changes[0].path,c.path); // is there a common path?
+      if(common) { c.path = common; changes.shift(); }                          // if yes, drop the most-recent change
+      return [c].concat(changes);                                               // add the new change to the list
+    }
+    // apply an annotated change, by either patching a subtree or splicing roots
+    function applyChange({from, to, text, removed, adjFrom, insertedToPos, path}) {
+      if(path && (pathArray = path.split(',')).length > 1) {                    // PATCH A SUBTREE
         // if it's an insertion or deletion, set the path to the *parent*
-        if((comparePos(from,to)==0) || (text.join("")=="")) { ancestorPath = pathArray.slice(0,-1).join(','); }
-        patches = jsonpatch.compare(this.getNodeByPath(ancestorPath), newAST.getNodeByPath(ancestorPath));
+        if((comparePos(from,to)==0) || (text.join("")=="")) { path = pathArray.slice(0,-1).join(','); }
+        patches = jsonpatch.compare(that.getNodeByPath(path), newAST.getNodeByPath(path));
         patches = patches.filter(p => p.path.split('/').pop() !== 'el');        // Save the DOM element for rendering
-        jsonpatch.applyPatch(this.getNodeByPath(ancestorPath), patches, false); // Perf: false = don't validate patches
-        castToASTNode(this.getNodeByPath(ancestorPath));                        // Ensure the correct nodeTypes
-        dirty.add(this.getNodeByPath(ancestorPath));
-      } else {                                                                  // splice new roots into this.rootNodes
-        let removedRoots  = this.getRootNodesTouching(from, to);
-        let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos);
-        for(var i=0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
-        this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
-        insertedRoots.forEach(n => dirty.add(n));
+        jsonpatch.applyPatch(that.getNodeByPath(path), patches, false);         // Perf: false = don't validate patches
+        castToASTNode(that.getNodeByPath(path));                                // Ensure the correct nodeTypes
+        dirtyPaths.add(path);
+      } else {                                                                  // SPLICE ROOTS
+        let removedRoots  = that.getRootNodesTouching(from, to);
+        let insertedRoots = newAST.getRootNodesTouching(adjFrom, insertedToPos);
+        for(var i=0; i<that.rootNodes.length; i++){ if(comparePos(adjFrom, that.rootNodes[i].from)<=0) break;  }
+        that.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
+        insertedRoots.forEach(n => dirtyPaths.add(n.path));
       }
-    });
-    patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
+    }
+    changes = changes.map(annotateChanges);
+    changes.sort((a, b) => a.path < b.path? -1 : a.path > b.path? 1 : 0);       // sort by path
+    changes = changes.reduce(coalescePaths, []);                                // coalesce changes by ancestor
+    changes.forEach(applyChange);                                               // apply the changes
+    patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);              // generate patches for this v. newAST 
     patches = patches.filter(p => fields.includes(p.path.split('/').pop()));    // only patch fields we care about
     jsonpatch.applyPatch(this.rootNodes, patches, false);                       // Perf: false = don't validate patches
     ast = new AST(this.rootNodes);                                              // build new AST from patched rootNodes
-    ast.dirty = dirty;                                                          // track nodes that need (re-)rendering
+    ast.dirtyPaths = Array.from(dirtyPaths);                                    // track paths that need (re-)rendering
     return ast;
   }
 
@@ -157,9 +179,7 @@ export class AST {
   // if two nodes are given, walk their paths to find the nearest common ancestor
   getCommonAncestorPath(n1, n2) {
     if(!n1 || !n2) return false;
-    let p1 = n1.path.split(','), p2 = n2.path.split(','), i = -1;
-    while((p1[i+1] == p2[i+1]) && i<Math.min(p1.length, p2.length)){ i++; }
-    return i==-1? false : p1.slice(0, i+1).join(',');
+    return commonSubstring(n1.path, n2.path);
   }
   // return the parent or false
   getNodeParent(node) {
