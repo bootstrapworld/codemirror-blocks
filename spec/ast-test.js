@@ -138,7 +138,7 @@ describe("AST Patching", function() {
     this.ast = this.parser.parse('42\n\n(+ 1 (* 2 3))\n\n"hello"');
   });
 
-  it("should correctly change a root-level literal", function() {
+  it('42 (+ 1 (* 2 3)) "hello" -> 41 (+ 1 (* 2 3)) "hello"', function() {
     var newAST = this.parser.parse('41\n\n(+ 1 (* 2 3))\n\n"hello"');
     let change = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: ["41"], removed: ["42"] };
     this.ast = this.ast.patch(newAST, [change]);
@@ -148,7 +148,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].type).toBe("expression");
   });
 
-  it("should correctly change child node", function() {
+  it('42 (+ 1 (* 2 3)) "hello" -> 41 (foo bar baz) "hello"', function() {
     var newAST = this.parser.parse('41\n\n(foo bar baz)\n\n"hello"');
     let change = { from: {line: 2, ch:0}, to: {line:2, ch:13}, text: ["(foo bar baz)"], removed: ["(+ 1 (* 2 3)))"] };
     this.ast = this.ast.patch(newAST, [change]);
@@ -159,7 +159,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args.length).toBe(2);
   });
 
-  it("should correctly delete root node", function() {
+  it('42  (+ 1 (* 2 3))  "hello" --> 42  (foo bar baz)  ', function() {
     var newAST = this.parser.parse('42\n\n(+ 1 (* 1 2 3))\n\n');
     let change = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
     this.ast = this.ast.patch(newAST, [change]);
@@ -168,8 +168,8 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].type).toBe("expression");
   });
 
-  it("should correctly delete non-root node", function() {
-    var newAST = this.parser.parse('42\n\n(+ 1)\n\n"hello"');
+  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 )  "hello"', function() {
+    var newAST = this.parser.parse('42\n\n(+ 1 )\n\n"hello"');
     let change = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
     this.ast = this.ast.patch(newAST, [change]);
     expect(this.ast.rootNodes.length).toBe(3);
@@ -180,7 +180,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args[0].value).toBe("1");
   });
 
-  it("should correctly move roots forward", function() {
+  it('42  + 1 (* 2 3))  "hello" -> (+ 1 (* 2 3)) 42 "hello"', function() {
     var newAST = this.parser.parse('\n\n(+ 1 (* 2 3))\n42\n"hello"');
     let change1 = { from: {line: 3, ch:0}, to: {line:3, ch:0}, text: ["42"], removed: [""] };
     let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
@@ -193,7 +193,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[2].value).toBe('"hello"');
   });
 
-  it("should correctly move roots backward", function() {
+  it('42  (+ 1 (* 2 3))  "hello" -> 42 "hello" (+ 1 (* 2 3))', function() {
     var newAST = this.parser.parse('42\n"hello"\n(+ 1 (* 3 2))\n\n');
     let change1 = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
     let change2 = { from: {line: 1, ch:0}, to: {line:1, ch:0}, text: ['"hello"'], removed: [""] };
@@ -204,7 +204,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[2].type).toBe("expression");
   });
 
-  it("should correctly swap non-root siblings", function() {
+  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 (* 3 2))  "hello"', function() {
     var newAST = this.parser.parse('42\n\n(+ 1 (* 3 2))\n\n"hello"');
     let change1 = { from: {line: 2, ch:10}, to: {line:2, ch:11}, text: [""], removed: ["3"] };
     let change2 = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["3 "], removed: [""] };
@@ -217,7 +217,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args[1].args[1].value).toBe("2");
   });
 
-  it("should correctly swap non-literal siblings", function() {
+  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ (* 3 2) 1)  "hello"', function() {
     var newAST = this.parser.parse('42\n\n(+ (* 3 2) 1)\n\n"hello"');
     let change1 = { from: {line: 2, ch:11}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
     let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:3}, text: ["(* 2 3)"], removed: [""] };
@@ -230,7 +230,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args[1].type).toBe("literal");
   });
 
-  it("should correctly move nodes up to parent level", function() {
+  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 2 (* 3))  "hello"', function() {
     var newAST = this.parser.parse('42\n\n(+ 1 2 (* 3))\n\n"hello"');
     let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:9}, text: [""], removed: ["2"] };
     let change2 = { from: {line: 2, ch:4}, to: {line:2, ch:4}, text: [" 2"], removed: [""] };
@@ -246,7 +246,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args[2].args.length).toBe(1);
   });
 
-  it("should correctly move nodes down to child level", function() {
+  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ (* 1 2 3))  "hello"', function() {
     var newAST = this.parser.parse('42\n\n(+ (* 1 2 3))\n\n"hello"');
     let change1 = { from: {line: 2, ch:11}, to: {line:2, ch:11}, text: [" 1"], removed: [""] };
     let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:4}, text: [""], removed: ["1"] };
@@ -260,20 +260,41 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args[0].args.length).toBe(3);
   });
 
-  it("should correctly promote non-root nodes to root nodes", function() {
-    var newAST = this.parser.parse('42\n\n(+ (* 1 2 3))\n\n"hello"');
-    let change1 = { from: {line: 2, ch:13}, to: {line:2, ch:13}, text: [" 1"], removed: [""] };
-    let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:4}, text: [""], removed: ["1"] };
+  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 )(* 2 3)  "hello"', function() {
+    var newAST = this.parser.parse('42\n\n(+ 1 )(* 2 3)\n\n"hello"');
+    let change1 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [" (* 2 3)"], removed: [""] };
+    let change2 = { from: {line: 2, ch:13}, to: {line:2, ch:13}, text: ["(* 2 3)"], removed: [""] };
     this.ast = this.ast.patch(newAST, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(3);
+    expect(this.ast.rootNodes.length).toBe(4);
     expect(this.ast.rootNodes[0].type).toBe("literal");
     expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[2].type).toBe("literal");
-    expect(this.ast.rootNodes[2].value).toBe('"hello"');
+    expect(this.ast.rootNodes[2].type).toBe("expression");
+    expect(this.ast.rootNodes[3].type).toBe("literal");
     expect(this.ast.rootNodes[1].args.length).toBe(1);
+    expect(this.ast.rootNodes[1].func.value).toBe("+");
+    expect(this.ast.rootNodes[2].args.length).toBe(2);
+    expect(this.ast.rootNodes[2].func.value).toBe("*");
+    expect(this.ast.rootNodes[3].value).toBe('"hello"');
   });
 
-  it("should correctly move nodes down to child level", function() {
+  it('42  (+ 1 (* 2 3))  "hello" -> 42  (* 2 3)(+ 1 )  "hello"', function() {
+    var newAST = this.parser.parse('42\n\n(* 2 3)(+ 1 )\n\n"hello"');
+    let change1 = { from: {line: 2, ch:5}, to: {line:2, ch:6}, text: [""], removed: ["(* 2 3)"] };
+    let change2 = { from: {line: 2, ch:0}, to: {line:2, ch:0}, text: ["(* 2 3) "], removed: [""] };
+    this.ast = this.ast.patch(newAST, [change1, change2]);
+    expect(this.ast.rootNodes.length).toBe(4);
+    expect(this.ast.rootNodes[0].type).toBe("literal");
+    expect(this.ast.rootNodes[1].type).toBe("expression");
+    expect(this.ast.rootNodes[2].type).toBe("expression");
+    expect(this.ast.rootNodes[3].type).toBe("literal");
+    expect(this.ast.rootNodes[1].args.length).toBe(2);
+    expect(this.ast.rootNodes[1].func.value).toBe("*");
+    expect(this.ast.rootNodes[2].args.length).toBe(1);
+    expect(this.ast.rootNodes[2].func.value).toBe("+");
+    expect(this.ast.rootNodes[3].value).toBe('"hello"');
+  });
+
+  it('(+ 1 (* 3 5 (- 2 9))) -> (+ (* 3 5 (- 1 2 9)))', function() {
     this.ast = this.parser.parse('(+ 1 (* 3 5 (- 2 9)))');
     var newAST = this.parser.parse('(+ (* 3 5 (- 1 2 9)))');
     let change1 = { from: {line: 0, ch:15}, to: {line:0, ch:15}, text: ["1 "], removed: [""] };

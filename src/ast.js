@@ -90,22 +90,21 @@ export class AST {
   // Take care to preserve all rendered DOM elements, though!
   patch(newAST, changes) {
     var ast, patches, pathArray, that = this, dirtyPaths = new Set();
-    // annotate a changeObject with adjFrom, insertedToPos, and common ancestor path information
     function annotateChanges({from, to, text, removed}) {
       let lastText = text[text.length-1], lastRemoved = removed[removed.length-1];
-      var insertedToPos = {
+      var postChangeTo = {
         line: from.line + (text.length - removed.length), 
-        ch: lastText.length + (text.length==removed.length==1)? from.ch+lastText.length-lastRemoved.length : 0
+        ch: lastText.length + (text.length==removed.length==1)? to.ch+lastText.length-lastRemoved.length : 0
       };
       // before selecting nodes, adjust ranges for removed text based on whitespace padding
       let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
       if(startWS) { from.ch = from.ch + startWS[0].length; }
       if(endWS)   { to.ch   = to.ch   - endWS[0].length;   }
       let fromNode = that.getRootNodesTouching(from, from)[0];                 // is there a containing rootNode?
-      let adjFrom  = fromNode? fromNode.from : from;                           // if so, use that node's .from
+      let rootFrom = fromNode? fromNode.from : from;                           // if so, use that node's .from
       return {
-        from: from, to: to, text: text, removed: removed, adjFrom: adjFrom, insertedToPos: insertedToPos,
-        path: that.getCommonAncestorPath(that.getNodeContaining(from), newAST.getNodeContaining(to))
+        from: from, to: to, text: text, removed: removed, rootFrom: rootFrom, postChangeTo: postChangeTo,
+        path: that.getCommonAncestorPath(that.getNodeContaining(from), newAST.getNodeContaining(postChangeTo))
       };
     }
     // given a path-ordered list of changes and new change, either add the change or combine it with an existing one
@@ -116,7 +115,7 @@ export class AST {
       return [c].concat(changes);                                               // add the new change to the list
     }
     // apply an annotated change, by either patching a subtree or splicing roots
-    function applyChange({from, to, text, adjFrom, insertedToPos, path}) {
+    function applyChange({from, to, text, rootFrom, postChangeTo, path}) {
       if(path && (pathArray = path.split(',')).length > 1) {                    // PATCH A SUBTREE
         // if it's an insertion or deletion, set the path to the *parent*
         if((comparePos(from,to)==0) || (text.join("")=="")) { path = pathArray.slice(0,-1).join(','); }
@@ -127,21 +126,24 @@ export class AST {
         dirtyPaths.add(path);
       } else {                                                                  // SPLICE ROOTS
         let removedRoots  = that.getRootNodesTouching(from, to);
-        let insertedRoots = newAST.getRootNodesTouching(adjFrom, insertedToPos);
-        for(var i=0; i<that.rootNodes.length; i++){ if(comparePos(adjFrom, that.rootNodes[i].from)<=0) break;  }
+        let insertedRoots = newAST.getRootNodesTouching(from, postChangeTo);
+        for(var i=0; i<that.rootNodes.length; i++){ if(comparePos(rootFrom, that.rootNodes[i].from)<=0) break;  }
         that.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
         insertedRoots.forEach(n => dirtyPaths.add(n.path));
       }
     }
-    changes = changes.map(annotateChanges);
-    changes.sort((a, b) => a.path < b.path? -1 : a.path > b.path? 1 : 0);       // sort by path
-    changes = changes.reduce(coalescePaths, []);                                // coalesce changes by ancestor
-    changes.forEach(applyChange);                                               // apply the changes
+    changes.sort((a,b) => comparePos(a.from, b.from));
+    let annotatedChanges = changes.map(annotateChanges);
+    annotatedChanges.sort((a, b) => a.path < b.path? -1 : a.path > b.path? 1 : 0); // sort by path
+    let coalescedChanges = annotatedChanges.reduce(coalescePaths, []);          // coalesce changes by ancestor
+    coalescedChanges.sort((a,b) => comparePos(a.from, b.from));
+    coalescedChanges.forEach(applyChange);                                      // apply the changes
     patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);              // generate patches for this v. newAST 
     patches = patches.filter(p => fields.includes(p.path.split('/').pop()));    // only patch fields we care about
     jsonpatch.applyPatch(this.rootNodes, patches, false);                       // Perf: false = don't validate patches
     ast = new AST(this.rootNodes);                                              // build new AST from patched rootNodes
     ast.dirtyPaths = Array.from(dirtyPaths);                                    // track paths that need (re-)rendering
+    console.log(ast);
     return ast;
   }
 
@@ -171,9 +173,13 @@ export class AST {
   }
   // return all the root nodes that contain the given positions, or fall between them
   getRootNodesTouching(start, end, rootNodes=this.rootNodes){
-    return rootNodes.filter(node =>
-      posWithinNode(start, node) || posWithinNode(end, node) ||
-      ( (comparePos(start, node.from) < 0) && (comparePos(end, node.to) > 0) ));
+    return rootNodes.filter(node => {
+      let rootSurrounded = (comparePos(start, node.from) <  0) && (comparePos(end, node.to)   >  0);
+      let straddlesLeft  = (comparePos(start, node.from) <= 0) && (comparePos(end, node.from) >  0);
+      let straddlesRight = (comparePos(start, node.to  ) <  0) && (comparePos(end, node.to)   >= 0);
+      let strictlyInside = (comparePos(start, node.from) >  0) && (comparePos(end, node.to)   <  0);
+      return rootSurrounded || straddlesLeft || straddlesRight || strictlyInside;
+    });
   }
   // return the common ancestor containing two nodes, or false
   // if two nodes are given, walk their paths to find the nearest common ancestor
