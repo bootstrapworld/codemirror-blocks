@@ -26,6 +26,7 @@
   .blocks-expression,
   .blocks-ifExpression,
   .blocks-condExpression,
+  .blocks-sequence,
   .blocks-unknown {
     display: inline-flex;
     flex-direction: column;
@@ -48,6 +49,26 @@
 
   .blocks-lambdaExpression {
     border-radius: @large-border-radius @large-border-radius 0px 0px;
+  }
+
+  .blocks-sequence {
+    border-radius: 0px;
+    background: white;
+    > .blocks-operator {
+      justify-content: flex-start;
+    }
+    > .blocks-sequence-exprs {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      margin: 1px;
+
+      > .blocks-white-space {
+        display: block;
+        height: 16px;
+        border-width: 2px;
+      }
+    }
   }
 
   .blocks-condExpression,
