@@ -35,6 +35,7 @@ export default class Renderer {
       structDefinition: StructDefinition,
       literal: Literal,
       comment: Comment,
+      sequence: Sequence,
       blank: Blank
     };
   }
