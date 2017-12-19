@@ -509,3 +509,27 @@ export class Blank extends ASTNode {
     return `${this.value}`;
   }
 }
+
+export class Sequence extends ASTNode {
+  constructor(from, to, exprs, name, options={}) {
+    super(from, to, 'sequence', options);
+    this.exprs = exprs;
+    this.name = name;
+  }
+
+  *[Symbol.iterator]() {
+    yield this;
+    for (let expr of this.exprs) {
+      yield expr;
+    }
+  }
+
+  toDescription(level) {
+    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    return `a sequence containing ${enumerateList(this.exprs)}`;
+  }
+
+  toString() {
+    return `(${this.name} ${this.exprs.join(" ")})`;
+  }
+}
