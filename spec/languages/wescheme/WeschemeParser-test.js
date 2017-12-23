@@ -274,10 +274,6 @@ describe("The WeScheme Parser,", function() {
       this.ast = this.parser.parse('(letrec ((x 42)) x)');
       expect(this.ast.rootNodes.length).toBe(0);
     });
-    it("should ignore letStar", function() {
-      this.ast = this.parser.parse('(begin (+ 1 2) (+ 3 4) 5)');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
     it("should ignore whenExpr", function() {
       this.ast = this.parser.parse('(when (> 3 2) x)');
       expect(this.ast.rootNodes.length).toBe(0);
