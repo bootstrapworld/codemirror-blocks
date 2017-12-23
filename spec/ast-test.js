@@ -1,4 +1,4 @@
-import {AST, Literal, Expression} from 'codemirror-blocks/ast';
+import {AST, Literal, Expression, Sequence} from 'codemirror-blocks/ast';
 
 describe("The Literal Class", function() {
   it("should be constructed with a value and data type", function() {
@@ -33,6 +33,60 @@ describe("The Literal Class", function() {
     expect(literal.options).toEqual({'aria-label':'11'});
   });
 
+});
+
+describe("The Sequence Class", function() {
+  var sequence, expression1, expression2, from, to, name, exprs;
+
+  beforeEach(function() {
+    // (+ 1 2)
+    var func1 = new Literal({line: 0, ch: 8}, {line: 0, ch: 9}, '+', 'symbol');
+    var args1 = [
+      new Literal({line: 0, ch: 10}, {line: 0, ch: 11}, 1),
+      new Literal({line: 0, ch: 12}, {line: 0, ch: 13}, 2)
+    ];
+    expression1 = new Expression(
+      {line: 0, ch: 7},
+      {line: 0, ch: 14},
+      func1,
+      args1,
+      {'aria-label':'+ expression'}
+    );
+
+    // (- 2 3)
+    var func2 = new Literal({line: 0, ch: 16}, {line: 0, ch: 17}, '-', 'symbol');
+    var args2 = [
+      new Literal({line: 0, ch: 18}, {line: 0, ch: 19}, 2),
+      new Literal({line: 0, ch: 20}, {line: 0, ch: 21}, 3)
+    ];
+    expression2 = new Expression(
+      {line: 0, ch: 15},
+      {line: 0, ch: 22},
+      func2,
+      args2,
+      {'aria-label':'+ expression'}
+    );
+
+    // (begin (+ 1 2) (- 2 3))
+    from = {line: 0, ch: 0};
+    to = {line: 0, ch: 23};
+    name = 'begin';
+    exprs = [expression1, expression2];
+    sequence = new Sequence(from, to, exprs, name);
+  });
+
+  it("should be constructed with a list of expressions", function() {
+    expect(sequence.from).toBe(from);
+    expect(sequence.to).toBe(to);
+    expect(sequence.exprs).toBe(exprs);
+    expect(sequence.name).toEqual(name);
+  });
+
+  it("should take an optional options parameter in it's constructor", function() {
+    var options = {'aria-label': 'sequence'};
+    var newSequence = new Sequence(from, to, exprs, name, options);
+    expect(newSequence.options).toEqual(options);
+  });
 });
 
 describe("The Expression Class", function() {
