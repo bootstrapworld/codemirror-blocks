@@ -221,6 +221,37 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
+  describe("when parsing sequences,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse('(begin (- (+ 1 2) 5) (print "hello"))');
+    });
+
+    it("should convert beginExpr to a sequence", function() {
+      expect(this.ast.rootNodes[0].type).toBe('sequence');
+    });
+
+    it("should get the correct name of the sequence", function() {
+      expect(this.ast.rootNodes[0].name).toBe('begin');
+    });
+
+    it("should convert the sequence's expressions correctly", function() {
+      expect(this.ast.rootNodes[0].exprs[0].type).toBe('expression');
+      expect(this.ast.rootNodes[0].exprs[1].type).toBe('expression');
+    });
+
+    it("should leave the expressions in the order that they appeared in the sequence", function() {
+      expect(this.ast.rootNodes[0].exprs[0].func.value).toBe('-');
+      expect(this.ast.rootNodes[0].exprs[1].func.value).toBe('print');
+    });
+
+    it("should preserve nested expressions in the sequence", function() {
+      var firstExpression = this.ast.rootNodes[0].exprs[0];
+      expect(firstExpression.func.value).toBe('-');
+      expect(firstExpression.args[0].type).toBe('expression');
+      expect(firstExpression.args[1].type).toBe('literal');
+    });
+  });
+
   describe("when parsing expressions that are unsupported in the block language,", function() {
 
     it("should ignore defVars", function() {
