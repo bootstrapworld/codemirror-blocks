@@ -14,6 +14,7 @@ export default React.createClass({
   propTypes: {
     primitives: PropTypes.instanceOf(PrimitiveGroup),
     renderer: PropTypes.instanceOf(Renderer).isRequired,
+    contractStyleClass: PropTypes.instanceOf(String),
   },
 
   childContextTypes: {
@@ -88,7 +89,7 @@ export default React.createClass({
             selected={this.state.selectedPrimitive}
           />
         </div>
-        <div className="selected-primitive">
+        <div className={classNames('selected-primitive', this.props.contractStyleClass)}>
           <div className="contract-header">Contract</div>
           <PrimitiveBlock primitive={selected}/>
         </div>
