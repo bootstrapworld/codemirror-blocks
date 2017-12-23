@@ -84,7 +84,7 @@ describe("The Sequence Class", function() {
 
   it("should take an optional options parameter in it's constructor", function() {
     var options = {'aria-label': 'sequence'};
-    var newSequence = new Sequence(from, to, exprs, name, options)
+    var newSequence = new Sequence(from, to, exprs, name, options);
     expect(newSequence.options).toEqual(options);
   });
 });
