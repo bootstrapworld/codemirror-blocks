@@ -105,7 +105,6 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm = cm;
-    this.cm.setOption("viewportMargin", Infinity);
     this.toolbarNode = toolbar;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
@@ -178,7 +177,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
-    this.cm.on('changes',    (cm, e) => this.handleChange(cm, e));
+    this.cm.on('changes',   (cm, e) => this.handleChange(cm, e));
     // mousedown events should impact dragging, focus-if-error, and click events
     this.cm.on('mousedown', (cm, e) => {
       toggleDraggable(e); 
@@ -210,7 +209,6 @@ export default class CodeMirrorBlocks {
   // called anytime we update the underlying CM value
   // destorys the redo history and updates the undo history
   commitChange(changes, announcement=false) {
-    console.log('commiting change. saving focus at ', this.focusPath);
     this.focusHistory.done.unshift({path: this.focusPath, announcement: announcement});
     this.focusHistory.undone = [];
     this.cm.operation(changes);
@@ -218,7 +216,7 @@ export default class CodeMirrorBlocks {
   }
 
   // muting and unmuting, to cut down on chattier compound operations
-  mute()   { this.muteAnnouncements = true; }
+  mute()   { this.muteAnnouncements = true;  }
   unmute() { this.muteAnnouncements = false; }
 
   // say : String Number -> Void
@@ -330,19 +328,19 @@ export default class CodeMirrorBlocks {
   render(changes) {
     let start = Date.now();
     try{
+      // batch-apply the changes, then re-render dirty nodes
       this.cm.operation(() => {
-        // for each change, patch the AST and render dirty rootNodes
-        changes.forEach(change => {
-          this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), change);
-          this.ast.rootNodes.filter(r => r.dirty).forEach(r => { this.renderer.render(r); delete r.dirty; });
-        });
+        this.ast = this.ast.patch(this.parser.parse, this.cm.getValue(), changes);
+        this.ast.dirtyNodes.forEach(n => this.renderer.render(n));
       });
       // reset the cursor
       setTimeout(() => {
         let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
+        console.log('activating', node, this.focusPath);
         if(node && node.el) { node.el.click(); }
         else { this.cm.focus(); }
-      }, 150);
+        delete this.ast.dirty; // remove dirty nodeset, now that they've been rendered
+      }, 100);
     } catch (e){
       console.error(e);
     }
@@ -374,14 +372,19 @@ export default class CodeMirrorBlocks {
       this.clearSelection(); 
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
-    let {top, bottom, left, right} = node.el.getBoundingClientRect();
+    var rect = node.el.getBoundingClientRect();
+    // if the element is outside of CM's viewport, scroll to that line and recalaculate
+    if((rect.left + rect.right + rect.top + rect.bottom) == 0) {
+      this.cm.scrollIntoView(node.from);
+      rect = node.el.getBoundingClientRect();
+    }
     let offset = this.wrapper.getBoundingClientRect();
     let scroll = this.cm.getScrollInfo();
-    top    = top    + scroll.top  - offset.top; 
-    bottom = bottom + scroll.top  - offset.top;
-    left   = left   + scroll.left - offset.left; 
-    right  = right  + scroll.left - offset.left;
-    this.cm.scrollIntoView({top, bottom, left, right}, 100);
+    let top    = rect.top    + scroll.top  - offset.top,
+      bottom = rect.bottom + scroll.top  - offset.top,
+      left   = rect.left   + scroll.left - offset.left,
+      right  = rect.right  + scroll.left - offset.left;
+    this.cm.scrollIntoView({top, bottom, left, right}, 20);
     node.el.focus();
     this.focusPath = node.path;
     return true;
@@ -495,10 +498,11 @@ export default class CodeMirrorBlocks {
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
-      let errorTxt = this.parser.getExceptionMessage(e);
+      var errorTxt = this.parser.getExceptionMessage(e);
+      errorTxt    += ".\n\nTo cancel this edit, type Shift-Escape";
       nodeEl.title = errorTxt;                        // 4) Make the title the error msg
       setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
-      this.say("Error: "+errorTxt);
+      this.say(errorTxt);
     }
   }
 
@@ -532,6 +536,7 @@ export default class CodeMirrorBlocks {
   // Set the appropriate attributes and event handlers
   editLiteral(node, event) {
     event.stopPropagation();
+    this.clearSelection(); // if we're editing, clear the selection
     let action = node.el.getAttribute("aria-label") == ""? "inserting " : "editing ";
     this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel");
     node.el.contentEditable = true;
@@ -563,10 +568,10 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
+    this.selectedNodes.clear();
     this.focusPath = sel[sel.length-1].path; // point to the first node
     this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
-    this.selectedNodes.clear();
   }
 
   startDraggingNode(node, event) {
@@ -709,7 +714,6 @@ export default class CodeMirrorBlocks {
       return (f && !(destinationNode && destinationNode.type == "literal"))?
         f(sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
     }
-
     // Call willInsertNode and didInsertNode on either side of the replacement operation
     // if we're not replacing a literal.
     this.commitChange(() => {
@@ -815,7 +819,7 @@ export default class CodeMirrorBlocks {
       else { that.activateNode(node, event); }
     }
     function showNextMatch(moveCursorFn) {
-      clearTimeout(that.searchTimer); // reset the timer for 1.5sec
+      clearTimeout(that.searchTimer); // reset the timer for 2.5sec
       that.searchTimer = setTimeout(() => that.searchString = that.searchCursor = "", 2500);
       var node, more; // iterate until there's no match or a node is found
       while((more=moveCursorFn()) && !(node=that.ast.getNodeContaining(that.searchCursor.from()))){ /* no-op */}
@@ -917,6 +921,8 @@ export default class CodeMirrorBlocks {
     // Shift-Left and Shift-Right toggle global expansion
     else if (keyName === "Shift-Left" && activeNode) {
       this.say("All blocks collapsed");
+      let savedViewportMargin = this.cm.getOption("viewportMargin");
+      this.cm.setOption("viewportMargin", Infinity);
       let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
       [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), false));
       refreshCM(); // update the CM display, since line heights may have changed
@@ -924,12 +930,16 @@ export default class CodeMirrorBlocks {
       // shift focus if rootId !== activeNodeId
       if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
       else this.cm.scrollIntoView(activeNode.from);
+      this.cm.setOption("viewportMargin", savedViewportMargin);
     }
     else if (keyName === "Shift-Right" && activeNode) {
       this.say("All blocks expanded");
+      let savedViewportMargin = this.cm.getOption("viewportMargin");
+      this.cm.setOption("viewportMargin", Infinity);
       let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
       [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), true));
       refreshCM(); // update the CM display, since line heights may have changed
+      this.cm.setOption("viewportMargin", savedViewportMargin);
     }
     // active the previous non-locked, non-hidden node
     else if (keyName === "Shift-PageUp" && activeNode) {
@@ -960,9 +970,10 @@ export default class CodeMirrorBlocks {
     }
     // speak parents: "<label>, at level N, inside <label>, at level N-1...""
     else if (keyName == "\\") {
-      var parents = [node], node = activeNode;
-      while(node = this.ast.getNodeParent(node)){
+      var node = activeNode, parents = [];
+      while(node){ // walk up the tree, pushing label/level descriptions
         parents.push(node.options['aria-label'] + ", at level "+node["aria-level"]);
+        node = this.ast.getNodeParent(node);
       }
       if(parents.length > 1) this.say(parents.join(", inside "));
       else playBeep();

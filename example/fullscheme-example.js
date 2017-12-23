@@ -10,9 +10,10 @@ require('./example-page.less');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
-  {theme:'3024-day',
-  lineNumbers: true,
-   autoCloseBrackets: true}
+  { theme:'3024-day',
+    lineNumbers: true,
+    autoCloseBrackets: true,
+    viewportMargin: 10}
 );
 
 var cm2 = CodeMirror.fromTextArea(
@@ -20,6 +21,7 @@ var cm2 = CodeMirror.fromTextArea(
   {theme:'3024-day',
    autoCloseBrackets: false,
    lineNumbers: true,
+   viewportMargin: 10,
    extraKeys: {
      "Shift-9" : function(cm){
        cm.replaceSelection("(...)");
@@ -27,6 +29,25 @@ var cm2 = CodeMirror.fromTextArea(
    }
  }
 );
+
+
+var currentFocusId = null;
+document.addEventListener("keydown", function(e){
+  var mode = document.getElementById("mode");
+  if(e.key == "F6") {
+    if(currentFocusId === "code"){
+      currentFocusId = e.shiftKey? "mode" : "code2";
+      (e.shiftKey? mode : cm2).focus();
+    } else if(currentFocusId === "code2"){
+      currentFocusId = e.shiftKey? "code" : "mode";
+      (e.shiftKey? cm : mode).focus();
+    } else {
+      currentFocusId = e.shiftKey? "code2" : "code";
+      (e.shiftKey? cm2 : cm).focus();
+    } 
+  }
+});
+
 
 //var code = require('./ast-test.rkt');
 var code = require('./cow-game.rkt');
