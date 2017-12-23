@@ -12,6 +12,7 @@ import {
   Comment,
   VariableDefinition,
   Unknown,
+  Sequence,
   Blank
 } from '../../ast';
 import {PrimitiveGroup} from '../../parsers/primitives';
@@ -266,11 +267,14 @@ function parseNode(node, i) {
                       , {'aria-label':aria, 'comment': comment});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
+  } else if (node instanceof structures.beginExpr) {
+    return new Sequence(from, to, node.exprs.map(parseNode), "begin",
+                       {'aria-label': `a sequence containing ${pluralize('expression', node.exprs)}`});
   } else if (node instanceof structures.unsupportedExpr) {
     if(node.val.constructor !== Array) return null;
     return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
                       {msg: node.errorMsg, 'aria-label': 'invalid expression'});
-  }
+  } 
   console.log("!! No translator for", node);
   return null;
 }

@@ -3,9 +3,13 @@ import CodeMirror from 'codemirror';
 import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
 
 import { 
+  click,
   dragstart,
   drop
 } from './events';
+
+const LEFT_KEY  = 37;
+const RIGHT_KEY = 39;
 const DOWN_KEY  = 40;
 
 function keydown(keyCode, other={}) {
@@ -90,6 +94,28 @@ describe('The CodeMirrorBlocks Class', function() {
         this.fourthArg.el.dispatchEvent(drop(dragEvent.dataTransfer));
         expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('( 1 2 3 +)');
       });
+    });
+  });
+  
+  describe('when parsing code with sequences,', function() {
+    beforeEach(function() {
+      this.cm.setValue(`(begin (+ 1 2) (- 3 4))`);
+      this.blocks.setBlockMode(true);
+      this.sequence = this.blocks.ast.rootNodes[0];
+    });
+
+    it('sequence blocks should be collapsible', function() {
+      this.sequence.el.dispatchEvent(click());
+      this.sequence.el.dispatchEvent(keydown(LEFT_KEY));
+      expect(this.sequence.el.getAttribute("aria-expanded")).toBe("false");
+      this.sequence.el.dispatchEvent(keydown(RIGHT_KEY));
+      expect(document.activeElement).toBe(this.sequence.el);
+    });
+
+    it('should allow moving through expressions in sequences', function() {
+      this.sequence.el.dispatchEvent(click());
+      this.sequence.el.dispatchEvent(keydown(DOWN_KEY));
+      expect(document.activeElement).toBe(this.sequence.exprs[0].el);
     });
   });
 /*

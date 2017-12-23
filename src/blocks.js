@@ -374,7 +374,14 @@ export default class CodeMirrorBlocks {
       this.clearSelection(); 
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
-    this.cm.scrollIntoView(node.from);
+    let {top, bottom, left, right} = node.el.getBoundingClientRect();
+    let offset = this.wrapper.getBoundingClientRect();
+    let scroll = this.cm.getScrollInfo();
+    top    = top    + scroll.top  - offset.top; 
+    bottom = bottom + scroll.top  - offset.top;
+    left   = left   + scroll.left - offset.left; 
+    right  = right  + scroll.left - offset.left;
+    this.cm.scrollIntoView({top, bottom, left, right}, 100);
     node.el.focus();
     this.focusPath = node.path;
     return true;

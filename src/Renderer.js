@@ -10,10 +10,11 @@ import Unknown          from './components/Unknown';
 import Literal          from './components/Literal';
 import Blank            from './components/Blank';
 import Comment          from './components/Comment';
-import IdentifierList from './components/IdentifierList';
+import IdentifierList   from './components/IdentifierList';
 import StructDefinition from './components/StructDef';
 import VariableDefinition from './components/VariableDef';
 import FunctionDefinition from './components/FunctionDef';
+import Sequence         from './components/Sequence';
 
 export default class Renderer {
   constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
@@ -34,6 +35,7 @@ export default class Renderer {
       structDefinition: StructDefinition,
       literal: Literal,
       comment: Comment,
+      sequence: Sequence,
       blank: Blank
     };
   }
