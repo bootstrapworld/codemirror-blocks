@@ -89,19 +89,17 @@ export default React.createClass({
     );
     return (
       <div className="Editor">
-        <div className="row">
-          {this.blocks ?
-            <div className={toolbarPaneClasses}>
-              <Toolbar primitives={blocks.parser.primitives} renderer={this.blocks.renderer}/>
-              <TrashCan onDrop={this.dropNodeOnTrash}/>
-           </div> : null}
-          <div className="col-xs-9 codemirror-pane">
-            <CodeMirror ref="cm" options={this.props.cmOptions}/>
-            <button className="blocks-toggle-btn btn btn-default btn-sm"
-                    onClick={this.toggleBlocks}>
-              <span className={glyphClass}></span>
-            </button>
-          </div>
+        {this.blocks ?
+          <div className={toolbarPaneClasses}>
+            <Toolbar primitives={blocks.parser.primitives} renderer={this.blocks.renderer}/>
+            <TrashCan onDrop={this.dropNodeOnTrash}/>
+         </div> : null}
+        <div className="col-xs-9 codemirror-pane">
+          <CodeMirror ref="cm" options={this.props.cmOptions}/>
+          <button className="blocks-toggle-btn btn btn-default btn-sm"
+                  onClick={this.toggleBlocks}>
+            <span className={glyphClass}></span>
+          </button>
         </div>
       </div>
     );
