@@ -25,11 +25,11 @@ function enumerateList(lst) {
   return (lst.length == 0)? last.toString() : lst.join(', ') + " and "+last.toString();
 }
 
-function pluralize(noun, set) {
+export function pluralize(noun, set) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
-const descDepth = 1;
+export const descDepth = 1;
 
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
@@ -92,7 +92,7 @@ export class AST {
     // only update aria attributes and position fields
     patches = patches.filter(p => ['aria-level','aria-setsize','aria-posinset','line','ch'].includes(p.path.split('/').pop()));
     jsonpatch.applyPatch(this.rootNodes, patches, false); // false = don't validate patches
-    this.rootNodes.forEach(castToASTNode);
+    //this.rootNodes.forEach(castToASTNode);
     return new AST(this.rootNodes);
   }
 

@@ -36,7 +36,7 @@ export default class Renderer {
       literal: Literal,
       comment: Comment,
       sequence: Sequence,
-      blank: Blank
+      blank: Blank,
     };
   }
 

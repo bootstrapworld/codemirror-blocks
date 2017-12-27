@@ -262,18 +262,6 @@ describe("The WeScheme Parser,", function() {
       this.ast = this.parser.parse('(local [(define x 2)] x)');
       expect(this.ast.rootNodes.length).toBe(0);
     });
-    it("should ignore letExpr", function() {
-      this.ast = this.parser.parse('(let ((x 42)) x)');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
-    it("should ignore letStar", function() {
-      this.ast = this.parser.parse('(let* ((x 42)) x)');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
-    it("should ignore letrectExpr", function() {
-      this.ast = this.parser.parse('(letrec ((x 42)) x)');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
     it("should ignore whenExpr", function() {
       this.ast = this.parser.parse('(when (> 3 2) x)');
       expect(this.ast.rootNodes.length).toBe(0);
@@ -349,9 +337,9 @@ describe("The WeScheme Parser,", function() {
       expect(this.parser.parse('(/ 1 2)').rootNodes[0].options['aria-label'])
                  .toBe('divide expression, 2 inputs');
       expect(this.parser.parse('(foo? 0)').rootNodes[0].options['aria-label'])
-                 .toBe('foo huh expression, 1 input');
+                 .toBe('foo-huh expression, 1 input');
       expect(this.parser.parse('(set! x 2)').rootNodes[0].options['aria-label'])
-                 .toBe('set bang expression, 2 inputs');                 
+                 .toBe('set-bang expression, 2 inputs');                 
       expect(this.parser.parse('#(1 2)').rootNodes[0].options['aria-label'])
                  .toBe('vector expression, 2 inputs');                 
     });
