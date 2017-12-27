@@ -15,6 +15,7 @@ import {
   Sequence,
   Blank
 } from '../../ast';
+import {LetLikeExpr} from './ast';
 import {PrimitiveGroup} from '../../parsers/primitives';
 import PRIMITIVES_CONFIG from './primitives-config';
 
@@ -46,7 +47,7 @@ function symbolAria(str) {
     return symbolMap.get(str);
   } else {
     // pronounce special chars, scheme-style
-    str = str.replace("?", " huh").replace("!"," bang");
+    str = str.replace("?", "-huh").replace("!","-bang").replace("*","-star");
     // pronounce quotes
     str = str.replace("\"", " quote");
     // pronounce braces
@@ -98,6 +99,12 @@ function parseNode(node, i) {
       ch: node.location.endCol
     };
     return {from, to};
+  }
+
+  function parseBinding(b) {
+    let loc = locationFromNode(b);
+    return new VariableDefinition(loc.from, loc.to, parseNode(b.first), parseNode(b.second),
+      {'aria-label': symbolAria(b.first.val)+': a binding' ,'comment' : comment});
   }
 
   let {from, to} = locationFromNode(node);
@@ -270,6 +277,15 @@ function parseNode(node, i) {
   } else if (node instanceof structures.beginExpr) {
     return new Sequence(from, to, node.exprs.map(parseNode), "begin",
                        {'aria-label': `a sequence containing ${pluralize('expression', node.exprs)}`});
+  } else if (node instanceof structures.letExpr
+    || node instanceof structures.letStarExpr
+    || node instanceof structures.letrecExpr) {
+    let loc = locationFromNode(node.bindings), form = node.stx[0].val;
+    return new LetLikeExpr(from, to, form, 
+      new Sequence(loc.from, loc.to, node.bindings.map(parseBinding), "bindings",
+                       {'aria-label': `${pluralize('binding', node.bindings)}`}),
+      parseNode(node.body),
+      {'aria-label': `a ${symbolAria(form)} expression with ${pluralize('binding', node.bindings)}`});
   } else if (node instanceof structures.unsupportedExpr) {
     if(node.val.constructor !== Array) return null;
     return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
@@ -505,7 +521,9 @@ class WeschemeParser {
           || !sexp[1].every(sexpIsCouple)) {      // is it a list of not-all-bindings?
           return fallback(sexp);
         }
-        return new structures.letrecExpr(sexp[1].map(parseBinding), parseExpr(sexp[2]), sexp[0]);
+        let bindings = sexp[1].map(parseBinding);
+        bindings.location = sexp[1].location;
+        return new structures.letrecExpr(bindings, parseExpr(sexp[2]), sexp);
       }
 
       function parseLetExpr(sexp) {
@@ -514,7 +532,9 @@ class WeschemeParser {
           || !sexp[1].every(sexpIsCouple)) {      // is it a list of not-all-bindings?
           return fallback(sexp);
         }
-        return new structures.letExpr(sexp[1].map(parseBinding), parseExpr(sexp[2]), sexp);
+        let bindings = sexp[1].map(parseBinding);
+        bindings.location = sexp[1].location;
+        return new structures.letExpr(bindings, parseExpr(sexp[2]), sexp);
       }
 
       function parseLetStarExpr(sexp) {
@@ -525,7 +545,7 @@ class WeschemeParser {
         }
         var bindings = sexp[1].map(parseBinding);
         bindings.location = sexp[1].location;
-        return new structures.letStarExpr(bindings, parseExpr(sexp[2]), sexp[0]);
+        return new structures.letStarExpr(bindings, parseExpr(sexp[2]), sexp);
       }
 
       function parseIfExpr(sexp) {

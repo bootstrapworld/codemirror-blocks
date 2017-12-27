@@ -45,7 +45,7 @@ cm2.swapDoc(cm.getDoc().linkedDoc({sharedHist: true}));
 
 const options = {
   renderOptions: {
-    lockNodesOfType: ['comment','functionDef','variableDef','struct']
+    lockNodesOfType: ['comment','functionDef','variableDef','struct'],
   },
   willInsertNode(sourceNodeText, sourceNode, destination) {
     let line = cm2.getLine(destination.line);
