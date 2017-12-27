@@ -16,7 +16,7 @@ export class LetLikeExpr extends ASTNode {
 
   toDescription(level){
     if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
-    return `a ${this.form} expression with ${pluralize("binding", this.bindings.exprs)}`
+    return `a ${this.form} expression with ${pluralize("binding", this.bindings.exprs)}`;
   }
 
   toString() {

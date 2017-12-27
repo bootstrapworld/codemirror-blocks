@@ -1,6 +1,6 @@
 import WeschemeParser from './WeschemeParser';
 import CodeMirrorBlocks from '../../blocks';
-import LetLikeExpr from './components/LetLikeExpr'
+import LetLikeExpr from './components/LetLikeExpr';
 
 require('./style.less');
 

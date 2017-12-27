@@ -9,7 +9,7 @@ export default class Literal extends Component {
   }
 
   render() {
-    const {node, lockedTypes, helpers} = this.props;
+    const {node} = this.props;
     return (
       <Node type="literal" node={node}>
         <span className="data-type">

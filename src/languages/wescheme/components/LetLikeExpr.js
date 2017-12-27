@@ -1,10 +1,8 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
-import {Sequence as ASTSequenceNode} from '../../../ast';
 import {LetLikeExpr as ASTLetLikeExprNode} from '../ast';
 import Node from '../../../components/Node';
-import DropTarget from '../../../components/DropTarget';
 
 export default class LetLikeExpr extends Component {
   static propTypes = {
