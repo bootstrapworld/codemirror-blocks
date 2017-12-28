@@ -1,34 +1,29 @@
-import React from 'react';
+import React, {Component} from 'react';
 import CodeMirror from 'react-codemirror';
 import classNames from 'classnames';
 import CodeMirrorBlocks from '../blocks';
 import {EVENT_DRAG_START, EVENT_DRAG_END} from '../blocks';
 import Toolbar from './Toolbar';
 import TrashCan from './TrashCan';
+import PropTypes from 'prop-types';
 
 require('./Editor.less');
 
-export default React.createClass({
-  displayName: 'Editor',
+export default class Editor extends Component {
+  static propTypes = {
+    options: PropTypes.object,
+    cmOptions: PropTypes.object,
+    language: PropTypes.string.isRequired,
+  }
 
-  propTypes: {
-    options:React.PropTypes.object,
-    cmOptions: React.PropTypes.object,
-    language: React.PropTypes.string.isRequired,
-  },
+  static defaultProps = {
+    options: {},
+    cmOptions: {},
+  }
 
-  getDefaultProps() {
-    return {
-      options: {},
-      cmOptions: {},
-    };
-  },
-
-  getInitialState() {
-    return {
-      showTrashCan: false,
-    };
-  },
+  state = {
+    showTrashCan: false,
+  }
 
   componentDidMount() {
     this.blocks = new CodeMirrorBlocks(
@@ -44,38 +39,38 @@ export default React.createClass({
     // the codemirror instance in order to render...
     // so render again!
     this.forceUpdate();
-  },
+  }
 
   componentWillUnmount() {
     this.blocks.off(EVENT_DRAG_START, this.showTrashCan);
     this.blocks.off(EVENT_DRAG_END, this.hideTrashCan);
-  },
+  }
 
   getCodeMirror() {
     return this.refs.cm.getCodeMirror();
-  },
+  }
 
   getCodeMirrorBlocks() {
     return this.blocks;
-  },
+  }
 
   showTrashCan() {
     this.setState({showTrashCan:true});
-  },
+  }
 
   hideTrashCan() {
     this.setState({showTrashCan:false});
-  },
+  }
 
   toggleBlocks() {
     this.blocks.toggleBlockMode();
     this.forceUpdate();
-  },
+  }
 
   dropNodeOnTrash(nodeId) {
     this.blocks.deleteNodeWithId(nodeId);
     this.hideTrashCan();
-  },
+  }
 
   render() {
     let blocks = this.blocks || {parser:{}};
@@ -106,4 +101,4 @@ export default React.createClass({
       </div>
     );
   }
-});
+}

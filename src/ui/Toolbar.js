@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import PrimitiveList from './PrimitiveList';
@@ -8,58 +8,52 @@ import Renderer from '../Renderer';
 
 require('./Toolbar.less');
 
-export default React.createClass({
-  displayName: 'Toolbar',
-
-  propTypes: {
+export default class Toolbar extends Component {
+  static propTypes = {
     primitives: PropTypes.instanceOf(PrimitiveGroup),
     renderer: PropTypes.instanceOf(Renderer).isRequired,
-  },
+  }
 
-  childContextTypes: {
+  static childContextTypes = {
     renderer: PropTypes.instanceOf(Renderer).isRequired,
-  },
+  }
 
-  getDefaultProps() {
-    return {
-      primitives: null
-    };
-  },
+  static defaultProps = {
+    primitives: null
+  }
 
   getChildContext() {
     return {
       renderer: this.props.renderer,
     };
-  },
+  }
 
-  getInitialState() {
-    return {
-      search: '',
-      selectedPrimitive: null,
-    };
-  },
+  state = {
+    search: '',
+    selectedPrimitive: null,
+  }
 
-  changeSearch(event) {
+  changeSearch = (event) => {
     this.setState({search: event.target.value});
-  },
+  }
 
   clearSearch() {
     this.setState({search: ''});
-  },
+  }
 
-  checkEscape(event) {
+  checkEscape = (event) => {
     if (event.key == 'Escape') {
       event.target.blur();
       event.preventDefault();
     }
-  },
+  }
 
   selectPrimitive(selectedPrimitive) {
     if (selectedPrimitive === this.state.selectedPrimitive) {
       selectedPrimitive = null;
     }
     this.setState({selectedPrimitive});
-  },
+  }
 
   render() {
     let primitives = [];
@@ -95,4 +89,4 @@ export default React.createClass({
       </div>
     );
   }
-});
+}
