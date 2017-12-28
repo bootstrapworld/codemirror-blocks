@@ -7,28 +7,6 @@ import {Primitive} from '../parsers/primitives';
 
 require('./PrimitiveBlock.less');
 
-function onDragStart(node, text, renderer, event) {
-  let el = event.target;
-  while (el.parentNode && !el.parentNode.classList.contains('RenderedBlockNode')) {
-    el = el.parentNode;
-  }
-  if (!el) {
-    return;
-  }
-  event.stopPropagation();
-  el.classList.add('blocks-dragging');
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setDragImage(el, -5, -5);
-  if (node || text) {
-    event.dataTransfer.setData('text/plain', node && renderer.printASTNode(node) || text);
-  }
-  if (node) {
-    // Don't translate node.el (prevents a circular reference)
-    event.dataTransfer.setData('text/json', 
-      JSON.stringify(node, k => { if (k === "el") return undefined; }));
-  }
-}
-
 export var RenderedBlockNode = React.createClass({
   displayName: 'RenderedBlockNode',
 
@@ -55,8 +33,38 @@ export var RenderedBlockNode = React.createClass({
       el.firstChild.draggable = true;
       el.firstChild.addEventListener(
         'dragstart',
-        onDragStart.bind(null, this.props.node, this.props.text, this.context.renderer)
+        this.onDragStart.bind(this)
       );
+    }
+  },
+
+  onDragStart(event) {
+    let node = this.props.node;
+    let text = this.props.text;
+
+    // Find the block (it might just be a text Primitive, so there might not be 
+    // an assocated AST node):
+    let el = node ? node.el : event.target;
+    if (!node) {
+      while (el.parentNode && !el.parentNode.classList.contains('RenderedBlockNode')) {
+        el = el.parentNode;
+      }
+      if (!el) {
+        return;
+      }
+    }
+
+    event.stopPropagation();
+    el.classList.add('blocks-dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setDragImage(el, -5, -5);
+
+    // Add dataTransfer information:
+    if (node) {
+      event.dataTransfer.setData('text/plain', this.context.renderer.printASTNode(node));
+      event.dataTransfer.setData('text/id', node.id);
+    } else if (text) {
+      event.dataTransfer.setData('text/plain', text);
     }
   },
 
