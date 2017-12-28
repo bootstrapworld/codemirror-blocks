@@ -54,20 +54,20 @@ export default class Editor extends Component {
     return this.blocks;
   }
 
-  showTrashCan() {
+  showTrashCan = (_) => {
     this.setState({showTrashCan:true});
   }
 
-  hideTrashCan() {
+  hideTrashCan = (_) => {
     this.setState({showTrashCan:false});
   }
 
-  toggleBlocks() {
+  toggleBlocks = (_) => {
     this.blocks.toggleBlockMode();
     this.forceUpdate();
   }
 
-  dropNodeOnTrash(nodeId) {
+  dropNodeOnTrash = (nodeId) => {
     this.blocks.deleteNodeWithId(nodeId);
     this.hideTrashCan();
   }

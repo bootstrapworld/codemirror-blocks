@@ -17,19 +17,19 @@ export default class TrashCan extends Component {
     isOverTrashCan: false,
   }
 
-  handleDragEnter() {
+  handleDragEnter = () => {
     this.setState({isOverTrashCan: true});
   }
 
-  handleDragLeave() {
+  handleDragLeave = () => {
     this.setState({isOverTrashCan: false});
   }
 
-  handleDragOver(event) {
+  handleDragOver = (event) => {
     event.preventDefault();
   }
 
-  handleDrop(event) {
+  handleDrop = (event) => {
     this.setState({isOverTrashCan: false});
     let nodeId = event.dataTransfer.getData("text/id");
     this.props.onDrop(nodeId);

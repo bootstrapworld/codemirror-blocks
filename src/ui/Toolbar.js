@@ -37,7 +37,7 @@ export default class Toolbar extends Component {
     this.setState({search: event.target.value});
   }
 
-  clearSearch() {
+  clearSearch = (_) => {
     this.setState({search: ''});
   }
 

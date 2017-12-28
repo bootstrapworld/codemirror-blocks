@@ -33,7 +33,7 @@ export class PrimitiveGroup extends Component {
     expanded: false
   }
 
-  toggleExpanded() {
+  toggleExpanded = (_) => {
     this.setState({expanded: !this.state.expanded});
   }
 
