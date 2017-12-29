@@ -1,6 +1,7 @@
 import WeschemeParser from './WeschemeParser';
 import CodeMirrorBlocks from '../../blocks';
 import LetLikeExpr from './components/LetLikeExpr';
+import WhenUnlessExpr from './components/WhenUnlessExpr';
 
 require('./style.less');
 
@@ -16,6 +17,7 @@ export default CodeMirrorBlocks.languages.addLanguage(
       return {
         extraRenderers: {
           letLikeExpr: LetLikeExpr,
+          whenUnlessExpr: WhenUnlessExpr,
         }
       };
     },

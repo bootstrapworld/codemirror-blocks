@@ -15,7 +15,7 @@ import {
   Sequence,
   Blank
 } from '../../ast';
-import {LetLikeExpr} from './ast';
+import {LetLikeExpr, WhenUnless} from './ast';
 import {PrimitiveGroup} from '../../parsers/primitives';
 import PRIMITIVES_CONFIG from './primitives-config';
 
@@ -283,9 +283,15 @@ function parseNode(node, i) {
     let loc = locationFromNode(node.bindings), form = node.stx[0].val;
     return new LetLikeExpr(from, to, form, 
       new Sequence(loc.from, loc.to, node.bindings.map(parseBinding), "bindings",
-                       {'aria-label': `${pluralize('binding', node.bindings)}`}),
+                    {'aria-label': `${pluralize('binding', node.bindings)}`}),
       parseNode(node.body),
       {'aria-label': `a ${symbolAria(form)} expression with ${pluralize('binding', node.bindings)}`});
+  } else if(node instanceof structures.whenUnlessExpr) {
+    let loc = locationFromNode(node.exprs), form = node.stx.val;
+    return new WhenUnless(from, to, form, parseNode(node.predicate),
+      new Sequence(loc.from, loc.to, node.exprs.map(parseNode), "begin",
+                    {'aria-label': `${pluralize('expression', node.exprs)}`}),
+      {'aria-label': `a ${symbolAria(form)} expression`});
   } else if (node instanceof structures.unsupportedExpr) {
     if(node.val.constructor !== Array) return null;
     return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
@@ -610,7 +616,15 @@ class WeschemeParser {
       if (sexp.length < 3) { return fallback(sexp); }  // is it just (when)?
       var exprs = sexp.slice(2),
         result = new structures.whenUnlessExpr(parseExpr(sexp[1]), parse(exprs), sexp[0]);
-      exprs.location = exprs[0].location;
+      // construct the location manually from first and last expr
+      result.exprs.location = {
+        startCol : exprs[0].location.startCol,
+        startRow : exprs[0].location.startRow,
+        startChar: exprs[0].location.startChar,
+        endCol   : exprs[exprs.length-1].location.endCol,
+        endRow   : exprs[exprs.length-1].location.endRow,
+        endChar  : exprs[exprs.length-1].location.endChar
+      };
       result.location = sexp.location;
       return result;
     }
