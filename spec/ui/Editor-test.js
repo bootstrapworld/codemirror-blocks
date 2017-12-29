@@ -1,6 +1,13 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
+import { 
+  dragstart,
+} from '../events';
+
+import Toolbar from 'codemirror-blocks/ui/Toolbar';
+import PrimitiveBlock from 'codemirror-blocks/ui/PrimitiveBlock';
+import Primitive from 'codemirror-blocks/ui/PrimitiveList';
 import Editor from 'codemirror-blocks/ui/Editor';
 import TrashCan from 'codemirror-blocks/ui/TrashCan';
 import 'codemirror-blocks/languages/wescheme';
@@ -49,5 +56,19 @@ describe('The Editor component,', function() {
     this.editor.componentWillUnmount();
     expect(this.blocks.off.calls.argsFor(0)).toEqual([EVENT_DRAG_START, jasmine.any(Function)]);
     expect(this.blocks.off.calls.argsFor(1)).toEqual([EVENT_DRAG_END, jasmine.any(Function)]);
+  });
+
+  describe("when using the Toolbar,", function() {
+    beforeEach(function() {
+    });
+
+    it("should allow users to drag Literals from the Toolbar into the Editor", function() {
+    });
+
+    it("should allow users to drag blocks from the Toolbar contract area into the Editor", function() {
+    });
+
+    it("should not show the trash can when users are dragging primitives from the Toolbar", function() {
+    });
   });
 });
