@@ -62,7 +62,7 @@ export class RenderedBlockNode extends Component {
     } else if (text) {
       event.dataTransfer.setData('text/plain', text);
     }
-  },
+  }
 
   render() {
     if (this.props.node) {
