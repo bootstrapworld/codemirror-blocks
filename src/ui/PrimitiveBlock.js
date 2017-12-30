@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
 import {ASTNode} from '../ast';
@@ -7,25 +7,21 @@ import {Primitive} from '../parsers/primitives';
 
 require('./PrimitiveBlock.less');
 
-export var RenderedBlockNode = React.createClass({
-  displayName: 'RenderedBlockNode',
-
-  contextTypes: {
+export class RenderedBlockNode extends Component {
+  static contextTypes = {
     renderer: PropTypes.instanceOf(Renderer).isRequired,
-  },
+  }
 
-  propTypes: {
+  static propTypes = {
     node: PropTypes.instanceOf(ASTNode),
     text: PropTypes.string,
-  },
+  }
 
-  getDefaultProps() {
-    return {
-      node: null,
-      text: '',
-      renderer: null,
-    };
-  },
+  static defaultProps = {
+    node: null,
+    text: '',
+    renderer: null,
+  }
 
   componentDidMount() {
     if (this.refs.root) {
@@ -36,7 +32,7 @@ export var RenderedBlockNode = React.createClass({
         this.onDragStart.bind(this)
       );
     }
-  },
+  }
 
   onDragStart(event) {
     let node = this.props.node;
@@ -83,20 +79,16 @@ export var RenderedBlockNode = React.createClass({
       );
     }
   }
-});
+}
 
-export default React.createClass({
-  displayName: 'PrimitiveBlock',
-
-  propTypes: {
+export default class PrimitiveBlock extends Component {
+  static propTypes = {
     primitive: PropTypes.instanceOf(Primitive),
-  },
+  }
 
-  getDefaultProps() {
-    return {
-      primitive: null,
-    };
-  },
+  static defaultProps = {
+    primitive: null,
+  }
 
   render() {
     if (!this.props.primitive) {
@@ -111,4 +103,4 @@ export default React.createClass({
            />
     );
   }
-});
+}

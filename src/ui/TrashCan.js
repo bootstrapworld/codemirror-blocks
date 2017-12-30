@@ -1,43 +1,39 @@
-import React from 'react';
+import React, {Component} from 'react';
 import classNames from 'classnames';
+import PropTypes from 'prop-types';
 
 require('./TrashCan.less');
 
-export default React.createClass({
-  displayName: 'TrashCan',
-  propTypes: {
-    onDrop: React.PropTypes.func.isRequired,
-  },
+export default class TrashCan extends Component {
+  static propTypes = {
+    onDrop: PropTypes.func.isRequired,
+  }
 
-  getDefaultProps() {
-    return {
-      onDrop: function(){}
-    };
-  },
+  static defaultProps = {
+    onDrop: function(){}
+  }
 
-  getInitialState() {
-    return {
-      isOverTrashCan: false,
-    };
-  },
+  state = {
+    isOverTrashCan: false,
+  }
 
-  handleDragEnter() {
+  handleDragEnter = () => {
     this.setState({isOverTrashCan: true});
-  },
+  }
 
-  handleDragLeave() {
+  handleDragLeave = () => {
     this.setState({isOverTrashCan: false});
-  },
+  }
 
-  handleDragOver(event) {
+  handleDragOver = (event) => {
     event.preventDefault();
-  },
+  }
 
-  handleDrop(event) {
+  handleDrop = (event) => {
     this.setState({isOverTrashCan: false});
     let nodeId = event.dataTransfer.getData("text/id");
     this.props.onDrop(nodeId);
-  },
+  }
 
   render() {
     return (
@@ -50,6 +46,6 @@ export default React.createClass({
         <p>drag here to delete</p>
       </div>
     );
-  },
-});
+  }
+}
 

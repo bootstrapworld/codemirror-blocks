@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Component} from 'react';
 import classNames from 'classnames';
 
 import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
@@ -6,7 +6,7 @@ import {RenderedBlockNode} from './PrimitiveBlock';
 
 require('./PrimitiveList.less');
 
-const Primitive = React.createClass({
+export class Primitive extends Component {
   render() {
     var {primitive, className, onClick} = this.props;
     let astNode = primitive.getLiteralNode();
@@ -16,31 +16,26 @@ const Primitive = React.createClass({
         <RenderedBlockNode node={astNode} text={primitive.name} />
       </li>
     );
-  },
-});
+  }
+}
 
-const PrimitiveGroup = React.createClass({
+export class PrimitiveGroup extends Component {
+  static defaultProps = {
+    group: {
+      name: '',
+      primitives: []
+    },
+    onSelect: null,
+    selected: null,
+  }
 
-  getDefaultProps() {
-    return {
-      group: {
-        name: '',
-        primitives: []
-      },
-      onSelect: null,
-      selected: null,
-    };
-  },
+  state = {
+    expanded: false
+  }
 
-  getInitialState() {
-    return {
-      expanded: false
-    };
-  },
-
-  toggleExpanded() {
+  toggleExpanded = (_) => {
     this.setState({expanded: !this.state.expanded});
-  },
+  }
 
   render() {
     let {group, onSelect, selected} = this.props;
@@ -64,18 +59,14 @@ const PrimitiveGroup = React.createClass({
       </li>
     );
   }
-});
+}
 
-const PrimitiveList = React.createClass({
-  displayName: 'PrimitiveList',
-
-  getInitialProps() {
-    return {
-      primitive: null,
-      onSelect: null,
-      selected: null,
-    };
-  },
+export default class PrimitiveList extends Component {
+  static defaultProps = {
+    primitive: null,
+    onSelect: null,
+    selected: null,
+  }
 
   render() {
     const {primitives, selected} = this.props;
@@ -108,6 +99,4 @@ const PrimitiveList = React.createClass({
       <ul className="PrimitiveList list-group">{nodes}</ul>
     );
   }
-});
-
-export default PrimitiveList;
+}
