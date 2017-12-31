@@ -1,13 +1,7 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
-import { 
-  dragstart,
-} from '../events';
-
 import Toolbar from 'codemirror-blocks/ui/Toolbar';
-import PrimitiveBlock from 'codemirror-blocks/ui/PrimitiveBlock';
-import Primitive from 'codemirror-blocks/ui/PrimitiveList';
 import Editor from 'codemirror-blocks/ui/Editor';
 import TrashCan from 'codemirror-blocks/ui/TrashCan';
 import 'codemirror-blocks/languages/wescheme';
@@ -60,15 +54,20 @@ describe('The Editor component,', function() {
 
   describe("when using the Toolbar,", function() {
     beforeEach(function() {
+      this.toolbar = TestUtils.findRenderedComponentWithType(this.editor, Toolbar);
     });
 
-    it("should allow users to drag Literals from the Toolbar into the Editor", function() {
+    it("should allow users to select Literals by clicking", function() {
+      this.toolbar.setState({search: '+'});
+      let plusLiteral = TestUtils.findRenderedDOMComponentWithClass(this.editor, 'RenderedBlockNode');
+      TestUtils.Simulate.click(plusLiteral);
+      expect(this.toolbar.state.selectedPrimitive.name).toBe('+');
     });
 
-    it("should allow users to drag blocks from the Toolbar contract area into the Editor", function() {
-    });
+    it("should allow users to drag Literals from the Toolbar into the Editor");
 
-    it("should not show the trash can when users are dragging primitives from the Toolbar", function() {
-    });
+    it("should allow users to drag blocks from the Toolbar contract area into the Editor");
+
+    it("should not show the trash can when users are dragging primitives from the Toolbar");
   });
 });

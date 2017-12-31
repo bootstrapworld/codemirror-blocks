@@ -18,7 +18,7 @@ export default class Toolbar extends Component {
   static propTypes = {
     primitives: PropTypes.instanceOf(PrimitiveGroup),
     renderer: PropTypes.instanceOf(Renderer).isRequired,
-    languageId: PropTypes.instanceOf(String).isRequired, // used to find the .blocks-language-{languageId} CSS class
+    languageId: PropTypes.instanceOf(String), // used to find the .blocks-language-{languageId} CSS class
   }
 
   static childContextTypes = {
