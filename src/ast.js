@@ -487,7 +487,7 @@ export class Comment extends ASTNode {
 export class Blank extends ASTNode {
   constructor(from, to, value, dataType='blank', options={}) {
     super(from, to, 'blank', options);
-    this.value = value;
+    this.value = value || "...";
     this.dataType = dataType;
   }
 

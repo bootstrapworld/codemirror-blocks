@@ -9,9 +9,16 @@ import Renderer from '../Renderer';
 require('./Toolbar.less');
 
 export default class Toolbar extends Component {
+  constructor(props) {
+    super(props);
+
+    this.selectPrimitive = this.selectPrimitive.bind(this);
+  }
+
   static propTypes = {
     primitives: PropTypes.instanceOf(PrimitiveGroup),
     renderer: PropTypes.instanceOf(Renderer).isRequired,
+    languageId: PropTypes.instanceOf(String), // used to find the .blocks-language-{languageId} CSS class
   }
 
   static childContextTypes = {
@@ -82,7 +89,7 @@ export default class Toolbar extends Component {
             selected={this.state.selectedPrimitive}
           />
         </div>
-        <div className="selected-primitive">
+        <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
           <div className="contract-header">Contract</div>
           <PrimitiveBlock primitive={selected}/>
         </div>
