@@ -18,7 +18,7 @@ export default class Toolbar extends Component {
   static propTypes = {
     primitives: PropTypes.instanceOf(PrimitiveGroup),
     renderer: PropTypes.instanceOf(Renderer).isRequired,
-    languageId: PropTypes.instanceOf(String),
+    languageId: PropTypes.instanceOf(String).isRequired, // used to find the .blocks-language-{languageId} CSS class
   }
 
   static childContextTypes = {
@@ -68,7 +68,6 @@ export default class Toolbar extends Component {
       primitives = this.props.primitives.filter(this.state.search).primitives;
     }
     let selected = this.state.selectedPrimitive;
-    let contractStyleClass = this.props.languageId ? `blocks-language-${this.props.languageId}` : null;
     return (
       <div className={classNames('blocks-ui Toolbar', {'has-selected':!!selected})}>
         <div className="search-box">
@@ -90,7 +89,7 @@ export default class Toolbar extends Component {
             selected={this.state.selectedPrimitive}
           />
         </div>
-        <div className={classNames('selected-primitive', contractStyleClass)}>
+        <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
           <div className="contract-header">Contract</div>
           <PrimitiveBlock primitive={selected}/>
         </div>
