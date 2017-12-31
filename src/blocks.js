@@ -513,10 +513,13 @@ export default class CodeMirrorBlocks {
       // To cancel, (maybe) reinsert the original DOM Elt and activate the original
       // then remove the blur handler and the insertion node
       if(["Esc", "Shift-Esc"].includes(keyName)) {
+        console.log('cancelling');
         nodeEl.onblur = null;
         if(nodeEl.originalEl) {
+          console.log('restore original', nodeEl);
           nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
-          this.activateNode(this.ast.getNodeByPath(node.path), e);
+          console.log('activating node', node.path);
+          this.activateNode(this.ast.getClosestNodeFromPath(node.path.split(',')), e);
         }
         this.say("cancelled");
         nodeEl.parentNode.removeChild(nodeEl);
