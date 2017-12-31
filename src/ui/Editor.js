@@ -82,14 +82,13 @@ export default class Editor extends Component {
       "col-xs-3 toolbar-pane",
       {'show-trashcan':this.state.showTrashCan}
     );
-    let contractStyleClass = this.blocks ? `blocks-language-${this.blocks.language.id}` : null;
     return (
       <div className="Editor">
         {this.blocks ?
           <div className={toolbarPaneClasses}>
             <Toolbar primitives={blocks.parser.primitives} 
                      renderer={this.blocks.renderer} 
-                     contractStyleClass={contractStyleClass}/>
+                     languageId={this.blocks.language.id}/>
             <TrashCan onDrop={this.dropNodeOnTrash}/>
          </div> : null}
         <div className="col-xs-9 codemirror-pane">
