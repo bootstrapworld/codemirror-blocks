@@ -27,6 +27,7 @@
   .blocks-ifExpression,
   .blocks-condExpression,
   .blocks-sequence,
+  .blocks-whenUnlessExpr,
   .blocks-letLikeExpr,
   .blocks-unknown {
     display: inline-flex;
@@ -61,13 +62,15 @@
     > .blocks-sequence-exprs {
       display: flex;
       flex-direction: column;
-      align-items: stretch;
+      align-items: center;
       margin: 1px;
 
       > .blocks-white-space {
         display: block;
-        height: 16px;
+        width: 100%;
         border-width: 2px;
+        /* display a downwards arrow to show sequencing, but not for last child or editing */
+        &:not(:last-child):not(.blocks-editing):after { color: gray; content: "\2B07"; }
       }
     }
   }

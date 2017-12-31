@@ -252,6 +252,76 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
+  describe("when parsing let-like expressions,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse('(let* ((x 1) (y 2) (z (+ x y))) (* x y z))');
+    });
+
+    it("should convert letExpr to a letLikeExpr", function() {
+      expect(this.ast.rootNodes[0].type).toBe('letLikeExpr');
+    });
+
+    it("should get the correct form of the letLikeExpr", function() {
+      expect(this.ast.rootNodes[0].form).toBe('let*');
+    });
+
+    it("should get the correct aria-label", function() {
+      expect(this.ast.rootNodes[0].options['aria-label']).toBe('a let-star expression with 3 bindings');
+    });
+
+    it("should convert the bindings to a sequence, correctly", function() {
+      expect(this.ast.rootNodes[0].bindings.type).toBe('sequence');
+      expect(this.ast.rootNodes[0].bindings.name).toBe('bindings');
+      expect(this.ast.rootNodes[0].bindings.exprs.length).toBe(3);
+      expect(this.ast.rootNodes[0].bindings.exprs[0].type).toBe('variableDefinition');
+      expect(this.ast.rootNodes[0].bindings.exprs[0].name.value).toBe('x');
+      expect(this.ast.rootNodes[0].bindings.exprs[1].type).toBe('variableDefinition');
+      expect(this.ast.rootNodes[0].bindings.exprs[1].name.value).toBe('y');
+      expect(this.ast.rootNodes[0].bindings.exprs[2].type).toBe('variableDefinition');
+      expect(this.ast.rootNodes[0].bindings.exprs[2].name.value).toBe('z');
+    });
+
+    it("should convert the let-body properly", function() {
+      expect(this.ast.rootNodes[0].expr.type).toBe('expression');
+      expect(this.ast.rootNodes[0].expr.func.value).toBe('*');
+    });
+  });
+
+  describe("when parsing whenUnless expressions,", function() {
+    beforeEach(function() {
+      this.ast = this.parser.parse('(when (> a b) x y z)');
+    });
+
+    it("should convert WhenUnless to a WhenUnlessExpr node", function() {
+      expect(this.ast.rootNodes[0].type).toBe('whenUnlessExpr');
+    });
+
+    it("should get the correct form of the WhenUnlessExpr", function() {
+      expect(this.ast.rootNodes[0].form).toBe('when');
+    });
+
+    it("should get the correct aria-label", function() {
+      expect(this.ast.rootNodes[0].options['aria-label']).toBe('a when expression');
+    });
+
+    it("should convert the predicate properly", function() {
+      expect(this.ast.rootNodes[0].predicate.type).toBe('expression');
+      expect(this.ast.rootNodes[0].predicate.func.value).toBe('>');
+    });
+
+    it("should convert the exprs to a sequence, correctly", function() {
+      expect(this.ast.rootNodes[0].exprs.type).toBe('sequence');
+      expect(this.ast.rootNodes[0].exprs.name).toBe('begin');
+      expect(this.ast.rootNodes[0].exprs.exprs.length).toBe(3);
+      expect(this.ast.rootNodes[0].exprs.exprs[0].type).toBe('literal');
+      expect(this.ast.rootNodes[0].exprs.exprs[0].value).toBe('x');
+      expect(this.ast.rootNodes[0].exprs.exprs[1].type).toBe('literal');
+      expect(this.ast.rootNodes[0].exprs.exprs[1].value).toBe('y');
+      expect(this.ast.rootNodes[0].exprs.exprs[2].type).toBe('literal');
+      expect(this.ast.rootNodes[0].exprs.exprs[2].value).toBe('z');
+    });
+  });
+
   describe("when parsing expressions that are unsupported in the block language,", function() {
 
     it("should ignore defVars", function() {
@@ -260,10 +330,6 @@ describe("The WeScheme Parser,", function() {
     });
     it("should ignore localExpr", function() {
       this.ast = this.parser.parse('(local [(define x 2)] x)');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
-    it("should ignore whenExpr", function() {
-      this.ast = this.parser.parse('(when (> 3 2) x)');
       expect(this.ast.rootNodes.length).toBe(0);
     });
     it("should ignore quotedExpr", function() {

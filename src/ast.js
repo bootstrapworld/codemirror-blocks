@@ -19,10 +19,10 @@ function castToASTNode(o) {
   [...o].slice(1).forEach(castToASTNode);                   // traverse children
 }
 
-function enumerateList(lst) {
-  lst = lst.slice(0);
+function enumerateList(lst, level) {
+  lst = lst.map(l => l.toDescription(level)).slice(0);
   var last = lst.pop();
-  return (lst.length == 0)? last.toString() : lst.join(', ') + " and "+last.toString();
+  return (lst.length == 0)? last : lst.join(', ') + " and "+last;
 }
 
 export function pluralize(noun, set) {
@@ -138,26 +138,16 @@ export class AST {
   }
 
   getClosestNodeFromPath(keyArray) {
-    // return the node, if the key is valid
-    if(this.nodePathMap.get(keyArray.join(","))) {
-      return this.nodePathMap.get(keyArray.join(","));
-    }
+    let path = keyArray.join(',');
     // if we have no valid key, give up
     if(keyArray.length == 0) return false;
-    // if we're at the root level, count backwards till we find something
-    if(keyArray.length == 1 && keyArray[0] >= 0) {
-      return this.nodePathMap.get(keyArray[0].toString())
-          || this.getClosestNodeFromPath([keyArray[0] - 1]);
-    // if we're at a child go to the previous sibling
-    } else if(keyArray[keyArray.length-1] > 0) {
-      keyArray[keyArray.length-1]--;
-      return this.nodePathMap.get(keyArray.join(','));
+    // if we have a valid key, return the node
+    if(this.nodePathMap.has(path)) { return this.nodePathMap.get(path); }
+    // if not at the 1st sibling, look for a previous one
+    else if(keyArray[keyArray.length-1] > 0) { keyArray[keyArray.length-1]--; }
     // if we're at the first child, go up a generation
-    } else {
-      let parentArray = keyArray.slice(0, keyArray.length-1);
-      return this.nodePathMap.get(keyArray.join(','))
-          || this.getClosestNodeFromPath(parentArray);
-    }
+    else { keyArray.pop(); }
+    return this.getClosestNodeFromPath(keyArray);
   }
 
   // getNextMatchingNode : (ASTNode->ASTNode) (ASTNode->Bool) ASTNode -> ASTNode
@@ -279,7 +269,7 @@ export class IdentifierList extends ASTNode {
 
   toDescription(level){
     if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
-    return enumerateList(this.ids);
+    return enumerateList(this.ids, level);
   }
 
   toString() {
@@ -526,7 +516,7 @@ export class Sequence extends ASTNode {
 
   toDescription(level) {
     if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
-    return `a sequence containing ${enumerateList(this.exprs)}`;
+    return `a sequence containing ${enumerateList(this.exprs, level)}`;
   }
 
   toString() {
