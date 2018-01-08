@@ -54,15 +54,15 @@ export default class Editor extends Component {
     return this.blocks;
   }
 
-  showTrashCan = (_) => {
+  showTrashCan = () => {
     this.setState({showTrashCan:true});
   }
 
-  hideTrashCan = (_) => {
+  hideTrashCan = () => {
     this.setState({showTrashCan:false});
   }
 
-  toggleBlocks = (_) => {
+  toggleBlocks = () => {
     this.blocks.toggleBlockMode();
     this.forceUpdate();
   }
