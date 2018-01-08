@@ -47,7 +47,7 @@ export default class Editor extends Component {
   }
 
   getCodeMirror() {
-    return this._cm.getCodeMirror();
+    return this.refs.cm.getCodeMirror();
   }
 
   getCodeMirrorBlocks() {
@@ -92,7 +92,7 @@ export default class Editor extends Component {
             <TrashCan onDrop={this.dropNodeOnTrash}/>
          </div> : null}
         <div className="col-xs-9 codemirror-pane">
-          <CodeMirror ref={cm => this._cm = cm} options={this.props.cmOptions}/>
+          <CodeMirror ref="cm" options={this.props.cmOptions}/>
           <button className="blocks-toggle-btn btn btn-default btn-sm"
                   onClick={this.toggleBlocks}>
             <span className={glyphClass}></span>

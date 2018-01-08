@@ -21,7 +21,7 @@ describe('The PrimitiveBlock component,', function() {
     let primitiveBlock = TestUtils.renderIntoDocument(<PrimitiveBlock primitive={primitive}/>);
     let renderedBlockNode = TestUtils.findRenderedComponentWithType(
       primitiveBlock, RenderedBlockNode);
-    let el = renderedBlockNode.root;
+    let el = ReactDOM.findDOMNode(renderedBlockNode.refs.root);
 
     let dragEvent = dragstart();
     el.firstChild.dispatchEvent(dragEvent);
@@ -39,7 +39,7 @@ describe('The PrimitiveBlock component,', function() {
     let primitiveBlock = TestUtils.renderIntoDocument(<PrimitiveBlock primitive={primitive}/>);
     let renderedBlockNode = TestUtils.findRenderedComponentWithType(
       primitiveBlock, RenderedBlockNode);
-    let el = renderedBlockNode.root;
+    let el = ReactDOM.findDOMNode(renderedBlockNode.refs.root);
     let dragEvent = dragstart();
     el.firstChild.dispatchEvent(dragEvent);
     expect(dragEvent.dataTransfer.getData('text/plain')).toBe('some-primitive');

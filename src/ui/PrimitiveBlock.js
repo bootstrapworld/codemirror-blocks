@@ -24,8 +24,8 @@ export class RenderedBlockNode extends Component {
   }
 
   componentDidMount() {
-    if (this.root) {
-      let el = this.root;
+    if (this.refs.root) {
+      let el = ReactDOM.findDOMNode(this.refs.root);
       el.firstChild.draggable = true;
       el.firstChild.addEventListener(
         'dragstart',
@@ -67,13 +67,13 @@ export class RenderedBlockNode extends Component {
   render() {
     if (this.props.node) {
       return (
-        <span className="RenderedBlockNode" ref={root => this.root = root}>
+        <span className="RenderedBlockNode" ref="root">
           {this.context.renderer.renderNodeForReact(this.props.node)}
         </span>
       );
     } else {
       return (
-        <span className="RenderedBlockNode" ref={root => this.root = root}>
+        <span className="RenderedBlockNode" ref="root">
           <span>{this.props.text}</span>
         </span>
       );
