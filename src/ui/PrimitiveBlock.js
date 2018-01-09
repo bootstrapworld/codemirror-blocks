@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import ReactDOM from 'react-dom';
 import {ASTNode} from '../ast';
 import Renderer from '../Renderer';
 import {Primitive} from '../parsers/primitives';

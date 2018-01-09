@@ -5,7 +5,7 @@ import Editor from './Editor';
 
 export function renderToolbarInto(blocks) {
   if (blocks.toolbarNode) {
-    return ReactDOM.render(
+    ReactDOM.render(
       <Toolbar primitives={blocks.parser.primitives} renderer={blocks.renderer} />,
       blocks.toolbarNode
     );
@@ -13,8 +13,10 @@ export function renderToolbarInto(blocks) {
 }
 
 export function renderEditorInto(node, language, options, cmOptions) {
-  return ReactDOM.render(
-    <Editor language={language} options={options} cmOptions={cmOptions}/>,
+  let editor;
+  ReactDOM.render(
+    <Editor ref={ed => editor = ed } language={language} options={options} cmOptions={cmOptions}/>,
     node
   );
+  return editor;
 }

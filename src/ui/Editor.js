@@ -47,22 +47,22 @@ export default class Editor extends Component {
   }
 
   getCodeMirror() {
-    return this._cm.getCodeMirror();
+    return this.cm.getCodeMirror();
   }
 
   getCodeMirrorBlocks() {
     return this.blocks;
   }
 
-  showTrashCan = (_) => {
+  showTrashCan = () => {
     this.setState({showTrashCan:true});
   }
 
-  hideTrashCan = (_) => {
+  hideTrashCan = () => {
     this.setState({showTrashCan:false});
   }
 
-  toggleBlocks = (_) => {
+  toggleBlocks = () => {
     this.blocks.toggleBlockMode();
     this.forceUpdate();
   }
@@ -92,7 +92,7 @@ export default class Editor extends Component {
             <TrashCan onDrop={this.dropNodeOnTrash}/>
          </div> : null}
         <div className="col-xs-9 codemirror-pane">
-          <CodeMirror ref={cm => this._cm = cm} options={this.props.cmOptions}/>
+          <CodeMirror ref={cm => this.cm = cm} options={this.props.cmOptions}/>
           <button className="blocks-toggle-btn btn btn-default btn-sm"
                   onClick={this.toggleBlocks}>
             <span className={glyphClass}></span>

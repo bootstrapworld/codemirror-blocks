@@ -1,12 +1,18 @@
 import React, {Component} from 'react';
 import classNames from 'classnames';
-
+import PropTypes from 'prop-types';
 import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
 import {RenderedBlockNode} from './PrimitiveBlock';
 
 require('./PrimitiveList.less');
 
 export class Primitive extends Component {
+  static propTypes = {
+    //primitive: PropTypes.instanceOf(ASTFunctionDefinitionNode).isRequired,
+    className: PropTypes.instanceOf(String).isRequired,
+    onClick: PropTypes.instanceOf(Function).isRequired,
+  }
+
   render() {
     var {primitive, className, onClick} = this.props;
     let astNode = primitive.getLiteralNode();
@@ -29,11 +35,17 @@ export class PrimitiveGroup extends Component {
     selected: null,
   }
 
+  static propTypes = {
+    //group: PropTypes.instanceOf(ASTFunctionDefinitionNode).isRequired,
+    onSelect: PropTypes.instanceOf(Function).isRequired,
+    selected: PropTypes.instanceOf(String).isRequired,
+  }
+
   state = {
     expanded: false
   }
 
-  toggleExpanded = (_) => {
+  toggleExpanded = () => {
     this.setState({expanded: !this.state.expanded});
   }
 
@@ -68,6 +80,10 @@ export default class PrimitiveList extends Component {
     selected: null,
   }
 
+  static propTypes = {
+    onSelect: PropTypes.instanceOf(Function).isRequired,
+    selected: PropTypes.instanceOf(String).isRequired,
+  }
   render() {
     const {primitives, selected} = this.props;
     const onSelect = this.props.onSelect || function(){};
