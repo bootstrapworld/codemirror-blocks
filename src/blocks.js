@@ -502,7 +502,7 @@ export default class CodeMirrorBlocks {
       let errorTxt = this.parser.getExceptionMessage(e);
       nodeEl.title = errorTxt;                        // 4) Make the title the error msg
       setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
-      this.say("Error: "+errorTxt);
+      this.say(errorTxt);
     }
   }
 

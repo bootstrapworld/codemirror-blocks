@@ -142,25 +142,19 @@ export default class Renderer {
   }
 
   // Render the rootNode into a new marker, clearing any old ones
-  // Render the node, recycling a container whenever possible
-  render(node, quarantine=false) {
-    var container;
-    if(node["aria-level"] == 1) { // if it's a root node, reset the marker but save the container
-      let marker = this.cm.findMarksAt(node.from).filter(m => m.node)[0];
-      // recycle the container, if we can
-      container = (marker && !quarantine)? marker.replacedWith : document.createElement('span');
-      if(marker && !quarantine) marker.clear();
-      this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
-      
-      // REVISIT: make comments disappear by adding an empty span
-      if(node.options.comment) {
-        this.cm.markText(node.options.comment.from, node.options.comment.to,
-          { replacedWith: document.createElement('span') });
-      }
-    } else { // otherwise just render in-place
-      container = node.el.parentNode;
+  render(rootNode, quarantine=false) {
+    var marker = this.cm.findMarksAt(rootNode.from).filter(m => m.node)[0];
+    // recycle the container, if we can
+    let container = (marker && !quarantine)? marker.replacedWith : document.createElement('span');
+    if(marker && !quarantine) marker.clear();
+    this.cm.markText(rootNode.from, rootNode.to, {replacedWith: container, node: rootNode} );
+    
+    // REVISIT: make comments disappear by adding an empty span
+    if(rootNode.options.comment) {
+      this.cm.markText(rootNode.options.comment.from, rootNode.options.comment.to,
+        { replacedWith: document.createElement('span') });
     }
-    ReactDOM.render(this.renderNodeForReact(node), container);
+    ReactDOM.render(this.renderNodeForReact(rootNode), container);
     container.className = 'react-container';
     return container;
   }
