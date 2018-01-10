@@ -17,9 +17,9 @@
     "fast-json-patch": "2.0.6",
     "prop-types": "^15.5.10",
     "react": "^15.6.2",
-    "react-bootstrap": "^0.30.10",
+    "react-bootstrap": "^0.32.0",
     "react-codemirror": "^1.0.0",
-    "react-dom": "^15.3.2",
+    "react-dom": "^15.6.2",
     "uuid": "^3.1.0",
     "webpack": "^3.10.0"
   },
@@ -56,9 +56,9 @@
     "less-loader": "^4.0.5",
     "lodash": "^4.16.2",
     "raw-loader": "^0.5.1",
-    "react-addons-test-utils": "^15.3.2",
+    "react-addons-test-utils": "^15.6.2",
     "react-hot-loader": "^3.0.0-beta.5",
-    "react-stub-context": "^0.7.0",
+    "react-stub-context": "^0.8.1",
     "style-loader": "^0.19.1",
     "url-loader": "^0.6.2",
     "webpack-dev-server": "^2.10.1"
