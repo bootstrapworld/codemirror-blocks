@@ -2,6 +2,11 @@ var _ = require('lodash');
 var path = require('path');
 var webpack = webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+/* 
+  TODO(Emmanuel) - when webpack 4 comes out, we won't need to load this plugin separately
+  See https://github.com/webpack-contrib/uglifyjs-webpack-plugin
+ */
+var UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 var baseConfig = require('./base.config.js')();
 
 // this is the config for generating the files needed to run the examples.
@@ -58,10 +63,9 @@ module.exports = _.extend({}, baseConfig, {
       chunks: ['third-party','editor-example'],
     }),
     new webpack.DefinePlugin({
-      'process.env': {
-        'NODE_ENV': JSON.stringify('production')
-      },
-    })
+      'process.env.NODE_ENV': JSON.stringify('production')
+    }),
+    new UglifyJSPlugin()
   ]),
   devServer: {
     hot: true,

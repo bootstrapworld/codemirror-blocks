@@ -61,7 +61,9 @@
     "react-stub-context": "^0.8.1",
     "style-loader": "^0.19.1",
     "url-loader": "^0.6.2",
-    "webpack-dev-server": "^2.10.1"
+    "webpack-dev-server": "^2.10.1",
+    "uglify-js": "git://github.com/mishoo/UglifyJS2#harmony-v2.8.22",
+    "uglifyjs-webpack-plugin": "0.4.3"
   },
   "peerDependencies": {
     "babel-polyfill": "^6.16.0",
