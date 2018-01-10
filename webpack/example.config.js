@@ -16,9 +16,9 @@ module.exports = _.extend({}, baseConfig, {
     "third-party": ['react', 'react-dom', 'babel-polyfill', 'codemirror']
   },
   module: _.extend({}, baseConfig.module, {
-    loaders: baseConfig.module.loaders.concat([
-      { test: /\.css$/, loaders: ["style", "css"] },
-      { test: /\.rkt$/, loader: 'raw' }
+    rules: baseConfig.module.rules.concat([
+      { test: /\.css$/, use: ["style-loader", "css-loader"] },
+      { test: /\.rkt$/, use: 'raw-loader' }
     ])
   }),
   plugins: baseConfig.plugins.concat([

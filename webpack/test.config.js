@@ -3,11 +3,11 @@ var _ = require('lodash');
 var baseConfig = require('./base.config.js')();
 var envConfig = require('../env-config.js');
 
-var preLoaders = baseConfig.module.preLoaders.concat();
+var rules = baseConfig.module.rules.concat();
 if (envConfig.runCoverage) {
-  preLoaders.push({
+  rules.push({
     test: /\.js/,
-    loader: 'isparta',
+    use: 'isparta',
     include: path.resolve(__dirname, '..', 'src'),
     exclude: /node_modules/
   });
@@ -22,6 +22,6 @@ module.exports = _.extend({}, baseConfig, {
   },
   devtool: 'inline-source-map',
   module: _.extend({}, baseConfig.module, {
-    preLoaders: preLoaders
+    rules: rules
   })
 });

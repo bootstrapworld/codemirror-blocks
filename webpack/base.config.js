@@ -4,20 +4,20 @@ var ExtractTextPlugin = require("extract-text-webpack-plugin");
 module.exports = function(config) {
   config = config || {};
   var plugins = [];
-  var loaders = [
-    {test: /\.handlebars$/, loader: 'handlebars-loader?knownHelpers=renderNode'},
-    {test:/.png$|.jpg$|.jpeg$|.gif$|.svg$|.wav$/, loader: "url-loader?limit=10000"},
-    {test:/.woff$|.woff2$/, loader: "url-loader?limit=10000"},
-    {test:/.ttf$|.eot$/, loader: "file-loader"},
+  var rules = [
+    {test: /\.handlebars$/, use: 'handlebars-loader?knownHelpers=renderNode'},
+    {test:/.png$|.jpg$|.jpeg$|.gif$|.svg$|.wav$/, use: "url-loader?limit=10000"},
+    {test:/.woff$|.woff2$/, use: "url-loader?limit=10000"},
+    {test:/.ttf$|.eot$/, use: "file-loader"},
   ];
   if (config.extractCSS) {
     plugins.push(new ExtractTextPlugin("[name].css"));
-    loaders.push({
+    rules.push({
       test: /\.less$/,
-      loader: ExtractTextPlugin.extract("style-loader", ["css-loader", "less-loader"])
+      use: ExtractTextPlugin.extract({fallback:"style-loader", use:["css-loader", "less-loader"]})
     });
   } else {
-    loaders.push({test: /\.less$/, loader:'style!css!less'});
+    rules.push({test: /\.less$/, use:["style-loader","css-loader","less-loader"]});
   }
   return {
     output: {
@@ -25,8 +25,7 @@ module.exports = function(config) {
       filename: "[name].js"
     },
     module: {
-      loaders: loaders,
-      preLoaders: [{
+      rules: rules.concat([{
         test: /\.js$/,
         include: [
           path.resolve(__dirname, '..', 'example'),
@@ -37,11 +36,12 @@ module.exports = function(config) {
         exclude: [
           path.resolve(__dirname, '..', 'node_modules', 'wescheme-js', 'src', 'runtime', 'js-numbers.js')
         ],
-        loader: "babel",
+        enforce: "pre",
+        loader: "babel-loader",
         query: {
           cacheDirectory: true
         }
-      }]
+      }])
     },
     plugins: plugins,
   };
