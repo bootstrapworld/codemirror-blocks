@@ -14,7 +14,7 @@ var cm = CodeMirror.fromTextArea(
 );
 var cm2 = CodeMirror.fromTextArea(
   document.getElementById('code2'),
-  {lineNumbers: true, theme:'3024-day'}
+  {lineNumbers: true, theme:'3024-day', viewportMargin: 10}
 );
 
 var focusCarousel = [cm, cm2, document.getElementById("mode")];

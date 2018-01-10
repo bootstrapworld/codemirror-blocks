@@ -105,7 +105,6 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm = cm;
-    this.cm.setOption("viewportMargin", Infinity);
     this.toolbarNode = toolbar;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
@@ -374,7 +373,12 @@ export default class CodeMirrorBlocks {
       this.clearSelection(); 
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
-    let {top, bottom, left, right} = node.el.getBoundingClientRect();
+    var {top, bottom, left, right} = node.el.getBoundingClientRect();
+    // if the element is outside of CM's viewport, scroll to that line and recalaculate
+    if((left+right+top+bottom) == 0) {
+      this.cm.scrollIntoView(node.from);
+      var {top, bottom, left, right} = node.el.getBoundingClientRect();
+    }
     let offset = this.wrapper.getBoundingClientRect();
     let scroll = this.cm.getScrollInfo();
     top    = top    + scroll.top  - offset.top; 
@@ -535,6 +539,7 @@ export default class CodeMirrorBlocks {
   // Set the appropriate attributes and event handlers
   editLiteral(node, event) {
     event.stopPropagation();
+    this.clearSelection(); // if we're editing, clear the selection
     let action = node.el.getAttribute("aria-label") == ""? "inserting " : "editing ";
     this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel");
     node.el.contentEditable = true;
@@ -566,10 +571,10 @@ export default class CodeMirrorBlocks {
   // delete all of this.selectedNodes set, and then empty the set
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
+    this.selectedNodes.clear();
     this.focusPath = sel[sel.length-1].path; // point to the first node
     this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
-    this.selectedNodes.clear();
   }
 
   startDraggingNode(node, event) {
@@ -818,7 +823,7 @@ export default class CodeMirrorBlocks {
       else { that.activateNode(node, event); }
     }
     function showNextMatch(moveCursorFn) {
-      clearTimeout(that.searchTimer); // reset the timer for 1.5sec
+      clearTimeout(that.searchTimer); // reset the timer for 2.5sec
       that.searchTimer = setTimeout(() => that.searchString = that.searchCursor = "", 2500);
       var node, more; // iterate until there's no match or a node is found
       while((more=moveCursorFn()) && !(node=that.ast.getNodeContaining(that.searchCursor.from()))){ /* no-op */}
@@ -920,6 +925,8 @@ export default class CodeMirrorBlocks {
     // Shift-Left and Shift-Right toggle global expansion
     else if (keyName === "Shift-Left" && activeNode) {
       this.say("All blocks collapsed");
+      let savedViewportMargin = this.cm.getOption("viewportMargin");
+      this.cm.setOption("viewportMargin", Infinity);
       let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
       [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), false));
       refreshCM(); // update the CM display, since line heights may have changed
@@ -927,12 +934,16 @@ export default class CodeMirrorBlocks {
       // shift focus if rootId !== activeNodeId
       if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
       else this.cm.scrollIntoView(activeNode.from);
+      this.cm.setOption("viewportMargin", savedViewportMargin);
     }
     else if (keyName === "Shift-Right" && activeNode) {
       this.say("All blocks expanded");
+      let savedViewportMargin = this.cm.getOption("viewportMargin");
+      this.cm.setOption("viewportMargin", Infinity);
       let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
       [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), true));
       refreshCM(); // update the CM display, since line heights may have changed
+      this.cm.setOption("viewportMargin", savedViewportMargin);
     }
     // active the previous non-locked, non-hidden node
     else if (keyName === "Shift-PageUp" && activeNode) {

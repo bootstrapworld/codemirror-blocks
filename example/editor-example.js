@@ -41,6 +41,7 @@ let editor = renderEditorInto(
 );
 editor.getCodeMirror().setValue(code);
 editor.getCodeMirror().setOption("lineNumbers", true);
+editor.getCodeMirror().setOption("viewportMargin", 10);
 editor.getCodeMirror().doc.clearHistory();
 
 ReactDOM.render((
