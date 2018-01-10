@@ -17,7 +17,7 @@ export default class IfExpression extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="ifExpression" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">

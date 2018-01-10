@@ -24,7 +24,7 @@ export default class Sequence extends Component {
       );
     });
     return (
-      <Node type="sequence" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">{node.name}</span>
         <div className="blocks-sequence-exprs">
           <DropTarget location={node.exprs.length ? node.exprs[0].from : node.to} />

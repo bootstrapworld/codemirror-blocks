@@ -15,7 +15,7 @@ export default class Literal extends Component {
   render() {
     const {node, lockedTypes, helpers} = this.props;
     return (
-      <Node type="literal" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className={`blocks-literal-${node.dataType}`}>
           {node.value.toString()}
         </span>

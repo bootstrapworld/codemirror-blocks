@@ -17,7 +17,7 @@ export default class CondClause extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="condClause" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">
             <DropTarget location={node.testExpr.from} />

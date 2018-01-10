@@ -22,7 +22,7 @@ export default class IdentifierList extends Component {
       idNodes.push(<DropTarget location={id.to} key={'drop-'+index} />);
     });
     return (
-      <Node type="identifierlist" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-args">
           <DropTarget location={node.ids[0].from} />
           {idNodes}

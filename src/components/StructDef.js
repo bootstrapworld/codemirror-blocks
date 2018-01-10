@@ -17,7 +17,7 @@ export default class StructDefinition extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="struct" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           define-struct 
           <DropTarget location={node.name.from} />
