@@ -46,10 +46,10 @@ describe('The CodeMirrorBlocks Class', function() {
       let prev = line[destination.ch - 1] || '\n';
       let next = line[destination.ch] || '\n';
       sourceNodeText = sourceNodeText.trim();
-      if (!/\s|[\(\[\{]/.test(prev)) {
+      if (!/\s|[([{]/.test(prev)) {
         sourceNodeText = ' ' + sourceNodeText;
       }
-      if (!/\s|[\)\]\}]/.test(next)) {
+      if (!/\s|[)]}]/.test(next)) {
         sourceNodeText += ' ';
       }
       return sourceNodeText;

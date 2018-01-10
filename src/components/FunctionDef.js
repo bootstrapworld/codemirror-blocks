@@ -20,10 +20,10 @@ export default class FunctionDefinition extends Component {
       <Node type="functionDef" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           define (
-            <DropTarget location={node.name.from} />
-            {helpers.renderNodeForReact(node.name)}
-            {helpers.renderNodeForReact(node.params)}
-            )
+          <DropTarget location={node.name.from} />
+          {helpers.renderNodeForReact(node.name)}
+          {helpers.renderNodeForReact(node.params)}
+          )
         </span>
         <span className="blocks-args">
           {helpers.renderNodeForReact(node.body)}

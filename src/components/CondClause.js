@@ -20,15 +20,15 @@ export default class CondClause extends Component {
       <Node type="condClause" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">
-              <DropTarget location={node.testExpr.from} />
-              {helpers.renderNodeForReact(node.testExpr)}
+            <DropTarget location={node.testExpr.from} />
+            {helpers.renderNodeForReact(node.testExpr)}
           </div>
           <div className="blocks-cond-result">
-              {node.thenExprs.map((thenExpr, index) => (
-               <span key={index}>
-                 <DropTarget location={thenExpr.from} />
-                 {helpers.renderNodeForReact(thenExpr)}
-               </span>))}
+            {node.thenExprs.map((thenExpr, index) => (
+              <span key={index}>
+                <DropTarget location={thenExpr.from} />
+                {helpers.renderNodeForReact(thenExpr)}
+              </span>))}
           </div>
         </div>
         <div className="blocks-cond-drop-row">

@@ -38,10 +38,10 @@ export default class TrashCan extends Component {
   render() {
     return (
       <div className={classNames("TrashCan", {over: this.state.isOverTrashCan})}
-           onDragEnter={this.handleDragEnter}
-           onDragLeave={this.handleDragLeave}
-           onDragOver={this.handleDragOver}
-           onDrop={this.handleDrop}>
+        onDragEnter={this.handleDragEnter}
+        onDragLeave={this.handleDragLeave}
+        onDragOver={this.handleDragOver}
+        onDrop={this.handleDrop}>
         <span className="glyphicon glyphicon-trash"></span>
         <p>drag here to delete</p>
       </div>

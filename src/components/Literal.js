@@ -17,7 +17,7 @@ export default class Literal extends Component {
     return (
       <Node type="literal" node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className={`blocks-literal-${node.dataType}`}>
-        {node.value.toString()}
+          {node.value.toString()}
         </span>
       </Node>
     );

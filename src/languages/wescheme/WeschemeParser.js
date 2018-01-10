@@ -1,3 +1,5 @@
+/*eslint indent: "off"*/
+
 import {
   AST,
   Expression,
@@ -129,7 +131,7 @@ function parseNode(node, i) {
       func,
       node.args.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria(node.func ? node.func.val : 'empty', node.args)
-      ,'comment' : comment}
+        ,'comment' : comment}
     );
   } else if (node instanceof structures.andExpr) {
     return new Expression(
@@ -140,7 +142,7 @@ function parseNode(node, i) {
         {line:from.line, ch:from.ch+4},
         "and",
         "symbol",
-         {'aria-label': 'and'}
+        {'aria-label': 'and'}
       ),
       node.exprs.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria('and', node.exprs)}
@@ -154,7 +156,7 @@ function parseNode(node, i) {
         {line:from.line, ch:from.ch+3},
         "or",
         "symbol",
-         {'aria-label': 'or'}
+        {'aria-label': 'or'}
       ),
       node.exprs.map(parseNode).filter(item => item !== null),
       {'aria-label': expressionAria('or', node.exprs)}
@@ -165,15 +167,14 @@ function parseNode(node, i) {
       to,
       parseNode(node.name),
       parseNode(node.expr),
-      {'aria-label': symbolAria(node.name.val)+': a value definition'
-      ,'comment' : comment}
+      {'aria-label': symbolAria(node.name.val)+': a value definition', 'comment' : comment}
     );
   } else if (node instanceof structures.defStruct) {
     let fieldsLoc = locationFromNode(node.fields);
     let fields = new IdentifierList(
       fieldsLoc.from, fieldsLoc.to, 'fields', node.fields.map(parseNode),
       {'aria-label': pluralize('field', node.fields)+": "+enumerateIdentifierList(node.fields)
-      ,'comment' : node.fields.comment? makeComment(node.fields) : false}
+        ,'comment' : node.fields.comment? makeComment(node.fields) : false}
     );
     return new StructDefinition(
       from,
@@ -184,14 +185,14 @@ function parseNode(node, i) {
         + ': a structure definition with ' 
         + pluralize('field', node.fields)
         + ": " + enumerateIdentifierList(node.fields)
-      ,'comment' : comment}
+        ,'comment' : comment}
     );
   } else if (node instanceof structures.defFunc) {
     let argsLoc = locationFromNode(node.args);
     let args = new IdentifierList(
       argsLoc.from, argsLoc.to, 'arguments:', node.args.map(parseNode),
       {'aria-label': pluralize('argument', node.args) + ": " + enumerateIdentifierList(node.args)
-      ,'comment' : node.args.comment? makeComment(node.args) : false}
+        ,'comment' : node.args.comment? makeComment(node.args) : false}
     );
     return new FunctionDefinition(
       from,
@@ -203,13 +204,13 @@ function parseNode(node, i) {
         + ': a function definition with '
         + pluralize('argument', node.args)
         + ": "+enumerateIdentifierList(node.args)
-      ,'comment' :   comment}
+        ,'comment' :   comment}
     );
   } else if (node instanceof structures.lambdaExpr) {let argsLoc = locationFromNode(node.args);
     let args = new IdentifierList(
       argsLoc.from, argsLoc.to, 'arguments', node.args.map(parseNode),
       {'aria-label': pluralize('argument', node.args)+": "+enumerateIdentifierList(node.args)
-      ,'comment' : node.args.comment? makeComment(node.args) : false}
+        ,'comment' : node.args.comment? makeComment(node.args) : false}
     );
     return new LambdaExpression(
       from,
@@ -271,31 +272,31 @@ function parseNode(node, i) {
       aria = `${String(node.val.numerator())} over ${String(node.val.denominator())}, a Rational`;
     }
     return new Literal(from, to, node.toString(), dataType
-                      , {'aria-label':aria, 'comment': comment});
+      , {'aria-label':aria, 'comment': comment});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
   } else if (node instanceof structures.beginExpr) {
     return new Sequence(from, to, node.exprs.map(parseNode), "begin",
-                       {'aria-label': `a sequence containing ${pluralize('expression', node.exprs)}`});
+      {'aria-label': `a sequence containing ${pluralize('expression', node.exprs)}`});
   } else if (node instanceof structures.letExpr
     || node instanceof structures.letStarExpr
     || node instanceof structures.letrecExpr) {
     let loc = locationFromNode(node.bindings), form = node.stx[0].val;
     return new LetLikeExpr(from, to, form, 
       new Sequence(loc.from, loc.to, node.bindings.map(parseBinding), "bindings",
-                    {'aria-label': `${pluralize('binding', node.bindings)}`}),
+        {'aria-label': `${pluralize('binding', node.bindings)}`}),
       parseNode(node.body),
       {'aria-label': `a ${symbolAria(form)} expression with ${pluralize('binding', node.bindings)}`});
   } else if(node instanceof structures.whenUnlessExpr) {
     let loc = locationFromNode(node.exprs), form = node.stx.val;
     return new WhenUnless(from, to, form, parseNode(node.predicate),
       new Sequence(loc.from, loc.to, node.exprs.map(parseNode), "begin",
-                    {'aria-label': `${pluralize('expression', node.exprs)}`}),
+        {'aria-label': `${pluralize('expression', node.exprs)}`}),
       {'aria-label': `a ${symbolAria(form)} expression`});
   } else if (node instanceof structures.unsupportedExpr) {
     if(node.val.constructor !== Array) return null;
     return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
-                      {msg: node.errorMsg, 'aria-label': 'invalid expression'});
+      {msg: node.errorMsg, 'aria-label': 'invalid expression'});
   } 
   console.log("!! No translator for", node);
   return null;

@@ -96,10 +96,10 @@ export default class PrimitiveBlock extends Component {
 
     this.astNode = this.props.primitive.getASTNode();
     return (
-        <RenderedBlockNode
-           node={this.astNode}
-           text={this.props.primitive.name}
-           />
+      <RenderedBlockNode
+        node={this.astNode}
+        text={this.props.primitive.name}
+      />
     );
   }
 }

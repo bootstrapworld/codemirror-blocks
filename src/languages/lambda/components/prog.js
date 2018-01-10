@@ -1,4 +1,5 @@
-import React, {Component, PropTypes} from 'react';
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 
 import Node from '../../../components/Node';
 import {Literal as LiteralASTNode} from '../../../ast';
@@ -17,10 +18,10 @@ export default class Literal extends Component {
       <Node type="prog" node={node}>
         <h4>Your Lambda Program</h4>
         {node.prog.map((node, index) => (
-             <span key={index}>
-               {helpers.renderNodeForReact(node)}
-             </span>
-           ))}
+          <span key={index}>
+            {helpers.renderNodeForReact(node)}
+          </span>
+        ))}
       </Node>
     );
   }

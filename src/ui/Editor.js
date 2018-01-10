@@ -87,14 +87,13 @@ export default class Editor extends Component {
         {this.blocks ?
           <div className={toolbarPaneClasses}>
             <Toolbar primitives={blocks.parser.primitives} 
-                     renderer={this.blocks.renderer} 
-                     languageId={this.blocks.language.id}/>
+              renderer={this.blocks.renderer} 
+              languageId={this.blocks.language.id}/>
             <TrashCan onDrop={this.dropNodeOnTrash}/>
-         </div> : null}
+          </div> : null}
         <div className="col-xs-9 codemirror-pane">
           <CodeMirror ref={cm => this.cm = cm} options={this.props.cmOptions}/>
-          <button className="blocks-toggle-btn btn btn-default btn-sm"
-                  onClick={this.toggleBlocks}>
+          <button className="blocks-toggle-btn btn btn-default btn-sm" onClick={this.toggleBlocks}>
             <span className={glyphClass}></span>
           </button>
         </div>

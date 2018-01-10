@@ -305,18 +305,18 @@ export default class CodeMirrorBlocks {
 
   findMarks(from, to) {
     return this.cm.findMarks(from, to)
-               .filter(mark => mark[MARKER])
-               .map(mark => mark[MARKER]);
+      .filter(mark => mark[MARKER])
+      .map(mark => mark[MARKER]);
   }
   findMarksAt(pos) {
     return this.cm.findMarksAt(pos)
-               .filter(mark => mark[MARKER])
-               .map(mark => mark[MARKER]);
+      .filter(mark => mark[MARKER])
+      .map(mark => mark[MARKER]);
   }
   getAllMarks() {
     return this.cm.getAllMarks()
-               .filter(mark => mark[MARKER])
-               .map(mark => mark[MARKER]);
+      .filter(mark => mark[MARKER])
+      .map(mark => mark[MARKER]);
   }
   _clearMarks() {
     let marks = this.cm.findMarks({line: 0, ch: 0}, {line: this.cm.lineCount(), ch: 0});
@@ -623,7 +623,7 @@ export default class CodeMirrorBlocks {
     let prevNode = this.findNodeFromEl(el.previousElementSibling);
     let nextNode = this.findNodeFromEl(el.nextElementSibling);
     path[path.length] = prevNode ? Number(prevNode.path.split(',').pop())     // "insert after previous"
-        : nextNode? nextNode.path.split(',').pop() - 1                        // "insert before next"
+      : nextNode? nextNode.path.split(',').pop() - 1                          // "insert before next"
         : 0;                                                                  // "insert at parent's beginning"
     return path.join(',');
   }
@@ -740,7 +740,7 @@ export default class CodeMirrorBlocks {
       return false;
     }
     var text = (e.type == "keypress")? String.fromCharCode(e.which)
-             : e.clipboardData.getData('text/plain');
+      : e.clipboardData.getData('text/plain');
     if(!text.replace(/\s/g, '').length) return; // let pure whitespace pass through
     e.preventDefault();
     this.insertionQuarantine(text, this.cm.getCursor(), e);

@@ -88,7 +88,7 @@ export default class Renderer {
             clone.style.top    = top    + "px";
             clone.style.left   = left   + "px";
             clone.style.transform = 'translate('+(node.left-left)+'px,'+(node.top-top)+'px) ';
-                                //+'scale('+(node.width/width)+', '+(node.height/height)+')'; 
+            //+'scale('+(node.width/width)+', '+(node.height/height)+')'; 
           }
         }
       });
@@ -99,8 +99,8 @@ export default class Renderer {
     // extract all the literals and blanks from a rootNode
     function flatten(flat, node) {
       return ["literal", "blank"].includes(node.type)? flat.concat([node])      // add literals and blanks
-                : that.lockNodesOfType.includes(node.type)? flat.concat([node]) // Perf: don't bother looking inside
-                : [...node].slice(1).reduce(flatten, flat);                     // look inside
+        : that.lockNodesOfType.includes(node.type)? flat.concat([node])         // Perf: don't bother looking inside
+          : [...node].slice(1).reduce(flatten, flat);                           // look inside
     }
 
     // 1) Limit the number of lines CM is rendering (perf), and extract visible nodes, & make clones 

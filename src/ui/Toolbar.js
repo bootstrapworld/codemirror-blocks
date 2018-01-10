@@ -72,15 +72,15 @@ export default class Toolbar extends Component {
       <div className={classNames('blocks-ui Toolbar', {'has-selected':!!selected})}>
         <div className="search-box">
           <input type="search"
-                 placeholder="Search Primitives"
-                 className="form-control"
-                 value={this.state.search}
-                 onKeyDown={this.checkEscape}
-                 onChange={this.changeSearch} />
+            placeholder="Search Primitives"
+            className="form-control"
+            value={this.state.search}
+            onKeyDown={this.checkEscape}
+            onChange={this.changeSearch} />
 
           {this.state.search ?
-           <span className="glyphicon glyphicon-remove" onClick={this.clearSearch} />
-           : null}
+            <span className="glyphicon glyphicon-remove" onClick={this.clearSearch} />
+            : null}
         </div>
         <div className="primitives-box">
           <PrimitiveList

@@ -37,7 +37,7 @@ export default class ExampleParser {
   }
 
   getToken() {
-    const IDENTIFIER_RE = /[\w-+\/*]/;
+    const IDENTIFIER_RE = /[\w-+/*]/;
     if (this.charIndex >= this.code.length) {
       return new Token(
         {line: this.lineIndex, ch: this.colIndex},
