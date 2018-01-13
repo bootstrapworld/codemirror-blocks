@@ -29,7 +29,15 @@ export function pluralize(noun, set) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
+function commonSubstring(s1, s2) {
+  if(!s1 || !s2) return false;
+  let i = 0, len = Math.min(s1.length, s2.length);
+  while(i<len && s1.charAt(i) == s2.charAt(i)){ i++; } 
+  return s1.substring(0, i) || false; 
+}
+
 export const descDepth = 1;
+const fields = ['aria-level','aria-setsize','aria-label','aria-posinset','line','ch'];
 
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
@@ -77,23 +85,79 @@ export class AST {
   // patch : AST ChangeObj -> AST
   // given a new AST, return a new one patched from the current one
   // taking care to preserve all rendered DOM elements, though!
-  patch(newAST, {from, to, text}) {
-    let fromNode      = this.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
-    let fromPos       = fromNode? fromNode.from : from;           // if so, use that node's .from
-    var insertedToPos = {line: from.line+text.length-1, ch: text[text.length-1].length+((text.length==1)? from.ch : 0)};
-    // get an array of removed roots and inserted roots
-    let removedRoots  = this.getRootNodesTouching(from, to);
-    let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
-    // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
-    for(var i = 0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
-    //console.log('starting at index'+(i)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
-    this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
-    var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
-    // only update aria attributes and position fields
-    patches = patches.filter(p => ['aria-level','aria-setsize','aria-posinset','line','ch'].includes(p.path.split('/').pop()));
-    jsonpatch.applyPatch(this.rootNodes, patches, false); // false = don't validate patches
-    //this.rootNodes.forEach(castToASTNode);
-    return new AST(this.rootNodes);
+  // patch : AST [ChangeObj] -> AST
+  // Given a new AST and some CM change objects, return a new AST patched from the current one.
+  // Take care to preserve all rendered DOM elements, though!
+  patch(parser, newCode, changes) {
+    let that = this, dirtyNodes = new Set(), newAST = parser(newCode), pathArray, patches;
+    changes.forEach(({from, to, text, removed}) => {
+      console.log('--------------PROCESSING CHANGE------------', {from, to, text, removed});
+      let lastText = text[text.length-1], lastRemoved = removed[removed.length-1];
+      let postChangeTo = {
+        line: from.line + (text.length - removed.length), 
+        ch: lastText.length + (text.length==removed.length==1)? to.ch+lastText.length-lastRemoved.length : 0
+      };
+      let fromNode = that.getRootNodesTouching(from, from)[0];                  // is there a containing rootNode?
+      let rootFrom = fromNode? fromNode.from : from;                            // if so, use that node's .from
+      // before looking for patched nodes, adjust ranges for removed text based on whitespace padding
+      let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
+      if(startWS) { from.ch = from.ch + startWS[0].length; }
+      if(endWS)   { to.ch   = to.ch   - endWS[0].length;   }
+      let path = that.getCommonAncestorPath(that.getNodeContaining(from), that.getNodeContaining(to));
+      let insertion = comparePos(from,to) == 0, deletion = text.join("")=="";
+      console.log('path to effected subtree', path);
+      if(path && (pathArray = path.split(',')).length > 1) {                    // PATCH A SUBTREE
+        let insertAtStart = insertion && (comparePos(from, that.getNodeByPath(path).from)==0);
+        let insertAtEnd   = insertion && (comparePos(from, that.getNodeByPath(path).to)==0);
+
+        // if it's an insertion or deletion, we should patch the *parent*. Update path and childPath accordingly.
+        let childPathArray = [0]; // assume we're patching the same node as the parent, and adjust later
+        if(insertion || deletion) { childPathArray.push(pathArray.pop()); }
+        let parentPath    = pathArray.join(','), childPath = childPathArray.join(',');
+
+        // normalize the node by reparsing, then compute splice points in the new string
+        let oldNode       = that.getNodeByPath(parentPath);
+        let oldNodeStr    = oldNode.toString();
+        let normalizedAST = parser(oldNode.toString());
+        let childNode     = normalizedAST.getNodeByPath(childPath);
+        let normalizedFrom= insertAtEnd?    childNode.to   : childNode.from;
+        let normalizedTo  = insertAtStart?  childNode.from : childNode.to;
+        console.log('node to be normalized and patched:', oldNode.toString());
+        if(insertion) console.log('inserting', text.join('\n'), 'between', normalizedFrom,'and', normalizedTo);
+        else if(deletion) console.log('deleting', childNode.toString(), 'between', normalizedFrom,'and', normalizedTo);
+        else console.log('replacing', childNode.toString(), 'with', text.join('\n'), 'between', normalizedFrom,'and', normalizedTo);
+
+        // perform the text patch to create the new node
+        let newNodeStr = oldNodeStr.slice(0, normalizedFrom.ch) + text.join('\n') + oldNodeStr.slice(normalizedTo.ch);
+        let newNode = parser(newNodeStr).rootNodes[0];
+        console.log('after patch:', newNodeStr, newNode);
+
+        // patch the old node to match our newly-constructed one, making sure to preserve the elt and path
+        patches = jsonpatch.compare(oldNode, newNode);
+        // don't update element, path, or location information - those will be fixed after all the changes are applied
+        patches = patches.filter(p => !['el','path'].includes(p.path.split('/').pop()));
+        jsonpatch.applyPatch(that.getNodeByPath(parentPath), patches, false);   // Perf: false = don't validate patches
+        castToASTNode(that.getNodeByPath(parentPath));                          // Ensure the correct nodeTypes
+        dirtyNodes.add(that.getNodeByPath(parentPath));                         // Mark for repainting
+      } else {                                                                  // SPLICE ROOTS
+        let removedRoots  = that.getRootNodesTouching(from, to);
+        let insertedRoots = newAST.getRootNodesTouching(from, postChangeTo);
+        console.log('splicing after rootNode that starts on or before', rootFrom);;
+        let spliceIndex = that.rootNodes.findIndex(r => comparePos(rootFrom, r.from) <= 0);
+        if(spliceIndex == -1) spliceIndex = that.rootNodes.length;
+        console.log('removing', removedRoots, 'starting at ',spliceIndex, 'and inserting', insertedRoots);
+        if(rootFrom.sticky=="after") spliceIndex--;
+        that.rootNodes.splice(spliceIndex, removedRoots.length, ...insertedRoots);
+        insertedRoots.forEach(n => dirtyNodes.add(n));                          // Mark for repainting
+      }
+    });
+    patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);              // generate patches for this v. newAST 
+    patches = patches.filter(p => fields.includes(p.path.split('/').pop()));    // only patch fields we care about
+    jsonpatch.applyPatch(this.rootNodes, patches, false);                       // Perf: false = don't validate patches
+    let ast = new AST(this.rootNodes);                                          // build new AST from patched rootNodes
+    ast.dirtyNodes = [...dirtyNodes];
+    console.log(ast);
+    return ast;
   }
 
   getNodeById(id) {
@@ -102,7 +166,12 @@ export class AST {
   getNodeByPath(path) {
     return this.nodePathMap.get(path);
   }
-
+  // return the common ancestor containing two nodes, or false
+  // if two nodes are given, walk their paths to find the nearest common ancestor
+  getCommonAncestorPath(n1, n2) {
+    if(!n1 || !n2) return false;
+    return commonSubstring(n1.path, n2.path);
+  }
   // return the next node or false
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)

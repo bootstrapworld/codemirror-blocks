@@ -329,19 +329,19 @@ export default class CodeMirrorBlocks {
   render(changes) {
     let start = Date.now();
     try{
+      // batch-apply the changes, then re-render dirty nodes
       this.cm.operation(() => {
-        // for each change, patch the AST and render dirty rootNodes
-        changes.forEach(change => {
-          this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), change);
-          this.ast.rootNodes.filter(r => r.dirty).forEach(r => { this.renderer.render(r); delete r.dirty; });
-        });
+        this.ast = this.ast.patch(s => this.parser.parse(s), this.cm.getValue(), changes);
+        this.ast.dirtyNodes.forEach(n => this.renderer.render(n));
       });
       // reset the cursor
       setTimeout(() => {
         let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
+        console.log('activating', node, this.focusPath);
         if(node && node.el) { node.el.click(); }
         else { this.cm.focus(); }
-      }, 150);
+        delete this.ast.dirty; // remove dirty nodeset, now that they've been rendered
+      }, 100);
     } catch (e){
       console.error(e);
     }
