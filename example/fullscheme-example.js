@@ -10,21 +10,23 @@ require('./example-page.less');
 
 var cm = CodeMirror.fromTextArea(
   document.getElementById("code"),
-  {theme:'3024-day',
-  lineNumbers: true,
-   autoCloseBrackets: true}
+  { theme:'3024-day',
+    lineNumbers: true,
+    autoCloseBrackets: true,
+    viewportMargin: 10}
 );
 
 var cm2 = CodeMirror.fromTextArea(
   document.getElementById('code2'),
-  {theme:'3024-day',
-   autoCloseBrackets: false,
-   lineNumbers: true,
-   extraKeys: {
-     "Shift-9" : function(cm){
-       cm.replaceSelection("(...)");
-     }
-   }
+  { theme:'3024-day',
+    autoCloseBrackets: false,
+    lineNumbers: true,
+    viewportMargin: 10,
+    extraKeys: {
+      "Shift-9" : function(cm) {
+        cm.replaceSelection("(...)");
+      }
+    }
  }
 );
 

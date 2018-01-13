@@ -16,7 +16,7 @@ export default class LambdaExpression extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="lambdaExpression" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           &lambda; (
           {helpers.renderNodeForReact(node.args)}

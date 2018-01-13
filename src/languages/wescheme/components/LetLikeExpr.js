@@ -16,7 +16,7 @@ export default class LetLikeExpr extends Component {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
-      <Node type="letLikeExpr" node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">{node.form}</span>
         {helpers.renderNodeForReact(node.bindings)}
         {helpers.renderNodeForReact(node.expr)}
