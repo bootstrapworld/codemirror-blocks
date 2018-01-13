@@ -61,6 +61,10 @@ export class AST {
     this.annotateNodes();
   }
 
+  toString() {
+    return this.rootNodes.map(r => r.toString()).join('\n');
+  }
+
   // annotateNodes : ASTNodes ASTNode -> Void
   // walk through the siblings, assigning aria-* attributes
   // and populating various maps for tree navigation
@@ -92,13 +96,6 @@ export class AST {
     let that = this, dirtyNodes = new Set(), newAST = parser(newCode), pathArray, patches;
     changes.forEach(({from, to, text, removed}) => {
       console.log('--------------PROCESSING CHANGE------------', {from, to, text, removed});
-      let lastText = text[text.length-1], lastRemoved = removed[removed.length-1];
-      let postChangeTo = {
-        line: from.line + (text.length - removed.length), 
-        ch: lastText.length + (text.length==removed.length==1)? to.ch+lastText.length-lastRemoved.length : 0
-      };
-      let fromNode = that.getRootNodesTouching(from, from)[0];                  // is there a containing rootNode?
-      let rootFrom = fromNode? fromNode.from : from;                            // if so, use that node's .from
       // before looking for patched nodes, adjust ranges for removed text based on whitespace padding
       let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
       if(startWS) { from.ch = from.ch + startWS[0].length; }
@@ -140,6 +137,13 @@ export class AST {
         castToASTNode(that.getNodeByPath(parentPath));                          // Ensure the correct nodeTypes
         dirtyNodes.add(that.getNodeByPath(parentPath));                         // Mark for repainting
       } else {                                                                  // SPLICE ROOTS
+        let lastText = text[text.length-1], lastRemoved = removed[removed.length-1];
+        let postChangeTo = {
+          line: from.line + (text.length - removed.length), 
+          ch: lastText.length + (text.length==removed.length==1)? to.ch+lastText.length-lastRemoved.length : 0
+        };
+        let fromNode = that.getRootNodesTouching(from, from)[0];                  // is there a containing rootNode?
+        let rootFrom = fromNode? fromNode.from : from;                            // if so, use that node's .from
         let removedRoots  = that.getRootNodesTouching(from, to);
         let insertedRoots = newAST.getRootNodesTouching(from, postChangeTo);
         console.log('splicing after rootNode that starts on or before', rootFrom);;

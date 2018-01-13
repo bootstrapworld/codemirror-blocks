@@ -185,7 +185,7 @@ describe("The AST Class", function() {
   });
 });
 
-/*
+
 describe("AST Patching", function() {
   beforeEach(function() {
     this.parser = new WeschemeParser();
@@ -395,7 +395,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].type).toBe("literal");
   });
 
-  it('42  (+ 1 (* 2 3)) moo  "hello" ->   (+ 1 (* 2 3 moo))  "hello"', function() {
+  it('42  (+ 1 (* 2 3)) moo  "hello" ->  42  (+ 1 (* 2 3) moo)  "hello"', function() {
     this.ast = this.parser.parse('42\n\n(+ 1 (* 2 3)) moo\n\n"hello"');
     var newCode = '42\n\n(+ 1 (* 2 3) moo) \n\n"hello"';
     let change1 = { from: {line: 2, ch:14}, to: {line:2, ch:17}, text: [""], removed: ["moo"] };
@@ -411,4 +411,3 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[2].value).toBe('"hello"');
   });
 });
-*/
