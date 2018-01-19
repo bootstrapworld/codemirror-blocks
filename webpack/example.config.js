@@ -61,11 +61,11 @@ module.exports = _.extend({}, baseConfig, {
       template: 'example/editor.html',
       inject: 'body',
       chunks: ['third-party','editor-example'],
-    }),
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('production')
-    }),
-    new UglifyJSPlugin()
+    })
+//    new webpack.DefinePlugin({
+//      'process.env.NODE_ENV': JSON.stringify('production')
+//    })
+//    new UglifyJSPlugin()
   ]),
   devServer: {
     hot: true,
