@@ -266,7 +266,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should get the correct aria-label", function() {
-      expect(this.ast.rootNodes[0].options['aria-label']).toBe('a let-star expression with 3 bindings');
+      expect(this.ast.rootNodes[0].options['aria-label']).toBe('let-star expression with 3 bindings');
     });
 
     it("should convert the bindings to a sequence, correctly", function() {
@@ -301,7 +301,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should get the correct aria-label", function() {
-      expect(this.ast.rootNodes[0].options['aria-label']).toBe('a when expression');
+      expect(this.ast.rootNodes[0].options['aria-label']).toBe('when expression');
     });
 
     it("should convert the predicate properly", function() {

@@ -73,7 +73,7 @@ export class AST {
       node.path = parent? parent.path + (","+i) : i.toString();
       node["aria-setsize"]  = nodes.length;
       node["aria-posinset"] = i+1;
-      node["aria-level"]    = 1+(parent? parent.id.split(",").length : 0);
+      node["aria-level"]    = 1+(parent? parent.path.split(",").length : 0);
       if (this.lastNode) {
         this.nextNodeMap.set(this.lastNode, node);
         this.prevNodeMap.set(node, this.lastNode);
