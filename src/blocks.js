@@ -820,7 +820,7 @@ export default class CodeMirrorBlocks {
       let node = that.ast.getNextMatchingNode(
         searchFn, that.isNodeHidden, that.getActiveNode() || that.cm.getCursor());
       if(node === activeNode) { playBeep(); }
-      else { that.activateNode(node, event); }
+      that.activateNode(node, event);
     }
     function showNextMatch(moveCursorFn) {
       clearTimeout(that.searchTimer); // reset the timer for 2.5sec
