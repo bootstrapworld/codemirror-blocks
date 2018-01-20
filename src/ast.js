@@ -82,10 +82,10 @@ export class AST {
     let fromPos       = fromNode? fromNode.from : from;           // if so, use that node's .from
     var insertedToPos = {line: from.line+text.length-1, ch: text[text.length-1].length+((text.length==1)? from.ch : 0)};
     // get an array of removed roots and inserted roots
+    // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
     let removedRoots  = this.getRootNodesTouching(from, to);
     let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
-    // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
-    let splicePoint = this.rootNodes.findIndex(r => comparePos(fromPos, r.from) <= 0);
+    let splicePoint   = this.rootNodes.findIndex(r => comparePos(fromPos, r.from) <= 0);
     this.rootNodes.splice(splicePoint, removedRoots.length, ...insertedRoots);
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
     // only update aria attributes and position fields
