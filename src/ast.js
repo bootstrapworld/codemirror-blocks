@@ -85,14 +85,12 @@ export class AST {
     let removedRoots  = this.getRootNodesTouching(from, to);
     let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
     // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
-    for(var i = 0; i<this.rootNodes.length; i++){ if(comparePos(fromPos, this.rootNodes[i].from)<=0) break;  }
-    //console.log('starting at index'+(i)+', remove '+removedRoots.length+' roots and insert', insertedRoots);
-    this.rootNodes.splice(i, removedRoots.length, ...insertedRoots);
+    let splicePoint = this.rootNodes.findIndex(r => comparePos(fromPos, r.from) <= 0);
+    this.rootNodes.splice(splicePoint, removedRoots.length, ...insertedRoots);
     var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
     // only update aria attributes and position fields
     patches = patches.filter(p => ['aria-level','aria-setsize','aria-posinset','line','ch'].includes(p.path.split('/').pop()));
     jsonpatch.applyPatch(this.rootNodes, patches, false); // false = don't validate patches
-    //this.rootNodes.forEach(castToASTNode);
     return new AST(this.rootNodes);
   }
 
