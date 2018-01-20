@@ -66,3 +66,22 @@ ReactDOM.render((
   </select>
 ),document.getElementById('language-selector')
 );
+
+
+// Toggle the help HUD
+document.body.onkeydown = function(k) {
+  if(!(k.key == "/" && k.ctrlKey == true)) return;
+  let help = document.getElementById('helpDialog');
+  if(help && help.style.display !== "block"){
+    help.style.display = "block";
+    help.onkeydown = (k) => { 
+      k.preventDefault();
+      k.stopPropagation();
+      if(k.key == "/" && k.ctrlKey == true) {
+        help.style.display = "none";
+        cm2.focus();
+      }
+    };
+    help.focus();
+  }
+}
