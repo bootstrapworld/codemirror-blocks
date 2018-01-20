@@ -15,7 +15,7 @@ export default class Literal extends Component {
   render() {
     const {node, helpers} = this.props;
     return (
-      <Node type="prog" node={node}>
+      <Node node={node}>
         <h4>Your Lambda Program</h4>
         {node.prog.map((node, index) => (
           <span key={index}>
