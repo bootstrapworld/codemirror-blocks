@@ -93,7 +93,8 @@ export class AST {
   // Given a new AST and some CM change objects, return a new AST patched from the current one.
   // Take care to preserve all rendered DOM elements, though!
   patch(parser, newCode, changes) {
-    let that = this, dirtyNodes = new Set(), newAST = parser(newCode), pathArray, patches;
+    let dirtyNodes = new Set(), pathArray, patches;
+    let that = this, newAST = parser(newCode);
     changes.forEach(({from, to, text, removed}) => {
       console.log('--------------PROCESSING CHANGE------------', {from, to, text, removed});
       // before looking for patched nodes, adjust ranges for removed text based on whitespace padding
@@ -101,15 +102,16 @@ export class AST {
       if(startWS) { from.ch = from.ch + startWS[0].length; }
       if(endWS)   { to.ch   = to.ch   - endWS[0].length;   }
       let path = that.getCommonAncestorPath(that.getNodeContaining(from), that.getNodeContaining(to));
-      let insertion = comparePos(from,to) == 0, deletion = text.join("")=="";
+      let isInsertion = comparePos(from,to) == 0, isDeletion = text.join("")=="";
       console.log('path to effected subtree', path);
       if(path && (pathArray = path.split(',')).length > 1) {                    // PATCH A SUBTREE
-        let insertAtStart = insertion && (comparePos(from, that.getNodeByPath(path).from)==0);
-        let insertAtEnd   = insertion && (comparePos(from, that.getNodeByPath(path).to)==0);
+        var spliceFrom, spliceTo;
+        let insertAtStart = isInsertion && (comparePos(from, that.getNodeByPath(path).from)==0);
+        let insertAtEnd   = isInsertion && (comparePos(from, that.getNodeByPath(path).to)==0);
 
         // if it's an insertion or deletion, we should patch the *parent*. Update path and childPath accordingly.
         let childPathArray = [0]; // assume we're patching the same node as the parent, and adjust later
-        if(insertion || deletion) { childPathArray.push(pathArray.pop()); }
+        if(isInsertion || isDeletion) { childPathArray.push(pathArray.pop()); }
         let parentPath    = pathArray.join(','), childPath = childPathArray.join(',');
 
         // normalize the node by reparsing, then compute splice points in the new string
@@ -117,15 +119,16 @@ export class AST {
         let oldNodeStr    = oldNode.toString();
         let normalizedAST = parser(oldNode.toString());
         let childNode     = normalizedAST.getNodeByPath(childPath);
-        let normalizedFrom= insertAtEnd?    childNode.to   : childNode.from;
-        let normalizedTo  = insertAtStart?  childNode.from : childNode.to;
+        if(insertAtStart)    { spliceFrom = spliceTo = childNode.from; }
+        else if(insertAtEnd) { spliceFrom = spliceTo = childNode.to; }
+        else                 { spliceFrom = childNode.from; spliceTo = childNode.to; }
         console.log('node to be normalized and patched:', oldNode.toString());
-        if(insertion) console.log('inserting', text.join('\n'), 'between', normalizedFrom,'and', normalizedTo);
-        else if(deletion) console.log('deleting', childNode.toString(), 'between', normalizedFrom,'and', normalizedTo);
-        else console.log('replacing', childNode.toString(), 'with', text.join('\n'), 'between', normalizedFrom,'and', normalizedTo);
+        if(isInsertion) console.log('inserting', text.join('\n'), 'between', spliceFrom,'and', spliceTo);
+        else if(isDeletion) console.log('deleting', childNode.toString(), 'between', spliceFrom,'and', spliceTo);
+        else console.log('replacing', childNode.toString(), 'with', text.join('\n'), 'between', spliceFrom,'and', spliceTo);
 
         // perform the text patch to create the new node
-        let newNodeStr = oldNodeStr.slice(0, normalizedFrom.ch) + text.join('\n') + oldNodeStr.slice(normalizedTo.ch);
+        let newNodeStr = oldNodeStr.slice(0, spliceFrom.ch) + text.join('\n') + oldNodeStr.slice(spliceTo.ch);
         let newNode = parser(newNodeStr).rootNodes[0];
         console.log('after patch:', newNodeStr, newNode);
 
