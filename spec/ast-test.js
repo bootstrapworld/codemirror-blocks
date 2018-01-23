@@ -203,6 +203,18 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].type).toBe("expression");
   });
 
+  it('42 (+ 1 (* 2 3)) "hello" -> 42 (if a b c) "hello"', function() {
+    let newCode = '42\n\n(if a b c)\n\n"hello"';
+    var newAST = this.parser.parse(newCode);
+    let change = { from: {line: 2, ch:0}, to: {line:2, ch:13}, text: ["(if a b c)"], removed: ["(+ 1 (* 2 3))"] };
+    this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
+    expect(this.ast.rootNodes.length).toBe(3);
+    expect(this.ast.rootNodes[1].type).toBe("ifExpression");
+    expect(this.ast.rootNodes[1].testExpr.value).toBe("a");
+    expect(this.ast.rootNodes[1].thenExpr.value).toBe("b");
+    expect(this.ast.rootNodes[1].elseExpr.value).toBe("c");
+  });
+
   it('42 (+ 1 (* 2 3)) "hello" -> 41 (foo bar baz) "hello"', function() {
     let newCode = '41\n\n(foo bar baz)\n\n"hello"';
     var newAST = this.parser.parse(newCode);
@@ -215,7 +227,7 @@ describe("AST Patching", function() {
     expect(this.ast.rootNodes[1].args.length).toBe(2);
   });
 
-  it('42  (+ 1 (* 2 3))  "hello" --> 42  (foo bar baz)  ', function() {
+  it('42  (+ 1 (* 2 3))  "hello" --> 42  (+ 1 (* 1 2 3))  ', function() {
     let newCode = '42\n\n(+ 1 (* 1 2 3))\n\n';
     var newAST = this.parser.parse(newCode);
     let change = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
@@ -281,7 +293,7 @@ describe("AST Patching", function() {
   it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ (* 2 3) 1)  "hello"', function() {
     var newCode = '42\n\n(+ (* 2 3) 1)\n\n"hello"';
     var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 2, ch:7}, to: {line:2, ch:14}, text: [""], removed: ["(* 2 3)"] };
+    let change1 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
     let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:3}, text: ["(* 2 3)"], removed: [""] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
     expect(this.ast.rootNodes.length).toBe(3);
@@ -313,7 +325,7 @@ describe("AST Patching", function() {
     var newCode = '42\n\n(+  (* 1 2 3))\n\n"hello"';
     var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["1 "], removed: [""] };
-    let change2 = { from: {line: 2, ch:4}, to: {line:2, ch:13}, text: [""], removed: ["1"] };
+    let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:4}, text: [""], removed: ["1"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
     expect(this.ast.rootNodes.length).toBe(3);
     expect(this.ast.rootNodes[0].type).toBe("literal");
@@ -365,7 +377,7 @@ describe("AST Patching", function() {
     var newCode = '(+ (* 3 5 (- 1 2 9)))';
     var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 0, ch:15}, to: {line:0, ch:15}, text: ["1 "], removed: [""] };
-    let change2 = { from: {line: 0, ch:4}, to: {line:0, ch:21}, text: [""], removed: ["1"] };
+    let change2 = { from: {line: 0, ch:3}, to: {line:0, ch:4}, text: [""], removed: ["1"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
     expect(this.ast.rootNodes.length).toBe(1);
     expect(this.ast.rootNodes[0].type).toBe("expression");
