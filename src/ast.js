@@ -37,8 +37,6 @@ function commonSubstring(s1, s2) {
 }
 
 export const descDepth = 1;
-const fields = ['aria-level','aria-setsize','aria-label','aria-posinset','line','ch'];
-
 
 // This is the root of the *Abstract Syntax Tree*.  Parser implementations are
 // required to spit out an `AST` instance.
@@ -89,83 +87,78 @@ export class AST {
   // patch : AST ChangeObj -> AST
   // given a new AST, return a new one patched from the current one
   // taking care to preserve all rendered DOM elements, though!
-  // patch : AST [ChangeObj] -> AST
-  // Given a new AST and some CM change objects, return a new AST patched from the current one.
-  // Take care to preserve all rendered DOM elements, though!
+  // ASSUMES ALL CHANGES ARE ALONG BLOCK BOUNDARIES!
   patch(parser, newCode, changes) {
     let dirtyNodes = new Set(), pathArray, patches;
-    let that = this, newAST = parser(newCode);
-    changes.forEach(({from, to, text, removed}) => {
-      console.log('--------------PROCESSING CHANGE------------', {from, to, text, removed});
+    let oldAST = this, newAST = parser(newCode);
+
+    // 1) Convert CM changeObjs to treeChange objects, so that all changes are expressed treewise.
+    // this allows us to ignore {line,ch} ranges
+    // a treeChange object is { op:     'insertAfter', 'replace', or 'spliceRoots'
+    //                          text:   the raw text from the changeObj
+    //                          path:   the path to the node where the operation should occur
+    //                          length: the number of rootNodes being spliced in. *ONLY used by spliceRoots*
+    //                        }
+    let treeChanges = changes.map(({from, to, text, removed}) => {
       // before looking for patched nodes, adjust ranges for removed text based on whitespace padding
+      // TODO(Emmanuel) - this might be useless code. Remove after more testing?
       let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
       if(startWS) { from.ch = from.ch + startWS[0].length; }
       if(endWS)   { to.ch   = to.ch   - endWS[0].length;   }
-      let path = that.getCommonAncestorPath(that.getNodeContaining(from), that.getNodeContaining(to));
-      let isInsertion = comparePos(from,to) == 0, isDeletion = text.join("")=="";
-      console.log('path to effected subtree', path);
+      let path = oldAST.getCommonAncestorPath(oldAST.getNodeContaining(from), oldAST.getNodeContaining(to));
       if(path && (pathArray = path.split(',')).length > 1) {                    // PATCH A SUBTREE
-        var spliceFrom, spliceTo;
-        let insertAtStart = isInsertion && (comparePos(from, that.getNodeByPath(path).from)==0);
-        let insertAtEnd   = isInsertion && (comparePos(from, that.getNodeByPath(path).to)==0);
-
-        // if it's an insertion or deletion, we should patch the *parent*. Update path and childPath accordingly.
-        let childPathArray = [0]; // assume we're patching the same node as the parent, and adjust later
-        if(isInsertion || isDeletion) { childPathArray.push(pathArray.pop()); }
-        let parentPath    = pathArray.join(','), childPath = childPathArray.join(',');
-
-        // normalize the node by reparsing, then compute splice points in the new string
-        let oldNode       = that.getNodeByPath(parentPath);
-        let oldNodeStr    = oldNode.toString();
-        let normalizedAST = parser(oldNode.toString());
-        let childNode     = normalizedAST.getNodeByPath(childPath);
-        if(insertAtStart)    { spliceFrom = spliceTo = childNode.from; }
-        else if(insertAtEnd) { spliceFrom = spliceTo = childNode.to; }
-        else                 { spliceFrom = childNode.from; spliceTo = childNode.to; }
-        console.log('node to be normalized and patched:', oldNode.toString());
-        if(isInsertion) console.log('inserting', text.join('\n'), 'between', spliceFrom,'and', spliceTo);
-        else if(isDeletion) console.log('deleting', childNode.toString(), 'between', spliceFrom,'and', spliceTo);
-        else console.log('replacing', childNode.toString(), 'with', text.join('\n'), 'between', spliceFrom,'and', spliceTo);
-
-        // perform the text patch to create the new node
-        let newNodeStr = oldNodeStr.slice(0, spliceFrom.ch) + text.join('\n') + oldNodeStr.slice(spliceTo.ch);
-        let newNode = parser(newNodeStr).rootNodes[0];
-        console.log('after patch:', newNodeStr, newNode);
-
-        // patch the old node to match our newly-constructed one, making sure to preserve the elt and path
-        patches = jsonpatch.compare(oldNode, newNode);
-        // don't update element, path, or location information - those will be fixed after all the changes are applied
-        patches = patches.filter(p => !['el','path'].includes(p.path.split('/').pop()));
-        jsonpatch.applyPatch(that.getNodeByPath(parentPath), patches, false);   // Perf: false = don't validate patches
-        castToASTNode(that.getNodeByPath(parentPath));                          // Ensure the correct nodeTypes
-        dirtyNodes.add(that.getNodeByPath(parentPath));                         // Mark for repainting
-      } else {                                                                  // SPLICE ROOTS
-        let lastText = text[text.length-1], lastRemoved = removed[removed.length-1];
-        let postChangeTo = {
-          line: from.line + (text.length - removed.length), 
-          ch: lastText.length + (text.length==removed.length==1)? to.ch+lastText.length-lastRemoved.length : 0
-        };
-        let fromNode = that.getRootNodesTouching(from, from)[0];                  // is there a containing rootNode?
-        let rootFrom = fromNode? fromNode.from : from;                            // if so, use that node's .from
-        let removedRoots  = that.getRootNodesTouching(from, to);
-        let insertedRoots = newAST.getRootNodesTouching(from, postChangeTo);
-        console.log('splicing after rootNode that starts on or before', rootFrom);;
-        let spliceIndex = that.rootNodes.findIndex(r => comparePos(rootFrom, r.from) <= 0);
-        if(spliceIndex == -1) spliceIndex = that.rootNodes.length;
-        console.log('removing', removedRoots, 'starting at ',spliceIndex, 'and inserting', insertedRoots);
-        if(rootFrom.sticky=="after") spliceIndex--;
-        that.rootNodes.splice(spliceIndex, removedRoots.length, ...insertedRoots);
-        insertedRoots.forEach(n => dirtyNodes.add(n));                          // Mark for repainting
+        let pathArray = path.split(',');
+        let isInsertion = comparePos(from,to) == 0, operation = isInsertion? 'insertAfter' : 'replace';
+        if(isInsertion && comparePos(from, oldAST.getNodeByPath(path).from)==0) pathArray[pathArray.length-1]--;
+        return {op: operation, path: pathArray.join(','), text: text.join(',')}
+      } else {                                                     // SPLICE ROOTS
+        let spliceIndex = oldAST.rootNodes.findIndex(r => comparePos(from, r.from) <= 0);
+        if(spliceIndex == -1) spliceIndex = oldAST.rootNodes.length;
+        let removedRoots  = removed.join('').length>0? oldAST.getRootNodesTouching(from, to) : [];
+        return {op: 'spliceRoots', path: spliceIndex.toString(), text: text.join(','), length: removedRoots.length}
       }
     });
-    patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);              // generate patches for this v. newAST 
+    // 2) Apply the treeChanges
+    // splicing is straightforward. For everything else, we express the change as something that happens
+    // at a childIndex of a particular parentNode. We normalize the parentNode to give us predictable text,
+    // then splice into the text at the appropriate location. Every changed or new node is marked as dirty.
+    treeChanges.forEach(({op, path, text, length}) => {
+      if(op == 'spliceRoots') {
+        let insertedNodes = parser(text).rootNodes;
+        oldAST.rootNodes.splice(path, length, ...insertedNodes);
+        insertedNodes.forEach(n => dirtyNodes.add(n));
+      } else {
+        path = path.split(',');
+        let childIndex = path.pop(), parentNode = oldAST.getNodeByPath(path.join(','));
+        let nodeStr = parentNode.toString().replace(/(\r\n|\n|\r)/gm,""); // normalize to one big line
+        let normalizedAST = parser(nodeStr), newStr = "";
+        let normalizedChild = normalizedAST.getNodeByPath("0,"+childIndex);
+        if(op == 'insertAfter') {
+          let spliceAt = (childIndex == -1)? 0 : normalizedChild.to.ch;
+          newStr = nodeStr.slice(0, spliceAt)+" "+text+" "+nodeStr.slice(spliceAt);
+        } else {
+          newStr = nodeStr.slice(0, normalizedChild.from.ch)+" "+text+" "+nodeStr.slice(normalizedChild.to.ch);
+        }
+        let newNode = parser(newStr).rootNodes[0];
+        patches = jsonpatch.compare(parentNode, newNode);
+        patches = patches.filter(p => !['el','path'].includes(p.path.split('/').pop()));
+        jsonpatch.applyPatch(parentNode, patches, false);           // Perf: false = don't validate patches
+        castToASTNode(parentNode);                                  // Ensure the correct nodeTypes
+        dirtyNodes.add(parentNode);                                 // Mark for repainting
+      }
+    });
+    // 3) Polishing
+    // Now that the AST is in the same *shape* as the newAST, we patch all the fields that deal with 
+    // text positions and ARIA attributes. We also store the dirty nodelist into the AST, so the renderer
+    // knows what needs work. This preserves all unchanged DOM nodes.
+    const fields = ['aria-level','aria-setsize','aria-label','aria-posinset','line','ch'];
+    patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
     patches = patches.filter(p => fields.includes(p.path.split('/').pop()));    // only patch fields we care about
     jsonpatch.applyPatch(this.rootNodes, patches, false);                       // Perf: false = don't validate patches
     let ast = new AST(this.rootNodes);                                          // build new AST from patched rootNodes
     ast.dirtyNodes = [...dirtyNodes];
     console.log(ast);
-    return ast;
-  }
+    return ast;  }
 
   getNodeById(id) {
     return this.nodeIdMap.get(id);
