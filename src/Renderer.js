@@ -146,7 +146,6 @@ export default class Renderer {
     var container = document.createElement('span');
     if(node["aria-level"] && node["aria-level"] > 1) { // render in-place 
       container = document.createElement('span');
-      console.log(node);
       node.el.parentNode.replaceChild(container, node.el);                // REVISIT: there *has* to be a better way
       ReactDOM.render(this.renderNodeForReact(node), container);          // REVISIT
       container.parentNode.replaceChild(container.firstChild, container); // REVISIT

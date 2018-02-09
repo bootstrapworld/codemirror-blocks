@@ -1,5 +1,4 @@
 const uuidv4 = require('uuid/v4');
-var jsonpatch = require('fast-json-patch');
 
 function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
@@ -7,7 +6,26 @@ function comparePos(a, b) {
 function posWithinNode(pos, node){
   return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) >= 0);
 }
+// Compute the position of the end of a change (its 'to' property
+// refers to the pre-change end).
+export function changeEnd(change) {
+  if (!change.text) return change.to
+  let lastText = change.text[change.text.length-1];
+  return {line: change.from.line + change.text.length - 1,
+          ch: lastText.length + (change.text.length == 1 ? change.from.ch : 0)};
+}
 
+// Adjust a position to refer to the post-change position of the
+// same text, or the end of the change if the change covers it.
+function adjustForChange(pos, change, from) {
+  if (comparePos(pos, change.from) < 0) return pos
+  if (comparePos(pos, change.from) == 0 && from) return pos // node.from doesn't change if it falls on change.from
+  if (comparePos(pos, change.to) <= 0) return changeEnd(change)
+
+  let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch
+  if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch
+  return {line: line, ch: ch};
+}
 // Cast an object to the appropriate ASTNode, and traverse its children
 // REVISIT: should we be using Object.setPrototypeOf() here? And good god, eval()?!?
 function castToASTNode(o) {
@@ -38,7 +56,7 @@ function commonSubstring(s1, s2) {
 
 export const descDepth = 1;
 
-// This is the root of the *Abstract Syntax Tree*.  Parser implementations are
+// This is the root of the *Abstract Syntax Tree*.  parse implementations are
 // required to spit out an `AST` instance.
 export class AST {
   constructor(rootNodes) {
@@ -84,81 +102,75 @@ export class AST {
     });
   } 
 
-  // patch : AST ChangeObj -> AST
-  // given a new AST, return a new one patched from the current one
-  // taking care to preserve all rendered DOM elements, though!
-  // ASSUMES ALL CHANGES ARE ALONG BLOCK BOUNDARIES!
-  patch(parser, newCode, changes) {
-    let dirtyNodes = new Set(), pathArray, patches;
-    let oldAST = this, newAST = parser(newCode);
+  // patch : Parser, String, [ChangeObjs] -> AST
+  // FOR NOW: ASSUMES ALL CHANGES COME FROM THE BLOCK EDITOR!
+  // produce the new AST, preserving all the unchanged DOM nodes from the old AST
+  patch(parse, newCode, CMchanges) {
+    let oldAST = this, newAST = parse(newCode);
+    newAST.dirtyNodes = new Set();
 
-    // 1) Convert CM changeObjs to treeChange objects, so that all changes are expressed treewise.
-    // this allows us to ignore {line,ch} ranges
-    // a treeChange object is { op:     'insertAfter', 'replace', or 'spliceRoots'
-    //                          text:   the raw text from the changeObj
-    //                          path:   the path to the node where the operation should occur
-    //                          length: the number of rootNodes being spliced in. *ONLY used by spliceRoots*
-    //                        }
-    let treeChanges = changes.map(({from, to, text, removed}) => {
-      // before looking for patched nodes, adjust ranges for removed text based on whitespace padding
-      // TODO(Emmanuel) - this might be useless code. Remove after more testing?
+    // for each CM change, compute sibling shifts at the path level, then update all the
+    // Posns in the AST to reflect the post-change coordinates, *without any other changes*
+    let pathChanges = CMchanges.reduce((acc, change) => {
+      let {from, to, text, removed} = change, nodeAtPath, ops = [];
+      // trim whitespace from change object, and figure out how many siblings are added/removed
       let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
       if(startWS) { from.ch = from.ch + startWS[0].length; }
       if(endWS)   { to.ch   = to.ch   - endWS[0].length;   }
-      let path = oldAST.getCommonAncestorPath(oldAST.getNodeContaining(from), oldAST.getNodeContaining(to));
-      if(path && (pathArray = path.split(',')).length > 1) {                    // PATCH A SUBTREE
-        let pathArray = path.split(',');
-        let isInsertion = comparePos(from,to) == 0, operation = isInsertion? 'insertAfter' : 'replace';
-        if(isInsertion && comparePos(from, oldAST.getNodeByPath(path).from)==0) pathArray[pathArray.length-1]--;
-        return {op: operation, path: pathArray.join(','), text: text.join(',')}
-      } else {                                                     // SPLICE ROOTS
-        let spliceIndex = oldAST.rootNodes.findIndex(r => comparePos(from, r.from) <= 0);
-        if(spliceIndex == -1) spliceIndex = oldAST.rootNodes.length;
-        let removedRoots  = removed.join('').length>0? oldAST.getRootNodesTouching(from, to) : [];
-        return {op: 'spliceRoots', path: spliceIndex.toString(), text: text.join(','), length: removedRoots.length}
+      let insertedSiblings = parse( text.join('\n')  ).rootNodes.length;
+      let removedSiblings  = parse(removed.join('\n')).rootNodes.length;
+
+      let path = oldAST.getPathContaining(from, to);
+      if(!path || ((nodeAtPath = oldAST.getNodeByPath(path)) &&
+        comparePos(nodeAtPath.from, from) !== 0 && comparePos(nodeAtPath.to, to) !== 0)) {
+        let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
+        let spliceIndex = siblings.findIndex(n => comparePos(from, n.from) <= 0);
+        if(spliceIndex == -1) spliceIndex = siblings.length;
+        path = path ? path.split(',').concat([spliceIndex]).join(',') : spliceIndex.toString();
       }
-    });
-    // 2) Apply the treeChanges
-    // splicing is straightforward. For everything else, we express the change as something that happens
-    // at a childIndex of a particular parentNode. We normalize the parentNode to give us predictable text,
-    // then splice into the text at the appropriate location. Every changed or new node is marked as dirty.
-    treeChanges.forEach(({op, path, text, length}) => {
-      if(op == 'spliceRoots') {
-        let insertedNodes = parser(text).rootNodes;
-        oldAST.rootNodes.splice(path, length, ...insertedNodes);
-        insertedNodes.forEach(n => dirtyNodes.add(n));
-      } else {
-        path = path.split(',');
-        let childIndex = path.pop(), parentNode = oldAST.getNodeByPath(path.join(','));
-        let nodeStr = parentNode.toString().replace(/(\r\n|\n|\r)/gm,""); // normalize to one big line
-        let normalizedAST = parser(nodeStr), newStr = "";
-        let normalizedChild = normalizedAST.getNodeByPath("0,"+childIndex);
-        if(op == 'insertAfter') {
-          let spliceAt = (childIndex == -1)? 0 : normalizedChild.to.ch;
-          newStr = nodeStr.slice(0, spliceAt)+" "+text+" "+nodeStr.slice(spliceAt);
-        } else {
-          newStr = nodeStr.slice(0, normalizedChild.from.ch)+" "+text+" "+nodeStr.slice(normalizedChild.to.ch);
+      if(removedSiblings)  ops.push({atNode: path, shift: -removedSiblings });
+      if(insertedSiblings) ops.push({atNode: path, shift: insertedSiblings });
+      // TODO(Emmanuel): only adjust later nodes
+      oldAST.nodeIdMap.forEach(n => {
+        n.from = adjustForChange(n.from, change, true );
+        n.to   = adjustForChange(n.to,   change, false);
+      });
+      return acc.concat(ops);
+    }, []);
+
+    // for each pathChange, adjust the paths of all the nodes in the AST
+    pathChanges.forEach(change => {
+      let changeArray = change.atNode.split(',').map(Number);        
+      // TODO(Emmanuel): only adjust later nodes
+      oldAST.nodeIdMap.forEach(node => {
+        let pathArray = node.path.split(',').map(Number);
+        let changeDepth = changeArray.length-1, changeIdx = changeArray[changeDepth];
+        // return nodes that are above or before the edit, unchanged
+        if(pathArray.length < changeArray.length || pathArray[changeDepth] < changeIdx) return;
+        // siblings (and their children) that fall into the deleted ranged, should have their
+        // nodes and elements set to the empty string, and their parent marked as dirty
+        if((change.shift < 0) && (pathArray[changeDepth] < changeIdx-change.shift)) {
+          node.el = node.path = ""; pathArray.pop();
+          let dirty  = newAST.getNodeByPath(pathArray.join(','));
+          if(dirty) newAST.dirtyNodes.add(dirty);
         }
-        let newNode = parser(newStr).rootNodes[0];
-        patches = jsonpatch.compare(parentNode, newNode);
-        patches = patches.filter(p => !['el','path'].includes(p.path.split('/').pop()));
-        jsonpatch.applyPatch(parentNode, patches, false);           // Perf: false = don't validate patches
-        castToASTNode(parentNode);                                  // Ensure the correct nodeTypes
-        dirtyNodes.add(parentNode);                                 // Mark for repainting
-      }
+        // update the <ith> entry of post-nodeAt siblings (and their children) by +shift
+        pathArray[changeDepth] += change.shift;
+        node.path = pathArray.join(',');
+      });
     });
-    // 3) Polishing
-    // Now that the AST is in the same *shape* as the newAST, we patch all the fields that deal with 
-    // text positions and ARIA attributes. We also store the dirty nodelist into the AST, so the renderer
-    // knows what needs work. This preserves all unchanged DOM nodes.
-    const fields = ['aria-level','aria-setsize','aria-label','aria-posinset','line','ch'];
-    patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
-    patches = patches.filter(p => fields.includes(p.path.split('/').pop()));    // only patch fields we care about
-    jsonpatch.applyPatch(this.rootNodes, patches, false);                       // Perf: false = don't validate patches
-    let ast = new AST(this.rootNodes);                                          // build new AST from patched rootNodes
-    ast.dirtyNodes = [...dirtyNodes];
-    console.log(ast);
-    return ast;  }
+    // copy over the DOM nodes we haven't changed, and update their IDs to match
+    oldAST.nodeIdMap.forEach(n => {
+      let newNode = newAST.getNodeByPath(n.path);
+      if(n.el && newNode) { n.el.id='block-node-'+newNode.id; newNode.el = n.el; }
+    });
+    // Set parent to dirty if there's no element. If we're at a root, just use the root itself.
+    newAST.nodeIdMap.forEach(n => {
+      if(n.el) return;
+      newAST.dirtyNodes.add(newAST.getNodeParent(n) || n);
+    });
+    return newAST;
+  }
 
   getNodeById(id) {
     return this.nodeIdMap.get(id);
@@ -166,10 +178,14 @@ export class AST {
   getNodeByPath(path) {
     return this.nodePathMap.get(path);
   }
-  // return the common ancestor containing two nodes, or false
-  // if two nodes are given, walk their paths to find the nearest common ancestor
-  getCommonAncestorPath(n1, n2) {
+  // return the path to the node containing both cursor positions, or false
+  getPathContaining(c1, c2) {
+    let n1 = this.getNodeContaining(c1), n2 = this.getNodeContaining(c2);
     if(!n1 || !n2) return false;
+    // false positive: an insertion (c1=c2) that touches n.from or n.to
+    if((comparePos(c2, c1) == 0) && ((comparePos(n1.from, c1) == 0) || (comparePos(n1.to, c1) == 0))) {
+      return this.getNodeParent(n1) && this.getNodeParent(n1).path; // Return the parent, if there is one
+    }
     return commonSubstring(n1.path, n2.path);
   }
   // return the next node or false
@@ -199,7 +215,7 @@ export class AST {
   getNodeParent(node) {
     let path = node.path.split(",");
     path.pop();
-    return this.nodePathMap.get(path.join(",")); 
+    return this.nodePathMap.get(path.join(",")) || ""; 
   }
   // return the first child, if it exists
   getNodeFirstChild(node) {
@@ -249,9 +265,9 @@ export class ASTNode {
 
     // Every node also has an `options` attribute, which is just an open ended
     // object that you can put whatever you want in it. This is useful if you'd
-    // like to persist information from your parser about a particular node, all
+    // like to persist information from your parse about a particular node, all
     // the way through to the renderer. For example, when parsing wescheme code,
-    // human readable aria labels are generated by the parser, stored in the
+    // human readable aria labels are generated by the parse, stored in the
     // options object, and then rendered in the renderers.
     this.options = options;
 
