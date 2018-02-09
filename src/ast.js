@@ -129,35 +129,44 @@ export class AST {
 
     // for each pathChange, adjust the paths of all the nodes in the AST
     pathChanges.forEach(change => {
-      let changeArray = change.atNode.split(',').map(Number);        
+      let changeArray = change.atNode.split(',').map(Number);
+      let changeParent = changeArray.slice(0,-1), changeParentStr = changeParent.join(',');
       // TODO(Emmanuel): only adjust later nodes
       oldAST.nodeIdMap.forEach(node => {
         let pathArray = node.path.split(',').map(Number);
+        let compareStr = pathArray.slice(0, changeParent.length).join(',');
         let changeDepth = changeArray.length-1, changeIdx = changeArray[changeDepth];
         // return nodes that are above or before the edit, unchanged
         if(pathArray.length < changeArray.length || pathArray[changeDepth] < changeIdx) return;
+        // return nodes that have no ancestors effected by the change, unchanged
+        if(compareStr !== changeParentStr) return;
         // siblings (and their children) that fall into the deleted range should have their
         // nodes and elements set to the empty string, and their parent marked as dirty
         if((change.shift < 0) && (pathArray[changeDepth] < changeIdx-change.shift)) {
           node.el = node.path = ""; pathArray.pop();
           let dirty  = newAST.getNodeByPath(pathArray.join(','));
-          if(dirty) newAST.dirtyNodes.add(dirty);
+          if(dirty) { newAST.dirtyNodes.add(dirty); }
         }
         // update the <ith> entry of post-nodeAt siblings (and their children) by +shift
-        pathArray[changeDepth] += change.shift;
-        node.path = pathArray.join(',');
+        if(pathArray[changeDepth] < changeIdx-change.shift) {
+          pathArray[changeDepth] += change.shift;
+          node.path = pathArray.join(',');
+        }
       });
     });
     // copy over the DOM nodes we haven't changed, and update their IDs to match
     oldAST.nodeIdMap.forEach(n => {
       let newNode = newAST.getNodeByPath(n.path);
-      if(n.el && newNode) { n.el.id='block-node-'+newNode.id; newNode.el = n.el; }
+      if(n.el && newNode) { n.el.id='block-node-'+newNode.id; newNode.el = n.el; 
+      }
     });
     // Set parent to dirty if there's no element. If we're at a root, just use the root itself.
     newAST.nodeIdMap.forEach(n => {
-      if(n.el) return;
+      if(n.el) { return; }
       newAST.dirtyNodes.add(newAST.getNodeParent(n) || n);
     });
+    // TODO(Emmanuel): filter dirtyNodes to prevert rendering children or a parent that's already rendered
+    console.log(newAST.dirtyNodes);
     return newAST;
   }
 
