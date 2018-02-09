@@ -3,38 +3,26 @@ const uuidv4 = require('uuid/v4');
 function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
-function posWithinNode(pos, node){
-  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) >= 0);
-}
-// Compute the position of the end of a change (its 'to' property
-// refers to the pre-change end).
-export function changeEnd(change) {
-  if (!change.text) return change.to
-  let lastText = change.text[change.text.length-1];
-  return {line: change.from.line + change.text.length - 1,
-          ch: lastText.length + (change.text.length == 1 ? change.from.ch : 0)};
+// Compute the position of the end of a change (its 'to' property refers to the pre-change end).
+// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
+function changeEnd({from, to, text}) {
+  if (!text) return to;
+  let lastText = text[text.length-1];
+  return {line: from.line+text.length-1, ch: lastText.length+(text.length==1 ? from.ch : 0)};
 }
 
-// Adjust a position to refer to the post-change position of the
-// same text, or the end of the change if the change covers it.
+// Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
+// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
 function adjustForChange(pos, change, from) {
-  if (comparePos(pos, change.from) < 0) return pos
-  if (comparePos(pos, change.from) == 0 && from) return pos // node.from doesn't change if it falls on change.from
-  if (comparePos(pos, change.to) <= 0) return changeEnd(change)
-
-  let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch
-  if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch
+  if (comparePos(pos, change.from) < 0)           return pos;
+  if (comparePos(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
+  if (comparePos(pos, change.to) <= 0)            return changeEnd(change);
+  let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
+  if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
   return {line: line, ch: ch};
 }
-// Cast an object to the appropriate ASTNode, and traverse its children
-// REVISIT: should we be using Object.setPrototypeOf() here? And good god, eval()?!?
-function castToASTNode(o) {
-  if(o.type !== o.constructor.name.toLowerCase()) {
-    let desiredType = o.type.charAt(0).toUpperCase() + o.type.slice(1);
-    o.__proto__ = eval(desiredType).prototype;              // cast the node itself
-    if(o.options.comment) castToASTNode(o.options.comment); // cast the comment, if it exists
-  }
-  [...o].slice(1).forEach(castToASTNode);                   // traverse children
+function posWithinNode(pos, node){
+  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) >= 0);
 }
 
 function enumerateList(lst, level) {
@@ -119,7 +107,8 @@ export class AST {
       if(endWS)   { to.ch   = to.ch   - endWS[0].length;   }
       let insertedSiblings = parse( text.join('\n')  ).rootNodes.length;
       let removedSiblings  = parse(removed.join('\n')).rootNodes.length;
-
+      // if there's no path to a containing node, or the path was a false-positive 
+      // insert-at-boundary, search for the previous sibling
       let path = oldAST.getPathContaining(from, to);
       if(!path || ((nodeAtPath = oldAST.getNodeByPath(path)) &&
         comparePos(nodeAtPath.from, from) !== 0 && comparePos(nodeAtPath.to, to) !== 0)) {
@@ -147,7 +136,7 @@ export class AST {
         let changeDepth = changeArray.length-1, changeIdx = changeArray[changeDepth];
         // return nodes that are above or before the edit, unchanged
         if(pathArray.length < changeArray.length || pathArray[changeDepth] < changeIdx) return;
-        // siblings (and their children) that fall into the deleted ranged, should have their
+        // siblings (and their children) that fall into the deleted range should have their
         // nodes and elements set to the empty string, and their parent marked as dirty
         if((change.shift < 0) && (pathArray[changeDepth] < changeIdx-change.shift)) {
           node.el = node.path = ""; pathArray.pop();

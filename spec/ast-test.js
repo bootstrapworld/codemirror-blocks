@@ -194,7 +194,6 @@ describe("AST Patching", function() {
 
   it('42 (+ 1 (* 2 3)) "hello" -> 41 (+ 1 (* 2 3)) "hello"', function() {
     let newCode = '41\n\n(+ 1 (* 2 3))\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: ["41"], removed: ["42"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
     expect(this.ast.rootNodes.length).toBe(3);
@@ -205,7 +204,6 @@ describe("AST Patching", function() {
 
   it('42 (+ 1 (* 2 3)) "hello" -> 42 (if a b c) "hello"', function() {
     let newCode = '42\n\n(if a b c)\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change = { from: {line: 2, ch:0}, to: {line:2, ch:13}, text: ["(if a b c)"], removed: ["(+ 1 (* 2 3))"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
     expect(this.ast.rootNodes.length).toBe(3);
@@ -217,7 +215,6 @@ describe("AST Patching", function() {
 
   it('42 (+ 1 (* 2 3)) "hello" -> 42 (foo bar baz) "hello"', function() {
     let newCode = '42\n\n(foo bar baz)\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change = { from: {line: 2, ch:0}, to: {line:2, ch:13}, text: ["(foo bar baz)"], removed: ["(+ 1 (* 2 3))"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
     expect(this.ast.rootNodes.length).toBe(3);
@@ -229,7 +226,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" --> 42  (+ 1 (* 1 2 3))  ', function() {
     let newCode = '42\n\n(+ 1 (* 1 2 3))\n\n';
-    var newAST = this.parser.parse(newCode);
     let change = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
     console.log(this.ast);
@@ -240,7 +236,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 )  "hello"', function() {
     var newCode = '42\n\n(+ 1 )\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
     expect(this.ast.rootNodes.length).toBe(3);
@@ -253,7 +248,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" -> (+ 1 (* 2 3)) 42 "hello"', function() {
     var newCode = '\n\n(+ 1 (* 2 3))\n42\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 3, ch:0}, to: {line:3, ch:0}, text: ["42"], removed: [""] };
     let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
@@ -267,7 +261,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" -> 42 "hello" (+ 1 (* 2 3))', function() {
     var newCode = '42\n"hello"\n(+ 1 (* 3 2))\n\n';
-    var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
     let change2 = { from: {line: 1, ch:0}, to: {line:1, ch:0}, text: ['"hello"'], removed: [""] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
@@ -279,7 +272,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 (* 3 2))  "hello"', function() {
     var newCode = '42\n\n(+ 1 (* 3 2))\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 2, ch:10}, to: {line:2, ch:11}, text: [""], removed: ["3"] };
     let change2 = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["3 "], removed: [""] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
@@ -293,7 +285,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ (* 2 3) 1)  "hello"', function() {
     var newCode = '42\n\n(+ (* 2 3) 1)\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
     let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:3}, text: ["(* 2 3)"], removed: [""] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
@@ -307,7 +298,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 2 (* 3))  "hello"', function() {
     var newCode = '42\n\n(+ 1 2 (* 3))\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:9}, text: [""], removed: ["2"] };
     let change2 = { from: {line: 2, ch:4}, to: {line:2, ch:4}, text: [" 2"], removed: [""] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
@@ -324,7 +314,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ (* 1 2 3))  "hello"', function() {
     var newCode = '42\n\n(+  (* 1 2 3))\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["1 "], removed: [""] };
     let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:4}, text: [""], removed: ["1"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
@@ -339,7 +328,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 ) (* 2 3)  "hello"', function() {
     var newCode = '42\n\n(+ 1 ) (* 2 3)\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 2, ch:13}, to: {line:2, ch:13}, text: [" (* 2 3)"], removed: [""] };
     let change2 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
@@ -357,7 +345,6 @@ describe("AST Patching", function() {
 
   it('42  (+ 1 (* 2 3))  "hello" -> 42  (* 2 3) (+ 1 )  "hello"', function() {
     var newCode = '42\n\n(* 2 3) (+ 1 )\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
     let change2 = { from: {line: 2, ch:0, sticky: "after"}, to: {line:2, ch:0, sticky: "after"}, text: ["(* 2 3) "], removed: [""] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
@@ -376,7 +363,6 @@ describe("AST Patching", function() {
   it('(+ 1 (* 3 5 (- 2 9))) -> (+ (* 3 5 (- 1 2 9)))', function() {
     this.ast = this.parser.parse('(+ 1 (* 3 5 (- 2 9)))');
     var newCode = '(+ (* 3 5 (- 1 2 9)))';
-    var newAST = this.parser.parse(newCode);
     let change1 = { from: {line: 0, ch:15}, to: {line:0, ch:15}, text: ["1 "], removed: [""] };
     let change2 = { from: {line: 0, ch:3}, to: {line:0, ch:4}, text: [""], removed: ["1"] };
     this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
