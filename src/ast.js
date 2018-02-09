@@ -165,8 +165,11 @@ export class AST {
       if(n.el) { return; }
       newAST.dirtyNodes.add(newAST.getNodeParent(n) || n);
     });
-    // TODO(Emmanuel): filter dirtyNodes to prevert rendering children or a parent that's already rendered
-    console.log(newAST.dirtyNodes);
+    // Ensure that no dirty node is the ancestor of another dirty node
+    let dirty = [...newAST.dirtyNodes].sort((a,b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
+    dirty.forEach((n1, i) => {
+      dirty.slice(i+1).forEach(n2 => { if(n2.path.includes(n1.path)) newAST.dirtyNodes.delete(n2); });
+    });
     return newAST;
   }
 
