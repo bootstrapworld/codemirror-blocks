@@ -391,8 +391,6 @@ describe('The CodeMirrorBlocks Class', function() {
         });
 
         it('should remove multiple selected nodes on cut', function(done) {
-          this.literal.el.dispatchEvent(click());            // activate the node,
-          this.literal.el.dispatchEvent(keydown(SPACE_KEY)); // then select it
           this.literal.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
           this.literal2.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true}));
           expect(this.blocks.selectedNodes.size).toBe(2);
