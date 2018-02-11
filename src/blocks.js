@@ -332,7 +332,7 @@ export default class CodeMirrorBlocks {
       // batch-apply the changes, then re-render dirty nodes
       this.cm.operation(() => {
         this.ast = this.ast.patch(s => this.parser.parse(s), this.cm.getValue(), changes);
-        this.ast.dirtyNodes.forEach(n => this.renderer.render(n));
+        this.ast.dirtyNodes.forEach(n => this.renderer.render(n)); 
       });
       // reset the cursor
       setTimeout(() => {
