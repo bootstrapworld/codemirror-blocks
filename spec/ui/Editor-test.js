@@ -1,5 +1,5 @@
 import React from 'react';
-import TestUtils from 'react-addons-test-utils';
+import TestUtils from 'react-dom/test-utils';
 
 import Toolbar from 'codemirror-blocks/ui/Toolbar';
 import Editor from 'codemirror-blocks/ui/Editor';
