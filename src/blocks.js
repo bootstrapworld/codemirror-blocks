@@ -328,22 +328,27 @@ export default class CodeMirrorBlocks {
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render(changes) {
     let start = Date.now();
-    try{
-      // batch-apply the changes, then re-render dirty nodes
-      this.cm.operation(() => {
-        this.ast = this.ast.patch(s => this.parser.parse(s), this.cm.getValue(), changes);
+    let newAST = this.parser.parse(this.cm.getValue());
+    this.cm.operation(() => {
+      // try to patch the AST, and conservatively mark only changed nodes as dirty
+      try{
+        this.ast = this.ast.patch(s => this.parser.parse(s), newAST, changes);
+      // patching failed! log an error, and treat *all* nodes as dirty
+      } catch(e) {
+        console.error('PATCHING ERROR!!', changes, e);
+        this.ast = newAST;
+        this.ast.dirtyNodes = this.ast.rootNodes;
+      // render all the dirty nodes, and reset the cursor
+      } finally {
         this.ast.dirtyNodes.forEach(n => this.renderer.render(n)); 
-      });
-      // reset the cursor
-      setTimeout(() => {
-        let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
-        if(node && node.el) { node.el.click(); }
-        else { this.cm.focus(); }
-        delete this.ast.dirty; // remove dirty nodeset, now that they've been rendered
-      }, 100);
-    } catch (e){
-      console.error(e);
-    }
+        setTimeout(() => {
+          let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
+          if(node && node.el) { node.el.click(); }
+          else { this.cm.focus(); }
+          delete this.ast.dirty; // remove dirty nodeset, now that they've been rendered
+        }, 100);
+      }
+    });
     ui.renderToolbarInto(this);
     console.log('re-render time: '+(Date.now() - start)/1000 + 'ms');
   }
