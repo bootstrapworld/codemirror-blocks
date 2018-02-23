@@ -96,9 +96,10 @@ export class AST {
   // produce the new AST, preserving all the unchanged DOM nodes from the old AST
   patch(parse, newAST, CMchanges) {
     let oldAST = this, dirtyNodes = new Set();
+    console.log(JSON.parse(JSON.stringify(CMchanges)));
 
-    // Given a CM change, compute sibling shifts at the path level, then update all the
-    // text positions in the AST to reflect the post-change coordinates
+    // For each CM change: (1) compute a sibling shift at the relevant path and 
+    // (2) update the text posns in the AST to reflect the post-change coordinates
     let pathChanges = CMchanges.map(change => {
       let {from, to, text, removed} = change;
       // trim whitespace from change object, and figure out how many siblings are added/removed
@@ -123,21 +124,21 @@ export class AST {
       return {path: path, added: insertedSiblings, removed: removedSiblings };
     });
 
-    // for each pathChange, adjust the paths of all the nodes in the AST
+    // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
     pathChanges.forEach(change => {
       let shift = change.added - change.removed;
-      if(shift == 0) { oldAST.getNodeByPath(change.path).el = null; return; }
+      if(shift == 0) { oldAST.nodeIdMap.delete(oldAST.getNodeByPath(change.path).id); return; }
       let changeArray = change.path.split(',').map(Number);
       let changeDepth = changeArray.length-1, changeIdx = changeArray[changeDepth];
-      oldAST.nodeIdMap.forEach(node => {
+      oldAST.nodeIdMap.forEach((node, id) => {
         let pathArray = node.path.split(',').map(Number);
         // any path shorter or lexicographically less than the changePath is unaffected
         if((node.path.length < change.path.length) || (node.path < change.path)) return;
-        // Set deleted paths and DOM elts to null. If they have parents, mark them as dirty
+        // Delete removed node from nodeIdMap. Mark its parent as dirty, if it has one
         if(pathArray[changeDepth] < (changeIdx + change.removed)) {
           let parent  = oldAST.getNodeParent(node);
           if(parent) { dirtyNodes.add(parent); }
-          node.el = node.path = null;
+          oldAST.nodeIdMap.delete(id);
         }
         // update the path of other post-change nodes by +shift
         pathArray[changeDepth] += shift;
@@ -147,7 +148,7 @@ export class AST {
     // copy over the DOM elt for unchanged nodes, and update their IDs to match
     oldAST.nodeIdMap.forEach(n => {
       let newNode = newAST.getNodeByPath(n.path);
-      if(n.el && newNode) { n.el.id = 'block-node-' + newNode.id; newNode.el = n.el; }
+      if(newNode) { n.el.id = 'block-node-' + newNode.id; newNode.el = n.el; }
     });
     // Set parent to dirty if there's no DOM elt. If it's a root, just use the node itself.
     newAST.nodeIdMap.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
@@ -157,7 +158,6 @@ export class AST {
       dirty.slice(i+1).forEach(n2 => { if(n2.path.includes(n1.path)) dirtyNodes.delete(n2); });
     });
     newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)));
-    console.log(newAST, newAST.dirtyNodes, 'dirty nodes');
     return newAST;
   }
 
