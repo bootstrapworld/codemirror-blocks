@@ -43,7 +43,7 @@ function commonSubstring(s1, s2) {
   return s1.substring(0, i) || false; 
 }
 
-export const descDepth = 1;
+export const desdepth = 1;
 
 // This is the root of the *Abstract Syntax Tree*.  parse implementations are
 // required to spit out an `AST` instance.
@@ -108,10 +108,10 @@ export class AST {
       if(endWS)   { to.ch   -= endWS[0].length;   }
       let insertedSiblings = parse( text.join('\n')  ).rootNodes.length;
       let removedSiblings  = parse(removed.join('\n')).rootNodes.length;
-      // if there's no path, or change isn't a replacement, search for the previous sibling
       let path = oldAST.getCommonAncestor(from, to), node = oldAST.getNodeByPath(path);
-      let notReplacement = node && !(comparePos(node.from, from)==0 && comparePos(node.to, to)==0);
-      if(!path || notReplacement) {
+      let replacing = node && (comparePos(node.from, from)==0 && comparePos(node.to, to)==0);
+      // if there's no path, or we're not replacing, search for the previous sibling
+      if(!path || !replacing) {
         let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
         let spliceIndex = siblings.findIndex(n => comparePos(from, n.from) <= 0);
         if(spliceIndex == -1) spliceIndex = siblings.length;
@@ -127,36 +127,30 @@ export class AST {
     // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
     pathChanges.forEach(change => {
       let shift = change.added - change.removed;
-      if(shift == 0) { oldAST.nodeIdMap.delete(oldAST.getNodeByPath(change.path).id); return; }
-      let changeArray = change.path.split(',').map(Number);
-      let changeDepth = changeArray.length-1, changeIdx = changeArray[changeDepth];
-      oldAST.nodeIdMap.forEach((node, id) => {
+      if(shift == 0) { dirtyNodes.add(oldAST.nodePathMap.get(change.path)); return; }
+      let changeArray = change.path.split(',').map(Number), depth = changeArray.length-1;
+      oldAST.nodePathMap.forEach((node, path) => {
         let pathArray = node.path.split(',').map(Number);
         // any path shorter or lexicographically less than the changePath is unaffected
-        if((node.path.length < change.path.length) || (node.path < change.path)) return;
-        // Delete removed node from nodeIdMap. Mark its parent as dirty, if it has one
-        if(pathArray[changeDepth] < (changeIdx + change.removed)) {
-          let parent  = oldAST.getNodeParent(node);
-          if(parent) { dirtyNodes.add(parent); }
-          oldAST.nodeIdMap.delete(id);
+        if((pathArray.length < changeArray.length) || (path < change.path)) return;
+        if(pathArray[depth] < (changeArray[depth] + change.removed)) {  // DELETING
+          let parent  = oldAST.getNodeParent(node);                     // Is there a parent?
+          if(parent) { dirtyNodes.add(parent); }                        // If so, mark as dirty
+        } else {                                                    
+          pathArray[depth] += shift;                                    // SHIFTING
+          node.path = pathArray.join(',');                              // Adjust path
         }
-        // update the path of other post-change nodes by +shift
-        pathArray[changeDepth] += shift;
-        node.path = pathArray.join(',');
       });
     });
-    // copy over the DOM elt for unchanged nodes, and update their IDs to match
-    oldAST.nodeIdMap.forEach(n => {
-      let newNode = newAST.getNodeByPath(n.path);
-      if(newNode) { n.el.id = 'block-node-' + newNode.id; newNode.el = n.el; }
+    // If we have a DOM elt, use it and update the id. Mark parents of nodes with DOM elts as dirty
+    oldAST.nodePathMap.forEach(n => {
+      let newNode = newAST.nodePathMap.get(n.path);
+      if(newNode) { newNode.el = n.el; n.el.id = 'block-node-' + newNode.id; }
     });
-    // Set parent to dirty if there's no DOM elt. If it's a root, just use the node itself.
-    newAST.nodeIdMap.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
+    newAST.nodePathMap.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
     // Ensure that no dirty node is the ancestor of another dirty node
     let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
-    dirty.forEach((n1, i) => {
-      dirty.slice(i+1).forEach(n2 => { if(n2.path.includes(n1.path)) dirtyNodes.delete(n2); });
-    });
+    dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
     newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)));
     return newAST;
   }
@@ -284,7 +278,7 @@ export class Unknown extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level']- level) >= desdepth) return this.options['aria-label'];
     return `an unknown expression with ${pluralize("children", this.elts)} `+ 
       this.elts.map((e, i, elts)  => (elts.length>1? (i+1) + ": " : "")+ e.toDescription(level)).join(", ");
   }
@@ -316,7 +310,7 @@ export class Expression extends ASTNode {
       this.args.map((a, i, args)  => (args.length>1? (i+1) + ": " : "")+ a.toDescription(level)).join(", ");
     }
     // if we've bottomed out, use the aria label
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     // if we're in between, use "f of A, B, C" format
     else return `${this.func.toDescription()} of `+ this.args.map(a  => a.toDescription(level)).join(", ");
       
@@ -342,7 +336,7 @@ export class IdentifierList extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     return enumerateList(this.ids, level);
   }
 
@@ -365,7 +359,7 @@ export class StructDefinition extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     return `define ${this.name.toDescription(level)} to be a structure with
             ${this.fields.toDescription(level)}`;
   }
@@ -383,7 +377,7 @@ export class VariableDefinition extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:";
     return `define ${this.name} to be ${insert} ${this.body.toDescription(level)}`;
   }
@@ -413,7 +407,7 @@ export class LambdaExpression extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     return `an anonymous function of ${pluralize("argument", this.args.ids)}: 
             ${this.args.toDescription(level)}, with body:
             ${this.body.toDescription(level)}`;
@@ -440,7 +434,7 @@ export class FunctionDefinition extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     return `define ${this.name} to be a function of 
             ${this.params.toDescription(level)}, with body:
             ${this.body.toDescription(level)}`;
@@ -467,7 +461,7 @@ export class CondClause extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     return `condition: if ${this.testExpr.toDescription(level)}, then, ${this.thenExprs.map(te => te.toDescription(level))}`;
   }
 
@@ -490,7 +484,7 @@ export class CondExpression extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     return `a conditional expression with ${pluralize("condition", this.clauses)}: 
             ${this.clauses.map(c => c.toDescription(level))}`;
   }
@@ -517,7 +511,7 @@ export class IfExpression extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     return `an if expression: if ${this.testExpr.toDescription(level)}, then ${this.thenExpr.toDescription(level)} `+
             `else ${this.elseExpr.toDescription(level)}`;
   }
@@ -589,7 +583,7 @@ export class Sequence extends ASTNode {
   }
 
   toDescription(level) {
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this['aria-level'] - level) >= desdepth) return this.options['aria-label'];
     return `a sequence containing ${enumerateList(this.exprs, level)}`;
   }
 
