@@ -1,22 +1,29 @@
 const uuidv4 = require('uuid/v4');
-var jsonpatch = require('fast-json-patch');
 
 function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
-function posWithinNode(pos, node){
-  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) >= 0);
+// Compute the position of the end of a change (its 'to' property refers to the pre-change end).
+// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
+function changeEnd({from, to, text}) {
+  if (!text) return to;
+  let lastText = text[text.length-1];
+  return {line: from.line+text.length-1, ch: lastText.length+(text.length==1 ? from.ch : 0)};
 }
 
-// Cast an object to the appropriate ASTNode, and traverse its children
-// REVISIT: should we be using Object.setPrototypeOf() here? And good god, eval()?!?
-function castToASTNode(o) {
-  if(o.type !== o.constructor.name.toLowerCase()) {
-    let desiredType = o.type.charAt(0).toUpperCase() + o.type.slice(1);
-    o.__proto__ = eval(desiredType).prototype;              // cast the node itself
-    if(o.options.comment) castToASTNode(o.options.comment); // cast the comment, if it exists
-  }
-  [...o].slice(1).forEach(castToASTNode);                   // traverse children
+// Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
+// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
+function adjustForChange(pos, change, from) {
+  if (comparePos(pos, change.from) < 0)           return pos;
+  if (comparePos(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
+  if (comparePos(pos, change.to) <= 0)            return changeEnd(change);
+  let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
+  if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
+  return {line: line, ch: ch};
+}
+function posWithinNode(pos, node){
+  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) > 0)
+    ||   (comparePos(node.from, pos) < 0) && (comparePos(node.to, pos) >= 0);
 }
 
 function enumerateList(lst, level) {
@@ -29,10 +36,16 @@ export function pluralize(noun, set) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
+function commonSubstring(s1, s2) {
+  if(!s1 || !s2) return false;
+  let i = 0, len = Math.min(s1.length, s2.length);
+  while(i<len && s1.charAt(i) == s2.charAt(i)){ i++; } 
+  return s1.substring(0, i) || false; 
+}
+
 export const descDepth = 1;
 
-
-// This is the root of the *Abstract Syntax Tree*.  Parser implementations are
+// This is the root of the *Abstract Syntax Tree*.  parse implementations are
 // required to spit out an `AST` instance.
 export class AST {
   constructor(rootNodes) {
@@ -51,6 +64,10 @@ export class AST {
 
     this.lastNode = null;
     this.annotateNodes();
+  }
+
+  toString() {
+    return this.rootNodes.map(r => r.toString()).join('\n');
   }
 
   // annotateNodes : ASTNodes ASTNode -> Void
@@ -74,24 +91,72 @@ export class AST {
     });
   } 
 
-  // patch : AST ChangeObj -> AST
-  // given a new AST, return a new one patched from the current one
-  // taking care to preserve all rendered DOM elements, though!
-  patch(newAST, {from, to, text}) {
-    let fromNode      = this.getRootNodesTouching(from, from)[0]; // is there a containing rootNode?
-    let fromPos       = fromNode? fromNode.from : from;           // if so, use that node's .from
-    var insertedToPos = {line: from.line+text.length-1, ch: text[text.length-1].length+((text.length==1)? from.ch : 0)};
-    // get an array of removed roots and inserted roots
-    // compute splice point, do the splice, and patch from/to posns, aria attributes, etc
-    let removedRoots  = this.getRootNodesTouching(from, to);
-    let insertedRoots = newAST.getRootNodesTouching(fromPos, insertedToPos).map(r => {r.dirty=true; return r;});
-    let splicePoint   = this.rootNodes.findIndex(r => comparePos(fromPos, r.from) <= 0);
-    this.rootNodes.splice(splicePoint, removedRoots.length, ...insertedRoots);
-    var patches = jsonpatch.compare(this.rootNodes, newAST.rootNodes);
-    // only update aria attributes and position fields
-    patches = patches.filter(p => ['aria-level','aria-setsize','aria-posinset','line','ch'].includes(p.path.split('/').pop()));
-    jsonpatch.applyPatch(this.rootNodes, patches, false); // false = don't validate patches
-    return new AST(this.rootNodes);
+  // patch : Parser, String, [ChangeObjs] -> AST
+  // FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
+  // produce the new AST, preserving all the unchanged DOM nodes from the old AST
+  patch(parse, newAST, CMchanges) {
+    let oldAST = this, dirtyNodes = new Set();
+    console.log(JSON.parse(JSON.stringify(CMchanges)));
+
+    // For each CM change: (1) compute a sibling shift at the relevant path and 
+    // (2) update the text posns in the AST to reflect the post-change coordinates
+    let pathChanges = CMchanges.map(change => {
+      let {from, to, text, removed} = change;
+      // trim whitespace from change object, and figure out how many siblings are added/removed
+      let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
+      if(startWS) { from.ch += startWS[0].length; }
+      if(endWS)   { to.ch   -= endWS[0].length;   }
+      let insertedSiblings = parse( text.join('\n')  ).rootNodes.length;
+      let removedSiblings  = parse(removed.join('\n')).rootNodes.length;
+      let path = oldAST.getCommonAncestor(from, to), node = oldAST.getNodeByPath(path);
+      let replacing = node && (comparePos(node.from, from)==0 && comparePos(node.to, to)==0);
+      // if there's no path, or we're not replacing, search for the previous sibling
+      if(!path || !replacing) {
+        let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
+        let spliceIndex = siblings.findIndex(n => comparePos(from, n.from) <= 0);
+        if(spliceIndex == -1) spliceIndex = siblings.length;
+        path = (path ? path+',' : "") + spliceIndex;
+      }
+      oldAST.nodeIdMap.forEach(n => {
+        n.from = adjustForChange(n.from, change, true );
+        n.to   = adjustForChange(n.to,   change, false);
+      });
+      return {path: path, added: insertedSiblings, removed: removedSiblings };
+    });
+
+    // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
+    pathChanges.forEach(change => {
+      let shift = change.added - change.removed;
+      if(shift == 0) { oldAST.nodeIdMap.delete(oldAST.getNodeByPath(change.path).id); return; }
+      let changeArray = change.path.split(',').map(Number);
+      let changeDepth = changeArray.length-1, changeIdx = changeArray[changeDepth];
+      oldAST.nodeIdMap.forEach((node, id) => {
+        let pathArray = node.path.split(',').map(Number);
+        // any path shorter or lexicographically less than the changePath is unaffected
+        if((node.path.length < change.path.length) || (node.path < change.path)) return;
+        // Delete removed node from nodeIdMap. Mark its parent as dirty, if it has one
+        if(pathArray[changeDepth] < (changeIdx + change.removed)) {
+          let parent  = oldAST.getNodeParent(node);
+          if(parent) { dirtyNodes.add(parent); }
+          oldAST.nodeIdMap.delete(id);
+        }
+        // update the path of other post-change nodes by +shift
+        pathArray[changeDepth] += shift;
+        node.path = pathArray.join(',');
+      });
+    });
+    // copy over the DOM elt for unchanged nodes, and update their IDs to match
+    oldAST.nodeIdMap.forEach(n => {
+      let newNode = newAST.getNodeByPath(n.path);
+      if(newNode) { n.el.id = 'block-node-' + newNode.id; newNode.el = n.el; }
+    });
+    // If we have a DOM elt, use it and update the id. Mark parents of nodes with DOM elts as dirty
+    newAST.nodeIdMap.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
+    // Ensure that no dirty node is the ancestor of another dirty node
+    let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
+    dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
+    newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)));
+    return newAST;
   }
 
   getNodeById(id) {
@@ -100,7 +165,16 @@ export class AST {
   getNodeByPath(path) {
     return this.nodePathMap.get(path);
   }
-
+  // return the path to the node containing both cursor positions, or false
+  getCommonAncestor(c1, c2) {
+    let n1 = this.getNodeContaining(c1), n2 = this.getNodeContaining(c2);
+    if(!n1 || !n2) return false;
+    // false positive: an insertion (c1=c2) that touches n.from or n.to
+    if((comparePos(c2, c1) == 0) && ((comparePos(n1.from, c1) == 0) || (comparePos(n1.to, c1) == 0))) {
+      return this.getNodeParent(n1) && this.getNodeParent(n1).path; // Return the parent, if there is one
+    }
+    return commonSubstring(n1.path, n2.path);
+  }
   // return the next node or false
   getNodeAfter(selection) {
     return this.nextNodeMap.get(selection)
@@ -128,7 +202,7 @@ export class AST {
   getNodeParent(node) {
     let path = node.path.split(",");
     path.pop();
-    return this.nodePathMap.get(path.join(",")); 
+    return this.nodePathMap.get(path.join(",")) || ""; 
   }
   // return the first child, if it exists
   getNodeFirstChild(node) {
@@ -178,9 +252,9 @@ export class ASTNode {
 
     // Every node also has an `options` attribute, which is just an open ended
     // object that you can put whatever you want in it. This is useful if you'd
-    // like to persist information from your parser about a particular node, all
+    // like to persist information from your parse about a particular node, all
     // the way through to the renderer. For example, when parsing wescheme code,
-    // human readable aria labels are generated by the parser, stored in the
+    // human readable aria labels are generated by the parse, stored in the
     // options object, and then rendered in the renderers.
     this.options = options;
 

@@ -185,230 +185,428 @@ describe("The AST Class", function() {
   });
 });
 
-/*
+
 describe("AST Patching", function() {
   beforeEach(function() {
     this.parser = new WeschemeParser();
     this.ast = this.parser.parse('42\n\n(+ 1 (* 2 3))\n\n"hello"');
+    this.ast.nodeIdMap.forEach(n => n.el = {key: "dummy"}); // create dummy DOM nodes
   });
 
-  it('42 (+ 1 (* 2 3)) "hello" -> 41 (+ 1 (* 2 3)) "hello"', function() {
-    let newCode = '41\n\n(+ 1 (* 2 3))\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: ["41"], removed: ["42"] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[0].value).toBe("41");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
+  describe(", when replacing,", function() {
+
+    it('Replace 1 root literal with another', function() {
+      let newCode = '41\n\n(+ 1 (* 2 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: ["41"], removed: ["42"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[0].value).toBe("41");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('Replace 1 root literal with multiple nodes', function() {
+      let newCode = '(+ 1 2) maya\n\n(+ 1 (* 2 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: ["(+ 1 2) maya"], removed: ["42"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(4);
+      expect(this.ast.rootNodes[0].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("literal");
+      expect(this.ast.rootNodes[1].value).toBe("maya");
+      expect(this.ast.rootNodes[2].type).toBe("expression");
+      expect(this.ast.rootNodes[3].type).toBe("literal");
+      expect(this.ast.dirtyNodes.size).toBe(2);
+    });
+
+    it('replace 1 non-literal root node with another', function() {
+      let newCode = '42\n\n(if a b c)\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:0}, to: {line:2, ch:13}, text: ["(if a b c)"], removed: ["(+ 1 (* 2 3))"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[1].type).toBe("ifExpression");
+      expect(this.ast.rootNodes[1].testExpr.value).toBe("a");
+      expect(this.ast.rootNodes[1].thenExpr.value).toBe("b");
+      expect(this.ast.rootNodes[1].elseExpr.value).toBe("c");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('replace 1 root node with another of a different shape', function() {
+      let newCode = '42\n\n(foo bar baz)\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:0}, to: {line:2, ch:13}, text: ["(foo bar baz)"], removed: ["(+ 1 (* 2 3))"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].func.value).toBe("foo");
+      expect(this.ast.rootNodes[1].args.length).toBe(2);
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('replace 1 child with multiple nodes', function() {
+      let newCode = '42\n\n(+ 1 (* (+ 1 2) maya 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:8}, to: {line:2, ch:9}, text: ["(+ 1 2) maya"], removed: ["2"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[1].args[0].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[1].args[1].value).toBe("maya");
+      expect(this.ast.rootNodes[2].type).toBe("literal");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
   });
 
-  it('42 (+ 1 (* 2 3)) "hello" -> 41 (foo bar baz) "hello"', function() {
-    let newCode = '41\n\n(foo bar baz)\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change = { from: {line: 2, ch:0}, to: {line:2, ch:13}, text: ["(foo bar baz)"], removed: ["(+ 1 (* 2 3)))"] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[1].func.value).toBe("foo");
-    expect(this.ast.rootNodes[1].args.length).toBe(2);
+  describe(", when deleting,", function() {
+
+    it('delete 1 root node', function() {
+      let newCode = '42\n\n(+ 1 (* 2 3))\n\n';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      console.log(this.ast);
+      expect(this.ast.rootNodes.length).toBe(2);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.dirtyNodes.size).toBe(0);
+    });
+
+    it('delete 1 child node', function() {
+      var newCode = '42\n\n(+ 1 )\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[2].type).toBe("literal");
+      expect(this.ast.rootNodes[1].args.length).toBe(1);
+      expect(this.ast.rootNodes[1].args[0].value).toBe("1");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('delete 2 non-adjacent roots', function() {
+      var newCode = '\n\n(+ 1 (* 2 3))\n\n';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ["hello"] };
+      let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(1);
+      expect(this.ast.rootNodes[0].type).toBe("expression");
+      expect(this.ast.rootNodes[0].args.length).toBe(2);
+      expect(this.ast.rootNodes[0].args[0].value).toBe("1");
+      expect(this.ast.dirtyNodes.size).toBe(0);
+    });
+
+    it('delete a root and a child node', function() {
+      var newCode = '\n\n(+ 1 (*  3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:9}, text: [""], removed: ["2"] };
+      let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(2);
+      expect(this.ast.rootNodes[0].type).toBe("expression");
+      expect(this.ast.rootNodes[0].args.length).toBe(2);
+      expect(this.ast.rootNodes[0].args[0].value).toBe("1");
+      expect(this.ast.rootNodes[1].type).toBe("literal");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('delete 2 child nodes', function() {
+      var newCode = '42\n\n(+ 1 (*  ))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 2, ch:10}, to: {line:2, ch:11}, text: [""], removed: ["3"] };
+      let change2 = { from: {line: 2, ch: 8}, to: {line:2, ch: 9}, text: [""], removed: ["2"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[2].type).toBe("literal");
+      expect(this.ast.rootNodes[1].args[1].args.length).toBe(0);
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
   });
 
-  it('42  (+ 1 (* 2 3))  "hello" --> 42  (foo bar baz)  ', function() {
-    let newCode = '42\n\n(+ 1 (* 1 2 3))\n\n';
-    var newAST = this.parser.parse(newCode);
-    let change = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
-    expect(this.ast.rootNodes.length).toBe(2);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
+  describe(", when inserting,", function() {
+
+    it('insert root literal before first root node', function() {
+      let newCode = 'maya 42\n\n(+ 1 (* 2 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 0, ch:0}, to: {line:0, ch:0}, text: ["maya "], removed: [''] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(4);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[0].value).toBe("maya");
+      expect(this.ast.rootNodes[1].type).toBe("literal");
+      expect(this.ast.rootNodes[1].value).toBe("42");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('insert root literal after last root node', function() {
+      let newCode = '42\n\n(+ 1 (* 2 3))\n\n"hello" maya';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 4, ch:7}, to: {line:4, ch:7}, text: [" maya"], removed: [''] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(4);
+      expect(this.ast.rootNodes[2].type).toBe("literal");
+      expect(this.ast.rootNodes[2].value).toBe('"hello"');
+      expect(this.ast.rootNodes[3].type).toBe("literal");
+      expect(this.ast.rootNodes[3].value).toBe("maya");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('insert child literal before function', function() {
+      let newCode = '42\n\n(maya + 1 (* 2 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:1}, to: {line:2, ch:1}, text: ["maya "], removed: [''] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].func.value).toBe("maya");
+      expect(this.ast.rootNodes[1].args.length).toBe(3);
+      expect(this.ast.rootNodes[1].args[0].value).toBe("+");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('insert child literal after function', function() {
+      let newCode = '42\n\n(+ maya 1 (* 2 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:2}, to: {line:2, ch:2}, text: [" maya"], removed: [''] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].func.value).toBe("+");
+      expect(this.ast.rootNodes[1].args.length).toBe(3);
+      expect(this.ast.rootNodes[1].args[0].value).toBe("maya");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('insert child literal before first child', function() {
+      let newCode = '42\n\n(+ maya 1 (* 2 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:3}, to: {line:2, ch:3}, text: ["maya "], removed: [''] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].func.value).toBe("+");
+      expect(this.ast.rootNodes[1].args.length).toBe(3);
+      expect(this.ast.rootNodes[1].args[0].value).toBe("maya");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('insert child literal after last child', function() {
+      let newCode = '42\n\n(+ 1 (* 2 3) maya)\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:12}, to: {line:2, ch:12}, text: [" maya"], removed: [''] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].func.value).toBe("+");
+      expect(this.ast.rootNodes[1].args.length).toBe(3);
+      expect(this.ast.rootNodes[1].args[2].value).toBe("maya");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('insert multiple nodes before first child', function() {
+      let newCode = '42\n\n(+ 1 (* maya simone 2 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["maya simone "], removed: [''] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[1].args[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[1].func.value).toBe("*");
+      expect(this.ast.rootNodes[1].args[1].args.length).toBe(4);
+      expect(this.ast.rootNodes[1].args[1].args[0].value).toBe("maya");
+      expect(this.ast.rootNodes[1].args[1].args[1].value).toBe("simone");
+      expect(this.ast.rootNodes[1].args[1].args[2].value).toBe("2");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
   });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 )  "hello"', function() {
-    var newCode = '42\n\n(+ 1 )\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[2].type).toBe("literal");
-    expect(this.ast.rootNodes[1].args.length).toBe(1);
-    expect(this.ast.rootNodes[1].args[0].value).toBe("1");
-  });
+  describe(", when moving,", function() {
+    it('move first root node to a different root position', function() {
+      var newCode = '\n\n(+ 1 (* 2 3))\n42\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 3, ch:0}, to: {line:3, ch:0}, text: ["42"], removed: [""] };
+      let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("literal");
+      expect(this.ast.rootNodes[2].type).toBe("literal");
+      expect(this.ast.rootNodes[1].value).toBe("42");
+      expect(this.ast.rootNodes[2].value).toBe('"hello"');
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> (+ 1 (* 2 3)) 42 "hello"', function() {
-    var newCode = '\n\n(+ 1 (* 2 3))\n42\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 3, ch:0}, to: {line:3, ch:0}, text: ["42"], removed: [""] };
-    let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].type).toBe("expression");
-    expect(this.ast.rootNodes[1].type).toBe("literal");
-    expect(this.ast.rootNodes[2].type).toBe("literal");
-    expect(this.ast.rootNodes[1].value).toBe("42");
-    expect(this.ast.rootNodes[2].value).toBe('"hello"');
-  });
+    it('move last root node to a different root position', function() {
+      var newCode = '42\n"hello"\n(+ 1 (* 3 2))\n\n';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
+      let change2 = { from: {line: 1, ch:0}, to: {line:1, ch:0}, text: ['"hello"'], removed: [""] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].value).toBe("42");
+      expect(this.ast.rootNodes[1].value).toBe('"hello"');
+      expect(this.ast.rootNodes[2].type).toBe("expression");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> 42 "hello" (+ 1 (* 2 3))', function() {
-    var newCode = '42\n"hello"\n(+ 1 (* 3 2))\n\n';
-    var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
-    let change2 = { from: {line: 1, ch:0}, to: {line:1, ch:0}, text: ['"hello"'], removed: [""] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].value).toBe("42");
-    expect(this.ast.rootNodes[1].value).toBe('"hello"');
-    expect(this.ast.rootNodes[2].type).toBe("expression");
-  });
+    it('swap sibling literals who have the same parent', function() {
+      var newCode = '42\n\n(+ 1 (* 3 2))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 2, ch:10}, to: {line:2, ch:11}, text: [""], removed: ["3"] };
+      let change2 = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["3 "], removed: [""] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args.length).toBe(2);
+      expect(this.ast.rootNodes[1].args[1].args[0].value).toBe("3");
+      expect(this.ast.rootNodes[1].args[1].args[1].value).toBe("2");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 (* 3 2))  "hello"', function() {
-    var newCode = '42\n\n(+ 1 (* 3 2))\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 2, ch:10}, to: {line:2, ch:11}, text: [""], removed: ["3"] };
-    let change2 = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["3 "], removed: [""] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[1].args.length).toBe(2);
-    expect(this.ast.rootNodes[1].args[1].args[0].value).toBe("3");
-    expect(this.ast.rootNodes[1].args[1].args[1].value).toBe("2");
-  });
+    it('swap sibling non-literals who have the same parent', function() {
+      var newCode = '42\n\n(+ (* 2 3) 1)\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
+      let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:3}, text: ["(* 2 3)"], removed: [""] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args.length).toBe(2);
+      expect(this.ast.rootNodes[1].args[0].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[1].type).toBe("literal");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ (* 2 3) 1)  "hello"', function() {
-    var newCode = '42\n\n(+ (* 2 3) 1)\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 2, ch:7}, to: {line:2, ch:14}, text: [""], removed: ["(* 2 3)"] };
-    let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:3}, text: ["(* 2 3)"], removed: [""] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[1].args.length).toBe(2);
-    expect(this.ast.rootNodes[1].args[0].type).toBe("expression");
-    expect(this.ast.rootNodes[1].args[1].type).toBe("literal");
-  });
+    it('move 1 literal up a generation', function() {
+      var newCode = '42\n\n(+ 1 2 (* 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:9}, text: [""], removed: ["2"] };
+      let change2 = { from: {line: 2, ch:4}, to: {line:2, ch:4}, text: [" 2"], removed: [""] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args.length).toBe(3);
+      expect(this.ast.rootNodes[1].args[0].value).toBe("1");
+      expect(this.ast.rootNodes[1].args[1].value).toBe("2");
+      expect(this.ast.rootNodes[1].args[2].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[2].args[0].value).toBe("3");
+      expect(this.ast.rootNodes[1].args[2].args.length).toBe(1);
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 2 (* 3))  "hello"', function() {
-    var newCode = '42\n\n(+ 1 2 (* 3))\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:9}, text: [""], removed: ["2"] };
-    let change2 = { from: {line: 2, ch:4}, to: {line:2, ch:4}, text: [" 2"], removed: [""] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[1].args.length).toBe(3);
-    expect(this.ast.rootNodes[1].args[0].value).toBe("1");
-    expect(this.ast.rootNodes[1].args[1].value).toBe("2");
-    expect(this.ast.rootNodes[1].args[2].type).toBe("expression");
-    expect(this.ast.rootNodes[1].args[2].args[0].value).toBe("3");
-    expect(this.ast.rootNodes[1].args[2].args.length).toBe(1);
-  });
+    it('move 1 literal down a generation', function() {
+      var newCode = '42\n\n(+  (* 1 2 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["1 "], removed: [""] };
+      let change2 = { from: {line: 2, ch:3}, to: {line:2, ch:4}, text: [""], removed: ["1"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args.length).toBe(1);
+      expect(this.ast.rootNodes[1].args[0].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[0].args[0].value).toBe("1");
+      expect(this.ast.rootNodes[1].args[0].args.length).toBe(3);
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ (* 1 2 3))  "hello"', function() {
-    var newCode = '42\n\n(+  (* 1 2 3))\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["1 "], removed: [""] };
-    let change2 = { from: {line: 2, ch:4}, to: {line:2, ch:13}, text: [""], removed: ["1"] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[1].args.length).toBe(1);
-    expect(this.ast.rootNodes[1].args[0].type).toBe("expression");
-    expect(this.ast.rootNodes[1].args[0].args[0].value).toBe("1");
-    expect(this.ast.rootNodes[1].args[0].args.length).toBe(3);
-  });
+    it('promote child node to root node after parent', function() {
+      var newCode = '42\n\n(+ 1 ) (* 2 3)\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 2, ch:13}, to: {line:2, ch:13}, text: [" (* 2 3)"], removed: [""] };
+      let change2 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(4);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[2].type).toBe("expression");
+      expect(this.ast.rootNodes[3].type).toBe("literal");
+      expect(this.ast.rootNodes[1].args.length).toBe(1);
+      expect(this.ast.rootNodes[1].func.value).toBe("+");
+      expect(this.ast.rootNodes[2].args.length).toBe(2);
+      expect(this.ast.rootNodes[2].func.value).toBe("*");
+      expect(this.ast.rootNodes[3].value).toBe('"hello"');
+      expect(this.ast.dirtyNodes.size).toBe(2);
+    });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 ) (* 2 3)  "hello"', function() {
-    var newCode = '42\n\n(+ 1 ) (* 2 3)\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 2, ch:13}, to: {line:2, ch:13}, text: [" (* 2 3)"], removed: [""] };
-    let change2 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(4);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[2].type).toBe("expression");
-    expect(this.ast.rootNodes[3].type).toBe("literal");
-    expect(this.ast.rootNodes[1].args.length).toBe(1);
-    expect(this.ast.rootNodes[1].func.value).toBe("+");
-    expect(this.ast.rootNodes[2].args.length).toBe(2);
-    expect(this.ast.rootNodes[2].func.value).toBe("*");
-    expect(this.ast.rootNodes[3].value).toBe('"hello"');
-  });
+    it('promote child node to root node before parent', function() {
+      var newCode = '42\n\n(* 2 3) (+ 1 )\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
+      let change2 = { from: {line: 2, ch:0}, to: {line:2, ch:0}, text: ["(* 2 3) "], removed: [""] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(4);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[2].type).toBe("expression");
+      expect(this.ast.rootNodes[3].type).toBe("literal");
+      expect(this.ast.rootNodes[1].args.length).toBe(2);
+      expect(this.ast.rootNodes[1].func.value).toBe("*");
+      expect(this.ast.rootNodes[2].args.length).toBe(1);
+      expect(this.ast.rootNodes[2].func.value).toBe("+");
+      expect(this.ast.rootNodes[3].value).toBe('"hello"');
+      expect(this.ast.dirtyNodes.size).toBe(2);
+    });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> 42  (* 2 3) (+ 1 )  "hello"', function() {
-    var newCode = '42\n\n(* 2 3) (+ 1 )\n\n"hello"';
-    var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
-    let change2 = { from: {line: 2, ch:0, sticky: "after"}, to: {line:2, ch:0, sticky: "after"}, text: ["(* 2 3) "], removed: [""] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(4);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[2].type).toBe("expression");
-    expect(this.ast.rootNodes[3].type).toBe("literal");
-    expect(this.ast.rootNodes[1].args.length).toBe(2);
-    expect(this.ast.rootNodes[1].func.value).toBe("*");
-    expect(this.ast.rootNodes[2].args.length).toBe(1);
-    expect(this.ast.rootNodes[2].func.value).toBe("+");
-    expect(this.ast.rootNodes[3].value).toBe('"hello"');
-  });
+    it('move 1 literal down two generations', function() {
+      this.ast = this.parser.parse('(+ 1 (* 3 5 (- 2 9)))');
+      this.ast.nodeIdMap.forEach(n => n.el = {key: "dummy"}); // create dummy DOM nodes
+      var newCode = '(+ (* 3 5 (- 1 2 9)))';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 0, ch:15}, to: {line:0, ch:15}, text: ["1 "], removed: [""] };
+      let change2 = { from: {line: 0, ch:3}, to: {line:0, ch:4}, text: [""], removed: ["1"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(1);
+      expect(this.ast.rootNodes[0].type).toBe("expression");
+      expect(this.ast.rootNodes[0].args.length).toBe(1);
+      expect(this.ast.rootNodes[0].args[0].type).toBe("expression");
+      expect(this.ast.rootNodes[0].args[0].args.length).toBe(3);
+      expect(this.ast.rootNodes[0].args[0].args[2].type).toBe("expression");
+      expect(this.ast.rootNodes[0].args[0].args[2].args.length).toBe(3);
+      expect(this.ast.rootNodes[0].args[0].args[2].args[0].value).toBe("1");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
 
-  it('(+ 1 (* 3 5 (- 2 9))) -> (+ (* 3 5 (- 1 2 9)))', function() {
-    this.ast = this.parser.parse('(+ 1 (* 3 5 (- 2 9)))');
-    var newCode = '(+ (* 3 5 (- 1 2 9)))';
-    var newAST = this.parser.parse(newCode);
-    let change1 = { from: {line: 0, ch:15}, to: {line:0, ch:15}, text: ["1 "], removed: [""] };
-    let change2 = { from: {line: 0, ch:4}, to: {line:0, ch:21}, text: [""], removed: ["1"] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(1);
-    expect(this.ast.rootNodes[0].type).toBe("expression");
-    expect(this.ast.rootNodes[0].args.length).toBe(1);
-    expect(this.ast.rootNodes[0].args[0].type).toBe("expression");
-    expect(this.ast.rootNodes[0].args[0].args.length).toBe(3);
-    expect(this.ast.rootNodes[0].args[0].args[2].type).toBe("expression");
-    expect(this.ast.rootNodes[0].args[0].args[2].args.length).toBe(3);
-    expect(this.ast.rootNodes[0].args[0].args[2].args[0].value).toBe("1");
-  });
+    it('move a child so that it replaces a root node', function() {
+      var newCode = '42\n\n(+ 1 ) (* 2 3)\n\n';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: ["(* 2 3)"], removed: ['"hello"'] };
+      let change2 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ['(* 2 3)'] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.dirtyNodes.size).toBe(2);
+    });
 
-  it('42  (+ 1 (* 2 3))  "hello" -> 42  (+ 1 (* 2 3))  ', function() {
-    var newCode = '42\n\n(+ 1 ) (* 2 3)\n\n';
-    let change1 = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: [""], removed: ['"hello"'] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1]);
-    expect(this.ast.rootNodes.length).toBe(2);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-  });
-
-  it('42  (+ 1 (* 2 3))  "hello" ->   (+ 1 (* 2 3))  "hello"', function() {
-    var newCode = '\n\n(+ 1 ) (* 2 3)\n\n"hello"';
-    let change1 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ['42'] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1]);
-    expect(this.ast.rootNodes.length).toBe(2);
-    expect(this.ast.rootNodes[0].type).toBe("expression");
-    expect(this.ast.rootNodes[1].type).toBe("literal");
-  });
-
-  it('42  (+ 1 (* 2 3)) moo  "hello" ->   (+ 1 (* 2 3 moo))  "hello"', function() {
-    this.ast = this.parser.parse('42\n\n(+ 1 (* 2 3)) moo\n\n"hello"');
-    var newCode = '42\n\n(+ 1 (* 2 3) moo) \n\n"hello"';
-    let change1 = { from: {line: 2, ch:14}, to: {line:2, ch:17}, text: [""], removed: ["moo"] };
-    let change2 = { from: {line: 2, ch:12}, to: {line:2, ch:12}, text: ["moo"], removed: [""] };
-    this.ast = this.ast.patch(this.parser.parse, newCode, [change1, change2]);
-    expect(this.ast.rootNodes.length).toBe(3);
-    expect(this.ast.rootNodes[0].type).toBe("literal");
-    expect(this.ast.rootNodes[1].type).toBe("expression");
-    expect(this.ast.rootNodes[2].type).toBe("literal");
-    expect(this.ast.rootNodes[1].args.length).toBe(3);
-    expect(this.ast.rootNodes[1].args[2].type).toBe("literal");
-    expect(this.ast.rootNodes[1].args[2].value).toBe("moo");
-    expect(this.ast.rootNodes[2].value).toBe('"hello"');
+    it('move a root node into a child position', function() {
+      this.ast = this.parser.parse('42\n\n(+ 1 (* 2 3)) moo\n\n"hello"');
+      this.ast.nodeIdMap.forEach(n => n.el = {key: "dummy"}); // create dummy DOM nodes
+      var newCode = '42\n\n(+ 1 (* 2 3) moo) \n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change1 = { from: {line: 2, ch:14}, to: {line:2, ch:17}, text: [""], removed: ["moo"] };
+      let change2 = { from: {line: 2, ch:12}, to: {line:2, ch:12}, text: [" moo"], removed: [""] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[2].type).toBe("literal");
+      expect(this.ast.rootNodes[1].args.length).toBe(3);
+      expect(this.ast.rootNodes[1].args[2].type).toBe("literal");
+      expect(this.ast.rootNodes[1].args[2].value).toBe("moo");
+      expect(this.ast.rootNodes[2].value).toBe('"hello"');
+      expect(this.ast.dirtyNodes.size).toBe(1);
+    });
   });
 });
-*/

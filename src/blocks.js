@@ -177,7 +177,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
-    this.cm.on('changes',    (cm, e) => this.handleChange(cm, e));
+    this.cm.on('changes',   (cm, e) => this.handleChange(cm, e));
     // mousedown events should impact dragging, focus-if-error, and click events
     this.cm.on('mousedown', (cm, e) => {
       toggleDraggable(e); 
@@ -328,23 +328,27 @@ export default class CodeMirrorBlocks {
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render(changes) {
     let start = Date.now();
-    try{
-      this.cm.operation(() => {
-        // for each change, patch the AST and render dirty rootNodes
-        changes.forEach(change => {
-          this.ast = this.ast.patch(this.parser.parse(this.cm.getValue()), change);
-          this.ast.rootNodes.filter(r => r.dirty).forEach(r => { this.renderer.render(r); delete r.dirty; });
-        });
-      });
-      // reset the cursor
-      setTimeout(() => {
-        let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
-        if(node && node.el) { node.el.click(); }
-        else { this.cm.focus(); }
-      }, 150);
-    } catch (e){
-      console.error(e);
-    }
+    let newAST = this.parser.parse(this.cm.getValue());
+    this.cm.operation(() => {
+      // try to patch the AST, and conservatively mark only changed nodes as dirty
+      try{
+        this.ast = this.ast.patch(s => this.parser.parse(s), newAST, changes);
+      // patching failed! log an error, and treat *all* nodes as dirty
+      } catch(e) {
+        console.error('PATCHING ERROR!!', changes, e);
+        this.ast = newAST;
+        this.ast.dirtyNodes = this.ast.rootNodes;
+      // render all the dirty nodes, and reset the cursor
+      } finally {
+        this.ast.dirtyNodes.forEach(n => this.renderer.render(n)); 
+        setTimeout(() => {
+          let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
+          if(node && node.el) { node.el.click(); }
+          else { this.cm.focus(); }
+          delete this.ast.dirty; // remove dirty nodeset, now that they've been rendered
+        }, 100);
+      }
+    });
     ui.renderToolbarInto(this);
     console.log('re-render time: '+(Date.now() - start)/1000 + 'ms');
   }
@@ -445,8 +449,7 @@ export default class CodeMirrorBlocks {
     } catch (e) {
       console.error("execCommand doesn't work in this browser :(", e);
     }
-    // put focus back on activeEl, and clear the buffer
-    setTimeout(() => { activeNode.el.focus(); }, 200);
+    // if we cut selected nodes, clear them
     if (event.type == 'cut') { this.deleteSelectedNodes(); } // delete all those nodes
   }
 
@@ -495,7 +498,6 @@ export default class CodeMirrorBlocks {
       }, 
       (node.insertion? "inserted " : "changed ") + text);
     } catch(e) {                                      // If the node contents will NOT lex...
-      console.log(e);
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
@@ -517,12 +519,9 @@ export default class CodeMirrorBlocks {
       // To cancel, (maybe) reinsert the original DOM Elt and activate the original
       // then remove the blur handler and the insertion node
       if(["Esc", "Shift-Esc"].includes(keyName)) {
-        console.log('cancelling');
         nodeEl.onblur = null;
         if(nodeEl.originalEl) {
-          console.log('restore original', nodeEl);
           nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
-          console.log('activating node', node.path);
           this.activateNode(this.ast.getClosestNodeFromPath(node.path.split(',')), e);
         }
         this.say("cancelled");
