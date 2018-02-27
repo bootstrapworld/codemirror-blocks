@@ -108,10 +108,10 @@ export class AST {
       if(endWS)   { to.ch   -= endWS[0].length;   }
       let insertedSiblings = parse( text.join('\n')  ).rootNodes.length;
       let removedSiblings  = parse(removed.join('\n')).rootNodes.length;
-      // if there's no path, or change isn't a replacement, search for the previous sibling
       let path = oldAST.getCommonAncestor(from, to), node = oldAST.getNodeByPath(path);
-      let notReplacement = node && !(comparePos(node.from, from)==0 && comparePos(node.to, to)==0);
-      if(!path || notReplacement) {
+      let replacing = node && (comparePos(node.from, from)==0 && comparePos(node.to, to)==0);
+      // if there's no path, or we're not replacing, search for the previous sibling
+      if(!path || !replacing) {
         let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
         let spliceIndex = siblings.findIndex(n => comparePos(from, n.from) <= 0);
         if(spliceIndex == -1) spliceIndex = siblings.length;
@@ -150,13 +150,11 @@ export class AST {
       let newNode = newAST.getNodeByPath(n.path);
       if(newNode) { n.el.id = 'block-node-' + newNode.id; newNode.el = n.el; }
     });
-    // Set parent to dirty if there's no DOM elt. If it's a root, just use the node itself.
+    // If we have a DOM elt, use it and update the id. Mark parents of nodes with DOM elts as dirty
     newAST.nodeIdMap.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
     // Ensure that no dirty node is the ancestor of another dirty node
     let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
-    dirty.forEach((n1, i) => {
-      dirty.slice(i+1).forEach(n2 => { if(n2.path.includes(n1.path)) dirtyNodes.delete(n2); });
-    });
+    dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
     newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)));
     return newAST;
   }
