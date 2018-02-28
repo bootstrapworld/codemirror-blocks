@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "babel-preset-stage-1": "6.24.1",
-    "bootstrap": "4.0.0",
     "classnames": "^2.2.5",
     "codemirror": "^5.35.0",
     "eslint-loader": "^2.0.0",
