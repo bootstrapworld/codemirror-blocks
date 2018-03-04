@@ -50,13 +50,18 @@ configs = configs.concat(
       output: {
         filename: "[name].min.js"
       },
-      plugins: config.plugins.concat([
-        new webpack.optimize.UglifyJsPlugin({
-          compressor: {
-            warnings: false
+      optimization: {
+        minimize: true,
+        splitChunks: {
+          cacheGroups: {
+            commons: {
+              test: /[\\/]node_modules[\\/]/,
+              name: "vendors",
+              chunks: "all"
+            }
           }
-        })
-      ])
+        }
+      }
     });
   })
 );
