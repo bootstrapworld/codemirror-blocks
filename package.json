@@ -1,6 +1,6 @@
 {
   "name": "codemirror-blocks",
-  "version": "0.5",
+  "version": "0.5.0",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "lib/codemirror-blocks.js",
   "engines": {
@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "babel-preset-stage-1": "6.24.1",
-    "bootstrap": "4.0.0",
     "classnames": "^2.2.5",
     "codemirror": "5.35.0",
     "eslint-loader": "^2.0.0",
@@ -73,7 +72,7 @@
     "wescheme-js": "bootstrapworld/wescheme-js"
   },
   "scripts": {
-    "prepublish": "npm run build",
+    "prepublishOnly": "npm run build",
     "test": "karma start --single-run",
     "test-watch": "karma start",
     "start": "webpack-dev-server --config webpack/example.config.js",
@@ -83,6 +82,8 @@
     "site": "jekyll serve --baseurl \"\""
   },
   "author": "Emmanuel Schanzer and Paul Carduner",
-  "contributors": ["Zachary Espiritu"],
+  "contributors": [
+    "Zachary Espiritu"
+  ],
   "license": "MIT License"
 }
