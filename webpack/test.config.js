@@ -7,7 +7,7 @@ var rules = baseConfig.module.rules.concat();
 if (envConfig.runCoverage) {
   rules.push({
     test: /\.js/,
-    use: 'isparta',
+    use: 'isparta-loader',
     include: path.resolve(__dirname, '..', 'src'),
     exclude: /node_modules/
   });
