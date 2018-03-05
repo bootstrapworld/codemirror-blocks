@@ -4,8 +4,8 @@
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "lib/codemirror-blocks.js",
   "engines": {
-    "node": "6.x",
-    "npm": "3.x"
+    "node": ">=6.x",
+    "npm": ">=3.x"
   },
   "dependencies": {
     "babel-preset-stage-1": "6.24.1",
