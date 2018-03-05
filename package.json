@@ -71,7 +71,7 @@
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "test": "karma start --single-run",
+    "test": "./node_modules/karma/bin/karma start --single-run",
     "test-watch": "karma start",
     "start": "webpack-dev-server --mode development --config webpack/example.config.js",
     "heroku-server": "node heroku-server.js",
