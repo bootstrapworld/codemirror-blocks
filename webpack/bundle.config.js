@@ -49,18 +49,6 @@ configs = configs.concat(
     return _.merge({}, config, {
       output: {
         filename: "[name].min.js"
-      },
-      optimization: {
-        minimize: true,
-        splitChunks: {
-          cacheGroups: {
-            commons: {
-              test: /[\\/]node_modules[\\/]/,
-              name: "vendors",
-              chunks: "all"
-            }
-          }
-        }
       }
     });
   })

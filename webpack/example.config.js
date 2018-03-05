@@ -55,6 +55,28 @@ module.exports = _.extend({}, baseConfig, {
       chunks: ['third-party','editor-example'],
     })
   ]),
+  optimization: {
+    minimize: false,
+    splitChunks: {
+      chunks: "async",
+      minSize: 1000,
+      minChunks: 2,
+      maxAsyncRequests: 5,
+      maxInitialRequests: 3,
+      name: true,
+      cacheGroups: {
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true,
+        },
+        vendors: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: -10
+        }
+      }
+    }
+  },
   devServer: {
     hot: true,
     inline: true,
