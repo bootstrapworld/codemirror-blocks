@@ -7,7 +7,7 @@ var rules = baseConfig.module.rules.concat();
 if (envConfig.runCoverage) {
   rules.push({
     test: /\.js/,
-    use: 'isparta-loader',
+    use: 'istanbul-instrumenter-loader',
     include: path.resolve(__dirname, '..', 'src'),
     exclude: /node_modules/
   });

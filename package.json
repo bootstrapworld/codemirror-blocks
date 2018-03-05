@@ -40,7 +40,7 @@
     "file-loader": "^1.1.11",
     "html-webpack-plugin": "3.0.4",
     "tapable": "1.0",
-    "isparta-loader": "^2.0.0",
+    "istanbul-instrumenter-loader": "3.0.0",
     "jasmine": "^3.1.0",
     "jasmine-core": "^3.1.0",
     "karma": "^2.0.0",
