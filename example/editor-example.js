@@ -16,7 +16,7 @@ var code = require('./ast-test.rkt');
 
 const options = {
   renderOptions: {
-    hideNodesOfType: ['comment','functionDef','variableDef','struct']
+    lockNodesOfType: ['comment','functionDef','variableDef','struct']
   },
   toolbar: document.getElementById('toolbar'),
   willInsertNode(sourceNodeText, sourceNode, destination) {
