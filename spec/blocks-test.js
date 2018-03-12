@@ -1,5 +1,6 @@
 import CodeMirrorBlocks, {BlockMarker} from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
+import 'codemirror/addon/search/searchcursor.js';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
 import {addLanguage} from 'codemirror-blocks/languages';
 
@@ -69,7 +70,7 @@ describe('The CodeMirrorBlocks Class', function() {
     spyOn(this.blocks, 'handleChange').and.callThrough();
     spyOn(this.cm,     'replaceRange').and.callThrough();
   });
-  
+
   describe('constructor,', function() {
 
     it("should take a codemirror instance and a parser instance", function() {
@@ -240,14 +241,14 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.cm.getAllMarks().length).toBe(0);
     });
   });
-  
+
   describe('events,', function() {
     beforeEach(function() {
       this.cm.setValue('11');
       this.blocks.setBlockMode(true);
       this.literal = this.blocks.ast.rootNodes[0];
     });
-
+    
     describe("when dealing with top-level input,", function() {
 
       beforeEach(function() {
@@ -844,8 +845,40 @@ describe('The CodeMirrorBlocks Class', function() {
         nodeEl.parentElement.dispatchEvent(dropEvent);
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
-    
     });
     
+    
+    describe('when using Search Mode,', function() {
+      beforeEach(function() {
+        this.cm.setValue('1 2 1 (+ 1 2)');
+        this.test1 = this.blocks.ast.rootNodes[0];
+        this.test2 = this.blocks.ast.rootNodes[1];
+        this.test3 = this.blocks.ast.rootNodes[2];
+        this.rootExp = this.blocks.ast.rootNodes[3];
+        this.test4 = this.blocks.ast.rootNodes[0].func;
+        let startSearch = keydown(70, {metaKey: true, key: "f"}); // Start searchMode
+        let oneKey = keydown(49, {key: "1"}); // Start searchMode
+        this.test1.el.dispatchEvent(click());
+        this.test1.el.dispatchEvent(startSearch);
+        this.test1.el.dispatchEvent(oneKey);
+      });
+
+      it('should find first match', function() {
+        expect(this.blocks.getActiveNode()).toBe(this.test1);
+        expect(document.activeElement).toBe(this.test1.el);
+      });
+
+      it('should find next match, skipping a non-matching literal', function() {
+        this.test1.el.dispatchEvent(keydown(ENTER_KEY));
+        expect(this.blocks.getActiveNode()).toBe(this.test3);
+        expect(document.activeElement).toBe(this.test3.el);
+      });
+
+      it('should go back to previous match, skipping a non-matching literal', function() {
+        this.test1.el.dispatchEvent(keydown(ENTER_KEY, {shiftKey: true}));
+        expect(this.blocks.getActiveNode()).toBe(this.test1);
+        expect(document.activeElement).toBe(this.test1.el);
+      });
+    });
   });
 });

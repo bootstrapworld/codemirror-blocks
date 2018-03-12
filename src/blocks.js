@@ -807,7 +807,6 @@ export default class CodeMirrorBlocks {
     let that = this, keyName = CodeMirror.keyName(event), keyCode = event.which;
     let activeNode = this.getActiveNode(), cur = activeNode? activeNode.from : this.cm.getCursor();
     let searchMode = this.searchString !== false;
-    console.log('searchMode is ', searchMode);
     // used for lightweigh refresh when the AST hasn't changed
     function refreshCM(){
       that.cm.refresh(); 
@@ -882,7 +881,8 @@ export default class CodeMirrorBlocks {
       if (["Esc","Shift-Esc"].includes(keyName)) {
         this.say("Search off");
         this.searchBox.style.display = "none"; 
-        this.searchString = this.searchBox.innerText = "";
+        this.searchString = false;
+        this.searchBox.innerText = "";
       }
       // if there's a search string, Enter and Shift-Enter go to next/prev
       else if (keyName == "Enter" && activeNode) {
@@ -894,8 +894,8 @@ export default class CodeMirrorBlocks {
           this.searchCursor.findNext();
       }
       // if search is installed & active, and an ASCII key was pressed, modify the search string and find
-      else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey)) &&
-        ([8, 46].includes(keyCode) || /[\d\w#,()."\/\-\s]/.test(String.fromCharCode(keyCode))) ) {
+      else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey)) 
+        && ([8, 46].includes(keyCode) || event.key.length==1) ) {
         this.searchString = [8, 46].includes(keyCode)? this.searchString.slice(0, -1) // Del/Backspace
           : ["", true].includes(this.searchString)? event.key                         // First char
           : this.searchString + event.key;                                            // Next Char
