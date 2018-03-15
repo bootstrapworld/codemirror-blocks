@@ -95,8 +95,7 @@ export class AST {
   // FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
   // produce the new AST, preserving all the unchanged DOM nodes from the old AST
   patch(parse, newAST, CMchanges) {
-    let oldAST = this, dirtyNodes = new Set();
-    console.log(JSON.parse(JSON.stringify(CMchanges)));
+    let oldAST = this, dirtyNodes = new Set(), savedChanges = JSON.parse(JSON.stringify(CMchanges));
 
     // For each CM change: (1) compute a sibling shift at the relevant path and 
     // (2) update the text posns in the AST to reflect the post-change coordinates
@@ -128,21 +127,25 @@ export class AST {
     pathChanges.forEach(change => {
       let shift = change.added - change.removed;
       if(shift == 0) { oldAST.nodeIdMap.delete(oldAST.getNodeByPath(change.path).id); return; }
-      let changeArray = change.path.split(',').map(Number);
-      let changeDepth = changeArray.length-1, changeIdx = changeArray[changeDepth];
+      let cArray = change.path.split(',').map(Number);
+      let changeDepth = cArray.length-1, changeIdx = cArray[changeDepth];
       oldAST.nodeIdMap.forEach((node, id) => {
-        let pathArray = node.path.split(',').map(Number);
-        // any path shorter or lexicographically less than the changePath is unaffected
-        if((node.path.length < change.path.length) || (node.path < change.path)) return;
-        // Delete removed node from nodeIdMap. Mark its parent as dirty, if it has one
-        if(pathArray[changeDepth] < (changeIdx + change.removed)) {
+        let pArray = node.path.split(',').map(Number);
+        if(pArray.length < cArray.length ||                   // if the node is above the change point,
+          pArray.findIndex((v, i) => (v<cArray[i]) ||         // or the node is before the change point,
+            (v>cArray[i] && i<cArray.length-2)) > -1)         // or the node is after the change point,
+        { return; }                                           // then it's a no-op
+        
+        // If it's being removed, delete from nodeIdMap. Mark its parent as dirty, if it has one
+        if(pArray[changeDepth] < (changeIdx + change.removed)) {
           let parent  = oldAST.getNodeParent(node);
           if(parent) { dirtyNodes.add(parent); }
           oldAST.nodeIdMap.delete(id);
+        } else {
+          // update the path of other post-change nodes by +shift
+          pArray[changeDepth] += shift;
+          node.path = pArray.join(',');
         }
-        // update the path of other post-change nodes by +shift
-        pathArray[changeDepth] += shift;
-        node.path = pathArray.join(',');
       });
     });
     // copy over the DOM elt for unchanged nodes, and update their IDs to match
@@ -156,6 +159,7 @@ export class AST {
     let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
     dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
     newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)));
+    console.log(savedChanges, newAST.dirtyNodes);
     return newAST;
   }
 
