@@ -135,7 +135,7 @@ export class AST {
           pArray.findIndex((v, i) => (v<cArray[i]) ||         // or the node is before the change point,
             (v>cArray[i] && i<cArray.length-2)) > -1)         // or the node is after the change *parent*,
         { return; }                                           // then it's a no-op
-        
+      
         // If it's being removed, delete from nodeIdMap. Mark its parent as dirty, if it has one
         if(pArray[changeDepth] < (changeIdx + change.removed)) {
           let parent  = oldAST.getNodeParent(node);
