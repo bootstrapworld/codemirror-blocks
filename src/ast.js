@@ -21,6 +21,15 @@ function adjustForChange(pos, change, from) {
   if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
   return {line: line, ch: ch};
 }
+
+// pathIsIndependentOfChangePath : [Path], [Path] -> Boolean
+// a path is independant if it points above, before, or after the change
+function pathIsIndependentOfChangePath(pathArray, changeArray) {
+  return pathArray.length < changeArray.length ||           // above: shorter paths are "above" the change point
+    pathArray.findIndex((v, i) => (v<changeArray[i]) ||     // before: the node - or any ancestor - is a younger sibling of the change
+      (v>changeArray[i] && i<changeArray.length-2)) > -1    // after: any *ancestor only* is an older sibling
+}
+
 function posWithinNode(pos, node){
   return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) > 0)
     ||   (comparePos(node.from, pos) < 0) && (comparePos(node.to, pos) >= 0);
@@ -131,18 +140,15 @@ export class AST {
       let changeDepth = cArray.length-1, changeIdx = cArray[changeDepth];
       oldAST.nodeIdMap.forEach((node, id) => {
         let pArray = node.path.split(',').map(Number);
-        if(pArray.length < cArray.length ||                   // if the node is above the change point,
-          pArray.findIndex((v, i) => (v<cArray[i]) ||         // or the node is before the change point,
-            (v>cArray[i] && i<cArray.length-2)) > -1)         // or the node is after the change *parent*,
-        { return; }                                           // then it's a no-op
-      
+        // if the node is totally independent of the change, just return
+        if(pathIsIndependentOfChangePath(pArray, cArray)) { return; }
         // If it's being removed, delete from nodeIdMap. Mark its parent as dirty, if it has one
+        // Otherwise just update the path of other post-change nodes by +shift
         if(pArray[changeDepth] < (changeIdx + change.removed)) {
           let parent  = oldAST.getNodeParent(node);
           if(parent) { dirtyNodes.add(parent); }
           oldAST.nodeIdMap.delete(id);
         } else {
-          // update the path of other post-change nodes by +shift
           pArray[changeDepth] += shift;
           node.path = pArray.join(',');
         }
