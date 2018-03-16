@@ -160,7 +160,7 @@ export class AST {
       if(newNode) { n.el.id = 'block-node-' + newNode.id; newNode.el = n.el; }
     });
     // If we have a DOM elt, use it and update the id. Mark parents of nodes with DOM elts as dirty
-    newAST.nodeIdMap.forEach(n => { if(!n.el){ console.log('adding',n.path); dirtyNodes.add(newAST.getNodeParent(n) || n); }});
+    newAST.nodeIdMap.forEach(n => { if(!n.el){ dirtyNodes.add(newAST.getNodeParent(n) || n); }});
     // Ensure that no dirty node is the ancestor of another dirty node
     let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
     dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
