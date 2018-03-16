@@ -139,7 +139,6 @@ export class AST {
       let cArray = change.path.split(',').map(Number);
       let changeDepth = cArray.length-1, changeIdx = cArray[changeDepth];
       oldAST.nodeIdMap.forEach((node, id) => {
-        console.log(node.path);
         let pArray = node.path.split(',').map(Number);
         // if the node is independent of the change, just return
         if(pathIsIndependentOfChangePath(pArray, cArray)) { return; }
