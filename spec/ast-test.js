@@ -33,7 +33,6 @@ describe("The Literal Class", function() {
     );
     expect(literal.options).toEqual({'aria-label':'11'});
   });
-
 });
 
 describe("The Sequence Class", function() {
@@ -259,6 +258,20 @@ describe("AST Patching", function() {
       expect(this.ast.rootNodes[1].args[1].args[1].value).toBe("maya");
       expect(this.ast.rootNodes[2].type).toBe("literal");
       expect(this.ast.dirtyNodes.size).toBe(1);
+    });
+
+    it('replace 1 child literal with another', function() {
+      let newCode = '42\n\n(expt 1 (* 2 3))\n\n"hello"';
+      let newAST = this.parser.parse(newCode);
+      let change = { from: {line: 2, ch:1}, to: {line:2, ch:2}, text: ["expt"], removed: ["+"] };
+      this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
+      expect(this.ast.rootNodes.length).toBe(3);
+      expect(this.ast.rootNodes[0].type).toBe("literal");
+      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].func.value).toBe("expt");
+      expect(this.ast.rootNodes[2].type).toBe("literal");
+      expect(this.ast.dirtyNodes.size).toBe(1);
+      expect([...this.ast.dirtyNodes.values()][0].type).toBe("literal");
     });
   });
 
@@ -609,4 +622,5 @@ describe("AST Patching", function() {
       expect(this.ast.dirtyNodes.size).toBe(1);
     });
   });
+
 });

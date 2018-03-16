@@ -135,14 +135,15 @@ export class AST {
     // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
     pathChanges.forEach(change => {
       let shift = change.added - change.removed;
-      if(shift == 0) { oldAST.nodeIdMap.delete(oldAST.getNodeByPath(change.path).id); return; }
+      if(shift == 0) { dirtyNodes.add(newAST.getNodeByPath(change.path)); return; }
       let cArray = change.path.split(',').map(Number);
       let changeDepth = cArray.length-1, changeIdx = cArray[changeDepth];
       oldAST.nodeIdMap.forEach((node, id) => {
+        console.log(node.path);
         let pArray = node.path.split(',').map(Number);
-        // if the node is totally independent of the change, just return
+        // if the node is independent of the change, just return
         if(pathIsIndependentOfChangePath(pArray, cArray)) { return; }
-        // If it's being removed, delete from nodeIdMap. Mark its parent as dirty, if it has one
+        // If it's being removed, delete from nodeIdMap and mark its parent as dirty (if it has one)
         // Otherwise just update the path of other post-change nodes by +shift
         if(pArray[changeDepth] < (changeIdx + change.removed)) {
           let parent  = oldAST.getNodeParent(node);
@@ -160,7 +161,7 @@ export class AST {
       if(newNode) { n.el.id = 'block-node-' + newNode.id; newNode.el = n.el; }
     });
     // If we have a DOM elt, use it and update the id. Mark parents of nodes with DOM elts as dirty
-    newAST.nodeIdMap.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
+    newAST.nodeIdMap.forEach(n => { if(!n.el){ console.log('adding',n.path); dirtyNodes.add(newAST.getNodeParent(n) || n); }});
     // Ensure that no dirty node is the ancestor of another dirty node
     let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
     dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
