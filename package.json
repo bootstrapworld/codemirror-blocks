@@ -10,7 +10,7 @@
   "dependencies": {
     "babel-preset-stage-1": "6.24.1",
     "classnames": "^2.2.5",
-    "codemirror": "5.35.0",
+    "codemirror": "5.36.0",
     "eslint-loader": "^2.0.0",
     "event-emitter": "^0.3.5",
     "prop-types": "^15.6.1",
@@ -34,7 +34,7 @@
     "express": "^4.16.2",
     "extract-text-webpack-plugin": "4.0.0-beta.0",
     "file-loader": "^1.1.11",
-    "html-webpack-plugin": "3.0.6",
+    "html-webpack-plugin": "3.0.7",
     "istanbul-instrumenter-loader": "3.0.0",
     "jasmine": "^3.1.0",
     "jasmine-core": "^3.1.0",
@@ -46,7 +46,7 @@
     "karma-jasmine": "^1.1.1",
     "karma-jasmine-diff-reporter": "^1.1.1",
     "karma-sourcemap-loader": "^0.3.7",
-    "karma-webpack": "^2.0.13",
+    "karma-webpack": "^3.0.0",
     "less": "3.0.1",
     "less-loader": "^4.0.6",
     "lodash": "^4.17.5",
@@ -58,7 +58,7 @@
     "tapable": "1.0",
     "url-loader": "^1.0.1",
     "webpack-dev-server": "3.1.1",
-    "webpack": "4.1.1",
+    "webpack": "4.2.0",
     "webpack-cli": "2.0.12"
   },
   "peerDependencies": {
