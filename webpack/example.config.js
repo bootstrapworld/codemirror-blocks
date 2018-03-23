@@ -57,10 +57,7 @@ module.exports = function(env, argv) {
       })
     ]),
     optimization: {
-      minimize: argv['mode'] == 'production',
-      splitChunks: {
-        chunks: "all"
-      }
+      minimize: argv['mode'] == 'production'
     },
     devServer: {
       hot: true,
