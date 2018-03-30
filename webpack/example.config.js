@@ -14,8 +14,7 @@ module.exports = function(env, argv) {
       "example": './example/example.js',
       "fullscheme-example": './example/fullscheme-example.js',
       "wescheme-example": './example/wescheme-example.js',
-      "editor-example": './example/editor-example.js',
-      "third-party": ['react', 'react-dom', 'babel-polyfill', 'codemirror']
+      "editor-example": './example/editor-example.js'
     },
     module: _.extend({}, baseConfig.module, {
       rules: baseConfig.module.rules.concat([
@@ -29,35 +28,45 @@ module.exports = function(env, argv) {
         filename: 'index.html',
         template: 'example/index.html',
         inject: 'body',
-        chunks: ['third-party','index'],
+        chunks: ['commons', 'index'],
       }),
       new HtmlWebpackPlugin({
         filename: 'simple.html',
         template: 'example/simple.html',
         inject: 'body',
-        chunks: ['third-party','example'],
+        chunks: ['commons', 'example'],
       }),
       new HtmlWebpackPlugin({
         filename: 'fullscheme.html',
         template: 'example/fullscheme.html',
         inject: 'body',
-        chunks: ['third-party','fullscheme-example'],
+        chunks: ['commons', 'fullscheme-example'],
       }),
       new HtmlWebpackPlugin({
         filename: 'wescheme.html',
         template: 'example/wescheme.html',
         inject: 'body',
-        chunks: ['third-party','wescheme-example'],
+        chunks: ['commons', 'wescheme-example'],
       }),
       new HtmlWebpackPlugin({
         filename: 'editor.html',
         template: 'example/editor.html',
         inject: 'body',
-        chunks: ['third-party','editor-example'],
+        chunks: ['commons','editor-example'],
       })
     ]),
     optimization: {
-      minimize: argv['mode'] == 'production'
+      minimize: argv['mode'] == 'production',
+      splitChunks: {
+        cacheGroups: {
+          commons: {
+            name: 'commons',
+            chunks: 'all',
+            minChunks: 2,
+            enforce: true
+          }
+        }
+      }
     },
     devServer: {
       hot: true,
