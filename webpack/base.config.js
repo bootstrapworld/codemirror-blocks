@@ -19,13 +19,14 @@ module.exports = function(config) {
     rules.push({test: /\.less$/, use:["style-loader","css-loader","less-loader"]});
   }
   return {
+    resolve : {extensions: ['.js', '.jsx'] },
     output: {
       path: path.resolve(__dirname, '..', "build"),
       filename: "[name].js"
     },
     module: {
       rules: rules.concat([{
-        test: /\.js$/,
+        test: /\.(js|jsx)$/,
         include: [
           path.resolve(__dirname, '..', 'example'),
           path.resolve(__dirname, '..', 'src'),
