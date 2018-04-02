@@ -16,7 +16,7 @@ export default CodeMirrorBlocks.languages.addLanguage(
     getRenderOptions() {
       return {
         extraRenderers: {
-          prog: require('./components/prog.js'),
+          prog: require('./components/prog'),
 
         }
       };
