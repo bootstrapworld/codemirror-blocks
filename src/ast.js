@@ -25,9 +25,9 @@ function adjustForChange(pos, change, from) {
 // pathIsIndependentOfChangePath : [Path], [Path] -> Boolean
 // a path is independant if it points above, before, or after the change
 function pathIsIndependentOfChangePath(pathArray, changeArray) {
-  return pathArray.length < changeArray.length ||           // above: shorter paths are "above" the change point
+  return pathArray.length < changeArray.length       ||     // above: shorter paths are "above" the change point
     pathArray.findIndex((v, i) => (v<changeArray[i]) ||     // before: the node - or any ancestor - is a younger sibling of the change
-      (v>changeArray[i] && i<changeArray.length-2)) > -1    // after: any *ancestor only* is an older sibling
+      (v>changeArray[i] && i<changeArray.length-2)) > -1;   // after: any *ancestor only* is an older sibling
 }
 
 function posWithinNode(pos, node){

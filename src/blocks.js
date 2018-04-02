@@ -829,23 +829,14 @@ export default class CodeMirrorBlocks {
       that.activateNode(node, event);
     }
     function showNextMatch(forward) {
-      let index, matches = that.searchMatches.slice(0);
-      if(forward) {
-        index = Math.max(0, matches.findIndex(n => poscmp(n.from, activeNode.from) > 0));
-      } else {
-        matches.reverse();
-        index = Math.max(matches.length-1, matches.findIndex(n => poscmp(n.from, activeNode.from) < 0));
-      }
-      let node = that.searchMatches[index];
+      let matches = that.searchMatches.slice(0), wrap = 0, test = d=>d>0, node;
+      if(!forward){ wrap = matches.length-1; test = d=>d<0; matches.reverse(); } // wrap to end, check for neg. distance
+      node = that.searchMatches[Math.max(wrap, matches.findIndex(n=>test(poscmp(n.from,activeNode.from))))];
       var ancestors = [node], p = that.ast.getNodeParent(node);
-      while(p) { ancestors.push(p); p = that.ast.getNodeParent(p); }
-      ancestors.reverse();  // put ancestors in oldest-first order
-      if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) {
-        node = ancestors[0];
-      } else {
-        ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); 
-        refreshCM();
-      }
+      while(p) { ancestors.unshift(p); p = that.ast.getNodeParent(p); }
+      if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) { node = ancestors[0]; }
+      else { ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); }
+      refreshCM();
       that.activateNode(node, event);
       return true;
     }
@@ -877,8 +868,8 @@ export default class CodeMirrorBlocks {
       else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey)) 
         && ([8, 46].includes(keyCode) || event.key.length==1) ) {
         let newSearchString = [8, 46].includes(keyCode)? this.searchString.slice(0, -1) // Del/Backspace
-          : ["", true].includes(this.searchString)? event.key                         // First char
-          : this.searchString + event.key;                                            // Next Char
+          : ["", true].includes(this.searchString)? event.key                           // First char
+            : this.searchString + event.key;                                            // Next Char
         let searchCursor = this.cm.getSearchCursor(newSearchString);
         this.searchMatches = [];
         while(searchCursor.findNext()) { 
