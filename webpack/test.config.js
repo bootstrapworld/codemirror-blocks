@@ -2,6 +2,8 @@ var path = require("path");
 var _ = require('lodash');
 var baseConfig = require('./base.config.js')();
 var envConfig = require('../env-config.js');
+envConfig.mode = 'development';
+console.log(envConfig);
 
 var rules = baseConfig.module.rules.concat();
 if (envConfig.runCoverage) {
@@ -19,6 +21,7 @@ module.exports = _.extend({}, baseConfig, {
     alias: {
       'codemirror-blocks': path.resolve(__dirname, '..', 'src')
     },
+    extensions: ['.js', '.jsx'],
   },
   devtool: 'inline-source-map',
   module: _.extend({}, baseConfig.module, {
