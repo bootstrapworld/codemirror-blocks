@@ -3,7 +3,6 @@ var _ = require('lodash');
 var baseConfig = require('./base.config.js')();
 var envConfig = require('../env-config.js');
 envConfig.mode = 'development';
-console.log(envConfig);
 
 var rules = baseConfig.module.rules.concat();
 if (envConfig.runCoverage) {

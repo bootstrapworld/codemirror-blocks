@@ -7,9 +7,7 @@ import * as ui from './ui';
 import merge from './merge';
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
-function poscmp(a, b) { 
-  return  a.line - b.line || a.ch - b.ch; 
-}
+function poscmp(a, b) { return  a.line - b.line || a.ch - b.ch;  }
 
 // findNearestNodeEl : DOM -> DOM
 // Consumes a DOM node, and produces the ancestor associated
@@ -873,12 +871,8 @@ export default class CodeMirrorBlocks {
         this.searchBox.innerText = "";
       }
       // if there's a search string, Enter and Shift-Enter go to next/prev
-      else if (keyName == "Enter" && activeNode) {
-        showNextMatch(true);
-      }
-      else if (keyName == "Shift-Enter" && activeNode) {
-        showNextMatch(false);
-      }
+      else if (keyName == "Enter"       && activeNode) { showNextMatch(true ); }
+      else if (keyName == "Shift-Enter" && activeNode) { showNextMatch(false); }
       // An ASCII key was pressed! If there's still a match, modify the search string and find
       else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey)) 
         && ([8, 46].includes(keyCode) || event.key.length==1) ) {
