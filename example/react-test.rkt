@@ -6,6 +6,6 @@ quuz   ; symbol
 
 (greet john)
 
-(or #t #f)
+(or true false)
 
 (define (f a b c) (+ a c))
