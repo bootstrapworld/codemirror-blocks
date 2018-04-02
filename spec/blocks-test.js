@@ -850,34 +850,41 @@ describe('The CodeMirrorBlocks Class', function() {
     
     describe('when using Search Mode,', function() {
       beforeEach(function() {
-        this.cm.setValue('1 2 1 (+ 1 2)');
-        this.test1 = this.blocks.ast.rootNodes[0];
-        this.test2 = this.blocks.ast.rootNodes[1];
-        this.test3 = this.blocks.ast.rootNodes[2];
-        this.rootExp = this.blocks.ast.rootNodes[3];
-        this.test4 = this.blocks.ast.rootNodes[0].func;
-        let startSearch = keydown(70, {metaKey: true, key: "f"}); // Start searchMode
+        this.cm.setValue('0 1 2 1 (+ 1 2)');
+        this.nomatch1 = this.blocks.ast.rootNodes[0];
+        this.match1 = this.blocks.ast.rootNodes[1];
+        this.nomatch2 = this.blocks.ast.rootNodes[2];
+        this.match2 = this.blocks.ast.rootNodes[3];
+        this.match3 = this.blocks.ast.rootNodes[4].args[0];
+        let startSearch = keydown(191); // Start searchMode
         let oneKey = keydown(49, {key: "1"}); // Start searchMode
-        this.test1.el.dispatchEvent(click());
-        this.test1.el.dispatchEvent(startSearch);
-        this.test1.el.dispatchEvent(oneKey);
+        this.nomatch1.el.dispatchEvent(click());
+        this.nomatch1.el.dispatchEvent(startSearch);
+        this.nomatch1.el.dispatchEvent(oneKey);
       });
 
       it('should find first match', function() {
-        expect(this.blocks.getActiveNode()).toBe(this.test1);
-        expect(document.activeElement).toBe(this.test1.el);
+        expect(this.blocks.getActiveNode()).toBe(this.match1);
+        expect(document.activeElement).toBe(this.match1.el);
       });
 
       it('should find next match, skipping a non-matching literal', function() {
-        this.test1.el.dispatchEvent(keydown(ENTER_KEY));
-        expect(this.blocks.getActiveNode()).toBe(this.test3);
-        expect(document.activeElement).toBe(this.test3.el);
+        this.match1.el.dispatchEvent(keydown(ENTER_KEY));
+        expect(this.blocks.getActiveNode()).toBe(this.match2);
+        expect(document.activeElement).toBe(this.match2.el);
       });
 
-      it('should go back to previous match, skipping a non-matching literal', function() {
-        this.test1.el.dispatchEvent(keydown(ENTER_KEY, {shiftKey: true}));
-        expect(this.blocks.getActiveNode()).toBe(this.test1);
-        expect(document.activeElement).toBe(this.test1.el);
+      it('find-next should wrap around to beginning of document', function() {
+        this.match3.el.dispatchEvent(click());
+        this.match3.el.dispatchEvent(keydown(ENTER_KEY));
+        expect(this.blocks.getActiveNode()).toBe(this.match1);
+        expect(document.activeElement).toBe(this.match1.el);
+      });
+
+      it('find-previous should wrap around to end of document', function() {
+        this.match1.el.dispatchEvent(keydown(ENTER_KEY, {shiftKey: true}));
+        expect(this.blocks.getActiveNode()).toBe(this.match3);
+        expect(document.activeElement).toBe(this.match3.el);
       });
     });
   });
