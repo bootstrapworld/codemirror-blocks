@@ -28,12 +28,13 @@ function toggleDraggable(e) {
 
 var beepSound = require('./beep.wav');
 const BEEP = new Audio(beepSound);
-function playBeep() {
-  BEEP.pause();
+const WRAP = BEEP;
+function playSound(sound) {
+  sound.pause();
   console.log("BEEP!");
-  if(BEEP.readyState > 0){ BEEP.currentTime = 0; }
+  if(sound.readyState > 0){ sound.currentTime = 0; }
   // Resolves race condition. See https://stackoverflow.com/questions/36803176
-  setTimeout(function () { BEEP.play(); }, 50);
+  setTimeout(function () { sound.play(); }, 50);
 }
 
 const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i)?true:false;
@@ -825,13 +826,15 @@ export default class CodeMirrorBlocks {
     function switchNodes(searchFn) {
       let node = that.ast.getNextMatchingNode(
         searchFn, that.isNodeHidden, that.getActiveNode() || that.cm.getCursor());
-      if(node === activeNode) { playBeep(); }
+      if(node === activeNode) { playSound(BEEP); }
       that.activateNode(node, event);
     }
     function showNextMatch(forward) {
       let matches = that.searchMatches.slice(0), wrap = 0, test = d=>d>0, node;
       if(!forward){ wrap = matches.length-1; test = d=>d<0; matches.reverse(); } // wrap to end, check for neg. distance
-      node = that.searchMatches[Math.max(wrap, matches.findIndex(n=>test(poscmp(n.from,activeNode.from))))];
+      let index = matches.findIndex(n => test(poscmp(n.from, activeNode.from)));
+      if(index < 0) { playSound(BEEP); index = wrap; }
+      node = that.searchMatches[index];
       var ancestors = [node], p = that.ast.getNodeParent(node);
       while(p) { ancestors.unshift(p); p = that.ast.getNodeParent(p); }
       if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) { node = ancestors[0]; }
@@ -876,10 +879,10 @@ export default class CodeMirrorBlocks {
           let node = this.ast.getNodeContaining(searchCursor.from());
           if(node) this.searchMatches.push(node);  // make sure we're not just matching a comment
         }
-        if(newSearchString !="" && this.searchMatches.length == 0) { playBeep(); return; } // no matches! bail.
+        if(newSearchString !="" && this.searchMatches.length == 0) { playSound(WRAP); return; } // no matches! wrap.
         this.searchString = newSearchString;
         this.searchBox.innerText = newSearchString;
-        this.say('Searching for '+this.searchString, 0);
+        this.say(this.searchString? 'Searching for '+this.searchString : 'Type to search', 0);
         if(newSearchString !="") showNextMatch(true);
       }
     } else {
@@ -923,7 +926,7 @@ export default class CodeMirrorBlocks {
       // Backspace should delete selected nodes
       else if ([DELETEKEY, CTRLKEY+"-"+DELETEKEY].includes(keyName)
                 && activeNode && !searchMode) {
-        if(this.selectedNodes.size == 0) { playBeep(); }
+        if(this.selectedNodes.size == 0) { playSound(BEEP); }
         else { this.deleteSelectedNodes(); }
       }
       // Ctrl-[ moves the cursor to previous whitespace or cursor position
@@ -954,7 +957,7 @@ export default class CodeMirrorBlocks {
           parents.push(node.options['aria-label'] + ", at level "+node["aria-level"]);
         }
         if(parents.length > 1) this.say(parents.join(", inside "));
-        else playBeep();
+        else playSound(BEEP);
       }
       // Have the subtree read itself intelligently
       else if (keyName == "Shift-\\") {
@@ -1019,7 +1022,7 @@ export default class CodeMirrorBlocks {
       let parent = this.ast.getNodeParent(activeNode);
       return (maybeChangeNodeExpanded(activeNode, false) && refreshCM())
           || (parent && this.activateNode(parent, event))
-          || playBeep();
+          || playSound(BEEP);
     }
     // Expand block if possible, otherwise descend to firstChild
     else if (event.keyCode == RIGHT && activeNode) {
@@ -1027,7 +1030,7 @@ export default class CodeMirrorBlocks {
         && this.ast.getNodeFirstChild(activeNode);
       return (maybeChangeNodeExpanded(activeNode, true) && refreshCM())
           || (firstChild && this.activateNode(firstChild, event))
-          || playBeep();
+          || playSound(BEEP);
     }
     // Go to next visible node
     else if (event.keyCode == DOWN) {
@@ -1044,7 +1047,7 @@ export default class CodeMirrorBlocks {
           this.focusHistory.undone.unshift(this.focusHistory.done.shift());
           this.focusPath = this.focusHistory.undone[0].path;
         }
-        else { playBeep(); }
+        else { playSound(BEEP); }
       }
       if ((ISMAC && keyName=="Shift-Cmd-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
         if(this.cm.historySize().redo > 0) {
@@ -1052,14 +1055,14 @@ export default class CodeMirrorBlocks {
           this.focusHistory.done.unshift(this.focusHistory.undone.shift());
           this.focusPath = this.focusHistory.done[0].path;
         }
-        else { playBeep(); }
+        else { playSound(BEEP); }
       }
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
         this.cm.execCommand(command);
       } else if (typeof command == "function") {
         command(this.cm);
-      } else {
+      } else if(!searchMode) {
         return; // let CodeMirror handle it
       }
     }
