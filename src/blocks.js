@@ -830,12 +830,11 @@ export default class CodeMirrorBlocks {
       that.activateNode(node, event);
     }
     function showNextMatch(forward) {
-      let matches = that.searchMatches.slice(0), wrap = 0, test = d=>d>0, node;
-      if(!forward){ wrap = matches.length-1; test = d=>d<0; matches.reverse(); } // wrap to end, check for neg. distance
+      let matches = that.searchMatches.slice(0), test = forward? d=>d>0 : d=>d<0;
+      if(!forward){ matches.reverse(); } // if we're searching backwards, reverse the array
       let index = matches.findIndex(n => test(poscmp(n.from, activeNode.from)));
-      if(index < 0) { playSound(BEEP); index = wrap; }
-      node = that.searchMatches[index];
-      var ancestors = [node], p = that.ast.getNodeParent(node);
+      if(index < 0) { index = 0; playSound(BEEP); } // if we go off the edge, wrap to 0 & play sound
+      let node = matches[index], ancestors = [node], p = that.ast.getNodeParent(node);
       while(p) { ancestors.unshift(p); p = that.ast.getNodeParent(p); }
       if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) { node = ancestors[0]; }
       else { ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); }

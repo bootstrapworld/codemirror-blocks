@@ -857,7 +857,7 @@ describe('The CodeMirrorBlocks Class', function() {
         this.match2 = this.blocks.ast.rootNodes[3];
         this.match3 = this.blocks.ast.rootNodes[4].args[0];
         let startSearch = keydown(191); // Start searchMode
-        let oneKey = keydown(49, {key: "1"}); // Start searchMode
+        let oneKey = keydown(49, {key: "1"}); // search for '1'
         this.nomatch1.el.dispatchEvent(click());
         this.nomatch1.el.dispatchEvent(startSearch);
         this.nomatch1.el.dispatchEvent(oneKey);
@@ -882,6 +882,7 @@ describe('The CodeMirrorBlocks Class', function() {
       });
 
       it('find-previous should wrap around to end of document', function() {
+        this.match1.el.dispatchEvent(click());
         this.match1.el.dispatchEvent(keydown(ENTER_KEY, {shiftKey: true}));
         expect(this.blocks.getActiveNode()).toBe(this.match3);
         expect(document.activeElement).toBe(this.match3.el);
