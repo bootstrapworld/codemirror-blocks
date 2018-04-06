@@ -271,7 +271,7 @@ describe("AST Patching", function() {
       expect(this.ast.rootNodes[1].func.value).toBe("expt");
       expect(this.ast.rootNodes[2].type).toBe("literal");
       expect(this.ast.dirtyNodes.size).toBe(1);
-      expect([...this.ast.dirtyNodes.values()][0].type).toBe("literal");
+      expect([...this.ast.dirtyNodes.values()][0].type).toBe("expression");
     });
   });
 
