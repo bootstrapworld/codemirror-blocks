@@ -283,8 +283,8 @@
 (check-expect (posn=? (make-posn 5 5) (make-posn 5 5)) true)
 (check-expect (posn=? (make-posn 5 5) (make-posn 10 10)) false)
 
-;big-bang creates the world
-(js-big-bang world0
+;big-bang creates the world and starts the game
+(big-bang world0
              (to-draw draw)
              (on-key move-ufo-x)
              (on-tick move-all-on-tick)
