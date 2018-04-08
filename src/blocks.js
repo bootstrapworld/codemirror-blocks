@@ -827,6 +827,7 @@ export default class CodeMirrorBlocks {
     let that = this, keyName = CodeMirror.keyName(event), keyCode = event.which;
     let activeNode = this.getActiveNode(), cur = activeNode? activeNode.from : this.cm.getCursor();
     let searchMode = this.searchString !== false;
+    log('keydown', keyName);
 
     // used for lightweigh refresh when the AST hasn't changed
     function refreshCM(){
