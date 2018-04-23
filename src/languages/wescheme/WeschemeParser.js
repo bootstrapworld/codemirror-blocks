@@ -115,10 +115,8 @@ function parseNode(node, i) {
   let comment = node.comment? makeComment(node) : false;
 
   if (node instanceof structures.callExpr) {
-    let func;
-    if (node.func) {
-      func = parseNode(node.func);
-    } else {
+    let func, label, children = node.args.map(parseNode).filter(item => item !== null);
+    if (!node.func) {
       func = new Blank(
         {line: from.line, ch: from.ch+1},
         {line: from.line, ch: from.ch+1},
@@ -126,13 +124,21 @@ function parseNode(node, i) {
         'blank',
         {'aria-label': '*blank*'}
       );
+    // special case for Unit Tests
+    } else {
+      func = parseNode(node.func);
+      if(func.value == "check-expect" && node.args[0].func) {
+        label = 'Unit Test for '+node.args[0].func.val;
+      } else {
+        label = expressionAria(node.func ? node.func.val : 'empty', node.args);
+      }
     }
     return new Expression(
       from,
       to,
       func,
-      node.args.map(parseNode).filter(item => item !== null),
-      {'aria-label': expressionAria(node.func ? node.func.val : 'empty', node.args)
+      children,
+      {'aria-label': label
         ,'comment' : comment}
     );
   } else if (node instanceof structures.andExpr) {
