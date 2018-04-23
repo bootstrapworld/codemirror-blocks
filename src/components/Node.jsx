@@ -31,7 +31,7 @@ export default class Node extends PureComponent {
         role            = "treeitem"
         aria-selected   = "false"
         aria-label      = { node.options['aria-label'] }
-        aria-describedby= { node.options.comment? `block-node-${node.options.comment.id}`: undefined}
+        aria-describedby= { node.options.comment? `${node.options.comment.id}`: undefined}
         aria-disabled   = { locked? "true": undefined }
         aria-expanded   = { expandable? ((locked || node.collapsed )? "false" : "true") : undefined}
         aria-setsize    = { node["aria-setsize"]  }
