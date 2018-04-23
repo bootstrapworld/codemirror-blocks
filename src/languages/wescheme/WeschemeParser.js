@@ -49,7 +49,7 @@ function symbolAria(str) {
     return symbolMap.get(str);
   } else {
     // pronounce special chars, scheme-style
-    str = str.replace("*","-star");
+    str = str.replace("?", "-huh").replace("!","-bang").replace("*","-star");
     // pronounce quotes
     str = str.replace("\"", " quote");
     // pronounce braces
