@@ -1000,7 +1000,7 @@ export default class CodeMirrorBlocks {
     }
     // Shift-Left and Shift-Right toggle global expansion
     else if (keyName === "Shift-Left" && activeNode) {
-      this.say("All blocks collapsed");
+      this.say("Collapse All", 0);
       let savedViewportMargin = this.cm.getOption("viewportMargin");
       this.cm.setOption("viewportMargin", Infinity);
       let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
@@ -1013,7 +1013,7 @@ export default class CodeMirrorBlocks {
       this.cm.setOption("viewportMargin", savedViewportMargin);
     }
     else if (keyName === "Shift-Right" && activeNode) {
-      this.say("All blocks expanded");
+      this.say("Expand All", 0);
       let savedViewportMargin = this.cm.getOption("viewportMargin");
       this.cm.setOption("viewportMargin", Infinity);
       let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
