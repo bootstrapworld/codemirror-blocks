@@ -128,9 +128,9 @@ function parseNode(node, i) {
     } else {
       func = parseNode(node.func);
       if(func.value == "check-expect" && node.args[0].func) {
-        label = 'Unit Test for '+node.args[0].func.val;
+        label = 'Unit Test for '+symbolAria(node.args[0].func.val);
       } else {
-        label = expressionAria(node.func ? node.func.val : 'empty', node.args);
+        label = expressionAria(node.func ? symbolAria(node.func.val) : 'empty', node.args);
       }
     }
     return new Expression(
