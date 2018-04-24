@@ -6,8 +6,6 @@ import * as languages from './languages';
 import * as ui from './ui';
 import merge from './merge';
 
-let batchedLogs = [];
-
 // Logging function
 function log(event, details, activeNode=false) {
   let userSelect  = document.getElementById("userTestingID");
@@ -16,12 +14,12 @@ function log(event, details, activeNode=false) {
   let task        = taskSelect? taskSelect.value : null;
   let path        = activeNode? activeNode.path : 'none';
   let payload = {
-      'tag':        'blocks-testing', 
-      'event':      event,
-      'details':    details,
-      'path':       path,
-      'userID':     userID,
-      'task':       task
+    'tag':        'blocks-testing', 
+    'event':      event,
+    'details':    details,
+    'path':       path,
+    'userID':     userID,
+    'task':       task
   };
   _LTracker.push(payload);
 }
