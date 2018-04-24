@@ -9,15 +9,17 @@ import merge from './merge';
 let batchedLogs = [];
 
 // Logging function
-function log(event, details) {
-  let userSelect = document.getElementById("userTestingID");
-  let taskSelect = document.getElementById("task");
-  let userID = userSelect? userSelect.value : null;
-  let task   = taskSelect? taskSelect.value : null;
+function log(event, details, activeNode=false) {
+  let userSelect  = document.getElementById("userTestingID");
+  let taskSelect  = document.getElementById("task");
+  let userID      = userSelect? userSelect.value : null;
+  let task        = taskSelect? taskSelect.value : null;
+  let path        = activeNode? activeNode.path : 'none';
   let payload = {
       'tag':        'blocks-testing', 
       'event':      event,
       'details':    details,
+      'path':       path,
       'userID':     userID,
       'task':       task
   };
@@ -251,7 +253,7 @@ export default class CodeMirrorBlocks {
     if(this.muteAnnouncements) return;
     let announcement = document.createTextNode(text+", ");
     console.log(text);
-    log('console', text);
+    log('console', text, this.getActiveNode());
     setTimeout(() => this.announcements.appendChild(announcement), delay);
     setTimeout(() => this.announcements.removeChild(announcement), delay+300);
   }
@@ -827,7 +829,7 @@ export default class CodeMirrorBlocks {
     let that = this, keyName = CodeMirror.keyName(event), keyCode = event.which;
     let activeNode = this.getActiveNode(), cur = activeNode? activeNode.from : this.cm.getCursor();
     let searchMode = this.searchString !== false;
-    log('keydown', keyName);
+    log('keydown', keyName, activeNode);
 
     // used for lightweigh refresh when the AST hasn't changed
     function refreshCM(){
