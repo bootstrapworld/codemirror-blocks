@@ -1,32 +1,3 @@
-;Space Invaders!
-
-;Things:
-;  - a bunch of aliens that move down the screen
-;  - a spaceship that moves back and forth across the bottom of the screen
-;  - bullets that move up from the spaceship
-
-;Things that happen all the time:
-;  - sometimes a new alien appears at the top of the screen
-;  - all aliens move down
-;  - all bullets move up
-;  - if a bullet hits an alien, the alien and the bullet go away
-;  - if an alien gets to the bottom, it's game-over
-
-;Things that happen when the player does something:
-;  - when the mouse moves, have the ship move with it
-;  - when the user clicks the mouse, have it create a bullet
-
-;A Fleet is a ListofPosns, representng the positions of all the aliens
-
-;A Barrage is a ListofPosns, representing the positions of all the bullets
-
-;A Ship is a Number, representing the x-coordinate of the spaceship
-
-;A ListofPosns (LoP) is one of:
-;  - empty
-;  - (cons (make-posn Number Number) ListofPosns)
-
-;Some constants
 (define WIDTH 600)
 (define HEIGHT 400)
 (define ALIEN-SIZE 20)
@@ -78,10 +49,9 @@
 ;  render-barrage: Barrage Image -> Image
 ;  recursively draw bullets onto the rest of the scene
 (define (render-barrage los scene)
-  (cond
-    [(empty? los) scene]
-    [(cons? los) (place-image SHOT-IMG (posn-x (first los)) (posn-y (first los))
-                              (render-barrage (rest los) scene))]))
+  (if (empty? los) scene
+      (place-image SHOT-IMG (posn-x (first los)) (posn-y (first los))
+                              (render-barrage (rest los) scene))))
 ; test case for rendering a barrage
 (check-expect (render-barrage (list (make-posn 150 350) (make-posn 51 23)) 
                               (empty-scene WIDTH HEIGHT))
@@ -92,10 +62,9 @@
 ; render-fleet: Aliens Scene -> Image
 ; render a list of aliens by recursively adding them to the scene
 (define (render-fleet loa scene)
-  (cond
-    [(empty? loa) scene]
-    [(cons? loa) (place-image ALIEN-IMG (posn-x (first loa)) (posn-y (first loa))
-                              (render-fleet (rest loa) scene))]))
+  (if (empty? loa) scene
+    (place-image ALIEN-IMG (posn-x (first loa)) (posn-y (first loa))
+                              (render-fleet (rest loa) scene))))
 
 ;tick: World -> World
 ;  move everything that needs moving, add what needs adding, and remove what nees removing
@@ -109,10 +78,9 @@
 ; move-fleet: Fleet -> Fleet
 ; recursively move the aliens 
 (define (move-fleet loa)
-  (cond
-   [(empty? loa) empty]
-   [(cons? loa) (cons (make-posn (posn-x (first loa)) (+ ALIEN-SPEED (posn-y (first loa))))
-                      (move-fleet (rest loa)))]))
+  (if (empty? loa) empty
+   (cons (make-posn (posn-x (first loa)) (+ ALIEN-SPEED (posn-y (first loa))))
+                      (move-fleet (rest loa)))))
 ; test for a simple list of two aliens
 (check-expect (move-fleet (list (make-posn 50 100) (make-posn 10 350))) 
               (list (make-posn 50 (+ 100 ALIEN-SPEED)) (make-posn 10 (+ 350 ALIEN-SPEED))))
@@ -120,10 +88,9 @@
 ;  move-barrage: Barrage -> Barrage
 ;  recursively move the bullets up
 (define (move-barrage los)
-  (cond
-   [(empty? los) empty]
-   [(cons? los) (cons (make-posn (posn-x (first los)) (- (posn-y (first los)) SHOT-SPEED))
-                      (move-barrage (rest los)))]))
+  (if (empty? los) empty
+   (cons (make-posn (posn-x (first los)) (- (posn-y (first los)) SHOT-SPEED))
+                      (move-barrage (rest los)))))
 ; test for a list of two bullets
 (check-expect (move-barrage (list (make-posn 50 100) (make-posn 10 350))) 
               (list (make-posn 50 (- 100 SHOT-SPEED)) (make-posn 10 (- 350 SHOT-SPEED))))
@@ -131,11 +98,10 @@
 ;  remove-aliens: Fleet Barrage -> Fleet
 ;  recursively remove any aliens that were hit by bullets
 (define (remove-aliens loa los)
-  (cond
-    [(empty? loa) empty]
-    [(cons? loa) (cond
-                   [(near-any? (first loa) los) (remove-aliens (rest loa) los)]
-                   [else (cons (first loa) (remove-aliens (rest loa) los))])]))
+  (if (empty? loa) empty
+    (if
+      (near-any? (first loa) los) (remove-aliens (rest loa) los)
+      (cons (first loa) (remove-aliens (rest loa) los)))))
 ; test where one of two aliens is removed, and the other remains
 (check-expect (remove-aliens (list (make-posn 50 100) (make-posn 10 350)) 
                              (list (make-posn 8 349) (make-posn 289 77)))
@@ -144,18 +110,16 @@
 ;  near-any?: Posn Barrage -> Boolean
 ;  determines if the given posn is near any of the posns in the given shots
 (define (near-any? alien los)
-  (cond
-    [(empty? los) false]
-    [(cons? los) (or (near? alien (first los)) (near-any? alien (rest los)))]))
+  (if (empty? los) false
+    (or (near? alien (first los)) (near-any? alien (rest los)))))
 (check-expect (near-any? (make-posn 8 349) (list (make-posn 50 100) (make-posn 10 350))) true)
 (check-expect (near-any? (make-posn 108 349) (list (make-posn 50 100) (make-posn 10 350))) false)
 
 ; near?: Posn Posn -> Boolean
 ; determines whether the two given posns are close enough together
 (define (near? bullet alien)
-  (cond
-    [(<= (distance bullet alien) ALIEN-SIZE) true]
-    [else false]))
+  (if (<= (distance bullet alien) ALIEN-SIZE) true
+    false))
 ; test where the posns are near
 (check-expect (near? (make-posn 50 25) (make-posn 51 24)) true)
 ; test where the posns are far
@@ -172,9 +136,8 @@
 ; add-alien: Fleet -> Fleet
 ; randomly add an alien with a random chance at a random horizontal position
 (define (add-alien loa)
-  (cond
-    [(< (random 100) CHANCE-OF-ALIEN) (cons (make-posn (random WIDTH) 0) loa)]
-    [else loa]))
+  (if (< (random 100) CHANCE-OF-ALIEN) (cons (make-posn (random WIDTH) 0) loa)
+    loa))
 
 ; mouse: World Number Number MouseEvent -> World
 ; respond to mouse movement and clicking
@@ -210,10 +173,9 @@
 ; any-on-ground?: Fleet -> Boolean
 ; decide if any of the given aliens are on the ground
 (define (any-on-ground? loa)
-  (cond
-    [(empty? loa) false]
-    [(cons? loa) (or (>= (posn-y (first loa)) (- HEIGHT ALIEN-SIZE)) 
-                     (any-on-ground? (rest loa)))]))
+  (if (empty? loa) false
+    (or (>= (posn-y (first loa)) (- HEIGHT ALIEN-SIZE)) 
+                     (any-on-ground? (rest loa)))))
 ; test for when one is on the ground
 (check-expect (any-on-ground? (list (make-posn 80 (+ HEIGHT 3)) (make-posn 88 65))) true)
 ; test for when one is NOT on the ground

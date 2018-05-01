@@ -10,14 +10,12 @@ quuz   ; symbol
 ; we can have if expressions
 (if (positive? -5) (error "doesn't get here") 2)
 
-; we can have cond expressions
-(cond
-   [(positive? -5) (error "doesn't get here")]
-   [(zero? -5) (error "doesn't get here, either")]
-   [(positive? 5) #t])
-
-; we can have lambda expressions
-(lambda (x y) (+ x y))
+; we can have nested if expressions
+(if (> x 0) 
+	"A"
+   	(if (< x 0) 
+   		"B"
+   		"C"))
 
 ; we can define a variable or two
 (define FIRST-NAME "John")
@@ -31,6 +29,8 @@ quuz   ; symbol
 
 ; we can define functions
 (define (years-to-seconds years) (* years 360 24 60 60))
+(check-expect (years-to-seconds 0)        0)
+(check-expect (years-to-seconds 2) 62208000)
 
 (define (greet p)
   (format "Hello ~a from ~a. You've been alive for ~a seconds."

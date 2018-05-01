@@ -7,7 +7,7 @@ import CodeMirrorBlocks from '../src/blocks';
 import '../src/languages/wescheme';
 
 require('./example-page.less');
-var code = require('./ast-test.rkt'), cm;
+var code = require('./space-invaders.rkt'), cm;
 document.getElementById("code").value = code;
 
 // Toggle the help HUD
