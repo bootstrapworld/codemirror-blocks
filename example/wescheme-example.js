@@ -39,7 +39,7 @@ document.getElementById('mode').onchange = function(e) {
 
     const options = {
       willInsertNode(sourceNodeText, sourceNode, destination) {
-        let line = cm2.getLine(destination.line);
+        let line = cm.getLine(destination.line);
         let prev = line[destination.ch - 1] || '\n';
         let next = line[destination.ch] || '\n';
         sourceNodeText = sourceNodeText.trim();
