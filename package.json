@@ -10,7 +10,7 @@
   "dependencies": {
     "babel-preset-stage-1": "6.24.1",
     "classnames": "^2.2.5",
-    "codemirror": "5.36.0",
+    "codemirror": "5.37.0",
     "eslint-loader": "^2.0.0",
     "event-emitter": "^0.3.5",
     "prop-types": "^15.6.1",
