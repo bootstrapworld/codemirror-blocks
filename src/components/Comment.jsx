@@ -10,8 +10,8 @@ export default class Comment extends PureComponent {
   }
   render() {
     const {node} = this.props;
-    return (<span className="blocks-comment" id={node.id}>
-      {node.comment.toString()}
+    return (<span className="blocks-comment" id={node.id} aria-hidden="true">
+      <span className="sr-only"> Comment,</span> {node.comment.toString()}
     </span>);
   }
 }

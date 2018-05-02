@@ -333,7 +333,8 @@
   .blocks-comment {
     color: @comment-color;
     background-color: #444;
-    display: none;
+    display: inline-table !important;
+    opacity: 0;
     position: absolute;
     color: #ddd;
     padding: 2px 10px;
@@ -351,6 +352,7 @@
     word-break: normal;
     z-index: 999;
   }
+  .blocks-comment .sr-only {display: inline !important; }
   .blocks-comment::before {
     content: "";
     width: 0px;
@@ -361,7 +363,7 @@
     bottom: 15%;
     border-right: 10px solid #444;
   }
-  .blocks-node:focus > .blocks-comment{ display: inline-table; } 
+  .blocks-node:focus > .blocks-comment{ opacity: 1; } 
 
   .blocks-dragging {
     .blocks-white-space{ background-color: transparent; }
