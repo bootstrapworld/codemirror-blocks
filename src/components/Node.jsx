@@ -22,6 +22,8 @@ export default class Node extends PureComponent {
     if(node.options.comment){
       node.options.comment.id = "block-node-"+node.id+"-comment";
     }
+    let commentID = node.options.comment? `${node.options.comment.id}`: undefined;
+
     return (
       <span
         id              = { `block-node-${node.id}` }
@@ -30,8 +32,8 @@ export default class Node extends PureComponent {
         tabIndex        = "-1"
         role            = "treeitem"
         aria-selected   = "false"
-        aria-label      = { node.options['aria-label'] }
-        aria-describedby= { node.options.comment? `${node.options.comment.id}`: undefined}
+        aria-label      = { node.options['aria-label']+',' }
+        aria-labelledby = { `block-node-${node.id} ${commentID}` }
         aria-disabled   = { locked? "true": undefined }
         aria-expanded   = { expandable? ((locked || node.collapsed )? "false" : "true") : undefined}
         aria-setsize    = { node["aria-setsize"]  }
