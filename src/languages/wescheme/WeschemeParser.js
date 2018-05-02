@@ -245,13 +245,12 @@ function parseNode(node, i) {
       {'aria-label':'condition '+(i+1)}
     );
   } else if (node instanceof structures.ifExpr) {
+    let predicate = parseNode(node.predicate);
+    let consequence = parseNode(node.consequence);
+    let alternative = parseNode(node.alternative);
     return new IfExpression(
-      from,
-      to,
-      parseNode(node.predicate),
-      parseNode(node.consequence),
-      parseNode(node.alternative),
-      {'aria-label': "if expression", 'comment' : comment}
+      from, to, predicate, consequence, alternative,
+      {'aria-label': "if-then-else expression", 'comment' : comment}
     );
   } else if (node instanceof structures.symbolExpr) {
     if(node.val == "...") {
