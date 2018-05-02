@@ -158,6 +158,9 @@ export default class CodeMirrorBlocks {
     this.buffer.style.height = "1px";
     document.body.appendChild(this.buffer);
 
+    // HACK to get around FF box
+    [...document.getElementsByClassName("CodeMirror-vscrollbar")].forEach(n => n.tabIndex=-1);
+
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
     }
