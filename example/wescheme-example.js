@@ -31,7 +31,7 @@ document.getElementById('mode').onchange = function(e) {
   if(e.target.checked) {
     cm = CodeMirror.fromTextArea(
       document.getElementById("code"),
-      {lineNumbers: true, theme:'3024-day', viewportMargin: Infinity}
+      {lineNumbers: true, theme:'3024-day'}
     );
 
 

@@ -6,8 +6,8 @@
 
 
 ;Physical Constants
-(define SCREEN-WIDTH 500);
-(define SCREEN-HEIGHT 500);
+(define SCREEN-WIDTH 500)
+(define SCREEN-HEIGHT 500)
 (define BACKGROUND (empty-scene SCREEN-WIDTH SCREEN-HEIGHT))
 (define UFO-HEIGHT (image-height UFO))
 (define UFO-WIDTH (image-width UFO))

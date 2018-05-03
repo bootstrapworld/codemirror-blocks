@@ -13,7 +13,7 @@ quuz   ; symbol
 ; we can have nested if expressions
 (if (> x 0) 
 	"A"
-   	(if (< x 0) 
+   	(if (< x 0)
    		"B"
    		"C"))
 
