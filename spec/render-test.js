@@ -28,7 +28,7 @@ describe('The render module,', function() {
     });
 
     it('should render an aria label if specified in the options', function() {
-      expect(this.literalEls[0].getAttribute('aria-label')).toBe('1');
+      expect(this.literalEls[0].getAttribute('aria-label')).toBe('1,');
     });
   });
 
@@ -70,7 +70,7 @@ describe('The render module,', function() {
     });
 
     it('should contain the comment itself within the span', function() {
-      expect(this.commentEls[0].innerText).toBe('this is a comment');
+      expect(this.commentEls[0].innerText).toBe('Has comment, this is a comment');
     });
   });
 
