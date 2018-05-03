@@ -883,8 +883,12 @@ export default class CodeMirrorBlocks {
         this.searchBox.innerText = "";
       }
       // if there's a search string, Enter and Shift-Enter go to next/prev
-      else if (keyName == "Enter"       && activeNode) { showNextMatch(true , activeNode.to   ); }
-      else if (keyName == "Shift-Enter" && activeNode) { showNextMatch(false, activeNode.from ); }
+      else if (keyName == "Enter"       && activeNode) { 
+        showNextMatch(true , that.ast.getNodeAfter(activeNode).from); 
+      }
+      else if (keyName == "Shift-Enter" && activeNode) {
+        showNextMatch(false , activeNode.from); 
+      }
       // An ASCII key was pressed! If there's still a match, modify the search string and find
       else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey)) 
         && ([8, 46].includes(keyCode) || event.key.length==1) ) {
@@ -893,7 +897,7 @@ export default class CodeMirrorBlocks {
             : this.searchString + event.key;                                            // Next Char
         let searchCursor = this.cm.getSearchCursor(newSearchString);
         this.searchMatches = [];
-        while(searchCursor.findNext()) { 
+        while(searchCursor.findNext()) {
           let node = this.ast.getNodeContaining(searchCursor.from());
           if(node) this.searchMatches.push(node);  // make sure we're not just matching a comment
         }

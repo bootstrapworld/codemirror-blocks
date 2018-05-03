@@ -30,9 +30,13 @@ function pathIsIndependentOfChangePath(pathArray, changeArray) {
       (v>changeArray[i] && i<changeArray.length-2)) > -1;   // after: any *ancestor only* is an older sibling
 }
 
-function posWithinNode(pos, node){
-  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) > 0)
-    ||   (comparePos(node.from, pos) < 0) && (comparePos(node.to, pos) >= 0);
+function posWithinNode(pos, node) {
+  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) >  0)
+    ||   (comparePos(node.from, pos) <  0) && (comparePos(node.to, pos) >= 0);
+}
+
+function nodeCommentContaining(pos, node) {
+  return node.options.comment && posWithinNode(pos, node.options.comment);
 }
 
 function enumerateList(lst, level) {
@@ -199,7 +203,7 @@ export class AST {
   }
   // return the node containing the cursor, or false
   getNodeContaining(cursor, nodes = this.rootNodes) {
-    let n = nodes.find(node => posWithinNode(cursor, node));
+    let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
     return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)) || n);
   }
   // return all the root nodes that contain the given positions, or fall between them
