@@ -826,10 +826,10 @@ export default class CodeMirrorBlocks {
       if(node === activeNode) { playSound(BEEP); }
       that.activateNode(node, event);
     }
-    function showNextMatch(forward) {
-      let matches = that.searchMatches.slice(0), test = forward? d=>d>0 : d=>d<0;
+    function showNextMatch(forward, from) {
+      let matches = that.searchMatches.slice(0), test = forward? d => d>=0 : d => d<0;
       if(!forward){ matches.reverse(); } // if we're searching backwards, reverse the array
-      let index = matches.findIndex(n => test(poscmp(n.from, activeNode.from)));
+      let index = matches.findIndex(n => test(poscmp(n.from, from)));
       if(index < 0) { index = 0; playSound(BEEP); } // if we go off the edge, wrap to 0 & play sound
       let node = matches[index], ancestors = [node], p = that.ast.getNodeParent(node);
       while(p) { ancestors.unshift(p); p = that.ast.getNodeParent(p); }
@@ -861,8 +861,8 @@ export default class CodeMirrorBlocks {
         this.searchBox.innerText = "";
       }
       // if there's a search string, Enter and Shift-Enter go to next/prev
-      else if (keyName == "Enter"       && activeNode) { showNextMatch(true ); }
-      else if (keyName == "Shift-Enter" && activeNode) { showNextMatch(false); }
+      else if (keyName == "Enter"       && activeNode) { showNextMatch(true , activeNode.to   ); }
+      else if (keyName == "Shift-Enter" && activeNode) { showNextMatch(false, activeNode.from ); }
       // An ASCII key was pressed! If there's still a match, modify the search string and find
       else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey)) 
         && ([8, 46].includes(keyCode) || event.key.length==1) ) {
@@ -879,7 +879,7 @@ export default class CodeMirrorBlocks {
         this.searchString = newSearchString;
         this.searchBox.innerText = newSearchString;
         this.say(this.searchString? 'Searching for '+this.searchString : 'Type to search', 0);
-        if(newSearchString !="") showNextMatch(true);
+        if(newSearchString !="") showNextMatch(true, activeNode.from);
       }
     } else {
       // Switch to Search Mode
