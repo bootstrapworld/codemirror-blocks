@@ -385,11 +385,8 @@ export default class CodeMirrorBlocks {
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     var {top, bottom, left, right} = node.el.getBoundingClientRect();
-    // if the element is outside of CM's viewport, scroll to that line and recalaculate
-    if((left+right+top+bottom) == 0) {
-      this.cm.scrollIntoView(node.from);
-      var {top, bottom, left, right} = node.el.getBoundingClientRect();
-    }
+    this.cm.scrollIntoView(node.from);
+    var {top, bottom, left, right} = node.el.getBoundingClientRect();
     let offset = this.wrapper.getBoundingClientRect();
     let scroll = this.cm.getScrollInfo();
     top    = top    + scroll.top  - offset.top; 
