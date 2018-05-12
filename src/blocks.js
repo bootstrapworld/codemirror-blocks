@@ -857,8 +857,9 @@ export default class CodeMirrorBlocks {
       while(p) { ancestors.unshift(p); p = that.ast.getNodeParent(p); }
       if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) { node = ancestors[0]; }
       else { ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); }
+      that.say((forward? index+1 : matches.length-index) + " of "+matches.length, 0);
       refreshCM();
-      that.activateNode(node, event);
+      setTimeout(() => that.activateNode(node, event), 500);
       return true;
     }
     // If it's an expandable node, set to makeExpanded (or toggle)
@@ -873,8 +874,8 @@ export default class CodeMirrorBlocks {
       }
       return makeExpanded !== isExpanded;
     }
-
-    if (searchMode) {
+   // allow help, ancestors and children to pass through
+    if (searchMode && (!["Shift-\\","/","\\"].includes(keyName))) {
       // Turn off Find Modal
       if (["Esc","Shift-Esc"].includes(keyName)) {
         this.say("Find mode disabled");
@@ -890,7 +891,7 @@ export default class CodeMirrorBlocks {
         showNextMatch(false , activeNode.from); 
       }
       // An ASCII key was pressed! If there's still a match, modify the search string and find
-      else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey)) 
+      else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey))
         && ([8, 46].includes(keyCode) || event.key.length==1) ) {
         let newSearchString = [8, 46].includes(keyCode)? this.searchString.slice(0, -1) // Del/Backspace
           : ["", true].includes(this.searchString)? event.key                           // First char
