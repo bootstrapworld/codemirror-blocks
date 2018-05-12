@@ -248,6 +248,12 @@ function parseNode(node, i) {
     let predicate = parseNode(node.predicate);
     let consequence = parseNode(node.consequence);
     let alternative = parseNode(node.alternative);
+    let predLabel = predicate.options['aria-label'];
+    let conLabel = consequence.options['aria-label'];
+    let altLabel = alternative.options['aria-label'];
+    predicate.options['aria-label'] = "if, "+predLabel;
+    consequence.options['aria-label'] = "then, "+conLabel;
+    alternative.options['aria-label'] = "else, "+altLabel;
     return new IfExpression(
       from, to, predicate, consequence, alternative,
       {'aria-label': "if-then-else expression", 'comment' : comment}
