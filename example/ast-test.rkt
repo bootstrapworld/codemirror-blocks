@@ -7,6 +7,12 @@
 #t     ; boolean
 quuz   ; symbol
 
+(print "hello world")
+
+(+ 1 2)
+
+(* (- 1 2) (+ 9 8))
+
 ; we can have if expressions
 (if (positive? -5) (error "doesn't get here") 2)
 

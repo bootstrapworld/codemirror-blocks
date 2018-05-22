@@ -443,6 +443,27 @@ export default class CodeMirrorBlocks {
       || !node; // things outside of nodes are drop targets
   }
 
+  // If it's an expandable node, set to makeExpanded (or toggle)
+  // return true if there's been a change
+  maybeChangeNodeExpanded(node, makeExpanded) {
+    if(!this.isNodeExpandable(node)) return false;
+    // treat anything other than false as true (even undefined)
+    let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
+    if(makeExpanded !== isExpanded) {
+      node.el.setAttribute("aria-expanded", !isExpanded);
+      node.collapsed = isExpanded;
+    }
+    return makeExpanded !== isExpanded;
+  }
+
+
+  // used for lightweigh refresh when the AST hasn't changed
+  refreshCM(cur){
+    this.cm.refresh(); 
+    this.cm.scrollIntoView(cur);
+    return true;
+  }
+
   // handleCopyCut : Event -> Void
   // if any nodes are selected, copy all of their text ranges to a buffer
   // copy the buffer to the clipboard. Remove the original text onCut
@@ -829,12 +850,6 @@ export default class CodeMirrorBlocks {
     let searchMode = this.searchString !== false;
     log('keydown', keyName, activeNode);
 
-    // used for lightweigh refresh when the AST hasn't changed
-    function refreshCM(){
-      that.cm.refresh(); 
-      that.cm.scrollIntoView(cur);
-      return true;
-    }
     // used to create an insertion node
     function moveCursorAdjacent(node, cursor) {
       if(node) { that.insertionQuarantine("", node, event); } 
@@ -856,24 +871,13 @@ export default class CodeMirrorBlocks {
       let node = matches[index], ancestors = [node], p = that.ast.getNodeParent(node);
       while(p) { ancestors.unshift(p); p = that.ast.getNodeParent(p); }
       if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) { node = ancestors[0]; }
-      else { ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); }
+      else { ancestors.forEach(a => that.maybeChangeNodeExpanded(a, true)); }
       that.say((forward? index+1 : matches.length-index) + " of "+matches.length, 0);
-      refreshCM();
+      that.refreshCM(cur);
       setTimeout(() => that.activateNode(node, event), 500);
       return true;
     }
-    // If it's an expandable node, set to makeExpanded (or toggle)
-    // return true if there's been a change
-    function maybeChangeNodeExpanded(node, makeExpanded) {
-      if(!that.isNodeExpandable(node)) return false;
-      // treat anything other than false as true (even undefined)
-      let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
-      if(makeExpanded !== isExpanded) {
-        node.el.setAttribute("aria-expanded", !isExpanded);
-        node.collapsed = isExpanded;
-      }
-      return makeExpanded !== isExpanded;
-    }
+    
    // allow help, ancestors and children to pass through
     if (searchMode && (!["Shift-\\","/","\\"].includes(keyName))) {
       // Turn off Find Modal
@@ -921,8 +925,8 @@ export default class CodeMirrorBlocks {
         if(this.isNodeEditable(activeNode)){
           this.insertionQuarantine(false, activeNode, event);
         } else {
-          maybeChangeNodeExpanded(activeNode);
-          refreshCM();
+          that.maybeChangeNodeExpanded(activeNode);
+          that.refreshCM(cur);
         }
       }
       // Ctrl/Cmd-Enter should force-allow editing on ANY node
@@ -1004,28 +1008,8 @@ export default class CodeMirrorBlocks {
       this.activateNode(lastNode, event);
     }
     // Shift-Left and Shift-Right toggle global expansion
-    else if (keyName === "Shift-Left" && activeNode) {
-      this.say("Collapse All", 30);
-      let savedViewportMargin = this.cm.getOption("viewportMargin");
-      this.cm.setOption("viewportMargin", Infinity);
-      let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
-      [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), false));
-      refreshCM(); // update the CM display, since line heights may have changed
-      let rootPath = activeNode.path.split(",")[0]; // put focus on containing rootNode
-      // shift focus if rootId !== activeNodeId
-      if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
-      else this.cm.scrollIntoView(activeNode.from);
-      this.cm.setOption("viewportMargin", savedViewportMargin);
-    }
-    else if (keyName === "Shift-Right" && activeNode) {
-      this.say("Expand All", 30);
-      let savedViewportMargin = this.cm.getOption("viewportMargin");
-      this.cm.setOption("viewportMargin", Infinity);
-      let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
-      [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), true));
-      refreshCM(); // update the CM display, since line heights may have changed
-      this.cm.setOption("viewportMargin", savedViewportMargin);
-    }
+    else if (keyName === "Shift-Left" && activeNode) { that.changeAllExpanded(false); }
+    else if (keyName === "Shift-Right" && activeNode){ that.changeAllExpanded(true ); }
     // active the previous non-locked, non-hidden node
     else if (keyName === "Shift-PageUp" && activeNode) {
       let searchFn = (cur => this.ast.getNodeBefore(cur)),
@@ -1043,7 +1027,7 @@ export default class CodeMirrorBlocks {
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {
       let parent = this.ast.getNodeParent(activeNode);
-      return (maybeChangeNodeExpanded(activeNode, false) && refreshCM())
+      return (that.maybeChangeNodeExpanded(activeNode, false) && that.refreshCM(cur))
           || (parent && this.activateNode(parent, event))
           || playSound(BEEP);
     }
@@ -1051,7 +1035,7 @@ export default class CodeMirrorBlocks {
     else if (event.keyCode == RIGHT && activeNode) {
       let firstChild = this.isNodeExpandable(activeNode) 
         && this.ast.getNodeFirstChild(activeNode);
-      return (maybeChangeNodeExpanded(activeNode, true) && refreshCM())
+      return (that.maybeChangeNodeExpanded(activeNode, true) && that.refreshCM(cur))
           || (firstChild && this.activateNode(firstChild, event))
           || playSound(BEEP);
     }
@@ -1121,6 +1105,24 @@ export default class CodeMirrorBlocks {
       this.selectedNodes.forEach(n => this.removeFromSelection(n, false));
       this.say("selection cleared");
     } 
+  }
+
+  // collapse all blocks
+  changeAllExpanded(expanded) {
+    this.say(expanded? "Expand All" : "Collapse All", 30);
+    let activeNode = this.getActiveNode();
+    let savedViewportMargin = this.cm.getOption("viewportMargin");
+    this.cm.setOption("viewportMargin", Infinity);
+    let elts = this.wrapper.querySelectorAll(`[aria-expanded=${!expanded}]:not([class*=blocks-locked])`);
+    [].forEach.call(elts, e => this.maybeChangeNodeExpanded(this.findNodeFromEl(e), expanded));
+    this.refreshCM(); // update the CM display, since line heights may have changed
+    this.cm.setOption("viewportMargin", savedViewportMargin);
+    if(!expanded) { // if we collapsed, put focus on containing rootNode
+      let rootPath = activeNode.path.split(",")[0];
+      // shift focus if rootId !== activeNodeId
+      if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
+      else this.cm.scrollIntoView(activeNode.from);      
+    }
   }
 
   cancelIfErrorExists(event) {
