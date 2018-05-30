@@ -7,7 +7,7 @@ var baseConfig = require('./base.config.js');
 var configs = [
   _.extend({}, baseConfig(), {
     entry: {
-      "CodeMirrorBlocks": './src/codemirror-blocks.js'
+      "CodeMirrorBlocks": ['babel-polyfill', './src/codemirror-blocks.js']
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
@@ -18,9 +18,10 @@ var configs = [
       'codemirror': 'CodeMirror'
     }
   }),
+  // everything needed to drop into WeScheme
   _.extend({}, baseConfig(), {
     entry: {
-      "CodeMirrorBlocks-all": './src/codemirror-blocks-all.js'
+      "CodeMirrorBlocks-wescheme": ['babel-polyfill', './src/languages/wescheme/index.js', './src/codemirror-blocks-all.js']
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
@@ -30,7 +31,7 @@ var configs = [
   }),
   _.extend({}, baseConfig(), {
     entry: {
-      "WeschemeParser": './src/languages/wescheme/index.js'
+      "WeschemeParser": ['babel-polyfill', './src/languages/wescheme/index.js']
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
@@ -39,7 +40,7 @@ var configs = [
     },
     externals: {
       'codemirror': 'CodeMirror',
-      '../ast': 'CodeMirrorBlocks.ast'
+      'ast': 'CodeMirrorBlocks.ast'
     }
   })
 ];
