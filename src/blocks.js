@@ -8,6 +8,7 @@ import merge from './merge';
 
 // Logging function
 function log(event, details, activeNode=false) {
+  return;
   let userSelect  = document.getElementById("userTestingID");
   let taskSelect  = document.getElementById("task");
   let userID      = userSelect? userSelect.value : null;
@@ -312,7 +313,7 @@ export default class CodeMirrorBlocks {
               node.el.style.cssText = options.css;
             }
             if (options.className) {
-              node.el.className += ' '+options.className;
+              node.el.classList.add(options.className);
             }
             if (options.title) {
               node.el.title = options.title;
