@@ -8,7 +8,6 @@ import merge from './merge';
 
 // Logging function
 function log(event, details, activeNode=false) {
-  return;
   let userSelect  = document.getElementById("userTestingID");
   let taskSelect  = document.getElementById("task");
   let userID      = userSelect? userSelect.value : null;
