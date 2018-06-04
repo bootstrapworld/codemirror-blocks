@@ -42,6 +42,20 @@ var configs = [
       'codemirror': 'CodeMirror',
       'ast': 'CodeMirrorBlocks.ast'
     }
+  }),
+  _.extend({}, baseConfig(), {
+    entry: {
+      "Editor": ['babel-polyfill', './src/languages/wescheme/index.js', './src/codemirror-blocks-all.js', './src/ui/']
+    },
+    output: {
+      path: path.resolve(__dirname, '..', "dist"),
+      filename: "[name].js",
+      library: ["CodeMirrorBlocks"]
+    },
+    externals: {
+      'codemirror': 'CodeMirror',
+      'ast': 'CodeMirrorBlocks.ast'
+    }
   })
 ];
 

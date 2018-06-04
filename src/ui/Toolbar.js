@@ -72,7 +72,7 @@ export default class Toolbar extends Component {
       <div className={classNames('blocks-ui Toolbar', {'has-selected':!!selected})}>
         <div className="search-box">
           <input type="search"
-            placeholder="Search Primitives"
+            placeholder="Search functions"
             className="form-control"
             value={this.state.search}
             onKeyDown={this.checkEscape}

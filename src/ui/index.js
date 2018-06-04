@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Toolbar from './Toolbar';
 import Editor from './Editor';
+import CodeMirrorBlocks from '../blocks';
+
 
 export function renderToolbarInto(blocks) {
   if (blocks.toolbarNode) {

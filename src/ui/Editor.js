@@ -31,7 +31,7 @@ export default class Editor extends Component {
       this.props.language,
       this.props.options
     );
-    this.blocks.setBlockMode(true);
+    this.blocks.setBlockMode(false);
     this.blocks.on(EVENT_DRAG_START, this.showTrashCan);
     this.blocks.on(EVENT_DRAG_END, this.hideTrashCan);
     // hrm, the code mirror instance is only available after
@@ -78,12 +78,16 @@ export default class Editor extends Component {
       'glyphicon-pencil': blocks.blockMode,
       'glyphicon-align-left': !blocks.blockMode
     });
+    let editorClass = classNames('Editor', {
+      'blocks': blocks.blockMode,
+      'text': !blocks.blockMode
+    });
     let toolbarPaneClasses = classNames(
       "col-xs-3 toolbar-pane",
       {'show-trashcan':this.state.showTrashCan}
     );
     return (
-      <div className="Editor">
+      <div className={editorClass}>
         {this.blocks ?
           <div className={toolbarPaneClasses}>
             <Toolbar primitives={blocks.parser.primitives} 
