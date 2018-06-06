@@ -863,29 +863,41 @@ describe('The CodeMirrorBlocks Class', function() {
         this.nomatch1.el.dispatchEvent(oneKey);
       });
 
-      it('should find first match', function() {
-        expect(this.blocks.getActiveNode()).toBe(this.match1);
-        expect(document.activeElement).toBe(this.match1.el);
+      it('should find first match', function(done) {
+        setTimeout(() => {
+          expect(this.blocks.getActiveNode()).toBe(this.match1);
+          expect(document.activeElement).toBe(this.match1.el);
+          done();
+        }, DELAY);
       });
 
-      it('should find next match, skipping a non-matching literal', function() {
+      it('should find next match, skipping a non-matching literal', function(done) {
         this.match1.el.dispatchEvent(keydown(ENTER_KEY));
-        expect(this.blocks.getActiveNode()).toBe(this.match2);
-        expect(document.activeElement).toBe(this.match2.el);
+        setTimeout(() => {
+          expect(this.blocks.getActiveNode()).toBe(this.match2);
+          expect(document.activeElement).toBe(this.match2.el);
+          done()
+        }, DELAY);
       });
 
-      it('find-next should wrap around to beginning of document', function() {
+      it('find-next should wrap around to beginning of document', function(done) {
         this.match3.el.dispatchEvent(click());
         this.match3.el.dispatchEvent(keydown(ENTER_KEY));
-        expect(this.blocks.getActiveNode()).toBe(this.match1);
-        expect(document.activeElement).toBe(this.match1.el);
+        setTimeout(() => {
+          expect(this.blocks.getActiveNode()).toBe(this.match1);
+          expect(document.activeElement).toBe(this.match1.el);
+          done();
+        }, DELAY);
       });
 
-      it('find-previous should wrap around to end of document', function() {
+      it('find-previous should wrap around to end of document', function(done) {
         this.match1.el.dispatchEvent(click());
         this.match1.el.dispatchEvent(keydown(ENTER_KEY, {shiftKey: true}));
-        expect(this.blocks.getActiveNode()).toBe(this.match3);
-        expect(document.activeElement).toBe(this.match3.el);
+        setTimeout(() => {
+          expect(this.blocks.getActiveNode()).toBe(this.match3);
+          expect(document.activeElement).toBe(this.match3.el);
+          done();
+        }, DELAY);
       });
     });
   });
