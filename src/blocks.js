@@ -8,6 +8,7 @@ import merge from './merge';
 
 // Logging function
 function log(event, details, activeNode=false) {
+  return;
   let userSelect  = document.getElementById("userTestingID");
   let taskSelect  = document.getElementById("task");
   let userID      = userSelect? userSelect.value : null;
@@ -354,6 +355,7 @@ export default class CodeMirrorBlocks {
   render(changes) {
     let start = Date.now();
     let newAST = this.parser.parse(this.cm.getValue());
+    console.log(newAST.rootNodes);
     this.cm.operation(() => {
       // try to patch the AST, and conservatively mark only changed nodes as dirty
       try{
@@ -869,9 +871,9 @@ export default class CodeMirrorBlocks {
       while(p) { ancestors.unshift(p); p = that.ast.getNodeParent(p); }
       if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) { node = ancestors[0]; }
       else { ancestors.forEach(a => that.maybeChangeNodeExpanded(a, true)); }
-      that.say((forward? index+1 : matches.length-index) + " of "+matches.length, 0);
       that.refreshCM(cur);
-      setTimeout(() => that.activateNode(node, event), 500);
+      that.activateNode(node, event);
+      that.say((forward? index+1 : matches.length-index) + " of "+matches.length, 100);
       return true;
     }
     
