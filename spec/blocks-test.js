@@ -876,7 +876,7 @@ describe('The CodeMirrorBlocks Class', function() {
         setTimeout(() => {
           expect(this.blocks.getActiveNode()).toBe(this.match2);
           expect(document.activeElement).toBe(this.match2.el);
-          done()
+          done();
         }, DELAY);
       });
 

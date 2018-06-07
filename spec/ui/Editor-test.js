@@ -11,6 +11,7 @@ describe('The Editor component,', function() {
   beforeEach(function() {
     this.editor = TestUtils.renderIntoDocument(<Editor language="wescheme" />);
     this.blocks = this.editor.getCodeMirrorBlocks();
+    this.blocks.setBlockMode(true);
   });
 
   it("should create a CodeMirrorBlocks instance for you", function() {
