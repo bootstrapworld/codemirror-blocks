@@ -70,7 +70,7 @@ module.exports = function(env, argv) {
       })
     ]),
     optimization: {
-      minimize: argv['mode'] == 'production',
+      minimize: argv['mode'] !== 'development',
       splitChunks: {
         cacheGroups: {
           commons: {
