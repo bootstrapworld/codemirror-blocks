@@ -310,6 +310,10 @@ function parseNode(node, i) {
     if(node.val.constructor !== Array) return null;
     return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
       {msg: node.errorMsg, 'aria-label': 'invalid expression'});
+  } else if (node instanceof structures.requireExpr) {
+    return new Expression(from, to, parseNode(node.stx), [parseNode(node.spec)],
+      {'aria-label': 'require '+node.spec.val ,'comment' : comment}
+    );
   } 
   console.log("!! No translator for", node);
   return null;
