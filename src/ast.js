@@ -135,7 +135,6 @@ export class AST {
       });
       return {path: path, added: insertedSiblings, removed: removedSiblings };
     });
-
     // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
     pathChanges.forEach(change => {
       let shift = change.added - change.removed;
@@ -168,8 +167,8 @@ export class AST {
     // Ensure that no dirty node is the ancestor of another dirty node
     let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
     dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
-    newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)));
-    console.log(savedChanges, newAST.dirtyNodes);
+    newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)) // grab all the nodes
+      .filter(n => n !== undefined));                                                  // remove deleted ones
     return newAST;
   }
 
