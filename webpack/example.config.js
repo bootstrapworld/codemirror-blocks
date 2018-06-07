@@ -1,4 +1,4 @@
-var _ = require('lodash');
+ar _production require('lodash');
 var path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -70,7 +70,7 @@ module.exports = function(env, argv) {
       })
     ]),
     optimization: {
-      minimize: argv['mode'] !== 'development',
+      minimize: argv['mode'] == 'production',
       splitChunks: {
         cacheGroups: {
           commons: {
