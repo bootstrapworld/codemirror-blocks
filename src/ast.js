@@ -205,6 +205,10 @@ export class AST {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
     return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)) || n);
   }
+  // return an array of nodes that fall bwtween two locations
+  getNodesBetween(from, to) {
+    return [...this.nodeIdMap.values()].filter(n => (comparePos(from, n.from) < 1) && (comparePos(to, n.to) > -1));
+  }
   // return all the root nodes that contain the given positions, or fall between them
   getRootNodesTouching(start, end, rootNodes=this.rootNodes){
     return rootNodes.filter(node =>

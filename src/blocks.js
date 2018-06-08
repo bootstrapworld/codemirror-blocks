@@ -69,19 +69,20 @@ const closeDelims = {"(": ")", "[":"]", "{": "}"};
 
 const MARKER = Symbol("codemirror-blocks-marker");
 export class BlockMarker {
-  constructor(cmMarker, options){
+  constructor(cmMarker, options, node){
     this.cmMarker = cmMarker;
     this.options = options;
+    this.nodeEl = node.el;
   }
   clear() {
     if (this.options.css) {
-      this.cmMarker.replacedWith.firstChild.style.cssText = '';
+      this.nodeEl.style.cssText = '';
     }
     if (this.options.title) {
-      this.cmMarker.replacedWith.firstChild.title = '';
+      this.nodeEl.title = '';
     }
     if (this.options.className) {
-      this.cmMarker.replacedWith.firstChild.classList.remove(this.options.className);
+      this.nodeEl.classList.remove(this.options.className);
     }
     delete this.cmMarker[MARKER];
   }
@@ -306,22 +307,21 @@ export default class CodeMirrorBlocks {
     let marks = this.cm.findMarks(from, to);
     // find marks that are blocks, and apply the styling to node between [from, to]
     for (let mark of marks) {
-      if (mark.replacedWith && mark.replacedWith.firstChild.classList.contains('blocks-node')) {
-        for(let node of mark.node){
-          if((poscmp(from, node.from) < 1) && (poscmp(to, node.to) > -1)){
-            if (options.css) {
-              node.el.style.cssText = options.css;
-            }
-            if (options.className) {
-              node.el.classList.add(options.className);
-            }
-            if (options.title) {
-              node.el.title = options.title;
-            }
-            mark[MARKER] = new BlockMarker(mark, options);
-            return mark[MARKER]; // we should only find one that is a blocks-node
+      if (mark.replacedWith && mark.node) {
+        let nodes = this.ast.getNodesBetween(from, to);
+        return nodes.map(node => {
+          if (options.css) {
+            node.el.style.cssText = options.css;
           }
-        }
+          if (options.className) {
+            node.el.classList.add(options.className);
+          }
+          if (options.title) {
+            node.el.title = options.title;
+          }
+          mark[MARKER] = new BlockMarker(mark, options, node);
+          return mark[MARKER]; // we should only find one that is a blocks-node
+        });
       }
     }
     // didn't find a codemirror mark, just pass through.
