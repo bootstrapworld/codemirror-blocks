@@ -63,7 +63,7 @@ configs = configs.concat(
   configs.map(function(config) {
     return _.merge({}, config, {
       output: {
-        filename: "[name].min.js"
+        filename: "[name]-min.js"
       }
     });
   })
@@ -72,7 +72,7 @@ configs = configs.concat(
 configs.push(
   _.extend({}, baseConfig({extractCSS:true}), {
     entry: {
-      "example": './src/less/example.less'
+      "blocks": './src/less/blocks.less'
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
