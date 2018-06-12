@@ -68,18 +68,18 @@ export default class Renderer {
     // https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
     function assignClonePosition(nodes, clones, textPosition, precalc, shiftY=0) {
       clones.forEach((clone, i) => {
-        let node = nodes[i];
+        let node = nodes[i], left, right, width, height;
         // compute position in raw CM text - avoid DOM by using cm.charCoords
         if(textPosition) {
           let startCoord = cm.charCoords(node.from, "window"), endCoord = cm.charCoords(node.to, "window");
-          var left = startCoord.left, top = startCoord.top, width=endCoord.right-left, height=endCoord.bottom-top;
+          left = startCoord.left, top = startCoord.top, width=endCoord.right-left, height=endCoord.bottom-top;
         // compute position of offscreen block - just fadeout and disappear during transition
         } else if(node.el.offsetWidth === 0 && node.el.offsetHeight === 0) {
           clone.classList.add("fadeout");
           clone.style.whiteSpace = "pre";
         // compute position of onscreen block - use DOM because there's no cheaper way
         } else {
-          var {left, top, width, height} = node.el.getBoundingClientRect();
+          ({left, top, width, height} = node.el.getBoundingClientRect());
         }
         top  = (top  - offsetTop)  + parentScrollTop;
         left = (left - offsetLeft) + parentScrollLeft;
@@ -139,11 +139,11 @@ export default class Renderer {
     let totalTime = (Date.now() - start)/1000;
     console.log('starting animation took: '+totalTime+ 'ms.\n'
       +renderTime+'ms ('+((renderTime/totalTime)*100).toFixed(2)+'%) of that was for Rendering '+viewportNodes.length+' roots');
+
     if(toBlocks) { // if going to blockMode, render out-of-viewport nodes while animation is happening
-      let rootSet = new Set(viewportNodes);
-      rootNodes.forEach(r => {if(!rootSet.has(r)) this.render(r); }); 
+      let alreadyRendered = new Set(viewportNodes);
+      rootNodes.forEach(r => {if(!alreadyRendered.has(r)) this.render(r); }); 
     }
-    console.log('Total time was',(Date.now() - start)/1000);
   }
 
   // Render the node, recycling a container whenever possible

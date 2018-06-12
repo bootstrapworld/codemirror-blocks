@@ -108,7 +108,7 @@ export class AST {
   // FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
   // produce the new AST, preserving all the unchanged DOM nodes from the old AST
   patch(parse, newAST, CMchanges) {
-    let oldAST = this, dirtyNodes = new Set(), savedChanges = JSON.parse(JSON.stringify(CMchanges));
+    let oldAST = this, dirtyNodes = new Set();
 
     // For each CM change: (1) compute a sibling shift at the relevant path and 
     // (2) update the text posns in the AST to reflect the post-change coordinates
