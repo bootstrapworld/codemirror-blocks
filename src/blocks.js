@@ -303,24 +303,23 @@ export default class CodeMirrorBlocks {
     if (!hasOptions) { return; } // noop
 
     let marks = this.cm.findMarks(from, to);
-    // find marks that are blocks, and apply the styling to node between [from, to]
+    // find blocks between [from, to], and apply the styling to node
     for (let mark of marks) {
       if (mark.replacedWith && mark.node) {
-        for(let node of mark.node){
-          if((poscmp(from, node.from) < 1) && (poscmp(to, node.to) > -1)){
-            if (options.css) {
-              node.el.style.cssText = options.css;
-            }
-            if (options.className) {
-              node.el.className += ' '+options.className;
-            }
-            if (options.title) {
-              node.el.title = options.title;
-            }
-            mark[MARKER] = new BlockMarker(mark, options, node);
-            return mark[MARKER]; // we should only find one that is a blocks-node
+        let nodes = this.ast.getNodesBetween(from, to);
+        return nodes.map(node => {
+          if (options.css) {
+            node.el.style.cssText = options.css;
           }
-        }
+          if (options.className) {
+            node.el.className += ' '+options.className;
+          }
+          if (options.title) {
+            node.el.title = options.title;
+          }
+          mark[MARKER] = new BlockMarker(mark, options, node);
+          return mark[MARKER];
+        });
       }
     }
     // didn't find a codemirror mark, just pass through.

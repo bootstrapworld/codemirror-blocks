@@ -120,7 +120,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it("should return a BlockMarker object", function() {
-      let mark = this.blocks.markText(this.literal1.from, this.literal1.to, {css:"color: red"});
+      let mark = this.blocks.markText(this.literal1.from, this.literal1.to, {css:"color: red"})[0];
       expect(mark).toEqual(jasmine.any(BlockMarker));
     });
 
@@ -170,7 +170,7 @@ describe('The CodeMirrorBlocks Class', function() {
       beforeEach(function() {
         this.mark = this.blocks.markText(
           this.literal1.from, this.literal1.to, {css:"color: red"}
-        );
+        )[0];
       });
 
       it("should expose a clear function to remove the mark", function() {

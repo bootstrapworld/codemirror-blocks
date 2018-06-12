@@ -67,12 +67,13 @@ export default class Renderer {
     // uses the FLIP method described at:
     // https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
     function assignClonePosition(nodes, clones, textPosition, precalc, shiftY=0) {
+      var left, top, width, height;
       clones.forEach((clone, i) => {
-        let node = nodes[i], left, right, width, height;
+        var node = nodes[i];
         // compute position in raw CM text - avoid DOM by using cm.charCoords
         if(textPosition) {
           let startCoord = cm.charCoords(node.from, "window"), endCoord = cm.charCoords(node.to, "window");
-          left = startCoord.left, top = startCoord.top, width=endCoord.right-left, height=endCoord.bottom-top;
+          left = startCoord.left, top = startCoord.top, width=endCoord.right-left, height=endCoord.bottom-startCoord.top;
         // compute position of offscreen block - just fadeout and disappear during transition
         } else if(node.el.offsetWidth === 0 && node.el.offsetHeight === 0) {
           clone.classList.add("fadeout");
