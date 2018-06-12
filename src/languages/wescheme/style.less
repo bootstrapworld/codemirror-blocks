@@ -1,7 +1,7 @@
 .blocks-language-wescheme {
   @border-radius: 5px;
   @large-border-radius: 15px;
-  @border-width: 3px;
+  @border-width: 2px;
 
   // Colors:
   @literal-number-color: blue;
@@ -198,6 +198,7 @@
     min-width: 10px;
     line-height: @height - @border-width * 2;
     height: @height;
+    font-size: 12px;
     cursor: pointer;
     cursor: hand;
     transition: all 0.5s;
@@ -216,7 +217,7 @@
     }
 
     &:hover {
-      border: solid @border-hint;
+      border: solid @border-hint @border-width;
     }
 
     &.blocks-over-target {
@@ -256,6 +257,7 @@
     box-shadow: 5px 5px 5px #888888;
   }
   .blocks-node:focus {
+    border-width: 2px;
     border-style: solid;
     border-color: @editing-border-color;
     outline: 0;
@@ -291,7 +293,7 @@
     min-width: 15px;
     display: inline-block;
     cursor: default;
-    height: 22px;
+    height: 20px;
     vertical-align: middle;
     text-align: center;
     transition: min-width .5s;
