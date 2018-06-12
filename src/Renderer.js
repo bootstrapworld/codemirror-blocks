@@ -102,7 +102,7 @@ export default class Renderer {
 
     // 1) Limit the number of lines CM is rendering (perf), and extract visible nodes, & make clones 
     let originalViewportMargin = that.cm.getOption("viewportMargin");
-    that.cm.setOption("viewportMargin", 20);
+    that.cm.setOption("viewportMargin", toBlocks? 2 : 20); // blocks are bigger than text, so use a smaller viewport
     let {from, to} = that.cm.getViewport();
     let viewportNodes = ast.getRootNodesTouching({line: from, ch: 0}, {line: to, ch: 0});
     let literals = viewportNodes.reduce(flatten, []);
@@ -118,16 +118,16 @@ export default class Renderer {
     // 3) render or clear the original AST, and compute how much we'll need to scroll
     let renderStart = Date.now();
     lines.classList.add('fadein');
-    if(toBlocks) { rootNodes.forEach(r => this.render(r));               }
+    if(toBlocks) { viewportNodes.forEach(r => this.render(r));           }
     else { cm.getAllMarks().filter(m => m.node).forEach(m => m.clear()); }
-    console.log('rendering took: '+(Date.now() - renderStart)/1000 + 'ms');
+    let renderTime = (Date.now() - renderStart)/1000;
 
     // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
     assignClonePosition(literals, clones, !toBlocks, false, shiftY);
     clones.forEach(c => cloneParent.appendChild(c));
     let endY = cm.cursorCoords(canary, "local").top, shiftY = endY-startY;
     cm.scrollTo(null, startScroll+shiftY);
-    setTimeout(() => cloneParent.classList.add("animate",toBlocks? "blocks" : "text"), 50);
+    setTimeout(() => cloneParent.classList.add("animate", toBlocks? "blocks" : "text"), 50);
 
     // 5) Clean up after ourselves. The 1500ms should match the transition length defined in blocks.less
     setTimeout(() => {
@@ -136,7 +136,14 @@ export default class Renderer {
       cm.refresh();
     }, 1500);
     that.cm.setOption("viewportMargin", originalViewportMargin);
-    console.log('animateTransition took: '+(Date.now() - start)/1000 + 'ms');
+    let totalTime = (Date.now() - start)/1000;
+    console.log('starting animation took: '+totalTime+ 'ms.\n'
+      +renderTime+'ms ('+((renderTime/totalTime)*100).toFixed(2)+'%) of that was for Rendering '+viewportNodes.length+' roots');
+    if(toBlocks) { // if going to blockMode, render out-of-viewport nodes while animation is happening
+      let rootSet = new Set(viewportNodes);
+      rootNodes.forEach(r => {if(!rootSet.has(r)) this.render(r); }); 
+    }
+    console.log('Total time was',(Date.now() - start)/1000);
   }
 
   // Render the node, recycling a container whenever possible
