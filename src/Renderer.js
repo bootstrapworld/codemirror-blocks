@@ -67,32 +67,30 @@ export default class Renderer {
     // uses the FLIP method described at:
     // https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
     function assignClonePosition(nodes, clones, textPosition, precalc, shiftY=0) {
-      if(textPosition) { // if we're computing text positions, mark them
-        cm.operation(() => nodes.forEach(node => { // Perf: batch-mark without repaints
-          node.el = toDom(node);
-          node.marker = cm.markText(node.from, node.to, { replacedWith: node.el });
-        }));
-      }
       clones.forEach((clone, i) => {
         let node = nodes[i];
-        if(node.el && node.el.offsetWidth === 0 && node.el.offsetHeight === 0) {
+        // compute position in raw CM text - avoid DOM by using cm.charCoords
+        if(textPosition) {
+          let startCoord = cm.charCoords(node.from, "window"), endCoord = cm.charCoords(node.to, "window");
+          var left = startCoord.left, top = startCoord.top, width=endCoord.right-left, height=endCoord.bottom-top;
+        // compute position of offscreen block - just fadeout and disappear during transition
+        } else if(node.el.offsetWidth === 0 && node.el.offsetHeight === 0) {
           clone.classList.add("fadeout");
           clone.style.whiteSpace = "pre";
+        // compute position of onscreen block - use DOM because there's no cheaper way
         } else {
-          let {left, top, width, height} = node.el.getBoundingClientRect();
-          top  = (top  - offsetTop)  + parentScrollTop;
-          left = (left - offsetLeft) + parentScrollLeft;
-          if(precalc){ // pre-compute left, top, width and height
-            node.top = top; node.left = left; node.width = width; node.height = height;
-          } else {     // compute the GPU-accelerated transition
-            clone.style.top    = top    + "px";
-            clone.style.left   = left   + "px";
-            clone.style.transform = 'translate('+(node.left-left)+'px,'+(node.top+shiftY-top)+'px) ';
-          }
+          var {left, top, width, height} = node.el.getBoundingClientRect();
+        }
+        top  = (top  - offsetTop)  + parentScrollTop;
+        left = (left - offsetLeft) + parentScrollLeft;
+        if(precalc){ // pre-compute left, top, width and height
+          node.top = top; node.left = left; node.width = width; node.height = height;
+        } else {     // compute the GPU-accelerated transition
+          clone.style.top    = top    + "px";
+          clone.style.left   = left   + "px";
+          clone.style.transform = 'translate('+(node.left-left)+'px,'+(node.top+shiftY-top)+'px) ';
         }
       });
-      // if we were messing with text positions, clear markers. Perf: batch-clear them without repaint
-      if(textPosition) { cm.operation(() => nodes.forEach(n => {n.marker.clear(); delete n.marker;})); }
     }
 
     // extract all the literals and blanks from a rootNode
@@ -109,14 +107,14 @@ export default class Renderer {
     let viewportNodes = ast.getRootNodesTouching({line: from, ch: 0}, {line: to, ch: 0});
     let literals = viewportNodes.reduce(flatten, []);
     let clones = literals.map(toDom);
-    
+
     // 2) pre-calculate starting positions (F)
     assignClonePosition(literals, clones, toBlocks, true);
     let startScroll = that.cm.getScrollInfo().top, topLine = cm.lineAtHeight(startScroll ,"local");
     for(var i=0; i<ast.rootNodes.length; i++){ if(topLine < ast.rootNodes[i].from.line) break; }
     let startRoot = ast.rootNodes[Math.max(i-1,0)], canary = startRoot? startRoot.from : 0;
     let startY = cm.cursorCoords(canary, "local").top;
-    
+
     // 3) render or clear the original AST, and compute how much we'll need to scroll
     let renderStart = Date.now();
     lines.classList.add('fadein');

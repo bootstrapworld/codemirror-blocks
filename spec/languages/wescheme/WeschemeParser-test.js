@@ -357,10 +357,6 @@ describe("The WeScheme Parser,", function() {
       console.log(this.ast.rootNodes[0]);
       expect(this.ast.rootNodes.length).toBe(0);
     });
-    it("should ignore require", function() {
-      this.ast = this.parser.parse('(require 2htdp/image)');
-      expect(this.ast.rootNodes.length).toBe(0);
-    });
     it("should ignore provide", function() {
       this.ast = this.parser.parse('(provide nori)');
       expect(this.ast.rootNodes.length).toBe(0);
