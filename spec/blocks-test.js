@@ -233,6 +233,13 @@ describe('The CodeMirrorBlocks Class', function() {
       );
     });
 
+    it("should allow for blocks that touch", function() {
+      this.blocks.toggleBlockMode();
+      this.cm.setValue('(+ 1 2)(* 3 6)');
+      expect(this.blocks.ast.rootNodes.length).toEqual(2);
+      expect(this.cm.getAllMarks().length).toEqual(2);
+    });
+
     it('should unrender itself when block mode is turned off', function() {
       this.blocks.setBlockMode(true);
       this.cm.setValue('1');

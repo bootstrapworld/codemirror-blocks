@@ -16,6 +16,10 @@ import VariableDefinition from './components/VariableDef';
 import FunctionDefinition from './components/FunctionDef';
 import Sequence         from './components/Sequence';
 
+function comparePos(a, b) {
+  return a.line - b.line || a.ch - b.ch;
+}
+
 export default class Renderer {
   constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
     this.cm = cm;
@@ -149,6 +153,7 @@ export default class Renderer {
 
   // Render the node, recycling a container whenever possible
   render(node, quarantine=false) {
+    console.log('render called');
     var container = document.createElement('span');
     if(node["aria-level"] && node["aria-level"] > 1) { // render in-place 
       container = document.createElement('span');
@@ -157,7 +162,10 @@ export default class Renderer {
       container.parentNode.replaceChild(container.firstChild, container); // REVISIT
     } else { // if it's a root node, reset the marker but save the container
       container.className = 'react-container';
-      let marker = this.cm.findMarksAt(node.from).filter(m => m.node)[0];
+      // find a marker that (a) has an old ASTNode and (b) start in exactly the same place as the new ASTNode
+      let marker = this.cm.findMarksAt(node.from).filter(
+        m => m.node && !comparePos(m.node.from, node.from))[0]; // there will never be more than one
+      // if there IS a marker, we're not quarantining, and it starts at the exact same place..
       if(marker && !quarantine) marker.clear();
       this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
       
@@ -167,6 +175,7 @@ export default class Renderer {
           { replacedWith: document.createElement('span') });
       }
       ReactDOM.render(this.renderNodeForReact(node), container);
+      console.log('marked text from', node.from, 'to', node.to, 'with', container.firstChild);
     }
     return container;
   }
