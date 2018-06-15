@@ -66,7 +66,7 @@ export default class Renderer {
     };
 
     // given nodes, clones, whether we're in text or block mode, and whether it's a precalc..
-    // position the clones over the currently-rendered nodes (wrap all marking in a cm.operation)
+    // position the clones over the currently-rendered literals and blanks
     // unless the node is offscreen, in which case fade out the clone
     // uses the FLIP method described at:
     // https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
@@ -81,7 +81,7 @@ export default class Renderer {
         // compute position of offscreen block - just fadeout and disappear during transition
         } else if(node.el.offsetWidth === 0 && node.el.offsetHeight === 0) {
           clone.classList.add("fadeout");
-          return; // no need to compute transitions for these
+          return;
         // compute position of onscreen block - use DOM because there's no cheaper way
         } else {
           ({left, top, width, height} = node.el.getBoundingClientRect());
@@ -110,17 +110,15 @@ export default class Renderer {
     that.cm.setOption("viewportMargin", toBlocks? 2 : 20); // blocks are bigger than text, so use a smaller viewport
     let {from, to} = that.cm.getViewport();
     let viewportNodes = ast.getRootNodesTouching({line: from, ch: 0}, {line: to, ch: 0});
-    let literals = viewportNodes.reduce(flatten, []);
-    let clones = literals.map(toDom);
+    let literals = viewportNodes.reduce(flatten, []), clones = literals.map(toDom);
 
     // 2) pre-calculate starting positions (F)
     assignClonePosition(literals, clones, toBlocks, true);
     let startScroll = that.cm.getScrollInfo().top, topLine = cm.lineAtHeight(startScroll ,"local");
-    for(var i=0; i<ast.rootNodes.length; i++){ if(topLine < ast.rootNodes[i].from.line) break; }
-    let startRoot = ast.rootNodes[Math.max(i-1,0)], canary = startRoot? startRoot.from : 0;
-    let startY = cm.cursorCoords(canary, "local").top;
+    let startRoot = rootNodes.find(r => topLine < r.from.line) || rootNodes[0];
+    let canary = startRoot? startRoot.from : {line:0,ch:0}, startY = cm.cursorCoords(canary, "local").top;
 
-    // 3) render or clear the original AST, and compute how much we'll need to scroll
+    // 3) render or clear the original AST
     let renderStart = Date.now();
     lines.classList.add('fadein');
     if(toBlocks) { viewportNodes.forEach(r => this.render(r));           }
@@ -130,7 +128,7 @@ export default class Renderer {
     // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
     assignClonePosition(literals, clones, !toBlocks, false, shiftY);
     clones.forEach(c => cloneParent.appendChild(c));
-    let endY = cm.cursorCoords(canary, "local").top, shiftY = endY-startY;
+    let shiftY = cm.cursorCoords(canary, "local").top - startY; // how much did the canary line scroll?
     cm.scrollTo(null, startScroll+shiftY);
     setTimeout(() => cloneParent.classList.add("animate", toBlocks? "blocks" : "text"), 50);
 
@@ -153,7 +151,6 @@ export default class Renderer {
 
   // Render the node, recycling a container whenever possible
   render(node, quarantine=false) {
-    console.log('render called');
     var container = document.createElement('span');
     if(node["aria-level"] && node["aria-level"] > 1) { // render in-place 
       container = document.createElement('span');
@@ -175,7 +172,6 @@ export default class Renderer {
           { replacedWith: document.createElement('span') });
       }
       ReactDOM.render(this.renderNodeForReact(node), container);
-      console.log('marked text from', node.from, 'to', node.to, 'with', container.firstChild);
     }
     return container;
   }
