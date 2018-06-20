@@ -115,10 +115,8 @@ function parseNode(node, i) {
   let comment = node.comment? makeComment(node) : false;
 
   if (node instanceof structures.callExpr) {
-    let func;
-    if (node.func) {
-      func = parseNode(node.func);
-    } else {
+    let func, label, children = node.args.map(parseNode).filter(item => item !== null);
+    if (!node.func) {
       func = new Blank(
         {line: from.line, ch: from.ch+1},
         {line: from.line, ch: from.ch+1},
@@ -126,13 +124,21 @@ function parseNode(node, i) {
         'blank',
         {'aria-label': '*blank*'}
       );
+    // special case for Unit Tests
+    } else {
+      func = parseNode(node.func);
+      if(func.value == "check-expect" && node.args[0].func) {
+        label = 'Unit Test for '+symbolAria(node.args[0].func.val);
+      } else {
+        label = expressionAria(node.func ? symbolAria(node.func.val) : 'empty', node.args);
+      }
     }
     return new Expression(
       from,
       to,
       func,
-      node.args.map(parseNode).filter(item => item !== null),
-      {'aria-label': expressionAria(node.func ? node.func.val : 'empty', node.args)
+      children,
+      {'aria-label': label
         ,'comment' : comment}
     );
   } else if (node instanceof structures.andExpr) {
@@ -242,6 +248,12 @@ function parseNode(node, i) {
     let predicate = parseNode(node.predicate);
     let consequence = parseNode(node.consequence);
     let alternative = parseNode(node.alternative);
+    let predLabel = predicate.options['aria-label'];
+    let conLabel = consequence.options['aria-label'];
+    let altLabel = alternative.options['aria-label'];
+    predicate.options['aria-label'] = "if, "+predLabel;
+    consequence.options['aria-label'] = "then, "+conLabel;
+    alternative.options['aria-label'] = "else, "+altLabel;
     return new IfExpression(
       from, to, predicate, consequence, alternative,
       {'aria-label': "if-then-else expression", 'comment' : comment}
@@ -298,6 +310,10 @@ function parseNode(node, i) {
     if(node.val.constructor !== Array) return null;
     return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
       {msg: node.errorMsg, 'aria-label': 'invalid expression'});
+  } else if (node instanceof structures.requireExpr) {
+    return new Expression(from, to, parseNode(node.stx), [parseNode(node.spec)],
+      {'aria-label': 'require '+node.spec.val ,'comment' : comment}
+    );
   } 
   console.log("!! No translator for", node);
   return null;

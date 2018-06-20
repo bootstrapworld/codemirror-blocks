@@ -1,7 +1,7 @@
 .blocks-language-wescheme {
   @border-radius: 5px;
   @large-border-radius: 15px;
-  @border-width: 3px;
+  @border-width: 2px;
 
   // Colors:
   @literal-number-color: blue;
@@ -18,6 +18,7 @@
   @hover-replace-background-color: red;
 
   .react-container{ position: relative; }
+  .react-container * { vertical-align: top; }
 
   .searchBox {
     background:   black;
@@ -198,6 +199,7 @@
     min-width: 10px;
     line-height: @height - @border-width * 2;
     height: @height;
+    font-size: 12px;
     cursor: pointer;
     cursor: hand;
     transition: all 0.5s;
@@ -216,7 +218,7 @@
     }
 
     &:hover {
-      border: solid @border-hint;
+      border: solid @border-hint @border-width;
     }
 
     &.blocks-over-target {
@@ -256,6 +258,7 @@
     box-shadow: 5px 5px 5px #888888;
   }
   .blocks-node:focus {
+    border-width: 2px;
     border-style: solid;
     border-color: @editing-border-color;
     outline: 0;
@@ -291,7 +294,7 @@
     min-width: 15px;
     display: inline-block;
     cursor: default;
-    height: 22px;
+    height: 20px;
     vertical-align: middle;
     text-align: center;
     transition: min-width .5s;
@@ -334,7 +337,7 @@
     color: @comment-color;
     background-color: #444;
     display: inline-table !important;
-    opacity: 0;
+    visibility: hidden;
     position: absolute;
     color: #ddd;
     padding: 2px 10px;
@@ -352,7 +355,7 @@
     word-break: normal;
     z-index: 999;
   }
-  .blocks-comment .sr-only {display: inline !important; }
+
   .blocks-comment::before {
     content: "";
     width: 0px;
@@ -363,7 +366,7 @@
     bottom: 15%;
     border-right: 10px solid #444;
   }
-  .blocks-node:focus > .blocks-comment{ opacity: 1; } 
+  .blocks-node:focus > .blocks-comment{ visibility: visible; } 
 
   .blocks-dragging {
     .blocks-white-space{ background-color: transparent; }
@@ -385,10 +388,10 @@
     }
   }
   .blocks-node[aria-expanded="false"] {
-    height: 30px;
+    max-height: 30px;
     min-width: 75px;
     padding: 3px;
-    background: linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1), rgba(0,0,0,0));
+    background: linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1), rgba(0,0,0,0.3));
     * { display: none;}
     .blocks-operator, .blocks-operator * { 
       display: inline;

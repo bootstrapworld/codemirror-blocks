@@ -1,7 +1,16 @@
 <!DOCTYPE html> 
 <html lang="en">
   <head>
+    <meta charset="utf-8"/>
     <title>Full Scheme Example</title>
+    <script type="text/javascript" src="//cloudfront.loggly.com/js/loggly.tracker-latest.min.js" async></script>
+    <script>
+      var _LTracker = _LTracker || [];
+      _LTracker.push({'logglyKey': '3da0c1b3-bc06-4510-878e-203010643b08',
+        'sendConsoleErrors' : true,
+        'tag' : 'CodeMirror-Blocks'  
+      });
+    </script>
   </head>
   <body>
     <div class="container fullscheme-example">
@@ -19,6 +28,30 @@
             <textarea id="code2">This is a test.</textarea>
           </div>
           <label><input type="checkbox" aria-label="Block Mode" id="mode" />Block Mode</label>
+          <br/>
+          <label>User:<select id="userTestingID">
+            <option value="anonymous" selected>Anonymous</option>
+            <option value="16">16</option>
+            <option value="17">17</option>
+            <option value="18">18</option>
+            <option value="19">19</option>
+            <option value="20">20</option>
+            <option value="21">21</option>
+            <option value="22">22</option>
+            <option value="23">23</option>
+            <option value="24">24</option>
+            <option value="25">25</option>
+            <option value="26">26</option>
+            </select>
+          </label>
+          <label>Task:<select id="task">
+            <option value="none" selected>None</option>
+            <option value=""></option>
+            <option value=""></option>
+            <option value=""></option>
+            <option value=""></option>
+            </select>
+          </label>
         </div>
       </main>
     </div>

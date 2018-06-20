@@ -17,7 +17,7 @@ export default class Literal extends Component {
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className={`blocks-literal-symbol`}>
-        ...
+        
         </span>
       </Node>
     );

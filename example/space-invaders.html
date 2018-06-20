@@ -1,10 +1,13 @@
 <!DOCTYPE html> 
 <html lang="en">
   <head>
-    <meta charset="utf-8"/>
-    <title>Blocks Training Page</title>
+    <meta charset="utf-8" />
+    <title>Space Invaders - Text Editor</title>
     <script type="text/javascript" src="http://cloudfront.loggly.com/js/loggly.tracker-latest.min.js" async></script>
+
     <script>
+      window.blocks = true;
+
       var _LTracker = _LTracker || [];
       _LTracker.push({'logglyKey': '3da0c1b3-bc06-4510-878e-203010643b08',
         'sendConsoleErrors' : true,
@@ -21,11 +24,10 @@
           'userID':     userID,
           'task':       task
         };
-        console.log('task logged');
         _LTracker.push(payload);
       }
     </script>
-    <style>
+        <style>
       #helpDialog {
           display: none;
           width: 90%;
@@ -36,7 +38,7 @@
           position: absolute;
           left: 5%;
           top: 10%;
-          z-index: 99;
+          z-index: 9;
           border-radius: 20px;
           box-shadow: 0px 10px 25px black;
           transition: all .5s;
@@ -82,7 +84,7 @@
   <body>
     <div class="container">
       <div class="page-header">
-        <h1>Training Page</h1>
+        <h1>Space Invaders</h1>
       </div>
 
           <textarea id="code" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -107,19 +109,17 @@
           </label>
           <br/>
           <label>Task:<select id="task" onchange="logTask()">
-            <option value="training" selected>None</option>
-            <option value="training1">Navigate to the last node</option>
-            <option value="training2">Jump to the top</option>
-            <option value="training3">Collapse all nodes, and navigate to the 1st function definition</option>
-            <option value="training4">Expand all nodes, and find the datatype of the 4th node in the file</option>
-            <option value="training5">Search for a structure called Person. What are its fields?</option>
-            <option value="training6">How many arguments does years-to-seconds take?</option>
-            <option value="training8">What conditions need to be true for the second if expression to return "C"?</option>
-            <option value="training9">DONE!</option>
+            <option value="Space Invaders (SI)" selected>None</option>
+            <option value="SI-locateWithSearch">Find the location in the code where ALIEN-SIZE is used to determine if an alien was hit by a bullet.</option>
+            <option value="SI-locateWithoutSearch">Without using search, find the location in the code that is evaluated when the mouse button is down.</option>
+            <option value="SI-conditions">What conditions must be true for w to return unchanged from the mouse-handler?</option>
+            <option value="SI-done">DONE!</option>
             </select>
           </label>
+        </div>
     </div>
-
+      </main>
+    </div>
     <div id="helpDialog" tabindex="-1" role="document">
       <h1>Blocks Shortcuts</h1>
       <span style="display: block;">(Note: on MacOS, <kbd>Cmd</kbd> replaces <kbd>Ctrl</kbd>.)</span>

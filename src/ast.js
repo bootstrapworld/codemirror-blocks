@@ -30,9 +30,13 @@ function pathIsIndependentOfChangePath(pathArray, changeArray) {
       (v>changeArray[i] && i<changeArray.length-2)) > -1;   // after: any *ancestor only* is an older sibling
 }
 
-function posWithinNode(pos, node){
-  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) > 0)
-    ||   (comparePos(node.from, pos) < 0) && (comparePos(node.to, pos) >= 0);
+function posWithinNode(pos, node) {
+  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) >  0)
+    ||   (comparePos(node.from, pos) <  0) && (comparePos(node.to, pos) >= 0);
+}
+
+function nodeCommentContaining(pos, node) {
+  return node.options.comment && posWithinNode(pos, node.options.comment);
 }
 
 function enumerateList(lst, level) {
@@ -104,7 +108,7 @@ export class AST {
   // FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
   // produce the new AST, preserving all the unchanged DOM nodes from the old AST
   patch(parse, newAST, CMchanges) {
-    let oldAST = this, dirtyNodes = new Set(), savedChanges = JSON.parse(JSON.stringify(CMchanges));
+    let oldAST = this, dirtyNodes = new Set();
 
     // For each CM change: (1) compute a sibling shift at the relevant path and 
     // (2) update the text posns in the AST to reflect the post-change coordinates
@@ -131,7 +135,6 @@ export class AST {
       });
       return {path: path, added: insertedSiblings, removed: removedSiblings };
     });
-
     // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
     pathChanges.forEach(change => {
       let shift = change.added - change.removed;
@@ -165,8 +168,8 @@ export class AST {
     // Ensure that no dirty node is the ancestor of another dirty node
     let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
     dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
-    newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)));
-    console.log(savedChanges, newAST.dirtyNodes);
+    newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)) // grab all the nodes
+      .filter(n => n !== undefined));                                                  // remove deleted ones
     return newAST;
   }
 
@@ -200,8 +203,12 @@ export class AST {
   }
   // return the node containing the cursor, or false
   getNodeContaining(cursor, nodes = this.rootNodes) {
-    let n = nodes.find(node => posWithinNode(cursor, node));
+    let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
     return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)) || n);
+  }
+  // return an array of nodes that fall bwtween two locations
+  getNodesBetween(from, to) {
+    return [...this.nodeIdMap.values()].filter(n => (comparePos(from, n.from) < 1) && (comparePos(to, n.to) > -1));
   }
   // return all the root nodes that contain the given positions, or fall between them
   getRootNodesTouching(start, end, rootNodes=this.rootNodes){

@@ -13,6 +13,8 @@ module.exports = function(env, argv) {
       "index": './example/index.js',
       "example": './example/example.js',
       "fullscheme-example": './example/fullscheme-example.js',
+      "cow-game": './example/cow-game.js',
+      "space-invaders": './example/space-invaders.js',
       "wescheme-example": './example/wescheme-example.js',
       "editor-example": './example/editor-example.js'
     },
@@ -41,6 +43,18 @@ module.exports = function(env, argv) {
         template: 'example/fullscheme.html',
         inject: 'body',
         chunks: ['commons', 'fullscheme-example'],
+      }),
+      new HtmlWebpackPlugin({
+        filename: 'cow-game.html',
+        template: 'example/cow-game.html',
+        inject: 'body',
+        chunks: ['commons', 'cow-game'],
+      }),
+      new HtmlWebpackPlugin({
+        filename: 'space-invaders.html',
+        template: 'example/space-invaders.html',
+        inject: 'body',
+        chunks: ['commons', 'space-invaders'],
       }),
       new HtmlWebpackPlugin({
         filename: 'wescheme.html',

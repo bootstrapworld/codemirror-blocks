@@ -6,8 +6,8 @@
 
 
 ;Physical Constants
-(define SCREEN-WIDTH 500);
-(define SCREEN-HEIGHT 500);
+(define SCREEN-WIDTH 500)
+(define SCREEN-HEIGHT 500)
 (define BACKGROUND (empty-scene SCREEN-WIDTH SCREEN-HEIGHT))
 (define UFO-HEIGHT (image-height UFO))
 (define UFO-WIDTH (image-width UFO))
@@ -25,6 +25,7 @@
 ; Represents a cow's position and the direction it faces
 (define-struct cow (p dir))
 
+; Define some sample cows
 (define cow0 (make-cow (make-posn (/ SCREEN-WIDTH 2) (- SCREEN-HEIGHT HALF-COW-HEIGHT)) "right"))
 (define cow1 (make-cow (make-posn (/ SCREEN-WIDTH 4) (- SCREEN-HEIGHT HALF-COW-HEIGHT)) "right"))
 (define cow2 (make-cow (make-posn (* SCREEN-WIDTH 3/4) (- SCREEN-HEIGHT HALF-COW-HEIGHT)) "left"))
@@ -34,6 +35,7 @@
 ; Represents the ufo's position and all the cows' positions directions
 (define-struct world (ufo cows))
 
+; Define some sample worlds
 (define world-test (make-world (make-posn 10 10)
                                (list cow0 cow1)))
 (define world0 (make-world (make-posn (/ SCREEN-WIDTH 2) HALF-UFO-HEIGHT)
@@ -46,16 +48,12 @@
 ; given: empty
 ; should produce: empty scene
 (define (draw-cows aloc scene)
-  (cond
-    [(empty? aloc) scene]
-    [(cons? aloc) (place-image (cond
-                                 [(string=? (cow-dir (first aloc)) "right")
-                                  COW-RIGHT]
-                                 [(string=? (cow-dir (first aloc)) "left")
-                                  COW-LEFT])
+  (if (empty? aloc) scene
+    (place-image (if (string=? (cow-dir (first aloc)) "right") COW-RIGHT
+                     COW-LEFT)
                                (posn-x (cow-p (first aloc)))
                                (posn-y (cow-p (first aloc)))
-                               (draw-cows (rest aloc) scene))]))
+                               (draw-cows (rest aloc) scene))))
 
 
 
@@ -88,6 +86,7 @@
                          (+ UFO-SPEED (posn-y (world-ufo w))))
               (world-cows w)))
 
+; Test for move-ufo-y, which preserves the cow positions but drops the ufo
 (check-expect (move-ufo-y world-test) (make-world (make-posn 10 15)
                                                   (list cow0 cow1)))
 
@@ -96,19 +95,21 @@
 (define (move-ufo-x w key)
   (make-world 
    (make-posn  
-    (cond
-      [(and (key=? key "left") (not (hitting-wall? (world-ufo w) "left")))
-       (- (posn-x (world-ufo w)) UFO-SPEED)]
-      [(and (key=? key "right") (not (hitting-wall? (world-ufo w) "right")))
-       (+ (posn-x (world-ufo w)) UFO-SPEED)]
-      [else (posn-x (world-ufo w))])
+    (if (and (key=? key "left") (not (hitting-wall? (world-ufo w) "left")))
+      (- (posn-x (world-ufo w)) UFO-SPEED)
+      (if (and (key=? key "right") (not (hitting-wall? (world-ufo w) "right")))
+        (+ (posn-x (world-ufo w)) UFO-SPEED)
+        (posn-x (world-ufo w))))
     (posn-y (world-ufo w)))
    (world-cows w)))
 
+; left key pressed
 (check-expect (move-ufo-x world-test "left") (make-world (make-posn 5 10) 
                                                          (list cow0 cow1)))
+; right key pressed
 (check-expect (move-ufo-x world-test "right") (make-world (make-posn 15 10) 
                                                           (list cow0 cow1)))
+; any other key pressed                                                          
 (check-expect (move-ufo-x world-test "") (make-world (make-posn 10 10) 
                                                      (list cow0 cow1)))
 
@@ -122,19 +123,20 @@
                            (world-cows w))
    (hitting-wall? (world-ufo w) "down")))
 
+; ufo is not done 
 (check-expect (ufo-done? world-test) false)
+; ufo is touch a cow
 (check-expect (ufo-done? (make-world (make-posn 20 (- SCREEN-HEIGHT 20)) (list (make-cow
                                                                                 (make-posn 20 (- SCREEN-HEIGHT 20))
                                                                                 "right"))))
               true)
+; ufo is on the ground
 (check-expect (ufo-done? (make-world (make-posn 0 (+ SCREEN-HEIGHT 5)) empty)) true)
 
 ;anything-touching-cow? : posn num num list-of-posns -> boolean
 ;anything-touching-cow? consumes a posn, an image height, an image width, and a list-of-cows and returns true if the image at the posns is touching any of the cows in the list based on the image height and width, otherwise returns false
 (define (anything-touching-cow? img-p img-w img-h aloc)
-  (cond
-    [(empty? aloc) false]
-    [(cons? aloc)
+  (if (empty? aloc) false
      (or 
       (and
        (or
@@ -143,19 +145,17 @@
         (and (>= (+ (posn-x img-p) img-w) (- (posn-x (cow-p (first aloc))) HALF-COW-WIDTH))
              (<= (+ (posn-x img-p) img-w) (+ (posn-x (cow-p (first aloc))) HALF-COW-WIDTH))))
        (>= (+ (posn-y img-p) img-h) (- (posn-y (cow-p (first aloc))) HALF-COW-HEIGHT)))
-      (anything-touching-cow? img-p img-w img-h (rest aloc)))]))
+      (anything-touching-cow? img-p img-w img-h (rest aloc)))))
 
+; there are no cows, so nothing is touching
 (check-expect (anything-touching-cow? (make-posn 0 0) 0 0 empty) false)
+; there is a cow, but it's not touching anything
 (check-expect (anything-touching-cow? (make-posn (/ SCREEN-WIDTH 2) 20) 
                                       HALF-UFO-WIDTH 
                                       HALF-UFO-HEIGHT 
                                       (list cow0))
               false)
-(check-expect (anything-touching-cow? (make-posn 20 (- SCREEN-HEIGHT HALF-COW-HEIGHT)) 
-                                      HALF-UFO-WIDTH 
-                                      HALF-UFO-HEIGHT 
-                                      (list cow0))
-              false)
+; this is a cow, and something is touching it
 (check-expect (anything-touching-cow? (make-posn (/ SCREEN-WIDTH 2) (- SCREEN-HEIGHT HALF-COW-HEIGHT)) 
                                       HALF-UFO-WIDTH 
                                       HALF-UFO-HEIGHT 
@@ -165,13 +165,13 @@
 ;remove-cow-from-list : cow list-of-cows -> list-of-cows
 ;remove-cow-from-list consumes a cow and a list-of-cows and returns a list-of-cows with cow removed
 (define (remove-cow-from-list c aloc)
-  (cond
-    [(empty? aloc) empty]
-    [(cons? aloc) (cond
-                    [(posn=? (cow-p c) (cow-p (first aloc))) (rest aloc)]
-                    [else (cons (first aloc) (remove-cow-from-list c (rest aloc)))])]))
+  (if (empty? aloc) empty
+    (if (posn=? (cow-p c) (cow-p (first aloc))) (rest aloc)
+        (cons (first aloc) (remove-cow-from-list c (rest aloc))))))
 
+; removing a cow from an empty list should still return empty
 (check-expect (remove-cow-from-list cow0 empty) empty)
+; removing a cow from a list should return a list with the other cows
 (check-expect (remove-cow-from-list cow0 (list cow1 cow0 cow2)) (list cow1 cow2))
 
 ;process-cows : world  -> world
@@ -203,35 +203,36 @@
 ;move-cows : list-of-cows -> list-of-cows
 ;move-cows consumes a list-of-cows and produces a list of cows moved to the left or right depending on the cows' directions
 (define (move-cows aloc)
-  (cond
-    [(empty? aloc) empty]
-    [(cons? aloc) (cons
-                   (make-cow
-                    (make-posn
-                     (
-                      (cond
-                        [(string=? (cow-dir (first aloc)) "right") +]
-                        [(string=? (cow-dir (first aloc)) "left") -])
-                      (posn-x (cow-p (first aloc))) COW-SPEED)
-                     (posn-y (cow-p (first aloc))))
-                    (cow-dir (first aloc))) 
-                   (move-cows (rest aloc)))]))
+  (if (empty? aloc) empty
+    (cons
+       (make-cow
+        (make-posn
+         (
+          (if (string=? (cow-dir (first aloc)) "right") + -)
+          (posn-x (cow-p (first aloc))) COW-SPEED)
+         (posn-y (cow-p (first aloc))))
+        (cow-dir (first aloc))) 
+       (move-cows (rest aloc)))))
 
+; moving cows in an empty list should still return empty
 (check-expect (move-cows empty) empty)
+; moving cows in a list should produce a list with those same cows, moved
 (check-expect (move-cows (list cow0)) (list (make-cow (make-posn (+ 2 (/ SCREEN-WIDTH 2)) (- SCREEN-HEIGHT HALF-COW-HEIGHT)) "right")))
 
 ;new-dirs : list-of-cows list-of-cows -> list-of-cows
 ;consumes two identical lists-of-cows and produces a list-of-cows in which all cows' dirs are updated
 ;e.g. changes the cow's direction if it collides with another cow or reaches the edge of the screen, otherwise leaves it unchanged
 (define (new-dirs aloc1 aloc2)
-  (cond
-    [(empty? aloc1) empty]
-    [(cons? aloc1) (cons (make-cow (cow-p (first aloc1))
+  (if (empty? aloc1) empty
+    (cons (make-cow (cow-p (first aloc1))
                                    (update-dir (first aloc1) aloc2))
-                         (new-dirs (rest aloc1) aloc2))]))
+                         (new-dirs (rest aloc1) aloc2))))
 
+; changing direction on an empty list should still return empty
 (check-expect (new-dirs empty empty) empty)
+; changing direction of non-colliding cows should return the same list, unchanged
 (check-expect (new-dirs (list cow0 cow1) (list cow0 cow1)) (list cow0 cow1))
+; changing direction of cows that collided should make them both change direction
 (check-expect (new-dirs (list cow0 cow0) (list cow0 cow0)) (list
                                                             (make-cow (make-posn
                                                                        (/ SCREEN-WIDTH 2)
@@ -245,32 +246,42 @@
 ;update-dir : cow list-of-cows -> String
 ;update-dir consumes a cow and a list-of-cows and changes it's direction if it hits a wall or another cow
 (define (update-dir c aloc)
-  (cond
-    [(hitting-wall? (cow-p c) "right") "left"]
-    [(hitting-wall? (cow-p c) "left") "right"]
-    [(anything-touching-cow? (cow-p c) HALF-COW-WIDTH HALF-COW-HEIGHT (remove-cow-from-list c aloc))
-     (cond
-       [(string=? (cow-dir c) "left") "right"]
-       [(string=? (cow-dir c) "right") "left"])]
-    [else (cow-dir c)]))
+  (if (hitting-wall? (cow-p c) "right") 
+    "left"
+    (if (hitting-wall? (cow-p c) "left") 
+      "right"
+      (if (anything-touching-cow? (cow-p c) HALF-COW-WIDTH HALF-COW-HEIGHT (remove-cow-from-list c aloc))
+        (if (string=? (cow-dir c) "left") 
+          "right"
+          "left")
+        (cow-dir c)))))
 
+; test condition for changing to right when hitting another cow
 (check-expect (update-dir cow0 (list cow0 cow1)) "right")
+; test condition for changing to left when hitting another cow
 (check-expect (update-dir (make-cow (make-posn (+ SCREEN-WIDTH 5) 0) "right") (list cow0 cow1)) "left") 
+; test condition for changing to right when hitting a wall
 (check-expect (update-dir (make-cow (make-posn -5 0) "left") (list cow0 cow1)) "right")
+; test condition for changing to left when hitting a wall
 (check-expect (update-dir cow0 (list cow0 (make-cow (make-posn (/ SCREEN-WIDTH 2) (- SCREEN-HEIGHT HALF-COW-HEIGHT)) "left"))) "left")
 
 ;hitting-wall? : posn String -> boolean
 ;hitting-wall? consumes a posn and a direction and returns true if the posn is past the edge of the screen in that direction
 ;otherwise returns false
 (define (hitting-wall? p dir)
-  (cond
-    [(string=? dir "right") (> (posn-x p) SCREEN-WIDTH)]
-    [(string=? dir "left") (< (posn-x p) 0)]
-    [(string=? dir "down") (> (posn-y p) SCREEN-HEIGHT)]))
+  (if (string=? dir "right") 
+    (> (posn-x p) SCREEN-WIDTH)
+    (if (string=? dir "left") 
+      (< (posn-x p) 0)
+      (> (posn-y p) SCREEN-HEIGHT))))
 
+; test for hitting the left wall
 (check-expect (hitting-wall? (make-posn -5 5) "left") true)
+; test for hitting the right wall
 (check-expect (hitting-wall? (make-posn (+ SCREEN-WIDTH 5) 5) "right") true)
+; test for hitting the bottom wall
 (check-expect (hitting-wall? (make-posn 5 (+ SCREEN-HEIGHT 5)) "down") true)
+; test for not hitting anything
 (check-expect (hitting-wall? (make-posn 5 5) "left") false)
 
 ;posn=? : posn posn -> boolean
@@ -280,11 +291,13 @@
    (= (posn-x p1) (posn-x p2))
    (= (posn-y p1) (posn-y p2))))
 
+; test for two identical posns
 (check-expect (posn=? (make-posn 5 5) (make-posn 5 5)) true)
+; test for two different posns
 (check-expect (posn=? (make-posn 5 5) (make-posn 10 10)) false)
 
-;big-bang creates the world
-(js-big-bang world0
+;big-bang creates the world, binds handlers for draw, key, and tick events, and starts the game
+(big-bang world0
              (to-draw draw)
              (on-key move-ufo-x)
              (on-tick move-all-on-tick)

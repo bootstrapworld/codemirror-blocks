@@ -6,6 +6,24 @@ import * as languages from './languages';
 import * as ui from './ui';
 import merge from './merge';
 
+// Logging function
+function log(event, details, activeNode=false) {
+  return;
+  let userSelect  = document.getElementById("userTestingID");
+  let taskSelect  = document.getElementById("task");
+  let userID      = userSelect? userSelect.value : null;
+  let task        = taskSelect? taskSelect.value : null;
+  let path        = activeNode? activeNode.path : 'none';
+  let payload = {
+    'tag':        'blocks-testing', 
+    'event':      event,
+    'details':    details,
+    'path':       path,
+    'userID':     userID,
+    'task':       task
+  };
+  _LTracker.push(payload);
+}
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return  a.line - b.line || a.ch - b.ch;  }
 
@@ -51,19 +69,20 @@ const closeDelims = {"(": ")", "[":"]", "{": "}"};
 
 const MARKER = Symbol("codemirror-blocks-marker");
 export class BlockMarker {
-  constructor(cmMarker, options){
+  constructor(cmMarker, options, node){
     this.cmMarker = cmMarker;
     this.options = options;
+    this.nodeEl = node.el;
   }
   clear() {
     if (this.options.css) {
-      this.cmMarker.replacedWith.firstChild.style.cssText = '';
+      this.nodeEl.style.cssText = '';
     }
     if (this.options.title) {
-      this.cmMarker.replacedWith.firstChild.title = '';
+      this.nodeEl.title = '';
     }
     if (this.options.className) {
-      this.cmMarker.replacedWith.firstChild.classList.remove(this.options.className);
+      this.nodeEl.classList.remove(this.options.className);
     }
     delete this.cmMarker[MARKER];
   }
@@ -234,6 +253,7 @@ export default class CodeMirrorBlocks {
     if(this.muteAnnouncements) return;
     let announcement = document.createTextNode(text+", ");
     console.log(text);
+    log('console', text, this.getActiveNode());
     setTimeout(() => this.announcements.appendChild(announcement), delay);
     setTimeout(() => this.announcements.removeChild(announcement), delay+300);
   }
@@ -280,29 +300,26 @@ export default class CodeMirrorBlocks {
       }
     }
 
-    if (!hasOptions) {
-      return; // noop
-    }
+    if (!hasOptions) { return; } // noop
 
     let marks = this.cm.findMarks(from, to);
-    // find marks that are blocks, and apply the styling to node between [from, to]
+    // find blocks between [from, to], and apply the styling to node
     for (let mark of marks) {
-      if (mark.replacedWith && mark.replacedWith.firstChild.classList.contains('blocks-node')) {
-        for(let node of mark.node){
-          if((poscmp(from, node.from) < 1) && (poscmp(to, node.to) > -1)){
-            if (options.css) {
-              node.el.style.cssText = options.css;
-            }
-            if (options.className) {
-              node.el.className += ' '+options.className;
-            }
-            if (options.title) {
-              node.el.title = options.title;
-            }
-            mark[MARKER] = new BlockMarker(mark, options);
-            return mark[MARKER]; // we should only find one that is a blocks-node
+      if (mark.replacedWith && mark.node) {
+        let nodes = this.ast.getNodesBetween(from, to);
+        return nodes.map(node => {
+          if (options.css) {
+            node.el.style.cssText = options.css;
           }
-        }
+          if (options.className) {
+            node.el.className += ' '+options.className;
+          }
+          if (options.title) {
+            node.el.title = options.title;
+          }
+          mark[MARKER] = new BlockMarker(mark, options, node);
+          return mark[MARKER];
+        });
       }
     }
     // didn't find a codemirror mark, just pass through.
@@ -336,6 +353,7 @@ export default class CodeMirrorBlocks {
   render(changes) {
     let start = Date.now();
     let newAST = this.parser.parse(this.cm.getValue());
+    console.log(newAST.rootNodes);
     this.cm.operation(() => {
       // try to patch the AST, and conservatively mark only changed nodes as dirty
       try{
@@ -420,6 +438,27 @@ export default class CodeMirrorBlocks {
     return el.classList.contains('blocks-drop-target') 
       || (node && this.isNodeEditable(node))
       || !node; // things outside of nodes are drop targets
+  }
+
+  // If it's an expandable node, set to makeExpanded (or toggle)
+  // return true if there's been a change
+  maybeChangeNodeExpanded(node, makeExpanded) {
+    if(!this.isNodeExpandable(node)) return false;
+    // treat anything other than false as true (even undefined)
+    let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
+    if(makeExpanded !== isExpanded) {
+      node.el.setAttribute("aria-expanded", !isExpanded);
+      node.collapsed = isExpanded;
+    }
+    return makeExpanded !== isExpanded;
+  }
+
+
+  // used for lightweigh refresh when the AST hasn't changed
+  refreshCM(cur){
+    this.cm.refresh(); 
+    this.cm.scrollIntoView(cur);
+    return true;
   }
 
   // handleCopyCut : Event -> Void
@@ -806,13 +845,8 @@ export default class CodeMirrorBlocks {
     let that = this, keyName = CodeMirror.keyName(event), keyCode = event.which;
     let activeNode = this.getActiveNode(), cur = activeNode? activeNode.from : this.cm.getCursor();
     let searchMode = this.searchString !== false;
+    log('keydown', keyName, activeNode);
 
-    // used for lightweigh refresh when the AST hasn't changed
-    function refreshCM(){
-      that.cm.refresh(); 
-      that.cm.scrollIntoView(cur);
-      return true;
-    }
     // used to create an insertion node
     function moveCursorAdjacent(node, cursor) {
       if(node) { that.insertionQuarantine("", node, event); } 
@@ -834,25 +868,15 @@ export default class CodeMirrorBlocks {
       let node = matches[index], ancestors = [node], p = that.ast.getNodeParent(node);
       while(p) { ancestors.unshift(p); p = that.ast.getNodeParent(p); }
       if(that.renderOptions.lockNodesOfType.includes(ancestors[0].type)) { node = ancestors[0]; }
-      else { ancestors.forEach(a => maybeChangeNodeExpanded(a, true)); }
-      refreshCM();
+      else { ancestors.forEach(a => that.maybeChangeNodeExpanded(a, true)); }
+      that.refreshCM(cur);
       that.activateNode(node, event);
+      that.say((forward? index+1 : matches.length-index) + " of "+matches.length, 100);
       return true;
     }
-    // If it's an expandable node, set to makeExpanded (or toggle)
-    // return true if there's been a change
-    function maybeChangeNodeExpanded(node, makeExpanded) {
-      if(!that.isNodeExpandable(node)) return false;
-      // treat anything other than false as true (even undefined)
-      let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
-      if(makeExpanded !== isExpanded) {
-        node.el.setAttribute("aria-expanded", !isExpanded);
-        node.collapsed = isExpanded;
-      }
-      return makeExpanded !== isExpanded;
-    }
-
-    if (searchMode) {
+    
+   // allow help, ancestors and children to pass through
+    if (searchMode && (!["Shift-\\","/","\\"].includes(keyName))) {
       // Turn off Find Modal
       if (["Esc","Shift-Esc"].includes(keyName)) {
         this.say("Find mode disabled");
@@ -861,17 +885,21 @@ export default class CodeMirrorBlocks {
         this.searchBox.innerText = "";
       }
       // if there's a search string, Enter and Shift-Enter go to next/prev
-      else if (keyName == "Enter"       && activeNode) { showNextMatch(true , activeNode.to   ); }
-      else if (keyName == "Shift-Enter" && activeNode) { showNextMatch(false, activeNode.from ); }
+      else if (keyName == "Enter"       && activeNode) { 
+        showNextMatch(true , that.ast.getNodeAfter(activeNode).from); 
+      }
+      else if (keyName == "Shift-Enter" && activeNode) {
+        showNextMatch(false , activeNode.from); 
+      }
       // An ASCII key was pressed! If there's still a match, modify the search string and find
-      else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey)) 
+      else if(!((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey))
         && ([8, 46].includes(keyCode) || event.key.length==1) ) {
         let newSearchString = [8, 46].includes(keyCode)? this.searchString.slice(0, -1) // Del/Backspace
           : ["", true].includes(this.searchString)? event.key                           // First char
             : this.searchString + event.key;                                            // Next Char
         let searchCursor = this.cm.getSearchCursor(newSearchString);
         this.searchMatches = [];
-        while(searchCursor.findNext()) { 
+        while(searchCursor.findNext()) {
           let node = this.ast.getNodeContaining(searchCursor.from());
           if(node) this.searchMatches.push(node);  // make sure we're not just matching a comment
         }
@@ -894,8 +922,8 @@ export default class CodeMirrorBlocks {
         if(this.isNodeEditable(activeNode)){
           this.insertionQuarantine(false, activeNode, event);
         } else {
-          maybeChangeNodeExpanded(activeNode);
-          refreshCM();
+          that.maybeChangeNodeExpanded(activeNode);
+          that.refreshCM(cur);
         }
       }
       // Ctrl/Cmd-Enter should force-allow editing on ANY node
@@ -977,28 +1005,8 @@ export default class CodeMirrorBlocks {
       this.activateNode(lastNode, event);
     }
     // Shift-Left and Shift-Right toggle global expansion
-    else if (keyName === "Shift-Left" && activeNode) {
-      this.say("All blocks collapsed");
-      let savedViewportMargin = this.cm.getOption("viewportMargin");
-      this.cm.setOption("viewportMargin", Infinity);
-      let elts = this.wrapper.querySelectorAll("[aria-expanded=true]");
-      [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), false));
-      refreshCM(); // update the CM display, since line heights may have changed
-      let rootPath = activeNode.path.split(",")[0]; // put focus on containing rootNode
-      // shift focus if rootId !== activeNodeId
-      if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
-      else this.cm.scrollIntoView(activeNode.from);
-      this.cm.setOption("viewportMargin", savedViewportMargin);
-    }
-    else if (keyName === "Shift-Right" && activeNode) {
-      this.say("All blocks expanded");
-      let savedViewportMargin = this.cm.getOption("viewportMargin");
-      this.cm.setOption("viewportMargin", Infinity);
-      let elts = this.wrapper.querySelectorAll("[aria-expanded=false]:not([class*=blocks-locked])");
-      [].forEach.call(elts, e => maybeChangeNodeExpanded(this.findNodeFromEl(e), true));
-      refreshCM(); // update the CM display, since line heights may have changed
-      this.cm.setOption("viewportMargin", savedViewportMargin);
-    }
+    else if (keyName === "Shift-Left" && activeNode) { that.changeAllExpanded(false); }
+    else if (keyName === "Shift-Right" && activeNode){ that.changeAllExpanded(true ); }
     // active the previous non-locked, non-hidden node
     else if (keyName === "Shift-PageUp" && activeNode) {
       let searchFn = (cur => this.ast.getNodeBefore(cur)),
@@ -1016,7 +1024,7 @@ export default class CodeMirrorBlocks {
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {
       let parent = this.ast.getNodeParent(activeNode);
-      return (maybeChangeNodeExpanded(activeNode, false) && refreshCM())
+      return (that.maybeChangeNodeExpanded(activeNode, false) && that.refreshCM(cur))
           || (parent && this.activateNode(parent, event))
           || playSound(BEEP);
     }
@@ -1024,7 +1032,7 @@ export default class CodeMirrorBlocks {
     else if (event.keyCode == RIGHT && activeNode) {
       let firstChild = this.isNodeExpandable(activeNode) 
         && this.ast.getNodeFirstChild(activeNode);
-      return (maybeChangeNodeExpanded(activeNode, true) && refreshCM())
+      return (that.maybeChangeNodeExpanded(activeNode, true) && that.refreshCM(cur))
           || (firstChild && this.activateNode(firstChild, event))
           || playSound(BEEP);
     }
@@ -1094,6 +1102,24 @@ export default class CodeMirrorBlocks {
       this.selectedNodes.forEach(n => this.removeFromSelection(n, false));
       this.say("selection cleared");
     } 
+  }
+
+  // collapse all blocks
+  changeAllExpanded(expanded) {
+    this.say(expanded? "Expand All" : "Collapse All", 30);
+    let activeNode = this.getActiveNode();
+    let savedViewportMargin = this.cm.getOption("viewportMargin");
+    this.cm.setOption("viewportMargin", Infinity);
+    let elts = this.wrapper.querySelectorAll(`[aria-expanded=${!expanded}]:not([class*=blocks-locked])`);
+    [].forEach.call(elts, e => this.maybeChangeNodeExpanded(this.findNodeFromEl(e), expanded));
+    this.refreshCM(); // update the CM display, since line heights may have changed
+    this.cm.setOption("viewportMargin", savedViewportMargin);
+    if(!expanded) { // if we collapsed, put focus on containing rootNode
+      let rootPath = activeNode.path.split(",")[0];
+      // shift focus if rootId !== activeNodeId
+      if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
+      else this.cm.scrollIntoView(activeNode.from);      
+    }
   }
 
   cancelIfErrorExists(event) {
