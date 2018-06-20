@@ -138,7 +138,8 @@ export class AST {
     // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
     pathChanges.forEach(change => {
       let shift = change.added - change.removed;
-      if(shift == 0) { dirtyNodes.add(newAST.getNodeByPath(change.path)); return; }
+      // force a re-render on the parent, since parent nodeType could change
+      if(shift == 0) { oldAST.nodeIdMap.delete(oldAST.getNodeByPath(change.path).id); return; }
       let cArray = change.path.split(',').map(Number);
       let changeDepth = cArray.length-1, changeIdx = cArray[changeDepth];
       oldAST.nodeIdMap.forEach((node, id) => {
