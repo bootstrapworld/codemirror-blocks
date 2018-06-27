@@ -28,7 +28,7 @@ function toggleDraggable(e) {
 
 var beepSound = require('./beep.wav');
 const BEEP = new Audio(beepSound);
-const WRAP = BEEP;
+const WRAP = BEEP; // eventually use a different sound for this
 function playSound(sound) {
   sound.pause();
   console.log("BEEP!");
@@ -115,10 +115,10 @@ export default class CodeMirrorBlocks {
     this.blockMode = false;
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
+    this.scroller = cm.getScrollerElement();
     this.wrapper = cm.getWrapperElement();
     this.wrapper.setAttribute("aria-label", "Text Editor");
-    this.scroller = cm.getScrollerElement();
-    // Add a live region to the wrapper, for error alerts
+    // Add a live region to the wrapper, for announcements
     this.announcements = document.createElement("span");
     this.announcements.setAttribute("role", "log");
     this.announcements.setAttribute("aria-live", "assertive");
@@ -127,6 +127,8 @@ export default class CodeMirrorBlocks {
     this.searchString = false;
     this.searchBox = document.createElement("span");
     this.searchBox.setAttribute('aria-hidden', 'true');
+    this.searchBox.className = "searchBox";
+    this.wrapper.appendChild(this.searchBox);
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
     // Track paths that should be collapsed after a render
@@ -197,9 +199,6 @@ export default class CodeMirrorBlocks {
         setTimeout(() => { this.activateNode(this.ast.getNodeByPath(this.focusPath), e); }, 10);
       }
     });
-    // set up searchbox
-    this.wrapper.appendChild(this.searchBox);
-    this.searchBox.className = "searchBox";
   }
 
   on(event, listener) {
@@ -215,7 +214,7 @@ export default class CodeMirrorBlocks {
   }
 
   // called anytime we update the underlying CM value
-  // destorys the redo history and updates the undo history
+  // destroys the redo history and updates the undo history
   commitChange(changes, announcement=false) {
     console.log('commiting change. saving focus at ', this.focusPath);
     this.focusHistory.done.unshift({path: this.focusPath, announcement: announcement});
@@ -259,17 +258,11 @@ export default class CodeMirrorBlocks {
     this.renderer.animateTransition(this.ast, mode);
   }
 
-  toggleBlockMode() {
-    this.setBlockMode(!this.blockMode);
-  }
+  toggleBlockMode() { this.setBlockMode(!this.blockMode); }
 
   // handleChange : CM CM-Change-Events -> Void
   // if blocks mode is enabled, re-render the blocks
-  handleChange(_, changes) {
-    if (this.blockMode) {
-      this.render(changes);
-    }
-  }
+  handleChange(_, changes) { if (this.blockMode) this.render(changes); }
 
   markText(from, to, options) {
     let supportedOptions = new Set(['css','className','title']);
@@ -334,7 +327,6 @@ export default class CodeMirrorBlocks {
   render(changes) {
     let start = Date.now();
     let newAST = this.parser.parse(this.cm.getValue());
-    console.log(newAST.rootNodes);
     this.cm.operation(() => {
       // try to patch the AST, and conservatively mark only changed nodes as dirty
       try{
@@ -369,22 +361,19 @@ export default class CodeMirrorBlocks {
   // activate and announce the given node, optionally changing selection
   activateNode(node, event) {
     event.stopPropagation();
-    if(node == this.getActiveNode()){
-      this.say(node.el.getAttribute("aria-label"));
-    }
+    if(node == this.getActiveNode()){ this.say(node.el.getAttribute("aria-label")); }
     if(this.isNodeEditable(node) && !(node.el.getAttribute("aria-expanded")=="false")
       && !node.el.classList.contains("blocks-editing")) {
       clearTimeout(this.queuedAnnoucement);
       this.queuedAnnoucement = setTimeout(() => { this.say("Use enter to edit"); }, 1250);
     } 
-    
     // if there's a selection and the altKey isn't pressed, clear selection
     if((this.selectedNodes.size > 0) && !(ISMAC? event.altKey : event.ctrlKey)) { 
       this.clearSelection(); 
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
     var {top, bottom, left, right} = node.el.getBoundingClientRect();
-    this.cm.scrollIntoView(node.from);
+    this.cm.scrollIntoView(node.from); // if node is offscreen, this forces a CM render
     var {top, bottom, left, right} = node.el.getBoundingClientRect();
     let offset = this.wrapper.getBoundingClientRect();
     let scroll = this.cm.getScrollInfo();
@@ -420,7 +409,6 @@ export default class CodeMirrorBlocks {
       || (node && this.isNodeEditable(node))
       || !node; // things outside of nodes are drop targets
   }
-
   // If it's an expandable node, set to makeExpanded (or toggle)
   // return true if there's been a change
   maybeChangeNodeExpanded(node, makeExpanded) {
@@ -433,15 +421,12 @@ export default class CodeMirrorBlocks {
     }
     return makeExpanded !== isExpanded;
   }
-
-
   // used for lightweigh refresh when the AST hasn't changed
   refreshCM(cur){
     this.cm.refresh(); 
     this.cm.scrollIntoView(cur);
     return true;
   }
-
   // handleCopyCut : Event -> Void
   // if any nodes are selected, copy all of their text ranges to a buffer
   // copy the buffer to the clipboard. Remove the original text onCut
@@ -826,7 +811,6 @@ export default class CodeMirrorBlocks {
     let that = this, keyName = CodeMirror.keyName(event), keyCode = event.which;
     let activeNode = this.getActiveNode(), cur = activeNode? activeNode.from : this.cm.getCursor();
     let searchMode = this.searchString !== false;
-    log('keydown', keyName, activeNode);
 
     // used to create an insertion node
     function moveCursorAdjacent(node, cursor) {
