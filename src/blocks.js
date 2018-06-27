@@ -6,24 +6,6 @@ import * as languages from './languages';
 import * as ui from './ui';
 import merge from './merge';
 
-// Logging function
-function log(event, details, activeNode=false) {
-  return;
-  let userSelect  = document.getElementById("userTestingID");
-  let taskSelect  = document.getElementById("task");
-  let userID      = userSelect? userSelect.value : null;
-  let task        = taskSelect? taskSelect.value : null;
-  let path        = activeNode? activeNode.path : 'none';
-  let payload = {
-    'tag':        'blocks-testing', 
-    'event':      event,
-    'details':    details,
-    'path':       path,
-    'userID':     userID,
-    'task':       task
-  };
-  _LTracker.push(payload);
-}
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return  a.line - b.line || a.ch - b.ch;  }
 
@@ -253,7 +235,6 @@ export default class CodeMirrorBlocks {
     if(this.muteAnnouncements) return;
     let announcement = document.createTextNode(text+", ");
     console.log(text);
-    log('console', text, this.getActiveNode());
     setTimeout(() => this.announcements.appendChild(announcement), delay);
     setTimeout(() => this.announcements.removeChild(announcement), delay+300);
   }
