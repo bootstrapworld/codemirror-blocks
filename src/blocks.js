@@ -131,8 +131,6 @@ export default class CodeMirrorBlocks {
     this.wrapper.appendChild(this.searchBox);
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track paths that should be collapsed after a render
-    this.pathsToCollapseAfterRender = [];
     // Track focus and history with path/announcement pairs
     this.focusHistory = {done: [], undone: []};
     this.focusPath = "0";
@@ -415,10 +413,7 @@ export default class CodeMirrorBlocks {
     if(!this.isNodeExpandable(node)) return false;
     // treat anything other than false as true (even undefined)
     let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
-    if(makeExpanded !== isExpanded) {
-      node.el.setAttribute("aria-expanded", !isExpanded);
-      node.collapsed = isExpanded;
-    }
+    if(makeExpanded !== isExpanded) { node.el.setAttribute("aria-expanded", !isExpanded); }
     return makeExpanded !== isExpanded;
   }
   // used for lightweigh refresh when the AST hasn't changed
@@ -701,9 +696,6 @@ export default class CodeMirrorBlocks {
       if ((poscmp(destFrom, sourceNode.from) > -1) && (poscmp(destTo, sourceNode.to) <  1)) { return; }
       // Remember to re-collapse any dragged nodes after patch
       let elts = sourceNode.el.querySelectorAll("[aria-expanded=false]");
-      let collapsedPaths = [].map.call(elts, elt => this.findNodeFromEl(elt).path.split(','));
-      if(sourceNode.collapsed) collapsedPaths.push(sourceNode.path.split(','));
-      this.pathsToCollapseAfterRender = collapsedPaths.map(p => destPath.concat(p.slice(destPath.length)).join(','));
     }
     this.focusPath = destPath.join(',');
     
@@ -1069,7 +1061,7 @@ export default class CodeMirrorBlocks {
     } 
   }
 
-  // collapse all blocks
+  // change expanded state globally
   changeAllExpanded(expanded) {
     this.say(expanded? "Expand All" : "Collapse All", 30);
     let activeNode = this.getActiveNode();

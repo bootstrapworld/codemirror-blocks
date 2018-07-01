@@ -35,7 +35,7 @@ export default class Node extends PureComponent {
         aria-label      = { node.options['aria-label']+',' }
         aria-labelledby = { `block-node-${node.id} ${commentID}` }
         aria-disabled   = { locked? "true": undefined }
-        aria-expanded   = { expandable? ((locked || node.collapsed )? "false" : "true") : undefined}
+        aria-expanded   = { expandable? (locked? "false" : "true") : undefined}
         aria-setsize    = { node["aria-setsize"]  }
         aria-posinset   = { node["aria-posinset"] }
         aria-level      = { node["aria-level"]    }
