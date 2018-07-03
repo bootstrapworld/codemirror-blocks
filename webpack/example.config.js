@@ -3,7 +3,6 @@ var path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-
 var baseConfig = require('./base.config.js')();
 
 // this is the config for generating the files needed to run the examples.
