@@ -2,8 +2,6 @@ var _ = require('lodash');
 var path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-
 
 var baseConfig = require('./base.config.js')();
 
@@ -71,7 +69,6 @@ module.exports = function(env, argv) {
         chunks: ['commons','editor-example'],
       }),
       new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/),
-      new BundleAnalyzerPlugin()
     ]),
     optimization: {
       minimize: argv['mode'] == 'production',
