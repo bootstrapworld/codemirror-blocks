@@ -40,7 +40,6 @@ function playSound(sound) {
 const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i)?true:false;
 const MODKEY  = ISMAC? "Alt" : "Ctrl";
 const CTRLKEY = ISMAC? "Cmd" : "Ctrl";
-const DELETEKEY=ISMAC? "Backspace" : "Delete";
 const LEFT    = 37;
 const RIGHT   = 39;
 const DOWN    = 40;
@@ -905,7 +904,7 @@ export default class CodeMirrorBlocks {
         }
       }
       // Backspace should delete selected nodes
-      else if ([DELETEKEY, CTRLKEY+"-"+DELETEKEY].includes(keyName)
+      else if (["Delete", "Backspace", CTRLKEY+"-Delete", CTRLKEY+"-Backspace"].includes(keyName)
                 && activeNode && !searchMode) {
         if(this.selectedNodes.size == 0) { playSound(BEEP); }
         else { this.deleteSelectedNodes(); }
