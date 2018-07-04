@@ -915,28 +915,22 @@ export default class CodeMirrorBlocks {
   handleKeyDown(event) {
     if(!this.blockMode) return; // bail if mode==false
     let keyName = CodeMirror.keyName(event), keyCode = event.which, activeNode=this.getActiveNode();
-    let searchMode=this.searchString !== false;
+    let searchMode = this.searchString !== false;
     
-    // Turn off Find Modal
+    // Search Mode on/off
+    if (!searchMode && keyName == "/") { this.searchModeOn(); }    
     if (searchMode && ["Esc","Shift-Esc"].includes(keyName)) { this.searchModeOff(); }
-    // if there's a search string, Enter and Shift-Enter go to next/prev
+    // Find next/prev match for searchString
     else if (searchMode && keyName == "Enter" && activeNode) { 
-      this.showNextMatch(true , this.ast.getNodeAfter(activeNode).from); 
+      this.showNextMatch(true, this.ast.getNodeAfter(activeNode).from); 
     }
     else if (searchMode && keyName == "Shift-Enter" && activeNode) {
-      this.showNextMatch(false , activeNode.from); 
+      this.showNextMatch(false, activeNode.from); 
     }
     // An ASCII key was pressed! If there's still a match, modify the search string and find
     else if(searchMode && !((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey))
       && ([8, 46].includes(keyCode) || event.key.length==1) ) {
       this.maybeModifySearchString(event);
-    }
-    // Switch to Search Mode
-    if (!searchMode && keyName == "/") { this.searchModeOn(); }    
-    // Enter should toggle editing on editable nodes, or toggle expanding
-    else if (!searchMode && keyName == "Enter" && activeNode) {
-      if(this.isNodeEditable(activeNode)){ this.makeNodeEditable(activeNode, event); }
-      else { this.maybeChangeNodeExpanded(activeNode); }
     }
     // Ctrl/Cmd-Enter should force-allow editing on ANY node
     else if (keyName == CTRLKEY+"-Enter" && activeNode) {
@@ -976,13 +970,22 @@ export default class CodeMirrorBlocks {
     else if (keyName == "\\") { this.speakParents(activeNode); }
     // Have the subtree read itself intelligently
     else if (keyName == "Shift-\\") { this.speakChildren(activeNode); }
-    // Go to the first node in the tree (depth-first)
+    // Go to the first node or last visible in the tree (depth-first)
     else if (keyName == "Home" && activeNode) { this.activateFirstVisibleNode(event); }
-    // Go to the last visible node in the tree (depth-first)
     else if (keyName == "End"  && activeNode) { this.activateLastVisibleNode(event); }
     // Shift-Left and Shift-Right toggle global expansion
     else if (keyName === "Shift-Left" && activeNode) { this.changeAllExpanded(false); }
     else if (keyName === "Shift-Right" && activeNode){ this.changeAllExpanded(true ); }
+    // Go to next/prev visible node
+    else if (event.keyCode == DOWN) { this.switchNodes(cur => this.ast.getNodeAfter(cur));  }
+    else if (event.keyCode == UP)   { this.switchNodes(cur => this.ast.getNodeBefore(cur)); }
+    else if (keyName == CTRLKEY+"-Z" && activeNode)                    { this.undo(); }
+    else if (keyName==(ISMAC? "Shift-Cmd-Z" : "Ctrl-Y") && activeNode) { this.redo(); }
+    // Enter should toggle editing on editable nodes, or toggle expanding
+    else if (!searchMode && keyName == "Enter" && activeNode) {
+      if(this.isNodeEditable(activeNode)){ this.makeNodeEditable(activeNode, event); }
+      else { this.maybeChangeNodeExpanded(activeNode); }
+    }
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {
       let parent = this.ast.getNodeParent(activeNode);
@@ -990,19 +993,13 @@ export default class CodeMirrorBlocks {
           || (parent && this.activateNode(parent, event))
           || playSound(BEEP);
     }
-    // Expand block if possible, otherwise descend to firstChild
+    // Expand block if possible, otherwise focus on firstChild
     else if (event.keyCode == RIGHT && activeNode) {
       let firstChild = this.isNodeExpandable(activeNode) && this.ast.getNodeFirstChild(activeNode);
       this.maybeChangeNodeExpanded(activeNode, true)
           || (firstChild && this.activateNode(firstChild, event))
           || playSound(BEEP);
     }
-    // Go to next visible node
-    else if (event.keyCode == DOWN) { this.switchNodes(cur => this.ast.getNodeAfter(cur)); }
-    // Go to previous visible node
-    else if (event.keyCode == UP) { this.switchNodes(cur => this.ast.getNodeBefore(cur)); }
-    else if (keyName == CTRLKEY+"-Z" && activeNode)                    { this.undo(); }
-    else if (keyName==(ISMAC? "Shift-Cmd-Z" : "Ctrl-Y") && activeNode) { this.redo(); }
     else {
       let command = this.keyMap[keyName]; // does codemirror have a command for this key?
       if      (typeof command == "string")   { this.cm.execCommand(command); }
