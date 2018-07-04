@@ -210,6 +210,13 @@ export default class CodeMirrorBlocks {
     this.events.emit(event, ...args);
   }
 
+  cancelIfErrorExists(event) {
+    if(this.hasInvalidEdit){
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
   // called anytime we update the underlying CM value
   // destroys the redo history and updates the undo history
   commitChange(changes, announcement=false) {
@@ -414,16 +421,11 @@ export default class CodeMirrorBlocks {
     let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
     if(makeExpanded !== isExpanded) { // make the change and refresh CM
       node.el.setAttribute("aria-expanded", !isExpanded); 
-      this.refreshCM(); 
+      let activeNode = this.getActiveNode(), cur=activeNode? activeNode.from : this.cm.getCursor();
+      this.cm.refresh(); // since line height may have changed, do a refresh and rescroll
+      this.cm.scrollIntoView(cur);
     }
     return makeExpanded !== isExpanded;
-  }
-  // used for lightweigh refresh when the AST hasn't changed
-  refreshCM(){
-    let activeNode = this.getActiveNode(), cur=activeNode? activeNode.from : this.cm.getCursor();
-    this.cm.refresh(); 
-    this.cm.scrollIntoView(cur);
-    return true;
   }
   // handleCopyCut : Event -> Void
   // if any nodes are selected, copy all of their text ranges to a buffer
@@ -816,18 +818,6 @@ export default class CodeMirrorBlocks {
     if(node === this.getActiveNode()) { playSound(BEEP); }
     this.activateNode(node, event);
   }
-  searchModeOff() {
-    this.say("Find mode disabled");
-    this.searchBox.style.display = "none"; 
-    this.searchString = false;
-    this.searchBox.innerText = "";
-  }
-  searchModeOn() {
-    this.say("Find mode enabled. Type to search. Enter and Shift-Enter to search forwards"
-      +" and backwards. Shift-Escape to cancel");
-    this.searchBox.style.display = "inline-block";
-    this.searchString = this.searchString || true;
-  }
   // create an insertion quarantine in place of the given node
   makeNodeEditable(node, event) { this.insertionQuarantine(false, node, event); }
   selectNode(node, preserveSelection) {
@@ -880,6 +870,18 @@ export default class CodeMirrorBlocks {
     }
     else { playSound(BEEP); }
   }
+  searchModeOff() {
+    this.say("Find mode disabled");
+    this.searchBox.style.display = "none"; 
+    this.searchString = false;
+    this.searchBox.innerText = "";
+  }
+  searchModeOn() {
+    this.say("Find mode enabled. Type to search. Enter and Shift-Enter to search forwards"
+      +" and backwards. Shift-Escape to cancel");
+    this.searchBox.style.display = "inline-block";
+    this.searchString = this.searchString || true;
+  }
   showNextMatch(forward, from) {
     if(this.searchString == false) throw "showNextMatch called, but searchMode is off!"; 
     let matches = this.searchMatches.slice(0), test = forward? d => d>=0 : d => d<0;
@@ -911,112 +913,12 @@ export default class CodeMirrorBlocks {
     this.say(this.searchString? 'Searching for '+this.searchString : 'Type to search', 0);
     if(newSearchString !="") this.showNextMatch(true, this.getActiveNode().from);
   }
-
-  handleKeyDown(event) {
-    if(!this.blockMode) return; // bail if mode==false
-    let keyName = CodeMirror.keyName(event), keyCode = event.which, activeNode=this.getActiveNode();
-    let searchMode = this.searchString !== false;
-    
-    // Search Mode on/off
-    if (!searchMode && keyName == "/") { this.searchModeOn(); }    
-    if (searchMode && ["Esc","Shift-Esc"].includes(keyName)) { this.searchModeOff(); }
-    // Find next/prev match for searchString
-    else if (searchMode && keyName == "Enter" && activeNode) { 
-      this.showNextMatch(true, this.ast.getNodeAfter(activeNode).from); 
-    }
-    else if (searchMode && keyName == "Shift-Enter" && activeNode) {
-      this.showNextMatch(false, activeNode.from); 
-    }
-    // An ASCII key was pressed! If there's still a match, modify the search string and find
-    else if(searchMode && !((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey))
-      && ([8, 46].includes(keyCode) || event.key.length==1) ) {
-      this.maybeModifySearchString(event);
-    }
-    // Ctrl/Cmd-Enter should force-allow editing on ANY node
-    else if (keyName == CTRLKEY+"-Enter" && activeNode) {
-      this.makeNodeEditable(activeNode, event);
-    }
-    // Space clears selection and selects active node
-    else if (!searchMode && keyName == "Space" && activeNode) {
-      this.selectNode(activeNode, false);
-    }
-    // Mod-Space toggles node selection, preserving earlier selection
-    else if (keyName == (MODKEY+"-Space") && activeNode) {
-      this.selectNode(activeNode, true);
-    }
-    // Backspace or Delete should delete selected nodes
-    else if (!searchMode && activeNode && 
-      ["Delete", "Backspace", CTRLKEY+"-Delete", CTRLKEY+"-Backspace"].includes(keyName)) {
-      this.deleteSelectedNodes();
-    }
-    // Ctrl-[ moves the cursor to previous whitespace or cursor position
-    else if (!searchMode && keyName === "Ctrl-[" && activeNode) {
-      this.moveCursorAdjacent(activeNode.el.previousElementSibling, activeNode.from);
-    }
-    // Ctrl-] moves the cursor to next whitespace or cursor position,
-    else if (!searchMode && keyName === "Ctrl-]" && activeNode) {
-      this.moveCursorAdjacent(activeNode.el.nextElementSibling, activeNode.to);
-    }
-    // if open-bracket, modify text to be an empty expression with a blank
-    else if (!searchMode && openDelims.includes(event.key) && activeNode && !searchMode) {
-      this.insertEmptyExpression(event.key);
-    }
-    // shift focus to buffer for the *real* paste event to fire
-    // then replace or insert, then reset the buffer
-    else if (!searchMode && [CTRLKEY+"-V", "Shift-"+CTRLKEY+"-V"].includes(keyName) && activeNode) {
-      this.handlePaste(event);
-    }
-    // speak parents: "<label>, at level N, inside <label>, at level N-1...""
-    else if (keyName == "\\") { this.speakParents(activeNode); }
-    // Have the subtree read itself intelligently
-    else if (keyName == "Shift-\\") { this.speakChildren(activeNode); }
-    // Go to the first node or last visible in the tree (depth-first)
-    else if (keyName == "Home" && activeNode) { this.activateFirstVisibleNode(event); }
-    else if (keyName == "End"  && activeNode) { this.activateLastVisibleNode(event); }
-    // Shift-Left and Shift-Right toggle global expansion
-    else if (keyName === "Shift-Left" && activeNode) { this.changeAllExpanded(false); }
-    else if (keyName === "Shift-Right" && activeNode){ this.changeAllExpanded(true ); }
-    // Go to next/prev visible node
-    else if (event.keyCode == DOWN) { this.switchNodes(cur => this.ast.getNodeAfter(cur));  }
-    else if (event.keyCode == UP)   { this.switchNodes(cur => this.ast.getNodeBefore(cur)); }
-    else if (keyName == CTRLKEY+"-Z" && activeNode)                    { this.undo(); }
-    else if (keyName==(ISMAC? "Shift-Cmd-Z" : "Ctrl-Y") && activeNode) { this.redo(); }
-    // Enter should toggle editing on editable nodes, or toggle expanding
-    else if (!searchMode && keyName == "Enter" && activeNode) {
-      if(this.isNodeEditable(activeNode)){ this.makeNodeEditable(activeNode, event); }
-      else { this.maybeChangeNodeExpanded(activeNode); }
-    }
-    // Collapse block if possible, otherwise focus on parent
-    else if (event.keyCode == LEFT && activeNode) {
-      let parent = this.ast.getNodeParent(activeNode);
-      this.maybeChangeNodeExpanded(activeNode, false)
-          || (parent && this.activateNode(parent, event))
-          || playSound(BEEP);
-    }
-    // Expand block if possible, otherwise focus on firstChild
-    else if (event.keyCode == RIGHT && activeNode) {
-      let firstChild = this.isNodeExpandable(activeNode) && this.ast.getNodeFirstChild(activeNode);
-      this.maybeChangeNodeExpanded(activeNode, true)
-          || (firstChild && this.activateNode(firstChild, event))
-          || playSound(BEEP);
-    }
-    else {
-      let command = this.keyMap[keyName]; // does codemirror have a command for this key?
-      if      (typeof command == "string")   { this.cm.execCommand(command); }
-      else if (typeof command == "function") { command(this.cm); }
-      else if(!searchMode) { return; } // let CodeMirror handle it
-    }
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
   // unset the aria-selected attribute, and remove the node from the set
   removeFromSelection(node, speakEachOne=true) {
     this.selectedNodes.delete(node);
     if(speakEachOne) { this.say(node.options["aria-label"]+" unselected"); }
     node.el.setAttribute("aria-selected", "false");
   }
-
   // add the node to the selected set, and set the aria attribute
   // make sure selectedNodes never contains both a child and its ancestor
   addToSelection(node) {
@@ -1031,7 +933,6 @@ export default class CodeMirrorBlocks {
       this.selectedNodes.add(node);
     }
   }
-
   // unset the aria attribute, and empty the set
   clearSelection() {
     if(this.selectedNodes.size > 0) {
@@ -1039,7 +940,6 @@ export default class CodeMirrorBlocks {
       this.say("selection cleared");
     } 
   }
-
   // change expanded state globally
   changeAllExpanded(expanded) {
     this.say(expanded? "Expand All" : "Collapse All", 30);
@@ -1057,11 +957,100 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  cancelIfErrorExists(event) {
-    if(this.hasInvalidEdit){
-      event.preventDefault();
-      event.stopPropagation();
+  handleKeyDown(event) {
+    if(!this.blockMode) return; // bail if mode==false
+    let keyName = CodeMirror.keyName(event), keyCode = event.which, activeNode=this.getActiveNode();
+    let searchMode = this.searchString !== false;
+    
+    // Search Mode on/off
+    if (!searchMode && keyName == "/") { this.searchModeOn(); }    
+    if (searchMode && ["Esc","Shift-Esc"].includes(keyName)) { this.searchModeOff(); }
+    // Find next/prev match for searchString
+    else if (keyName == "Enter" && activeNode && searchMode) { 
+      this.showNextMatch(true, this.ast.getNodeAfter(activeNode).from); 
     }
+    else if (keyName == "Shift-Enter" && activeNode && searchMode) {
+      this.showNextMatch(false, activeNode.from); 
+    }
+    // An ASCII key was pressed! If there's still a match, modify the search string and find
+    else if(searchMode && !((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey))
+      && ([8, 46].includes(keyCode) || event.key.length==1) ) {
+      this.maybeModifySearchString(event);
+    }
+    // Ctrl/Cmd-Enter should force-allow editing on ANY node
+    else if (keyName == CTRLKEY+"-Enter" && activeNode) {
+      this.makeNodeEditable(activeNode, event);
+    }
+    // Space clears selection and selects active node
+    else if (keyName == "Space" && activeNode && !searchMode) {
+      this.selectNode(activeNode, false);
+    }
+    // Mod-Space toggles node selection, preserving earlier selection
+    else if (keyName == (MODKEY+"-Space") && activeNode && !searchMode) {
+      this.selectNode(activeNode, true);
+    }
+    // Backspace or Delete should delete selected nodes
+    else if (["Delete", "Backspace", CTRLKEY+"-Delete", CTRLKEY+"-Backspace"].includes(keyName)
+      && !searchMode && activeNode) { this.deleteSelectedNodes();}
+    // Ctrl-[ moves the cursor to previous whitespace or cursor position
+    else if (keyName === "Ctrl-[" && activeNode && !searchMode) {
+      this.moveCursorAdjacent(activeNode.el.previousElementSibling, activeNode.from);
+    }
+    // Ctrl-] moves the cursor to next whitespace or cursor position,
+    else if (keyName === "Ctrl-]" && activeNode && !searchMode) {
+      this.moveCursorAdjacent(activeNode.el.nextElementSibling, activeNode.to);
+    }
+    // if open-bracket, modify text to be an empty expression with a blank
+    else if (openDelims.includes(event.key) && activeNode && !searchMode) {
+      this.insertEmptyExpression(event.key);
+    }
+    // shift focus to buffer for the *real* paste event to fire
+    // then replace or insert, then reset the buffer
+    else if ([CTRLKEY+"-V", "Shift-"+CTRLKEY+"-V"].includes(keyName) && activeNode && !searchMode) {
+      this.handlePaste(event);
+    }
+    // speak parents: "<label>, at level N, inside <label>, at level N-1...""
+    else if (keyName == "\\" && activeNode) { this.speakParents(activeNode); }
+    // Have the subtree read itself intelligently
+    else if (keyName == "Shift-\\" && activeNode) { this.speakChildren(activeNode); }
+    // Go to the first node or last visible in the tree (depth-first)
+    else if (keyName == "Home" && activeNode) { this.activateFirstVisibleNode(event); }
+    else if (keyName == "End"  && activeNode) { this.activateLastVisibleNode(event); }
+    // Shift-Left and Shift-Right toggle global expansion
+    else if (keyName === "Shift-Left" && activeNode) { this.changeAllExpanded(false); }
+    else if (keyName === "Shift-Right" && activeNode){ this.changeAllExpanded(true ); }
+    // Go to next/prev visible node
+    else if (event.keyCode == DOWN) { this.switchNodes(cur => this.ast.getNodeAfter(cur));  }
+    else if (event.keyCode == UP)   { this.switchNodes(cur => this.ast.getNodeBefore(cur)); }
+    else if (keyName == CTRLKEY+"-Z" && activeNode)                    { this.undo(); }
+    else if (keyName ==(ISMAC? "Shift-Cmd-Z" : "Ctrl-Y") && activeNode){ this.redo(); }
+    // Enter should toggle editing on editable nodes, or toggle expanding
+    else if (!searchMode && keyName == "Enter" && activeNode) {
+      if(this.isNodeEditable(activeNode)){ this.makeNodeEditable(activeNode, event); }
+      else { this.maybeChangeNodeExpanded(activeNode); }
+    }
+    // Collapse block if possible, otherwise focus on parent
+    else if (event.keyCode == LEFT && activeNode) {
+      if(!(this.isNodeExpandable(activeNode) && this.maybeChangeNodeExpanded(activeNode, false))) {
+        let parent = this.ast.getNodeParent(activeNode);
+        if(parent) this.activateNode(parent, event); else playSound(BEEP);
+      }
+    }
+    // Expand block if possible, otherwise focus on firstChild
+    else if (event.keyCode == RIGHT && activeNode) {
+      if(!(this.isNodeExpandable(activeNode) && this.maybeChangeNodeExpanded(activeNode, true))) {
+        let firstChild = this.isNodeExpandable(activeNode) && this.ast.getNodeFirstChild(activeNode);
+        if(firstChild) this.activateNode(firstChild, event); else playSound(BEEP);
+      }
+    }
+    else {
+      let command = this.keyMap[keyName]; // does codemirror have a command for this key?
+      if      (typeof command == "string")   { this.cm.execCommand(command); }
+      else if (typeof command == "function") { command(this.cm); }
+      else if(!searchMode) { return; } // let CodeMirror handle it
+    }
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   // nodeEventHandler : {HandlerFn} Boolean -> *
