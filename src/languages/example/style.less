@@ -11,10 +11,10 @@
   @comment-color: #ccc;
   @editing-border-color: orange;
   @error-border-color: red;
-  @border-hint: rgba(255, 165, 0, 0.3);
 
-  @hover-drop-background-color: lightblue;
-  @hover-replace-background-color: red;
+  @hover-border-color: red;
+  @drag-drop-background-color: lightblue;
+  @drag-replace-background-color: red;
 
   .blocks-locked {
     display: none !important;
@@ -92,11 +92,11 @@
     }
 
     &:hover {
-      border: 1px solid red;
+      border: 1px solid @hover-border-color;
     }
 
     &.blocks-over-target {
-      background-color: @hover-replace-background-color;
+      background-color: @drag-replace-background-color;
     }
 
     * {
@@ -143,7 +143,7 @@
   }
 
   .blocks-over-target {
-    background-color: @hover-drop-background-color;
+    background-color: @drag-drop-background-color;
     border-radius: @border-radius;
   }
 

@@ -1,0 +1,327 @@
+// Default parameters. You can override these when importing this file
+// just by declaring the same variable names _after_ the import.
+@border-radius: 5px;
+@border-width: 2px;
+
+@comment-color: black; // TODO: unused
+@border-color: black;
+@editing-border-color: orange;
+@error-border-color: red;
+@hover-border-color: rgba(255, 165, 0, 0.3);
+@drag-drop-background-color: lightblue;
+@drag-replace-background-color: red;
+
+
+.react-container{ position: relative; }
+.react-container * { vertical-align: top; }
+
+.searchBox {
+  background:   black;
+  color:        white;
+  font-weight:  bold;
+  border:       ridge;
+  position:     absolute;
+  bottom:       0px;
+  right:        0px;
+  z-index:      10;
+  display:      none;
+  min-width:    10px;
+  white-space:  pre;
+  box-shadow:   -2px -2px 3px #888;
+  &:before {
+    content: 'Find: ';
+    position: relative;
+    color: @editing-border-color;
+    right: 0px;
+  }
+}
+
+.blocks-node:not(.blocks-literal) {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  color: black;
+  border: @border-width solid @border-color;
+  border-radius: 15px;
+  margin: 2px;
+  background: #eee;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: all 0.5s;
+
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
+
+  user-select: none;
+}
+
+.blocks-sequence {
+  border-radius: 0px;
+  background: white;
+  > .blocks-operator {
+    justify-content: flex-start;
+  }
+  > .blocks-sequence-exprs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 1px;
+
+    > .blocks-white-space {
+      display: block;
+      width: 100%;
+      border-width: 2px;
+      /* display a downwards arrow to show sequencing, but not for last child or editing */
+      &:not(:last-child):not(.blocks-editing):after { color: gray; content: "\2B07"; }
+    }
+  }
+}
+
+.blocks-operator {
+  display: flex;
+  justify-content: center;
+  font-weight: bold;
+  padding: 1px 5px;
+  text-align: center;
+  background: black;
+  color: white;
+  > .blocks-white-space:not(.blocks-editing) {
+    min-width: 10px;
+    border-radius: 5px;
+    border: none;
+  }
+  .blocks-white-space {
+    border-width: 1px;
+    min-width: 10px;
+  }
+  > .blocks-white-space:hover {
+    background: black;
+    border: dotted 2px darkgray;
+  }
+  > .blocks-node {
+    box-shadow: 0px 0px 10px 1px white;
+  }
+  .blocks-literal, .blocks-identifierList {
+    color: white;
+    box-shadow: none;
+  }
+  .blocks-literal{ border: @border-width inset; }
+}
+
+.blocks-args {
+  display: inline-flex;
+  flex-wrap: wrap;
+  flex-grow: 1;
+  padding: 1px 1px 1px 0px;
+  justify-content: center;
+
+  > .blocks-literal, .blocks-white-space[contenteditable="true"] {
+    background: white;
+    border: @border-width lightgray inset;
+  }
+}
+.blocks-literal,
+.blocks-blank {
+  @height: 20px;
+
+  display: inline-block;
+  color: black;
+  border-radius: 5px;
+  padding: 0px 2px;
+  border: @border-width solid transparent;
+  min-width: 10px;
+  line-height: @height - @border-width * 2;
+  height: @height;
+  font-size: 12px;
+  cursor: pointer;
+  cursor: hand;
+  transition: all 0.5s;
+
+  &.blocks-editing, &.quarantine {
+    border-color: @editing-border-color;
+    cursor: text;
+    display:inline-table;
+    &.blocks-error {
+      border-color: @error-border-color;
+    }
+  }
+  &.blocks-editing.quarantine:empty {
+    display: block;
+    width: 15px;
+  }
+
+  &:hover {
+    border: solid @hover-border-color @border-width;
+  }
+
+  &.blocks-over-target {
+    background-color: @drag-replace-background-color;
+  }
+
+  * {
+    pointer-events: none;
+  }
+}
+
+.blocks-node[aria-selected^="true"] {
+  border-style: dotted;
+  border-color: @editing-border-color;
+  outline: 0;
+  box-shadow: 5px 5px 5px #888888;
+}
+.blocks-node:focus {
+  border-width: 2px;
+  border-style: solid;
+  border-color: @editing-border-color;
+  outline: 0;
+}
+.blocks-identifierList:focus{
+  border-style: none;
+  background: @editing-border-color;
+  border-radius: 15px;
+}
+
+.blocks-editing * {
+  outline: 0;
+  cursor: text;
+
+}
+
+.blocks-over-target {
+  background-color: @drag-drop-background-color;
+  border-radius: @border-radius;
+}
+
+.blocks-white-space:before {
+  content: ' ';
+}
+
+.blocks-white-space {
+  padding: 0px;
+  border: @border-width dotted lightgray;
+  font-weight: bold;
+  border-radius: @border-radius;
+  margin: 0px 5px;
+  min-width: 15px;
+  display: inline-block;
+  cursor: default;
+  height: 20px;
+  vertical-align: middle;
+  text-align: center;
+  transition: min-width .5s;
+
+  &:hover {
+    background-color: @drag-drop-background-color;
+    background: white;
+    min-width: 20px;
+    border-style: inset;
+    cursor: pointer;
+    cursor: hand;
+    background: white;
+    min-width: 20px;
+    border-style: inset;
+  }
+
+  &.blocks-editing {
+    font-weight: normal;
+    margin: 0px 5px;
+    min-width: 20px;
+    border-style: inset;
+    outline: 0;
+    &.blocks-error {
+      border: @border-width solid @error-border-color;
+    }
+    &:hover {
+      background-color: transparent;
+    }
+    cursor: text;
+  }
+}
+
+.blocks-unknown {
+  border-width: 1px;
+  >.blocks-operator{ background: rgba(0,0,0,0.5); }
+  >.blocks-args    { background: rgba(255,190,190,0.5); }
+}
+
+.blocks-comment {
+  color: @comment-color;
+  background-color: #444;
+  display: inline-table !important;
+  visibility: hidden;
+  position: absolute;
+  color: #ddd;
+  padding: 2px 10px;
+  border-radius: 5px;
+  max-width: 300px;
+  line-height: 20px;
+  box-shadow: 0px 0px 20px #999;
+  margin-left: 15px;
+  border: 1px solid #333;
+  text-shadow: 0 0 1px #000;
+  margin-bottom: -5px;
+  bottom: 0px;
+  left: 100%;
+  white-space: pre-line;
+  word-break: normal;
+  z-index: 999;
+}
+
+.blocks-comment::before {
+  content: "";
+  width: 0px;
+  height: 0px;
+  border: 0.5em solid transparent;
+  position: absolute;
+  left: -15px;
+  bottom: 15%;
+  border-right: 10px solid #444;
+}
+.blocks-node:focus > .blocks-comment{ visibility: visible; } 
+
+.blocks-dragging {
+  .blocks-white-space{ background-color: transparent; }
+}
+
+.blocks-blank {
+  color: white;
+  background: gold;
+  cursor: hand;
+  &:after {
+    content: "?";
+    color: black;
+    display: inline-block;
+    width: 20px;
+  }
+  &.blocks-editing {
+    background: transparent;
+    &:after{content: none; width: 0px; }
+  }
+}
+.blocks-node[aria-expanded="false"] {
+  max-height: 30px;
+  min-width: 75px;
+  padding: 3px;
+  background: linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1), rgba(0,0,0,0.3));
+  * { display: none;}
+  .blocks-operator, .blocks-operator * { 
+    display: inline;
+    padding: 0px;
+    margin: 0px;
+    border: none;
+    font-weight: bold;
+    line-height: 20px;
+    color: white;
+    background: none;
+    text-align: left;
+  }
+}
+.blocks-node[aria-expanded="true"] .blocks-identifierList[aria-expanded="false"]:before{
+    content: "...";
+    color: white;
+}
+.blocks-locked {
+  opacity: 0.5;
+}
+.blocks-locked::after{ content: "\1f512" !important; z-index: 99;}
