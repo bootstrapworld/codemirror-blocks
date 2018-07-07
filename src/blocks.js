@@ -2,12 +2,13 @@
 import CodeMirror from 'codemirror';
 import ee from 'event-emitter';
 import Renderer from './Renderer';
+import { commands } from './commands'
 import * as languages from './languages';
 import * as ui from './ui';
 import merge from './merge';
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
-function poscmp(a, b) { return  a.line - b.line || a.ch - b.ch;  }
+export function poscmp(a, b) { return  a.line - b.line || a.ch - b.ch;  }
 
 // findNearestNodeEl : DOM -> DOM
 // Consumes a DOM node, and produces the ancestor associated
@@ -27,9 +28,9 @@ function toggleDraggable(e) {
 }
 
 var beepSound = require('./beep.wav');
-const BEEP = new Audio(beepSound);
-const WRAP = BEEP; // eventually use a different sound for this
-function playSound(sound) {
+export const BEEP = new Audio(beepSound);
+export const WRAP = BEEP; // eventually use a different sound for this
+export function playSound(sound) {
   sound.pause();
   console.log("BEEP!");
   if(sound.readyState > 0){ sound.currentTime = 0; }
@@ -364,7 +365,7 @@ export default class CodeMirrorBlocks {
   // activateNode : ASTNode Event -> Boolean
   // activate and announce the given node, optionally changing selection
   activateNode(node, event) {
-    event.stopPropagation();
+    if(event) event.stopPropagation();
     if(node == this.getActiveNode()){ this.say(node.el.getAttribute("aria-label")); }
     if(this.isNodeEditable(node) && !(node.el.getAttribute("aria-expanded")=="false")
       && !node.el.classList.contains("blocks-editing")) {
@@ -421,11 +422,14 @@ export default class CodeMirrorBlocks {
     let isExpanded = !(node.el.getAttribute("aria-expanded")=="false");
     if(makeExpanded !== isExpanded) { // make the change and refresh CM
       node.el.setAttribute("aria-expanded", !isExpanded); 
-      let activeNode = this.getActiveNode(), cur=activeNode? activeNode.from : this.cm.getCursor();
-      this.cm.refresh(); // since line height may have changed, do a refresh and rescroll
-      this.cm.scrollIntoView(cur);
     }
     return makeExpanded !== isExpanded;
+  }
+  // used for lightweigh refresh when the AST hasn't changed
+  refreshCM(){
+    let active = this.getActiveNode(), cur = active? active.from : this.cm.getCursor();
+    this.cm.refresh(); 
+    this.cm.scrollIntoView(cur);
   }
   // handleCopyCut : Event -> Void
   // if any nodes are selected, copy all of their text ranges to a buffer
@@ -459,7 +463,7 @@ export default class CodeMirrorBlocks {
       console.error("execCommand doesn't work in this browser :(", e);
     }
     // if we cut selected nodes, clear them
-    if (event.type == 'cut') { this.deleteSelectedNodes(); } // delete all those nodes
+    if (event.type == 'cut') { commands.deleteSelectedNodes(this); } // delete all those nodes
     event.altKey = event.ctrlKey = true;                     // fake the event so selection isn't lost...
     this.activateNode(activeNode, event);                    // ...during activateNode
   }
@@ -514,7 +518,7 @@ export default class CodeMirrorBlocks {
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
       let errorTxt = this.parser.getExceptionMessage(e);
       nodeEl.title = errorTxt;                        // 4) Make the title the error msg
-      setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
+      setTimeout(()=> this.editLiteral(node), 50);    // 5) Keep focus
       this.say(errorTxt);
     }
   }
@@ -547,8 +551,7 @@ export default class CodeMirrorBlocks {
 
   // editLiteral : ASTNode Event -> Void
   // Set the appropriate attributes and event handlers
-  editLiteral(node, event) {
-    event.stopPropagation();
+  editLiteral(node) {
     this.clearSelection(); // if we're editing, clear the selection
     let action = node.el.getAttribute("aria-label") == ""? "inserting " : "editing ";
     this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel");
@@ -575,17 +578,6 @@ export default class CodeMirrorBlocks {
 
   deleteNodeWithId(nodeId) {
     this.deleteNode(this.ast.getNodeById(nodeId));
-  }
-
-  // deleteSelectedNodes : Void -> Void
-  // delete all of this.selectedNodes set, and then empty the set
-  deleteSelectedNodes() {
-    if(this.selectedNodes.size == 0) { playSound(BEEP); return; }
-    let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
-    this.selectedNodes.clear();
-    this.focusPath = sel[sel.length-1].path; // point to the first node
-    this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
-      "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
   }
 
   startDraggingNode(node, event) {
@@ -652,6 +644,7 @@ export default class CodeMirrorBlocks {
       return match && (match.length > 1) && this.ast.getNodeById(match[1]);
     }
   }
+
   // findNearestNodeFromEl : DOMNode -> ASTNode
   // return the AST node that *best** matches the element, or null
   findNearestNodeFromEl(el) {
@@ -762,6 +755,7 @@ export default class CodeMirrorBlocks {
   // Hides the original node and inserts a literal at the Destination 
   // with the String (or, if false, DOMNode contents), allowing the user to edit.
   insertionQuarantine(text, dest, event) {
+    if(event) event.stopPropagation();
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
     literal.options['aria-label'] = text;
@@ -800,87 +794,40 @@ export default class CodeMirrorBlocks {
     literal.el.innerText = text;
     literal.el.originalPath = this.focusPath;
     literal.el.setAttribute("aria-label", text);
-    setTimeout(() => this.editLiteral(literal, event), 10);
+    setTimeout(() => this.editLiteral(literal), 10);
     return literal;
   }
 
-  // either create an insertionQuarantine at the adjacent dropTarget, or move the CM cursor
-  // to the adjacent cursor location
-  moveCursorAdjacent(node, cursor) {
-    if(node) { this.insertionQuarantine("", node, event); } 
-    // set mouseUsed to simulate click-to-focus
-    else { this.mouseUsed = true; this.cm.focus(); this.cm.setCursor(cursor); }
+  // change expanded state globally
+  changeAllExpanded(expanded) {
+    this.say(expanded? "Expand All" : "Collapse All", 30);
+    let node = this.getActiveNode();
+    let savedViewportMargin = this.cm.getOption("viewportMargin");
+    this.cm.setOption("viewportMargin", Infinity);
+    let elts = this.wrapper.querySelectorAll(`[aria-expanded=${!expanded}]:not([class*=blocks-locked])`);
+    [].forEach.call(elts, e => this.maybeChangeNodeExpanded(this.findNodeFromEl(e), expanded));
+    this.cm.setOption("viewportMargin", savedViewportMargin);
+    if(!expanded) { // if we collapsed, put focus on containing rootNode
+      let rootPath = node.path.split(",")[0];
+      // shift focus if rootId !== nodeId
+      if(rootPath !== node.path) this.activateNode(this.ast.getNodeByPath(rootPath));
+      else this.cm.scrollIntoView(node.from);      
+    }
+    this.refreshCM();
   }
-  // used to switch focus to the "next" node, based on a search function
-  switchNodes(searchFn) {
-    let node = this.ast.getNextMatchingNode(
-      searchFn, this.isNodeHidden, this.getActiveNode() || this.cm.getCursor());
-    if(node === this.getActiveNode()) { playSound(BEEP); }
-    this.activateNode(node, event);
-  }
-  // create an insertion quarantine in place of the given node
-  makeNodeEditable(node, event) { this.insertionQuarantine(false, node, event); }
-  selectNode(node, preserveSelection) {
-    let activeNode = this.getActiveNode(), addingSelected = this.selectedNodes.has(activeNode);
-    if(addingSelected) { this.removeFromSelection(activeNode); }
+  // toggle node selection for the given node. if we're not preserving, clear previous selection
+  toggleSelection(preserveSelection) {
+    let node = this.getActiveNode(), addingSelected = this.selectedNodes.has(node);
+    if(addingSelected) { this.removeFromSelection(node); }
     if(!preserveSelection) { this.clearSelection(); }
     if(!addingSelected) { this.addToSelection(node); }
   }
   insertEmptyExpression(openDelim) {
-    let activeNode = this.getActiveNode(), path = activeNode.path.split(',');
+    let node = this.getActiveNode(), path = node.path.split(',');
     path[path.length-1]++; // add an adjacent sibling
     this.focusPath = path.join(','); // put focus on new sibling
-    this.commitChange(() => this.cm.replaceRange(openDelim+closeDelims[openDelim], activeNode.to),
+    this.commitChange(() => this.cm.replaceRange(openDelim+closeDelims[openDelim], node.to),
       "inserted empty expression");
-  }
-  speakParents(node) {
-    var parents = [node], node = this.getActiveNode();
-    while(node = this.ast.getNodeParent(node)){
-      parents.push(node.options['aria-label'] + ", at level "+node["aria-level"]);
-    }
-    if(parents.length > 1) this.say(parents.join(", inside "));
-    else playSound(BEEP);
-  }
-  speakChildren(node) { this.say(node.toDescription(node['aria-level'])); }
-  activateFirstVisibleNode(event) { this.activateNode(this.ast.rootNodes[0], event); }
-  activateLastVisibleNode(event) {
-    let lastExpr = [...this.ast.reverseRootNodes[0]];
-    var lastNode = lastExpr[lastExpr.length-1];
-    if(this.isNodeHidden(lastNode)) {
-      let searchFn = (cur => this.ast.getNodeParent(cur));
-      lastNode = this.ast.getNextMatchingNode(searchFn, this.isNodeHidden, lastNode);
-    }      
-    this.activateNode(lastNode, event);
-  }
-  undo() {
-    if(this.searchString !== false) return; // Don't allow in searchMode
-    if(this.cm.historySize().undo > 0) { 
-      this.say("undo " + this.focusHistory.done[0].announcement);
-      this.focusHistory.undone.unshift(this.focusHistory.done.shift());
-      this.focusPath = this.focusHistory.undone[0].path;
-    }
-    else { playSound(BEEP); }
-  }
-  redo() {
-    if(this.searchString !== false) return; // Don't allow in searchMode
-    if(this.cm.historySize().redo > 0) {
-      this.say("redo " + this.focusHistory.undone[0].announcement);
-      this.focusHistory.done.unshift(this.focusHistory.undone.shift());
-      this.focusPath = this.focusHistory.done[0].path;
-    }
-    else { playSound(BEEP); }
-  }
-  searchModeOff() {
-    this.say("Find mode disabled");
-    this.searchBox.style.display = "none"; 
-    this.searchString = false;
-    this.searchBox.innerText = "";
-  }
-  searchModeOn() {
-    this.say("Find mode enabled. Type to search. Enter and Shift-Enter to search forwards"
-      +" and backwards. Shift-Escape to cancel");
-    this.searchBox.style.display = "inline-block";
-    this.searchString = this.searchString || true;
   }
   showNextMatch(forward, from) {
     if(this.searchString == false) throw "showNextMatch called, but searchMode is off!"; 
@@ -891,11 +838,11 @@ export default class CodeMirrorBlocks {
     let node = matches[index], ancestors = [node], p = this.ast.getNodeParent(node);
     while(p) { ancestors.unshift(p); p = this.ast.getNodeParent(p); }
     if(this.renderOptions.lockNodesOfType.includes(ancestors[0].type)) { node = ancestors[0]; }
-    else { ancestors.forEach(a => this.maybeChangeNodeExpanded(a, true)); }
-    this.activateNode(node, event);
+    else { ancestors.forEach(a => { this.maybeChangeNodeExpanded(a, true); this.refreshCM(); }) };
+    this.activateNode(node);
     this.say((forward? index+1 : matches.length-index) + " of "+matches.length, 100);
-    return true;
   }
+
   // If the event modifies the string in a way that still has a match, do it. Otherwise, Beep!
   maybeModifySearchString(event) {
     let newSearchString = [8, 46].includes(event.which)? this.searchString.slice(0, -1) // Del/Backspace
@@ -911,7 +858,7 @@ export default class CodeMirrorBlocks {
     this.searchString = newSearchString;
     this.searchBox.innerText = newSearchString;
     this.say(this.searchString? 'Searching for '+this.searchString : 'Type to search', 0);
-    if(newSearchString !="") this.showNextMatch(true, this.getActiveNode().from);
+    if(newSearchString !="") commands.searchForward(this);
   }
   // unset the aria-selected attribute, and remove the node from the set
   removeFromSelection(node, speakEachOne=true) {
@@ -940,21 +887,19 @@ export default class CodeMirrorBlocks {
       this.say("selection cleared");
     } 
   }
-  // change expanded state globally
-  changeAllExpanded(expanded) {
-    this.say(expanded? "Expand All" : "Collapse All", 30);
-    let activeNode = this.getActiveNode();
-    let savedViewportMargin = this.cm.getOption("viewportMargin");
-    this.cm.setOption("viewportMargin", Infinity);
-    let elts = this.wrapper.querySelectorAll(`[aria-expanded=${!expanded}]:not([class*=blocks-locked])`);
-    [].forEach.call(elts, e => this.maybeChangeNodeExpanded(this.findNodeFromEl(e), expanded));
-    this.cm.setOption("viewportMargin", savedViewportMargin);
-    if(!expanded) { // if we collapsed, put focus on containing rootNode
-      let rootPath = activeNode.path.split(",")[0];
-      // shift focus if rootId !== activeNodeId
-      if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
-      else this.cm.scrollIntoView(activeNode.from);      
-    }
+  // either create an insertionQuarantine at the adjacent dropTarget, or move the CM cursor
+  // to the adjacent cursor location
+  moveCursorAdjacent(node, cursor) {
+    if(node) { this.insertionQuarantine("", node); } 
+    // set mouseUsed to simulate click-to-focus
+    else { this.mouseUsed = true; this.cm.focus(); this.cm.setCursor(cursor); }
+  }
+  // used to switch focus to the "next" node, based on a search function
+  findNextNodeBasedOnFn(searchFn) {
+    let node = this.ast.getNextMatchingNode(
+        searchFn, this.isNodeHidden, this.getActiveNode() || this.cm.getCursor());
+    if(node === this.getActiveNode()) { playSound(BEEP); }
+    this.activateNode(node, event);
   }
 
   handleKeyDown(event) {
@@ -963,14 +908,14 @@ export default class CodeMirrorBlocks {
     let searchMode = this.searchString !== false;
     
     // Search Mode on/off
-    if (!searchMode && keyName == "/") { this.searchModeOn(); }    
-    if (searchMode && ["Esc","Shift-Esc"].includes(keyName)) { this.searchModeOff(); }
+    if (!searchMode && keyName == "/") { commands.searchModeOn(this); }    
+    if (searchMode && ["Esc","Shift-Esc"].includes(keyName)) { commands.searchModeOff(this); }
     // Find next/prev match for searchString
     else if (keyName == "Enter" && activeNode && searchMode) { 
-      this.showNextMatch(true, this.ast.getNodeAfter(activeNode).from); 
+      commands.searchForward(this); 
     }
     else if (keyName == "Shift-Enter" && activeNode && searchMode) {
-      this.showNextMatch(false, activeNode.from); 
+      commands.searchBackward(this); 
     }
     // An ASCII key was pressed! If there's still a match, modify the search string and find
     else if(searchMode && !((ISMAC && event.metaKey) || (!ISMAC && event.ctrlKey))
@@ -979,30 +924,31 @@ export default class CodeMirrorBlocks {
     }
     // Ctrl/Cmd-Enter should force-allow editing on ANY node
     else if (keyName == CTRLKEY+"-Enter" && activeNode) {
-      this.makeNodeEditable(activeNode, event);
+      commands.makeNodeEditable(this, event);
     }
     // Space clears selection and selects active node
     else if (keyName == "Space" && activeNode && !searchMode) {
-      this.selectNode(activeNode, false);
+      commands.toggleSelection(this);
     }
     // Mod-Space toggles node selection, preserving earlier selection
     else if (keyName == (MODKEY+"-Space") && activeNode && !searchMode) {
-      this.selectNode(activeNode, true);
+      commands.toggleSelectionAndPreserve(this);
     }
     // Backspace or Delete should delete selected nodes
     else if (["Delete", "Backspace", CTRLKEY+"-Delete", CTRLKEY+"-Backspace"].includes(keyName)
-      && !searchMode && activeNode) { this.deleteSelectedNodes();}
+      && !searchMode && activeNode) { commands.deleteSelectedNodes(this); }
     // Ctrl-[ moves the cursor to previous whitespace or cursor position
     else if (keyName === "Ctrl-[" && activeNode && !searchMode) {
-      this.moveCursorAdjacent(activeNode.el.previousElementSibling, activeNode.from);
+      commands.insertToLeft(this);
     }
     // Ctrl-] moves the cursor to next whitespace or cursor position,
     else if (keyName === "Ctrl-]" && activeNode && !searchMode) {
-      this.moveCursorAdjacent(activeNode.el.nextElementSibling, activeNode.to);
+      //this.moveCursorAdjacent(activeNode.el.nextElementSibling, activeNode.to);
+      commands.insertToRight(this);
     }
     // if open-bracket, modify text to be an empty expression with a blank
     else if (openDelims.includes(event.key) && activeNode && !searchMode) {
-      this.insertEmptyExpression(event.key);
+      commands.insertEmptyExpression(event.key);
     }
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
@@ -1010,38 +956,38 @@ export default class CodeMirrorBlocks {
       this.handlePaste(event);
     }
     // speak parents: "<label>, at level N, inside <label>, at level N-1...""
-    else if (keyName == "\\" && activeNode) { this.speakParents(activeNode); }
+    else if (keyName == "\\" && activeNode) { commands.speakParents(this); }
     // Have the subtree read itself intelligently
-    else if (keyName == "Shift-\\" && activeNode) { this.speakChildren(activeNode); }
+    else if (keyName == "Shift-\\" && activeNode) { commands.speakChildren(this); }
     // Go to the first node or last visible in the tree (depth-first)
-    else if (keyName == "Home" && activeNode) { this.activateFirstVisibleNode(event); }
-    else if (keyName == "End"  && activeNode) { this.activateLastVisibleNode(event); }
+    else if (keyName == "Home" && activeNode) { commands.activateFirstVisibleNode(this, event); }
+    else if (keyName == "End"  && activeNode) { commands.activateLastVisibleNode(this, event); }
     // Shift-Left and Shift-Right toggle global expansion
-    else if (keyName === "Shift-Left" && activeNode) { this.changeAllExpanded(false); }
-    else if (keyName === "Shift-Right" && activeNode){ this.changeAllExpanded(true ); }
+    else if (keyName === "Shift-Left" && activeNode) { commands.collapseAll(this); }
+    else if (keyName === "Shift-Right" && activeNode){ commands.expandAll(this); }
     // Go to next/prev visible node
-    else if (event.keyCode == DOWN) { this.switchNodes(cur => this.ast.getNodeAfter(cur));  }
-    else if (event.keyCode == UP)   { this.switchNodes(cur => this.ast.getNodeBefore(cur)); }
-    else if (keyName == CTRLKEY+"-Z" && activeNode)                    { this.undo(); }
-    else if (keyName ==(ISMAC? "Shift-Cmd-Z" : "Ctrl-Y") && activeNode){ this.redo(); }
+    else if (event.keyCode == DOWN) { commands.findNextVisibleNode(this); }
+    else if (event.keyCode == UP)   { commands.findPrevVisibleNode(this); }
+    else if (keyName == CTRLKEY+"-Z" && activeNode)                    { commands.undo(this); }
+    else if (keyName ==(ISMAC? "Shift-Cmd-Z" : "Ctrl-Y") && activeNode){ commands.redo(this); }
     // Enter should toggle editing on editable nodes, or toggle expanding
     else if (!searchMode && keyName == "Enter" && activeNode) {
-      if(this.isNodeEditable(activeNode)){ this.makeNodeEditable(activeNode, event); }
-      else { this.maybeChangeNodeExpanded(activeNode); }
+      if(this.isNodeEditable(activeNode)){ commands.makeNodeEditable(this, event); }
+      else { this.maybeChangeNodeExpanded(activeNode); this.refreshCM(); }
     }
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {
       if(!(this.isNodeExpandable(activeNode) && this.maybeChangeNodeExpanded(activeNode, false))) {
         let parent = this.ast.getNodeParent(activeNode);
         if(parent) this.activateNode(parent, event); else playSound(BEEP);
-      }
+      } else { this.refreshCM(); }
     }
     // Expand block if possible, otherwise focus on firstChild
     else if (event.keyCode == RIGHT && activeNode) {
       if(!(this.isNodeExpandable(activeNode) && this.maybeChangeNodeExpanded(activeNode, true))) {
         let firstChild = this.isNodeExpandable(activeNode) && this.ast.getNodeFirstChild(activeNode);
         if(firstChild) this.activateNode(firstChild, event); else playSound(BEEP);
-      }
+      } else { this.refreshCM(); }
     }
     else {
       let command = this.keyMap[keyName]; // does codemirror have a command for this key?
