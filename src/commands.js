@@ -1,8 +1,8 @@
-import {playSound, BEEP, WRAP, poscmp} from './blocks';
+import {playSound, BEEP, poscmp} from './blocks';
 
 export let commands = {
-  	// deleteSelectedNodes : Void -> Void
-  	// delete all of this.selectedNodes set, and then empty the set
+	// deleteSelectedNodes : Void -> Void
+	// delete all of this.selectedNodes set, and then empty the set
 	deleteSelectedNodes: cmb => {
 		if(cmb.selectedNodes.size == 0) { playSound(BEEP); return; }
 	    let sel = [...cmb.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
@@ -20,11 +20,32 @@ export let commands = {
 		cmb.moveCursorAdjacent(el, cur);
 	},
 	findNextVisibleNode: cmb => {
-		cmb.findNextNodeBasedOnFn(cur => cmb.ast.getNodeAfter(cur));
+		cmb.activateNextNodeBasedOnFn(cur => cmb.ast.getNodeAfter(cur));
 	},
 	findPrevVisibleNode: cmb => {
-		cmb.findNextNodeBasedOnFn(cur => cmb.ast.getNodeBefore(cur));
+		cmb.activateNextNodeBasedOnFn(cur => cmb.ast.getNodeBefore(cur));
 	},
+	findNextVisibleNodeAndPreserveSelection: cmb => {
+		cmb.activateNextNodeBasedOnFn(cur => cmb.ast.getNodeAfter(cur), true);
+	},
+	findPrevVisibleNodeAndPreserveSelection: cmb => {
+		cmb.activateNextNodeBasedOnFn(cur => cmb.ast.getNodeBefore(cur), true);
+	},
+	collapseOrFindParent: cmb => {
+		let node = cmb.getActiveNode();
+		if(!(cmb.isNodeExpandable(node) && cmb.maybeChangeNodeExpanded(node, false))) {
+        let parent = cmb.ast.getNodeParent(node);
+        if(parent) cmb.activateNode(parent, event); else playSound(BEEP);
+      } else { cmb.refreshCM(); }
+	},
+	expandOrFindFirstChild: cmb => {
+		let node = cmb.getActiveNode();
+		if(!(cmb.isNodeExpandable(node) && cmb.maybeChangeNodeExpanded(node, true))) {
+		  let firstChild = cmb.isNodeExpandable(node) && cmb.ast.getNodeFirstChild(node);
+		  if(firstChild) cmb.activateNode(firstChild, event); else playSound(BEEP);
+		} else { cmb.refreshCM(); }
+	},
+	// speak parents: "<label>, at level N, inside <label>, at level N-1...""
     speakParents: cmb => {
       var node = cmb.getActiveNode(), parents = [node];
       while(node = cmb.ast.getNodeParent(node)){
@@ -33,6 +54,7 @@ export let commands = {
       if(parents.length > 1) cmb.say(parents.join(", inside "));
       else playSound(BEEP);
     },
+    // Have the subtree read itself intelligently
     speakChildren: cmb => { 
     	let node = cmb.getActiveNode(); 
     	cmb.say(node.toDescription(node['aria-level'])); 
@@ -67,9 +89,15 @@ export let commands = {
       cmb.searchBox.style.display = "inline-block";
       cmb.searchString = cmb.searchString || true;
     },
+    editNode: cmb => {
+  		let node = cmb.getActiveNode();
+    	cmb.insertionQuarantine(false, node, event);
+    },
   	// create an insertion quarantine in place of the given node
-  	makeNodeEditable: cmb => {
-  		cmb.insertionQuarantine(false, cmb.getActiveNode()); 
+  	editOrToggleExpanded: cmb => {
+  		let node = cmb.getActiveNode();
+  		if(cmb.isNodeEditable(node)){ cmb.insertionQuarantine(false, node); }
+  		else { cmb.maybeChangeNodeExpanded(node) && cmb.refreshCM(); }
   	},
     activateFirstVisibleNode: cmb => { 
     	cmb.activateNode(cmb.ast.rootNodes[0]); 
@@ -98,7 +126,7 @@ export let commands = {
     toggleSelection: cmb => {
     	cmb.toggleSelection(false);
     },
-    toggleSelectionAndPreserve: cmb => {
+    toggleSelectionAndPreserveSelection: cmb => {
     	cmb.toggleSelection(true);
     }
 };
