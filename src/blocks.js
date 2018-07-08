@@ -838,7 +838,8 @@ export default class CodeMirrorBlocks {
     let node = matches[index], ancestors = [node], p = this.ast.getNodeParent(node);
     while(p) { ancestors.unshift(p); p = this.ast.getNodeParent(p); }
     if(this.renderOptions.lockNodesOfType.includes(ancestors[0].type)) { node = ancestors[0]; }
-    else { ancestors.forEach(a => { this.maybeChangeNodeExpanded(a, true); this.refreshCM(); }) };
+    else { ancestors.forEach(a => this.maybeChangeNodeExpanded(a, true)) };
+    this.refreshCM(); // update line heights in case expanded state changed
     this.activateNode(node);
     this.say((forward? index+1 : matches.length-index) + " of "+matches.length, 100);
   }
@@ -973,7 +974,7 @@ export default class CodeMirrorBlocks {
     // Enter should toggle editing on editable nodes, or toggle expanding
     else if (!searchMode && keyName == "Enter" && activeNode) {
       if(this.isNodeEditable(activeNode)){ commands.makeNodeEditable(this, event); }
-      else { this.maybeChangeNodeExpanded(activeNode); this.refreshCM(); }
+      else { this.maybeChangeNodeExpanded(activeNode) && this.refreshCM(); }
     }
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {
