@@ -94,7 +94,8 @@ Every block has the `blocks-node` css class:
 
 - **blocks-node**: _Any_ block
 
-- **blocks-node[aria-selected^="true"]**: A block with aria selection
+- **blocks-node[aria-selected^="true"]**: A block that is currently
+  selected.
 
 - **blocks-node[aria-expanded="false"]**: A folded/collapsed block
 
@@ -105,22 +106,37 @@ are:
 - **blocks-literal**: A block containing literal data, such as a
   string or number.
 
+- **blocks-sequence**: A vertical sequence of blocks, such as used by
+  Scheme's `begin`.
+
 - **blocks-TYPE**: A block of the given (non-literal) type. What TYPE
     can be is defined by your language.
 
 - **blocks-hole**: This represents a part of the program that hasn't
   been filled in yet.
 
-- **blocks-sequence**: A vertical sequence of blocks, such as used by
-  Scheme's `begin`.
-
 - **blocks-unknown**: A block of unknown type.
 
 - **blocks-locked**: "Locking" allows you to make certain blocks
     opaque to novice users. This is the css class of locked blocks.
 
-If a node is a literal, it contains a span with a more specific
-css class, for that particular literal:
+Most typical blocks have two parts: an `operator` (the black bar up
+top), and an `args` (the space below that contains its children):
+
+- **operator**: The "head" of a node, shown by default in a black bar
+  at the top of the block.
+
+- **args**: The "children" of a node, shown by default in a light gray
+  section at the bottom of the block.
+
+If a node is a `blocks-sequence`, however, it contains a
+`sequence-exprs` instead of an `args`:
+
+- **sequence-exprs**: The "children" of a `blocks-sequence`. By
+  default, these are shown with arrows between them.
+
+And if a node is a literal, it instead contains a span with a more
+specific css class, for that particular literal:
 
 - **blocks-literal-TYPE**: A literal of type TYPE. This is contained
     _inside_ of a span of class `blocks-literal`. What TYPE can be is
@@ -130,10 +146,6 @@ Some blocks have spaces that you can drop a block onto. These spaces
 have the css class `blocks-drop-target`, as well as `blocks-white-space`:
 
 - **blocks-drop-target**: A spot that you can drag a block onto.
-
-Most typical blocks have two parts: an `operator` (the black bar up
-top), and an `args` (the space below that contains its children). A
-`sequence` block, however, has `sequence-exprs` instead of `args`.
 
 Here is a diagram showing most of the css classes. The classes are
 written without the `blocks-` prefix.
