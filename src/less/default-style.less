@@ -3,7 +3,9 @@
 @border-radius: 5px;
 @border-width: 2px;
 
-@comment-color: black; // TODO: unused
+@comment-color: #ddd;
+@comment-background-color: #444;
+@comment-border-color: (@comment-background-color - #111);
 @border-color: black;
 @editing-border-color: orange;
 @error-border-color: red;
@@ -246,19 +248,18 @@
 }
 
 .blocks-comment {
-  color: @comment-color;
-  background-color: #444;
+  background-color: @comment-background-color;
   display: inline-table !important;
   visibility: hidden;
   position: absolute;
-  color: #ddd;
+  color: @comment-color;
   padding: 2px 10px;
   border-radius: 5px;
   max-width: 300px;
   line-height: 20px;
   box-shadow: 0px 0px 20px #999;
   margin-left: 15px;
-  border: 1px solid #333;
+  border: 1px solid @comment-border-color;
   text-shadow: 0 0 1px #000;
   margin-bottom: -5px;
   bottom: 0px;
@@ -276,7 +277,7 @@
   position: absolute;
   left: -15px;
   bottom: 15%;
-  border-right: 10px solid #444;
+  border-right: 10px solid @comment-background-color;
 }
 .blocks-node:focus > .blocks-comment{ visibility: visible; } 
 

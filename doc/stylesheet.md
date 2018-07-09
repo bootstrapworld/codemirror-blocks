@@ -47,9 +47,14 @@ reasonable defaults. To set these, define them _after_ importing
 
         @name-color: steelblue;
 
-- [TODO: unused] **comment-color**: The color of comments.
+- **comment-color**: The foreground color of comments (i.e., the color
+  of their text).
+  
+        @comment-color: #ddd;
 
-        @comment-color: #ccc;
+- **comment-background-color**: The background color of comments.
+
+        @comment-background-color: #444;
 
 - **border-color**: The default border color for blocks.
 
