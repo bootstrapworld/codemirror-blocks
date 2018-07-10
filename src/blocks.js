@@ -931,20 +931,9 @@ export default class CodeMirrorBlocks {
     if(!this.blockMode) return; // bail if mode==false
     let keyName = CodeMirror.keyName(event), keyCode = event.which, activeNode=this.getActiveNode();
     let searchMode = this.searchString !== false;
-    if(!searchMode && keyMap.hasOwnProperty(keyName)) {
-      let cmd = keyMap[keyName];
-      if (commands.hasOwnProperty(cmd)) { 
-        event.preventDefault();
-        event.stopPropagation();
-        return commands[cmd].call(null, this); 
-      }
-    }
 
-    // Search Mode on/off
-    if (!searchMode && keyName == "/") { commands.searchModeOn(this); }    
-    if (searchMode && ["Esc","Shift-Esc"].includes(keyName)) { commands.searchModeOff(this); }
     // Find next/prev match for searchString
-    else if (keyName == "Enter" && activeNode && searchMode) { 
+    if (keyName == "Enter" && activeNode && searchMode) { 
       commands.searchForward(this); 
     }
     else if (keyName == "Shift-Enter" && activeNode && searchMode) {
@@ -959,12 +948,14 @@ export default class CodeMirrorBlocks {
     else if (openDelims.includes(event.key) && activeNode && !searchMode) {
       commands.insertEmptyExpression(event.key);
     }
-    // shift focus to buffer for the *real* paste event to fire
-    // then replace or insert, then reset the buffer
-    else if ([CTRLKEY+"-V", "Shift-"+CTRLKEY+"-V"].includes(keyName) && activeNode && !searchMode) {
-      this.handlePaste(event);
-    }
-    else {
+    else if(keyMap.hasOwnProperty(keyName)) {
+      let cmd = keyMap[keyName];
+      if (commands.hasOwnProperty(cmd)) { 
+        event.preventDefault();
+        event.stopPropagation();
+        return commands[cmd].call(null, this, event); 
+      }
+    } else {
       let command = this.keyMap[keyName]; // does codemirror have a command for this key?
       if      (typeof command == "string")   { this.cm.execCommand(command); }
       else if (typeof command == "function") { command(this.cm); }
