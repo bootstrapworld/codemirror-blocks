@@ -156,7 +156,7 @@ export default class CodeMirrorBlocks {
         onclick:    this.nodeEventHandler(this.activateNode),
         ondblclick: this.nodeEventHandler({
           literal:    ((n, e) => this.insertionQuarantine(false, n, e)),
-          hole:       ((n, e) => this.insertionQuarantine(false, n, e)),
+          blank:      ((n, e) => this.insertionQuarantine(false, n, e)),
           whitespace: ((n, e) => this.insertionQuarantine("", n, e))
         }),
         ondragstart:  this.nodeEventHandler(this.startDraggingNode),
@@ -385,11 +385,11 @@ export default class CodeMirrorBlocks {
   }
   // is this a node that can be collapsed or expanded?
   isNodeExpandable(node) {
-    return !["hole", "literal", "comment"].includes(node.type) && 
+    return !["blank", "literal", "comment"].includes(node.type) && 
          !node.el.getAttribute("aria-disabled");
   }
   isNodeEditable(node) {
-    return ["hole", "literal"].includes(node.type);
+    return ["blank", "literal"].includes(node.type);
   }
   // are any of the node's ancestors collapsed?
   isNodeHidden(node) {
@@ -1102,7 +1102,7 @@ export default class CodeMirrorBlocks {
             return;
           }
         }
-        if(event.target.classList.contains('blocks-hole')) {
+        if(event.target.classList.contains('blocks-blank')) {
           if(event.type == "dragstart"){
             event.stopPropagation();
             return false;

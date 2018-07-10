@@ -15,7 +15,7 @@ import {
   VariableDefinition,
   Unknown,
   Sequence,
-  Hole
+  Blank
 } from '../../ast';
 import {LetLikeExpr, WhenUnless} from './ast';
 import {PrimitiveGroup} from '../../parsers/primitives';
@@ -117,12 +117,12 @@ function parseNode(node, i) {
   if (node instanceof structures.callExpr) {
     let func, label, children = node.args.map(parseNode).filter(item => item !== null);
     if (!node.func) {
-      func = new Hole(
+      func = new Blank(
         {line: from.line, ch: from.ch+1},
         {line: from.line, ch: from.ch+1},
         '...',
-        'hole',
-        {'aria-label': '*hole*'}
+        'blank',
+        {'aria-label': '*blank*'}
       );
     // special case for Unit Tests
     } else {
@@ -260,7 +260,7 @@ function parseNode(node, i) {
     );
   } else if (node instanceof structures.symbolExpr) {
     if(node.val == "...") {
-      return new Hole(from, to, node.val, "symbol", {'aria-label': "hole"});
+      return new Blank(from, to, node.val, "symbol", {'aria-label': "blank"});
     } else if (["true","false"].includes(node.val)) {
       return new Literal(from, to, node.val, "boolean", 
         {'aria-label': symbolAria(node.val)+', a Boolean', 'comment': comment});
@@ -332,7 +332,7 @@ class WeschemeParser {
         'symbol'
       ),
       primitive.argumentTypes.map(() =>
-        new Hole(
+        new Blank(
           {line: 0, ch: 0},
           {line: 0, ch: 0},
           ''

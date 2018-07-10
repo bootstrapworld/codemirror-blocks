@@ -8,7 +8,7 @@ import CondExpression   from './components/CondExpression';
 import CondClause       from './components/CondClause';
 import Unknown          from './components/Unknown';
 import Literal          from './components/Literal';
-import Hole             from './components/Hole';
+import Blank            from './components/Blank';
 import Comment          from './components/Comment';
 import IdentifierList   from './components/IdentifierList';
 import StructDefinition from './components/StructDef';
@@ -40,7 +40,7 @@ export default class Renderer {
       literal: Literal,
       comment: Comment,
       sequence: Sequence,
-      hole: Hole,
+      blank: Blank,
     };
   }
 
@@ -60,13 +60,13 @@ export default class Renderer {
     // given a node AST node, make a DOM node with the same text contents
     var toDom = (node) => {
       let el = document.createElement("span");
-      el.className = !["literal", "hole"].includes(node.type)? 'box' : 'literal';
+      el.className = !["literal", "blank"].includes(node.type)? 'box' : 'literal';
       el.appendChild(document.createTextNode(this.printASTNode(node)));
       return el;
     };
 
     // given nodes, clones, whether we're in text or block mode, and whether it's a precalc..
-    // position the clones over the currently-rendered literals and holes
+    // position the clones over the currently-rendered literals and blanks
     // unless the node is offscreen, in which case fade out the clone
     // uses the FLIP method described at:
     // https://medium.com/outsystems-experts/flip-your-60-fps-animations-flip-em-good-372281598865
@@ -98,9 +98,9 @@ export default class Renderer {
       });
     }
 
-    // extract all the literals and holes from a rootNode
+    // extract all the literals and blanks from a rootNode
     function flatten(flat, node) {
-      return ["literal", "hole"].includes(node.type)? flat.concat([node])  // nothing inside literals and holes
+      return ["literal", "blank"].includes(node.type)? flat.concat([node])  // nothing inside literals and blanks
         : that.lockNodesOfType.includes(node.type)? flat.concat([node])     // Perf: don't bother looking inside
           : [...node].slice(1).reduce(flatten, flat);                       // look inside
     }

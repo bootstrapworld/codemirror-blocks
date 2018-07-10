@@ -1,12 +1,12 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
-import {Hole as ASTHoleNode} from '../ast';
+import {Blank as ASTBlankNode} from '../ast';
 import Node from './Node';
 
 export default class Literal extends Component {
   static propTypes = {
-    node: PropTypes.instanceOf(ASTHoleNode).isRequired,
+    node: PropTypes.instanceOf(ASTBlankNode).isRequired,
     lockedTypes: PropTypes.instanceOf(Array).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,

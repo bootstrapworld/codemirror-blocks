@@ -400,7 +400,7 @@ export class VariableDefinition extends ASTNode {
 
   toDescription(level){
     if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
-    let insert = ["literal", "hole"].includes(this.body.type)? "" : "the result of:";
+    let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:";
     return `define ${this.name} to be ${insert} ${this.body.toDescription(level)}`;
   }
 
@@ -574,9 +574,9 @@ export class Comment extends ASTNode {
   }
 }
 
-export class Hole extends ASTNode {
-  constructor(from, to, value, dataType='hole', options={}) {
-    super(from, to, 'hole', options);
+export class Blank extends ASTNode {
+  constructor(from, to, value, dataType='blank', options={}) {
+    super(from, to, 'blank', options);
     this.value = value || "...";
     this.dataType = dataType;
   }
