@@ -3,6 +3,7 @@ import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/searchcursor.js';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
 import {addLanguage} from 'codemirror-blocks/languages';
+import {ISMAC} from 'codemirror-blocks/keymap';
 
 import {
   click,
@@ -30,6 +31,15 @@ const END_KEY   = 35;
 const ESC_KEY   = 27;
 const LEFTBRACE = 219;
 const RIGHTBRACE= 221;
+const Z_KEY     = 90;
+
+const TOGGLE_SELECTION_KEYPRESS =
+  keydown(SPACE_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
+const PRESERVE_NEXT_KEYPRESS =
+  keydown(DOWN_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
+const PRESERVE_PREV_KEYPRESS =
+  keydown(UP_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
+
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
@@ -399,8 +409,8 @@ describe('The CodeMirrorBlocks Class', function() {
         });
 
         it('should remove multiple selected nodes on cut', function(done) {
-          this.literal.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
-          this.literal2.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true}));
+          this.literal.el.dispatchEvent(PRESERVE_NEXT_KEYPRESS);
+          this.literal2.el.dispatchEvent(TOGGLE_SELECTION_KEYPRESS);
           expect(this.blocks.selectedNodes.size).toBe(2);
           document.dispatchEvent(cut());
           setTimeout(() => {
@@ -525,7 +535,7 @@ describe('The CodeMirrorBlocks Class', function() {
       });
 
       it('alt-arrow preserves selection & changes active ', function() {
-        this.literal.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
+        this.literal.el.dispatchEvent(PRESERVE_NEXT_KEYPRESS);
         expect(this.literal.el.getAttribute("aria-selected")).toBe('true');
         expect(this.literal2.el.getAttribute("aria-selected")).toBe('false');
         expect(document.activeElement).toBe(this.literal2.el);
@@ -533,9 +543,9 @@ describe('The CodeMirrorBlocks Class', function() {
       });
 
       it('allow multiple, non-contiguous selection ', function() {
-        this.literal.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
-        this.literal2.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true})); // skip literal2
-        this.expr.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true})); // toggle selection on expr
+        this.literal.el.dispatchEvent(PRESERVE_NEXT_KEYPRESS);
+        this.literal2.el.dispatchEvent(PRESERVE_NEXT_KEYPRESS); // skip literal2
+        this.expr.el.dispatchEvent(TOGGLE_SELECTION_KEYPRESS); // toggle selection on expr
         expect(this.literal.el.getAttribute("aria-selected")).toBe('true');
         expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
         expect(document.activeElement).toBe(this.expr.el);
@@ -545,8 +555,8 @@ describe('The CodeMirrorBlocks Class', function() {
       it('selecting a parent, then child should just select the parent ', function() {
         this.expr.el.dispatchEvent(click());
         this.expr.el.dispatchEvent(keydown(SPACE_KEY));
-        this.expr.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
-        this.expr.func.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true}));
+        this.expr.el.dispatchEvent(PRESERVE_NEXT_KEYPRESS);
+        this.expr.func.el.dispatchEvent(TOGGLE_SELECTION_KEYPRESS);
         expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
         expect(this.expr.func.el.getAttribute("aria-selected")).toBe('false');
         expect(document.activeElement).toBe(this.expr.func.el);
@@ -556,7 +566,7 @@ describe('The CodeMirrorBlocks Class', function() {
       it('selecting a child, then parent should just select the parent ', function() {
         this.expr.func.el.dispatchEvent(click());
         this.expr.func.el.dispatchEvent(keydown(SPACE_KEY));
-        this.expr.func.el.dispatchEvent(keydown(UP_KEY, {altKey: true}));
+        this.expr.func.el.dispatchEvent(PRESERVE_PREV_KEYPRESS);
         this.expr.el.dispatchEvent(keydown(SPACE_KEY));
         expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
         expect(this.expr.func.el.getAttribute("aria-selected")).toBe('false');
@@ -720,7 +730,7 @@ describe('The CodeMirrorBlocks Class', function() {
           }, DELAY);
         });
         
-        describe('when "saving" bad whitepsace inputs,', function() {
+        describe('when "saving" bad whitepspace inputs,', function() {
           beforeEach(function(done) {
             this.whiteSpaceEl.dispatchEvent(dblclick());
             setTimeout(() => {

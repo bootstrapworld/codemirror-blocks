@@ -3,7 +3,7 @@ import CodeMirror from 'codemirror';
 import ee from 'event-emitter';
 import Renderer from './Renderer';
 import { commands } from './commands';
-import { keyMap } from './keymap';
+import { ISMAC, keyMap } from './keymap';
 import * as languages from './languages';
 import * as ui from './ui';
 import merge from './merge';
@@ -39,7 +39,6 @@ export function playSound(sound) {
   setTimeout(function () { sound.play(); }, 50);
 }
 
-const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i)?true:false;
 const CTRLKEY = ISMAC? "Cmd" : "Ctrl";
 
 // open/close delimeters
