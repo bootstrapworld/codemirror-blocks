@@ -61,7 +61,7 @@ export let commands = {
     },
     undo: cmb => {
       if(cmb.searchString !== false) return; // Don't allow in searchMode
-      if(cmb.cm.historySize().undo > 0) { 
+      if(cmb.focusHistory.done.length > 0) {
         cmb.say("undo " + cmb.focusHistory.done[0].announcement);
         cmb.focusHistory.undone.unshift(cmb.focusHistory.done.shift());
         cmb.focusPath = cmb.focusHistory.undone[0].path;
@@ -70,7 +70,7 @@ export let commands = {
     },
     redo: cmb => {
       if(cmb.searchString !== false) return; // Don't allow in searchMode
-      if(cmb.cm.historySize().redo > 0) {
+      if(cmb.focusHistory.undone.length > 0) {
         cmb.say("redo " + cmb.focusHistory.undone[0].announcement);
         cmb.focusHistory.done.unshift(cmb.focusHistory.undone.shift());
         cmb.focusPath = cmb.focusHistory.done[0].path;
