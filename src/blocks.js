@@ -986,7 +986,7 @@ export default class CodeMirrorBlocks {
       // Announce undo and redo (or beep if there's nothing)
       if (keyName == CTRLKEY+"-Z" && activeNode) {
         if(searchMode) return; // Don't let this fall-through to CM. Just return.
-        if(this.cm.historySize().undo > 0) { 
+        if(this.focusHistory.done.length > 0) {
           this.say("undo " + this.focusHistory.done[0].announcement);
           this.focusHistory.undone.unshift(this.focusHistory.done.shift());
           this.focusPath = this.focusHistory.undone[0].path;
@@ -995,7 +995,7 @@ export default class CodeMirrorBlocks {
       }
       if ((ISMAC && keyName=="Shift-Cmd-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
         if(searchMode) return; // Don't let this fall-through to CM. Just return.
-        if(this.cm.historySize().redo > 0) {
+        if(this.focusHistory.undone.length > 0) {
           this.say("redo " + this.focusHistory.undone[0].announcement);
           this.focusHistory.done.unshift(this.focusHistory.undone.shift());
           this.focusPath = this.focusHistory.done[0].path;
