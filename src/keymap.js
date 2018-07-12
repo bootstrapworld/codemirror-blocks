@@ -22,7 +22,7 @@ export let keyMap = {
   "Ctrl-Backspace":"deleteSelectedNodes",
 };
 
-const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
+export const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
 
 if(ISMAC) {
   keyMap["Alt-Space"] = "toggleSelectionAndPreserveSelection";
