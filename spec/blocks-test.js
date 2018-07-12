@@ -3,6 +3,7 @@ import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/searchcursor.js';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
 import {addLanguage} from 'codemirror-blocks/languages';
+import {ISMAC} from 'codemirror-blocks/keymap';
 
 import {
   click,
@@ -760,7 +761,6 @@ describe('The CodeMirrorBlocks Class', function() {
           quarantine.dispatchEvent(keydown(ENTER));
           expect(this.trackHandleChange).toHaveBeenCalled();
         });
-
         describe('when "saving" bad whitepspace inputs,', function() {
           beforeEach(async function() {
             this.whiteSpaceEl.dispatchEvent(dblclick());
