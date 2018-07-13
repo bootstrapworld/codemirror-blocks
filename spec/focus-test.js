@@ -3,6 +3,7 @@
 import CodeMirrorBlocks from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
+import {ISMAC} from 'codemirror-blocks/keymap';
 
 import {
   click,
@@ -18,6 +19,12 @@ const RIGHTBRACE= 221;
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
+
+const TOGGLE_SELECTION_KEYPRESS =
+  keydown(SPACE_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
+const PRESERVE_NEXT_KEYPRESS =
+  keydown(DOWN_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
+
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
@@ -94,8 +101,8 @@ describe('The CodeMirrorBlocks Class', function() {
     it('deleting the multiple nodes should shift focus to the one after', function(done) {
       this.literal1.el.dispatchEvent(click());            // activate the node,
       this.literal1.el.dispatchEvent(keydown(SPACE_KEY)); // then select it
-      this.literal1.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
-      this.literal2.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true}));
+      this.literal1.el.dispatchEvent(PRESERVE_NEXT_KEYPRESS);
+      this.literal2.el.dispatchEvent(TOGGLE_SELECTION_KEYPRESS);
       expect(this.blocks.selectedNodes.size).toBe(2);
       this.cm.getWrapperElement().dispatchEvent(keydown(DELETE_KEY));
       setTimeout(() => {
