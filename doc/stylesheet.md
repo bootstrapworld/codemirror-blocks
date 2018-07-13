@@ -60,10 +60,11 @@ reasonable defaults. To set these, define them _after_ importing
 
         @border-color: block;
 
-- **editing-border-color**: The border color for the block you are
-  currently at.
+- **focus-border-color**: The border color for the block you are
+  currently focused on. (When you navigate with the arrow keys, you
+  are changing which block is focused.)
 
-        @editing-border-color: orange;
+        @focus-border-color: orange;
 
 - **error-border-color**: The border color for a block containing an
   error, such as [FILL].

@@ -7,7 +7,7 @@
 @comment-background-color: #444;
 @comment-border-color: (@comment-background-color - #111);
 @border-color: black;
-@editing-border-color: orange;
+@focus-border-color: orange;
 @error-border-color: red;
 @hover-border-color: rgba(255, 165, 0, 0.3);
 @drag-drop-background-color: lightblue;
@@ -33,7 +33,7 @@
   &:before {
     content: 'Find: ';
     position: relative;
-    color: @editing-border-color;
+    color: @focus-border-color;
     right: 0px;
   }
 }
@@ -141,7 +141,7 @@
   transition: all 0.5s;
 
   &.blocks-editing, &.quarantine {
-    border-color: @editing-border-color;
+    border-color: @focus-border-color;
     cursor: text;
     display:inline-table;
     &.blocks-error {
@@ -168,19 +168,19 @@
 
 .blocks-node[aria-selected^="true"] {
   border-style: dotted;
-  border-color: @editing-border-color;
+  border-color: @focus-border-color;
   outline: 0;
   box-shadow: 5px 5px 5px #888888;
 }
 .blocks-node:focus {
   border-width: 2px;
   border-style: solid;
-  border-color: @editing-border-color;
+  border-color: @focus-border-color;
   outline: 0;
 }
 .blocks-identifierList:focus{
   border-style: none;
-  background: @editing-border-color;
+  background: @focus-border-color;
   border-radius: 15px;
 }
 

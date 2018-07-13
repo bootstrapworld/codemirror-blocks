@@ -9,7 +9,7 @@
   @literal-boolean-color: darkred;
   @literal-symbol-color: steelblue;
   @comment-color: #ccc;
-  @editing-border-color: orange;
+  @focus-border-color: orange;
   @error-border-color: red;
 
   @hover-border-color: red;
@@ -85,7 +85,7 @@
     text-align: center;
 
     &.blocks-editing, &.blocks-quarantine {
-      border-color: @editing-border-color;
+      border-color: @focus-border-color;
       &.blocks-error {
         border-color: @error-border-color;
       }
@@ -132,7 +132,7 @@
   }
 
   .blocks-node:focus {
-    border-color: @editing-border-color;
+    border-color: @focus-border-color;
     outline: 0;
   }
 
