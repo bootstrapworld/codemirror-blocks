@@ -103,8 +103,9 @@ export class AST {
   } 
 
   // patch : Parser, String, [ChangeObjs] -> AST
-  // FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
   // produce the new AST, preserving all the unchanged DOM nodes from the old AST
+  // FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
+  // FIXME: Once React is in place, all we care about is which roots to update
   patch(parse, newAST, CMchanges) {
     let oldAST = this, dirtyNodes = new Set();
 
@@ -143,6 +144,7 @@ export class AST {
       oldAST.nodeIdMap.forEach((node, id) => {
         let pArray = node.path.split(',').map(Number);
         // if the node is independent of the change, just return
+        // BUG: inserting a last child could update the parent - let React handle it
         if(pathIsIndependentOfChangePath(pArray, cArray)) { return; }
         // If it's being removed, delete from nodeIdMap and mark its parent as dirty (if it has one)
         // Otherwise just update the path of other post-change nodes by +shift

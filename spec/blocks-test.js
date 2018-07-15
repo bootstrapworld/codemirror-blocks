@@ -380,17 +380,6 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue()).toBe('11 54');
       });
 
-      it('should proxy keydown events on the active node to codemirror', function() {
-        spyOn(this.cm, 'execCommand');
-        this.literal.el.dispatchEvent(click());
-        let event = keydown(90, {ctrlKey: true}); // Ctrl-z: undo
-        CodeMirror.keyMap['default']["Ctrl-Z"] = "undo";
-        expect(CodeMirror.keyMap['default'][CodeMirror.keyName(event)]).toBe('undo');
-        this.literal.el.dispatchEvent(event);
-        expect(this.cm.execCommand).toHaveBeenCalledWith('undo');
-      });
-
-
       describe('cut/copy/paste', function() {
         beforeEach(function() {
           this.literal.el.dispatchEvent(click());            // activate the node,
