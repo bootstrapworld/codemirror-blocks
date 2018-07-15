@@ -453,6 +453,7 @@ export default class CodeMirrorBlocks {
     this.buffer.value = this.clipboard;
     this.buffer.select();
     try {
+      console.log(event.type);
       document.execCommand && document.execCommand(event.type);
     } catch (e) {
       console.error("execCommand doesn't work in this browser :(", e);
@@ -466,6 +467,7 @@ export default class CodeMirrorBlocks {
   // handlePaste : Event -> Void
   // paste to a hidden buffer, then grab the text and deal with it manually
   handlePaste(e) {
+    console.log('handling paste');
     let that = this, activeNode = this.getActiveNode();
     this.mute();
     this.buffer.focus();
@@ -924,11 +926,9 @@ export default class CodeMirrorBlocks {
       if (commands.hasOwnProperty(cmd)) { 
         event.preventDefault();
         event.stopPropagation();
-        return commands[cmd].call(null, this, event); 
+        return commands[cmd].call(null, this, event);
       }
     }
-    event.preventDefault();
-    event.stopPropagation();
   }
 
   // nodeEventHandler : {HandlerFn} Boolean -> *

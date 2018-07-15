@@ -79,6 +79,7 @@ export let commands = {
       }
       else { playSound(BEEP); }
     },
+    paste:  (cmb, e) => { cmb.handlePaste(e); },
     searchModeOff: cmb => {
       cmb.say("Find mode disabled");
       cmb.searchBox.style.display = "none"; 
