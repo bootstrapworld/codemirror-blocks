@@ -955,11 +955,6 @@ export default class CodeMirrorBlocks {
         event.stopPropagation();
         return commands[cmd].call(null, this, event); 
       }
-    } else {
-      let command = this.keyMap[keyName]; // does codemirror have a command for this key?
-      if      (typeof command == "string")   { this.cm.execCommand(command); }
-      else if (typeof command == "function") { command(this.cm); }
-      else if(!searchMode) { return; } // let CodeMirror handle it
     }
     event.preventDefault();
     event.stopPropagation();
