@@ -84,7 +84,7 @@ export default class ExampleParser {
     } else if (this.code[this.charIndex].match(IDENTIFIER_RE)) {
       let identifier = '';
       let startIndex = this.colIndex;
-      while (this.code[this.charIndex].match(IDENTIFIER_RE)) {
+      while (this.charIndex < this.code.length && this.code[this.charIndex].match(IDENTIFIER_RE)) {
         identifier += this.getch();
       }
       return new Token(
@@ -135,6 +135,8 @@ export default class ExampleParser {
         return this.parseExpression();
       case TOKENS.NUMBER:
         return this.parseLiteral();
+      case TOKENS.IDENTIFIER:
+        return this.parseIdentifier();
       default:
         throw new Error("Expected either a number or another expression");
     }
@@ -150,6 +152,11 @@ export default class ExampleParser {
     );
   }
 
+  parseIdentifier() {
+    var identifierToken = this.getToken();
+    return new Literal (identifierToken.from, identifierToken.to, identifierToken.text, 'symbol');
+  }
+
   parseExpression() {
     let token = this.getToken();
     if (token.token != TOKENS.OPEN_PAREN) {
@@ -158,7 +165,7 @@ export default class ExampleParser {
     if (this.peekToken().token != TOKENS.IDENTIFIER) {
       throw new Error("Expected an identifier");
     }
-    let identifierToken = this.getToken();
+    let identifier = this.parseIdentifier ();
     var args = [];
     while (this.peekToken().token != TOKENS.CLOSE_PAREN) {
       args.push(this.parseNextToken());
@@ -167,7 +174,7 @@ export default class ExampleParser {
     return new Expression(
       token.from,
       closeParenToken.to,
-      new Literal(identifierToken.from, identifierToken.to, identifierToken.text, 'symbol'),
+      identifier,
       args
     );
   }
