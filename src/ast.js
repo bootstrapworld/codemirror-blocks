@@ -284,6 +284,16 @@ export class ASTNode {
   toDescription(){
     return this.options["aria-label"];
   }
+
+  // setSpanRef : React.Ref -> Void
+  // called by the Node react component and its subclasses to pass the DOM node reference
+  // to Renderer
+  setSpanRef = (el) => {
+    this.el = el;
+    console.log ("spoon! " + el.id ? ("elt " + el.id) : el.toString());
+  }
+
+
 }
 
 export class Unknown extends ASTNode {
