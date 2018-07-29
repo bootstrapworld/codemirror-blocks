@@ -340,7 +340,8 @@ export default class CodeMirrorBlocks {
           let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
           if(node && node.el) { node.el.click(); }
           else { this.cm.focus(); }
-          delete this.ast.dirty; // remove dirty nodeset, now that they've been rendered
+          // AK: this should be this.ast.dirtyNodes not this.ast.dirty, right?
+          delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
         }, 100);
       }
     });
