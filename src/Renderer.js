@@ -149,21 +149,31 @@ export default class Renderer {
     }
   }
 
-  // Render the node, recycling a container whenever possible
-  render(node, quarantine=false) {
-    var container = document.createElement('span');
-    if(node["aria-level"] && node["aria-level"] > 1) { // render in-place 
+  // ASTNode boolean -> {container: HTMLElement, hoistUp: boolean}
+  // the container element that should house the rendering of the given node
+  // and a flag indicating whether to hoist the rendered content out of the container
+  // after rendering and replace the container
+  findRenderContainerForNode(node, quarantine) {
+    let container = document.createElement('span');
+    let hoistUp = false;
+    if(node["aria-level"] && node["aria-level"] > 1) { // render in-place
+      console.log ("re-rendering in-place for " + node.id);
       //container = document.createElement('span');  //AK: this seems redundant. why was it here?
       node.el.parentNode.replaceChild(container, node.el);                // REVISIT: there *has* to be a better way
-      ReactDOM.render(this.renderNodeForReact(node), container);          // REVISIT
-      container.parentNode.replaceChild(container.firstChild, container); // REVISIT
+      hoistUp = true;
     } else { // if it's a root node, reset the marker but save the container
+      console.log ("re-rendering toplevel for " + node.id);
       container.className = 'react-container';
       // find a marker that (a) has an old ASTNode and (b) start in exactly the same place as the new ASTNode
       let marker = this.cm.findMarksAt(node.from).filter(
         m => m.node && !comparePos(m.node.from, node.from))[0]; // there will never be more than one
       // if there IS a marker, we're not quarantining, and it starts at the exact same place..
-      if(marker && !quarantine) marker.clear();
+      if(marker && !quarantine) {
+        console.log ("clearing old marker " + marker.node.id);
+        marker.clear();
+      } else if (marker) {
+        console.log ("NOT clearing old marker " + marker.node.id);
+      }
       this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
       
       // REVISIT: make comments disappear by adding an empty span
@@ -171,7 +181,16 @@ export default class Renderer {
         this.cm.markText(node.options.comment.from, node.options.comment.to,
           { replacedWith: document.createElement('span') });
       }
-      ReactDOM.render(this.renderNodeForReact(node), container);
+    }
+    return {container: container, hoistUp: hoistUp};
+  }
+
+  // Render the node, recycling a container whenever possible
+  render(node, quarantine=false) {
+    const {container, hoistUp} = this.findRenderContainerForNode(node, quarantine);
+    ReactDOM.render(this.renderNodeForReact(node), container);          // REVISIT
+    if (hoistUp) {
+      container.parentNode.replaceChild(container.firstChild, container); // REVISIT
     }
     return container;
   }
