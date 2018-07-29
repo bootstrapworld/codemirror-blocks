@@ -153,7 +153,7 @@ export default class Renderer {
   render(node, quarantine=false) {
     var container = document.createElement('span');
     if(node["aria-level"] && node["aria-level"] > 1) { // render in-place 
-      container = document.createElement('span');
+      //container = document.createElement('span');  //AK: this seems redundant. why was it here?
       node.el.parentNode.replaceChild(container, node.el);                // REVISIT: there *has* to be a better way
       ReactDOM.render(this.renderNodeForReact(node), container);          // REVISIT
       container.parentNode.replaceChild(container.firstChild, container); // REVISIT
