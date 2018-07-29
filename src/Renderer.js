@@ -21,8 +21,11 @@ function comparePos(a, b) {
 }
 
 export default class Renderer {
-  constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
+  constructor(cm, cmcInstance, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
     this.cm = cm;
+    this.cmcInstance = cmcInstance;
+    // wire up the renderer to the code mirror container
+    this.cmcInstance.setRenderer (this);
     this.lockNodesOfType = lockNodesOfType;
     this.extraRenderers = extraRenderers || {};
     this.printASTNode = printASTNode || (node => node.toString());
@@ -121,7 +124,9 @@ export default class Renderer {
     // 3) render or clear the original AST
     let renderStart = Date.now();
     lines.classList.add('fadein');
-    if(toBlocks) { viewportNodes.forEach(r => this.render(r));           }
+    if(toBlocks) {
+       viewportNodes.forEach(r => this.cmcInstance.nodeNeedsRendering(r));
+    }
     else { cm.getAllMarks().filter(m => m.node).forEach(m => m.clear()); }
     let renderTime = (Date.now() - renderStart)/1000;
 
@@ -145,7 +150,7 @@ export default class Renderer {
 
     if(toBlocks) { // if going to blockMode, render out-of-viewport nodes while animation is happening
       let alreadyRendered = new Set(viewportNodes);
-      rootNodes.forEach(r => {if(!alreadyRendered.has(r)) this.render(r); }); 
+      rootNodes.forEach(r => {if(!alreadyRendered.has(r)) this.cmcInstance.nodeNeedsRendering(r); });
     }
   }
 

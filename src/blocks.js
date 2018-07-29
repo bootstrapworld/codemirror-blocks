@@ -1,10 +1,14 @@
 // TODO: move this file to CodeMirrorBlocks.js
 import CodeMirror from 'codemirror';
+import React from 'react';
+import ReactDOM from 'react-dom';
+
 import ee from 'event-emitter';
 import Renderer from './Renderer';
 import * as languages from './languages';
 import * as ui from './ui';
 import merge from './merge';
+import CodeMirrorContainer from './components/CodeMirrorContainer';
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 function poscmp(a, b) { return  a.line - b.line || a.ch - b.ch;  }
@@ -17,6 +21,17 @@ function findNearestNodeEl(el) {
     el = el.parentNode;
   }
   return el === document.body? null : el;
+}
+
+// reparentDOMNode : DOM string -> DOM
+// create a new element of the given sort and replace the given DOM node by it,
+// then set the given node as the child of the given node.
+// returns the newly created element
+function reparentDOMNode (el, tagName) {
+  var newNode = document.createElement(tagName);
+  el.parentNode.replaceChild (newNode, el);
+  newNode.appendChild(el);
+  return newNode;
 }
 
 // FF & WK don't like draggable and contenteditable to mix, so we need
@@ -106,6 +121,17 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm = cm;
+    // put the code mirror wrapper element inside a span and then append a
+    // CodeMirror container as another child of the span.
+    // put a CodeMirrorContainer immediately after the CodeMirror wrapper element.
+    let newNode = reparentDOMNode(cm.getWrapperElement(), "span");
+    // FIXME: cm.toTextArea () really doesn't like these reparenting shennanigans
+    let sibling = document.createElement("span")
+    newNode.appendChild(sibling);
+    this.cmcInstance = null;
+    let cms = React.createElement(CodeMirrorContainer, {ref: (el) => { this.cmcInstance = el; }}, null);
+    ReactDOM.render (cms, sibling);
+
     this.toolbarNode = toolbar;
     this.willInsertNode = willInsertNode;
     this.didInsertNode = didInsertNode;
@@ -144,7 +170,7 @@ export default class CodeMirrorBlocks {
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
     }
-    this.renderer = new Renderer(this.cm, renderOptions);
+    this.renderer = new Renderer(this.cm, this.cmcInstance, renderOptions);
 
     if (this.language) {
       this.wrapper.classList.add(`blocks-language-${this.language.id}`);
@@ -262,6 +288,8 @@ export default class CodeMirrorBlocks {
   handleChange(_, changes) { if (this.blockMode) this.render(changes); }
 
   markText(from, to, options) {
+    // AK: I don't think this is called anywhere
+    throw new Error ("blocks.js markText is dead code");
     let supportedOptions = new Set(['css','className','title']);
     let hasOptions = false;
     for (let option in options) {
@@ -335,7 +363,7 @@ export default class CodeMirrorBlocks {
         this.ast.dirtyNodes = this.ast.rootNodes;
       // render all the dirty nodes, and reset the cursor
       } finally {
-        this.ast.dirtyNodes.forEach(n => this.renderer.render(n)); 
+        this.ast.dirtyNodes.forEach(n => this.cmcInstance.nodeNeedsRendering(n));
         setTimeout(() => {
           let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
           if(node && node.el) { node.el.click(); }
@@ -761,7 +789,7 @@ export default class CodeMirrorBlocks {
     let ast  = this.parser.parse("0");
     let literal = ast.rootNodes[0];
     literal.options['aria-label'] = text;
-    this.renderer.render(literal, true);
+    this.cmcInstance.insertQuarantine(literal);
     literal.el.classList.add("quarantine");
     // if we're editing an existing ASTNode
     if(dest.type) {
