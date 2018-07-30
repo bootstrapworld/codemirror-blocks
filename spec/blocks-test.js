@@ -76,8 +76,8 @@ describe('The CodeMirrorBlocks Class', function() {
         toolbar: document.getElementById('toolbar')
       }
     );
-    spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
-    spyOn(this.blocks, 'handleChange').and.callThrough();
+    this.trackQuarantine   = spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
+    this.trackHandleChange = spyOn(this.blocks, 'handleChange').and.callThrough();
     spyOn(this.cm,     'replaceRange').and.callThrough();
   });
 
@@ -697,16 +697,18 @@ describe('The CodeMirrorBlocks Class', function() {
         it('should save whiteSpace on blur', function(done) {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           setTimeout(() => {
-            let quarantine = document.querySelectorAll('.blocks-editing')[0];
+            let quarantine = this.trackQuarantine.calls.mostRecent().returnValue.el;
             let selection = window.getSelection();
             expect(selection.rangeCount).toEqual(1);
             let range = selection.getRangeAt(0);
             range.deleteContents();
             range.insertNode(document.createTextNode('4253'));
             quarantine.dispatchEvent(blur());
-            expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
-            expect(this.blocks.hasInvalidEdit).toBe(false);
-            done();
+            setTimeout(() => {
+              expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
+              expect(this.blocks.hasInvalidEdit).toBe(false);
+              done();
+            }, DELAY);
           }, DELAY);
         });
         
@@ -714,7 +716,7 @@ describe('The CodeMirrorBlocks Class', function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           setTimeout(() => {
             document.activeElement.dispatchEvent(keydown(ENTER_KEY));
-            expect(this.blocks.handleChange).toHaveBeenCalled();
+            expect(this.trackHandleChange).toHaveBeenCalled();
             done();
           }, DELAY);
         });
@@ -723,7 +725,7 @@ describe('The CodeMirrorBlocks Class', function() {
           beforeEach(function(done) {
             this.whiteSpaceEl.dispatchEvent(dblclick());
             setTimeout(() => {
-              let quarantine = document.querySelectorAll('.blocks-editing')[0];
+              let quarantine = this.trackQuarantine.calls.mostRecent().returnValue.el;
               let selection = window.getSelection();
               expect(selection.rangeCount).toEqual(1);
               let range = selection.getRangeAt(0);
@@ -734,12 +736,15 @@ describe('The CodeMirrorBlocks Class', function() {
             }, DELAY);
           });
 
-          it('should not save anything & set all error state', function() {
-            let quarantine = document.querySelectorAll('.blocks-editing')[0];
-            expect(this.cm.replaceRange).not.toHaveBeenCalled();
-            expect(quarantine.classList).toContain('blocks-error');
-            expect(quarantine.title).toBe('Error: parse error');
-            expect(this.blocks.hasInvalidEdit).toBe(true);
+          it('should not save anything & set all error state', function(done) {
+            setTimeout(() => {
+              let quarantine = this.trackQuarantine.calls.mostRecent().returnValue.el;
+              expect(this.cm.replaceRange).not.toHaveBeenCalled();
+              expect(quarantine.classList).toContain('blocks-error');
+              expect(quarantine.title).toBe('Error: parse error');
+              expect(this.blocks.hasInvalidEdit).toBe(true);
+              done();
+            }, DELAY);
           });
         });
         
