@@ -104,73 +104,22 @@ export class AST {
     });
   } 
 
-  // patch : Parser, String, [ChangeObjs] -> AST
-  // FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
-  // produce the new AST, preserving all the unchanged DOM nodes from the old AST
-  patch(parse, newAST, CMchanges) {
-    let oldAST = this, dirtyNodes = new Set();
-
-    // For each CM change: (1) compute a sibling shift at the relevant path and 
-    // (2) update the text posns in the AST to reflect the post-change coordinates
-    let pathChanges = CMchanges.map(change => {
+  // getDirtyRoots : [ChangeObjs] -> Set<ASTNodes>
+  // given a list of CM changes, produce a set containing all the dirty roots
+  getDirtyRoots(CMchanges){
+    return CMchanges.reduce((dirtyRoots, change) => {
       let {from, to, text, removed} = change;
       // trim whitespace from change object, and figure out how many siblings are added/removed
       let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
       if(startWS) { from.ch += startWS[0].length; }
       if(endWS)   { to.ch   -= endWS[0].length;   }
-      let insertedSiblings = parse( text.join('\n')  ).rootNodes.length;
-      let removedSiblings  = parse(removed.join('\n')).rootNodes.length;
-      let path = oldAST.getCommonAncestor(from, to), node = oldAST.getNodeByPath(path);
-      let replacing = node && (comparePos(node.from, from)==0 && comparePos(node.to, to)==0);
-      // if there's no path, or we're not replacing, search for the previous sibling
-      if(!path || !replacing) {
-        let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
-        let spliceIndex = siblings.findIndex(n => comparePos(from, n.from) <= 0);
-        if(spliceIndex == -1) spliceIndex = siblings.length;
-        path = (path ? path+',' : "") + spliceIndex;
-      }
-      oldAST.nodeIdMap.forEach(n => {
+      this.getRootNodesTouching(change.from, change.to).forEach(r => dirtyRoots.add(r));
+      this.rootNodes.forEach(n => {
         n.from = adjustForChange(n.from, change, true );
         n.to   = adjustForChange(n.to,   change, false);
       });
-      return {path: path, added: insertedSiblings, removed: removedSiblings };
-    });
-    // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
-    pathChanges.forEach(change => {
-      let shift = change.added - change.removed;
-      // force a re-render on the parent, since parent nodeType could change
-      if(shift == 0) { oldAST.nodeIdMap.delete(oldAST.getNodeByPath(change.path).id); return; }
-      let cArray = change.path.split(',').map(Number);
-      let changeDepth = cArray.length-1, changeIdx = cArray[changeDepth];
-      oldAST.nodeIdMap.forEach((node, id) => {
-        let pArray = node.path.split(',').map(Number);
-        // if the node is independent of the change, just return
-        if(pathIsIndependentOfChangePath(pArray, cArray)) { return; }
-        // If it's being removed, delete from nodeIdMap and mark its parent as dirty (if it has one)
-        // Otherwise just update the path of other post-change nodes by +shift
-        if(pArray[changeDepth] < (changeIdx + change.removed)) {
-          let parent  = oldAST.getNodeParent(node);
-          if(parent) { dirtyNodes.add(parent); }
-          oldAST.nodeIdMap.delete(id);
-        } else {
-          pArray[changeDepth] += shift;
-          node.path = pArray.join(',');
-        }
-      });
-    });
-    // copy over the DOM elt for unchanged nodes, and update their IDs to match
-    oldAST.nodeIdMap.forEach(n => {
-      let newNode = newAST.getNodeByPath(n.path);
-      if(newNode) { n.el.id = 'block-node-' + newNode.id; newNode.el = n.el; }
-    });
-    // If we have a DOM elt, use it and update the id. Mark parents of nodes with DOM elts as dirty
-    newAST.nodeIdMap.forEach(n => { if(!n.el){ dirtyNodes.add(newAST.getNodeParent(n) || n); }});
-    // Ensure that no dirty node is the ancestor of another dirty node
-    let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
-    dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
-    newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)) // grab all the nodes
-      .filter(n => n !== undefined));                                                  // remove deleted ones
-    return newAST;
+      return dirtyRoots;
+    }, new Set());
   }
 
   getNodeById(id) {
@@ -225,12 +174,6 @@ export class AST {
   // return the first child, if it exists
   getNodeFirstChild(node) {
     return this.nodePathMap.get(node.path+",0");
-  }
-
-  // return the root node ancestor of this node
-  getNodeRoot(node) {
-    let path = node.path.split(",");
-    return this.nodePathMap.get(path[0]) || "";
   }
 
   getClosestNodeFromPath(keyArray) {

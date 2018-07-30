@@ -165,15 +165,7 @@ export default class Renderer {
     }
   }
 
-  updateMarks (ast, rootNodes, dirtyNodes) {
-    const dirtyRoots = new Set();
-    dirtyNodes.forEach ((dirtyNode) => {
-      const dirtyRoot = ast.getNodeRoot (dirtyNode);
-      console.log ('dirty node ' + dirtyNode + ' has dirty root ' + dirtyRoot);
-      if (!dirtyRoots.has (dirtyRoot)) {
-        dirtyRoots.add (dirtyRoot);
-      }
-    })
+  updateMarks (ast, rootNodes, dirtyRoots) {
     return rootNodes.map ((n) =>  {
       const returnExistingMarker = !dirtyRoots.has (n);
       return this.createMarkForRender(n, undefined, false, returnExistingMarker);

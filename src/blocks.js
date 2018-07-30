@@ -351,34 +351,24 @@ export default class CodeMirrorBlocks {
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render(changes) {
     let start = Date.now();
-    let newAST = this.parser.parse(this.cm.getValue());
+    this.ast = this.parser.parse(this.cm.getValue());
     this.cm.operation(() => {
-      // try to patch the AST, and conservatively mark only changed nodes as dirty
-      try{
-        this.ast = this.ast.patch(s => this.parser.parse(s), newAST, changes);
-      // patching failed! log an error, and treat *all* nodes as dirty
-      } catch(e) {
-        console.error('PATCHING ERROR!!', changes, e);
-        this.ast = newAST;
-        this.ast.dirtyNodes = this.ast.rootNodes;
-      // render all the dirty nodes, and reset the cursor
-      } finally {
-        this.cmcInstance.setAst (this.ast);
-        console.log ('dirty nodes')
-        this.ast.dirtyNodes.forEach((n) => console.log (n.toString ()));
-        console.log ('end dirty nodes');
-        this.cmcInstance.setMarks (this.renderer.updateMarks(this.ast, this.ast.rootNodes, this.ast.dirtyNodes));
-        this.cmcInstance.forceUpdate (() => {
-          // FIXME: we should wait to focus until the next React render cycle
-          setTimeout(() => {
-            let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
-            if(node && node.el) { node.el.click(); }
-            else { this.cm.focus(); }
-            // AK: this should be this.ast.dirtyNodes not this.ast.dirty, right?
-            delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
-          }, 100);
-        });
-      }
+      let dirtyRoots = this.ast.getDirtyRoots(changes);
+      this.cmcInstance.setAst (this.ast);
+      console.log ('dirty nodes')
+      dirtyRoots.forEach((n) => console.log (n.toString ()));
+      console.log ('end dirty nodes');
+      this.cmcInstance.setMarks (this.renderer.updateMarks(this.ast, this.ast.rootNodes, dirtyRoots));
+      this.cmcInstance.forceUpdate (() => {
+        // FIXME: we should wait to focus until the next React render cycle
+        setTimeout(() => {
+          let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
+          if(node && node.el) { node.el.click(); }
+          else { this.cm.focus(); }
+          // AK: this should be this.ast.dirtyNodes not this.ast.dirty, right?
+          delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
+        }, 100);
+      });
     });
     ui.renderToolbarInto(this);
     console.log('re-render time: '+(Date.now() - start)/1000 + 'ms');
