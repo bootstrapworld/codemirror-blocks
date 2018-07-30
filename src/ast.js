@@ -296,8 +296,6 @@ export class ASTNode {
   // to Renderer
   setSpanRef = (el) => {
     this.el = el;
-    if (el)
-      console.log ("spoon! " + el.id ? ("elt " + el.id) : el.toString());
   }
 
 

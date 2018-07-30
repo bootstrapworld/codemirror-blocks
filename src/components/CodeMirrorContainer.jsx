@@ -30,7 +30,6 @@ export default class CodeMirrorContainer extends Component {
   }
 
   setMarks = (marks) => {
-    console.log ('setMarks marks[0].node is ' + marks[0].node);
     this.setState ((prevState, props) => {
       return {marks: marks};
     });
@@ -67,9 +66,6 @@ export default class CodeMirrorContainer extends Component {
     const portals = [];
     console.log ('marks.length is ' + marks.length);
     marks.forEach((p) => {
-      console.log ('p is ' + p);
-      console.log ('p.node is ' + p.node);
-      console.log ('p.node.id is ' + p.node.id);
       const child = this.renderer.renderNodeForReact (p.node);
       // The child will be a child of CodeMirrorContainer,
       // but it's rendered at the TextMarker.replacedWith DOM element.
