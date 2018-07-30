@@ -129,7 +129,7 @@ export default class Renderer {
        viewportMarks = viewportNodes.map (r => this.createMarkForRender (r));
        this.cmcInstance.setMarks (viewportMarks);
     } else {
-      this.cmsInstance.setMarks ([]);
+      this.cmcInstance.setMarks ([]);
       cm.getAllMarks().filter(m => m.node).forEach(m => m.clear());
     }
     let renderTime = (Date.now() - renderStart)/1000;
