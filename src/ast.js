@@ -227,6 +227,12 @@ export class AST {
     return this.nodePathMap.get(node.path+",0");
   }
 
+  // return the root node ancestor of this node
+  getNodeRoot(node) {
+    let path = node.path.split(",");
+    return this.nodePathMap.get(path[0]) || "";
+  }
+
   getClosestNodeFromPath(keyArray) {
     let path = keyArray.join(',');
     // if we have no valid key, give up
@@ -290,7 +296,8 @@ export class ASTNode {
   // to Renderer
   setSpanRef = (el) => {
     this.el = el;
-    console.log ("spoon! " + el.id ? ("elt " + el.id) : el.toString());
+    if (el)
+      console.log ("spoon! " + el.id ? ("elt " + el.id) : el.toString());
   }
 
 
