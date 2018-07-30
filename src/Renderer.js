@@ -165,18 +165,39 @@ export default class Renderer {
     }
   }
 
-  // ASTNode HTMLElement? boolean? -> TextMarker
+  updateMarks (ast, rootNodes, dirtyNodes) {
+    const dirtyRoots = new Set();
+    dirtyNodes.forEach ((dirtyNode) => {
+      const dirtyRoot = ast.getNodeRoot (dirtyNode);
+      console.log ('dirty node ' + dirtyNode + ' has dirty root ' + dirtyRoot);
+      if (!dirtyRoots.has (dirtyRoot)) {
+        dirtyRoots.add (dirtyRoot);
+      }
+    })
+    return rootNodes.map ((n) =>  {
+      const returnExistingMarker = !dirtyRoots.has (n);
+      return this.createMarkForRender(n, undefined, false, returnExistingMarker);
+    });
+  }
+
+  // ASTNode HTMLElement? boolean? boolean? -> TextMarker
   // Create a new marker for the given (assumed root) node
   // If there's an existing marker, clear it.
   // If a container element is given, use it otherwise make a fresh one.
   // If the node is a quarantine node, don't clear the previous mark.
-  createMarkForRender(node, container=undefined, quarantine=false) {
+  // If returnExisting then don't clear the older marker, just return it.
+  createMarkForRender(node, container=undefined, quarantine=false, returnExisting=false) {
     if (!container)
       container = document.createElement('span');
     container.className = 'react-container';
     let marker = this.cm.findMarksAt(node.from).filter(
       m => m.node && !comparePos(m.node.from, node.from))[0]; // there will never be more than one
     // if there IS a marker, we're not quarantining, and it starts at the exact same place..
+    if (returnExisting && marker) {
+      // expect marker node and new node to be the same
+      console.log ("keeping existing marker for node " + marker.node + " (new node is " + node + ")");
+      return marker;
+    }
     if(marker && !quarantine) {
       console.log ("clearing old marker " + marker.node.id);
       marker.clear();
@@ -230,10 +251,11 @@ export default class Renderer {
       throw new Error("Don't know how to render node of type: "+node.type);
     }
     if (Renderer && Renderer.prototype instanceof Component) {
+      const helpers = {renderNodeForReact: this.renderNodeForReact};
       return (
         <Renderer
           node        = {node}
-          helpers     = {{renderNodeForReact: this.renderNodeForReact}}
+          helpers     = {helpers}
           key         = {key}
           lockedTypes = {this.lockNodesOfType}
         />

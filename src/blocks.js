@@ -363,14 +363,21 @@ export default class CodeMirrorBlocks {
         this.ast.dirtyNodes = this.ast.rootNodes;
       // render all the dirty nodes, and reset the cursor
       } finally {
-        this.ast.dirtyNodes.forEach(n => this.cmcInstance.nodeNeedsRendering(n));
-        setTimeout(() => {
-          let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
-          if(node && node.el) { node.el.click(); }
-          else { this.cm.focus(); }
-          // AK: this should be this.ast.dirtyNodes not this.ast.dirty, right?
-          delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
-        }, 100);
+        this.cmcInstance.setAst (this.ast);
+        console.log ('dirty nodes')
+        this.ast.dirtyNodes.forEach((n) => console.log (n.toString ()));
+        console.log ('end dirty nodes');
+        this.cmcInstance.setMarks (this.renderer.updateMarks(this.ast, this.ast.rootNodes, this.ast.dirtyNodes));
+        this.cmcInstance.forceUpdate (() => {
+          // FIXME: we should wait to focus until the next React render cycle
+          setTimeout(() => {
+            let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
+            if(node && node.el) { node.el.click(); }
+            else { this.cm.focus(); }
+            // AK: this should be this.ast.dirtyNodes not this.ast.dirty, right?
+            delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
+          }, 100);
+        });
       }
     });
     ui.renderToolbarInto(this);
@@ -526,6 +533,7 @@ export default class CodeMirrorBlocks {
       }
       if(nodeEl.originalEl) nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
       nodeEl.parentNode.removeChild(nodeEl);
+      this.cmcInstance.setQuarantine(false);
       this.commitChange(() => { // make the change, and set the path for re-focus
         this.cm.replaceRange(text, node.from, node.to);
         if(path) this.focusPath = path.join(',');
@@ -557,6 +565,7 @@ export default class CodeMirrorBlocks {
         if(nodeEl.originalEl) {
           nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
           this.activateNode(this.ast.getClosestNodeFromPath(node.path.split(',')), e);
+          this.cmcInstance.setQuarantine (false);
         }
         this.say("cancelled");
         nodeEl.parentNode.removeChild(nodeEl);

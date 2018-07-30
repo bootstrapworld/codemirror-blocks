@@ -15,7 +15,7 @@ import PropTypes from 'prop-types';
 export default class CodeMirrorContainer extends Component {
   constructor(props) {
     super(props);
-    this.state = {ast: {}, marks: []};
+    this.state = {ast: {}, marks: [], quarantine: false};
     this.renderer = null;
   }
 
@@ -36,6 +36,12 @@ export default class CodeMirrorContainer extends Component {
     });
   }
 
+  setQuarantine = (q) => {
+    this.setState ((prevState, props) => {
+      return {quarantine: q};
+    });
+  }
+
   // ASTNode Bool -> Void
   // tell the renderer to render the given AST node (which is definitely not quarantined)
   nodeNeedsRendering = (node) => {
@@ -52,6 +58,7 @@ export default class CodeMirrorContainer extends Component {
   insertQuarantine = (node) => {
     console.log ("adding quarantine " + node.id);
     this.renderer.render (node, true);
+    this.setQuarantine (node);
   }
 
   render() {
