@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 
 // This component should be the root of the react tree
@@ -14,25 +15,34 @@ import PropTypes from 'prop-types';
 export default class CodeMirrorContainer extends Component {
   constructor(props) {
     super(props);
-    this.state = {managedNodes: {}};
+    this.state = {ast: {}, marks: []};
     this.renderer = null;
-    this.ast = null; /* FIXME: need to get this from blocks - renderer doesn't have it */
   }
 
   setRenderer = (renderer) => {
     this.renderer = renderer;
   }
 
+  setAst = (ast) => {
+    this.setState ((prevState, props) => {
+      return {ast: ast};
+    });
+  }
+
+  setMarks = (marks) => {
+    console.log ('setMarks marks[0].node is ' + marks[0].node);
+    this.setState ((prevState, props) => {
+      return {marks: marks};
+    });
+  }
+
   // ASTNode Bool -> Void
-  // tell the renderer to render the given AST node (which may or may not be quarantined)
+  // tell the renderer to render the given AST node (which is definitely not quarantined)
   nodeNeedsRendering = (node) => {
     console.log ("node needs rendering: " + node.id + " " + node["aria-level"]);
     if (node["aria-level"] == 1) {
-      this.setState ((prevState, props) => {
-        const x = {};
-        x[node.id] = true;
-        return {managedNodes: Object.assign (x, prevState.managedNodes) };
-      });
+      // Don't render toplevel nodes, just let react do its job.
+      return;
     }
     this.renderer.render (node, false);
   }
@@ -46,15 +56,21 @@ export default class CodeMirrorContainer extends Component {
 
   render() {
     const invisible = {}; //{display: 'none'}; //TODO: eventually hide it
-    const ms = [];
-    Object.keys(this.state.managedNodes).forEach(nodeId => {
-      if (this.state.managedNodes[nodeId]) {
-        ms.push (nodeId);
-      }
+    const marks = this.state.marks;
+    const portals = [];
+    console.log ('marks.length is ' + marks.length);
+    marks.forEach((p) => {
+      console.log ('p is ' + p);
+      console.log ('p.node is ' + p.node);
+      console.log ('p.node.id is ' + p.node.id);
+      const child = this.renderer.renderNodeForReact (p.node);
+      // The child will be a child of CodeMirrorContainer,
+      // but it's rendered at the TextMarker.replacedWith DOM element.
+      const v = ReactDOM.createPortal(child, p.replacedWith, p.node.id);
+      portals.push (v);
     });
-    const comps = ms.map ((txt)=> txt.toString () + ", ");
     return (<span className="code-mirror-blocks-children-container" style={invisible}>
-      <React.Fragment>{comps}</React.Fragment>
+      <React.Fragment>{portals}</React.Fragment>
     </span>);
   }
 }

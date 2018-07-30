@@ -124,10 +124,14 @@ export default class Renderer {
     // 3) render or clear the original AST
     let renderStart = Date.now();
     lines.classList.add('fadein');
+    let viewportMarks = [];
     if(toBlocks) {
-       viewportNodes.forEach(r => this.cmcInstance.nodeNeedsRendering(r));
+       viewportMarks = viewportNodes.map (r => this.createMarkForRender (r));
+       this.cmcInstance.setMarks (viewportMarks);
+    } else {
+      this.cmsInstance.setMarks ([]);
+      cm.getAllMarks().filter(m => m.node).forEach(m => m.clear());
     }
-    else { cm.getAllMarks().filter(m => m.node).forEach(m => m.clear()); }
     let renderTime = (Date.now() - renderStart)/1000;
 
     // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
@@ -150,8 +154,44 @@ export default class Renderer {
 
     if(toBlocks) { // if going to blockMode, render out-of-viewport nodes while animation is happening
       let alreadyRendered = new Set(viewportNodes);
-      rootNodes.forEach(r => {if(!alreadyRendered.has(r)) this.cmcInstance.nodeNeedsRendering(r); });
+      let allMarks = viewportMarks.slice(0);
+      rootNodes.forEach(r => {
+        if(!alreadyRendered.has(r)) {
+          const mark = this.createMarkForRender (r);
+          allMarks.push (mark);
+        }
+      });
+      this.cmcInstance.setMarks (allMarks);
     }
+  }
+
+  // ASTNode HTMLElement? boolean? -> TextMarker
+  // Create a new marker for the given (assumed root) node
+  // If there's an existing marker, clear it.
+  // If a container element is given, use it otherwise make a fresh one.
+  // If the node is a quarantine node, don't clear the previous mark.
+  createMarkForRender(node, container=undefined, quarantine=false) {
+    if (!container)
+      container = document.createElement('span');
+    container.className = 'react-container';
+    let marker = this.cm.findMarksAt(node.from).filter(
+      m => m.node && !comparePos(m.node.from, node.from))[0]; // there will never be more than one
+    // if there IS a marker, we're not quarantining, and it starts at the exact same place..
+    if(marker && !quarantine) {
+      console.log ("clearing old marker " + marker.node.id);
+      marker.clear();
+    } else if (marker) {
+      console.log ("NOT clearing old marker " + marker.node.id);
+    }
+    let newMark = this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
+    console.log ('new mark node is ' + newMark.node);
+    console.log ('new mark replacedWith is ' + newMark.replacedWith);
+    // REVISIT: make comments disappear by adding an empty span
+    if(node.options.comment) {
+      this.cm.markText(node.options.comment.from, node.options.comment.to,
+        { replacedWith: document.createElement('span') });
+    }
+    return newMark;
   }
 
   // ASTNode boolean -> {container: HTMLElement, hoistUp: boolean}
@@ -168,24 +208,7 @@ export default class Renderer {
       hoistUp = true;
     } else { // if it's a root node, reset the marker but save the container
       console.log ("re-rendering toplevel for " + node.id);
-      container.className = 'react-container';
-      // find a marker that (a) has an old ASTNode and (b) start in exactly the same place as the new ASTNode
-      let marker = this.cm.findMarksAt(node.from).filter(
-        m => m.node && !comparePos(m.node.from, node.from))[0]; // there will never be more than one
-      // if there IS a marker, we're not quarantining, and it starts at the exact same place..
-      if(marker && !quarantine) {
-        console.log ("clearing old marker " + marker.node.id);
-        marker.clear();
-      } else if (marker) {
-        console.log ("NOT clearing old marker " + marker.node.id);
-      }
-      this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
-      
-      // REVISIT: make comments disappear by adding an empty span
-      if(node.options.comment) {
-        this.cm.markText(node.options.comment.from, node.options.comment.to,
-          { replacedWith: document.createElement('span') });
-      }
+      this.createMarkForRender (node, container, quarantine);
     }
     return {container: container, hoistUp: hoistUp};
   }
