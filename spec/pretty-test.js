@@ -175,4 +175,31 @@ words.`);
       .toEqual(["aaaaaaaaa", "* bb", "+ cc"]);
     });
   });
+
+  describe("when computing flat widths", function() {
+    it("should be null for docs containing a newline", function() {
+      expect(horz(vert(empty, empty), empty).flat_width)
+      .toBe(null);
+
+      expect(horz(empty, vert(empty, empty)).flat_width)
+      .toBe(null);
+
+      expect(concat(vert(empty, empty), empty).flat_width)
+      .toBe(null);
+
+      expect(concat(empty, vert(empty, empty)).flat_width)
+      .toBe(null);
+    });
+
+    it("should handle weird edge cases correctly", function() {
+      expect(ifFlat(vert(empty, empty), txt("four")).flat_width)
+      .toBe(4);
+
+      expect(ifFlat(txt("longer"), txt("four")).flat_width)
+      .toBe(4);
+
+      expect(ifFlat(txt("1"), txt("four")).flat_width)
+      .toBe(1);
+    });
+  });
 });

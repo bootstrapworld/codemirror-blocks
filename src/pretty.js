@@ -80,7 +80,11 @@ class TextDoc extends Doc {
 
 class HorzDoc extends Doc {
   constructor(doc1, doc2) {
-    super(doc1.flat_width + doc2.flat_width);
+    if (doc1.flat_width === null || doc2.flat_width === null) {
+      super(null);
+    } else {
+      super(doc1.flat_width + doc2.flat_width);
+    }
     this.doc1 = doc1;
     this.doc2 = doc2;
   }
@@ -93,7 +97,11 @@ class HorzDoc extends Doc {
 
 class ConcatDoc extends Doc {
   constructor(doc1, doc2) {
-    super(doc1.flat_width + doc2.flat_width);
+    if (doc1.flat_width === null || doc2.flat_width === null) {
+      super(null);
+    } else {
+      super(doc1.flat_width + doc2.flat_width);
+    }
     this.doc1 = doc1;
     this.doc2 = doc2;
   }
@@ -120,7 +128,13 @@ class VertDoc extends Doc {
 
 class IfFlatDoc extends Doc {
   constructor(flat, broken) {
-    super(flat.flat_width);
+    if (flat.flat_width === null) {
+      super(broken.flat_width);
+    } else if (broken.flat_width === null) {
+      super(flat.flat_width);
+    } else {
+      super(Math.min(flat.flat_width, broken.flat_width));
+    }
     this.flat = flat;
     this.broken = broken;
   }
@@ -128,7 +142,8 @@ class IfFlatDoc extends Doc {
   render(out, indent, column, width) {
     // The key to the efficiency of this whole pretty printing algorithm
     // is the fact that this conditional does not rely on rendering `this.flat`:
-    if (column + this.flat.flat_width <= width) {
+    let flat_width = this.flat.flat_width;
+    if (flat_width !== null && column + flat_width <= width) {
       // If the "flat" doc fits on the line, use it.
       return this.flat.render(out, indent, column, width);
     } else {
