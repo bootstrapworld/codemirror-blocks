@@ -503,6 +503,7 @@ export default class CodeMirrorBlocks {
         path[path.length-1] += roots.length;            // adjust the path based on parsed text
       }
       if(nodeEl.originalEl) nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
+      nodeEl.onblur = null;
       nodeEl.parentNode.removeChild(nodeEl);
       this.commitChange(() => { // make the change, and set the path for re-focus
         this.cm.replaceRange(text, node.from, node.to);
