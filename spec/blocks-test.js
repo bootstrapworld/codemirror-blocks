@@ -77,8 +77,10 @@ describe('The CodeMirrorBlocks Class', function() {
       }
     );
     this.trackQuarantine   = spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
-    this.trackHandleChange = spyOn(this.blocks, 'handleChange').and.callThrough();
-    spyOn(this.cm,     'replaceRange').and.callThrough();
+    this.trackHandleChange = spyOn(this.blocks,        'handleChange').and.callThrough();
+    this.trackReplaceRange = spyOn(this.cm,            'replaceRange').and.callThrough();
+    this.trackEditLiteral  = spyOn(this.blocks,         'editLiteral').and.callThrough();
+    this.trackSaveEdit     = spyOn(this.blocks,            'saveEdit').and.callThrough();
   });
 
   describe('constructor,', function() {
@@ -697,14 +699,21 @@ describe('The CodeMirrorBlocks Class', function() {
         it('should save whiteSpace on blur', function(done) {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           setTimeout(() => {
-            let quarantine = this.trackQuarantine.calls.mostRecent().returnValue.el;
+            expect(this.trackQuarantine).toHaveBeenCalledWith("", this.whiteSpaceEl, jasmine.anything());
+            let quarantineNode = this.trackQuarantine.calls.mostRecent().returnValue;
+            expect(this.trackEditLiteral).toHaveBeenCalledWith(quarantineNode);
+            let quarantine = quarantineNode.el;
+            let trackOnBlur = spyOn(quarantine, 'onblur').and.callThrough();
             let selection = window.getSelection();
             expect(selection.rangeCount).toEqual(1);
             let range = selection.getRangeAt(0);
             range.deleteContents();
             range.insertNode(document.createTextNode('4253'));
+            expect(quarantine.innerHTML).toBe('4253');
             quarantine.dispatchEvent(blur());
             setTimeout(() => {
+              expect(trackOnBlur).toHaveBeenCalled();
+              expect(this.trackSaveEdit).toHaveBeenCalled();
               expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
               expect(this.blocks.hasInvalidEdit).toBe(false);
               done();
