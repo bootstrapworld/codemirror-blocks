@@ -1,5 +1,4 @@
 .blocks-language-pyret {
-  // Import it. It will use the parameters below. Hooray for weird scope.
   @import "../../less/default-style.less";
   // Set parameters for standard-style.less
   @border-radius: 5px;
@@ -32,12 +31,6 @@
   }
 }
 
-// Set the height based on the available screen height.
-// BE CAREFUL WHEN DOING MATH IN LESS.
-// If we had instead written:
-//     @height: 100vh - 50px;
-// that would set @height to 50vh.
-// https://github.com/less/less.js/issues/3269
 @height: calc(~"100vh - 300px");
 
 .CodeMirror {
