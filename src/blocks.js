@@ -213,7 +213,7 @@ export default class CodeMirrorBlocks {
   // called anytime we update the underlying CM value
   // destroys the redo history and updates the undo history
   commitChange(changes, announcement=false) {
-    console.log('commiting change. saving focus at ', this.focusPath);
+    console.log('committing change. saving focus at ', this.focusPath);
     this.focusHistory.done.unshift({path: this.focusPath, announcement: announcement});
     this.focusHistory.undone = [];
     this.cm.operation(changes);
