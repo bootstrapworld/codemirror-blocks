@@ -3,6 +3,7 @@ var _ = require('lodash');
 var baseConfig = require('./base.config.js')();
 var envConfig = require('../env-config.js');
 envConfig.mode = 'development';
+var mode = envConfig.nodeEnv = 'development';
 
 var rules = baseConfig.module.rules.concat();
 if (envConfig.runCoverage) {
@@ -25,5 +26,6 @@ module.exports = _.extend({}, baseConfig, {
   devtool: 'inline-source-map',
   module: _.extend({}, baseConfig.module, {
     rules: rules
-  })
+  }),
+  mode: 'development'
 });
