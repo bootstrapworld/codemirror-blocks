@@ -968,6 +968,7 @@ export default class CodeMirrorBlocks {
       handlers = {default: handlers};
     }
     return function(event) {
+      console.log(event, event.type);
       let node = this.findNearestNodeFromEl(event.target);
       if (node || callWithNullNode) {
         if (event.target.classList.contains('blocks-white-space')) {
