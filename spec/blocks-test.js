@@ -730,8 +730,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       });
 
-      describe('and specifically when editing it,', function() {
-        
+      describe('and specifically when editing it,', function() {        
         /*
         // fails nondeterministically - figure out how to avoid 
         // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
@@ -753,7 +752,7 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(this.blocks.hasInvalidEdit).toBe(false);
         });
         */
-        
+
         it('should blur whitespace you are editing on enter', async function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
