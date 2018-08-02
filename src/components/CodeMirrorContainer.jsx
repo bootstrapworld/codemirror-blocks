@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
-import PropTypes from 'prop-types';
+// import PropTypes from 'prop-types';
 
 // This component should be the root of the react tree
 // for the block Node and expression component tree that renders the AST.
@@ -24,19 +24,19 @@ export default class CodeMirrorContainer extends Component {
   }
 
   setAst = (ast) => {
-    this.setState ((prevState, props) => {
+    this.setState ((prevStates) => {
       return {ast: ast};
     });
   }
 
   setMarks = (marks) => {
-    this.setState ((prevState, props) => {
+    this.setState ((prevState) => {
       return {marks: marks};
     });
   }
 
   setQuarantine = (q) => {
-    this.setState ((prevState, props) => {
+    this.setState ((prevState) => {
       return {quarantine: q};
     });
   }
