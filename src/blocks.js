@@ -126,7 +126,7 @@ export default class CodeMirrorBlocks {
     // put a CodeMirrorContainer immediately after the CodeMirror wrapper element.
     let newNode = reparentDOMNode(cm.getWrapperElement(), "span");
     // FIXME: cm.toTextArea () really doesn't like these reparenting shennanigans
-    let sibling = document.createElement("span")
+    let sibling = document.createElement("span");
     newNode.appendChild(sibling);
     this.cmcInstance = null;
     let cms = React.createElement(CodeMirrorContainer, {ref: (el) => { this.cmcInstance = el; }}, null);
@@ -355,9 +355,9 @@ export default class CodeMirrorBlocks {
     this.cm.operation(() => {
       let dirtyRoots = this.ast.getDirtyRoots(changes);
       this.cmcInstance.setAst (this.ast);
-      console.log ('dirty nodes')
-      dirtyRoots.forEach((n) => console.log (n.toString ()));
-      console.log ('end dirty nodes');
+      // console.log ('dirty nodes');
+      // dirtyRoots.forEach((n) => console.log (n.toString ()));
+      // console.log ('end dirty nodes');
       this.cmcInstance.setMarks (this.renderer.updateMarks(this.ast, this.ast.rootNodes, dirtyRoots));
       this.cmcInstance.forceUpdate (() => {
         // FIXME: we should wait to focus until the next React render cycle
