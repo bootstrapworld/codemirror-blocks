@@ -24,19 +24,19 @@ export default class CodeMirrorContainer extends Component {
   }
 
   setAst = (ast) => {
-    this.setState ((prevStates) => {
+    this.setState (() => {
       return {ast: ast};
     });
   }
 
   setMarks = (marks) => {
-    this.setState ((prevState) => {
+    this.setState (() => {
       return {marks: marks};
     });
   }
 
   setQuarantine = (q) => {
-    this.setState ((prevState) => {
+    this.setState (() => {
       return {quarantine: q};
     });
   }
