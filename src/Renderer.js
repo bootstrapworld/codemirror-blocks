@@ -21,8 +21,11 @@ function comparePos(a, b) {
 }
 
 export default class Renderer {
-  constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
+  constructor(cm, cmcInstance, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
     this.cm = cm;
+    this.cmcInstance = cmcInstance;
+    // wire up the renderer to the code mirror container
+    this.cmcInstance.setRenderer (this);
     this.lockNodesOfType = lockNodesOfType;
     this.extraRenderers = extraRenderers || {};
     this.printASTNode = printASTNode || (node => node.toString());
@@ -121,8 +124,14 @@ export default class Renderer {
     // 3) render or clear the original AST
     let renderStart = Date.now();
     lines.classList.add('fadein');
-    if(toBlocks) { viewportNodes.forEach(r => this.render(r));           }
-    else { cm.getAllMarks().filter(m => m.node).forEach(m => m.clear()); }
+    let viewportMarks = [];
+    if(toBlocks) {
+      viewportMarks = viewportNodes.map (r => this.createMarkForRender (r));
+      this.cmcInstance.setMarks (viewportMarks);
+    } else {
+      this.cmcInstance.setMarks ([]);
+      cm.getAllMarks().filter(m => m.node).forEach(m => m.clear());
+    }
     let renderTime = (Date.now() - renderStart)/1000;
 
     // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
@@ -145,33 +154,84 @@ export default class Renderer {
 
     if(toBlocks) { // if going to blockMode, render out-of-viewport nodes while animation is happening
       let alreadyRendered = new Set(viewportNodes);
-      rootNodes.forEach(r => {if(!alreadyRendered.has(r)) this.render(r); }); 
+      let allMarks = viewportMarks.slice(0);
+      rootNodes.forEach(r => {
+        if(!alreadyRendered.has(r)) {
+          const mark = this.createMarkForRender (r);
+          allMarks.push (mark);
+        }
+      });
+      this.cmcInstance.setMarks (allMarks);
     }
+  }
+
+  updateMarks (ast, rootNodes, dirtyRoots) {
+    return rootNodes.map ((n) =>  {
+      const returnExistingMarker = !dirtyRoots.has (n);
+      return this.createMarkForRender(n, undefined, false, returnExistingMarker);
+    });
+  }
+
+  // ASTNode HTMLElement? boolean? boolean? -> TextMarker
+  // Create a new marker for the given (assumed root) node
+  // If there's an existing marker, clear it.
+  // If a container element is given, use it otherwise make a fresh one.
+  // If the node is a quarantine node, don't clear the previous mark.
+  // If returnExisting then don't clear the older marker, just return it.
+  createMarkForRender(node, container=undefined, quarantine=false, returnExisting=false) {
+    if (!container)
+      container = document.createElement('span');
+    container.className = 'react-container';
+    let marker = this.cm.findMarksAt(node.from).filter(
+      m => m.node && !comparePos(m.node.from, node.from))[0]; // there will never be more than one
+    // if there IS a marker, we're not quarantining, and it starts at the exact same place..
+    if (returnExisting && marker) {
+      // expect marker node and new node to be the same
+      console.log ("keeping existing marker for node " + marker.node + " (new node is " + node + ")");
+      return marker;
+    }
+    if(marker && !quarantine) {
+      console.log ("clearing old marker " + marker.node.id);
+      marker.clear();
+    } else if (marker) {
+      console.log ("NOT clearing old marker " + marker.node.id);
+    }
+    let newMark = this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
+    console.log ('new mark node is ' + newMark.node);
+    console.log ('new mark replacedWith is ' + newMark.replacedWith);
+    // REVISIT: make comments disappear by adding an empty span
+    if(node.options.comment) {
+      this.cm.markText(node.options.comment.from, node.options.comment.to,
+        { replacedWith: document.createElement('span') });
+    }
+    return newMark;
+  }
+
+  // ASTNode boolean -> {container: HTMLElement, hoistUp: boolean}
+  // the container element that should house the rendering of the given node
+  // and a flag indicating whether to hoist the rendered content out of the container
+  // after rendering and replace the container
+  findRenderContainerForNode(node, quarantine) {
+    let container = document.createElement('span');
+    let hoistUp = false;
+    if(node["aria-level"] && node["aria-level"] > 1) { // render in-place
+      console.log ("re-rendering in-place for " + node.id);
+      //container = document.createElement('span');  //AK: this seems redundant. why was it here?
+      node.el.parentNode.replaceChild(container, node.el);                // REVISIT: there *has* to be a better way
+      hoistUp = true;
+    } else { // if it's a root node, reset the marker but save the container
+      console.log ("re-rendering toplevel for " + node.id);
+      this.createMarkForRender (node, container, quarantine);
+    }
+    return {container: container, hoistUp: hoistUp};
   }
 
   // Render the node, recycling a container whenever possible
   render(node, quarantine=false) {
-    var container = document.createElement('span');
-    if(node["aria-level"] && node["aria-level"] > 1) { // render in-place 
-      container = document.createElement('span');
-      node.el.parentNode.replaceChild(container, node.el);                // REVISIT: there *has* to be a better way
-      ReactDOM.render(this.renderNodeForReact(node), container);          // REVISIT
+    const {container, hoistUp} = this.findRenderContainerForNode(node, quarantine);
+    ReactDOM.render(this.renderNodeForReact(node), container);          // REVISIT
+    if (hoistUp) {
       container.parentNode.replaceChild(container.firstChild, container); // REVISIT
-    } else { // if it's a root node, reset the marker but save the container
-      container.className = 'react-container';
-      // find a marker that (a) has an old ASTNode and (b) start in exactly the same place as the new ASTNode
-      let marker = this.cm.findMarksAt(node.from).filter(
-        m => m.node && !comparePos(m.node.from, node.from))[0]; // there will never be more than one
-      // if there IS a marker, we're not quarantining, and it starts at the exact same place..
-      if(marker && !quarantine) marker.clear();
-      this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
-      
-      // REVISIT: make comments disappear by adding an empty span
-      if(node.options.comment) {
-        this.cm.markText(node.options.comment.from, node.options.comment.to,
-          { replacedWith: document.createElement('span') });
-      }
-      ReactDOM.render(this.renderNodeForReact(node), container);
     }
     return container;
   }
@@ -183,10 +243,11 @@ export default class Renderer {
       throw new Error("Don't know how to render node of type: "+node.type);
     }
     if (Renderer && Renderer.prototype instanceof Component) {
+      const helpers = {renderNodeForReact: this.renderNodeForReact};
       return (
         <Renderer
           node        = {node}
-          helpers     = {{renderNodeForReact: this.renderNodeForReact}}
+          helpers     = {helpers}
           key         = {key}
           lockedTypes = {this.lockNodesOfType}
         />
