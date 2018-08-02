@@ -126,8 +126,8 @@ export default class Renderer {
     lines.classList.add('fadein');
     let viewportMarks = [];
     if(toBlocks) {
-       viewportMarks = viewportNodes.map (r => this.createMarkForRender (r));
-       this.cmcInstance.setMarks (viewportMarks);
+      viewportMarks = viewportNodes.map (r => this.createMarkForRender (r));
+      this.cmcInstance.setMarks (viewportMarks);
     } else {
       this.cmcInstance.setMarks ([]);
       cm.getAllMarks().filter(m => m.node).forEach(m => m.clear());
