@@ -7,6 +7,10 @@ import {Literal as LiteralASTNode} from '../../../ast';
 export default class Literal extends Component {
   static propTypes = {
     node: PropTypes.instanceOf(LiteralASTNode),
+    lockedTypes: PropTypes.instanceOf(Array).isRequired,
+    helpers: PropTypes.shape({
+      renderNodeForReact: PropTypes.func.isRequired,
+    }).isRequired,
   }
 
   render() {
