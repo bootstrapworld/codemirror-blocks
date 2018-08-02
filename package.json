@@ -81,7 +81,10 @@
   },
   "author": "Emmanuel Schanzer and Paul Carduner",
   "contributors": [
-    "Zachary Espiritu"
+    "Zachary Espiritu",
+    "Justin Pombrio",
+    "Aleksey Kliger",
+    "Sorawee Porncharoenwase"
   ],
   "license": "MIT License"
 }
