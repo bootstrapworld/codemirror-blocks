@@ -38,6 +38,7 @@ document.getElementById('mode').onchange = function(e) {
     cm.doc.clearHistory();
 
     const options = {
+      search: document.getElementById('search'),
       willInsertNode(sourceNodeText, sourceNode, destination) {
         let line = cm.getLine(destination.line);
         let prev = line[destination.ch - 1] || '\n';
