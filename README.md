@@ -65,6 +65,22 @@ is in the **example/** directory.
 
         npm run build
 
+### Screen reader testing
+
+You might want to install a screen reader for testing the editor's
+accessibility. Screen readers are finicky and what works changes over
+time, but here some (possibly out of date) word-on-the-street advice
+from Emmanuel:
+
+    On Windows, your choice is basically an up-to-date NVDA or Jaws,
+    paired with Firefox (v<56, since quantum broke screenreaders) or
+    Chrome (current)
+
+    on OSX, it’s VoiceOver+Safari Technology Preview.
+
+    On linux, it’s Chrome+ChromeVox
+
+
 ## Updating demo on project site
 
 To update the demo on the project site with the latest version of the example in
