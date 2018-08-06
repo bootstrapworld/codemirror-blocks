@@ -80,6 +80,17 @@ from Emmanuel:
 
     On linux, it’s Chrome+ChromeVox
 
+Some additional word-on-the-street for installing `ChromeVox` on Linux
+from Oak:
+
+1. Install ChromeVox in Chrome Store.
+2. You will need a lot of programs to make this work (e.g.,
+   `speech-dispatcher`, `espeak`). Installing `orca` will ensure that
+   these programs are installed.
+3. Run `chromium --enable-speech-dispatcher`. Note if it doesn't work
+   (no "voices" in the dropdown box), closing and opening it again
+   might fix the problem.
+
 
 ## Updating demo on project site
 
