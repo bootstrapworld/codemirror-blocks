@@ -925,8 +925,8 @@ export default class CodeMirrorBlocks {
   activateNextNodeBasedOnFn(searchFn, preserveSelection) {
     let node = this.ast.getNextMatchingNode(
       searchFn, this.isNodeHidden, this.getActiveNode() || this.cm.getCursor());
-    if(node === this.getActiveNode()) { playSound(BEEP); }
-    this.activateNode(node, preserveSelection);
+    if(node === this.getActiveNode() || !node.type) { playSound(BEEP); }
+    else { this.activateNode(node, preserveSelection); }
   }
 
   handleKeyDown(event) {
