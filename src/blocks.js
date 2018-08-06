@@ -176,7 +176,7 @@ export default class CodeMirrorBlocks {
     var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
     this.cm.on('drop',      (cm, e) => dropHandler(e));
     this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
-    this.cm.on('inputread', (cm, e) => this.handleKeyDown(e));
+    this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
     this.cm.on('paste',     (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
@@ -815,8 +815,9 @@ export default class CodeMirrorBlocks {
     function switchNodes(searchFn) {
       let node = that.ast.getNextMatchingNode(
         searchFn, that.isNodeHidden, that.getActiveNode() || that.cm.getCursor());
-      if(node === activeNode) { playSound(BEEP); }
-      that.activateNode(node, event);
+      // if the search return the same node - or something that is *not* a node (e.g. - CM cursor)
+      if((node === activeNode) || !node.type) { playSound(BEEP); }
+      else { that.activateNode(node, event); }
     }
     function showNextMatch(forward, from) {
       let matches = that.searchMatches.slice(0), test = forward? d => d>=0 : d => d<0;
