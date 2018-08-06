@@ -15,10 +15,7 @@ import StructDefinition from './components/StructDef';
 import VariableDefinition from './components/VariableDef';
 import FunctionDefinition from './components/FunctionDef';
 import Sequence         from './components/Sequence';
-
-function comparePos(a, b) {
-  return a.line - b.line || a.ch - b.ch;
-}
+import {poscmp} from './utils';
 
 export default class Renderer {
   constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
@@ -161,7 +158,7 @@ export default class Renderer {
       container.className = 'react-container';
       // find a marker that (a) has an old ASTNode and (b) start in exactly the same place as the new ASTNode
       let marker = this.cm.findMarksAt(node.from).filter(
-        m => m.node && !comparePos(m.node.from, node.from))[0]; // there will never be more than one
+        m => m.node && !poscmp(m.node.from, node.from))[0]; // there will never be more than one
       // if there IS a marker, we're not quarantining, and it starts at the exact same place..
       if(marker && !quarantine) marker.clear();
       this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );

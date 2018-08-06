@@ -29,16 +29,22 @@ document.body.onkeydown = function(k) {
 }
 document.getElementById('mode').onchange = function(e) {
   if(e.target.checked) {
+    const codeNode = document.getElementById("code");
     cm = CodeMirror.fromTextArea(
-      document.getElementById("code"),
+      codeNode,
       {lineNumbers: true, theme:'3024-day'}
     );
 
+    let searchNode = document.getElementById("search");
+    if (!searchNode) {
+      searchNode = document.createElement("div");
+      codeNode.parentNode.appendChild(searchNode);
+    }
 
     cm.doc.clearHistory();
 
     const options = {
-      search: document.getElementById('search'),
+      search: searchNode,
       willInsertNode(sourceNodeText, sourceNode, destination) {
         let line = cm.getLine(destination.line);
         let prev = line[destination.ch - 1] || '\n';

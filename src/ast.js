@@ -1,8 +1,6 @@
+import {poscmp} from './utils';
 const uuidv4 = require('uuid/v4');
 
-function comparePos(a, b) {
-  return a.line - b.line || a.ch - b.ch;
-}
 // Compute the position of the end of a change (its 'to' property refers to the pre-change end).
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
 function changeEnd({from, to, text}) {
@@ -14,9 +12,9 @@ function changeEnd({from, to, text}) {
 // Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
 function adjustForChange(pos, change, from) {
-  if (comparePos(pos, change.from) < 0)           return pos;
-  if (comparePos(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
-  if (comparePos(pos, change.to) <= 0)            return changeEnd(change);
+  if (poscmp(pos, change.from) < 0)           return pos;
+  if (poscmp(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
+  if (poscmp(pos, change.to) <= 0)            return changeEnd(change);
   let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
   if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
   return {line: line, ch: ch};
@@ -31,8 +29,8 @@ function pathIsIndependentOfChangePath(pathArray, changeArray) {
 }
 
 function posWithinNode(pos, node) {
-  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) >  0)
-    ||   (comparePos(node.from, pos) <  0) && (comparePos(node.to, pos) >= 0);
+  return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
+    ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);
 }
 
 function nodeCommentContaining(pos, node) {
@@ -121,11 +119,11 @@ export class AST {
       let insertedSiblings = parse( text.join('\n')  ).rootNodes.length;
       let removedSiblings  = parse(removed.join('\n')).rootNodes.length;
       let path = oldAST.getCommonAncestor(from, to), node = oldAST.getNodeByPath(path);
-      let replacing = node && (comparePos(node.from, from)==0 && comparePos(node.to, to)==0);
+      let replacing = node && (poscmp(node.from, from)==0 && poscmp(node.to, to)==0);
       // if there's no path, or we're not replacing, search for the previous sibling
       if(!path || !replacing) {
         let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
-        let spliceIndex = siblings.findIndex(n => comparePos(from, n.from) <= 0);
+        let spliceIndex = siblings.findIndex(n => poscmp(from, n.from) <= 0);
         if(spliceIndex == -1) spliceIndex = siblings.length;
         path = (path ? path+',' : "") + spliceIndex;
       }
@@ -184,23 +182,23 @@ export class AST {
     let n1 = this.getNodeContaining(c1), n2 = this.getNodeContaining(c2);
     if(!n1 || !n2) return false;
     // false positive: an insertion (c1=c2) that touches n.from or n.to
-    if((comparePos(c2, c1) == 0) && ((comparePos(n1.from, c1) == 0) || (comparePos(n1.to, c1) == 0))) {
+    if((poscmp(c2, c1) == 0) && ((poscmp(n1.from, c1) == 0) || (poscmp(n1.to, c1) == 0))) {
       return this.getNodeParent(n1) && this.getNodeParent(n1).path; // Return the parent, if there is one
     }
     return commonSubstring(n1.path, n2.path);
   }
   // return the next node or false
-  getNodeAfter(selection) {
-    return this.nextNodeMap.get(selection)
-        || this.rootNodes.find(node => comparePos(node.from, selection) >= 0)
-        || false;
-  }
+  getNodeAfter = selection => (
+    this.nextNodeMap.get(selection)
+      || this.rootNodes.find(node => poscmp(node.from, selection) >= 0)
+      || false
+  )
   // return the previous node or false
-  getNodeBefore(selection) {
-    return this.prevNodeMap.get(selection)
-        || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0)
-        || false;
-  }
+  getNodeBefore = selection => (
+    this.prevNodeMap.get(selection)
+      || this.reverseRootNodes.find(node => poscmp(node.to, selection) <= 0)
+      || false
+  )
   // return the node containing the cursor, or false
   getNodeContaining(cursor, nodes = this.rootNodes) {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
@@ -208,13 +206,13 @@ export class AST {
   }
   // return an array of nodes that fall bwtween two locations
   getNodesBetween(from, to) {
-    return [...this.nodeIdMap.values()].filter(n => (comparePos(from, n.from) < 1) && (comparePos(to, n.to) > -1));
+    return [...this.nodeIdMap.values()].filter(n => (poscmp(from, n.from) < 1) && (poscmp(to, n.to) > -1));
   }
   // return all the root nodes that contain the given positions, or fall between them
   getRootNodesTouching(start, end, rootNodes=this.rootNodes){
     return rootNodes.filter(node =>
       posWithinNode(start, node) || posWithinNode(end, node) ||
-      ( (comparePos(start, node.from) < 0) && (comparePos(end, node.to) > 0) ));
+      ( (poscmp(start, node.from) < 0) && (poscmp(end, node.to) > 0) ));
   }
   // return the parent or false
   getNodeParent(node) {

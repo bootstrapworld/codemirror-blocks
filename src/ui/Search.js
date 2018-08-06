@@ -1,16 +1,25 @@
 import React, {Component} from 'react';
 import Modal from 'react-modal';
-import {UP, DOWN, ESC, ENTER, PGUP, PGDN, F3} from '../keycode';
+import {SPACE, UP, DOWN, ESC, ENTER, PGUP, PGDN, F3} from '../keycode';
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
 
 // TODO: Make sure to bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 // Modal.setAppElement('#yourAppElement');
 
 export default class extends Component {
+  // NOTE(Oak): we need to store all panels' states here so that the states are not
+  // forgotten
+
+  // NOTE(Oak): the prop `searchModes` should not be changed once it's given
+  // (could potentially make it changeable by using getDerivedStatefromProps)
   constructor(props) {
     super(props);
-
-    this.state = {showSearchModal: false, searchString: '', searchMode: 0};
-    this.searchBoxNode = null;
+    let state = {showSearchModal: false, tabIndex: 0};
+    for (const searchMode of this.props.searchModes) {
+      state = {...state, ...searchMode.init}; // just merge this in
+    }
+    this.state = state;
   }
 
   handleKeyModal = e => {
@@ -21,75 +30,53 @@ export default class extends Component {
       // our focus is on the modal, so we use setTimeout to wait for the modal to close
       // first
       setTimeout(() => {
-        if (this.state.searchString === '') return;
-        this.props.searchModes[this.state.searchMode].initSearch(this.state.searchString);
-      });
-
-    } else if (e.keyCode === UP) {
-      if (this.state.searchMode > 0) {
-        this.setState((prevState => ({searchMode: prevState.searchMode - 1})));
-      }
-    } else if (e.keyCode === DOWN) {
-      if (this.state.searchMode < this.props.searchModes.length - 1) {
-        this.setState((prevState => ({searchMode: prevState.searchMode + 1})));
-      }
+        this.props.searchModes[this.state.tabIndex].initSearch(
+          this.props.blocks,
+          this.state
+        );
+      }, 0);
     }
   }
 
-
   handleKeyGlobal = e => {
+    if (!this.props.blocks.blockMode) return;
+
     switch (e.keyCode) {
     case F3:
       e.preventDefault(); // prevent the browser search
-
       this.setState({showSearchModal: true});
       return;
 
-    case PGUP:
+    case PGUP: {
       e.preventDefault(); // we never want pgup and pgdn to actually do pgup and pgdn
-
-      // NOTE: Oak doesn't think the next line is right. We ought to support
-      // searching in non block mode too, but this's the current behavior
-      if (!this.props.blocks.blockMode) return;
-
-      if (this.state.searchString === '') {
-        this.props.blocks.switchNodes(cur => this.props.blocks.ast.getNodeBefore(cur), e);
-      } else {
-        this.props.searchModes[this.state.searchMode].find(false, e);
-      }
+      this.props.searchModes[this.state.tabIndex].find(
+        this.props.blocks,
+        this.state,
+        false,
+        e
+      );
       return;
+    }
 
-    case PGDN:
+    case PGDN: {
       e.preventDefault(); // we never want pgup and pgdn to actually do pgup and pgdn
-
-      // NOTE: Oak doesn't think the next line is right. We ought to support
-      // searching in non block mode too, but this's the current behavior
-      if (!this.props.blocks.blockMode) return;
-
-      if (this.state.searchString === '') {
-        this.props.blocks.switchNodes(cur => this.props.blocks.ast.getNodeAfter(cur), e);
-      } else {
-        this.props.searchModes[this.state.searchMode].find(true, e);
-      }
+      this.props.searchModes[this.state.tabIndex].find(
+        this.props.blocks,
+        this.state,
+        true,
+        e
+      );
       return;
+    }
+
     }
   }
 
-  handleChangeSearchString = e => {
-    this.setState({searchString: e.target.value});
-  }
+  handleTab = tabIndex => this.setState({tabIndex})
 
-  handleClickSearchMode = i => () => {
-    this.setState({searchMode: i});
-    this.searchBoxNode.focus();
-  }
-
-  handleCloseModal = () => {
-    this.setState({showSearchModal: false});
-  }
+  handleCloseModal = () => this.setState({showSearchModal: false})
 
   // NOTE: to intercept f3, we need to use keydown
-
   componentDidMount() {
     document.addEventListener("keydown", this.handleKeyGlobal);
   }
@@ -98,7 +85,21 @@ export default class extends Component {
     document.removeEventListener("keydown", this.handleKeyGlobal);
   }
 
+  handleChange = e => {
+    this.setState({
+      [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value
+    });
+  }
+
   render() {
+    const tabs = this.props.searchModes.map(({label}, i) => <Tab key={i}>{label}</Tab>);
+    const tabPanels = this.props.searchModes.map(({component: SearchMode}, i) => (
+      <TabPanel key={i}>
+        <SearchMode state={this.state} handleChange={this.handleChange}
+                    blocks={this.props.blocks} />
+      </TabPanel>
+    ));
+
     return (
       <Modal isOpen={this.state.showSearchModal}
              className="wrapper-modal">
@@ -113,36 +114,26 @@ export default class extends Component {
               <h5 className="modal-title">Search</h5>
             </div>
             <div className="modal-body">
-              <input type="text" className="form-control search-input"
-                     autoFocus onChange={this.handleChangeSearchString}
-                     value={this.state.searchString}
-                     ref={searchBoxNode => { this.searchBoxNode = searchBoxNode; }} />
-              <div className="list-group"> {
-                  this.props.searchModes.map((searchMode, i) => {
-                    return (
-                      <SearchMode active={i === this.state.searchMode}
-                                  onClick={this.handleClickSearchMode(i)}
-                                  key={i} >
-                        {searchMode.getLabel()}
-                      </SearchMode>
-                    );
-                  })
-              }</div>
+              <Tabs selectedIndex={this.state.tabIndex} onSelect={this.handleTab}
+                    defaultFocus={true}>
+                <TabList>{tabs}</TabList>
+                {tabPanels}
+              </Tabs>
+            </div>
+            <div className="modal-footer">
+              <small className="form-text text-muted">
+                <div>
+                  <kbd>&uarr;</kbd>
+                  <kbd>&darr;</kbd> to change modes;
+                  <kbd>&crarr;</kbd>
+                  <kbd>esc</kbd> to save the search config;
+                  <kbd>⇥</kbd> to focus next element
+                </div>
+              </small>
             </div>
           </div>
         </div>
       </Modal>
-    );
-  }
-}
-
-class SearchMode extends Component {
-  render() {
-    return (
-      <a href="#"
-         className={`list-group-item list-group-item-action flex-column align-items-start ${this.props.active ? 'active' : ''}`} onClick={this.props.onClick}>
-        <div>{this.props.children}</div>
-      </a>
     );
   }
 }

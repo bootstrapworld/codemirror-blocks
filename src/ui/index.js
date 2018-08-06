@@ -3,12 +3,12 @@ import ReactDOM from 'react-dom';
 import Toolbar from './Toolbar';
 import Editor from './Editor';
 import Search from './Search';
-import SearchUsual from '../searchers/usual';
+import ByString from '../searchers/ByString';
+import ByBlock from '../searchers/ByBlock';
 
 export function renderSearchInto(blocks) {
   ReactDOM.render(
-    <Search searchModes={[new SearchUsual(blocks), new SearchUsual(blocks)]}
-            blocks={blocks} />,
+    <Search searchModes={[ByString, ByBlock]} blocks={blocks} />,
     blocks.searchNode
   );
 }

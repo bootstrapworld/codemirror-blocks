@@ -10,3 +10,4 @@ export const ENTER   = 13;
 export const F3      = 114;
 export const PGUP    = 33;
 export const PGDN    = 34;
+export const SPACE   = 32;
