@@ -153,7 +153,7 @@ export default class CodeMirrorBlocks {
     var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
     this.cm.on('drop',      (cm, e) => dropHandler(e));
     this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
-    this.cm.on('inputread', (cm, e) => this.handleKeyDown(e));
+    this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
     this.cm.on('paste',     (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
@@ -802,6 +802,7 @@ export default class CodeMirrorBlocks {
       // set mouseUsed to simulate click-to-focus
       else { that.mouseUsed = true; that.cm.focus(); that.cm.setCursor(cursor); }
     }
+
     // Enter should toggle editing on editable nodes, or toggle expanding
     if (keyName == "Enter" && activeNode) {
       if(this.isNodeEditable(activeNode)){
