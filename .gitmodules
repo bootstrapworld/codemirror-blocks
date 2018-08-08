@@ -1,3 +1,0 @@
-[submodule "src/languages/pyret/pyret-lang"]
-	path = lib/pyret-lang
-	url = https://github.com/brownplt/pyret-lang
