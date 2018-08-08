@@ -2,16 +2,19 @@
   "parser": "babel-eslint",
   "rules": {
     "comma-dangle": 0,
-    "indent": [2, 2, {"SwitchCase": 1}],
-    "linebreak-style": [2, "unix"],
-    "semi": [2, "always"],
+    "indent": ["warn", 2, {
+      // from https://github.com/airbnb/javascript/blob/e9fff7adbf6dd4e3723c12849c407aafd429cf0f/packages/eslint-config-airbnb-base/rules/style.js#L141
+      "ignoredNodes": ["JSXElement", "JSXElement > *", "JSXAttribute", "JSXIdentifier", "JSXNamespacedName", "JSXMemberExpression", "JSXSpreadAttribute", "JSXExpressionContainer", "JSXOpeningElement", "JSXClosingElement", "JSXText", "JSXEmptyExpression", "JSXSpreadChild"]
+    }],
+    "linebreak-style": ["error", "unix"],
+    "semi": ["error", "always"],
     "no-console": 0
   },
   "env": {
     "es6": true,
     "browser": true,
     "node": true,
-    "jasmine": true,
+    "jasmine": true
   },
   "extends": [
     "eslint:recommended",
@@ -30,8 +33,8 @@
       "modules": true,
       "spread": true,
       "templateStrings": true,
-      "jsx": true,
-    },
+      "jsx": true
+    }
   },
   "plugins": [
     "react"
