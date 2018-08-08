@@ -15,40 +15,55 @@ import {
   dragleave,
   drop,
   cut,
+  pureevent,
+  setNativeValue,
 } from './events';
 
-// keycodes
-const LEFT_KEY  = 37;
-const UP_KEY    = 38;
-const RIGHT_KEY = 39;
-const DOWN_KEY  = 40;
-const DELETE_KEY=  8;
-const ENTER_KEY = 13;
-const SPACE_KEY = 32;
-const HOME_KEY  = 36;
-const END_KEY   = 35;
-const ESC_KEY   = 27;
-const LEFTBRACE = 219;
-const RIGHTBRACE= 221;
-const Z_KEY     = 90;
+import {
+  LEFT,
+  UP,
+  RIGHT,
+  DOWN,
+  DELETE,
+  ENTER,
+  SPACE,
+  HOME,
+  END,
+  ESC,
+  LEFTBRACE,
+  RIGHTBRACE,
+  ISMAC,
+  DKEY,
+  ONEKEY,
+  TAB,
+  PGUP,
+  PGDN,
+  F3,
+} from 'codemirror-blocks/keycode';
 
-const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
 const TOGGLE_SELECTION_KEYPRESS =
-  keydown(SPACE_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
+      keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
 const PRESERVE_NEXT_KEYPRESS =
-  keydown(DOWN_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
+      keydown(DOWN, ISMAC ? {altKey: true} : {ctrlKey: true});
 const PRESERVE_PREV_KEYPRESS =
-  keydown(UP_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
-
+      keydown(UP, ISMAC ? {altKey: true} : {ctrlKey: true});
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
 
+function removeEventListeners() {
+  const oldElem = document.body;
+  const newElem = oldElem.cloneNode(true);
+  oldElem.parentNode.replaceChild(newElem, oldElem);
+}
+
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
+    removeEventListeners();
     document.body.innerHTML = `
       <textarea id="code"></textarea>
       <div id="toolbar"></div>
+      <div id="search"></div>
     `;
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
@@ -71,6 +86,7 @@ describe('The CodeMirrorBlocks Class', function() {
       this.cm,
       this.parser,
       {
+        search: document.getElementById('search'),
         willInsertNode: this.willInsertNode,
         didInsertNode: this.didInsertNode,
         toolbar: document.getElementById('toolbar')
@@ -84,6 +100,7 @@ describe('The CodeMirrorBlocks Class', function() {
     this.trackCommitChange = spyOn(this.blocks,        'commitChange').and.callThrough();
     this.trackWillInsertNode=spyOn(this.blocks,      'willInsertNode').and.callThrough();
   });
+
 
   describe('constructor,', function() {
 
@@ -269,7 +286,7 @@ describe('The CodeMirrorBlocks Class', function() {
       this.blocks.setBlockMode(true);
       this.literal = this.blocks.ast.rootNodes[0];
     });
-    
+
     describe("when dealing with top-level input,", function() {
 
       beforeEach(function() {
@@ -322,23 +339,23 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue()).toBe('11 54');
         this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
-        this.cm.getWrapperElement().dispatchEvent(keydown(DELETE_KEY));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
         setTimeout(() => {
           expect(this.cm.getValue()).toBe('11 54');
-          done();  
+          done();
         }, DELAY);
-        
+
       });
 
       it('should activate the first node when down is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN));
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
 
       it('should activate the next node when down is pressed', function() {
-        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
-        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal);
         expect(this.blocks.getActiveNode()).toBe(this.literal2);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
@@ -346,48 +363,48 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('should activate the node after the cursor when down is pressed', function() {
         this.cm.setCursor({line: 0, ch: 2});
-        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN_KEY));
+        this.cm.getWrapperElement().dispatchEvent(keydown(DOWN));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal);
         expect(this.blocks.getActiveNode()).toBe(this.literal2);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
       });
-      
+
       it('should activate the node before the cursor when up is pressed', function() {
         this.cm.setCursor({line: 0, ch: 2});
-        this.cm.getWrapperElement().dispatchEvent(keydown(UP_KEY));
+        this.cm.getWrapperElement().dispatchEvent(keydown(UP));
         expect(this.blocks.getActiveNode()).not.toBe(this.literal2);
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
-      
+
       it('should toggle the editability of activated node when Enter is pressed', function(done) {
         this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
-        this.literal.el.dispatchEvent(keydown(ENTER_KEY));
+        this.literal.el.dispatchEvent(keydown(ENTER));
         setTimeout(() => {
           expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done();  
+          done();
         }, DELAY);
-        
+
       });
 
       it('should cancel the editability of activated node when Esc is pressed', function(done) {
         this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
-        this.literal.el.dispatchEvent(keydown(ENTER_KEY));
+        this.literal.el.dispatchEvent(keydown(ENTER));
         setTimeout(() => {
           expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done();  
+          done();
         }, DELAY);
-        this.literal.el.dispatchEvent(keydown(68));
-        this.literal.el.dispatchEvent(keydown(ESC_KEY));
+        this.literal.el.dispatchEvent(keydown(DKEY));
+        this.literal.el.dispatchEvent(keydown(ESC));
         expect(this.cm.getValue()).toBe('11 54');
       });
 
       describe('cut/copy/paste', function() {
         beforeEach(function() {
           this.literal.el.dispatchEvent(click());            // activate the node,
-          this.literal.el.dispatchEvent(keydown(SPACE_KEY)); // then select it
+          this.literal.el.dispatchEvent(keydown(SPACE)); // then select it
           spyOn(document, 'execCommand');
         });
 
@@ -430,17 +447,17 @@ describe('The CodeMirrorBlocks Class', function() {
           this.secondArg  = this.blocks.ast.rootNodes[0].args[1];
           this.thirdArg   = this.blocks.ast.rootNodes[0].args[2];
           this.firstRoot.el.dispatchEvent(click());
-          this.firstRoot.el.dispatchEvent(keydown(LEFT_KEY));
+          this.firstRoot.el.dispatchEvent(keydown(LEFT));
         });
 
         it('up-arrow should navigate to the previous visible node, but not beyond it', function() {
           this.secondRoot.el.dispatchEvent(click());
           expect(document.activeElement).toBe(this.secondRoot.el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.secondRoot.el.id);
-          this.firstRoot.el.dispatchEvent(keydown(UP_KEY));
+          this.firstRoot.el.dispatchEvent(keydown(UP));
           expect(document.activeElement).toBe(this.firstRoot.el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
-          this.secondRoot.el.dispatchEvent(keydown(UP_KEY));
+          this.secondRoot.el.dispatchEvent(keydown(UP));
           expect(document.activeElement).toBe(this.firstRoot.el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
         });
@@ -448,52 +465,52 @@ describe('The CodeMirrorBlocks Class', function() {
         it('down-arrow should navigate to the next sibling, but not beyond it', function() {
           this.thirdRoot.args[0].el.dispatchEvent(click());
           expect(document.activeElement).toBe(this.thirdRoot.args[0].el);
-          this.thirdRoot.args[0].el.dispatchEvent(keydown(DOWN_KEY));
+          this.thirdRoot.args[0].el.dispatchEvent(keydown(DOWN));
           expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
-          this.thirdRoot.args[1].el.dispatchEvent(keydown(DOWN_KEY));
+          this.thirdRoot.args[1].el.dispatchEvent(keydown(DOWN));
           expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
         });
 
         it('left-arrow should collapse a block, if it can be', function() {
           this.firstRoot.el.dispatchEvent(click());
-          this.firstRoot.el.dispatchEvent(keydown(LEFT_KEY));
+          this.firstRoot.el.dispatchEvent(keydown(LEFT));
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
           this.secondRoot.el.dispatchEvent(click());
-          this.secondRoot.el.dispatchEvent(keydown(LEFT_KEY));
+          this.secondRoot.el.dispatchEvent(keydown(LEFT));
           expect(this.secondRoot.el.getAttribute("aria-expanded")).toBe(null);
         });
 
         it('left-arrow should collapse a block & activate parent', function() {
           this.secondArg.el.dispatchEvent(click());
-          this.secondArg.el.dispatchEvent(keydown(LEFT_KEY));
+          this.secondArg.el.dispatchEvent(keydown(LEFT));
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
           expect(document.activeElement).toBe(this.firstRoot.el);
         });
 
         it('right-arrow should expand a block, or shift focus to 1st child', function() {
           this.firstRoot.el.dispatchEvent(click());
-          this.firstRoot.el.dispatchEvent(keydown(LEFT_KEY));
+          this.firstRoot.el.dispatchEvent(keydown(LEFT));
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
-          this.firstRoot.el.dispatchEvent(keydown(RIGHT_KEY));
+          this.firstRoot.el.dispatchEvent(keydown(RIGHT));
           expect(document.activeElement).toBe(this.firstRoot.el);
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("true");
-          this.firstRoot.el.dispatchEvent(keydown(RIGHT_KEY));
+          this.firstRoot.el.dispatchEvent(keydown(RIGHT));
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("true");
           expect(document.activeElement).toBe(this.funcSymbol.el);
         });
 
         it('home should activate the first visible node', function() {
           this.secondRoot.el.dispatchEvent(click());
-          this.secondRoot.el.dispatchEvent(keydown(HOME_KEY));
+          this.secondRoot.el.dispatchEvent(keydown(HOME));
           expect(document.activeElement).toBe(this.firstRoot.el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
         });
 
         it('end should activate the last visible node', function() {
           this.secondRoot.el.dispatchEvent(click());
-          this.secondRoot.el.dispatchEvent(keydown(END_KEY));
+          this.secondRoot.el.dispatchEvent(keydown(END));
           expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
         });
@@ -508,19 +525,19 @@ describe('The CodeMirrorBlocks Class', function() {
         this.literal2 = this.blocks.ast.rootNodes[1];
         this.expr     = this.blocks.ast.rootNodes[2];
         this.literal.el.dispatchEvent(click());
-        this.literal.el.dispatchEvent(keydown(SPACE_KEY));
+        this.literal.el.dispatchEvent(keydown(SPACE));
       });
 
       it('space key toggles selection on and off', function() {
         expect(this.literal.el.getAttribute("aria-selected")).toBe('true');
         expect(this.blocks.selectedNodes.size).toBe(1);
-        this.literal.el.dispatchEvent(keydown(SPACE_KEY));
+        this.literal.el.dispatchEvent(keydown(SPACE));
         expect(this.literal.el.getAttribute("aria-selected")).toBe('false');
         expect(this.blocks.selectedNodes.size).toBe(0);
       });
 
       it('arrow clears selection & changes active ', function() {
-        this.literal.el.dispatchEvent(keydown(DOWN_KEY));
+        this.literal.el.dispatchEvent(keydown(DOWN));
         expect(this.literal.el.getAttribute("aria-selected")).toBe('false');
         expect(this.literal2.el.getAttribute("aria-selected")).toBe('false');
         expect(document.activeElement).toBe(this.literal2.el);
@@ -547,7 +564,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('selecting a parent, then child should just select the parent ', function() {
         this.expr.el.dispatchEvent(click());
-        this.expr.el.dispatchEvent(keydown(SPACE_KEY));
+        this.expr.el.dispatchEvent(keydown(SPACE));
         this.expr.el.dispatchEvent(PRESERVE_NEXT_KEYPRESS);
         this.expr.func.el.dispatchEvent(TOGGLE_SELECTION_KEYPRESS);
         expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
@@ -558,16 +575,16 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('selecting a child, then parent should just select the parent ', function() {
         this.expr.func.el.dispatchEvent(click());
-        this.expr.func.el.dispatchEvent(keydown(SPACE_KEY));
+        this.expr.func.el.dispatchEvent(keydown(SPACE));
         this.expr.func.el.dispatchEvent(PRESERVE_PREV_KEYPRESS);
-        this.expr.el.dispatchEvent(keydown(SPACE_KEY));
+        this.expr.el.dispatchEvent(keydown(SPACE));
         expect(this.expr.el.getAttribute("aria-selected")).toBe('true');
         expect(this.expr.func.el.getAttribute("aria-selected")).toBe('false');
         expect(document.activeElement).toBe(this.expr.el);
         expect(this.blocks.selectedNodes.size).toBe(1);
       });
     });
-    
+
     it('should begin editing a node on double click', function(done) {
       this.literal.el.dispatchEvent(dblclick());
       setTimeout(() => {
@@ -576,7 +593,7 @@ describe('The CodeMirrorBlocks Class', function() {
         done();
       }, DELAY);
     });
-    
+
     it('should save a valid, edited node on blur', function(done) {
       this.literal.el.dispatchEvent(dblclick());
       setTimeout(() => {
@@ -592,28 +609,28 @@ describe('The CodeMirrorBlocks Class', function() {
         done();
       }, DELAY);
     });
-  
+
     it('should return the node being edited on esc', function(done) {
       this.literal.el.dispatchEvent(dblclick());
       setTimeout(() => {
         let quarantine = document.activeElement;
-        quarantine.dispatchEvent(keydown(ESC_KEY));
+        quarantine.dispatchEvent(keydown(ESC));
         expect(this.cm.getValue()).toEqual('11');
         done();
       }, DELAY);
     });
-    
+
     it('should blur the node being edited on enter', function(done) {
       this.literal.el.dispatchEvent(dblclick());
       setTimeout(() => {
         let quarantine = document.activeElement;
         spyOn(quarantine, 'blur');
-        quarantine.dispatchEvent(keydown(ENTER_KEY));
+        quarantine.dispatchEvent(keydown(ENTER));
         expect(quarantine.blur).toHaveBeenCalled();
         done();
       }, DELAY);
     });
-    
+
     describe('when "saving" bad inputs,', function() {
       beforeEach(function(done) {
         this.literal.el.dispatchEvent(dblclick());
@@ -653,7 +670,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(0);
       });
-      
+
       it('Ctrl-] should jump to the right of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
         this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
@@ -661,7 +678,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(7);
       });
-      
+
       it('Ctrl-[ should activate a quarantine to the left', function(done) {
         this.firstArg.el.dispatchEvent(click());
         this.firstArg.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
@@ -688,7 +705,7 @@ describe('The CodeMirrorBlocks Class', function() {
           done();
         }, DELAY);
       });
-      
+
       it('should activate a quarantine on dblclick', function(done) {
         this.whiteSpaceEl.dispatchEvent(dblclick());
         setTimeout(() => {
@@ -732,12 +749,12 @@ describe('The CodeMirrorBlocks Class', function() {
         it('should blur whitespace you are editing on enter', function(done) {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           setTimeout(() => {
-            document.activeElement.dispatchEvent(keydown(ENTER_KEY));
+            document.activeElement.dispatchEvent(keydown(ENTER));
             expect(this.trackHandleChange).toHaveBeenCalled();
             done();
           }, DELAY);
         });
-        
+
         describe('when "saving" bad whitepspace inputs,', function() {
           beforeEach(function(done) {
             this.whiteSpaceEl.dispatchEvent(dblclick());
@@ -753,7 +770,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
           /*
           // fails nondeterministically - figure out how to avoid
-          // see https://github.com/bootstrapworld/codemirror-blocks/issues/123          
+          // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
           it('should not save anything & set all error state', function(done) {
             setTimeout(() => {
               expect(this.trackSaveEdit).toHaveBeenCalledWith(this.quarantineNode, this.quarantineEl, jasmine.anything());
@@ -767,10 +784,10 @@ describe('The CodeMirrorBlocks Class', function() {
           });
           */
         });
-        
-      });    
+
+      });
     });
-    
+
     describe('when dealing with dragging,', function() {
       beforeEach(function() {
         this.cm.setValue('(+ 1 2 3)');
@@ -810,7 +827,7 @@ describe('The CodeMirrorBlocks Class', function() {
         this.blocks.ast.rootNodes[0].el.dispatchEvent(drop(dragEvent.dataTransfer));
         expect(this.cm.getValue()).toBe(initialValue);
       });
-        
+
       it('should update the text on drop to a later point in the file', function() {
         expect(this.dropTargetEls[4].classList).toContain('blocks-drop-target');
         // drag the first arg to the drop target
@@ -876,33 +893,38 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
     });
-    
-    
+
+
     describe('when using Search Mode,', function() {
-      beforeEach(function() {
+      beforeEach(function(done) {
         this.cm.setValue('0 1 2 1 (+ 1 2)');
         this.nomatch1 = this.blocks.ast.rootNodes[0];
         this.match1 = this.blocks.ast.rootNodes[1];
         this.nomatch2 = this.blocks.ast.rootNodes[2];
         this.match2 = this.blocks.ast.rootNodes[3];
         this.match3 = this.blocks.ast.rootNodes[4].args[0];
-        let startSearch = keydown(191); // Start searchMode
-        let oneKey = keydown(49, {key: "1"}); // search for '1'
-        this.nomatch1.el.dispatchEvent(click());
-        this.nomatch1.el.dispatchEvent(startSearch);
-        this.nomatch1.el.dispatchEvent(oneKey);
-      });
 
-      it('should find first match', function(done) {
+        this.nomatch1.el.dispatchEvent(click());
+        this.nomatch1.el.dispatchEvent(keydown(F3));
         setTimeout(() => {
-          expect(this.blocks.getActiveNode()).toBe(this.match1);
-          expect(document.activeElement).toBe(this.match1.el);
-          done();
+          const searchBox = document.querySelector('.search-input');
+          setNativeValue(searchBox, "1");
+          searchBox.dispatchEvent(pureevent('input'));
+          const close = document.querySelector('.wrapper-modal .close');
+          close.dispatchEvent(click());
+          setTimeout(done, DELAY);
         }, DELAY);
       });
 
+      it('should stay where it is initially', function(done) {
+        expect(this.blocks.getActiveNode()).toBe(this.nomatch1);
+        expect(document.activeElement).toBe(this.nomatch1.el);
+        done();
+      });
+
       it('should find next match, skipping a non-matching literal', function(done) {
-        this.match1.el.dispatchEvent(keydown(ENTER_KEY));
+        this.match1.el.dispatchEvent(click());
+        this.match1.el.dispatchEvent(keydown(PGDN));
         setTimeout(() => {
           expect(this.blocks.getActiveNode()).toBe(this.match2);
           expect(document.activeElement).toBe(this.match2.el);
@@ -910,9 +932,9 @@ describe('The CodeMirrorBlocks Class', function() {
         }, DELAY);
       });
 
-      it('find-next should wrap around to beginning of document', function(done) {
+      it('should wrap around to beginning of document for find-next', function(done) {
         this.match3.el.dispatchEvent(click());
-        this.match3.el.dispatchEvent(keydown(ENTER_KEY));
+        this.match3.el.dispatchEvent(keydown(PGDN));
         setTimeout(() => {
           expect(this.blocks.getActiveNode()).toBe(this.match1);
           expect(document.activeElement).toBe(this.match1.el);
@@ -920,13 +942,79 @@ describe('The CodeMirrorBlocks Class', function() {
         }, DELAY);
       });
 
-      it('find-previous should wrap around to end of document', function(done) {
+      it('should wrap around to end of document for find-previous', function(done) {
         this.match1.el.dispatchEvent(click());
-        this.match1.el.dispatchEvent(keydown(ENTER_KEY, {shiftKey: true}));
+        this.match1.el.dispatchEvent(keydown(PGUP));
         setTimeout(() => {
           expect(this.blocks.getActiveNode()).toBe(this.match3);
           expect(document.activeElement).toBe(this.match3.el);
           done();
+        }, DELAY);
+      });
+    });
+
+    describe('when using advanced search mode,', function() {
+      beforeEach(function(done) {
+        this.cm.setValue('(hello 1 (hell) 2 (Hello) 3 (fall))');
+        this.hello = this.blocks.ast.rootNodes[0].func;
+        this.hell = this.blocks.ast.rootNodes[0].args[1].func;
+        this.Hello = this.blocks.ast.rootNodes[0].args[3].func;
+        this.fall = this.blocks.ast.rootNodes[0].args[5].func;
+
+        this.hello.el.dispatchEvent(click());
+        this.hello.el.dispatchEvent(keydown(F3));
+        setTimeout(() => {
+          const searchBox = document.querySelector('.search-input');
+          setNativeValue(searchBox, "hell");
+          searchBox.dispatchEvent(pureevent('input'));
+          const close = document.querySelector('.wrapper-modal .close');
+          close.dispatchEvent(click());
+          setTimeout(done, DELAY);
+        }, DELAY);
+      });
+
+      it('should be case insensitive by default', function(done) {
+        this.hello.el.dispatchEvent(keydown(PGDN));
+        setTimeout(() => {
+          expect(this.blocks.getActiveNode()).toBe(this.hell);
+          expect(document.activeElement).toBe(this.hell.el);
+
+          this.hell.el.dispatchEvent(keydown(PGDN));
+          setTimeout(() => {
+            expect(this.blocks.getActiveNode()).toBe(this.Hello);
+            expect(document.activeElement).toBe(this.Hello.el);
+
+            this.Hello.el.dispatchEvent(keydown(PGDN));
+            setTimeout(() => {
+              expect(this.blocks.getActiveNode()).toBe(this.hello);
+              expect(document.activeElement).toBe(this.hello.el);
+              done();
+            }, DELAY);
+          });
+        }, DELAY);
+      });
+
+      it('should be able to use case sensitive mode', function(done) {
+        this.hello.el.dispatchEvent(keydown(F3));
+        setTimeout(() => {
+          const ignoreCase = document.querySelector('input[name="isIgnoreCase"]');
+          ignoreCase.dispatchEvent(click());
+          const close = document.querySelector('.wrapper-modal .close');
+          close.dispatchEvent(click());
+          setTimeout(() => {
+            this.hello.el.dispatchEvent(keydown(PGDN));
+            setTimeout(() => {
+              expect(this.blocks.getActiveNode()).toBe(this.hell);
+              expect(document.activeElement).toBe(this.hell.el);
+
+              this.hell.el.dispatchEvent(keydown(PGDN));
+              setTimeout(() => {
+                expect(this.blocks.getActiveNode()).toBe(this.hello);
+                expect(document.activeElement).toBe(this.hello.el);
+                done();
+              }, DELAY);
+            }, DELAY);
+          }, DELAY);
         }, DELAY);
       });
     });

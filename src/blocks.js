@@ -105,12 +105,6 @@ export default class CodeMirrorBlocks {
     this.announcements.setAttribute("role", "log");
     this.announcements.setAttribute("aria-live", "assertive");
     this.wrapper.appendChild(this.announcements);
-    // False = no search, anything else = the-search-string
-    this.searchString = false;
-    this.searchBox = document.createElement("span");
-    this.searchBox.setAttribute('aria-hidden', 'true');
-    this.searchBox.className = "searchBox";
-    this.wrapper.appendChild(this.searchBox);
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
     // Track focus and history with path/announcement pairs
@@ -180,8 +174,7 @@ export default class CodeMirrorBlocks {
       }
     });
 
-
-    ui.renderSearchInto(this);
+    if (this.searchNode) ui.renderSearchInto(this);
   }
 
   on(event, listener) {
@@ -1040,7 +1033,4 @@ export default class CodeMirrorBlocks {
       }
     }.bind(this);
   }
-
-
-
 }

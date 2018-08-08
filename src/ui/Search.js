@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import Modal from 'react-modal';
 import {SPACE, UP, DOWN, ESC, ENTER, PGUP, PGDN, F3} from '../keycode';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
-import 'react-tabs/style/react-tabs.css';
+import 'react-tabs/style/react-tabs.less';
 
 // TODO: Make sure to bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 // Modal.setAppElement('#yourAppElement');
@@ -24,17 +24,8 @@ export default class extends Component {
 
   handleKeyModal = e => {
     if (e.keyCode === ENTER || e.keyCode === ESC) { // enter or escape
-      this.setState({showSearchModal: false});
-
-      // NOTE(Oak): getActiveNode uses document.activeElement, but right now
-      // our focus is on the modal, so we use setTimeout to wait for the modal to close
-      // first
-      setTimeout(() => {
-        this.props.searchModes[this.state.tabIndex].initSearch(
-          this.props.blocks,
-          this.state
-        );
-      }, 0);
+      this.handleCloseModal();
+      return;
     }
   }
 
@@ -74,15 +65,21 @@ export default class extends Component {
 
   handleTab = tabIndex => this.setState({tabIndex})
 
-  handleCloseModal = () => this.setState({showSearchModal: false})
+  handleCloseModal = () => {
+    this.setState({showSearchModal: false});
+    this.props.searchModes[this.state.tabIndex].initSearch(
+      this.props.blocks,
+      this.state
+    );
+  }
 
   // NOTE: to intercept f3, we need to use keydown
   componentDidMount() {
-    document.addEventListener("keydown", this.handleKeyGlobal);
+    document.body.addEventListener("keydown", this.handleKeyGlobal);
   }
 
   componentWillUnmount() {
-    document.removeEventListener("keydown", this.handleKeyGlobal);
+    document.body.removeEventListener("keydown", this.handleKeyGlobal);
   }
 
   handleChange = e => {
