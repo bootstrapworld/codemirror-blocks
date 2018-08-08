@@ -69,7 +69,7 @@
     "codemirror": "5.37.0"
   },
   "optionalDependencies": {
-    "wescheme-js": "sorawee/wescheme-js"
+    "wescheme-js": "bootstrapworld/wescheme-js"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
