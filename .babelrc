@@ -1,10 +1,21 @@
 {
   "plugins": [
-    "transform-react-jsx",
     "react-hot-loader/babel"
   ],
   "presets": [
-    "es2015",
+    [
+      "env",
+      {
+        "targets": {
+          "browsers": [
+            "Firefox >= 52",
+            "Safari >= 9",
+            "Chrome >= 60",
+            "IE >= 10"
+          ]
+        }
+      }
+    ],
     "react",
     "stage-1"
   ],
