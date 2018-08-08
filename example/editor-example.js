@@ -18,31 +18,29 @@ const exampleCodes = {
   lambda: "2",
 };
 
+const options = {
+  renderOptions: {
+    lockNodesOfType: ['comment', 'functionDef', 'variableDef', 'struct']
+  },
+  willInsertNode: (cm, sourceNodeText, sourceNode, destination) => {
+    const line = cm.getLine(destination.line);
+    const prev = line[destination.ch - 1] || '\n';
+    const next = line[destination.ch] || '\n';
+    sourceNodeText = sourceNodeText.trim();
+    if (!/\s|[([{]/.test(prev)) {
+      sourceNodeText = ' ' + sourceNodeText;
+    }
+    if (!/\s|[)\]}]/.test(next)) {
+      sourceNodeText += ' ';
+    }
+    return sourceNodeText;
+  }
+};
+
 class EditorInstance extends React.Component {
   constructor(props) {
     super(props);
     this.ref = React.createRef();
-    this.options = {
-      renderOptions: {
-        lockNodesOfType: ['comment', 'functionDef', 'variableDef', 'struct']
-      },
-      willInsertNode: (sourceNodeText, sourceNode, destination) => {
-        // TODO: the need of this.ref here indicates that `willInsertNode` has
-        // a bad interface. Perhaps it should also provide editor
-
-        const line = this.ref.current.getCodeMirror().getLine(destination.line);
-        const prev = line[destination.ch - 1] || '\n';
-        const next = line[destination.ch] || '\n';
-        sourceNodeText = sourceNodeText.trim();
-        if (!/\s|[([{]/.test(prev)) {
-          sourceNodeText = ' ' + sourceNodeText;
-        }
-        if (!/\s|[)\]}]/.test(next)) {
-          sourceNodeText += ' ';
-        }
-        return sourceNodeText;
-      }
-    };
     this.state = {language: 'wescheme'};
   }
 
@@ -73,7 +71,7 @@ class EditorInstance extends React.Component {
         </select>
         <Editor ref={this.ref}
                 language={this.state.language}
-                options={this.options}
+                options={options}
                 cmOptions={this.getCmOptions()} />
       </React.Fragment>
     );

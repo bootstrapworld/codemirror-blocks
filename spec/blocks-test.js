@@ -67,8 +67,8 @@ describe('The CodeMirrorBlocks Class', function() {
     `;
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
-    this.willInsertNode = (sourceNodeText, sourceNode, destination) => {
-      let line = this.cm.getLine(destination.line);
+    this.willInsertNode = (cm, sourceNodeText, sourceNode, destination) => {
+      let line = cm.getLine(destination.line);
       let prev = line[destination.ch - 1] || '\n';
       let next = line[destination.ch] || '\n';
       sourceNodeText = sourceNodeText.trim();

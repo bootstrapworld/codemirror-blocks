@@ -24,8 +24,8 @@ describe('The CodeMirrorBlocks Class', function() {
     document.body.innerHTML = '<textarea id="code"></textarea>';
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new WeschemeParser();
-    this.willInsertNode = (sourceNodeText, sourceNode, destination) => {
-      let line = this.cm.getLine(destination.line);
+    this.willInsertNode = (cm, sourceNodeText, sourceNode, destination) => {
+      let line = cm.getLine(destination.line);
       if (destination.ch > 0 && line[destination.ch - 1].match(/[\w\d]/)) {
         // previous character is a letter or number, so prefix a space
         sourceNodeText = ' ' + sourceNodeText;

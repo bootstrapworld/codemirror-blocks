@@ -5,9 +5,10 @@ import 'codemirror/theme/monokai.css';
 import 'codemirror/addon/search/searchcursor.js';
 import CodeMirrorBlocks from '../src/blocks';
 import '../src/languages/wescheme';
+import './example-page.less';
+import code from './ast-test.rkt';
 
-require('./example-page.less');
-var code = require('./ast-test.rkt'), cm;
+let cm;
 document.getElementById("code").value = code;
 
 // Toggle the help HUD
@@ -16,7 +17,7 @@ document.body.onkeydown = function(k) {
   let help = document.getElementById('helpDialog');
   if(help && help.style.display !== "block"){
     help.style.display = "block";
-    help.onkeydown = (k) => { 
+    help.onkeydown = (k) => {
       k.preventDefault();
       k.stopPropagation();
       if(k.key == "/" && k.ctrlKey == true) {
@@ -26,7 +27,8 @@ document.body.onkeydown = function(k) {
     };
     help.focus();
   }
-}
+};
+
 document.getElementById('mode').onchange = function(e) {
   if(e.target.checked) {
     const codeNode = document.getElementById("code");
@@ -45,15 +47,15 @@ document.getElementById('mode').onchange = function(e) {
 
     const options = {
       search: searchNode,
-      willInsertNode(sourceNodeText, sourceNode, destination) {
+      willInsertNode(cm, sourceNodeText, sourceNode, destination) {
         let line = cm.getLine(destination.line);
         let prev = line[destination.ch - 1] || '\n';
         let next = line[destination.ch] || '\n';
         sourceNodeText = sourceNodeText.trim();
-        if (!/\s|[\(\[\{]/.test(prev)) {
+        if (!/\s|[([{]/.test(prev)) {
           sourceNodeText = ' ' + sourceNodeText;
         }
-        if (!/\s|[\)\]\}]/.test(next)) {
+        if (!/\s|[)\]}]/.test(next)) {
           sourceNodeText += ' ';
         }
         return sourceNodeText;
