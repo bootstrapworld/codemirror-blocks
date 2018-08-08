@@ -1,4 +1,5 @@
-define("jglr/rnglr", ["jglr/cyclicJSON"], function(cycle) {
+import * as cycle from "./cyclicJSON.js";
+
   function SrcLoc(startRow, startCol, startChar, endRow, endCol, endChar) {
     this.startRow = startRow;
     this.startCol = startCol;
@@ -2673,7 +2674,7 @@ define("jglr/rnglr", ["jglr/cyclicJSON"], function(cycle) {
   }
 
 
-  return {
+module.exports = {
     Atom: Atom,
     Nonterm: Nonterm,
     Token: Token,
@@ -2684,4 +2685,4 @@ define("jglr/rnglr", ["jglr/cyclicJSON"], function(cycle) {
     EPSILON: EPSILON,
     SrcLoc: SrcLoc
   };
-});
+

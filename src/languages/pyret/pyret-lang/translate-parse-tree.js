@@ -1,4 +1,3 @@
-define("pyret-base/js/translate-parse-tree", [], function() {
   
   function translate(ast, fileName, constructors) {
     // makeNode will be called on the node name, followed by the node args
@@ -1306,7 +1305,7 @@ define("pyret-base/js/translate-parse-tree", [], function() {
     return tr(ast);
   }
 
-  return {
+module.exports = {
     'translate': translate
   }
-})
+

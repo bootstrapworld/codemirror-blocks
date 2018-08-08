@@ -1,4 +1,4 @@
-define("pyret-base/js/pyret-tokenizer", ["jglr/jglr"], function(E) {
+const E = require("./jglr.js");
   const SrcLoc = E.SrcLoc
   const GenTokenizer = E.Tokenizer2;
   const IGNORED_WS = {name: "WS"};
@@ -567,7 +567,7 @@ define("pyret-base/js/pyret-tokenizer", ["jglr/jglr"], function(E) {
   };
 
 
-  return {
+module.exports = {
     'Tokenizer': new Tokenizer(spec)
   }; 
-});
+

@@ -1,4 +1,5 @@
-define("jglr/jglr", ["jglr/rnglr"], function(E) {
+import * as E from "./rnglr";
+
   const SrcLoc = E.SrcLoc
   const NS_PER_SEC = 1e9;
   var start;
@@ -324,7 +325,7 @@ define("jglr/jglr", ["jglr/rnglr"], function(E) {
     return Tokenizer;
   })();
 
-  return {
+module.exports = {
     'Tokenizer': Tokenizer,
     'Tokenizer2': Tokenizer2,
     'STICKY_REGEXP': '',
@@ -338,4 +339,4 @@ define("jglr/jglr", ["jglr/rnglr"], function(E) {
     'EPSILON': E.EPSILON,
     'SrcLoc': E.SrcLoc
   };
-});
+

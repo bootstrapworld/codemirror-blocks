@@ -1,6 +1,7 @@
-define('pyret-base/js/pyret-parser', ['jglr/jglr'],
+const E = require("./jglr.js");
+
 /** @param {{Grammar : {fromSerializable : !Function}, Nonterm : !Object, Token : !Object, Rule : !Object}} E */
-function(E) {
+
   const Grammar = E.Grammar;
   const Nonterm = E.Nonterm;
   const Token = E.Token;
@@ -171544,5 +171545,6 @@ function(E) {
       }
     ]
   };
-  return { PyretGrammar: Grammar.fromSerializable(g_json) };
-});
+module.exports = {
+  PyretGrammar: Grammar.fromSerializable(g_json)
+};
