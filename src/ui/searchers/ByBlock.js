@@ -1,6 +1,6 @@
 import React from 'react';
-import {playSound, BEEP, WRAP} from '../sound';
-import {poscmp} from '../utils';
+import {playSound, BEEP, WRAP} from '../../sound';
+import {poscmp} from '../../utils';
 
 function ByBlock({state, handleChange, blocks}) {
   // we want to sort anyway, so Array.from is not really inefficient

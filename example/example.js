@@ -26,8 +26,8 @@ var blocks = new CodeMirrorBlocks(
   cm2,
   'example',
   {
-    willInsertNode(sourceNodeText, sourceNode, destination) {
-      let line = cm2.getLine(destination.line);
+    willInsertNode(cm, sourceNodeText, sourceNode, destination) {
+      let line = cm.getLine(destination.line);
       if (destination.ch > 0 && line[destination.ch - 1].match(/[\w\d]/)) {
         // previous character is a letter or number, so prefix a space
         sourceNodeText = ' ' + sourceNodeText;

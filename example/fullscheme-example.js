@@ -38,8 +38,8 @@ cm.doc.clearHistory();
 cm2.swapDoc(cm.getDoc().linkedDoc({sharedHist: true}));
 
 const options = {
-  willInsertNode(sourceNodeText, sourceNode, destination) {
-    let line = cm2.getLine(destination.line);
+  willInsertNode(cm, sourceNodeText, sourceNode, destination) {
+    let line = cm.getLine(destination.line);
     let prev = line[destination.ch - 1] || '\n';
     let next = line[destination.ch] || '\n';
     sourceNodeText = sourceNodeText.trim();

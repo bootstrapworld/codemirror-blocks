@@ -5,64 +5,77 @@ import 'codemirror/addon/search/searchcursor.js';
 import '../src/languages/wescheme';
 import '../src/languages/example';
 import '../src/languages/lambda';
-import {renderEditorInto} from '../src/ui';
 import CodemirrorBlocks from '../src/blocks.js';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import Editor from '../src/ui/Editor';
+import './example-page.less';
+import exampleWeSchemeCode from './ast-test.rkt';
 
-require('./example-page.less');
-
-var code = require('./ast-test.rkt');
+const exampleCodes = {
+  wescheme: exampleWeSchemeCode,
+  example: "1",
+  lambda: "2",
+};
 
 const options = {
   renderOptions: {
-    lockNodesOfType: ['comment','functionDef','variableDef','struct']
+    lockNodesOfType: ['comment', 'functionDef', 'variableDef', 'struct']
   },
-  toolbar: document.getElementById('toolbar'),
-  willInsertNode(sourceNodeText, sourceNode, destination) {
-    let line = editor.getCodeMirror().getLine(destination.line);
-    let prev = line[destination.ch - 1] || '\n';
-    let next = line[destination.ch] || '\n';
+  willInsertNode: (cm, sourceNodeText, sourceNode, destination) => {
+    const line = cm.getLine(destination.line);
+    const prev = line[destination.ch - 1] || '\n';
+    const next = line[destination.ch] || '\n';
     sourceNodeText = sourceNodeText.trim();
-    if (!/\s|[\(\[\{]/.test(prev)) {
+    if (!/\s|[([{]/.test(prev)) {
       sourceNodeText = ' ' + sourceNodeText;
     }
-    if (!/\s|[\)\]\}]/.test(next)) {
+    if (!/\s|[)\]}]/.test(next)) {
       sourceNodeText += ' ';
     }
     return sourceNodeText;
   }
 };
 
-let editor = renderEditorInto(
-  document.getElementById('editor'),
-  'wescheme',
-  options
-);
-editor.getCodeMirror().setValue(code);
-editor.getCodeMirror().setOption("lineNumbers", true);
-editor.getCodeMirror().setOption("viewportMargin", 10);
-editor.getCodeMirror().doc.clearHistory();
+class EditorInstance extends React.Component {
+  constructor(props) {
+    super(props);
+    this.ref = React.createRef();
+    this.state = {language: 'wescheme'};
+  }
 
-ReactDOM.render((
-  <select onChange={function(event){
-    ReactDOM.unmountComponentAtNode(document.getElementById('editor'));
-    var editor = renderEditorInto(
-        document.getElementById('editor'),
-        event.target.value,
-        options
+  getCmOptions() {
+    return {
+      value: exampleCodes[this.state.language],
+      lineNumbers: true,
+      viewportMargin: 10,
+    };
+  }
+
+  handleChange = event => {
+    this.ref.current.getCodeMirror().doc.clearHistory();
+    this.setState({language: event.target.value});
+  }
+
+  render() {
+    const choices = CodemirrorBlocks.languages.getLanguages().map(
+      language => (
+        <option value={language.id} key={language.id}>{language.name}</option>
+      )
     );
-    var exampleCode = CodemirrorBlocks.languages.getLanguage(event.target.value).example;
-    editor.getCodeMirror().setValue(exampleCode || "");
-  }}>
-    <option>
-      Choose Language...
-    </option>
-    {CodemirrorBlocks.languages.getLanguages().map(
-       language => (
-         <option value={language.id} key={language.id}>{language.name}</option>
-       )
-     )}
-  </select>
-),document.getElementById('language-selector')
-);
+    return (
+      <React.Fragment>
+        <select value={this.state.language} onChange={this.handleChange}
+                id="language-chooser">
+          {choices}
+        </select>
+        <Editor ref={this.ref}
+                language={this.state.language}
+                options={options}
+                cmOptions={this.getCmOptions()} />
+      </React.Fragment>
+    );
+  }
+}
+
+ReactDOM.render(<EditorInstance />, document.getElementById('editor'));

@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import Modal from 'react-modal';
-import {SPACE, UP, DOWN, ESC, ENTER, PGUP, PGDN, F3} from '../keycode';
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import {ESC, ENTER, PGUP, PGDN, F3} from '../keycode';
+import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
 
 // TODO: Make sure to bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
@@ -123,7 +123,7 @@ export default class extends Component {
                   <kbd>&uarr;</kbd>
                   <kbd>&darr;</kbd> to change modes;
                   <kbd>&crarr;</kbd>
-                  <kbd>esc</kbd> to save the search config;
+                  <kbd>esc</kbd> to save search config;
                   <kbd>⇥</kbd> to focus next element
                 </div>
               </small>

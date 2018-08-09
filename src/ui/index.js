@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom';
 import Toolbar from './Toolbar';
 import Editor from './Editor';
 import Search from './Search';
-import ByString from '../searchers/ByString';
-import ByBlock from '../searchers/ByBlock';
+import ByString from './searchers/ByString';
+import ByBlock from './searchers/ByBlock';
 
 export function renderSearchInto(blocks) {
   ReactDOM.render(

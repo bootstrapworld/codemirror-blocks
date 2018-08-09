@@ -466,7 +466,7 @@ export default class CodeMirrorBlocks {
     try {
       var text = nodeEl.textContent;
       let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
-      if(node.from === node.to) text = this.willInsertNode(text, nodeEl, node.from, node.to); // sanitize
+      if(node.from === node.to) text = this.willInsertNode(this.cm, text, nodeEl, node.from, node.to); // sanitize
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
       nodeEl.title = '';                              // 2) Clear any prior error titles
       if(node.insertion) {                            // 3) If we're inserting (instead of editing)
@@ -693,10 +693,10 @@ export default class CodeMirrorBlocks {
 
     // If f is defined and the destination is a non-literal node, apply it.
     // Otherwise return the sourceNodeText unmodified
-    function maybeApplyClientFn(f) {
+    const maybeApplyClientFn = f => {
       return (f && !(destinationNode && destinationNode.type == "literal"))?
-        f(sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
-    }
+        f(this.cm, sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
+    };
 
     // Call willInsertNode and didInsertNode on either side of the replacement operation
     // if we're not replacing a literal.

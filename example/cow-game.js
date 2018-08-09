@@ -38,7 +38,7 @@ document.getElementById('mode').onchange = function(e) {
     cm.doc.clearHistory();
 
     const options = {
-      willInsertNode(sourceNodeText, sourceNode, destination) {
+      willInsertNode(cm, sourceNodeText, sourceNode, destination) {
         let line = cm.getLine(destination.line);
         let prev = line[destination.ch - 1] || '\n';
         let next = line[destination.ch] || '\n';

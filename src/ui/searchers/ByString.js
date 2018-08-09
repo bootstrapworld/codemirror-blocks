@@ -1,8 +1,43 @@
 import React from 'react';
-import {playSound, BEEP, WRAP} from '../sound';
-import {poscmp} from '../utils';
+import {playSound, BEEP, WRAP} from '../../sound';
+import {poscmp} from '../../utils';
 
-function ByString({state, handleChange}) {
+/**
+ * Returns a regex query from settings. If the regex is invalid (indicating
+ * that users are still not finishing writing regex),
+ * returns an always failing regex instead.
+ */
+function getRegexFromSettings(state) {
+  let query = state.searchString;
+  let flag = 'g'; // always global
+  if (!state.isRegex) {
+    // escape normal string to regex
+    // from the searchOverlay function in
+    // https://codemirror.net/addon/search/search.js
+    query = query.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");
+  }
+  if (state.isExactMatch) query = '\\b' + query + '\\b';
+  if (state.isIgnoreCase) flag += 'i';
+  try {
+    return new RegExp(query, flag);
+  } catch (e) {
+    return /$^/;
+  }
+}
+
+function getResults(state, blocks, limit=Infinity) {
+  const regex = getRegexFromSettings(state);
+  const searchCursor = blocks.cm.getSearchCursor(regex);
+  const searchMatches = [];
+  while (searchCursor.findNext() && searchMatches.length < limit) {
+    const node = blocks.ast.getNodeContaining(searchCursor.from());
+    // make sure we're not just matching a comment
+    if (node) searchMatches.push(node);
+  }
+  return searchMatches;
+}
+
+function ByString({state, handleChange, blocks}) {
   function SearchOption({name, value, init}) {
     return (
       <label>
@@ -12,12 +47,18 @@ function ByString({state, handleChange}) {
       </label>
     );
   }
+  const isMatched = (
+    state.searchString === '' || getResults(state, blocks, 1).length !== 0
+  );
+  const searchBoxClass = isMatched ? '' : 'has-error';
   return (
     <React.Fragment>
-      <input type="text" className="form-control search-input"
-             name="searchString"
-             onChange={handleChange}
-             value={state.searchString} />
+      <div className={`form-group ${searchBoxClass}`}>
+        <input type="text" className="form-control search-input"
+               name="searchString"
+               onChange={handleChange}
+               value={state.searchString} />
+      </div>
       <div className="search-options">
         <SearchOption name="isRegex" value="Regex" />
         <SearchOption name="isExactMatch" value="Exact match" />
@@ -38,20 +79,9 @@ export default {
   component: ByString,
   searchMatches: [],
   query: null,
-  initSearch: function(blocks, state) {
+  initSearch(blocks, state) {
     if (state.searchString === '') return;
-
-    let query = state.searchString;
-    let flag = 'g'; // always global
-    if (!state.isRegex) {
-      // escape normal string to regex
-      // from the searchOverlay function in
-      // https://codemirror.net/addon/search/search.js
-      query = query.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");
-    }
-    if (state.isExactMatch) query = '\\b' + query + '\\b';
-    if (state.isIgnoreCase) flag += 'i';
-    this.query = new RegExp(query, flag);
+    this.query = getRegexFromSettings(state);
     const searchCursor = blocks.cm.getSearchCursor(this.query);
     this.searchMatches = [];
     while (searchCursor.findNext()) {
