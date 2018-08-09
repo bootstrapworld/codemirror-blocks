@@ -254,6 +254,8 @@ export class AST {
 
 // Every node in the AST inherits from the `ASTNode` class, which is used to
 // house some common attributes.
+//
+// INVARIANT: No two nodes in the AST share the same (from, to) pair.
 export class ASTNode {
   constructor(from, to, type, options) {
 
