@@ -11,7 +11,7 @@ function getQueryFromSettings(state) {
   let isExactMatch = state.isExactMatch;
   if (isExactMatch && !isRegex) {
     query = query.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");
-    isRegex = false;
+    isRegex = true;
   }
   if (!isRegex) return query;
   if (isExactMatch) query = '\\b' + query + '\\b';
