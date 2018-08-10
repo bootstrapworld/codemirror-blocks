@@ -254,14 +254,17 @@ export class AST {
 
 // Every node in the AST inherits from the `ASTNode` class, which is used to
 // house some common attributes.
-//
-// INVARIANT: No two nodes in the AST share the same (from, to) pair.
 export class ASTNode {
   constructor(from, to, type, options) {
 
     // The `from` and `to` attributes are objects containing the start and end
     // positions of this node within the source document. They are in the format
     // of `{line: <line>, ch: <column>}`.
+    //
+    // INVARIANT:
+    //   The (from, to) ranges of a node's children are:
+    //   1. strictly contained within the node's range, and
+    //   2. non-overlapping
     this.from = from;
     this.to = to;
 
