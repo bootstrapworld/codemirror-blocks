@@ -2,3 +2,11 @@
 export function poscmp(a, b) {
   return  a.line - b.line || a.ch - b.ch;
 }
+
+export function skipWhile(skipper, start, next) {
+  let now = start;
+  while (skipper(now)) {
+    now = next(now);
+  }
+  return now;
+}

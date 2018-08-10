@@ -30,16 +30,15 @@ import {
   HOME,
   END,
   ESC,
-  LEFTBRACE,
-  RIGHTBRACE,
+  LEFTBRACKET,
+  RIGHTBRACKET,
   ISMAC,
   DKEY,
-  ONEKEY,
-  TAB,
-  PGUP,
   PGDN,
   F3,
 } from 'codemirror-blocks/keycode';
+
+import {wait} from './test-utils';
 
 const TOGGLE_SELECTION_KEYPRESS =
       keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
@@ -51,15 +50,8 @@ const PRESERVE_PREV_KEYPRESS =
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
 
-function removeEventListeners() {
-  const oldElem = document.body;
-  const newElem = oldElem.cloneNode(true);
-  oldElem.parentNode.replaceChild(newElem, oldElem);
-}
-
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    removeEventListeners();
     document.body.innerHTML = `
       <textarea id="code"></textarea>
       <div id="toolbar"></div>
@@ -665,7 +657,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-[ should jump to the left of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
-        this.firstRoot.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
+        this.firstRoot.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
         let cursor = this.cm.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(0);
@@ -673,7 +665,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-] should jump to the right of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
-        this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
+        this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
         let cursor = this.cm.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(7);
@@ -681,7 +673,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-[ should activate a quarantine to the left', function(done) {
         this.firstArg.el.dispatchEvent(click());
-        this.firstArg.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
+        this.firstArg.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
         setTimeout(() => {
           expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
           done();
@@ -690,7 +682,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-] should activate a quarantine to the right', function(done) {
         this.firstArg.el.dispatchEvent(click());
-        this.firstArg.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
+        this.firstArg.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
         setTimeout(() => {
           expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
           done();
@@ -699,7 +691,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-] should activate a quarantine in the first arg position', function(done) {
         this.blank.func.el.dispatchEvent(click());
-        this.blank.func.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
+        this.blank.func.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
         setTimeout(() => {
           expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
           done();
@@ -891,131 +883,6 @@ describe('The CodeMirrorBlocks Class', function() {
         dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
         nodeEl.parentElement.dispatchEvent(dropEvent);
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
-      });
-    });
-
-
-    describe('when using Search Mode,', function() {
-      beforeEach(function(done) {
-        this.cm.setValue('0 1 2 1 (+ 1 2)');
-        this.nomatch1 = this.blocks.ast.rootNodes[0];
-        this.match1 = this.blocks.ast.rootNodes[1];
-        this.nomatch2 = this.blocks.ast.rootNodes[2];
-        this.match2 = this.blocks.ast.rootNodes[3];
-        this.match3 = this.blocks.ast.rootNodes[4].args[0];
-
-        this.nomatch1.el.dispatchEvent(click());
-        this.nomatch1.el.dispatchEvent(keydown(F3));
-        setTimeout(() => {
-          const searchBox = document.querySelector('.search-input');
-          setNativeValue(searchBox, "1");
-          searchBox.dispatchEvent(pureevent('input'));
-          const close = document.querySelector('.wrapper-modal .close');
-          close.dispatchEvent(click());
-          setTimeout(done, DELAY);
-        }, DELAY);
-      });
-
-      it('should stay where it is initially', function(done) {
-        expect(this.blocks.getActiveNode()).toBe(this.nomatch1);
-        expect(document.activeElement).toBe(this.nomatch1.el);
-        done();
-      });
-
-      it('should find next match, skipping a non-matching literal', function(done) {
-        this.match1.el.dispatchEvent(click());
-        this.match1.el.dispatchEvent(keydown(PGDN));
-        setTimeout(() => {
-          expect(this.blocks.getActiveNode()).toBe(this.match2);
-          expect(document.activeElement).toBe(this.match2.el);
-          done();
-        }, DELAY);
-      });
-
-      it('should wrap around to beginning of document for find-next', function(done) {
-        this.match3.el.dispatchEvent(click());
-        this.match3.el.dispatchEvent(keydown(PGDN));
-        setTimeout(() => {
-          expect(this.blocks.getActiveNode()).toBe(this.match1);
-          expect(document.activeElement).toBe(this.match1.el);
-          done();
-        }, DELAY);
-      });
-
-      it('should wrap around to end of document for find-previous', function(done) {
-        this.match1.el.dispatchEvent(click());
-        this.match1.el.dispatchEvent(keydown(PGUP));
-        setTimeout(() => {
-          expect(this.blocks.getActiveNode()).toBe(this.match3);
-          expect(document.activeElement).toBe(this.match3.el);
-          done();
-        }, DELAY);
-      });
-    });
-
-    describe('when using advanced search mode,', function() {
-      beforeEach(function(done) {
-        this.cm.setValue('(hello 1 (hell) 2 (Hello) 3 (fall))');
-        this.hello = this.blocks.ast.rootNodes[0].func;
-        this.hell = this.blocks.ast.rootNodes[0].args[1].func;
-        this.Hello = this.blocks.ast.rootNodes[0].args[3].func;
-        this.fall = this.blocks.ast.rootNodes[0].args[5].func;
-
-        this.hello.el.dispatchEvent(click());
-        this.hello.el.dispatchEvent(keydown(F3));
-        setTimeout(() => {
-          const searchBox = document.querySelector('.search-input');
-          setNativeValue(searchBox, "hell");
-          searchBox.dispatchEvent(pureevent('input'));
-          const close = document.querySelector('.wrapper-modal .close');
-          close.dispatchEvent(click());
-          setTimeout(done, DELAY);
-        }, DELAY);
-      });
-
-      it('should be case insensitive by default', function(done) {
-        this.hello.el.dispatchEvent(keydown(PGDN));
-        setTimeout(() => {
-          expect(this.blocks.getActiveNode()).toBe(this.hell);
-          expect(document.activeElement).toBe(this.hell.el);
-
-          this.hell.el.dispatchEvent(keydown(PGDN));
-          setTimeout(() => {
-            expect(this.blocks.getActiveNode()).toBe(this.Hello);
-            expect(document.activeElement).toBe(this.Hello.el);
-
-            this.Hello.el.dispatchEvent(keydown(PGDN));
-            setTimeout(() => {
-              expect(this.blocks.getActiveNode()).toBe(this.hello);
-              expect(document.activeElement).toBe(this.hello.el);
-              done();
-            }, DELAY);
-          });
-        }, DELAY);
-      });
-
-      it('should be able to use case sensitive mode', function(done) {
-        this.hello.el.dispatchEvent(keydown(F3));
-        setTimeout(() => {
-          const ignoreCase = document.querySelector('input[name="isIgnoreCase"]');
-          ignoreCase.dispatchEvent(click());
-          const close = document.querySelector('.wrapper-modal .close');
-          close.dispatchEvent(click());
-          setTimeout(() => {
-            this.hello.el.dispatchEvent(keydown(PGDN));
-            setTimeout(() => {
-              expect(this.blocks.getActiveNode()).toBe(this.hell);
-              expect(document.activeElement).toBe(this.hell.el);
-
-              this.hell.el.dispatchEvent(keydown(PGDN));
-              setTimeout(() => {
-                expect(this.blocks.getActiveNode()).toBe(this.hello);
-                expect(document.activeElement).toBe(this.hello.el);
-                done();
-              }, DELAY);
-            }, DELAY);
-          }, DELAY);
-        }, DELAY);
       });
     });
   });

@@ -1,33 +1,32 @@
 import React from 'react';
-import {playSound, BEEP, WRAP} from '../../sound';
-import {poscmp} from '../../utils';
 
 /**
- * Returns a regex query from settings. If the regex is invalid (indicating
- * that users are still not finishing writing regex),
+ * Returns a query from settings. If the query is a regex but is invalid (indicating
+ * that users are still in the middle of writing regex),
  * returns an always failing regex instead.
  */
-function getRegexFromSettings(state) {
+function getQueryFromSettings(state) {
   let query = state.searchString;
-  let flag = 'g'; // always global
-  if (!state.isRegex) {
-    // escape normal string to regex
-    // from the searchOverlay function in
-    // https://codemirror.net/addon/search/search.js
+  let isRegex = state.isRegex;
+  let isExactMatch = state.isExactMatch;
+  if (isExactMatch && !isRegex) {
     query = query.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");
+    isRegex = false;
   }
-  if (state.isExactMatch) query = '\\b' + query + '\\b';
-  if (state.isIgnoreCase) flag += 'i';
+  if (!isRegex) return query;
+  if (isExactMatch) query = '\\b' + query + '\\b';
   try {
-    return new RegExp(query, flag);
+    return new RegExp(query);
   } catch (e) {
     return /$^/;
   }
 }
 
 function getResults(state, blocks, limit=Infinity) {
-  const regex = getRegexFromSettings(state);
-  const searchCursor = blocks.cm.getSearchCursor(regex);
+  const query = getQueryFromSettings(state);
+  const searchCursor = blocks.cm.getSearchCursor(
+    query, null, {caseFold: state.isIgnoreCase}
+  );
   const searchMatches = [];
   while (searchCursor.findNext() && searchMatches.length < limit) {
     const node = blocks.ast.getNodeContaining(searchCursor.from());
@@ -35,6 +34,10 @@ function getResults(state, blocks, limit=Infinity) {
     if (node) searchMatches.push(node);
   }
   return searchMatches;
+}
+
+function hasMatch(state, blocks) {
+  return state.searchString === '' || getResults(state, blocks, 1).length !== 0;
 }
 
 function ByString({state, handleChange, blocks}) {
@@ -47,10 +50,7 @@ function ByString({state, handleChange, blocks}) {
       </label>
     );
   }
-  const isMatched = (
-    state.searchString === '' || getResults(state, blocks, 1).length !== 0
-  );
-  const searchBoxClass = isMatched ? '' : 'has-error';
+  const searchBoxClass = hasMatch(state, blocks) ? '' : 'has-error';
   return (
     <React.Fragment>
       <div className={`form-group ${searchBoxClass}`}>
@@ -77,71 +77,66 @@ export default {
     isIgnoreCase: true,
   },
   component: ByString,
-  searchMatches: [],
-  query: null,
-  initSearch(blocks, state) {
-    if (state.searchString === '') return;
-    this.query = getRegexFromSettings(state);
-    const searchCursor = blocks.cm.getSearchCursor(this.query);
-    this.searchMatches = [];
-    while (searchCursor.findNext()) {
-      const node = blocks.ast.getNodeContaining(searchCursor.from());
-      // make sure we're not just matching a comment
-      if (node) this.searchMatches.push(node);
-    }
-
-    // no matches! wrap.
-    if (this.searchMatches.length === 0) {
-      playSound(WRAP);
-    }
-  },
+  hasMatch,
+  /**
+   * find: (Blocks, State, Bool, Event) -> ASTNode?
+   */
   find: function(blocks, state, forward, e) {
     if (state.searchString === '') {
-      blocks.switchNodes(forward ? blocks.ast.getNodeAfter : blocks.ast.getNodeBefore, e);
-      return;
+      blocks.switchNodes(
+        forward ? blocks.ast.getNodeAfter : blocks.ast.getNodeBefore,
+        forward ? blocks.ast.getNodeAfterCur : blocks.ast.getNodeBeforeCur,
+        e
+      );
+      return null;
     }
+    const options = {caseFold: state.isIgnoreCase};
+
+    // we don't want to stay at the currently active block because
+    // if the current block matches already, searching won't be able to progress.
     const activeNode = blocks.getActiveNode();
-    // TODO: if this is false, might need to abort
-
-    const cur = activeNode ? activeNode.from : blocks.cm.getCursor();
-
-    let from = null;
-    let test = null;
-    const matches = this.searchMatches.slice(0);
-    if (forward) {
-      from = blocks.ast.getNodeAfter(activeNode).from;
-      test = d => (d >= 0);
+    let cur = null;
+    let beep = false;
+    if (activeNode) {
+      // TODO: this will skip over plain comment. Might need to change once
+      // commenting mechanism is fixed.
+      const node = forward ?
+            blocks.ast.getNodeAfter(activeNode) :
+            blocks.ast.getNodeBefore(activeNode);
+      if (node) {
+        cur = forward ? node.from : node.to;
+      } else {
+        // if we are at the first or last block already, we won't be able to find the
+        // next adjacent block.
+        cur = forward ? blocks.getBeginCursor() : blocks.getEndCursor();
+        beep = true;
+      }
     } else {
-      from = activeNode.from;
-      test = d => (d < 0);
-      matches.reverse(); // if we're searching backwards, reverse the array
+      cur = blocks.cm.getCursor();
     }
 
-    let index = matches.findIndex(n => test(poscmp(n.from, from)));
-    // if we go off the edge, wrap to 0 & play sound
-    if (index < 0) {
-      index = 0;
-      playSound(BEEP);
+    const query = getQueryFromSettings(state);
+
+    function next(searchCursor) {
+      return (searchCursor.find(!forward), searchCursor);
+    }
+    function getSearchCursor(query, cur, options) {
+      // we need to activate next right away so that we have the `from` field.
+      return next(blocks.cm.getSearchCursor(query, cur, options));
     }
 
-    let node = matches[index];
-    const ancestors = [node];
-    let p = blocks.ast.getNodeParent(node);
-    while (p) {
-      ancestors.unshift(p);
-      p = blocks.ast.getNodeParent(p);
-    }
-    if (blocks.renderOptions.lockNodesOfType.includes(ancestors[0].type)) {
-      node = ancestors[0];
-    } else {
-      ancestors.forEach(a => blocks.maybeChangeNodeExpanded(a, true));
-    }
-    blocks.refreshCM(cur);
-    blocks.activateNode(node, e);
-    blocks.say(
-      (forward ? index + 1 : matches.length - index) +
-        " of " + matches.length,
-      100
-    );
+    return {
+      initialStart: () => getSearchCursor(query, cur, options),
+      wrapStart: () => getSearchCursor(
+        query,
+        forward ? blocks.getBeginCursor() : blocks.getEndCursor(),
+        options
+      ),
+      match: searchCursor => blocks.ast.getNodeContaining(searchCursor.from()),
+      ending: searchCursor => !searchCursor.from(),
+      next,
+      beep,
+      getResult: searchCursor => blocks.ast.getNodeContaining(searchCursor.from())
+    };
   }
 };

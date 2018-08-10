@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import Modal from 'react-modal';
 import {ESC, ENTER, PGUP, PGDN, F3} from '../keycode';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
+import {playSound, WRAP} from '../sound';
+import {skipWhile} from '../utils';
 import 'react-tabs/style/react-tabs.less';
 
 // TODO: Make sure to bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
@@ -29,6 +31,48 @@ export default class extends Component {
     }
   }
 
+  find(forward, e) {
+    const searchConfig = this.props.searchModes[this.state.tabIndex].find(
+      this.props.blocks,
+      this.state,
+      forward,
+      e
+    );
+    if (!searchConfig) return;
+
+    const {initialStart, wrapStart, match, ending, next, getResult, beep} = searchConfig;
+    if (beep) playSound(WRAP);
+    const skipper = obj => !ending(obj) && !match(obj);
+    let result = skipWhile(skipper, initialStart(), next);
+    if (ending(result)) {
+      if (!beep) playSound(WRAP); // we have already beep
+      result = skipWhile(skipper, wrapStart(), next);
+      if (ending(result)) return;
+    }
+    let node = getResult(result);
+
+    const ancestors = [node];
+    let p = this.props.blocks.ast.getNodeParent(node);
+    while (p) {
+      ancestors.push(p);
+      p = this.props.blocks.ast.getNodeParent(p);
+    }
+    ancestors.reverse();
+    if (this.props.blocks.renderOptions.lockNodesOfType.includes(ancestors[0].type)) {
+      node = ancestors[0];
+    } else {
+      ancestors.forEach(a => this.props.blocks.maybeChangeNodeExpanded(a, true));
+    }
+    this.props.blocks.activateNode(node, e);
+    this.props.blocks.cm.refresh();
+    // saying this is not accurate since some matches are not this.props.blocks
+    // this.props.blocks.say(
+    //   (forward ? index + 1 : matches.length - index) +
+    //     " of " + matches.length,
+    //   100
+    // );
+  }
+
   handleKeyGlobal = e => {
     if (!this.props.blocks.blockMode) return;
 
@@ -40,23 +84,13 @@ export default class extends Component {
 
     case PGUP: {
       e.preventDefault(); // we never want pgup and pgdn to actually do pgup and pgdn
-      this.props.searchModes[this.state.tabIndex].find(
-        this.props.blocks,
-        this.state,
-        false,
-        e
-      );
+      this.find(false, e);
       return;
     }
 
     case PGDN: {
       e.preventDefault(); // we never want pgup and pgdn to actually do pgup and pgdn
-      this.props.searchModes[this.state.tabIndex].find(
-        this.props.blocks,
-        this.state,
-        true,
-        e
-      );
+      this.find(true, e);
       return;
     }
 
@@ -66,20 +100,20 @@ export default class extends Component {
   handleTab = tabIndex => this.setState({tabIndex})
 
   handleCloseModal = () => {
+    if (!this.props.searchModes[this.state.tabIndex]
+        .hasMatch(this.state, this.props.blocks)) {
+      playSound(WRAP);
+    }
     this.setState({showSearchModal: false});
-    this.props.searchModes[this.state.tabIndex].initSearch(
-      this.props.blocks,
-      this.state
-    );
   }
 
   // NOTE: to intercept f3, we need to use keydown
   componentDidMount() {
-    document.body.addEventListener("keydown", this.handleKeyGlobal);
+    document.body.addEventListener("keydown", this.handleKeyGlobal, true);
   }
 
   componentWillUnmount() {
-    document.body.removeEventListener("keydown", this.handleKeyGlobal);
+    document.body.removeEventListener("keydown", this.handleKeyGlobal, true);
   }
 
   handleChange = e => {
