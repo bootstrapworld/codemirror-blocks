@@ -1,19 +1,19 @@
 import React from 'react';
 import TestUtils from 'react-dom/test-utils';
-import stubContext from 'react-stub-context';
-
 import {Literal} from 'codemirror-blocks/ast';
 import Renderer from 'codemirror-blocks/Renderer';
 import {dragstart} from '../events';
 import {Primitive} from 'codemirror-blocks/parsers/primitives';
 import _PrimitiveBlock from 'codemirror-blocks/ui/PrimitiveBlock';
 import {RenderedBlockNode} from 'codemirror-blocks/ui/PrimitiveBlock';
+import {RendererContext} from 'codemirror-blocks/ui/Context';
 
 describe('The PrimitiveBlock component,', function() {
-  var PrimitiveBlock;
-  beforeEach(function() {
-    PrimitiveBlock = stubContext(_PrimitiveBlock, {renderer: new Renderer()});
-  });
+  const PrimitiveBlock = props => (
+    <RendererContext.Provider value={new Renderer()}>
+      <_PrimitiveBlock {...props} />
+    </RendererContext.Provider>
+  );
 
   it('should render a draggable node for a primitive', function() {
     let primitive = new Primitive(null, 'some-primitive');

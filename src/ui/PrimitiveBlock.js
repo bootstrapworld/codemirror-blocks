@@ -1,16 +1,11 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import Renderer from '../Renderer';
 import {Primitive} from '../parsers/primitives';
-
-require('./PrimitiveBlock.less');
+import {RendererContext} from './Context';
+import './PrimitiveBlock.less';
 
 export class RenderedBlockNode extends Component {
-  static contextTypes = {
-    renderer: PropTypes.instanceOf(Renderer).isRequired,
-  }
-
   static propTypes = {
     node: PropTypes.instanceOf(ASTNode),
     text: PropTypes.string,
@@ -67,7 +62,9 @@ export class RenderedBlockNode extends Component {
     if (this.props.node) {
       return (
         <span className="RenderedBlockNode" ref={root => this.root = root}>
-          {this.context.renderer.renderNodeForReact(this.props.node)}
+          <RendererContext.Consumer>
+            {renderer => renderer.renderNodeForReact(this.props.node)}
+          </RendererContext.Consumer>
         </span>
       );
     } else {

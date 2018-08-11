@@ -5,8 +5,8 @@ import PrimitiveList from './PrimitiveList';
 import PrimitiveBlock from './PrimitiveBlock';
 import {PrimitiveGroup} from '../parsers/primitives';
 import Renderer from '../Renderer';
-
-require('./Toolbar.less');
+import {RendererContext} from './Context';
+import './Toolbar.less';
 
 export default class Toolbar extends Component {
   constructor(props) {
@@ -21,18 +21,8 @@ export default class Toolbar extends Component {
     languageId: PropTypes.instanceOf(String), // used to find the .blocks-language-{languageId} CSS class
   }
 
-  static childContextTypes = {
-    renderer: PropTypes.instanceOf(Renderer).isRequired,
-  }
-
   static defaultProps = {
     primitives: null
-  }
-
-  getChildContext() {
-    return {
-      renderer: this.props.renderer,
-    };
   }
 
   state = {
@@ -67,7 +57,7 @@ export default class Toolbar extends Component {
     if (this.props.primitives) {
       primitives = this.props.primitives.filter(this.state.search).primitives;
     }
-    let selected = this.state.selectedPrimitive;
+    const selected = this.state.selectedPrimitive;
     return (
       <div className={classNames('blocks-ui Toolbar', {'has-selected':!!selected})}>
         <div className="search-box">
@@ -82,17 +72,19 @@ export default class Toolbar extends Component {
             <span className="glyphicon glyphicon-remove" onClick={this.clearSearch} />
             : null}
         </div>
-        <div className="primitives-box">
-          <PrimitiveList
-            primitives={primitives}
-            onSelect={this.selectPrimitive}
-            selected={this.state.selectedPrimitive}
-          />
-        </div>
-        <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
-          <div className="contract-header">Contract</div>
-          <PrimitiveBlock primitive={selected}/>
-        </div>
+        <RendererContext.Provider value={this.props.renderer}>
+          <div className="primitives-box">
+            <PrimitiveList
+              primitives={primitives}
+              onSelect={this.selectPrimitive}
+              selected={this.state.selectedPrimitive}
+              />
+          </div>
+          <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
+            <div className="contract-header">Contract</div>
+            <PrimitiveBlock primitive={selected}/>
+          </div>
+        </RendererContext.Provider>
       </div>
     );
   }

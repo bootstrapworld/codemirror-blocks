@@ -1,6 +1,5 @@
 import React from 'react';
-import {playSound, BEEP, WRAP} from '../../sound';
-import {poscmp} from '../../utils';
+import PropTypes from 'prop-types';
 
 function getAllNodeTypes(blocks) {
   const allNodeTypes = new Set();
@@ -28,6 +27,14 @@ function ByBlock({state, handleChange, blocks}) {
     </select>
   );
 }
+
+ByBlock.propTypes = {
+  state: PropTypes.shape({
+    blockType: PropTypes.string.isRequired,
+  }),
+  handleChange: PropTypes.func.isRequired,
+  blocks: PropTypes.object.isRequired,
+};
 
 export default {
   label: 'Search by block',

@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import CodeMirror from 'react-codemirror';
+import {UnControlled as CodeMirror} from 'react-codemirror2';
 import classNames from 'classnames';
 import CodeMirrorBlocks from '../blocks';
 import {EVENT_DRAG_START, EVENT_DRAG_END} from '../blocks';
@@ -9,19 +9,20 @@ import PropTypes from 'prop-types';
 import Search from './Search';
 import ByString from './searchers/ByString';
 import ByBlock from './searchers/ByBlock';
-
-require('./Editor.less');
+import './Editor.less';
 
 export default class Editor extends Component {
   static propTypes = {
     options: PropTypes.object,
     cmOptions: PropTypes.object,
     language: PropTypes.string.isRequired,
+    value: PropTypes.string,
   }
 
   static defaultProps = {
     options: {},
     cmOptions: {},
+    value: '',
   }
 
   state = {
@@ -50,7 +51,7 @@ export default class Editor extends Component {
   }
 
   getCodeMirror() {
-    return this.cm.getCodeMirror();
+    return this.cm;
   }
 
   getCodeMirrorBlocks() {
@@ -89,24 +90,27 @@ export default class Editor extends Component {
       "col-xs-3 toolbar-pane",
       {'show-trashcan':this.state.showTrashCan}
     );
+    const extras = this.blocks ? (
+      <React.Fragment>
+        <div className={toolbarPaneClasses}>
+          <Toolbar primitives={this.blocks.parser.primitives}
+                   renderer={this.blocks.renderer}
+                   languageId={this.blocks.language.id} />
+          <TrashCan onDrop={this.dropNodeOnTrash} />
+        </div>
+        <Search searchModes={[ByString, ByBlock]} blocks={this.blocks} />
+      </React.Fragment>
+    ) : null;
+
     return (
       <div className={editorClass}>
-        {
-          this.blocks ? (
-            <React.Fragment>
-              <div className={toolbarPaneClasses}>
-                <Toolbar primitives={this.blocks.parser.primitives}
-                         renderer={this.blocks.renderer}
-                         languageId={this.blocks.language.id} />
-                <TrashCan onDrop={this.dropNodeOnTrash} />
-              </div>
-              <Search searchModes={[ByString, ByBlock]} blocks={this.blocks} />
-            </React.Fragment>
-          ) : null
-        }
+        {extras}
         <div className="col-xs-9 codemirror-pane">
-          <CodeMirror ref={cm => this.cm = cm} options={this.props.cmOptions}/>
-          <button className="blocks-toggle-btn btn btn-default btn-sm" onClick={this.toggleBlocks}>
+        <CodeMirror options={this.props.cmOptions}
+                    value={this.props.value}
+                    editorDidMount={editor => this.cm = editor} />
+          <button className="blocks-toggle-btn btn btn-default btn-sm"
+                  onClick={this.toggleBlocks}>
             <span className={glyphClass}></span>
           </button>
         </div>

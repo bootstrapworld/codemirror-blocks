@@ -4,12 +4,19 @@ import {ESC, ENTER, PGUP, PGDN, F3} from '../keycode';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import {playSound, WRAP} from '../sound';
 import {skipWhile} from '../utils';
+import PropTypes from 'prop-types';
 import 'react-tabs/style/react-tabs.less';
 
 // TODO: Make sure to bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 // Modal.setAppElement('#yourAppElement');
 
 export default class extends Component {
+
+  static propTypes = {
+    searchModes: PropTypes.array.isRequired,
+    blocks: PropTypes.object.isRequired,
+  }
+
   // NOTE(Oak): we need to store all panels' states here so that the states are not
   // forgotten
 
