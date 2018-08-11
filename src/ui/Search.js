@@ -78,17 +78,20 @@ export default class extends Component {
 
     switch (e.keyCode) {
     case F3:
+      console.log('F3 RECEIVED');
       e.preventDefault(); // prevent the browser search
       this.setState({showSearchModal: true});
       return;
 
     case PGUP: {
+      console.log('PGUP RECEIVED');
       e.preventDefault(); // we never want pgup and pgdn to actually do pgup and pgdn
       this.find(false, e);
       return;
     }
 
     case PGDN: {
+      console.log('PGDN RECEIVED');
       e.preventDefault(); // we never want pgup and pgdn to actually do pgup and pgdn
       this.find(true, e);
       return;

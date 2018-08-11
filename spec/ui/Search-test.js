@@ -16,13 +16,14 @@ import {
   F3,
 } from 'codemirror-blocks/keycode';
 
-import {wait} from '../test-utils';
+import {wait, removeEventListeners} from '../test-utils';
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 750;
+const DELAY = 500;
 
 describe('Search component', function() {
   beforeEach(async function() {
+    removeEventListeners();
     const fixture = `<div id="root"></div>`;
     document.body.insertAdjacentHTML('afterbegin', fixture);
 
