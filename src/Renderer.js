@@ -180,7 +180,7 @@ export default class Renderer {
       container = document.createElement('span');
     container.className = 'react-container';
     let marker = this.cm.findMarksAt(node.from).filter(
-      m => m.node && !comparePos(m.node.from, node.from))[0]; // there will never be more than one
+      m => m.node && !poscmp(m.node.from, node.from))[0]; // there will never be more than one
     // if there IS a marker, we're not quarantining, and it starts at the exact same place..
     if (returnExisting && marker) {
       // expect marker node and new node to be the same
