@@ -15,10 +15,7 @@ import StructDefinition from './components/StructDef';
 import VariableDefinition from './components/VariableDef';
 import FunctionDefinition from './components/FunctionDef';
 import Sequence         from './components/Sequence';
-
-function comparePos(a, b) {
-  return a.line - b.line || a.ch - b.ch;
-}
+import {poscmp} from './utils';
 
 export default class Renderer {
   constructor(cm, cmcInstance, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
@@ -108,7 +105,7 @@ export default class Renderer {
           : [...node].slice(1).reduce(flatten, flat);                       // look inside
     }
 
-    // 1) Limit the number of lines CM is rendering (perf), and extract visible nodes, & make clones 
+    // 1) Limit the number of lines CM is rendering (perf), and extract visible nodes, & make clones
     let originalViewportMargin = that.cm.getOption("viewportMargin");
     that.cm.setOption("viewportMargin", toBlocks? 2 : 20); // blocks are bigger than text, so use a smaller viewport
     let {from, to} = that.cm.getViewport();
@@ -134,7 +131,7 @@ export default class Renderer {
     }
     let renderTime = (Date.now() - renderStart)/1000;
 
-    // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P) 
+    // 4) move each clone to the ending position (L), compute transformation (I), and start animation (P)
     assignClonePosition(literals, clones, !toBlocks, false, shiftY);
     clones.forEach(c => cloneParent.appendChild(c));
     let shiftY = cm.cursorCoords(canary, "local").top - startY; // how much did the canary line scroll?

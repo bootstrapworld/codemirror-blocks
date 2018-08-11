@@ -151,7 +151,7 @@ describe("The Expression Class", function() {
     expect(ast.getNodeAfter(expression.args[0])).toEqual(expression.args[1]);
     expect(ast.getNodeParent(expression.args[1])).toEqual(expression);
     expect(ast.getNodeBefore(expression.args[1])).toEqual(expression.args[0]);
-    expect(ast.getNodeAfter(expression.args[1])).toEqual(false);
+    expect(ast.getNodeAfter(expression.args[1])).toBeNull();
   });
 
 });

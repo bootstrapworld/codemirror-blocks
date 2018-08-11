@@ -917,6 +917,8 @@ class WeschemeParser {
   }
 
   getExceptionMessage(e){
+    // TODO: Using JSON.parse is not safe. Sometimes it could result in a parsing error.
+    console.error(e);
     let msg = JSON.parse(e)['dom-message'][2].slice(2);
     let txt = (msg.every((element) => typeof element==="string"))? msg
             : (msg[0] instanceof Array)? msg[0][2].substring(msg[0][2].indexOf("read: ")+6)

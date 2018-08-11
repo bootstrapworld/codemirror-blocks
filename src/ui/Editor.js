@@ -6,6 +6,9 @@ import {EVENT_DRAG_START, EVENT_DRAG_END} from '../blocks';
 import Toolbar from './Toolbar';
 import TrashCan from './TrashCan';
 import PropTypes from 'prop-types';
+import Search from './Search';
+import ByString from './searchers/ByString';
+import ByBlock from './searchers/ByBlock';
 
 require('./Editor.less');
 
@@ -73,28 +76,34 @@ export default class Editor extends Component {
   }
 
   render() {
-    let blocks = this.blocks || {parser:{}};
-    let glyphClass = classNames('glyphicon', {
+    const blocks = this.blocks || {parser:{}};
+    const glyphClass = classNames('glyphicon', {
       'glyphicon-pencil': blocks.blockMode,
       'glyphicon-align-left': !blocks.blockMode
     });
-    let editorClass = classNames('Editor', {
+    const editorClass = classNames('Editor', {
       'blocks': blocks.blockMode,
       'text': !blocks.blockMode
     });
-    let toolbarPaneClasses = classNames(
+    const toolbarPaneClasses = classNames(
       "col-xs-3 toolbar-pane",
       {'show-trashcan':this.state.showTrashCan}
     );
     return (
       <div className={editorClass}>
-        {this.blocks ?
-          <div className={toolbarPaneClasses}>
-            <Toolbar primitives={blocks.parser.primitives} 
-              renderer={this.blocks.renderer} 
-              languageId={this.blocks.language.id}/>
-            <TrashCan onDrop={this.dropNodeOnTrash}/>
-          </div> : null}
+        {
+          this.blocks ? (
+            <React.Fragment>
+              <div className={toolbarPaneClasses}>
+                <Toolbar primitives={this.blocks.parser.primitives}
+                         renderer={this.blocks.renderer}
+                         languageId={this.blocks.language.id} />
+                <TrashCan onDrop={this.dropNodeOnTrash} />
+              </div>
+              <Search searchModes={[ByString, ByBlock]} blocks={this.blocks} />
+            </React.Fragment>
+          ) : null
+        }
         <div className="col-xs-9 codemirror-pane">
           <CodeMirror ref={cm => this.cm = cm} options={this.props.cmOptions}/>
           <button className="blocks-toggle-btn btn btn-default btn-sm" onClick={this.toggleBlocks}>

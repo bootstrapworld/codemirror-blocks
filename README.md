@@ -36,13 +36,22 @@ A library for making functional languages editable using visual blocks inside of
 
 ## Development
 
-To get your dev environment up and running, follow these steps
+To get your dev environment up and running, follow these steps. Note that to run tests,
+you will need either Chrome or Chromium and point the variable `CHROME_BIN` to the binary
+like this:
+
+```
+export CHROME_BIN=/usr/bin/chromium
+```
+
+You must enter the following command in every session before you run the test.
+Alternatively, you can put it in your `.{bash,zsh}rc`, which will run them automatically.
 
 1. Checkout the repository in your favorite manner
 
-2. install dependencies with [yarn](https://yarnpkg.com/)
+2. install dependencies with `npm`
 
-        yarn
+        npm install
 
 3. start the webpack development server:
 

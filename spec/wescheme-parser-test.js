@@ -21,11 +21,14 @@ function keydown(keyCode, other={}) {
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    document.body.innerHTML = '<textarea id="code"></textarea>';
+    const fixture = `<div id="root">
+      <textarea id="code"></textarea>
+    </div>`;
+    document.body.insertAdjacentHTML('afterbegin', fixture);
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new WeschemeParser();
-    this.willInsertNode = (sourceNodeText, sourceNode, destination) => {
-      let line = this.cm.getLine(destination.line);
+    this.willInsertNode = (cm, sourceNodeText, sourceNode, destination) => {
+      let line = cm.getLine(destination.line);
       if (destination.ch > 0 && line[destination.ch - 1].match(/[\w\d]/)) {
         // previous character is a letter or number, so prefix a space
         sourceNodeText = ' ' + sourceNodeText;
@@ -46,6 +49,10 @@ describe('The CodeMirrorBlocks Class', function() {
         didInsertNode: this.didInsertNode
       }
     );
+  });
+
+  afterEach(function() {
+    document.body.removeChild(document.getElementById('root'));
   });
 
   describe('events,', function() {

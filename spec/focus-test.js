@@ -3,32 +3,33 @@
 import CodeMirrorBlocks from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
-
 import {
   click,
   blur,
   keydown,
 } from './events';
-
-// keycodes
-const DOWN_KEY  = 40;
-const DELETE_KEY=  8;
-const SPACE_KEY = 32;
-const RIGHTBRACE= 221;
+import {
+  DOWN,
+  DELETE,
+  SPACE,
+  RIGHTBRACKET,
+} from 'codemirror-blocks/keycode';
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    document.body.innerHTML = `
-      <textarea id="code"></textarea>
-      <div id="toolbar"></div>
-    `;
+    const fixture = `
+      <div id="root">
+        <textarea id="code"></textarea>
+        <div id="toolbar"></div>
+      </div>`;
+    document.body.insertAdjacentHTML('afterbegin', fixture);
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
-    this.willInsertNode = (sourceNodeText, sourceNode, destination) => {
-      let line = this.cm.getLine(destination.line);
+    this.willInsertNode = (cm, sourceNodeText, sourceNode, destination) => {
+      let line = cm.getLine(destination.line);
       let prev = line[destination.ch - 1] || '\n';
       let next = line[destination.ch] || '\n';
       sourceNodeText = sourceNodeText.trim();
@@ -55,6 +56,10 @@ describe('The CodeMirrorBlocks Class', function() {
     spyOn(this.blocks, 'handleChange').and.callThrough();
     spyOn(this.cm,     'replaceRange').and.callThrough();
   });
+
+  afterEach(function() {
+    document.body.removeChild(document.getElementById("root"));
+  });
   
   describe('focusing,', function() {
     beforeEach(function() {
@@ -70,8 +75,8 @@ describe('The CodeMirrorBlocks Class', function() {
     it('deleting the last node should shift focus to the next-to-last', function(done) {
       this.literal3.el.dispatchEvent(click());
       expect(document.activeElement).toBe(this.literal3.el);
-      this.literal3.el.dispatchEvent(keydown(SPACE_KEY));
-      this.cm.getWrapperElement().dispatchEvent(keydown(DELETE_KEY));
+      this.literal3.el.dispatchEvent(keydown(SPACE));
+      this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
       setTimeout(() => {
         expect(this.cm.getValue()).toBe('(+ 1 2 )');
         expect(this.blocks.focusPath).toBe("0,2");
@@ -82,8 +87,8 @@ describe('The CodeMirrorBlocks Class', function() {
     it('deleting the nth node should shift focus to n+1', function(done) {
       this.literal2.el.dispatchEvent(click());
       expect(document.activeElement).toBe(this.literal2.el);
-      this.literal2.el.dispatchEvent(keydown(SPACE_KEY));
-      this.cm.getWrapperElement().dispatchEvent(keydown(DELETE_KEY));
+      this.literal2.el.dispatchEvent(keydown(SPACE));
+      this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
       setTimeout(() => {
         expect(this.cm.getValue()).toBe('(+ 1  3)');
         expect(this.blocks.focusPath).toBe("0,2");
@@ -93,21 +98,24 @@ describe('The CodeMirrorBlocks Class', function() {
 
     it('deleting the multiple nodes should shift focus to the one after', function(done) {
       this.literal1.el.dispatchEvent(click());            // activate the node,
-      this.literal1.el.dispatchEvent(keydown(SPACE_KEY)); // then select it
-      this.literal1.el.dispatchEvent(keydown(DOWN_KEY, {altKey: true}));
-      this.literal2.el.dispatchEvent(keydown(SPACE_KEY, {altKey: true}));
-      expect(this.blocks.selectedNodes.size).toBe(2);
-      this.cm.getWrapperElement().dispatchEvent(keydown(DELETE_KEY));
+      this.literal1.el.dispatchEvent(keydown(SPACE)); // then select it
+      this.literal1.el.dispatchEvent(keydown(DOWN, {altKey: true}));
+      this.literal2.el.dispatchEvent(keydown(SPACE, {altKey: true}));
       setTimeout(() => {
-        expect(this.cm.getValue()).toBe('(+   3)');
-        expect(this.blocks.focusPath).toBe("0,1");
-        done();  
+        expect(this.blocks.selectedNodes.size).toBe(2);
+        this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
+        setTimeout(() => {
+          expect(this.cm.getValue()).toBe('(+   3)');
+          expect(this.blocks.focusPath).toBe("0,1");
+          done();
+        }, DELAY);
       }, DELAY);
     });
 
+    // TODO: sometimes this test fails because of some reason
     it('inserting a node should put focus on the new node', function(done) {
       this.literal1.el.dispatchEvent(click());
-      this.literal1.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
+      this.literal1.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
       setTimeout(() => {
         let quarantine = document.querySelectorAll('.blocks-editing')[0];
         let selection = window.getSelection();
@@ -122,9 +130,10 @@ describe('The CodeMirrorBlocks Class', function() {
       }, DELAY);
     });
 
+    // TODO: sometimes this test fails because of some reason
     it('inserting mulitple nodes should put focus on the last of the new nodes', function(done) {
       this.literal1.el.dispatchEvent(click());
-      this.literal1.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
+      this.literal1.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
       setTimeout(() => {
         let quarantine = document.querySelectorAll('.blocks-editing')[0];
         let selection = window.getSelection();

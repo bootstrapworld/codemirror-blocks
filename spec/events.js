@@ -19,6 +19,11 @@ export function keypress(keyCode, other={}) {
   Object.assign(event, other);
   return event;
 }
+
+export function pureevent(t) {
+  return new CustomEvent(t, {bubbles: true});
+}
+
 export function dragstart(data={}) {
   let event = new CustomEvent('dragstart', {bubbles: true});
   event.dataTransfer = {
@@ -47,4 +52,18 @@ export function drop(dataTransfer) {
 }
 export function cut() {
   return new CustomEvent('cut', {bubbles: true});
+}
+
+// from https://github.com/facebook/react/issues/10135#issuecomment-314441175
+// endorsed by Dan Abramov
+// https://github.com/facebook/react/issues/11095#issuecomment-334305739
+export function setNativeValue(element, value) {
+  const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
+  const prototype = Object.getPrototypeOf(element);
+  const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+  if (valueSetter && valueSetter !== prototypeValueSetter) {
+    prototypeValueSetter.call(element, value);
+  } else {
+    valueSetter.call(element, value);
+  }
 }

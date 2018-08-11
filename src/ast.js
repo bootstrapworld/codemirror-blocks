@@ -1,8 +1,6 @@
+import {poscmp} from './utils';
 const uuidv4 = require('uuid/v4');
 
-function comparePos(a, b) {
-  return a.line - b.line || a.ch - b.ch;
-}
 // Compute the position of the end of a change (its 'to' property refers to the pre-change end).
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
 function changeEnd({from, to, text}) {
@@ -14,9 +12,9 @@ function changeEnd({from, to, text}) {
 // Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
 function adjustForChange(pos, change, from) {
-  if (comparePos(pos, change.from) < 0)           return pos;
-  if (comparePos(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
-  if (comparePos(pos, change.to) <= 0)            return changeEnd(change);
+  if (poscmp(pos, change.from) < 0)           return pos;
+  if (poscmp(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
+  if (poscmp(pos, change.to) <= 0)            return changeEnd(change);
   let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
   if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
   return {line: line, ch: ch};
@@ -31,8 +29,8 @@ function pathIsIndependentOfChangePath(pathArray, changeArray) {
 }
 
 function posWithinNode(pos, node) {
-  return (comparePos(node.from, pos) <= 0) && (comparePos(node.to, pos) >  0)
-    ||   (comparePos(node.from, pos) <  0) && (comparePos(node.to, pos) >= 0);
+  return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
+    ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);
 }
 
 function nodeCommentContaining(pos, node) {
@@ -52,8 +50,8 @@ export function pluralize(noun, set) {
 function commonSubstring(s1, s2) {
   if(!s1 || !s2) return false;
   let i = 0, len = Math.min(s1.length, s2.length);
-  while(i<len && s1.charAt(i) == s2.charAt(i)){ i++; } 
-  return s1.substring(0, i) || false; 
+  while(i<len && s1.charAt(i) == s2.charAt(i)){ i++; }
+  return s1.substring(0, i) || false;
 }
 
 export const descDepth = 1;
@@ -74,8 +72,6 @@ export class AST {
     this.nodePathMap = new Map();
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
-
-    this.lastNode = null;
     this.annotateNodes();
   }
 
@@ -87,22 +83,28 @@ export class AST {
   // walk through the siblings, assigning aria-* attributes
   // and populating various maps for tree navigation
   annotateNodes(nodes=this.rootNodes, parent=false) {
-    nodes.forEach((node, i) => {
-      node.path = parent? parent.path + (","+i) : i.toString();
-      node["aria-setsize"]  = nodes.length;
-      node["aria-posinset"] = i+1;
-      node["aria-level"]    = 1+(parent? parent.path.split(",").length : 0);
-      if (this.lastNode) {
-        this.nextNodeMap.set(this.lastNode, node);
-        this.prevNodeMap.set(node, this.lastNode);
-      }
-      this.nodeIdMap.set(node.id, node);
-      this.nodePathMap.set(node.path, node);
-      this.lastNode = node;
-      var children = [...node].slice(1); // the first elt is always the parent
-      this.annotateNodes(children, node);
-    });
-  } 
+    let lastNode = null;
+
+    const loop = (nodes, parent) => {
+      nodes.forEach((node, i) => {
+        node.path = parent ? parent.path + ("," + i) : i.toString();
+        node["aria-setsize"]  = nodes.length;
+        node["aria-posinset"] = i + 1;
+        node["aria-level"]    = 1 + (parent ? parent.path.split(",").length : 0);
+        if (lastNode) {
+          this.nextNodeMap.set(lastNode, node);
+          this.prevNodeMap.set(node, lastNode);
+        }
+        this.nodeIdMap.set(node.id, node);
+        this.nodePathMap.set(node.path, node);
+        lastNode = node;
+        const children = [...node].slice(1); // the first elt is always the parent
+        loop(children, node);
+      });
+    };
+
+    loop(nodes, parent);
+  }
 
   // getDirtyRoots : [ChangeObjs] -> Set<ASTNodes>
   // given a list of CM changes, produce a set containing all the dirty roots
@@ -133,23 +135,69 @@ export class AST {
     let n1 = this.getNodeContaining(c1), n2 = this.getNodeContaining(c2);
     if(!n1 || !n2) return false;
     // false positive: an insertion (c1=c2) that touches n.from or n.to
-    if((comparePos(c2, c1) == 0) && ((comparePos(n1.from, c1) == 0) || (comparePos(n1.to, c1) == 0))) {
+    if((poscmp(c2, c1) == 0) && ((poscmp(n1.from, c1) == 0) || (poscmp(n1.to, c1) == 0))) {
       return this.getNodeParent(n1) && this.getNodeParent(n1).path; // Return the parent, if there is one
     }
     return commonSubstring(n1.path, n2.path);
   }
-  // return the next node or false
-  getNodeAfter(selection) {
-    return this.nextNodeMap.get(selection)
-        || this.rootNodes.find(node => comparePos(node.from, selection) >= 0)
-        || false;
+  /**
+   * getNodeAfter : ASTNode -> ASTNode
+   *
+   * Returns the next node or null
+   */
+  getNodeAfter = selection => this.nextNodeMap.get(selection) || null;
+
+  /**
+   * getNodeBefore : ASTNode -> ASTNode
+   *
+   * Returns the previous node or null
+   */
+  getNodeBefore = selection => this.prevNodeMap.get(selection) || null;
+
+  // NOTE: If we have x|y where | indicates the cursor, the position of the cursor
+  // is the same as the position of y's `from`. Hence, going forward requires ">= 0"
+  // while going backward requires "< 0"
+
+  /**
+   * getNodeAfterCur : Cur -> ASTNode
+   *
+   * Returns the next node or null
+   */
+  getNodeAfterCur = cur => this.rootNodes.find(n => poscmp(n.from, cur) >= 0) || null
+
+  /**
+   * getToplevelNodeBeforeCur : Cur -> ASTNode
+   *
+   * Returns the previous toplevel node or null
+   */
+  getToplevelNodeBeforeCur = cur => {
+    return this.reverseRootNodes.find(n => poscmp(n.from, cur) < 0) || null;
   }
-  // return the previous node or false
-  getNodeBefore(selection) {
-    return this.prevNodeMap.get(selection)
-        || this.reverseRootNodes.find(node => comparePos(node.to, selection) <= 0)
-        || false;
+
+  /**
+   * getToplevelNodeAfterCur : Cur -> ASTNode
+   *
+   * Returns the after toplevel node or null
+   */
+  getToplevelNodeAfterCur = this.getNodeAfterCur
+
+  /**
+   * getNodeBeforeCur : Cur -> ASTNode
+   *
+   * Returns the previous node or null
+   */
+  getNodeBeforeCur = cur => {
+    // TODO: this implementation is very inefficient. Once reactify is merged,
+    // we can implement a more efficient version using binary search on an indexing array
+    let result = null;
+    for (const node of this.nodeIdMap.values()) {
+      if (poscmp(node.from, cur) < 0 && (result === null || poscmp(node.from, result.from) >= 0)) {
+        result = node;
+      }
+    }
+    return result;
   }
+
   // return the node containing the cursor, or false
   getNodeContaining(cursor, nodes = this.rootNodes) {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
@@ -157,19 +205,19 @@ export class AST {
   }
   // return an array of nodes that fall bwtween two locations
   getNodesBetween(from, to) {
-    return [...this.nodeIdMap.values()].filter(n => (comparePos(from, n.from) < 1) && (comparePos(to, n.to) > -1));
+    return [...this.nodeIdMap.values()].filter(n => (poscmp(from, n.from) < 1) && (poscmp(to, n.to) > -1));
   }
   // return all the root nodes that contain the given positions, or fall between them
   getRootNodesTouching(start, end, rootNodes=this.rootNodes){
     return rootNodes.filter(node =>
       posWithinNode(start, node) || posWithinNode(end, node) ||
-      ( (comparePos(start, node.from) < 0) && (comparePos(end, node.to) > 0) ));
+      ( (poscmp(start, node.from) < 0) && (poscmp(end, node.to) > 0) ));
   }
   // return the parent or false
-  getNodeParent(node) {
+  getNodeParent = node => {
     let path = node.path.split(",");
     path.pop();
-    return this.nodePathMap.get(path.join(",")) || ""; 
+    return this.nodePathMap.get(path.join(",")) || "";
   }
   // return the first child, if it exists
   getNodeFirstChild(node) {
@@ -189,15 +237,19 @@ export class AST {
     return this.getClosestNodeFromPath(keyArray);
   }
 
-  // getNextMatchingNode : (ASTNode->ASTNode) (ASTNode->Bool) ASTNode -> ASTNode
-  // Consumes a search function, a test function, and a starting ASTNode. 
-  // Calls searchFn(Start) over and over until testFn(Node)==true 
-  getNextMatchingNode(searchFn, testFn, start) {
-    let nextNode = searchFn(start);
-    while (nextNode && testFn(nextNode)) {
-      nextNode = searchFn(nextNode);
+  /**
+   * getNextMatchingNode : (ASTNode->ASTNode?) (ASTNode->Bool) ASTNode [Bool] -> ASTNode?
+   *
+   * Consumes a search function, a test function, and a starting ASTNode.
+   * Calls searchFn over and over until testFn returns false
+   * If inclusive is false, searchFn is applied right away.
+   */
+  getNextMatchingNode(searchFn, testFn, start, inclusive=false) {
+    let node = inclusive ? start : searchFn(start);
+    while (node && testFn(node)) {
+      node = searchFn(node);
     }
-    return nextNode || start;
+    return node;
   }
 }
 
@@ -259,7 +311,7 @@ export class Unknown extends ASTNode {
 
   toDescription(level){
     if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
-    return `an unknown expression with ${pluralize("children", this.elts)} `+ 
+    return `an unknown expression with ${pluralize("children", this.elts)} `+
       this.elts.map((e, i, elts)  => (elts.length>1? (i+1) + ": " : "")+ e.toDescription(level)).join(", ");
   }
 
@@ -285,7 +337,7 @@ export class Expression extends ASTNode {
 
   toDescription(level){
     // if it's the top level, enumerate the args
-    if((this['aria-level'] - level) == 0) { 
+    if((this['aria-level'] - level) == 0) {
       return `applying the function ${this.func.toDescription()} to ${pluralize("argument", this.args)} `+
       this.args.map((a, i, args)  => (args.length>1? (i+1) + ": " : "")+ a.toDescription(level)).join(", ");
     }
@@ -293,7 +345,7 @@ export class Expression extends ASTNode {
     if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
     // if we're in between, use "f of A, B, C" format
     else return `${this.func.toDescription()} of `+ this.args.map(a  => a.toDescription(level)).join(", ");
-      
+
   }
 
   toString() {
@@ -388,7 +440,7 @@ export class LambdaExpression extends ASTNode {
 
   toDescription(level){
     if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
-    return `an anonymous function of ${pluralize("argument", this.args.ids)}: 
+    return `an anonymous function of ${pluralize("argument", this.args.ids)}:
             ${this.args.toDescription(level)}, with body:
             ${this.body.toDescription(level)}`;
   }
@@ -415,7 +467,7 @@ export class FunctionDefinition extends ASTNode {
 
   toDescription(level){
     if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
-    return `define ${this.name} to be a function of 
+    return `define ${this.name} to be a function of
             ${this.params.toDescription(level)}, with body:
             ${this.body.toDescription(level)}`;
   }
@@ -465,7 +517,7 @@ export class CondExpression extends ASTNode {
 
   toDescription(level){
     if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
-    return `a conditional expression with ${pluralize("condition", this.clauses)}: 
+    return `a conditional expression with ${pluralize("condition", this.clauses)}:
             ${this.clauses.map(c => c.toDescription(level))}`;
   }
 
