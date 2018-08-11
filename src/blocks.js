@@ -174,8 +174,20 @@ export default class CodeMirrorBlocks {
       }
     });
 
-    if (this.searchNode) ui.renderSearchInto(this);
+    ui.renderSearchInto(this);
   }
+
+
+  getBeginCursor = () => CodeMirror.Pos(this.cm.firstLine(), 0)
+
+  getEndCursor = () => CodeMirror.Pos(
+    this.cm.lastLine(), this.cm.getLine(this.cm.lastLine()).length
+  )
+
+  getFirstNode = () => this.ast.getNodeAfterCur(this.getBeginCursor());
+
+  getLastNode = () => this.ast.getNodeBeforeCur(this.getEndCursor());
+
 
   on(event, listener) {
     this.events.on(event, listener);
@@ -225,7 +237,7 @@ export default class CodeMirrorBlocks {
       this.wrapper.setAttribute("aria-label", "Block Editor");
       this.say("Switching to Block Mode");
       this.ast = this.parser.parse(this.cm.getValue());
-    } else { 
+    } else {
       this.wrapper.removeAttribute( "role"); 
       this.scroller.removeAttribute("role");
       this.wrapper.setAttribute("aria-label", "Text Editor");
@@ -659,7 +671,7 @@ export default class CodeMirrorBlocks {
     let destTo          = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
     var destPath        = (destinationNode && destinationNode.path) 
                         || this.getPathFromWhitespace(event.target)
-                        || String(this.ast.getNodeBefore(this.cm.coordsChar({left:event.pageX, top:event.pageY})).path || -1);
+                        || String(this.ast.getToplevelNodeBeforeCur(this.cm.coordsChar({left:event.pageX, top:event.pageY})).path || -1);
     destPath = destPath.split(',').map(Number);
 
     // if we're inserting, add 1 to the last child of the path
@@ -764,7 +776,8 @@ export default class CodeMirrorBlocks {
     } else if(dest.line !== undefined){
       literal.to = literal.from = dest;
       // calculate the path for focus (-1 if it's the first node)
-      literal.path = String(this.ast.getNodeBefore(dest).path || -1);
+      const nodeBefore = this.ast.getToplevelNodeBeforeCur(dest);
+      literal.path = String(nodeBefore ? nodeBefore.path : -1);
       let mk = this.cm.setBookmark(dest, {widget: literal.el});
       literal.insertion = mk;
     } else {
@@ -780,15 +793,28 @@ export default class CodeMirrorBlocks {
 
 
   // used to switch focus to the "next" node, based on a search function
-  switchNodes(searchFn, e) {
-    const activeNode = this.getActiveNode();
-    const node = this.ast.getNextMatchingNode(
-      searchFn,
-      this.isNodeHidden,
-      activeNode || this.cm.getCursor()
+  // returns false if it fails to switch, true otherwise.
+  switchNodes(searchFnNode, searchFnCur, e) {
+    let node = this.getActiveNode();
+    let inclusive = false;
+    if (!node) {
+      node = searchFnCur(this.cm.getCursor());
+      if (!node) {
+        // In the context of UP and DOWN key, this might mean the cursor is at the
+        // top of bottom already, so we should do nothing
+        return false;
+      }
+      inclusive = true;
+    }
+    const result = this.ast.getNextMatchingNode(
+      searchFnNode, this.isNodeHidden, node, inclusive
     );
-    if (node === activeNode) playSound(BEEP);
-    this.activateNode(node, e);
+    if (result === null) {
+      playSound(BEEP);
+      return false;
+    }
+    this.activateNode(result, e);
+    return true;
   }
 
   handleKeyDown(event) {
@@ -879,13 +905,13 @@ export default class CodeMirrorBlocks {
     }
     // Go to the last visible node in the tree (depth-first)
     else if (keyName == "End" && activeNode) {
-      let lastExpr = [...this.ast.reverseRootNodes[0]];
-      var lastNode = lastExpr[lastExpr.length-1];
-      if(this.isNodeHidden(lastNode)) {
-        let searchFn = (cur => this.ast.getNodeParent(cur));
-        lastNode = that.ast.getNextMatchingNode(
-          searchFn, that.isNodeHidden, lastNode);
-      }      
+      const lastExpr = [...this.ast.reverseRootNodes[0]];
+      // TODO(Oak): I rewrote this preserving the semantics of the function, but I'm not
+      // convinced that this function is totally functional in the first place.
+      const lastNode = that.ast.getNextMatchingNode(
+        this.ast.getNodeParent, that.isNodeHidden, lastExpr[lastExpr.length - 1], true
+      );
+      if (!lastNode) return;
       this.activateNode(lastNode, event);
     }
     // Shift-Left and Shift-Right toggle global expansion
@@ -907,13 +933,16 @@ export default class CodeMirrorBlocks {
           || playSound(BEEP);
     }
     // Go to next visible node
-    // NOTE(Oak): do we really need an eta-expansion here?
     else if (event.keyCode == DOWN) {
-      this.switchNodes(cur => this.ast.getNodeAfter(cur), event);
+      if (!this.switchNodes(this.ast.getNodeAfter, this.ast.getNodeAfterCur, event)) {
+        return;
+      }
     }
     // Go to previous visible node
     else if (event.keyCode == UP) {
-      this.switchNodes(cur => this.ast.getNodeBefore(cur), event);
+      if (!this.switchNodes(this.ast.getNodeBefore, this.ast.getNodeBeforeCur, event)) {
+        return;
+      }
     } else {
       // Announce undo and redo (or beep if there's nothing)
       if (keyName == CTRLKEY+"-Z" && activeNode) {

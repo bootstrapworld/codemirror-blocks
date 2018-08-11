@@ -7,10 +7,12 @@ import ByString from './searchers/ByString';
 import ByBlock from './searchers/ByBlock';
 
 export function renderSearchInto(blocks) {
-  ReactDOM.render(
-    <Search searchModes={[ByString, ByBlock]} blocks={blocks} />,
-    blocks.searchNode
-  );
+  if (blocks.searchNode) {
+    ReactDOM.render(
+      <Search searchModes={[ByString, ByBlock]} blocks={blocks} />,
+      blocks.searchNode
+    );
+  }
 }
 
 export function renderToolbarInto(blocks) {

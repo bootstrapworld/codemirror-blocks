@@ -65,12 +65,9 @@
     clip: rect(1px, 1px, 1px, 1px);
 }
 
-.CodeMirror {
-    z-index: 0;
-}
-
 .react-modal, .modal-content {
     height: 100%;
+    outline: 0;
 }
 
 .search-input {
@@ -94,4 +91,8 @@
 
 .search-options input {
     margin-right: 5px;
+}
+
+.ReactModal__Overlay {
+    z-index: 1000;
 }

@@ -72,8 +72,6 @@ export class AST {
     this.nodePathMap = new Map();
     this.nextNodeMap = new WeakMap();
     this.prevNodeMap = new WeakMap();
-
-    this.lastNode = null;
     this.annotateNodes();
   }
 
@@ -85,22 +83,28 @@ export class AST {
   // walk through the siblings, assigning aria-* attributes
   // and populating various maps for tree navigation
   annotateNodes(nodes=this.rootNodes, parent=false) {
-    nodes.forEach((node, i) => {
-      node.path = parent? parent.path + (","+i) : i.toString();
-      node["aria-setsize"]  = nodes.length;
-      node["aria-posinset"] = i+1;
-      node["aria-level"]    = 1+(parent? parent.path.split(",").length : 0);
-      if (this.lastNode) {
-        this.nextNodeMap.set(this.lastNode, node);
-        this.prevNodeMap.set(node, this.lastNode);
-      }
-      this.nodeIdMap.set(node.id, node);
-      this.nodePathMap.set(node.path, node);
-      this.lastNode = node;
-      var children = [...node].slice(1); // the first elt is always the parent
-      this.annotateNodes(children, node);
-    });
-  } 
+    let lastNode = null;
+
+    const loop = (nodes, parent) => {
+      nodes.forEach((node, i) => {
+        node.path = parent ? parent.path + ("," + i) : i.toString();
+        node["aria-setsize"]  = nodes.length;
+        node["aria-posinset"] = i + 1;
+        node["aria-level"]    = 1 + (parent ? parent.path.split(",").length : 0);
+        if (lastNode) {
+          this.nextNodeMap.set(lastNode, node);
+          this.prevNodeMap.set(node, lastNode);
+        }
+        this.nodeIdMap.set(node.id, node);
+        this.nodePathMap.set(node.path, node);
+        lastNode = node;
+        const children = [...node].slice(1); // the first elt is always the parent
+        loop(children, node);
+      });
+    };
+
+    loop(nodes, parent);
+  }
 
   // patch : Parser, String, [ChangeObjs] -> AST
   // FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
@@ -187,18 +191,64 @@ export class AST {
     }
     return commonSubstring(n1.path, n2.path);
   }
-  // return the next node or false
-  getNodeAfter = selection => (
-    this.nextNodeMap.get(selection)
-      || this.rootNodes.find(node => poscmp(node.from, selection) >= 0)
-      || false
-  )
-  // return the previous node or false
-  getNodeBefore = selection => (
-    this.prevNodeMap.get(selection)
-      || this.reverseRootNodes.find(node => poscmp(node.to, selection) <= 0)
-      || false
-  )
+  /**
+   * getNodeAfter : ASTNode -> ASTNode
+   *
+   * Returns the next node or null
+   */
+  getNodeAfter = selection => this.nextNodeMap.get(selection) || null;
+
+  /**
+   * getNodeBefore : ASTNode -> ASTNode
+   *
+   * Returns the previous node or null
+   */
+  getNodeBefore = selection => this.prevNodeMap.get(selection) || null;
+
+  // NOTE: If we have x|y where | indicates the cursor, the position of the cursor
+  // is the same as the position of y's `from`. Hence, going forward requires ">= 0"
+  // while going backward requires "< 0"
+
+  /**
+   * getNodeAfterCur : Cur -> ASTNode
+   *
+   * Returns the next node or null
+   */
+  getNodeAfterCur = cur => this.rootNodes.find(n => poscmp(n.from, cur) >= 0) || null
+
+  /**
+   * getToplevelNodeBeforeCur : Cur -> ASTNode
+   *
+   * Returns the previous toplevel node or null
+   */
+  getToplevelNodeBeforeCur = cur => {
+    return this.reverseRootNodes.find(n => poscmp(n.from, cur) < 0) || null;
+  }
+
+  /**
+   * getToplevelNodeAfterCur : Cur -> ASTNode
+   *
+   * Returns the after toplevel node or null
+   */
+  getToplevelNodeAfterCur = this.getNodeAfterCur
+
+  /**
+   * getNodeBeforeCur : Cur -> ASTNode
+   *
+   * Returns the previous node or null
+   */
+  getNodeBeforeCur = cur => {
+    // TODO: this implementation is very inefficient. Once reactify is merged,
+    // we can implement a more efficient version using binary search on an indexing array
+    let result = null;
+    for (const node of this.nodeIdMap.values()) {
+      if (poscmp(node.from, cur) < 0 && (result === null || poscmp(node.from, result.from) >= 0)) {
+        result = node;
+      }
+    }
+    return result;
+  }
+
   // return the node containing the cursor, or false
   getNodeContaining(cursor, nodes = this.rootNodes) {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
@@ -215,10 +265,10 @@ export class AST {
       ( (poscmp(start, node.from) < 0) && (poscmp(end, node.to) > 0) ));
   }
   // return the parent or false
-  getNodeParent(node) {
+  getNodeParent = node => {
     let path = node.path.split(",");
     path.pop();
-    return this.nodePathMap.get(path.join(",")) || ""; 
+    return this.nodePathMap.get(path.join(",")) || "";
   }
   // return the first child, if it exists
   getNodeFirstChild(node) {
@@ -238,15 +288,19 @@ export class AST {
     return this.getClosestNodeFromPath(keyArray);
   }
 
-  // getNextMatchingNode : (ASTNode->ASTNode) (ASTNode->Bool) ASTNode -> ASTNode
-  // Consumes a search function, a test function, and a starting ASTNode. 
-  // Calls searchFn(Start) over and over until testFn(Node)==true 
-  getNextMatchingNode(searchFn, testFn, start) {
-    let nextNode = searchFn(start);
-    while (nextNode && testFn(nextNode)) {
-      nextNode = searchFn(nextNode);
+  /**
+   * getNextMatchingNode : (ASTNode->ASTNode?) (ASTNode->Bool) ASTNode [Bool] -> ASTNode?
+   *
+   * Consumes a search function, a test function, and a starting ASTNode.
+   * Calls searchFn over and over until testFn returns false
+   * If inclusive is false, searchFn is applied right away.
+   */
+  getNextMatchingNode(searchFn, testFn, start, inclusive=false) {
+    let node = inclusive ? start : searchFn(start);
+    while (node && testFn(node)) {
+      node = searchFn(node);
     }
-    return nextNode || start;
+    return node;
   }
 }
 

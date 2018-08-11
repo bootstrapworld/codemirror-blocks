@@ -30,16 +30,15 @@ import {
   HOME,
   END,
   ESC,
-  LEFTBRACE,
-  RIGHTBRACE,
+  LEFTBRACKET,
+  RIGHTBRACKET,
   ISMAC,
   DKEY,
-  ONEKEY,
-  TAB,
-  PGUP,
   PGDN,
   F3,
 } from 'codemirror-blocks/keycode';
+
+import {wait} from './test-utils';
 
 const TOGGLE_SELECTION_KEYPRESS =
       keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
@@ -51,15 +50,8 @@ const PRESERVE_PREV_KEYPRESS =
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
 
-function removeEventListeners() {
-  const oldElem = document.body;
-  const newElem = oldElem.cloneNode(true);
-  oldElem.parentNode.replaceChild(newElem, oldElem);
-}
-
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    removeEventListeners();
     document.body.innerHTML = `
       <textarea id="code"></textarea>
       <div id="toolbar"></div>
@@ -335,16 +327,13 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
 
-      it('should not delete active nodes when the delete key is pressed', function(done) {
+      it('should not delete active nodes when the delete key is pressed', async function() {
         expect(this.cm.getValue()).toBe('11 54');
         this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
-        setTimeout(() => {
-          expect(this.cm.getValue()).toBe('11 54');
-          done();
-        }, DELAY);
-
+        await wait(DELAY);
+        expect(this.cm.getValue()).toBe('11 54');
       });
 
       it('should activate the first node when down is pressed', function() {
@@ -377,25 +366,20 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
       });
 
-      it('should toggle the editability of activated node when Enter is pressed', function(done) {
+      it('should toggle the editability of activated node when Enter is pressed', async function() {
         this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER));
-        setTimeout(() => {
-          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done();
-        }, DELAY);
-
+        await wait(DELAY);
+        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
       });
 
-      it('should cancel the editability of activated node when Esc is pressed', function(done) {
+      it('should cancel the editability of activated node when Esc is pressed', async function() {
         this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER));
-        setTimeout(() => {
-          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done();
-        }, DELAY);
+        await wait(DELAY);
+        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
         this.literal.el.dispatchEvent(keydown(DKEY));
         this.literal.el.dispatchEvent(keydown(ESC));
         expect(this.cm.getValue()).toBe('11 54');
@@ -408,27 +392,23 @@ describe('The CodeMirrorBlocks Class', function() {
           spyOn(document, 'execCommand');
         });
 
-        it('should remove selected nodes on cut', function(done) {
+        it('should remove selected nodes on cut', async function() {
           document.dispatchEvent(cut());
-          setTimeout(() => {
-            expect(this.cm.getValue()).toBe(' 54');
-            expect(document.execCommand).toHaveBeenCalledWith('cut');
-            expect(this.blocks.getActiveNode()).toBe(this.blocks.ast.rootNodes[0]); // focus should shift
-            done();
-          }, DELAY);
+          await wait(DELAY);
+          expect(this.cm.getValue()).toBe(' 54');
+          expect(document.execCommand).toHaveBeenCalledWith('cut');
+          expect(this.blocks.getActiveNode()).toBe(this.blocks.ast.rootNodes[0]); // focus should shift
         });
 
-        it('should remove multiple selected nodes on cut', function(done) {
+        it('should remove multiple selected nodes on cut', async function() {
           this.literal.el.dispatchEvent(PRESERVE_NEXT_KEYPRESS);
           this.literal2.el.dispatchEvent(TOGGLE_SELECTION_KEYPRESS);
           expect(this.blocks.selectedNodes.size).toBe(2);
           document.dispatchEvent(cut());
-          setTimeout(() => {
-            expect(this.blocks.selectedNodes.size).toBe(0);
-            expect(this.cm.getValue()).toBe(' ');
-            expect(document.execCommand).toHaveBeenCalledWith('cut');
-            done();
-          }, DELAY);
+          await wait(DELAY);
+          expect(this.blocks.selectedNodes.size).toBe(0);
+          expect(this.cm.getValue()).toBe(' ');
+          expect(document.execCommand).toHaveBeenCalledWith('cut');
         });
 
         xit('should create an activeElement with the text to be copied', function() {
@@ -585,64 +565,54 @@ describe('The CodeMirrorBlocks Class', function() {
       });
     });
 
-    it('should begin editing a node on double click', function(done) {
+    it('should begin editing a node on double click', async function() {
       this.literal.el.dispatchEvent(dblclick());
-      setTimeout(() => {
-        expect(document.activeElement.classList).toContain('blocks-editing');
-        expect(document.activeElement.contentEditable).toBe('true');
-        done();
-      }, DELAY);
+      await wait(DELAY);
+      expect(document.activeElement.classList).toContain('blocks-editing');
+      expect(document.activeElement.contentEditable).toBe('true');
     });
 
-    it('should save a valid, edited node on blur', function(done) {
+    it('should save a valid, edited node on blur', async function() {
       this.literal.el.dispatchEvent(dblclick());
-      setTimeout(() => {
+      await wait(DELAY);
+      let selection = window.getSelection();
+      expect(selection.rangeCount).toEqual(1);
+      let range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(document.createTextNode('9'));
+      expect(this.cm.getValue()).toEqual('11');
+      document.activeElement.dispatchEvent(blur());
+      expect(this.cm.getValue()).toEqual('9');
+      expect(this.blocks.hasInvalidEdit).toBe(false);
+    });
+
+    it('should return the node being edited on esc', async function() {
+      this.literal.el.dispatchEvent(dblclick());
+      await wait(DELAY);
+      let quarantine = document.activeElement;
+      quarantine.dispatchEvent(keydown(ESC));
+      expect(this.cm.getValue()).toEqual('11');
+    });
+
+    it('should blur the node being edited on enter', async function() {
+      this.literal.el.dispatchEvent(dblclick());
+      await wait(DELAY);
+      let quarantine = document.activeElement;
+      spyOn(quarantine, 'blur');
+      quarantine.dispatchEvent(keydown(ENTER));
+      expect(quarantine.blur).toHaveBeenCalled();
+    });
+
+    describe('when "saving" bad inputs,', function() {
+      beforeEach(async function() {
+        this.literal.el.dispatchEvent(dblclick());
+        await wait(DELAY);
         let selection = window.getSelection();
         expect(selection.rangeCount).toEqual(1);
         let range = selection.getRangeAt(0);
         range.deleteContents();
-        range.insertNode(document.createTextNode('9'));
-        expect(this.cm.getValue()).toEqual('11');
+        range.insertNode(document.createTextNode('"moo'));
         document.activeElement.dispatchEvent(blur());
-        expect(this.cm.getValue()).toEqual('9');
-        expect(this.blocks.hasInvalidEdit).toBe(false);
-        done();
-      }, DELAY);
-    });
-
-    it('should return the node being edited on esc', function(done) {
-      this.literal.el.dispatchEvent(dblclick());
-      setTimeout(() => {
-        let quarantine = document.activeElement;
-        quarantine.dispatchEvent(keydown(ESC));
-        expect(this.cm.getValue()).toEqual('11');
-        done();
-      }, DELAY);
-    });
-
-    it('should blur the node being edited on enter', function(done) {
-      this.literal.el.dispatchEvent(dblclick());
-      setTimeout(() => {
-        let quarantine = document.activeElement;
-        spyOn(quarantine, 'blur');
-        quarantine.dispatchEvent(keydown(ENTER));
-        expect(quarantine.blur).toHaveBeenCalled();
-        done();
-      }, DELAY);
-    });
-
-    describe('when "saving" bad inputs,', function() {
-      beforeEach(function(done) {
-        this.literal.el.dispatchEvent(dblclick());
-        setTimeout(() => {
-          let selection = window.getSelection();
-          expect(selection.rangeCount).toEqual(1);
-          let range = selection.getRangeAt(0);
-          range.deleteContents();
-          range.insertNode(document.createTextNode('"moo'));
-          document.activeElement.dispatchEvent(blur());
-          done();
-        }, DELAY);
       });
 
       it('should not save anything & set all error state', function() {
@@ -665,7 +635,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-[ should jump to the left of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
-        this.firstRoot.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
+        this.firstRoot.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
         let cursor = this.cm.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(0);
@@ -673,45 +643,37 @@ describe('The CodeMirrorBlocks Class', function() {
 
       it('Ctrl-] should jump to the right of a top-level node', function() {
         this.firstRoot.el.dispatchEvent(click());
-        this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
+        this.firstRoot.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
         let cursor = this.cm.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(7);
       });
 
-      it('Ctrl-[ should activate a quarantine to the left', function(done) {
+      it('Ctrl-[ should activate a quarantine to the left', async function() {
         this.firstArg.el.dispatchEvent(click());
-        this.firstArg.el.dispatchEvent(keydown(LEFTBRACE, {ctrlKey: true}));
-        setTimeout(() => {
-          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done();
-        }, DELAY);
+        this.firstArg.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
+        await wait(DELAY);
+        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
       });
 
-      it('Ctrl-] should activate a quarantine to the right', function(done) {
+      it('Ctrl-] should activate a quarantine to the right', async function() {
         this.firstArg.el.dispatchEvent(click());
-        this.firstArg.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
-        setTimeout(() => {
-          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done();
-        }, DELAY);
+        this.firstArg.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
+        await wait(DELAY);
+        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
       });
 
-      it('Ctrl-] should activate a quarantine in the first arg position', function(done) {
+      it('Ctrl-] should activate a quarantine in the first arg position', async function() {
         this.blank.func.el.dispatchEvent(click());
-        this.blank.func.el.dispatchEvent(keydown(RIGHTBRACE, {ctrlKey: true}));
-        setTimeout(() => {
-          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done();
-        }, DELAY);
+        this.blank.func.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
+        await wait(DELAY);
+        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
       });
 
-      it('should activate a quarantine on dblclick', function(done) {
+      it('should activate a quarantine on dblclick', async function() {
         this.whiteSpaceEl.dispatchEvent(dblclick());
-        setTimeout(() => {
-          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
-          done();
-        }, DELAY);
+        await wait(DELAY);
+        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
       });
 
       describe('and specifically when editing it,', function() {
@@ -746,26 +708,22 @@ describe('The CodeMirrorBlocks Class', function() {
           }, DELAY);
         });
         */
-        it('should blur whitespace you are editing on enter', function(done) {
+        it('should blur whitespace you are editing on enter', async function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
-          setTimeout(() => {
-            document.activeElement.dispatchEvent(keydown(ENTER));
-            expect(this.trackHandleChange).toHaveBeenCalled();
-            done();
-          }, DELAY);
+          await wait(DELAY);
+          document.activeElement.dispatchEvent(keydown(ENTER));
+          expect(this.trackHandleChange).toHaveBeenCalled();
         });
 
         describe('when "saving" bad whitepspace inputs,', function() {
-          beforeEach(function(done) {
+          beforeEach(async function() {
             this.whiteSpaceEl.dispatchEvent(dblclick());
-            setTimeout(() => {
-              this.quarantineNode = this.trackQuarantine.calls.mostRecent().returnValue;
-              this.quarantineEl = this.quarantineNode.el;
-              expect(this.trackEditLiteral).toHaveBeenCalledWith(this.quarantineNode);
-              this.quarantineEl.appendChild(document.createTextNode('"moo'));
-              this.quarantineEl.dispatchEvent(blur());
-              done();
-            }, DELAY);
+            await wait(DELAY);
+            this.quarantineNode = this.trackQuarantine.calls.mostRecent().returnValue;
+            this.quarantineEl = this.quarantineNode.el;
+            expect(this.trackEditLiteral).toHaveBeenCalledWith(this.quarantineNode);
+            this.quarantineEl.appendChild(document.createTextNode('"moo'));
+            this.quarantineEl.dispatchEvent(blur());
           });
 
           /*
@@ -891,131 +849,6 @@ describe('The CodeMirrorBlocks Class', function() {
         dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
         nodeEl.parentElement.dispatchEvent(dropEvent);
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
-      });
-    });
-
-
-    describe('when using Search Mode,', function() {
-      beforeEach(function(done) {
-        this.cm.setValue('0 1 2 1 (+ 1 2)');
-        this.nomatch1 = this.blocks.ast.rootNodes[0];
-        this.match1 = this.blocks.ast.rootNodes[1];
-        this.nomatch2 = this.blocks.ast.rootNodes[2];
-        this.match2 = this.blocks.ast.rootNodes[3];
-        this.match3 = this.blocks.ast.rootNodes[4].args[0];
-
-        this.nomatch1.el.dispatchEvent(click());
-        this.nomatch1.el.dispatchEvent(keydown(F3));
-        setTimeout(() => {
-          const searchBox = document.querySelector('.search-input');
-          setNativeValue(searchBox, "1");
-          searchBox.dispatchEvent(pureevent('input'));
-          const close = document.querySelector('.wrapper-modal .close');
-          close.dispatchEvent(click());
-          setTimeout(done, DELAY);
-        }, DELAY);
-      });
-
-      it('should stay where it is initially', function(done) {
-        expect(this.blocks.getActiveNode()).toBe(this.nomatch1);
-        expect(document.activeElement).toBe(this.nomatch1.el);
-        done();
-      });
-
-      it('should find next match, skipping a non-matching literal', function(done) {
-        this.match1.el.dispatchEvent(click());
-        this.match1.el.dispatchEvent(keydown(PGDN));
-        setTimeout(() => {
-          expect(this.blocks.getActiveNode()).toBe(this.match2);
-          expect(document.activeElement).toBe(this.match2.el);
-          done();
-        }, DELAY);
-      });
-
-      it('should wrap around to beginning of document for find-next', function(done) {
-        this.match3.el.dispatchEvent(click());
-        this.match3.el.dispatchEvent(keydown(PGDN));
-        setTimeout(() => {
-          expect(this.blocks.getActiveNode()).toBe(this.match1);
-          expect(document.activeElement).toBe(this.match1.el);
-          done();
-        }, DELAY);
-      });
-
-      it('should wrap around to end of document for find-previous', function(done) {
-        this.match1.el.dispatchEvent(click());
-        this.match1.el.dispatchEvent(keydown(PGUP));
-        setTimeout(() => {
-          expect(this.blocks.getActiveNode()).toBe(this.match3);
-          expect(document.activeElement).toBe(this.match3.el);
-          done();
-        }, DELAY);
-      });
-    });
-
-    describe('when using advanced search mode,', function() {
-      beforeEach(function(done) {
-        this.cm.setValue('(hello 1 (hell) 2 (Hello) 3 (fall))');
-        this.hello = this.blocks.ast.rootNodes[0].func;
-        this.hell = this.blocks.ast.rootNodes[0].args[1].func;
-        this.Hello = this.blocks.ast.rootNodes[0].args[3].func;
-        this.fall = this.blocks.ast.rootNodes[0].args[5].func;
-
-        this.hello.el.dispatchEvent(click());
-        this.hello.el.dispatchEvent(keydown(F3));
-        setTimeout(() => {
-          const searchBox = document.querySelector('.search-input');
-          setNativeValue(searchBox, "hell");
-          searchBox.dispatchEvent(pureevent('input'));
-          const close = document.querySelector('.wrapper-modal .close');
-          close.dispatchEvent(click());
-          setTimeout(done, DELAY);
-        }, DELAY);
-      });
-
-      it('should be case insensitive by default', function(done) {
-        this.hello.el.dispatchEvent(keydown(PGDN));
-        setTimeout(() => {
-          expect(this.blocks.getActiveNode()).toBe(this.hell);
-          expect(document.activeElement).toBe(this.hell.el);
-
-          this.hell.el.dispatchEvent(keydown(PGDN));
-          setTimeout(() => {
-            expect(this.blocks.getActiveNode()).toBe(this.Hello);
-            expect(document.activeElement).toBe(this.Hello.el);
-
-            this.Hello.el.dispatchEvent(keydown(PGDN));
-            setTimeout(() => {
-              expect(this.blocks.getActiveNode()).toBe(this.hello);
-              expect(document.activeElement).toBe(this.hello.el);
-              done();
-            }, DELAY);
-          });
-        }, DELAY);
-      });
-
-      it('should be able to use case sensitive mode', function(done) {
-        this.hello.el.dispatchEvent(keydown(F3));
-        setTimeout(() => {
-          const ignoreCase = document.querySelector('input[name="isIgnoreCase"]');
-          ignoreCase.dispatchEvent(click());
-          const close = document.querySelector('.wrapper-modal .close');
-          close.dispatchEvent(click());
-          setTimeout(() => {
-            this.hello.el.dispatchEvent(keydown(PGDN));
-            setTimeout(() => {
-              expect(this.blocks.getActiveNode()).toBe(this.hell);
-              expect(document.activeElement).toBe(this.hell.el);
-
-              this.hell.el.dispatchEvent(keydown(PGDN));
-              setTimeout(() => {
-                expect(this.blocks.getActiveNode()).toBe(this.hello);
-                expect(document.activeElement).toBe(this.hello.el);
-                done();
-              }, DELAY);
-            }, DELAY);
-          }, DELAY);
-        }, DELAY);
       });
     });
   });
