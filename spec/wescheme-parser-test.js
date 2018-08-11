@@ -21,7 +21,10 @@ function keydown(keyCode, other={}) {
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    document.body.innerHTML = '<textarea id="code"></textarea>';
+    const fixture = `<div id="root">
+      <textarea id="code"></textarea>
+    </div>`;
+    document.body.insertAdjacentHTML('afterbegin', fixture);
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new WeschemeParser();
     this.willInsertNode = (cm, sourceNodeText, sourceNode, destination) => {
@@ -46,6 +49,10 @@ describe('The CodeMirrorBlocks Class', function() {
         didInsertNode: this.didInsertNode
       }
     );
+  });
+
+  afterEach(function() {
+    document.body.removeChild(document.getElementById('root'));
   });
 
   describe('events,', function() {

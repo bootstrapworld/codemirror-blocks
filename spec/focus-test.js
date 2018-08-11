@@ -20,10 +20,12 @@ const DELAY = 750;
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    document.body.innerHTML = `
-      <textarea id="code"></textarea>
-      <div id="toolbar"></div>
-    `;
+    const fixture = `
+      <div id="root">
+        <textarea id="code"></textarea>
+        <div id="toolbar"></div>
+      </div>`;
+    document.body.insertAdjacentHTML('afterbegin', fixture);
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
     this.willInsertNode = (cm, sourceNodeText, sourceNode, destination) => {
@@ -53,6 +55,10 @@ describe('The CodeMirrorBlocks Class', function() {
     spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
     spyOn(this.blocks, 'handleChange').and.callThrough();
     spyOn(this.cm,     'replaceRange').and.callThrough();
+  });
+
+  afterEach(function() {
+    document.body.removeChild(document.getElementById("root"));
   });
   
   describe('focusing,', function() {

@@ -5,10 +5,17 @@ import {Comment} from 'codemirror-blocks/ast';
 
 describe('The render module,', function() {
   beforeEach(function() {
-    document.body.innerHTML = '<textarea id="code"></textarea>';
+    const fixture = `<div id="root">
+      <textarea id="code"></textarea>
+    </div>`;
+    document.body.insertAdjacentHTML('afterbegin', fixture);
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
     this.renderer = new Renderer(this.cm);
+  });
+
+  afterEach(function() {
+    document.body.removeChild(document.getElementById('root'));
   });
 
   describe('when rendering a literal,', function() {
