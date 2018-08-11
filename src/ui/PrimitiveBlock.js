@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
+import Renderer from '../Renderer';
 import {Primitive} from '../parsers/primitives';
 import {RendererContext} from './Context';
 import './PrimitiveBlock.less';
@@ -9,7 +10,7 @@ export class BaseRenderedBlockNode extends Component {
   static propTypes = {
     node: PropTypes.instanceOf(ASTNode),
     text: PropTypes.string,
-    renderer: PropTypes.object.isRequired,
+    renderer: PropTypes.instanceOf(Renderer).isRequired,
   }
 
   static defaultProps = {

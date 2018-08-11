@@ -14,8 +14,8 @@ export class Primitive extends Component {
   }
 
   render() {
-    const {primitive, className, onClick} = this.props;
-    const astNode = primitive.getLiteralNode();
+    var {primitive, className, onClick} = this.props;
+    let astNode = primitive.getLiteralNode();
     return (
       <li className={classNames(className, "Primitive list-group-item")} onClick={onClick}>
         <RenderedBlockNode node={astNode} text={primitive.name} />

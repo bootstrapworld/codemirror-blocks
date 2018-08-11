@@ -1,9 +1,9 @@
 import React from 'react';
 import TestUtils from 'react-dom/test-utils';
 import {Literal} from 'codemirror-blocks/ast';
+import Renderer from 'codemirror-blocks/Renderer';
 import {dragstart} from '../events';
 import {Primitive} from 'codemirror-blocks/parsers/primitives';
-import Renderer from 'codemirror-blocks/Renderer';
 import {RendererContext} from 'codemirror-blocks/ui/Context';
 import _PrimitiveBlock, {BaseRenderedBlockNode} from 'codemirror-blocks/ui/PrimitiveBlock';
 
