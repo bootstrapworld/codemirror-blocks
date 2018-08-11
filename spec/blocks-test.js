@@ -15,8 +15,6 @@ import {
   dragleave,
   drop,
   cut,
-  pureevent,
-  setNativeValue,
 } from './events';
 
 import {
@@ -34,8 +32,6 @@ import {
   RIGHTBRACKET,
   ISMAC,
   DKEY,
-  PGDN,
-  F3,
 } from 'codemirror-blocks/keycode';
 
 import {wait} from './test-utils';
@@ -52,11 +48,13 @@ const DELAY = 750;
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    document.body.innerHTML = `
-      <textarea id="code"></textarea>
-      <div id="toolbar"></div>
-      <div id="search"></div>
+    const fixture = `
+      <div id="root">
+        <textarea id="code"></textarea>
+        <div id="toolbar"></div>
+      </div>
     `;
+    document.body.insertAdjacentHTML('afterbegin', fixture);
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
     this.parser = new ExampleParser();
     this.willInsertNode = (cm, sourceNodeText, sourceNode, destination) => {
@@ -78,7 +76,6 @@ describe('The CodeMirrorBlocks Class', function() {
       this.cm,
       this.parser,
       {
-        search: document.getElementById('search'),
         willInsertNode: this.willInsertNode,
         didInsertNode: this.didInsertNode,
         toolbar: document.getElementById('toolbar')
@@ -91,6 +88,10 @@ describe('The CodeMirrorBlocks Class', function() {
     this.trackSaveEdit     = spyOn(this.blocks,            'saveEdit').and.callThrough();
     this.trackCommitChange = spyOn(this.blocks,        'commitChange').and.callThrough();
     this.trackWillInsertNode=spyOn(this.blocks,      'willInsertNode').and.callThrough();
+  });
+
+  afterEach(function() {
+    document.body.removeChild(document.getElementById('root'));
   });
 
 

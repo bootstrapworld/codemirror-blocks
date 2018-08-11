@@ -23,7 +23,9 @@ const DELAY = 750;
 
 describe('Search component', function() {
   beforeEach(async function() {
-    document.body.innerHTML = `<div id="root"></div>`;
+    const fixture = `<div id="root"></div>`;
+    document.body.insertAdjacentHTML('afterbegin', fixture);
+
     this.root = document.getElementById("root");
     this.editor = ReactDOM.render(
       <Editor language="example" cmOptions={{value: ''}} />,
@@ -35,8 +37,10 @@ describe('Search component', function() {
     this.blocks.setBlockMode(true);
   });
 
-  afterEach(function() {
+  afterEach(async function() {
     ReactDOM.unmountComponentAtNode(document.getElementById("root"));
+    await wait(DELAY);
+    document.body.removeChild(document.getElementById('root'));
   });
 
   describe('Basic search', function() {

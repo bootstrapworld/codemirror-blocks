@@ -9,6 +9,9 @@ import {EVENT_DRAG_START, EVENT_DRAG_END} from 'codemirror-blocks/blocks';
 
 describe('The Editor component,', function() {
   beforeEach(function() {
+    // do we need to clean up? https://github.com/facebook/react/issues/10330
+    // seems to suggest that we don't need to, but be aware that if tests are
+    // brittle, it might come from improper clean up
     this.editor = TestUtils.renderIntoDocument(<Editor language="wescheme" />);
     this.blocks = this.editor.getCodeMirrorBlocks();
     this.blocks.setBlockMode(true);
