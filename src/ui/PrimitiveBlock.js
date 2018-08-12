@@ -3,37 +3,30 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import Renderer from '../Renderer';
 import {Primitive} from '../parsers/primitives';
+import {RendererContext} from './Context';
+import './PrimitiveBlock.less';
 
-require('./PrimitiveBlock.less');
-
-export class RenderedBlockNode extends Component {
-  static contextTypes = {
-    renderer: PropTypes.instanceOf(Renderer).isRequired,
-  }
-
+export class BaseRenderedBlockNode extends Component {
   static propTypes = {
     node: PropTypes.instanceOf(ASTNode),
     text: PropTypes.string,
+    renderer: PropTypes.instanceOf(Renderer).isRequired,
   }
 
   static defaultProps = {
     node: null,
     text: '',
-    renderer: null,
   }
 
   componentDidMount() {
     if (this.root) {
       let el = this.root;
       el.firstChild.draggable = true;
-      el.firstChild.addEventListener(
-        'dragstart',
-        this.onDragStart.bind(this)
-      );
+      el.firstChild.addEventListener('dragstart', this.onDragStart);
     }
   }
 
-  onDragStart(event) {
+  onDragStart = event => {
     let node = this.props.node;
     let text = this.props.text;
 
@@ -56,7 +49,7 @@ export class RenderedBlockNode extends Component {
 
     // Add dataTransfer information:
     if (node) {
-      event.dataTransfer.setData('text/plain', this.context.renderer.printASTNode(node));
+      event.dataTransfer.setData('text/plain', this.props.renderer.printASTNode(node));
       event.dataTransfer.setData('text/id', node.id);
     } else if (text) {
       event.dataTransfer.setData('text/plain', text);
@@ -67,7 +60,7 @@ export class RenderedBlockNode extends Component {
     if (this.props.node) {
       return (
         <span className="RenderedBlockNode" ref={root => this.root = root}>
-          {this.context.renderer.renderNodeForReact(this.props.node)}
+          {this.props.renderer.renderNodeForReact(this.props.node)}
         </span>
       );
     } else {
@@ -77,6 +70,16 @@ export class RenderedBlockNode extends Component {
         </span>
       );
     }
+  }
+}
+
+export class RenderedBlockNode extends Component {
+  render() {
+    return (
+      <RendererContext.Consumer>
+        {renderer => <BaseRenderedBlockNode renderer={renderer} {...this.props} />}
+      </RendererContext.Consumer>
+    );
   }
 }
 

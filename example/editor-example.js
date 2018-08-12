@@ -18,6 +18,11 @@ const exampleCodes = {
   lambda: "2",
 };
 
+const cmOptions = {
+  lineNumbers: true,
+  viewportMargin: 10,
+};
+
 const options = {
   renderOptions: {
     lockNodesOfType: ['comment', 'functionDef', 'variableDef', 'struct']
@@ -44,13 +49,6 @@ class EditorInstance extends React.Component {
     this.state = {language: 'wescheme'};
   }
 
-  getCmOptions() {
-    return {
-      value: exampleCodes[this.state.language],
-      lineNumbers: true,
-      viewportMargin: 10,
-    };
-  }
 
   handleChange = event => {
     this.ref.current.getCodeMirror().doc.clearHistory();
@@ -71,8 +69,9 @@ class EditorInstance extends React.Component {
         </select>
         <Editor ref={this.ref}
                 language={this.state.language}
+                value={exampleCodes[this.state.language]}
                 options={options}
-                cmOptions={this.getCmOptions()} />
+                cmOptions={cmOptions} />
       </React.Fragment>
     );
   }

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Returns a query from settings. If the query is a regex but is invalid (indicating
@@ -41,7 +42,7 @@ function hasMatch(state, blocks) {
 }
 
 function ByString({state, handleChange, blocks}) {
-  function SearchOption({name, value, init}) {
+  function SearchOption({name, value}) {
     return (
       <label>
         <input type="checkbox" name={name} onChange={handleChange}
@@ -50,6 +51,11 @@ function ByString({state, handleChange, blocks}) {
       </label>
     );
   }
+  SearchOption.propTypes = {
+    name: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired,
+  };
+
   const searchBoxClass = hasMatch(state, blocks) ? '' : 'has-error';
   return (
     <React.Fragment>
@@ -67,6 +73,17 @@ function ByString({state, handleChange, blocks}) {
     </React.Fragment>
   );
 }
+
+ByString.propTypes = {
+  state: PropTypes.shape({
+    searchString: PropTypes.string.isRequired,
+    isRegex: PropTypes.bool.isRequired,
+    isExactMatch: PropTypes.bool.isRequired,
+    isIgnoreCase: PropTypes.bool.isRequired,
+  }),
+  handleChange: PropTypes.func.isRequired,
+  blocks: PropTypes.object.isRequired,
+};
 
 export default {
   label: 'Search by string',
@@ -118,7 +135,8 @@ export default {
     const query = getQueryFromSettings(state);
 
     function next(searchCursor) {
-      return (searchCursor.find(!forward), searchCursor);
+      searchCursor.find(!forward);
+      return searchCursor;
     }
     function getSearchCursor(query, cur, options) {
       // we need to activate next right away so that we have the `from` field.
