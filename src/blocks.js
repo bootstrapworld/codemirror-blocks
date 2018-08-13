@@ -314,6 +314,7 @@ export default class CodeMirrorBlocks {
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render(changes) {
     let start = Date.now();
+    console.log(changes);
     let newAST = this.parser.parse(this.cm.getValue());
     this.cm.operation(() => {
       // try to patch the AST, and conservatively mark only changed nodes as dirty
@@ -605,13 +606,12 @@ export default class CodeMirrorBlocks {
     }
   }
 
-  // getLocationFromWhiteSpace : DOMNode -> {line, ch} | null
+  // getLocationFromWhiteSpace : DOMNode -> {line, ch} | false
+  // if the element is a whitespace node, return its location. Otherwise return false
   getLocationFromWhitespace(el) {
-    if(!el.classList.contains('blocks-white-space')) return; 
-    let prevEl = el.previousElementSibling, nextEl = el.nextElementSibling;
-    if(prevEl) { return this.findNodeFromEl(prevEl).to;   }  // If there's a previous sibling, return it's .to
-    if(nextEl) { return this.findNodeFromEl(nextEl).from; }  // If there's a next sibling, return it's .from
-    throw "IMPOSSIBLE: A WS element had neither a previous nor next sibling";
+    if(!el.classList.contains('blocks-white-space')) return false;
+    if(!(el.dataset.line && el.dataset.ch)) throw "getLocationFromWhitespace called with a WS el that did not have a location";
+    return {line: Number(el.dataset.line), ch: Number(el.dataset.ch)}; // cast to number, since HTML5
   }
 
   // getPathFromWhiteSpace : DOMNode -> Path | #f

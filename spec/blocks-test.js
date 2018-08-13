@@ -677,6 +677,29 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
       });
 
+      describe('in corner-cases with no arguments,', function() {
+        beforeEach(function() {
+          this.cm.setValue('(f)');
+          this.firstRoot = this.blocks.ast.rootNodes[0];
+          this.func = this.blocks.ast.rootNodes[0].func;
+          this.wsAfterFunc = this.func.el.nextElementSibling;
+          this.argWS = this.firstRoot.el.getElementsByClassName('blocks-args')[0].firstChild;
+        }); 
+
+        it('should allow editing the argument whitespace', async function() {
+          this.argWS.dispatchEvent(dblclick());
+          await wait(DELAY);
+          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        }); 
+
+        it('should allow editing the whitespace after the function', async function() {
+          this.wsAfterFunc.dispatchEvent(dblclick());
+          await wait(DELAY);
+          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        });
+
+      });
+
       describe('and specifically when editing it,', function() {
         /*
 
