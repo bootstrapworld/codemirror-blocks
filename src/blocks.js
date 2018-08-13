@@ -314,7 +314,6 @@ export default class CodeMirrorBlocks {
   // re-parse the document, then (ideally) patch and re-render the resulting AST
   render(changes) {
     let start = Date.now();
-    console.log(changes);
     let newAST = this.parser.parse(this.cm.getValue());
     this.cm.operation(() => {
       // try to patch the AST, and conservatively mark only changed nodes as dirty
