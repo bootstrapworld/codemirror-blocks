@@ -786,7 +786,10 @@ export default class CodeMirrorBlocks {
     literal.el.innerText = text;
     literal.el.originalPath = this.focusPath;
     literal.el.setAttribute("aria-label", text);
-    setTimeout(() => this.editLiteral(literal, event), 10);
+    // Fixes rapid-typing bug on FF. Interestingly enough, removing the timeout altogether 
+    // OR using a larger timeout causes the bug to re-appear.
+    // See https://github.com/bootstrapworld/codemirror-blocks/issues/139
+    setTimeout(() => this.editLiteral(literal, event), 0);
     return literal;
   }
 
@@ -1009,16 +1012,18 @@ export default class CodeMirrorBlocks {
     let activeNode = this.getActiveNode();
     let savedViewportMargin = this.cm.getOption("viewportMargin");
     this.cm.setOption("viewportMargin", Infinity);
-    let elts = this.wrapper.querySelectorAll(`[aria-expanded=${!expanded}]:not([class*=blocks-locked])`);
-    [].forEach.call(elts, e => this.maybeChangeNodeExpanded(this.findNodeFromEl(e), expanded));
-    this.refreshCM(); // update the CM display, since line heights may have changed
-    this.cm.setOption("viewportMargin", savedViewportMargin);
-    if(!expanded) { // if we collapsed, put focus on containing rootNode
-      let rootPath = activeNode.path.split(",")[0];
-      // shift focus if rootId !== activeNodeId
-      if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
-      else this.cm.scrollIntoView(activeNode.from);      
-    }
+    setTimeout(() => {
+      let elts = this.wrapper.querySelectorAll(`[aria-expanded=${!expanded}]:not([class*=blocks-locked])`);
+      [].forEach.call(elts, e => this.maybeChangeNodeExpanded(this.findNodeFromEl(e), expanded));
+      this.refreshCM(); // update the CM display, since line heights may have changed
+      this.cm.setOption("viewportMargin", savedViewportMargin);
+      if(!expanded) { // if we collapsed, put focus on containing rootNode
+        let rootPath = activeNode.path.split(",")[0];
+        // shift focus if rootId !== activeNodeId
+        if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
+        else this.cm.scrollIntoView(activeNode.from);      
+      }
+    }, 30);
   }
 
   cancelIfErrorExists(event) {
