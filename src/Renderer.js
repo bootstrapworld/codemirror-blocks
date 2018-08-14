@@ -164,9 +164,12 @@ export default class Renderer {
       this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
       
       // REVISIT: make comments disappear by adding an empty span
+      // we force a right-padding to work around CM treating non-webkit browser differently.
+      // See https://github.com/bootstrapworld/codemirror-blocks/issues/142
       if(node.options.comment) {
-        this.cm.markText(node.options.comment.from, node.options.comment.to,
-          { replacedWith: document.createElement('span') });
+        let empty = document.createElement('span');
+        empty.style.paddingRight = "0.1px";
+        this.cm.markText(node.options.comment.from, node.options.comment.to, {replacedWith: empty});
       }
       ReactDOM.render(this.renderNodeForReact(node), container);
     }
