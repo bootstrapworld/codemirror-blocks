@@ -204,7 +204,7 @@ export default class CodeMirrorBlocks {
   // called anytime we update the underlying CM value
   // destroys the redo history and updates the undo history
   commitChange(changes, announcement=false) {
-    console.log('committing change. saving focus at ', this.focusPath);
+    console.log('committing change. saving focus at ' + this.focusPath);
     this.focusHistory.done.unshift({path: this.focusPath, announcement: announcement});
     this.focusHistory.undone = [];
     this.cm.operation(changes);
@@ -480,6 +480,7 @@ export default class CodeMirrorBlocks {
       let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
       if(node.from === node.to) text = this.willInsertNode(this.cm, text, nodeEl, node.from, node.to); // sanitize
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
+      console.log('hasInvalidEdit is ', this.hasInvalidEdit);
       nodeEl.title = '';                              // 2) Clear any prior error titles
       if(node.insertion) {                            // 3) If we're inserting (instead of editing)
         node.insertion.clear();                         // clear the CM marker
@@ -489,11 +490,13 @@ export default class CodeMirrorBlocks {
       if(nodeEl.originalEl) nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
       nodeEl.parentNode.removeChild(nodeEl);
       this.commitChange(() => { // make the change, and set the path for re-focus
-        this.cm.replaceRange(text, node.from, node.to);
-        if(path) this.focusPath = path.join(',');
-      }, 
-      (node.insertion? "inserted " : "changed ") + text);
+          this.cm.replaceRange(text, node.from, node.to);
+          if(path) this.focusPath = path.join(',');
+        }, 
+        (node.insertion? "inserted " : "changed ") + text
+      );
     } catch(e) {                                      // If the node contents will NOT lex...
+      console.log('SETTING hasInvalidEdit TO TRUE!!!!!!!!!!!!');
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes

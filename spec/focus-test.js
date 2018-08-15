@@ -15,6 +15,9 @@ import {
   RIGHTBRACKET,
 } from 'codemirror-blocks/keycode';
 
+import {wait} from './test-utils';
+
+
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
 
@@ -52,9 +55,10 @@ describe('The CodeMirrorBlocks Class', function() {
         toolbar: document.getElementById('toolbar')
       }
     );
-    spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
-    spyOn(this.blocks, 'handleChange').and.callThrough();
-    spyOn(this.cm,     'replaceRange').and.callThrough();
+    this.trackQuarantine   = spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
+    this.trackHandleChange = spyOn(this.blocks,        'handleChange').and.callThrough();
+    this.trackReplaceRange = spyOn(this.cm,            'replaceRange').and.callThrough();
+    
   });
 
   afterEach(function() {
@@ -72,80 +76,71 @@ describe('The CodeMirrorBlocks Class', function() {
       this.literal3 = this.expression.args[2];
     });
   
-    it('deleting the last node should shift focus to the next-to-last', function(done) {
+    it('deleting the last node should shift focus to the next-to-last', async function() {
       this.literal3.el.dispatchEvent(click());
       expect(document.activeElement).toBe(this.literal3.el);
       this.literal3.el.dispatchEvent(keydown(SPACE));
       this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
-      setTimeout(() => {
-        expect(this.cm.getValue()).toBe('(+ 1 2 )');
-        expect(this.blocks.focusPath).toBe("0,2");
-        done();  
-      }, DELAY);
+      await wait(DELAY);
+      expect(this.cm.getValue()).toBe('(+ 1 2 )');
+      expect(this.blocks.focusPath).toBe("0,2");
     });
 
-    it('deleting the nth node should shift focus to n+1', function(done) {
+    it('deleting the nth node should shift focus to n+1', async function() {
       this.literal2.el.dispatchEvent(click());
       expect(document.activeElement).toBe(this.literal2.el);
       this.literal2.el.dispatchEvent(keydown(SPACE));
       this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
-      setTimeout(() => {
-        expect(this.cm.getValue()).toBe('(+ 1  3)');
-        expect(this.blocks.focusPath).toBe("0,2");
-        done();  
-      }, DELAY);
+      await wait(DELAY);
+      expect(this.cm.getValue()).toBe('(+ 1  3)');
+      expect(this.blocks.focusPath).toBe("0,2");
     });
 
-    it('deleting the multiple nodes should shift focus to the one after', function(done) {
+    it('deleting the multiple nodes should shift focus to the one after', async function() {
       this.literal1.el.dispatchEvent(click());            // activate the node,
       this.literal1.el.dispatchEvent(keydown(SPACE)); // then select it
       this.literal1.el.dispatchEvent(keydown(DOWN, {altKey: true}));
       this.literal2.el.dispatchEvent(keydown(SPACE, {altKey: true}));
-      setTimeout(() => {
-        expect(this.blocks.selectedNodes.size).toBe(2);
-        this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
-        setTimeout(() => {
-          expect(this.cm.getValue()).toBe('(+   3)');
-          expect(this.blocks.focusPath).toBe("0,1");
-          done();
-        }, DELAY);
-      }, DELAY);
+      await wait(DELAY);
+      expect(this.blocks.selectedNodes.size).toBe(2);
+      this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
+      await wait(DELAY);
+      expect(this.cm.getValue()).toBe('(+   3)');
+      expect(this.blocks.focusPath).toBe("0,1");
     });
 
     // TODO: sometimes this test fails because of some reason
-    it('inserting a node should put focus on the new node', function(done) {
+    it('inserting a node should put focus on the new node', async function() {
       this.literal1.el.dispatchEvent(click());
       this.literal1.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
-      setTimeout(() => {
-        let quarantine = document.querySelectorAll('.blocks-editing')[0];
-        let selection = window.getSelection();
-        expect(selection.rangeCount).toEqual(1);
-        let range = selection.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode('99'));
-        quarantine.dispatchEvent(blur());
-        expect(this.cm.getValue()).toBe('(+ 1 99 2 3)');
-        expect(this.blocks.focusPath).toBe("0,2");
-        done();
-      }, DELAY);
+      await wait(DELAY);
+      let quarantineNode = this.trackQuarantine.calls.mostRecent().returnValue;
+      let selection = window.getSelection();
+      expect(selection.rangeCount).toEqual(1);
+      let range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(document.createTextNode('99'));
+      quarantineNode.el.dispatchEvent(blur());
+      await wait(DELAY);
+      expect(this.cm.getValue()).toBe('(+ 1 99 2 3)');
+      expect(this.blocks.focusPath).toBe("0,2");
     });
 
     // TODO: sometimes this test fails because of some reason
-    it('inserting mulitple nodes should put focus on the last of the new nodes', function(done) {
+    it('inserting mulitple nodes should put focus on the last of the new nodes', async function() {
       this.literal1.el.dispatchEvent(click());
       this.literal1.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
-      setTimeout(() => {
-        let quarantine = document.querySelectorAll('.blocks-editing')[0];
-        let selection = window.getSelection();
-        expect(selection.rangeCount).toEqual(1);
-        let range = selection.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode('99 88 77'));
-        quarantine.dispatchEvent(blur());
-        expect(this.cm.getValue()).toBe('(+ 1 99 88 77 2 3)');
-        expect(this.blocks.focusPath).toBe("0,4");
-        done();
-      }, DELAY);
+      await wait(DELAY);
+      let quarantineNode = this.trackQuarantine.calls.mostRecent().returnValue;
+      let selection = window.getSelection();
+      expect(selection.rangeCount).toEqual(1);
+      let range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(document.createTextNode('99 88 77'));
+      quarantineNode.el.dispatchEvent(blur());
+      await wait(DELAY);
+      expect(this.cm.getValue()).toBe('(+ 1 99 88 77 2 3)');
+      expect(this.blocks.focusPath).toBe("0,4");
     });
         
   });
