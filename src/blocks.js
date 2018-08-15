@@ -72,7 +72,8 @@ export default class CodeMirrorBlocks {
     return languages;
   }
 
-  constructor(cm, languageOrParser, {toolbar, search, willInsertNode, didInsertNode, renderOptions} = {}) {
+  constructor(cm, languageOrParser, {suppress, toolbar, search, willInsertNode, didInsertNode, renderOptions} = {}) {
+    if (suppress) this.suppress = true;
     if (typeof languageOrParser == 'string') {
       if (CodeMirrorBlocks.languages.getLanguage(languageOrParser)) {
         this.language = CodeMirrorBlocks.languages.getLanguage(languageOrParser);
@@ -158,7 +159,7 @@ export default class CodeMirrorBlocks {
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
-    this.cm.on('changes',   (cm, e) => this.handleChange(cm, e));
+    if (!this.suppress) this.cm.on('changes',   (cm, e) => this.handleChange(cm, e));
     // mousedown events should impact dragging, focus-if-error, and click events
     this.cm.on('mousedown', (cm, e) => {
       toggleDraggable(e); 
@@ -243,7 +244,7 @@ export default class CodeMirrorBlocks {
       this.wrapper.setAttribute("aria-label", "Text Editor");
       this.say("Switching to Text Mode");
     }
-    this.renderer.animateTransition(this.ast, mode);
+    if (!this.suppress) this.renderer.animateTransition(this.ast, mode);
   }
 
   toggleBlockMode() { this.setBlockMode(!this.blockMode); }

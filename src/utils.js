@@ -10,3 +10,9 @@ export function skipWhile(skipper, start, next) {
   }
   return now;
 }
+
+export function assert(x) {
+  if (!x) {
+    throw new Error("assertion fails");
+  }
+}

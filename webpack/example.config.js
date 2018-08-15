@@ -16,7 +16,8 @@ module.exports = function(env, argv) {
       "cow-game": './example/cow-game.js',
       "space-invaders": './example/space-invaders.js',
       "wescheme-example": './example/wescheme-example.js',
-      "editor-example": './example/editor-example.js'
+      "editor-example": './example/editor-example.js',
+      "new-editor-example": './example/new-editor-example.js'
     },
     module: _.extend({}, baseConfig.module, {
       rules: baseConfig.module.rules.concat([
@@ -67,6 +68,12 @@ module.exports = function(env, argv) {
         template: 'example/editor.html',
         inject: 'body',
         chunks: ['commons','editor-example'],
+      }),
+      new HtmlWebpackPlugin({
+        filename: 'new-editor.html',
+        template: 'example/new-editor.html',
+        inject: 'body',
+        chunks: ['commons','new-editor-example'],
       }),
       new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/),
     ]),
