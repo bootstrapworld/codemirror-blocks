@@ -58,7 +58,7 @@ class Bind extends ASTNode {
   }
 }
 
-class Function extends ASTNode {
+class Func extends ASTNode {
   constructor(from, to, name, args, retAnn, doc, body, options={}) {
     super(from, to, options);
     this.args = args;
@@ -181,7 +181,7 @@ const nodeTypes = {
   },
   "s-fun": function(pos, name, params, args, ann, doc, body, checkLoc, check, blodky) {
     // TODO: ignoring params, check, blocky
-    return new Function(
+    return new Func(
       pos.from,
       pos.to,
       name,
