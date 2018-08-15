@@ -480,7 +480,6 @@ export default class CodeMirrorBlocks {
       let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
       if(node.from === node.to) text = this.willInsertNode(this.cm, text, nodeEl, node.from, node.to); // sanitize
       this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
-      console.log('hasInvalidEdit is ', this.hasInvalidEdit);
       nodeEl.title = '';                              // 2) Clear any prior error titles
       if(node.insertion) {                            // 3) If we're inserting (instead of editing)
         node.insertion.clear();                         // clear the CM marker
@@ -496,7 +495,6 @@ export default class CodeMirrorBlocks {
         (node.insertion? "inserted " : "changed ") + text
       );
     } catch(e) {                                      // If the node contents will NOT lex...
-      console.log('SETTING hasInvalidEdit TO TRUE!!!!!!!!!!!!');
       this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
       nodeEl.classList.add('blocks-error');           // 2) Set the error state
       nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
