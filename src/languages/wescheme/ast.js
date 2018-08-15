@@ -2,16 +2,10 @@ import {ASTNode, pluralize, descDepth} from '../../ast';
 
 export class LetLikeExpr extends ASTNode {
   constructor(from, to, form, bindings, expr, options={}) {
-    super(from, to, 'letLikeExpr', options);
+    super(from, to, 'letLikeExpr', ['bindings', 'expr'], options);
     this.form = form;
     this.bindings = bindings;
     this.expr = expr;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    yield this.bindings;
-    yield this.expr;
   }
 
   toDescription(level){
@@ -26,16 +20,10 @@ export class LetLikeExpr extends ASTNode {
 
 export class WhenUnless extends ASTNode {
   constructor(from, to, form, predicate, exprs, options={}) {
-    super(from, to, 'whenUnlessExpr', options);
+    super(from, to, 'whenUnlessExpr', ['predicate', 'exprs'], options);
     this.form = form;
     this.predicate = predicate;
     this.exprs = exprs;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    yield this.predicate;
-    yield this.exprs;
   }
 
   toDescription(level){

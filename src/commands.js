@@ -106,7 +106,7 @@ export let commands = {
     	cmb.activateNode(cmb.ast.rootNodes[0]); 
     },
     activateLastVisibleNode: cmb => {
-      let lastExpr = [...cmb.ast.reverseRootNodes[0]];
+      let lastExpr = [...cmb.ast.reverseRootNodes[0].children()];
       var lastNode = lastExpr[lastExpr.length-1];
       if(cmb.isNodeHidden(lastNode)) {
         let searchFn = (cur => cmb.ast.getNodeParent(cur));
