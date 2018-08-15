@@ -99,7 +99,7 @@ export default class Renderer {
     function flatten(flat, node) {
       return ["literal", "blank"].includes(node.type)? flat.concat([node])  // nothing inside literals and blanks
         : that.lockNodesOfType.includes(node.type)? flat.concat([node])     // Perf: don't bother looking inside
-          : [...node].slice(1).reduce(flatten, flat);                       // look inside
+          : [...node.children()].reduce(flatten, flat);                     // look inside
     }
 
     // 1) Limit the number of lines CM is rendering (perf), and extract visible nodes, & make clones 

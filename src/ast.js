@@ -98,7 +98,7 @@ export class AST {
         this.nodeIdMap.set(node.id, node);
         this.nodePathMap.set(node.path, node);
         lastNode = node;
-        const children = [...node].slice(1); // the first elt is always the parent
+        const children = [...node.children()];
         loop(children, node);
       });
     };
@@ -126,7 +126,7 @@ export class AST {
       let replacing = node && (poscmp(node.from, from)==0 && poscmp(node.to, to)==0);
       // if there's no path, or we're not replacing, search for the previous sibling
       if(!path || !replacing) {
-        let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
+        let siblings = path? [...oldAST.getNodeByPath(path).children()] : oldAST.rootNodes;
         let spliceIndex = siblings.findIndex(n => poscmp(from, n.from) <= 0);
         if(spliceIndex == -1) spliceIndex = siblings.length;
         path = (path ? path+',' : "") + spliceIndex;
@@ -252,7 +252,8 @@ export class AST {
   // return the node containing the cursor, or false
   getNodeContaining(cursor, nodes = this.rootNodes) {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
-    return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)) || n);
+    return n && ([...n.children()].length === 0 ? n :
+                 this.getNodeContaining(cursor, [...n.children()]) || n);
   }
   // return an array of nodes that fall bwtween two locations
   getNodesBetween(from, to) {
@@ -307,7 +308,7 @@ export class AST {
 // Every node in the AST inherits from the `ASTNode` class, which is used to
 // house some common attributes.
 export class ASTNode {
-  constructor(from, to, type, options) {
+  constructor(from, to, type, keys, options) {
 
     // The `from` and `to` attributes are objects containing the start and end
     // positions of this node within the source document. They are in the format
@@ -319,6 +320,19 @@ export class ASTNode {
     // string sepcifying what type of node it is. This helps with debugging and
     // with writing renderers.
     this.type = type;
+
+    // A node can contain other nodes in its fields. For example, a
+    // function call node may have a field called `func` that contains
+    // the function expression being called, and a field called `args`
+    // that contains an Array of the argument expressions. Fields like
+    // `func` and `args` that can contain other nodes must be listed
+    // under `keys`. In this example, `keys === ["func", "args"]`.
+    // Each key must name a field that contains one of the following:
+    //
+    // 1. an ASTNode
+    // 2. An Array of ASTNodes
+    // 3. null (this is to allow an optional ASTNode)
+    this.keys = keys;
 
     // Every node also has an `options` attribute, which is just an open ended
     // object that you can put whatever you want in it. This is useful if you'd
@@ -336,19 +350,62 @@ export class ASTNode {
   toDescription(){
     return this.options["aria-label"];
   }
+
+  // Produces an iterator over the children of this node.
+  children() {
+    return new ChildrenIterator(this, this.keys);
+  }
+
+  // Produces an iterator over all descendants of this node, including itself.
+  descendants() {
+    return new DescendantsIterator(this, this.keys);
+  }
+}
+
+class ChildrenIterator {
+  constructor(self, keys) {
+    this.self = self;
+    this.keys = keys;
+  }
+
+  *[Symbol.iterator]() {
+    for (let i in this.keys) {
+      let key = this.keys[i];
+      let value = this.self[key];
+      if (value instanceof ASTNode) {
+        yield value;
+      } else if (value instanceof Array) {
+        for (let j in value) {
+          let element = value[j];
+          if (element instanceof ASTNode) {
+            yield element;
+          }
+        }
+      }
+    }
+  }
+}
+
+class DescendantsIterator {
+  constructor(self, keys) {
+    this.self = self;
+    this.keys = keys;
+  }
+
+  *[Symbol.iterator]() {
+    yield this.self;
+    for (let child of this.self.children()) {
+      for (let descendant of child.descendants()) {
+        yield descendant;
+      }
+    }
+  }
 }
 
 export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
-    super(from, to, 'unknown', options);
+    super(from, to, 'unknown', ['elts'], options);
     this.elts = elts;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    for (let elt of this.elts) {
-      yield elt;
-    }
   }
 
   toDescription(level){
@@ -364,17 +421,9 @@ export class Unknown extends ASTNode {
 
 export class Expression extends ASTNode {
   constructor(from, to, func, args, options={}) {
-    super(from, to, 'expression', options);
+    super(from, to, 'expression', ['func', 'args'], options);
     this.func = func;
     this.args = args;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    yield this.func;
-    for (let arg of this.args) {
-      yield arg;
-    }
   }
 
   toDescription(level){
@@ -397,16 +446,9 @@ export class Expression extends ASTNode {
 
 export class IdentifierList extends ASTNode {
   constructor(from, to, kind, ids, options={}) {
-    super(from, to, 'identifierList', options);
+    super(from, to, 'identifierList', ['ids'], options);
     this.kind = kind;
     this.ids = ids;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    for (let id of this.ids) {
-      yield id;
-    }
   }
 
   toDescription(level){
@@ -421,15 +463,9 @@ export class IdentifierList extends ASTNode {
 
 export class StructDefinition extends ASTNode {
   constructor(from, to, name, fields, options={}) {
-    super(from, to, 'structDefinition', options);
+    super(from, to, 'structDefinition', ['name', 'fields'], options);
     this.name = name;
     this.fields = fields;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    yield this.name;
-    yield this.fields;
   }
 
   toDescription(level){
@@ -445,7 +481,7 @@ export class StructDefinition extends ASTNode {
 
 export class VariableDefinition extends ASTNode {
   constructor(from, to, name, body, options={}) {
-    super(from, to, 'variableDefinition', options);
+    super(from, to, 'variableDefinition', ['name', 'body'], options);
     this.name = name;
     this.body = body;
   }
@@ -456,12 +492,6 @@ export class VariableDefinition extends ASTNode {
     return `define ${this.name} to be ${insert} ${this.body.toDescription(level)}`;
   }
 
-  *[Symbol.iterator]() {
-    yield this;
-    yield this.name;
-    yield this.body;
-  }
-
   toString() {
     return `(define ${this.name} ${this.body})`;
   }
@@ -469,15 +499,9 @@ export class VariableDefinition extends ASTNode {
 
 export class LambdaExpression extends ASTNode {
   constructor(from, to, args, body, options={}) {
-    super(from, to, 'lambdaExpression', options);
+    super(from, to, 'lambdaExpression', ['args', 'body'], options);
     this.args = args;
     this.body = body;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    yield this.args;
-    yield this.body;
   }
 
   toDescription(level){
@@ -494,17 +518,10 @@ export class LambdaExpression extends ASTNode {
 
 export class FunctionDefinition extends ASTNode {
   constructor(from, to, name, params, body, options={}) {
-    super(from, to, 'functionDefinition', options);
+    super(from, to, 'functionDefinition', ['name', 'params', 'body'], options);
     this.name = name;
     this.params = params;
     this.body = body;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    yield this.name;
-    yield this.params;
-    yield this.body;
   }
 
   toDescription(level){
@@ -521,17 +538,9 @@ export class FunctionDefinition extends ASTNode {
 
 export class CondClause extends ASTNode {
   constructor(from, to, testExpr, thenExprs, options={}) {
-    super(from, to, 'condClause', options);
+    super(from, to, 'condClause', ['testExpr', 'thenExprs'], options);
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    yield this.testExpr;
-    for(let thenExpr of this.thenExprs) {
-      yield thenExpr;
-    }
   }
 
   toDescription(level){
@@ -546,15 +555,8 @@ export class CondClause extends ASTNode {
 
 export class CondExpression extends ASTNode {
   constructor(from, to, clauses, options={}) {
-    super(from, to, 'condExpression', options);
+    super(from, to, 'condExpression', ['clauses'], options);
     this.clauses = clauses;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    for (let clause of this.clauses) {
-      yield clause;
-    }
   }
 
   toDescription(level){
@@ -571,17 +573,10 @@ export class CondExpression extends ASTNode {
 
 export class IfExpression extends ASTNode {
   constructor(from, to, testExpr, thenExpr, elseExpr, options={}) {
-    super(from, to, 'ifExpression', options);
+    super(from, to, 'ifExpression', ['testExpr', 'thenExpr', 'elseExpr'], options);
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    yield this.testExpr;
-    yield this.thenExpr;
-    yield this.elseExpr;
   }
 
   toDescription(level){
@@ -597,13 +592,9 @@ export class IfExpression extends ASTNode {
 
 export class Literal extends ASTNode {
   constructor(from, to, value, dataType='unknown', options={}) {
-    super(from, to, 'literal', options);
+    super(from, to, 'literal', [], options);
     this.value = value;
     this.dataType = dataType;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
   }
 
   toString() {
@@ -613,12 +604,8 @@ export class Literal extends ASTNode {
 
 export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
-    super(from, to, 'comment', options);
+    super(from, to, 'comment', [], options);
     this.comment = comment;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
   }
 
   toString() {
@@ -628,13 +615,9 @@ export class Comment extends ASTNode {
 
 export class Blank extends ASTNode {
   constructor(from, to, value, dataType='blank', options={}) {
-    super(from, to, 'blank', options);
+    super(from, to, 'blank', [], options);
     this.value = value || "...";
     this.dataType = dataType;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
   }
 
   toString() {
@@ -644,16 +627,9 @@ export class Blank extends ASTNode {
 
 export class Sequence extends ASTNode {
   constructor(from, to, exprs, name, options={}) {
-    super(from, to, 'sequence', options);
+    super(from, to, 'sequence', ['exprs'], options);
     this.exprs = exprs;
     this.name = name;
-  }
-
-  *[Symbol.iterator]() {
-    yield this;
-    for (let expr of this.exprs) {
-      yield expr;
-    }
   }
 
   toDescription(level) {
