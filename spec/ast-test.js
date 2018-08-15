@@ -18,9 +18,9 @@ describe("The Literal Class", function() {
     expect(literal.dataType).toBe('unknown');
   });
 
-  it("should only return itself when iterated over", function() {
+  it("should return an empty sequence when iterating over its children", function() {
     var literal = new Literal({line: 0, ch: 0}, {line: 0, ch: 2}, 11);
-    expect([...literal]).toEqual([literal]);
+    expect([...literal.children()]).toEqual([]);
   });
 
   it("should take an optional options parameter in it's constructor", function() {
@@ -133,12 +133,23 @@ describe("The Expression Class", function() {
     expect(expression.options).toEqual({'aria-label':'+ expression'});
   });
 
-  it("should return itself and it's descendants when iterated over", function() {
-    expect([...nestedExpression]).toEqual([
-      nestedExpression,
+  it("should be able to iterate over its children", function() {
+    expect([...nestedExpression.children()]).toEqual([
       nestedExpression.func,
       nestedExpression.args[0],
       nestedExpression.args[1]
+    ]);
+  });
+
+  it("should be able to iterate over its descendants", function() {
+    expect([...nestedExpression.descendants()]).toEqual([
+      nestedExpression,
+      nestedExpression.func,
+      nestedExpression.args[0],
+      nestedExpression.args[1],
+      nestedExpression.args[1].func,
+      nestedExpression.args[1].args[0],
+      nestedExpression.args[1].args[1]
     ]);
   });
 
