@@ -5,9 +5,9 @@ module.exports = function(config) {
   config = config || {};
   var plugins = [];
   var rules = [
-    {test:/.png$|.jpg$|.jpeg$|.gif$|.svg$|.wav$/, use: "url-loader?limit=10000"},
-    {test:/.woff$|.woff2$/, use: "url-loader?limit=10000"},
-    {test:/.ttf$|.eot$/, use: "file-loader"},
+    {test:/\.png$|\.jpg$|\.jpeg$|\.gif$|\.svg$|\.wav$/, use: "url-loader?limit=10000"},
+    {test:/\.woff$|\.woff2$/, use: "url-loader?limit=10000"},
+    {test:/\.ttf$|\.eot$/, use: "file-loader"},
   ];
   if (config.extractCSS) {
     plugins.push(new ExtractTextPlugin("[name].css"));
