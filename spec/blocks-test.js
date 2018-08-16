@@ -389,11 +389,18 @@ describe('The CodeMirrorBlocks Class', function() {
           spyOn(document, 'execCommand');
         });
 
+        // [TODO Justin]: Regression. This test started failing when I
+        // started re-rendering the whole ast on every edit. I'm not
+        // sure why.
         it('should remove selected nodes on cut', function(done) {
           document.dispatchEvent(cut());
           setTimeout(() => {
             expect(this.cm.getValue()).toBe(' 54');
             expect(document.execCommand).toHaveBeenCalledWith('cut');
+            // Specifically, this line fails.
+            // document.activeElement is an empty textarea that isn't
+            // part of any block. I think maybe it should have been
+            // deleted but wasn't?
             expect(this.blocks.getActiveNode()).toBe(this.blocks.ast.rootNodes[0]); // focus should shift
             done();
           }, DELAY);
