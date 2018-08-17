@@ -37,6 +37,7 @@ export class Bind extends ASTNode {
 export class Func extends ASTNode {
   constructor(from, to, name, args, retAnn, doc, body, options={}) {
     super(from, to, 'func', ['args', 'retAnn', 'body'], options);
+    this.name = name;
     this.args = args;
     this.retAnn = retAnn;
     this.doc = doc;

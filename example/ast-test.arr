@@ -1,3 +1,3 @@
-fun foo(x :: Number):
+fun foo(x):
   x + 3
 end

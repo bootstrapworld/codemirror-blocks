@@ -19,14 +19,14 @@ class Position {
 
 function startOf(srcloc) {
   return {
-    "line": srcloc.startRow,
+    "line": srcloc.startRow - 1,
     "ch":   srcloc.startCol
   }
 }
 
 function endOf(srcloc) {
   return {
-    "line": srcloc.endRow,
+    "line": srcloc.endRow - 1,
     "ch":   srcloc.endCol
   }
 }
@@ -90,7 +90,7 @@ const nodeTypes = {
     return new Binop(
       pos.from,
       pos.to,
-      op,
+      op.substr(2),
       left,
       right);
   },
