@@ -15,6 +15,7 @@ module.exports = function(env, argv) {
       "fullscheme-example": './example/fullscheme-example.js',
       "cow-game": './example/cow-game.js',
       "space-invaders": './example/space-invaders.js',
+      "pyret-example": './example/pyret-example.js',
       "wescheme-example": './example/wescheme-example.js',
       "editor-example": './example/editor-example.js'
     },
@@ -55,6 +56,12 @@ module.exports = function(env, argv) {
         template: 'example/space-invaders.html',
         inject: 'body',
         chunks: ['commons', 'space-invaders'],
+      }),
+      new HtmlWebpackPlugin({
+        filename: 'pyret.html',
+        template: 'example/pyret.html',
+        inject: 'body',
+        chunks: ['commons', 'pyret-example'],
       }),
       new HtmlWebpackPlugin({
         filename: 'wescheme.html',

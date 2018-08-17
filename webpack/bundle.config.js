@@ -18,6 +18,45 @@ var configs = [
       'codemirror': 'CodeMirror'
     }
   }),
+  // everything needed to drop into Pyret
+  _.extend({}, baseConfig(), {
+    entry: {
+      "CodeMirrorBlocks-pyret": ['babel-polyfill', './src/languages/pyret/index.js', './src/codemirror-blocks-all.js']
+    },
+    output: {
+      path: path.resolve(__dirname, '..', "dist"),
+      filename: "[name].js",
+      library: "CodeMirrorBlocks",
+    },
+  }),
+  _.extend({}, baseConfig(), {
+    entry: {
+      "PyretParser": ['babel-polyfill', './src/languages/pyret/index.js']
+    },
+    output: {
+      path: path.resolve(__dirname, '..', "dist"),
+      filename: "parsers/[name].js",
+      library: ["CodeMirrorBlocks", "parsers", "[name]"]
+    },
+    externals: {
+      'codemirror': 'CodeMirror',
+      'ast': 'CodeMirrorBlocks.ast'
+    }
+  }),
+  _.extend({}, baseConfig(), {
+    entry: {
+      "Editor": ['babel-polyfill', './src/languages/pyret/index.js', './src/codemirror-blocks-all.js', './src/ui/']
+    },
+    output: {
+      path: path.resolve(__dirname, '..', "dist"),
+      filename: "[name].js",
+      library: ["CodeMirrorBlocks"]
+    },
+    externals: {
+      'codemirror': 'CodeMirror',
+      'ast': 'CodeMirrorBlocks.ast'
+    }
+  })
   // everything needed to drop into WeScheme
   _.extend({}, baseConfig(), {
     entry: {
