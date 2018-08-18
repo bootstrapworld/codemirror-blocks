@@ -269,11 +269,11 @@ function parseNode(node, i) {
         {'aria-label': symbolAria(node.val), 'comment': comment});
     }
   } else if (node instanceof structures.literal) {
-    var dataType = typeof node.val;
-    let aria = node.toString();
+    let dataType = typeof node.val, aria = node.toString(), value = node.val;
     if (types.isString(node.val)) {
       dataType = "string";
       aria = `${node.val}, a String`;
+      value = '"' + value + '"'; // put the quotes back in
     } else if (types.isChar(node.val)) {
       dataType = "character";
       aria = `${node.val.val}, a Character`;
@@ -284,7 +284,7 @@ function parseNode(node, i) {
       dataType = "number";
       aria = `${String(node.val.numerator())} over ${String(node.val.denominator())}, a Rational`;
     }
-    return new Literal(from, to, node.val, dataType
+    return new Literal(from, to, value, dataType
       , {'aria-label':aria, 'comment': comment});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
