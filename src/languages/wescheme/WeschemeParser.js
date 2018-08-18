@@ -284,7 +284,7 @@ function parseNode(node, i) {
       dataType = "number";
       aria = `${String(node.val.numerator())} over ${String(node.val.denominator())}, a Rational`;
     }
-    return new Literal(from, to, node.toString(), dataType
+    return new Literal(from, to, node.val, dataType
       , {'aria-label':aria, 'comment': comment});
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
