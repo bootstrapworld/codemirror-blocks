@@ -470,89 +470,6 @@ export default class CodeMirrorBlocks {
     }, 50);
   }
 
-  // saveEdit : ASTNode DOMNode Event -> Void
-  // If not, set the error state and maintain focus
-  // set this.hasInvalidEdit to the appropriate value
-  saveEdit(node, nodeEl, event) {
-    event.preventDefault();
-    try {
-      var text = nodeEl.textContent;
-      let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
-      if(node.from === node.to) text = this.willInsertNode(this.cm, text, nodeEl, node.from, node.to); // sanitize
-      this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
-      nodeEl.title = '';                              // 2) Clear any prior error titles
-      if(node.insertion) {                            // 3) If we're inserting (instead of editing)
-        node.insertion.clear();                         // clear the CM marker
-        var path = node.path.split(',').map(Number);    // Extract and expand the path
-        path[path.length-1] += roots.length;            // adjust the path based on parsed text
-      }
-      if(nodeEl.originalEl) nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
-      nodeEl.parentNode.removeChild(nodeEl);
-      this.commitChange(() => { // make the change, and set the path for re-focus
-          this.cm.replaceRange(text, node.from, node.to);
-          if(path) this.focusPath = path.join(',');
-        }, 
-        (node.insertion? "inserted " : "changed ") + text
-      );
-    } catch(e) {                                      // If the node contents will NOT lex...
-      this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
-      nodeEl.classList.add('blocks-error');           // 2) Set the error state
-      nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
-      let errorTxt = this.parser.getExceptionMessage(e);
-      nodeEl.title = errorTxt;                        // 4) Make the title the error msg
-      setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
-      this.say(errorTxt);
-    }
-  }
-
-  // handleEditKeyDown : ASTNode DOMNode Event -> Void
-  // Trap Enter, Tab and Esc, Shift-Esc keys. Let the rest pass through
-  handleEditKeyDown(node, nodeEl, e) {
-    e.stopPropagation();
-    e.codemirrorIgnore = true;
-    let keyName = CodeMirror.keyName(e);
-    if (["Enter", "Tab", "Shift-Tab", "Esc", "Shift-Esc"].includes(keyName)) {
-      e.preventDefault();
-      // To cancel, (maybe) reinsert the original DOM Elt and activate the original
-      // then remove the blur handler and the insertion node
-      if(["Esc", "Shift-Esc"].includes(keyName)) {
-        nodeEl.onblur = null;
-        if(nodeEl.originalEl) {
-          nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
-          this.activateNode(this.ast.getClosestNodeFromPath(node.path.split(',')), e);
-        }
-        this.say("cancelled");
-        nodeEl.parentNode.removeChild(nodeEl);
-      } else if(["Tab", "Shift-Tab"].includes(keyName) && this.hasInvalidEdit) {
-        this.say(nodeEl.title);
-      } else {
-        nodeEl.blur();
-      }
-    }
-  }
-
-  // editLiteral : ASTNode Event -> Void
-  // Set the appropriate attributes and event handlers
-  editLiteral(node, event) {
-    event.stopPropagation();
-    this.clearSelection(); // if we're editing, clear the selection
-    let action = node.el.getAttribute("aria-label") == ""? "inserting " : "editing ";
-    this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel");
-    node.el.contentEditable = true;
-    node.el.spellcheck = false;
-    node.el.classList.add('blocks-editing');
-    node.el.setAttribute('role','textbox');
-    node.el.onblur    = (e => this.saveEdit(node, node.el, e));
-    node.el.onkeydown = (e => this.handleEditKeyDown(node, node.el, e));
-    let range = document.createRange();
-    let end = Math.min(node.toString().length, node.el.innerText.length);
-    range.setStart(node.el, node.insertion? end : 0);
-    range.setEnd(node.el, end);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-    node.el.focus();
-  }
-
   // deleteNode : ASTNode -> Void
   // remove node contents from CM
   deleteNode(node) {
@@ -792,6 +709,89 @@ export default class CodeMirrorBlocks {
     // See https://github.com/bootstrapworld/codemirror-blocks/issues/139
     setTimeout(() => this.editLiteral(literal, event), 0);
     return literal;
+  }
+
+  // saveEdit : ASTNode DOMNode Event -> Void
+  // If not, set the error state and maintain focus
+  // set this.hasInvalidEdit to the appropriate value
+  saveEdit(node, nodeEl, event) {
+    event.preventDefault();
+    try {
+      var text = nodeEl.textContent;
+      let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
+      if(node.from === node.to) text = this.willInsertNode(this.cm, text, nodeEl, node.from, node.to); // sanitize
+      this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
+      nodeEl.title = '';                              // 2) Clear any prior error titles
+      if(node.insertion) {                            // 3) If we're inserting (instead of editing)
+        node.insertion.clear();                         // clear the CM marker
+        var path = node.path.split(',').map(Number);    // Extract and expand the path
+        path[path.length-1] += roots.length;            // adjust the path based on parsed text
+      }
+      if(nodeEl.originalEl) nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
+      nodeEl.parentNode.removeChild(nodeEl);
+      this.commitChange(() => { // make the change, and set the path for re-focus
+          this.cm.replaceRange(text, node.from, node.to);
+          if(path) this.focusPath = path.join(',');
+        }, 
+        (node.insertion? "inserted " : "changed ") + text
+      );
+    } catch(e) {                                      // If the node contents will NOT lex...
+      this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
+      nodeEl.classList.add('blocks-error');           // 2) Set the error state
+      nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
+      let errorTxt = this.parser.getExceptionMessage(e);
+      nodeEl.title = errorTxt;                        // 4) Make the title the error msg
+      setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
+      this.say(errorTxt);
+    }
+  }
+
+  // handleEditKeyDown : ASTNode DOMNode Event -> Void
+  // Trap Enter, Tab and Esc, Shift-Esc keys. Let the rest pass through
+  handleEditKeyDown(node, nodeEl, e) {
+    e.stopPropagation();
+    e.codemirrorIgnore = true;
+    let keyName = CodeMirror.keyName(e);
+    if (["Enter", "Tab", "Shift-Tab", "Esc", "Shift-Esc"].includes(keyName)) {
+      e.preventDefault();
+      // To cancel, (maybe) reinsert the original DOM Elt and activate the original
+      // then remove the blur handler and the insertion node
+      if(["Esc", "Shift-Esc"].includes(keyName)) {
+        nodeEl.onblur = null;
+        if(nodeEl.originalEl) {
+          nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
+          this.activateNode(this.ast.getClosestNodeFromPath(node.path.split(',')), e);
+        }
+        this.say("cancelled");
+        nodeEl.parentNode.removeChild(nodeEl);
+      } else if(["Tab", "Shift-Tab"].includes(keyName) && this.hasInvalidEdit) {
+        this.say(nodeEl.title);
+      } else {
+        nodeEl.blur();
+      }
+    }
+  }
+
+  // editLiteral : ASTNode Event -> Void
+  // Set the appropriate attributes and event handlers
+  editLiteral(node, event) {
+    event.stopPropagation();
+    this.clearSelection(); // if we're editing, clear the selection
+    let action = node.el.getAttribute("aria-label") == ""? "inserting " : "editing ";
+    this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel");
+    node.el.contentEditable = true;
+    node.el.spellcheck = false;
+    node.el.classList.add('blocks-editing');
+    node.el.setAttribute('role','textbox');
+    node.el.onblur    = (e => this.saveEdit(node, node.el, e));
+    node.el.onkeydown = (e => this.handleEditKeyDown(node, node.el, e));
+    let range = document.createRange();
+    let end = Math.min(node.toString().length, node.el.innerText.length);
+    range.setStart(node.el, node.insertion? end : 0);
+    range.setEnd(node.el, end);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    node.el.focus();
   }
 
 
