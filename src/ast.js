@@ -268,7 +268,7 @@ export class AST {
   getNodeParent = node => {
     let path = node.path.split(",");
     path.pop();
-    return this.nodePathMap.get(path.join(",")) || "";
+    return this.nodePathMap.get(path.join(",")) || false;
   }
   // return the first child, if it exists
   getNodeFirstChild(node) {
