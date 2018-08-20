@@ -39,7 +39,7 @@ block editors:
    (or even announced aloud in Spanish, Tagolog, etc!). This reduces the
    cognitive load when learning a new language, by allowing the user to
    focus on the structure and meaning of a block of code without having
-   to consider the structure.
+   to consider the syntax.
 
 ## Developer Notes
 
