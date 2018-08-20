@@ -269,11 +269,11 @@ function parseNode(node, i) {
         {'aria-label': symbolAria(node.val), 'comment': comment});
     }
   } else if (node instanceof structures.literal) {
-    let dataType = typeof node.val, aria = node.toString(), value = node.val;
+    let dataType = typeof node.val, aria = node.toString(), value = node.toString();
     if (types.isString(node.val)) {
       dataType = "string";
       aria = `${node.val}, a String`;
-      value = '"' + value + '"'; // put the quotes back in
+      value = '"' + node.val + '"'; // use the raw value, plus the quotes (for unicode symbols)
     } else if (types.isChar(node.val)) {
       dataType = "character";
       aria = `${node.val.val}, a Character`;
