@@ -658,7 +658,7 @@ export default class CodeMirrorBlocks {
     this.makeQuarantineAt(text, this.cm.getCursor());
   }
 
-  // makeQuarantineAt : String [ASTNode | DOMNode | Cursor] Event -> Void
+  // makeQuarantineAt : String [ASTNode | DOMNode | Cursor] -> Quarantine
   // Consumes a String, a Destination, and an event.
   // Hides the original node and inserts a quarantine DOM node at the Destination 
   // with the String (or, if false, DOMNode contents), allowing the user to edit.
@@ -669,42 +669,39 @@ export default class CodeMirrorBlocks {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
       quarantine.from = dest.from; quarantine.to = dest.to;
-      quarantine.path = dest.path;      // save the path for returning focus
-      quarantine.originalEl = dest.el;  // save the original DOM El
-      parent.insertBefore(quarantine, dest.el);
-      parent.removeChild(dest.el);
+      quarantine.path = dest.path;              // save the path for returning focus
+      quarantine.originalEl = dest.el;          // save the original DOM El
+      parent.replaceChild(quarantine, dest.el); // replace the old node with the quarantine
     // if we're inserting into a whitespace node
     } else if(dest.nodeType) {
       quarantine.classList.add("blocks-white-space");
       let parent = dest.parentNode;
       quarantine.to = quarantine.from = this.getLocationFromWhitespace(dest);
       quarantine.path = this.getPathFromWhitespace(dest); // save path for focus
-      quarantine.originalEl = dest;  // save the original DOM El
-      parent.insertBefore(quarantine, dest);
-      parent.removeChild(dest);
+      quarantine.originalEl = dest;             // save the original DOM El
+      parent.replaceChild(quarantine, dest);    // replace the old node with the quarantine
       quarantine.insertion = {clear: () => {}}; // make a dummy marker
     // if we're inserting into a toplevel CM cursor
     } else if(dest.line !== undefined){
       quarantine.to = quarantine.from = dest;
       // calculate the path for focus (-1 if it's the first node)
       const nodeBefore = this.ast.getToplevelNodeBeforeCur(dest);
-      quarantine.path = String(nodeBefore ? nodeBefore.path : -1);
+      quarantine.path = String(nodeBefore ? nodeBefore.path : -1); // save path for focus
       let mk = this.cm.setBookmark(dest, {widget: quarantine});
       quarantine.insertion = mk;
     } else {
       throw "makeQuarantineAt given a destination of unknown type";
     }
     quarantine.classList.add('quarantine', 'blocks-node', 'blocks-editing', 'blocks-literal');
-    quarantine.originalPath = this.focusPath;
     quarantine.setAttribute('role','textbox');
     quarantine["aria-label"] = quarantine.textContent = text;
     quarantine.contentEditable = true;
     quarantine.spellcheck = false;
-    quarantine.onblur    = (e => this.saveQuarantine(quarantine, e));
+    quarantine.onblur    = (e => this.saveQuarantine(quarantine));
     quarantine.onkeydown = (e => this.handleEditKeyDown(quarantine, e));
     quarantine.onpaste   = (e => {
-      e.preventDefault(); // SANITIZE: kill the paste event and manually-insert the text
-      document.execCommand("insertHTML", false, e.clipboardData.getData("text/plain"));
+      e.preventDefault(); // SANITIZE: kill the paste event and manually-insert plaintext
+      document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
     });
     // if text is the empty string, we're inserting
     this.say(text? "editing " : "inserting "+text+". Use Enter to save, and Shift-Escape to cancel");
@@ -713,6 +710,9 @@ export default class CodeMirrorBlocks {
     return quarantine;
   }
 
+  // editQuarantine : Quarantine -> Void
+  // If we're inserting OR we have an invalid edit, put the cursor at the end
+  // otherwise select the whole thing
   editQuarantine(quarantine) {
     quarantine.focus();
     setTimeout(() => {
@@ -724,25 +724,22 @@ export default class CodeMirrorBlocks {
     }, 10);
   }
 
-  // saveQuarantine : ASTNode DOMNode Event -> Void
+  // saveQuarantine : Quarantine -> Void
   // If not, set the error state and maintain focus
   // set this.hasInvalidEdit to the appropriate value
-  saveQuarantine(quarantine, event) {
-    event.preventDefault(); event.stopPropagation();
+  saveQuarantine(quarantine) {
     try {
       var text = quarantine.textContent;
       let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
       if(quarantine.from === quarantine.to) 
         text = this.willInsertNode(this.cm, text, quarantine, quarantine.from, quarantine.to); // sanitize
       this.hasInvalidEdit = false;                        // 1) Set this.hasInvalidEdit
-      quarantine.title = '';                              // 2) Clear any prior error titles
-      if(quarantine.insertion) {                          // 3) If we're inserting (instead of editing)
+      if(quarantine.insertion) {                          // 2) If we're inserting (instead of editing)
         quarantine.insertion.clear();                         // clear the CM marker
         var path = quarantine.path.split(',').map(Number);    // Extract and expand the path
-        path[path.length-1] += roots.length;              // adjust the path based on parsed text
+        path[path.length-1] += roots.length;                  // adjust the path based on parsed text
       }
-      if(quarantine.originalEl) quarantine.parentNode.insertBefore(quarantine.originalEl, quarantine);
-      quarantine.parentNode.removeChild(quarantine);
+      if(quarantine.originalEl) quarantine.parentNode.replaceChild(quarantine.originalEl, quarantine);
       this.commitChange(() => { // make the change, and set the path for re-focus
         this.cm.replaceRange(text, quarantine.from, quarantine.to);
         if(path) this.focusPath = path.join(',');
@@ -755,7 +752,7 @@ export default class CodeMirrorBlocks {
       quarantine.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
       let errorTxt = this.parser.getExceptionMessage(e);
       quarantine.title = errorTxt;                        // 4) Make the title the error msg
-      this.editQuarantine(quarantine,event);              // 5) Keep focus
+      this.editQuarantine(quarantine);                    // 5) Keep focus
       this.say(errorTxt);
     }
   }
@@ -773,11 +770,10 @@ export default class CodeMirrorBlocks {
         quarantine.onblur = this.hasInvalidEdit = false; // remove blur handler and set hasInvalidEdit to false
         if(quarantine.insertion) { quarantine.insertion.clear(); }
         if(quarantine.originalEl) {
-          quarantine.parentNode.insertBefore(quarantine.originalEl, quarantine);
+          quarantine.parentNode.replaceChild(quarantine.originalEl, quarantine);
           this.activateNode(this.ast.getClosestNodeFromPath(quarantine.path.split(',')), e);
         }
         this.say("cancelled");
-        quarantine.parentNode.removeChild(quarantine);
       } else if(["Tab", "Shift-Tab"].includes(keyName) && this.hasInvalidEdit) {
         this.say(quarantine.title);
       } else {
