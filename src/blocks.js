@@ -697,13 +697,13 @@ export default class CodeMirrorBlocks {
     quarantine["aria-label"] = quarantine.textContent = text;
     quarantine.contentEditable = true;
     quarantine.spellcheck = false;
-    quarantine.onblur    = (e => this.saveQuarantine(quarantine));
-    quarantine.onkeydown = (e => this.handleEditKeyDown(quarantine, e));
-    quarantine.onpaste   = (e => {
+    quarantine.onblur    = (() => this.saveQuarantine(quarantine));
+    quarantine.onkeydown = (e  => this.handleEditKeyDown(quarantine, e));
+    quarantine.onpaste   = (e  => {
       e.preventDefault(); // SANITIZE: kill the paste event and manually-insert plaintext
       document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
     });
-    // if text is the empty string, we're inserting
+    // If text is the empty string, we're inserting. Otherwise, we're editing
     this.say(text? "editing " : "inserting "+text+". Use Enter to save, and Shift-Escape to cancel");
     this.clearSelection(); // clear any selected nodes
     this.editQuarantine(quarantine);
@@ -729,22 +729,21 @@ export default class CodeMirrorBlocks {
   // set this.hasInvalidEdit to the appropriate value
   saveQuarantine(quarantine) {
     try {
-      var text = quarantine.textContent;
+      let text = quarantine.textContent;
       let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
-      if(quarantine.from === quarantine.to) 
-        text = this.willInsertNode(this.cm, text, quarantine, quarantine.from, quarantine.to); // sanitize
       this.hasInvalidEdit = false;                        // 1) Set this.hasInvalidEdit
       if(quarantine.insertion) {                          // 2) If we're inserting (instead of editing)
         quarantine.insertion.clear();                         // clear the CM marker
         var path = quarantine.path.split(',').map(Number);    // Extract and expand the path
         path[path.length-1] += roots.length;                  // adjust the path based on parsed text
+        text = this.willInsertNode(this.cm, text, quarantine, quarantine.from, quarantine.to); // sanitize
       }
       if(quarantine.originalEl) quarantine.parentNode.replaceChild(quarantine.originalEl, quarantine);
       this.commitChange(() => { // make the change, and set the path for re-focus
-        this.cm.replaceRange(text, quarantine.from, quarantine.to);
-        if(path) this.focusPath = path.join(',');
-      }, 
-      (quarantine.insertion? "inserted " : "changed ") + text
+          this.cm.replaceRange(text, quarantine.from, quarantine.to);
+          if(path) this.focusPath = path.join(',');
+        }, 
+        (quarantine.insertion? "inserted " : "changed ") + text
       );
     } catch(e) {                                      // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                         // 1) Set this.hasInvalidEdit
