@@ -132,9 +132,9 @@ export default class CodeMirrorBlocks {
         onkeydown:  ((n, e) => this.handleKeyDown(n, e)),
         onclick:    this.nodeEventHandler(this.activateNode),
         ondblclick: this.nodeEventHandler({
-          literal:    ((n, e) => this.makeQuarantineAt(false, n, e)),
-          blank:      ((n, e) => this.makeQuarantineAt(false, n, e)),
-          whitespace: ((n, e) => this.makeQuarantineAt("", n, e))
+          literal:    (n => this.makeQuarantineAt(false, n)),
+          blank:      (n => this.makeQuarantineAt(false, n)),
+          whitespace: (n => this.makeQuarantineAt("", n))
         }),
         ondragstart:  this.nodeEventHandler(this.startDraggingNode),
         ondragend:    this.nodeEventHandler(this.stopDraggingNode),
@@ -463,7 +463,7 @@ export default class CodeMirrorBlocks {
            || (!e.shiftKey && activeNode.to)                          // ...or inserting after at the top level
            || (e.shiftKey  && activeNode.from);                       // ...or inserting before at the top level
       this.clearSelection();
-      let node = that.makeQuarantineAt(text, dest, e);
+      let node = that.makeQuarantineAt(text, dest);
       that.buffer.value = ""; // empty the buffer
       // save the node
       setTimeout(() => { this.unmute(); node.el.blur(); }, 50);
@@ -603,8 +603,6 @@ export default class CodeMirrorBlocks {
       }      
       // check for no-ops: we have to use textCoords instead of ASTpaths, to allow shifting a block within whitespace
       if ((poscmp(destFrom, sourceNode.from) > -1) && (poscmp(destTo, sourceNode.to) <  1)) { return; }
-      // Remember to re-collapse any dragged nodes after patch
-      let elts = sourceNode.el.querySelectorAll("[aria-expanded=false]");
     }
     this.focusPath = destPath.join(',');
     
@@ -657,14 +655,14 @@ export default class CodeMirrorBlocks {
       : e.clipboardData.getData('text/plain');
     if(!text.replace(/\s/g, '').length) return; // let pure whitespace pass through
     e.preventDefault(); e.stopPropagation(); e.codemirrorIgnore = true;
-    this.makeQuarantineAt(text, this.cm.getCursor(), e);
+    this.makeQuarantineAt(text, this.cm.getCursor());
   }
 
   // makeQuarantineAt : String [ASTNode | DOMNode | Cursor] Event -> Void
   // Consumes a String, a Destination, and an event.
   // Hides the original node and inserts a quarantine DOM node at the Destination 
   // with the String (or, if false, DOMNode contents), allowing the user to edit.
-  makeQuarantineAt(text, dest, event) {
+  makeQuarantineAt(text, dest) {
     let quarantine = document.createElement('span');
     // if we're editing an existing ASTNode
     if(dest.type) {
@@ -723,7 +721,7 @@ export default class CodeMirrorBlocks {
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
       if(quarantine.insertion && !this.hasInvalidEdit) range.collapse();
-     }, 10);
+    }, 10);
   }
 
   // saveQuarantine : ASTNode DOMNode Event -> Void
@@ -746,10 +744,10 @@ export default class CodeMirrorBlocks {
       if(quarantine.originalEl) quarantine.parentNode.insertBefore(quarantine.originalEl, quarantine);
       quarantine.parentNode.removeChild(quarantine);
       this.commitChange(() => { // make the change, and set the path for re-focus
-          this.cm.replaceRange(text, quarantine.from, quarantine.to);
-          if(path) this.focusPath = path.join(',');
-        }, 
-        (quarantine.insertion? "inserted " : "changed ") + text
+        this.cm.replaceRange(text, quarantine.from, quarantine.to);
+        if(path) this.focusPath = path.join(',');
+      }, 
+      (quarantine.insertion? "inserted " : "changed ") + text
       );
     } catch(e) {                                      // If the node contents will NOT lex...
       this.hasInvalidEdit = true;                         // 1) Set this.hasInvalidEdit
@@ -820,7 +818,7 @@ export default class CodeMirrorBlocks {
 
     // used to create an insertion node
     function moveCursorAdjacent(node, cursor) {
-      if(node) { that.makeQuarantineAt("", node, event); } 
+      if(node) { that.makeQuarantineAt("", node); } 
       // set mouseUsed to simulate click-to-focus
       else { that.mouseUsed = true; that.cm.focus(); that.cm.setCursor(cursor); }
     }
@@ -828,7 +826,7 @@ export default class CodeMirrorBlocks {
     // Enter should toggle editing on editable nodes, or toggle expanding
     if (keyName == "Enter" && activeNode) {
       if(this.isNodeEditable(activeNode)){
-        this.makeQuarantineAt(false, activeNode, event);
+        this.makeQuarantineAt(false, activeNode);
       } else {
         that.maybeChangeNodeExpanded(activeNode);
         that.refreshCM(cur);
@@ -836,7 +834,7 @@ export default class CodeMirrorBlocks {
     }
     // Ctrl/Cmd-Enter should force-allow editing on ANY node
     else if (keyName == CTRLKEY+"-Enter" && activeNode) {
-      this.makeQuarantineAt(false, activeNode, event);
+      this.makeQuarantineAt(false, activeNode);
     }
     // Space clears selection and selects active node
     else if (keyName == "Space" && activeNode) {
@@ -968,7 +966,7 @@ export default class CodeMirrorBlocks {
     }
     event.preventDefault();
     event.stopPropagation();
-  };
+  }
 
   // unset the aria-selected attribute, and remove the node from the set
   removeFromSelection(node, speakEachOne=true) {
