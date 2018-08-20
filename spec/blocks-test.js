@@ -419,7 +419,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       describe('tree navigation', function() {
         beforeEach(function() {
-          this.cm.setValue('(+ 1 2 3) 99 (* 7 8)');
+          this.cm.setValue('(+ 1 2 3) 99 (* 7 (* 1 2))');
           this.firstRoot  = this.blocks.ast.rootNodes[0];
           this.secondRoot = this.blocks.ast.rootNodes[1];
           this.thirdRoot  = this.blocks.ast.rootNodes[2];
@@ -429,9 +429,10 @@ describe('The CodeMirrorBlocks Class', function() {
           this.thirdArg   = this.blocks.ast.rootNodes[0].args[2];
           this.firstRoot.el.dispatchEvent(click());
           this.firstRoot.el.dispatchEvent(keydown(LEFT));
+          this.lastNode   = this.thirdRoot.args[1].args[1];
         });
 
-        it('up-arrow should navigate to the previous visible node, but not beyond it', function() {
+        it('up-arrow should navigate to the previous visible node, but not beyond the tree', function() {
           this.secondRoot.el.dispatchEvent(click());
           expect(document.activeElement).toBe(this.secondRoot.el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.secondRoot.el.id);
@@ -443,15 +444,15 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
         });
 
-        it('down-arrow should navigate to the next sibling, but not beyond it', function() {
-          this.thirdRoot.args[0].el.dispatchEvent(click());
-          expect(document.activeElement).toBe(this.thirdRoot.args[0].el);
-          this.thirdRoot.args[0].el.dispatchEvent(keydown(DOWN));
-          expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
-          this.thirdRoot.args[1].el.dispatchEvent(keydown(DOWN));
-          expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
+        it('down-arrow should navigate to the next sibling, but not beyond the tree', function() {
+          this.thirdRoot.args[1].args[0].el.dispatchEvent(click());
+          expect(document.activeElement).toBe(this.thirdRoot.args[1].args[0].el);
+          this.thirdRoot.args[1].args[0].el.dispatchEvent(keydown(DOWN));
+          expect(document.activeElement).toBe(this.thirdRoot.args[1].args[1].el);
+          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].args[1].el.id);
+          this.thirdRoot.args[1].args[1].el.dispatchEvent(keydown(DOWN));
+          expect(document.activeElement).toBe(this.thirdRoot.args[1].args[1].el);
+          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].args[1].el.id);
         });
 
         it('left-arrow should collapse a block, if it can be', function() {
@@ -492,8 +493,15 @@ describe('The CodeMirrorBlocks Class', function() {
         it('end should activate the last visible node', function() {
           this.secondRoot.el.dispatchEvent(click());
           this.secondRoot.el.dispatchEvent(keydown(END));
+          expect(document.activeElement).toBe(this.lastNode.el);
+          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.lastNode.el.id);
+          this.thirdRoot.args[1].el.dispatchEvent(click());
+          this.thirdRoot.args[1].el.dispatchEvent(keydown(LEFT));
+          this.secondRoot.el.dispatchEvent(click());
+          this.secondRoot.el.dispatchEvent(keydown(END));
           expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
+          
         });
       });
     });

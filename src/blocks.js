@@ -909,14 +909,12 @@ export default class CodeMirrorBlocks {
     }
     // Go to the last visible node in the tree (depth-first)
     else if (keyName == "End" && activeNode) {
-      const lastExpr = [...this.ast.reverseRootNodes[0]];
-      // TODO(Oak): I rewrote this preserving the semantics of the function, but I'm not
-      // convinced that this function is totally functional in the first place.
-      const lastNode = that.ast.getNextMatchingNode(
-        this.ast.getNodeParent, that.isNodeHidden, lastExpr[lastExpr.length - 1], true
+      if(this.ast.rootNodes.length == 0) return; // no-op for empty trees
+      let lastNode = this.ast.getNodeBeforeCur(this.ast.reverseRootNodes[0].to);
+      let lastVisibleNode = that.ast.getNextMatchingNode(
+        this.ast.getNodeParent, that.isNodeHidden, lastNode, true
       );
-      if (!lastNode) return;
-      this.activateNode(lastNode, event);
+      this.activateNode(lastVisibleNode, event);
     }
     // Shift-Left and Shift-Right toggle global expansion
     else if (keyName === "Shift-Left" && activeNode) { that.changeAllExpanded(false); }
