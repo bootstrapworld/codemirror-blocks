@@ -132,9 +132,9 @@ export default class CodeMirrorBlocks {
         onkeydown:  ((n, e) => this.handleKeyDown(n, e)),
         onclick:    this.nodeEventHandler(this.activateNode),
         ondblclick: this.nodeEventHandler({
-          literal:    ((n, e) => this.insertionQuarantine(false, n, e)),
-          blank:      ((n, e) => this.insertionQuarantine(false, n, e)),
-          whitespace: ((n, e) => this.insertionQuarantine("", n, e))
+          literal:    ((n, e) => this.makeQuarantineAt(false, n, e)),
+          blank:      ((n, e) => this.makeQuarantineAt(false, n, e)),
+          whitespace: ((n, e) => this.makeQuarantineAt("", n, e))
         }),
         ondragstart:  this.nodeEventHandler(this.startDraggingNode),
         ondragend:    this.nodeEventHandler(this.stopDraggingNode),
@@ -463,7 +463,7 @@ export default class CodeMirrorBlocks {
            || (!e.shiftKey && activeNode.to)                          // ...or inserting after at the top level
            || (e.shiftKey  && activeNode.from);                       // ...or inserting before at the top level
       this.clearSelection();
-      let node = that.insertionQuarantine(text, dest, e);
+      let node = that.makeQuarantineAt(text, dest, e);
       that.buffer.value = ""; // empty the buffer
       // save the node
       setTimeout(() => { this.unmute(); node.el.blur(); }, 50);
@@ -656,144 +656,135 @@ export default class CodeMirrorBlocks {
     var text = (e.type == "keypress")? String.fromCharCode(e.which)
       : e.clipboardData.getData('text/plain');
     if(!text.replace(/\s/g, '').length) return; // let pure whitespace pass through
-    e.preventDefault();
-    this.insertionQuarantine(text, this.cm.getCursor(), e);
+    e.preventDefault(); e.stopPropagation(); e.codemirrorIgnore = true;
+    this.makeQuarantineAt(text, this.cm.getCursor(), e);
   }
 
-  // insertionQuarantine : String [ASTNode | DOMNode | Cursor] Event -> Void
+  // makeQuarantineAt : String [ASTNode | DOMNode | Cursor] Event -> Void
   // Consumes a String, a Destination, and an event.
   // Hides the original node and inserts a literal at the Destination 
   // with the String (or, if false, DOMNode contents), allowing the user to edit.
-  insertionQuarantine(text, dest, event) {
-    let ast  = this.parser.parse("0");
-    let literal = ast.rootNodes[0];
-    literal.options['aria-label'] = text;
-    this.renderer.render(literal, true);
-    literal.el.classList.add("quarantine");
+  makeQuarantineAt(text, dest, event) {
+  console.log('makeQuarantineAt called');  
+    let quarantine = document.createElement('span');
     // if we're editing an existing ASTNode
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
-      literal.from = dest.from; literal.to = dest.to;
-      literal.path = dest.path; // save the path for returning focus
-      literal.el.originalEl = dest.el; // save the original DOM El
-      parent.insertBefore(literal.el, dest.el);
+      quarantine.from = dest.from; quarantine.to = dest.to;
+      quarantine.path = dest.path; // save the path for returning focus
+      quarantine.originalEl = dest.el; // save the original DOM El
+      parent.insertBefore(quarantine, dest.el);
       parent.removeChild(dest.el);
     // if we're inserting into a whitespace node
     } else if(dest.nodeType) {
-      literal.el.classList.add("blocks-white-space");
+      quarantine.classList.add("blocks-white-space");
       let parent = dest.parentNode;
-      literal.to = literal.from = this.getLocationFromWhitespace(dest);
-      literal.path = this.getPathFromWhitespace(dest); // save path for focus
-      literal.el.originalEl = dest;  // save the original DOM El
-      parent.insertBefore(literal.el, dest);
+      quarantine.to = quarantine.from = this.getLocationFromWhitespace(dest);
+      quarantine.path = this.getPathFromWhitespace(dest); // save path for focus
+      quarantine.originalEl = dest;  // save the original DOM El
+      parent.insertBefore(quarantine, dest);
       parent.removeChild(dest);
-      literal.insertion = {clear: () => {}}; // make a dummy marker
+      quarantine.insertion = {clear: () => {}}; // make a dummy marker
     // if we're inserting into a toplevel CM cursor
     } else if(dest.line !== undefined){
-      literal.to = literal.from = dest;
+      quarantine.to = quarantine.from = dest;
       // calculate the path for focus (-1 if it's the first node)
       const nodeBefore = this.ast.getToplevelNodeBeforeCur(dest);
-      literal.path = String(nodeBefore ? nodeBefore.path : -1);
-      let mk = this.cm.setBookmark(dest, {widget: literal.el});
-      literal.insertion = mk;
+      quarantine.path = String(nodeBefore ? nodeBefore.path : -1);
+      let mk = this.cm.setBookmark(dest, {widget: quarantine});
+      quarantine.insertion = mk;
     } else {
-      throw "insertionQuarantine given a destination of unknown type";
+      throw "makeQuarantineAt given a destination of unknown type";
     }
-    literal.el.draggable = false;
-    literal.el.innerText = text;
-    literal.el.originalPath = this.focusPath;
-    literal.el.setAttribute("aria-label", text);
-    // Fixes rapid-typing bug on FF. Interestingly enough, removing the timeout altogether 
-    // OR using a larger timeout causes the bug to re-appear.
-    // See https://github.com/bootstrapworld/codemirror-blocks/issues/139
-    setTimeout(() => this.editLiteral(literal, event), 0);
-    return literal;
+    quarantine.classList.add('quarantine', 'blocks-node', 'blocks-editing', 'blocks-literal');
+    quarantine.appendChild(document.createTextNode(text));
+    quarantine.originalPath = this.focusPath;
+    quarantine.setAttribute('role','textbox');
+    quarantine["aria-label"] = quarantine.innerText = text;
+    quarantine.contentEditable = true;
+    quarantine.spellcheck = false;
+    quarantine.onblur    = (e => this.saveQuarantine(quarantine, e));
+    quarantine.onkeydown = (e => this.handleEditKeyDown(quarantine, e));
+    // if text is the empty string, we're inserting
+    this.say(text? "editing " : "inserting "+text+". Use Enter to save, and Shift-Escape to cancel");
+    this.clearSelection(); // clear any selected nodes, then select the contents of the quarantine contents
+    this.editQuarantine(quarantine);
+    return quarantine;
   }
 
-  // saveEdit : ASTNode DOMNode Event -> Void
+  editQuarantine(quarantine) {
+    quarantine.focus();
+    setTimeout(() => {
+      let range = document.createRange();
+      range.selectNodeContents(quarantine);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      if(quarantine.insertion && !this.hasInvalidEdit) range.collapse();
+     }, 10);
+  }
+
+  // saveQuarantine : ASTNode DOMNode Event -> Void
   // If not, set the error state and maintain focus
   // set this.hasInvalidEdit to the appropriate value
-  saveEdit(node, nodeEl, event) {
-    event.preventDefault();
+  saveQuarantine(quarantine, event) {
+    event.preventDefault(); event.stopPropagation();
     try {
-      var text = nodeEl.textContent;
+      var text = quarantine.textContent;
       let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
-      if(node.from === node.to) text = this.willInsertNode(this.cm, text, nodeEl, node.from, node.to); // sanitize
-      this.hasInvalidEdit = false;                    // 1) Set this.hasInvalidEdit
-      nodeEl.title = '';                              // 2) Clear any prior error titles
-      if(node.insertion) {                            // 3) If we're inserting (instead of editing)
-        node.insertion.clear();                         // clear the CM marker
-        var path = node.path.split(',').map(Number);    // Extract and expand the path
-        path[path.length-1] += roots.length;            // adjust the path based on parsed text
+      if(quarantine.from === quarantine.to) 
+        text = this.willInsertNode(this.cm, text, quarantine, quarantine.from, quarantine.to); // sanitize
+      this.hasInvalidEdit = false;                        // 1) Set this.hasInvalidEdit
+      quarantine.title = '';                              // 2) Clear any prior error titles
+      if(quarantine.insertion) {                          // 3) If we're inserting (instead of editing)
+        quarantine.insertion.clear();                         // clear the CM marker
+        var path = quarantine.path.split(',').map(Number);    // Extract and expand the path
+        path[path.length-1] += roots.length;              // adjust the path based on parsed text
       }
-      if(nodeEl.originalEl) nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
-      nodeEl.parentNode.removeChild(nodeEl);
+      if(quarantine.originalEl) quarantine.parentNode.insertBefore(quarantine.originalEl, quarantine);
+      quarantine.parentNode.removeChild(quarantine);
       this.commitChange(() => { // make the change, and set the path for re-focus
-          this.cm.replaceRange(text, node.from, node.to);
+          this.cm.replaceRange(text, quarantine.from, quarantine.to);
           if(path) this.focusPath = path.join(',');
         }, 
-        (node.insertion? "inserted " : "changed ") + text
+        (quarantine.insertion? "inserted " : "changed ") + text
       );
     } catch(e) {                                      // If the node contents will NOT lex...
-      this.hasInvalidEdit = true;                     // 1) Set this.hasInvalidEdit
-      nodeEl.classList.add('blocks-error');           // 2) Set the error state
-      nodeEl.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
+      this.hasInvalidEdit = true;                         // 1) Set this.hasInvalidEdit
+      quarantine.classList.add('blocks-error');           // 2) Set the error state
+      quarantine.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
       let errorTxt = this.parser.getExceptionMessage(e);
-      nodeEl.title = errorTxt;                        // 4) Make the title the error msg
-      setTimeout(()=>this.editLiteral(node,event),50);// 5) Keep focus
+      quarantine.title = errorTxt;                        // 4) Make the title the error msg
+      this.editQuarantine(quarantine,event);              // 5) Keep focus
       this.say(errorTxt);
     }
   }
 
   // handleEditKeyDown : ASTNode DOMNode Event -> Void
   // Trap Enter, Tab and Esc, Shift-Esc keys. Let the rest pass through
-  handleEditKeyDown(node, nodeEl, e) {
+  handleEditKeyDown(quarantine, e) {
     e.stopPropagation();
-    e.codemirrorIgnore = true;
     let keyName = CodeMirror.keyName(e);
     if (["Enter", "Tab", "Shift-Tab", "Esc", "Shift-Esc"].includes(keyName)) {
       e.preventDefault();
       // To cancel, (maybe) reinsert the original DOM Elt and activate the original
       // then remove the blur handler and the insertion node
       if(["Esc", "Shift-Esc"].includes(keyName)) {
-        nodeEl.onblur = null;
-        if(nodeEl.originalEl) {
-          nodeEl.parentNode.insertBefore(nodeEl.originalEl, nodeEl);
-          this.activateNode(this.ast.getClosestNodeFromPath(node.path.split(',')), e);
+        quarantine.onblur = this.hasInvalidEdit = false; // remove blur handler and set hasInvalidEdit to false
+        if(quarantine.insertion) { quarantine.insertion.clear(); }
+        if(quarantine.originalEl) {
+          quarantine.parentNode.insertBefore(quarantine.originalEl, quarantine);
+          this.activateNode(this.ast.getClosestNodeFromPath(quarantine.path.split(',')), e);
         }
         this.say("cancelled");
-        nodeEl.parentNode.removeChild(nodeEl);
+        quarantine.parentNode.removeChild(quarantine);
       } else if(["Tab", "Shift-Tab"].includes(keyName) && this.hasInvalidEdit) {
-        this.say(nodeEl.title);
+        this.say(quarantine.title);
       } else {
-        nodeEl.blur();
+        quarantine.blur();
       }
     }
   }
-
-  // editLiteral : ASTNode Event -> Void
-  // Set the appropriate attributes and event handlers
-  editLiteral(node, event) {
-    event.stopPropagation();
-    this.clearSelection(); // if we're editing, clear the selection
-    let action = node.el.getAttribute("aria-label") == ""? "inserting " : "editing ";
-    this.say(action+node.el.getAttribute("aria-label")+". Use Enter to save, and Shift-Escape to cancel");
-    node.el.contentEditable = true;
-    node.el.spellcheck = false;
-    node.el.classList.add('blocks-editing');
-    node.el.setAttribute('role','textbox');
-    node.el.onblur    = (e => this.saveEdit(node, node.el, e));
-    node.el.onkeydown = (e => this.handleEditKeyDown(node, node.el, e));
-    let range = document.createRange();
-    let end = Math.min(node.toString().length, node.el.innerText.length);
-    range.setStart(node.el, node.insertion? end : 0);
-    range.setEnd(node.el, end);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-    node.el.focus();
-  }
-
 
   // used to switch focus to the "next" node, based on a search function
   // returns false if it fails to switch, true otherwise.
@@ -827,7 +818,7 @@ export default class CodeMirrorBlocks {
 
     // used to create an insertion node
     function moveCursorAdjacent(node, cursor) {
-      if(node) { that.insertionQuarantine("", node, event); } 
+      if(node) { that.makeQuarantineAt("", node, event); } 
       // set mouseUsed to simulate click-to-focus
       else { that.mouseUsed = true; that.cm.focus(); that.cm.setCursor(cursor); }
     }
@@ -835,7 +826,7 @@ export default class CodeMirrorBlocks {
     // Enter should toggle editing on editable nodes, or toggle expanding
     if (keyName == "Enter" && activeNode) {
       if(this.isNodeEditable(activeNode)){
-        this.insertionQuarantine(false, activeNode, event);
+        this.makeQuarantineAt(false, activeNode, event);
       } else {
         that.maybeChangeNodeExpanded(activeNode);
         that.refreshCM(cur);
@@ -843,7 +834,7 @@ export default class CodeMirrorBlocks {
     }
     // Ctrl/Cmd-Enter should force-allow editing on ANY node
     else if (keyName == CTRLKEY+"-Enter" && activeNode) {
-      this.insertionQuarantine(false, activeNode, event);
+      this.makeQuarantineAt(false, activeNode, event);
     }
     // Space clears selection and selects active node
     else if (keyName == "Space" && activeNode) {
