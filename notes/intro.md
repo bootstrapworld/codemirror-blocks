@@ -30,7 +30,16 @@ block editors:
 1. It lets you switch between a block editor and a text editor, thus
    giving a migration path towards grownup textual editing.
 2. It has good accessibility (e.g. for screen readers) built in.
-
+3. It creates a separation between the way a block of code is described
+   and the way it is written. This allows, for example, for code line public
+   static void foo(x, y) { x + y} to be announced as "foo, a function
+   definition of two inputs. Public, static, returns void". These
+   descriptions can be customized for pedagogical purposes, perhaps using
+   different amounts of detail or vocabulary so as to be age appropriate
+   (or even announced aloud in Spanish, Tagolog, etc!). This reduces the
+   cognitive load when learning a new language, by allowing the user to
+   focus on the structure and meaning of a block of code without having
+   to consider the structure.
 
 ## Developer Notes
 
