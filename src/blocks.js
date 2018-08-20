@@ -528,7 +528,7 @@ export default class CodeMirrorBlocks {
   getLocationFromWhitespace(el) {
     if(!el.classList.contains('blocks-white-space')) return false;
     if(!(el.dataset.line && el.dataset.ch)) throw "getLocationFromWhitespace called with a WS el that did not have a location";
-    return {line: Number(el.dataset.line), ch: Number(el.dataset.ch)}; // cast to number, since HTML5
+    return {line: Number(el.dataset.line), ch: Number(el.dataset.ch)}; // cast to number, since HTML5 stores data as strings
   }
 
   // getPathFromWhiteSpace : DOMNode -> Path | #f
@@ -662,18 +662,17 @@ export default class CodeMirrorBlocks {
 
   // makeQuarantineAt : String [ASTNode | DOMNode | Cursor] Event -> Void
   // Consumes a String, a Destination, and an event.
-  // Hides the original node and inserts a literal at the Destination 
+  // Hides the original node and inserts a quarantine DOM node at the Destination 
   // with the String (or, if false, DOMNode contents), allowing the user to edit.
   makeQuarantineAt(text, dest, event) {
-  console.log('makeQuarantineAt called');  
     let quarantine = document.createElement('span');
     // if we're editing an existing ASTNode
     if(dest.type) {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
       quarantine.from = dest.from; quarantine.to = dest.to;
-      quarantine.path = dest.path; // save the path for returning focus
-      quarantine.originalEl = dest.el; // save the original DOM El
+      quarantine.path = dest.path;      // save the path for returning focus
+      quarantine.originalEl = dest.el;  // save the original DOM El
       parent.insertBefore(quarantine, dest.el);
       parent.removeChild(dest.el);
     // if we're inserting into a whitespace node
@@ -698,17 +697,20 @@ export default class CodeMirrorBlocks {
       throw "makeQuarantineAt given a destination of unknown type";
     }
     quarantine.classList.add('quarantine', 'blocks-node', 'blocks-editing', 'blocks-literal');
-    quarantine.appendChild(document.createTextNode(text));
     quarantine.originalPath = this.focusPath;
     quarantine.setAttribute('role','textbox');
-    quarantine["aria-label"] = quarantine.innerText = text;
+    quarantine["aria-label"] = quarantine.textContent = text;
     quarantine.contentEditable = true;
     quarantine.spellcheck = false;
     quarantine.onblur    = (e => this.saveQuarantine(quarantine, e));
     quarantine.onkeydown = (e => this.handleEditKeyDown(quarantine, e));
+    quarantine.onpaste   = (e => {
+      e.preventDefault(); // SANITIZE: kill the paste event and manually-insert the text
+      document.execCommand("insertHTML", false, e.clipboardData.getData("text/plain"));
+    });
     // if text is the empty string, we're inserting
     this.say(text? "editing " : "inserting "+text+". Use Enter to save, and Shift-Escape to cancel");
-    this.clearSelection(); // clear any selected nodes, then select the contents of the quarantine contents
+    this.clearSelection(); // clear any selected nodes
     this.editQuarantine(quarantine);
     return quarantine;
   }
