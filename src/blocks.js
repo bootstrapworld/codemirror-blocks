@@ -30,6 +30,9 @@ function toggleDraggable(e) {
 const openDelims = ["(","[","{"];
 const closeDelims = {"(": ")", "[":"]", "{": "}"};
 
+// CM options we want to save/restore
+const cmOptions = ["readOnly", "viewportMargin"];
+
 const MARKER = Symbol("codemirror-blocks-marker");
 export class BlockMarker {
   constructor(cmMarker, options, node){
@@ -88,6 +91,7 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm = cm;
+    this.cm.setOption("readOnly", true); // make it so only the block editor can make changes
     this.toolbarNode = toolbar;
     this.searchNode = search;
     this.willInsertNode = willInsertNode;
@@ -152,7 +156,6 @@ export default class CodeMirrorBlocks {
 
     var dropHandler = this.nodeEventHandler(this.dropOntoNode, true);
     var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
-    this.cm.setOption("readOnly", true); // make it so only the block editor can make changes
     this.cm.on('drop',      (cm, e) => dropHandler(e));
     this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
     this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
@@ -233,13 +236,16 @@ export default class CodeMirrorBlocks {
   setBlockMode(mode) {
     if (mode === this.blockMode) { return; } // bail if there's no change
     this.blockMode = mode;
-    if(mode) { 
+    if(mode) {
+      this.savedOpts = {}
+      cmOptions.forEach(opt => this.savedOpts[opt] = this.cm.getOption(opt));
       this.wrapper.setAttribute( "role", "tree"); 
       this.scroller.setAttribute("role", "presentation");
       this.wrapper.setAttribute("aria-label", "Block Editor");
       this.say("Switching to Block Mode");
       this.ast = this.parser.parse(this.cm.getValue());
     } else {
+      cmOptions.forEach(opt => this.cm.setOption(opt, this.savedOpts[opt]));
       this.wrapper.removeAttribute( "role"); 
       this.scroller.removeAttribute("role");
       this.wrapper.setAttribute("aria-label", "Text Editor");
@@ -770,14 +776,14 @@ export default class CodeMirrorBlocks {
       // To cancel, (maybe) reinsert the original DOM Elt and activate the original
       // then remove the blur handler and the insertion node
       if(["Esc", "Shift-Esc"].includes(keyName)) {
-        quarantine.onblur = this.hasInvalidEdit = false; // remove blur handler and set hasInvalidEdit to false
+        quarantine.onblur = this.hasInvalidEdit = false; // turn off blur handler and hasInvalidEdit
         if(quarantine.insertion) { quarantine.insertion.clear(); }
         if(quarantine.originalEl) {
           quarantine.parentNode.replaceChild(quarantine.originalEl, quarantine);
           this.activateNode(this.ast.getClosestNodeFromPath(quarantine.path.split(',')), e);
         }
         this.say("cancelled");
-        this.cm.setOption("readOnly", true);
+        this.cm.setOption("readOnly", true);  // let CM see again
       } else if(["Tab", "Shift-Tab"].includes(keyName) && this.hasInvalidEdit) {
         this.say(quarantine.title);
       } else {
@@ -1002,13 +1008,12 @@ export default class CodeMirrorBlocks {
   changeAllExpanded(expanded) {
     this.say(expanded? "Expand All" : "Collapse All", 30);
     let activeNode = this.getActiveNode();
-    let savedViewportMargin = this.cm.getOption("viewportMargin");
     this.cm.setOption("viewportMargin", Infinity);
     setTimeout(() => {
       let elts = this.wrapper.querySelectorAll(`[aria-expanded=${!expanded}]:not([class*=blocks-locked])`);
       [].forEach.call(elts, e => this.maybeChangeNodeExpanded(this.findNodeFromEl(e), expanded));
       this.refreshCM(); // update the CM display, since line heights may have changed
-      this.cm.setOption("viewportMargin", savedViewportMargin);
+      this.cm.setOption("viewportMargin", this.savedOpts["viewportMargin"]);
       if(!expanded) { // if we collapsed, put focus on containing rootNode
         let rootPath = activeNode.path.split(",")[0];
         // shift focus if rootId !== activeNodeId
