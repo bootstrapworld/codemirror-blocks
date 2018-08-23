@@ -142,6 +142,7 @@ export default class CodeMirrorBlocks {
         ondrop:       this.nodeEventHandler(this.dropOntoNode),
       }
     );
+
     // TODO: don't do this, otherwise we copy/paste will only work
     // when there is one instance of this class on a page.
     Object.assign(document, {
@@ -151,6 +152,7 @@ export default class CodeMirrorBlocks {
 
     var dropHandler = this.nodeEventHandler(this.dropOntoNode, true);
     var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
+    this.cm.setOption("readOnly", true); // make it so only the block editor can make changes
     this.cm.on('drop',      (cm, e) => dropHandler(e));
     this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
     this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
@@ -645,6 +647,7 @@ export default class CodeMirrorBlocks {
   // quarantine a keypress or paste entry at the CM level
   handleTopLevelEntry(e) {
     if(!this.blockMode) return; // bail if mode==false
+    e.preventDefault(); e.stopPropagation(); e.codemirrorIgnore = true;
     this.clearSelection();      // clear the previous selection
     // WK/Firefox workaround: skip kepress events that are actually clipboard events
     if(e.type == "keypress" && ["c","v","x"].includes(e.key) 
@@ -654,7 +657,6 @@ export default class CodeMirrorBlocks {
     var text = (e.type == "keypress")? String.fromCharCode(e.which)
       : e.clipboardData.getData('text/plain');
     if(!text.replace(/\s/g, '').length) return; // let pure whitespace pass through
-    e.preventDefault(); e.stopPropagation(); e.codemirrorIgnore = true;
     this.makeQuarantineAt(text, this.cm.getCursor());
   }
 
@@ -663,6 +665,7 @@ export default class CodeMirrorBlocks {
   // Hides the original node and inserts a quarantine DOM node at the Destination 
   // with the String (or, if false, DOMNode contents), allowing the user to edit.
   makeQuarantineAt(text, dest) {
+    this.cm.setOption("readOnly", "nocursor"); // make CM blind while quarantine is visible
     let quarantine = document.createElement('span');
     // if we're editing an existing ASTNode
     if(dest.type) {
@@ -730,9 +733,10 @@ export default class CodeMirrorBlocks {
   saveQuarantine(quarantine) {
     try {
       let text = quarantine.textContent;
-      let roots = this.parser.parse(text).rootNodes;  // Make sure the node contents will parse
-      this.hasInvalidEdit = false;                        // 1) Set this.hasInvalidEdit
-      if(quarantine.insertion) {                          // 2) If we're inserting (instead of editing)
+      let roots = this.parser.parse(text).rootNodes;      // Make sure the node contents will parse. If so...
+      this.cm.setOption("readOnly", true);                // 1) Let CM see again, and...
+      this.hasInvalidEdit = false;                        // 2) Set this.hasInvalidEdit
+      if(quarantine.insertion) {                          // 3) If we're inserting (instead of editing)...
         quarantine.insertion.clear();                         // clear the CM marker
         var path = quarantine.path.split(',').map(Number);    // Extract and expand the path
         path[path.length-1] += roots.length;                  // adjust the path based on parsed text
@@ -773,6 +777,7 @@ export default class CodeMirrorBlocks {
           this.activateNode(this.ast.getClosestNodeFromPath(quarantine.path.split(',')), e);
         }
         this.say("cancelled");
+        this.cm.setOption("readOnly", true);
       } else if(["Tab", "Shift-Tab"].includes(keyName) && this.hasInvalidEdit) {
         this.say(quarantine.title);
       } else {
