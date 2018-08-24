@@ -1,18 +1,9 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import React from 'react';
 
-import {CondExpression as ASTCondExpressionNode} from '../ast';
 import Node from './Node';
+import Block from './Block';
 
-export default class CondExpression extends Component {
-  static propTypes = {
-    node: PropTypes.instanceOf(ASTCondExpressionNode).isRequired,
-    helpers: PropTypes.shape({
-      renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired,
-    lockedTypes: PropTypes.instanceOf(Array).isRequired,
-  }
-
+export default class CondExpression extends Block {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (

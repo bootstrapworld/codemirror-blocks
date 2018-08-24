@@ -1,19 +1,10 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import React from 'react';
 
-import {FunctionDefinition as ASTFunctionDefinitionNode} from '../ast';
 import Node from './Node';
 import DropTarget from './DropTarget';
+import Block from './Block';
 
-export default class FunctionDefinition extends Component {
-  static propTypes = {
-    node: PropTypes.instanceOf(ASTFunctionDefinitionNode).isRequired,
-    helpers: PropTypes.shape({
-      renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired,
-    lockedTypes: PropTypes.instanceOf(Array).isRequired,
-  }
-
+export default class FunctionDefinition extends Block {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
