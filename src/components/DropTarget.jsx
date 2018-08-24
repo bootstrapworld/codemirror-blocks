@@ -1,17 +1,20 @@
-import React, {PureComponent} from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
+import Component from './BlockComponent';
 
+export default class DropTarget extends Component {
 
-export default class DropTarget extends PureComponent {
-
-static propTypes = {
+  static propTypes = {
     location: PropTypes.instanceOf(Object).isRequired
   }
 
   render() {
-  	const {location} = this.props;
+    const {location} = this.props;
     return (
-      <span className="blocks-drop-target blocks-white-space" data-line={location.line} data-ch={location.ch}/>
+      <span
+        className="blocks-drop-target blocks-white-space"
+        data-line={location.line}
+        data-ch={location.ch} />
     );
   }
 }

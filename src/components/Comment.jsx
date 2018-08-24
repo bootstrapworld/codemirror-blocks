@@ -1,9 +1,9 @@
-import React, {PureComponent} from 'react';
+import React  from 'react';
 import PropTypes from 'prop-types';
-
+import Component from './BlockComponent';
 import {ASTNode} from '../ast';
 
-export default class Comment extends PureComponent {
+export default class Comment extends Component {
   static propTypes = {
     node: PropTypes.instanceOf(ASTNode),
     lockedTypes: PropTypes.instanceOf(Array).isRequired,

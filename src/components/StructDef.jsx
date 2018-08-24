@@ -1,5 +1,6 @@
-import React, {Component} from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
+import Component from './BlockComponent';
 
 import {StructDefinition as ASTStructDefinitionNode} from '../ast';
 import Node from './Node';

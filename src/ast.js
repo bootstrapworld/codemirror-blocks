@@ -82,16 +82,27 @@ export class AST {
   // annotateNodes : ASTNodes ASTNode -> Void
   // walk through the siblings, assigning aria-* attributes
   // and populating various maps for tree navigation
-  annotateNodes(nodes=this.rootNodes, parent=false) {
-    let lastNode = null;
+  annotateNodes() {
+    this.nodeIdMap.clear();
+    this.nodePathMap.clear();
 
-    const loop = (nodes, parent) => {
+
+    let lastNode = null;
+    let nid = 0;
+
+    const loop = (nodes, parent, level) => {
       nodes.forEach((node, i) => {
+        node.parent = parent;
         node.path = parent ? parent.path + ("," + i) : i.toString();
+        // node.nextSibling = i + 1 === nodes.length ? null : nodes[i + 1];
+        node.level = level;
         node["aria-setsize"]  = nodes.length;
         node["aria-posinset"] = i + 1;
         node["aria-level"]    = 1 + (parent ? parent.path.split(",").length : 0);
+        node.nid = nid++;
         if (lastNode) {
+          node.prev = lastNode;
+          lastNode.next = node;
           this.nextNodeMap.set(lastNode, node);
           this.prevNodeMap.set(node, lastNode);
         }
@@ -99,11 +110,11 @@ export class AST {
         this.nodePathMap.set(node.path, node);
         lastNode = node;
         const children = [...node.children()];
-        loop(children, node);
+        loop(children, node, level + 1);
       });
     };
 
-    loop(nodes, parent);
+    loop(this.rootNodes, null, 0);
   }
 
   // patch : Parser, String, [ChangeObjs] -> AST
@@ -175,7 +186,7 @@ export class AST {
     return newAST;
   }
 
-  getNodeById(id) {
+  getNodeById = id => {
     return this.nodeIdMap.get(id);
   }
   getNodeByPath(path) {
@@ -269,7 +280,7 @@ export class AST {
   getNodeParent = node => {
     let path = node.path.split(",");
     path.pop();
-    return this.nodePathMap.get(path.join(",")) || "";
+    return this.nodePathMap.get(path.join(",")) || false;
   }
   // return the first child, if it exists
   getNodeFirstChild(node) {

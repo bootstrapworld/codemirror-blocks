@@ -1,5 +1,6 @@
-import React, {Component} from 'react';
+import React  from 'react';
 import PropTypes from 'prop-types';
+import Component from './BlockComponent';
 
 import {Blank as ASTBlankNode} from '../ast';
 import Node from './Node';
@@ -15,7 +16,11 @@ export default class Literal extends Component {
   render() {
     const {node, lockedTypes, helpers} = this.props;
     return (
-      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node}
+            lockedTypes={lockedTypes}
+            normallyEditable={true}
+            expandable={false}
+            helpers={helpers}>
         <span className={`blocks-literal-symbol`}>
         </span>
       </Node>
