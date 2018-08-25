@@ -368,9 +368,9 @@ export default class CodeMirrorBlocks {
       this.clearSelection(); 
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
-    var {top, bottom, left, right} = node.el.getBoundingClientRect();
+    node.el.getBoundingClientRect();   // gets an *approximate* bounding rect
     this.cm.scrollIntoView(node.from); // if node is offscreen, this forces a CM render
-    var {top, bottom, left, right} = node.el.getBoundingClientRect();
+    var {top, bottom, left, right} = node.el.getBoundingClientRect(); // get the *actual* bounding rect
     let offset = this.wrapper.getBoundingClientRect();
     let scroll = this.cm.getScrollInfo();
     top    = top    + scroll.top  - offset.top; 
@@ -433,7 +433,7 @@ export default class CodeMirrorBlocks {
     if(this.selectedNodes.size === 0) {
       if(event.type == 'cut') {
         this.say("Nothing selected");
-        return false;
+        return;
       } else if(event.type == 'copy') {
         this.clipboard = this.cm.getRange(activeNode.from, activeNode.to);
       }
@@ -553,13 +553,14 @@ export default class CodeMirrorBlocks {
     return path.join(',');
   }
 
-  // findNodeFromEl : DOMNode -> ASTNode
-  // return the AST node that *exactly* matches the element, or null
+  // findNodeFromEl : DOMNode -> ASTNode | Boolean
+  // return the AST node that *exactly* matches the element, or false
   findNodeFromEl(el) {
     if(el) {
       let match = el.id.match(/block-node-(.*)/);
       return match && (match.length > 1) && this.ast.getNodeById(match[1]);
     }
+    return false;
   }
   // findNearestNodeFromEl : DOMNode -> ASTNode
   // return the AST node that *best** matches the element, or null
@@ -657,7 +658,7 @@ export default class CodeMirrorBlocks {
     // WK/Firefox workaround: skip kepress events that are actually clipboard events
     if(e.type == "keypress" && ["c","v","x"].includes(e.key) 
       && ((ISMAC && e.metaKey) || (!ISMAC && e.ctrlKey))) {
-      return false;
+      return;
     }
     var text = (e.type == "keypress")? String.fromCharCode(e.which)
       : e.clipboardData.getData('text/plain');
@@ -905,14 +906,12 @@ export default class CodeMirrorBlocks {
     }
     // Go to the last visible node in the tree (depth-first)
     else if (keyName == "End" && activeNode) {
-      const lastExpr = [...this.ast.reverseRootNodes[0]];
-      // TODO(Oak): I rewrote this preserving the semantics of the function, but I'm not
-      // convinced that this function is totally functional in the first place.
-      const lastNode = that.ast.getNextMatchingNode(
-        this.ast.getNodeParent, that.isNodeHidden, lastExpr[lastExpr.length - 1], true
+      if(this.ast.rootNodes.length == 0) return; // no-op for empty trees
+      let lastNode = this.ast.getNodeBeforeCur(this.ast.reverseRootNodes[0].to);
+      let lastVisibleNode = that.ast.getNextMatchingNode(
+        this.ast.getNodeParent, that.isNodeHidden, lastNode, true
       );
-      if (!lastNode) return;
-      this.activateNode(lastNode, event);
+      this.activateNode(lastVisibleNode, event);
     }
     // Shift-Left and Shift-Right toggle global expansion
     else if (keyName === "Shift-Left" && activeNode) { that.changeAllExpanded(false); }
@@ -1005,6 +1004,8 @@ export default class CodeMirrorBlocks {
   }
 
   // change expanded state globally
+  // HACK: we should be storing state in the AST, and letting React handle state changes
+  // We do this for now, strictyl for perf reasons
   changeAllExpanded(expanded) {
     this.say(expanded? "Expand All" : "Collapse All", 30);
     let activeNode = this.getActiveNode();
@@ -1012,12 +1013,12 @@ export default class CodeMirrorBlocks {
     setTimeout(() => {
       let elts = this.wrapper.querySelectorAll(`[aria-expanded=${!expanded}]:not([class*=blocks-locked])`);
       [].forEach.call(elts, e => this.maybeChangeNodeExpanded(this.findNodeFromEl(e), expanded));
-      this.refreshCM(); // update the CM display, since line heights may have changed
+      this.refreshCM(activeNode.from); // update the CM display, since line heights may have changed
       this.cm.setOption("viewportMargin", this.savedOpts["viewportMargin"]);
       if(!expanded) { // if we collapsed, put focus on containing rootNode
         let rootPath = activeNode.path.split(",")[0];
-        // shift focus if rootId !== activeNodeId
-        if(rootPath !== activeNode.path) this.activateNode(this.ast.getNodeByPath(rootPath), event);
+        // shift focus if rootId !== activeNodeId, by simulating a click
+        if(rootPath !== activeNode.path) this.ast.getNodeByPath(rootPath).el.click();
         else this.cm.scrollIntoView(activeNode.from);      
       }
     }, 30);
