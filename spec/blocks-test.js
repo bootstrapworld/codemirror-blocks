@@ -603,6 +603,15 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(quarantine.blur).toHaveBeenCalled();
     });
 
+    it('should blur the node being edited on top-level click', async function() {
+      this.literal.el.dispatchEvent(dblclick());
+      await wait(DELAY);
+      let quarantine = document.activeElement;
+      spyOn(quarantine, 'blur');
+      this.blocks.wrapper.click();
+      expect(quarantine.blur).toHaveBeenCalled();
+    });
+
     describe('when "saving" bad inputs,', function() {
       beforeEach(async function() {
         this.literal.el.dispatchEvent(dblclick());
