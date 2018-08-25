@@ -749,7 +749,12 @@ export default class CodeMirrorBlocks {
         path[path.length-1] += roots.length;                  // adjust the path based on parsed text
         text = this.willInsertNode(this.cm, text, quarantine, quarantine.from, quarantine.to); // sanitize
       }
-      if(quarantine.originalEl) quarantine.parentNode.replaceChild(quarantine.originalEl, quarantine);
+      // guard against https://github.com/bootstrapworld/codemirror-blocks/issues/123
+      try {
+        if(quarantine.originalEl) quarantine.parentNode.replaceChild(quarantine.originalEl, quarantine);
+      } catch(e) {
+        console.log('(Hopefully) Harmless DOM error:', e.toString());
+      }
       this.commitChange(() => { // make the change, and set the path for re-focus
           this.cm.replaceRange(text, quarantine.from, quarantine.to);
           if(path) this.focusPath = path.join(',');
