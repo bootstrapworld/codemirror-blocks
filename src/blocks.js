@@ -653,7 +653,6 @@ export default class CodeMirrorBlocks {
   // quarantine a keypress or paste entry at the CM level
   handleTopLevelEntry(e) {
     if(!this.blockMode) return; // bail if mode==false
-    e.preventDefault(); e.stopPropagation(); e.codemirrorIgnore = true;
     this.clearSelection();      // clear the previous selection
     // WK/Firefox workaround: skip kepress events that are actually clipboard events
     if(e.type == "keypress" && ["c","v","x"].includes(e.key) 
@@ -706,12 +705,13 @@ export default class CodeMirrorBlocks {
     quarantine["aria-label"] = quarantine.textContent = text;
     quarantine.contentEditable = true;
     quarantine.spellcheck = false;
-    quarantine.onblur    = (() => this.saveQuarantine(quarantine));
+    quarantine.onblur    = () => this.saveQuarantine(quarantine);
     quarantine.onkeydown = (e  => this.handleEditKeyDown(quarantine, e));
     quarantine.onpaste   = (e  => {
       e.preventDefault(); // SANITIZE: kill the paste event and manually-insert plaintext
       document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
     });
+    this.wrapper.onclick = () => quarantine.blur(); // clicking the editor should be construed as a "commit"
     // If text is the empty string, we're inserting. Otherwise, we're editing
     this.say(text? "editing " : "inserting "+text+". Use Enter to save, and Shift-Escape to cancel");
     this.clearSelection(); // clear any selected nodes
