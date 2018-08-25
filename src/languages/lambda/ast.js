@@ -1,5 +1,6 @@
 import React from 'react';
 import {ASTNode} from '../../ast';
+import Node from '../../components/Node';
 
 export class Conditional extends ASTNode {
   constructor(from, to, condStatement, thenStatement, elseStatement, options={}) {
