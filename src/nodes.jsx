@@ -1,5 +1,5 @@
 import React from 'react';
-import {ASTNode} from './ast';
+import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
 import Node from './components/Node';
 import Args from './components/Args';
 import DropTarget from './components/DropTarget';
@@ -231,7 +231,7 @@ export class IdentifierList extends ASTNode {
           <Args helpers={helpers}>{this.ids}</Args>
         </span>
       </Node>
-    );
+   );
    }
 }
 

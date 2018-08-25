@@ -37,7 +37,7 @@ function nodeCommentContaining(pos, node) {
   return node.options.comment && posWithinNode(pos, node.options.comment);
 }
 
-function enumerateList(lst, level) {
+export function enumerateList(lst, level) {
   lst = lst.map(l => l.toDescription(level)).slice(0);
   var last = lst.pop();
   return (lst.length == 0)? last : lst.join(', ') + " and "+last;
