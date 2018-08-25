@@ -471,10 +471,10 @@ export default class CodeMirrorBlocks {
            || (!e.shiftKey && activeNode.to)                          // ...or inserting after at the top level
            || (e.shiftKey  && activeNode.from);                       // ...or inserting before at the top level
       this.clearSelection();
-      let node = that.makeQuarantineAt(text, dest);
+      let quarantine = that.makeQuarantineAt(text, dest);
       that.buffer.value = ""; // empty the buffer
       // save the node
-      setTimeout(() => { this.unmute(); node.el.blur(); }, 50);
+      setTimeout(() => { this.unmute(); quarantine.blur(); }, 50);
     }, 50);
   }
 
