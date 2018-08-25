@@ -14,11 +14,6 @@ export default CodeMirrorBlocks.languages.addLanguage(
       };
     },
     getRenderOptions() {
-      return {
-        extraRenderers: {
-          prog: require('./components/prog'),
-
-        }
-      };
+      return {};
     },
   });

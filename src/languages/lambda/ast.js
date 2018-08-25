@@ -86,6 +86,20 @@ export class Prog extends ASTNode {
       yield node;
     }
   }
+
+  render(props) {
+    const {helpers, lockedTypes} = this.props;
+    return (
+      <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
+        <h4>Your Lambda Program</h4>
+        {this.prog.map((node, index) => (
+          <span key={index}>
+            {helpers.renderNodeForReact(node)}
+          </span>
+        ))}
+      </Node>
+    );
+  }
 }
 
 //TODO: add a toString() method

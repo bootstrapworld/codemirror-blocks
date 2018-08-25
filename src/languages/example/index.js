@@ -1,6 +1,5 @@
 import ExampleParser from './ExampleParser';
 import CodeMirrorBlocks from '../../blocks';
-import Literal from './components/Literal';
 
 require('./style.less');
 export default CodeMirrorBlocks.languages.addLanguage(
@@ -12,10 +11,6 @@ export default CodeMirrorBlocks.languages.addLanguage(
       return new ExampleParser();
     },
     getRenderOptions() {
-      return {
-        extraRenderers: {
-          literal: Literal,
-        },
-      };
+      return {};
     },
   });

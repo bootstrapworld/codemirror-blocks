@@ -1,44 +1,13 @@
-import React, {Component} from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 
-import Expression       from './components/Expression';
-import IfExpression     from './components/IfExpression';
-import LambdaExpression from './components/LambdaExpression';
-import CondExpression   from './components/CondExpression';
-import CondClause       from './components/CondClause';
-import Unknown          from './components/Unknown';
-import Literal          from './components/Literal';
-import Blank            from './components/Blank';
-import Comment          from './components/Comment';
-import IdentifierList   from './components/IdentifierList';
-import StructDefinition from './components/StructDef';
-import VariableDefinition from './components/VariableDef';
-import FunctionDefinition from './components/FunctionDef';
-import Sequence         from './components/Sequence';
 import {poscmp} from './utils';
 
 export default class Renderer {
-  constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
+  constructor(cm, {lockNodesOfType=[], printASTNode} = {}) {
     this.cm = cm;
     this.lockNodesOfType = lockNodesOfType;
-    this.extraRenderers = extraRenderers || {};
     this.printASTNode = printASTNode || (node => node.toString());
-    this.nodeRenderers = {
-      unknown: Unknown,
-      expression: Expression,
-      functionDefinition: FunctionDefinition,
-      lambdaExpression: LambdaExpression,
-      variableDefinition: VariableDefinition,
-      identifierList : IdentifierList,
-      ifExpression: IfExpression,
-      condExpression: CondExpression,
-      condClause: CondClause,
-      structDefinition: StructDefinition,
-      literal: Literal,
-      comment: Comment,
-      sequence: Sequence,
-      blank: Blank,
-    };
   }
 
   // make code "float" between text/blocks
@@ -178,14 +147,10 @@ export default class Renderer {
 
   renderNodeForReact = (node, key) => {
     this.renderNodeForReact.defaultProps = { displayName: 'ASTNode Renderer' };
-    var Renderer = this.extraRenderers[node.type] || this.nodeRenderers[node.type];
-    if (Renderer === undefined) {
-      throw new Error("Don't know how to render node of type: "+node.type);
-    }
-    if (Renderer && Renderer.prototype instanceof Component) {
+    if (typeof node.render === 'function') {
+      let Renderer = node.render.bind(node);
       return (
         <Renderer
-          node        = {node}
           helpers     = {{renderNodeForReact: this.renderNodeForReact}}
           key         = {key}
           lockedTypes = {this.lockNodesOfType}
