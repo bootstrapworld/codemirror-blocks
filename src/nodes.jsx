@@ -231,7 +231,7 @@ export class IdentifierList extends ASTNode {
           <Args helpers={helpers}>{this.ids}</Args>
         </span>
       </Node>
-   );
+    );
    }
 }
 

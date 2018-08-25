@@ -1,3 +1,4 @@
+import React from 'react';
 import {ASTNode} from '../../ast';
 
 export class Conditional extends ASTNode {
