@@ -1,8 +1,8 @@
 /*eslint indent: "off"*/
 
+import {AST} from '../../ast';
 import {
-  AST,
-  Expression,
+  Blank,
   Literal,
   StructDefinition,
   IdentifierList,
@@ -13,10 +13,10 @@ import {
   CondClause,
   Comment,
   VariableDefinition,
-  Unknown,
   Sequence,
-  Blank
-} from '../../ast';
+  Expression,
+  Unknown
+} from '../../nodes';
 import {LetLikeExpr, WhenUnless} from './ast';
 import {PrimitiveGroup} from '../../parsers/primitives';
 import PRIMITIVES_CONFIG from './primitives-config';

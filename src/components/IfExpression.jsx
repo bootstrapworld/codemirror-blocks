@@ -1,19 +1,10 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import React from 'react';
 
-import {IfExpression as ASTIfExpressionNode} from '../ast';
 import Node from './Node';
 import DropTarget from './DropTarget';
+import Block from './Block';
 
-export default class IfExpression extends Component {
-  static propTypes = {
-    node: PropTypes.instanceOf(ASTIfExpressionNode).isRequired,
-    helpers: PropTypes.shape({
-      renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired,
-    lockedTypes: PropTypes.instanceOf(Array).isRequired,
-  }
-
+export default class IfExpression extends Block {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (

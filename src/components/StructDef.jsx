@@ -1,28 +1,17 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import React from 'react';
 
-import {StructDefinition as ASTStructDefinitionNode} from '../ast';
 import Node from './Node';
-import DropTarget from './DropTarget';
+import Block from './Block';
+import Args from './Args';
 
-export default class StructDefinition extends Component {
-  static propTypes = {
-    node: PropTypes.instanceOf(ASTStructDefinitionNode).isRequired,
-    helpers: PropTypes.shape({
-      renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired,
-    lockedTypes: PropTypes.instanceOf(Array).isRequired,
-  }
-
+export default class StructDefinition extends Block {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           define-struct 
-          <DropTarget location={node.name.from} />
-          {helpers.renderNodeForReact(node.name)}
-          <DropTarget location={node.name.to} />
+          <Args helpers={helpers}>{[node.name]}</Args>
         </span>
         {helpers.renderNodeForReact(node.fields)}
       </Node>

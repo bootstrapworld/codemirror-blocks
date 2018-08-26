@@ -1,4 +1,6 @@
+import React from 'react';
 import {ASTNode} from '../../ast';
+import Node from '../../components/Node';
 
 export class Conditional extends ASTNode {
   constructor(from, to, condStatement, thenStatement, elseStatement, options={}) {
@@ -85,6 +87,20 @@ export class Prog extends ASTNode {
     for (let node of this.prog) {
       yield node;
     }
+  }
+
+  render(props) {
+    const {helpers, lockedTypes} = this.props;
+    return (
+      <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
+        <h4>Your Lambda Program</h4>
+        {this.prog.map((node, index) => (
+          <span key={index}>
+            {helpers.renderNodeForReact(node)}
+          </span>
+        ))}
+      </Node>
+    );
   }
 }
 

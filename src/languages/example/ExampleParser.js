@@ -1,4 +1,5 @@
-import {AST, Literal, Expression} from '../../ast';
+import {AST} from '../../ast';
+import {Literal, Expression} from '../../nodes';
 
 const TOKENS = {
   OPEN_PAREN: 'open-paren',

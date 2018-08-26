@@ -1,19 +1,10 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import React from 'react';
 
-import {CondClause as ASTCondClauseNode} from '../ast';
 import Node from './Node';
 import DropTarget from './DropTarget';
+import Block from './Block';
 
-export default class CondClause extends Component {
-  static propTypes = {
-    node: PropTypes.instanceOf(ASTCondClauseNode).isRequired,
-    helpers: PropTypes.shape({
-      renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired,
-    lockedTypes: PropTypes.instanceOf(Array).isRequired,
-  }
-
+export default class CondClause extends Block {
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
