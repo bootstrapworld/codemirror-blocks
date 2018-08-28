@@ -120,6 +120,10 @@ export let commands = {
     collapseAll: cmb => { 
     	cmb.changeAllExpanded(false); 
     },
+    activateRoot: cmb => {
+      let rootPath = cmb.getActiveNode().path.split(",")[0];
+      cmb.activateNode(cmb.ast.getNodeByPath(rootPath));
+    }
     searchForward: cmb => {
     	cmb.showNextMatch(true, cmb.ast.getNodeAfter(cmb.getActiveNode()).from);
     },

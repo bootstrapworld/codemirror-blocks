@@ -20,6 +20,7 @@ export let keyMap = {
   "Backspace":  "deleteSelectedNodes",
   "Ctrl-Delete":"deleteSelectedNodes",
   "Ctrl-Backspace":"deleteSelectedNodes",
+  "Shift-,"     "activateRoot"
 };
 
 export const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
