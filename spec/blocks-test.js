@@ -22,6 +22,7 @@ import {
   UP,
   RIGHT,
   DOWN,
+  LESS_THAN,
   DELETE,
   ENTER,
   SPACE,
@@ -468,6 +469,13 @@ describe('The CodeMirrorBlocks Class', function() {
           this.secondArg.el.dispatchEvent(keydown(LEFT));
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
           expect(document.activeElement).toBe(this.firstRoot.el);
+        });
+
+        it('less-than should activate root without collapsing', async function() {
+          this.thirdRoot.args[1].args[1].el.dispatchEvent(click());
+          this.thirdRoot.args[1].args[1].el.dispatchEvent(keydown(LESS_THAN, {shiftKey: true}));
+          expect(this.thirdRoot.el.getAttribute("aria-expanded")).toBe("true");
+          expect(document.activeElement).toBe(this.thirdRoot.el);
         });
 
         it('right-arrow should expand a block, or shift focus to 1st child', function() {
