@@ -368,7 +368,6 @@ export default class CodeMirrorBlocks {
       this.clearSelection(); 
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
-    node.el.getBoundingClientRect();   // gets an *approximate* bounding rect
     this.cm.scrollIntoView(node.from); // if node is offscreen, this forces a CM render
     var {top, bottom, left, right} = node.el.getBoundingClientRect(); // get the *actual* bounding rect
     let offset = this.wrapper.getBoundingClientRect();
@@ -377,7 +376,7 @@ export default class CodeMirrorBlocks {
     bottom = bottom + scroll.top  - offset.top;
     left   = left   + scroll.left - offset.left; 
     right  = right  + scroll.left - offset.left;
-    this.cm.scrollIntoView({top, bottom, left, right}, 100);
+    this.cm.scrollIntoView({top, bottom, left, right});
     node.el.focus();
     this.focusPath = node.path;
     return true;
