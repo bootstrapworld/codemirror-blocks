@@ -3,7 +3,7 @@ import {
 } from '../../ast';
 import {
   Literal,
-  Expression,
+  FunctionApp,
   VariableDefinition,
   FunctionDefinition
 } from '../../nodes';
@@ -79,7 +79,7 @@ function convertAST(lambdaNode) {
         lambdaNode.body.map(convertAST)
       );
     case 'call':
-      return new Expression(
+      return new FunctionApp(
         lambdaNode.from,
         lambdaNode.to,
         lambdaNode.func,

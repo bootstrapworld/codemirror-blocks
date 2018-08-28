@@ -89,7 +89,7 @@ export class Sequence extends ASTNode {
   }
 }
 
-export class Expression extends ASTNode {
+export class FunctionApp extends ASTNode {
   constructor(from, to, func, args, options={}) {
     super(from, to, 'expression', options);
     this.func = func;

@@ -14,7 +14,7 @@ import {
   Comment,
   VariableDefinition,
   Sequence,
-  Expression,
+  FunctionApp,
   Unknown
 } from '../../nodes';
 import {LetLikeExpr, WhenUnless} from './ast';
@@ -133,7 +133,7 @@ function parseNode(node, i) {
         label = expressionAria(node.func ? symbolAria(node.func.val) : 'empty', node.args);
       }
     }
-    return new Expression(
+    return new FunctionApp(
       from,
       to,
       func,
@@ -142,7 +142,7 @@ function parseNode(node, i) {
         ,'comment' : comment}
     );
   } else if (node instanceof structures.andExpr) {
-    return new Expression(
+    return new FunctionApp(
       from,
       to,
       new Literal(
@@ -156,7 +156,7 @@ function parseNode(node, i) {
       {'aria-label': expressionAria('and', node.exprs)}
     );
   } else if (node instanceof structures.orExpr) {
-    return new Expression(
+    return new FunctionApp(
       from,
       to,
       new Literal(
@@ -311,7 +311,7 @@ function parseNode(node, i) {
     return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
       {msg: node.errorMsg, 'aria-label': 'invalid expression'});
   } else if (node instanceof structures.requireExpr) {
-    return new Expression(from, to, parseNode(node.stx), [parseNode(node.spec)],
+    return new FunctionApp(from, to, parseNode(node.stx), [parseNode(node.spec)],
       {'aria-label': 'require '+node.spec.val ,'comment' : comment}
     );
   } 
@@ -322,7 +322,7 @@ function parseNode(node, i) {
 class WeschemeParser {
 
   getASTNodeForPrimitive(primitive) {
-    return new Expression(
+    return new FunctionApp(
       {line:0, ch:0},
       {line:0, ch:0},
       new Literal(
