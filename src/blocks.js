@@ -920,6 +920,13 @@ export default class CodeMirrorBlocks {
     // Shift-Left and Shift-Right toggle global expansion
     else if (keyName === "Shift-Left" && activeNode) { that.changeAllExpanded(false); }
     else if (keyName === "Shift-Right" && activeNode){ that.changeAllExpanded(true ); }
+    // < jumps to the root containing the activeNode
+    else if (keyName == "Shift-," && activeNode) {
+      console.log("jumping to root");
+      let rootNode = this.ast.getNodeByPath(activeNode.path.split(",")[0]);
+      this.activateNode(rootNode, event);
+      console.log(rootNode.el.getAttribute("aria-expanded"));
+    }
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {
       let parent = this.ast.getNodeParent(activeNode);
