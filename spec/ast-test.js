@@ -1,5 +1,5 @@
 import {AST} from 'codemirror-blocks/ast';
-import {Literal, Sequence, Expression} from 'codemirror-blocks/nodes';
+import {Literal, Sequence, FunctionApp} from 'codemirror-blocks/nodes';
 import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
 
 describe("The Literal Class", function() {
@@ -46,7 +46,7 @@ describe("The Sequence Class", function() {
       new Literal({line: 0, ch: 10}, {line: 0, ch: 11}, 1),
       new Literal({line: 0, ch: 12}, {line: 0, ch: 13}, 2)
     ];
-    expression1 = new Expression(
+    expression1 = new FunctionApp(
       {line: 0, ch: 7},
       {line: 0, ch: 14},
       func1,
@@ -60,7 +60,7 @@ describe("The Sequence Class", function() {
       new Literal({line: 0, ch: 18}, {line: 0, ch: 19}, 2),
       new Literal({line: 0, ch: 20}, {line: 0, ch: 21}, 3)
     ];
-    expression2 = new Expression(
+    expression2 = new FunctionApp(
       {line: 0, ch: 15},
       {line: 0, ch: 22},
       func2,
@@ -90,7 +90,7 @@ describe("The Sequence Class", function() {
   });
 });
 
-describe("The Expression Class", function() {
+describe("The FunctionApp Class", function() {
   var expression, func, args, nestedExpression, ast;
   beforeEach(function() {
     func = new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol');
@@ -99,7 +99,7 @@ describe("The Expression Class", function() {
       new Literal({line: 1, ch: 6}, {line: 0, ch: 8}, 22)
     ];
     // (+ 11 22)
-    expression = new Expression(
+    expression = new FunctionApp(
       {line: 1, ch: 0},
       {line: 1, ch: 9},
       func,
@@ -107,13 +107,13 @@ describe("The Expression Class", function() {
       {'aria-label':'+ expression'}
     );
     // (+ 11 (- 15 35))
-    nestedExpression = new Expression(
+    nestedExpression = new FunctionApp(
       {line: 1, ch: 0},
       {line: 1, ch: 9},
       new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol'),
       [
         new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 11),
-        new Expression(
+        new FunctionApp(
           {line: 1, ch: 0},
           {line: 1, ch: 9},
           new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '-', 'symbol'),
@@ -167,7 +167,7 @@ describe("The AST Class", function() {
   it("should add every node to a node map for quick lookup", function() {
     var nodes = [
       new Literal({line: 0, ch: 0}, {line: 0, ch: 2}, 11),
-      new Expression(
+      new FunctionApp(
         {line: 1, ch: 0},
         {line: 1, ch: 9},
         new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol'),
