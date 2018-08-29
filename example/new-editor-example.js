@@ -8,7 +8,11 @@ import ReactDOM from 'react-dom';
 import Editor from '../src/ui/NewEditor';
 import './example-page.less';
 import Parser from '../src/languages/wescheme/WeschemeParser';
-import exampleWeSchemeCode from './cow-game.rkt';
+// import exampleWeSchemeCode from './cow-game.rkt';
+
+const exampleWeSchemeCode = `
+(a b) c
+`;
 
 const parser = new Parser();
 

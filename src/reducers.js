@@ -3,8 +3,6 @@ export const reducer = (
     selections: [],
     ast: null,
     focusId: -1,
-    cm: null,
-    parser: null,
     collapsedList: [],
     errorId: '',
   },
@@ -14,12 +12,8 @@ export const reducer = (
       return {...state, focusId: action.focusId};
     case 'SET_AST':
       return {...state, ast: action.ast};
-    case 'SET_CM':
-      return {...state, cm: action.cm};
     case 'SET_SELECTIONS':
       return {...state, selections: action.selections};
-    case 'SET_PARSER':
-      return {...state, parser: action.parser};
     case 'SET_ERROR_ID':
       return {...state, errorId: action.errorId};
     case 'COLLAPSE':

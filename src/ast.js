@@ -1,5 +1,6 @@
 import {poscmp} from './utils';
-const uuidv4 = require('uuid/v4');
+import uuidv4 from 'uuid/v4';
+import hashObject from 'object-hash';
 
 // Compute the position of the end of a change (its 'to' property refers to the pre-change end).
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
@@ -70,13 +71,33 @@ export class AST {
     // the other nodeMaps make it easy to determine node order
     this.nodeIdMap = new Map();
     this.nodePathMap = new Map();
-    this.nextNodeMap = new WeakMap();
-    this.prevNodeMap = new WeakMap();
     this.annotateNodes();
+    this.id = -1; // just for the sake of having an id, though unused
+    this.hash = hashObject(this.rootNodes.map(node => node.hash));
   }
 
   toString() {
     return this.rootNodes.map(r => r.toString()).join('\n');
+  }
+
+  children() {
+    const that = this;
+    return {
+      *[Symbol.iterator]() {
+        yield* that.rootNodes;
+      }
+    };
+  }
+
+  descendants() {
+    const that = this;
+    return {
+      *[Symbol.iterator]() {
+        for (const node in that.rootNodes) {
+          yield* node.descendants();
+        }
+      }
+    };
   }
 
   // annotateNodes : ASTNodes ASTNode -> Void
@@ -85,7 +106,6 @@ export class AST {
   annotateNodes() {
     this.nodeIdMap.clear();
     this.nodePathMap.clear();
-
 
     let lastNode = null;
     let nid = 0;
@@ -103,8 +123,6 @@ export class AST {
         if (lastNode) {
           node.prev = lastNode;
           lastNode.next = node;
-          this.nextNodeMap.set(lastNode, node);
-          this.prevNodeMap.set(node, lastNode);
         }
         this.nodeIdMap.set(node.id, node);
         this.nodePathMap.set(node.path, node);
@@ -113,7 +131,6 @@ export class AST {
         loop(children, node, level + 1);
       });
     };
-
     loop(this.rootNodes, null, 0);
   }
 
@@ -207,14 +224,14 @@ export class AST {
    *
    * Returns the next node or null
    */
-  getNodeAfter = selection => this.nextNodeMap.get(selection) || null;
+  getNodeAfter = selection => selection.next || null;
 
   /**
    * getNodeBefore : ASTNode -> ASTNode
    *
    * Returns the previous node or null
    */
-  getNodeBefore = selection => this.prevNodeMap.get(selection) || null;
+  getNodeBefore = selection => selection.prev || null;
 
   // NOTE: If we have x|y where | indicates the cursor, the position of the cursor
   // is the same as the position of y's `from`. Hence, going forward requires ">= 0"
@@ -356,6 +373,14 @@ export class ASTNode {
     // Every node also has a globally unique `id` which can be used to look up
     // it's corresponding DOM element, or to look it up in `AST.nodeIdMap`
     this.id = uuidv4(); // generate a unique ID
+
+    // Every node has a hash value which is dependent on
+    // 1. type
+    // 2. children (ordered)
+    // but not on srcloc and id.
+    //
+    // Two subtrees with identical value are supposed to have the same hash
+    this.hash = null; // null for now
   }
 
   toDescription(){
@@ -417,6 +442,7 @@ export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
     super(from, to, 'unknown', ['elts'], options);
     this.elts = elts;
+    this.hash = hashObject(['unknown', elts.map(elt => elt.hash)]);
   }
 
   toDescription(level){
@@ -435,6 +461,7 @@ export class Expression extends ASTNode {
     super(from, to, 'expression', ['func', 'args'], options);
     this.func = func;
     this.args = args;
+    this.hash = hashObject(['expression', func.hash, args.map(arg => arg.hash)]);
   }
 
   toDescription(level){
@@ -460,6 +487,7 @@ export class IdentifierList extends ASTNode {
     super(from, to, 'identifierList', ['ids'], options);
     this.kind = kind;
     this.ids = ids;
+    this.hash = hashObject(['identifierList', this.kind, this.ids.map(id => id.hash)]);
   }
 
   toDescription(level){
@@ -477,6 +505,7 @@ export class StructDefinition extends ASTNode {
     super(from, to, 'structDefinition', ['name', 'fields'], options);
     this.name = name;
     this.fields = fields;
+    this.hash = hashObject(['structDefinition', name.hash, fields.hash]);
   }
 
   toDescription(level){
@@ -495,6 +524,7 @@ export class VariableDefinition extends ASTNode {
     super(from, to, 'variableDefinition', ['name', 'body'], options);
     this.name = name;
     this.body = body;
+    this.hash = hashObject(['variableDefinition', name.hash, body.hash]);
   }
 
   toDescription(level){
@@ -513,6 +543,7 @@ export class LambdaExpression extends ASTNode {
     super(from, to, 'lambdaExpression', ['args', 'body'], options);
     this.args = args;
     this.body = body;
+    this.hash = hashObject(['lambdaExpression', args.hash, body.hash]);
   }
 
   toDescription(level){
@@ -533,6 +564,7 @@ export class FunctionDefinition extends ASTNode {
     this.name = name;
     this.params = params;
     this.body = body;
+    this.hash = hashObject(['functionDefinition', name.hash, params.hash, body.hash]);
   }
 
   toDescription(level){
@@ -552,6 +584,7 @@ export class CondClause extends ASTNode {
     super(from, to, 'condClause', ['testExpr', 'thenExprs'], options);
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
+    this.hash = hashObject(['condClause', testExpr.hash, thenExprs.map(e => e.hash)]);
   }
 
   toDescription(level){
@@ -568,6 +601,7 @@ export class CondExpression extends ASTNode {
   constructor(from, to, clauses, options={}) {
     super(from, to, 'condExpression', ['clauses'], options);
     this.clauses = clauses;
+    this.hash = hashObject(['condExpression', this.clauses.map(clause => clause.hash)]);
   }
 
   toDescription(level){
@@ -588,6 +622,7 @@ export class IfExpression extends ASTNode {
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
+    this.hash = hashObject(['ifExpression', testExpr.hash, thenExpr.hash, elseExpr.hash]);
   }
 
   toDescription(level){
@@ -606,6 +641,7 @@ export class Literal extends ASTNode {
     super(from, to, 'literal', [], options);
     this.value = value;
     this.dataType = dataType;
+    this.hash = hashObject(['literal', this.value, this.dataType]);
   }
 
   toString() {
@@ -617,6 +653,7 @@ export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
     super(from, to, 'comment', [], options);
     this.comment = comment;
+    this.hash = hashObject(['comment', this.comment]);
   }
 
   toString() {
@@ -629,6 +666,7 @@ export class Blank extends ASTNode {
     super(from, to, 'blank', [], options);
     this.value = value || "...";
     this.dataType = dataType;
+    this.hash = hashObject(['blank', this.value, this.dataType]);
   }
 
   toString() {
@@ -641,6 +679,7 @@ export class Sequence extends ASTNode {
     super(from, to, 'sequence', ['exprs'], options);
     this.exprs = exprs;
     this.name = name;
+    this.hash = hashObject(['sequence', this.name, this.exprs.map(expr => expr.hash)]);
   }
 
   toDescription(level) {

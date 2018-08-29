@@ -4,19 +4,24 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {ESC, ENTER} from '../keycode';
 import ContentEditable from './ContentEditable';
-import CodeMirror from 'codemirror';
-import {setAST} from '../actions';
+import {OptionsContext} from '../ui/Context';
+import {commitChanges} from '../codeMirror';
+import global from '../global';
 
 class NodeEditable extends Component {
   static defaultProps = {
     children: null,
+    willInsertNode: (_, x) => x,
   }
 
   static propTypes = {
     node: PropTypes.instanceOf(ASTNode),
     children: PropTypes.node,
 
-    cm: PropTypes.object.isRequired,
+    dropTarget: PropTypes.bool.isRequired,
+
+    parser: PropTypes.object.isRequired,
+    options: PropTypes.object.isRequired,
     // NOTE: the presence of this Node means ast is not null
   }
 
@@ -47,16 +52,16 @@ class NodeEditable extends Component {
   focusSelf(noRefresh=false) {
     // NOTE(Oak): the noRefresh parameter is to circumvent
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1317098
-    const scroll = this.props.cm.getScrollInfo();
+    const scroll = global.cm.getScrollInfo();
     let {top, bottom, left, right} = this.element.getBoundingClientRect();
-    const offset = this.props.cm.getWrapperElement().getBoundingClientRect();
+    const offset = global.cm.getWrapperElement().getBoundingClientRect();
     top    += scroll.top  - offset.top;
     bottom += scroll.top  - offset.top;
     left   += scroll.left - offset.left;
     right  += scroll.left - offset.left;
-    this.props.cm.scrollIntoView({top, bottom, left, right}, 100);
+    global.cm.scrollIntoView({top, bottom, left, right}, 100);
     this.element.focus();
-    if (!noRefresh) this.props.cm.refresh();
+    if (!noRefresh) global.cm.refresh();
     // TODO: we need refreshing to make focusing right, but where should we put it?
   }
 
@@ -77,41 +82,46 @@ class NodeEditable extends Component {
       // event has relatedTarget === null, so we add this to bail out.
       return;
     }
-    const {node, cm, parser, setAST, setErrorId} = this.props;
+    const {node, cm, parser, setErrorId, onEditableChange} = this.props;
     // NOTE: e comes from either click or keydown event
     if (e.keyCode && e.keyCode === ESC) {
       this.setState({value: null});
-      this.props.onEditableChange(false);
-      this.props.setErrorId('');
+      onEditableChange(false);
+      setErrorId('');
       return;
     }
 
-    const tmpDiv = document.createElement('div');
-    const tmpCM = CodeMirror(tmpDiv, {value: cm.getValue()});
+    let value = null;
 
-    tmpCM.on('changes', (editor, changes) => {
-      let newAST = null;
-      try {
-        newAST = parser.parse(editor.getValue());
-      } catch (exception) {
+    if (this.props.dropTarget && this.props.options.willInsertNode) {
+      value = this.props.options.willInsertNode(
+        global.cm,
+        this.state.value,
+        undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
+        this.props.node.from,
+      );
+    } else {
+      value = this.state.value;
+    }
+
+    commitChanges(
+      cm => () => cm.replaceRange(value, node.from, node.to),
+      () => {
+        onEditableChange(false);
+        setErrorId('');
+      },
+      () => {
         e.preventDefault();
-        this.props.setErrorId(node.id);
-        return;
+        setErrorId(node.id);
       }
-      setAST(newAST, changes, editor);
-      this.props.onEditableChange(false);
-      this.props.setErrorId('');
-      cm.replaceRange(this.state.value, node.from, node.to);
-    });
-
-    tmpCM.replaceRange(this.state.value, node.from, node.to);
+    );
   }
 
   contentEditableDidMount = el => this.element = el;
 
   static getDerivedStateFromProps(props, state) {
-    if (props.editable && !state.value) {
-      return {value: props.cm.getRange(props.node.from, props.node.to)};
+    if (!state.value) {
+      return {value: global.cm.getRange(props.node.from, props.node.to)};
     }
     return null;
   }
@@ -125,42 +135,46 @@ class NodeEditable extends Component {
     } = this.props;
 
 
-    if (this.props.editable) {
-      const classes = [
-        'blocks-literal',
-        'quarantine',
-        'blocks-editing',
-        this.props.isErrored ? 'blocks-error' : '',
-      ].concat(extraClasses);
+    const classes = [
+      'blocks-literal',
+      'quarantine',
+      'blocks-editing',
+      this.props.isErrored ? 'blocks-error' : '',
+    ].concat(extraClasses);
 
-      return (
-        <ContentEditable
-          {...contentEditableProps}
-          className  = {classes.join(' ')}
-          itDidMount = {this.contentEditableDidMount}
-          onChange   = {this.handleChange}
-          onBlur     = {this.handleBlur}
-          onKeyDown  = {this.handleKeyDown}
-          onClick    = {this.handleClick}
-          value      = {this.state.value} />
-      );
-    }
     return (
-      <React.Fragment>
-        {children}
-      </React.Fragment>
+      <ContentEditable
+        {...contentEditableProps}
+        className  = {classes.join(' ')}
+        role       = "textbox"
+        itDidMount = {this.contentEditableDidMount}
+        onChange   = {this.handleChange}
+        onBlur     = {this.handleBlur}
+        onKeyDown  = {this.handleKeyDown}
+        onClick    = {this.handleClick}
+        value      = {this.state.value} />
     );
   }
 }
 
-const mapStateToProps = ({cm, errorId, parser}, {node}) => {
+function WrappedNodeEditable(props) {
+  return (
+    <OptionsContext.Consumer>
+      {
+        ({parser, options}) =>
+          <NodeEditable {...props} parser={parser} options={options} />
+      }
+    </OptionsContext.Consumer>
+  );
+}
+
+const mapStateToProps = ({cm, errorId}, {node}) => {
   const isErrored = errorId == node.id;
-  return {cm, parser, isErrored};
+  return {cm, isErrored};
 };
 
 const mapDispatchToProps = dispatch => ({
-  setAST: (ast, changes, cm) => dispatch(setAST(ast, changes, cm)),
   setErrorId: errorId => dispatch({type: 'SET_ERROR_ID', errorId}),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(NodeEditable);
+export default connect(mapStateToProps, mapDispatchToProps)(WrappedNodeEditable);

@@ -140,16 +140,16 @@ export default class CodeMirrorBlocks {
           }),
         }
       );
+      Object.assign(
+        this.wrapper,
+        {
+          ondragstart:  this.nodeEventHandler(this.startDraggingNode),
+          ondragend:    this.nodeEventHandler(this.stopDraggingNode),
+          ondragleave:  this.nodeEventHandler(this.handleDragLeave),
+          ondrop:       this.nodeEventHandler(this.dropOntoNode),
+        }
+      );
     }
-    Object.assign(
-      this.wrapper,
-      {
-        ondragstart:  this.nodeEventHandler(this.startDraggingNode),
-        ondragend:    this.nodeEventHandler(this.stopDraggingNode),
-        ondragleave:  this.nodeEventHandler(this.handleDragLeave),
-        ondrop:       this.nodeEventHandler(this.dropOntoNode),
-      }
-    );
     // TODO: don't do this, otherwise we copy/paste will only work
     // when there is one instance of this class on a page.
     Object.assign(document, {
@@ -157,25 +157,26 @@ export default class CodeMirrorBlocks {
       oncopy: (n, e) => this.handleCopyCut(n, e),
     });
 
-    var dropHandler = this.nodeEventHandler(this.dropOntoNode, true);
-    var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
-    this.cm.on('drop',      (cm, e) => dropHandler(e));
-    this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
     this.cm.on('paste',     (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
-    this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
     if (!this.suppress) {
+      var dropHandler = this.nodeEventHandler(this.dropOntoNode, true);
+      var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
+      this.cm.on('drop',      (cm, e) => dropHandler(e));
+      this.cm.on('dragenter', (cm, e) => dragEnterHandler(e));
+      this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
       this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
       this.cm.on('changes',   (cm, e) => this.handleChange(cm, e));
       this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
+
+      // mousedown events should impact dragging, focus-if-error, and click events
+      this.cm.on('mousedown', (cm, e) => {
+        toggleDraggable(e);
+        this.cancelIfErrorExists(e);
+        this.mouseUsed = true;
+        setTimeout(() => this.mouseUsed = false, 200);
+      });
     }
-    // mousedown events should impact dragging, focus-if-error, and click events
-    this.cm.on('mousedown', (cm, e) => {
-      toggleDraggable(e); 
-      this.cancelIfErrorExists(e);
-      this.mouseUsed = true;
-      setTimeout(() => this.mouseUsed = false, 200);
-    });
     // override CM's natural onFocus behavior, activating the last focused node
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {

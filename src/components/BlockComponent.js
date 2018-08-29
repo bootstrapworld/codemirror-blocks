@@ -8,9 +8,14 @@ export default class BlockComponent extends Component {
     const {node: newValue, ...newProps} = props;
     const {node: oldValue, ...oldProps} = this.props;
 
-    console.log('working on', oldValue);
-    console.log('ans', !shallowequal(newProps, oldProps) || !shallowequal(state, this.state));
-
-    return !shallowequal(newProps, oldProps) || !shallowequal(state, this.state);
+    const shouldUpdate = (
+      (newValue && oldValue && newValue.id !== oldValue.id) ||
+        !shallowequal(newProps, oldProps) ||
+        !shallowequal(state, this.state)
+    );
+    // if (!shouldUpdate) {
+    //   console.log('abort on ', oldValue);
+    // }
+    return shouldUpdate;
   }
 }

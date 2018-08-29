@@ -1,5 +1,5 @@
 import {skipWhile, poscmp, partition} from './utils';
-import patch from './ast-patch';
+import {commitChanges} from './codeMirror';
 
 /**
  * Returns whether `u` is a strict ancestor of `v`
@@ -30,6 +30,13 @@ export function focusNextNode(id, next) {
     } else {
       // announce beep
     }
+  };
+}
+
+export function focusNode(id) {
+  return (dispatch, getState) => {
+    const {ast} = getState();
+    dispatch({type: 'SET_FOCUS', focusId: ast.getNodeById(id).nid});
   };
 }
 
@@ -70,9 +77,28 @@ export function toggleSelection(id) {
   };
 }
 
-export function setAST(newAST, changes, cm) {
+export function deleteNodes() {
   return (dispatch, getState) => {
-    const {ast: oldAST} = getState();
-    dispatch({type: 'SET_AST', ast: patch(oldAST, newAST, changes, cm)});
+    const {ast, selections, focusId} = getState();
+    const nodeSelections = selections.map(ast.getNodeById);
+    // we delete from the end of the document to the beginning so that
+    // the next deletion still has a valid pos
+    nodeSelections.sort((a, b) => poscmp(b.from, a.from));
+    if (nodeSelections.length === 0) {
+    } else {
+      commitChanges(
+        cm => () => {
+          for (const node of nodeSelections) {
+            cm.replaceRange('', node.from, node.to);
+          }
+        },
+        () => {},
+        () => {},
+      );
+      // since we sort in descending order, this is the last one in the array
+      const firstNode = nodeSelections.pop();
+      dispatch({type: 'SET_FOCUS', focusId: firstNode.nid});
+      dispatch({type: 'SET_SELECTIONS', selections: []});
+    }
   };
 }

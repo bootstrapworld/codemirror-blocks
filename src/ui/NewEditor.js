@@ -6,10 +6,11 @@ import PropTypes from 'prop-types';
 import './Editor.less';
 import {poscmp} from '../utils';
 import {connect, Provider} from 'react-redux';
-import {createStore, applyMiddleware} from 'redux';
-import thunk from 'redux-thunk';
-import {reducer} from '../reducers';
-import patch from '../ast-patch';
+import {OptionsContext} from './Context';
+import store from '../store';
+import global from '../global';
+import {DragDropContext} from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 
 import Expression         from '../components/Expression';
 import IfExpression       from '../components/IfExpression';
@@ -43,7 +44,6 @@ const nodeRenderers = {
   blank: Blank,
 };
 
-const store = createStore(reducer, undefined, applyMiddleware(thunk));
 const lockedTypes = [];
 const helpers = {renderNodeForReact};
 
@@ -81,13 +81,13 @@ class ToplevelBlock extends Component {
   }
 
   render() {
-    const {cm, node, quarantine} = this.props;
+    const {node, quarantine} = this.props;
 
     // TODO: is the if expression really needed? Can't we always delete all
     // and mark everything again? It seems cheap enough.
 
     // find a marker that (a) has an old ASTNode and (b) start in exactly the same place as the new ASTNode
-    const markers = cm
+    const markers = global.cm
           .findMarksAt(node.from)
           .filter(m => m.node && !poscmp(m.node.from, node.from));
     if (markers.length > 0) {
@@ -96,11 +96,11 @@ class ToplevelBlock extends Component {
       // if we're not quarantining, and it starts at the exact same place..
       if (!quarantine) marker.clear();
     }
-    cm.markText(node.from, node.to, {replacedWith: this.container, node: node});
+    global.cm.markText(node.from, node.to, {replacedWith: this.container, node: node});
 
     // REVISIT: make comments disappear by adding an empty span
     if (node.options.comment) {
-      cm.markText(
+      global.cm.markText(
         node.options.comment.from,
         node.options.comment.to,
         {replacedWith: document.createElement('span')}
@@ -112,6 +112,7 @@ class ToplevelBlock extends Component {
   }
 }
 
+@DragDropContext(HTML5Backend)
 class Editor extends Component {
   static propTypes = {
     options: PropTypes.object,
@@ -119,12 +120,10 @@ class Editor extends Component {
     language: PropTypes.string.isRequired,
     parser: PropTypes.object.isRequired,
     setAST: PropTypes.func.isRequired,
-    setCM: PropTypes.func.isRequired,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
     ast: PropTypes.object,
-    cm: PropTypes.object,
   }
 
   static defaultProps = {
@@ -132,15 +131,8 @@ class Editor extends Component {
     cmOptions: {},
   }
 
-  /* TODO: this needs to go away */
-  handleChanges = (editor, changes) => {
-    const newAST = this.props.parser.parse(editor.getValue());
-    this.props.setAST(patch(this.props.ast, newAST, changes, editor));
-  }
-
   handleEditorDidMount = ed => {
-    this.props.setParser(this.props.parser);
-    this.props.setCM(ed);
+    global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
     this.blocks = new CodeMirrorBlocks(
@@ -151,6 +143,8 @@ class Editor extends Component {
   }
 
   componentDidMount() {
+    global.parser = this.props.parser;
+    global.options = this.props.options;
     setTimeout(() => {
       this.blocks.setBlockMode(true);
       // hrm, the code mirror instance is only available after
@@ -162,39 +156,40 @@ class Editor extends Component {
   }
 
   render() {
+    const {parser, options} = this.props;
     return (
-      <div className="Editor blocks">
-        <div className="codemirror-pane">
-          <CodeMirror options={this.props.cmOptions}
-                      value={this.props.value}
-                      editorDidMount={this.handleEditorDidMount} />
+      <OptionsContext.Provider value={{parser, options}}>
+        <div className="Editor blocks">
+          <div className="codemirror-pane">
+            <CodeMirror options={this.props.cmOptions}
+                        value={this.props.value}
+                        editorDidMount={this.handleEditorDidMount} />
+          </div>
+          {this.renderPortals()}
+          <div>
+            {global.cm && global.cm.getValue()}
+          </div>
         </div>
-        {this.renderPortals()}
-        <div>
-          {this.props.cm && this.props.cm.getValue()}
-        </div>
-      </div>
+      </OptionsContext.Provider>
     );
   }
 
   renderPortals = () => {
-    if (this.props.cm && this.props.ast) {
-      for (const m of this.props.cm.getAllMarks()) {
+    if (global.cm && this.props.ast) {
+      for (const m of global.cm.getAllMarks()) {
         m.clear();
       }
       return this.props.ast.rootNodes.map(
-        r => (<ToplevelBlock key={r.id} node={r} cm={this.props.cm} />)
+        r => (<ToplevelBlock key={r.id} node={r} cm={global.cm} />)
       );
     }
     return null;
   }
 }
 
-const mapStateToProps = ({ast, cm}) => ({ast, cm});;
+const mapStateToProps = ({ast}) => ({ast});
 const mapDispatchToProps = dispatch => ({
-  setCM: cm => dispatch({type: 'SET_CM', cm}),
   setAST: ast => dispatch({type: 'SET_AST', ast}),
-  setParser: parser => dispatch({type: 'SET_PARSER', parser}),
 });
 
 const EditorWrapper = connect(mapStateToProps, mapDispatchToProps)(Editor);

@@ -16,7 +16,6 @@ export default class Expression extends Component {
   }
 
   render() {
-    console.log('expression rendered', this.props.node);
     const {node, helpers, lockedTypes} = this.props;
     const argNodes = [];
     node.args.forEach((arg, index) => {

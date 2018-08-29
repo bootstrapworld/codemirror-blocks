@@ -2,11 +2,60 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {LEFT, RIGHT, SPACE, UP, DOWN, ENTER} from '../keycode';
-import {toggleSelection, focusNextNode} from '../actions';
+import {BACKSPACE, LEFT, RIGHT, SPACE, UP, DOWN, ENTER, DELETE} from '../keycode';
+import {toggleSelection, focusNextNode, focusNode, deleteNodes} from '../actions';
 import NodeEditable from './NodeEditable';
 import Component from './BlockComponent';
+import store from '../store';
+import global from '../global';
+import {ItemTypes} from '../constants';
+import {DragSource, DropTarget} from 'react-dnd';
 
+// TODO(Oak): make sure that all use of node.<something> is valid
+// since it might be cached and outdated
+// EVEN BETTER: is it possible to just pass an id?
+
+const nodeSource = {
+  beginDrag(props) {
+    console.log(props, 'source');
+    return {};
+  }
+};
+
+function collectSource(connect, monitor) {
+  return {
+    connectDragSource: connect.dragSource(),
+    isDragging: monitor.isDragging()
+  };
+}
+
+const nodeTarget = {
+  drop(props) {
+    console.log(props, 'target');
+  }
+};
+
+function collectTarget(connect, monitor) {
+  console.log(monitor.isOver());
+  return {
+    connectDropTarget: connect.dropTarget(),
+    isOver: monitor.isOver({shallow: true})
+  };
+}
+
+/**
+ * errorFree: (-> Boolean)
+ *
+ * Indicating whether there is no error. Note that this function has side-effect.
+ * It should not be used in rendering, since React should be notified by changes directly
+ * Only use this function in event handlers.
+ */
+function errorFree() {
+  return store.getState().errorId === '';
+}
+
+@DragSource(ItemTypes.NODE, nodeSource, collectSource)
+@DropTarget(ItemTypes.NODE, nodeTarget, collectTarget)
 class Node extends Component {
   static defaultProps = {
     children: null,
@@ -22,7 +71,8 @@ class Node extends Component {
     }).isRequired,
     lockedTypes: PropTypes.array.isRequired,
 
-    cm: PropTypes.object.isRequired,
+    connectDragSource: PropTypes.func.isRequired,
+    isDragging: PropTypes.bool.isRequired,
 
     normallyEditable: PropTypes.bool,
 
@@ -32,20 +82,20 @@ class Node extends Component {
     toggleSelection: PropTypes.func.isRequired,
   }
 
-  state = {
-    editable: false,
-  }
+  state = {editable: false}
 
   handleClick = e => {
     e.stopPropagation(); // prevent ancestors to steal focus
     e.preventDefault();
-    if (this.props.globalHasError) return;
-    this.props.setFocus(this.props.node.nid);
+    if (!errorFree()) return;
+
+    this.props.setFocus(this.props.node.id);
   }
 
   handleKeyDown = e => {
     e.stopPropagation();
-    if (this.props.globalHasError) return;
+    e.preventDefault();
+    if (!errorFree()) return;
 
     const {
       node, expandable, isCollapsed,
@@ -55,12 +105,10 @@ class Node extends Component {
 
     switch (e.keyCode) {
     case UP:
-      e.preventDefault(); // don't scroll
       this.props.focusNextNode(node.id, node => node.prev);
       return;
 
     case DOWN:
-      e.preventDefault(); // don't scroll
       this.props.focusNextNode(node.id, node => node.next);
       return;
 
@@ -72,7 +120,7 @@ class Node extends Component {
       } else {
         const nextNode = node.parent;
         if (nextNode) {
-          setFocus(nextNode.nid);
+          setFocus(nextNode.id);
         } else {
           // play beep
         }
@@ -87,7 +135,7 @@ class Node extends Component {
       } else {
         const nextNode = node.next;
         if (nextNode && nextNode.level === node.level + 1) {
-          setFocus(nextNode.nid);
+          setFocus(nextNode.id);
         } else {
           // play beep
         }
@@ -95,12 +143,10 @@ class Node extends Component {
       return;
 
     case SPACE:
-      e.preventDefault(); // prevent scrolling
       toggleSelection(node.id);
       return;
 
     case ENTER:
-      e.preventDefault(); // prevent from actually entering to the edit field
       if (normallyEditable || e.ctrlKey) {
         this.handleMakeEditable(e);
       } else if (expandable && !this.isLocked()) {
@@ -108,11 +154,15 @@ class Node extends Component {
       } // else beep?
       return;
 
+    case DELETE:
+    case BACKSPACE:
+      this.props.handleDelete();
+      return;
     }
   }
 
   componentDidMount = () => {
-    if (this.element && !this.props.globalHasError && this.props.isFocused) {
+    if (this.element && errorFree() && this.props.isFocused) {
       this.focusSelf(true);
     }
   }
@@ -122,16 +172,16 @@ class Node extends Component {
   focusSelf(noRefresh=false) {
     // NOTE(Oak): the noRefresh parameter is to circumvent
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1317098
-    const scroll = this.props.cm.getScrollInfo();
+    const scroll = global.cm.getScrollInfo();
     let {top, bottom, left, right} = this.element.getBoundingClientRect();
-    const offset = this.props.cm.getWrapperElement().getBoundingClientRect();
+    const offset = global.cm.getWrapperElement().getBoundingClientRect();
     top    += scroll.top  - offset.top;
     bottom += scroll.top  - offset.top;
     left   += scroll.left - offset.left;
     right  += scroll.left - offset.left;
-    this.props.cm.scrollIntoView({top, bottom, left, right}, 100);
+    global.cm.scrollIntoView({top, bottom, left, right}, 100);
     this.element.focus();
-    if (!noRefresh) this.props.cm.refresh();
+    if (!noRefresh) global.cm.refresh();
     // TODO: we need refreshing to make focusing right, but where should we put it?
   }
 
@@ -143,9 +193,9 @@ class Node extends Component {
   }
 
   handleMakeEditable = () => {
-    if (this.props.globalHasError) return;
+    if (!errorFree()) return;
     this.setState({editable: true});
-    this.props.cm.refresh(); // is this needed?
+    global.cm.refresh(); // is this needed?
   }
 
   handleEditableChange = editable => {
@@ -157,7 +207,7 @@ class Node extends Component {
   }
 
   render() {
-    console.log('Node rendered', this.props.node);
+    // console.log('Node rendered', this.props.node);
     const {
       isSelected,
       isCollapsed,
@@ -178,7 +228,6 @@ class Node extends Component {
     const props = {
       id                : `block-node-${node.id}`,
       tabIndex          : "-1",
-      role              : this.props.editable ? 'textbox' : 'treeitem',
       'aria-selected'   : isSelected,
       'aria-label'      : node.options['aria-label']+',' ,
       'aria-labelledby' : `block-node-${node.id} ${commentID}`,
@@ -196,17 +245,29 @@ class Node extends Component {
       `blocks-${node.type}`
     ];
 
-    return (
-      <NodeEditable {...passingProps}
-                    editable={this.state.editable}
-                    onEditableChange={this.handleEditableChange}
-                    extraClasses={classes}
-                    node={node}
-                    contentEditableProps={props}>
+    if (this.state.editable) {
+      // TODO: combine passingProps and contentEditableProps
+      return (
+        <NodeEditable {...passingProps}
+                      onEditableChange={this.handleEditableChange}
+                      extraClasses={classes}
+                      node={node}
+                      dropTarget={false}
+                      contentEditableProps={props} />
+      );
+    } else {
+      const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
+      let result = (
         <span
           {...props}
           className     = {classes.join(' ')}
           ref           = {el => this.element = el}
+          role          = "treeitem"
+          style={{
+            opacity: isDragging ? 0.5 : 1,
+            cursor: 'move',
+            position: 'relative',
+          }}
           onClick       = {this.handleClick}
           onDoubleClick = {this.handleDoubleClick}
           onKeyDown     = {this.handleKeyDown}>
@@ -216,19 +277,24 @@ class Node extends Component {
               this.props.helpers.renderNodeForReact(node.options.comment)
           }
         </span>
-      </NodeEditable>
-    );
+      );
+      if (this.props.normallyEditable) {
+        result = connectDropTarget(result);
+      }
+      result = connectDragSource(result);
+      return result;
+    }
   }
 }
 
 const mapStateToProps = (
-  {cm, errorId, focusId, selections, parser, collapsedList},
+  {focusId, selections, collapsedList, ast},
   {node}
+  // be careful here. Only node's id is accurate. Use getNodeById
+  // to access accurate info
 ) => {
   return {
-    cm, parser,
-    isFocused: focusId === node.nid,
-    globalHasError: errorId !== '',
+    isFocused: focusId === ast.getNodeById(node.id).nid,
     // NOTE(Oak): might consider using immutable.js to speed up performance
     isSelected: selections.includes(node.id),
     isCollapsed: collapsedList.includes(node.id),
@@ -238,11 +304,12 @@ const mapStateToProps = (
 const mapDispatchToProps = dispatch => ({
   toggleSelection: id => dispatch(toggleSelection(id)),
   focusNextNode: (id, next) => dispatch(focusNextNode(id, next)),
-  setFocus: focusId => dispatch({type: 'SET_FOCUS', focusId}),
-  collapse: node => dispatch({type: 'COLLAPSE', id: node.id}),
-  uncollapse: node => dispatch({type: 'UNCOLLAPSE', id: node.id}),
+  setFocus: id => dispatch(focusNode(id)),
+  collapse: id => dispatch({type: 'COLLAPSE', id}),
+  uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   collapseAll: () => dispatch({type: 'COLLAPSE_ALL'}),
   uncollapseAll: () => dispatch({type: 'UNCOLLAPSE_ALL'}),
+  handleDelete: () => dispatch(deleteNodes()),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);
