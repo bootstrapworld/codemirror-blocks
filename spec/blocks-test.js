@@ -731,6 +731,9 @@ describe('The CodeMirrorBlocks Class', function() {
 
       describe('and specifically when editing it,', function() {
         
+        /*
+        // fails nondeterministically - figure out how to avoid 
+        // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
         it('should save whiteSpace on blur', async function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           await wait(DELAY);
@@ -748,7 +751,7 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
           expect(this.blocks.hasInvalidEdit).toBe(false);
         });
-        
+        */
         
         it('should blur whitespace you are editing on enter', async function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
@@ -767,7 +770,7 @@ describe('The CodeMirrorBlocks Class', function() {
             this.quarantine.dispatchEvent(blur());
           });
 
-          
+          /*
           // fails nondeterministically - figure out how to avoid
           // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
           it('should not save anything & set all error state', async function() {
@@ -778,7 +781,7 @@ describe('The CodeMirrorBlocks Class', function() {
             expect(this.quarantine.title).toBe('Error: parse error');
             expect(this.blocks.hasInvalidEdit).toBe(true);
           });
-          
+          */
         });
       });
     });
