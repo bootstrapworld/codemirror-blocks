@@ -1,3 +1,4 @@
+import * as P from '../../pretty';
 import React from 'react';
 import Node from '../../components/Node';
 
@@ -22,8 +23,8 @@ export class LetLikeExpr extends ASTNode {
     return `a ${this.form} expression with ${pluralize("binding", this.bindings.exprs)}`;
   }
 
-  toString() {
-    return `(${this.form} (${this.bindings.toString()}) ${this.expr.toString()}`;
+  pretty() {
+    return P.lambdaLikeSexpr(this.form, P.brackets(this.bindings), this.expr);
   }
 
   render(props) {
@@ -57,8 +58,8 @@ export class WhenUnless extends ASTNode {
     return `a ${this.form} expression: ${this.form} ${this.predicate.toDescription(level)}, ${this.exprs.toDescription(level)}`;
   }
 
-  toString() {
-    return `(${this.form} (${this.predicate.toString()}) ${this.exprs.toString()})`;
+  pretty() {
+    return P.standardSexpr(this.form, [this.predicate, this.exprs]);
   }
 
   render(props) {

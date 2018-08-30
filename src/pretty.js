@@ -6,26 +6,36 @@
 export function empty() {
   return new EmptyDoc();
 }
-export function txt(text) {
+export function txt(arg) {
+  let text = arg.toString(); // coerce to a string if it isn't already
   if (text.indexOf("\n") !== -1) {
     throw "pretty.js: The `txt` function does not accept text with newlines, but was given: " + text;
   }
   return new TextDoc(text);
 }
 export function horz() {
-  let args = Array.from(arguments);
-  return args.reduce((result, doc) => new HorzDoc(result, doc));
+  return horzArray(Array.from(arguments));
 }
 export function vert() {
-  let args = Array.from(arguments);
-  return args.reduce((result, doc) => new VertDoc(result, doc));
+  return vertArray(Array.from(arguments));
 }
 export function concat() {
-  let args = Array.from(arguments);
-  return args.reduce((result, doc) => new ConcatDoc(result, doc));
+  return concatArray(Array.from(arguments));
 }
-export function ifFlat(doc1, doc2) {
-  return new IfFlatDoc(doc1, doc2);
+export function horzArray(array) {
+  let docArray = array.map(item => coerce(item));
+  return docArray.reduce((result, doc) => new HorzDoc(result, doc));
+}
+export function vertArray(array) {
+  let docArray = array.map(item => coerce(item));
+  return docArray.reduce((result, doc) => new VertDoc(result, doc));
+}
+export function concatArray(array) {
+  let docArray = array.map(item => coerce(item));
+  return docArray.reduce((result, doc) => new ConcatDoc(result, doc));
+}
+export function ifFlat(flat, broken) {
+  return new IfFlatDoc(coerce(flat), coerce(broken));
 }
 
 /******************************************************************************
@@ -177,11 +187,8 @@ export function pretty(strs, ...vals) {
         lineParts.push(txt(part));
       }
     } else {
-      // It's a value part. It _should_ already be a Doc, but if
-      // someone was lazy it might just be a string, in which case we
-      // should wrap it.
-      let part = vals[(i - 1) / 2];
-      lineParts.push(typeof part === 'string' ? txt(part) : part);
+      // It's a value part. Add it.
+      lineParts.push(vals[(i - 1) / 2]);
     }
   }
   // Remember to push the last line.
@@ -190,12 +197,98 @@ export function pretty(strs, ...vals) {
 }
 
 /******************************************************************************
+ * Private Helper Functions
+ ******************************************************************************/
+
+// The user has given us a thing. If they were nice, it would be a Doc.
+// But they're not nice, so it could be anything.
+// Let's see if we can make it into a Doc.
+function coerce(thing) {
+  if (thing instanceof Doc) {
+    return thing;
+  } else if (typeof thing === 'string') {
+    return txt(thing);
+  } else if (typeof thing.pretty === 'function') {
+    let doc = thing.pretty();
+    if (!(doc instanceof Doc)) {
+      // TODO: `+ thing` is an awful way to print something; replace with something better?
+      throw new Error("The pretty printer called the `.pretty()` function, and expected it to return a Doc, but instead it returned: " + thing);
+    }
+    return doc;
+  } else {
+    // What did they give us? We can't work with this thing.
+    throw new Error("The pretty printer was expecting a Doc (or a String, or something with a pretty() method), but instead it was given: " + thing);
+  }
+}
+
+function intersperse(sep, items) {
+  let array = new Array();
+  for (let i in items) {
+    if (i != 0) {
+      array.push(sep);
+    }
+    array.push(items[i]);
+  }
+  return array;
+}
+
+
+/******************************************************************************
  * Utility Constructors
  ******************************************************************************/
 
-export function wrap(sep, items) {
+// Display all items, with each pair of adjacent items separated
+// either by `sep` or by `vertSep \n`. If `sep` is txt(" ") and
+// `vertSep` is empty(), this implements word wrap.
+// Neither `sep` nor `vertSep` may contain newlines.
+export function wrap(sep, vertSep, items) {
   return items.reduce(
     (acc, item) =>
       concat(acc, ifFlat(horz(sep, item),
-                         vert(empty(), item))))
+                         vert(vertSep, item))));
+}
+
+// Display either `items[0] sep items[1] sep ... items[n]`
+// or `items[0] vertSep \n items[1] vertSep \n ... items[n]`.
+// Neither `sep` nor `vertSep` may contain newlines.
+export function sepBy(sep, vertSep, items) {
+  let vertItems = items.map((item, i) => {
+    return i == items.length - 1 ? item : horz(item, vertSep);
+  });
+  return ifFlat(horzArray(intersperse(sep, items)),
+                vertArray(vertItems));
+}
+
+export function commaSep(items) {
+  return sepBy(txt(", "), txt(","), items);
+}
+
+export function spaceSep(items) {
+  return sepBy(txt(" "), empty(), items);
+}
+
+export function surround(open, close, center) {
+  return horz(open, center, close);
+}
+
+export function parens(center) {
+  return surround(txt("("), txt(")"), center);
+}
+
+export function brackets(center) {
+  return surround(txt("["), txt("]"), center);
+}
+
+export function standardSexpr(func, args) {
+  return parens(spaceSep([func].concat(args)));
+}
+
+export function lambdaLikeSexpr(keyword, defn, body) {
+  return ifFlat(parens(spaceSep([keyword, defn, body])),
+                parens(vert(horz(keyword, " ", defn),
+                            horz(" ", body))));
+}
+
+export function beginLikeSexpr(keyword, bodies) {
+  return parens(vert(keyword, horz(" ", vertArray(bodies))));
 }

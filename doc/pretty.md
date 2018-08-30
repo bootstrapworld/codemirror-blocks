@@ -15,7 +15,7 @@ the layout of the code based on the screen width: the method
 `.display(width)` renders the `Doc` within the given width, and
 returns a list of lines.
 
-### Kinds of Docs
+## Kinds of Docs
 
 There are just six primitive constructors for `Doc`s:
 
@@ -38,6 +38,10 @@ just prints itself.
     xxyyyyy
       yyyy    // notice that this line is indented to match the first
 
+If instead of a fixed number of documents, you have an array of them,
+you can instead use `horzArray(docArray)`, which is equivalent to
+`horz.apply(null, docArray)`.
+
 #### Simple Concatenation
 
 `concat(doc1, doc2, ...)` concatenates documents from left to right.
@@ -52,6 +56,10 @@ two documents `x` and `y` looks like this:
 
 Most of the time, you should prefer `horz` over `concat`.
 
+If instead of a fixed number of documents, you have an array of them,
+you can use `concatArray(docArray)`.
+
+
 #### Vertical Concatenation
 
 `vert(doc1, doc2, ...)` concatenates documents from top to bottom. The
@@ -62,6 +70,10 @@ Most of the time, you should prefer `horz` over `concat`.
     xx
     yyyyy
     yyyy
+
+If instead of a fixed number of documents, you have an array of them,
+you can use `vertArray(docArray)`
+
 
 #### IfFlat: Choose between two Layouts
 
@@ -85,7 +97,8 @@ printing approach is a mix of Wadler's
 and Bernardy's
 [Pretty but not Greedy Printer](https://jyp.github.io/pdf/Prettiest.pdf).
 
-### Other Constructors
+
+## Other Constructors
 
 Besides the primitive constructors, there are some other useful
 "utility" constructors that can be defined in terms of them.
@@ -123,3 +136,46 @@ line or split across many:
 The `pretty` template accepts template strings that may contain
 newlines. It combines the lines with `vert`, and the parts of each
 line with `horz`.
+
+
+### S-Expression Constructors
+
+There are also some constructors for common kinds of s-expressions:
+
+#### Standard
+
+`standardSexpr(func, args)` is rendered like this:
+
+     (func args ... args)
+
+or like this:
+
+     (func
+      args
+      ...
+      args)
+
+#### Lambda-like
+
+`lambdaLikeSexpr(keyword, defn, body)` is rendered like this:
+
+    (keyword defn
+      body)
+
+#### Begin-like
+
+`export function beginLikeSexpr(keyword, bodies)` is rendered like this:
+
+    (keyword
+      bodies
+      ...
+      bodies)
+
+
+## Shortcuts
+
+When constructing a `Doc`, for example with `horz`, all of the
+arguments should themselves be `Doc`s. However, the library allows
+some leniency in this: if you pass a String instead of a `Doc`, it
+will be wrapped in `txt`, and if you pass an object with a `pretty()`
+method, that method will be called.

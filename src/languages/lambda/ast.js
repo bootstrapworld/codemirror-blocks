@@ -1,3 +1,4 @@
+import * as P from '../../pretty';
 import React from 'react';
 import {ASTNode} from '../../ast';
 import Node from '../../components/Node';
@@ -25,15 +26,19 @@ export class Conditional extends ASTNode {
     }
   }
 
-  toString() {
+  pretty() {
+    let cond = P.spaceSep(this.condStatement);
+    let then = P.spaceSep(this.thenStatement);
     if (!this.elseStatement) {
-      return `if (${this.condStatement}) { ${this.thenStatement.join(' ')} }`;
+      return P.pretty`if (${cond}) { ${then} }`;
+    } else {
+      let els = P.spaceSep(this.elseStatement);
+      return P.pretty`if (${cond}) { ${then} } else { ${els} }`;
     }
-    return `if (${this.condStatement}) { ${this.thenStatement.join(' ')} } else { ${this.body} })`;
   }
 }
 
-//TODO: add a toString() method
+//TODO: add a pretty() method
 export class Assignment extends ASTNode {
   constructor(from, to, operator, left, right, options={}) {
     super(from, to, 'assignment', options);
@@ -53,7 +58,7 @@ export class Assignment extends ASTNode {
   }
 }
 
-//TODO: add a toString() method
+//TODO: add a pretty() method
 //is it possible to merge this somehow with assign class? Almost identical with it
 export class Binary extends ASTNode {
   constructor(from, to, operator, left, right, options={}) {
@@ -74,8 +79,7 @@ export class Binary extends ASTNode {
   }
 }
 
-//TODO: add a toString() method
-//use struct toString method as template for this toString() method?
+//TODO: add a pretty() method
 export class Prog extends ASTNode {
   constructor(from, to, prog, options={}) {
     super(from, to, 'prog', options);
@@ -104,7 +108,7 @@ export class Prog extends ASTNode {
   }
 }
 
-//TODO: add a toString() method
+//TODO: add a pretty() method
 export class Let extends ASTNode {
   constructor(from, to, vars, body, options={}) {
     super(from, to, 'let', options);

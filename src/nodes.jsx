@@ -1,3 +1,5 @@
+import * as P from './pretty';
+import {pretty} from './pretty';
 import React from 'react';
 import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
 import Node from './components/Node';
@@ -16,8 +18,8 @@ export class Literal extends ASTNode {
     yield this;
   }
 
-  toString() {
-    return `${this.value}`;
+  pretty() {
+    return P.txt(this.value);
   }
 
   render(props) {
@@ -42,8 +44,8 @@ export class Comment extends ASTNode {
     yield this;
   }
 
-  toString() {
-    return `${this.comment}`;
+  pretty() {
+    return P.wrap(this.comment.split(/\s+/));
   }
 
   render(props) {
@@ -72,8 +74,8 @@ export class Sequence extends ASTNode {
     return `a sequence containing ${enumerateList(this.exprs, level)}`;
   }
 
-  toString() {
-    return `(${this.name} ${this.exprs.join(" ")})`;
+  pretty() {
+    return P.standardSexpr(this.name, this.exprs);
   }
 
   render(props) {
@@ -117,8 +119,8 @@ export class Expression extends ASTNode {
       
   }
 
-  toString() {
-    return `(${this.func} ${this.args.join(' ')})`;
+  pretty() {
+    return P.standardSexpr(this.func, this.args);
   }
 
   render(props) {
@@ -155,8 +157,8 @@ export class Unknown extends ASTNode {
       this.elts.map((e, i, elts)  => (elts.length>1? (i+1) + ": " : "")+ e.toDescription(level)).join(", ");
   }
 
-  toString() {
-    return `(${this.func} ${this.args.join(' ')})`;
+  pretty() {
+    return P.standardSexpr(this.elts[0], this.elts.slice(1));;
   }
 
   render(props) {
@@ -185,8 +187,8 @@ export class Blank extends ASTNode {
     yield this;
   }
 
-  toString() {
-    return `${this.value}`;
+  pretty() {
+    return P.txt(this.value);
   }
 
   render(props) {
@@ -219,8 +221,8 @@ export class IdentifierList extends ASTNode {
     return enumerateList(this.ids, level);
   }
 
-  toString() {
-    return `${this.ids.join(' ')}`;
+  pretty() {
+    return P.spaceSep(this.ids);
   }
 
   render(props) {
@@ -254,8 +256,8 @@ export class StructDefinition extends ASTNode {
             ${this.fields.toDescription(level)}`;
   }
 
-  toString() {
-    return `(define-struct ${this.name} (${this.fields.toString()}))`;
+  pretty() {
+    return P.lambdaLikeSexpr("define-struct", this.name, P.parens(this.fields));
   }
 
   render(props) {
@@ -291,8 +293,8 @@ export class VariableDefinition extends ASTNode {
     yield this.body;
   }
 
-  toString() {
-    return `(define ${this.name} ${this.body})`;
+  pretty() {
+    return P.lambdaLikeSexpr("define", this.name, this.body);
   }
 
   render(props) {
@@ -331,8 +333,8 @@ export class LambdaExpression extends ASTNode {
             ${this.body.toDescription(level)}`;
   }
 
-  toString() {
-    return `(lambda (${this.args.toString()}) ${this.body})`;
+  pretty() {
+    return P.lambdaLikeSexpr("lambda", P.parens(this.args), this.body);
   }
 
   render(props) {
@@ -374,8 +376,11 @@ export class FunctionDefinition extends ASTNode {
             ${this.body.toDescription(level)}`;
   }
 
-  toString() {
-    return `(define (${this.name} ${this.params.toString()}) ${this.body})`;
+  pretty() {
+    return P.lambdaLikeSexpr(
+      "define",
+      P.standardSexpr(this.name, this.params),
+      this.body);
   }
 
   render(props) {
@@ -417,8 +422,8 @@ export class CondClause extends ASTNode {
     return `condition: if ${this.testExpr.toDescription(level)}, then, ${this.thenExprs.map(te => te.toDescription(level))}`;
   }
 
-  toString() {
-    return `[${this.testExpr} ${this.thenExprs.join(' ')}]`;
+  pretty() {
+    return P.brackets(P.spaceSep([this.testExpr].concat(this.thenExprs)));
   }
 
   render(props) {
@@ -465,9 +470,8 @@ export class CondExpression extends ASTNode {
             ${this.clauses.map(c => c.toDescription(level))}`;
   }
 
-  toString() {
-    const clauses = this.clauses.map(c => c.toString()).join(' ');
-    return `(cond ${clauses})`;
+  pretty() {
+    return P.beginLikeSexpr("cond", this.clauses);
   }
 
   render(props) {
@@ -504,8 +508,8 @@ export class IfExpression extends ASTNode {
             `else ${this.elseExpr.toDescription(level)}`;
   }
 
-  toString() {
-    return `(if ${this.testExpr} ${this.thenExpr} ${this.elseExpr})`;
+  pretty() {
+    return P.standardSexpr("if", [this.testExpr, this.thenExpr, this.elseExpr]);
   }
 
   render(props) {

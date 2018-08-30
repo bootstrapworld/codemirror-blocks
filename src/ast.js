@@ -1,3 +1,4 @@
+import * as P from './pretty';
 import {poscmp} from './utils';
 const uuidv4 = require('uuid/v4');
 
@@ -75,8 +76,9 @@ export class AST {
     this.annotateNodes();
   }
 
-  toString() {
-    return this.rootNodes.map(r => r.toString()).join('\n');
+  pretty() {
+    let docs = this.rootNodes.map(r => r.pretty());
+    return P.vertArray(docs);
   }
 
   // annotateNodes : ASTNodes ASTNode -> Void

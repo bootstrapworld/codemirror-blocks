@@ -48,6 +48,19 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].func.value).toBe('...');
       expect(this.ast.rootNodes[0].func.dataType).toBe('blank');
     });
+
+    it("should pretty-print at large width nicely", function() {
+      expect(this.ast.pretty().display(80)).toEqual(
+        ["(sum 1 2 3)"]);
+    });
+
+    it("should pretty-print at small width nicely", function() {
+      expect(this.ast.pretty().display(2)).toEqual(
+        ["(sum",
+         " 1",
+         " 2",
+         " 3)"]);
+    });
   });
 
   describe("when parsing andExpressions and orExpression,", function() {
@@ -68,6 +81,22 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].func.value).toBe('or');
       expect(this.ast.rootNodes[1].func.value).toBe('and');
     });
+
+    it("should pretty-print at large width nicely", function() {
+      expect(this.ast.pretty().display(80)).toEqual(
+        ["(or true true)",
+         "(and true true)"]);
+    });
+
+    it("should pretty-print at small width nicely", function() {
+      expect(this.ast.pretty().display(10)).toEqual(
+        ["(or",
+         " true",
+         " true)",
+         "(and",
+         " true",
+         " true)"]);
+    });
   });
 
   describe("when parsing variable definitions,", function() {
@@ -80,27 +109,43 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].name.value).toBe('foo');
       expect(this.ast.rootNodes[0].body.type).toBe('literal');
     });
+
+    it("should pretty-print at large width nicely", function() {
+      expect(this.ast.pretty().display(80)).toEqual(
+        ['(define foo "bar")']);
+    });
+
+    it("should pretty-print at small width nicely", function() {
+      expect(this.ast.pretty().display(5)).toEqual(
+        ['(define foo',
+         '  "bar")']);
+    });
   });
 
-  /*
-   * The WeScheme parser ignores comments at the lexing stage.
-   * This may change in a future release, but for now these
-   * tests are commented out
+/*
+  // TODO: These tests have been behaving non-deterministically for me
+  // (Justin). Fix them, and also test `.pretty()` for comments.
 
+  // TODO: This only tests comments that are associated with a node.
+  // In the future, CMB should also support standalone top-level
+  // comments, and test for them here.
   describe("when parsing comments,", function() {
     beforeEach(function() {
-      this.ast = this.parser.parse(';this is a comment');
+      console.log("@begin");
+      this.ast = this.parser.parse(';this is a comment\n3');
+      console.log("@end");
     });
 
     it("should convert comments to codemirror-blocks comments", function() {
-      expect(this.ast.rootNodes[0].type).toBe('comment');
+      expect(this.ast.rootNodes[0].options.comment.type).toBe('comment');
     });
 
     it("should keep track of the text of the comment", function() {
-      expect(this.ast.rootNodes[0].comment).toBe('this is a comment');
+      expect(this.ast.rootNodes[0].options.comment.comment)
+        .toBe('this is a comment');
     });
   });
-  */
+*/
 
   describe("when parsing struct definitions,", function() {
 
@@ -120,6 +165,17 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].fields.ids.length).toBe(3);
       expect(this.ast.rootNodes[0].fields.ids[0].value).toBe('x');
       expect(this.ast.rootNodes[0].fields.ids[2].value).toBe('z');
+    });
+
+    it("should pretty-print at large width nicely", function() {
+      expect(this.ast.pretty().display(80)).toEqual(
+        ['(define-struct 3d-point (x y z))']);
+    });
+
+    it("should pretty-print at small width nicely", function() {
+      expect(this.ast.pretty().display(30)).toEqual(
+        ['(define-struct 3d-point',
+         '  (x y z))']);
     });
   });
 
@@ -145,6 +201,17 @@ describe("The WeScheme Parser,", function() {
     it("should convert the function body correctly", function() {
       expect(this.ast.rootNodes[0].body.type).toBe('expression');
     });
+
+    it("should pretty-print at large width nicely", function() {
+      expect(this.ast.pretty().display(80)).toEqual(
+        ['(define (add2 x) (+ x 2))']);
+    });
+
+    it("should pretty-print at small width nicely", function() {
+      expect(this.ast.pretty().display(24)).toEqual(
+        ['(define (add2 x)',
+         '  (+ x 2))']);
+    });
   });
 
   describe("when parsing lambda expressions,", function() {
@@ -164,6 +231,17 @@ describe("The WeScheme Parser,", function() {
 
     it("should convert the body correctly", function() {
       expect(this.ast.rootNodes[0].body.type).toBe('expression');
+    });
+
+    it("should pretty-print at large width nicely", function() {
+      expect(this.ast.pretty().display(80)).toEqual(
+        ["(lambda (x y) (+ x y))"]);
+    });
+
+    it("should pretty-print at small width nicely", function() {
+      expect(this.ast.pretty().display(20)).toEqual(
+        ["(lambda (x y)",
+         "  (+ x y))"]);
     });
   });
 
@@ -188,10 +266,22 @@ describe("The WeScheme Parser,", function() {
       expect(clauses[0].type).toBe('condClause');
     });
 
-    it("should have a sane toString method", function() {
-      expect(this.ast.rootNodes[0].toString()).toEqual(
-        `(cond [(positive? -5) (error "doesn't get here")] [(zero? -5) (error "doesn't get here, either")] [(positive? 5) #t])`
-      );
+    it("should pretty-print at large width nicely", function() {
+      expect(this.ast.pretty().display(80)).toEqual(
+        ["(cond",
+         "  [(positive? -5) (error \"doesn't get here\")]",
+         "  [(zero? -5) (error \"doesn't get here, either\")]",
+         "  [(positive? 5) #t])"]);
+    });
+
+    it("should pretty-print at small width nicely", function() {
+      expect(this.ast.pretty().display(40)).toEqual(
+        ["(cond",
+         "  [(positive? -5)",
+         "   (error \"doesn't get here\")]",
+         "  [(zero? -5)",
+         "   (error \"doesn't get here, either\")]",
+         "  [(positive? 5) #t])"]);
     });
   });
 
@@ -218,6 +308,19 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].elseExpr.type).toBe('literal');
       expect(this.ast.rootNodes[0].elseExpr.dataType).toBe('symbol');
       expect(this.ast.rootNodes[0].elseExpr.value).toBe('y');
+    });
+
+    it("should pretty-print at large width nicely", function() {
+      expect(this.ast.pretty().display(80)).toEqual(
+        ["(if (> 0 1) x y)"]);
+    });
+
+    it("should pretty-print at small width nicely", function() {
+      expect(this.ast.pretty().display(10)).toEqual(
+        ['(if',
+         ' (> 0 1)',
+         ' x',
+         ' y)']);
     });
   });
 
@@ -249,6 +352,28 @@ describe("The WeScheme Parser,", function() {
       expect(firstExpression.func.value).toBe('-');
       expect(firstExpression.args[0].type).toBe('expression');
       expect(firstExpression.args[1].type).toBe('literal');
+    });
+
+    it("should pretty-print at large width nicely", function() {
+      expect(this.ast.pretty().display(80)).toEqual(
+        ['(begin (- (+ 1 2) 5) (print "hello"))']);
+    });
+
+    it("should pretty-print at small width nicely", function() {
+      expect(this.ast.pretty().display(30)).toEqual(
+        ['(begin',
+         ' (- (+ 1 2) 5)',
+         ' (print "hello"))']);
+    });
+
+    it("should pretty-print at tiny width nicely", function() {
+      expect(this.ast.pretty().display(10)).toEqual(
+        ['(begin',
+         ' (-',
+         '  (+ 1 2)',
+         '  5)',
+         ' (print',
+         '  "hello"))']);
     });
   });
 
@@ -445,6 +570,8 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].elts[1].type).toBe('literal');
       expect(this.ast.rootNodes[0].elts[2].type).toBe('expression');
       expect(this.ast.rootNodes[0].elts[3].value).toBe('d');
+      expect(this.ast.pretty().display(80)).toEqual([
+        "(define-struct a (a b c) d)"]);
     });
 
     it("parse malformed ifExpression (if)", function() {

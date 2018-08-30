@@ -1,7 +1,19 @@
 import {
-  empty, txt, horz, vert, concat, ifFlat, wrap, pretty
+  empty, txt, horz, vert, concat, ifFlat, pretty, wrap, commaSep
 } from "codemirror-blocks/pretty";
 
+
+class Prettyable {
+  pretty() {
+    return txt("ok");
+  }
+}
+
+class NotPrettyable {
+  pretty() {
+    return "ok";
+  }
+}
 
 describe("The Pretty-Printing Doc Class", function() {
 
@@ -37,6 +49,36 @@ describe("The Pretty-Printing Doc Class", function() {
       .toEqual(["aaaa 1", "b", "  2"]);
   });
 
+  it("Should be able to separate things by commas nicely.", function() {
+    let items = ["1", "22", "333", "4444", "55555"].map(s => txt(s));
+    expect(commaSep(items).display(23))
+      .toEqual(["1, 22, 333, 4444, 55555"]);
+    expect(commaSep(items).display(22))
+      .toEqual(["1,", "22,", "333,", "4444,", "55555"]);
+  });
+
+  it("Should coerce Strings to txt.", function() {
+    expect(horz("Hello", " ", "world"))
+      .toEqual(horz(txt("Hello"), txt(" "), txt("world")));
+  });
+
+  it("Should try calling .pretty() on things that aren't Docs.", function() {
+    expect(vert(new Prettyable(), new Prettyable()).display(""))
+      .toEqual(["ok", "ok"]);
+  });
+
+  it("Should error if calling .pretty() doesn't return a Doc.", function() {
+    expect(function() {
+      vert(new NotPrettyable(), new NotPrettyable())
+    }).toThrow(new Error("The pretty printer called the `.pretty()` function, and expected it to return a Doc, but instead it returned: [object Object]"));
+  });
+
+  it("Should error if an argument can't be coerced to a Doc.", function() {
+    expect(function() {
+      concat(666);
+    }).toThrow(new Error("The pretty printer was expecting a Doc (or a String, or something with a pretty() method), but instead it was given: 666"));
+  });
+
   describe("on the example from the documentation", function() {
     function binop(left, op, right) {
       return ifFlat(
@@ -70,7 +112,8 @@ describe("The Pretty-Printing Doc Class", function() {
 
     it("should be able to wrap an eight-word sentence.", function() {
       let sentence =
-        wrap(txt(" "), ["This", "is", "a", "sentence", "with", "eight", "words"]
+        wrap(txt(" "), empty(),
+             ["This", "is", "a", "sentence", "with", "eight", "words"]
              .map(txt));
       expect(sentence.display(40))
         .toEqual(["This is a sentence with eight words"]);
@@ -89,7 +132,7 @@ describe("The Pretty-Printing Doc Class", function() {
       for (let i = 0; i < 10; i++) {
         para = para.concat(sentence);
       }
-      para = wrap(txt(" "), para.map(txt));
+      para = wrap(txt(" "), empty(), para.map(txt));
       expect(para.display(55).join("\n"))
       .toEqual(`This is a long paragraph with exactly one hundred
 words. This is a long paragraph with exactly one
@@ -178,21 +221,21 @@ words.`);
 
   describe("when computing flat widths", function() {
     it("should be null for docs containing a newline", function() {
-      expect(horz(vert(empty, empty), empty).flat_width)
+      expect(horz(vert(empty(), empty()), empty()).flat_width)
       .toBe(null);
 
-      expect(horz(empty, vert(empty, empty)).flat_width)
+      expect(horz(empty(), vert(empty(), empty())).flat_width)
       .toBe(null);
 
-      expect(concat(vert(empty, empty), empty).flat_width)
+      expect(concat(vert(empty(), empty()), empty()).flat_width)
       .toBe(null);
 
-      expect(concat(empty, vert(empty, empty)).flat_width)
+      expect(concat(empty(), vert(empty(), empty())).flat_width)
       .toBe(null);
     });
 
     it("should handle weird edge cases correctly", function() {
-      expect(ifFlat(vert(empty, empty), txt("four")).flat_width)
+      expect(ifFlat(vert(empty(), empty()), txt("four")).flat_width)
       .toBe(4);
 
       expect(ifFlat(txt("longer"), txt("four")).flat_width)

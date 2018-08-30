@@ -3,11 +3,18 @@ import ReactDOM from 'react-dom';
 
 import {poscmp} from './utils';
 
+
+const DEFAULT_PRINT_WIDTH = 120;
+
 export default class Renderer {
-  constructor(cm, {lockNodesOfType=[], printASTNode} = {}) {
+  constructor(cm, {lockNodesOfType=[], printWidth} = {}) {
     this.cm = cm;
     this.lockNodesOfType = lockNodesOfType;
-    this.printASTNode = printASTNode || (node => node.toString());
+    this.printWidth = printWidth || DEFAULT_PRINT_WIDTH;
+    this.printASTNode = function(node) {
+      let lines = node.pretty().display(this.printWidth);
+      return lines.join("\n");
+    };
   }
 
   // make code "float" between text/blocks
