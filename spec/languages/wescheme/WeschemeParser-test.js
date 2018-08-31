@@ -82,25 +82,21 @@ describe("The WeScheme Parser,", function() {
     });
   });
 
-  /*
-   * The WeScheme parser ignores comments at the lexing stage.
-   * This may change in a future release, but for now these
-   * tests are commented out
-
   describe("when parsing comments,", function() {
     beforeEach(function() {
-      this.ast = this.parser.parse(';this is a comment');
+      this.ast = this.parser.parse(';this is a comment\n3');
     });
 
     it("should convert comments to codemirror-blocks comments", function() {
-      expect(this.ast.rootNodes[0].type).toBe('comment');
+      expect(this.ast.rootNodes[0].type).toBe('literal');
+      expect(this.ast.rootNodes[0].options.comment.type).toBe('comment');
     });
 
     it("should keep track of the text of the comment", function() {
-      expect(this.ast.rootNodes[0].comment).toBe('this is a comment');
+      expect(this.ast.rootNodes[0].options.comment.comment).toBe('this is a comment');
     });
   });
-  */
+
 
   describe("when parsing struct definitions,", function() {
 
@@ -571,4 +567,5 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].elts.length).toBe(1);
     });
   });
+
 });
