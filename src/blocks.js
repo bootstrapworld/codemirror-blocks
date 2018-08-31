@@ -91,7 +91,6 @@ export default class CodeMirrorBlocks {
     }
 
     this.cm = cm;
-    this.cm.setOption("readOnly", true); // make it so only the block editor can make changes
     this.toolbarNode = toolbar;
     this.searchNode = search;
     this.willInsertNode = willInsertNode;
