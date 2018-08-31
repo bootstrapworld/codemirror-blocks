@@ -1,5 +1,4 @@
 import * as P from './pretty';
-import {pretty} from './pretty';
 import React from 'react';
 import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
 import Node from './components/Node';
@@ -158,7 +157,7 @@ export class Unknown extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr(this.elts[0], this.elts.slice(1));;
+    return P.standardSexpr(this.elts[0], this.elts.slice(1));
   }
 
   render(props) {
