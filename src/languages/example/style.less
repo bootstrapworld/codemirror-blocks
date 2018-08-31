@@ -9,12 +9,12 @@
   @literal-boolean-color: darkred;
   @literal-symbol-color: steelblue;
   @comment-color: #ccc;
-  @editing-border-color: orange;
+  @focus-border-color: orange;
   @error-border-color: red;
-  @border-hint: rgba(255, 165, 0, 0.3);
 
-  @hover-drop-background-color: lightblue;
-  @hover-replace-background-color: red;
+  @hover-border-color: red;
+  @drag-drop-background-color: lightblue;
+  @drag-replace-background-color: red;
 
   .blocks-locked {
     display: none !important;
@@ -85,18 +85,18 @@
     text-align: center;
 
     &.blocks-editing, &.blocks-quarantine {
-      border-color: @editing-border-color;
+      border-color: @focus-border-color;
       &.blocks-error {
         border-color: @error-border-color;
       }
     }
 
     &:hover {
-      border: 1px solid red;
+      border: 1px solid @hover-border-color;
     }
 
     &.blocks-over-target {
-      background-color: @hover-replace-background-color;
+      background-color: @drag-replace-background-color;
     }
 
     * {
@@ -132,7 +132,7 @@
   }
 
   .blocks-node:focus {
-    border-color: @editing-border-color;
+    border-color: @focus-border-color;
     outline: 0;
   }
 
@@ -143,7 +143,7 @@
   }
 
   .blocks-over-target {
-    background-color: @hover-drop-background-color;
+    background-color: @drag-drop-background-color;
     border-radius: @border-radius;
   }
 
