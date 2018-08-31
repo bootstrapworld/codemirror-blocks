@@ -1,5 +1,5 @@
 import CodeMirror from 'codemirror';
-import store from './store';
+import {store} from './store';
 import patch from './ast-patch';
 import global from './global';
 

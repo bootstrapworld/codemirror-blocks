@@ -3,59 +3,24 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {BACKSPACE, LEFT, RIGHT, SPACE, UP, DOWN, ENTER, DELETE} from '../keycode';
-import {toggleSelection, focusNextNode, focusNode, deleteNodes} from '../actions';
+import {dropNode, toggleSelection, focusNextNode, focusNode, deleteNodes} from '../actions';
 import NodeEditable from './NodeEditable';
 import Component from './BlockComponent';
-import store from '../store';
+import {isErrorFree} from '../store';
 import global from '../global';
-import {ItemTypes} from '../constants';
-import {DragSource, DropTarget} from 'react-dnd';
+import {DragNodeSource, DropNodeTarget} from '../dnd';
+import classNames from 'classnames';
+import {store} from '../store';
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
 
-const nodeSource = {
-  beginDrag(props) {
-    console.log(props, 'source');
-    return {};
-  }
-};
-
-function collectSource(connect, monitor) {
-  return {
-    connectDragSource: connect.dragSource(),
-    isDragging: monitor.isDragging()
-  };
-}
-
-const nodeTarget = {
-  drop(props) {
-    console.log(props, 'target');
-  }
-};
-
-function collectTarget(connect, monitor) {
-  console.log(monitor.isOver());
-  return {
-    connectDropTarget: connect.dropTarget(),
-    isOver: monitor.isOver({shallow: true})
-  };
-}
-
-/**
- * errorFree: (-> Boolean)
- *
- * Indicating whether there is no error. Note that this function has side-effect.
- * It should not be used in rendering, since React should be notified by changes directly
- * Only use this function in event handlers.
- */
-function errorFree() {
-  return store.getState().errorId === '';
-}
-
-@DragSource(ItemTypes.NODE, nodeSource, collectSource)
-@DropTarget(ItemTypes.NODE, nodeTarget, collectTarget)
+@DragNodeSource
+@DropNodeTarget(({node}) => {
+  node = store.getState().ast.getNodeById(node.id);
+  return {from: node.from, to: node.to};
+})
 class Node extends Component {
   static defaultProps = {
     children: null,
@@ -73,6 +38,8 @@ class Node extends Component {
 
     connectDragSource: PropTypes.func.isRequired,
     isDragging: PropTypes.bool.isRequired,
+    connectDropTarget: PropTypes.func.isRequired,
+    isOver: PropTypes.bool.isRequired,
 
     normallyEditable: PropTypes.bool,
 
@@ -87,7 +54,7 @@ class Node extends Component {
   handleClick = e => {
     e.stopPropagation(); // prevent ancestors to steal focus
     e.preventDefault();
-    if (!errorFree()) return;
+    if (!isErrorFree()) return;
 
     this.props.setFocus(this.props.node.id);
   }
@@ -95,7 +62,7 @@ class Node extends Component {
   handleKeyDown = e => {
     e.stopPropagation();
     e.preventDefault();
-    if (!errorFree()) return;
+    if (!isErrorFree()) return;
 
     const {
       node, expandable, isCollapsed,
@@ -162,7 +129,7 @@ class Node extends Component {
   }
 
   componentDidMount = () => {
-    if (this.element && errorFree() && this.props.isFocused) {
+    if (this.element && isErrorFree() && this.props.isFocused) {
       this.focusSelf(true);
     }
   }
@@ -193,7 +160,7 @@ class Node extends Component {
   }
 
   handleMakeEditable = () => {
-    if (!errorFree()) return;
+    if (!isErrorFree()) return;
     this.setState({editable: true});
     global.cm.refresh(); // is this needed?
   }
@@ -240,7 +207,7 @@ class Node extends Component {
     };
 
     const classes = [
-      locked ? "blocks-locked" : '',
+      {'blocks-locked': locked},
       'blocks-node',
       `blocks-${node.type}`
     ];
@@ -257,32 +224,30 @@ class Node extends Component {
       );
     } else {
       const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
+      classes.push({'blocks-over-target': isOver});
       let result = (
         <span
           {...props}
-          className     = {classes.join(' ')}
+          className     = {classNames(classes)}
           ref           = {el => this.element = el}
           role          = "treeitem"
           style={{
             opacity: isDragging ? 0.5 : 1,
-            cursor: 'move',
-            position: 'relative',
           }}
           onClick       = {this.handleClick}
           onDoubleClick = {this.handleDoubleClick}
           onKeyDown     = {this.handleKeyDown}>
           {children}
-          {
-            node.options.comment &&
-              this.props.helpers.renderNodeForReact(node.options.comment)
-          }
+        {
+          node.options.comment &&
+            this.props.helpers.renderNodeForReact(node.options.comment)
+        }
         </span>
       );
       if (this.props.normallyEditable) {
         result = connectDropTarget(result);
       }
-      result = connectDragSource(result);
-      return result;
+      return connectDragSource(result);
     }
   }
 }
@@ -310,6 +275,7 @@ const mapDispatchToProps = dispatch => ({
   collapseAll: () => dispatch({type: 'COLLAPSE_ALL'}),
   uncollapseAll: () => dispatch({type: 'UNCOLLAPSE_ALL'}),
   handleDelete: () => dispatch(deleteNodes()),
+  onDrop: (src, dest) => dispatch(dropNode(src, dest)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);

@@ -6,8 +6,7 @@ import PropTypes from 'prop-types';
 import './Editor.less';
 import {poscmp} from '../utils';
 import {connect, Provider} from 'react-redux';
-import {OptionsContext} from './Context';
-import store from '../store';
+import {store} from '../store';
 import global from '../global';
 import {DragDropContext} from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
@@ -133,6 +132,13 @@ class Editor extends Component {
 
   handleEditorDidMount = ed => {
     global.cm = ed;
+
+    ed.on("dragover", (editor, e) => {
+      if (!e.target.classList.contains('CodeMirror-line')) {
+        e.codemirrorIgnore = true;
+      }
+    });
+
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
     this.blocks = new CodeMirrorBlocks(
@@ -156,21 +162,18 @@ class Editor extends Component {
   }
 
   render() {
-    const {parser, options} = this.props;
     return (
-      <OptionsContext.Provider value={{parser, options}}>
-        <div className="Editor blocks">
-          <div className="codemirror-pane">
-            <CodeMirror options={this.props.cmOptions}
-                        value={this.props.value}
-                        editorDidMount={this.handleEditorDidMount} />
-          </div>
-          {this.renderPortals()}
-          <div>
-            {global.cm && global.cm.getValue()}
-          </div>
+      <div className="Editor blocks">
+        <div className="codemirror-pane">
+          <CodeMirror options={this.props.cmOptions}
+                      value={this.props.value}
+                      editorDidMount={this.handleEditorDidMount} />
         </div>
-      </OptionsContext.Provider>
+        {this.renderPortals()}
+        <div>
+          {global.cm && global.cm.getValue()}
+        </div>
+      </div>
     );
   }
 

@@ -1,5 +1,6 @@
 import {skipWhile, poscmp, partition} from './utils';
 import {commitChanges} from './codeMirror';
+import global from './global';
 
 /**
  * Returns whether `u` is a strict ancestor of `v`
@@ -100,5 +101,42 @@ export function deleteNodes() {
       dispatch({type: 'SET_FOCUS', focusId: firstNode.nid});
       dispatch({type: 'SET_SELECTIONS', selections: []});
     }
+  };
+}
+
+export function dropNode({id: srcId}, {from: destFrom, to: destTo, isDropTarget}) {
+  return (dispatch, getState) => {
+    const {ast} = getState();
+    const srcNode = ast.getNodeById(srcId);
+    if (poscmp(destFrom, srcNode.from) > 0 && poscmp(destTo, srcNode.to) < 0) {
+      return;
+    }
+    const srcText = global.cm.getRange(srcNode.from, srcNode.to);
+
+    let value = null;
+    if (isDropTarget && global.options.willInsertNode) {
+      value = global.options.willInsertNode(
+        global.cm,
+        srcText,
+        undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
+        destFrom,
+      );
+    } else {
+      value = srcText;
+    }
+
+    commitChanges(
+      cm => () => {
+        if (poscmp(srcNode.from, destFrom) < 0) {
+          cm.replaceRange(value, destFrom, destTo);
+          cm.replaceRange('', srcNode.from, srcNode.to);
+        } else {
+          cm.replaceRange('', srcNode.from, srcNode.to);
+          cm.replaceRange(value, destFrom, destTo);
+        }
+      },
+      () => {},
+      () => {}
+    );
   };
 }

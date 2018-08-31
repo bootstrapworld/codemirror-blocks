@@ -4,14 +4,13 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {ESC, ENTER} from '../keycode';
 import ContentEditable from './ContentEditable';
-import {OptionsContext} from '../ui/Context';
 import {commitChanges} from '../codeMirror';
 import global from '../global';
+import classNames from 'classnames';
 
 class NodeEditable extends Component {
   static defaultProps = {
     children: null,
-    willInsertNode: (_, x) => x,
   }
 
   static propTypes = {
@@ -19,9 +18,6 @@ class NodeEditable extends Component {
     children: PropTypes.node,
 
     dropTarget: PropTypes.bool.isRequired,
-
-    parser: PropTypes.object.isRequired,
-    options: PropTypes.object.isRequired,
     // NOTE: the presence of this Node means ast is not null
   }
 
@@ -82,7 +78,7 @@ class NodeEditable extends Component {
       // event has relatedTarget === null, so we add this to bail out.
       return;
     }
-    const {node, cm, parser, setErrorId, onEditableChange} = this.props;
+    const {node, cm, setErrorId, onEditableChange} = this.props;
     // NOTE: e comes from either click or keydown event
     if (e.keyCode && e.keyCode === ESC) {
       this.setState({value: null});
@@ -93,8 +89,8 @@ class NodeEditable extends Component {
 
     let value = null;
 
-    if (this.props.dropTarget && this.props.options.willInsertNode) {
-      value = this.props.options.willInsertNode(
+    if (this.props.dropTarget && global.options.willInsertNode) {
+      value = global.options.willInsertNode(
         global.cm,
         this.state.value,
         undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
@@ -139,13 +135,13 @@ class NodeEditable extends Component {
       'blocks-literal',
       'quarantine',
       'blocks-editing',
-      this.props.isErrored ? 'blocks-error' : '',
+      {'blocks-error': this.props.isErrored},
     ].concat(extraClasses);
 
     return (
       <ContentEditable
         {...contentEditableProps}
-        className  = {classes.join(' ')}
+        className  = {classNames(classes)}
         role       = "textbox"
         itDidMount = {this.contentEditableDidMount}
         onChange   = {this.handleChange}
@@ -157,17 +153,6 @@ class NodeEditable extends Component {
   }
 }
 
-function WrappedNodeEditable(props) {
-  return (
-    <OptionsContext.Consumer>
-      {
-        ({parser, options}) =>
-          <NodeEditable {...props} parser={parser} options={options} />
-      }
-    </OptionsContext.Consumer>
-  );
-}
-
 const mapStateToProps = ({cm, errorId}, {node}) => {
   const isErrored = errorId == node.id;
   return {cm, isErrored};
@@ -177,4 +162,4 @@ const mapDispatchToProps = dispatch => ({
   setErrorId: errorId => dispatch({type: 'SET_ERROR_ID', errorId}),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(WrappedNodeEditable);
+export default connect(mapStateToProps, mapDispatchToProps)(NodeEditable);

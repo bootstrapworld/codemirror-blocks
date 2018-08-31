@@ -1,14 +1,21 @@
 import React from 'react';
+import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import Component from './BlockComponent';
 import NodeEditable from './NodeEditable';
-import {connect} from 'react-redux';
 import global from '../global';
+import {DropNodeTarget} from '../dnd';
+import classNames from 'classnames';
+import {isErrorFree} from '../store';
+import {dropNode} from '../actions';
 
+@DropNodeTarget(({location}) => ({from: location, to: location}))
 class DropTarget extends Component {
 
   static propTypes = {
-    location: PropTypes.instanceOf(Object).isRequired
+    location: PropTypes.instanceOf(Object).isRequired,
+    connectDropTarget: PropTypes.func.isRequired,
+    isOver: PropTypes.bool.isRequired,
   }
 
   state = {editable: false}
@@ -23,7 +30,7 @@ class DropTarget extends Component {
   }
 
   handleMakeEditable = () => {
-    if (this.props.globalHasError) return;
+    if (!isErrorFree()) return;
     this.setState({editable: true});
     global.cm.refresh(); // is this needed?
   }
@@ -52,25 +59,21 @@ class DropTarget extends Component {
                       onEditableChange={this.handleEditableChange} />
       );
     }
-    return (
+    const classes = [
+      'blocks-drop-target',
+      'blocks-white-space',
+      {'blocks-over-target' : this.props.isOver}
+    ];
+    return this.props.connectDropTarget(
       <span
-        className="blocks-drop-target blocks-white-space"
-        onDoubleClick = {this.handleDoubleClick}
-        data-line={location.line}
-        data-ch={location.ch} />
+        className={classNames(classes)}
+        onDoubleClick = {this.handleDoubleClick} />
     );
   }
 }
 
-
-const mapStateToProps = ({cm, errorId}) => {
-  return {
-    cm,
-    globalHasError: errorId !== '',
-  };
-};
-
 const mapDispatchToProps = dispatch => ({
+  onDrop: (src, dest) => dispatch(dropNode(src, {...dest, isDropTarget: true})),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(DropTarget);
+export default connect(null, mapDispatchToProps)(DropTarget);
