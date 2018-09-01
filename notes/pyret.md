@@ -12,15 +12,24 @@
   copy-pasted into the folder with their import statements modified by
   hand to match the kinds of import statements used in CMB. This is
   awful. If anyone can fix this, please do.
-- Document the API needed to add a language to CMB.
-- Make a proper API for adding new blocks to a language.
-- Document the proper API for adding new blocks to a language.
+- Merge this branch in with `master`. I have already merged some
+  chunks of it, partly in the `pretty-print` branch/PR. The remaining
+  changes in this branch that have not been merged are:
+    - Everything in the `src/languages/pyret` folder.
+    - The Pyret example page, added by 
+    [these](https://github.com/bootstrapworld/codemirror-blocks/commit/5a6759ef36672fa48c7dc3dc97beb042ef5eafd3)
+    [two](https://github.com/bootstrapworld/codemirror-blocks/commit/c3758468aa380ae50e6ee08008540b86762eec53)
+    commits.
+    - A switch to different iterators over AST nodes. See
+    [these](https://github.com/bootstrapworld/codemirror-blocks/commit/7ad0928d83b220d5503908262f69701ab636d5f2)
+    [two](https://github.com/bootstrapworld/codemirror-blocks/commit/a9ff53757e8d29b9336e6d180724fe09814d40d2)
+    commits.
+    - The note about the srcloc invariant in `src/ast.js`.
+    - The notes in `README.md` about screen readers.
 - Add support for the kinds of blocks listed below, which is enough
   for Pyret blocks to be used in the Bootstrap data-science
   curriculum.
 - Add support for blocks for the rest of Pyret.
-- Merge with the `reactify` branch that re-does the way that changes
-  to the AST are processed and rendered (to use JS `react`).
 
 
 ## Kinds of Blocks to support (from Emmanuel)
