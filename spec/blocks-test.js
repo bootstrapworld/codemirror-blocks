@@ -3,6 +3,7 @@ import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/searchcursor.js';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
 import {addLanguage} from 'codemirror-blocks/languages';
+import {ISMAC} from 'codemirror-blocks/keymap';
 
 import {
   click,
@@ -469,6 +470,13 @@ describe('The CodeMirrorBlocks Class', function() {
           this.secondArg.el.dispatchEvent(keydown(LEFT));
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
           expect(document.activeElement).toBe(this.firstRoot.el);
+        }); 
+
+        it('less-than should activate root without collapsing', async function() {
+          this.thirdRoot.args[1].args[1].el.dispatchEvent(click());
+          this.thirdRoot.args[1].args[1].el.dispatchEvent(keydown(LESS_THAN, {shiftKey: true}));
+          expect(this.thirdRoot.el.getAttribute("aria-expanded")).toBe("true");
+          expect(document.activeElement).toBe(this.thirdRoot.el);
         });
 
         it('less-than should activate root without collapsing', async function() {
@@ -729,8 +737,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       });
 
-      describe('and specifically when editing it,', function() {
-        
+      describe('and specifically when editing it,', function() {        
         /*
         // fails nondeterministically - figure out how to avoid 
         // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
@@ -752,7 +759,7 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(this.blocks.hasInvalidEdit).toBe(false);
         });
         */
-        
+
         it('should blur whitespace you are editing on enter', async function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
@@ -760,7 +767,6 @@ describe('The CodeMirrorBlocks Class', function() {
           quarantine.dispatchEvent(keydown(ENTER));
           expect(this.trackHandleChange).toHaveBeenCalled();
         });
-
         describe('when "saving" bad whitepspace inputs,', function() {
           beforeEach(async function() {
             this.whiteSpaceEl.dispatchEvent(dblclick());

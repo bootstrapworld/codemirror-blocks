@@ -3,6 +3,8 @@
 import CodeMirrorBlocks from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
+import {ISMAC} from 'codemirror-blocks/keymap';
+
 import {
   click,
   blur,
@@ -20,6 +22,12 @@ import {wait} from './test-utils';
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
+
+const TOGGLE_SELECTION_KEYPRESS =
+  keydown(SPACE_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
+const PRESERVE_NEXT_KEYPRESS =
+  keydown(DOWN_KEY, ISMAC? {altKey: true} : {ctrlKey: true});
+
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
