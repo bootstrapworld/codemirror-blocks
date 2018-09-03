@@ -1,6 +1,9 @@
 .Editor {
   border: 1px solid #ddd;
   height: 100%;
+  position: absolute;
+  width: 100%;
+  max-width: 1000px;
   .glyphicon { font-family: 'Glyphicons Halflings'; }
   .glyphicon-pencil    { &:before { content: "\270f"; } }
   .glyphicon-align-left{ &:before { content: "\e052"; } }
@@ -42,15 +45,15 @@
   }
   > .codemirror-pane {
     display: flex;
+    padding: 0px 0px;
   }
   &.text {
     > .toolbar-pane {width: 0px; border: none;}
   }
   .blocks-toggle-btn {
     position: absolute;
-    right: 0px;
-    top: 5px;
-    right: 20px;
+    top: 10px;
+    right: 10px;
     z-index: 100;
     width: 34px;
     height: 34px;
