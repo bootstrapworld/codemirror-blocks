@@ -109,11 +109,11 @@ export default class Editor extends Component {
         <CodeMirror options={this.props.cmOptions}
                     value={this.props.value}
                     editorDidMount={editor => this.cm = editor} />
-          <button className="blocks-toggle-btn btn btn-default btn-sm"
+        </div>
+        <button className="blocks-toggle-btn btn btn-default btn-sm"
                   onClick={this.toggleBlocks}>
             <span className={glyphClass}></span>
-          </button>
-        </div>
+        </button>
       </div>
     );
   }
