@@ -8,9 +8,10 @@ import '../src/languages/lambda';
 import CodemirrorBlocks from '../src/blocks.js';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import classNames from 'classnames';
 import Editor from '../src/ui/Editor';
 import './example-page.less';
-import exampleWeSchemeCode from './ast-test.rkt';
+import exampleWeSchemeCode from './cow-game.rkt';
 
 const exampleCodes = {
   wescheme: exampleWeSchemeCode,
@@ -46,16 +47,21 @@ class EditorInstance extends React.Component {
   constructor(props) {
     super(props);
     this.ref = React.createRef();
-    this.state = {language: 'wescheme'};
+    this.state = {selectedLanguage:'wescheme', activeLanguage: 'wescheme'};
   }
 
 
-  handleChange = event => {
+  handleSelectChange = event => {
     this.ref.current.getCodeMirror().doc.clearHistory();
-    this.setState({language: event.target.value});
+    this.setState({selectedLanguage: event.target.value});
+  }
+
+  changeActiveLanguage = event => {
+    this.setState({activeLanguage: this.state.selectedLanguage});
   }
 
   render() {
+    const glyphClass = classNames('glyphicon', 'glyphicon-pencil');
     const choices = CodemirrorBlocks.languages.getLanguages().map(
       language => (
         <option value={language.id} key={language.id}>{language.name}</option>
@@ -63,13 +69,17 @@ class EditorInstance extends React.Component {
     );
     return (
       <React.Fragment>
-        <select value={this.state.language} onChange={this.handleChange}
+        <select value={this.state.language} onChange={this.handleSelectChange}
                 id="language-chooser">
           {choices}
         </select>
+        <button className="btn btn-default btn-sm"
+                  onClick={this.changeActiveLanguage}>
+            <span className={glyphClass}></span>
+        </button>
         <Editor ref={this.ref}
-                language={this.state.language}
-                value={exampleCodes[this.state.language]}
+                language={this.state.activeLanguage}
+                value={exampleCodes[this.state.activeLanguage]}
                 options={options}
                 cmOptions={cmOptions} />
       </React.Fragment>
