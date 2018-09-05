@@ -115,10 +115,10 @@ export default class CodeMirrorBlocks {
     this.focusPath = "0";
     // Internal clipboard for non-native operations (*groan*)
     this.clipboard = "";
-    // Offscreen buffer for handling native copy/cut/paste operations
+    // Make (and hide!) an offscreen buffer for handling native copy/cut/paste operations.
     this.buffer = document.createElement('textarea');
-    this.buffer.style.opacity = 0;
-    this.buffer.style.height = "1px";
+    Object.assign(this.buffer.style, {"opacity": 0, "height": "1px"});
+    Object.assign(this.buffer, {"aria-hidden": true, "tabIndex": -1});
     document.body.appendChild(this.buffer);
 
     if (this.language && this.language.getRenderOptions) {
