@@ -37,7 +37,7 @@ export class PrimitiveGroup extends Component {
   static propTypes = {
     //group: PropTypes.instanceOf(ASTFunctionDefinitionNode).isRequired,
     onSelect: PropTypes.instanceOf(Function).isRequired,
-    selected: PropTypes.instanceOf(String).isRequired,
+    selected: PropTypes.instanceOf(String), // to start, no primitive is selected
   }
 
   state = {
@@ -56,7 +56,7 @@ export class PrimitiveGroup extends Component {
       expanded ? 'glyphicon-minus' : 'glyphicon-plus'
     );
     return (
-      <li className="PrimitiveGroup list-group-item">
+      <li className="PrimitiveGroup list-group-item" role="list">
         <div onClick={this.toggleExpanded} className="group-header">
           <span className={expandoClass} aria-hidden="true"/>
         </div>
@@ -81,7 +81,7 @@ export default class PrimitiveList extends Component {
 
   static propTypes = {
     onSelect: PropTypes.instanceOf(Function).isRequired,
-    selected: PropTypes.instanceOf(String).isRequired,
+    selected: PropTypes.instanceOf(String),
   }
   render() {
     const {primitives, selected} = this.props;

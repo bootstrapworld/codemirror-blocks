@@ -23,6 +23,7 @@ export class BaseRenderedBlockNode extends Component {
       let el = this.root;
       el.firstChild.draggable = true;
       el.firstChild.addEventListener('dragstart', this.onDragStart);
+      el.firstChild.setAttribute('role', 'listitem');
     }
   }
 
@@ -57,19 +58,13 @@ export class BaseRenderedBlockNode extends Component {
   }
 
   render() {
-    if (this.props.node) {
-      return (
-        <span className="RenderedBlockNode" ref={root => this.root = root}>
-          {this.props.renderer.renderNodeForReact(this.props.node)}
-        </span>
-      );
-    } else {
-      return (
-        <span className="RenderedBlockNode" ref={root => this.root = root}>
-          <span>{this.props.text}</span>
-        </span>
-      );
-    }
+    const node = this.props.node? this.props.renderer.renderNodeForReact(this.props.node, null, true) 
+    : this.props.text;
+    return (
+      <span className="RenderedBlockNode" ref={root => this.root = root}>
+        {node}
+      </span>
+    );
   }
 }
 
