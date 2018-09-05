@@ -61,7 +61,7 @@ class EditorInstance extends React.Component {
   }
 
   render() {
-    const glyphClass = classNames('glyphicon', 'glyphicon-pencil');
+    const glyphClass = classNames('glyphicon', 'glyphicon glyphicon-repeat');
     const choices = CodemirrorBlocks.languages.getLanguages().map(
       language => (
         <option value={language.id} key={language.id}>{language.name}</option>
@@ -69,12 +69,15 @@ class EditorInstance extends React.Component {
     );
     return (
       <React.Fragment>
-        <select value={this.state.language} onChange={this.handleSelectChange}
-                id="language-chooser">
+        <select value={this.state.language}
+                onChange={this.handleSelectChange}
+                id="language-chooser"
+                aria-label="Language Chooser">
           {choices}
         </select>
-        <button className="btn btn-default btn-sm"
-                  onClick={this.changeActiveLanguage}>
+        <button className="btn btn-default btn-xs"
+                onClick={this.changeActiveLanguage}
+                aria-label="Switch editor to chosen language">
             <span className={glyphClass}></span>
         </button>
         <Editor ref={this.ref}
