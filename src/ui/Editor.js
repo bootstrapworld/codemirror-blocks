@@ -92,7 +92,7 @@ export default class Editor extends Component {
     );
     const extras = this.blocks ? (
       <React.Fragment>
-        <div className={toolbarPaneClasses}>
+        <div className={toolbarPaneClasses} aria-hidden={!blocks.blockMode} tabIndex="-1">
           <Toolbar primitives={this.blocks.parser.primitives}
                    renderer={this.blocks.renderer}
                    languageId={this.blocks.language.id} />
