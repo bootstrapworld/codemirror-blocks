@@ -4,52 +4,54 @@
   position: absolute;
   width: 100%;
   max-width: 1000px;
+  display: flex;
   .glyphicon { font-family: 'Glyphicons Halflings'; }
   .glyphicon-pencil    { &:before { content: "\270f"; } }
   .glyphicon-align-left{ &:before { content: "\e052"; } }
+  .react-codemirror2{ width: 100%; }
 
   > .toolbar-pane {
     border-right: 1px solid #ddd;
     padding-left: 0px;
     padding-right: 0px;
     height: 100%;
-    float: left;
     position: relative;
-    min-height: 1px;
-    transition: width 2s;
+    transition: flex 2s;
+    flex: 1 1 0; /* 20% of the width */
+  }
 
+  > .codemirror-pane {
+    padding: 0px 0px;
+    flex: 4 1 0; /* 80% of the width */
+  }
+
+  > .Toolbar {
+    height: 100%;
+    opacity: 1;
+  }
+  /* in text mode, the toolbar should have a width of 0 */
+  &.text {
+    > .toolbar-pane { flex: 0 1 0; border: none; width: 0px; }
+  }
+
+  > .TrashCan {
+    height: 0px;
+    opacity: 0;
+    transition: opacity .25s, transform .15s;
+  }
+
+  &.show-trashcan {
     > .TrashCan {
+      height: 100%;
+      opacity: 1;
+      transform: scale(1);
+    }
+    > .Toolbar {
       height: 0px;
       opacity: 0;
     }
-    > .Toolbar {
-      height: 100%;
-      opacity: 1;
-    }
-    > .TrashCan,
-    > .Toolbar {
-      transition: opacity .25s, transform .15s;
-    }
-
-    &.show-trashcan {
-      > .TrashCan {
-        height: 100%;
-        opacity: 1;
-        transform: scale(1);
-      }
-      > .Toolbar {
-        height: 0px;
-        opacity: 0;
-      }
-    }
   }
-  > .codemirror-pane {
-    display: flex;
-    padding: 0px 0px;
-  }
-  &.text {
-    > .toolbar-pane {width: 0px; border: none;}
-  }
+  
   .blocks-toggle-btn {
     position: absolute;
     top: 10px;

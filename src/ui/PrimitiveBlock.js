@@ -18,12 +18,15 @@ export class BaseRenderedBlockNode extends Component {
     text: '',
   }
 
+  // when the DOM for a rendered block has completed, we have some cleanup to do:
+  // the normal renderer assumes that all blocks are treeitems, with tabIndex=-1
   componentDidMount() {
     if (this.root) {
       let el = this.root;
       el.firstChild.draggable = true;
       el.firstChild.addEventListener('dragstart', this.onDragStart);
       el.firstChild.setAttribute('role', 'listitem');
+      el.firstChild.tabIndex="0";
     }
   }
 
