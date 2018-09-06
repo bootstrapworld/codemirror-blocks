@@ -27,6 +27,7 @@ export default class Editor extends Component {
 
   state = {
     showTrashCan: false,
+    blockMode: false,
   }
 
   componentDidMount() {
@@ -35,7 +36,7 @@ export default class Editor extends Component {
       this.props.language,
       this.props.options
     );
-    this.blocks.setBlockMode(false);
+    this.blocks.setBlockMode(this.state.blockMode);
     this.blocks.on(EVENT_DRAG_START, this.showTrashCan);
     this.blocks.on(EVENT_DRAG_END, this.hideTrashCan);
     // hrm, the code mirror instance is only available after
@@ -90,6 +91,7 @@ export default class Editor extends Component {
       "col-xs-3 toolbar-pane",
       {'show-trashcan':this.state.showTrashCan}
     );
+    const buttonAria = "Switch to "+ ((this.blocks && this.blocks.blockMode)? "text" : "blocks") + " mode";
     const extras = this.blocks ? (
       <React.Fragment>
         <div className={toolbarPaneClasses} aria-hidden={!blocks.blockMode} tabIndex="-1">
@@ -101,19 +103,22 @@ export default class Editor extends Component {
         <Search searchModes={[ByString, ByBlock]} blocks={this.blocks} />
       </React.Fragment>
     ) : null;
+    
 
     return (
       <div className={editorClass}>
+        <button className="blocks-toggle-btn btn btn-default btn-sm"
+                aria-label={buttonAria}
+                onClick={this.toggleBlocks}
+                tabIndex="0">
+            <span className={glyphClass}></span>
+        </button>
         {extras}
         <div className="col-xs-9 codemirror-pane">
         <CodeMirror options={this.props.cmOptions}
                     value={this.props.value}
                     editorDidMount={editor => this.cm = editor} />
         </div>
-        <button className="blocks-toggle-btn btn btn-default btn-sm"
-                  onClick={this.toggleBlocks}>
-            <span className={glyphClass}></span>
-        </button>
       </div>
     );
   }

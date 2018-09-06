@@ -111,7 +111,7 @@ export default class PrimitiveList extends Component {
 
     }
     return (
-      <ul className="PrimitiveList list-group">{nodes}</ul>
+      <ul className="PrimitiveList list-group" tabIndex="0" aria-label="Built-ins">{nodes}</ul>
     );
   }
 }

@@ -118,7 +118,7 @@ export default class CodeMirrorBlocks {
     // Make (and hide!) an offscreen buffer for handling native copy/cut/paste operations.
     this.buffer = document.createElement('textarea');
     Object.assign(this.buffer.style, {"opacity": 0, "height": "1px"});
-    Object.assign(this.buffer, {"aria-hidden": true, "tabIndex": -1});
+    Object.assign(this.buffer, {"ariaHidden": true, "tabIndex": -1});
     document.body.appendChild(this.buffer);
 
     if (this.language && this.language.getRenderOptions) {
