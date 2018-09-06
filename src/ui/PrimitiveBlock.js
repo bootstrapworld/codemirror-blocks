@@ -21,7 +21,7 @@ export class BaseRenderedBlockNode extends Component {
   // when the DOM for a rendered block has completed, we have some cleanup to do:
   // the normal renderer assumes that all blocks are treeitems, with tabIndex=-1
   componentDidMount() {
-    if (this.root) {
+    if (this.root && this.root.firstChild.setAttribute) {
       let el = this.root;
       el.firstChild.draggable = true;
       el.firstChild.addEventListener('dragstart', this.onDragStart);
