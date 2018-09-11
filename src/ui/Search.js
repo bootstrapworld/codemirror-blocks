@@ -149,7 +149,8 @@ export default class extends Component {
           <div className="modal-content" role="document">
             <div className="modal-header">
               <button type="button" className="close" data-dismiss="modal"
-                      onClick={this.handleCloseModal}>
+                aria-label="Close"
+                onClick={this.handleCloseModal}>
                 &times;
               </button>
               <h5 className="modal-title">Search</h5>
