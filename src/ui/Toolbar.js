@@ -61,7 +61,7 @@ export default class Toolbar extends Component {
     return (
       <div className={classNames('blocks-ui Toolbar', {'has-selected':!!selected})}>
         <div className="search-box">
-          <label className="screenreader-only" for="search_box">
+          <label className="screenreader-only" htmlFor="search_box">
             <h2>Search Functions</h2>
           </label>            
           <input type="search"
