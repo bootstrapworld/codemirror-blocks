@@ -367,15 +367,18 @@ export default class CodeMirrorBlocks {
       this.clearSelection(); 
     }
     this.scroller.setAttribute("aria-activedescendent", node.el.id);
-    this.cm.scrollIntoView(node.from); // if node is offscreen, this forces a CM render
-    var {top, bottom, left, right} = node.el.getBoundingClientRect(); // get the *actual* bounding rect
-    let offset = this.wrapper.getBoundingClientRect();
-    let scroll = this.cm.getScrollInfo();
-    top    = top    + scroll.top  - offset.top; 
-    bottom = bottom + scroll.top  - offset.top;
-    left   = left   + scroll.left - offset.left; 
-    right  = right  + scroll.left - offset.left;
-    this.cm.scrollIntoView({top, bottom, left, right});
+    // if it's not a click, make sure the viewport is scrolled so the node is visible
+    if(!["click", "dblclick"].includes(event.type)) {
+      this.cm.scrollIntoView(node.from); // force a CM render
+      var {top, bottom, left, right} = node.el.getBoundingClientRect(); // get the *actual* bounding rect
+      let offset = this.wrapper.getBoundingClientRect();
+      let scroll = this.cm.getScrollInfo();
+      top    = top    + scroll.top  - offset.top; 
+      bottom = bottom + scroll.top  - offset.top;
+      left   = left   + scroll.left - offset.left; 
+      right  = right  + scroll.left - offset.left;
+      this.cm.scrollIntoView({top, bottom, left, right});
+    }
     node.el.focus();
     this.focusPath = node.path;
     return true;
