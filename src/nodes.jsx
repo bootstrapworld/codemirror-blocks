@@ -228,7 +228,7 @@ export class IdentifierList extends ASTNode {
     return (
       <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-args">
-          <Args helpers={helpers}>{this.ids}</Args>
+          <Args helpers={helpers} location={this.from}>{this.ids}</Args>
         </span>
       </Node>
     );

@@ -23,6 +23,7 @@ export default class Args extends Component {
   render() {
     let {children, helpers} = this.props;
     let elems = [];
+    console.log(children, this.props.location);
     if (children.length === 0) {
       elems.push(<DropTarget location={this.props.location} />);
     } else {
