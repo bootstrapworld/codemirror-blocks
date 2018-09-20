@@ -768,7 +768,7 @@ export default class CodeMirrorBlocks {
       quarantine.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
       let errorTxt = this.parser.getExceptionMessage(e);
       quarantine.title = errorTxt;                        // 4) Make the title the error msg
-      quarantine.focus;                                   // 5) Keep focus
+      quarantine.focus();                                 // 5) Keep focus
       this.say(errorTxt);
     }
   }
