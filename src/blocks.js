@@ -120,6 +120,10 @@ export default class CodeMirrorBlocks {
     Object.assign(this.buffer.style, {"opacity": 0, "height": "1px"});
     Object.assign(this.buffer, {"ariaHidden": true, "tabIndex": -1});
     document.body.appendChild(this.buffer);
+    // disable Tab and Shift-Tab key handling
+    let extraKeys = this.cm.getOption('extraKeys') || {};
+    extraKeys["Tab"] = extraKeys["Shift-Tab"] = false;
+    this.cm.setOption('extraKeys', extraKeys);
 
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
@@ -181,17 +185,11 @@ export default class CodeMirrorBlocks {
     ui.renderSearchInto(this);
   }
 
-
+  // utility functions
   getBeginCursor = () => CodeMirror.Pos(this.cm.firstLine(), 0)
-
-  getEndCursor = () => CodeMirror.Pos(
-    this.cm.lastLine(), this.cm.getLine(this.cm.lastLine()).length
-  )
-
+  getEndCursor = () => CodeMirror.Pos(this.cm.lastLine(), this.cm.getLine(this.cm.lastLine()).length)
   getFirstNode = () => this.ast.getNodeAfterCur(this.getBeginCursor());
-
   getLastNode = () => this.ast.getNodeBeforeCur(this.getEndCursor());
-
 
   on(event, listener) {
     this.events.on(event, listener);
@@ -294,7 +292,6 @@ export default class CodeMirrorBlocks {
     // didn't find a codemirror mark, just pass through.
     this.cm.markText(from, to, options);
   }
-
   findMarks(from, to) {
     return this.cm.findMarks(from, to)
       .filter(mark => mark[MARKER])
@@ -335,11 +332,9 @@ export default class CodeMirrorBlocks {
       } finally {
         this.ast.dirtyNodes.forEach(n => this.renderer.render(n)); 
         setTimeout(() => {
-          let node = this.ast.getClosestNodeFromPath(this.focusPath.split(','));
-          if(node && node.el) { node.el.click(); }
-          else { this.cm.focus(); }
-          delete this.ast.dirty; // remove dirty nodeset, now that they've been rendered
-        }, 100);
+          delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
+          this.cm.focus();            // focus the editor, now on the current block
+        }, 250);
       }
     });
     ui.renderToolbarInto(this);
