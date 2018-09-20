@@ -1038,7 +1038,7 @@ export default class CodeMirrorBlocks {
   }
 
   cancelIfErrorExists(event) {
-    if(!(event.target === this.hasInvalidEdit)) {
+    if(this.hasInvalidEdit && !(event.target === this.hasInvalidEdit)) {
       event.preventDefault();
       event.stopPropagation();
     }
