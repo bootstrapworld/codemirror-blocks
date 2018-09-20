@@ -763,12 +763,12 @@ export default class CodeMirrorBlocks {
         (quarantine.insertion? "inserted " : "changed ") + text
       );
     } catch(e) {                                      // If the node contents will NOT lex...
-      this.hasInvalidEdit = true;                         // 1) Set this.hasInvalidEdit
+      this.hasInvalidEdit = quarantine;                   // 1) Set this.hasInvalidEdit
       quarantine.classList.add('blocks-error');           // 2) Set the error state
       quarantine.draggable = false;                       // 3) work around WK/FF bug w/editable nodes
       let errorTxt = this.parser.getExceptionMessage(e);
       quarantine.title = errorTxt;                        // 4) Make the title the error msg
-      this.editQuarantine(quarantine);                    // 5) Keep focus
+      quarantine.focus;                                   // 5) Keep focus
       this.say(errorTxt);
     }
   }
@@ -1038,7 +1038,7 @@ export default class CodeMirrorBlocks {
   }
 
   cancelIfErrorExists(event) {
-    if(this.hasInvalidEdit){
+    if(this.hasInvalidEdit && !(event.target === this.hasInvalidEdit)) {
       event.preventDefault();
       event.stopPropagation();
     }
