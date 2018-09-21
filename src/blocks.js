@@ -21,9 +21,9 @@ function findNearestNodeEl(el) {
 
 // FF & WK don't like draggable and contenteditable to mix, so we need
 // to turn draggable on and off based on mousedown/up events
-function toggleDraggable(e) {
-  if(e.target.draggable) {e.target.removeAttribute("draggable");} 
-  else { e.target.setAttribute("draggable", true); }
+function toggleDraggable(node) {
+  if(node.el.draggable) {node.el.removeAttribute("draggable");} 
+  else { node.el.setAttribute("draggable", true); }
 }
 
 // open/close delimeters
@@ -112,7 +112,7 @@ export default class CodeMirrorBlocks {
     this.selectedNodes = new Set();
     // Track focus and history with path/announcement pairs
     this.focusHistory = {done: [], undone: []};
-    this.focusPath = "0";
+    this.focusPath = {line: 0, ch: 0}; // default to empty editor with no blocks
     // Internal clipboard for non-native operations (*groan*)
     this.clipboard = "";
     // Make (and hide!) an offscreen buffer for handling native copy/cut/paste operations.
@@ -120,28 +120,29 @@ export default class CodeMirrorBlocks {
     Object.assign(this.buffer.style, {"opacity": 0, "height": "1px"});
     Object.assign(this.buffer, {"ariaHidden": true, "tabIndex": -1});
     document.body.appendChild(this.buffer);
-    // disable Tab and Shift-Tab key handling
+    // disable Tab and Shift-Tab key handling by appending to extraKeys
     let extraKeys = this.cm.getOption('extraKeys') || {};
     extraKeys["Tab"] = extraKeys["Shift-Tab"] = false;
     this.cm.setOption('extraKeys', extraKeys);
-
+    // add render options, if they exist
     if (this.language && this.language.getRenderOptions) {
       renderOptions = merge({}, this.language.getRenderOptions(), renderOptions);
     }
     this.renderer = new Renderer(this.cm, renderOptions);
-
+    // assign language class, to enable per-language styling
     if (this.language) {
       this.wrapper.classList.add(`blocks-language-${this.language.id}`);
     }
     Object.assign(
       this.wrapper,
       {
-        onkeydown:  ((n, e) => this.handleKeyDown(n, e)),
-        onclick:    this.nodeEventHandler(this.activateNode),
-        ondblclick: this.nodeEventHandler({
-          literal:    (n => this.makeQuarantineAt(false, n)),
-          blank:      (n => this.makeQuarantineAt(false, n)),
-          whitespace: (n => this.makeQuarantineAt("", n))
+        onkeydown:    ((n, e) => this.handleKeyDown(n, e)),
+        onmousedown:  this.nodeEventHandler(toggleDraggable),
+        onclick:      this.nodeEventHandler(this.activateNode),
+        ondblclick:   this.nodeEventHandler({
+          literal:      (n => this.makeQuarantineAt(false, n)),
+          blank:        (n => this.makeQuarantineAt(false, n)),
+          whitespace:   (n => this.makeQuarantineAt("", n))
         }),
         ondragstart:  this.nodeEventHandler(this.startDraggingNode),
         ondragend:    this.nodeEventHandler(this.stopDraggingNode),
@@ -164,21 +165,22 @@ export default class CodeMirrorBlocks {
     this.cm.on('keydown',   (cm, e) => this.handleKeyDown(e));
     this.cm.on('paste',     (cm, e) => this.handleTopLevelEntry(e));
     this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
-    this.cm.on('mouseup',   (cm, e) => toggleDraggable(e));
     this.cm.on('dblclick',  (cm, e) => this.cancelIfErrorExists(e));
     this.cm.on('changes',   (cm, e) => this.handleChange(cm, e));
     // mousedown events should impact dragging, focus-if-error, and click events
     this.cm.on('mousedown', (cm, e) => {
-      toggleDraggable(e); 
       this.cancelIfErrorExists(e);
       this.mouseUsed = true;
       setTimeout(() => this.mouseUsed = false, 200);
     });
-    // override CM's natural onFocus behavior, activating the last focused node
-    // skip this if it's the result of a mousedown event
+    // If a block was active, restore focus. Otherwise let CM handle it
+    // FIXME: we should handle ALL focus events, now that focusPath can be a cursor
     this.cm.on('focus',     (cm, e) => {
-      if(this.blockMode && this.ast.rootNodes.length > 0 && !this.mouseUsed) {
-        setTimeout(() => { this.activateNode(this.ast.getNodeByPath(this.focusPath), e); }, 10);
+      if(this.blockMode && !this.mouseUsed) {
+        setTimeout(() => {
+          console.log('this.focusPath=', this.focusPath);
+          if(this.focusPath.line===undefined) this.activateNode(this.ast.getNodeByPath(this.focusPath), e); 
+        }, 10);
       }
     });
 
@@ -351,7 +353,7 @@ export default class CodeMirrorBlocks {
   // activate and announce the given node, optionally changing selection
   activateNode(node, event) {
     event.stopPropagation();
-    if(node == this.getActiveNode()){ this.say(node.el.getAttribute("aria-label")); }
+    if(node == this.getActiveNode()) { this.say(node.el.getAttribute("aria-label")); }
     if(this.isNodeEditable(node) && !(node.el.getAttribute("aria-expanded")=="false")
       && !node.el.classList.contains("blocks-editing")) {
       clearTimeout(this.queuedAnnoucement);
@@ -448,9 +450,8 @@ export default class CodeMirrorBlocks {
       console.error("execCommand doesn't work in this browser :(", e);
     }
     // if we cut selected nodes, clear them
-    if (event.type == 'cut') { this.deleteSelectedNodes(); } // delete all those nodes
-    event.altKey = event.ctrlKey = true;                     // fake the event so selection isn't lost...
-    this.activateNode(activeNode, event);                    // ...during activateNode
+    if (event.type == 'cut') { this.deleteSelectedNodes(); } // delete all those nodes if we're cutting
+    else { activeNode.el.focus(); }                          // just restore the focus if we're copying
   }
 
   // handlePaste : Event -> Void
@@ -489,9 +490,11 @@ export default class CodeMirrorBlocks {
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
     this.selectedNodes.clear();
-    this.focusPath = sel[sel.length-1].path; // point to the first node
     this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
+    // get as close as possible to the first deleted node, or set cursor to beginning
+    let lastPath = sel.pop().path.split(',');
+    this.focusPath = this.ast.getClosestNodeFromPath(lastPath).path || {line: 0, ch: 0};
   }
 
   startDraggingNode(node, event) {
@@ -919,10 +922,8 @@ export default class CodeMirrorBlocks {
     else if (keyName === "Shift-Right" && activeNode){ that.changeAllExpanded(true ); }
     // < jumps to the root containing the activeNode
     else if (keyName == "Shift-," && activeNode) {
-      console.log("jumping to root");
       let rootNode = this.ast.getNodeByPath(activeNode.path.split(",")[0]);
       this.activateNode(rootNode, event);
-      console.log(rootNode.el.getAttribute("aria-expanded"));
     }
     // Collapse block if possible, otherwise focus on parent
     else if (event.keyCode == LEFT && activeNode) {
@@ -1067,6 +1068,7 @@ export default class CodeMirrorBlocks {
           return;
         }
         if (handlers.default) {
+          console.log('calling default');
           handlers.default.call(this, node, event);
           return;
         }

@@ -649,7 +649,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.replaceRange).not.toHaveBeenCalled();
         expect(quarantine.classList).toContain('blocks-error');
         expect(quarantine.title).toBe('Error: parse error');
-        expect(this.blocks.hasInvalidEdit).toBe(true);
+        expect(this.blocks.hasInvalidEdit).toBe(quarantine);
       });
     });
 
