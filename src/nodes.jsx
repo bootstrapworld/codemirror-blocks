@@ -476,6 +476,9 @@ export class CondExpression extends ASTNode {
       <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">cond</span>
         <div className="blocks-cond-table">
+          <div className="blocks-cond-drop-row">
+            <DropTarget location={this.clauses[0].from} />
+          </div>
           {this.clauses.map((clause, index) => helpers.renderNodeForReact(clause, index)) }
         </div>
       </Node>
