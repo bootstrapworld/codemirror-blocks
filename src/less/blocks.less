@@ -59,6 +59,16 @@
 }
 
 .blocks-literal.blocks-error { background: #fdd; }
+.blocks-node[aria-expanded="false"] {
+  ::after {
+    content: "\2194";
+    position: absolute;
+    top: 3px;
+    right: 10px;
+    color: black;
+    font-size: larger;
+  }
+}
 
 .screenreader-only {
     position: absolute !important;
