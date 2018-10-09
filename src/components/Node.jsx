@@ -260,7 +260,7 @@ class Node extends Component {
       ...passingProps
     } = this.props;
 
-    lf (node.options.comment) {
+    if (node.options.comment) {
       // TODO: can we avoid mutating in render()?
       node.options.comment.id = "block-node-" + node.id + "-comment";
     }
