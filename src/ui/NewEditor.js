@@ -67,6 +67,14 @@ class ToplevelBlock extends Component {
     super(props);
     this.container = document.createElement('span');
     this.container.className = 'react-container';
+    const {from, to} = props.node;
+
+    // TODO(Oak): markText in the constructor might not be a good idea
+    this.marker = global.cm.markText(from, to, {replacedWith: this.container});
+  }
+
+  componentWillUnmount() {
+    this.marker.clear();
   }
 
   static propTypes = {
@@ -151,6 +159,12 @@ class Editor extends Component {
   componentDidMount() {
     global.parser = this.props.parser;
     global.options = this.props.options;
+    global.buffer = document.createElement('textarea');
+
+    // don't make it transparent so that we can debug easily for now
+    // global.buffer.style.opacity = 0;
+    // global.buffer.style.height = '1px';
+    document.body.appendChild(global.buffer);
     setTimeout(() => {
       this.blocks.setBlockMode(true);
       // hrm, the code mirror instance is only available after
@@ -162,6 +176,10 @@ class Editor extends Component {
   }
 
   render() {
+    const classes = [];
+    if (this.props.language) {
+      classes.push(`blocks-language-${this.props.language}`);
+    }
     return (
       <div className="Editor blocks">
         <div className="codemirror-pane">

@@ -70,9 +70,14 @@ class Node extends Component {
       uncollapseAll, collapseAll, setFocus,
     } = this.props;
 
-    switch (e.keyCode) {
-    case UP:
-      this.props.focusNextNode(node.id, node => node.prev);
+    switch (e.key) {
+    case 'ArrowUp':
+      e.preventDefault();
+      this.props.focusNextNode(node.id, node => {
+        const {ast} = store.getState();
+        const realNode = ast.getNodeById(node.id);
+        return realNode.prev;
+      });
       return;
 
     case DOWN:
