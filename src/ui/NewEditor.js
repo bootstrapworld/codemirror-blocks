@@ -1,15 +1,18 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 import {UnControlled as CodeMirror} from 'react-codemirror2';
+import classNames from 'classnames';
 import CodeMirrorBlocks from '../blocks';
 import PropTypes from 'prop-types';
 import './Editor.less';
-import {poscmp} from '../utils';
 import {connect, Provider} from 'react-redux';
 import {store} from '../store';
 import global from '../global';
-import {DragDropContext} from 'react-dnd';
-import HTML5Backend from 'react-dnd-html5-backend';
+import patch from '../ast-patch';
+import CMBContext from '../components/Context';
+import NodeEditable from '../components/NodeEditable';
+import {focusSelf} from '../actions';
+// import {poscmp} from '../utils';
 
 import Expression         from '../components/Expression';
 import IfExpression       from '../components/IfExpression';
@@ -61,6 +64,8 @@ function renderNodeForReact(node, key) {
   }
 }
 
+// TODO(Oak): this should really be a new file, but for convenience we will put it
+// here for now
 
 class ToplevelBlock extends Component {
   constructor(props) {
@@ -68,7 +73,6 @@ class ToplevelBlock extends Component {
     this.container = document.createElement('span');
     this.container.className = 'react-container';
     const {from, to} = props.node;
-
     // TODO(Oak): markText in the constructor might not be a good idea
     this.marker = global.cm.markText(from, to, {replacedWith: this.container});
   }
@@ -79,31 +83,21 @@ class ToplevelBlock extends Component {
 
   static propTypes = {
     node: PropTypes.object.isRequired,
-    cm: PropTypes.object.isRequired,
-    quarantine: PropTypes.bool // this probably shouldn't be here
   }
 
-  static defaultProps = {
-    quarantine: false
-  }
+  // componentDidUpdate(prevProps) {
+  //   const {from, to} = this.props.node;
+  //   if (poscmp(from, prevProps.node.from) != 0 || poscmp(to, prevProps.node.to) != 0) {
+  //     this.marker.clear();
+  //     this.marker = global.cm.markText(from, to, {replacedWith: this.container});
+  //   }
+  // }
 
   render() {
-    const {node, quarantine} = this.props;
-
-    // TODO: is the if expression really needed? Can't we always delete all
-    // and mark everything again? It seems cheap enough.
-
-    // find a marker that (a) has an old ASTNode and (b) start in exactly the same place as the new ASTNode
-    const markers = global.cm
-          .findMarksAt(node.from)
-          .filter(m => m.node && !poscmp(m.node.from, node.from));
-    if (markers.length > 0) {
-      // there will never be more than one
-      const marker = markers[0];
-      // if we're not quarantining, and it starts at the exact same place..
-      if (!quarantine) marker.clear();
-    }
-    global.cm.markText(node.from, node.to, {replacedWith: this.container, node: node});
+    const {node} = this.props;
+    const {from, to} = node;
+    this.marker.clear();
+    this.marker = global.cm.markText(from, to, {replacedWith: this.container});
 
     // REVISIT: make comments disappear by adding an empty span
     if (node.options.comment) {
@@ -114,12 +108,66 @@ class ToplevelBlock extends Component {
       );
     }
     // TODO: Emmanuel's recently changes the above.
-
     return ReactDOM.createPortal(renderNodeForReact(node), this.container);
   }
 }
 
-@DragDropContext(HTML5Backend)
+class ToplevelBlockEditableCore extends Component {
+
+  static propTypes = {}
+
+  editableWillInsert = (value, node) => global.options.willInsertNode(
+    global.cm,
+    value,
+    undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
+    node.from,
+  )
+
+  constructor(props) {
+    super(props);
+    const [pos] = this.props.quarantine;
+    this.container = document.createElement('span');
+    this.container.className = 'react-container';
+    this.marker = global.cm.setBookmark(pos, {widget: this.container});
+  }
+
+  componentWillUnmount() {
+    this.marker.clear();
+  }
+
+  render() {
+    const {onDisableEditable, onChange, quarantine} = this.props;
+    const [pos, value] = quarantine;
+    const node = {id: 'editing', from: pos, to: pos};
+    const props = {
+      tabIndex          : "-1",
+      role              : 'text box',
+      'aria-setsize'    : '1',
+      'aria-posinset'   : '1',
+      'aria-level'      : '1',
+    };
+    return ReactDOM.createPortal(
+      <NodeEditable node={node}
+                    willInsertNode={this.editableWillInsert}
+                    value={value}
+                    onChange={onChange}
+                    contentEditableProps={props}
+                    initialSelection='end'
+                    extraClasses={['blocks-node', 'blocks-white-space']}
+                    onDisableEditable={onDisableEditable} />,
+      this.container
+    );
+  }
+}
+
+const mapStateToProps2 = ({quarantine}) => ({quarantine});
+const mapDispatchToProps2 = dispatch => ({
+  onDisableEditable: () => dispatch({type: 'DISABLE_QUARANTINE'}),
+  onChange: text => dispatch({type: 'CHANGE_QUARANTINE', text}),
+});
+const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(ToplevelBlockEditableCore);
+
+@CMBContext
 class Editor extends Component {
   static propTypes = {
     options: PropTypes.object,
@@ -133,20 +181,62 @@ class Editor extends Component {
     ast: PropTypes.object,
   }
 
+  constructor(props) {
+    super(props);
+    this.mouseUsed = false;
+  }
+
   static defaultProps = {
     options: {},
     cmOptions: {},
   }
 
-  handleEditorDidMount = ed => {
-    global.cm = ed;
+  handleDragOver = (ed, e) => {
+    if (!e.target.classList.contains('CodeMirror-line')) {
+      e.preventDefault();
+    }
+  }
 
-    ed.on("dragover", (editor, e) => {
-      if (!e.target.classList.contains('CodeMirror-line')) {
-        e.codemirrorIgnore = true;
+  handleKeyDown = (ed, e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      // TODO(Oak)
+    }
+  }
+
+  handleKeyPress = (ed, e) => {
+    if (e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    const text = e.key;
+    const cur = global.cm.getCursor();
+    this.props.setQuarantine(cur, text);
+  }
+
+  handlePaste = (ed, e) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    const cur = global.cm.getCursor();
+    this.props.setQuarantine(cur, text);
+  }
+
+  handleEditorDidMount = ed => {
+    const wrapper = ed.getWrapperElement();
+    wrapper.setAttribute('role', 'tree');
+    wrapper.setAttribute('aria-label', 'Block Editor');
+    const scroller = ed.getScrollerElement();
+    scroller.setAttribute('role', 'presentation');
+
+    ed.on('changes', (cm, changes) => {
+      if (changes.some(change => change.origin === 'undo')) {
+        const newAST = global.parser.parse(cm.getValue());
+        const {ast: oldAST} = store.getState();
+        if (oldAST.hash !== newAST.hash) {
+          store.dispatch({type: 'SET_AST', ast: patch(oldAST, newAST)});
+        }
       }
     });
 
+    global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
     this.blocks = new CodeMirrorBlocks(
@@ -154,6 +244,18 @@ class Editor extends Component {
       this.props.language,
       {suppress: true, ...this.props.options}
     );
+  }
+
+  handleFocus = (ed, e) => {
+    if (!this.mouseUsed) {
+      // NOTE(Oak): use setTimeout so that the CM cursor will not blink
+      setTimeout(() => this.props.focusSelf(), 10);
+    }
+  }
+
+  handleMouseDown = ed => {
+    this.mouseUsed = true;
+    setTimeout(() => this.mouseUsed = false, 200);
   }
 
   componentDidMount() {
@@ -175,6 +277,13 @@ class Editor extends Component {
     }, 0);
   }
 
+  componentDidUpdate(prevProps) {
+    // this is buggy somehow. It shouldn't need a forceUpdate like this
+    if (this.props.ast !== prevProps.ast) {
+      setTimeout(() => this.forceUpdate());
+    }
+  }
+
   render() {
     const classes = [];
     if (this.props.language) {
@@ -184,7 +293,16 @@ class Editor extends Component {
       <div className="Editor blocks">
         <div className="codemirror-pane">
           <CodeMirror options={this.props.cmOptions}
+                      className={classNames(classes)}
                       value={this.props.value}
+                      onDragOver={this.handleDragOver}
+                      onKeyPress={this.handleKeyPress}
+                      onKeyDown={this.handleKeyDown}
+                      onMouseDown={this.handleMouseDown}
+                      onFocus={this.handleFocus}
+                      onPaste={this.handlePaste}
+                      cursor={this.props.cur}
+                      onCursor={this.props.setCursor}
                       editorDidMount={this.handleEditorDidMount} />
         </div>
         {this.renderPortals()}
@@ -196,21 +314,25 @@ class Editor extends Component {
   }
 
   renderPortals = () => {
+    const portals = [];
     if (global.cm && this.props.ast) {
-      for (const m of global.cm.getAllMarks()) {
-        m.clear();
+      for (const r of this.props.ast.rootNodes) {
+        portals.push(<ToplevelBlock key={r.id} node={r} />);
       }
-      return this.props.ast.rootNodes.map(
-        r => (<ToplevelBlock key={r.id} node={r} cm={global.cm} />)
-      );
+      if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
     }
-    return null;
+    return portals;
   }
 }
 
-const mapStateToProps = ({ast}) => ({ast});
+const mapStateToProps = ({ast, cur, quarantine}) => ({
+  ast, cur, hasQuarantine : !!quarantine
+});
 const mapDispatchToProps = dispatch => ({
   setAST: ast => dispatch({type: 'SET_AST', ast}),
+  setCursor: (_, cur) => dispatch({type: 'SET_CURSOR', cur}),
+  focusSelf: () => dispatch(focusSelf()),
+  setQuarantine: (pos, text) => dispatch({type: 'SET_QUARANTINE', pos, text}),
 });
 
 const EditorWrapper = connect(mapStateToProps, mapDispatchToProps)(Editor);

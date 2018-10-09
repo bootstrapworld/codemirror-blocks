@@ -70,6 +70,7 @@ export class AST {
     // the `nodeIdMap` attribute can be used to look up nodes by their id.
     // the other nodeMaps make it easy to determine node order
     this.nodeIdMap = new Map();
+    this.nodeNIdMap = new Map();
     this.nodePathMap = new Map();
     this.annotateNodes();
     this.id = -1; // just for the sake of having an id, though unused
@@ -105,6 +106,7 @@ export class AST {
   // and populating various maps for tree navigation
   annotateNodes() {
     this.nodeIdMap.clear();
+    this.nodeNIdMap.clear();
     this.nodePathMap.clear();
 
     let lastNode = null;
@@ -125,6 +127,7 @@ export class AST {
           lastNode.next = node;
         }
         this.nodeIdMap.set(node.id, node);
+        this.nodeNIdMap.set(node.nid, node);
         this.nodePathMap.set(node.path, node);
         lastNode = node;
         const children = [...node.children()];
@@ -203,9 +206,9 @@ export class AST {
     return newAST;
   }
 
-  getNodeById = id => {
-    return this.nodeIdMap.get(id);
-  }
+  getNodeById = id => this.nodeIdMap.get(id)
+  getNodeByNId = id => this.nodeNIdMap.get(id)
+
   getNodeByPath(path) {
     return this.nodePathMap.get(path);
   }

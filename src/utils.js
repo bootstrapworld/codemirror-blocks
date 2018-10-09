@@ -1,3 +1,7 @@
+import global from './global';
+
+const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
+
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {
   return  a.line - b.line || a.ch - b.ch;
@@ -31,18 +35,38 @@ export function partition(arr, f) {
 }
 
 
-// from https://davidwalsh.name/javascript-debounce-function
-export function debounce(func, wait, immediate) {
-  var timeout;
-  return function() {
-    var context = this, args = arguments;
-    var later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
-    };
-    var callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
-};
+// // from https://davidwalsh.name/javascript-debounce-function
+// export function debounce(func, wait, immediate) {
+//   var timeout;
+//   return function() {
+//     var context = this, args = arguments;
+//     var later = function() {
+//       timeout = null;
+//       if (!immediate) func.apply(context, args);
+//     };
+//     var callNow = immediate && !timeout;
+//     clearTimeout(timeout);
+//     timeout = setTimeout(later, wait);
+//     if (callNow) func.apply(context, args);
+//   };
+// }
+
+export function copyToClipboard(text) {
+  global.buffer.value = text;
+  global.buffer.select();
+  document.execCommand('copy');
+}
+
+export function pasteFromClipboard(done) {
+  global.buffer.value = '';
+  global.buffer.focus();
+  setTimeout(() => {
+    done(global.buffer.value);
+  }, 50);
+}
+
+export function isControl(e) {
+  return ISMAC ? e.metaKey : e.ctrlKey;
+}
+
+export function say() {}

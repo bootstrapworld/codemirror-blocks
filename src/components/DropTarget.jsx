@@ -18,11 +18,9 @@ class DropTarget extends Component {
     isOver: PropTypes.bool.isRequired,
   }
 
-  state = {editable: false}
+  state = {editable: false, value: ''}
 
-  handleEditableChange = editable => {
-    this.setState({editable});
-  }
+  handleDisableEditable = () => this.setState({editable: false});
 
   handleDoubleClick = e => {
     e.stopPropagation();
@@ -34,6 +32,17 @@ class DropTarget extends Component {
     this.setState({editable: true});
     global.cm.refresh(); // is this needed?
   }
+
+  handleChange = (value) => {
+    this.setState({value});
+  }
+
+  editableWillInsert = (value, node) => global.options.willInsertNode(
+    global.cm,
+    value,
+    undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
+    node.from,
+  )
 
   render() {
     // TODO: take a look at this and make sure props is right
@@ -48,15 +57,18 @@ class DropTarget extends Component {
     const node = {
       from: location,
       to: location,
-      id: 'editing',
+      id: 'editing', // TODO(Oak): error focusing is going to be wrong
     };
     if (this.state.editable) {
       return (
         <NodeEditable node={node}
+                      value={this.state.value}
+                      onChange={this.handleChange}
                       dropTarget={true}
+                      willInsertNode={this.editableWillInsert}
                       contentEditableProps={props}
                       extraClasses={['blocks-node', 'blocks-white-space']}
-                      onEditableChange={this.handleEditableChange} />
+                      onDisableEditable={this.handleDisableEditable} />
       );
     }
     const classes = [

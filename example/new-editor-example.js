@@ -10,8 +10,9 @@ import './example-page.less';
 import Parser from '../src/languages/wescheme/WeschemeParser';
 // import exampleWeSchemeCode from './cow-game.rkt';
 
-const exampleWeSchemeCode = `
-(a b) c
+const exampleWeSchemeCode = `  x
+(aaaa b)(x y)
+d e f
 `;
 
 const parser = new Parser();

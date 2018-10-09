@@ -33,7 +33,7 @@ export default class ContentEditable extends Component {
   }
 
   handleChange = e => {
-    this.props.onChange(e, this.elem.textContent);
+    this.props.onChange(this.elem.textContent);
   }
 
   handleKeyDown = e => {

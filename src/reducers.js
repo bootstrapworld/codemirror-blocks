@@ -5,8 +5,11 @@ export const reducer = (
     focusId: -1,
     collapsedList: [],
     errorId: '',
+    cur: {line: 0, ch: 0},
+    quarantine: null,
   },
   action) => {
+    console.log(action);
     switch (action.type) {
     case 'SET_FOCUS':
       return {...state, focusId: action.focusId};
@@ -24,6 +27,14 @@ export const reducer = (
       return {...state, collapsedList: [...state.ast.nodeIdMap.keys()]};
     case 'UNCOLLAPSE_ALL':
       return {...state, collapsedList: []};
+    case 'SET_CURSOR':
+      return {...state, cur: action.cur};
+    case 'DISABLE_QUARANTINE':
+      return {...state, quarantine: null};
+    case 'CHANGE_QUARANTINE':
+      return {...state, quarantine: [state.quarantine[0], action.text]};
+    case 'SET_QUARANTINE':
+      return {...state, quarantine: [action.pos, action.text]};
     default:
       return state;
     }

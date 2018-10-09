@@ -2,8 +2,9 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {BACKSPACE, LEFT, RIGHT, SPACE, UP, DOWN, ENTER, DELETE} from '../keycode';
-import {dropNode, toggleSelection, focusNextNode, focusNode, deleteNodes} from '../actions';
+import {isControl, say} from '../utils';
+import {dropNode, toggleSelection, focusNextNode, focusNode,
+        deleteNodes, copyNodes, pasteNodes} from '../actions';
 import NodeEditable from './NodeEditable';
 import Component from './BlockComponent';
 import {isErrorFree} from '../store';
@@ -49,7 +50,18 @@ class Node extends Component {
     toggleSelection: PropTypes.func.isRequired,
   }
 
-  state = {editable: false}
+  state = {editable: false, value: null}
+
+  static getDerivedStateFromProps(props, state) {
+    if (state.value === null) {
+      return {value: global.cm.getRange(props.node.from, props.node.to)};
+    }
+    return null;
+  }
+
+  handleChange = (value) => {
+    this.setState({value});
+  }
 
   handleClick = e => {
     e.stopPropagation(); // prevent ancestors to steal focus
@@ -61,13 +73,13 @@ class Node extends Component {
 
   handleKeyDown = e => {
     e.stopPropagation();
-    e.preventDefault();
     if (!isErrorFree()) return;
 
     const {
       node, expandable, isCollapsed,
       uncollapse, collapse, normallyEditable, toggleSelection,
-      uncollapseAll, collapseAll, setFocus,
+      uncollapseAll, collapseAll, setFocus, setCursor,
+      handleCopy, handlePaste, handleDelete
     } = this.props;
 
     switch (e.key) {
@@ -80,11 +92,13 @@ class Node extends Component {
       });
       return;
 
-    case DOWN:
+    case 'ArrowDown':
+      e.preventDefault();
       this.props.focusNextNode(node.id, node => node.next);
       return;
 
-    case LEFT:
+    case 'ArrowLeft':
+      e.preventDefault();
       if (e.shiftKey) {
         collapseAll();
       } else if (expandable && !isCollapsed && !this.isLocked()) {
@@ -99,7 +113,8 @@ class Node extends Component {
       }
       return;
 
-    case RIGHT:
+    case 'ArrowRight':
+      e.preventDefault();
       if (e.shiftKey) {
         uncollapseAll();
       } else if (expandable && isCollapsed && !this.isLocked()) {
@@ -114,45 +129,103 @@ class Node extends Component {
       }
       return;
 
-    case SPACE:
+    case ' ':
+      e.preventDefault();
       toggleSelection(node.id);
       return;
 
-    case ENTER:
-      if (normallyEditable || e.ctrlKey) {
+    case 'Enter':
+      e.preventDefault();
+      if (normallyEditable || isControl(e)) {
         this.handleMakeEditable(e);
       } else if (expandable && !this.isLocked()) {
         (isCollapsed ? uncollapse : collapse)(node.id);
       } // else beep?
       return;
 
-    case DELETE:
-    case BACKSPACE:
-      this.props.handleDelete();
+    case 'Delete':
+    case 'Backspace':
+      e.preventDefault();
+      handleDelete();
+      return;
+
+    case ']':
+      e.preventDefault();
+      if (isControl(e)) {
+        setCursor(node.to);
+      }
+      return;
+
+    case '[':
+      e.preventDefault();
+      if (isControl(e)) {
+        setCursor(node.from);
+      }
+      return;
+
+    case 'c':
+      e.preventDefault();
+      if (isControl(e)) {
+        handleCopy(node.id, nodeSelections => {
+          if (nodeSelections.length == 0) {
+            // NOTE(Oak): no nodes are selected, do it on id instead
+            return [node.id, ...nodeSelections];
+          } else {
+            return nodeSelections;
+          }
+        });
+      }
+      return;
+
+    case 'v':
+      if (isControl(e)) {
+        handlePaste(node.id, e.shiftKey);
+      }
+      return;
+
+    case 'x':
+      e.preventDefault();
+      if (isControl(e)) {
+        handleCopy(node.id, nodeSelections => {
+          if (nodeSelections.length == 0) {
+            say('Nothing selected');
+          }
+          return nodeSelections;
+        });
+        handleDelete();
+      }
       return;
     }
   }
 
-  componentDidMount = () => {
-    if (this.element && isErrorFree() && this.props.isFocused) {
+  componentDidMount() {
+    const {node} = this.props;
+    const {ast, focusId} = store.getState();
+    if (this.props.node.element && isErrorFree() && this.props.isFocused) {
       this.focusSelf(true);
     }
   }
 
-  componentDidUpdate = this.componentDidMount
+  componentDidUpdate() {
+    const {node} = this.props;
+    const {ast, focusId} = store.getState();
+    if (this.props.node.element && isErrorFree() && this.props.isFocused) {
+      this.focusSelf(true);
+    }
+  }
 
   focusSelf(noRefresh=false) {
     // NOTE(Oak): the noRefresh parameter is to circumvent
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1317098
+    // https:bugzilla.mozilla.org/show_bug.cgi?id=1317098
     const scroll = global.cm.getScrollInfo();
-    let {top, bottom, left, right} = this.element.getBoundingClientRect();
+    let {top, bottom, left, right} = this.props.node.element.getBoundingClientRect();
     const offset = global.cm.getWrapperElement().getBoundingClientRect();
     top    += scroll.top  - offset.top;
     bottom += scroll.top  - offset.top;
     left   += scroll.left - offset.left;
     right  += scroll.left - offset.left;
     global.cm.scrollIntoView({top, bottom, left, right}, 100);
-    this.element.focus();
+    this.props.node.element.focus();
     if (!noRefresh) global.cm.refresh();
     // TODO: we need refreshing to make focusing right, but where should we put it?
   }
@@ -168,18 +241,16 @@ class Node extends Component {
     if (!isErrorFree()) return;
     this.setState({editable: true});
     global.cm.refresh(); // is this needed?
-  }
+  };
 
-  handleEditableChange = editable => {
-    this.setState({editable});
-  }
+  handleDisableEditable = () => this.setState({editable: false});
+
 
   isLocked() {
     return this.props.lockedTypes.includes(this.props.node.type);
   }
 
   render() {
-    // console.log('Node rendered', this.props.node);
     const {
       isSelected,
       isCollapsed,
@@ -189,7 +260,7 @@ class Node extends Component {
       ...passingProps
     } = this.props;
 
-    if (node.options.comment) {
+    lf (node.options.comment) {
       // TODO: can we avoid mutating in render()?
       node.options.comment.id = "block-node-" + node.id + "-comment";
     }
@@ -221,38 +292,39 @@ class Node extends Component {
       // TODO: combine passingProps and contentEditableProps
       return (
         <NodeEditable {...passingProps}
-                      onEditableChange={this.handleEditableChange}
+                      onDisableEditable={this.handleDisableEditable}
                       extraClasses={classes}
                       node={node}
-                      dropTarget={false}
+                      value={this.state.value}
+                      onChange={this.handleChange}
                       contentEditableProps={props} />
       );
     } else {
-      const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
-      classes.push({'blocks-over-target': isOver});
-      let result = (
-        <span
-          {...props}
-          className     = {classNames(classes)}
-          ref           = {el => this.element = el}
-          role          = "treeitem"
-          style={{
-            opacity: isDragging ? 0.5 : 1,
-          }}
-          onClick       = {this.handleClick}
-          onDoubleClick = {this.handleDoubleClick}
-          onKeyDown     = {this.handleKeyDown}>
-          {children}
-        {
-          node.options.comment &&
-            this.props.helpers.renderNodeForReact(node.options.comment)
+        const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
+        classes.push({'blocks-over-target': isOver});
+        let result = (
+          <span
+            {...props}
+            className     = {classNames(classes)}
+            ref           = {el => node.element = el}
+            role          = "treeitem"
+            style={{
+              opacity: isDragging ? 0.5 : 1,
+            }}
+            onClick       = {this.handleClick}
+            onDoubleClick = {this.handleDoubleClick}
+            onKeyDown     = {this.handleKeyDown}>
+            {children}
+            {
+              node.options.comment &&
+                this.props.helpers.renderNodeForReact(node.options.comment)
+            }
+          </span>
+        );
+        if (this.props.normallyEditable) {
+          result = connectDropTarget(result);
         }
-        </span>
-      );
-      if (this.props.normallyEditable) {
-        result = connectDropTarget(result);
-      }
-      return connectDragSource(result);
+        return connectDragSource(result);
     }
   }
 }
@@ -281,6 +353,9 @@ const mapDispatchToProps = dispatch => ({
   uncollapseAll: () => dispatch({type: 'UNCOLLAPSE_ALL'}),
   handleDelete: () => dispatch(deleteNodes()),
   onDrop: (src, dest) => dispatch(dropNode(src, dest)),
+  setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
+  handleCopy: (id, selectionEditor) => dispatch(copyNodes(id, selectionEditor)),
+  handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);

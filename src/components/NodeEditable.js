@@ -7,30 +7,56 @@ import ContentEditable from './ContentEditable';
 import {commitChanges} from '../codeMirror';
 import global from '../global';
 import classNames from 'classnames';
+import {focusSelf} from '../actions';
 
 class NodeEditable extends Component {
   static defaultProps = {
     children: null,
+    willInsertNode: v => v,
+    initialSelection: 'all'
   }
 
   static propTypes = {
+    // NOTE: the presence of this Node means ast is not null
     node: PropTypes.instanceOf(ASTNode),
     children: PropTypes.node,
 
-    dropTarget: PropTypes.bool.isRequired,
-    // NOTE: the presence of this Node means ast is not null
-  }
-
-  state = {
-    value: null, // use this value lazily (since it's pretty expensive)
+    willInsertNode: PropTypes.func,
+    initialSelection: PropTypes.oneOf(['all', 'end']),
   }
 
   handleKeyDown = e => {
     switch (e.keyCode) {
-    case ENTER:
-    case ESC:
+    case ENTER: {
+      this.ignoreBlur = true;
       e.stopPropagation();
-      this.handleBlur(e);
+      const {node, setErrorId, onDisableEditable} = this.props;
+
+      const value = this.props.willInsertNode(this.props.value, this.props.node);
+
+      commitChanges(
+        cm => () => {
+          cm.replaceRange(value, node.from, node.to);
+        },
+        () => {
+          onDisableEditable(false);
+          setErrorId('');
+          setTimeout(() => this.props.focusSelf(), 200);
+        },
+        () => {
+          e.preventDefault();
+          setErrorId(node.id);
+          this.setSelection('all');
+        }
+      );
+      return;
+    }
+    case ESC:
+      this.ignoreBlur = true;
+      e.stopPropagation();
+      this.props.onChange(null);
+      this.props.onDisableEditable(false);
+      this.props.setErrorId('');
       return;
     }
   }
@@ -39,15 +65,24 @@ class NodeEditable extends Component {
     e.stopPropagation();
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
     if (this.element && this.props.isErrored) {
       this.focusSelf();
+      if (!prevProps.isErrored) this.setSelection();
     }
+  }
+
+  componentDidMount() {
+    this.focusSelf(true);
+
+    // NOTE(Oak): the presence of NodeEditable means that selections should be
+    // disabled
+    this.props.clearSelections();
   }
 
   focusSelf(noRefresh=false) {
     // NOTE(Oak): the noRefresh parameter is to circumvent
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1317098
+    // https:bugzilla.mozilla.org/show_bug.cgi?id=1317098
     const scroll = global.cm.getScrollInfo();
     let {top, bottom, left, right} = this.element.getBoundingClientRect();
     const offset = global.cm.getWrapperElement().getBoundingClientRect();
@@ -61,10 +96,6 @@ class NodeEditable extends Component {
     // TODO: we need refreshing to make focusing right, but where should we put it?
   }
 
-  handleChange = (_, value) => {
-    this.setState({value});
-  }
-
   /*
    * No need to reset text because we assign new key (via the parser + patching)
    * to changed nodes, so they will be completely unmounted and mounted back
@@ -73,61 +104,47 @@ class NodeEditable extends Component {
 
   handleBlur = e => {
     e.stopPropagation();
-    if (e.relatedTarget === null) {
-      // In Chrome, somehow onBlur happens several times, but the subsequent
-      // event has relatedTarget === null, so we add this to bail out.
-      return;
-    }
-    const {node, cm, setErrorId, onEditableChange} = this.props;
-    // NOTE: e comes from either click or keydown event
-    if (e.keyCode && e.keyCode === ESC) {
-      this.setState({value: null});
-      onEditableChange(false);
-      setErrorId('');
-      return;
-    }
+    if (this.ignoreBlur) return;
+    const {node, setErrorId, onDisableEditable} = this.props;
 
-    let value = null;
-
-    if (this.props.dropTarget && global.options.willInsertNode) {
-      value = global.options.willInsertNode(
-        global.cm,
-        this.state.value,
-        undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
-        this.props.node.from,
-      );
-    } else {
-      value = this.state.value;
-    }
-
+    const value = this.props.willInsertNode(this.props.value, this.props.node);
     commitChanges(
-      cm => () => cm.replaceRange(value, node.from, node.to),
+      cm => () => {
+        cm.replaceRange(value, node.from, node.to);
+      },
       () => {
-        onEditableChange(false);
+        onDisableEditable(false);
         setErrorId('');
       },
       () => {
         e.preventDefault();
         setErrorId(node.id);
+        this.setSelection('all');
       }
     );
   }
 
-  contentEditableDidMount = el => this.element = el;
-
-  static getDerivedStateFromProps(props, state) {
-    if (!state.value) {
-      return {value: global.cm.getRange(props.node.from, props.node.to)};
-    }
-    return null;
+  setSelection = mode => {
+    setTimeout(() => {
+      const range = document.createRange();
+      range.selectNodeContents(this.element);
+      if (mode === 'end') range.collapse(false);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+    }, 0);
   }
 
+  contentEditableDidMount = el => {
+    this.element = el;
+    this.setSelection(this.props.initialSelection);
+  }
 
   render() {
     const {
       contentEditableProps,
-      children,
       extraClasses,
+      value,
+      onChange,
     } = this.props;
 
 
@@ -144,11 +161,11 @@ class NodeEditable extends Component {
         className  = {classNames(classes)}
         role       = "textbox"
         itDidMount = {this.contentEditableDidMount}
-        onChange   = {this.handleChange}
+        onChange   = {onChange}
         onBlur     = {this.handleBlur}
         onKeyDown  = {this.handleKeyDown}
         onClick    = {this.handleClick}
-        value      = {this.state.value} />
+        value      = {value} />
     );
   }
 }
@@ -160,6 +177,8 @@ const mapStateToProps = ({cm, errorId}, {node}) => {
 
 const mapDispatchToProps = dispatch => ({
   setErrorId: errorId => dispatch({type: 'SET_ERROR_ID', errorId}),
+  focusSelf: () => dispatch(focusSelf()),
+  clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []})
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(NodeEditable);

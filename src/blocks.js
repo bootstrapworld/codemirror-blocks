@@ -100,7 +100,6 @@ export default class CodeMirrorBlocks {
     this.events = ee({});
     this.scroller = cm.getScrollerElement();
     this.wrapper = cm.getWrapperElement();
-    this.wrapper.setAttribute("aria-label", "Text Editor");
     // Add a live region to the wrapper, for announcements
     this.announcements = document.createElement("span");
     this.announcements.setAttribute("role", "log");
@@ -124,10 +123,11 @@ export default class CodeMirrorBlocks {
     }
     this.renderer = new Renderer(this.cm, renderOptions);
 
-    if (this.language) {
-      this.wrapper.classList.add(`blocks-language-${this.language.id}`);
-    }
     if (!this.suppress) {
+      this.wrapper.setAttribute("aria-label", "Text Editor");
+      if (this.language) {
+        this.wrapper.classList.add(`blocks-language-${this.language.id}`);
+      }
       Object.assign(
         this.wrapper,
         {
@@ -149,17 +149,20 @@ export default class CodeMirrorBlocks {
           ondrop:       this.nodeEventHandler(this.dropOntoNode),
         }
       );
-    }
-    // TODO: don't do this, otherwise we copy/paste will only work
-    // when there is one instance of this class on a page.
-    Object.assign(document, {
-      oncut:  (n, e) => this.handleCopyCut(n, e),
-      oncopy: (n, e) => this.handleCopyCut(n, e),
-    });
 
-    this.cm.on('paste',     (cm, e) => this.handleTopLevelEntry(e));
-    this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
-    if (!this.suppress) {
+
+      // TODO: don't do this, otherwise we copy/paste will only work
+      // when there is one instance of this class on a page.
+      Object.assign(document, {
+        oncut:  (n, e) => this.handleCopyCut(n, e),
+        oncopy: (n, e) => this.handleCopyCut(n, e),
+      });
+      this.cm.on('paste',     (cm, e) => this.handleTopLevelEntry(e));
+      // TODO: need to do the above
+
+
+
+      this.cm.on('keypress',  (cm, e) => this.handleTopLevelEntry(e));
       var dropHandler = this.nodeEventHandler(this.dropOntoNode, true);
       var dragEnterHandler = this.nodeEventHandler(this.handleDragEnter);
       this.cm.on('drop',      (cm, e) => dropHandler(e));
@@ -176,14 +179,14 @@ export default class CodeMirrorBlocks {
         this.mouseUsed = true;
         setTimeout(() => this.mouseUsed = false, 200);
       });
+      // override CM's natural onFocus behavior, activating the last focused node
+      // skip this if it's the result of a mousedown event
+      this.cm.on('focus',     (cm, e) => {
+        if(this.blockMode && this.ast.rootNodes.length > 0 && !this.mouseUsed) {
+          setTimeout(() => { this.activateNode(this.ast.getNodeByPath(this.focusPath), e); }, 10);
+        }
+      });
     }
-    // override CM's natural onFocus behavior, activating the last focused node
-    // skip this if it's the result of a mousedown event
-    this.cm.on('focus',     (cm, e) => {
-      if(this.blockMode && this.ast.rootNodes.length > 0 && !this.mouseUsed) {
-        setTimeout(() => { this.activateNode(this.ast.getNodeByPath(this.focusPath), e); }, 10);
-      }
-    });
 
     ui.renderSearchInto(this);
   }
@@ -243,9 +246,6 @@ export default class CodeMirrorBlocks {
     if (mode === this.blockMode) { return; } // bail if there's no change
     this.blockMode = mode;
     if(mode) { 
-      this.wrapper.setAttribute( "role", "tree"); 
-      this.scroller.setAttribute("role", "presentation");
-      this.wrapper.setAttribute("aria-label", "Block Editor");
       this.say("Switching to Block Mode");
       this.ast = this.parser.parse(this.cm.getValue());
     } else {
