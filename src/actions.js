@@ -3,16 +3,6 @@ import {skipWhile, poscmp, partition,
 import {commitChanges} from './codeMirror';
 import global from './global';
 
-/**
- * Returns whether `u` is a strict ancestor of `v`
- */
-function isAncestor(u, v) {
-  v = v.parent;
-  while (v && v.level > u.level) {
-    v = v.parent;
-  }
-  return u === v;
-}
 
 export function focusNextNode(id, next) {
   return (dispatch, getState) => {
@@ -22,7 +12,7 @@ export function focusNextNode(id, next) {
     // next/prevSibling attribute to short circuit navigation
     const node = skipWhile(
       node => node !== null && collapsedNodeList.some(
-        collapsed => isAncestor(collapsed, node)
+        collapsed => ast.isAncestor(collapsed.id, node.id)
       ),
       next(ast.getNodeById(id)),
       next
@@ -150,12 +140,13 @@ export function dropNode({id: srcId}, {from: destFrom, to: destTo, isDropTarget}
 }
 
 export function copyNodes(id, selectionEditor) {
-  return (_, getState) => {
+  return (dispatch, getState) => {
     const {ast, selections} = getState();
     const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
     const texts = nodeSelections.map(node => global.cm.getRange(node.from, node.to));
     copyToClipboard(texts.join(' '));
+    dispatch(focusSelf());
   };
 }
 
@@ -163,42 +154,41 @@ export function pasteNodes(id, isBackward) {
   return (dispatch, getState) => {
     const {ast, selections} = getState();
     const node = ast.getNodeById(id);
+    let from = null, to = null, textTransform = x => x;
     if (selections.includes(id)) {
       // NOTE(Oak): overwrite in this case
-      pasteFromClipboard(text => {
-        commitChanges(
-          cm => () => {
-            cm.replaceRange(text, node.from, node.to);
-          },
-          () => {},
-          () => {}
-        );
-        // NOTE(Oak): always clear selections
-        dispatch({type: 'SET_SELECTIONS', selections: []});
-      });
+      from = node.from;
+      to = node.to;
     } else {
       // NOTE(Oak): otherwise, we do not overwrite
       const pos = isBackward ? node.from : node.to;
-      pasteFromClipboard(text => {
-        if (global.options.willInsertNode) {
-          text = global.options.willInsertNode(
+      from = pos;
+      to = pos;
+      if (global.options.willInsertNode) {
+        textTransform = text =>
+          global.options.willInsertNode(
             global.cm,
             text,
             undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
             pos,
           );
-        }
-        commitChanges(
-          cm => () => {
-            cm.replaceRange(text, pos, pos);
-          },
-          () => {},
-          () => {}
-        );
-        // NOTE(Oak): always clear selections
-        dispatch({type: 'SET_SELECTIONS', selections: []});
-      });
+      }
     }
+
+    pasteFromClipboard(text => {
+      text = textTransform(text);
+      commitChanges(
+        cm => () => {
+          cm.replaceRange(text, from, to);
+        },
+        () => {},
+        () => {}
+      );
+      // NOTE(Oak): always clear selections. Should this be a callback instead?
+      dispatch({type: 'SET_SELECTIONS', selections: []});
+      // TODO(Oak): set focus for the new node
+    });
+
   };
 }
 

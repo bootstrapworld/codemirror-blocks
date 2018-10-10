@@ -2,7 +2,6 @@ import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {ESC, ENTER} from '../keycode';
 import ContentEditable from './ContentEditable';
 import {commitChanges} from '../codeMirror';
 import global from '../global';
@@ -25,33 +24,44 @@ class NodeEditable extends Component {
     initialSelection: PropTypes.oneOf(['all', 'end']),
   }
 
-  handleKeyDown = e => {
-    switch (e.keyCode) {
-    case ENTER: {
-      this.ignoreBlur = true;
-      e.stopPropagation();
-      const {node, setErrorId, onDisableEditable} = this.props;
+  saveEdit = (e, done) => {
+    e.stopPropagation();
+    const {node, setErrorId, onDisableEditable} = this.props;
 
-      const value = this.props.willInsertNode(this.props.value, this.props.node);
-
-      commitChanges(
-        cm => () => {
-          cm.replaceRange(value, node.from, node.to);
-        },
-        () => {
-          onDisableEditable(false);
-          setErrorId('');
-          setTimeout(() => this.props.focusSelf(), 200);
-        },
-        () => {
-          e.preventDefault();
-          setErrorId(node.id);
-          this.setSelection('all');
-        }
-      );
+    if (!this.props.value) {
+      this.props.onDisableEditable(false);
       return;
     }
-    case ESC:
+
+    const value = this.props.willInsertNode(this.props.value, this.props.node);
+
+    commitChanges(
+      cm => () => {
+        cm.replaceRange(value, node.from, node.to);
+      },
+      () => {
+        onDisableEditable(false);
+        setErrorId('');
+        done();
+      },
+      () => {
+        e.preventDefault();
+        setErrorId(node.id);
+        this.setSelection('all');
+      }
+    );
+  }
+
+  handleKeyDown = e => {
+    switch (e.key) {
+    case 'Enter': {
+      this.ignoreBlur = true;
+      this.saveEdit(e, () => {
+        setTimeout(() => this.props.focusSelf(), 200);
+      });
+      return;
+    }
+    case 'Escape':
       this.ignoreBlur = true;
       e.stopPropagation();
       this.props.onChange(null);
@@ -103,25 +113,8 @@ class NodeEditable extends Component {
    */
 
   handleBlur = e => {
-    e.stopPropagation();
     if (this.ignoreBlur) return;
-    const {node, setErrorId, onDisableEditable} = this.props;
-
-    const value = this.props.willInsertNode(this.props.value, this.props.node);
-    commitChanges(
-      cm => () => {
-        cm.replaceRange(value, node.from, node.to);
-      },
-      () => {
-        onDisableEditable(false);
-        setErrorId('');
-      },
-      () => {
-        e.preventDefault();
-        setErrorId(node.id);
-        this.setSelection('all');
-      }
-    );
+    this.saveEdit(e, () => {});
   }
 
   setSelection = mode => {
@@ -145,6 +138,7 @@ class NodeEditable extends Component {
       extraClasses,
       value,
       onChange,
+      node,
     } = this.props;
 
 
@@ -165,7 +159,7 @@ class NodeEditable extends Component {
         onBlur     = {this.handleBlur}
         onKeyDown  = {this.handleKeyDown}
         onClick    = {this.handleClick}
-        value      = {value} />
+        value      = {value ? value : global.cm.getRange(node.from, node.to)} />
     );
   }
 }

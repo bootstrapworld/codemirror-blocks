@@ -67,37 +67,22 @@ function renderNodeForReact(node, key) {
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
 
-class ToplevelBlock extends Component {
+class ToplevelBlock extends React.Component {
   constructor(props) {
     super(props);
     this.container = document.createElement('span');
     this.container.className = 'react-container';
-    const {from, to} = props.node;
-    // TODO(Oak): markText in the constructor might not be a good idea
-    this.marker = global.cm.markText(from, to, {replacedWith: this.container});
-  }
-
-  componentWillUnmount() {
-    this.marker.clear();
   }
 
   static propTypes = {
     node: PropTypes.object.isRequired,
   }
 
-  // componentDidUpdate(prevProps) {
-  //   const {from, to} = this.props.node;
-  //   if (poscmp(from, prevProps.node.from) != 0 || poscmp(to, prevProps.node.to) != 0) {
-  //     this.marker.clear();
-  //     this.marker = global.cm.markText(from, to, {replacedWith: this.container});
-  //   }
-  // }
-
   render() {
     const {node} = this.props;
     const {from, to} = node;
-    this.marker.clear();
-    this.marker = global.cm.markText(from, to, {replacedWith: this.container});
+
+    global.cm.markText(from, to, {replacedWith: this.container});
 
     // REVISIT: make comments disappear by adding an empty span
     if (node.options.comment) {
@@ -239,11 +224,6 @@ class Editor extends Component {
     global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
-    this.blocks = new CodeMirrorBlocks(
-      ed,
-      this.props.language,
-      {suppress: true, ...this.props.options}
-    );
   }
 
   handleFocus = (ed, e) => {
@@ -267,22 +247,8 @@ class Editor extends Component {
     // global.buffer.style.opacity = 0;
     // global.buffer.style.height = '1px';
     document.body.appendChild(global.buffer);
-    setTimeout(() => {
-      this.blocks.setBlockMode(true);
-      // hrm, the code mirror instance is only available after
-      // this gets rendered the first time, but we need
-      // the codemirror instance in order to render...
-      // so render again!
-      this.forceUpdate();
-    }, 0);
   }
 
-  componentDidUpdate(prevProps) {
-    // this is buggy somehow. It shouldn't need a forceUpdate like this
-    if (this.props.ast !== prevProps.ast) {
-      setTimeout(() => this.forceUpdate());
-    }
-  }
 
   render() {
     const classes = [];
@@ -316,6 +282,11 @@ class Editor extends Component {
   renderPortals = () => {
     const portals = [];
     if (global.cm && this.props.ast) {
+      // NOTE(Oak): we need to clear all markers up front to prevent
+      // overlapping the marker issue
+      for (const marker of global.cm.getAllMarks()) {
+        marker.clear();
+      }
       for (const r of this.props.ast.rootNodes) {
         portals.push(<ToplevelBlock key={r.id} node={r} />);
       }

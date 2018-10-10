@@ -52,13 +52,6 @@ class Node extends Component {
 
   state = {editable: false, value: null}
 
-  static getDerivedStateFromProps(props, state) {
-    if (state.value === null) {
-      return {value: global.cm.getRange(props.node.from, props.node.to)};
-    }
-    return null;
-  }
-
   handleChange = (value) => {
     this.setState({value});
   }
@@ -86,9 +79,7 @@ class Node extends Component {
     case 'ArrowUp':
       e.preventDefault();
       this.props.focusNextNode(node.id, node => {
-        const {ast} = store.getState();
-        const realNode = ast.getNodeById(node.id);
-        return realNode.prev;
+        return node.prev;
       });
       return;
 

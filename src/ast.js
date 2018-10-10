@@ -130,8 +130,7 @@ export class AST {
         this.nodeNIdMap.set(node.nid, node);
         this.nodePathMap.set(node.path, node);
         lastNode = node;
-        const children = [...node.children()];
-        loop(children, node, level + 1);
+        loop([...node.children()], node, level + 1);
       });
     };
     loop(this.rootNodes, null, 0);
@@ -208,6 +207,19 @@ export class AST {
 
   getNodeById = id => this.nodeIdMap.get(id)
   getNodeByNId = id => this.nodeNIdMap.get(id)
+
+  /**
+   * Returns whether `u` is a strict ancestor of `v`
+   */
+  isAncestor = (uid, vid) => {
+    let v = this.getNodeById(vid);
+    const u = this.getNodeById(uid);
+    v = v.parent;
+    while (v && v.level > u.level) {
+      v = v.parent;
+    }
+    return u === v;
+  }
 
   getNodeByPath(path) {
     return this.nodePathMap.get(path);
