@@ -37,23 +37,23 @@ export default function unify(oldTree, newTree) {
     for (const key in index) {
       index[key].reverse();
     }
+
+    const processed = new Set();
+
     let partiallySuccess = false;
     const newLeftover = [...newTree.children()].filter(newNode => {
       if (index[newNode.hash] && index[newNode.hash].length > 0) {
-        copyAllIds(index[newNode.hash].pop(), newNode);
+        const oldNode = index[newNode.hash].pop();
+        copyAllIds(oldNode, newNode);
         partiallySuccess = true;
+        processed.add(oldNode.id);
         return false;
       } else {
         return true;
       }
     });
     const oldLeftover = [...oldTree.children()].filter(oldNode => {
-      if (index[oldNode.hash] && index[oldNode.hash].length > 0) {
-        index[oldNode.hash].pop();
-        return true;
-      } else {
-        return false;
-      }
+      return !processed.has(oldNode.id);
     });
     if (!partiallySuccess) {
       assignNewIds(newTree);
