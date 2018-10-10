@@ -1,10 +1,12 @@
 import {
-  AST,
-  Literal,
-  VariableDefinition,
-  FunctionDefinition,
-  Expression,
+  AST
 } from '../../ast';
+import {
+  Literal,
+  FunctionApp,
+  VariableDefinition,
+  FunctionDefinition
+} from '../../nodes';
 
 import {
   Prog,
@@ -77,7 +79,7 @@ function convertAST(lambdaNode) {
         lambdaNode.body.map(convertAST)
       );
     case 'call':
-      return new Expression(
+      return new FunctionApp(
         lambdaNode.from,
         lambdaNode.to,
         lambdaNode.func,

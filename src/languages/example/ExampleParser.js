@@ -1,4 +1,5 @@
-import {AST, Literal, Expression} from '../../ast';
+import {AST} from '../../ast';
+import {Literal, FunctionApp} from '../../nodes';
 
 const TOKENS = {
   OPEN_PAREN: 'open-paren',
@@ -164,7 +165,7 @@ export default class ExampleParser {
       args.push(this.parseNextToken());
     }
     let closeParenToken = this.getToken();
-    return new Expression(
+    return new FunctionApp(
       token.from,
       closeParenToken.to,
       new Literal(identifierToken.from, identifierToken.to, identifierToken.text, 'symbol'),

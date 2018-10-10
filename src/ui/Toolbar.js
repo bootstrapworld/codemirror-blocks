@@ -61,13 +61,16 @@ export default class Toolbar extends Component {
     return (
       <div className={classNames('blocks-ui Toolbar', {'has-selected':!!selected})}>
         <div className="search-box">
+          <label className="screenreader-only" htmlFor="search_box">
+            <h2>Search Functions</h2>
+          </label>            
           <input type="search"
+            id="search_box"
             placeholder="Search functions"
             className="form-control"
             value={this.state.search}
             onKeyDown={this.checkEscape}
             onChange={this.changeSearch} />
-
           {this.state.search ?
             <span className="glyphicon glyphicon-remove" onClick={this.clearSearch} />
             : null}

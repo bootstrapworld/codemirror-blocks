@@ -1,8 +1,8 @@
 /*eslint indent: "off"*/
 
+import {AST} from '../../ast';
 import {
-  AST,
-  Expression,
+  Blank,
   Literal,
   StructDefinition,
   IdentifierList,
@@ -13,10 +13,10 @@ import {
   CondClause,
   Comment,
   VariableDefinition,
-  Unknown,
   Sequence,
-  Blank
-} from '../../ast';
+  FunctionApp,
+  Unknown
+} from '../../nodes';
 import {LetLikeExpr, WhenUnless} from './ast';
 import {PrimitiveGroup} from '../../parsers/primitives';
 import PRIMITIVES_CONFIG from './primitives-config';
@@ -84,6 +84,7 @@ function makeComment(node) {
 // enumerateIdentifierList : [Literals] -> String
 // do the right thing with commas, "and", etc
 function enumerateIdentifierList(lst) {
+  if(lst.length == 0) return "";
   lst = lst.slice(0);
   var last = lst.pop();
   return (lst.length == 0)? last.toString() : lst.join(', ') + " and "+last.toString();
@@ -133,7 +134,7 @@ function parseNode(node, i) {
         label = expressionAria(node.func ? symbolAria(node.func.val) : 'empty', node.args);
       }
     }
-    return new Expression(
+    return new FunctionApp(
       from,
       to,
       func,
@@ -142,7 +143,7 @@ function parseNode(node, i) {
         ,'comment' : comment}
     );
   } else if (node instanceof structures.andExpr) {
-    return new Expression(
+    return new FunctionApp(
       from,
       to,
       new Literal(
@@ -156,7 +157,7 @@ function parseNode(node, i) {
       {'aria-label': expressionAria('and', node.exprs)}
     );
   } else if (node instanceof structures.orExpr) {
-    return new Expression(
+    return new FunctionApp(
       from,
       to,
       new Literal(
@@ -269,11 +270,11 @@ function parseNode(node, i) {
         {'aria-label': symbolAria(node.val), 'comment': comment});
     }
   } else if (node instanceof structures.literal) {
-    let dataType = typeof node.val, aria = node.toString(), value = node.val;
+    let dataType = typeof node.val, aria = node.toString(), value = node.toString();
     if (types.isString(node.val)) {
       dataType = "string";
       aria = `${node.val}, a String`;
-      value = '"' + value + '"'; // put the quotes back in
+      value = '"' + node.val + '"'; // use the raw value, plus the quotes (for unicode symbols)
     } else if (types.isChar(node.val)) {
       dataType = "character";
       aria = `${node.val.val}, a Character`;
@@ -311,7 +312,7 @@ function parseNode(node, i) {
     return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
       {msg: node.errorMsg, 'aria-label': 'invalid expression'});
   } else if (node instanceof structures.requireExpr) {
-    return new Expression(from, to, parseNode(node.stx), [parseNode(node.spec)],
+    return new FunctionApp(from, to, parseNode(node.stx), [parseNode(node.spec)],
       {'aria-label': 'require '+node.spec.val ,'comment' : comment}
     );
   } 
@@ -322,7 +323,7 @@ function parseNode(node, i) {
 class WeschemeParser {
 
   getASTNodeForPrimitive(primitive) {
-    return new Expression(
+    return new FunctionApp(
       {line:0, ch:0},
       {line:0, ch:0},
       new Literal(
@@ -464,17 +465,29 @@ class WeschemeParser {
             || (sexp.length !== 3)) {         // is it the wrong # of parts?
             return fallback(sexp);
           }
-          var args = rest(sexp[1]).map(parseIdExpr);
+          let args = rest(sexp[1]).map(parseIdExpr);
+          let func = parseIdExpr(sexp[1][0]);
           // construct the location manually, excluding the func name
-          args.location = {
-            startCol : args[0].location.startCol,
-            startRow : args[0].location.startRow,
-            startChar: args[0].location.startChar,
-            endCol   : args[args.length-1].location.endCol,
-            endRow   : args[args.length-1].location.endRow,
-            endChar  : args[args.length-1].location.endChar
-          };
-          return new structures.defFunc(parseIdExpr(sexp[1][0]), args, parseExpr(sexp[2]), sexp);
+          if(args.length > 0) {
+            args.location = {
+              startCol : args[0].location.startCol,
+              startRow : args[0].location.startRow,
+              startChar: args[0].location.startChar,
+              endCol   : args[args.length-1].location.endCol,
+              endRow   : args[args.length-1].location.endRow,
+              endChar  : args[args.length-1].location.endChar
+            };
+          } else {
+             args.location = {
+              startCol : func.location.endCol,
+              startRow : func.location.endRow,
+              startChar: func.location.endChar,
+              endCol   : func.location.endCol,
+              endRow   : func.location.endRow,
+              endChar  : func.location.endChar
+            };
+          }
+          return new structures.defFunc(func, args, parseExpr(sexp[2]), sexp);
         }
         // If it's (define x ...)
         if (isSymbol(sexp[1])) {

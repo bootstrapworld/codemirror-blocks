@@ -1,3 +1,6 @@
+import React from 'react';
+import Node from '../../components/Node';
+
 import {ASTNode, pluralize, descDepth} from '../../ast';
 
 export class LetLikeExpr extends ASTNode {
@@ -16,6 +19,17 @@ export class LetLikeExpr extends ASTNode {
   toString() {
     return `(${this.form} (${this.bindings.toString()}) ${this.expr.toString()}`;
   }
+
+  render(props) {
+    const {helpers, lockedTypes} = this.props;
+    return (
+      <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
+        <span className="blocks-operator">{this.form}</span>
+        {helpers.renderNodeForReact(this.bindings)}
+        {helpers.renderNodeForReact(this.expr)}
+      </Node>
+    );
+  }
 }
 
 export class WhenUnless extends ASTNode {
@@ -33,5 +47,16 @@ export class WhenUnless extends ASTNode {
 
   toString() {
     return `(${this.form} (${this.predicate.toString()}) ${this.exprs.toString()})`;
+  }
+
+  render(props) {
+    const {helpers, lockedTypes} = this.props;
+    return (
+      <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
+        <span className="blocks-operator">{this.form}</span>
+        {helpers.renderNodeForReact(this.predicate)}
+        {helpers.renderNodeForReact(this.exprs)}
+      </Node>
+    );
   }
 }

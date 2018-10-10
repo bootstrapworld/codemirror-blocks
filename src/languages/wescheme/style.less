@@ -106,25 +106,25 @@
     }
     > .blocks-cond-table {
       display: table;
-      min-width: 400px;
+      padding: 2px;
       margin: 1px;
       .blocks-cond-drop-row {
-        .blocks-white-space {
-          display: table-row;
-        }
+        display: table-row;
+        .blocks-white-space, .quarantine { min-width: 100%; margin: 0px; height: 5px; transition: height .5s; }
+        .blocks-white-space:hover, .quarantine { height: 20px; }
       }
       .blocks-condClause {
-        border: @border-width inset gray;
-        display: block;
+        display: table-row-group;
         padding: 3px;
         text-align: center;
         min-width: 200px;
         &:focus {
-          border-color: @editing-border-color;
+          outline: @editing-border-color @border-width solid;
         }
         .blocks-cond-row {
+          border: 1px solid black;
           text-align: left;
-          display: block;
+          display: table-row;
           border-top: 1px solid #aaa;
           .blocks-cond-predicate, .blocks-cond-result {
             display: inline-block;
@@ -132,13 +132,17 @@
               color: #777;
             }
           }
+          .blocks-cond-predicate {float: left; }
+          .blocks-cond-result {float: right; }
         }
         .blocks-cond-row:first-child {
           border-top: 0px;
         }
       }
-      .blocks-condClause:first-of-type::before{
-        content: "test \00A0  \2192 \00A0  result";
+      .blocks-condClause[aria-expanded=false] {
+        display: block;
+        height: 20px;
+        margin: 5px;
       }
     }
   }
@@ -391,7 +395,7 @@
     max-height: 30px;
     min-width: 75px;
     padding: 3px;
-    background: linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1), rgba(0,0,0,0.3));
+    background: linear-gradient(to right, rgba(0,0,0,1), white 90%);
     * { display: none;}
     .blocks-operator, .blocks-operator * { 
       display: inline;

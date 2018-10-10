@@ -22,6 +22,7 @@ import {
   UP,
   RIGHT,
   DOWN,
+  LESS_THAN,
   DELETE,
   ENTER,
   SPACE,
@@ -81,13 +82,12 @@ describe('The CodeMirrorBlocks Class', function() {
         toolbar: document.getElementById('toolbar')
       }
     );
-    this.trackQuarantine   = spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
-    this.trackHandleChange = spyOn(this.blocks,        'handleChange').and.callThrough();
-    this.trackReplaceRange = spyOn(this.cm,            'replaceRange').and.callThrough();
-    this.trackEditLiteral  = spyOn(this.blocks,         'editLiteral').and.callThrough();
-    this.trackSaveEdit     = spyOn(this.blocks,            'saveEdit').and.callThrough();
-    this.trackCommitChange = spyOn(this.blocks,        'commitChange').and.callThrough();
-    this.trackWillInsertNode=spyOn(this.blocks,      'willInsertNode').and.callThrough();
+    this.trackQuarantine   = spyOn(this.blocks,  'makeQuarantineAt').and.callThrough();
+    this.trackSaveEdit     = spyOn(this.blocks,    'saveQuarantine').and.callThrough();
+    this.trackHandleChange = spyOn(this.blocks,      'handleChange').and.callThrough();
+    this.trackReplaceRange = spyOn(this.cm,          'replaceRange').and.callThrough();
+    this.trackCommitChange = spyOn(this.blocks,      'commitChange').and.callThrough();
+    this.trackWillInsertNode=spyOn(this.blocks,    'willInsertNode').and.callThrough();
   });
 
   afterEach(function() {
@@ -289,19 +289,19 @@ describe('The CodeMirrorBlocks Class', function() {
       it('typing at the end of a line', function() {
         this.cm.setCursor({line: 0, ch: 5});
         this.cm.getInputField().dispatchEvent(keypress(100));
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
       });
 
       it('typing at the beginning of a line', function() {
         this.cm.setCursor({line: 0, ch: 0});
         this.cm.getInputField().dispatchEvent(keypress(100));
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
       });
 
       it('typing between two blocks on a line', function() {
         this.cm.setCursor({line: 0, ch: 3});
         this.cm.getInputField().dispatchEvent(keypress(100));
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
       });
 
       // TODO: figure out how to fire a paste event
@@ -372,7 +372,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER));
         await wait(DELAY);
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
       });
 
       it('should cancel the editability of activated node when Esc is pressed', async function() {
@@ -380,7 +380,7 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.getActiveNode()).toBe(this.literal);
         this.literal.el.dispatchEvent(keydown(ENTER));
         await wait(DELAY);
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
         this.literal.el.dispatchEvent(keydown(DKEY));
         this.literal.el.dispatchEvent(keydown(ESC));
         expect(this.cm.getValue()).toBe('11 54');
@@ -419,7 +419,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
       describe('tree navigation', function() {
         beforeEach(function() {
-          this.cm.setValue('(+ 1 2 3) 99 (* 7 8)');
+          this.cm.setValue('(+ 1 2 3) 99 (* 7 (* 1 2))');
           this.firstRoot  = this.blocks.ast.rootNodes[0];
           this.secondRoot = this.blocks.ast.rootNodes[1];
           this.thirdRoot  = this.blocks.ast.rootNodes[2];
@@ -429,9 +429,10 @@ describe('The CodeMirrorBlocks Class', function() {
           this.thirdArg   = this.blocks.ast.rootNodes[0].args[2];
           this.firstRoot.el.dispatchEvent(click());
           this.firstRoot.el.dispatchEvent(keydown(LEFT));
+          this.lastNode   = this.thirdRoot.args[1].args[1];
         });
 
-        it('up-arrow should navigate to the previous visible node, but not beyond it', function() {
+        it('up-arrow should navigate to the previous visible node, but not beyond the tree', function() {
           this.secondRoot.el.dispatchEvent(click());
           expect(document.activeElement).toBe(this.secondRoot.el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.secondRoot.el.id);
@@ -443,15 +444,15 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.firstRoot.el.id);
         });
 
-        it('down-arrow should navigate to the next sibling, but not beyond it', function() {
-          this.thirdRoot.args[0].el.dispatchEvent(click());
-          expect(document.activeElement).toBe(this.thirdRoot.args[0].el);
-          this.thirdRoot.args[0].el.dispatchEvent(keydown(DOWN));
-          expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
-          this.thirdRoot.args[1].el.dispatchEvent(keydown(DOWN));
-          expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
-          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
+        it('down-arrow should navigate to the next sibling, but not beyond the tree', function() {
+          this.thirdRoot.args[1].args[0].el.dispatchEvent(click());
+          expect(document.activeElement).toBe(this.thirdRoot.args[1].args[0].el);
+          this.thirdRoot.args[1].args[0].el.dispatchEvent(keydown(DOWN));
+          expect(document.activeElement).toBe(this.thirdRoot.args[1].args[1].el);
+          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].args[1].el.id);
+          this.thirdRoot.args[1].args[1].el.dispatchEvent(keydown(DOWN));
+          expect(document.activeElement).toBe(this.thirdRoot.args[1].args[1].el);
+          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].args[1].el.id);
         });
 
         it('left-arrow should collapse a block, if it can be', function() {
@@ -468,6 +469,13 @@ describe('The CodeMirrorBlocks Class', function() {
           this.secondArg.el.dispatchEvent(keydown(LEFT));
           expect(this.firstRoot.el.getAttribute("aria-expanded")).toBe("false");
           expect(document.activeElement).toBe(this.firstRoot.el);
+        });
+
+        it('less-than should activate root without collapsing', async function() {
+          this.thirdRoot.args[1].args[1].el.dispatchEvent(click());
+          this.thirdRoot.args[1].args[1].el.dispatchEvent(keydown(LESS_THAN, {shiftKey: true}));
+          expect(this.thirdRoot.el.getAttribute("aria-expanded")).toBe("true");
+          expect(document.activeElement).toBe(this.thirdRoot.el);
         });
 
         it('right-arrow should expand a block, or shift focus to 1st child', function() {
@@ -492,8 +500,15 @@ describe('The CodeMirrorBlocks Class', function() {
         it('end should activate the last visible node', function() {
           this.secondRoot.el.dispatchEvent(click());
           this.secondRoot.el.dispatchEvent(keydown(END));
+          expect(document.activeElement).toBe(this.lastNode.el);
+          expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.lastNode.el.id);
+          this.thirdRoot.args[1].el.dispatchEvent(click());
+          this.thirdRoot.args[1].el.dispatchEvent(keydown(LEFT));
+          this.secondRoot.el.dispatchEvent(click());
+          this.secondRoot.el.dispatchEvent(keydown(END));
           expect(document.activeElement).toBe(this.thirdRoot.args[1].el);
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
+          
         });
       });
     });
@@ -576,13 +591,16 @@ describe('The CodeMirrorBlocks Class', function() {
     it('should save a valid, edited node on blur', async function() {
       this.literal.el.dispatchEvent(dblclick());
       await wait(DELAY);
+      let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
       let selection = window.getSelection();
       expect(selection.rangeCount).toEqual(1);
       let range = selection.getRangeAt(0);
       range.deleteContents();
       range.insertNode(document.createTextNode('9'));
       expect(this.cm.getValue()).toEqual('11');
-      document.activeElement.dispatchEvent(blur());
+      quarantine.dispatchEvent(blur());
+      await wait(DELAY);
+      expect(this.trackSaveEdit).toHaveBeenCalledWith(quarantine);
       expect(this.cm.getValue()).toEqual('9');
       expect(this.blocks.hasInvalidEdit).toBe(false);
     });
@@ -590,7 +608,7 @@ describe('The CodeMirrorBlocks Class', function() {
     it('should return the node being edited on esc', async function() {
       this.literal.el.dispatchEvent(dblclick());
       await wait(DELAY);
-      let quarantine = document.activeElement;
+      let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
       quarantine.dispatchEvent(keydown(ESC));
       expect(this.cm.getValue()).toEqual('11');
     });
@@ -598,9 +616,18 @@ describe('The CodeMirrorBlocks Class', function() {
     it('should blur the node being edited on enter', async function() {
       this.literal.el.dispatchEvent(dblclick());
       await wait(DELAY);
-      let quarantine = document.activeElement;
+      let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
       spyOn(quarantine, 'blur');
       quarantine.dispatchEvent(keydown(ENTER));
+      expect(quarantine.blur).toHaveBeenCalled();
+    });
+
+    it('should blur the node being edited on top-level click', async function() {
+      this.literal.el.dispatchEvent(dblclick());
+      await wait(DELAY);
+      let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
+      spyOn(quarantine, 'blur');
+      this.blocks.wrapper.click();
       expect(quarantine.blur).toHaveBeenCalled();
     });
 
@@ -608,19 +635,21 @@ describe('The CodeMirrorBlocks Class', function() {
       beforeEach(async function() {
         this.literal.el.dispatchEvent(dblclick());
         await wait(DELAY);
+        let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
         let selection = window.getSelection();
         expect(selection.rangeCount).toEqual(1);
         let range = selection.getRangeAt(0);
         range.deleteContents();
         range.insertNode(document.createTextNode('"moo'));
-        document.activeElement.dispatchEvent(blur());
+        quarantine.dispatchEvent(blur());
       });
 
       it('should not save anything & set all error state', function() {
+        let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
         expect(this.cm.replaceRange).not.toHaveBeenCalled();
-        expect(document.activeElement.classList).toContain('blocks-error');
-        expect(document.activeElement.title).toBe('Error: parse error');
-        expect(this.blocks.hasInvalidEdit).toBe(true);
+        expect(quarantine.classList).toContain('blocks-error');
+        expect(quarantine.title).toBe('Error: parse error');
+        expect(this.blocks.hasInvalidEdit).toBe(quarantine);
       });
     });
 
@@ -654,27 +683,27 @@ describe('The CodeMirrorBlocks Class', function() {
         this.firstArg.el.dispatchEvent(click());
         this.firstArg.el.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
         await wait(DELAY);
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
       });
 
       it('Ctrl-] should activate a quarantine to the right', async function() {
         this.firstArg.el.dispatchEvent(click());
         this.firstArg.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
         await wait(DELAY);
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
       });
 
       it('Ctrl-] should activate a quarantine in the first arg position', async function() {
         this.blank.func.el.dispatchEvent(click());
         this.blank.func.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
         await wait(DELAY);
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
       });
 
       it('should activate a quarantine on dblclick', async function() {
         this.whiteSpaceEl.dispatchEvent(dblclick());
         await wait(DELAY);
-        expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
       });
 
       describe('in corner-cases with no arguments,', function() {
@@ -689,53 +718,46 @@ describe('The CodeMirrorBlocks Class', function() {
         it('should allow editing the argument whitespace', async function() {
           this.argWS.dispatchEvent(dblclick());
           await wait(DELAY);
-          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+          expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
         }); 
 
         it('should allow editing the whitespace after the function', async function() {
           this.wsAfterFunc.dispatchEvent(dblclick());
           await wait(DELAY);
-          expect(this.blocks.insertionQuarantine).toHaveBeenCalled();
+          expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
         });
 
       });
 
       describe('and specifically when editing it,', function() {
+        
         /*
-
-        // fails nondeterministically - figure out how to avoid
+        // fails nondeterministically - figure out how to avoid 
         // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
-        it('should save whiteSpace on blur', function(done) {
-          this.whiteSpaceEl.dispatchEvent(dblclick());
-          setTimeout(() => {
-            expect(this.trackQuarantine).toHaveBeenCalledWith("", this.whiteSpaceEl, jasmine.anything());
-            let quarantineNode = this.trackQuarantine.calls.mostRecent().returnValue;
-            expect(this.trackEditLiteral).toHaveBeenCalledWith(quarantineNode);
-            let quarantineEl = quarantineNode.el;
-            let trackOnBlur = spyOn(quarantineEl, 'onblur').and.callThrough();
-            quarantineEl.appendChild(document.createTextNode('4253'));
-            setTimeout(() => {
-              quarantineEl.dispatchEvent(blur());
-              setTimeout(() => {
-                expect(trackOnBlur).toHaveBeenCalled();
-                expect(this.trackSaveEdit).toHaveBeenCalledWith(quarantineNode, quarantineEl, jasmine.anything());
-                expect(quarantineEl.textContent).toBe('4253'); // confirms text=4253 inside saveEdit, blocks.js line 495
-                expect(this.trackWillInsertNode).toHaveBeenCalledWith('4253', quarantineEl, Object({ ch: 4, line: 0 }), Object({ ch: 4, line: 0 }));
-                expect(this.trackCommitChange).toHaveBeenCalled();
-                expect(this.trackReplaceRange).toHaveBeenCalledWith(' 4253', Object({ ch: 4, line: 0 }), Object({ ch: 4, line: 0 }));
-                console.log(this.trackReplaceRange.calls.mostRecent().args.map(a=>a.toString()));
-                expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
-                expect(this.blocks.hasInvalidEdit).toBe(false);
-                done();
-              }, DELAY);
-            }, DELAY);
-          }, DELAY);
-        });
-        */
-        it('should blur whitespace you are editing on enter', async function() {
+        it('should save whiteSpace on blur', async function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           await wait(DELAY);
-          document.activeElement.dispatchEvent(keydown(ENTER));
+          expect(this.trackQuarantine).toHaveBeenCalledWith("", this.whiteSpaceEl);
+          let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
+          let trackOnBlur = spyOn(quarantine, 'onblur').and.callThrough();
+          quarantine.appendChild(document.createTextNode('4253'));
+          quarantine.dispatchEvent(blur());
+          await wait(DELAY);
+          expect(trackOnBlur).toHaveBeenCalled();
+          expect(this.trackSaveEdit).toHaveBeenCalledWith(quarantine);
+          expect(quarantine.textContent).toBe('4253'); // confirms text=4253 inside saveEdit, blocks.js line 495
+          expect(this.trackCommitChange).toHaveBeenCalled();
+          expect(this.trackReplaceRange).toHaveBeenCalledWith(' 4253', Object({ ch: 4, line: 0 }), Object({ ch: 4, line: 0 }));
+          expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
+          expect(this.blocks.hasInvalidEdit).toBe(false);
+        });
+        */
+        
+        it('should blur whitespace you are editing on enter', async function() {
+          this.whiteSpaceEl.dispatchEvent(dblclick());
+          let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
+          await wait(DELAY);
+          quarantine.dispatchEvent(keydown(ENTER));
           expect(this.trackHandleChange).toHaveBeenCalled();
         });
 
@@ -743,30 +765,24 @@ describe('The CodeMirrorBlocks Class', function() {
           beforeEach(async function() {
             this.whiteSpaceEl.dispatchEvent(dblclick());
             await wait(DELAY);
-            this.quarantineNode = this.trackQuarantine.calls.mostRecent().returnValue;
-            this.quarantineEl = this.quarantineNode.el;
-            expect(this.trackEditLiteral).toHaveBeenCalledWith(this.quarantineNode);
-            this.quarantineEl.appendChild(document.createTextNode('"moo'));
-            this.quarantineEl.dispatchEvent(blur());
+            this.quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
+            this.quarantine.appendChild(document.createTextNode('"moo'));
+            this.quarantine.dispatchEvent(blur());
           });
 
           /*
           // fails nondeterministically - figure out how to avoid
           // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
-          it('should not save anything & set all error state', function(done) {
-            setTimeout(() => {
-              expect(this.trackSaveEdit).toHaveBeenCalledWith(this.quarantineNode, this.quarantineEl, jasmine.anything());
-              expect(this.quarantineEl.textContent).toBe('"moo');
-              expect(this.cm.replaceRange).not.toHaveBeenCalled();
-              expect(this.quarantineEl.classList).toContain('blocks-error');
-              expect(this.quarantineEl.title).toBe('Error: parse error');
-              expect(this.blocks.hasInvalidEdit).toBe(true);
-              done();
-            }, DELAY);
+          it('should not save anything & set all error state', async function() {
+            expect(this.trackSaveEdit).toHaveBeenCalledWith(this.quarantine);
+            expect(this.quarantine.textContent).toBe('"moo');
+            expect(this.cm.replaceRange).not.toHaveBeenCalled();
+            expect(this.quarantine.classList).toContain('blocks-error');
+            expect(this.quarantine.title).toBe('Error: parse error');
+            expect(this.blocks.hasInvalidEdit).toBe(true);
           });
           */
         });
-
       });
     });
 

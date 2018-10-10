@@ -22,3 +22,4 @@ export const DKEY    = 68;
 export const FORWARDSLASH = 191;
 export const ONEKEY  = 49;
 export const TAB     = 9;
+export const LESS_THAN = 188;

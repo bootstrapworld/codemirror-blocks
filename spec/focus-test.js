@@ -55,9 +55,9 @@ describe('The CodeMirrorBlocks Class', function() {
         toolbar: document.getElementById('toolbar')
       }
     );
-    this.trackQuarantine   = spyOn(this.blocks, 'insertionQuarantine').and.callThrough();
-    this.trackHandleChange = spyOn(this.blocks,        'handleChange').and.callThrough();
-    this.trackReplaceRange = spyOn(this.cm,            'replaceRange').and.callThrough();
+    this.trackQuarantine   = spyOn(this.blocks, 'makeQuarantineAt').and.callThrough();
+    this.trackHandleChange = spyOn(this.blocks,     'handleChange').and.callThrough();
+    this.trackReplaceRange = spyOn(this.cm,         'replaceRange').and.callThrough();
     
   });
 
@@ -114,13 +114,13 @@ describe('The CodeMirrorBlocks Class', function() {
       this.literal1.el.dispatchEvent(click());
       this.literal1.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
       await wait(DELAY);
-      let quarantineNode = this.trackQuarantine.calls.mostRecent().returnValue;
+      let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
       let selection = window.getSelection();
       expect(selection.rangeCount).toEqual(1);
       let range = selection.getRangeAt(0);
       range.deleteContents();
       range.insertNode(document.createTextNode('99'));
-      quarantineNode.el.dispatchEvent(blur());
+      quarantine.dispatchEvent(blur());
       await wait(DELAY);
       expect(this.cm.getValue()).toBe('(+ 1 99 2 3)');
       expect(this.blocks.focusPath).toBe("0,2");
@@ -131,13 +131,13 @@ describe('The CodeMirrorBlocks Class', function() {
       this.literal1.el.dispatchEvent(click());
       this.literal1.el.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
       await wait(DELAY);
-      let quarantineNode = this.trackQuarantine.calls.mostRecent().returnValue;
+      let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
       let selection = window.getSelection();
       expect(selection.rangeCount).toEqual(1);
       let range = selection.getRangeAt(0);
       range.deleteContents();
       range.insertNode(document.createTextNode('99 88 77'));
-      quarantineNode.el.dispatchEvent(blur());
+      quarantine.dispatchEvent(blur());
       await wait(DELAY);
       expect(this.cm.getValue()).toBe('(+ 1 99 88 77 2 3)');
       expect(this.blocks.focusPath).toBe("0,4");
