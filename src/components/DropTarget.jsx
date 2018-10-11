@@ -28,7 +28,7 @@ class DropTarget extends Component {
   }
 
   handleMakeEditable = () => {
-    if (!isErrorFree()) return;
+    if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
     this.setState({editable: true});
     global.cm.refresh(); // is this needed?
   }
@@ -64,7 +64,7 @@ class DropTarget extends Component {
         <NodeEditable node={node}
                       value={this.state.value}
                       onChange={this.handleChange}
-                      dropTarget={true}
+                      isInsertion={true}
                       willInsertNode={this.editableWillInsert}
                       contentEditableProps={props}
                       extraClasses={['blocks-node', 'blocks-white-space']}

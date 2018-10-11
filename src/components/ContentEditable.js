@@ -46,7 +46,7 @@ export default class ContentEditable extends Component {
 
   handlePaste = ev => {
     ev.preventDefault();
-    const text = ev.clipboardData.getData("text");
+    const text = ev.clipboardData.getData('text');
     document.execCommand('insertText', false, text);
     this.props.onPaste(ev);
   }
@@ -58,8 +58,8 @@ export default class ContentEditable extends Component {
   }
 
   shouldComponentUpdate(props) {
-    const {value: newValue, ...newProps} = props;
-    const {value: oldValue, ...oldProps} = this.props;
+    const {value: newValue, 'aria-label': newAriaLabel, ...newProps} = props;
+    const {value: oldValue, 'aria-label': oldAriaLabel, ...oldProps} = this.props;
     return (
       (getInnerHTML(newValue) !== this.elem.innerHTML) ||
        !shallowequal(newProps, oldProps)

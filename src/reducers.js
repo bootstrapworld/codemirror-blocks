@@ -7,6 +7,7 @@ export const reducer = (
     errorId: '',
     cur: {line: 0, ch: 0},
     quarantine: null,
+    announcer: null,
   },
   action) => {
     console.log(action);
@@ -28,13 +29,15 @@ export const reducer = (
     case 'UNCOLLAPSE_ALL':
       return {...state, collapsedList: []};
     case 'SET_CURSOR':
-      return {...state, cur: action.cur};
+      return {...state, cur: action.cur, focusId: -1};
     case 'DISABLE_QUARANTINE':
       return {...state, quarantine: null};
     case 'CHANGE_QUARANTINE':
       return {...state, quarantine: [state.quarantine[0], action.text]};
     case 'SET_QUARANTINE':
       return {...state, quarantine: [action.pos, action.text]};
+    case 'SET_ANNOUNCER':
+      return {...state, announcer: action.announcer};
     default:
       return state;
     }

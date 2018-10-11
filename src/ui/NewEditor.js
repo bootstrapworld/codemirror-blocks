@@ -2,7 +2,6 @@ import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 import {UnControlled as CodeMirror} from 'react-codemirror2';
 import classNames from 'classnames';
-import CodeMirrorBlocks from '../blocks';
 import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect, Provider} from 'react-redux';
@@ -12,7 +11,8 @@ import patch from '../ast-patch';
 import CMBContext from '../components/Context';
 import NodeEditable from '../components/NodeEditable';
 import {focusSelf} from '../actions';
-// import {poscmp} from '../utils';
+import {say} from '../utils';
+import FakeCursorManager from './FakeCursorManager';
 
 import FunctionApp         from '../components/FunctionApp';
 import IfExpression       from '../components/IfExpression';
@@ -125,7 +125,7 @@ class ToplevelBlockEditableCore extends Component {
     const [pos, value] = quarantine;
     const node = {id: 'editing', from: pos, to: pos};
     const props = {
-      tabIndex          : "-1",
+      tabIndex          : '-1',
       role              : 'text box',
       'aria-setsize'    : '1',
       'aria-posinset'   : '1',
@@ -137,8 +137,8 @@ class ToplevelBlockEditableCore extends Component {
                     value={value}
                     onChange={onChange}
                     contentEditableProps={props}
-                    initialSelection='end'
-                    extraClasses={['blocks-node', 'blocks-white-space']}
+                    isInsertion={true}
+                    extraClasses={[]}
                     onDisableEditable={onDisableEditable} />,
       this.container
     );
@@ -160,6 +160,8 @@ class Editor extends Component {
     language: PropTypes.string.isRequired,
     parser: PropTypes.object.isRequired,
     setAST: PropTypes.func.isRequired,
+    setAnnouncer: PropTypes.func.isRequired,
+    clearFocus: PropTypes.func.isRequired,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -208,8 +210,14 @@ class Editor extends Component {
     const wrapper = ed.getWrapperElement();
     wrapper.setAttribute('role', 'tree');
     wrapper.setAttribute('aria-label', 'Block Editor');
+
     const scroller = ed.getScrollerElement();
     scroller.setAttribute('role', 'presentation');
+
+    const annoucements = document.createElement('span');
+    annoucements.setAttribute('role', 'log');
+    annoucements.setAttribute('aria-live', 'assertive');
+    wrapper.appendChild(annoucements);
 
     ed.on('changes', (cm, changes) => {
       if (changes.some(change => change.origin === 'undo')) {
@@ -224,12 +232,16 @@ class Editor extends Component {
     global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
+    this.props.setAnnouncer(annoucements);
+
+    say('Switching to Block mode');
   }
 
   handleFocus = (ed, e) => {
     if (!this.mouseUsed) {
       // NOTE(Oak): use setTimeout so that the CM cursor will not blink
       setTimeout(() => this.props.focusSelf(), 10);
+      this.mouseUsed = false;
     }
   }
 
@@ -241,7 +253,12 @@ class Editor extends Component {
   componentDidMount() {
     global.parser = this.props.parser;
     global.options = this.props.options;
-    global.buffer = document.createElement('textarea');
+    const clipboardBuffer = document.createElement('textarea');
+
+    clipboardBuffer.ariaHidden = true;
+    clipboardBuffer.tabIndex = -1;
+
+    global.buffer = clipboardBuffer;
 
     // don't make it transparent so that we can debug easily for now
     // global.buffer.style.opacity = 0;
@@ -272,7 +289,8 @@ class Editor extends Component {
                       editorDidMount={this.handleEditorDidMount} />
         </div>
         {this.renderPortals()}
-        <div>
+        <FakeCursorManager />
+        <div style={{position: 'absolute', bottom: 0}}>
           {global.cm && global.cm.getValue()}
         </div>
       </div>
@@ -301,7 +319,9 @@ const mapStateToProps = ({ast, cur, quarantine}) => ({
 });
 const mapDispatchToProps = dispatch => ({
   setAST: ast => dispatch({type: 'SET_AST', ast}),
+  setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
   setCursor: (_, cur) => dispatch({type: 'SET_CURSOR', cur}),
+  clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: -1}),
   focusSelf: () => dispatch(focusSelf()),
   setQuarantine: (pos, text) => dispatch({type: 'SET_QUARANTINE', pos, text}),
 });

@@ -7,12 +7,12 @@ import {commitChanges} from '../codeMirror';
 import global from '../global';
 import classNames from 'classnames';
 import {focusSelf} from '../actions';
+import {say} from '../utils';
 
 class NodeEditable extends Component {
   static defaultProps = {
     children: null,
     willInsertNode: v => v,
-    initialSelection: 'all'
   }
 
   static propTypes = {
@@ -21,14 +21,23 @@ class NodeEditable extends Component {
     children: PropTypes.node,
 
     willInsertNode: PropTypes.func,
-    initialSelection: PropTypes.oneOf(['all', 'end']),
+    isInsertion: PropTypes.bool.isRequired,
+  }
+
+  constructor(props) {
+    super(props);
+    if (this.props.value === null) {
+      // TODO(Oak): this is bad. Shouldn't access .from and .to directly here
+      // since it might be incorrect
+      this.cachedValue = global.cm.getRange(this.props.node.from, this.props.node.to);
+    }
   }
 
   saveEdit = (e, done) => {
     e.stopPropagation();
     const {node, setErrorId, onDisableEditable} = this.props;
 
-    if (!this.props.value) {
+    if (this.props.value === null || this.props.value === this.cachedValue) {
       this.props.onDisableEditable(false);
       return;
     }
@@ -42,12 +51,15 @@ class NodeEditable extends Component {
       () => {
         onDisableEditable(false);
         setErrorId('');
+        say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
         done();
       },
-      () => {
-        e.preventDefault();
+      e => {
+        const errorText = global.parser.getExceptionMessage(e);
+        say(errorText);
+        this.ignoreBlur = false;
         setErrorId(node.id);
-        this.setSelection('all');
+        this.setSelection(false);
       }
     );
   }
@@ -62,11 +74,13 @@ class NodeEditable extends Component {
       return;
     }
     case 'Escape':
+      say('cancelled');
       this.ignoreBlur = true;
       e.stopPropagation();
       this.props.onChange(null);
       this.props.onDisableEditable(false);
       this.props.setErrorId('');
+      setTimeout(() => this.props.focusSelf(), 200);
       return;
     }
   }
@@ -75,35 +89,10 @@ class NodeEditable extends Component {
     e.stopPropagation();
   }
 
-  componentDidUpdate(prevProps) {
-    if (this.element && this.props.isErrored) {
-      this.focusSelf();
-      if (!prevProps.isErrored) this.setSelection();
-    }
-  }
-
   componentDidMount() {
-    this.focusSelf(true);
-
-    // NOTE(Oak): the presence of NodeEditable means that selections should be
-    // disabled
+    const text = this.props.value !== null ? this.props.value : this.cachedValue;
+    say(`${this.props.isInsertion ? 'inserting' : 'editing'} ${text}. Use Enter to save, and Shift-Escape to cancel`);
     this.props.clearSelections();
-  }
-
-  focusSelf(noRefresh=false) {
-    // NOTE(Oak): the noRefresh parameter is to circumvent
-    // https:bugzilla.mozilla.org/show_bug.cgi?id=1317098
-    const scroll = global.cm.getScrollInfo();
-    let {top, bottom, left, right} = this.element.getBoundingClientRect();
-    const offset = global.cm.getWrapperElement().getBoundingClientRect();
-    top    += scroll.top  - offset.top;
-    bottom += scroll.top  - offset.top;
-    left   += scroll.left - offset.left;
-    right  += scroll.left - offset.left;
-    global.cm.scrollIntoView({top, bottom, left, right}, 100);
-    this.element.focus();
-    if (!noRefresh) global.cm.refresh();
-    // TODO: we need refreshing to make focusing right, but where should we put it?
   }
 
   /*
@@ -117,19 +106,19 @@ class NodeEditable extends Component {
     this.saveEdit(e, () => {});
   }
 
-  setSelection = mode => {
+  setSelection = isCollapsed => {
     setTimeout(() => {
       const range = document.createRange();
       range.selectNodeContents(this.element);
-      if (mode === 'end') range.collapse(false);
+      if (isCollapsed) range.collapse(false);
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
-    }, 0);
+    }, 10);
   }
 
   contentEditableDidMount = el => {
     this.element = el;
-    this.setSelection(this.props.initialSelection);
+    this.setSelection(this.props.isInsertion);
   }
 
   render() {
@@ -141,13 +130,15 @@ class NodeEditable extends Component {
       node,
     } = this.props;
 
-
     const classes = [
       'blocks-literal',
       'quarantine',
       'blocks-editing',
+      'blocks-node',
       {'blocks-error': this.props.isErrored},
     ].concat(extraClasses);
+
+    const text = value !== null ? value : this.cachedValue;
 
     return (
       <ContentEditable
@@ -159,7 +150,8 @@ class NodeEditable extends Component {
         onBlur     = {this.handleBlur}
         onKeyDown  = {this.handleKeyDown}
         onClick    = {this.handleClick}
-        value      = {value ? value : global.cm.getRange(node.from, node.to)} />
+        aria-label = {text}
+        value      = {text} />
     );
   }
 }

@@ -101,25 +101,25 @@ export default class CodeMirrorBlocks {
     this.keyMap = CodeMirror.keyMap[this.cm.getOption('keyMap')];
     this.events = ee({});
     this.scroller = cm.getScrollerElement();
-    this.wrapper = cm.getWrapperElement();
-    this.wrapper.setAttribute("aria-label", "Text Editor");
-    // Add a live region to the wrapper, for announcements
-    this.announcements = document.createElement("span");
-    this.announcements.setAttribute("role", "log");
-    this.announcements.setAttribute("aria-live", "assertive");
-    this.wrapper.appendChild(this.announcements);
-    // Track all selected nodes in our own set
-    this.selectedNodes = new Set();
+    this.wrapper = cm.getWrapperElement(); // DONE
+    this.wrapper.setAttribute("aria-label", "Text Editor"); // DONE
+    // Add a live region to the wrapper, for announcements // DONE
+    this.announcements = document.createElement("span"); // DONE
+    this.announcements.setAttribute("role", "log"); // DONE
+    this.announcements.setAttribute("aria-live", "assertive"); // DONE
+    this.wrapper.appendChild(this.announcements); // DONE
+    // Track all selected nodes in our own set // DONE
+    this.selectedNodes = new Set(); // DONE
     // Track focus and history with path/announcement pairs
     this.focusHistory = {done: [], undone: []};
     this.focusPath = {line: 0, ch: 0}; // default to empty editor with no blocks
-    // Internal clipboard for non-native operations (*groan*)
-    this.clipboard = "";
+    // Internal clipboard for non-native operations (*groan*) // NOTE(Oak): we don't seem to need this
+    this.clipboard = ""; // NOTE(Oak): we don't seem to need this
     // Make (and hide!) an offscreen buffer for handling native copy/cut/paste operations.
-    this.buffer = document.createElement('textarea');
-    Object.assign(this.buffer.style, {"opacity": 0, "height": "1px"});
-    Object.assign(this.buffer, {"ariaHidden": true, "tabIndex": -1});
-    document.body.appendChild(this.buffer);
+    this.buffer = document.createElement('textarea'); // DONE
+    Object.assign(this.buffer.style, {"opacity": 0, "height": "1px"}); // DONE (kindof)
+    Object.assign(this.buffer, {"ariaHidden": true, "tabIndex": -1}); // DONE
+    document.body.appendChild(this.buffer); // DONE
     // disable Tab and Shift-Tab key handling by appending to extraKeys
     let extraKeys = this.cm.getOption('extraKeys') || {};
     extraKeys["Tab"] = extraKeys["Shift-Tab"] = false;
@@ -130,9 +130,9 @@ export default class CodeMirrorBlocks {
     }
     this.renderer = new Renderer(this.cm, renderOptions);
     // assign language class, to enable per-language styling
-    if (this.language) {
-      this.wrapper.classList.add(`blocks-language-${this.language.id}`);
-    }
+    if (this.language) { // DONE
+      this.wrapper.classList.add(`blocks-language-${this.language.id}`); // DONE
+    } // DONE
     Object.assign(
       this.wrapper,
       {
@@ -222,12 +222,12 @@ export default class CodeMirrorBlocks {
   // say : String Number -> Void
   // add text to the announcements element, and log it to the console
   // append a comma to distinguish between adjacent commands
-  say(text, delay=200){
-    if(this.muteAnnouncements) return;
-    let announcement = document.createTextNode(text+", ");
-    console.log(text);
-    setTimeout(() => this.announcements.appendChild(announcement), delay);
-    setTimeout(() => this.announcements.removeChild(announcement), delay+300);
+  say(text, delay=200){ // DONE
+    if(this.muteAnnouncements) return; // DONE kindof
+    let announcement = document.createTextNode(text+", "); // DONE
+    console.log(text); // DONE
+    setTimeout(() => this.announcements.appendChild(announcement), delay); // DONE
+    setTimeout(() => this.announcements.removeChild(announcement), delay+300); // DONE
   }
 
   // setBlockMode : String -> Void
@@ -238,11 +238,11 @@ export default class CodeMirrorBlocks {
     if(mode) {
       this.savedOpts = {}
       cmOptions.forEach(opt => this.savedOpts[opt] = this.cm.getOption(opt));
-      this.wrapper.setAttribute( "role", "tree"); 
-      this.scroller.setAttribute("role", "presentation");
-      this.wrapper.setAttribute("aria-label", "Block Editor");
-      this.say("Switching to Block Mode");
-      this.ast = this.parser.parse(this.cm.getValue());
+      this.wrapper.setAttribute( "role", "tree"); // DONE
+      this.scroller.setAttribute("role", "presentation"); // DONE
+      this.wrapper.setAttribute("aria-label", "Block Editor"); // DONE
+      this.say("Switching to Block Mode"); // DONE
+      this.ast = this.parser.parse(this.cm.getValue()); // DONE
     } else {
       cmOptions.forEach(opt => this.cm.setOption(opt, this.savedOpts[opt]));
       this.wrapper.removeAttribute( "role"); 
@@ -250,7 +250,7 @@ export default class CodeMirrorBlocks {
       this.wrapper.setAttribute("aria-label", "Text Editor");
       this.say("Switching to Text Mode");
     }
-    this.renderer.animateTransition(this.ast, mode);
+    this.renderer.animateTransition(this.ast, mode); // FIXME(Oak): not gonna do it
   }
 
   toggleBlockMode() { this.setBlockMode(!this.blockMode); }
@@ -351,35 +351,35 @@ export default class CodeMirrorBlocks {
 
   // activateNode : ASTNode Event -> Boolean
   // activate and announce the given node, optionally changing selection
-  activateNode(node, event) {
-    event.stopPropagation();
-    if(node == this.getActiveNode()) { this.say(node.el.getAttribute("aria-label")); }
-    if(this.isNodeEditable(node) && !(node.el.getAttribute("aria-expanded")=="false")
-      && !node.el.classList.contains("blocks-editing")) {
-      clearTimeout(this.queuedAnnoucement);
-      this.queuedAnnoucement = setTimeout(() => { this.say("Use enter to edit"); }, 1250);
-    }
-    // if there's a selection and the altKey isn't pressed, clear selection
-    if((this.selectedNodes.size > 0) && !(ISMAC? event.altKey : event.ctrlKey)) {
-      this.clearSelection();
-    }
-    this.scroller.setAttribute("aria-activedescendent", node.el.id);
-    // if it's not a click, make sure the viewport is scrolled so the node is visible
-    if(!["click", "dblclick"].includes(event.type)) {
-      this.cm.scrollIntoView(node.from); // force a CM render
-      var {top, bottom, left, right} = node.el.getBoundingClientRect(); // get the *actual* bounding rect
-      let offset = this.wrapper.getBoundingClientRect();
-      let scroll = this.cm.getScrollInfo();
-      top    = top    + scroll.top  - offset.top; 
-      bottom = bottom + scroll.top  - offset.top;
-      left   = left   + scroll.left - offset.left; 
-      right  = right  + scroll.left - offset.left;
-      this.cm.scrollIntoView({top, bottom, left, right});
-    }
-    node.el.focus();
-    this.focusPath = node.path;
-    return true;
-  }
+  activateNode(node, event) { // DONE
+    event.stopPropagation(); // DONE
+    if(node == this.getActiveNode()) { this.say(node.el.getAttribute("aria-label")); } // DONE
+    if(this.isNodeEditable(node) && !(node.el.getAttribute("aria-expanded")=="false") // DONE
+      && !node.el.classList.contains("blocks-editing")) { // DONE
+      clearTimeout(this.queuedAnnoucement); // DONE
+      this.queuedAnnoucement = setTimeout(() => { this.say("Use enter to edit"); }, 1250); // DONE
+    } // DONE
+    // if there's a selection and the altKey isn't pressed, clear selection // DONE
+    if((this.selectedNodes.size > 0) && !(ISMAC? event.altKey : event.ctrlKey)) { // DONE
+      this.clearSelection(); // DONE
+    } // DONE
+    this.scroller.setAttribute("aria-activedescendent", node.el.id); // DONE
+    // if it's not a click, make sure the viewport is scrolled so the node is visible // DONE
+    if(!["click", "dblclick"].includes(event.type)) { // DONE
+      this.cm.scrollIntoView(node.from); // force a CM render // DONE
+      var {top, bottom, left, right} = node.el.getBoundingClientRect(); // get the *actual* bounding rect // DONE
+      let offset = this.wrapper.getBoundingClientRect(); // DONE
+      let scroll = this.cm.getScrollInfo(); // DONE
+      top    = top    + scroll.top  - offset.top;  // DONE
+      bottom = bottom + scroll.top  - offset.top; // DONE
+      left   = left   + scroll.left - offset.left;  // DONE
+      right  = right  + scroll.left - offset.left; // DONE
+      this.cm.scrollIntoView({top, bottom, left, right}); // DONE
+    } // DONE
+    node.el.focus(); // DONE
+    this.focusPath = node.path; // DONE
+    return true; // DONE
+  } // DONE
   // is this a node that can be collapsed or expanded?
   isNodeExpandable(node) {
     return !["blank", "literal", "comment"].includes(node.type) &&
@@ -671,67 +671,67 @@ export default class CodeMirrorBlocks {
   // with the String (or, if false, DOMNode contents), allowing the user to edit.
   makeQuarantineAt(text, dest) {
     this.cm.setOption("readOnly", "nocursor"); // make CM blind while quarantine is visible
-    let quarantine = document.createElement('span');
-    // if we're editing an existing ASTNode
-    if(dest.type) {
-      text = text || this.cm.getRange(dest.from, dest.to);
-      let parent = dest.el.parentNode;
-      quarantine.from = dest.from; quarantine.to = dest.to;
-      quarantine.path = dest.path;              // save the path for returning focus
-      quarantine.originalEl = dest.el;          // save the original DOM El
-      parent.replaceChild(quarantine, dest.el); // replace the old node with the quarantine
+    let quarantine = document.createElement('span'); // DONE
+    // if we're editing an existing ASTNode // DONE
+    if(dest.type) { // DONE
+      text = text || this.cm.getRange(dest.from, dest.to); // DONE
+      let parent = dest.el.parentNode; // DONE
+      quarantine.from = dest.from; quarantine.to = dest.to; // DONE
+      quarantine.path = dest.path;              // save the path for returning focus // DONE
+      quarantine.originalEl = dest.el;          // save the original DOM El // DONE
+      parent.replaceChild(quarantine, dest.el); // replace the old node with the quarantine // DONE
     // if we're inserting into a whitespace node
-    } else if(dest.nodeType) {
-      quarantine.classList.add("blocks-white-space");
-      let parent = dest.parentNode;
-      quarantine.to = quarantine.from = this.getLocationFromWhitespace(dest);
-      quarantine.path = this.getPathFromWhitespace(dest); // save path for focus
-      quarantine.originalEl = dest;             // save the original DOM El
-      parent.replaceChild(quarantine, dest);    // replace the old node with the quarantine
-      quarantine.insertion = {clear: () => {}}; // make a dummy marker
-    // if we're inserting into a toplevel CM cursor
-    } else if(dest.line !== undefined){
-      quarantine.to = quarantine.from = dest;
-      // calculate the path for focus (-1 if it's the first node)
-      const nodeBefore = this.ast.getToplevelNodeBeforeCur(dest);
-      quarantine.path = String(nodeBefore ? nodeBefore.path : -1); // save path for focus
-      let mk = this.cm.setBookmark(dest, {widget: quarantine});
-      quarantine.insertion = mk;
-    } else {
-      throw "makeQuarantineAt given a destination of unknown type";
-    }
-    quarantine.classList.add('quarantine', 'blocks-node', 'blocks-editing', 'blocks-literal');
-    quarantine.setAttribute('role','textbox');
-    quarantine["aria-label"] = quarantine.textContent = text;
-    quarantine.contentEditable = true;
-    quarantine.spellcheck = false;
-    quarantine.onblur    = () => this.saveQuarantine(quarantine);
-    quarantine.onkeydown = (e  => this.handleEditKeyDown(quarantine, e));
-    quarantine.onpaste   = (e  => {
-      e.preventDefault(); // SANITIZE: kill the paste event and manually-insert plaintext
-      document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
-    });
-    this.wrapper.onclick = () => quarantine.blur(); // clicking the editor should be construed as a "commit"
+    } else if(dest.nodeType) { // DONE
+      quarantine.classList.add("blocks-white-space"); // DONE
+      let parent = dest.parentNode; // DONE
+      quarantine.to = quarantine.from = this.getLocationFromWhitespace(dest); // DONE
+      quarantine.path = this.getPathFromWhitespace(dest); // save path for focus // DONE
+      quarantine.originalEl = dest;             // save the original DOM El // DONE
+      parent.replaceChild(quarantine, dest);    // replace the old node with the quarantine // DONE
+      quarantine.insertion = {clear: () => {}}; // make a dummy marker // DONE
+      // if we're inserting into a toplevel CM cursor // DONE
+    } else if(dest.line !== undefined){ // DONE
+      quarantine.to = quarantine.from = dest; // DONE
+      // calculate the path for focus (-1 if it's the first node) // DONE
+      const nodeBefore = this.ast.getToplevelNodeBeforeCur(dest); // DONE
+      quarantine.path = String(nodeBefore ? nodeBefore.path : -1); // save path for focus // DONE
+      let mk = this.cm.setBookmark(dest, {widget: quarantine}); // DONE
+      quarantine.insertion = mk; // DONE
+    } else { // DONE
+      throw "makeQuarantineAt given a destination of unknown type"; // DONE
+    } // DONE
+    quarantine.classList.add('quarantine', 'blocks-node', 'blocks-editing', 'blocks-literal'); // DONE
+    quarantine.setAttribute('role','textbox'); // DONE
+    quarantine["aria-label"] = quarantine.textContent = text; // DONE
+    quarantine.contentEditable = true; // DONE
+    quarantine.spellcheck = false; // DONE
+    quarantine.onblur    = () => this.saveQuarantine(quarantine); // DONE
+    quarantine.onkeydown = (e  => this.handleEditKeyDown(quarantine, e)); // DONE
+    quarantine.onpaste   = (e  => { // DONE
+      e.preventDefault(); // SANITIZE: kill the paste event and manually-insert plaintext // DONE
+      document.execCommand("insertText", false, e.clipboardData.getData("text/plain")); // DONE
+    }); // DONE
+    this.wrapper.onclick = () => quarantine.blur(); // clicking the editor should be construed as a "commit" // DONE
     // If text is the empty string, we're inserting. Otherwise, we're editing
-    this.say(text? "editing " : "inserting "+text+". Use Enter to save, and Shift-Escape to cancel");
-    this.clearSelection(); // clear any selected nodes
-    this.editQuarantine(quarantine);
-    return quarantine;
+    this.say(text? "editing " : "inserting "+text+". Use Enter to save, and Shift-Escape to cancel"); // DONE kindof
+    this.clearSelection(); // clear any selected nodes // DONE
+    this.editQuarantine(quarantine); // DONE
+    return quarantine; // DONE
   }
 
   // editQuarantine : Quarantine -> Void
   // If we're inserting OR we have an invalid edit, put the cursor at the end
   // otherwise select the whole thing
-  editQuarantine(quarantine) {
-    quarantine.focus();
-    setTimeout(() => {
-      let range = document.createRange();
-      range.selectNodeContents(quarantine);
-      window.getSelection().removeAllRanges();
-      window.getSelection().addRange(range);
-      if(quarantine.insertion && !this.hasInvalidEdit) range.collapse();
-    }, 10);
-  }
+  editQuarantine(quarantine) { // DONE
+    quarantine.focus(); // DONE
+    setTimeout(() => { // DONE
+      let range = document.createRange(); // DONE
+      range.selectNodeContents(quarantine); // DONE
+      window.getSelection().removeAllRanges(); // DONE
+      window.getSelection().addRange(range); // DONE
+      if(quarantine.insertion && !this.hasInvalidEdit) range.collapse(); // DONE
+    }, 10); // DONE
+  } // DONE
 
   // saveQuarantine : Quarantine -> Void
   // If not, set the error state and maintain focus

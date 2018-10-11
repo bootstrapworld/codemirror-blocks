@@ -2,9 +2,9 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {isControl, say} from '../utils';
-import {dropNode, toggleSelection, focusNextNode, focusNode,
-        deleteNodes, copyNodes, pasteNodes} from '../actions';
+import {isControl, say, skipWhile} from '../utils';
+import {dropNode, toggleSelection,
+        deleteNodes, copyNodes, pasteNodes, activate} from '../actions';
 import NodeEditable from './NodeEditable';
 import Component from './BlockComponent';
 import {isErrorFree} from '../store';
@@ -12,6 +12,23 @@ import global from '../global';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
+
+function skipCollapsed(next) {
+  return (node, state) => {
+    const {collapsedList, ast} = state;
+    const collapsedNodeList = collapsedList.map(ast.getNodeById);
+
+    // NOTE(Oak): if this is too slow, consider adding a
+    // next/prevSibling attribute to short circuit navigation
+    return skipWhile(
+      node => !!node && collapsedNodeList.some(
+        collapsed => ast.isAncestor(collapsed.id, node.id)
+      ),
+      next(node),
+      next
+    );
+  };
+}
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -48,6 +65,8 @@ class Node extends Component {
     expandable: PropTypes.bool,
 
     toggleSelection: PropTypes.func.isRequired,
+
+    activate: PropTypes.func.isRequired,
   }
 
   state = {editable: false, value: null}
@@ -58,34 +77,44 @@ class Node extends Component {
 
   handleClick = e => {
     e.stopPropagation(); // prevent ancestors to steal focus
-    e.preventDefault();
-    if (!isErrorFree()) return;
+    e.preventDefault(); // TODO(Oak): really need it?
+    if (!isErrorFree()) return; // TODO(Oak): is this the best way?
 
-    this.props.setFocus(this.props.node.id);
+    this.props.activate(
+      this.props.node.id,
+      false,
+      node => node
+    );
   }
 
   handleKeyDown = e => {
     e.stopPropagation();
-    if (!isErrorFree()) return;
+    if (!isErrorFree()) return; // TODO(Oak): is this the best way?
 
     const {
       node, expandable, isCollapsed,
       uncollapse, collapse, normallyEditable, toggleSelection,
-      uncollapseAll, collapseAll, setFocus, setCursor,
+      uncollapseAll, collapseAll, setCursor,
       handleCopy, handlePaste, handleDelete
     } = this.props;
 
+    const activate = movement => this.props.activate(
+      this.props.node.id,
+      true,
+      movement,
+    );
+
     switch (e.key) {
     case 'ArrowUp':
+      // TODO(Oak): hook the search engine here!
       e.preventDefault();
-      this.props.focusNextNode(node.id, node => {
-        return node.prev;
-      });
+      activate(skipCollapsed(node => node.prev));
       return;
 
     case 'ArrowDown':
+      // TODO(Oak): hook the search engine here!
       e.preventDefault();
-      this.props.focusNextNode(node.id, node => node.next);
+      activate(skipCollapsed(node => node.next));
       return;
 
     case 'ArrowLeft':
@@ -95,12 +124,7 @@ class Node extends Component {
       } else if (expandable && !isCollapsed && !this.isLocked()) {
         collapse(node.id);
       } else {
-        const nextNode = node.parent;
-        if (nextNode) {
-          setFocus(nextNode.id);
-        } else {
-          // play beep
-        }
+        activate(node => node.parent);
       }
       return;
 
@@ -111,12 +135,13 @@ class Node extends Component {
       } else if (expandable && isCollapsed && !this.isLocked()) {
         uncollapse(node.id);
       } else {
-        const nextNode = node.next;
-        if (nextNode && nextNode.level === node.level + 1) {
-          setFocus(nextNode.id);
-        } else {
-          // play beep
-        }
+        activate(node => {
+          const next = node.next;
+          if (next && next.level === node.level + 1) {
+            return next;
+          }
+          return null;
+        });
       }
       return;
 
@@ -142,14 +167,16 @@ class Node extends Component {
 
     case ']':
       e.preventDefault();
-      if (isControl(e)) {
+      if (e.ctrlKey) { // strictly want ctrlKey
+        // TODO: this should go up to the top level block
         setCursor(node.to);
       }
       return;
 
     case '[':
       e.preventDefault();
-      if (isControl(e)) {
+      if (e.ctrlKey) { // strictly want ctrlKey
+        // TODO: this should go up to the top level block
         setCursor(node.from);
       }
       return;
@@ -187,38 +214,6 @@ class Node extends Component {
       }
       return;
     }
-  }
-
-  componentDidMount() {
-    const {node} = this.props;
-    const {ast, focusId} = store.getState();
-    if (this.props.node.element && isErrorFree() && this.props.isFocused) {
-      this.focusSelf(true);
-    }
-  }
-
-  componentDidUpdate() {
-    const {node} = this.props;
-    const {ast, focusId} = store.getState();
-    if (this.props.node.element && isErrorFree() && this.props.isFocused) {
-      this.focusSelf(true);
-    }
-  }
-
-  focusSelf(noRefresh=false) {
-    // NOTE(Oak): the noRefresh parameter is to circumvent
-    // https:bugzilla.mozilla.org/show_bug.cgi?id=1317098
-    const scroll = global.cm.getScrollInfo();
-    let {top, bottom, left, right} = this.props.node.element.getBoundingClientRect();
-    const offset = global.cm.getWrapperElement().getBoundingClientRect();
-    top    += scroll.top  - offset.top;
-    bottom += scroll.top  - offset.top;
-    left   += scroll.left - offset.left;
-    right  += scroll.left - offset.left;
-    global.cm.scrollIntoView({top, bottom, left, right}, 100);
-    this.props.node.element.focus();
-    if (!noRefresh) global.cm.refresh();
-    // TODO: we need refreshing to make focusing right, but where should we put it?
   }
 
   handleDoubleClick = e => {
@@ -275,7 +270,6 @@ class Node extends Component {
 
     const classes = [
       {'blocks-locked': locked},
-      'blocks-node',
       `blocks-${node.type}`
     ];
 
@@ -285,6 +279,7 @@ class Node extends Component {
         <NodeEditable {...passingProps}
                       onDisableEditable={this.handleDisableEditable}
                       extraClasses={classes}
+                      isInsertion={false}
                       node={node}
                       value={this.state.value}
                       onChange={this.handleChange}
@@ -292,7 +287,7 @@ class Node extends Component {
       );
     } else {
         const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
-        classes.push({'blocks-over-target': isOver});
+      classes.push({'blocks-over-target': isOver, 'blocks-node': true});
         let result = (
           <span
             {...props}
@@ -321,14 +316,12 @@ class Node extends Component {
 }
 
 const mapStateToProps = (
-  {focusId, selections, collapsedList, ast},
+  {selections, collapsedList},
   {node}
   // be careful here. Only node's id is accurate. Use getNodeById
   // to access accurate info
 ) => {
   return {
-    isFocused: focusId === ast.getNodeById(node.id).nid,
-    // NOTE(Oak): might consider using immutable.js to speed up performance
     isSelected: selections.includes(node.id),
     isCollapsed: collapsedList.includes(node.id),
   };
@@ -336,8 +329,6 @@ const mapStateToProps = (
 
 const mapDispatchToProps = dispatch => ({
   toggleSelection: id => dispatch(toggleSelection(id)),
-  focusNextNode: (id, next) => dispatch(focusNextNode(id, next)),
-  setFocus: id => dispatch(focusNode(id)),
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   collapseAll: () => dispatch({type: 'COLLAPSE_ALL'}),
@@ -347,6 +338,7 @@ const mapDispatchToProps = dispatch => ({
   setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
   handleCopy: (id, selectionEditor) => dispatch(copyNodes(id, selectionEditor)),
   handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
+  activate: (id, allowMove, movement) => dispatch(activate(id, allowMove, movement)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);

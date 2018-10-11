@@ -1,32 +1,10 @@
-import {skipWhile, poscmp, partition,
+import {say, poscmp, partition,
         copyToClipboard, pasteFromClipboard} from './utils';
 import {commitChanges} from './codeMirror';
 import global from './global';
+import {playSound, WRAP} from './sound';
 
-
-export function focusNextNode(id, next) {
-  return (dispatch, getState) => {
-    const {collapsedList, ast} = getState();
-    const collapsedNodeList = collapsedList.map(ast.getNodeById);
-    // NOTE(Oak): if this is too slow, consider adding a
-    // next/prevSibling attribute to short circuit navigation
-    const node = skipWhile(
-      node => node !== null && collapsedNodeList.some(
-        collapsed => ast.isAncestor(collapsed.id, node.id)
-      ),
-      next(ast.getNodeById(id)),
-      next
-    );
-    if (node) {
-      dispatch({type: 'SET_FOCUS', focusId: node.nid});
-      setTimeout(() => {
-        dispatch(focusSelf());
-      }, 20);
-    } else {
-      // announce beep
-    }
-  };
-}
+let queuedAnnouncement = null;
 
 export function focusNode(id) {
   return (dispatch, getState) => {
@@ -197,5 +175,46 @@ export function focusSelf() {
     const {ast, focusId} = getState();
     const node = ast.getNodeByNId(focusId);
     if (node) node.element.focus();
+  };
+}
+
+export function activate(id, allowMove, movement) {
+  return (dispatch, getState) => {
+    const state = getState();
+    const {ast, focusId, collapsedList} = state;
+    const nodeNow = ast.getNodeById(id);
+    const node = movement(nodeNow, state);
+    if (!node) {
+      playSound(WRAP);
+      return;
+    }
+    if (node.nid === focusId) {
+      say(node.options['aria-label']);
+      return;
+    }
+    // FIXME(Oak): if possible, let's not hard code like this
+    if (['blank', 'literal'].includes(node.type) && !collapsedList.includes(node.id)) {
+      if (queuedAnnouncement) clearTimeout(queuedAnnouncement);
+      queuedAnnouncement = setTimeout(() => {
+        say('Use enter to edit', 1250);
+      });
+    }
+    const scroller = global.cm.getScrollerElement();
+    const wrapper = global.cm.getWrapperElement();
+    scroller.setAttribute('aria-activedescendent', node.element.id);
+
+    if (allowMove) {
+      global.cm.scrollIntoView(node.from);
+      let {top, bottom, left, right} = node.element.getBoundingClientRect(); // get the *actual* bounding rect
+      let offset = wrapper.getBoundingClientRect();
+      let scroll = global.cm.getScrollInfo();
+      top    = top    + scroll.top  - offset.top;
+      bottom = bottom + scroll.top  - offset.top;
+      left   = left   + scroll.left - offset.left;
+      right  = right  + scroll.left - offset.left;
+      global.cm.scrollIntoView({top, bottom, left, right});
+    }
+    node.element.focus();
+    dispatch({type: 'SET_FOCUS', focusId: node.nid});
   };
 }

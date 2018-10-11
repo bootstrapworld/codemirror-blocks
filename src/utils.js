@@ -1,4 +1,5 @@
 import global from './global';
+import {store} from './store';
 
 const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
 
@@ -69,4 +70,11 @@ export function isControl(e) {
   return ISMAC ? e.metaKey : e.ctrlKey;
 }
 
-export function say() {}
+export function say(text, delay=200) {
+  // if (this.muteAnnouncements) return; // TODO(Oak): how to mute?
+  console.log('say:', text);
+  const announcement = document.createTextNode(text + ', ');
+  const announcer = store.getState().announcer;
+  setTimeout(() => announcer.appendChild(announcement), delay);
+  setTimeout(() => announcer.removeChild(announcement), delay + 300);
+}
