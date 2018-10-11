@@ -14,7 +14,7 @@ import NodeEditable from '../components/NodeEditable';
 import {focusSelf} from '../actions';
 // import {poscmp} from '../utils';
 
-import Expression         from '../components/Expression';
+import FunctionApp         from '../components/FunctionApp';
 import IfExpression       from '../components/IfExpression';
 import LambdaExpression   from '../components/LambdaExpression';
 import CondExpression     from '../components/CondExpression';
@@ -31,7 +31,7 @@ import Sequence           from '../components/Sequence';
 
 const nodeRenderers = {
   unknown: Unknown,
-  expression: Expression,
+  functionApp: FunctionApp,
   functionDefinition: FunctionDefinition,
   lambdaExpression: LambdaExpression,
   variableDefinition: VariableDefinition,

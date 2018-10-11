@@ -4,7 +4,7 @@ import Component from './BlockComponent';
 
 import {IdentifierList as ASTExpressionNode} from '../ast';
 import Node from './Node';
-import DropTarget from './DropTarget';
+import Args from './Args';
 
 export default class IdentifierList extends Component {
   static propTypes = {
@@ -17,16 +17,10 @@ export default class IdentifierList extends Component {
 
   render() {
     const {node, helpers, lockedTypes} = this.props;
-    const idNodes = [];
-    node.ids.forEach((id, index) => {
-      idNodes.push(helpers.renderNodeForReact(id, 'node-'+index));
-      idNodes.push(<DropTarget location={id.to} key={'drop-'+index} />);
-    });
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-args">
-          <DropTarget location={node.ids[0].from} />
-          {idNodes}
+          <Args helpers={helpers} location={node.from}>{node.ids}</Args>
         </span>
       </Node>
     );

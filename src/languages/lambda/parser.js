@@ -1,12 +1,10 @@
-import {
-  AST
-} from '../../ast';
+import {AST} from '../../ast';
 import {
   Literal,
   FunctionApp,
   VariableDefinition,
   FunctionDefinition
-} from '../../nodes';
+} from '../../ast';
 
 import {
   Prog,

@@ -2,13 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Component from './BlockComponent';
 
-import {StructDefinition as ASTStructDefinitionNode} from '../ast';
+import {FunctionApp as ASTFunctionApp} from '../ast';
 import Node from './Node';
 import Args from './Args';
 
-export default class StructDefinition extends Component {
+export default class FunctionApp extends Component {
   static propTypes = {
-    node: PropTypes.instanceOf(ASTStructDefinitionNode).isRequired,
+    node: PropTypes.instanceOf(ASTFunctionApp).isRequired,
     helpers: PropTypes.shape({
       renderNodeForReact: PropTypes.func.isRequired,
     }).isRequired,
@@ -20,10 +20,11 @@ export default class StructDefinition extends Component {
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
-          define-struct
-          <Args helpers={helpers}>{[node.name]}</Args>
+          <Args helpers={helpers}>{[node.func]}</Args>
         </span>
-        {helpers.renderNodeForReact(node.fields)}
+        <span className="blocks-args">
+          <Args helpers={helpers} location={node.func.to}>{node.args}</Args>
+        </span>
       </Node>
     );
   }

@@ -21,8 +21,7 @@ export default class Literal extends Component {
             normallyEditable={true}
             expandable={false}
             helpers={helpers}>
-        <span className={`blocks-literal-symbol`}>
-        </span>
+        <span className="blocks-literal-symbol" />
       </Node>
     );
   }
