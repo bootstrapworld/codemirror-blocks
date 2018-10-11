@@ -13,6 +13,7 @@ import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
 
+
 function skipCollapsed(next) {
   return (node, state) => {
     const {collapsedList, ast} = state;
@@ -159,6 +160,11 @@ class Node extends Component {
       } // else beep?
       return;
 
+    case 'Escape':
+      e.preventDefault();
+      this.props.clearSelections();
+      return;
+
     case 'Delete':
     case 'Backspace':
       e.preventDefault();
@@ -264,7 +270,7 @@ class Node extends Component {
       'aria-expanded'   : (expandable && !locked) ? !isCollapsed : undefined,
       'aria-setsize'    : node["aria-setsize"],
       'aria-posinset'   : node["aria-posinset"],
-      'aria-level'      : node["aria-level"],
+      'aria-level'      : node.level,
       'aria-multiselectable' : "true"
     };
 
@@ -286,7 +292,7 @@ class Node extends Component {
                       contentEditableProps={props} />
       );
     } else {
-        const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
+      const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
         let result = (
           <span
@@ -329,6 +335,7 @@ const mapStateToProps = (
 
 const mapDispatchToProps = dispatch => ({
   toggleSelection: id => dispatch(toggleSelection(id)),
+  clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []}),
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   collapseAll: () => dispatch({type: 'COLLAPSE_ALL'}),

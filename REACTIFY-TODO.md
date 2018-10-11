@@ -9,6 +9,13 @@ Some stuff can be in global. E.g., the clipboard buffer. Totally fine to share i
 
 4. In `activateNode`, we completely do nothing (except reading aria-label). Is this OK?
 
-5. We change the spec regarding selections: no need to hold ctrl anymore. Is this OK?
+---------
 
-6. There's a bug: if we change `(a b)` to `( a b )`, then things become messy.
+1. clean up focusSelf
+2. There's a bug: if we change `(a b)` to `( a b )`, then things become messy.
+3. Search 
+4. Toolbar
+5. Automated testing
+
+----------
+

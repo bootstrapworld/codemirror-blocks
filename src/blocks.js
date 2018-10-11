@@ -895,14 +895,14 @@ export default class CodeMirrorBlocks {
     else if (keyName == "\\") {
       var parents = [node], node = activeNode;
       while(node = this.ast.getNodeParent(node)){
-        parents.push(node.options['aria-label'] + ", at level "+node["aria-level"]);
+        parents.push(node.options['aria-label'] + ", at level "+node.level);
       }
       if(parents.length > 1) this.say(parents.join(", inside "));
       else playSound(BEEP);
     }
     // Have the subtree read itself intelligently
     else if (keyName == "Shift-\\") {
-      this.say(activeNode.toDescription(activeNode['aria-level']));
+      this.say(activeNode.toDescription(activeNode.level));
     }
     // Go to the first node in the tree (depth-first)
     else if (keyName == "Home" && activeNode) {

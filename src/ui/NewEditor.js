@@ -182,6 +182,7 @@ class Editor extends Component {
     if (!e.target.classList.contains('CodeMirror-line')) {
       e.preventDefault();
     }
+    // TODO: actual insertion onto CM
   }
 
   handleKeyDown = (ed, e) => {
@@ -220,7 +221,7 @@ class Editor extends Component {
     wrapper.appendChild(annoucements);
 
     ed.on('changes', (cm, changes) => {
-      if (changes.some(change => change.origin === 'undo')) {
+      if (changes.some(change => change.origin === 'undo' || change.origin === 'redo')) {
         const newAST = global.parser.parse(cm.getValue());
         const {ast: oldAST} = store.getState();
         if (oldAST.hash !== newAST.hash) {

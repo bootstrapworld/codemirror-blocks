@@ -6,6 +6,7 @@ import {playSound, WRAP} from './sound';
 
 let queuedAnnouncement = null;
 
+// TODO(Oak): do we need this?
 export function focusNode(id) {
   return (dispatch, getState) => {
     const {ast} = getState();
@@ -61,7 +62,7 @@ export function deleteNodes() {
     // the next deletion still has a valid pos
     nodeSelections.sort((a, b) => poscmp(b.from, a.from));
     if (nodeSelections.length === 0) {
-      // TODO(Oak)
+      // TODO(Oak): say something
     } else {
       commitChanges(
         cm => () => {
@@ -74,7 +75,7 @@ export function deleteNodes() {
       );
       // since we sort in descending order, this is the last one in the array
       const firstNode = nodeSelections.pop();
-      dispatch({type: 'SET_FOCUS', focusId: firstNode.nid});
+      dispatch({type: 'SET_FOCUS', focusId: firstNode.nid}); // FIXME: change to activate
       dispatch({type: 'SET_SELECTIONS', selections: []});
     }
   };
@@ -133,13 +134,16 @@ export function pasteNodes(id, isBackward) {
     const {ast, selections} = getState();
     const node = ast.getNodeById(id);
     let from = null, to = null, textTransform = x => x;
+    let focusTarget = null;
     if (selections.includes(id)) {
       // NOTE(Oak): overwrite in this case
       from = node.from;
       to = node.to;
+      focusTarget = 'self';
     } else {
       // NOTE(Oak): otherwise, we do not overwrite
       const pos = isBackward ? node.from : node.to;
+      focusTarget = isBackward ? 'back' : 'next';
       from = pos;
       to = pos;
       if (global.options.willInsertNode) {
@@ -164,17 +168,27 @@ export function pasteNodes(id, isBackward) {
       );
       // NOTE(Oak): always clear selections. Should this be a callback instead?
       dispatch({type: 'SET_SELECTIONS', selections: []});
-      // TODO(Oak): set focus for the new node
+      if (focusTarget === 'self') {
+        dispatch(focusSelf());
+      }
     });
 
   };
 }
 
+// TODO(Oak): we should change this
 export function focusSelf() {
   return (_, getState) => {
     const {ast, focusId} = getState();
     const node = ast.getNodeByNId(focusId);
     if (node) node.element.focus();
+  };
+}
+
+export function activateByNId(nid, allowMove, movement) {
+  return (dispatch, getState) => {
+    const {ast} = getState();
+    dispatch(activate(ast.getNodeByNId(nid).id, allowMove, movement));
   };
 }
 

@@ -120,7 +120,6 @@ export class AST {
         node.level = level;
         node["aria-setsize"]  = nodes.length;
         node["aria-posinset"] = i + 1;
-        node["aria-level"]    = 1 + (parent ? parent.path.split(",").length : 0);
         node.nid = nid++;
         if (lastNode) {
           node.prev = lastNode;
@@ -133,7 +132,7 @@ export class AST {
         loop([...node.children()], node, level + 1);
       });
     };
-    loop(this.rootNodes, null, 0);
+    loop(this.rootNodes, null, 1);
   }
 
   // patch : Parser, String, [ChangeObjs] -> AST
@@ -474,7 +473,7 @@ export class Unknown extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level']- level) >= descDepth) return this.options['aria-label'];
+    if((this.level - level) >= descDepth) return this.options['aria-label'];
     return `an unknown expression with ${pluralize("children", this.elts)} `+ 
       this.elts.map((e, i, elts)  => (elts.length>1? (i+1) + ": " : "")+ e.toDescription(level)).join(", ");
   }
@@ -494,12 +493,12 @@ export class FunctionApp extends ASTNode {
 
   toDescription(level){
     // if it's the top level, enumerate the args
-    if((this['aria-level'] - level) == 0) { 
+    if((this.level  - level) == 0) {
       return `applying the function ${this.func.toDescription()} to ${pluralize("argument", this.args)} `+
       this.args.map((a, i, args)  => (args.length>1? (i+1) + ": " : "")+ a.toDescription(level)).join(", ");
     }
     // if we've bottomed out, use the aria label
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     // if we're in between, use "f of A, B, C" format
     else return `${this.func.toDescription()} of `+ this.args.map(a  => a.toDescription(level)).join(", ");
       
@@ -519,7 +518,7 @@ export class IdentifierList extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return enumerateList(this.ids, level);
   }
 
@@ -537,7 +536,7 @@ export class StructDefinition extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `define ${this.name.toDescription(level)} to be a structure with
             ${this.fields.toDescription(level)}`;
   }
@@ -556,7 +555,7 @@ export class VariableDefinition extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:";
     return `define ${this.name} to be ${insert} ${this.body.toDescription(level)}`;
   }
@@ -575,7 +574,7 @@ export class LambdaExpression extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `an anonymous function of ${pluralize("argument", this.args.ids)}: 
             ${this.args.toDescription(level)}, with body:
             ${this.body.toDescription(level)}`;
@@ -596,7 +595,7 @@ export class FunctionDefinition extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `define ${this.name} to be a function of 
             ${this.params.toDescription(level)}, with body:
             ${this.body.toDescription(level)}`;
@@ -616,7 +615,7 @@ export class CondClause extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `condition: if ${this.testExpr.toDescription(level)}, then, ${this.thenExprs.map(te => te.toDescription(level))}`;
   }
 
@@ -633,7 +632,7 @@ export class CondExpression extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `a conditional expression with ${pluralize("condition", this.clauses)}: 
             ${this.clauses.map(c => c.toDescription(level))}`;
   }
@@ -654,7 +653,7 @@ export class IfExpression extends ASTNode {
   }
 
   toDescription(level){
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `an if expression: if ${this.testExpr.toDescription(level)}, then ${this.thenExpr.toDescription(level)} `+
             `else ${this.elseExpr.toDescription(level)}`;
   }
@@ -711,7 +710,7 @@ export class Sequence extends ASTNode {
   }
 
   toDescription(level) {
-    if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `a sequence containing ${enumerateList(this.exprs, level)}`;
   }
 
