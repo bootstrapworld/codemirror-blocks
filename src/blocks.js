@@ -834,44 +834,8 @@ export default class CodeMirrorBlocks {
       else { that.mouseUsed = true; that.cm.focus(); that.cm.setCursor(cursor); }
     }
 
-    // Enter should toggle editing on editable nodes, or toggle expanding
-    if (keyName == "Enter" && activeNode) {
-      if(this.isNodeEditable(activeNode)){
-        this.makeQuarantineAt(false, activeNode);
-      } else {
-        that.maybeChangeNodeExpanded(activeNode);
-        that.refreshCM(cur);
-      }
-    }
-    // Ctrl/Cmd-Enter should force-allow editing on ANY node
-    else if (keyName == CTRLKEY+"-Enter" && activeNode) {
-      this.makeQuarantineAt(false, activeNode);
-    }
-    // Space clears selection and selects active node
-    else if (keyName == "Space" && activeNode) {
-      if(this.selectedNodes.has(activeNode)) {
-        this.clearSelection();
-      } else {
-        this.clearSelection();
-        this.addToSelection(activeNode);
-      }
-    }
-    // Mod-Space toggles node selection, preserving earlier selection
-    else if (keyName == (MODKEY+"-Space") && activeNode) {
-      if(this.selectedNodes.has(activeNode)) {
-        this.removeFromSelection(activeNode);
-      } else {
-        this.addToSelection(activeNode);
-      }
-    }
-    // Backspace should delete selected nodes
-    else if (["Delete", "Backspace", CTRLKEY+"-Delete", CTRLKEY+"-Backspace"].includes(keyName)
-              && activeNode) {
-      if(this.selectedNodes.size == 0) { playSound(BEEP); }
-      else { this.deleteSelectedNodes(); }
-    }
     // Ctrl-[ moves the cursor to previous whitespace or cursor position
-    else if (keyName === "Ctrl-[" && activeNode) {
+    if (keyName === "Ctrl-[" && activeNode) {
       moveCursorAdjacent(activeNode.el.previousElementSibling, activeNode.from);
     }
     // Ctrl-] moves the cursor to next whitespace or cursor position,
@@ -885,11 +849,6 @@ export default class CodeMirrorBlocks {
       this.focusPath = path.join(','); // put focus on new sibling
       this.commitChange(() => this.cm.replaceRange(event.key+closeDelims[event.key], activeNode.to),
         "inserted empty expression");
-    }
-    // shift focus to buffer for the *real* paste event to fire
-    // then replace or insert, then reset the buffer
-    else if ([CTRLKEY+"-V", "Shift-"+CTRLKEY+"-V"].includes(keyName) && activeNode) {
-      return this.handlePaste(event);
     }
     // speak parents: "<label>, at level N, inside <label>, at level N-1...""
     else if (keyName == "\\") {
@@ -917,40 +876,10 @@ export default class CodeMirrorBlocks {
       );
       this.activateNode(lastVisibleNode, event);
     }
-    // Shift-Left and Shift-Right toggle global expansion
-    else if (keyName === "Shift-Left" && activeNode) { that.changeAllExpanded(false); }
-    else if (keyName === "Shift-Right" && activeNode){ that.changeAllExpanded(true ); }
     // < jumps to the root containing the activeNode
     else if (keyName == "Shift-," && activeNode) {
       let rootNode = this.ast.getNodeByPath(activeNode.path.split(",")[0]);
       this.activateNode(rootNode, event);
-    }
-    // Collapse block if possible, otherwise focus on parent
-    else if (event.keyCode == LEFT && activeNode) {
-      let parent = this.ast.getNodeParent(activeNode);
-      return (that.maybeChangeNodeExpanded(activeNode, false) && that.refreshCM(cur))
-          || (parent && this.activateNode(parent, event))
-          || playSound(BEEP);
-    }
-    // Expand block if possible, otherwise descend to firstChild
-    else if (event.keyCode == RIGHT && activeNode) {
-      let firstChild = this.isNodeExpandable(activeNode)
-        && this.ast.getNodeFirstChild(activeNode);
-      return (that.maybeChangeNodeExpanded(activeNode, true) && that.refreshCM(cur))
-          || (firstChild && this.activateNode(firstChild, event))
-          || playSound(BEEP);
-    }
-    // Go to next visible node
-    else if (event.keyCode == DOWN) {
-      if (!this.switchNodes(this.ast.getNodeAfter, this.ast.getNodeAfterCur, event)) {
-        return;
-      }
-    }
-    // Go to previous visible node
-    else if (event.keyCode == UP) {
-      if (!this.switchNodes(this.ast.getNodeBefore, this.ast.getNodeBeforeCur, event)) {
-        return;
-      }
     } else {
       // Announce undo and redo (or beep if there's nothing)
       if (keyName == CTRLKEY+"-Z" && activeNode) {

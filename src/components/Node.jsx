@@ -3,8 +3,8 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {isControl, say, skipWhile} from '../utils';
-import {dropNode, toggleSelection,
-        deleteNodes, copyNodes, pasteNodes, activate} from '../actions';
+import {dropNode, toggleSelection, deleteNodes, copyNodes, 
+  pasteNodes, activate, activateByNId} from '../actions';
 import NodeEditable from './NodeEditable';
 import Component from './BlockComponent';
 import {isErrorFree} from '../store';
@@ -68,6 +68,7 @@ class Node extends Component {
     toggleSelection: PropTypes.func.isRequired,
 
     activate: PropTypes.func.isRequired,
+    activateByNId: PropTypes.func.isRequired,
   }
 
   state = {editable: false, value: null}
@@ -104,7 +105,11 @@ class Node extends Component {
       true,
       movement,
     );
-
+    const activateByNId = movement => this.props.activateByNId(
+      this.props.node.id,
+      true,
+      movement,
+    );
     switch (e.key) {
     case 'ArrowUp':
       // TODO(Oak): hook the search engine here!
@@ -218,6 +223,22 @@ class Node extends Component {
         });
         handleDelete();
       }
+      return;
+
+    case 'Home':
+      e.preventDefault();
+      this.props.activateByNId(0, true, node => node);
+      return;
+
+    case '<':
+      e.preventDefault();
+      activate(node => {
+        let next = node;
+        while (next && next.parent) {
+          next = next.parent;
+        }
+        return next;
+      });
       return;
     }
   }
@@ -346,6 +367,7 @@ const mapDispatchToProps = dispatch => ({
   handleCopy: (id, selectionEditor) => dispatch(copyNodes(id, selectionEditor)),
   handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
   activate: (id, allowMove, movement) => dispatch(activate(id, allowMove, movement)),
+  activateByNId: (nid, allowMove, movement) => dispatch(activateByNId(nid, allowMove, movement)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);
