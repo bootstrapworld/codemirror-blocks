@@ -186,9 +186,18 @@ class Editor extends Component {
   }
 
   handleKeyDown = (ed, e) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
+    switch (e.key) {
+    case 'ArrowDown':
       // TODO(Oak)
+      e.preventDefault();
+      return;
+    case 'Home':
+      e.preventDefault();
+      let {focusId} = store.getState();
+      if(focusId == -1) { // if it's not -1, it'll be handled by the behavior in Node.jsx
+        store.dispatch({type: 'SET_CURSOR', cur: {line:0, ch: 0}});
+      }
+      return;
     }
   }
 
