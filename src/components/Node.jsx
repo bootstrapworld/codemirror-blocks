@@ -258,7 +258,7 @@ class Node extends Component {
       if(parents.length > 1) say(parents.join(", inside "));
       else playSound(BEEP);
       return;
-
+    // "read the first set of children"
     case '|':
       e.preventDefault();
       say(node.toDescription(node.level));
