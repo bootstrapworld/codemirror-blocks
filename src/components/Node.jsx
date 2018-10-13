@@ -12,6 +12,7 @@ import global from '../global';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
+import {playSound, BEEP} from '../sound';
 
 
 function skipCollapsed(next) {
@@ -110,6 +111,7 @@ class Node extends Component {
       true,
       movement,
     );
+    console.log(e.key);
     switch (e.key) {
     case 'ArrowUp':
       // TODO(Oak): hook the search engine here!
@@ -122,25 +124,27 @@ class Node extends Component {
       e.preventDefault();
       activate(skipCollapsed(node => node.next));
       return;
-
+    // collapse all (shift), collapse current (if collapsable), select parent (if exists)
     case 'ArrowLeft':
       e.preventDefault();
       if (e.shiftKey) {
         collapseAll();
       } else if (expandable && !isCollapsed && !this.isLocked()) {
         collapse(node.id);
-      } else {
+      } else if (node.parent) {
         activate(node => node.parent);
+      } else { 
+        playSound(BEEP); 
       }
       return;
-
+    // expand all (shift), expand current (if expandable), select first child (if expanded)
     case 'ArrowRight':
       e.preventDefault();
       if (e.shiftKey) {
         uncollapseAll();
       } else if (expandable && isCollapsed && !this.isLocked()) {
         uncollapse(node.id);
-      } else {
+      } else if (node.next && node.next.parent === node) {
         activate(node => {
           const next = node.next;
           if (next && next.level === node.level + 1) {
@@ -148,34 +152,38 @@ class Node extends Component {
           }
           return null;
         });
+      } else {
+        playSound(BEEP);
       }
       return;
-
+    // toggle selection
     case ' ':
       e.preventDefault();
       toggleSelection(node.id);
       return;
-
+    // edit if normally editable, otherwise toggle collapsed state
     case 'Enter':
       e.preventDefault();
       if (normallyEditable || isControl(e)) {
         this.handleMakeEditable(e);
       } else if (expandable && !this.isLocked()) {
         (isCollapsed ? uncollapse : collapse)(node.id);
-      } // else beep?
+      } else {
+        playSound(BEEP);
+      }
       return;
-
+    // clear selection
     case 'Escape':
       e.preventDefault();
       this.props.clearSelections();
       return;
-
+    // delete seleted nodes
     case 'Delete':
     case 'Backspace':
       e.preventDefault();
       handleDelete();
       return;
-
+    // insert-right
     case ']':
       e.preventDefault();
       if (e.ctrlKey) { // strictly want ctrlKey
@@ -183,7 +191,7 @@ class Node extends Component {
         setCursor(node.to);
       }
       return;
-
+    // insert-left
     case '[':
       e.preventDefault();
       if (e.ctrlKey) { // strictly want ctrlKey
@@ -191,7 +199,7 @@ class Node extends Component {
         setCursor(node.from);
       }
       return;
-
+    // copy
     case 'c':
       e.preventDefault();
       if (isControl(e)) {
@@ -205,13 +213,13 @@ class Node extends Component {
         });
       }
       return;
-
+    // paste
     case 'v':
       if (isControl(e)) {
         handlePaste(node.id, e.shiftKey);
       }
       return;
-
+    // cut
     case 'x':
       e.preventDefault();
       if (isControl(e)) {
@@ -224,12 +232,12 @@ class Node extends Component {
         handleDelete();
       }
       return;
-
+    // go to the very first node in the AST
     case 'Home':
       e.preventDefault();
       this.props.activateByNId(0, true, node => node);
       return;
-
+    // "jump to the root of the active node"
     case '<':
       e.preventDefault();
       activate(node => {
@@ -239,6 +247,21 @@ class Node extends Component {
         }
         return next;
       });
+      return;
+    // "read all the ancestors"
+    case '\\':
+      e.preventDefault();
+      let parents = [node], next = node;
+      while(next = next.parent) {
+        parents.push(next.options['aria-label'] + ", at level "+next.level);
+      }
+      if(parents.length > 1) say(parents.join(", inside "));
+      else playSound(BEEP);
+      return;
+
+    case '|':
+      e.preventDefault();
+      say(node.toDescription(node.level));
       return;
     }
   }

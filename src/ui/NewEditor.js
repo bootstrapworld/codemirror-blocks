@@ -162,6 +162,7 @@ class Editor extends Component {
     setAST: PropTypes.func.isRequired,
     setAnnouncer: PropTypes.func.isRequired,
     clearFocus: PropTypes.func.isRequired,
+    focusId : PropTypes.number.isRequired,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -191,11 +192,12 @@ class Editor extends Component {
       // TODO(Oak)
       e.preventDefault();
       return;
+    // NOTE: this changes the semantics of normal Home button behavior from what's normal.
+    // If users complain, we should just delete this entire case
     case 'Home':
       e.preventDefault();
-      let {focusId} = store.getState();
-      if(focusId == -1) { // if it's not -1, it'll be handled by the behavior in Node.jsx
-        store.dispatch({type: 'SET_CURSOR', cur: {line:0, ch: 0}});
+      if(this.props.focusId == -1) { // if it's not -1, it'll be handled by the behavior in Node.jsx
+        store.dispatch({type: 'SET_CURSOR', cur: {line: 0, ch: 0}});
       }
       return;
     }
@@ -324,8 +326,8 @@ class Editor extends Component {
   }
 }
 
-const mapStateToProps = ({ast, cur, quarantine}) => ({
-  ast, cur, hasQuarantine : !!quarantine
+const mapStateToProps = ({ast, cur, quarantine, focusId}) => ({
+  ast, cur, hasQuarantine : !!quarantine, focusId
 });
 const mapDispatchToProps = dispatch => ({
   setAST: ast => dispatch({type: 'SET_AST', ast}),

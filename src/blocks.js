@@ -850,23 +850,6 @@ export default class CodeMirrorBlocks {
       this.commitChange(() => this.cm.replaceRange(event.key+closeDelims[event.key], activeNode.to),
         "inserted empty expression");
     }
-    // speak parents: "<label>, at level N, inside <label>, at level N-1...""
-    else if (keyName == "\\") {
-      var parents = [node], node = activeNode;
-      while(node = this.ast.getNodeParent(node)){
-        parents.push(node.options['aria-label'] + ", at level "+node.level);
-      }
-      if(parents.length > 1) this.say(parents.join(", inside "));
-      else playSound(BEEP);
-    }
-    // Have the subtree read itself intelligently
-    else if (keyName == "Shift-\\") {
-      this.say(activeNode.toDescription(activeNode.level));
-    }
-    // Go to the first node in the tree (depth-first)
-    else if (keyName == "Home" && activeNode) {
-      this.activateNode(this.ast.rootNodes[0], event);
-    }
     // Go to the last visible node in the tree (depth-first)
     else if (keyName == "End" && activeNode) {
       if(this.ast.rootNodes.length == 0) return; // no-op for empty trees
@@ -875,29 +858,7 @@ export default class CodeMirrorBlocks {
         this.ast.getNodeParent, that.isNodeHidden, lastNode, true
       );
       this.activateNode(lastVisibleNode, event);
-    }
-    // < jumps to the root containing the activeNode
-    else if (keyName == "Shift-," && activeNode) {
-      let rootNode = this.ast.getNodeByPath(activeNode.path.split(",")[0]);
-      this.activateNode(rootNode, event);
     } else {
-      // Announce undo and redo (or beep if there's nothing)
-      if (keyName == CTRLKEY+"-Z" && activeNode) {
-        if(this.focusHistory.done.length > 0) {
-          this.say("undo " + this.focusHistory.done[0].announcement);
-          this.focusHistory.undone.unshift(this.focusHistory.done.shift());
-          this.focusPath = this.focusHistory.undone[0].path;
-        }
-        else { playSound(BEEP); }
-      }
-      if ((ISMAC && keyName=="Shift-Cmd-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) {
-        if(this.focusHistory.undone.length > 0) {
-          this.say("redo " + this.focusHistory.undone[0].announcement);
-          this.focusHistory.done.unshift(this.focusHistory.undone.shift());
-          this.focusPath = this.focusHistory.done[0].path;
-        }
-        else { playSound(BEEP); }
-      }
       let command = this.keyMap[keyName];
       if (typeof command == "string") {
         this.cm.execCommand(command);
