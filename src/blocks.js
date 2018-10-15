@@ -849,15 +849,6 @@ export default class CodeMirrorBlocks {
       this.focusPath = path.join(','); // put focus on new sibling
       this.commitChange(() => this.cm.replaceRange(event.key+closeDelims[event.key], activeNode.to),
         "inserted empty expression");
-    }
-    // Go to the last visible node in the tree (depth-first)
-    else if (keyName == "End" && activeNode) {
-      if(this.ast.rootNodes.length == 0) return; // no-op for empty trees
-      let lastNode = this.ast.getNodeBeforeCur(this.ast.reverseRootNodes[0].to);
-      let lastVisibleNode = that.ast.getNextMatchingNode(
-        this.ast.getNodeParent, that.isNodeHidden, lastNode, true
-      );
-      this.activateNode(lastVisibleNode, event);
     } else {
       let command = this.keyMap[keyName];
       if (typeof command == "string") {

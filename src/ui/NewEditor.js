@@ -200,6 +200,15 @@ class Editor extends Component {
         store.dispatch({type: 'SET_CURSOR', cur: {line: 0, ch: 0}});
       }
       return;
+    // NOTE: this changes the semantics of normal End button behavior from what's normal.
+    // If users complain, we should just delete this entire case
+    case 'End':
+      e.preventDefault();
+      if(this.props.focusId == -1) { // if it's not -1, it'll be handled by the behavior in Node.jsx
+        const idx = global.cm.lastLine(), text = global.cm.getLine(idx);
+        store.dispatch({type: 'SET_CURSOR', cur: {line: idx, ch: text.length}});
+      }
+      return;
     }
   }
 

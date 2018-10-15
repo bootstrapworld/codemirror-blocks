@@ -32,6 +32,20 @@ function skipCollapsed(next) {
   };
 }
 
+function getLastVisibleNode() {
+  return (node, state) => {
+    const {collapsedList, ast} = state;
+    const collapsedNodeList = collapsedList.map(ast.getNodeById);
+    const lastNode = ast.getNodeBeforeCur(ast.reverseRootNodes[0].to);
+    return skipWhile(
+      node => !!node && node.parent && collapsedNodeList.some(
+        collapsed => collapsed.id === node.parent.id),
+      lastNode,
+      n => n.parent
+    );
+  }
+}
+
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
@@ -236,6 +250,10 @@ class Node extends Component {
     case 'Home':
       e.preventDefault();
       this.props.activateByNId(0, true, node => node);
+      return;
+    // go to last _visible_ node in the AST
+    case 'End':
+      activate(getLastVisibleNode());
       return;
     // "jump to the root of the active node"
     case '<':
