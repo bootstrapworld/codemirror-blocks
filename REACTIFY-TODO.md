@@ -15,7 +15,8 @@ Some stuff can be in global. E.g., the clipboard buffer. Totally fine to share i
 2. There's a bug: if we change `(a b)` to `( a b )`, then things become messy.
 3. Search 
 4. Toolbar
-5. Automated testing
+5. See merge blockers: https://github.com/bootstrapworld/codemirror-blocks/issues/172
+6. Automated testing
 
 ----------
 
