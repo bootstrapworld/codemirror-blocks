@@ -125,7 +125,12 @@ class Node extends Component {
       true,
       movement,
     );
-    console.log(e.key);
+    const findRoot = node => {
+      let next = node;
+      while (next && next.parent) { next = next.parent; }
+      return next;
+    };
+
     switch (e.key) {
     case 'ArrowUp':
       // TODO(Oak): hook the search engine here!
@@ -141,8 +146,9 @@ class Node extends Component {
     // collapse all (shift), collapse current (if collapsable), select parent (if exists)
     case 'ArrowLeft':
       e.preventDefault();
-      if (e.shiftKey) {
+      if (e.shiftKey) { // activate the root
         collapseAll();
+        activate(node => findRoot(node));
       } else if (expandable && !isCollapsed && !this.isLocked()) {
         collapse(node.id);
       } else if (node.parent) {
@@ -258,13 +264,7 @@ class Node extends Component {
     // "jump to the root of the active node"
     case '<':
       e.preventDefault();
-      activate(node => {
-        let next = node;
-        while (next && next.parent) {
-          next = next.parent;
-        }
-        return next;
-      });
+      activate(node => findRoot(node));
       return;
     // "read all the ancestors"
     case '\\':
