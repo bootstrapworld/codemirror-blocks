@@ -228,7 +228,7 @@ export function activate(id, allowMove, movement) {
       right  = right  + scroll.left - offset.left;
       global.cm.scrollIntoView({top, bottom, left, right});
     }
-    node.element.focus();
+    setTimeout(() => node.element.focus(), 100);
     dispatch({type: 'SET_FOCUS', focusId: node.nid});
   };
 }

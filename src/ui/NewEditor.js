@@ -240,6 +240,7 @@ class Editor extends Component {
     annoucements.setAttribute('aria-live', 'assertive');
     wrapper.appendChild(annoucements);
 
+    // NOTE(Oak): don't we need to *unregister* this when the component unmounts?
     ed.on('changes', (cm, changes) => {
       if (changes.some(change => change.origin === 'undo' || change.origin === 'redo')) {
         const newAST = global.parser.parse(cm.getValue());
@@ -252,6 +253,8 @@ class Editor extends Component {
 
     global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
+    // if we have nodes, default to the first one
+    if(ast.rootNodes.length > 0) { store.dispatch({type: 'SET_FOCUS', focusId: 0}); }
     this.props.setAST(ast);
     this.props.setAnnouncer(annoucements);
 
