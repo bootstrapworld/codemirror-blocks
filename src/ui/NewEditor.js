@@ -10,7 +10,7 @@ import global from '../global';
 import patch from '../ast-patch';
 import CMBContext from '../components/Context';
 import NodeEditable from '../components/NodeEditable';
-import {focusSelf} from '../actions';
+import {focusSelf, activateByNId} from '../actions';
 import {say} from '../utils';
 import FakeCursorManager from './FakeCursorManager';
 
@@ -160,9 +160,11 @@ class Editor extends Component {
     language: PropTypes.string.isRequired,
     parser: PropTypes.object.isRequired,
     setAST: PropTypes.func.isRequired,
+    setCursor: PropTypes.func.isRequired,
+    setQuarantine: PropTypes.func.isRequired,
     setAnnouncer: PropTypes.func.isRequired,
     clearFocus: PropTypes.func.isRequired,
-    focusId : PropTypes.number.isRequired,
+    activateByNId: PropTypes.func.isRequired,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -187,28 +189,29 @@ class Editor extends Component {
   }
 
   handleKeyDown = (ed, e) => {
+    // NOTE: if there's a focused node, this handler will not be activated
+
     switch (e.key) {
     case 'ArrowDown':
       // TODO(Oak)
       e.preventDefault();
       return;
-    // NOTE: this changes the semantics of normal Home button behavior from what's normal.
-    // If users complain, we should just delete this entire case
+
     case 'Home':
+      // NOTE: this changes the semantics of normal Home button behavior from what's normal.
+      // If users complain, we should just delete this entire case
       e.preventDefault();
-      if(this.props.focusId == -1) { // if it's not -1, it'll be handled by the behavior in Node.jsx
-        store.dispatch({type: 'SET_CURSOR', cur: {line: 0, ch: 0}});
-      }
+      this.props.setCursor(null, {line: 0, ch: 0});
       return;
-    // NOTE: this changes the semantics of normal End button behavior from what's normal.
-    // If users complain, we should just delete this entire case
-    case 'End':
+
+    case 'End': {
+      // NOTE: this changes the semantics of normal End button behavior from what's normal.
+      // If users complain, we should just delete this entire case
       e.preventDefault();
-      if(this.props.focusId == -1) { // if it's not -1, it'll be handled by the behavior in Node.jsx
-        const idx = global.cm.lastLine(), text = global.cm.getLine(idx);
-        store.dispatch({type: 'SET_CURSOR', cur: {line: idx, ch: text.length}});
-      }
+      const idx = global.cm.lastLine(), text = global.cm.getLine(idx);
+      this.props.setCursor(null, {line: idx, ch: text.length});
       return;
+    }
     }
   }
 
@@ -227,6 +230,14 @@ class Editor extends Component {
     this.props.setQuarantine(cur, text);
   }
 
+  editorChange = (cm, changes) => {
+    if (changes.some(change => change.origin === 'undo' || change.origin === 'redo')) {
+      const newAST = global.parser.parse(cm.getValue());
+      const {ast: oldAST} = store.getState();
+      this.props.setAST(patch(oldAST, newAST));
+    }
+  }
+
   handleEditorDidMount = ed => {
     const wrapper = ed.getWrapperElement();
     wrapper.setAttribute('role', 'tree');
@@ -240,25 +251,27 @@ class Editor extends Component {
     annoucements.setAttribute('aria-live', 'assertive');
     wrapper.appendChild(annoucements);
 
-    // NOTE(Oak): don't we need to *unregister* this when the component unmounts?
-    ed.on('changes', (cm, changes) => {
-      if (changes.some(change => change.origin === 'undo' || change.origin === 'redo')) {
-        const newAST = global.parser.parse(cm.getValue());
-        const {ast: oldAST} = store.getState();
-        if (oldAST.hash !== newAST.hash) {
-          store.dispatch({type: 'SET_AST', ast: patch(oldAST, newAST)});
-        }
-      }
-    });
+    ed.on('changes', this.editorChange);
 
     global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
-    // if we have nodes, default to the first one
-    if(ast.rootNodes.length > 0) { store.dispatch({type: 'SET_FOCUS', focusId: 0}); }
     this.props.setAST(ast);
     this.props.setAnnouncer(annoucements);
 
     say('Switching to Block mode');
+
+    // TODO(Oak): instead of setTimeout, try to move this to componentDidMount instead
+    setTimeout(() => {
+      // if we have nodes, default to the first one
+      if (ast.rootNodes.length > 0) {
+        this.props.activateByNId(0, true, node => node);
+      }
+    }, 100);
+
+  }
+
+  handleEditorWillUnmount = ed => {
+    ed.off('changes', this.editorChange);
   }
 
   handleFocus = (ed, e) => {
@@ -338,8 +351,9 @@ class Editor extends Component {
   }
 }
 
-const mapStateToProps = ({ast, cur, quarantine, focusId}) => ({
-  ast, cur, hasQuarantine : !!quarantine, focusId
+const mapStateToProps = ({ast, cur, quarantine}) => ({
+  ast, cur,
+  hasQuarantine: !!quarantine
 });
 const mapDispatchToProps = dispatch => ({
   setAST: ast => dispatch({type: 'SET_AST', ast}),
@@ -348,6 +362,7 @@ const mapDispatchToProps = dispatch => ({
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: -1}),
   focusSelf: () => dispatch(focusSelf()),
   setQuarantine: (pos, text) => dispatch({type: 'SET_QUARANTINE', pos, text}),
+  activateByNId: (nid, allowMove, movement) => dispatch(activateByNId(nid, allowMove, movement)),
 });
 
 const EditorWrapper = connect(mapStateToProps, mapDispatchToProps)(Editor);

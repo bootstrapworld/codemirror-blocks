@@ -21,9 +21,7 @@ export function commitChanges(
 
     global.cm.operation(changes(global.cm));
     const {ast: oldAST} = store.getState();
-    if (oldAST.hash !== newAST.hash) {
-      store.dispatch({type: 'SET_AST', ast: patch(oldAST, newAST)});
-    }
+    store.dispatch({type: 'SET_AST', ast: patch(oldAST, newAST)});
     onSuccess();
   });
 

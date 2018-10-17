@@ -127,7 +127,9 @@ class Node extends Component {
     );
     const findRoot = node => {
       let next = node;
-      while (next && next.parent) { next = next.parent; }
+      while (next && next.parent) {
+        next = next.parent;
+      }
       return next;
     };
 
@@ -148,7 +150,7 @@ class Node extends Component {
       e.preventDefault();
       if (e.shiftKey) { // activate the root
         collapseAll();
-        activate(node => findRoot(node));
+        activate(findRoot);
       } else if (expandable && !isCollapsed && !this.isLocked()) {
         collapse(node.id);
       } else if (node.parent) {
@@ -264,18 +266,21 @@ class Node extends Component {
     // "jump to the root of the active node"
     case '<':
       e.preventDefault();
-      activate(node => findRoot(node));
+      activate(findRoot);
       return;
     // "read all the ancestors"
-    case '\\':
+    case '\\': {
       e.preventDefault();
-      let parents = [node], next = node;
-      while(next = next.parent) {
-        parents.push(next.options['aria-label'] + ", at level "+next.level);
+      const parents = [node];
+      let next = node.parent;
+      while (next) {
+        parents.push(next.options['aria-label'] + ", at level " + next.level);
+        next = next.parent;
       }
       if(parents.length > 1) say(parents.join(", inside "));
       else playSound(BEEP);
       return;
+    }
     // "read the first set of children"
     case '|':
       e.preventDefault();
