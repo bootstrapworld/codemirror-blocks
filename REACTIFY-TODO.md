@@ -7,12 +7,8 @@ Some stuff can be in global. E.g., the clipboard buffer. Totally fine to share i
 
 3. Let's rewrite the annoucement area in the React style
 
-4. In `activateNode`, we completely do nothing (except reading aria-label). Is this OK?
-
 ---------
 
-1. clean up focusSelf
-2. There's a bug: if we change `(a b)` to `( a b )`, then things become messy.
 3. Search 
 4. Toolbar
 5. See merge blockers: https://github.com/bootstrapworld/codemirror-blocks/issues/172
