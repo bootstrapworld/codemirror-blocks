@@ -193,8 +193,15 @@ class Editor extends Component {
 
     switch (e.key) {
     case 'ArrowDown':
-      // TODO(Oak)
       e.preventDefault();
+      const nextNode = this.props.ast.getNodeAfterCur(this.props.cur);
+      this.props.activateByNId(nextNode.nid, true, node => node);
+      return;
+
+    case 'ArrowUp':
+      e.preventDefault();
+      const prevNode = this.props.ast.getNodeBeforeCur(this.props.cur);
+      this.props.activateByNId(prevNode.nid, true, node => node);
       return;
 
     case 'Home':
