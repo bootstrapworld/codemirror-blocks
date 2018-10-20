@@ -12,6 +12,7 @@ import CMBContext from '../components/Context';
 import NodeEditable from '../components/NodeEditable';
 import {focusSelf, activateByNId} from '../actions';
 import {say} from '../utils';
+import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 
 import FunctionApp         from '../components/FunctionApp';
@@ -157,6 +158,7 @@ class Editor extends Component {
   static propTypes = {
     options: PropTypes.object,
     cmOptions: PropTypes.object,
+    keyMap: PropTypes.object,
     language: PropTypes.string.isRequired,
     parser: PropTypes.object.isRequired,
     setAST: PropTypes.func.isRequired,
@@ -174,11 +176,33 @@ class Editor extends Component {
   constructor(props) {
     super(props);
     this.mouseUsed = false;
+    global.keyMap = this.props.keyMap;
   }
 
   static defaultProps = {
     options: {},
     cmOptions: {},
+    keyMap : {
+      'ArrowDown' : 'nextNode',
+      'ArrowUp'   : 'prevNode',
+      'Home'      : 'firstNode',
+      'End'       : 'lastVisibleNode',
+      'ArrowLeft' : 'collapseOrSelectParent',
+      'ArrowRight': 'expandOrSelectFirstChild',
+      'Enter'     : 'edit',
+      ' '         : 'toggleSelection',
+      'Escape'    : 'clearSelection',
+      'Delete'    : 'delete',
+      'Backspace' : 'delete',
+      '['         : 'insertRight',
+      ']'         : 'insertLeft',
+      '<'         : 'jumpToRoot',
+      '\\'        : 'readAncestors',
+      '|'         : 'readChildren',
+      'c'         : 'copy',
+      'v'         : 'paste',
+      'x'         : 'cut'
+    }
   }
 
   handleDragOver = (ed, e) => {
@@ -188,30 +212,32 @@ class Editor extends Component {
     // TODO: actual insertion onto CM
   }
 
+  // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
-    // NOTE: if there's a focused node, this handler will not be activated
-
-    switch (e.key) {
-    case 'ArrowDown':
+    
+    switch (global.keyMap[e.key]) {
+    case 'nextNode':
       e.preventDefault();
       const nextNode = this.props.ast.getNodeAfterCur(this.props.cur);
-      this.props.activateByNId(nextNode.nid, true, node => node);
+      if(nextNode) { this.props.activateByNId(nextNode.nid, true, node => node); }
+      else {playSound(BEEP); }
       return;
 
-    case 'ArrowUp':
+    case 'prevNode':
       e.preventDefault();
       const prevNode = this.props.ast.getNodeBeforeCur(this.props.cur);
-      this.props.activateByNId(prevNode.nid, true, node => node);
+      if(prevNode) { this.props.activateByNId(prevNode.nid, true, node => node); }
+      else {playSound(BEEP); }
       return;
 
-    case 'Home':
+    case 'firstNode':
       // NOTE: this changes the semantics of normal Home button behavior from what's normal.
       // If users complain, we should just delete this entire case
       e.preventDefault();
       this.props.setCursor(null, {line: 0, ch: 0});
       return;
 
-    case 'End': {
+    case 'lastVisibleNode': {
       // NOTE: this changes the semantics of normal End button behavior from what's normal.
       // If users complain, we should just delete this entire case
       e.preventDefault();

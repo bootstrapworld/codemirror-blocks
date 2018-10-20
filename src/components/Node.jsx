@@ -133,20 +133,20 @@ class Node extends Component {
       return next;
     };
 
-    switch (e.key) {
-    case 'ArrowUp':
+    switch (global.keyMap[e.key]) {
+    case 'prevNode':
       // TODO(Oak): hook the search engine here!
       e.preventDefault();
       activate(skipCollapsed(node => node.prev));
       return;
 
-    case 'ArrowDown':
+    case 'nextNode':
       // TODO(Oak): hook the search engine here!
       e.preventDefault();
       activate(skipCollapsed(node => node.next));
       return;
     // collapse all (shift), collapse current (if collapsable), select parent (if exists)
-    case 'ArrowLeft':
+    case 'collapseOrSelectParent':
       e.preventDefault();
       if (e.shiftKey) { // activate the root
         collapseAll();
@@ -160,7 +160,7 @@ class Node extends Component {
       }
       return;
     // expand all (shift), expand current (if expandable), select first child (if expanded)
-    case 'ArrowRight':
+    case 'expandOrSelectFirstChild':
       e.preventDefault();
       if (e.shiftKey) {
         uncollapseAll();
@@ -179,12 +179,12 @@ class Node extends Component {
       }
       return;
     // toggle selection
-    case ' ':
+    case 'toggleSelection':
       e.preventDefault();
       toggleSelection(node.id);
       return;
     // edit if normally editable, otherwise toggle collapsed state
-    case 'Enter':
+    case 'edit':
       e.preventDefault();
       if (normallyEditable || isControl(e)) {
         this.handleMakeEditable(e);
@@ -195,18 +195,17 @@ class Node extends Component {
       }
       return;
     // clear selection
-    case 'Escape':
+    case 'clearSelection':
       e.preventDefault();
       this.props.clearSelections();
       return;
     // delete seleted nodes
-    case 'Delete':
-    case 'Backspace':
+    case 'delete':
       e.preventDefault();
       handleDelete();
       return;
     // insert-right
-    case ']':
+    case 'insertRight':
       e.preventDefault();
       if (e.ctrlKey) { // strictly want ctrlKey
         // TODO: this should go up to the top level block
@@ -214,7 +213,7 @@ class Node extends Component {
       }
       return;
     // insert-left
-    case '[':
+    case 'insertLeft':
       e.preventDefault();
       if (e.ctrlKey) { // strictly want ctrlKey
         // TODO: this should go up to the top level block
@@ -222,7 +221,7 @@ class Node extends Component {
       }
       return;
     // copy
-    case 'c':
+    case 'copy':
       e.preventDefault();
       if (isControl(e)) {
         handleCopy(node.id, nodeSelections => {
@@ -236,13 +235,13 @@ class Node extends Component {
       }
       return;
     // paste
-    case 'v':
+    case 'paste':
       if (isControl(e)) {
         handlePaste(node.id, e.shiftKey);
       }
       return;
     // cut
-    case 'x':
+    case 'cut':
       e.preventDefault();
       if (isControl(e)) {
         handleCopy(node.id, nodeSelections => {
@@ -255,21 +254,21 @@ class Node extends Component {
       }
       return;
     // go to the very first node in the AST
-    case 'Home':
+    case 'firstNode':
       e.preventDefault();
       this.props.activateByNId(0, true, node => node);
       return;
     // go to last _visible_ node in the AST
-    case 'End':
+    case 'lastVisibleNode':
       activate(getLastVisibleNode());
       return;
     // "jump to the root of the active node"
-    case '<':
+    case 'jumpToRoot':
       e.preventDefault();
       activate(findRoot);
       return;
     // "read all the ancestors"
-    case '\\': {
+    case 'describeAncestors': {
       e.preventDefault();
       const parents = [node];
       let next = node.parent;
@@ -282,7 +281,7 @@ class Node extends Component {
       return;
     }
     // "read the first set of children"
-    case '|':
+    case 'describeChildren':
       e.preventDefault();
       say(node.toDescription(node.level));
       return;
