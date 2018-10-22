@@ -83,7 +83,8 @@ class ToplevelBlock extends React.Component {
     const {node} = this.props;
     const {from, to} = node;
 
-    global.cm.markText(from, to, {replacedWith: this.container});
+    const marker = global.cm.markText(from, to, {replacedWith: this.container});
+    marker.BLOCK_NODE_ID = node.id;
 
     // REVISIT: make comments disappear by adding an empty span
     if (node.options.comment) {
@@ -370,9 +371,9 @@ class Editor extends Component {
   renderPortals = () => {
     const portals = [];
     if (global.cm && this.props.ast) {
-      // NOTE(Oak): we need to clear all markers up front to prevent
-      // overlapping the marker issue
-      for (const marker of global.cm.getAllMarks()) {
+      // NOTE(Oak): we need to clear all Blocks markers (containing a NODE_ID)
+      // to prevent overlapping the marker issue
+      for (const marker of global.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
         marker.clear();
       }
       for (const r of this.props.ast.rootNodes) {
