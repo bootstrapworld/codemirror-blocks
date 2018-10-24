@@ -5,10 +5,10 @@ import {pos} from '../types';
 
 class FakeCursorManager extends Component {
   static propTypes = {
-    cur: pos.isRequired,
+    cur: pos,
   }
   render() {
-    if (global.cm) {
+    if (global.cm && this.props.cur) {
       global.cm.focus();
       global.cm.setCursor(this.props.cur);
     }

@@ -2,8 +2,9 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {isControl, say, skipWhile} from '../utils';
-import {dropNode, toggleSelection, deleteNodes, copyNodes, 
+import {partition, poscmp, getRoot,
+        isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
+import {dropNode, deleteNodes, copyNodes,
   pasteNodes, activate, activateByNId} from '../actions';
 import NodeEditable from './NodeEditable';
 import Component from './BlockComponent';
@@ -13,38 +14,6 @@ import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
 import {playSound, BEEP} from '../sound';
-
-
-function skipCollapsed(next) {
-  return (node, state) => {
-    const {collapsedList, ast} = state;
-    const collapsedNodeList = collapsedList.map(ast.getNodeById);
-
-    // NOTE(Oak): if this is too slow, consider adding a
-    // next/prevSibling attribute to short circuit navigation
-    return skipWhile(
-      node => !!node && collapsedNodeList.some(
-        collapsed => ast.isAncestor(collapsed.id, node.id)
-      ),
-      next(node),
-      next
-    );
-  };
-}
-
-function getLastVisibleNode() {
-  return (node, state) => {
-    const {collapsedList, ast} = state;
-    const collapsedNodeList = collapsedList.map(ast.getNodeById);
-    const lastNode = ast.getNodeBeforeCur(ast.reverseRootNodes[0].to);
-    return skipWhile(
-      node => !!node && node.parent && collapsedNodeList.some(
-        collapsed => collapsed.id === node.parent.id),
-      lastNode,
-      n => n.parent
-    );
-  }
-}
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -80,8 +49,6 @@ class Node extends Component {
     isSelected: PropTypes.bool.isRequired,
     expandable: PropTypes.bool,
 
-    toggleSelection: PropTypes.func.isRequired,
-
     activate: PropTypes.func.isRequired,
     activateByNId: PropTypes.func.isRequired,
   }
@@ -97,11 +64,7 @@ class Node extends Component {
     e.preventDefault(); // TODO(Oak): really need it?
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
 
-    this.props.activate(
-      this.props.node.id,
-      false,
-      node => node
-    );
+    this.props.activate(this.props.node.id, false);
   }
 
   handleKeyDown = e => {
@@ -110,182 +73,240 @@ class Node extends Component {
 
     const {
       node, expandable, isCollapsed,
-      uncollapse, collapse, normallyEditable, toggleSelection,
+      uncollapse, collapse, normallyEditable,
       uncollapseAll, collapseAll, setCursor,
-      handleCopy, handlePaste, handleDelete
+      handleCopy, handlePaste, handleDelete,
+      dispatch
     } = this.props;
 
-    const activate = movement => this.props.activate(
-      this.props.node.id,
-      true,
-      movement,
-    );
-    const activateByNId = movement => this.props.activateByNId(
-      this.props.node.id,
-      true,
-      movement,
-    );
-    const findRoot = node => {
-      let next = node;
-      while (next && next.parent) {
-        next = next.parent;
-      }
-      return next;
-    };
+    const id = node.id;
 
-    switch (global.keyMap[e.key]) {
-    case 'prevNode':
-      // TODO(Oak): hook the search engine here!
-      e.preventDefault();
-      activate(skipCollapsed(node => node.prev));
-      return;
+    dispatch((_, getState) => {
+      const state = getState();
+      const {ast, selections} = state;
+      // so that we get the accurate node
+      const node = ast.getNodeById(id);
 
-    case 'nextNode':
-      // TODO(Oak): hook the search engine here!
-      e.preventDefault();
-      activate(skipCollapsed(node => node.next));
-      return;
-    // collapse all (shift), collapse current (if collapsable), select parent (if exists)
-    case 'collapseOrSelectParent':
-      e.preventDefault();
-      if (e.shiftKey) { // activate the root
-        collapseAll();
-        activate(findRoot);
-      } else if (expandable && !isCollapsed && !this.isLocked()) {
-        collapse(node.id);
-      } else if (node.parent) {
-        activate(node => node.parent);
-      } else { 
-        playSound(BEEP); 
-      }
-      return;
-    // expand all (shift), expand current (if expandable), select first child (if expanded)
-    case 'expandOrSelectFirstChild':
-      e.preventDefault();
-      if (e.shiftKey) {
-        uncollapseAll();
-      } else if (expandable && isCollapsed && !this.isLocked()) {
-        uncollapse(node.id);
-      } else if (node.next && node.next.parent === node) {
-        activate(node => {
-          const next = node.next;
-          if (next && next.level === node.level + 1) {
-            return next;
+      const fastSkip = next => skipCollapsed(node, next, state);
+      const activate = node => {
+        if (!node) {
+          playSound(BEEP);
+        } else {
+          this.props.activate(node.id, true);
+        }
+      };
+
+      switch (global.keyMap[e.key]) {
+      case 'prevNode':
+        e.preventDefault();
+        activate(fastSkip(node => node.prev));
+        return;
+
+      case 'nextNode':
+        e.preventDefault();
+        activate(fastSkip(node => node.next));
+        return;
+
+      case 'activateSearchDialog':
+        e.preventDefault();
+        global.search.onSearch();
+        return;
+
+      case 'searchPrevious':
+        e.preventDefault();
+        activate(global.search.searchPrevious());
+        return;
+
+      case 'searchNext':
+        e.preventDefault();
+        activate(global.search.searchNext());
+        return;
+
+        // collapse all (shift), collapse current (if collapsable), select parent (if exists)
+      case 'collapseOrSelectParent':
+        e.preventDefault();
+        if (e.shiftKey) { // activate the root
+          collapseAll();
+          activate(getRoot(node));
+        } else if (expandable && !isCollapsed && !this.isLocked()) {
+          collapse(id);
+        } else if (node.parent) {
+          activate(node.parent);
+        } else {
+          playSound(BEEP);
+        }
+        return;
+        // expand all (shift), expand current (if expandable), select first child (if expanded)
+      case 'expandOrSelectFirstChild':
+        e.preventDefault();
+        if (e.shiftKey) {
+          uncollapseAll();
+        } else if (expandable && isCollapsed && !this.isLocked()) {
+          uncollapse(id);
+        } else if (node.next && node.next.parent === node) {
+          activate(node.next);
+        } else {
+          playSound(BEEP);
+        }
+        return;
+        // toggle selection
+      case 'toggleSelection':
+        e.preventDefault();
+        if (selections.includes(id)) {
+          dispatch({
+            type: 'SET_SELECTIONS',
+            selections: selections.filter(s => s !== id)
+          });
+          // announce removal
+        } else {
+          const {from: addedFrom, to: addedTo} = node;
+          const isContained = id => {
+            const {from, to} = ast.getNodeById(id);
+            return poscmp(addedFrom, from) <= 0 && poscmp(to, addedTo) <= 0;
+          };
+          const doesContain = id => {
+            const {from, to} = ast.getNodeById(id);
+            return poscmp(from, addedFrom) <= 0 && poscmp(addedTo, to) <= 0;
+          };
+          const [removed, newSelections] = partition(selections, isContained);
+          for (const r of removed) {
+            // announce removal
           }
-          return null;
-        });
-      } else {
-        playSound(BEEP);
-      }
-      return;
-    // toggle selection
-    case 'toggleSelection':
-      e.preventDefault();
-      toggleSelection(node.id);
-      return;
-    // edit if normally editable, otherwise toggle collapsed state
-    case 'edit':
-      e.preventDefault();
-      if (normallyEditable || isControl(e)) {
-        this.handleMakeEditable(e);
-      } else if (expandable && !this.isLocked()) {
-        (isCollapsed ? uncollapse : collapse)(node.id);
-      } else {
-        playSound(BEEP);
-      }
-      return;
-    // clear selection
-    case 'clearSelection':
-      e.preventDefault();
-      this.props.clearSelections();
-      return;
-    // delete seleted nodes
-    case 'delete':
-      e.preventDefault();
-      handleDelete();
-      return;
-    // insert-right
-    case 'insertRight':
-      e.preventDefault();
-      if (e.ctrlKey) { // strictly want ctrlKey
-        // TODO: this should go up to the top level block
-        setCursor(node.to);
-      }
-      return;
-    // insert-left
-    case 'insertLeft':
-      e.preventDefault();
-      if (e.ctrlKey) { // strictly want ctrlKey
-        // TODO: this should go up to the top level block
-        setCursor(node.from);
-      }
-      return;
-    // copy
-    case 'copy':
-      e.preventDefault();
-      if (isControl(e)) {
-        handleCopy(node.id, nodeSelections => {
-          if (nodeSelections.length == 0) {
-            // NOTE(Oak): no nodes are selected, do it on id instead
-            return [node.id, ...nodeSelections];
+          if (newSelections.some(doesContain)) {
+            // announce failure
           } else {
-            return nodeSelections;
+            // announce addition
+            newSelections.push(id);
+            dispatch({
+              type: 'SET_SELECTIONS',
+              selections: newSelections
+            });
           }
-        });
-      }
-      return;
-    // paste
-    case 'paste':
-      if (isControl(e)) {
-        handlePaste(node.id, e.shiftKey);
-      }
-      return;
-    // cut
-    case 'cut':
-      e.preventDefault();
-      if (isControl(e)) {
-        handleCopy(node.id, nodeSelections => {
-          if (nodeSelections.length == 0) {
-            say('Nothing selected');
-          }
-          return nodeSelections;
-        });
+        }
+        return;
+        // edit if normally editable, otherwise toggle collapsed state
+      case 'edit':
+        e.preventDefault();
+        if (normallyEditable || isControl(e)) {
+          this.handleMakeEditable(e);
+        } else if (expandable && !this.isLocked()) {
+          (isCollapsed ? uncollapse : collapse)(node.id);
+        } else {
+          playSound(BEEP);
+        }
+        return;
+        // clear selection
+      case 'clearSelection':
+        e.preventDefault();
+        this.props.clearSelections();
+        return;
+        // delete seleted nodes
+      case 'delete':
+        e.preventDefault();
         handleDelete();
+        return;
+        // insert-right
+      case 'insertRight':
+        e.preventDefault();
+        if (e.ctrlKey) { // strictly want ctrlKey
+          // TODO: this should go up to the top level block
+          setCursor(node.to);
+        }
+        return;
+        // insert-left
+      case 'insertLeft':
+        e.preventDefault();
+        if (e.ctrlKey) { // strictly want ctrlKey
+          // TODO: this should go up to the top level block
+          setCursor(node.from);
+        }
+        return;
+        // copy
+      case 'copy':
+        e.preventDefault();
+        if (isControl(e)) {
+          handleCopy(node.id, nodeSelections => {
+            if (nodeSelections.length == 0) {
+              // NOTE(Oak): no nodes are selected, do it on id instead
+              return [node.id, ...nodeSelections];
+            } else {
+              return nodeSelections;
+            }
+          });
+        }
+        return;
+        // paste
+      case 'paste':
+        if (isControl(e)) {
+          handlePaste(node.id, e.shiftKey);
+        }
+        return;
+        // cut
+      case 'cut':
+        e.preventDefault();
+        if (isControl(e)) {
+          handleCopy(node.id, nodeSelections => {
+            if (nodeSelections.length == 0) {
+              say('Nothing selected');
+            }
+            return nodeSelections;
+          });
+          handleDelete();
+        }
+        return;
+        // go to the very first node in the AST
+      case 'firstNode':
+        e.preventDefault();
+        this.props.activateByNId(0, true);
+        return;
+        // go to last _visible_ node in the AST
+      case 'lastVisibleNode':
+        activate(getLastVisibleNode(state));
+        return;
+        // "jump to the root of the active node"
+      case 'jumpToRoot':
+        e.preventDefault();
+        activate(getRoot(node));
+        return;
+        // "read all the ancestors"
+      case 'describeAncestors': {
+        e.preventDefault();
+        const parents = [node]; // FIXME(Oak): this doens't make sense
+        let next = node.parent;
+        while (next) {
+          parents.push(next.options['aria-label'] + ", at level " + next.level);
+          next = next.parent;
+        }
+        if (parents.length > 1) say(parents.join(", inside "));
+        else playSound(BEEP);
+        return;
       }
-      return;
-    // go to the very first node in the AST
-    case 'firstNode':
-      e.preventDefault();
-      this.props.activateByNId(0, true, node => node);
-      return;
-    // go to last _visible_ node in the AST
-    case 'lastVisibleNode':
-      activate(getLastVisibleNode());
-      return;
-    // "jump to the root of the active node"
-    case 'jumpToRoot':
-      e.preventDefault();
-      activate(findRoot);
-      return;
-    // "read all the ancestors"
-    case 'describeAncestors': {
-      e.preventDefault();
-      const parents = [node];
-      let next = node.parent;
-      while (next) {
-        parents.push(next.options['aria-label'] + ", at level " + next.level);
-        next = next.parent;
+        // "read the first set of children"
+      case 'describeChildren':
+        e.preventDefault();
+        say(node.toDescription(node.level));
+        return;
+
+      case 'undo':
+        if (isControl(e)) {
+          e.preventDefault();
+          if (e.shiftKey) {
+            global.cm.redo();
+          } else {
+            global.cm.undo();
+          }
+        }
+        return;
+
+      case 'redo':
+        if (isControl(e)) {
+          e.preventDefault();
+          global.cm.redo();
+        }
+        return;
+
       }
-      if(parents.length > 1) say(parents.join(", inside "));
-      else playSound(BEEP);
-      return;
-    }
-    // "read the first set of children"
-    case 'describeChildren':
-      e.preventDefault();
-      say(node.toDescription(node.level));
-      return;
-    }
+    });
   }
 
   handleDoubleClick = e => {
@@ -400,7 +421,7 @@ const mapStateToProps = (
 };
 
 const mapDispatchToProps = dispatch => ({
-  toggleSelection: id => dispatch(toggleSelection(id)),
+  dispatch,
   clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []}),
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),

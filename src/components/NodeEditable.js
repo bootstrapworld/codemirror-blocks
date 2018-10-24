@@ -6,7 +6,7 @@ import ContentEditable from './ContentEditable';
 import {commitChanges} from '../codeMirror';
 import global from '../global';
 import classNames from 'classnames';
-import {focusSelf} from '../actions';
+import {activateByNId, activate} from '../actions';
 import {say} from '../utils';
 
 class NodeEditable extends Component {
@@ -33,48 +33,52 @@ class NodeEditable extends Component {
     }
   }
 
-  saveEdit = (e, done) => {
+  saveEdit = e => {
     e.stopPropagation();
-    const {node, setErrorId, onDisableEditable} = this.props;
+    const {node, setErrorId, onDisableEditable, dispatch} = this.props;
 
-    if (this.props.value === null || this.props.value === this.cachedValue) {
-      this.props.onDisableEditable(false);
-      return;
-    }
+    dispatch((_, getState) => {
+      const {focusId} = getState();
 
-    const value = this.props.willInsertNode(this.props.value, this.props.node);
-
-    commitChanges(
-      cm => () => {
-        cm.replaceRange(value, node.from, node.to);
-      },
-      () => {
-        onDisableEditable(false);
-        setErrorId('');
-        say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
-        done();
-      },
-      e => {
-        const errorText = global.parser.getExceptionMessage(e);
-        say(errorText);
-        this.ignoreBlur = false;
-        setErrorId(node.id);
-        this.setSelection(false);
+      if (this.props.value === null || this.props.value === this.cachedValue) {
+        this.props.onDisableEditable(false);
+        dispatch(activateByNId(focusId, true));
+        return;
       }
-    );
+
+      const value = this.props.willInsertNode(this.props.value, this.props.node);
+
+      commitChanges(
+        cm => () => {
+          cm.replaceRange(value, node.from, node.to, 'cmb:edit');
+        },
+        ({firstNewId}) => {
+          if (firstNewId !== null) {
+            dispatch(activate(firstNewId, true));
+          }
+          onDisableEditable(false);
+          setErrorId('');
+          say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
+        },
+        e => {
+          const errorText = global.parser.getExceptionMessage(e);
+          say(errorText);
+          this.ignoreBlur = false;
+          setErrorId(node.id);
+          this.setSelection(false);
+        }
+      );
+    });
   }
 
   handleKeyDown = e => {
     switch (e.key) {
     case 'Enter': {
       this.ignoreBlur = true;
-      this.saveEdit(e, () => {
-        setTimeout(() => this.props.focusSelf(), 200);
-      });
+      this.saveEdit(e);
       return;
     }
     case 'Escape':
-      say('cancelled');
       this.ignoreBlur = true;
       e.stopPropagation();
       this.props.onChange(null);
@@ -103,7 +107,7 @@ class NodeEditable extends Component {
 
   handleBlur = e => {
     if (this.ignoreBlur) return;
-    this.saveEdit(e, () => {});
+    this.saveEdit(e);
   }
 
   setSelection = isCollapsed => {
@@ -127,7 +131,6 @@ class NodeEditable extends Component {
       extraClasses,
       value,
       onChange,
-      node,
     } = this.props;
 
     const classes = [
@@ -162,9 +165,10 @@ const mapStateToProps = ({cm, errorId}, {node}) => {
 };
 
 const mapDispatchToProps = dispatch => ({
+  dispatch,
   setErrorId: errorId => dispatch({type: 'SET_ERROR_ID', errorId}),
-  focusSelf: () => dispatch(focusSelf()),
-  clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []})
+  focusSelf: () => dispatch(activateByNId(null, false)),
+  clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []}),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(NodeEditable);

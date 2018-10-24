@@ -20,11 +20,17 @@ class DropTarget extends Component {
 
   state = {editable: false, value: ''}
 
-  handleDisableEditable = () => this.setState({editable: false});
+  handleDisableEditable = () => {
+    this.setState({editable: false});
+  };
 
   handleDoubleClick = e => {
     e.stopPropagation();
     this.handleMakeEditable();
+  }
+
+  handleClick = e => {
+    e.stopPropagation();
   }
 
   handleMakeEditable = () => {
@@ -79,7 +85,8 @@ class DropTarget extends Component {
     return this.props.connectDropTarget(
       <span
         className={classNames(classes)}
-        onDoubleClick = {this.handleDoubleClick} />
+        onDoubleClick = {this.handleDoubleClick}
+        onClick = {this.handleClick} />
     );
   }
 }

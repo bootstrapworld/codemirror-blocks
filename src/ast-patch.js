@@ -29,6 +29,7 @@ function assignNewIds(n) {
 }
 
 export default function unify(oldTree, newTree) {
+  let firstAssignedId = null;
   function loop(oldTree, newTree) {
     const index = {};
     for (const oldNode of oldTree.children()) {
@@ -57,6 +58,7 @@ export default function unify(oldTree, newTree) {
     });
     if (!partiallySuccess) {
       assignNewIds(newTree);
+      if (firstAssignedId === null) firstAssignedId = newTree.id;
     } else {
       const commonLength = Math.min(oldLeftover.length, newLeftover.length);
       for (let i = 0; i < commonLength; i++) {
@@ -64,10 +66,11 @@ export default function unify(oldTree, newTree) {
       }
       for (let i = commonLength; i < newLeftover.length; i++) {
         assignNewIds(newLeftover[i]);
+        if (firstAssignedId === null) firstAssignedId = newLeftover[i].id;
       }
     }
   }
   loop(oldTree, newTree);
   newTree.annotateNodes();
-  return newTree;
+  return {tree: newTree, firstNewId: firstAssignedId};
 }

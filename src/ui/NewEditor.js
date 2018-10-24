@@ -10,10 +10,11 @@ import global from '../global';
 import patch from '../ast-patch';
 import CMBContext from '../components/Context';
 import NodeEditable from '../components/NodeEditable';
-import {focusSelf, activateByNId} from '../actions';
+import {activateByNId} from '../actions';
 import {say} from '../utils';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
+import {pos} from '../types';
 
 import FunctionApp         from '../components/FunctionApp';
 import IfExpression       from '../components/IfExpression';
@@ -168,10 +169,18 @@ class Editor extends Component {
     setAnnouncer: PropTypes.func.isRequired,
     clearFocus: PropTypes.func.isRequired,
     activateByNId: PropTypes.func.isRequired,
+    search: PropTypes.shape({
+      onSearch: PropTypes.func.isRequired,
+      searchPrevious: PropTypes.func.isRequired,
+      searchNext: PropTypes.func.isRequired,
+    }),
+    hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
     ast: PropTypes.object,
+    dispatch: PropTypes.func.isRequired,
+    cur: pos
   }
 
   constructor(props) {
@@ -195,14 +204,25 @@ class Editor extends Component {
       'Escape'    : 'clearSelection',
       'Delete'    : 'delete',
       'Backspace' : 'delete',
-      '['         : 'insertRight',
-      ']'         : 'insertLeft',
+      '['         : 'insertLeft',
+      ']'         : 'insertRight',
       '<'         : 'jumpToRoot',
       '\\'        : 'readAncestors',
       '|'         : 'readChildren',
       'c'         : 'copy',
       'v'         : 'paste',
-      'x'         : 'cut'
+      'x'         : 'cut',
+      'z'         : 'undo',
+      'y'         : 'redo',
+      'PageDown'  : 'searchPrevious',
+      'PageUp'    : 'searchNext',
+      'F3'        : 'activateSearchDialog',
+      'Tab'       : 'changeFocus',
+    },
+    search: {
+      searchPrevious: x => x,
+      searchNext: x => x,
+      onSearch: () => {},
     }
   }
 
@@ -215,38 +235,77 @@ class Editor extends Component {
 
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
-    
-    switch (global.keyMap[e.key]) {
-    case 'nextNode':
-      e.preventDefault();
-      const nextNode = this.props.ast.getNodeAfterCur(this.props.cur);
-      if(nextNode) { this.props.activateByNId(nextNode.nid, true, node => node); }
-      else {playSound(BEEP); }
-      return;
 
-    case 'prevNode':
-      e.preventDefault();
-      const prevNode = this.props.ast.getNodeBeforeCur(this.props.cur);
-      if(prevNode) { this.props.activateByNId(prevNode.nid, true, node => node); }
-      else {playSound(BEEP); }
-      return;
+    const {dispatch} = this.props;
 
-    case 'firstNode':
-      // NOTE: this changes the semantics of normal Home button behavior from what's normal.
-      // If users complain, we should just delete this entire case
-      e.preventDefault();
-      this.props.setCursor(null, {line: 0, ch: 0});
-      return;
+    dispatch((_, getState) => {
+      const state = getState();
+      const {ast, focusId} = state;
 
-    case 'lastVisibleNode': {
-      // NOTE: this changes the semantics of normal End button behavior from what's normal.
-      // If users complain, we should just delete this entire case
-      e.preventDefault();
-      const idx = global.cm.lastLine(), text = global.cm.getLine(idx);
-      this.props.setCursor(null, {line: idx, ch: text.length});
-      return;
-    }
-    }
+      switch (global.keyMap[e.key]) {
+      case 'nextNode': {
+        e.preventDefault();
+        const nextNode = ast.getNodeAfterCur(this.props.cur);
+        if (nextNode) this.props.activateByNId(nextNode.nid, true);
+        else playSound(BEEP);
+        return;
+      }
+
+      case 'prevNode': {
+        e.preventDefault();
+        const prevNode = ast.getNodeBeforeCur(this.props.cur);
+        if (prevNode) {
+          this.props.activateByNId(prevNode.nid, true);
+        } else {
+          playSound(BEEP);
+        }
+        return;
+      }
+
+      case 'firstNode':
+        // NOTE: this changes the semantics of normal Home button behavior from what's normal.
+        // If users complain, we should just delete this entire case
+        e.preventDefault();
+        this.props.setCursor(null, {line: 0, ch: 0});
+        return;
+
+      case 'lastVisibleNode': {
+        // NOTE: this changes the semantics of normal End button behavior from what's normal.
+        // If users complain, we should just delete this entire case
+        e.preventDefault();
+        const idx = global.cm.lastLine(), text = global.cm.getLine(idx);
+        this.props.setCursor(null, {line: idx, ch: text.length});
+        return;
+      }
+
+      case 'changeFocus':
+        e.preventDefault();
+        if (focusId === -1) {
+          if (ast.rootNodes.length > 0) {
+            dispatch(activateByNId(0, true));
+            // NOTE(Oak): can also find the closest node based on current cursor
+          }
+        } else {
+          dispatch(activateByNId(null, true));
+        }
+        return;
+
+      case 'activateSearchDialog':
+        e.preventDefault();
+        global.search.onSearch();
+        return;
+
+      case 'searchPrevious':
+        e.preventDefault();
+        activate(global.search.searchPrevious());
+        return;
+
+      case 'searchNext':
+        e.preventDefault();
+        activate(global.search.searchNext());
+        return;
+      }
+    });
   }
 
   handleKeyPress = (ed, e) => {
@@ -265,10 +324,11 @@ class Editor extends Component {
   }
 
   editorChange = (cm, changes) => {
-    if (changes.some(change => change.origin === 'undo' || change.origin === 'redo')) {
+    if (!changes.every(change => change.origin.startsWith('cmb:'))) {
       const newAST = global.parser.parse(cm.getValue());
-      const {ast: oldAST} = store.getState();
-      this.props.setAST(patch(oldAST, newAST));
+      const patched = patch(this.props.ast, newAST);
+      this.props.setAST(patched.tree);
+      // TODO(Oak): should we do anything with patched.firstNewId?
     }
   }
 
@@ -294,13 +354,12 @@ class Editor extends Component {
 
     say('Switching to Block mode');
 
-    // TODO(Oak): instead of setTimeout, try to move this to componentDidMount instead
-    setTimeout(() => {
-      // if we have nodes, default to the first one
-      if (ast.rootNodes.length > 0) {
-        this.props.activateByNId(0, true, node => node);
-      }
-    }, 100);
+    // if we have nodes, default to the first one. Note that does NOT
+    // activate a node; only when the editor is focused, the focused node will be
+    // active
+    if (ast.rootNodes.length > 0) {
+      this.props.dispatch({type: 'SET_FOCUS', focusId: 0});
+    }
 
   }
 
@@ -311,7 +370,7 @@ class Editor extends Component {
   handleFocus = (ed, e) => {
     if (!this.mouseUsed) {
       // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-      setTimeout(() => this.props.focusSelf(), 10);
+      setTimeout(() => this.props.activateByNId(null, true), 10);
       this.mouseUsed = false;
     }
   }
@@ -322,19 +381,32 @@ class Editor extends Component {
   }
 
   componentDidMount() {
-    global.parser = this.props.parser;
-    global.options = this.props.options;
-    const clipboardBuffer = document.createElement('textarea');
+    const {parser, options, search} = this.props;
+    global.parser = parser;
+    global.options = options;
+    global.search = search;
 
+    const clipboardBuffer = document.createElement('textarea');
     clipboardBuffer.ariaHidden = true;
     clipboardBuffer.tabIndex = -1;
-
     global.buffer = clipboardBuffer;
-
     // don't make it transparent so that we can debug easily for now
     // global.buffer.style.opacity = 0;
     // global.buffer.style.height = '1px';
     document.body.appendChild(global.buffer);
+  }
+
+  componentDidUpdate() {
+    const {dispatch} = this.props;
+    dispatch((_, getState) => {
+      const {focusId, ast} = getState();
+      if (focusId !== -1) {
+        const node = ast.getNodeByNId(focusId);
+        if (node && node.element) {
+          node.element.focus();
+        }
+      }
+    });
   }
 
 
@@ -355,7 +427,7 @@ class Editor extends Component {
                       onMouseDown={this.handleMouseDown}
                       onFocus={this.handleFocus}
                       onPaste={this.handlePaste}
-                      cursor={this.props.cur}
+                      cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
                       onCursor={this.props.setCursor}
                       editorDidMount={this.handleEditorDidMount} />
         </div>
@@ -374,6 +446,10 @@ class Editor extends Component {
       // NOTE(Oak): we need to clear all Blocks markers (containing a NODE_ID)
       // to prevent overlapping the marker issue
       for (const marker of global.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
+        console.log('portals rendered');
+
+        // NOTE(Oak): we need to clear all markers up front to prevent
+        // overlapping the marker issue
         marker.clear();
       }
       for (const r of this.props.ast.rootNodes) {
@@ -390,13 +466,13 @@ const mapStateToProps = ({ast, cur, quarantine}) => ({
   hasQuarantine: !!quarantine
 });
 const mapDispatchToProps = dispatch => ({
+  dispatch,
   setAST: ast => dispatch({type: 'SET_AST', ast}),
   setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
   setCursor: (_, cur) => dispatch({type: 'SET_CURSOR', cur}),
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: -1}),
-  focusSelf: () => dispatch(focusSelf()),
   setQuarantine: (pos, text) => dispatch({type: 'SET_QUARANTINE', pos, text}),
-  activateByNId: (nid, allowMove, movement) => dispatch(activateByNId(nid, allowMove, movement)),
+  activateByNId: (nid, allowMove) => dispatch(activateByNId(nid, allowMove)),
 });
 
 const EditorWrapper = connect(mapStateToProps, mapDispatchToProps)(Editor);

@@ -1,3 +1,5 @@
+
+
 export const reducer = (
   state = {
     selections: [],
@@ -13,7 +15,7 @@ export const reducer = (
     console.log(action);
     switch (action.type) {
     case 'SET_FOCUS':
-      return {...state, focusId: action.focusId};
+      return {...state, focusId: action.focusId, cur: null};
     case 'SET_AST':
       return {...state, ast: action.ast};
     case 'SET_SELECTIONS':

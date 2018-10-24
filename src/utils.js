@@ -78,3 +78,39 @@ export function say(text, delay=200) {
   setTimeout(() => announcer.appendChild(announcement), delay);
   setTimeout(() => announcer.removeChild(announcement), delay + 300);
 }
+
+
+export function skipCollapsed(node, next, state) {
+  const {collapsedList, ast} = state;
+  const collapsedNodeList = collapsedList.map(ast.getNodeById);
+
+  // NOTE(Oak): if this is too slow, consider adding a
+  // next/prevSibling attribute to short circuit navigation
+  return skipWhile(
+    node => !!node && collapsedNodeList.some(
+      collapsed => ast.isAncestor(collapsed.id, node.id)
+    ),
+    next(node),
+    next
+  );
+}
+
+export function getRoot(node) {
+  let next = node;
+  while (next && next.parent) {
+    next = next.parent;
+  }
+  return next;
+}
+
+export function getLastVisibleNode(state) {
+  const {collapsedList, ast} = state;
+  const collapsedNodeList = collapsedList.map(ast.getNodeById);
+  const lastNode = ast.getNodeBeforeCur(ast.reverseRootNodes[0].to);
+  return skipWhile(
+    node => !!node && node.parent && collapsedNodeList.some(
+      collapsed => collapsed.id === node.parent.id),
+    lastNode,
+    n => n.parent
+  );
+}

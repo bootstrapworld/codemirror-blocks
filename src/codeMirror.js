@@ -21,8 +21,9 @@ export function commitChanges(
 
     global.cm.operation(changes(global.cm));
     const {ast: oldAST} = store.getState();
-    store.dispatch({type: 'SET_AST', ast: patch(oldAST, newAST)});
-    onSuccess();
+    const patched = patch(oldAST, newAST);
+    store.dispatch({type: 'SET_AST', ast: patched.tree});
+    onSuccess(patched);
   });
 
   tmpCM.operation(changes(tmpCM));
