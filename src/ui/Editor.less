@@ -18,38 +18,37 @@
     position: relative;
     transition: flex 2s;
     flex: 1 1 0; /* 20% of the width */
+
+    > .Toolbar {
+      height: 100%;
+      opacity: 1;
+    }
+    > .TrashCan {
+      height: 0px;
+      opacity: 0;
+      transition: opacity .25s, transform .15s;
+    }
+
+    &.show-trashcan {
+      > .TrashCan {
+        height: 100%;
+        opacity: 1;
+        transform: scale(1);
+      }
+      > .Toolbar {
+        height: 0px;
+        opacity: 0;
+      }
+    }
   }
 
   > .codemirror-pane {
     padding: 0px 0px;
     flex: 4 1 0; /* 80% of the width */
   }
-
-  > .Toolbar {
-    height: 100%;
-    opacity: 1;
-  }
   /* in text mode, the toolbar should have a width of 0 */
   &.text {
     > .toolbar-pane { flex: 0 1 0; border: none; width: 0px; }
-  }
-
-  > .TrashCan {
-    height: 0px;
-    opacity: 0;
-    transition: opacity .25s, transform .15s;
-  }
-
-  &.show-trashcan {
-    > .TrashCan {
-      height: 100%;
-      opacity: 1;
-      transform: scale(1);
-    }
-    > .Toolbar {
-      height: 0px;
-      opacity: 0;
-    }
   }
   
   .blocks-toggle-btn {
