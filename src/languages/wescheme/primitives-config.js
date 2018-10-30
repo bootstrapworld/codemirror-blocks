@@ -2,6 +2,11 @@ export default {
   name: 'root',
   primitives: [
     {
+      name: 'define',
+      returnType: '',
+      argumentTypes: ['Any', 'Any'],
+    },
+    {
       name: '+',
       returnType: 'Number',
       argumentTypes: ['Number', 'Number'],
@@ -81,6 +86,14 @@ export default {
       name: 'put-image',
       returnType: 'Image',
       argumentTypes: ['Image', 'Number', 'Number', 'Image'],
+    },{
+      name: 'image-width',
+      returnType: 'Number',
+      argumentTypes: ['Image'],
+    },{
+      name: 'image-height',
+      returnType: 'Number',
+      argumentTypes: ['Image'],
     }, {
       name: 'bitmap/url',
       returnType: 'Image',

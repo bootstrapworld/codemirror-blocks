@@ -155,14 +155,11 @@
     text-align: center;
     background: black;
     color: white;
-    > .blocks-white-space:not(.blocks-editing) {
-      min-width: 10px;
-      border-radius: 5px;
-      border: none;
-    }
     .blocks-white-space {
       border-width: 1px;
+      border-radius: 5px;
       min-width: 10px;
+      border: dotted 1px darkgray;
     }
     > .blocks-white-space:hover {
       background: black;
@@ -370,7 +367,9 @@
     bottom: 15%;
     border-right: 10px solid #444;
   }
-  .blocks-node:focus > .blocks-comment{ visibility: visible; } 
+  /* if a node is focused and _not_being_dragged_, make comments visible */
+  .blocks-node:focus > .blocks-comment{ visibility: visible; }
+  .blocks-node.blocks-dragging:focus > .blocks-comment{ visibility: hidden; } 
 
   .blocks-dragging {
     .blocks-white-space{ background-color: transparent; }
