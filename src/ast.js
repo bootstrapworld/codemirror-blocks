@@ -136,20 +136,23 @@ export class AST {
       if(endWS)   { to.ch   -= endWS[0].length;   }
       // HACK: we currently rely on being able to parse inserted text. Must fix.
       let insertedSiblings = parse( text.join('\n')  ).rootNodes.length;
-      let path = getInsertionPath(change);
-      // compute how many nodes were removed between {from, to}. Assume 0 to start.
-      let removedCount = 0, fromNode = this.getNodeAfterCur(from), toNode = this.getNodeBeforeCur(to);
-      if(fromNode && toNode) { // we might have removed something. Check to see.
-        // find the nodes touching from & to, and see how many siblings fall between them (+ 1 if same node)
-        removedCount = fromNode.path.split(",").pop() - fromNode.path.split(",").pop() + 1;
-        if(removed == "") removedCount--; // if we're strictly inserting, subtract 1
+      let removedSiblings  = parse(removed.join('\n')).rootNodes.length;
+      let path = oldAST.getCommonAncestor(from, to), node = oldAST.getNodeByPath(path);
+      let replacing = node && (poscmp(node.from, from)==0 && poscmp(node.to, to)==0);
+      // if there's no path, or we're not replacing, search for the previous sibling
+      if(!path || !replacing) {
+        let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
+        let spliceIndex = siblings.findIndex(n => poscmp(from, n.from) <= 0);
+        if(spliceIndex == -1) spliceIndex = siblings.length;
+        path = (path ? path+',' : "") + spliceIndex;
       }
       oldAST.nodeIdMap.forEach(n => {
         n.from = adjustForChange(n.from, change, true );
         n.to   = adjustForChange(n.to,   change, false);
       });
-      return {path: path, added: insertedSiblings, removed: removedCount };
+      return {path: path, added: insertedSiblings, removed: removedSiblings };
     });
+    console.log(pathChanges);
     // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
     pathChanges.forEach(({path, added, removed}) => {
       let shift = added - removed;
