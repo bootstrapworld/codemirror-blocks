@@ -82,7 +82,6 @@ describe('The CodeMirrorBlocks Class', function() {
       this.literal3.el.dispatchEvent(keydown(SPACE));
       this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
       await wait(DELAY);
-      this.cm.focus();
       expect(this.cm.getValue()).toBe('(+ 1 2 )');
       expect(this.blocks.focusPath).toBe("0,2");
     });

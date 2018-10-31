@@ -447,10 +447,10 @@ export default class CodeMirrorBlocks {
     } catch (e) {
       console.error("execCommand doesn't work in this browser :(", e);
     }
+    activeNode.el.focus();
     // if we cut selected nodes, clear them
     if (event.type == 'cut') { this.deleteSelectedNodes(); } // delete all those nodes
-    event.altKey = event.ctrlKey = true;                     // fake the event so selection isn't lost...
-    this.activateNode(activeNode, event);                    // ...during activateNode
+    this.cm.focus();                                          // ...during focus
   }
 
   // handlePaste : Event -> Void
@@ -490,13 +490,20 @@ export default class CodeMirrorBlocks {
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
     this.selectedNodes.clear();
-    let after = this.ast.getNodeAfter(sel[0]), parent = this.ast.getNodeParent(this.getActiveNode());
-    if(after && this.ast.getNodeParent(after) == parent) {
+    let after = this.ast.getNodeAfter(sel[0]);
+    let before = this.ast.getNodeBefore(sel[sel.length-1]);
+    let parent = this.ast.getNodeParent(sel[0]);
+    // if there's a next root node or sibling node, focus on that
+    if(after && (!parent || this.ast.getNodeParent(after) == parent)) {
       let pathArray = after.path.split(',');
       pathArray[pathArray.length-1] -= sel.length;
       this.focusPath = pathArray.join(',');
+    // if there's a previous node, focus on that
+    } else if(before){
+      this.focusPath = before.path;
+    // we're deleting the only node
     } else {
-      this.focusPath = this.ast.getNodeBefore(sel[sel.length-1]).path;
+      this.focusPath = sel[sel.length-1].from;
     }
     this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));

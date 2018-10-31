@@ -152,7 +152,7 @@ export class AST {
       });
       return {path: path, added: insertedSiblings, removed: removedSiblings };
     });
-    console.log(pathChanges);
+
     // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
     pathChanges.forEach(({path, added, removed}) => {
       let shift = added - removed;
