@@ -485,11 +485,19 @@ export default class CodeMirrorBlocks {
   }
 
   // deleteSelectedNodes : Void -> Void
-  // delete all of this.selectedNodes set, and then empty the set
+  // Delete all of this.selectedNodes set, and then empty the set.
+  // Put focus on the next sibling, if it exists. Otherwise focus on previous node (sib/parent)
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
     this.selectedNodes.clear();
-    this.focusPath = sel[sel.length-1].path; // point to the first node
+    let after = this.ast.getNodeAfter(sel[0]), parent = this.ast.getNodeParent(this.getActiveNode());
+    if(after && this.ast.getNodeParent(after) == parent) {
+      let pathArray = after.path.split(',');
+      pathArray[pathArray.length-1] -= sel.length;
+      this.focusPath = pathArray.join(',');
+    } else {
+      this.focusPath = this.ast.getNodeBefore(sel[sel.length-1]).path;
+    }
     this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
   }
