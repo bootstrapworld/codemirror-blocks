@@ -587,13 +587,16 @@ export default class CodeMirrorBlocks {
 
     // look up the destination information: Node, destFrom, destTo, and destPath
     let destinationNode = this.findNodeFromEl(event.target);            // when dropping onto an existing node, get that Node
+    let coordsChar      = this.cm.coordsChar({left:event.pageX, top:event.pageY});
+    let rootBefore = this.ast.getToplevelNodeBeforeCur(coordsChar);
+
     let destFrom        = (destinationNode && destinationNode.from)     // if we have an existing node, use its start location
                         || this.getLocationFromWhitespace(event.target) // if we have a drop target, grab that location
-                        || this.cm.coordsChar({left:event.pageX, top:event.pageY}); // give up and ask CM for the cursor location
+                        || coordsChar; // give up and ask CM for the cursor location
     let destTo          = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
     var destPath        = (destinationNode && destinationNode.path) 
                         || this.getPathFromWhitespace(event.target)
-                        || String(this.ast.getToplevelNodeBeforeCur(this.cm.coordsChar({left:event.pageX, top:event.pageY})).path || -1);
+                        || String(rootBefore? rootBefore.path : -1);
     destPath = destPath.split(',').map(Number);
 
     // if we're inserting, add 1 to the last child of the path
