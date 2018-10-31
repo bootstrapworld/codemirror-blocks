@@ -61,13 +61,19 @@ export class BaseRenderedBlockNode extends Component {
   }
 
   render() {
-    const node = this.props.node? this.props.renderer.renderNodeForReact(this.props.node, null, true) 
-    : this.props.text;
-    return (
-      <span className="RenderedBlockNode" ref={root => this.root = root}>
-        {node}
-      </span>
-    );
+    if (this.props.node) {
+      return (
+        <span className="RenderedBlockNode" ref={root => this.root = root}>
+          {this.props.renderer.renderNodeForReact(this.props.node)}
+        </span>
+      );
+    } else {
+      return (
+        <span className="RenderedBlockNode" ref={root => this.root = root}>
+          <span>{this.props.text}</span>
+        </span>
+      );
+    }
   }
 }
 
