@@ -169,7 +169,11 @@ export default class Renderer {
       if(node.options.comment) {
         let empty = document.createElement('span');
         empty.style.paddingRight = "0.1px";
-        this.cm.markText(node.options.comment.from, node.options.comment.to, {replacedWith: empty});
+        let commentMark = this.cm.markText(
+          node.options.comment.from, 
+          node.options.comment.to, 
+          {replacedWith: empty});
+        commentMark.node = true;
       }
       ReactDOM.render(this.renderNodeForReact(node), container);
     }

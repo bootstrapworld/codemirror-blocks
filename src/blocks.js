@@ -901,13 +901,18 @@ export default class CodeMirrorBlocks {
       this.commitChange(() => this.cm.replaceRange(event.key+closeDelims[event.key], activeNode.to),
         "inserted empty expression");
     }
+    else if (keyName == CTRLKEY+"-A") {
+      this.cm.execCommand("selectAll");
+      this.mouseUsed = true;
+      this.cm.focus();
+    }
     // shift focus to buffer for the *real* paste event to fire
     // then replace or insert, then reset the buffer
     else if ([CTRLKEY+"-V", "Shift-"+CTRLKEY+"-V"].includes(keyName) && activeNode) {
       return this.handlePaste(event);
     }
     // speak parents: "<label>, at level N, inside <label>, at level N-1...""
-    else if (keyName == "\\") {
+    else if (keyName == "\\" && activeNode) {
       var parents = [node], node = activeNode;
       while(node = this.ast.getNodeParent(node)){
         parents.push(node.options['aria-label'] + ", at level "+node["aria-level"]);
@@ -916,7 +921,7 @@ export default class CodeMirrorBlocks {
       else playSound(BEEP);
     }
     // Have the subtree read itself intelligently
-    else if (keyName == "Shift-\\") {
+    else if (keyName == "Shift-\\" && activeNode) {
       this.say(activeNode.toDescription(activeNode['aria-level']));
     }
     // Go to the first node in the tree (depth-first)
