@@ -20,12 +20,35 @@ function adjustForChange(pos, change, from) {
   return {line: line, ch: ch};
 }
 
-// pathIsIndependentOfChangePath : [Path], [Path] -> Boolean
-// a path is independant if it points above, before, or after the change
-function pathIsIndependentOfChangePath(pathArray, changeArray) {
-  return pathArray.length < changeArray.length       ||     // above: shorter paths are "above" the change point
-    pathArray.findIndex((v, i) => (v<changeArray[i]) ||     // before: the node - or any ancestor - is a younger sibling of the change
-      (v>changeArray[i] && i<changeArray.length-2)) > -1;   // after: any *ancestor only* is an older sibling
+// Ensure that no node in the set is the ancestor of another node in the set
+function removeChildren(nodes) {
+  let clean = [...nodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
+  clean.reduce((n1, n2) => n2.path.includes(n1.path)? nodes.delete(n2) && n1 : n2, false);
+  return nodes;
+}
+
+// given an oldAST, newAST and changeset, mark what was deleted+inserted
+function markChanges(oldAST, newAST, changes) {
+  let insertedRanges = new Set();
+  changes.forEach(c => {
+    // insertion: add to the insertedRanges set, and update the set locations
+    if(c.text.join("").length > 0) insertedRanges.add({from: c.from, to: c.to});
+    insertedRanges.forEach(r => {
+      r.from = adjustForChange(r.from, c, true ); 
+      r.to   = adjustForChange(r.to  , c, false);
+    });
+    // deletion: mark all nodes within oldAST as "deleted", then update locations
+    if(c.removed.join("").length > 0) 
+      oldAST.getNodesBetween(c.from, c.to).forEach(n => n.deleted = true);
+    oldAST.nodeIdMap.forEach(n => {
+      n.from = adjustForChange(n.from, c, true );
+      n.to   = adjustForChange(n.to,   c, false);
+    });
+  });
+  // mark all the inserted notes in newAST as "inserted"
+  insertedRanges.forEach(r => {
+    newAST.getNodesBetween(r.from, r.to).forEach(n => n.inserted = true);
+  });
 }
 
 function posWithinNode(pos, node) {
@@ -111,83 +134,39 @@ export class AST {
   // produce the new AST, preserving all the unchanged DOM nodes from the old AST
   patch(parse, newAST, CMchanges) {
     let oldAST = this, dirtyNodes = new Set();
+    markChanges(oldAST, newAST, CMchanges); // mark deleted and inserted nodes as such
+    
+    // We track deleted node's parents, so they can be redrawn without the deleted child
+    let deleted = new Set([...oldAST.nodeIdMap.values()].filter(n => n.deleted));
+    deleted.forEach( n => (oldAST.getNodeParent(n) || n).dirty = true);
 
-    // produces the path to the node immediately following the start of the change
-    function getInsertionPath({from, to}) {
-      let path = oldAST.getCommonAncestor(from, to), node = oldAST.getNodeByPath(path);
-      let replacing = node && (poscmp(node.from, from)==0 && poscmp(node.to, to)==0);
-      // if there's no path, or we're not replacing, search for the previous sibling
-      if(!path || !replacing) {
-        let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
-        let spliceIndex = siblings.findIndex(n => poscmp(from, n.from) <= 0);
-        if(spliceIndex == -1) spliceIndex = siblings.length;
-        path = (path ? path+',' : "") + spliceIndex;
-      }
-      return path;
-    }
+    let newNodes = [...newAST.nodeIdMap.values()];
+    let oldNodes = [...oldAST.nodeIdMap.values()];
+    let newIdx = 0;
 
-    // For each CM change: (1) compute a sibling shift at the relevant path and 
-    // (2) update the text posns in the AST to reflect the post-change coordinates
-    let pathChanges = CMchanges.map(change => {
-      let {from, to, text, removed} = change;
-      // trim whitespace from change object, and figure out how many siblings are added/removed
-      let startWS = removed[0].match(/^\s+/), endWS = removed[removed.length-1].match(/\s+$/);
-      if(startWS) { from.ch += startWS[0].length; }
-      if(endWS)   { to.ch   -= endWS[0].length;   }
-      // HACK: we currently rely on being able to parse inserted text. Must fix.
-      let insertedSiblings = parse( text.join('\n')  ).rootNodes.length;
-      let removedSiblings  = parse(removed.join('\n')).rootNodes.length;
-      let path = oldAST.getCommonAncestor(from, to), node = oldAST.getNodeByPath(path);
-      let replacing = node && (poscmp(node.from, from)==0 && poscmp(node.to, to)==0);
-      // if there's no path, or we're not replacing, search for the previous sibling
-      if(!path || !replacing) {
-        let siblings = path? [...oldAST.getNodeByPath(path)].slice(1) : oldAST.rootNodes;
-        let spliceIndex = siblings.findIndex(n => poscmp(from, n.from) <= 0);
-        if(spliceIndex == -1) spliceIndex = siblings.length;
-        path = (path ? path+',' : "") + spliceIndex;
-      }
-      oldAST.nodeIdMap.forEach(n => {
-        n.from = adjustForChange(n.from, change, true );
-        n.to   = adjustForChange(n.to,   change, false);
-      });
-      return {path: path, added: insertedSiblings, removed: removedSiblings };
-    });
+    // walk through the nodes, unifying those that are unchanged
+    oldNodes.forEach(oldNode => {
+      let newNode = newNodes[newIdx];
 
-    // for each pathChange, nullify removed nodes and adjust the paths of affected nodes
-    pathChanges.forEach(({path, added, removed}) => {
-      let shift = added - removed;
-      // force a re-render on the parent, since parent nodeType could change
-      if(shift == 0) { oldAST.nodeIdMap.delete(oldAST.getNodeByPath(path).id); return; }
-      let cArray = path.split(',').map(Number);
-      let changeDepth = cArray.length-1, changeIdx = cArray[changeDepth];
-      oldAST.nodeIdMap.forEach((node, id) => {
-        let pArray = node.path.split(',').map(Number);
-        // if the node is independent of the change, just return
-        if(pathIsIndependentOfChangePath(pArray, cArray)) { return; }
-        // If it's being removed, delete from nodeIdMap and mark its parent as dirty (if it has one)
-        if(pArray[changeDepth] < (changeIdx + removed)) {
-          let parent  = oldAST.getNodeParent(node);
-          if(parent) { dirtyNodes.add(parent); }
-          oldAST.nodeIdMap.delete(id);
-        // Otherwise just update the path of other post-change nodes by +shift
-        } else {
-          pArray[changeDepth] += shift;
-          node.path = pArray.join(',');
-        }
-      });
+      // skip over any inserted nodes
+      while(newNode && newNodes[newIdx].inserted) { newNode = newNodes[newIdx++]; }
+
+      // If we're out of newNodes, or if the oldNode was deleted, move ahead
+      if(!newNode || oldNode.deleted) { return; }
+
+      // This node hasn't been changed (although it's children might have!) -- copy the id
+      // If the node is dirty, don't bother copying the element
+      newNodes[newIdx].id = oldNode.id;
+      newNodes[newIdx].el = oldNode.el;
+      newNodes[newIdx].dirty = oldNode.dirty;
+      newIdx++;
     });
-    // copy over the DOM elt for unchanged nodes, and update their IDs to match
-    oldAST.nodeIdMap.forEach(n => {
-      let newNode = newAST.getNodeByPath(n.path);
-      if(newNode) { n.el.id = 'block-node-' + newNode.id; newNode.el = n.el; }
-    });
-    // If we have a DOM elt, use it and update the id. Mark parents of nodes with DOM elts as dirty
-    newAST.nodeIdMap.forEach(n => { if(!n.el){ dirtyNodes.add(newAST.getNodeParent(n) || n); }});
-    // Ensure that no dirty node is the ancestor of another dirty node
-    let dirty = [...dirtyNodes].sort((a, b) => a.path<b.path? -1 : a.path==b.path? 0 : 1);
-    dirty.reduce((n1, n2) => n2.path.includes(n1.path)? dirtyNodes.delete(n2) && n1 : n2, false);
-    newAST.dirtyNodes = new Set([...dirtyNodes].map(n => newAST.getNodeByPath(n.path)) // grab all the nodes
-      .filter(n => n !== undefined));                                                  // remove deleted ones
+    // Dirty nodes need to be added. Nodes without an el need their parents added (if they exist)
+    newNodes.forEach(n => { if(n.dirty) dirtyNodes.add(n); });
+    newNodes.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
+    newAST.dirtyNodes = new Set(removeChildren(dirtyNodes));
+    newAST.annotateNodes();
+    console.log(newAST.dirtyNodes);
     return newAST;
   }
 
