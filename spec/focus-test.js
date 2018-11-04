@@ -86,17 +86,17 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.focusPath).toBe("0,2");
     });
 
-    it('deleting the nth node should shift focus to n+1', async function() {
+    it('deleting the nth node should shift focus to n-1', async function() {
       this.literal2.el.dispatchEvent(click());
       expect(document.activeElement).toBe(this.literal2.el);
       this.literal2.el.dispatchEvent(keydown(SPACE));
       this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
       await wait(DELAY);
       expect(this.cm.getValue()).toBe('(+ 1  3)');
-      expect(this.blocks.focusPath).toBe("0,2");
+      expect(this.blocks.focusPath).toBe("0,1");
     });
 
-    it('deleting the multiple nodes should shift focus to the one after', async function() {
+    it('deleting the multiple nodes should shift focus to the one before the first', async function() {
       this.literal1.el.dispatchEvent(click());            // activate the node,
       this.literal1.el.dispatchEvent(keydown(SPACE)); // then select it
       this.literal1.el.dispatchEvent(keydown(DOWN, {altKey: true}));
@@ -106,7 +106,7 @@ describe('The CodeMirrorBlocks Class', function() {
       this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
       await wait(DELAY);
       expect(this.cm.getValue()).toBe('(+   3)');
-      expect(this.blocks.focusPath).toBe("0,1");
+      expect(this.blocks.focusPath).toBe("0,0");
     });
 
     // TODO: sometimes this test fails because of some reason

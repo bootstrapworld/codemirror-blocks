@@ -166,7 +166,6 @@ export class AST {
     newNodes.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
     newAST.dirtyNodes = new Set(removeChildren(dirtyNodes));
     newAST.annotateNodes();
-    console.log(newAST.dirtyNodes);
     return newAST;
   }
 

@@ -178,6 +178,7 @@ export default class CodeMirrorBlocks {
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
       if(this.blockMode && this.ast.rootNodes.length > 0 && !this.mouseUsed) {
+        console.log('trying to focus at ', this.focusPath, this.ast.getNodeByPath(this.focusPath));
         setTimeout(() => { this.activateNode(this.ast.getNodeByPath(this.focusPath), e); }, 10);
       }
     });
@@ -485,26 +486,14 @@ export default class CodeMirrorBlocks {
   }
 
   // deleteSelectedNodes : Void -> Void
-  // Delete all of this.selectedNodes set, and then empty the set.
-  // Put focus on the next sibling, if it exists. Otherwise focus on previous node (sib/parent)
+  // delete all the textRanges, clear the selectedNodes set, and update focus
+  // focus on the previous node if it exists, then the next node, then the cursor position
   deleteSelectedNodes() {
     let sel = [...this.selectedNodes].sort((b, a) => poscmp(a.from, b.from));
     this.selectedNodes.clear();
     let after = this.ast.getNodeAfter(sel[0]);
     let before = this.ast.getNodeBefore(sel[sel.length-1]);
-    let parent = this.ast.getNodeParent(sel[0]);
-    // if there's a next root node or sibling node, focus on that
-    if(after && (!parent || this.ast.getNodeParent(after) == parent)) {
-      let pathArray = after.path.split(',');
-      pathArray[pathArray.length-1] -= sel.length;
-      this.focusPath = pathArray.join(',');
-    // if there's a previous node, focus on that
-    } else if(before){
-      this.focusPath = before.path;
-    // we're deleting the only node
-    } else {
-      this.focusPath = sel[sel.length-1].from;
-    }
+    this.focusPath = before? before.path : after? after.path : sel[sel.length-1].from;
     this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
   }
