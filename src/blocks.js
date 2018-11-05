@@ -657,6 +657,7 @@ export default class CodeMirrorBlocks {
   // quarantine a keypress or paste entry at the CM level
   handleTopLevelEntry(e) {
     if(!this.blockMode) return; // bail if mode==false
+    e.preventDefault(); e.stopPropagation(); e.codemirrorIgnore = true;
     this.clearSelection();      // clear the previous selection
     // WK/Firefox workaround: skip kepress events that are actually clipboard events
     if(e.type == "keypress" && ["c","v","x"].includes(e.key) 
@@ -745,7 +746,7 @@ export default class CodeMirrorBlocks {
     try {
       let text = quarantine.textContent;
       let roots = this.parser.parse(text).rootNodes;      // Make sure the node contents will parse. If so...
-      this.cm.setOption("readOnly", true);                // 1) Let CM see again, and...
+      this.cm.setOption("readOnly", false);               // 1) Let CM see again, and...
       this.hasInvalidEdit = false;                        // 2) Set this.hasInvalidEdit
       if(quarantine.insertion) {                          // 3) If we're inserting (instead of editing)...
         quarantine.insertion.clear();                         // clear the CM marker
@@ -794,7 +795,7 @@ export default class CodeMirrorBlocks {
           this.activateNode(this.ast.getClosestNodeFromPath(quarantine.path.split(',')), e);
         }
         this.say("cancelled");
-        this.cm.setOption("readOnly", true);  // let CM see again
+        this.cm.setOption("readOnly", false);  // let CM see again
       } else if(["Tab", "Shift-Tab"].includes(keyName) && this.hasInvalidEdit) {
         this.say(quarantine.title);
       } else {
