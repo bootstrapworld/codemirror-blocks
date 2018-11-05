@@ -7,6 +7,7 @@ import * as ui from './ui';
 import merge from './merge';
 import {playSound, BEEP} from './sound';
 import {poscmp} from './utils';
+import {patch} from './ast';
 import {ISMAC, MODKEY, CTRLKEY, LEFT, RIGHT, DOWN, UP} from './keycode';
 
 // findNearestNodeEl : DOM -> DOM
@@ -178,7 +179,6 @@ export default class CodeMirrorBlocks {
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
       if(this.blockMode && this.ast.rootNodes.length > 0 && !this.mouseUsed) {
-        console.log('trying to focus at ', this.focusPath, this.ast.getNodeByPath(this.focusPath));
         setTimeout(() => { this.activateNode(this.ast.getNodeByPath(this.focusPath), e); }, 10);
       }
     });
@@ -323,7 +323,7 @@ export default class CodeMirrorBlocks {
     this.cm.operation(() => {
       // try to patch the AST, and conservatively mark only changed nodes as dirty
       try{
-        this.ast = this.ast.patch(s => this.parser.parse(s), newAST, changes);
+        this.ast = patch(this.ast, newAST, changes);
       // patching failed! log an error, and treat *all* nodes as dirty
       } catch(e) {
         console.error('PATCHING ERROR!!', changes, e);

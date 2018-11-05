@@ -31,13 +31,13 @@ function removeChildren(nodes) {
 function markChanges(oldAST, newAST, changes) {
   let insertedRanges = new Set();
   changes.forEach(c => {
-    // insertion: add to the insertedRanges set, and update the set locations
+    // insertion: add to the insertedRanges set, and update the range locations
     if(c.text.join("").length > 0) insertedRanges.add({from: c.from, to: c.to});
     insertedRanges.forEach(r => {
       r.from = adjustForChange(r.from, c, true ); 
       r.to   = adjustForChange(r.to  , c, false);
     });
-    // deletion: mark all nodes within oldAST as "deleted", then update locations
+    // deletion: mark all nodes within oldAST as "deleted", then update node locations
     if(c.removed.join("").length > 0) 
       oldAST.getNodesBetween(c.from, c.to).forEach(n => n.deleted = true);
     oldAST.nodeIdMap.forEach(n => {
@@ -46,9 +46,46 @@ function markChanges(oldAST, newAST, changes) {
     });
   });
   // mark all the inserted notes in newAST as "inserted"
-  insertedRanges.forEach(r => {
-    newAST.getNodesBetween(r.from, r.to).forEach(n => n.inserted = true);
+  insertedRanges.forEach(r =>
+    newAST.getNodesBetween(r.from, r.to).forEach(n => n.inserted = true));
+}
+
+// patch : AST, AST, [ChangeObjs] -> AST
+// FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
+// produce the new AST, preserving all the unchanged DOM nodes from the old AST
+// and a set of nodes that must be re-rendered
+export function patch(oldAST, newAST, CMchanges) {
+  let dirtyNodes = new Set();
+  markChanges(oldAST, newAST, CMchanges); // mark deleted and inserted nodes as such
+  
+  let newNodes = [...newAST.nodeIdMap.values()];
+  let oldNodes = [...oldAST.nodeIdMap.values()];
+  // Mark deleted node's parents as dirty, so they can be redrawn later
+  oldNodes.forEach( n => { if(n.deleted) (oldAST.getNodeParent(n) || n).dirty = true; });
+  
+  // walk through the nodes, unifying those that are unchanged
+  let newIdx = 0;
+  oldNodes.forEach(oldNode => {
+    let newNode = newNodes[newIdx];
+
+    // skip over any inserted nodes
+    while(newNode && newNodes[newIdx].inserted) { newNode = newNodes[newIdx++]; }
+
+    // If we're out of newNodes, or if the oldNode was deleted, move to the next oldNode
+    if(!newNode || oldNode.deleted) { return; }
+
+    // This node hasn't been changed (although its children might have!) -- unify properties
+    newNodes[newIdx].id = oldNode.id;       // keep the ID (for react reconciliation later)
+    newNodes[newIdx].el = oldNode.el;       // keep the el (for old drawing code)
+    newNodes[newIdx].dirty = oldNode.dirty; // keep dirty state (for old drawing code)
+    newIdx++;
   });
+  // Dirty nodes need to be added. Nodes without an el need their parents added (if they exist)
+  newNodes.forEach(n => { if(n.dirty) dirtyNodes.add(n); });
+  newNodes.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
+  newAST.dirtyNodes = new Set(removeChildren(dirtyNodes));
+  newAST.annotateNodes();
+  return newAST;
 }
 
 function posWithinNode(pos, node) {
@@ -127,46 +164,6 @@ export class AST {
     };
 
     loop(nodes, parent);
-  }
-
-  // patch : Parser, String, [ChangeObjs] -> AST
-  // FOR NOW: ASSUMES ALL CHANGES BOUNDARIES ARE NODE BOUNDARIES
-  // produce the new AST, preserving all the unchanged DOM nodes from the old AST
-  patch(parse, newAST, CMchanges) {
-    let oldAST = this, dirtyNodes = new Set();
-    markChanges(oldAST, newAST, CMchanges); // mark deleted and inserted nodes as such
-    
-    // We track deleted node's parents, so they can be redrawn without the deleted child
-    let deleted = new Set([...oldAST.nodeIdMap.values()].filter(n => n.deleted));
-    deleted.forEach( n => (oldAST.getNodeParent(n) || n).dirty = true);
-
-    let newNodes = [...newAST.nodeIdMap.values()];
-    let oldNodes = [...oldAST.nodeIdMap.values()];
-    let newIdx = 0;
-
-    // walk through the nodes, unifying those that are unchanged
-    oldNodes.forEach(oldNode => {
-      let newNode = newNodes[newIdx];
-
-      // skip over any inserted nodes
-      while(newNode && newNodes[newIdx].inserted) { newNode = newNodes[newIdx++]; }
-
-      // If we're out of newNodes, or if the oldNode was deleted, move ahead
-      if(!newNode || oldNode.deleted) { return; }
-
-      // This node hasn't been changed (although it's children might have!) -- copy the id
-      // If the node is dirty, don't bother copying the element
-      newNodes[newIdx].id = oldNode.id;
-      newNodes[newIdx].el = oldNode.el;
-      newNodes[newIdx].dirty = oldNode.dirty;
-      newIdx++;
-    });
-    // Dirty nodes need to be added. Nodes without an el need their parents added (if they exist)
-    newNodes.forEach(n => { if(n.dirty) dirtyNodes.add(n); });
-    newNodes.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
-    newAST.dirtyNodes = new Set(removeChildren(dirtyNodes));
-    newAST.annotateNodes();
-    return newAST;
   }
 
   getNodeById(id) {
@@ -248,7 +245,7 @@ export class AST {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
     return n && ([...n].length == 1? n : this.getNodeContaining(cursor, [...n].slice(1)) || n);
   }
-  // return an array of nodes that fall bwtween two locations
+  // return an array of nodes that fall bewtween two locations
   getNodesBetween(from, to) {
     return [...this.nodeIdMap.values()].filter(n => (poscmp(from, n.from) < 1) && (poscmp(to, n.to) > -1));
   }
