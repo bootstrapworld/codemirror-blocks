@@ -29,25 +29,31 @@ function removeChildren(nodes) {
 
 // given an oldAST, newAST and changeset, mark what was deleted+inserted
 function markChanges(oldAST, newAST, changes) {
-  let insertedRanges = new Set();
-  changes.forEach(c => {
-    // insertion: add to the insertedRanges set, and update the range locations
-    if(c.text.join("").length > 0) insertedRanges.add({from: c.from, to: c.to});
-    insertedRanges.forEach(r => {
+  let rangeMap = [];
+  changes.forEach((c, i) => {
+    // insertion: add to the rangeMap set, and update the range locations
+    rangeMap[i] = {from: c.from, to: c.to};
+    rangeMap.forEach(r => {
       r.from = adjustForChange(r.from, c, true ); 
       r.to   = adjustForChange(r.to  , c, false);
     });
     // deletion: mark all nodes within oldAST as "deleted", then update node locations
-    if(c.removed.join("").length > 0) 
-      oldAST.getNodesBetween(c.from, c.to).forEach(n => n.deleted = true);
+    let deleted = oldAST.getNodesBetween(c.from, c.to);
+    rangeMap[i].deleted = deleted;
     oldAST.nodeIdMap.forEach(n => {
       n.from = adjustForChange(n.from, c, true );
       n.to   = adjustForChange(n.to,   c, false);
     });
   });
-  // mark all the inserted notes in newAST as "inserted"
-  insertedRanges.forEach(r =>
-    newAST.getNodesBetween(r.from, r.to).forEach(n => n.inserted = true));
+  // Replaced nodes are dirty, Inserted nodes and Deleted nodes are marked as such, with dirty parents
+  rangeMap.forEach(r => {
+    let inserted = newAST.getNodesBetween(r.from, r.to);
+    if(inserted.length === r.deleted.length) { r.deleted.forEach(n => n.dirty = true); }
+    else {
+      r.deleted.forEach(n => { n.deleted  = true; (oldAST.getNodeParent(n) || n).dirty = true; });
+      inserted.forEach( n => { n.inserted = true; (newAST.getNodeParent(n) || n).dirty = true; });
+    }
+  });
 }
 
 // patch : AST, AST, [ChangeObjs] -> AST
@@ -55,31 +61,24 @@ function markChanges(oldAST, newAST, changes) {
 // produce the new AST, preserving all the unchanged DOM nodes from the old AST
 // and a set of nodes that must be re-rendered
 export function patch(oldAST, newAST, CMchanges) {
-  let dirtyNodes = new Set(), newIdx = 0;
-  markChanges(oldAST, newAST, CMchanges); // mark deleted and inserted nodes as such
-  
-  let newNodes = [...newAST.nodeIdMap.values()];
+  markChanges(oldAST, newAST, CMchanges); // mark dirty, deleted and inserted nodes as such
+  let newNodes = [...newAST.nodeIdMap.values()], newIdx = 0;
   let oldNodes = [...oldAST.nodeIdMap.values()];
-  // Mark deleted node's parents as dirty, so they can be redrawn later
-  oldNodes.forEach( n => { if(n.deleted) (oldAST.getNodeParent(n) || n).dirty = true; });
   
   // walk through the nodes, unifying those that are unchanged
   oldNodes.forEach(oldNode => {
     let newNode = newNodes[newIdx];
     // (1) Read ahead to the 1st non-inserted newNode. (2) If we're out of newNodes
-    // or the oldNode was deleted, return and iterate over the next oldNode.
-    while(newNode && newNodes[newIdx].inserted) { newNode = newNodes[newIdx++]; }
+    // or the oldNode was deleted, return and iterate over the next oldNode. 
+    while(newNode && newNodes[newIdx].inserted) { newNode = newNodes[++newIdx];  }
     if(!newNode || oldNode.deleted) { return; }
-    // This node hasn't been changed (although its children might have!) -- unify properties
-    newNodes[newIdx].id   = oldNode.id;       // for react reconciliation later
-    newNodes[newIdx].el   = oldNode.el;       // for old drawing code
-    newNodes[newIdx].dirty= oldNode.dirty;    // for old drawing code
+    // These are matching nodes -- unify properties
+    newNodes[newIdx].id     = oldNode.id;       // for react reconciliation later
+    newNodes[newIdx].el     = oldNode.el;       // for OLD DRAWING CODE
+    newNodes[newIdx].dirty |= oldNode.dirty;    // for OLD DRAWING CODE
     newIdx++;
   });
-  // Dirty nodes need to be added. Nodes without an el need their parents added (if they exist)
-  newNodes.forEach(n => { if(n.dirty) dirtyNodes.add(n); });
-  newNodes.forEach(n => { if(!n.el) dirtyNodes.add(newAST.getNodeParent(n) || n); });
-  newAST.dirtyNodes = new Set(removeChildren(dirtyNodes));
+  newAST.dirtyNodes = removeChildren(new Set(newNodes.filter(n => n.dirty)));
   newAST.annotateNodes();
   return newAST;
 }
@@ -139,6 +138,8 @@ export class AST {
   // walk through the siblings, assigning aria-* attributes
   // and populating various maps for tree navigation
   annotateNodes(nodes=this.rootNodes, parent=false) {
+    this.nodeIdMap.clear();
+    this.nodePathMap.clear();
     let lastNode = null;
 
     const loop = (nodes, parent) => {

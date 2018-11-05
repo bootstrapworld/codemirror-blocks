@@ -271,7 +271,7 @@ describe("AST Patching", function() {
       expect(this.ast.rootNodes[1].func.value).toBe("expt");
       expect(this.ast.rootNodes[2].type).toBe("literal");
       expect(this.ast.dirtyNodes.size).toBe(1);
-      expect([...this.ast.dirtyNodes.values()][0].type).toBe("expression");
+      expect([...this.ast.dirtyNodes.values()][0].type).toBe("literal");
     });
   });
 
@@ -592,10 +592,10 @@ describe("AST Patching", function() {
     });
 
     it('move a child so that it replaces a root node', function() {
-      var newCode = '42\n\n(+ 1 ) (* 2 3)\n\n';
+      var newCode = '42\n\n(+ 1 )\n\n(* 2 3)';
       let newAST = this.parser.parse(newCode);
       let change1 = { from: {line: 4, ch:0}, to: {line:4, ch:7}, text: ["(* 2 3)"], removed: ['"hello"'] };
-      let change2 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ['(* 2 3)'] };
+      let change2 = { from: {line: 2, ch:5}, to: {line:2, ch:12}, text: [""], removed: ["(* 2 3)"] };
       this.ast = patch(this.ast, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].type).toBe("literal");
