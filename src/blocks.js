@@ -709,6 +709,7 @@ export default class CodeMirrorBlocks {
     quarantine["aria-label"] = quarantine.textContent = text;
     quarantine.contentEditable = true;
     quarantine.spellcheck = false;
+    quarantine.onclick   = e => e.stopPropagation();
     quarantine.onblur    = () => this.saveQuarantine(quarantine);
     quarantine.onkeydown = (e  => this.handleEditKeyDown(quarantine, e));
     quarantine.onpaste   = (e  => {
@@ -751,6 +752,7 @@ export default class CodeMirrorBlocks {
         var path = quarantine.path.split(',').map(Number);    // Extract and expand the path
         path[path.length-1] += roots.length;                  // adjust the path based on parsed text
         text = this.willInsertNode(this.cm, text, quarantine, quarantine.from, quarantine.to); // sanitize
+        quarantine.path = path.join(',');
       }
       // guard against https://github.com/bootstrapworld/codemirror-blocks/issues/123
       try {
@@ -760,7 +762,7 @@ export default class CodeMirrorBlocks {
       }
       this.commitChange(() => { // make the change, and set the path for re-focus
           this.cm.replaceRange(text, quarantine.from, quarantine.to);
-          if(path) this.focusPath = path.join(',');
+          if(quarantine.path) this.focusPath = quarantine.path;
         }, 
         (quarantine.insertion? "inserted " : "changed ") + text
       );

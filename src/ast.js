@@ -55,7 +55,7 @@ function markChanges(oldAST, newAST, changes) {
 // produce the new AST, preserving all the unchanged DOM nodes from the old AST
 // and a set of nodes that must be re-rendered
 export function patch(oldAST, newAST, CMchanges) {
-  let dirtyNodes = new Set();
+  let dirtyNodes = new Set(), newIdx = 0;
   markChanges(oldAST, newAST, CMchanges); // mark deleted and inserted nodes as such
   
   let newNodes = [...newAST.nodeIdMap.values()];
@@ -64,20 +64,16 @@ export function patch(oldAST, newAST, CMchanges) {
   oldNodes.forEach( n => { if(n.deleted) (oldAST.getNodeParent(n) || n).dirty = true; });
   
   // walk through the nodes, unifying those that are unchanged
-  let newIdx = 0;
   oldNodes.forEach(oldNode => {
     let newNode = newNodes[newIdx];
-
-    // skip over any inserted nodes
+    // (1) Read ahead to the 1st non-inserted newNode. (2) If we're out of newNodes
+    // or the oldNode was deleted, return and iterate over the next oldNode.
     while(newNode && newNodes[newIdx].inserted) { newNode = newNodes[newIdx++]; }
-
-    // If we're out of newNodes, or if the oldNode was deleted, move to the next oldNode
     if(!newNode || oldNode.deleted) { return; }
-
     // This node hasn't been changed (although its children might have!) -- unify properties
-    newNodes[newIdx].id = oldNode.id;       // keep the ID (for react reconciliation later)
-    newNodes[newIdx].el = oldNode.el;       // keep the el (for old drawing code)
-    newNodes[newIdx].dirty = oldNode.dirty; // keep dirty state (for old drawing code)
+    newNodes[newIdx].id   = oldNode.id;       // for react reconciliation later
+    newNodes[newIdx].el   = oldNode.el;       // for old drawing code
+    newNodes[newIdx].dirty= oldNode.dirty;    // for old drawing code
     newIdx++;
   });
   // Dirty nodes need to be added. Nodes without an el need their parents added (if they exist)
