@@ -889,7 +889,7 @@ describe('The CodeMirrorBlocks Class', function() {
         dropEvent.pageX = wrapperEl.offsetLeft + wrapperEl.offsetWidth - 10;
         dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
         nodeEl.parentElement.dispatchEvent(dropEvent);
-        expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
+        expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3) 5000');
       });
     });
 

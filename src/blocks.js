@@ -588,7 +588,6 @@ export default class CodeMirrorBlocks {
     } else if (!sourceNodeText) {
       console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
-
     // look up the destination information: Node, destFrom, destTo, and destPath
     let destinationNode = this.findNodeFromEl(event.target);            // when dropping onto an existing node, get that Node
     let coordsChar      = this.cm.coordsChar({left:event.pageX, top:event.pageY});
@@ -602,7 +601,7 @@ export default class CodeMirrorBlocks {
                         || this.getPathFromWhitespace(event.target)
                         || String(rootBefore? rootBefore.path : -1);
     destPath = destPath.split(',').map(Number);
-
+    
     // if we're inserting, add 1 to the last child of the path
     if(!destinationNode) { destPath[destPath.length-1]++; }
   
@@ -617,18 +616,6 @@ export default class CodeMirrorBlocks {
       if ((poscmp(destFrom, sourceNode.from) > -1) && (poscmp(destTo, sourceNode.to) <  1)) { return; }
     }
     this.focusPath = destPath.join(',');
-    
-    // if we're coming from outside
-    if (destFrom.outside) {
-      sourceNodeText = '\n' + sourceNodeText;
-    }
-
-    // if we're inserting/replacing from outside the editor, just do it and return
-    if (!sourceNode) {
-      this.commitChange( () => this.cm.replaceRange(sourceNodeText, destFrom, destTo),
-        "inserted "+sourceNodeText);
-      return;
-    }
 
     // If f is defined and the destination is a non-literal node, apply it.
     // Otherwise return the sourceNodeText unmodified
@@ -637,10 +624,22 @@ export default class CodeMirrorBlocks {
         f(this.cm, sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
     };
 
+    // if we're coming from outside
+    if (destFrom.outside) {
+      sourceNodeText = '\n' + sourceNodeText;
+    }
+    sourceNodeText = maybeApplyClientFn(this.willInsertNode);
+
+    // if we're inserting/replacing from outside the editor, just do it and return
+    if (!sourceNode) {
+      this.commitChange( () => this.cm.replaceRange(sourceNodeText, destFrom, destTo),
+        "inserted "+sourceNodeText);
+      return;
+    }
+
     // Call willInsertNode and didInsertNode on either side of the replacement operation
     // if we're not replacing a literal.
     this.commitChange(() => {
-      sourceNodeText = maybeApplyClientFn(this.willInsertNode);
       if (poscmp(sourceNode.from, destFrom) < 0) {
         this.cm.replaceRange(sourceNodeText, destFrom, destTo);
         this.cm.replaceRange('', sourceNode.from, sourceNode.to);
