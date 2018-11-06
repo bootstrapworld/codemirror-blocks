@@ -623,12 +623,12 @@ export default class CodeMirrorBlocks {
       return (f && !(destinationNode && destinationNode.type == "literal"))?
         f(this.cm, sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
     };
+    sourceNodeText = maybeApplyClientFn(this.willInsertNode);
 
     // if we're coming from outside
     if (destFrom.outside) {
       sourceNodeText = '\n' + sourceNodeText;
     }
-    sourceNodeText = maybeApplyClientFn(this.willInsertNode);
 
     // if we're inserting/replacing from outside the editor, just do it and return
     if (!sourceNode) {
