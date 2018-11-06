@@ -331,9 +331,8 @@ export default class CodeMirrorBlocks {
         this.ast.dirtyNodes = this.ast.rootNodes;
       // render all the dirty nodes, and reset the cursor
       } finally {
-        this.ast.dirtyNodes.forEach(n => this.renderer.render(n)); 
+        this.ast.dirtyNodes.forEach(n => { this.renderer.render(n); delete n.dirty; });
         setTimeout(() => {
-          this.ast.dirtyNodes.forEach(n => delete n.dirty);
           delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
           this.cm.focus();            // focus the editor, now on the current block
         }, 250);

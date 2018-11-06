@@ -31,21 +31,20 @@ function removeChildren(nodes) {
 function markChanges(oldAST, newAST, changes) {
   let rangeMap = [];
   changes.forEach((c, i) => {
-    // insertion: add to the rangeMap set, and update the range locations
+    // update all the ranges we've seen to the latest coordinate system
     rangeMap[i] = {from: c.from, to: c.to};
     rangeMap.forEach(r => {
       r.from = adjustForChange(r.from, c, true ); 
       r.to   = adjustForChange(r.to  , c, false);
     });
-    // deletion: mark all nodes within oldAST as "deleted", then update node locations
-    let deleted = oldAST.getNodesBetween(c.from, c.to);
-    rangeMap[i].deleted = deleted;
+    // save deleted sequences of old nodes to our rangeMap, then update old nodes coordinates
+    rangeMap[i].deleted = oldAST.getNodesBetween(c.from, c.to);
     oldAST.nodeIdMap.forEach(n => {
       n.from = adjustForChange(n.from, c, true );
       n.to   = adjustForChange(n.to,   c, false);
     });
   });
-  // Replaced nodes are dirty, Inserted nodes and Deleted nodes are marked as such, with dirty parents
+  // Replaced nodes - and the parents of inserted/deleted nodes - are dirty
   rangeMap.forEach(r => {
     let inserted = newAST.getNodesBetween(r.from, r.to);
     if(inserted.length === r.deleted.length) { r.deleted.forEach(n => n.dirty = true); }
@@ -80,6 +79,7 @@ export function patch(oldAST, newAST, CMchanges) {
   });
   newAST.dirtyNodes = removeChildren(new Set(newNodes.filter(n => n.dirty)));
   newAST.annotateNodes();
+  console.log(...newAST.dirtyNodes);
   return newAST;
 }
 
