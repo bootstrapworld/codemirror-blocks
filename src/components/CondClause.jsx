@@ -20,7 +20,7 @@ export default class CondClause extends Component {
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">
-            <DropTarget location={node.testExpr.from} />
+            <DropTarget location={node.from} />
             {helpers.renderNodeForReact(node.testExpr)}
           </div>
           <div className="blocks-cond-result">
