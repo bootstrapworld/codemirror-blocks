@@ -176,9 +176,11 @@ export default class CodeMirrorBlocks {
       setTimeout(() => this.mouseUsed = false, 200);
     });
     // override CM's natural onFocus behavior, activating the last focused node
+    // this.focusPath is *not guaranteed to exist*, since an edit may have occurred
     // skip this if it's the result of a mousedown event
     this.cm.on('focus',     (cm, e) => {
       if(this.blockMode && this.ast.rootNodes.length > 0 && !this.mouseUsed) {
+        this.focusPath = this.ast.getClosestNodeFromPath(this.focusPath.split(',')).path;
         setTimeout(() => { this.activateNode(this.ast.getNodeByPath(this.focusPath), e); }, 10);
       }
     });
