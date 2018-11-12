@@ -111,7 +111,7 @@ export default class CodeMirrorBlocks {
     this.wrapper.appendChild(this.announcements);
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track history with path/announcement pairs
+    // Track history
     this.history = {done: [], undone: []};
     this.focusPath = "0";
     // Internal clipboard for non-native operations (*groan*)
@@ -335,8 +335,8 @@ export default class CodeMirrorBlocks {
         this.ast.dirtyNodes.forEach(n => { this.renderer.render(n); delete n.dirty; });
         setTimeout(() => {
           delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
-          this.focusPath = this.ast.focusPath;
-          this.cm.focus();            // focus the editor, now on the current block
+          this.focusPath = this.ast.focusPath || "0" // use computed focus, or fall back to 1st node;
+          this.cm.focus();            // focus on the editor
         }, 250);
       }
     });
@@ -942,14 +942,14 @@ export default class CodeMirrorBlocks {
       // Announce undo and redo (or beep if there's nothing)
       if (keyName == CTRLKEY+"-Z" && activeNode) {
         if(this.history.done.length > 0) {
-          this.say("undo " + this.history.done[0]);
+          this.say("undo " + this.history.done[0].announcement);
           this.history.undone.unshift(this.history.done.shift());
         }
         else { playSound(BEEP); }
       }
       if ((ISMAC && keyName=="Shift-Cmd-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
         if(this.history.undone.length > 0) {
-          this.say("redo " + this.history.undone[0]);
+          this.say("redo " + this.history.undone[0].announcement);
           this.history.done.unshift(this.history.undone.shift());
         }
         else { playSound(BEEP); }
