@@ -67,12 +67,12 @@ function markChanges(oldAST, newAST, changes) {
 // and a set of nodes that must be re-rendered
 export function patch(oldAST, newAST, CMchanges) {
   markChanges(oldAST, newAST, CMchanges); // mark dirty, deleted and inserted nodes as such
-  let newNodes = [...newAST.nodeIdMap.values()], newIdx = -1;
+  let newNodes = [...newAST.nodeIdMap.values()], newIdx = 0;
   let oldNodes = [...oldAST.nodeIdMap.values()];
   
   // walk through the nodes, unifying those that weren't deleted or inserted
   oldNodes.forEach(oldNode => {
-    let newNode = newNodes[++newIdx];
+    let newNode = newNodes[newIdx];
     // (1) Read ahead to the 1st non-inserted newNode. 
     while(newNode && newNodes[newIdx].inserted) { newNode = newNodes[++newIdx];  }
     // (2) If we're out of newNodes or the oldNode was deleted, process next oldNode. 
@@ -81,6 +81,7 @@ export function patch(oldAST, newAST, CMchanges) {
     newNodes[newIdx].id     = oldNode.id;
     newNodes[newIdx].el     = oldNode.el;       // delete for new-reactify
     newNodes[newIdx].dirty |= oldNode.dirty;    // delete for new-reactify
+    newIdx++;
   });
   newAST.dirtyNodes = removeChildren(new Set(newNodes.filter(n => n.dirty)));
   newAST.annotateNodes();
