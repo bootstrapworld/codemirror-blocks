@@ -27,24 +27,26 @@ function removeChildren(nodes) {
   return nodes;
 }
 
-// given an oldAST, newAST and changeset, mark what was deleted+inserted
+// given an oldAST, newAST and changeset, mark what was deleted, inserted and dirty
+// also compute the path of the node to be focused after the edit
 function markChanges(oldAST, newAST, changes) {
-  let rangeMap = [];
+  let rangeMap = [], insert = false;
   changes.forEach((c, i) => {
-    // update all the ranges we've seen to the latest coordinate system
-    rangeMap[i] = {from: c.from, to: c.to};
+    rangeMap[i] = {from: c.from, to: c.to}; // add this change to the rangeMap
+    // update all the range-positions we've seen thus far to reflect this change
     rangeMap.forEach(r => {
       r.from = adjustForChange(r.from, c, true ); 
       r.to   = adjustForChange(r.to  , c, false);
     });
-    // save deleted sequences of old nodes to our rangeMap, then update old nodes coordinates
+    // save old, deleted nodes, then update oldAST node positions to reflect this change
     rangeMap[i].deleted = oldAST.getNodesBetween(c.from, c.to);
     oldAST.nodeIdMap.forEach(n => {
       n.from = adjustForChange(n.from, c, true );
       n.to   = adjustForChange(n.to,   c, false);
     });
+    if(c.text.join(',').length) insert = rangeMap[i]; // if it's an insertion, remember it
   });
-  // Replaced nodes - and the parents of inserted/deleted nodes - are dirty
+  // Mark replaced nodes - and the parents of inserted/deleted nodes - as dirty
   rangeMap.forEach(r => {
     let inserted = newAST.getNodesBetween(r.from, r.to);
     if(inserted.length === r.deleted.length) { r.deleted.forEach(n => n.dirty = true); }
@@ -53,6 +55,10 @@ function markChanges(oldAST, newAST, changes) {
       inserted.forEach( n => { n.inserted = true; (newAST.getNodeParent(n) || n).dirty = true; });
     }
   });
+  // Use the node before most-recent .to (insertion), or before earliest-appearing .from (deleting)
+  let node = newAST.getNodeBeforeCur(insert? insert.to : rangeMap[0].from);
+  // If there's no node before the deletion, we're at the beginning. Use the first node in the tree.
+  newAST.focusPath = node? node.path : newAST.getNodeByPath("0").path;
 }
 
 // patch : AST, AST, [ChangeObjs] -> AST

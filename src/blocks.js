@@ -111,8 +111,8 @@ export default class CodeMirrorBlocks {
     this.wrapper.appendChild(this.announcements);
     // Track all selected nodes in our own set
     this.selectedNodes = new Set();
-    // Track focus and history with path/announcement pairs
-    this.focusHistory = {done: [], undone: []};
+    // Track history with path/announcement pairs
+    this.history = {done: [], undone: []};
     this.focusPath = "0";
     // Internal clipboard for non-native operations (*groan*)
     this.clipboard = "";
@@ -209,9 +209,8 @@ export default class CodeMirrorBlocks {
   // called anytime we update the underlying CM value
   // destroys the redo history and updates the undo history
   commitChange(changes, announcement=false) {
-    console.log('committing change. saving focus at ' + this.focusPath);
-    this.focusHistory.done.unshift({path: this.focusPath, announcement: announcement});
-    this.focusHistory.undone = [];
+    this.history.done.unshift({announcement: announcement});
+    this.history.undone = [];
     this.cm.operation(changes);
     if (announcement) this.say(announcement);
   }
@@ -336,6 +335,7 @@ export default class CodeMirrorBlocks {
         this.ast.dirtyNodes.forEach(n => { this.renderer.render(n); delete n.dirty; });
         setTimeout(() => {
           delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
+          this.focusPath = this.ast.focusPath;
           this.cm.focus();            // focus the editor, now on the current block
         }, 250);
       }
@@ -495,7 +495,6 @@ export default class CodeMirrorBlocks {
     this.selectedNodes.clear();
     let after = this.ast.getNodeAfter(sel[0]);
     let before = this.ast.getNodeBefore(sel[sel.length-1]);
-    this.focusPath = before? before.path : after? after.path : sel[sel.length-1].from;
     this.commitChange(() => sel.forEach(n => this.cm.replaceRange('', n.from, n.to)),
       "deleted "+sel.length+" item"+(sel.length==1? "" : "s"));
   }
@@ -590,7 +589,7 @@ export default class CodeMirrorBlocks {
     } else if (!sourceNodeText) {
       console.error("data transfer contains no node id/json/text. Not sure how to proceed.");
     }
-    // look up the destination information: Node, destFrom, destTo, and destPath
+    // look up the destination information: Node, destFrom, and destTo
     let destinationNode = this.findNodeFromEl(event.target);            // when dropping onto an existing node, get that Node
     let coordsChar      = this.cm.coordsChar({left:event.pageX, top:event.pageY});
     let rootBefore = this.ast.getToplevelNodeBeforeCur(coordsChar);
@@ -599,25 +598,12 @@ export default class CodeMirrorBlocks {
                         || this.getLocationFromWhitespace(event.target) // if we have a drop target, grab that location
                         || coordsChar; // give up and ask CM for the cursor location
     let destTo          = destinationNode? destinationNode.to : destFrom; // destFrom = destTo for insertion
-    var destPath        = (destinationNode && destinationNode.path) 
-                        || this.getPathFromWhitespace(event.target)
-                        || String(rootBefore? rootBefore.path : -1);
-    destPath = destPath.split(',').map(Number);
     
-    // if we're inserting, add 1 to the last child of the path
-    if(!destinationNode) { destPath[destPath.length-1]++; }
-  
     // Special handling if the sourceNode is coming from within the document
+    // check for no-ops: we have to use textCoords instead of ASTpaths, to allow shifting a block within whitespace
     if(sourceNode) {
-      let sourcePath = sourceNode.path.split(',').map(Number);
-      // if the sourecepath ends at a younger sibling of any destination ancestor, decrement that ancestor's order
-      for(var i = 0; i < Math.min(sourcePath.length, destPath.length); i++) {
-        if((sourcePath[i] <  destPath[i]) && (sourcePath.length == (i+1))) { destPath[i]--; }
-      }      
-      // check for no-ops: we have to use textCoords instead of ASTpaths, to allow shifting a block within whitespace
       if ((poscmp(destFrom, sourceNode.from) > -1) && (poscmp(destTo, sourceNode.to) <  1)) { return; }
     }
-    this.focusPath = destPath.join(',');
 
     // If f is defined and the destination is a non-literal node, apply it.
     // Otherwise return the sourceNodeText unmodified
@@ -625,12 +611,12 @@ export default class CodeMirrorBlocks {
       return (f && !(destinationNode && destinationNode.type == "literal"))?
         f(this.cm, sourceNodeText, sourceNode, destFrom, destinationNode) : sourceNodeText;
     };
-    sourceNodeText = maybeApplyClientFn(this.willInsertNode);
 
     // if we're coming from outside
     if (destFrom.outside) {
       sourceNodeText = '\n' + sourceNodeText;
     }
+    sourceNodeText = maybeApplyClientFn(this.willInsertNode);
 
     // if we're inserting/replacing from outside the editor, just do it and return
     if (!sourceNode) {
@@ -683,7 +669,6 @@ export default class CodeMirrorBlocks {
       text = text || this.cm.getRange(dest.from, dest.to);
       let parent = dest.el.parentNode;
       quarantine.from = dest.from; quarantine.to = dest.to;
-      quarantine.path = dest.path;              // save the path for returning focus
       quarantine.originalEl = dest.el;          // save the original DOM El
       parent.replaceChild(quarantine, dest.el); // replace the old node with the quarantine
     // if we're inserting into a whitespace node
@@ -691,16 +676,12 @@ export default class CodeMirrorBlocks {
       quarantine.classList.add("blocks-white-space");
       let parent = dest.parentNode;
       quarantine.to = quarantine.from = this.getLocationFromWhitespace(dest);
-      quarantine.path = this.getPathFromWhitespace(dest); // save path for focus
       quarantine.originalEl = dest;             // save the original DOM El
       parent.replaceChild(quarantine, dest);    // replace the old node with the quarantine
       quarantine.insertion = {clear: () => {}}; // make a dummy marker
     // if we're inserting into a toplevel CM cursor
     } else if(dest.line !== undefined){
       quarantine.to = quarantine.from = dest;
-      // calculate the path for focus (-1 if it's the first node)
-      const nodeBefore = this.ast.getToplevelNodeBeforeCur(dest);
-      quarantine.path = String(nodeBefore ? nodeBefore.path : -1); // save path for focus
       let mk = this.cm.setBookmark(dest, {widget: quarantine});
       quarantine.insertion = mk;
     } else {
@@ -751,10 +732,7 @@ export default class CodeMirrorBlocks {
       this.hasInvalidEdit = false;                        // 2) Set this.hasInvalidEdit
       if(quarantine.insertion) {                          // 3) If we're inserting (instead of editing)...
         quarantine.insertion.clear();                         // clear the CM marker
-        var path = quarantine.path.split(',').map(Number);    // Extract and expand the path
-        path[path.length-1] += roots.length;                  // adjust the path based on parsed text
         text = this.willInsertNode(this.cm, text, quarantine, quarantine.from, quarantine.to); // sanitize
-        quarantine.path = path.join(',');
       }
       // guard against https://github.com/bootstrapworld/codemirror-blocks/issues/123
       try {
@@ -762,10 +740,7 @@ export default class CodeMirrorBlocks {
       } catch(e) {
         console.log('(Hopefully) Harmless DOM error:', e.toString());
       }
-      this.commitChange(() => { // make the change, and set the path for re-focus
-          this.cm.replaceRange(text, quarantine.from, quarantine.to);
-          if(quarantine.path) this.focusPath = quarantine.path;
-        }, 
+      this.commitChange(() => this.cm.replaceRange(text, quarantine.from, quarantine.to), 
         (quarantine.insertion? "inserted " : "changed ") + text
       );
     } catch(e) {                                      // If the node contents will NOT lex...
@@ -793,7 +768,7 @@ export default class CodeMirrorBlocks {
         if(quarantine.insertion) { quarantine.insertion.clear(); }
         if(quarantine.originalEl) {
           quarantine.parentNode.replaceChild(quarantine.originalEl, quarantine);
-          this.activateNode(this.ast.getClosestNodeFromPath(quarantine.path.split(',')), e);
+          this.activateNode(this.ast.getNodeByPath(this.focusPath), e);
         }
         this.say("cancelled");
         this.cm.setOption("readOnly", false);  // let CM see again
@@ -888,9 +863,6 @@ export default class CodeMirrorBlocks {
     }
     // if open-bracket, modify text to be an empty expression with a blank
     else if (openDelims.includes(event.key) && activeNode) {
-      let path = activeNode.path.split(',');
-      path[path.length-1]++; // add an adjacent sibling
-      this.focusPath = path.join(','); // put focus on new sibling
       this.commitChange(() => this.cm.replaceRange(event.key+closeDelims[event.key], activeNode.to),
         "inserted empty expression");
     }
@@ -969,18 +941,16 @@ export default class CodeMirrorBlocks {
     } else {
       // Announce undo and redo (or beep if there's nothing)
       if (keyName == CTRLKEY+"-Z" && activeNode) {
-        if(this.focusHistory.done.length > 0) {
-          this.say("undo " + this.focusHistory.done[0].announcement);
-          this.focusHistory.undone.unshift(this.focusHistory.done.shift());
-          this.focusPath = this.focusHistory.undone[0].path;
+        if(this.history.done.length > 0) {
+          this.say("undo " + this.history.done[0]);
+          this.history.undone.unshift(this.history.done.shift());
         }
         else { playSound(BEEP); }
       }
       if ((ISMAC && keyName=="Shift-Cmd-Z") || (!ISMAC && keyName=="Ctrl-Y") && activeNode) { 
-        if(this.focusHistory.undone.length > 0) {
-          this.say("redo " + this.focusHistory.undone[0].announcement);
-          this.focusHistory.done.unshift(this.focusHistory.undone.shift());
-          this.focusPath = this.focusHistory.done[0].path;
+        if(this.history.undone.length > 0) {
+          this.say("redo " + this.history.undone[0]);
+          this.history.done.unshift(this.history.undone.shift());
         }
         else { playSound(BEEP); }
       }
