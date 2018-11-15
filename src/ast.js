@@ -38,22 +38,19 @@ function markChanges(oldAST, newAST, changes) {
       r.from = adjustForChange(r.from, c, true ); 
       r.to   = adjustForChange(r.to  , c, false);
     });
-    // save old, deleted nodes, then update oldAST node positions to reflect this change
-    rangeMap[i].deleted = oldAST.getNodesBetween(c.from, c.to);
+    // mark the parents of all deleted nodes as dirty (or the nodes themselves, in the case of roots)
+    oldAST.getNodesBetween(c.from, c.to).forEach(n => 
+      { n.deleted  = true; (oldAST.getNodeParent(n) || n).dirty = true; });
     oldAST.nodeIdMap.forEach(n => {
       n.from = adjustForChange(n.from, c, true );
       n.to   = adjustForChange(n.to,   c, false);
     });
     if(c.text.join(',').length) insert = rangeMap[i]; // if it's an insertion, remember it
   });
-  // Mark replaced nodes - and the parents of inserted/deleted nodes - as dirty
+  // mark the parents of all inserted nodes as dirty (or the nodes themselves, in the case of roots)
   rangeMap.forEach(r => {
-    let inserted = newAST.getNodesBetween(r.from, r.to);
-    if(inserted.length === r.deleted.length) { r.deleted.forEach(n => n.dirty = true); }
-    else {
-      r.deleted.forEach(n => { n.deleted  = true; (oldAST.getNodeParent(n) || n).dirty = true; });
-      inserted.forEach( n => { n.inserted = true; (newAST.getNodeParent(n) || n).dirty = true; });
-    }
+    newAST.getNodesBetween(r.from, r.to).forEach(n => 
+      { n.inserted = true; (newAST.getNodeParent(n) || n).dirty = true; });
   });
   // Use the node before most-recent .to (insertion), or before earliest-appearing .from (deleting)
   let node = newAST.getNodeBeforeCur(insert? insert.to : rangeMap[0].from);
