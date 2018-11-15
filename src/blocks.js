@@ -333,6 +333,7 @@ export default class CodeMirrorBlocks {
       // render all the dirty nodes, and reset the cursor
       } finally {
         this.ast.dirtyNodes.forEach(n => { this.renderer.render(n); delete n.dirty; });
+        console.log(this.ast);
         setTimeout(() => {
           delete this.ast.dirtyNodes; // remove dirty nodeset, now that they've been rendered
           this.focusPath = this.ast.focusPath || "0" // use computed focus, or fall back to 1st node;
@@ -693,7 +694,7 @@ export default class CodeMirrorBlocks {
   saveQuarantine(quarantine) {
     try {
       let text = quarantine.textContent;
-      let roots = this.parser.parse(text).rootNodes;      // Make sure the node contents will parse. If so...
+      //let roots = this.parser.parse(text).rootNodes;      // Make sure the node contents will parse. If so...
       this.cm.setOption("readOnly", false);               // 1) Let CM see again, and...
       this.hasInvalidEdit = false;                        // 2) Set this.hasInvalidEdit
       if(quarantine.insertion) {                          // 3) If we're inserting (instead of editing)...

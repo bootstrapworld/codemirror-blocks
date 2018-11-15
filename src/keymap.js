@@ -2,7 +2,9 @@ import { ISMAC } from './keycode';
 
 export let keyMap = {
   "Up":         "findPrevVisibleNode",
+  "Shift-Tab":  "findPrevVisibleNode",
   "Down":       "findNextVisibleNode",
+  "Tab":        "findNextVisibleNode",
   "Left":       "collapseOrFindParent",
   "Right":      "expandOrFindFirstChild",
   "Home":       "activateFirstVisibleNode",
