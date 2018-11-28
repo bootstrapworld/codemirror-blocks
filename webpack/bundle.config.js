@@ -7,7 +7,7 @@ var baseConfig = require('./base.config.js');
 var configs = [
   _.extend({}, baseConfig(), {
     entry: {
-      "CodeMirrorBlocks": ['babel-polyfill', './src/codemirror-blocks.js']
+      "CodeMirrorBlocks": ['./src/codemirror-blocks.js']
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
@@ -21,7 +21,7 @@ var configs = [
   // everything needed to drop into WeScheme
   _.extend({}, baseConfig(), {
     entry: {
-      "CodeMirrorBlocks-wescheme": ['babel-polyfill', './src/languages/wescheme/index.js', './src/codemirror-blocks-all.js']
+      "CodeMirrorBlocks-wescheme": ['./src/languages/wescheme/index.js', './src/codemirror-blocks-all.js']
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
@@ -31,7 +31,7 @@ var configs = [
   }),
   _.extend({}, baseConfig(), {
     entry: {
-      "WeschemeParser": ['babel-polyfill', './src/languages/wescheme/index.js']
+      "WeschemeParser": ['./src/languages/wescheme/index.js']
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
@@ -45,7 +45,7 @@ var configs = [
   }),
   _.extend({}, baseConfig(), {
     entry: {
-      "Editor": ['babel-polyfill', './src/languages/wescheme/index.js', './src/codemirror-blocks-all.js', './src/ui/']
+      "Editor": ['./src/languages/wescheme/index.js', './src/codemirror-blocks-all.js', './src/ui/']
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
