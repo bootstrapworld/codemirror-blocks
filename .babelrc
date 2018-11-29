@@ -9,7 +9,6 @@
     [
       "@babel/preset-env",
       {
-        "useBuiltIns": "entry",
         "targets": {
           "browsers": [
             "Firefox >= 57",
