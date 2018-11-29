@@ -1,4 +1,4 @@
-import 'babel-polyfill';
+import '@babel/polyfill';
 import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/searchcursor.js';
 import 'codemirror/lib/codemirror.css';
