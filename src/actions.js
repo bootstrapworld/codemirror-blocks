@@ -62,7 +62,7 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
           cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
         } else if (poscmp(srcNode.from, destFrom) < 0) {
           cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
-          cm.leplaceRange('', srcNode.from, srcNode.to, 'cmb: drop-node');
+          cm.replaceRange('', srcNode.from, srcNode.to, 'cmb: drop-node');
         } else {
           cm.replaceRange('', srcNode.from, srcNode.to, 'cmb:drop-node');
           cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
