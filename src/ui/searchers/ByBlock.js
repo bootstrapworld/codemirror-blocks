@@ -1,77 +1,81 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {skipWhile, getNodeContainingBiased} from '../../utils';
 
-function getAllNodeTypes(blocks) {
+function getAllNodeTypes(ast) {
   const allNodeTypes = new Set();
-  for (const node of blocks.ast.nodeIdMap.values()) {
+  for (const node of ast.nodeIdMap.values()) {
     allNodeTypes.add(node.type);
   }
   return allNodeTypes;
 }
 
-function ByBlock({state, handleChange, blocks}) {
-  const allNodeTypes = getAllNodeTypes(blocks);
-  const types = Array.from(allNodeTypes).sort();
-  let currentBadOption = null;
-  if (!allNodeTypes.has(state.blockType)) {
-    currentBadOption = (
-      <option key={state.blockType} value={state.blockType} disabled hidden>
-        {state.blockType}
-      </option>
-    );
-  }
-  return (
-    <select name="blockType" value={state.blockType} onChange={handleChange}>
-      {currentBadOption}
-      {types.map(t => <option key={t} value={t}>{t}</option>)}
-    </select>
-  );
-}
-
-ByBlock.propTypes = {
-  state: PropTypes.shape({
-    blockType: PropTypes.string.isRequired,
-  }),
-  handleChange: PropTypes.func.isRequired,
-  blocks: PropTypes.object.isRequired,
-};
-
 export default {
   label: 'Search by block',
-  init: {blockType: ''},
-  component: ByBlock,
-  hasMatch: (state, blocks) => getAllNodeTypes(blocks).has(state.blockType),
-  find: function(blocks, state, forward) {
-    const activeNode = blocks.getActiveNode();
-    const searcher = forward ? blocks.ast.getNodeAfter : blocks.ast.getNodeBefore;
-
-    let startingNode = null;
-    let beep = false;
-    if (activeNode) {
-      startingNode = searcher(activeNode);
-    } else {
-      const cur = blocks.cm.getCursor();
-      startingNode = forward ?
-        blocks.ast.getNodeAfterCur(cur) :
-        blocks.ast.getNodeBeforeCur(cur);
+  setting: {blockType: ''},
+  component: class extends React.Component {
+    static propTypes = {
+      cmbState: PropTypes.object.isRequired,
+      setting: PropTypes.object.isRequired,
+      onChange: PropTypes.func.isRequired,
     }
 
-    // if we are at the first or last block or cursor before the first block
-    // or cursor after the last block already, we won't be able to find the
-    // next adjacent block.
+    handleChange = e => {
+      this.props.onChange({
+        ...this.props.setting,
+        [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
+      });
+    }
+
+    render() {
+      const {setting, cmbState: {ast}} = this.props;
+
+      const allNodeTypes = getAllNodeTypes(ast);
+      const types = Array.from(allNodeTypes).sort();
+      let currentBadOption = null;
+      if (!allNodeTypes.has(setting.blockType)) {
+        currentBadOption = (
+          <option key={setting.blockType} value={setting.blockType} disabled hidden>
+            {setting.blockType}
+          </option>
+        );
+      }
+      return (
+        <select name="blockType" value={setting.blockType} onChange={this.handleChange}>
+          {currentBadOption}
+          {types.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+      );
+    }
+  },
+  search: (cur, settings, cm, {ast, collapsedList}, forward) => {
+    let startingNode = getNodeContainingBiased(cur, ast);
     if (!startingNode) {
-      startingNode = forward ? blocks.getFirstNode() : blocks.getLastNode();
-      beep = true;
+      startingNode = forward ?
+        ast.getNodeAfterCur(cur) :
+        ast.getNodeBeforeCur(cur);
     }
 
-    return {
-      initialStart: () => startingNode,
-      wrapStart: () => forward ? blocks.getFirstNode() : blocks.getLastNode(),
-      match: node => node.type == state.blockType,
-      ending: node => node === null,
-      next: node => searcher(node),
-      beep,
-      getResult: node => node
-    };
+    // handle the cursor before first / after last block
+    if (!startingNode) {
+      // TODO(Oak)
+    }
+
+    const collapsedNodeList = collapsedList.map(ast.getNodeById);
+    const next = node => forward ? node.next : node.prev;
+
+    // NOTE(Oak): if this is too slow, consider adding a
+    // next/prevSibling attribute to short circuit navigation
+    const result = skipWhile(
+      node => {
+        return node && (collapsedNodeList.some(
+          collapsed => ast.isAncestor(collapsed.id, node.id)
+        ) || node.type !== settings.blockType);
+      },
+      next(startingNode),
+      next
+    );
+    if (result) return {node: result, cursor: result.from};
+    return null;
   }
 };

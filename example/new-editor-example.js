@@ -6,14 +6,16 @@ import '../src/languages/wescheme';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Editor from '../src/ui/NewEditor';
+import CMBContext from '../src/components/Context';
 import './example-page.less';
 import Parser from '../src/languages/wescheme/WeschemeParser';
-import PropTypes from 'prop-types';
+import ByString from '../src/ui/searchers/ByString';
+import ByBlock from '../src/ui/searchers/ByBlock';
+import attachSearch from '../src/ui/Search';
+import Toolbar from '../src/ui/Toolbar';
+import classNames from 'classnames';
+
 // import exampleWeSchemeCode from './cow-game.rkt';
-
-
-import Modal from 'react-modal';
-import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 
 const exampleWeSchemeCode = `(a)(x y)`;
 
@@ -45,136 +47,43 @@ const options = {
 };
 
 
-// class SearchDialog extends React.Component {
-//   static propTypes = {
-//     showSearchDialog: PropTypes.bool.isRequired,
-//   }
 
-//   render() {
-//     const tabs = this.props.searchModes.map(({label}, i) => <Tab key={i}>{label}</Tab>);
-//     const tabPanels = this.props.searchModes.map(({component: SearchMode}, i) => (
-//       <TabPanel key={i}>
-//         <SearchMode state={this.state} handleChange={this.handleChange}
-//                     blocks={this.props.blocks} />
-//       </TabPanel>
-//     ));
+const UpgradedEditor = attachSearch(Editor, [ByString, ByBlock]);
 
-//     const {showSearchDialog} = this.props;
-
-//     return (
-//     );
-//   }
-// }
-
-Modal.setAppElement('#cmb-editor');
-
-function attachSearch(Editor) {
-  return class extends React.Component {
-
-    state = {
-      showSearchDialog: false,
-      searchEngine: 0,
-    }
-
-    handleActivateSearch = () => {
-      this.setState({showSearchDialog: true});
-    }
-
-    handleCloseModal = () => {
-      this.setState({showSearchDialog: false});
-    }
-
-    handleSearchPrevious = x => {
-      console.log('searchBefore', x);
-      return x;
-    }
-
-    handleSearchNext = x => {
-      console.log('searchAfter', x);
-      return x;
-    }
-
-
-    handleKeyModal = e => {
-      if (e.key === 'Enter' || e.key === 'Escape') { // enter or escape
-        this.handleCloseModal();
-      }
-    }
-
-    handleTab = searchEngine => this.setState({searchEngine})
-
-    render() {
-      return (
-        <React.Fragment>
-          <Editor {...this.props}
-                  search={{
-                    searchNext: this.handleSearchNext,
-                    searchPrevious: this.handleSearchPrevious,
-                    onSearch: this.handleActivateSearch,
-                  }} />
-
-          <Modal isOpen={this.state.showSearchDialog}
-                 className="wrapper-modal">
-            <div tabIndex="-1" className="react-modal" onKeyUp={this.handleKeyModal}
-                 role="dialog">
-              <div className="modal-content" role="document">
-                <div className="modal-header">
-                  <button type="button" className="close" data-dismiss="modal"
-                          aria-label="Close"
-                          onClick={this.handleCloseModal}>
-                    &times;
-                  </button>
-                  <h5 className="modal-title">Search</h5>
-                </div>
-                <div className="modal-body">
-                  <Tabs selectedIndex={0} onSelect={this.handleTab} defaultFocus={true}>
-                    <TabList><Tab>abc</Tab></TabList>
-                    <TabPanel>
-                      aaaa
-                    </TabPanel>
-                  </Tabs>
-                </div>
-                <div className="modal-footer">
-                  <small className="form-text text-muted">
-                    <div>
-                      <kbd>&uarr;</kbd>
-                      <kbd>&darr;</kbd> to change modes;
-                      <kbd>&crarr;</kbd>
-                      <kbd>esc</kbd> to save search config;
-                      <kbd>⇥</kbd> to focus next element
-                    </div>
-                  </small>
-                </div>
-              </div>
-            </div>
-          </Modal>
-        </React.Fragment>
-      );
-    }
-  };
-}
-
-/*
-
-  <Tabs selectedIndex={this.state.tabIndex} onSelect={this.handleTab}
-  defaultFocus={true}>
-  <TabList>{tabs}</TabList>
-  {tabPanels}
-  </Tabs>
-
-*/
-
-const EditorWithSearch = attachSearch(Editor);
-
+@CMBContext
 class EditorInstance extends React.Component {
+  state = {
+    primitives: null,
+    renderer: null,
+    language: null,
+  }
+
+  handlePrimitives = primitives => this.setState({primitives})
+  handleRenderer = renderer => this.setState({renderer});
+  handleLanguage = language => this.setState({language});
+
   render() {
+    const editorClass = classNames('Editor', 'blocks');
+    const toolbarPaneClasses = classNames("col-xs-3 toolbar-pane");
     return (
-      <EditorWithSearch
-        language="wescheme"
-        value={exampleWeSchemeCode}
-        options={options}
-        parser={parser}
-        cmOptions={cmOptions} />
+      <div className={editorClass}>
+        <div className={toolbarPaneClasses} tabIndex="-1">
+          <Toolbar primitives={this.state.primitives}
+                   renderer={this.state.renderer}
+                   languageId={this.state.language} />
+        </div>
+        <div className="col-xs-9 codemirror-pane">
+          <UpgradedEditor
+            language="wescheme"
+            value={exampleWeSchemeCode}
+            options={options}
+            parser={parser}
+            cmOptions={cmOptions}
+            onPrimitives={this.handlePrimitives}
+            onRenderer={this.handleRenderer}
+            onLanguage={this.handleLanguage} />
+        </div>
+      </div>
     );
   }
 }

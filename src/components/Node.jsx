@@ -61,10 +61,9 @@ class Node extends Component {
 
   handleClick = e => {
     e.stopPropagation(); // prevent ancestors to steal focus
-    e.preventDefault(); // TODO(Oak): really need it?
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
 
-    this.props.activate(this.props.node.id, false);
+    this.props.activate(this.props.node.id, {allowMove: false});
   }
 
   handleKeyDown = e => {
@@ -73,8 +72,7 @@ class Node extends Component {
 
     const {
       node, expandable, isCollapsed,
-      uncollapse, collapse, normallyEditable,
-      uncollapseAll, collapseAll, setCursor,
+      uncollapse, collapse, normallyEditable, setCursor,
       handleCopy, handlePaste, handleDelete,
       dispatch
     } = this.props;
@@ -88,11 +86,11 @@ class Node extends Component {
       const node = ast.getNodeById(id);
 
       const fastSkip = next => skipCollapsed(node, next, state);
-      const activate = node => {
+      const activate = (node, options={allowMove: true, record: true}) => {
         if (!node) {
           playSound(BEEP);
         } else {
-          this.props.activate(node.id, true);
+          this.props.activate(node.id, options);
         }
       };
 
@@ -109,24 +107,30 @@ class Node extends Component {
 
       case 'activateSearchDialog':
         e.preventDefault();
-        global.search.onSearch();
+        global.search.onSearch(state, () => activate(node));
         return;
 
       case 'searchPrevious':
         e.preventDefault();
-        activate(global.search.searchPrevious());
+        activate(
+          global.search.search(false, state),
+          {allowMove: true, record: false}
+        );
         return;
 
       case 'searchNext':
         e.preventDefault();
-        activate(global.search.searchNext());
+        activate(
+          global.search.search(true, state),
+          {allowMove: true, record: false}
+        );
         return;
 
         // collapse all (shift), collapse current (if collapsable), select parent (if exists)
       case 'collapseOrSelectParent':
         e.preventDefault();
         if (e.shiftKey) { // activate the root
-          collapseAll();
+          dispatch({type: 'COLLAPSE_ALL'});
           activate(getRoot(node));
         } else if (expandable && !isCollapsed && !this.isLocked()) {
           collapse(id);
@@ -140,7 +144,7 @@ class Node extends Component {
       case 'expandOrSelectFirstChild':
         e.preventDefault();
         if (e.shiftKey) {
-          uncollapseAll();
+          dispatch({type: 'UNCOLLAPSE_ALL'});
         } else if (expandable && isCollapsed && !this.isLocked()) {
           uncollapse(id);
         } else if (node.next && node.next.parent === node) {
@@ -198,7 +202,7 @@ class Node extends Component {
         // clear selection
       case 'clearSelection':
         e.preventDefault();
-        this.props.clearSelections();
+        dispatch({type: 'SET_SELECTIONS', selections: []});
         return;
         // delete seleted nodes
       case 'delete':
@@ -257,7 +261,7 @@ class Node extends Component {
         // go to the very first node in the AST
       case 'firstNode':
         e.preventDefault();
-        this.props.activateByNId(0, true);
+        this.props.activateByNId(0, {allowMove: true});
         return;
         // go to last _visible_ node in the AST
       case 'lastVisibleNode':
@@ -271,7 +275,7 @@ class Node extends Component {
         // "read all the ancestors"
       case 'describeAncestors': {
         e.preventDefault();
-        const parents = [node]; // FIXME(Oak): this doens't make sense
+        const parents = [node.optinos['aria-label']];
         let next = node.parent;
         while (next) {
           parents.push(next.options['aria-label'] + ", at level " + next.level);
@@ -281,7 +285,7 @@ class Node extends Component {
         else playSound(BEEP);
         return;
       }
-        // "read the first set of children"
+      // "read the first set of children"
       case 'describeChildren':
         e.preventDefault();
         say(node.toDescription(node.level));
@@ -323,7 +327,6 @@ class Node extends Component {
   };
 
   handleDisableEditable = () => this.setState({editable: false});
-
 
   isLocked() {
     return this.props.lockedTypes.includes(this.props.node.type);
@@ -381,29 +384,29 @@ class Node extends Component {
     } else {
       const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
-        let result = (
-          <span
-            {...props}
-            className     = {classNames(classes)}
-            ref           = {el => node.element = el}
-            role          = "treeitem"
-            style={{
-              opacity: isDragging ? 0.5 : 1,
-            }}
-            onClick       = {this.handleClick}
-            onDoubleClick = {this.handleDoubleClick}
-            onKeyDown     = {this.handleKeyDown}>
-            {children}
-            {
-              node.options.comment &&
-                this.props.helpers.renderNodeForReact(node.options.comment)
-            }
-          </span>
-        );
-        if (this.props.normallyEditable) {
-          result = connectDropTarget(result);
-        }
-        return connectDragSource(result);
+      let result = (
+        <span
+          {...props}
+          className     = {classNames(classes)}
+          ref           = {el => node.element = el}
+          role          = "treeitem"
+          style={{
+            opacity: isDragging ? 0.5 : 1,
+          }}
+          onClick       = {this.handleClick}
+          onDoubleClick = {this.handleDoubleClick}
+          onKeyDown     = {this.handleKeyDown}>
+          {children}
+          {
+            node.options.comment &&
+              this.props.helpers.renderNodeForReact(node.options.comment)
+          }
+        </span>
+      );
+      if (this.props.normallyEditable) {
+        result = connectDropTarget(result);
+      }
+      return connectDragSource(result);
     }
   }
 }
@@ -422,18 +425,15 @@ const mapStateToProps = (
 
 const mapDispatchToProps = dispatch => ({
   dispatch,
-  clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []}),
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
-  collapseAll: () => dispatch({type: 'COLLAPSE_ALL'}),
-  uncollapseAll: () => dispatch({type: 'UNCOLLAPSE_ALL'}),
+  setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
   handleDelete: () => dispatch(deleteNodes()),
   onDrop: (src, dest) => dispatch(dropNode(src, dest)),
-  setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
   handleCopy: (id, selectionEditor) => dispatch(copyNodes(id, selectionEditor)),
   handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
-  activate: (id, allowMove, movement) => dispatch(activate(id, allowMove, movement)),
-  activateByNId: (nid, allowMove, movement) => dispatch(activateByNId(nid, allowMove, movement)),
+  activate: (id, options) => dispatch(activate(id, options)),
+  activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);

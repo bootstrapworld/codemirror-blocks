@@ -26,12 +26,16 @@ class DropTarget extends Component {
 
   handleDoubleClick = e => {
     e.stopPropagation();
+    this.isDoubleClick = true;
     this.handleMakeEditable();
   }
 
   handleClick = e => {
     e.stopPropagation();
   }
+
+  // NOTE(Oak): DropTarget should not handle click event since clicking it
+  // should activate the node
 
   handleMakeEditable = () => {
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?

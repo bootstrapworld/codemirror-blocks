@@ -10,6 +10,7 @@ class FakeCursorManager extends Component {
   render() {
     if (global.cm && this.props.cur) {
       global.cm.focus();
+      global.search.setCursor(this.props.cur);
       global.cm.setCursor(this.props.cur);
     }
     return null;

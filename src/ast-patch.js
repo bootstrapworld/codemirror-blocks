@@ -31,6 +31,7 @@ function assignNewIds(n) {
 export default function unify(oldTree, newTree) {
   let firstAssignedId = null;
   function loop(oldTree, newTree) {
+    newTree.id = oldTree.id;
     const index = {};
     for (const oldNode of oldTree.children()) {
       addIndex(index, oldNode.hash, oldNode);
@@ -56,7 +57,7 @@ export default function unify(oldTree, newTree) {
     const oldLeftover = [...oldTree.children()].filter(oldNode => {
       return !processed.has(oldNode.id);
     });
-    if (!partiallySuccess) {
+    if (!partiallySuccess && newLeftover.length > 1) {
       assignNewIds(newTree);
       if (firstAssignedId === null) firstAssignedId = newTree.id;
     } else {

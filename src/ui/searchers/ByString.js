@@ -1,5 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {skipCollapsed, poscmp, skipWhile,
+        getBeginCursor, getEndCursor,
+        getNodeContainingBiased} from '../../utils';
 
 /**
  * Returns a query from settings. If the query is a regex but is invalid (indicating
@@ -23,138 +26,126 @@ function getQueryFromSettings(state) {
   }
 }
 
-function getResults(state, blocks, limit=Infinity) {
-  const query = getQueryFromSettings(state);
-  const searchCursor = blocks.cm.getSearchCursor(
-    query, null, {caseFold: state.isIgnoreCase}
-  );
-  const searchMatches = [];
-  while (searchCursor.findNext() && searchMatches.length < limit) {
-    const node = blocks.ast.getNodeContaining(searchCursor.from());
-    // make sure we're not just matching a comment
-    if (node) searchMatches.push(node);
+class SearchOption extends React.Component {
+  static propTypes = {
+    onChange: PropTypes.func.isRequired,
+    setting: PropTypes.object.isRequired,
+    name: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired,
   }
-  return searchMatches;
-}
-
-function hasMatch(state, blocks) {
-  return state.searchString === '' || getResults(state, blocks, 1).length !== 0;
-}
-
-function ByString({state, handleChange, blocks}) {
-  function SearchOption({name, value}) {
+  render() {
+    const {name, value, setting, onChange} = this.props;
     return (
       <label>
-        <input type="checkbox" name={name} onChange={handleChange}
-               checked={state[name]} />
+        <input type="checkbox" name={name} onChange={onChange}
+               checked={setting[name]} />
         {value}
       </label>
     );
   }
-  SearchOption.propTypes = {
-    name: PropTypes.string.isRequired,
-    value: PropTypes.string.isRequired,
-  };
-
-  const searchBoxClass = hasMatch(state, blocks) ? '' : 'has-error';
-  return (
-    <React.Fragment>
-      <div className={`form-group ${searchBoxClass}`}>
-        <input type="text" className="form-control search-input"
-               name="searchString"
-               onChange={handleChange}
-               value={state.searchString} />
-      </div>
-      <div className="search-options">
-        <SearchOption name="isRegex" value="Regex" />
-        <SearchOption name="isExactMatch" value="Exact match" />
-        <SearchOption name="isIgnoreCase" value="Ignore case" />
-      </div>
-    </React.Fragment>
-  );
 }
 
-ByString.propTypes = {
-  state: PropTypes.shape({
-    searchString: PropTypes.string.isRequired,
-    isRegex: PropTypes.bool.isRequired,
-    isExactMatch: PropTypes.bool.isRequired,
-    isIgnoreCase: PropTypes.bool.isRequired,
-  }),
-  handleChange: PropTypes.func.isRequired,
-  blocks: PropTypes.object.isRequired,
-};
+// function getResults(settings, cm, {ast, collapsedList}, limit=Infinity) {
+//   const query = getQueryFromSettings(settings);
+//   const collapsedNodeList = collapsedList.map(ast.getNodeById);
+//   const searchCursor = cm.getSearchCursor(
+//     query, null, {caseFold: settings.isIgnoreCase}
+//   );
+//   const searchMatches = [];
+//   while (searchCursor.findNext() && searchMatches.length < limit) {
+//     const node = ast.getNodeContaining(searchCursor.from());
+//     // make sure we're not just matching a comment
+//     if (node && !collapsedNodeList.some(collapsed => ast.isAncestor(collapsed.id, node.id))) {
+//       searchMatches.push(node);
+//     }
+//   }
+//   return searchMatches;
+// }
 
 export default {
   label: 'Search by string',
-  init: {
+  setting: {
     searchString: '',
     isRegex: false,
     isExactMatch: false,
-    isIgnoreCase: true,
+    isIgnoreCase: false
   },
-  component: ByString,
-  hasMatch,
-  /**
-   * find: (Blocks, State, Bool, Event) -> ASTNode?
-   */
-  find: function(blocks, state, forward, e) {
-    if (state.searchString === '') {
-      blocks.switchNodes(
-        forward ? blocks.ast.getNodeAfter : blocks.ast.getNodeBefore,
-        forward ? blocks.ast.getNodeAfterCur : blocks.ast.getNodeBeforeCur,
-        e
+  component: class extends React.Component {
+    static propTypes = {
+      setting: PropTypes.object.isRequired,
+      onChange: PropTypes.func.isRequired,
+    }
+
+    handleChange = e => {
+      this.props.onChange({
+        ...this.props.setting,
+        [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
+      });
+    }
+
+    render() {
+      const {setting} = this.props;
+      return (
+        <React.Fragment>
+          <div className="form-group">
+            <input type="text" className="form-control search-input"
+                   name="searchString"
+                   onChange={this.handleChange}
+                   value={setting.searchString} />
+          </div>
+          <div className="search-options">
+            <SearchOption setting={setting} onChange={this.handleChange}
+                          name="isRegex" value="Regex" />
+            <SearchOption setting={setting} onChange={this.handleChange}
+                          name="isExactMatch" value="Exact match" />
+            <SearchOption setting={setting} onChange={this.handleChange}
+                          name="isIgnoreCase" value="Ignore case" />
+          </div>
+        </React.Fragment>
       );
+    }
+  },
+  search: (cur, settings, cm, state, forward) => {
+    const {ast, collapsedList} = state;
+    const collapsedNodeList = collapsedList.map(ast.getNodeById);
+
+    if (settings.searchString === '') {
+      let node = getNodeContainingBiased(cur, ast);
+      if (node) {
+        node = skipCollapsed(node, node => forward ? node.next : node.prev, state);
+        if (node) return {node, cursor: node.from};
+        return null;
+      }
+      node = forward ? ast.getNodeAfterCur(cur) : ast.getNodeBeforeCur(cur);
+      if (node) return {node, cursor: node.from};
       return null;
     }
-    const options = {caseFold: state.isIgnoreCase};
 
-    // we don't want to stay at the currently active block because
-    // if the current block matches already, searching won't be able to progress.
-    const activeNode = blocks.getActiveNode();
-    let cur = null;
-    let beep = false;
-    if (activeNode) {
-      // TODO: this will skip over plain comment. Might need to change once
-      // commenting mechanism is fixed.
-      const node = forward ?
-            blocks.ast.getNodeAfter(activeNode) :
-            blocks.ast.getNodeBefore(activeNode);
-      if (node) {
-        cur = forward ? node.from : node.to;
-      } else {
-        // if we are at the first or last block already, we won't be able to find the
-        // next adjacent block.
-        cur = forward ? blocks.getBeginCursor() : blocks.getEndCursor();
-        beep = true;
-      }
-    } else {
-      cur = blocks.cm.getCursor();
-    }
-
-    const query = getQueryFromSettings(state);
+    const options = {caseFold: settings.isIgnoreCase};
+    const query = getQueryFromSettings(settings);
 
     function next(searchCursor) {
-      searchCursor.find(!forward);
-      return searchCursor;
-    }
-    function getSearchCursor(query, cur, options) {
-      // we need to activate next right away so that we have the `from` field.
-      return next(blocks.cm.getSearchCursor(query, cur, options));
+      const result = searchCursor.find(!forward);
+      if (result) return searchCursor;
+      return null;
     }
 
-    return {
-      initialStart: () => getSearchCursor(query, cur, options),
-      wrapStart: () => getSearchCursor(
-        query,
-        forward ? blocks.getBeginCursor() : blocks.getEndCursor(),
-        options
-      ),
-      match: searchCursor => blocks.ast.getNodeContaining(searchCursor.from()),
-      ending: searchCursor => !searchCursor.from(),
-      next,
-      beep,
-      getResult: searchCursor => blocks.ast.getNodeContaining(searchCursor.from())
-    };
+    let searchCursor = next(cm.getSearchCursor(query, cur, options));
+    if (forward && searchCursor && poscmp(searchCursor.from(), cur) === 0) {
+      searchCursor = next(searchCursor);
+    }
+    const newSearchCur = skipWhile(searchCur => {
+      if (!searchCur) return false;
+      const node = getNodeContainingBiased(searchCur.from(), ast);
+      return !!node && collapsedNodeList.some(
+        collapsed => ast.isAncestor(collapsed.id, node.id)
+      );
+    }, searchCursor, next);
+    if (newSearchCur) {
+      const node = getNodeContainingBiased(newSearchCur.from(), ast);
+      if (node) return {node, cursor: newSearchCur.from()};
+    }
+    return null;
   }
 };
+

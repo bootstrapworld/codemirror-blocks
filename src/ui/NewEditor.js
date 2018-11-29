@@ -4,17 +4,18 @@ import {UnControlled as CodeMirror} from 'react-codemirror2';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import './Editor.less';
-import {connect, Provider} from 'react-redux';
-import {store} from '../store';
+import {connect} from 'react-redux';
 import global from '../global';
 import patch from '../ast-patch';
-import CMBContext from '../components/Context';
 import NodeEditable from '../components/NodeEditable';
-import {activateByNId} from '../actions';
+import {activate, activateByNId} from '../actions';
 import {say} from '../utils';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
+import Renderer from '../Renderer';
+import merge from '../merge';
+import CodeMirrorBlocks from '../blocks';
 
 import FunctionApp         from '../components/FunctionApp';
 import IfExpression       from '../components/IfExpression';
@@ -155,7 +156,6 @@ const mapDispatchToProps2 = dispatch => ({
 });
 const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(ToplevelBlockEditableCore);
 
-@CMBContext
 class Editor extends Component {
   static propTypes = {
     options: PropTypes.object,
@@ -171,9 +171,12 @@ class Editor extends Component {
     activateByNId: PropTypes.func.isRequired,
     search: PropTypes.shape({
       onSearch: PropTypes.func.isRequired,
-      searchPrevious: PropTypes.func.isRequired,
-      searchNext: PropTypes.func.isRequired,
+      search: PropTypes.func.isRequired,
+      setCursor: PropTypes.func.isRequired,
     }),
+    onPrimitives: PropTypes.func,
+    onRenderer: PropTypes.func,
+    onLanguage: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
@@ -214,16 +217,19 @@ class Editor extends Component {
       'x'         : 'cut',
       'z'         : 'undo',
       'y'         : 'redo',
-      'PageDown'  : 'searchPrevious',
-      'PageUp'    : 'searchNext',
+      'PageUp'    : 'searchPrevious',
+      'PageDown'  : 'searchNext',
       'F3'        : 'activateSearchDialog',
       'Tab'       : 'changeFocus',
     },
     search: {
-      searchPrevious: x => x,
-      searchNext: x => x,
+      search: () => null,
       onSearch: () => {},
-    }
+      setCursor: () => {},
+    },
+    onPrimitives: () => {},
+    onRenderer: () => {},
+    onLanguage: () => {},
   }
 
   handleDragOver = (ed, e) => {
@@ -238,6 +244,10 @@ class Editor extends Component {
 
     const {dispatch} = this.props;
 
+    const activateNoRecord = node => {
+      dispatch(activate(node.id, {record: false, allowMove: true}));
+    };
+
     dispatch((_, getState) => {
       const state = getState();
       const {ast, focusId} = state;
@@ -246,7 +256,7 @@ class Editor extends Component {
       case 'nextNode': {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
-        if (nextNode) this.props.activateByNId(nextNode.nid, true);
+        if (nextNode) this.props.activateByNId(nextNode.nid, {allowMove: true});
         else playSound(BEEP);
         return;
       }
@@ -255,7 +265,7 @@ class Editor extends Component {
         e.preventDefault();
         const prevNode = ast.getNodeBeforeCur(this.props.cur);
         if (prevNode) {
-          this.props.activateByNId(prevNode.nid, true);
+          this.props.activateByNId(prevNode.nid, {allowMove: true});
         } else {
           playSound(BEEP);
         }
@@ -282,27 +292,29 @@ class Editor extends Component {
         e.preventDefault();
         if (focusId === -1) {
           if (ast.rootNodes.length > 0) {
-            dispatch(activateByNId(0, true));
+            dispatch(activateByNId(0, {allowMove: true}));
             // NOTE(Oak): can also find the closest node based on current cursor
           }
         } else {
-          dispatch(activateByNId(null, true));
+          dispatch(activateByNId(null, {allowMove: true}));
         }
         return;
 
       case 'activateSearchDialog':
         e.preventDefault();
-        global.search.onSearch();
+        global.search.onSearch(state, () => {});
         return;
 
       case 'searchPrevious':
         e.preventDefault();
-        activate(global.search.searchPrevious());
+        const result = global.search.search(false, state);
+        console.log(result);
+        activateNoRecord(result);
         return;
 
       case 'searchNext':
         e.preventDefault();
-        activate(global.search.searchNext());
+        activateNoRecord(global.search.search(true, state));
         return;
       }
     });
@@ -361,6 +373,7 @@ class Editor extends Component {
       this.props.dispatch({type: 'SET_FOCUS', focusId: 0});
     }
 
+    this.props.search.setCM(ed);
   }
 
   handleEditorWillUnmount = ed => {
@@ -368,23 +381,50 @@ class Editor extends Component {
   }
 
   handleFocus = (ed, e) => {
-    if (!this.mouseUsed) {
-      // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-      setTimeout(() => this.props.activateByNId(null, true), 10);
-      this.mouseUsed = false;
-    }
+    const {dispatch} = this.props;
+    dispatch((_, getState) => {
+      const {cur} = getState();
+      if (!this.mouseUsed && cur === null) {
+        // NOTE(Oak): use setTimeout so that the CM cursor will not blink
+        setTimeout(() => this.props.activateByNId(null, {allowMove: true}), 10);
+        this.mouseUsed = false;
+      }
+    });
   }
 
-  handleMouseDown = ed => {
+  handleMouseDown = () => {
     this.mouseUsed = true;
     setTimeout(() => this.mouseUsed = false, 200);
   }
 
   componentDidMount() {
-    const {parser, options, search} = this.props;
+    const {
+      parser, language, options, search,
+      onPrimitives, onRenderer, onLanguage
+    } = this.props;
+
     global.parser = parser;
     global.options = options;
     global.search = search;
+
+    let languageObj = null;
+
+    if (CodeMirrorBlocks.languages.getLanguage(language)) {
+      languageObj = CodeMirrorBlocks.languages.getLanguage(language);
+    }
+    onPrimitives(parser.primitives);
+    // TODO(Oak): this is awkward. parser is already available to Toolbar.
+    // Just use it there instead.
+
+    const extraOptions = languageObj.getRenderOptions ? languageObj.getRenderOptions() : {};
+
+    const renderOptions = merge(
+      options.renderOptions || {lockNodesOfType: []},
+      extraOptions
+    );
+    const renderer = new Renderer(global.cm, renderOptions);
+    onRenderer(renderer);
+    onLanguage(language);
 
     const clipboardBuffer = document.createElement('textarea');
     clipboardBuffer.ariaHidden = true;
@@ -396,19 +436,9 @@ class Editor extends Component {
     document.body.appendChild(global.buffer);
   }
 
-  componentDidUpdate() {
-    const {dispatch} = this.props;
-    dispatch((_, getState) => {
-      const {focusId, ast} = getState();
-      if (focusId !== -1) {
-        const node = ast.getNodeByNId(focusId);
-        if (node && node.element) {
-          node.element.focus();
-        }
-      }
-    });
+  handleCursor = (ed, data) => {
+    this.props.setCursor(ed, data);
   }
-
 
   render() {
     const classes = [];
@@ -428,14 +458,14 @@ class Editor extends Component {
                       onFocus={this.handleFocus}
                       onPaste={this.handlePaste}
                       cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
-                      onCursor={this.props.setCursor}
+                      onCursor={this.handleCursor}
                       editorDidMount={this.handleEditorDidMount} />
         </div>
         {this.renderPortals()}
         <FakeCursorManager />
-        <div style={{position: 'absolute', bottom: 0}}>
-          {global.cm && global.cm.getValue()}
-        </div>
+        {/* <div style={{position: 'absolute', bottom: 0}}> */}
+        {/*   {global.cm && global.cm.getValue()} */}
+        {/* </div> */}
       </div>
     );
   }
@@ -472,13 +502,7 @@ const mapDispatchToProps = dispatch => ({
   setCursor: (_, cur) => dispatch({type: 'SET_CURSOR', cur}),
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: -1}),
   setQuarantine: (pos, text) => dispatch({type: 'SET_QUARANTINE', pos, text}),
-  activateByNId: (nid, allowMove) => dispatch(activateByNId(nid, allowMove)),
+  activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
 });
 
-const EditorWrapper = connect(mapStateToProps, mapDispatchToProps)(Editor);
-
-export default props => (
-  <Provider store={store}>
-    <EditorWrapper {...props} />
-  </Provider>
-);
+export default connect(mapStateToProps, mapDispatchToProps)(Editor);

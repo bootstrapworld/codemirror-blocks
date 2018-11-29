@@ -1,3 +1,4 @@
+import CodeMirror from 'codemirror';
 import global from './global';
 import {store} from './store';
 
@@ -87,7 +88,7 @@ export function skipCollapsed(node, next, state) {
   // NOTE(Oak): if this is too slow, consider adding a
   // next/prevSibling attribute to short circuit navigation
   return skipWhile(
-    node => !!node && collapsedNodeList.some(
+    node => node && collapsedNodeList.some(
       collapsed => ast.isAncestor(collapsed.id, node.id)
     ),
     next(node),
@@ -113,4 +114,50 @@ export function getLastVisibleNode(state) {
     lastNode,
     n => n.parent
   );
+}
+
+export function withDefaults(obj, def) {
+  return {...def, ...obj};
+}
+
+export function getBeginCursor(cm) {
+  return CodeMirror.Pos(cm, 0);
+}
+
+export function getEndCursor(cm) {
+  return CodeMirror.Pos(
+    cm.lastLine(),
+    cm.getLine(cm.lastLine()).length
+  );
+}
+
+function posWithinNode(pos, node) {
+  return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
+    ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);
+}
+
+function posWithinNodeBiased(pos, node) {
+  return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) > 0);
+}
+
+function nodeCommentContaining(pos, node) {
+  return node.options.comment && posWithinNode(pos, node.options.comment);
+}
+
+export function getNodeContainingBiased(cursor, ast) {
+  function iter(nodes) {
+    const node = nodes.find(node => posWithinNodeBiased(cursor, node) || nodeCommentContaining(cursor, node));
+    if (node) {
+      const children = [...node.children()];
+      if (children.length === 0) {
+        return node;
+      } else {
+        const result = iter(children);
+        return result === null ? node : result;
+      }
+    } else {
+      return null;
+    }
+  }
+  return iter(ast.rootNodes);
 }

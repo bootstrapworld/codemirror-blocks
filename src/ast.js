@@ -1,15 +1,7 @@
-import {poscmp} from './utils';
+import {poscmp, posWithinNode, nodeCommentContaining} from './utils';
 import uuidv4 from 'uuid/v4';
 import hashObject from 'object-hash';
 
-function posWithinNode(pos, node) {
-  return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
-    ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);
-}
-
-function nodeCommentContaining(pos, node) {
-  return node.options.comment && posWithinNode(pos, node.options.comment);
-}
 
 export function enumerateList(lst, level) {
   lst = lst.map(l => l.toDescription(level)).slice(0);

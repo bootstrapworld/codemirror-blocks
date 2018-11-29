@@ -1,4 +1,4 @@
-import {say, poscmp, copyToClipboard, pasteFromClipboard} from './utils';
+import {withDefaults, say, poscmp, copyToClipboard, pasteFromClipboard} from './utils';
 import {commitChanges} from './codeMirror';
 import global from './global';
 import {playSound, WRAP} from './sound';
@@ -28,36 +28,39 @@ export function deleteNodes() {
       );
       // since we sort in descending order, this is the last one in the array
       const firstNode = nodeSelections.pop();
-      dispatch(activateByNId(firstNode.nid, true));
+      dispatch(activateByNId(firstNode.nid, {allowMove: true}));
       dispatch({type: 'SET_SELECTIONS', selections: []});
     }
   };
 }
 
-export function dropNode({id: srcId}, {from: destFrom, to: destTo, isDropTarget}) {
+export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDropTarget}) {
   return (dispatch, getState) => {
     const {ast} = getState();
-    const srcNode = ast.getNodeById(srcId);
-    if (poscmp(destFrom, srcNode.from) > 0 && poscmp(destTo, srcNode.to) < 0) {
+    const srcNode = srcId ? ast.getNodeById(srcId) : null;
+    if (srcNode && poscmp(destFrom, srcNode.from) > 0 && poscmp(destTo, srcNode.to) < 0) {
       return;
     }
-    const srcText = global.cm.getRange(srcNode.from, srcNode.to);
+
+    if (srcNode) content = global.cm.getRange(srcNode.from, srcNode.to);
 
     let value = null;
     if (isDropTarget && global.options.willInsertNode) {
       value = global.options.willInsertNode(
         global.cm,
-        srcText,
+        content,
         undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
         destFrom,
       );
     } else {
-      value = srcText;
+      value = content;
     }
 
     commitChanges(
       cm => () => {
-        if (poscmp(srcNode.from, destFrom) < 0) {
+        if (srcNode === null) {
+          cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
+        } else if (poscmp(srcNode.from, destFrom) < 0) {
           cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
           cm.leplaceRange('', srcNode.from, srcNode.to, 'cmb: drop-node');
         } else {
@@ -78,7 +81,7 @@ export function copyNodes(id, selectionEditor) {
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
     const texts = nodeSelections.map(node => global.cm.getRange(node.from, node.to));
     copyToClipboard(texts.join(' '));
-    dispatch(activateByNId(null, false, node => node));
+    dispatch(activateByNId(null, {allowMove: false}));
   };
 }
 
@@ -122,34 +125,40 @@ export function pasteNodes(id, isBackward) {
       // NOTE(Oak): always clear selections. Should this be a callback instead?
       dispatch({type: 'SET_SELECTIONS', selections: []});
       if (focusTarget === 'self') {
-        dispatch(activateByNId(null, false, node => node));
+        dispatch(activateByNId(null, {allowMove: false}));
       }
     });
 
   };
 }
 
-export function activateByNId(nid, allowMove) {
+export function activateByNId(nid, options) {
   return (dispatch, getState) => {
     const {ast, focusId} = getState();
     if (nid === null) nid = focusId;
     const node = ast.getNodeByNId(nid);
     if (node) {
-      dispatch(activate(node.id, allowMove));
+      dispatch(activate(node.id, options));
     }
   };
 }
 
-export function activate(id, allowMove) {
+export function activate(id, options) {
   return (dispatch, getState) => {
+    // TODO(Oak): is this a dead code?
     if (id === null) return;
+
+    options = withDefaults(options, {allowMove: true, record: true});
     const state = getState();
     const {ast, focusId, collapsedList} = state;
     const node = ast.getNodeById(id);
+
+    // TODO(Oak): is this a dead code?
     if (!node) {
       playSound(WRAP);
       return;
     }
+
     if (node.nid === focusId) {
       say(node.options['aria-label']);
     }
@@ -171,12 +180,17 @@ export function activate(id, allowMove) {
     // anything
     // Note, however, that it is also a good thing that `activate` is invoked
     // when double click because we can set focusId on the to-be-focused node
+    global.cm.setCursor({line: -1, ch: 0});
     setTimeout(() => {
+      dispatch({type: 'SET_FOCUS', focusId: node.nid});
+      if (options.record) {
+        global.search.setCursor(node.from);
+      }
       if (node.element) {
         const scroller = global.cm.getScrollerElement();
         const wrapper = global.cm.getWrapperElement();
 
-        if (allowMove) {
+        if (options.allowMove) {
           global.cm.scrollIntoView(node.from);
           let {top, bottom, left, right} = node.element.getBoundingClientRect(); // get the *actual* bounding rect
           let offset = wrapper.getBoundingClientRect();
@@ -191,7 +205,6 @@ export function activate(id, allowMove) {
         node.element.focus();
       }
     }, 100);
-    dispatch({type: 'SET_FOCUS', focusId: node.nid});
   };
 }
 

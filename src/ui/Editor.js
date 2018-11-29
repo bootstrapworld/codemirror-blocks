@@ -8,6 +8,7 @@ import TrashCan from './TrashCan';
 import PropTypes from 'prop-types';
 import Search from './Search';
 import ByString from './searchers/ByString';
+
 import ByBlock from './searchers/ByBlock';
 import './Editor.less';
 

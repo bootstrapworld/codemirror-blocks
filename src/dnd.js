@@ -4,8 +4,15 @@ export const ItemTypes = {
   NODE: 'node',
 };
 
+function isZeroPos(pos) {
+  return pos.line === 0 && pos.ch === 0;
+}
+
 export const nodeSource = {
   beginDrag(props) {
+    if (isZeroPos(props.node.from) && isZeroPos(props.node.to)) {
+      return {content: props.node.toString()};
+    }
     return {id: props.node.id};
   }
 };

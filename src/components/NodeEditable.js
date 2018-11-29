@@ -35,7 +35,7 @@ class NodeEditable extends Component {
 
   saveEdit = e => {
     e.stopPropagation();
-    const {node, setErrorId, onDisableEditable, dispatch} = this.props;
+    const {node, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
 
     dispatch((_, getState) => {
       const {focusId} = getState();
@@ -54,8 +54,11 @@ class NodeEditable extends Component {
         },
         ({firstNewId}) => {
           if (firstNewId !== null) {
-            dispatch(activate(firstNewId, true));
+            dispatch(activate(firstNewId, {allowMove: true}));
+          } else {
+            dispatch(activateByNId(null, {allowMove: false}));
           }
+          onChange(null);
           onDisableEditable(false);
           setErrorId('');
           say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
@@ -167,7 +170,7 @@ const mapStateToProps = ({cm, errorId}, {node}) => {
 const mapDispatchToProps = dispatch => ({
   dispatch,
   setErrorId: errorId => dispatch({type: 'SET_ERROR_ID', errorId}),
-  focusSelf: () => dispatch(activateByNId(null, false)),
+  focusSelf: () => dispatch(activateByNId(null, {allowMove: false})),
   clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []}),
 });
 
