@@ -101,11 +101,12 @@
     "lint": "eslint src spec --ext .js || true",
     "site": "jekyll serve --baseurl \"\""
   },
-  "author": "Emmanuel Schanzer, Sorawee Porncharoenwase, and Paul Carduner",
+  "author": "Emmanuel Schanzer and Paul Carduner",
   "contributors": [
     "Zachary Espiritu",
     "Justin Pombrio",
-    "Aleksey Kliger"
+    "Aleksey Kliger",
+    "Sorawee Porncharoenwase"
   ],
   "license": "MIT License"
 }
