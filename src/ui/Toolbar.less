@@ -5,6 +5,9 @@
   height: 100%;
   overflow: hidden;
 
+  /* Only top-level blocks nodes should respond to pointer events in the toolbar */
+  .blocks-node > * { pointer-events: none; }
+
   > .search-box {
     padding: 5px;
     border-bottom: 1px solid #ddd;
