@@ -15,13 +15,26 @@ export default class FunctionDefinition extends Component {
     lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
+  state = {editableList: {}}
+  handleSetEditableArr = {}
+  handleSetEditable = i => {
+    if (!this.handleSetEditableArr[i]) {
+      this.handleSetEditableArr[i] = b => {
+        this.setState({editableList: {...this.state.editableList, [i]: b}});
+      };
+    }
+    return this.handleSetEditableArr[i];
+  }
+
   render() {
     const {node, helpers, lockedTypes} = this.props;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           define (
-          <DropTarget location={node.name.from} />
+          <DropTarget location={node.name.from}
+                      editable={this.state.editableList[0]}
+                      onSetEditable={this.handleSetEditable(0)} />);
           {helpers.renderNodeForReact(node.name)}
           {helpers.renderNodeForReact(node.params)}
           )

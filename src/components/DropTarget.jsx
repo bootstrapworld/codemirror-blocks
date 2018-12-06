@@ -1,33 +1,57 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import Component from './BlockComponent';
 import NodeEditable from './NodeEditable';
 import global from '../global';
 import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
+import {isDummyPos} from '../utils';
+import shallowequal from 'shallowequal';
+import Component from './BlockComponent';
 
 @DropNodeTarget(({location}) => ({from: location, to: location}))
 class DropTarget extends Component {
 
   static propTypes = {
     location: PropTypes.instanceOf(Object).isRequired,
+    editable: PropTypes.bool.isRequired,
+    onSetEditable: PropTypes.func.isRequired,
+
+    // fulfilled by DropNodeTarget
     connectDropTarget: PropTypes.func.isRequired,
     isOver: PropTypes.bool.isRequired,
   }
 
-  state = {editable: false, value: ''}
+  state = {value: ''}
 
-  handleDisableEditable = () => {
-    this.setState({editable: false});
-  };
+  shouldComponentUpdate(props, state) {
+    const {location: newLocation, editable: newEditable} = props;
+    const {location: oldLocation, editable: oldEditable} = this.props;
+
+    const shouldUpdate = (
+      (newLocation !== oldLocation || newEditable !== oldEditable) ||
+        !shallowequal(state, this.state)
+    );
+    return shouldUpdate;
+  }
 
   handleDoubleClick = e => {
     e.stopPropagation();
+    if (isDummyPos(this.props.location)) return;
     this.isDoubleClick = true;
     this.handleMakeEditable();
+  }
+
+  handleMouseDown = e => {
+    if (isDummyPos(this.props.location)) {
+      e.preventDefault();
+    }
+  }
+
+  handleDisableEditable = () => {
+    this.props.onSetEditable(false);
   }
 
   handleClick = e => {
@@ -39,7 +63,7 @@ class DropTarget extends Component {
 
   handleMakeEditable = () => {
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
-    this.setState({editable: true});
+    this.props.onSetEditable(true);
     global.cm.refresh(); // is this needed?
   }
 
@@ -69,7 +93,7 @@ class DropTarget extends Component {
       to: location,
       id: 'editing', // TODO(Oak): error focusing is going to be wrong
     };
-    if (this.state.editable) {
+    if (this.props.editable) {
       return (
         <NodeEditable node={node}
                       value={this.state.value}
@@ -90,6 +114,7 @@ class DropTarget extends Component {
       <span
         className={classNames(classes)}
         onDoubleClick = {this.handleDoubleClick}
+        onMouseDown = {this.handleMouseDown}
         onClick = {this.handleClick} />
     );
   }

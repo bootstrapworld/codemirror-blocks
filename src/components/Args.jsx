@@ -17,19 +17,40 @@ export default class Args extends Component {
     location: span,
   }
 
+  state = {editableList: {}}
+  handleSetEditableArr = {}
+  handleSetEditable = i => {
+    if (!this.handleSetEditableArr[i]) {
+      this.handleSetEditableArr[i] = b => {
+        this.setState({editableList: {...this.state.editableList, [i]: b}});
+      };
+    }
+    return this.handleSetEditableArr[i];
+  }
+
   render() {
     let {children, helpers} = this.props;
-    let elems = [];
     if (children.length === 0) {
-      return <DropTarget location={this.props.location} />;
-    } else {
-      elems.push(<DropTarget location={children[0].from} key={'drop-0'} />);
-      children.forEach((child, index) => {
-        elems.push(helpers.renderNodeForReact(child, 'node-'+index));
-        elems.push(<DropTarget location={child.to} key={'drop-'+(index+1)} />);
-      });
+      return (
+        <DropTarget
+          location={this.props.location}
+          editable={this.state.editableList[0]}
+          onSetEditable={this.handleSetEditable(0)} />);
     }
-
+    const elems = [];
+    elems.push(<DropTarget
+                   key={'drop-0'}
+                   location={children[0].from}
+                   editable={this.state.editableList[0]}
+                   onSetEditable={this.handleSetEditable(0)} />);
+    children.forEach((child, index) => {
+      elems.push(helpers.renderNodeForReact(child, 'node-'+index));
+      elems.push(<DropTarget
+                     key={'drop-'+(index+1)}
+                     location={child.to}
+                     editable={this.state.editableList[index+1]}
+                     onSetEditable={this.handleSetEditable(index+1)} />);
+    });
     return elems;
   }
 }

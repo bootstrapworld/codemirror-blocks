@@ -2,7 +2,7 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {partition, poscmp, getRoot,
+import {partition, poscmp, getRoot, isDummyPos,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
 import {dropNode, deleteNodes, copyNodes,
   pasteNodes, activate, activateByNId} from '../actions';
@@ -59,11 +59,28 @@ class Node extends Component {
     this.setState({value});
   }
 
+  handleMouseUp = e => {
+    // Ideally we want this to prevent focusing
+    // but this will also prevent drag and drop :(
+
+    if (isDummyPos(this.props.node.from)) {
+      e.preventDefault();
+    }
+  }
+
   handleClick = e => {
     e.stopPropagation(); // prevent ancestors to steal focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
 
     this.props.activate(this.props.node.id, {allowMove: false});
+  }
+
+  handleDoubleClick = e => {
+    e.stopPropagation();
+    if (isDummyPos(this.props.node.from)) return;
+    if (this.props.normallyEditable) {
+      this.handleMakeEditable();
+    }
   }
 
   handleKeyDown = e => {
@@ -313,12 +330,6 @@ class Node extends Component {
     });
   }
 
-  handleDoubleClick = e => {
-    e.stopPropagation();
-    if (this.props.normallyEditable) {
-      this.handleMakeEditable();
-    }
-  }
 
   handleMakeEditable = () => {
     if (!isErrorFree()) return;
@@ -393,6 +404,7 @@ class Node extends Component {
           style={{
             opacity: isDragging ? 0.5 : 1,
           }}
+          onMouseUp     = {this.handleMouseUp}
           onClick       = {this.handleClick}
           onDoubleClick = {this.handleDoubleClick}
           onKeyDown     = {this.handleKeyDown}>

@@ -68,6 +68,13 @@ export default (Editor, searchModes) => {
 
     handleSetCM = cm => this.cm = cm
 
+    search = {
+      onSearch: this.handleActivateSearch,
+      search: this.handleSearch,
+      setCursor: this.handleSetCursor,
+      setCM: this.handleSetCM,
+    }
+
     render() {
       const tabs = searchModes.map(({label}, i) => <Tab key={i}>{label}</Tab>);
       const tabPanels = searchModes.map(({component: SearchMode}, i) => (
@@ -79,13 +86,7 @@ export default (Editor, searchModes) => {
       ));
       return (
         <React.Fragment>
-          <Editor {...this.props}
-                  search={{
-                    onSearch: this.handleActivateSearch,
-                    search: this.handleSearch,
-                    setCursor: this.handleSetCursor,
-                    setCM: this.handleSetCM,
-                  }} />
+          <Editor {...this.props} search={this.search} />
 
           <Modal isOpen={this.state.showSearchDialog}
                  className="wrapper-modal">

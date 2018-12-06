@@ -320,32 +320,26 @@ function parseNode(node, i) {
   return null;
 }
 
-class WeschemeParser {
+const dummyLoc = {line: -1, ch: 0};
 
+class WeschemeParser {
   getASTNodeForPrimitive(primitive) {
     return new FunctionApp(
-      {line:0, ch:0},
-      {line:0, ch:0},
+      dummyLoc, dummyLoc,
       new Literal(
-        {line: 0, ch: 0},
-        {line:0, ch:0},
+        dummyLoc, dummyLoc,
         primitive.name,
         'symbol'
       ),
       primitive.argumentTypes.map(() =>
-        new Blank(
-          {line: 0, ch: 0},
-          {line: 0, ch: 0},
-          ''
-        )
+        new Blank(dummyLoc, dummyLoc, '')
       )
     );
   }
 
   getLiteralNodeForPrimitive(primitive) {
     return new Literal(
-      {line: 0, ch: 0},
-      {line:0, ch:0},
+      dummyLoc, dummyLoc,
       primitive.name,
       'symbol'
     );
@@ -940,10 +934,6 @@ class WeschemeParser {
   }
 }
 
-if (lex) {
-  module.exports = WeschemeParser;
-} else {
-  module.exports = function() {
+export default lex ? WeschemeParser : () => {
     throw new Error('wescheme-js must be installed to use the wescheme blocks parser');
-  };
-}
+};
