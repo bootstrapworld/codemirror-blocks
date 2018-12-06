@@ -39,16 +39,10 @@ class DropTarget extends Component {
 
   handleDoubleClick = e => {
     e.stopPropagation();
-    if (isDummyPos(this.props.location)) return;
     this.isDoubleClick = true;
     this.handleMakeEditable();
   }
 
-  handleMouseDown = e => {
-    if (isDummyPos(this.props.location)) {
-      e.preventDefault();
-    }
-  }
 
   handleDisableEditable = () => {
     this.props.onSetEditable(false);
@@ -114,7 +108,6 @@ class DropTarget extends Component {
       <span
         className={classNames(classes)}
         onDoubleClick = {this.handleDoubleClick}
-        onMouseDown = {this.handleMouseDown}
         onClick = {this.handleClick} />
     );
   }

@@ -59,15 +59,6 @@ class Node extends Component {
     this.setState({value});
   }
 
-  handleMouseUp = e => {
-    // Ideally we want this to prevent focusing
-    // but this will also prevent drag and drop :(
-
-    if (isDummyPos(this.props.node.from)) {
-      e.preventDefault();
-    }
-  }
-
   handleClick = e => {
     e.stopPropagation(); // prevent ancestors to steal focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
@@ -77,7 +68,6 @@ class Node extends Component {
 
   handleDoubleClick = e => {
     e.stopPropagation();
-    if (isDummyPos(this.props.node.from)) return;
     if (this.props.normallyEditable) {
       this.handleMakeEditable();
     }
@@ -404,7 +394,6 @@ class Node extends Component {
           style={{
             opacity: isDragging ? 0.5 : 1,
           }}
-          onMouseUp     = {this.handleMouseUp}
           onClick       = {this.handleClick}
           onDoubleClick = {this.handleDoubleClick}
           onKeyDown     = {this.handleKeyDown}>
