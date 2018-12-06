@@ -37,25 +37,18 @@ class DropTarget extends Component {
     return shouldUpdate;
   }
 
-  handleDoubleClick = e => {
-    e.stopPropagation();
-    this.isDoubleClick = true;
-    this.handleMakeEditable();
-  }
-
-
   handleDisableEditable = () => {
     this.props.onSetEditable(false);
   }
 
+  // NOTE(Oak): DropTarget should not handle click event since clicking it
+  // should activate the node
   handleClick = e => {
     e.stopPropagation();
   }
 
-  // NOTE(Oak): DropTarget should not handle click event since clicking it
-  // should activate the node
-
-  handleMakeEditable = () => {
+  handleDoubleClick  = e => {
+    e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
     this.props.onSetEditable(true);
     global.cm.refresh(); // is this needed?
