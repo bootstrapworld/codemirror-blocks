@@ -4,7 +4,7 @@ import Component from './BlockComponent';
 
 import {FunctionDefinition as ASTFunctionDefinitionNode} from '../ast';
 import Node from './Node';
-import DropTarget from './DropTarget';
+import makeDropTargets from './makeDropTargets';
 
 export default class FunctionDefinition extends Component {
   static propTypes = {
@@ -15,26 +15,19 @@ export default class FunctionDefinition extends Component {
     lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
-  state = {editableList: {}}
-  handleSetEditableArr = {}
-  handleSetEditable = i => {
-    if (!this.handleSetEditableArr[i]) {
-      this.handleSetEditableArr[i] = b => {
-        this.setState({editableList: {...this.state.editableList, [i]: b}});
-      };
-    }
-    return this.handleSetEditableArr[i];
+  constructor() {
+    super();
+    this.state = {};
+    this.DropTarget = makeDropTargets(this);
   }
 
   render() {
     const {node, helpers, lockedTypes} = this.props;
+    const DropTarget = this.DropTarget;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
-          define (
-          <DropTarget location={node.name.from}
-                      editable={this.state.editableList[0]}
-                      onSetEditable={this.handleSetEditable(0)} />);
+          define (<DropTarget index={0} location={node.name.from} />
           {helpers.renderNodeForReact(node.name)}
           {helpers.renderNodeForReact(node.params)}
           )

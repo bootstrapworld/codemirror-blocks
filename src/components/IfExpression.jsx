@@ -4,7 +4,7 @@ import Component from './BlockComponent';
 
 import {IfExpression as ASTIfExpressionNode} from '../ast';
 import Node from './Node';
-import DropTarget from './DropTarget';
+import makeDropTargets from './makeDropTargets';
 
 export default class IfExpression extends Component {
   static propTypes = {
@@ -15,18 +15,14 @@ export default class IfExpression extends Component {
     lockedTypes: PropTypes.instanceOf(Array).isRequired,
   }
 
-  state = {editableList: {}}
-  handleSetEditableArr = {}
-  handleSetEditable = i => {
-    if (!this.handleSetEditableArr[i]) {
-      this.handleSetEditableArr[i] = b => {
-        this.setState({editableList: {...this.state.editableList, [i]: b}});
-      };
-    }
-    return this.handleSetEditableArr[i];
+  constructor() {
+    super();
+    this.state = {};
+    this.DropTarget = makeDropTargets(this);
   }
 
   render() {
+    const DropTarget = this.DropTarget;
     const {node, helpers, lockedTypes} = this.props;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
@@ -34,15 +30,11 @@ export default class IfExpression extends Component {
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">
             <div className="blocks-cond-predicate">
-              <DropTarget location={node.testExpr.from}
-                          editable={this.state.editableList[0]}
-                          onSetEditable={this.handleSetEditable(0)} />
+              <DropTarget index={0} location={node.testExpr.from} />
               {helpers.renderNodeForReact(node.testExpr)}
             </div>
             <div className="blocks-cond-result">
-              <DropTarget location={node.thenExpr.from}
-                          editable={this.state.editableList[1]}
-                          onSetEditable={this.handleSetEditable(1)} />
+              <DropTarget index={1} location={node.thenExpr.from} />
               {helpers.renderNodeForReact(node.thenExpr)}
             </div>
           </div>
@@ -51,15 +43,11 @@ export default class IfExpression extends Component {
               else
             </div>
             <div className="blocks-cond-result">
-              <DropTarget location={node.elseExpr.from}
-                          editable={this.state.editableList[2]}
-                          onSetEditable={this.handleSetEditable(2)} />
+              <DropTarget index={2} location={node.elseExpr.from} />
               {helpers.renderNodeForReact(node.elseExpr)}
             </div>
             <div className="blocks-cond-result">
-              <DropTarget location={node.elseExpr.to}
-                          editable={this.state.editableList[3]}
-                          onSetEditable={this.handleSetEditable(3)} />
+              <DropTarget index={3} location={node.elseExpr.to} />
             </div>
           </div>
         </div>

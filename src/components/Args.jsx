@@ -2,8 +2,8 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
 import {ASTNode} from '../ast';
-import DropTarget from './DropTarget';
 import {span} from '../types';
+import makeDropTargets from './makeDropTargets';
 
 // NOTE: `location` is required in case `children` is empty!
 //       Otherwise, it can be omitted.
@@ -17,39 +17,24 @@ export default class Args extends Component {
     location: span,
   }
 
-  state = {editableList: {}}
-  handleSetEditableArr = {}
-  handleSetEditable = i => {
-    if (!this.handleSetEditableArr[i]) {
-      this.handleSetEditableArr[i] = b => {
-        this.setState({editableList: {...this.state.editableList, [i]: b}});
-      };
-    }
-    return this.handleSetEditableArr[i];
+  constructor() {
+    super();
+    this.state = {}
+    this.DropTarget = makeDropTargets(this);
   }
 
   render() {
+    const DropTarget = this.DropTarget;
     let {children, helpers} = this.props;
     if (children.length === 0) {
       return (
-        <DropTarget
-          location={this.props.location}
-          editable={this.state.editableList[0]}
-          onSetEditable={this.handleSetEditable(0)} />);
+        <DropTarget index={0} location={this.props.location} />);
     }
     const elems = [];
-    elems.push(<DropTarget
-                   key={'drop-0'}
-                   location={children[0].from}
-                   editable={this.state.editableList[0]}
-                   onSetEditable={this.handleSetEditable(0)} />);
+    elems.push(<DropTarget index={0} location={children[0].from} />);
     children.forEach((child, index) => {
       elems.push(helpers.renderNodeForReact(child, 'node-'+index));
-      elems.push(<DropTarget
-                     key={'drop-'+(index+1)}
-                     location={child.to}
-                     editable={this.state.editableList[index+1]}
-                     onSetEditable={this.handleSetEditable(index+1)} />);
+      elems.push(<DropTarget index={index+1} location={child.to} />);
     });
     return elems;
   }
