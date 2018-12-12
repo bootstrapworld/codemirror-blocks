@@ -21,7 +21,7 @@ export class LetLikeExpr extends ASTNode {
   }
 
   render(props) {
-    const {helpers, lockedTypes} = this.props;
+    const {helpers, lockedTypes} = props;
     return (
       <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">{this.form}</span>
@@ -50,7 +50,7 @@ export class WhenUnless extends ASTNode {
   }
 
   render(props) {
-    const {helpers, lockedTypes} = this.props;
+    const {helpers, lockedTypes} = props;
     return (
       <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">{this.form}</span>
