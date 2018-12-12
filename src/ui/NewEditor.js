@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
-import {UnControlled as CodeMirror} from 'react-codemirror2';
+import {Controlled as CodeMirror} from 'react-codemirror2';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import './Editor.less';
@@ -398,6 +398,10 @@ class Editor extends Component {
     setTimeout(() => this.mouseUsed = false, 200);
   }
 
+  componentWillUnmount() {
+    global.buffer.remove();
+  }
+
   componentDidMount() {
     const {
       parser, language, options, search,
@@ -452,6 +456,7 @@ class Editor extends Component {
           <CodeMirror options={this.props.cmOptions}
                       className={classNames(classes)}
                       value={this.props.value}
+                      onBeforeChange={this.props.onBeforeChange}
                       onDragOver={this.handleDragOver}
                       onKeyPress={this.handleKeyPress}
                       onKeyDown={this.handleKeyDown}

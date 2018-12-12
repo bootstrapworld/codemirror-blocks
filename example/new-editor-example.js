@@ -14,6 +14,7 @@ import ByBlock from '../src/ui/searchers/ByBlock';
 import attachSearch from '../src/ui/Search';
 import Toolbar from '../src/ui/Toolbar';
 import classNames from 'classnames';
+import {Controlled as CodeMirror} from 'react-codemirror2';
 
 // import exampleWeSchemeCode from './cow-game.rkt';
 
@@ -56,17 +57,31 @@ class EditorInstance extends React.Component {
     primitives: null,
     renderer: null,
     language: null,
+    blockMode: false,
+    code: exampleWeSchemeCode,
   }
 
   handlePrimitives = primitives => this.setState({primitives})
   handleRenderer = renderer => this.setState({renderer});
   handleLanguage = language => this.setState({language});
 
+  handleToggle = () => {
+    this.setState({blockMode: !this.state.blockMode});
+  }
+
+  handleChange = (ed, data, value) => {
+    this.setState({code: value});
+  }
+
   render() {
     const editorClass = classNames('Editor', 'blocks');
     const toolbarPaneClasses = classNames("col-xs-3 toolbar-pane");
-    return (
-      <div className={editorClass}>
+    const glyphClass = classNames('glyphicon', {
+      'glyphicon-pencil': this.state.blockMode,
+      'glyphicon-align-left': !this.state.blockMode
+    });
+    const theEditor = this.state.blockMode ? (
+      <React.Fragment>
         <div className={toolbarPaneClasses} tabIndex="-1">
           <Toolbar primitives={this.state.primitives}
                    renderer={this.state.renderer}
@@ -75,7 +90,8 @@ class EditorInstance extends React.Component {
         <div className="col-xs-9 codemirror-pane">
           <UpgradedEditor
             language="wescheme"
-            value={exampleWeSchemeCode}
+            value={this.state.code}
+            onBeforeChange={this.handleChange}
             options={options}
             parser={parser}
             cmOptions={cmOptions}
@@ -83,6 +99,27 @@ class EditorInstance extends React.Component {
             onRenderer={this.handleRenderer}
             onLanguage={this.handleLanguage} />
         </div>
+      </React.Fragment>
+    ) : (
+      <React.Fragment>
+        <div className="col-xs-9 codemirror-pane">
+          <CodeMirror
+            value={this.state.code}
+            onBeforeChange={this.handleChange}
+            options={cmOptions} />
+        </div>
+      </React.Fragment>
+    );
+    const buttonAria = "Switch to " + (this.state.blockMode ? "text" : "blocks") + " mode";
+    return (
+      <div className={editorClass}>
+        <button className="blocks-toggle-btn btn btn-default btn-sm"
+                aria-label={buttonAria}
+                onClick={this.handleToggle}
+                tabIndex="0">
+          <span className={glyphClass}></span>
+        </button>
+        {theEditor}
       </div>
     );
   }
