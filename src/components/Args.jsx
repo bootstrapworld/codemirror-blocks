@@ -28,7 +28,7 @@ export default class Args extends ComponentWithDropTargets {
                            index={0}
                            location={children[0].from} />);
     children.forEach((child, index) => {
-      elems.push(helpers.renderNodeForReact(child, 'node-'+index));
+      elems.push(this.renderNodeWithDropTargets(child, index, index+1, 'node-'+index));
       elems.push(<DropTarget key={'drop-'+(index+1)}
                              index={index+1}
                              location={child.to} />);

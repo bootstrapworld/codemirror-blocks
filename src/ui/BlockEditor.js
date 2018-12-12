@@ -19,7 +19,7 @@ import CodeMirrorBlocks from '../blocks';
 const lockedTypes = [];
 const helpers = {renderNodeForReact};
 
-function renderNodeForReact(node, key) {
+function renderNodeForReact(node, key, props={}) {
   if (typeof node.render === 'function') {
     let Renderer = node.render.bind(node);
     return (
@@ -27,7 +27,8 @@ function renderNodeForReact(node, key) {
         node        = {node}
         helpers     = {helpers}
         key         = {key}
-        lockedTypes = {lockedTypes} />
+        lockedTypes = {lockedTypes}
+        {...props} />
     );
   } else {
     throw new Error("Don't know how to render node of type: "+node.type);

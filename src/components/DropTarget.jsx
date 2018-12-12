@@ -7,8 +7,6 @@ import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
-import {isDummyPos} from '../utils';
-import shallowequal from 'shallowequal';
 import BlockComponent from './BlockComponent';
 
 @DropNodeTarget(({location}) => ({from: location, to: location}))
@@ -25,17 +23,6 @@ class DropTarget extends BlockComponent {
   }
 
   state = {value: ''}
-
-  shouldComponentUpdate(props, state) {
-    const {location: newLocation, editable: newEditable} = props;
-    const {location: oldLocation, editable: oldEditable} = this.props;
-
-    const shouldUpdate = (
-      (newLocation !== oldLocation || newEditable !== oldEditable) ||
-        !shallowequal(state, this.state)
-    );
-    return shouldUpdate;
-  }
 
   handleDisableEditable = () => {
     this.props.onSetEditable(false);
