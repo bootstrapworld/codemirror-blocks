@@ -4,7 +4,7 @@ import {
   FunctionApp,
   VariableDefinition,
   FunctionDefinition
-} from '../../ast';
+} from '../../nodes';
 
 import {
   Prog,

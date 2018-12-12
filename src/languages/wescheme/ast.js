@@ -20,6 +20,10 @@ export class LetLikeExpr extends ASTNode {
     return `(${this.form} (${this.bindings.toString()}) ${this.expr.toString()}`;
   }
 
+  pretty() {
+    return P.lambdaLikeSexpr(this.form, P.brackets(this.bindings), this.expr);
+  }
+
   render(props) {
     const {helpers, lockedTypes} = this.props;
     return (
@@ -47,6 +51,10 @@ export class WhenUnless extends ASTNode {
 
   toString() {
     return `(${this.form} (${this.predicate.toString()}) ${this.exprs.toString()})`;
+  }
+
+  pretty() {
+    return P.standardSexpr(this.form, [this.predicate, this.exprs]);
   }
 
   render(props) {

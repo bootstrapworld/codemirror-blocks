@@ -16,7 +16,7 @@ import {
   Sequence,
   FunctionApp,
   Unknown
-} from '../../ast';
+} from '../../nodes';
 import {LetLikeExpr, WhenUnless} from './ast';
 import {PrimitiveGroup} from '../../parsers/primitives';
 import PRIMITIVES_CONFIG from './primitives-config';

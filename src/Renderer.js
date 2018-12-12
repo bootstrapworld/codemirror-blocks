@@ -4,12 +4,10 @@ import ReactDOM from 'react-dom';
 import {poscmp} from './utils';
 
 export default class Renderer {
-  /* TODO(Oak): why do we need printASTNode? */
-  constructor(cm, {lockNodesOfType=[], extraRenderers, printASTNode} = {}) {
+  constructor(cm, {lockNodesOfType=[], printWidth=80} = {}) {
     this.cm = cm;
     this.lockNodesOfType = lockNodesOfType;
-    this.printASTNode = printASTNode || (node => node.toString());
-    this.extraRenderers = extraRenderers || {};
+    this.printASTNode = node => node.pretty().display(printWidth).join("\n");
   }
 
   // make code "float" between text/blocks
@@ -149,8 +147,8 @@ export default class Renderer {
 
   renderNodeForReact = (node, key) => {
     this.renderNodeForReact.defaultProps = { displayName: 'ASTNode Renderer' };
-    const Renderer = this.extraRenderers[node.type];
-    if (Renderer && Renderer.prototype instanceof React.Component) {
+    if (typeof node.render === 'function') {
+      let Renderer = node.render.bind(node);
       return (
         <Renderer
           node        = {node}
