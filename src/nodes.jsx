@@ -22,10 +22,6 @@ export class Unknown extends ASTNode {
       this.elts.map((e, i, elts)  => (elts.length>1? (i+1) + ": " : "")+ e.toDescription(level)).join(", ");
   }
 
-  toString() {
-    return `(${this.func} ${this.args.join(' ')})`;
-  }
-
   pretty() {
     return P.standardSexpr(this.elts[0], this.elts.slice(1));
   }
@@ -66,10 +62,6 @@ export class FunctionApp extends ASTNode {
       
   }
 
-  toString() {
-    return `(${this.func} ${this.args.join(' ')})`;
-  }
-
   pretty() {
     return P.standardSexpr(this.func, this.args);
   }
@@ -102,10 +94,6 @@ export class IdentifierList extends ASTNode {
     return enumerateList(this.ids, level);
   }
 
-  toString() {
-    return `${this.ids.join(' ')}`;
-  }
-
   pretty() {
     return P.spaceSep(this.ids);
   }
@@ -134,10 +122,6 @@ export class StructDefinition extends ASTNode {
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `define ${this.name.toDescription(level)} to be a structure with
             ${this.fields.toDescription(level)}`;
-  }
-
-  toString() {
-    return `(define-struct ${this.name} (${this.fields.toString()}))`;
   }
 
   pretty() {
@@ -170,10 +154,6 @@ export class VariableDefinition extends ASTNode {
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
     let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:";
     return `define ${this.name} to be ${insert} ${this.body.toDescription(level)}`;
-  }
-
-  toString() {
-    return `(define ${this.name} ${this.body})`;
   }
 
   pretty() {
@@ -209,10 +189,6 @@ export class LambdaExpression extends ASTNode {
     return `an anonymous function of ${pluralize("argument", this.args.ids)}: 
             ${this.args.toDescription(level)}, with body:
             ${this.body.toDescription(level)}`;
-  }
-
-  toString() {
-    return `(lambda (${this.args.toString()}) ${this.body})`;
   }
 
   pretty() {
@@ -252,10 +228,6 @@ export class FunctionDefinition extends ASTNode {
     return `define ${this.name} to be a function of 
             ${this.params.toDescription(level)}, with body:
             ${this.body.toDescription(level)}`;
-  }
-
-  toString() {
-    return `(define (${this.name} ${this.params.toString()}) ${this.body})`;
   }
 
   pretty() {
@@ -299,10 +271,6 @@ export class CondClause extends ASTNode {
     return `condition: if ${this.testExpr.toDescription(level)}, then, ${this.thenExprs.map(te => te.toDescription(level))}`;
   }
 
-  toString() {
-    return `[${this.testExpr} ${this.thenExprs.join(' ')}]`;
-  }
-
   pretty() {
     return P.brackets(P.spaceSep([this.testExpr].concat(this.thenExprs)));
   }
@@ -344,11 +312,6 @@ export class CondExpression extends ASTNode {
             ${this.clauses.map(c => c.toDescription(level))}`;
   }
 
-  toString() {
-    const clauses = this.clauses.map(c => c.toString()).join(' ');
-    return `(cond ${clauses})`;
-  }
-
   pretty() {
     return P.beginLikeSexpr("cond", this.clauses);
   }
@@ -381,10 +344,6 @@ export class IfExpression extends ASTNode {
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `an if expression: if ${this.testExpr.toDescription(level)}, then ${this.thenExpr.toDescription(level)} `+
             `else ${this.elseExpr.toDescription(level)}`;
-  }
-
-  toString() {
-    return `(if ${this.testExpr} ${this.thenExpr} ${this.elseExpr})`;
   }
 
   pretty() {
@@ -434,10 +393,6 @@ export class Literal extends ASTNode {
     this.hash = hashObject(['literal', this.value, this.dataType]);
   }
 
-  toString() {
-    return `${this.value}`;
-  }
-
   pretty() {
     return P.txt(this.value);
   }
@@ -465,10 +420,6 @@ export class Comment extends ASTNode {
     this.hash = hashObject(['comment', this.comment]);
   }
 
-  toString() {
-    return `${this.comment}`;
-  }
-
   pretty() {
     return P.wrap(this.comment.split(/\s+/));
   }
@@ -486,10 +437,6 @@ export class Blank extends ASTNode {
     this.value = value || "...";
     this.dataType = dataType;
     this.hash = hashObject(['blank', this.value, this.dataType]);
-  }
-
-  toString() {
-    return `${this.value}`;
   }
 
   pretty() {
@@ -521,10 +468,6 @@ export class Sequence extends ASTNode {
   toDescription(level) {
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
     return `a sequence containing ${enumerateList(this.exprs, level)}`;
-  }
-
-  toString() {
-    return `(${this.name} ${this.exprs.join(" ")})`;
   }
 
   pretty() {
