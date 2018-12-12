@@ -5,7 +5,7 @@ import Component from './BlockComponent';
 import {Blank as ASTBlankNode} from '../ast';
 import Node from './Node';
 
-export default class Literal extends Component {
+export default class extends Component {
   static propTypes = {
     node: PropTypes.instanceOf(ASTBlankNode).isRequired,
     lockedTypes: PropTypes.instanceOf(Array).isRequired,
@@ -14,13 +14,14 @@ export default class Literal extends Component {
     }).isRequired,
   }
   render() {
-    const {node, lockedTypes, helpers} = this.props;
+    const {node, lockedTypes, helpers, ...restProps} = this.props;
     return (
       <Node node={node}
             lockedTypes={lockedTypes}
             normallyEditable={true}
             expandable={false}
-            helpers={helpers}>
+            helpers={helpers}
+            {...restProps} >
         <span className="blocks-literal-symbol" />
       </Node>
     );

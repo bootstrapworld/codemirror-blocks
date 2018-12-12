@@ -16,6 +16,8 @@ export default class IdentifierList extends Component {
   }
 
   render() {
+    // NOTE(Oak): I don't think that we need to pass down restProps here
+    // because there's no adjacent DropTarget for FunctionDef
     const {node, helpers, lockedTypes} = this.props;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>

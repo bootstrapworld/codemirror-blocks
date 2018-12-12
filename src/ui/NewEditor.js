@@ -52,7 +52,7 @@ const nodeRenderers = {
 const lockedTypes = [];
 const helpers = {renderNodeForReact};
 
-function renderNodeForReact(node, key) {
+function renderNodeForReact(node, key, props={}) {
   const Renderer = nodeRenderers[node.type];
   if (Renderer && Renderer.prototype instanceof Component) {
     return (
@@ -60,7 +60,8 @@ function renderNodeForReact(node, key) {
         node        = {node}
         helpers     = {helpers}
         key         = {key}
-        lockedTypes = {lockedTypes} />
+        lockedTypes = {lockedTypes}
+        {...props} />
     );
   } else {
     throw new Error("Don't know how to render node of type: "+node.type);

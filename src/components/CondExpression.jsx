@@ -15,9 +15,9 @@ export default class CondExpression extends Component {
   }
 
   render() {
-    const {node, helpers, lockedTypes} = this.props;
+    const {node, helpers, lockedTypes, ...restProps} = this.props;
     return (
-      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers} {...restProps}>
         <span className="blocks-operator">cond</span>
         <div className="blocks-cond-table">
           {node.clauses.map((clause, index) => helpers.renderNodeForReact(clause, index)) }

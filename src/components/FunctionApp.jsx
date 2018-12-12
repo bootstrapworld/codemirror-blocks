@@ -16,9 +16,9 @@ export default class FunctionApp extends Component {
   }
 
   render() {
-    const {node, helpers, lockedTypes} = this.props;
+    const {node, helpers, lockedTypes, ...restProps} = this.props;
     return (
-      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers} {...restProps}>
         <span className="blocks-operator">
           <Args helpers={helpers}>{[node.func]}</Args>
         </span>

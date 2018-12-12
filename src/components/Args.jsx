@@ -44,7 +44,10 @@ export default class Args extends Component {
                    editable={this.state.editableList[0]}
                    onSetEditable={this.handleSetEditable(0)} />);
     children.forEach((child, index) => {
-      elems.push(helpers.renderNodeForReact(child, 'node-'+index));
+      elems.push(helpers.renderNodeForReact(child, 'node-'+index, {
+        onSetLeft: this.handleSetEditable(index),
+        onSetRight: this.handleSetEditable(index + 1)
+      }));
       elems.push(<DropTarget
                      key={'drop-'+(index+1)}
                      location={child.to}

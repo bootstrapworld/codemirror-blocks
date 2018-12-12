@@ -27,6 +27,8 @@ export default class FunctionDefinition extends Component {
   }
 
   render() {
+    // NOTE(Oak): I don't think that we need to pass down restProps here
+    // because there's no adjacent DropTarget for FunctionDef
     const {node, helpers, lockedTypes} = this.props;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
@@ -34,13 +36,22 @@ export default class FunctionDefinition extends Component {
           define (
           <DropTarget location={node.name.from}
                       editable={this.state.editableList[0]}
-                      onSetEditable={this.handleSetEditable(0)} />);
-          {helpers.renderNodeForReact(node.name)}
-          {helpers.renderNodeForReact(node.params)}
+                      onSetEditable={this.handleSetEditable(0)} />
+          {helpers.renderNodeForReact(node.name, undefined, {
+            onSetLeft: this.handleSetEditable(0),
+            onSetRight: () => {},
+          })}
+          {helpers.renderNodeForReact(node.params, undefined, {
+            onSetLeft: () => {},
+            onSetRight: () => {},
+          })}
           )
         </span>
         <span className="blocks-args">
-          {helpers.renderNodeForReact(node.body)}
+          {helpers.renderNodeForReact(node.body, undefined, {
+            onSetLeft: () => {},
+            onSetRight: () => {},
+          })}
         </span>
       </Node>
     );

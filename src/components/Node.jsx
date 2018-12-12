@@ -221,7 +221,11 @@ class Node extends Component {
         e.preventDefault();
         if (e.ctrlKey) { // strictly want ctrlKey
           // TODO: this should go up to the top level block
-          setCursor(node.to);
+          if (this.props.onSetRight) {
+            this.props.onSetRight(true);
+          } else {
+            setCursor(node.to);
+          }
         }
         return;
         // insert-left
@@ -229,7 +233,11 @@ class Node extends Component {
         e.preventDefault();
         if (e.ctrlKey) { // strictly want ctrlKey
           // TODO: this should go up to the top level block
-          setCursor(node.from);
+          if (this.props.onSetLeft) {
+            this.props.onSetLeft(true);
+          } else {
+            setCursor(node.from);
+          }
         }
         return;
         // copy

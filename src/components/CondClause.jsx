@@ -27,6 +27,8 @@ export default class CondClause extends Component {
   }
 
   render() {
+    // NOTE(Oak): I don't think that we need to pass down restProps here
+    // because there's no adjacent DropTarget for CondClause
     const {node, helpers, lockedTypes} = this.props;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
@@ -35,7 +37,10 @@ export default class CondClause extends Component {
             <DropTarget location={node.testExpr.from}
                         editable={this.state.editableList[0]}
                         onSetEditable={this.handleSetEditable(0)} />
-             {helpers.renderNodeForReact(node.testExpr)}
+            {helpers.renderNodeForReact(node.testExpr, undefined, {
+              onSetLeft: this.handleSetEditable(0),
+              onSetRight: this.handleSetEditable(1),
+            })}
           </div>
           <div className="blocks-cond-result">
             {node.thenExprs.map((thenExpr, index) => (
@@ -43,7 +48,10 @@ export default class CondClause extends Component {
                 <DropTarget location={thenExpr.from}
                             editable={this.state.editableList[index+1]}
                             onSetEditable={this.handleSetEditable(index+1)} />
-                {helpers.renderNodeForReact(thenExpr)}
+                {helpers.renderNodeForReact(thenExpr, undefined, {
+                  onSetLeft: this.handleSetEditable(index + 1),
+                  onSetRight: this.handleSetEditable(index + 2),
+                })}
               </span>))}
           </div>
         </div>

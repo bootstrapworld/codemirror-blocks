@@ -14,13 +14,14 @@ export default class Literal extends Component {
   }
 
   render() {
-    const {node, lockedTypes, helpers} = this.props;
+    const {node, lockedTypes, helpers, ...restProps} = this.props;
     return (
       <Node node={node}
             lockedTypes={lockedTypes}
             normallyEditable={true}
             expandable={false}
-            helpers={helpers}>
+            helpers={helpers}
+            {...restProps} >
         <span className={`blocks-literal-${node.dataType}`}>
           {node.value.toString()}
         </span>

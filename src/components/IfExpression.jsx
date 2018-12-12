@@ -27,9 +27,9 @@ export default class IfExpression extends Component {
   }
 
   render() {
-    const {node, helpers, lockedTypes} = this.props;
+    const {node, helpers, lockedTypes, ...restProps} = this.props;
     return (
-      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers} {...restProps}>
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">
@@ -37,13 +37,19 @@ export default class IfExpression extends Component {
               <DropTarget location={node.testExpr.from}
                           editable={this.state.editableList[0]}
                           onSetEditable={this.handleSetEditable(0)} />
-              {helpers.renderNodeForReact(node.testExpr)}
+              {helpers.renderNodeForReact(node.testExpr, undefined, {
+                onSetLeft: this.handleSetEditalbe(0),
+                onSetRight: this.handleSetEditalbe(1),
+              })}
             </div>
             <div className="blocks-cond-result">
               <DropTarget location={node.thenExpr.from}
                           editable={this.state.editableList[1]}
                           onSetEditable={this.handleSetEditable(1)} />
-              {helpers.renderNodeForReact(node.thenExpr)}
+              {helpers.renderNodeForReact(node.thenExpr, undefined, {
+                onSetLeft: this.handleSetEditalbe(1),
+                onSetRight: this.handleSetEditalbe(2),
+              })}
             </div>
           </div>
           <div className="blocks-cond-row">
@@ -54,7 +60,10 @@ export default class IfExpression extends Component {
               <DropTarget location={node.elseExpr.from}
                           editable={this.state.editableList[2]}
                           onSetEditable={this.handleSetEditable(2)} />
-              {helpers.renderNodeForReact(node.elseExpr)}
+              {helpers.renderNodeForReact(node.elseExpr, undefined, {
+                onSetLeft: this.handleSetEditalbe(2),
+                onSetRight: this.handleSetEditalbe(3),
+              })}
             </div>
             <div className="blocks-cond-result">
               <DropTarget location={node.elseExpr.to}

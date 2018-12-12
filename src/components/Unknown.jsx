@@ -16,11 +16,11 @@ export default class Unknown extends Component {
   }
 
   render() {
-    const {node, helpers, lockedTypes} = this.props;
+    const {node, helpers, lockedTypes, ...restProps} = this.props;
     const firstElt = node.elts[0];
     const restElts = node.elts.slice(1);
     return (
-      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers} {...restProps}>
         <span className="blocks-operator">{helpers.renderNodeForReact(firstElt)}</span>
         <span className="blocks-args">
           <Args helpers={helpers} location={firstElt.to}>{restElts}</Args>

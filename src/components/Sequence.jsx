@@ -16,9 +16,9 @@ export default class Sequence extends Component {
   }
 
   render() {
-    const {node, helpers, lockedTypes} = this.props;
+    const {node, helpers, lockedTypes, ...restProps} = this.props;
     return (
-      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers} {...restProps}>
         <span className="blocks-operator">{node.name}</span>
         <div className="blocks-sequence-exprs">
           <Args helpers={helpers} location={node.name.to}>{node.exprs}</Args>
