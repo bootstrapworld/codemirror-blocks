@@ -1,7 +1,7 @@
 import {Component, PureComponent} from 'react';
 import shallowequal from 'shallowequal';
 
-export default class BlockComponent extends PureComponent {
+export default class BlockComponent extends Component {
   // shouldComponentUpdate(props, state) {
   //   // NOTE: don't care about the node since the patching algorithm will deal
   //   // with the update already
