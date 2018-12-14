@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
-import {UnControlled as CodeMirror} from 'react-codemirror2';
+import {Controlled as CodeMirror} from 'react-codemirror2';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import './Editor.less';
@@ -145,6 +145,7 @@ class Editor extends Component {
     onPrimitives: PropTypes.func,
     onRenderer: PropTypes.func,
     onLanguage: PropTypes.func,
+    onAST: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
@@ -198,6 +199,7 @@ class Editor extends Component {
     onPrimitives: () => {},
     onRenderer: () => {},
     onLanguage: () => {},
+    onAST: () => {},
   }
 
   handleDragOver = (ed, e) => {
@@ -308,6 +310,7 @@ class Editor extends Component {
       const newAST = global.parser.parse(cm.getValue());
       const patched = patch(this.props.ast, newAST);
       this.props.setAST(patched.tree);
+      this.props.onAST(patched.tree);
       // TODO(Oak): should we do anything with patched.firstNewId?
     }
   }
@@ -329,7 +332,9 @@ class Editor extends Component {
 
     global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
+    console.log("AST is about to be updated!", this.props.setAST);
     this.props.setAST(ast);
+    this.props.onAST(ast);
     this.props.setAnnouncer(annoucements);
 
     say('Switching to Block mode');
@@ -365,10 +370,14 @@ class Editor extends Component {
     setTimeout(() => this.mouseUsed = false, 200);
   }
 
+  componentWillUnmount() {
+    global.buffer.remove();
+  }
+
   componentDidMount() {
     const {
       parser, language, options, search,
-      onPrimitives, onRenderer, onLanguage
+      onPrimitives, onRenderer, onLanguage, onAST
     } = this.props;
 
     global.parser = parser;
@@ -420,6 +429,7 @@ class Editor extends Component {
                       className={classNames(classes)}
                       value={this.props.value}
                       onDragOver={this.handleDragOver}
+                      onBeforeChange={this.props.onBeforeChange}
                       onKeyPress={this.handleKeyPress}
                       onKeyDown={this.handleKeyDown}
                       onMouseDown={this.handleMouseDown}

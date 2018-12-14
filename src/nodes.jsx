@@ -4,9 +4,8 @@ import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
 import hashObject from 'object-hash';
 import Node from './components/Node';
 import Args from './components/Args';
-import makeDropTargets from './components/makeDropTargets';
-
-// TODO: factor out DropTarget/editable!
+import BlockComponent from './components/BlockComponent';
+import DropTarget from './components/DropTarget';
 
 
 export class Unknown extends ASTNode {
@@ -219,8 +218,6 @@ export class FunctionDefinition extends ASTNode {
     this.params = params;
     this.body = body;
     this.hash = hashObject(['functionDefinition', name.hash, params.hash, body.hash]);
-    this.state = {};
-    this.DropTarget = makeDropTargets(this);
   }
 
   toDescription(level){
@@ -239,17 +236,41 @@ export class FunctionDefinition extends ASTNode {
 
   render(props) {
     const {helpers, lockedTypes} = props;
-    const DropTarget = this.DropTarget;
     return (
-      <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
+      <FunctionDefinitionComponent helpers={helpers} lockedTypes={lockedTypes} node={this}>
+        {props.children}
+      </FunctionDefinitionComponent>
+    );
+  }
+}
+
+class FunctionDefinitionComponent extends BlockComponent {
+  state = {editableList: {}}
+  handleSetEditableArr = {}
+  handleSetEditable = i => {
+    if (!this.handleSetEditableArr[i]) {
+      this.handleSetEditableArr[i] = b => {
+        this.setState({editableList: {...this.state.editableList, [i]: b}});
+      };
+    }
+    return this.handleSetEditableArr[i];
+  }
+
+  render() {
+    const {node, helpers, lockedTypes} = this.props;
+    return (
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
-          define (<DropTarget index={0} location={this.name.from} />
-          {helpers.renderNodeForReact(this.name)}
-          {helpers.renderNodeForReact(this.params)}
+          define (
+          <DropTarget location={node.name.from}
+                      editable={this.state.editableList[0]}
+                      onSetEditable={this.handleSetEditable(0)} />
+          {helpers.renderNodeForReact(node.name)}
+          {helpers.renderNodeForReact(node.params)}
           )
         </span>
         <span className="blocks-args">
-          {helpers.renderNodeForReact(this.body)}
+          {helpers.renderNodeForReact(node.body)}
         </span>
       </Node>
     );
@@ -262,8 +283,6 @@ export class CondClause extends ASTNode {
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
     this.hash = hashObject(['condClause', testExpr.hash, thenExprs.map(e => e.hash)]);
-    this.state = {};
-    this.DropTarget = makeDropTargets(this);
   }
 
   toDescription(level){
@@ -277,23 +296,51 @@ export class CondClause extends ASTNode {
 
   render(props) {
     const {helpers, lockedTypes} = props;
-    const DropTarget = this.DropTarget;
     return (
-      <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
+      <CondClauseComponent helpers={helpers} lockedTypes={lockedTypes} node={this}>
+        {props.children}
+      </CondClauseComponent>
+    );
+  }
+}
+
+class CondClauseComponent extends BlockComponent {
+  state = {editableList: {}}
+  handleSetEditableArr = {}
+  handleSetEditable = i => {
+    if (!this.handleSetEditableArr[i]) {
+      this.handleSetEditableArr[i] = b => {
+        this.setState({editableList: {...this.state.editableList, [i]: b}});
+      };
+    }
+    return this.handleSetEditableArr[i];
+  }
+
+  render() {
+    const {node, helpers, lockedTypes} = this.props;
+    return (
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">
-            <DropTarget index={0} location={this.testExpr.from} />
-             {helpers.renderNodeForReact(this.testExpr)}
+            <DropTarget location={node.testExpr.from}
+                        editable={this.state.editableList[0]}
+                        onSetEditable={this.handleSetEditable(0)} />
+             {helpers.renderNodeForReact(node.testExpr)}
           </div>
           <div className="blocks-cond-result">
-            {this.thenExprs.map((thenExpr, index) => (
+            {node.thenExprs.map((thenExpr, index) => (
               <span key={index}>
-                <DropTarget index={index+1} location={thenExpr.from} />
+                <DropTarget location={thenExpr.from}
+                            editable={this.state.editableList[index+1]}
+                            onSetEditable={this.handleSetEditable(index+1)} />
                 {helpers.renderNodeForReact(thenExpr)}
               </span>))}
           </div>
         </div>
-        <DropTarget index={this.thenExprs.length + 1} location={this.from} />
+        <DropTarget
+          location={node.from}
+          editable={this.state.editableList[node.thenExprs.length + 1]}
+          onSetEditable={this.handleSetEditable(node.thenExprs.length + 1)} />
       </Node>
     );
   }
@@ -336,8 +383,6 @@ export class IfExpression extends ASTNode {
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
     this.hash = hashObject(['ifExpression', testExpr.hash, thenExpr.hash, elseExpr.hash]);
-    this.state = {};
-    this.DropTarget = makeDropTargets(this);
   }
 
   toDescription(level){
@@ -352,19 +397,44 @@ export class IfExpression extends ASTNode {
 
   render(props) {
     const {helpers, lockedTypes} = props;
-    const DropTarget = this.DropTarget;
     return (
-      <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
+      <IfExpressionComponent helpers={helpers} lockedTypes={lockedTypes} node={this}>
+        {props.children}
+      </IfExpressionComponent>
+    );
+  }
+}
+
+class IfExpressionComponent extends BlockComponent {
+  state = {editableList: {}}
+  handleSetEditableArr = {}
+  handleSetEditable = i => {
+    if (!this.handleSetEditableArr[i]) {
+      this.handleSetEditableArr[i] = b => {
+        this.setState({editableList: {...this.state.editableList, [i]: b}});
+      };
+    }
+    return this.handleSetEditableArr[i];
+  }
+
+  render() {
+    const {node, helpers, lockedTypes} = this.props;
+    return (
+      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">
             <div className="blocks-cond-predicate">
-              <DropTarget index={0} location={this.testExpr.from} />
-              {helpers.renderNodeForReact(this.testExpr)}
+              <DropTarget location={node.testExpr.from}
+                          editable={this.state.editableList[0]}
+                          onSetEditable={this.handleSetEditable(0)} />
+              {helpers.renderNodeForReact(node.testExpr)}
             </div>
             <div className="blocks-cond-result">
-              <DropTarget index={1} location={this.thenExpr.from} />
-              {helpers.renderNodeForReact(this.thenExpr)}
+              <DropTarget location={node.thenExpr.from}
+                          editable={this.state.editableList[1]}
+                          onSetEditable={this.handleSetEditable(1)} />
+              {helpers.renderNodeForReact(node.thenExpr)}
             </div>
           </div>
           <div className="blocks-cond-row">
@@ -372,11 +442,15 @@ export class IfExpression extends ASTNode {
               else
             </div>
             <div className="blocks-cond-result">
-              <DropTarget index={2} location={this.elseExpr.from} />
-              {helpers.renderNodeForReact(this.elseExpr)}
+              <DropTarget location={node.elseExpr.from}
+                          editable={this.state.editableList[2]}
+                          onSetEditable={this.handleSetEditable(2)} />
+              {helpers.renderNodeForReact(node.elseExpr)}
             </div>
             <div className="blocks-cond-result">
-              <DropTarget index={3} location={this.elseExpr.to} />
+              <DropTarget location={node.elseExpr.to}
+                          editable={this.state.editableList[3]}
+                          onSetEditable={this.handleSetEditable(3)} />
             </div>
           </div>
         </div>
