@@ -42,7 +42,7 @@ export default function makeDropTargets(component) {
         key = {'drop-' + index}
         location = {location}
         editable = {component.state.editableList[index]}
-        onSetEditable = {component.__handleSetEditable[index]}
+        onSetEditable = {component.__handleSetEditable(index)}
       />;
     }
   };
