@@ -7,7 +7,7 @@ import {partition, poscmp, getRoot, isDummyPos,
 import {dropNode, deleteNodes, copyNodes,
   pasteNodes, activate, activateByNId} from '../actions';
 import NodeEditable from './NodeEditable';
-import Component from './BlockComponent';
+import BlockComponent from './BlockComponent';
 import {isErrorFree} from '../store';
 import global from '../global';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
@@ -24,7 +24,7 @@ import {playSound, BEEP} from '../sound';
   node = store.getState().ast.getNodeById(node.id);
   return {from: node.from, to: node.to};
 })
-class Node extends Component {
+class Node extends BlockComponent {
   static defaultProps = {
     children: null,
     normallyEditable: false,

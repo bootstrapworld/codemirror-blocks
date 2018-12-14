@@ -9,10 +9,10 @@ import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
 import {isDummyPos} from '../utils';
 import shallowequal from 'shallowequal';
-import Component from './BlockComponent';
+import BlockComponent from './BlockComponent';
 
 @DropNodeTarget(({location}) => ({from: location, to: location}))
-class DropTarget extends Component {
+class DropTarget extends BlockComponent {
 
   static propTypes = {
     location: PropTypes.instanceOf(Object).isRequired,
