@@ -87,6 +87,7 @@
     "start": "webpack-dev-server --mode development --config webpack/example.config.js",
     "heroku-server": "node heroku-server.js",
     "build": "webpack --mode production",
+    "build-debug": "webpack --mode development",
     "lint": "eslint src spec --ext .js || true",
     "site": "jekyll serve --baseurl \"\""
   },
