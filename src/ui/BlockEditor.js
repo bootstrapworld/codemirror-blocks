@@ -449,7 +449,7 @@ class BlockEditor extends Component {
       // NOTE(Oak): we need to clear all Blocks markers (containing a NODE_ID)
       // to prevent overlapping the marker issue
       for (const marker of global.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
-        console.log('portals rendered');
+        console.log('portals rendered!');
 
         // NOTE(Oak): we need to clear all markers up front to prevent
         // overlapping the marker issue
@@ -459,6 +459,7 @@ class BlockEditor extends Component {
         portals.push(<ToplevelBlock key={r.id} node={r} />);
       }
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
+      setTimeout(() => { global.cm.refresh(); console.log('refreshed CM'); }, 1000);
     }
     return portals;
   }
