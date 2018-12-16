@@ -36,6 +36,10 @@ export function deleteNodes() {
 
 export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDropTarget}) {
   return (dispatch, getState) => {
+    if (!destFrom) {
+      console.error("somehow destFrom doesn't exist");
+      return;
+    }
     const {ast} = getState();
     const srcNode = srcId ? ast.getNodeById(srcId) : null;
     if (srcNode && poscmp(destFrom, srcNode.from) > 0 && poscmp(destTo, srcNode.to) < 0) {

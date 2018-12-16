@@ -14,7 +14,7 @@ class DropTarget extends BlockComponent {
 
   static propTypes = {
     location: PropTypes.instanceOf(Object).isRequired,
-    editable: PropTypes.bool.isRequired,
+    editable: PropTypes.bool,
     onSetEditable: PropTypes.func.isRequired,
 
     // fulfilled by DropNodeTarget

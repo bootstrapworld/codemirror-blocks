@@ -2,7 +2,7 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {partition, poscmp, getRoot, isDummyPos,
+import {partition, poscmp, getRoot,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
 import {dropNode, deleteNodes, copyNodes,
   pasteNodes, activate, activateByNId} from '../actions';

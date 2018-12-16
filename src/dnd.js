@@ -1,5 +1,6 @@
 import {DragSource, DropTarget} from 'react-dnd';
 import {isDummyPos} from './utils';
+import global from './global';
 
 export const ItemTypes = {
   NODE: 'node',
@@ -25,7 +26,13 @@ export function collectSource(connect, monitor) {
 export const nodeTarget = nodeTargetFn => ({
   drop(props, monitor) {
     if (monitor.didDrop()) return;
-    props.onDrop(monitor.getItem(), nodeTargetFn(props));
+    const {x: left, y: top} = monitor.getClientOffset();
+    props.onDrop(
+      monitor.getItem(),
+      nodeTargetFn(props.location ?
+                   props :
+                   {...props, location: global.cm.coordsChar({left, top})})
+    );
   }
 });
 
