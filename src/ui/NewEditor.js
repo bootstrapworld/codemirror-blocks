@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
-import {Controlled as CodeMirror} from 'react-codemirror2';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import './Editor.less';
@@ -16,6 +15,7 @@ import {pos} from '../types';
 import Renderer from '../Renderer';
 import merge from '../merge';
 import CodeMirrorBlocks from '../blocks';
+import CodeMirror from './RawEditor';
 
 import FunctionApp         from '../components/FunctionApp';
 import IfExpression       from '../components/IfExpression';
@@ -159,6 +159,8 @@ const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(Top
 
 class Editor extends Component {
   static propTypes = {
+    value: PropTypes.string.isRequired,
+    onBeforeChange: PropTypes.func.isRequired,
     options: PropTypes.object,
     cmOptions: PropTypes.object,
     keyMap: PropTypes.object,
@@ -233,12 +235,6 @@ class Editor extends Component {
     onLanguage: () => {},
   }
 
-  handleDragOver = (ed, e) => {
-    if (!e.target.classList.contains('CodeMirror-line')) {
-      e.preventDefault();
-    }
-    // TODO: actual insertion onto CM
-  }
 
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
@@ -457,7 +453,6 @@ class Editor extends Component {
                       className={classNames(classes)}
                       value={this.props.value}
                       onBeforeChange={this.props.onBeforeChange}
-                      onDragOver={this.handleDragOver}
                       onKeyPress={this.handleKeyPress}
                       onKeyDown={this.handleKeyDown}
                       onMouseDown={this.handleMouseDown}
@@ -469,9 +464,6 @@ class Editor extends Component {
         </div>
         {this.renderPortals()}
         <FakeCursorManager />
-        {/* <div style={{position: 'absolute', bottom: 0}}> */}
-        {/*   {global.cm && global.cm.getValue()} */}
-        {/* </div> */}
       </div>
     );
   }
