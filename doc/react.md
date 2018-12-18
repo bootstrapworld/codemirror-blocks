@@ -2,8 +2,8 @@
 
 These are some general notes on the JS [React](https://reactjs.org/) library.
 Mostly, they are a summary of the
-[React tutorial](https://reactjs.org/docs/hello-world.html); if you haven't read
-that yet, it's probably a better place to start than here.
+[React tutorial](https://reactjs.org/docs/hello-world.html). If something isn't
+clear here, that's a good place to look to try to get a deeper understanding.
 
 Why are we using React? I see two big reasons:
 
@@ -11,8 +11,6 @@ Why are we using React? I see two big reasons:
 the DOM that haven't changed. This is good for efficiency.
 2. React is an opinionated framework, with good opinions. It gives good
 structure to CMB.
-
-[TODO: add Redux notes]
 
 
 ## React Overview
