@@ -9,7 +9,6 @@ import global from '../global';
 import patch from '../ast-patch';
 import NodeEditable from '../components/NodeEditable';
 import {activate, activateByNId} from '../actions';
-import {say} from '../utils';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
@@ -145,7 +144,6 @@ class Editor extends Component {
     onPrimitives: PropTypes.func,
     onRenderer: PropTypes.func,
     onLanguage: PropTypes.func,
-    onAST: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
@@ -199,7 +197,6 @@ class Editor extends Component {
     onPrimitives: () => {},
     onRenderer: () => {},
     onLanguage: () => {},
-    onAST: () => {},
   }
 
   handleDragOver = (ed, e) => {
@@ -310,7 +307,6 @@ class Editor extends Component {
       const newAST = global.parser.parse(cm.getValue());
       const patched = patch(this.props.ast, newAST);
       this.props.setAST(patched.tree);
-      this.props.onAST(patched.tree);
       // TODO(Oak): should we do anything with patched.firstNewId?
     }
   }
@@ -323,21 +319,17 @@ class Editor extends Component {
     const scroller = ed.getScrollerElement();
     scroller.setAttribute('role', 'presentation');
 
-    const annoucements = document.createElement('span');
-    annoucements.setAttribute('role', 'log');
-    annoucements.setAttribute('aria-live', 'assertive');
-    wrapper.appendChild(annoucements);
+    const announcements = document.createElement('span');
+    announcements.setAttribute('role', 'log');
+    announcements.setAttribute('aria-live', 'assertive');
+    wrapper.appendChild(announcements);
 
     ed.on('changes', this.editorChange);
 
     global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
-    console.log("AST is about to be updated!", this.props.setAST);
     this.props.setAST(ast);
-    this.props.onAST(ast);
-    this.props.setAnnouncer(annoucements);
-
-    say('Switching to Block mode');
+    this.props.setAnnouncer(announcements);
 
     // if we have nodes, default to the first one. Note that does NOT
     // activate a node; only when the editor is focused, the focused node will be
@@ -377,7 +369,7 @@ class Editor extends Component {
   componentDidMount() {
     const {
       parser, language, options, search,
-      onPrimitives, onRenderer, onLanguage, onAST
+      onPrimitives, onRenderer, onLanguage,
     } = this.props;
 
     global.parser = parser;
