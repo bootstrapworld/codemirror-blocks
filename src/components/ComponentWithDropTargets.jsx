@@ -8,7 +8,7 @@ export default class ComponentWithDropTargets extends Component {
   constructor() {
     super();
 
-    this.handleSetEditableArr = {}
+    this.handleSetEditableArr = {};
     this.handleSetEditable = i => {
       if (!this.handleSetEditableArr[i]) {
         this.handleSetEditableArr[i] = b => {
@@ -16,7 +16,7 @@ export default class ComponentWithDropTargets extends Component {
         };
       }
       return this.handleSetEditableArr[i];
-    }
+    };
 
     this.state = {editableList: {}};
 
@@ -35,6 +35,6 @@ export default class ComponentWithDropTargets extends Component {
           onSetEditable = {that.handleSetEditable(index)}
         />;
       }
-    }
+    };
   }
 }
