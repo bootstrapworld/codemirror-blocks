@@ -11,6 +11,6 @@ export default CodeMirrorBlocks.languages.addLanguage(
       return new WeschemeParser();
     },
     getRenderOptions() {
-      return {}
+      return {};
     },
   });

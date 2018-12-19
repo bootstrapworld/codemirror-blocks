@@ -141,6 +141,7 @@ class Editor extends Component {
       search: PropTypes.func.isRequired,
       setCursor: PropTypes.func.isRequired,
     }),
+    onBeforeChange: PropTypes.func,
     onPrimitives: PropTypes.func,
     onRenderer: PropTypes.func,
     onLanguage: PropTypes.func,
@@ -306,12 +307,11 @@ class Editor extends Component {
   editorChange = (cm, changes) => {
     // TODO(Justin) What was this `if` statement about?
     // How should this function relate to `src/codeMirror.js`?
-//    if (!changes.every(change => change.origin.startsWith('cmb:'))) {
-      const newAST = global.parser.parse(cm.getValue());
-      const patched = patch(this.props.ast, newAST);
-      this.updateAST(patched.tree);
-      // TODO(Oak): should we do anything with patched.firstNewId?
-//    }
+    // if (!changes.every(change => change.origin.startsWith('cmb:'))) {
+    const newAST = global.parser.parse(cm.getValue());
+    const patched = patch(this.props.ast, newAST);
+    this.updateAST(patched.tree);
+    // TODO(Oak): should we do anything with patched.firstNewId?
   }
 
   handleEditorDidMount = ed => {

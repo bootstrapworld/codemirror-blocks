@@ -71,7 +71,7 @@ class EmptyDoc extends Doc {
     super(0);
   }
 
-  render(out, indent, column, width) {
+  render(_out, _indent, column, _width) {
     return column;
   }
 }

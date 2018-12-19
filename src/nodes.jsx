@@ -450,7 +450,7 @@ export class Comment extends ASTNode {
     return P.wrap(this.comment.split(/\s+/));
   }
 
-  render(props) {
+  render(_props) {
     return (<span className="blocks-comment" id={this.id} aria-hidden="true">
       <span className="screenreader-only">Has comment,</span> {this.comment.toString()}
     </span>);

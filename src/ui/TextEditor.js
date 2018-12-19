@@ -52,7 +52,7 @@ class TextEditor extends Component {
   }
 }
 
-const mapStateToProps = state => ({});
+const mapStateToProps = _state => ({});
 const mapDispatchToProps = dispatch => ({
   dispatch,
   setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
