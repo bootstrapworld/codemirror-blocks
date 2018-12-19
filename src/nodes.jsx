@@ -4,8 +4,7 @@ import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
 import hashObject from 'object-hash';
 import Node from './components/Node';
 import Args from './components/Args';
-import BlockComponent from './components/BlockComponent';
-import DropTarget from './components/DropTarget';
+import ComponentWithDropTargets from './components/ComponentWithDropTargets';
 
 
 export class Unknown extends ASTNode {
@@ -244,27 +243,15 @@ export class FunctionDefinition extends ASTNode {
   }
 }
 
-class FunctionDefinitionComponent extends BlockComponent {
-  state = {editableList: {}}
-  handleSetEditableArr = {}
-  handleSetEditable = i => {
-    if (!this.handleSetEditableArr[i]) {
-      this.handleSetEditableArr[i] = b => {
-        this.setState({editableList: {...this.state.editableList, [i]: b}});
-      };
-    }
-    return this.handleSetEditableArr[i];
-  }
-
+class FunctionDefinitionComponent extends ComponentWithDropTargets {
   render() {
     const {node, helpers, lockedTypes} = this.props;
+    const DropTarget = this.DropTarget;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">
           define (
-          <DropTarget location={node.name.from}
-                      editable={this.state.editableList[0]}
-                      onSetEditable={this.handleSetEditable(0)} />
+          <DropTarget index={0} location={node.name.from} />
           {helpers.renderNodeForReact(node.name)}
           {helpers.renderNodeForReact(node.params)}
           )
@@ -304,43 +291,26 @@ export class CondClause extends ASTNode {
   }
 }
 
-class CondClauseComponent extends BlockComponent {
-  state = {editableList: {}}
-  handleSetEditableArr = {}
-  handleSetEditable = i => {
-    if (!this.handleSetEditableArr[i]) {
-      this.handleSetEditableArr[i] = b => {
-        this.setState({editableList: {...this.state.editableList, [i]: b}});
-      };
-    }
-    return this.handleSetEditableArr[i];
-  }
-
+class CondClauseComponent extends ComponentWithDropTargets {
   render() {
     const {node, helpers, lockedTypes} = this.props;
+    const DropTarget = this.DropTarget;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">
-            <DropTarget location={node.testExpr.from}
-                        editable={this.state.editableList[0]}
-                        onSetEditable={this.handleSetEditable(0)} />
+            <DropTarget index={0} location={node.testExpr.from} />
              {helpers.renderNodeForReact(node.testExpr)}
           </div>
           <div className="blocks-cond-result">
             {node.thenExprs.map((thenExpr, index) => (
               <span key={index}>
-                <DropTarget location={thenExpr.from}
-                            editable={this.state.editableList[index+1]}
-                            onSetEditable={this.handleSetEditable(index+1)} />
+                <DropTarget index={index+1} location={thenExpr.from} />
                 {helpers.renderNodeForReact(thenExpr)}
               </span>))}
           </div>
         </div>
-        <DropTarget
-          location={node.from}
-          editable={this.state.editableList[node.thenExprs.length + 1]}
-          onSetEditable={this.handleSetEditable(node.thenExprs.length + 1)} />
+        <DropTarget index={node.thenExprs.length + 1} location={node.from} />
       </Node>
     );
   }
@@ -405,35 +375,21 @@ export class IfExpression extends ASTNode {
   }
 }
 
-class IfExpressionComponent extends BlockComponent {
-  state = {editableList: {}}
-  handleSetEditableArr = {}
-  handleSetEditable = i => {
-    if (!this.handleSetEditableArr[i]) {
-      this.handleSetEditableArr[i] = b => {
-        this.setState({editableList: {...this.state.editableList, [i]: b}});
-      };
-    }
-    return this.handleSetEditableArr[i];
-  }
-
+class IfExpressionComponent extends ComponentWithDropTargets {
   render() {
     const {node, helpers, lockedTypes} = this.props;
+    const DropTarget = this.DropTarget;
     return (
       <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">
             <div className="blocks-cond-predicate">
-              <DropTarget location={node.testExpr.from}
-                          editable={this.state.editableList[0]}
-                          onSetEditable={this.handleSetEditable(0)} />
+              <DropTarget index={0} location={node.testExpr.from} />
               {helpers.renderNodeForReact(node.testExpr)}
             </div>
             <div className="blocks-cond-result">
-              <DropTarget location={node.thenExpr.from}
-                          editable={this.state.editableList[1]}
-                          onSetEditable={this.handleSetEditable(1)} />
+              <DropTarget index={1} location={node.thenExpr.from} />
               {helpers.renderNodeForReact(node.thenExpr)}
             </div>
           </div>
@@ -442,15 +398,11 @@ class IfExpressionComponent extends BlockComponent {
               else
             </div>
             <div className="blocks-cond-result">
-              <DropTarget location={node.elseExpr.from}
-                          editable={this.state.editableList[2]}
-                          onSetEditable={this.handleSetEditable(2)} />
+              <DropTarget index={2} location={node.elseExpr.from} />
               {helpers.renderNodeForReact(node.elseExpr)}
             </div>
             <div className="blocks-cond-result">
-              <DropTarget location={node.elseExpr.to}
-                          editable={this.state.editableList[3]}
-                          onSetEditable={this.handleSetEditable(3)} />
+              <DropTarget index={3} location={node.elseExpr.to} />
             </div>
           </div>
         </div>
