@@ -144,6 +144,7 @@ class Editor extends Component {
     onPrimitives: PropTypes.func,
     onRenderer: PropTypes.func,
     onLanguage: PropTypes.func,
+    onAST: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
@@ -303,12 +304,14 @@ class Editor extends Component {
   }
 
   editorChange = (cm, changes) => {
-    if (!changes.every(change => change.origin.startsWith('cmb:'))) {
+    // TODO(Justin) What was this `if` statement about?
+    // How should this function relate to `src/codeMirror.js`?
+//    if (!changes.every(change => change.origin.startsWith('cmb:'))) {
       const newAST = global.parser.parse(cm.getValue());
       const patched = patch(this.props.ast, newAST);
-      this.props.setAST(patched.tree);
+      this.updateAST(patched.tree);
       // TODO(Oak): should we do anything with patched.firstNewId?
-    }
+//    }
   }
 
   handleEditorDidMount = ed => {
@@ -328,7 +331,7 @@ class Editor extends Component {
 
     global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
-    this.props.setAST(ast);
+    this.updateAST(ast);
     this.props.setAnnouncer(announcements);
 
     // if we have nodes, default to the first one. Note that does NOT
@@ -422,6 +425,7 @@ class Editor extends Component {
                       value={this.props.value}
                       onDragOver={this.handleDragOver}
                       onBeforeChange={this.props.onBeforeChange}
+                      onAST={this.props.onAST}
                       onKeyPress={this.handleKeyPress}
                       onKeyDown={this.handleKeyDown}
                       onMouseDown={this.handleMouseDown}
@@ -458,6 +462,14 @@ class Editor extends Component {
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
     }
     return portals;
+  }
+
+  // Call this when the AST is updated.
+  // It must both let the Redux store know (via setAST),
+  // and let the Redux parent component know (via onAST).
+  updateAST = ast => {
+    this.props.setAST(ast);
+    this.props.onAST(ast);
   }
 }
 

@@ -62,26 +62,39 @@ class EditorInstance extends React.Component {
     renderer: null,
     language: null,
     blockMode: false,
+    ast: null,
     code: exampleWeSchemeCode,
   }
 
   handlePrimitives = primitives => this.setState({primitives})
   handleRenderer = renderer => this.setState({renderer});
   handleLanguage = language => this.setState({language});
+  handleAST = ast => this.setState({ast});
   handleChange = (ed, data, value) => {
     this.setState({code: value});
   }
   handleToggle = blockMode => {
     if (blockMode) {
       this.setState((state, props) => {
-        // TODO(Justin): deal with parse errors
-        say("Switching to block mode");
-        return {blockMode: true};
+        try {
+          let ast = parser.parse(state.code);
+          let code = ast.toString();
+          say("Switching to block mode");
+          return {blockMode: true,
+                  ast: ast,
+                  code: code};
+        } catch (err) {
+          // TODO(Justin): properly deal with parse errors
+          let msg = parser.getExceptionMessage(err);
+          say(msg);
+        }
       });
     } else {
       this.setState((state, props) => {
+        let code = state.ast.toString();
         say("Switching to text mode");
-        return {blockMode: false};
+        return {blockMode: false,
+                code: code};
       });
     }
   }
@@ -120,6 +133,7 @@ class EditorInstance extends React.Component {
             language="wescheme"
             value={this.state.code}
             onBeforeChange={this.handleChange}
+            onAST={this.handleAST}
             options={options}
             parser={parser}
             cmOptions={cmOptions}
