@@ -149,6 +149,25 @@ A Component class can have a magic field called `this.state`. It should be set
 in the constructor, and can be updated with `this.setState(newValue)`. When the
 state is updated, React will re-render the Component.
 
+**`setState` updates the state _asynchronously_.** Thus, when you call
+`setState`, the _previous_ state (accessed via `this.state`) may be out of date.
+Likewise, _after_ calling `setState`, you cannot rely on `this.state` showing
+the new state (nor even the previous state!).
+
+This _would_ often make it impossible to correctly write a program involving
+state. But fortunately, if you pass a callback to `setState`, it will let you do
+a synchronous update. For example:
+
+    this.setState((state, props) => ({
+      counter: state.counter + props.increment
+    }));
+
+So you get to manually CPS your program to make it correct. Yay!
+
+In short, **if the previous value of the state influences the next value in any
+way, you must use the callback version of `setState`**. Furthermore,
+_everything_ that depends on the new state must also go in the closure.
+
 ### Lifecycle
 
 A Component class can have `componentDidMount()` and `componentWillUnmount()`
