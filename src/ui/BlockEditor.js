@@ -123,7 +123,7 @@ const mapDispatchToProps2 = dispatch => ({
 });
 const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(ToplevelBlockEditableCore);
 
-class Editor extends Component {
+class BlockEditor extends Component {
   static propTypes = {
     options: PropTypes.object,
     cmOptions: PropTypes.object,
@@ -145,7 +145,6 @@ class Editor extends Component {
     onPrimitives: PropTypes.func,
     onRenderer: PropTypes.func,
     onLanguage: PropTypes.func,
-    onAST: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
@@ -305,13 +304,13 @@ class Editor extends Component {
   }
 
   editorChange = (cm, changes) => {
-    // TODO(Justin) What was this `if` statement about?
-    // How should this function relate to `src/codeMirror.js`?
-    // if (!changes.every(change => change.origin.startsWith('cmb:'))) {
-    const newAST = global.parser.parse(cm.getValue());
-    const patched = patch(this.props.ast, newAST);
-    this.updateAST(patched.tree);
-    // TODO(Oak): should we do anything with patched.firstNewId?
+    // This if statement has something to do with undo/redo.
+    if (!changes.every(change => change.origin.startsWith('cmb:'))) {
+      const newAST = global.parser.parse(cm.getValue());
+      const patched = patch(this.props.ast, newAST);
+      this.props.setAST(patched.tree);
+      // TODO(Oak): should we do anything with patched.firstNewId?
+    }
   }
 
   handleEditorDidMount = ed => {
@@ -331,7 +330,7 @@ class Editor extends Component {
 
     global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
-    this.updateAST(ast);
+    this.props.setAST(ast);
     this.props.setAnnouncer(announcements);
 
     // if we have nodes, default to the first one. Note that does NOT
@@ -425,7 +424,6 @@ class Editor extends Component {
                       value={this.props.value}
                       onDragOver={this.handleDragOver}
                       onBeforeChange={this.props.onBeforeChange}
-                      onAST={this.props.onAST}
                       onKeyPress={this.handleKeyPress}
                       onKeyDown={this.handleKeyDown}
                       onMouseDown={this.handleMouseDown}
@@ -463,18 +461,11 @@ class Editor extends Component {
     }
     return portals;
   }
-
-  // Call this when the AST is updated.
-  // It must both let the Redux store know (via setAST),
-  // and let the Redux parent component know (via onAST).
-  updateAST = ast => {
-    this.props.setAST(ast);
-    this.props.onAST(ast);
-  }
 }
 
 const mapStateToProps = ({ast, cur, quarantine}) => ({
-  ast, cur,
+  ast,
+  cur,
   hasQuarantine: !!quarantine
 });
 const mapDispatchToProps = dispatch => ({
@@ -487,4 +478,4 @@ const mapDispatchToProps = dispatch => ({
   activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Editor);
+export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);

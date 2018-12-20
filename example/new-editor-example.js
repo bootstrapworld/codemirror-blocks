@@ -62,42 +62,36 @@ class EditorInstance extends React.Component {
     renderer: null,
     language: null,
     blockMode: false,
-    ast: null,
     code: exampleWeSchemeCode,
   }
 
-  handlePrimitives = primitives => this.setState({primitives})
+  handlePrimitives = primitives => this.setState({primitives});
   handleRenderer = renderer => this.setState({renderer});
   handleLanguage = language => this.setState({language});
-  handleAST = ast => this.setState({ast});
   handleChange = (ed, data, value) => {
     this.setState({code: value});
   }
   handleToggle = blockMode => {
-    if (blockMode) {
-      this.setState((state, props) => {
-        try {
-          let ast = parser.parse(state.code);
-          let code = ast.toString();
+    this.setState((state, props) => {
+      try {
+        let ast = parser.parse(state.code);
+        let code = ast.toString();
+        if (blockMode) {
           say("Switching to block mode");
           return {blockMode: true,
-                  ast: ast,
                   code: code};
-        } catch (err) {
-          // TODO(Justin): properly deal with parse errors
-          let msg = parser.getExceptionMessage(err);
-          say(msg);
+        } else {
+          say("Switching to text mode");
+          return {blockMode: false,
+                  code: code};
         }
-      });
-    } else {
-      this.setState((state, props) => {
-        let code = state.ast.toString();
-        say("Switching to text mode");
-        return {blockMode: false,
-                code: code};
-      });
-    }
-  }
+      } catch (err) {
+        // TODO(Justin): properly deal with parse errors
+        let msg = parser.getExceptionMessage(err);
+        say(msg);
+      }
+    });
+  };
 
   render() {
     const editorClass = classNames('Editor', 'blocks');
@@ -133,7 +127,6 @@ class EditorInstance extends React.Component {
             language="wescheme"
             value={this.state.code}
             onBeforeChange={this.handleChange}
-            onAST={this.handleAST}
             options={options}
             parser={parser}
             cmOptions={cmOptions}
