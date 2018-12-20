@@ -248,6 +248,15 @@ export function wrap(sep, vertSep, items) {
                          vert(vertSep, item))));
 }
 
+// Wrap items like `wrap()`, and additionally begin each line with `prefix`.
+// This is useful for, e.g., a comment whose lines must start with `//`.
+export function wrapAndPrefix(prefix, sep, vertSep, items) {
+  return concat(prefix, items.reduce(
+    (acc, item) =>
+      concat(acc, ifFlat(horz(sep, item),
+                         vert(vertSep, concat(prefix, item))))));
+}
+
 // Display either `items[0] sep items[1] sep ... items[n]`
 // or `items[0] vertSep \n items[1] vertSep \n ... items[n]`.
 // Neither `sep` nor `vertSep` may contain newlines.
@@ -291,4 +300,12 @@ export function lambdaLikeSexpr(keyword, defn, body) {
 
 export function beginLikeSexpr(keyword, bodies) {
   return parens(vert(keyword, horz(" ", vertArray(bodies))));
+}
+
+export function withSchemeComment(doc, comment) {
+  if (comment) {
+    return vert(comment, doc);
+  } else {
+    return doc;
+  }
 }

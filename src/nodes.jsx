@@ -61,7 +61,9 @@ export class FunctionApp extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr(this.func, this.args);
+    return P.withSchemeComment(
+      P.standardSexpr(this.func, this.args),
+      this.options.comment);
   }
 
   render(props) {
@@ -93,7 +95,9 @@ export class IdentifierList extends ASTNode {
   }
 
   pretty() {
-    return P.spaceSep(this.ids);
+    return P.withSchemeComment(
+      P.spaceSep(this.ids),
+      this.options.comment);
   }
 
   render(props) {
@@ -123,7 +127,9 @@ export class StructDefinition extends ASTNode {
   }
 
   pretty() {
-    return P.lambdaLikeSexpr("define-struct", this.name, P.parens(this.fields));
+    return P.withSchemeComment(
+      P.lambdaLikeSexpr("define-struct", this.name, P.parens(this.fields)),
+      this.options.comment);
   }
 
   render(props) {
@@ -155,7 +161,9 @@ export class VariableDefinition extends ASTNode {
   }
 
   pretty() {
-    return P.lambdaLikeSexpr("define", this.name, this.body);
+    return P.withSchemeComment(
+      P.lambdaLikeSexpr("define", this.name, this.body),
+      this.options.comment);
   }
 
   render(props) {
@@ -227,10 +235,12 @@ export class FunctionDefinition extends ASTNode {
   }
 
   pretty() {
-    return P.lambdaLikeSexpr(
-      "define",
-      P.standardSexpr(this.name, this.params),
-      this.body);
+    return P.withSchemeComment(
+      P.lambdaLikeSexpr(
+        "define",
+        P.standardSexpr(this.name, this.params),
+        this.body),
+      this.options.comment);
   }
 
   render(props) {
@@ -362,7 +372,9 @@ export class IfExpression extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr("if", [this.testExpr, this.thenExpr, this.elseExpr]);
+    return P.withSchemeComment(
+      P.standardSexpr("if", [this.testExpr, this.thenExpr, this.elseExpr]),
+      this.options.comment);
   }
 
   render(props) {
@@ -420,7 +432,7 @@ export class Literal extends ASTNode {
   }
 
   pretty() {
-    return P.txt(this.value);
+    return P.withSchemeComment(P.txt(this.value), this.options.comment);
   }
 
   render(props) {
@@ -447,7 +459,8 @@ export class Comment extends ASTNode {
   }
 
   pretty() {
-    return P.wrap(this.comment.split(/\s+/));
+    let words = this.comment.split(/\s+/);
+    return P.wrapAndPrefix("; ", " ", "", words);
   }
 
   render(_props) {
@@ -512,4 +525,3 @@ export class Sequence extends ASTNode {
     );
   }
 }
-
