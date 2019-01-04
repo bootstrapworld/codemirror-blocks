@@ -8,6 +8,12 @@ import DropTarget from './DropTarget';
 // subclass of this class. This class takes care of many messy details involving
 // drop targets.
 export default class ComponentWithDropTargets extends Component {
+  static propTypes = {
+    helpers: PropTypes.shape({
+      renderNodeForReact: PropTypes.func.isRequired,
+    }).isRequired,
+  }
+
   constructor() {
     super();
 
@@ -59,6 +65,6 @@ export default class ComponentWithDropTargets extends Component {
         onSetRight: onSetRight
       };
       return helpers.renderNodeForReact(node, key, props);
-    }
+    };
   }
 }

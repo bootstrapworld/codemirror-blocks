@@ -127,7 +127,6 @@ const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(Top
 class BlockEditor extends Component {
   static propTypes = {
     value: PropTypes.string.isRequired,
-    onBeforeChange: PropTypes.func.isRequired,
     options: PropTypes.object,
     cmOptions: PropTypes.object,
     keyMap: PropTypes.object,

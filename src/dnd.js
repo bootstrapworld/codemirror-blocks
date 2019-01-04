@@ -29,9 +29,9 @@ export const nodeTarget = nodeTargetFn => ({
     const {x: left, y: top} = monitor.getClientOffset();
     props.onDrop(
       monitor.getItem(),
-      nodeTargetFn(props.location ?
-                   props :
-                   {...props, location: global.cm.coordsChar({left, top})})
+      nodeTargetFn(props.location
+                   ? props
+                   : {...props, location: global.cm.coordsChar({left, top})})
     );
   }
 });

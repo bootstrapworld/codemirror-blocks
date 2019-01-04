@@ -254,7 +254,7 @@ export class FunctionDefinition extends ASTNode {
 
 class FunctionDefinitionComponent extends ComponentWithDropTargets {
   render() {
-    const {node, helpers} = this.props;
+    const {node} = this.props;
     const DropTarget = this.DropTarget;
     return (
       <Node node={node} {...this.props}>
@@ -458,7 +458,7 @@ export class Comment extends ASTNode {
     return P.wrapAndPrefix("; ", " ", "", words);
   }
 
-  render(_props) {
+  render(_props) { // eslint-disable-line no-unused-vars
     return (<span className="blocks-comment" id={this.id} aria-hidden="true">
       <span className="screenreader-only">Has comment,</span> {this.comment.toString()}
     </span>);
