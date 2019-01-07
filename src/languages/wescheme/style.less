@@ -208,18 +208,27 @@
     cursor: hand;
     transition: all 0.5s;
 
+    /* Editing should always be black-on-white */
     &.blocks-editing, &.quarantine {
       border-color: @editing-border-color;
+      border-style: inset;
       cursor: text;
       display:inline-table;
+      background-color: white !important;
+      color: black !important;
+      font-weight: normal;
+      margin: 0px 5px;
+      min-width: 20px;
+      outline: 0;
       &.blocks-error {
-        border-color: @error-border-color;
+        border: @border-width solid @error-border-color;
       }
     }
     &.blocks-editing.quarantine:empty {
       display: block;
       width: 15px;
     }
+    .blocks-editing * { outline: 0; }
 
     &:hover {
       border: solid @border-hint @border-width;
@@ -273,12 +282,6 @@
     border-radius: 15px;
   }
 
-  .blocks-editing * {
-    outline: 0;
-    cursor: text;
-
-  }
-
   .blocks-over-target {
     background-color: @hover-drop-background-color;
     border-radius: @border-radius;
@@ -313,21 +316,6 @@
       background: white;
       min-width: 20px;
       border-style: inset;
-    }
-
-    &.blocks-editing {
-      font-weight: normal;
-      margin: 0px 5px;
-      min-width: 20px;
-      border-style: inset;
-      outline: 0;
-      &.blocks-error {
-        border: @border-width solid @error-border-color;
-      }
-      &:hover {
-        background-color: transparent;
-      }
-      cursor: text;
     }
 
   }
@@ -387,7 +375,6 @@
       width: 20px;
     }
     &.blocks-editing {
-      background: transparent;
       &:after{content: none; width: 0px; }
     }
   }
