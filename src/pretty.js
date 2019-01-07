@@ -302,8 +302,24 @@ export function beginLikeSexpr(keyword, bodies) {
   return parens(vert(keyword, horz(" ", vertArray(bodies))));
 }
 
-export function withSchemeComment(doc, comment) {
+// Display a Scheme-style comment.
+//
+// - `doc` is what's being commented.
+// - `comment` is the comment itself. If it is falsy, there is no comment.
+// - `container` is the ast node that owns the comment. This argument is used to
+//   determine if the comment is a line comment (appears after `container` on
+//   the same line). Line comments will stay as line comments _as long as they
+//   fit on the line_. If they don't, they'll be converted into a comment on the
+//   previous line.
+export function withSchemeComment(doc, comment, container) {
   if (comment) {
+    if (container) {
+      if (container.to.line == comment.from.line) {
+        // This is a line comment. Try to put it on the same line, if it fits.
+        return ifFlat(horz(doc, " ", comment),
+                      vert(comment, doc));
+      }
+    }
     return vert(comment, doc);
   } else {
     return doc;

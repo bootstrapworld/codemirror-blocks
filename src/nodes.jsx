@@ -63,7 +63,8 @@ export class FunctionApp extends ASTNode {
   pretty() {
     return P.withSchemeComment(
       P.standardSexpr(this.func, this.args),
-      this.options.comment);
+      this.options.comment,
+      this);
   }
 
   render(props) {
@@ -97,7 +98,8 @@ export class IdentifierList extends ASTNode {
   pretty() {
     return P.withSchemeComment(
       P.spaceSep(this.ids),
-      this.options.comment);
+      this.options.comment,
+      this);
   }
 
   render(props) {
@@ -129,7 +131,8 @@ export class StructDefinition extends ASTNode {
   pretty() {
     return P.withSchemeComment(
       P.lambdaLikeSexpr("define-struct", this.name, P.parens(this.fields)),
-      this.options.comment);
+      this.options.comment,
+      this);
   }
 
   render(props) {
@@ -163,7 +166,8 @@ export class VariableDefinition extends ASTNode {
   pretty() {
     return P.withSchemeComment(
       P.lambdaLikeSexpr("define", this.name, this.body),
-      this.options.comment);
+      this.options.comment,
+      this);
   }
 
   render(props) {
@@ -240,7 +244,8 @@ export class FunctionDefinition extends ASTNode {
         "define",
         P.standardSexpr(this.name, this.params),
         this.body),
-      this.options.comment);
+      this.options.comment,
+      this);
   }
 
   render(props) {
@@ -372,7 +377,8 @@ export class IfExpression extends ASTNode {
   pretty() {
     return P.withSchemeComment(
       P.standardSexpr("if", [this.testExpr, this.thenExpr, this.elseExpr]),
-      this.options.comment);
+      this.options.comment,
+      this);
   }
 
   render(props) {
@@ -429,7 +435,7 @@ export class Literal extends ASTNode {
   }
 
   pretty() {
-    return P.withSchemeComment(P.txt(this.value), this.options.comment);
+    return P.withSchemeComment(P.txt(this.value), this.options.comment, this);
   }
 
   render(props) {
@@ -454,8 +460,11 @@ export class Comment extends ASTNode {
   }
 
   pretty() {
-    let words = this.comment.split(/\s+/);
-    return P.wrapAndPrefix("; ", " ", "", words);
+    let words = this.comment.trim().split(/\s+/);
+    let wrapped = P.wrap(" ", "", words);
+    return P.ifFlat(
+      P.horz("; ", wrapped), // Single-line comment if it fits on one line,
+      P.concat("#| ", wrapped, " |#")); // Block comment if it doesn't.
   }
 
   render(_props) { // eslint-disable-line no-unused-vars
