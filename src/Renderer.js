@@ -115,36 +115,6 @@ export default class Renderer {
     }
   }
 
-  // Render the node, recycling a container whenever possible
-  render(node, quarantine=false) {
-    var container = document.createElement('span');
-    if(node["aria-level"] && node["aria-level"] > 1) { // render in-place 
-      container = document.createElement('span');
-      node.el.parentNode.replaceChild(container, node.el);                // REVISIT: there *has* to be a better way
-      ReactDOM.render(this.renderNodeForReact(node), container);          // REVISIT
-      container.parentNode.replaceChild(container.firstChild, container); // REVISIT
-    } else { // if it's a root node, reset the marker but save the container
-      container.className = 'react-container';
-      // find a marker that (a) has an old ASTNode and (b) start in exactly the same place as the new ASTNode
-      let marker = this.cm.findMarksAt(node.from).filter(
-        m => m.node && !poscmp(m.node.from, node.from))[0]; // there will never be more than one
-      // if there IS a marker, we're not quarantining, and it starts at the exact same place..
-      if(marker && !quarantine) marker.clear();
-      this.cm.markText(node.from, node.to, {replacedWith: container, node: node} );
-      
-      // REVISIT: make comments disappear by adding an empty span
-      // we force a right-padding to work around CM treating non-webkit browser differently.
-      // See https://github.com/bootstrapworld/codemirror-blocks/issues/142
-      if(node.options.comment) {
-        let empty = document.createElement('span');
-        empty.style.paddingRight = "0.1px";
-        this.cm.markText(node.options.comment.from, node.options.comment.to, {replacedWith: empty});
-      }
-      ReactDOM.render(this.renderNodeForReact(node), container);
-    }
-    return container;
-  }
-
   renderNodeForReact = (node, key) => {
     this.renderNodeForReact.defaultProps = { displayName: 'ASTNode Renderer' };
     if (typeof node.render === 'function') {
