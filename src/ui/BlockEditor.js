@@ -144,9 +144,7 @@ class BlockEditor extends Component {
       setCursor: PropTypes.func.isRequired,
     }),
     onBeforeChange: PropTypes.func,
-    onPrimitives: PropTypes.func,
     onRenderer: PropTypes.func,
-    onLanguage: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
@@ -197,9 +195,7 @@ class BlockEditor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
-    onPrimitives: () => {},
     onRenderer: () => {},
-    onLanguage: () => {},
   }
 
 
@@ -367,7 +363,7 @@ class BlockEditor extends Component {
   componentDidMount() {
     const {
       parser, language, options, search,
-      onPrimitives, onRenderer, onLanguage,
+      onRenderer,
     } = this.props;
 
     global.parser = parser;
@@ -379,7 +375,6 @@ class BlockEditor extends Component {
     if (CodeMirrorBlocks.languages.getLanguage(language)) {
       languageObj = CodeMirrorBlocks.languages.getLanguage(language);
     }
-    onPrimitives(parser.primitives);
     // TODO(Oak): this is awkward. parser is already available to Toolbar.
     // Just use it there instead.
 
@@ -391,7 +386,6 @@ class BlockEditor extends Component {
     );
     const renderer = new Renderer(global.cm, renderOptions);
     onRenderer(renderer);
-    onLanguage(language);
 
     const clipboardBuffer = document.createElement('textarea');
     clipboardBuffer.ariaHidden = true;
