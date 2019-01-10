@@ -1,4 +1,4 @@
-import {poscmp, posWithinNode, nodeCommentContaining} from './utils';
+import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining} from './utils';
 import uuidv4 from 'uuid/v4';
 import hashObject from 'object-hash';
 
@@ -241,6 +241,40 @@ export class AST {
     }
     return node;
   }
+
+  /**
+   * followsComment : {line, ch} -> bool
+   *
+   * Is this position on the same line as a comment, following it?
+   */
+  followsComment(pos) {
+    // TODO: efficiency
+    for (const node of this.nodeIdMap.values()) {
+      if (node.options.comment
+          && node.options.comment.to.line == pos.line
+          && node.options.comment.to.ch <= pos.ch) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * precedesComment : {line, ch} -> bool
+   *
+   * Is this position on the same line as a comment, before it?
+   */
+  precedesComment(pos) {
+    // TODO: efficiency
+    for (const node of this.nodeIdMap.values()) {
+      if (node.options.comment
+          && node.options.comment.from.line == pos.line
+          && pos.ch <= node.options.comment.from.ch) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 // Every node in the AST inherits from the `ASTNode` class, which is used to
@@ -309,6 +343,18 @@ export class ASTNode {
   // Produces an iterator over all descendants of this node, including itself.
   descendants() {
     return new DescendantsIterator(this, this.keys);
+  }
+
+  // srcRange :: -> {from: {line, ch}, to: {line, ch}}
+  // Get the _full_ source location range of this node, including its comment if it has one.
+  srcRange() {
+    const comment = this.options.comment;
+    if (comment) {
+      return {from: minpos(this.from, comment.from),
+              to:   maxpos(this.to,   comment.to)};
+    } else {
+      return {from: this.from, to: this.to};
+    }
   }
 }
 

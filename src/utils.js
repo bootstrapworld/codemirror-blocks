@@ -9,6 +9,14 @@ export function poscmp(a, b) {
   return  a.line - b.line || a.ch - b.ch;
 }
 
+export function minpos(a, b) {
+  return poscmp(a, b) <= 0 ? a : b;
+}
+
+export function maxpos(a, b) {
+  return poscmp(a, b) >= 0 ? a : b;
+}
+
 export function skipWhile(skipper, start, next) {
   let now = start;
   while (skipper(now)) {

@@ -37,16 +37,20 @@ export function deleteNodes() {
 export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDropTarget}) {
   return (dispatch, getState) => {
     if (!destFrom) {
-      console.error("somehow destFrom doesn't exist");
+      // TODO: Where are these spurious events coming from?
       return;
     }
     const {ast} = getState();
+    // srcNode is null if there's nothing to delete; e.g. if dragged from toolbar
     const srcNode = srcId ? ast.getNodeById(srcId) : null;
     if (srcNode && poscmp(destFrom, srcNode.from) > 0 && poscmp(destTo, srcNode.to) < 0) {
       return;
     }
 
-    if (srcNode) content = global.cm.getRange(srcNode.from, srcNode.to);
+    if (srcNode) {
+      var {from: srcFrom, to: srcTo} = srcNode.srcRange();
+      content = global.cm.getRange(srcFrom, srcTo);
+    }
 
     let value = null;
     if (isDropTarget && global.options.willInsertNode) {
@@ -60,15 +64,23 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
       value = content;
     }
 
+    // Make sure we don't accidentally merge with a comment.
+    if (ast.followsComment(destFrom) || ast.precedesComment(srcFrom)) {
+      value = "\n" + value;
+    }
+    if (ast.precedesComment(destTo) || ast.followsComment(srcTo)) {
+      value = value + "\n";
+    }
+
     commitChanges(
       cm => () => {
         if (srcNode === null) {
           cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
-        } else if (poscmp(srcNode.from, destFrom) < 0) {
+        } else if (poscmp(srcFrom, destFrom) < 0) {
           cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
-          cm.replaceRange('', srcNode.from, srcNode.to, 'cmb: drop-node');
+          cm.replaceRange('', srcFrom, srcTo, 'cmb: drop-node');
         } else {
-          cm.replaceRange('', srcNode.from, srcNode.to, 'cmb:drop-node');
+          cm.replaceRange('', srcFrom, srcTo, 'cmb:drop-node');
           cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
         }
       },
