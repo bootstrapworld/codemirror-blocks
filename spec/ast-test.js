@@ -1,5 +1,4 @@
-import {AST} from 'codemirror-blocks/ast';
-import {Literal, Sequence, FunctionApp} from 'codemirror-blocks/nodes';
+import {AST,Literal, Sequence, FunctionApp} from 'codemirror-blocks/ast';
 import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
 
 describe("The Literal Class", function() {
@@ -24,7 +23,7 @@ describe("The Literal Class", function() {
     expect([...literal]).toEqual([literal]);
   });
 
-  it("should take an optional options parameter in it's constructor", function() {
+  it("should take an optional options parameter in its constructor", function() {
     var literal = new Literal(
       {line: 0, ch: 0},
       {line: 0, ch: 2},
@@ -83,7 +82,7 @@ describe("The Sequence Class", function() {
     expect(sequence.name).toEqual(name);
   });
 
-  it("should take an optional options parameter in it's constructor", function() {
+  it("should take an optional options parameter in its constructor", function() {
     var options = {'aria-label': 'sequence'};
     var newSequence = new Sequence(from, to, exprs, name, options);
     expect(newSequence.options).toEqual(options);
@@ -128,13 +127,13 @@ describe("The FunctionApp Class", function() {
     ast = new AST([expression]);
   });
 
-  it("should take a function name and list of args in it's constructor", function() {
+  it("should take a function name and list of args in its constructor", function() {
     expect(expression.args).toBe(args);
     expect(expression.func).toBe(func);
     expect(expression.options).toEqual({'aria-label':'+ expression'});
   });
 
-  it("should return itself and it's descendants when iterated over", function() {
+  it("should return itself and its descendants when iterated over", function() {
     expect([...nestedExpression]).toEqual([
       nestedExpression,
       nestedExpression.func,
@@ -158,7 +157,7 @@ describe("The FunctionApp Class", function() {
 });
 
 describe("The AST Class", function() {
-  it("should take a set of root nodes in it's constructor", function() {
+  it("should take a set of root nodes in its constructor", function() {
     var nodes = [new Literal({line: 0, ch: 0}, {line: 0, ch: 2}, 11)];
     var ast = new AST(nodes);
     expect(ast.rootNodes).toBe(nodes);

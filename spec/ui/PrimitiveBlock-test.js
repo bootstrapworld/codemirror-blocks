@@ -1,6 +1,6 @@
 import React from 'react';
 import TestUtils from 'react-dom/test-utils';
-import {Literal} from 'codemirror-blocks/nodes';
+import {Literal} from 'codemirror-blocks/ast';
 import Renderer from 'codemirror-blocks/Renderer';
 import {dragstart} from '../events';
 import {Primitive} from 'codemirror-blocks/parsers/primitives';
