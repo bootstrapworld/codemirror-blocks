@@ -15,16 +15,16 @@ describe("The WeScheme Parser,", function() {
 
   it("should treat vector literals like expressions", function() {
     let ast = this.parser.parse('#(1 3)');
-    expect(ast.rootNodes[0].type).toBe('expression');
+    expect(ast.rootNodes[0].type).toBe('functionApp');
     ast = this.parser.parse('#9(#f)');
-    expect(ast.rootNodes[0].type).toBe('expression');
+    expect(ast.rootNodes[0].type).toBe('functionApp');
   });
 
   it("should treat booleans expression like regular expressions", function() {
     let ast = this.parser.parse('(or #t #f)');
-    expect(ast.rootNodes[0].type).toBe('functionApp‌');
+    expect(ast.rootNodes[0].type).toBe('functionApp');
     ast = this.parser.parse('(and #t #f)');
-    expect(ast.rootNodes[0].type).toBe('functionApp‌');
+    expect(ast.rootNodes[0].type).toBe('functionApp');
   });
 
   describe("when parsing callExpressions,", function() {
@@ -34,7 +34,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert callExpresssions to expressions", function() {
-      expect(this.ast.rootNodes[0].type).toBe('expression');
+      expect(this.ast.rootNodes[0].type).toBe('functionApp');
     });
 
     it("should convert the function symbol to a literal", function() {
@@ -44,7 +44,7 @@ describe("The WeScheme Parser,", function() {
 
     it("should support empty expressions by generating a placeholder literal", function() {
       this.ast = this.parser.parse('()');
-      expect(this.ast.rootNodes[0].type).toBe('expression');
+      expect(this.ast.rootNodes[0].type).toBe('functionApp');
       expect(this.ast.rootNodes[0].func.value).toBe('...');
       expect(this.ast.rootNodes[0].func.dataType).toBe('blank');
     });
@@ -56,8 +56,8 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert and/or expressions to expressions", function() {
-      expect(this.ast.rootNodes[0].type).toBe('expression');
-      expect(this.ast.rootNodes[1].type).toBe('expression');
+      expect(this.ast.rootNodes[0].type).toBe('functionApp');
+      expect(this.ast.rootNodes[1].type).toBe('functionApp');
     });
 
     it("should convert the function symbol to a literal", function() {
@@ -139,7 +139,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the function body correctly", function() {
-      expect(this.ast.rootNodes[0].body.type).toBe('expression');
+      expect(this.ast.rootNodes[0].body.type).toBe('functionApp');
     });
   });
 
@@ -159,14 +159,14 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the body correctly", function() {
-      expect(this.ast.rootNodes[0].body.type).toBe('expression');
+      expect(this.ast.rootNodes[0].body.type).toBe('functionApp');
     });
   });
 
   describe("when parsing cond expressions,", function() {
     beforeEach(function() {
-      this.ast = this.parser.parse(`
-(cond
+      this.ast = this.parser.parse(
+`(cond
    [(positive? -5) (error "doesn't get here")]
    [(zero? -5) (error "doesn't get here, either")]
    [(positive? 5) #t])
@@ -186,7 +186,10 @@ describe("The WeScheme Parser,", function() {
 
     it("should have a sane toString method", function() {
       expect(this.ast.rootNodes[0].toString()).toEqual(
-        `(cond [(positive? -5) (error "doesn't get here")] [(zero? -5) (error "doesn't get here, either")] [(positive? 5) #t])`
+`(cond
+  [(positive? -5) (error "doesn't get here")]
+  [(zero? -5) (error "doesn't get here, either")]
+  [(positive? 5) #t])`
       );
     });
   });
@@ -201,7 +204,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the test expression correctly", function() {
-      expect(this.ast.rootNodes[0].testExpr.type).toBe('expression');
+      expect(this.ast.rootNodes[0].testExpr.type).toBe('functionApp');
     });
 
     it("should convert the then expression correctly", function() {
@@ -231,8 +234,8 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the sequence's expressions correctly", function() {
-      expect(this.ast.rootNodes[0].exprs[0].type).toBe('expression');
-      expect(this.ast.rootNodes[0].exprs[1].type).toBe('expression');
+      expect(this.ast.rootNodes[0].exprs[0].type).toBe('functionApp');
+      expect(this.ast.rootNodes[0].exprs[1].type).toBe('functionApp');
     });
 
     it("should leave the expressions in the order that they appeared in the sequence", function() {
@@ -243,7 +246,7 @@ describe("The WeScheme Parser,", function() {
     it("should preserve nested expressions in the sequence", function() {
       var firstExpression = this.ast.rootNodes[0].exprs[0];
       expect(firstExpression.func.value).toBe('-');
-      expect(firstExpression.args[0].type).toBe('expression');
+      expect(firstExpression.args[0].type).toBe('functionApp');
       expect(firstExpression.args[1].type).toBe('literal');
     });
   });
@@ -278,7 +281,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the let-body properly", function() {
-      expect(this.ast.rootNodes[0].expr.type).toBe('expression');
+      expect(this.ast.rootNodes[0].expr.type).toBe('functionApp');
       expect(this.ast.rootNodes[0].expr.func.value).toBe('*');
     });
   });
@@ -301,7 +304,7 @@ describe("The WeScheme Parser,", function() {
     });
 
     it("should convert the predicate properly", function() {
-      expect(this.ast.rootNodes[0].predicate.type).toBe('expression');
+      expect(this.ast.rootNodes[0].predicate.type).toBe('functionApp');
       expect(this.ast.rootNodes[0].predicate.func.value).toBe('>');
     });
 
@@ -429,7 +432,7 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].type).toBe('unknown');
       expect(this.ast.rootNodes[0].elts[0].value).toBe('define');
       expect(this.ast.rootNodes[0].elts.length).toBe(2);
-      expect(this.ast.rootNodes[0].elts[1].type).toBe('expression');
+      expect(this.ast.rootNodes[0].elts[1].type).toBe('functionApp');
       expect(this.ast.rootNodes[0].elts[1].func.value).toBe('a');
     });
 
@@ -439,7 +442,7 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].elts[0].value).toBe('define-struct');
       expect(this.ast.rootNodes[0].elts.length).toBe(4);
       expect(this.ast.rootNodes[0].elts[1].type).toBe('literal');
-      expect(this.ast.rootNodes[0].elts[2].type).toBe('expression');
+      expect(this.ast.rootNodes[0].elts[2].type).toBe('functionApp');
       expect(this.ast.rootNodes[0].elts[3].value).toBe('d');
     });
 
@@ -480,7 +483,7 @@ describe("The WeScheme Parser,", function() {
       expect(this.ast.rootNodes[0].type).toBe('unknown');
       expect(this.ast.rootNodes[0].elts[0].type).toBe('literal');
       expect(this.ast.rootNodes[0].elts[0].value).toBe('cond');
-      expect(this.ast.rootNodes[0].elts[1].type).toBe('expression');
+      expect(this.ast.rootNodes[0].elts[1].type).toBe('functionApp');
       expect(this.ast.rootNodes[0].elts[1].func.value).toBe('a');
     });
 
