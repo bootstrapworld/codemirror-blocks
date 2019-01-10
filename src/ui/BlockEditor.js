@@ -56,15 +56,15 @@ class ToplevelBlock extends React.Component {
     const marker = global.cm.markText(from, to, {replacedWith: this.container});
     marker.BLOCK_NODE_ID = node.id;
 
-    // REVISIT: make comments disappear by adding an empty span
     if (node.options.comment) {
-      global.cm.markText(
-        node.options.comment.from,
-        node.options.comment.to,
-        {replacedWith: document.createElement('span')}
-      );
+      // workaround for FF, from Emmanuel.
+      // we force a right-padding to work around CM treating non-webkit browser differently.
+      // See https://github.com/bootstrapworld/codemirror-blocks/issues/142
+      let comment = node.options.comment;
+      let empty = document.createElement('span');
+      empty.style.paddingRight = "0.1px";
+      global.cm.markText(comment.from, comment.to, {replacedWith: empty});
     }
-    // TODO: Emmanuel's recently changes the above.
     return ReactDOM.createPortal(renderNodeForReact(node), this.container);
   }
 }
