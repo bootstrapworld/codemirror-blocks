@@ -1,4 +1,5 @@
-import {AST,Literal, Sequence, FunctionApp} from 'codemirror-blocks/ast';
+import {AST} from 'codemirror-blocks/ast';
+import {Literal, Sequence, FunctionApp} from 'codemirror-blocks/nodes';
 import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
 
 describe("The Literal Class", function() {
@@ -134,12 +135,6 @@ describe("The FunctionApp Class", function() {
   });
 
   it("should return itself and *all* of it's descendants when iterated over", function() {
-    expect([...nestedExpression]).toEqual([
-      nestedExpression,
-      nestedExpression.func,
-      nestedExpression.args[0],
-      nestedExpression.args[1]
-    ]);
     expect([...nestedExpression.descendants()]).toEqual([
       nestedExpression,
       nestedExpression.func,

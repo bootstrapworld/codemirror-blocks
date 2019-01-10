@@ -15,7 +15,7 @@ import {
   dragleave,
   drop,
   cut,
-} from './events';
+} from './support/events';
 
 import {
   LEFT,
@@ -35,7 +35,7 @@ import {
   DKEY,
 } from 'codemirror-blocks/keycode';
 
-import {wait} from './test-utils';
+import {wait} from './support/test-utils';
 
 const TOGGLE_SELECTION_KEYPRESS =
       keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
