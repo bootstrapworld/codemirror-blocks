@@ -131,7 +131,7 @@ export function getEndCursor(cm) {
   );
 }
 
-function posWithinNode(pos, node) {
+export function posWithinNode(pos, node) {
   return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
     ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);
 }
@@ -140,7 +140,7 @@ function posWithinNodeBiased(pos, node) {
   return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) > 0);
 }
 
-function nodeCommentContaining(pos, node) {
+export function nodeCommentContaining(pos, node) {
   return node.options.comment && posWithinNode(pos, node.options.comment);
 }
 

@@ -22,7 +22,7 @@ function keydown(keyCode, other={}) {
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
     const fixture = `<div id="root">
-      <textarea id="code"></textarea>
+      <textarea id="code"></textarea>//
     </div>`;
     document.body.insertAdjacentHTML('afterbegin', fixture);
     this.cm = CodeMirror.fromTextArea(document.getElementById("code"));
