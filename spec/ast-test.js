@@ -1,4 +1,5 @@
-import {AST,Literal, Sequence, FunctionApp} from 'codemirror-blocks/ast';
+import {AST} from 'codemirror-blocks/ast';
+import {Literal, Sequence, FunctionApp} from 'codemirror-blocks/nodes';
 import WeschemeParser from 'codemirror-blocks/languages/wescheme/WeschemeParser';
 
 describe("The Literal Class", function() {
