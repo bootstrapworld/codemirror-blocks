@@ -406,6 +406,10 @@ export class ASTNode {
     return this.options["aria-label"];
   }
 
+  toString() {
+    return this.pretty().display(80).join("\n");
+  }
+
   // Produces an iterator over the children of this node.
   children() {
     return new ChildrenIterator(this, this.keys);
@@ -456,6 +460,7 @@ class DescendantsIterator {
     }
   }
 }
+<<<<<<< HEAD
 
 export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
@@ -724,3 +729,5 @@ export class Sequence extends ASTNode {
 }
 
 // TODO(Oak): Justin moves the above somewhere else. Need to change
+=======
+>>>>>>> upstream/new-reactify

@@ -8,53 +8,20 @@ import global from '../global';
 import patch from '../ast-patch';
 import NodeEditable from '../components/NodeEditable';
 import {activate, activateByNId} from '../actions';
-import {say} from '../utils';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
 import Renderer from '../Renderer';
 import merge from '../merge';
 import CodeMirrorBlocks from '../blocks';
-import CodeMirror from './RawEditor';
-
-import FunctionApp         from '../components/FunctionApp';
-import IfExpression       from '../components/IfExpression';
-import LambdaExpression   from '../components/LambdaExpression';
-import CondExpression     from '../components/CondExpression';
-import CondClause         from '../components/CondClause';
-import Unknown            from '../components/Unknown';
-import Literal            from '../components/Literal';
-import Blank              from '../components/Blank';
-import Comment            from '../components/Comment';
-import IdentifierList     from '../components/IdentifierList';
-import StructDefinition   from '../components/StructDef';
-import VariableDefinition from '../components/VariableDef';
-import FunctionDefinition from '../components/FunctionDef';
-import Sequence           from '../components/Sequence';
-
-const nodeRenderers = {
-  unknown: Unknown,
-  functionApp: FunctionApp,
-  functionDefinition: FunctionDefinition,
-  lambdaExpression: LambdaExpression,
-  variableDefinition: VariableDefinition,
-  identifierList : IdentifierList,
-  ifExpression: IfExpression,
-  condExpression: CondExpression,
-  condClause: CondClause,
-  structDefinition: StructDefinition,
-  literal: Literal,
-  comment: Comment,
-  sequence: Sequence,
-  blank: Blank,
-};
+import CodeMirror from './DragAndDropEditor';
 
 const lockedTypes = [];
 const helpers = {renderNodeForReact};
 
 function renderNodeForReact(node, key, props={}) {
-  const Renderer = nodeRenderers[node.type];
-  if (Renderer && Renderer.prototype instanceof Component) {
+  if (typeof node.render === 'function') {
+    let Renderer = node.render.bind(node);
     return (
       <Renderer
         node        = {node}
@@ -157,10 +124,9 @@ const mapDispatchToProps2 = dispatch => ({
 });
 const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(ToplevelBlockEditableCore);
 
-class Editor extends Component {
+class BlockEditor extends Component {
   static propTypes = {
     value: PropTypes.string.isRequired,
-    onBeforeChange: PropTypes.func.isRequired,
     options: PropTypes.object,
     cmOptions: PropTypes.object,
     keyMap: PropTypes.object,
@@ -177,9 +143,8 @@ class Editor extends Component {
       search: PropTypes.func.isRequired,
       setCursor: PropTypes.func.isRequired,
     }),
-    onPrimitives: PropTypes.func,
+    onBeforeChange: PropTypes.func,
     onRenderer: PropTypes.func,
-    onLanguage: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
@@ -230,9 +195,7 @@ class Editor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
-    onPrimitives: () => {},
     onRenderer: () => {},
-    onLanguage: () => {},
   }
 
 
@@ -333,6 +296,7 @@ class Editor extends Component {
   }
 
   editorChange = (cm, changes) => {
+    // This if statement has something to do with undo/redo.
     if (!changes.every(change => change.origin.startsWith('cmb:'))) {
       const newAST = global.parser.parse(cm.getValue());
       const patched = patch(this.props.ast, newAST);
@@ -349,19 +313,17 @@ class Editor extends Component {
     const scroller = ed.getScrollerElement();
     scroller.setAttribute('role', 'presentation');
 
-    const annoucements = document.createElement('span');
-    annoucements.setAttribute('role', 'log');
-    annoucements.setAttribute('aria-live', 'assertive');
-    wrapper.appendChild(annoucements);
+    const announcements = document.createElement('span');
+    announcements.setAttribute('role', 'log');
+    announcements.setAttribute('aria-live', 'assertive');
+    wrapper.appendChild(announcements);
 
     ed.on('changes', this.editorChange);
 
     global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
-    this.props.setAnnouncer(annoucements);
-
-    say('Switching to Block mode');
+    this.props.setAnnouncer(announcements);
 
     // if we have nodes, default to the first one. Note that does NOT
     // activate a node; only when the editor is focused, the focused node will be
@@ -401,7 +363,7 @@ class Editor extends Component {
   componentDidMount() {
     const {
       parser, language, options, search,
-      onPrimitives, onRenderer, onLanguage
+      onRenderer,
     } = this.props;
 
     global.parser = parser;
@@ -413,7 +375,6 @@ class Editor extends Component {
     if (CodeMirrorBlocks.languages.getLanguage(language)) {
       languageObj = CodeMirrorBlocks.languages.getLanguage(language);
     }
-    onPrimitives(parser.primitives);
     // TODO(Oak): this is awkward. parser is already available to Toolbar.
     // Just use it there instead.
 
@@ -425,7 +386,6 @@ class Editor extends Component {
     );
     const renderer = new Renderer(global.cm, renderOptions);
     onRenderer(renderer);
-    onLanguage(language);
 
     const clipboardBuffer = document.createElement('textarea');
     clipboardBuffer.ariaHidden = true;
@@ -491,7 +451,8 @@ class Editor extends Component {
 }
 
 const mapStateToProps = ({ast, cur, quarantine}) => ({
-  ast, cur,
+  ast,
+  cur,
   hasQuarantine: !!quarantine
 });
 const mapDispatchToProps = dispatch => ({
@@ -504,4 +465,4 @@ const mapDispatchToProps = dispatch => ({
   activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Editor);
+export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);

@@ -7,10 +7,10 @@ import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
-import Component from './BlockComponent';
+import BlockComponent from './BlockComponent';
 
 @DropNodeTarget(({location}) => ({from: location, to: location}))
-class DropTarget extends Component {
+class DropTarget extends BlockComponent {
 
   static propTypes = {
     location: PropTypes.instanceOf(Object).isRequired,

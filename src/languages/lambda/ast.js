@@ -90,7 +90,7 @@ export class Prog extends ASTNode {
   }
 
   render(props) {
-    const {helpers, lockedTypes} = this.props;
+    const {helpers, lockedTypes} = props;
     return (
       <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
         <h4>Your Lambda Program</h4>

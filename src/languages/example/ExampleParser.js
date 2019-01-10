@@ -1,5 +1,5 @@
 import {AST} from '../../ast';
-import {Literal, FunctionApp} from '../../ast';
+import {Literal, FunctionApp} from '../../nodes';
 
 const TOKENS = {
   OPEN_PAREN: 'open-paren',

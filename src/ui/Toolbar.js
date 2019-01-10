@@ -17,8 +17,8 @@ export default class Toolbar extends Component {
 
   static propTypes = {
     primitives: PropTypes.instanceOf(PrimitiveGroup),
-    renderer: PropTypes.instanceOf(Renderer).isRequired,
-    languageId: PropTypes.instanceOf(String), // used to find the .blocks-language-{languageId} CSS class
+    renderer: PropTypes.instanceOf(Renderer), // is required, but initially null b.c. it's lazily loaded
+    languageId: PropTypes.string, // used to find the .blocks-language-{languageId} CSS class
   }
 
   static defaultProps = {
@@ -75,19 +75,21 @@ export default class Toolbar extends Component {
             <span className="glyphicon glyphicon-remove" onClick={this.clearSearch} />
             : null}
         </div>
-        <RendererContext.Provider value={this.props.renderer}>
-          <div className="primitives-box">
-            <PrimitiveList
-              primitives={primitives}
-              onSelect={this.selectPrimitive}
-              selected={this.state.selectedPrimitive}
-              />
-          </div>
-          <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
-            <div className="contract-header">Contract</div>
-            <PrimitiveBlock primitive={selected}/>
-          </div>
-        </RendererContext.Provider>
+        {this.props.renderer === null
+         ? <div/> // Renderer hasn't been loaded yet. Wait for it.
+         : <RendererContext.Provider value={this.props.renderer}>
+             <div className="primitives-box">
+               <PrimitiveList
+                 primitives={primitives}
+                 onSelect={this.selectPrimitive}
+                 selected={this.state.selectedPrimitive}
+                 />
+             </div>
+             <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
+               <div className="contract-header">Contract</div>
+               <PrimitiveBlock primitive={selected}/>
+             </div>
+           </RendererContext.Provider>}
       </div>
     );
   }

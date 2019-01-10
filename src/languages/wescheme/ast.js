@@ -1,5 +1,6 @@
 import React from 'react';
 import Node from '../../components/Node';
+import * as P from '../../pretty';
 
 import {ASTNode, pluralize, descDepth} from '../../ast';
 
@@ -16,12 +17,12 @@ export class LetLikeExpr extends ASTNode {
     return `a ${this.form} expression with ${pluralize("binding", this.bindings.exprs)}`;
   }
 
-  toString() {
-    return `(${this.form} (${this.bindings.toString()}) ${this.expr.toString()}`;
+  pretty() {
+    return P.lambdaLikeSexpr(this.form, P.brackets(this.bindings), this.expr);
   }
 
   render(props) {
-    const {helpers, lockedTypes} = this.props;
+    const {helpers, lockedTypes} = props;
     return (
       <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">{this.form}</span>
@@ -45,12 +46,12 @@ export class WhenUnless extends ASTNode {
     return `a ${this.form} expression: ${this.form} ${this.predicate.toDescription(level)}, ${this.exprs.toDescription(level)}`;
   }
 
-  toString() {
-    return `(${this.form} (${this.predicate.toString()}) ${this.exprs.toString()})`;
+  pretty() {
+    return P.standardSexpr(this.form, [this.predicate, this.exprs]);
   }
 
   render(props) {
-    const {helpers, lockedTypes} = this.props;
+    const {helpers, lockedTypes} = props;
     return (
       <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
         <span className="blocks-operator">{this.form}</span>
