@@ -1,1 +1,0 @@
-require('./example-page.less');

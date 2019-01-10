@@ -10,13 +10,6 @@ module.exports = function(env, argv) {
   return _.extend({}, baseConfig, {
     devtool: 'cheap-module-source-map',
     entry: {
-      "index": './example/index.js',
-      "example": './example/example.js',
-      "fullscheme-example": './example/fullscheme-example.js',
-      "cow-game": './example/cow-game.js',
-      "space-invaders": './example/space-invaders.js',
-      "wescheme-example": './example/wescheme-example.js',
-      "editor-example": './example/editor-example.js',
       "new-editor-example": './example/new-editor-example.js'
     },
     module: _.extend({}, baseConfig.module, {
@@ -27,48 +20,6 @@ module.exports = function(env, argv) {
     }),
     plugins: baseConfig.plugins.concat([
       new webpack.HotModuleReplacementPlugin(),
-      new HtmlWebpackPlugin({
-        filename: 'index.html',
-        template: 'example/index.html',
-        inject: 'body',
-        chunks: ['commons', 'index'],
-      }),
-      new HtmlWebpackPlugin({
-        filename: 'simple.html',
-        template: 'example/simple.html',
-        inject: 'body',
-        chunks: ['commons', 'example'],
-      }),
-      new HtmlWebpackPlugin({
-        filename: 'fullscheme.html',
-        template: 'example/fullscheme.html',
-        inject: 'body',
-        chunks: ['commons', 'fullscheme-example'],
-      }),
-      new HtmlWebpackPlugin({
-        filename: 'cow-game.html',
-        template: 'example/cow-game.html',
-        inject: 'body',
-        chunks: ['commons', 'cow-game'],
-      }),
-      new HtmlWebpackPlugin({
-        filename: 'space-invaders.html',
-        template: 'example/space-invaders.html',
-        inject: 'body',
-        chunks: ['commons', 'space-invaders'],
-      }),
-      new HtmlWebpackPlugin({
-        filename: 'wescheme.html',
-        template: 'example/wescheme.html',
-        inject: 'body',
-        chunks: ['commons', 'wescheme-example'],
-      }),
-      new HtmlWebpackPlugin({
-        filename: 'editor.html',
-        template: 'example/editor.html',
-        inject: 'body',
-        chunks: ['commons','editor-example'],
-      }),
       new HtmlWebpackPlugin({
         filename: 'new-editor.html',
         template: 'example/new-editor.html',
