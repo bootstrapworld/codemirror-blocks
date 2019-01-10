@@ -238,7 +238,7 @@ function intersperse(sep, items) {
  ******************************************************************************/
 
 // Display all items, with each pair of adjacent items separated
-// either by `sep` or by `vertSep \n`. If `sep` is txt(" ") and
+// either by `sep` or by `vertSep\n`. If `sep` is txt(" ") and
 // `vertSep` is empty(), this implements word wrap.
 // Neither `sep` nor `vertSep` may contain newlines.
 export function wrap(sep, vertSep, items) {
