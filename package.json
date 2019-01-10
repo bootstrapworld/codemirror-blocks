@@ -8,6 +8,8 @@
     "npm": ">=3.x"
   },
   "dependencies": {
+    "babel-core": "^6.26.3",
+    "babel-polyfill": "^6.26.0",
     "classnames": "^2.2.5",
     "codemirror": "5.42.2",
     "event-emitter": "^0.3.5",
@@ -28,7 +30,11 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
+    "@babel/code-frame": "^7.0.0",
     "@babel/core": "^7.2.2",
+    "@babel/generator": "^7.2.2",
+    "@babel/helper-function-name": "^7.1.0",
+    "@babel/highlight": "^7.0.0",
     "@babel/plugin-proposal-class-properties": "^7.2.3",
     "@babel/plugin-proposal-decorators": "^7.2.3",
     "@babel/plugin-transform-modules-commonjs": "^7.0.0",
@@ -36,6 +42,9 @@
     "@babel/polyfill": "^7.2.5",
     "@babel/preset-env": "^7.2.3",
     "@babel/preset-react": "^7.0.0",
+    "@babel/template": "^7.2.2",
+    "@babel/traverse": "^7.2.3",
+    "@babel/types": "^7.2.2",
     "babel-eslint": "10.0.1",
     "babel-loader": "^8.0.5",
     "css-loader": "2.1.0",
