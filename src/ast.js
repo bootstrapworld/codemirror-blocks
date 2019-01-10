@@ -477,8 +477,7 @@ export class Unknown extends ASTNode {
 
 export class FunctionApp extends ASTNode {
   constructor(from, to, func, args, options={}) {
-    super(from, to, 'expression', ['func', 'args'], options);
-    // super(from, to, 'functionApp', ['func', 'args'], options);
+    super(from, to, 'functionApp', ['func', 'args'], options);
     this.func = func;
     this.args = args;
     this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);

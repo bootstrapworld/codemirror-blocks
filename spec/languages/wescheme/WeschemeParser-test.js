@@ -22,9 +22,9 @@ describe("The WeScheme Parser,", function() {
 
   it("should treat booleans expression like regular expressions", function() {
     let ast = this.parser.parse('(or #t #f)');
-    expect(ast.rootNodes[0].type).toBe('expression');
+    expect(ast.rootNodes[0].type).toBe('functionApp‌');
     ast = this.parser.parse('(and #t #f)');
-    expect(ast.rootNodes[0].type).toBe('expression');
+    expect(ast.rootNodes[0].type).toBe('functionApp‌');
   });
 
   describe("when parsing callExpressions,", function() {

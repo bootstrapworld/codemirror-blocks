@@ -3,7 +3,7 @@ import Modal from 'react-modal';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
 
-Modal.setAppElement('#cmb-editor');
+// Modal.setAppElement('#cmb-\editor');
 
 export default (Editor, searchModes) => {
   const settings = searchModes.reduce((acc, searchMode, i) => {
