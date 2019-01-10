@@ -285,7 +285,7 @@ describe("AST Patching", function() {
       console.log(this.ast);
       expect(this.ast.rootNodes.length).toBe(2);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.dirtyNodes.size).toBe(0);
     });
 
@@ -296,7 +296,7 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[2].type).toBe("literal");
       expect(this.ast.rootNodes[1].args.length).toBe(1);
       expect(this.ast.rootNodes[1].args[0].value).toBe("1");
@@ -310,7 +310,7 @@ describe("AST Patching", function() {
       let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(1);
-      expect(this.ast.rootNodes[0].type).toBe("expression");
+      expect(this.ast.rootNodes[0].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[0].args.length).toBe(2);
       expect(this.ast.rootNodes[0].args[0].value).toBe("1");
       expect(this.ast.dirtyNodes.size).toBe(0);
@@ -323,7 +323,7 @@ describe("AST Patching", function() {
       let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(2);
-      expect(this.ast.rootNodes[0].type).toBe("expression");
+      expect(this.ast.rootNodes[0].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[0].args.length).toBe(2);
       expect(this.ast.rootNodes[0].args[0].value).toBe("1");
       expect(this.ast.rootNodes[1].type).toBe("literal");
@@ -338,7 +338,7 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[2].type).toBe("literal");
       expect(this.ast.rootNodes[1].args[1].args.length).toBe(0);
       expect(this.ast.dirtyNodes.size).toBe(1);
@@ -392,7 +392,7 @@ describe("AST Patching", function() {
       let change = { from: {line: 2, ch:2}, to: {line:2, ch:2}, text: [" maya"], removed: [''] };
       this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
       expect(this.ast.rootNodes.length).toBe(3);
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].func.value).toBe("+");
       expect(this.ast.rootNodes[1].args.length).toBe(3);
       expect(this.ast.rootNodes[1].args[0].value).toBe("maya");
@@ -405,7 +405,7 @@ describe("AST Patching", function() {
       let change = { from: {line: 2, ch:3}, to: {line:2, ch:3}, text: ["maya "], removed: [''] };
       this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
       expect(this.ast.rootNodes.length).toBe(3);
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].func.value).toBe("+");
       expect(this.ast.rootNodes[1].args.length).toBe(3);
       expect(this.ast.rootNodes[1].args[0].value).toBe("maya");
@@ -418,7 +418,7 @@ describe("AST Patching", function() {
       let change = { from: {line: 2, ch:12}, to: {line:2, ch:12}, text: [" maya"], removed: [''] };
       this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
       expect(this.ast.rootNodes.length).toBe(3);
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].func.value).toBe("+");
       expect(this.ast.rootNodes[1].args.length).toBe(3);
       expect(this.ast.rootNodes[1].args[2].value).toBe("maya");
@@ -431,7 +431,7 @@ describe("AST Patching", function() {
       let change = { from: {line: 2, ch:8}, to: {line:2, ch:8}, text: ["maya simone "], removed: [''] };
       this.ast = this.ast.patch(this.parser.parse, newAST, [change]);
       expect(this.ast.rootNodes.length).toBe(3);
-      expect(this.ast.rootNodes[1].args[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].args[1].func.value).toBe("*");
       expect(this.ast.rootNodes[1].args[1].args.length).toBe(4);
       expect(this.ast.rootNodes[1].args[1].args[0].value).toBe("maya");
@@ -449,7 +449,7 @@ describe("AST Patching", function() {
       let change2 = { from: {line: 0, ch:0}, to: {line:0, ch:2}, text: [""], removed: ["42"] };
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(3);
-      expect(this.ast.rootNodes[0].type).toBe("expression");
+      expect(this.ast.rootNodes[0].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].type).toBe("literal");
       expect(this.ast.rootNodes[2].type).toBe("literal");
       expect(this.ast.rootNodes[1].value).toBe("42");
@@ -466,7 +466,7 @@ describe("AST Patching", function() {
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].value).toBe("42");
       expect(this.ast.rootNodes[1].value).toBe('"hello"');
-      expect(this.ast.rootNodes[2].type).toBe("expression");
+      expect(this.ast.rootNodes[2].type).toBe("functionApp‌");
       expect(this.ast.dirtyNodes.size).toBe(1);
     });
 
@@ -478,7 +478,7 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].args.length).toBe(2);
       expect(this.ast.rootNodes[1].args[1].args[0].value).toBe("3");
       expect(this.ast.rootNodes[1].args[1].args[1].value).toBe("2");
@@ -493,9 +493,9 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].args.length).toBe(2);
-      expect(this.ast.rootNodes[1].args[0].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[0].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].args[1].type).toBe("literal");
       expect(this.ast.dirtyNodes.size).toBe(1);
     });
@@ -508,11 +508,11 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].args.length).toBe(3);
       expect(this.ast.rootNodes[1].args[0].value).toBe("1");
       expect(this.ast.rootNodes[1].args[1].value).toBe("2");
-      expect(this.ast.rootNodes[1].args[2].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[2].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].args[2].args[0].value).toBe("3");
       expect(this.ast.rootNodes[1].args[2].args.length).toBe(1);
       expect(this.ast.dirtyNodes.size).toBe(1);
@@ -526,9 +526,9 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].args.length).toBe(1);
-      expect(this.ast.rootNodes[1].args[0].type).toBe("expression");
+      expect(this.ast.rootNodes[1].args[0].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[1].args[0].args[0].value).toBe("1");
       expect(this.ast.rootNodes[1].args[0].args.length).toBe(3);
       expect(this.ast.dirtyNodes.size).toBe(1);
@@ -542,8 +542,8 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(4);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
-      expect(this.ast.rootNodes[2].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
+      expect(this.ast.rootNodes[2].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[3].type).toBe("literal");
       expect(this.ast.rootNodes[1].args.length).toBe(1);
       expect(this.ast.rootNodes[1].func.value).toBe("+");
@@ -561,8 +561,8 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(4);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
-      expect(this.ast.rootNodes[2].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
+      expect(this.ast.rootNodes[2].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[3].type).toBe("literal");
       expect(this.ast.rootNodes[1].args.length).toBe(2);
       expect(this.ast.rootNodes[1].func.value).toBe("*");
@@ -581,11 +581,11 @@ describe("AST Patching", function() {
       let change2 = { from: {line: 0, ch:3}, to: {line:0, ch:4}, text: [""], removed: ["1"] };
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(1);
-      expect(this.ast.rootNodes[0].type).toBe("expression");
+      expect(this.ast.rootNodes[0].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[0].args.length).toBe(1);
-      expect(this.ast.rootNodes[0].args[0].type).toBe("expression");
+      expect(this.ast.rootNodes[0].args[0].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[0].args[0].args.length).toBe(3);
-      expect(this.ast.rootNodes[0].args[0].args[2].type).toBe("expression");
+      expect(this.ast.rootNodes[0].args[0].args[2].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[0].args[0].args[2].args.length).toBe(3);
       expect(this.ast.rootNodes[0].args[0].args[2].args[0].value).toBe("1");
       expect(this.ast.dirtyNodes.size).toBe(1);
@@ -599,7 +599,7 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.dirtyNodes.size).toBe(2);
     });
 
@@ -613,7 +613,7 @@ describe("AST Patching", function() {
       this.ast = this.ast.patch(this.parser.parse, newAST, [change1, change2]);
       expect(this.ast.rootNodes.length).toBe(3);
       expect(this.ast.rootNodes[0].type).toBe("literal");
-      expect(this.ast.rootNodes[1].type).toBe("expression");
+      expect(this.ast.rootNodes[1].type).toBe("functionApp‌");
       expect(this.ast.rootNodes[2].type).toBe("literal");
       expect(this.ast.rootNodes[1].args.length).toBe(3);
       expect(this.ast.rootNodes[1].args[2].type).toBe("literal");
