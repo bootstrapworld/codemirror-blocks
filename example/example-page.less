@@ -1,17 +1,23 @@
 @import '../src/less/example.less';
 @import "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css";
 
+// Set the height based on the available screen height.
+// BE CAREFUL WHEN DOING MATH IN LESS.
+// If we had instead written:
+//     @height: 100vh - 50px;
+// that would set @height to 50vh, _by design_.
+// https://github.com/less/less.js/issues/3269
+@height: calc(~"100vh - 300px");
+
 .editor-container {
-    height: 300px;
+    height: @height;
 }
 
-#code{width: 100%; min-height: 300px; display: block; }
+#code{width: 100%; min-height: @height; display: block; }
 
-.simple-example,
-.wescheme-example {
-  .CodeMirror {
-    border: 1px solid #ddd;
-  }
+.CodeMirror {
+  border: 1px solid #ddd;
+  height: @height;
 }
 
 #language-chooser {
