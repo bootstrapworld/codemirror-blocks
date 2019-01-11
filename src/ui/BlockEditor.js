@@ -13,7 +13,7 @@ import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
 import Renderer from '../Renderer';
 import merge from '../merge';
-import CodeMirrorBlocks from '../blocks';
+import {addLanguage, getLanguage} from '../languages/';
 import CodeMirror from './DragAndDropEditor';
 
 const lockedTypes = [];
@@ -372,8 +372,8 @@ class BlockEditor extends Component {
 
     let languageObj = null;
 
-    if (CodeMirrorBlocks.languages.getLanguage(language)) {
-      languageObj = CodeMirrorBlocks.languages.getLanguage(language);
+    if (getLanguage(language)) {
+      languageObj = getLanguage(language);
     }
     // TODO(Oak): this is awkward. parser is already available to Toolbar.
     // Just use it there instead.

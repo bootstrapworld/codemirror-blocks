@@ -1,8 +1,8 @@
 import WeschemeParser from './WeschemeParser';
-import CodeMirrorBlocks from '../../blocks';
+import {addLanguage} from '../../languages/';
 require('./style.less');
 
-export default CodeMirrorBlocks.languages.addLanguage(
+export default addLanguage(
   {
     id: 'wescheme',
     name: 'WeScheme',

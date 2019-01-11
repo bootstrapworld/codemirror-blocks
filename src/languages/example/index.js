@@ -1,8 +1,8 @@
 import ExampleParser from './ExampleParser';
-import CodeMirrorBlocks from '../../blocks';
+import {addLanguage} from '../../languages/';
 
 require('./style.less');
-export default CodeMirrorBlocks.languages.addLanguage(
+export default addLanguage(
   {
     id: 'example',
     name: 'Example',

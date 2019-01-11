@@ -1,8 +1,8 @@
-import CodeMirrorBlocks from '../../blocks';
+import {addLanguage} from '../../languages/';
 import parseString from './parser';
 
 require('./style.less');
-export default CodeMirrorBlocks.languages.addLanguage(
+export default addLanguage(
   {
     id: 'lambda',
     name: 'Lambda',
