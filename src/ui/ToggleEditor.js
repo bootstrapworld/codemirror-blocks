@@ -61,7 +61,8 @@ export default class ToggleEditor extends React.Component {
         const line = cm.getLine(destination.line);
         const prev = line[destination.ch - 1] || '\n';
         const next = line[destination.ch] || '\n';
-        sourceNodeText = sourceNodeText.trim();
+        // Trim spaces and tabs, but not newlines!
+        sourceNodeText.replace(/^[ \t]+|[ \t]+$/gm, '');
         if (!/\s|[([{]/.test(prev)) {
           sourceNodeText = ' ' + sourceNodeText;
         }

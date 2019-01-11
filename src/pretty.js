@@ -313,13 +313,17 @@ export function beginLikeSexpr(keyword, bodies) {
 //   previous line.
 export function withSchemeComment(doc, comment, container) {
   if (comment) {
+    // TODO: While this is very clever, it breaks if you drag a block with a
+    // line comment into a drop target that has code after it.
+    /*
     if (container) {
       if (container.to.line == comment.from.line) {
         // This is a line comment. Try to put it on the same line, if it fits.
-        return ifFlat(horz(doc, " ", comment),
+        return ifFlat(horz(doc, " ", comment)),
                       vert(comment, doc));
       }
     }
+    */
     return vert(comment, doc);
   } else {
     return doc;

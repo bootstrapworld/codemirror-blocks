@@ -20,7 +20,8 @@ export function deleteNodes() {
       commitChanges(
         cm => () => {
           for (const node of nodeSelections) {
-            cm.replaceRange('', node.from, node.to, 'cmb:delete-nodes');
+            const {from, to} = node.srcRange();
+            cm.replaceRange('', from, to, 'cmb:delete-nodes');
           }
         },
         () => {},
@@ -47,6 +48,7 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
       return;
     }
 
+    // Drag the _whole_ source node, comments and all.
     if (srcNode) {
       var {from: srcFrom, to: srcTo} = srcNode.srcRange();
       content = global.cm.getRange(srcFrom, srcTo);
@@ -65,10 +67,10 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
     }
 
     // Make sure we don't accidentally merge with a comment.
-    if (ast.followsComment(destFrom) || ast.precedesComment(srcFrom)) {
+    if (ast.followsComment(destFrom) || srcFrom && ast.precedesComment(srcFrom)) {
       value = "\n" + value;
     }
-    if (ast.precedesComment(destTo) || ast.followsComment(srcTo)) {
+    if (ast.precedesComment(destTo) || srcTo && ast.followsComment(srcTo)) {
       value = value + "\n";
     }
 
@@ -95,7 +97,18 @@ export function copyNodes(id, selectionEditor) {
     const {ast, selections} = getState();
     const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
-    const texts = nodeSelections.map(node => global.cm.getRange(node.from, node.to));
+    const texts = nodeSelections.map(node => {
+      const {from, to} = node.srcRange();
+      return global.cm.getRange(from, to);
+    });
+    // Make sure we don't accidentally merge with a comment.
+    if (ast.precedesComment(nodeSelections[0].srcRange().from)) {
+      texts[0] = "\n" + texts[0];
+    }
+    const last = nodeSelections.length - 1;
+    if (ast.followsComment(nodeSelections[last].srcRange().to)) {
+      texts[last] = texts[last] + "\n";
+    }
     copyToClipboard(texts.join(' '));
     dispatch(activateByNId(null, {allowMove: false}));
   };
@@ -107,14 +120,15 @@ export function pasteNodes(id, isBackward) {
     const node = ast.getNodeById(id);
     let from = null, to = null, textTransform = x => x;
     let focusTarget = null;
+    let range = node.srcRange(); // Include any comments the node has.
     if (selections.includes(id)) {
       // NOTE(Oak): overwrite in this case
-      from = node.from;
-      to = node.to;
+      from = range.from;
+      to = range.to;
       focusTarget = 'self';
     } else {
       // NOTE(Oak): otherwise, we do not overwrite
-      const pos = isBackward ? node.from : node.to;
+      const pos = isBackward ? range.from : range.to;
       focusTarget = isBackward ? 'back' : 'next';
       from = pos;
       to = pos;
