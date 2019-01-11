@@ -8,7 +8,7 @@ import {
   keydown,
   pureevent,
   setNativeValue,
-} from '../events';
+} from '../support/events';
 
 import {
   PGUP,
@@ -16,7 +16,7 @@ import {
   F3,
 } from 'codemirror-blocks/keycode';
 
-import {wait, removeEventListeners} from '../test-utils';
+import {wait, removeEventListeners} from '../support/test-utils';
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 500;
