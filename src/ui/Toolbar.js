@@ -11,7 +11,6 @@ import './Toolbar.less';
 export default class Toolbar extends Component {
   constructor(props) {
     super(props);
-
     this.selectPrimitive = this.selectPrimitive.bind(this);
   }
 
