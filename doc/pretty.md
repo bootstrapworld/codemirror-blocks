@@ -77,7 +77,7 @@ you can use `vertArray(docArray)`
 
 #### IfFlat: Choose between two Layouts
 
-Finally, `ifFlat(doc1, doc2)` lets you choose between two documents.
+`ifFlat(doc1, doc2)` lets you choose between two documents.
 It will use `doc1` if it fits entirely on the current line, otherwise
 it will use `doc2`.
 
@@ -97,6 +97,31 @@ printing approach is a mix of Wadler's
 and Bernardy's
 [Pretty but not Greedy Printer](https://jyp.github.io/pdf/Prettiest.pdf).
 
+
+#### FullLine: Prevent More on the Same Line
+
+Finally, `fullLine(doc)` ensures that nothing is placed after `doc`, if at all
+possible. For example this doc:
+
+    horz(ifFlat("a", vert("a", "A")), "b")
+
+renders as:
+
+    ab
+
+However, if you wrap `a` in a `fullLine`:
+
+    horz(ifFlat(fullLine("a"), vert("a", "A")), "b")
+
+then the `fullLine` will disallow anything from being placed after the `a` on
+the same line, and as a result the `ifFlat` will choose the other option,
+rendering as:
+
+    a
+    Ab
+
+This is helpful for line comments. For example, `fullLine("// comment")` will
+ensure that (if at all possible) nothing is placed after the comment.
 
 ## Other Constructors
 

@@ -37,6 +37,9 @@ export function concatArray(array) {
 export function ifFlat(flat, broken) {
   return new IfFlatDoc(coerce(flat), coerce(broken));
 }
+export function fullLine(doc) {
+  return new FullLineDoc(coerce(doc))
+}
 
 /******************************************************************************
  * Documents
@@ -133,6 +136,17 @@ class VertDoc extends Doc {
     this.doc1.render(out, indent, column, width);
     out.push(new Array(indent + 1).join(" ")); // print newline and indent
     return this.doc2.render(out, indent, indent, width);
+  }
+}
+
+class FullLineDoc extends Doc {
+  constructor(doc) {
+    super(null);
+    this.doc = doc;
+  }
+
+  render(out, indent, column, width) {
+    return this.doc.render(out, indent, column, width);
   }
 }
 
