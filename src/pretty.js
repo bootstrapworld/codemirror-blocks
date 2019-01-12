@@ -37,6 +37,9 @@ export function concatArray(array) {
 export function ifFlat(flat, broken) {
   return new IfFlatDoc(coerce(flat), coerce(broken));
 }
+export function fullLine(doc) {
+  return new FullLineDoc(coerce(doc))
+}
 
 /******************************************************************************
  * Documents
@@ -133,6 +136,17 @@ class VertDoc extends Doc {
     this.doc1.render(out, indent, column, width);
     out.push(new Array(indent + 1).join(" ")); // print newline and indent
     return this.doc2.render(out, indent, indent, width);
+  }
+}
+
+class FullLineDoc extends Doc {
+  constructor(doc) {
+    super(null);
+    this.doc = doc;
+  }
+
+  render(out, indent, column, width) {
+    return this.doc.render(out, indent, column, width);
   }
 }
 
@@ -313,18 +327,13 @@ export function beginLikeSexpr(keyword, bodies) {
 //   previous line.
 export function withSchemeComment(doc, comment, container) {
   if (comment) {
-    // TODO: While this is very clever, it breaks if you drag a block with a
-    // line comment into a drop target that has code after it.
-    /*
-    if (container) {
-      if (container.to.line == comment.from.line) {
-        // This is a line comment. Try to put it on the same line, if it fits.
-        return ifFlat(horz(doc, " ", comment)),
-                      vert(comment, doc));
-      }
+    if (container && container.to.line == comment.from.line) {
+      // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
+      return ifFlat(horz(doc, " ", comment),
+                    vert(comment, doc));
+    } else {
+      return vert(comment, doc);
     }
-    */
-    return vert(comment, doc);
   } else {
     return doc;
   }

@@ -1,5 +1,5 @@
 import {
-  empty, txt, horz, vert, concat, ifFlat, wrap, pretty
+  empty, txt, horz, vert, concat, ifFlat, fullLine, wrap, pretty
 } from "codemirror-blocks/pretty";
 
 
@@ -140,6 +140,15 @@ words.`);
         .toEqual(["if a == b", "then a << 2", "else a + b"]);
       expect(BLernersExample().display(10))
         .toEqual(["if a == b", "then", "  a << 2", "else a + b"]);
+    });
+  });
+
+  describe("when rendering fullLines", function() {
+    it("should do what the docs suggest and disallow things later on the same line", function() {
+      expect(horz(ifFlat("a", vert("a", "A")), "b").display(20))
+        .toEqual(["ab"]);
+      expect(horz(ifFlat(fullLine("a"), vert("a", "A")), "b").display(20))
+        .toEqual(["a", "Ab"]);
     });
   });
 
