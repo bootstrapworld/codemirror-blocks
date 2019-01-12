@@ -462,9 +462,8 @@ export class Comment extends ASTNode {
   pretty() {
     let words = this.comment.trim().split(/\s+/);
     let wrapped = P.wrap(" ", "", words);
-    return P.ifFlat(
-      P.horz("; ", wrapped), // Single-line comment if it fits on one line,
-      P.concat("#| ", wrapped, " |#")); // Block comment if it doesn't.
+    // Normalize all comments to block comments
+    return P.concat("#| ", wrapped, " |#");
   }
 
   render(_props) { // eslint-disable-line no-unused-vars
