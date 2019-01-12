@@ -29,8 +29,8 @@ export const nodeTarget = nodeTargetFn => ({
   drop(props, monitor) {
     if (monitor.didDrop()) return;
     const {x: left, y: top} = monitor.getClientOffset();
-    // if it's a proper drop target, just drop at the provided location
-    if(props.location) {
+    // if it's a drop-target or a drop-node, execute the drop
+    if(props.location || props.node) {
       return props.onDrop(monitor.getItem(), nodeTargetFn(props));
     }
     // if not, make sure it's a valid drop (i.e. - not on any CM node marker)

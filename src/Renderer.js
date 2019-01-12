@@ -9,7 +9,8 @@ export default class Renderer {
     this.lockNodesOfType = lockNodesOfType;
     this.printASTNode = node => node.pretty().display(printWidth).join("\n");
   }
-
+/*
+  TODO(Emmanuel): DO NOT DELETE - this is dead, but we may want to use it later
   // make code "float" between text/blocks
   animateTransition(ast, toBlocks) {
     let start = Date.now();
@@ -114,7 +115,7 @@ export default class Renderer {
       rootNodes.forEach(r => {if(!alreadyRendered.has(r)) this.render(r); }); 
     }
   }
-
+*/
   renderNodeForReact = (node, key) => {
     this.renderNodeForReact.defaultProps = { displayName: 'ASTNode Renderer' };
     if (typeof node.render === 'function') {

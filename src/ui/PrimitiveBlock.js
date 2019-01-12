@@ -18,6 +18,10 @@ export class BaseRenderedBlockNode extends Component {
     text: '',
   }
 
+/*
+  * TODO(Emmanuel): almost certainly dead code, since this was added to support
+  * dragging functionality _before_ switching over to react-dnd
+
   // when the DOM for a rendered block has completed, we have some cleanup to do:
   // the normal renderer assumes that all blocks are treeitems, with tabIndex=-1
   componentDidMount() {
@@ -29,36 +33,7 @@ export class BaseRenderedBlockNode extends Component {
       el.firstChild.tabIndex="0";
     }
   }
-
-  // onDragStart = event => {
-  //   let node = this.props.node;
-  //   let text = this.props.text;
-
-  //   // Find the block (it might just be a text Primitive, so there might not be
-  //   // an assocated AST node):
-  //   let el = node ? node.el : event.target;
-  //   if (!node) {
-  //     while (el.parentNode && !el.parentNode.classList.contains('RenderedBlockNode')) {
-  //       el = el.parentNode;
-  //     }
-  //     if (!el) {
-  //       return;
-  //     }
-  //   }
-
-  //   event.stopPropagation();
-  //   el.classList.add('blocks-dragging');
-  //   event.dataTransfer.effectAllowed = 'move';
-  //   event.dataTransfer.setDragImage(el, -5, -5);
-
-  //   // Add dataTransfer information:
-  //   if (node) {
-  //     event.dataTransfer.setData('text/plain', this.props.renderer.printASTNode(node));
-  //     event.dataTransfer.setData('text/id', node.id);
-  //   } else if (text) {
-  //     event.dataTransfer.setData('text/plain', text);
-  //   }
-  // }
+*/
 
   render() {
     const node = this.props.node ? this.props.renderer.renderNodeForReact(this.props.node, null, true)

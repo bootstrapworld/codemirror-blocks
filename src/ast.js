@@ -13,12 +13,14 @@ export function pluralize(noun, set) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
+/*
+TODO(Emmanuel): Probably dead code
 function commonSubstring(s1, s2) {
   if(!s1 || !s2) return false;
   let i = 0, len = Math.min(s1.length, s2.length);
   while(i<len && s1.charAt(i) == s2.charAt(i)){ i++; } 
   return s1.substring(0, i) || false; 
-}
+}*/
 
 export const descDepth = 1;
 
@@ -36,7 +38,7 @@ export class AST {
     // the other nodeMaps make it easy to determine node order
     this.nodeIdMap = new Map();
     this.nodeNIdMap = new Map();
-    this.nodePathMap = new Map();
+//    this.nodePathMap = new Map(); // Probably dead code
     this.annotateNodes();
     this.id = -1; // just for the sake of having an id, though unused
     this.hash = hashObject(this.rootNodes.map(node => node.hash));
@@ -72,7 +74,7 @@ export class AST {
   annotateNodes() {
     this.nodeIdMap.clear();
     this.nodeNIdMap.clear();
-    this.nodePathMap.clear();
+//    this.nodePathMap.clear(); //Probably dead code
 
     let lastNode = null;
     let nid = 0;
@@ -92,7 +94,7 @@ export class AST {
         }
         this.nodeIdMap.set(node.id, node);
         this.nodeNIdMap.set(node.nid, node);
-        this.nodePathMap.set(node.path, node);
+//        this.nodePathMap.set(node.path, node); //Probably dead code
         lastNode = node;
         loop([...node.children()], node, level + 1);
       });
@@ -116,20 +118,12 @@ export class AST {
     return u === v;
   }
 
+/*
+  TODO(Emmanuel): Probably dead code 
   getNodeByPath(path) {
     return this.nodePathMap.get(path);
   }
-  // return the path to the node containing both cursor positions, or false
-  getCommonAncestor(c1, c2) {
-    let n1 = this.getNodeContaining(c1), n2 = this.getNodeContaining(c2);
-    if(!n1 || !n2) return false;
-    // false positive: an insertion (c1=c2) that touches n.from or n.to
-    if((poscmp(c2, c1) == 0) && ((poscmp(n1.from, c1) == 0) || (poscmp(n1.to, c1) == 0))) {
-      return this.getNodeParent(n1) && this.getNodeParent(n1).path; // Return the parent, if there is one
-    }
-    return commonSubstring(n1.path, n2.path);
-  }
-  /**
+*/  /**
    * getNodeAfter : ASTNode -> ASTNode
    *
    * Returns the next node or null
@@ -193,27 +187,27 @@ export class AST {
     return n && ([...n.children()].length === 0 ? n :
                  this.getNodeContaining(cursor, [...n.children()]) || n);
   }
+/*
+  TODO(Emmanuel): Probably dead code  
   // return an array of nodes that fall bwtween two locations
   getNodesBetween(from, to) {
     return [...this.nodeIdMap.values()].filter(n => (poscmp(from, n.from) < 1) && (poscmp(to, n.to) > -1));
   }
+  
   // return all the root nodes that contain the given positions, or fall between them
   getRootNodesTouching(start, end, rootNodes=this.rootNodes){
     return rootNodes.filter(node =>
       posWithinNode(start, node) || posWithinNode(end, node) ||
       ( (poscmp(start, node.from) < 0) && (poscmp(end, node.to) > 0) ));
   }
+  */
   // return the parent or false
   getNodeParent = node => {
-    let path = node.path.split(",");
-    path.pop();
-    return this.nodePathMap.get(path.join(",")) || false;
-  }
-  // return the first child, if it exists
-  getNodeFirstChild(node) {
-    return this.nodePathMap.get(node.path+",0");
+    return node.parent || false;
   }
 
+  /*
+  TODO(Emmanuel): Probably dead code  
   getClosestNodeFromPath(keyArray) {
     let path = keyArray.join(',');
     // if we have no valid key, give up
@@ -226,6 +220,7 @@ export class AST {
     else { keyArray.pop(); }
     return this.getClosestNodeFromPath(keyArray);
   }
+  */
 
   /**
    * getNextMatchingNode : (ASTNode->ASTNode?) (ASTNode->Bool) ASTNode [Bool] -> ASTNode?

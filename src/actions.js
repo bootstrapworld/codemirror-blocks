@@ -183,11 +183,9 @@ export function activate(id, options) {
     const {ast, focusId, collapsedList} = state;
     const node = ast.getNodeById(id);
 
-    // TODO(Oak): is this a dead code?
-    if (!node) {
-      playSound(WRAP);
-      return;
-    }
+    // If the node is part of the toolbar...
+    // TODO(Emmanuel): right now we bail, but shouldn't we at least say the label?
+    if (!node) { return; }
 
     if (node.nid === focusId) {
       say(node.options['aria-label']);
