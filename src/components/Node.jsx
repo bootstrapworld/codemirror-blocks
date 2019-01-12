@@ -60,7 +60,7 @@ class Node extends BlockComponent {
   }
 
   handleClick = e => {
-    e.stopPropagation(); // prevent ancestors to steal focus
+    if(!this.props.node.inToolbar) e.stopPropagation(); // prevent ancestors to steal focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
 
     this.props.activate(this.props.node.id, {allowMove: false});
@@ -68,6 +68,7 @@ class Node extends BlockComponent {
 
   handleDoubleClick = e => {
     e.stopPropagation();
+    if(this.props.node.inToolbar) return;
     if (this.props.normallyEditable) {
       this.handleMakeEditable();
     }
@@ -75,6 +76,7 @@ class Node extends BlockComponent {
 
   handleKeyDown = e => {
     e.stopPropagation();
+    if(this.props.node.inToolbar) return;
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
 
     const {
@@ -330,7 +332,7 @@ class Node extends BlockComponent {
 
 
   handleMakeEditable = () => {
-    if (!isErrorFree()) return;
+    if (!isErrorFree() || this.props.node.inToolbar) return;
     this.setState({editable: true});
     global.cm.refresh(); // is this needed?
   };
