@@ -107,14 +107,12 @@ export default class ToggleEditor extends React.Component {
     return (
       <div className={classes}>
         <ToggleButton onToggle={this.handleToggle}  />
-        <React.Fragment>
           <div className={"col-xs-3 toolbar-pane"} tabIndex="-1">
           <Toolbar primitives={this.parser.primitives}
                    renderer={this.state.renderer}
                    languageId={this.language.id} />
           </div>
           {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
-        </React.Fragment>
       </div>
     );
   }
