@@ -103,10 +103,18 @@ export default class ToggleEditor extends React.Component {
   };
 
   render(_props) { // eslint-disable-line no-unused-vars
+    const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
-      <div className={'Editor blocks'}>
-        <ToggleButton onToggle={this.handleToggle}/>
-        {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+      <div className={classes}>
+        <ToggleButton onToggle={this.handleToggle}  />
+        <React.Fragment>
+          <div className={"col-xs-3 toolbar-pane"} tabIndex="-1">
+          <Toolbar primitives={this.parser.primitives}
+                   renderer={this.state.renderer}
+                   languageId={this.language.id} />
+          </div>
+          {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+        </React.Fragment>
       </div>
     );
   }
@@ -123,12 +131,6 @@ export default class ToggleEditor extends React.Component {
 
   renderBlocks() {
     return (
-      <React.Fragment>
-        <div className={"col-xs-3 toolbar-pane"} tabIndex="-1">
-          <Toolbar primitives={this.parser.primitives}
-                   renderer={this.state.renderer}
-                   languageId={this.language.id} />
-        </div>
         <div className="col-xs-9 codemirror-pane">
           <UpgradedBlockEditor
             language={this.language.id}
@@ -139,7 +141,6 @@ export default class ToggleEditor extends React.Component {
             onBeforeChange={this.handleChange}
             onRenderer={this.handleRenderer} />
         </div>
-      </React.Fragment>
     );
   }
 }
