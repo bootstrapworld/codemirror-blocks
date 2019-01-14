@@ -419,7 +419,7 @@ class BlockEditor extends Component {
                       onFocus={this.handleFocus}
                       onPaste={this.handlePaste}
                       cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
-                      onCursor={this.handleCursor}
+                      onCursorActivity={this.handleCursor}
                       editorDidMount={this.handleEditorDidMount} />
         </div>
         {this.renderPortals()}
