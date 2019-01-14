@@ -60,7 +60,7 @@ class Node extends BlockComponent {
   }
 
   handleClick = e => {
-    e.stopPropagation(); // prevent ancestors to steal focus
+    if(!this.props.node.inToolbar) e.stopPropagation(); // prevent ancestors to steal focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
 
     this.props.activate(this.props.node.id, {allowMove: false});
@@ -68,6 +68,7 @@ class Node extends BlockComponent {
 
   handleDoubleClick = e => {
     e.stopPropagation();
+    if(this.props.node.inToolbar) return;
     if (this.props.normallyEditable) {
       this.handleMakeEditable();
     }
@@ -75,6 +76,7 @@ class Node extends BlockComponent {
 
   handleKeyDown = e => {
     e.stopPropagation();
+    if(this.props.node.inToolbar) return;
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
 
     const {
@@ -330,7 +332,7 @@ class Node extends BlockComponent {
 
 
   handleMakeEditable = () => {
-    if (!isErrorFree()) return;
+    if (!isErrorFree() || this.props.node.inToolbar) return;
     this.setState({editable: true});
     global.cm.refresh(); // is this needed?
   };
@@ -391,7 +393,11 @@ class Node extends BlockComponent {
                       contentEditableProps={props} />
       );
     } else {
-      const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
+      const {
+        connectDragSource, isDragging,
+        connectDropTarget, isOver,
+        connectDragPreview
+      } = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
       let result = (
         <span
@@ -415,7 +421,7 @@ class Node extends BlockComponent {
       if (this.props.normallyEditable) {
         result = connectDropTarget(result);
       }
-      return connectDragSource(result);
+      return connectDragPreview(connectDragSource(result), {offsetX: 1, offsetY: 1});
     }
   }
 }

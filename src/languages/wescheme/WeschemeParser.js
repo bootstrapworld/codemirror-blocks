@@ -333,7 +333,8 @@ class WeschemeParser {
       ),
       primitive.argumentTypes.map(() =>
         new Blank(dummyLoc, dummyLoc, '')
-      )
+      ),
+      {'aria-label': primitive.name + ' expression'}
     );
   }
 
@@ -341,7 +342,8 @@ class WeschemeParser {
     return new Literal(
       dummyLoc, dummyLoc,
       primitive.name,
-      'symbol'
+      'symbol',
+        {'aria-label': primitive.name}
     );
   }
 

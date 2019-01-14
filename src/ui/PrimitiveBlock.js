@@ -71,6 +71,7 @@ export default class PrimitiveBlock extends Component {
     }
 
     this.astNode = this.props.primitive.getASTNode();
+    this.astNode.inToolbar = true;
     return (
       <RenderedBlockNode
         node={this.astNode}
