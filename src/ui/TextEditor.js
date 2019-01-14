@@ -15,8 +15,6 @@ class TextEditor extends Component {
 
   handleEditorDidMount = ed => {
     const wrapper = ed.getWrapperElement();
-    // TODO(Justin): what's a role? Is this the right role?
-    wrapper.setAttribute('role', 'presentation');
     wrapper.setAttribute('aria-label', 'Text Editor');
 
     const scroller = ed.getScrollerElement();
