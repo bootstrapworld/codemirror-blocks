@@ -393,7 +393,11 @@ class Node extends BlockComponent {
                       contentEditableProps={props} />
       );
     } else {
-      const {connectDragSource, isDragging, connectDropTarget, isOver} = this.props;
+      const {
+        connectDragSource, isDragging,
+        connectDropTarget, isOver,
+        connectDragPreview
+      } = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
       let result = (
         <span
@@ -417,7 +421,7 @@ class Node extends BlockComponent {
       if (this.props.normallyEditable) {
         result = connectDropTarget(result);
       }
-      return connectDragSource(result);
+      return connectDragPreview(connectDragSource(result), {offsetX: 1, offsetY: 1});
     }
   }
 }
