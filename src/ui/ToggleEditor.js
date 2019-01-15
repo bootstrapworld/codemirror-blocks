@@ -27,7 +27,6 @@ const defaultCmOptions = {
 @CMBContext
 export default class ToggleEditor extends React.Component {
   state = {
-    renderer: null, // Not actually stateful, but can only be constructed after the editor has mounted.
     blockMode: false,
     code: ""
   }
@@ -74,8 +73,6 @@ export default class ToggleEditor extends React.Component {
     };
   }
 
-  handleRenderer = renderer => this.setState({renderer});
-
   handleChange = (ed, data, value) => {
     this.setState({code: value});
   }
@@ -109,7 +106,6 @@ export default class ToggleEditor extends React.Component {
         <ToggleButton onToggle={this.handleToggle}  />
           <div className={"col-xs-3 toolbar-pane"} tabIndex="-1">
           <Toolbar primitives={this.parser.primitives}
-                   renderer={this.state.renderer}
                    languageId={this.language.id} />
           </div>
           {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
@@ -136,8 +132,7 @@ export default class ToggleEditor extends React.Component {
             options={this.options}
             parser={this.parser}
             cmOptions={this.cmOptions}
-            onBeforeChange={this.handleChange}
-            onRenderer={this.handleRenderer} />
+            onBeforeChange={this.handleChange} />
         </div>
     );
   }

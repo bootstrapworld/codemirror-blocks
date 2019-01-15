@@ -90,13 +90,12 @@ export class Prog extends ASTNode {
   }
 
   render(props) {
-    const {helpers, lockedTypes} = props;
     return (
-      <Node node={this} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={this} {...props}>
         <h4>Your Lambda Program</h4>
         {this.prog.map((node, index) => (
           <span key={index}>
-            {helpers.renderNodeForReact(node)}
+            {node.reactElement()}
           </span>
         ))}
       </Node>

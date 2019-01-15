@@ -34,10 +34,6 @@ class Node extends BlockComponent {
   static propTypes = {
     node: PropTypes.instanceOf(ASTNode),
     children: PropTypes.node,
-    helpers: PropTypes.shape({
-      renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired,
-    lockedTypes: PropTypes.array.isRequired,
 
     connectDragSource: PropTypes.func.isRequired,
     isDragging: PropTypes.bool.isRequired,
@@ -340,7 +336,11 @@ class Node extends BlockComponent {
   handleDisableEditable = () => this.setState({editable: false});
 
   isLocked() {
-    return this.props.lockedTypes.includes(this.props.node.type);
+    if (global.options && global.options.renderOptions) {
+      const lockedList = global.options.renderOptions.lockNodesOfType;
+      return lockedList.includes(this.props.node.type);
+    }
+    return false;
   }
 
   render() {
@@ -399,6 +399,7 @@ class Node extends BlockComponent {
         connectDragPreview
       } = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
+
       let result = (
         <span
           {...props}
@@ -412,10 +413,7 @@ class Node extends BlockComponent {
           onDoubleClick = {this.handleDoubleClick}
           onKeyDown     = {this.handleKeyDown}>
           {children}
-          {
-            node.options.comment &&
-              this.props.helpers.renderNodeForReact(node.options.comment)
-          }
+          {node.options.comment && node.options.comment.reactElement()}
         </span>
       );
       if (this.props.normallyEditable) {

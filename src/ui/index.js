@@ -18,7 +18,7 @@ export function renderSearchInto(blocks) {
 export function renderToolbarInto(blocks) {
   if (blocks.toolbarNode) {
     ReactDOM.render(
-      <Toolbar primitives={blocks.parser.primitives} renderer={blocks.renderer} />,
+      <Toolbar primitives={blocks.parser.primitives} />,
       blocks.toolbarNode
     );
   }

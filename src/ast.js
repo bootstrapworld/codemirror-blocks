@@ -1,3 +1,4 @@
+import React from 'react';
 import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining} from './utils';
 import uuidv4 from 'uuid/v4';
 import hashObject from 'object-hash';
@@ -350,6 +351,21 @@ export class ASTNode {
     } else {
       return {from: this.from, to: this.to};
     }
+  }
+
+  // Get a React component for this node, which can be instantiated with angle brackets `<...>`.
+  reactComponent() {
+    if (typeof this.render === 'function') {
+      return this.render.bind(this);
+    } else {
+      throw new Error("Don't know how to render node of type: " + this.type);
+    }
+  }
+
+  // Create a React _element_ (an instantiated component) for this node.
+  reactElement(props) {
+    let Component = this.reactComponent();
+    return <Component node={this} {...props} />;
   }
 }
 

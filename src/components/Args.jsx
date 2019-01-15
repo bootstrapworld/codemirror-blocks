@@ -11,14 +11,11 @@ import {span} from '../types';
 export default class Args extends ComponentWithDropTargets {
   static propTypes = {
     children: PropTypes.arrayOf(PropTypes.instanceOf(ASTNode)).isRequired,
-    helpers: PropTypes.shape({
-      renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired,
     location: span,
   }
 
   render() {
-    let {children, helpers} = this.props;
+    let {children} = this.props;
     let DropTarget = this.DropTarget;
     if (children.length === 0) {
       return (<DropTarget index={0} location={this.props.location} />);

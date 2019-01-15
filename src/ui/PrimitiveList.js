@@ -3,13 +3,14 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
 import {RenderedBlockNode} from './PrimitiveBlock';
+import {Primitive as LanguagePrimitive} from '../parsers/primitives';
 
 require('./PrimitiveList.less');
 
-export class Primitive extends Component {
+class Primitive extends Component {
   static propTypes = {
-    //primitive: PropTypes.instanceOf(ASTFunctionDefinitionNode).isRequired,
-    className: PropTypes.instanceOf(String).isRequired,
+    primitive: PropTypes.instanceOf(LanguagePrimitive).isRequired,
+    className: PropTypes.string.isRequired,
     onClick: PropTypes.instanceOf(Function).isRequired,
   }
 
@@ -17,15 +18,16 @@ export class Primitive extends Component {
     var {primitive, className, onClick} = this.props;
     let astNode = primitive.getLiteralNode();
     astNode.inToolbar = true;
+    const elem = astNode ? astNode.reactElement() : primitive.name;
     return (
       <li className={classNames(className, "Primitive list-group-item")} onClick={onClick}>
-        <RenderedBlockNode node={astNode} text={primitive.name} />
+        {elem}
       </li>
     );
   }
 }
 
-export class PrimitiveGroup extends Component {
+class PrimitiveGroup extends Component {
   static defaultProps = {
     group: {
       name: '',
@@ -106,7 +108,7 @@ export default class PrimitiveList extends Component {
           key={primitive.name}
           primitive={primitive}
           onClick={() => onSelect(primitive)}
-          className={selected == primitive && 'selected'}
+          className={selected == primitive ? 'selected' : ''}
         />
       );
 

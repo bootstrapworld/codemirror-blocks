@@ -25,14 +25,13 @@ export class Unknown extends ASTNode {
   }
 
   render(props) {
-    const {helpers} = props;
-    const firstElt = this.elts[0];
+    const firstElt = this.elts[0].reactElement();
     const restElts = this.elts.slice(1);
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{helpers.renderNodeForReact(firstElt)}</span>
+        <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
-          <Args helpers={helpers} location={firstElt.to}>{restElts}</Args>
+        <Args location={firstElt.to}>{restElts}</Args>
         </span>
       </Node>
     );
@@ -68,14 +67,13 @@ export class FunctionApp extends ASTNode {
   }
 
   render(props) {
-    const {helpers} = props;
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          <Args helpers={helpers}>{[this.func]}</Args>
+          <Args>{[this.func]}</Args>
         </span>
         <span className="blocks-args">
-          <Args helpers={helpers} location={this.func.to}>{this.args}</Args>
+          <Args location={this.func.to}>{this.args}</Args>
         </span>
       </Node>
     );
@@ -103,11 +101,10 @@ export class IdentifierList extends ASTNode {
   }
 
   render(props) {
-    const {helpers} = props;
     return (
       <Node node={this} {...props}>
         <span className="blocks-args">
-          <Args helpers={helpers} location={this.from}>{this.ids}</Args>
+          <Args location={this.from}>{this.ids}</Args>
         </span>
       </Node>
     );
@@ -136,14 +133,14 @@ export class StructDefinition extends ASTNode {
   }
 
   render(props) {
-    const {helpers} = props;
+    const fields = this.fields.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define-struct
-          <Args helpers={helpers}>{[this.name]}</Args>
+          <Args>{[this.name]}</Args>
         </span>
-        {helpers.renderNodeForReact(this.fields)}
+        {fields}
       </Node>
     );
   }
@@ -171,15 +168,15 @@ export class VariableDefinition extends ASTNode {
   }
 
   render(props) {
-    const {helpers} = props;
+    const body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define
-          <Args helpers={helpers}>{[this.name]}</Args>
+          <Args>{[this.name]}</Args>
         </span>
         <span className="blocks-args">
-          {helpers.renderNodeForReact(this.body)}
+          {body}
         </span>
       </Node>
     );
@@ -206,16 +203,15 @@ export class LambdaExpression extends ASTNode {
   }
 
   render(props) {
-    const {helpers} = props;
+    const args = this.args.reactElement();
+    const body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          &lambda; (
-          {helpers.renderNodeForReact(this.args)}
-          )
+          &lambda; ({args})
         </span>
         <span className="blocks-args">
-          {helpers.renderNodeForReact(this.body)}
+          {body}
         </span>
       </Node>
     );
@@ -248,12 +244,8 @@ export class FunctionDefinition extends ASTNode {
       this);
   }
 
-  render(props) {
-    return (
-      <FunctionDefinitionComponent node={this} {...props}>
-        {props.children}
-      </FunctionDefinitionComponent>
-    );
+  reactComponent() {
+    return FunctionDefinitionComponent;
   }
 }
 
@@ -295,21 +287,17 @@ export class CondClause extends ASTNode {
     return P.brackets(P.spaceSep([this.testExpr].concat(this.thenExprs)));
   }
 
-  render(props) {
-    return (
-      <CondClauseComponent node={this} {...props}>
-        {props.children}
-      </CondClauseComponent>
-    );
+  reactComponent() {
+    return CondClauseComponent;
   }
 }
 
 class CondClauseComponent extends ComponentWithDropTargets {
   render() {
-    const {node, helpers, lockedTypes} = this.props;
+    const {node} = this.props;
     const DropTarget = this.DropTarget;
     return (
-      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} {...this.props}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">
             <DropTarget index={0} location={node.testExpr.from} />
@@ -347,12 +335,15 @@ export class CondExpression extends ASTNode {
   }
 
   render(props) {
-    const {helpers} = props;
+    const clauses = this.clauses.map((clause, index) => {
+      const Component = clause.reactComponent();
+      return <Component node={clause} key={index}/>;
+    });
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">cond</span>
         <div className="blocks-cond-table">
-          {this.clauses.map((clause, index) => helpers.renderNodeForReact(clause, index)) }
+          {clauses}
         </div>
       </Node>
     );
@@ -392,10 +383,10 @@ export class IfExpression extends ASTNode {
 
 class IfExpressionComponent extends ComponentWithDropTargets {
   render() {
-    const {node, helpers, lockedTypes} = this.props;
+    const {node} = this.props;
     const DropTarget = this.DropTarget;
     return (
-      <Node node={node} lockedTypes={lockedTypes} helpers={helpers}>
+      <Node node={node} {...this.props}>
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">
@@ -515,12 +506,11 @@ export class Sequence extends ASTNode {
   }
 
   render(props) {
-    const {helpers} = props;
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
         <div className="blocks-sequence-exprs">
-          <Args helpers={helpers} location={this.name.to}>{this.exprs}</Args>
+          <Args location={this.name.to}>{this.exprs}</Args>
         </div>
       </Node>
     );

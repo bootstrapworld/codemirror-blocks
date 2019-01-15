@@ -4,8 +4,6 @@ import classNames from 'classnames';
 import PrimitiveList from './PrimitiveList';
 import PrimitiveBlock from './PrimitiveBlock';
 import {PrimitiveGroup} from '../parsers/primitives';
-import Renderer from '../Renderer';
-import {RendererContext} from './Context';
 import './Toolbar.less';
 
 export default class Toolbar extends Component {
@@ -16,7 +14,6 @@ export default class Toolbar extends Component {
 
   static propTypes = {
     primitives: PropTypes.instanceOf(PrimitiveGroup),
-    renderer: PropTypes.instanceOf(Renderer), // is required, but initially null b.c. it's lazily loaded
     languageId: PropTypes.string, // used to find the .blocks-language-{languageId} CSS class
   }
 
@@ -74,21 +71,17 @@ export default class Toolbar extends Component {
             <span className="glyphicon glyphicon-remove" onClick={this.clearSearch} />
             : null}
         </div>
-        {this.props.renderer === null
-         ? <div/> // Renderer hasn't been loaded yet. Wait for it.
-         : <RendererContext.Provider value={this.props.renderer}>
-             <div className="primitives-box">
-               <PrimitiveList
-                 primitives={primitives}
-                 onSelect={this.selectPrimitive}
-                 selected={this.state.selectedPrimitive}
-                 />
-             </div>
-             <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
-               <div className="contract-header">Contract</div>
-               <PrimitiveBlock primitive={selected}/>
-             </div>
-           </RendererContext.Provider>}
+        <div className="primitives-box">
+          <PrimitiveList
+            primitives={primitives}
+            onSelect={this.selectPrimitive}
+            selected={this.state.selectedPrimitive}
+            />
+        </div>
+        <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
+          <div className="contract-header">Contract</div>
+          <PrimitiveBlock primitive={selected}/>
+        </div>
       </div>
     );
   }

@@ -12,7 +12,8 @@ export default addLanguage(
     },
     getRenderOptions() {
       return {
-        lockNodesOfType: ['comment', 'functionDef', 'variableDef', 'struct']
+        // TODO: perhaps also ['functionDefinition', 'variableDefinition', 'structDefinition']?
+        lockNodesOfType: ['comment']
       };
     },
   });

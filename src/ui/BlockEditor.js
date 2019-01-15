@@ -11,29 +11,9 @@ import {activate, activateByNId} from '../actions';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
-import Renderer from '../Renderer';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
 import CodeMirror from './DragAndDropEditor';
-
-const lockedTypes = [];
-const helpers = {renderNodeForReact};
-
-function renderNodeForReact(node, key, props={}) {
-  if (typeof node.render === 'function') {
-    let Renderer = node.render.bind(node);
-    return (
-      <Renderer
-        node        = {node}
-        helpers     = {helpers}
-        key         = {key}
-        lockedTypes = {lockedTypes}
-        {...props} />
-    );
-  } else {
-    throw new Error("Don't know how to render node of type: "+node.type);
-  }
-}
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
@@ -65,7 +45,7 @@ class ToplevelBlock extends React.Component {
       empty.style.paddingRight = "0.1px";
       global.cm.markText(comment.from, comment.to, {replacedWith: empty});
     }
-    return ReactDOM.createPortal(renderNodeForReact(node), this.container);
+    return ReactDOM.createPortal(node.reactElement(), this.container);
   }
 }
 
@@ -144,7 +124,6 @@ class BlockEditor extends Component {
       setCursor: PropTypes.func.isRequired,
     }),
     onBeforeChange: PropTypes.func,
-    onRenderer: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
@@ -195,7 +174,6 @@ class BlockEditor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
-    onRenderer: () => {},
   }
 
 
@@ -363,9 +341,9 @@ class BlockEditor extends Component {
   componentDidMount() {
     const {
       parser, language, options, search,
-      onRenderer,
     } = this.props;
 
+    // TODO: pass these with a React Context or something sensible like that.
     global.parser = parser;
     global.options = options;
     global.search = search;
@@ -375,17 +353,6 @@ class BlockEditor extends Component {
     if (getLanguage(language)) {
       languageObj = getLanguage(language);
     }
-    // TODO(Oak): this is awkward. parser is already available to Toolbar.
-    // Just use it there instead.
-
-    const extraOptions = languageObj.getRenderOptions ? languageObj.getRenderOptions() : {};
-
-    const renderOptions = merge(
-      options.renderOptions || {lockNodesOfType: []},
-      extraOptions
-    );
-    const renderer = new Renderer(global.cm, renderOptions);
-    onRenderer(renderer);
 
     const clipboardBuffer = document.createElement('textarea');
     clipboardBuffer.ariaHidden = true;

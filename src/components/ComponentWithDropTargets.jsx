@@ -8,11 +8,7 @@ import DropTarget from './DropTarget';
 // subclass of this class. This class takes care of many messy details involving
 // drop targets.
 export default class ComponentWithDropTargets extends Component {
-  static propTypes = {
-    helpers: PropTypes.shape({
-      renderNodeForReact: PropTypes.func.isRequired,
-    }).isRequired,
-  }
+  static propTypes = {}
 
   constructor() {
     super();
@@ -53,7 +49,6 @@ export default class ComponentWithDropTargets extends Component {
     // `null` if there is none), and likewise for the right. You may also
     // optionally pass in a React `key` prop.
     this.renderNodeWithDropTargets = (node, leftIndex, rightIndex, key) => {
-      const {helpers} = this.props;
       const onSetLeft = (leftIndex === null)
         ? () => {}
         : this.handleSetEditable(leftIndex);
@@ -64,7 +59,8 @@ export default class ComponentWithDropTargets extends Component {
         onSetLeft: onSetLeft,
         onSetRight: onSetRight
       };
-      return helpers.renderNodeForReact(node, key, props);
+      const Component = node.reactComponent();
+      return <Component node={node} key={key} {...props} />;
     };
   }
 }
