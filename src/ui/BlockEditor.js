@@ -31,20 +31,11 @@ class ToplevelBlock extends React.Component {
 
   render() {
     const {node} = this.props;
-    const {from, to} = node;
+    const {from, to} = node.srcRange(); // includes the node's comment, if any
 
-    const marker = global.cm.markText(from, to, {replacedWith: this.container});
-    marker.BLOCK_NODE_ID = node.id;
+    const mark = global.cm.markText(from, to, {replacedWith: this.container});
+    mark.BLOCK_NODE_ID = node.id;
 
-    if (node.options.comment) {
-      // workaround for FF, from Emmanuel.
-      // we force a right-padding to work around CM treating non-webkit browser differently.
-      // See https://github.com/bootstrapworld/codemirror-blocks/issues/142
-      let comment = node.options.comment;
-      let empty = document.createElement('span');
-      empty.style.paddingRight = "0.1px";
-      global.cm.markText(comment.from, comment.to, {replacedWith: empty});
-    }
     return ReactDOM.createPortal(node.reactElement(), this.container);
   }
 }
