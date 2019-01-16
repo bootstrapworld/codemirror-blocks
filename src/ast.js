@@ -321,6 +321,11 @@ export class ASTNode {
     //
     // Two subtrees with identical value are supposed to have the same hash
     this.hash = null; // null for now
+
+    // If this node is commented, give its comment an id based on this node's id.
+    if (options.comment) {
+      options.comment.id = "block-node-" + this.id + "-comment";
+    }
   }
 
   toDescription(){

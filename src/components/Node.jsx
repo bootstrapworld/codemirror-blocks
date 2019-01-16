@@ -354,12 +354,7 @@ class Node extends BlockComponent {
       ...passingProps
     } = this.props;
 
-    if (node.options.comment) {
-      // TODO: can we avoid mutating in render()?
-      node.options.comment.id = "block-node-" + node.id + "-comment";
-    }
-    const commentID = node.options.comment ? node.options.comment.id : '';
-
+    let comment = node.options.comment;
     const locked = this.isLocked();
 
     const props = {
@@ -367,7 +362,7 @@ class Node extends BlockComponent {
       tabIndex          : "-1",
       'aria-selected'   : isSelected,
       'aria-label'      : node.options['aria-label']+',' ,
-      'aria-labelledby' : `block-node-${node.id} ${commentID}`,
+      'aria-labelledby' : `block-node-${node.id} ${comment ? comment.id : ''}`,
       'aria-disabled'   : locked ? "true" : undefined,
       'aria-expanded'   : (expandable && !locked) ? !isCollapsed : undefined,
       'aria-setsize'    : node["aria-setsize"],
@@ -414,7 +409,7 @@ class Node extends BlockComponent {
           onDoubleClick = {this.handleDoubleClick}
           onKeyDown     = {this.handleKeyDown}>
           {children}
-          {node.options.comment && node.options.comment.reactElement()}
+          {comment && comment.reactElement()}
         </span>
       );
       if (this.props.normallyEditable) {
