@@ -75,7 +75,7 @@ export default class Toolbar extends Component {
           <PrimitiveList
             primitives={primitives}
             onSelect={this.selectPrimitive}
-            selected={this.state.selectedPrimitive}
+            selected={selected && selected.name}
             />
         </div>
         <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>

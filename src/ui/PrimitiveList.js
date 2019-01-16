@@ -17,8 +17,7 @@ class Primitive extends Component {
   render() {
     var {primitive, className, onClick} = this.props;
     let astNode = primitive.getLiteralNode();
-    astNode.inToolbar = true;
-    const elem = astNode ? astNode.reactElement() : primitive.name;
+    const elem = astNode ? astNode.reactElement({inToolbar: true}) : primitive.name;
     return (
       <li className={classNames(className, "Primitive list-group-item")} onClick={onClick}>
         {elem}
@@ -40,7 +39,7 @@ class PrimitiveGroup extends Component {
   static propTypes = {
     //group: PropTypes.instanceOf(ASTFunctionDefinitionNode).isRequired,
     onSelect: PropTypes.instanceOf(Function).isRequired,
-    selected: PropTypes.instanceOf(String), // to start, no primitive is selected
+    selected: PropTypes.string, // to start, no primitive is selected
   }
 
   state = {
@@ -84,7 +83,7 @@ export default class PrimitiveList extends Component {
 
   static propTypes = {
     onSelect: PropTypes.instanceOf(Function).isRequired,
-    selected: PropTypes.instanceOf(String),
+    selected: PropTypes.string,
   }
   render() {
     const {primitives, selected} = this.props;
