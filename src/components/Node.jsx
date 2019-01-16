@@ -39,6 +39,7 @@ class Node extends BlockComponent {
     isDragging: PropTypes.bool.isRequired,
     connectDropTarget: PropTypes.func.isRequired,
     isOver: PropTypes.bool.isRequired,
+    inToolbar: PropTypes.bool,
 
     normallyEditable: PropTypes.bool,
 
