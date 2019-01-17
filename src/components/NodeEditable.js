@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import ContentEditable from './ContentEditable';
 import {commitChanges} from '../codeMirror';
-import global from '../global';
+import SHARED from '../shared';
 import classNames from 'classnames';
 import {activateByNId, activate} from '../actions';
 import {say} from '../utils';
@@ -29,7 +29,7 @@ class NodeEditable extends Component {
     if (this.props.value === null) {
       // TODO(Oak): this is bad. Shouldn't access .from and .to directly here
       // since it might be incorrect
-      this.cachedValue = global.cm.getRange(this.props.node.from, this.props.node.to);
+      this.cachedValue = SHARED.cm.getRange(this.props.node.from, this.props.node.to);
     }
   }
 
@@ -64,7 +64,7 @@ class NodeEditable extends Component {
           say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
         },
         e => {
-          const errorText = global.parser.getExceptionMessage(e);
+          const errorText = SHARED.parser.getExceptionMessage(e);
           say(errorText);
           this.ignoreBlur = false;
           setErrorId(node.id);

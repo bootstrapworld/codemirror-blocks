@@ -2,7 +2,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import NodeEditable from './NodeEditable';
-import global from '../global';
+import SHARED from '../shared';
 import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
@@ -38,15 +38,15 @@ class DropTarget extends BlockComponent {
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
     this.props.onSetEditable(true);
-    global.cm.refresh(); // is this needed?
+    SHARED.cm.refresh(); // is this needed?
   }
 
   handleChange = (value) => {
     this.setState({value});
   }
 
-  editableWillInsert = (value, node) => global.options.willInsertNode(
-    global.cm,
+  editableWillInsert = (value, node) => SHARED.options.willInsertNode(
+    SHARED.cm,
     value,
     undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
     node.from,

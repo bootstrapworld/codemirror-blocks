@@ -1,7 +1,7 @@
 import CodeMirror from 'codemirror';
 import {store} from './store';
 import patch from './ast-patch';
-import global from './global';
+import SHARED from './shared';
 
 export function commitChanges(
   changes,
@@ -9,17 +9,17 @@ export function commitChanges(
   onError=() => {}
 ) {
   const tmpDiv = document.createElement('div');
-  const tmpCM = CodeMirror(tmpDiv, {value: global.cm.getValue()});
+  const tmpCM = CodeMirror(tmpDiv, {value: SHARED.cm.getValue()});
   tmpCM.on('changes', () => {
     let newAST = null;
     try {
-      newAST = global.parser.parse(tmpCM.getValue());
+      newAST = SHARED.parser.parse(tmpCM.getValue());
     } catch (exception) {
       onError(exception);
       return;
     }
 
-    global.cm.operation(changes(global.cm));
+    SHARED.cm.operation(changes(SHARED.cm));
     const {ast: oldAST} = store.getState();
     const patched = patch(oldAST, newAST);
     store.dispatch({type: 'SET_AST', ast: patched.tree});

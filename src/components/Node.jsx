@@ -9,7 +9,7 @@ import {dropNode, deleteNodes, copyNodes,
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
 import {isErrorFree} from '../store';
-import global from '../global';
+import SHARED from '../shared';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
@@ -100,7 +100,7 @@ class Node extends BlockComponent {
         }
       };
 
-      switch (global.keyMap[e.key]) {
+      switch (SHARED.keyMap[e.key]) {
       case 'prevNode':
         e.preventDefault();
         activate(fastSkip(node => node.prev));
@@ -113,13 +113,13 @@ class Node extends BlockComponent {
 
       case 'activateSearchDialog':
         e.preventDefault();
-        global.search.onSearch(state, () => activate(node));
+        SHARED.search.onSearch(state, () => activate(node));
         return;
 
       case 'searchPrevious':
         e.preventDefault();
         activate(
-          global.search.search(false, state),
+          SHARED.search.search(false, state),
           {allowMove: true, record: false}
         );
         return;
@@ -127,7 +127,7 @@ class Node extends BlockComponent {
       case 'searchNext':
         e.preventDefault();
         activate(
-          global.search.search(true, state),
+          SHARED.search.search(true, state),
           {allowMove: true, record: false}
         );
         return;
@@ -314,9 +314,9 @@ class Node extends BlockComponent {
         if (isControl(e)) {
           e.preventDefault();
           if (e.shiftKey) {
-            global.cm.redo();
+            SHARED.cm.redo();
           } else {
-            global.cm.undo();
+            SHARED.cm.undo();
           }
         }
         return;
@@ -324,7 +324,7 @@ class Node extends BlockComponent {
       case 'redo':
         if (isControl(e)) {
           e.preventDefault();
-          global.cm.redo();
+          SHARED.cm.redo();
         }
         return;
 
@@ -336,14 +336,14 @@ class Node extends BlockComponent {
   handleMakeEditable = () => {
     if (!isErrorFree() || this.props.inToolbar) return;
     this.setState({editable: true});
-    global.cm.refresh(); // is this needed?
+    SHARED.cm.refresh(); // is this needed?
   };
 
   handleDisableEditable = () => this.setState({editable: false});
 
   isLocked() {
-    if (global.options && global.options.renderOptions) {
-      const lockedList = global.options.renderOptions.lockNodesOfType;
+    if (SHARED.options && SHARED.options.renderOptions) {
+      const lockedList = SHARED.options.renderOptions.lockNodesOfType;
       return lockedList.includes(this.props.node.type);
     }
     return false;
