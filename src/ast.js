@@ -147,7 +147,16 @@ export class AST {
    *
    * Returns the next node or null
    */
-  getNodeAfterCur = cur => this.rootNodes.find(n => poscmp(n.from, cur) >= 0) || null
+  getNodeAfterCur = cur => {
+    function loop(nodes) {
+      let n = nodes.find(n => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
+      if(!n) { return; }                              // return null if there's no node after the cursor
+      if(poscmp(n.from, cur) >= 0) { return n; }      // if the node *starts* after the cursor too, we're done
+      let children = [...n.children()];               // if *contains* cur, drill down into the children
+      return (children.length == 0)? n : loop(children);
+    }
+    return loop(this.rootNodes);
+  }
 
   /**
    * getToplevelNodeBeforeCur : Cur -> ASTNode
@@ -163,7 +172,7 @@ export class AST {
    *
    * Returns the after toplevel node or null
    */
-  getToplevelNodeAfterCur = this.getNodeAfterCur
+  getToplevelNodeAfterCur = cur => this.rootNodes.find(n => poscmp(n.from, cur) >= 0) || null
 
   /**
    * getNodeBeforeCur : Cur -> ASTNode
@@ -171,15 +180,14 @@ export class AST {
    * Returns the previous node or null
    */
   getNodeBeforeCur = cur => {
-    // TODO: this implementation is very inefficient. Once reactify is merged,
-    // we can implement a more efficient version using binary search on an indexing array
-    let result = null;
-    for (const node of this.nodeIdMap.values()) {
-      if (poscmp(node.from, cur) < 0 && (result === null || poscmp(node.from, result.from) >= 0)) {
-        result = node;
-      }
+    function loop(nodes) {
+      let n = nodes.reverse().find(n => poscmp(n.from, cur) < 0); // find the 1st node that begins before cur
+      if(!n) { return; }                              // return null if there's no node before the cursor
+      if(poscmp(n.to, cur) <= 0) { return n; }        // if the node *ends* before the cursor too, we're done
+      let children = [...n.children()];               // if it contains cur, drill down into the children
+      return (children.length == 0)? n : loop(children);
     }
-    return result;
+    return loop(this.rootNodes);
   }
 
   // return the node containing the cursor, or false
@@ -188,13 +196,13 @@ export class AST {
     return n && ([...n.children()].length === 0 ? n :
                  this.getNodeContaining(cursor, [...n.children()]) || n);
   }
-/*
-  TODO(Emmanuel): Probably dead code  
+
+  //TODO(Emmanuel): Probably dead code  
   // return an array of nodes that fall bwtween two locations
   getNodesBetween(from, to) {
     return [...this.nodeIdMap.values()].filter(n => (poscmp(from, n.from) < 1) && (poscmp(to, n.to) > -1));
   }
-  
+  /*
   // return all the root nodes that contain the given positions, or fall between them
   getRootNodesTouching(start, end, rootNodes=this.rootNodes){
     return rootNodes.filter(node =>

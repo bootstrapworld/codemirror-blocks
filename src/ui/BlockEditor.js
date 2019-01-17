@@ -355,8 +355,10 @@ class BlockEditor extends Component {
     document.body.appendChild(global.buffer);
   }
 
+  // TODO(Emmanuel): is 'data' even needed?
+  // this change was introduced during the switch from onCursor to onCursorActivity
   handleCursor = (ed, data) => {
-    this.props.setCursor(ed, data);
+    this.props.setCursor(ed, ed.getCursor());
   }
 
   render() {
