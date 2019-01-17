@@ -1,19 +1,72 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 import classNames from 'classnames';
+import CustomDragLayer from './DragLayer';
 import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect} from 'react-redux';
-import SHARED from '../shared';
+import global from '../global';
 import patch from '../ast-patch';
 import NodeEditable from '../components/NodeEditable';
 import {activate, activateByNId} from '../actions';
+import {say} from '../utils';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
+import Renderer from '../Renderer';
 import merge from '../merge';
-import {addLanguage, getLanguage} from '../languages/';
-import CodeMirror from './DragAndDropEditor';
+import CodeMirror from './RawEditor';
+
+import FunctionApp        from '../components/FunctionApp';
+import IfExpression       from '../components/IfExpression';
+import LambdaExpression   from '../components/LambdaExpression';
+import CondExpression     from '../components/CondExpression';
+import CondClause         from '../components/CondClause';
+import Unknown            from '../components/Unknown';
+import Literal            from '../components/Literal';
+import Blank              from '../components/Blank';
+import Comment            from '../components/Comment';
+import IdentifierList     from '../components/IdentifierList';
+import StructDefinition   from '../components/StructDef';
+import VariableDefinition from '../components/VariableDef';
+import FunctionDefinition from '../components/FunctionDef';
+import Sequence           from '../components/Sequence';
+
+const nodeRenderers = {
+  unknown: Unknown,
+  functionApp: FunctionApp,
+  functionDefinition: FunctionDefinition,
+  lambdaExpression: LambdaExpression,
+  variableDefinition: VariableDefinition,
+  identifierList : IdentifierList,
+  ifExpression: IfExpression,
+  condExpression: CondExpression,
+  condClause: CondClause,
+  structDefinition: StructDefinition,
+  literal: Literal,
+  comment: Comment,
+  sequence: Sequence,
+  blank: Blank,
+};
+
+const lockedTypes = [];
+const helpers = {renderNodeForReact};
+
+function renderNodeForReact(node, key, props={}) {
+  const Renderer = nodeRenderers[node.type];
+  if (Renderer && Renderer.prototype instanceof Component) {
+    return (
+      <Renderer
+        node        = {node}
+        helpers     = {helpers}
+        key         = {key}
+        lockedTypes = {lockedTypes}
+        {...props} />
+    );
+  } else {
+    throw new Error("Don't know how to render node of type: "+node.type);
+  }
+}
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
@@ -31,12 +84,21 @@ class ToplevelBlock extends React.Component {
 
   render() {
     const {node} = this.props;
-    const {from, to} = node.srcRange(); // includes the node's comment, if any
+    const {from, to} = node;
 
-    const mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
-    mark.BLOCK_NODE_ID = node.id;
+    const marker = global.cm.markText(from, to, {replacedWith: this.container});
+    marker.BLOCK_NODE_ID = node.id;
 
-    return ReactDOM.createPortal(node.reactElement(), this.container);
+    // REVISIT: make comments disappear by adding an empty span
+    if (node.options.comment) {
+      global.cm.markText(
+        node.options.comment.from,
+        node.options.comment.to,
+        {replacedWith: document.createElement('span')}
+      );
+    }
+    // TODO: Emmanuel's recently changes the above.
+    return ReactDOM.createPortal(renderNodeForReact(node), this.container);
   }
 }
 
@@ -44,8 +106,8 @@ class ToplevelBlockEditableCore extends Component {
 
   static propTypes = {}
 
-  editableWillInsert = (value, node) => SHARED.options.willInsertNode(
-    SHARED.cm,
+  editableWillInsert = (value, node) => global.options.willInsertNode(
+    global.cm,
     value,
     undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
     node.from,
@@ -56,7 +118,7 @@ class ToplevelBlockEditableCore extends Component {
     const [pos] = this.props.quarantine;
     this.container = document.createElement('span');
     this.container.className = 'react-container';
-    this.marker = SHARED.cm.setBookmark(pos, {widget: this.container});
+    this.marker = global.cm.setBookmark(pos, {widget: this.container});
   }
 
   componentWillUnmount() {
@@ -95,9 +157,10 @@ const mapDispatchToProps2 = dispatch => ({
 });
 const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(ToplevelBlockEditableCore);
 
-class BlockEditor extends Component {
+class Editor extends Component {
   static propTypes = {
     value: PropTypes.string.isRequired,
+    onBeforeChange: PropTypes.func.isRequired,
     options: PropTypes.object,
     cmOptions: PropTypes.object,
     keyMap: PropTypes.object,
@@ -114,7 +177,9 @@ class BlockEditor extends Component {
       search: PropTypes.func.isRequired,
       setCursor: PropTypes.func.isRequired,
     }),
-    onBeforeChange: PropTypes.func,
+    onPrimitives: PropTypes.func,
+    onRenderer: PropTypes.func,
+    onLanguage: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
 
     // this is actually required, but it's buggy
@@ -127,7 +192,7 @@ class BlockEditor extends Component {
   constructor(props) {
     super(props);
     this.mouseUsed = false;
-    SHARED.keyMap = this.props.keyMap;
+    global.keyMap = this.props.keyMap;
   }
 
   static defaultProps = {
@@ -165,6 +230,9 @@ class BlockEditor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
+    onPrimitives: () => {},
+    onRenderer: () => {},
+    onLanguage: () => {},
   }
 
 
@@ -181,7 +249,7 @@ class BlockEditor extends Component {
       const state = getState();
       const {ast, focusId} = state;
 
-      switch (SHARED.keyMap[e.key]) {
+      switch (global.keyMap[e.key]) {
       case 'nextNode': {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
@@ -212,7 +280,7 @@ class BlockEditor extends Component {
         // NOTE: this changes the semantics of normal End button behavior from what's normal.
         // If users complain, we should just delete this entire case
         e.preventDefault();
-        const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
+        const idx = global.cm.lastLine(), text = global.cm.getLine(idx);
         this.props.setCursor(null, {line: idx, ch: text.length});
         return;
       }
@@ -231,19 +299,19 @@ class BlockEditor extends Component {
 
       case 'activateSearchDialog':
         e.preventDefault();
-        SHARED.search.onSearch(state, () => {});
+        global.search.onSearch(state, () => {});
         return;
 
       case 'searchPrevious':
         e.preventDefault();
-        const result = SHARED.search.search(false, state);
+        const result = global.search.search(false, state);
         console.log(result);
         activateNoRecord(result);
         return;
 
       case 'searchNext':
         e.preventDefault();
-        activateNoRecord(SHARED.search.search(true, state));
+        activateNoRecord(global.search.search(true, state));
         return;
       }
     });
@@ -253,24 +321,24 @@ class BlockEditor extends Component {
     if (e.ctrlKey || e.metaKey) return;
     e.preventDefault();
     const text = e.key;
-    const cur = SHARED.cm.getCursor();
+    const cur = global.cm.getCursor();
     this.props.setQuarantine(cur, text);
   }
 
   handlePaste = (ed, e) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
-    const cur = SHARED.cm.getCursor();
+    const cur = global.cm.getCursor();
     this.props.setQuarantine(cur, text);
   }
 
   editorChange = (cm, changes) => {
-    // This if statement has something to do with undo/redo.
     if (!changes.every(change => change.origin.startsWith('cmb:'))) {
-      const newAST = SHARED.parser.parse(cm.getValue());
-      const patched = patch(this.props.ast, newAST);
-      this.props.setAST(patched.tree);
-      // TODO(Oak): should we do anything with patched.firstNewId?
+      const newAST = global.parser.parse(cm.getValue());
+      console.log(patch);
+      const {tree, focusNId} = patch(this.props.ast, newAST);
+      this.props.setAST(tree);
+      this.props.dispatch(activateByNId(focusNId, {allowMove: false}));
     }
   }
 
@@ -282,17 +350,19 @@ class BlockEditor extends Component {
     const scroller = ed.getScrollerElement();
     scroller.setAttribute('role', 'presentation');
 
-    const announcements = document.createElement('span');
-    announcements.setAttribute('role', 'log');
-    announcements.setAttribute('aria-live', 'assertive');
-    wrapper.appendChild(announcements);
+    const annoucements = document.createElement('span');
+    annoucements.setAttribute('role', 'log');
+    annoucements.setAttribute('aria-live', 'assertive');
+    wrapper.appendChild(annoucements);
 
     ed.on('changes', this.editorChange);
 
-    SHARED.cm = ed;
+    global.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
-    this.props.setAnnouncer(announcements);
+    this.props.setAnnouncer(annoucements);
+
+    say('Switching to Block mode');
 
     // if we have nodes, default to the first one. Note that does NOT
     // activate a node; only when the editor is focused, the focused node will be
@@ -326,33 +396,46 @@ class BlockEditor extends Component {
   }
 
   componentWillUnmount() {
-    SHARED.buffer.remove();
+    global.buffer.remove();
   }
 
   componentDidMount() {
     const {
       parser, language, options, search,
+      onPrimitives, onRenderer, onLanguage
     } = this.props;
 
-    // TODO: pass these with a React Context or something sensible like that.
-    SHARED.parser = parser;
-    SHARED.options = options;
-    SHARED.search = search;
+    global.parser = parser;
+    global.options = options;
+    global.search = search;
 
     let languageObj = null;
 
     if (getLanguage(language)) {
       languageObj = getLanguage(language);
     }
+    onPrimitives(parser.primitives);
+    // TODO(Oak): this is awkward. parser is already available to Toolbar.
+    // Just use it there instead.
+
+    const extraOptions = languageObj.getRenderOptions ? languageObj.getRenderOptions() : {};
+
+    const renderOptions = merge(
+      options.renderOptions || {lockNodesOfType: []},
+      extraOptions
+    );
+    const renderer = new Renderer(global.cm, renderOptions);
+    onRenderer(renderer);
+    onLanguage(language);
 
     const clipboardBuffer = document.createElement('textarea');
     clipboardBuffer.ariaHidden = true;
     clipboardBuffer.tabIndex = -1;
-    SHARED.buffer = clipboardBuffer;
+    global.buffer = clipboardBuffer;
     // don't make it transparent so that we can debug easily for now
-    // SHARED.buffer.style.opacity = 0;
-    // SHARED.buffer.style.height = '1px';
-    document.body.appendChild(SHARED.buffer);
+    // global.buffer.style.opacity = 0;
+    // global.buffer.style.height = '1px';
+    document.body.appendChild(global.buffer);
   }
 
   // TODO(Emmanuel): is 'data' even needed?
@@ -362,7 +445,6 @@ class BlockEditor extends Component {
     let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
     this.props.setCursor(ed, cur);
   }
-
   render() {
     const classes = [];
     if (this.props.language) {
@@ -370,6 +452,7 @@ class BlockEditor extends Component {
     }
     return (
       <div className="Editor blocks">
+        <CustomDragLayer />
         <div className="codemirror-pane">
           <CodeMirror options={this.props.cmOptions}
                       className={classNames(classes)}
@@ -381,7 +464,7 @@ class BlockEditor extends Component {
                       onFocus={this.handleFocus}
                       onPaste={this.handlePaste}
                       cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
-                      onCursorActivity={this.handleCursor}
+                      onCursor={this.handleCursor}
                       editorDidMount={this.handleEditorDidMount} />
         </div>
         {this.renderPortals()}
@@ -392,29 +475,23 @@ class BlockEditor extends Component {
 
   renderPortals = () => {
     const portals = [];
-    if (SHARED.cm && this.props.ast) {
-      // NOTE(Oak): we need to clear all Blocks markers (containing a NODE_ID)
-      // to prevent overlapping the marker issue
-      for (const marker of SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
-        console.log('portals rendered!');
-
-        // NOTE(Oak): we need to clear all markers up front to prevent
-        // overlapping the marker issue
+    if (global.cm && this.props.ast) {
+      // Roots will re-mark themselves, so first clear every marer containing a root node
+      for (const marker of global.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
         marker.clear();
       }
       for (const r of this.props.ast.rootNodes) {
         portals.push(<ToplevelBlock key={r.id} node={r} />);
       }
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
-      setTimeout(() => { SHARED.cm.refresh(); console.log('refreshed CM'); }, 1000);
+      setTimeout(() => { global.cm.refresh(); console.log('refreshed CM'); }, 1000);
     }
     return portals;
   }
 }
 
 const mapStateToProps = ({ast, cur, quarantine}) => ({
-  ast,
-  cur,
+  ast, cur,
   hasQuarantine: !!quarantine
 });
 const mapDispatchToProps = dispatch => ({
@@ -427,4 +504,4 @@ const mapDispatchToProps = dispatch => ({
   activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);
+export default connect(mapStateToProps, mapDispatchToProps)(Editor);
