@@ -213,7 +213,12 @@ class Node extends BlockComponent {
         // delete seleted nodes
       case 'delete':
         e.preventDefault();
-        handleDelete();
+        handleDelete(node.id, nodeSelections => {
+          if (nodesSelections.length == 0) {
+            say('Nothing selected');
+          }
+          return nodeSelections;
+        });
         return;
         // insert-right
       case 'insertRight':
@@ -246,7 +251,7 @@ class Node extends BlockComponent {
           handleCopy(node.id, nodeSelections => {
             if (nodeSelections.length == 0) {
               // NOTE(Oak): no nodes are selected, do it on id instead
-              return [node.id, ...nodeSelections];
+              return [node.id];
             } else {
               return nodeSelections;
             }

@@ -15,23 +15,22 @@ export function deleteNodes() {
     // the next deletion still has a valid pos
     nodeSelections.sort((a, b) => poscmp(b.from, a.from));
     if (nodeSelections.length === 0) {
-      // TODO(Oak): say something
-    } else {
-      commitChanges(
-        cm => () => {
-          for (const node of nodeSelections) {
-            const {from, to} = node.srcRange();
-            cm.replaceRange('', from, to, 'cmb:delete-nodes');
-          }
-        },
-        () => {},
-        () => {},
-      );
-      // since we sort in descending order, this is the last one in the array
-      const firstNode = nodeSelections.pop();
-      dispatch(activateByNId(firstNode.nid, {allowMove: true}));
-      dispatch({type: 'SET_SELECTIONS', selections: []});
+      return; // Not much to do.
     }
+    commitChanges(
+      cm => () => {
+        for (const node of nodeSelections) {
+          const {from, to} = node.srcRange();
+          cm.replaceRange('', from, to, 'cmb:delete-nodes');
+        }
+      },
+      () => {},
+      () => {},
+    );
+    // since we sort in descending order, this is the last one in the array
+    const firstNode = nodeSelections.pop();
+    dispatch(activateByNId(firstNode.nid, {allowMove: true}));
+    dispatch({type: 'SET_SELECTIONS', selections: []});
   };
 }
 
@@ -96,6 +95,9 @@ export function copyNodes(id, selectionEditor) {
   return (dispatch, getState) => {
     const {ast, selections} = getState();
     const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
+    if (nodeSelections.length === 0) {
+      return; // Not much to do.
+    }
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
     const texts = nodeSelections.map(node => {
       const {from, to} = node.srcRange();
