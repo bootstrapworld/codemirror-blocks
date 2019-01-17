@@ -5,6 +5,7 @@ var baseConfig = require('./base.config.js');
 
 // this is the config for a single js file that can be included with a script tag
 var configs = [
+/*
   _.extend({}, baseConfig(), {
     entry: {
       "CodeMirrorBlocks": ['./src/codemirror-blocks.js']
@@ -57,6 +58,7 @@ var configs = [
       'ast': 'CodeMirrorBlocks.ast'
     }
   })
+  */
 ];
 
 configs = configs.concat(
