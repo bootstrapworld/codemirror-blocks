@@ -1,6 +1,6 @@
 import {withDefaults, say, poscmp, copyToClipboard, pasteFromClipboard} from './utils';
 import {commitChanges} from './codeMirror';
-import global from './global';
+import SHARED from './shared';
 import {playSound, WRAP} from './sound';
 
 /* This file is for _shared_ actions */
@@ -15,23 +15,22 @@ export function deleteNodes() {
     // the next deletion still has a valid pos
     nodeSelections.sort((a, b) => poscmp(b.from, a.from));
     if (nodeSelections.length === 0) {
-      // TODO(Oak): say something
-    } else {
-      commitChanges(
-        cm => () => {
-          for (const node of nodeSelections) {
-            const {from, to} = node.srcRange();
-            cm.replaceRange('', from, to, 'cmb:delete-nodes');
-          }
-        },
-        () => {},
-        () => {},
-      );
-      // since we sort in descending order, this is the last one in the array
-      const firstNode = nodeSelections.pop();
-      //dispatch(activateByNId(firstNode.nid, {allowMove: true}));
-      dispatch({type: 'SET_SELECTIONS', selections: []});
+      return; // Not much to do.
     }
+    commitChanges(
+      cm => () => {
+        for (const node of nodeSelections) {
+          const {from, to} = node.srcRange();
+          cm.replaceRange('', from, to, 'cmb:delete-nodes');
+        }
+      },
+      () => {},
+      () => {},
+    );
+    // since we sort in descending order, this is the last one in the array
+    const firstNode = nodeSelections.pop();
+    dispatch(activateByNId(firstNode.nid, {allowMove: true}));
+    dispatch({type: 'SET_SELECTIONS', selections: []});
   };
 }
 
@@ -51,13 +50,13 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
     // Drag the _whole_ source node, comments and all.
     if (srcNode) {
       var {from: srcFrom, to: srcTo} = srcNode.srcRange();
-      content = global.cm.getRange(srcFrom, srcTo);
+      content = SHARED.cm.getRange(srcFrom, srcTo);
     }
 
     let value = null;
-    if (isDropTarget && global.options.willInsertNode) {
-      value = global.options.willInsertNode(
-        global.cm,
+    if (isDropTarget && SHARED.options.willInsertNode) {
+      value = SHARED.options.willInsertNode(
+        SHARED.cm,
         content,
         undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
         destFrom,
@@ -96,10 +95,13 @@ export function copyNodes(id, selectionEditor) {
   return (dispatch, getState) => {
     const {ast, selections} = getState();
     const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
+    if (nodeSelections.length === 0) {
+      return; // Not much to do.
+    }
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
     const texts = nodeSelections.map(node => {
       const {from, to} = node.srcRange();
-      return global.cm.getRange(from, to);
+      return SHARED.cm.getRange(from, to);
     });
     // Make sure we don't accidentally merge with a comment.
     if (ast.precedesComment(nodeSelections[0].srcRange().from)) {
@@ -132,10 +134,10 @@ export function pasteNodes(id, isBackward) {
       focusTarget = isBackward ? 'back' : 'next';
       from = pos;
       to = pos;
-      if (global.options.willInsertNode) {
+      if (SHARED.options.willInsertNode) {
         textTransform = text =>
-          global.options.willInsertNode(
-            global.cm,
+          SHARED.options.willInsertNode(
+            SHARED.cm,
             text,
             undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
             pos,
@@ -208,26 +210,26 @@ export function activate(id, options) {
     // anything
     // Note, however, that it is also a good thing that `activate` is invoked
     // when double click because we can set focusId on the to-be-focused node
-    global.cm.setCursor({line: -1, ch: 0});
+    SHARED.cm.setCursor({line: -1, ch: 0});
     setTimeout(() => {
       dispatch({type: 'SET_FOCUS', focusId: node.nid});
       if (options.record) {
-        global.search.setCursor(node.from);
+        SHARED.search.setCursor(node.from);
       }
       if (node.element) {
-        const scroller = global.cm.getScrollerElement();
-        const wrapper = global.cm.getWrapperElement();
+        const scroller = SHARED.cm.getScrollerElement();
+        const wrapper = SHARED.cm.getWrapperElement();
 
         if (options.allowMove) {
-          global.cm.scrollIntoView(node.from);
+          SHARED.cm.scrollIntoView(node.from);
           let {top, bottom, left, right} = node.element.getBoundingClientRect(); // get the *actual* bounding rect
           let offset = wrapper.getBoundingClientRect();
-          let scroll = global.cm.getScrollInfo();
+          let scroll = SHARED.cm.getScrollInfo();
           top    = top    + scroll.top  - offset.top;
           bottom = bottom + scroll.top  - offset.top;
           left   = left   + scroll.left - offset.left;
           right  = right  + scroll.left - offset.left;
-          global.cm.scrollIntoView({top, bottom, left, right});
+          SHARED.cm.scrollIntoView({top, bottom, left, right});
         }
         scroller.setAttribute('aria-activedescendent', node.element.id);
         node.element.focus();

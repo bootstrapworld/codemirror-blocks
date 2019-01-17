@@ -1,6 +1,6 @@
 import {DragSource, DropTarget} from 'react-dnd';
 import {isDummyPos} from './utils';
-import global from './global';
+import SHARED from './shared';
 import {playSound, BEEP} from './sound';
 
 export const ItemTypes = {
@@ -34,7 +34,7 @@ export const nodeTarget = nodeTargetFn => ({
       return props.onDrop(monitor.getItem(), nodeTargetFn(props));
     }
     // if not, make sure it's a valid drop (i.e. - not on any CM node marker)
-    let roots = global.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
+    let roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
     let validTopLevelDrop = !roots.some(root => {
       let r = root.replacedWith.firstChild.getBoundingClientRect();
       return (r.left<left) && (left<r.right) && (r.top<top) && (top<r.bottom);
@@ -42,7 +42,7 @@ export const nodeTarget = nodeTargetFn => ({
     if(validTopLevelDrop) {
       props.onDrop(
         monitor.getItem(),
-        nodeTargetFn({...props, location: global.cm.coordsChar({left, top})}));
+        nodeTargetFn({...props, location: SHARED.cm.coordsChar({left, top})}));
     } else { // beep and make it a no-op
       playSound(BEEP);
     }

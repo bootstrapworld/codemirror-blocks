@@ -1,7 +1,7 @@
 import CodeMirror from 'codemirror';
 import {store} from './store';
 import patch from './ast-patch';
-import global from './global';
+import SHARED from './shared';
 import {activateByNId} from './actions';
 import {poscmp} from './utils';
 
@@ -11,17 +11,17 @@ export function commitChanges(
   onError=() => {}
 ) {
   const tmpDiv = document.createElement('div');
-  const tmpCM = CodeMirror(tmpDiv, {value: global.cm.getValue()});
+  const tmpCM = CodeMirror(tmpDiv, {value: SHARED.cm.getValue()});
   tmpCM.on('changes', (cm, changeArr) => {
     let newAST = null;
     try {
-      newAST = global.parser.parse(tmpCM.getValue());
+      newAST = SHARED.parser.parse(tmpCM.getValue());
     } catch (exception) {
       onError(exception);
       return;
     }
-    global.cm.operation(changes(global.cm));
     // patch the tree and set the state
+    SHARED.cm.operation(changes(SHARED.cm));
     const {ast: oldAST} = store.getState();
     const {tree} = patch(oldAST, newAST);
     store.dispatch({type: 'SET_AST', ast: tree});

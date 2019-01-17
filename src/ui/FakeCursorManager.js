@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import global from '../global';
+import SHARED from '../shared';
 import {connect} from 'react-redux';
 import {pos} from '../types';
 
@@ -8,10 +8,10 @@ class FakeCursorManager extends Component {
     cur: pos,
   }
   render() {
-    if (global.cm && this.props.cur) {
-      global.cm.focus();
-      global.search.setCursor(this.props.cur);
-      global.cm.setCursor(this.props.cur);
+    if (SHARED.cm && this.props.cur) {
+      SHARED.cm.focus();
+      SHARED.search.setCursor(this.props.cur);
+      SHARED.cm.setCursor(this.props.cur);
     }
     return null;
   }

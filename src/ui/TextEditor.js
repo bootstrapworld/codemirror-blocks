@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {Controlled as CodeMirror} from 'react-codemirror2';
+import SHARED from '../shared';
 
 
 class TextEditor extends Component {
@@ -26,7 +27,7 @@ class TextEditor extends Component {
     wrapper.appendChild(announcements);
     this.props.setAnnouncer(announcements);
 
-    global.cm = ed;
+    SHARED.cm = ed;
   }
 
   componentDidMount() {
@@ -34,7 +35,7 @@ class TextEditor extends Component {
       parser
     } = this.props;
 
-    global.parser = parser;
+    SHARED.parser = parser;
   }
 
   render() {

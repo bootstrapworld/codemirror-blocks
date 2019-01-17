@@ -14,15 +14,6 @@ export function pluralize(noun, set) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
-/*
-TODO(Emmanuel): Probably dead code
-function commonSubstring(s1, s2) {
-  if(!s1 || !s2) return false;
-  let i = 0, len = Math.min(s1.length, s2.length);
-  while(i<len && s1.charAt(i) == s2.charAt(i)){ i++; } 
-  return s1.substring(0, i) || false; 
-}*/
-
 export const descDepth = 1;
 
 // This is the root of the *Abstract Syntax Tree*.  parse implementations are
@@ -39,7 +30,6 @@ export class AST {
     // the other nodeMaps make it easy to determine node order
     this.nodeIdMap = new Map();
     this.nodeNIdMap = new Map();
-//    this.nodePathMap = new Map(); // Probably dead code
     this.annotateNodes();
     this.id = -1; // just for the sake of having an id, though unused
     this.hash = hashObject(this.rootNodes.map(node => node.hash));
@@ -75,7 +65,6 @@ export class AST {
   annotateNodes() {
     this.nodeIdMap.clear();
     this.nodeNIdMap.clear();
-//    this.nodePathMap.clear(); //Probably dead code
 
     let lastNode = null;
     let nid = 0;
@@ -84,7 +73,6 @@ export class AST {
       nodes.forEach((node, i) => {
         node.parent = parent;
         node.path = parent ? parent.path + ("," + i) : i.toString();
-        // node.nextSibling = i + 1 === nodes.length ? null : nodes[i + 1];
         node.level = level;
         node["aria-setsize"]  = nodes.length;
         node["aria-posinset"] = i + 1;
@@ -95,7 +83,6 @@ export class AST {
         }
         this.nodeIdMap.set(node.id, node);
         this.nodeNIdMap.set(node.nid, node);
-//        this.nodePathMap.set(node.path, node); //Probably dead code
         lastNode = node;
         loop([...node.children()], node, level + 1);
       });
@@ -119,12 +106,7 @@ export class AST {
     return u === v;
   }
 
-/*
-  TODO(Emmanuel): Probably dead code 
-  getNodeByPath(path) {
-    return this.nodePathMap.get(path);
-  }
-*/  /**
+  /**
    * getNodeAfter : ASTNode -> ASTNode
    *
    * Returns the next node or null
@@ -202,34 +184,11 @@ export class AST {
   getNodesBetween(from, to) {
     return [...this.nodeIdMap.values()].filter(n => (poscmp(from, n.from) < 1) && (poscmp(to, n.to) > -1));
   }
-  /*
-  // return all the root nodes that contain the given positions, or fall between them
-  getRootNodesTouching(start, end, rootNodes=this.rootNodes){
-    return rootNodes.filter(node =>
-      posWithinNode(start, node) || posWithinNode(end, node) ||
-      ( (poscmp(start, node.from) < 0) && (poscmp(end, node.to) > 0) ));
-  }
-  */
+
   // return the parent or false
   getNodeParent = node => {
     return node.parent || false;
   }
-
-  /*
-  TODO(Emmanuel): Probably dead code  
-  getClosestNodeFromPath(keyArray) {
-    let path = keyArray.join(',');
-    // if we have no valid key, give up
-    if(keyArray.length == 0) return false;
-    // if we have a valid key, return the node
-    if(this.nodePathMap.has(path)) { return this.nodePathMap.get(path); }
-    // if not at the 1st sibling, look for a previous one
-    else if(keyArray[keyArray.length-1] > 0) { keyArray[keyArray.length-1]--; }
-    // if we're at the first child, go up a generation
-    else { keyArray.pop(); }
-    return this.getClosestNodeFromPath(keyArray);
-  }
-  */
 
   /**
    * getNextMatchingNode : (ASTNode->ASTNode?) (ASTNode->Bool) ASTNode [Bool] -> ASTNode?

@@ -15,6 +15,7 @@ import Toolbar from './Toolbar';
 import ToggleButton from './ToggleButton';
 import {say} from '../utils';
 import merge from '../merge';
+import SHARED from '../shared';
 
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
@@ -80,7 +81,7 @@ export default class ToggleEditor extends React.Component {
   handleToggle = blockMode => {
     this.setState((state, props) => {
       try {
-        let ast = parser.parse(state.code);
+        let ast = SHARED.parser.parse(state.code);
         let code = ast.toString();
         if (blockMode) {
           say("Switching to block mode");
@@ -93,7 +94,7 @@ export default class ToggleEditor extends React.Component {
         }
       } catch (err) {
         // TODO(Justin): properly deal with parse errors
-        let msg = parser.getExceptionMessage(err);
+        let msg = SHARED.parser.getExceptionMessage(err);
         say(msg);
       }
     });

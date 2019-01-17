@@ -4,7 +4,7 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect} from 'react-redux';
-import global from '../global';
+import SHARED from '../shared';
 import patch from '../ast-patch';
 import NodeEditable from '../components/NodeEditable';
 import {activate, activateByNId} from '../actions';
@@ -33,7 +33,7 @@ class ToplevelBlock extends React.Component {
     const {node} = this.props;
     const {from, to} = node.srcRange(); // includes the node's comment, if any
 
-    const mark = global.cm.markText(from, to, {replacedWith: this.container});
+    const mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
     mark.BLOCK_NODE_ID = node.id;
 
     return ReactDOM.createPortal(node.reactElement(), this.container);
@@ -44,8 +44,8 @@ class ToplevelBlockEditableCore extends Component {
 
   static propTypes = {}
 
-  editableWillInsert = (value, node) => global.options.willInsertNode(
-    global.cm,
+  editableWillInsert = (value, node) => SHARED.options.willInsertNode(
+    SHARED.cm,
     value,
     undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
     node.from,
@@ -56,7 +56,7 @@ class ToplevelBlockEditableCore extends Component {
     const [pos] = this.props.quarantine;
     this.container = document.createElement('span');
     this.container.className = 'react-container';
-    this.marker = global.cm.setBookmark(pos, {widget: this.container});
+    this.marker = SHARED.cm.setBookmark(pos, {widget: this.container});
   }
 
   componentWillUnmount() {
@@ -127,7 +127,7 @@ class BlockEditor extends Component {
   constructor(props) {
     super(props);
     this.mouseUsed = false;
-    global.keyMap = this.props.keyMap;
+    SHARED.keyMap = this.props.keyMap;
   }
 
   static defaultProps = {
@@ -181,7 +181,7 @@ class BlockEditor extends Component {
       const state = getState();
       const {ast, focusId} = state;
 
-      switch (global.keyMap[e.key]) {
+      switch (SHARED.keyMap[e.key]) {
       case 'nextNode': {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
@@ -212,7 +212,7 @@ class BlockEditor extends Component {
         // NOTE: this changes the semantics of normal End button behavior from what's normal.
         // If users complain, we should just delete this entire case
         e.preventDefault();
-        const idx = global.cm.lastLine(), text = global.cm.getLine(idx);
+        const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
         this.props.setCursor(null, {line: idx, ch: text.length});
         return;
       }
@@ -231,19 +231,19 @@ class BlockEditor extends Component {
 
       case 'activateSearchDialog':
         e.preventDefault();
-        global.search.onSearch(state, () => {});
+        SHARED.search.onSearch(state, () => {});
         return;
 
       case 'searchPrevious':
         e.preventDefault();
-        const result = global.search.search(false, state);
+        const result = SHARED.search.search(false, state);
         console.log(result);
         activateNoRecord(result);
         return;
 
       case 'searchNext':
         e.preventDefault();
-        activateNoRecord(global.search.search(true, state));
+        activateNoRecord(SHARED.search.search(true, state));
         return;
       }
     });
@@ -253,21 +253,21 @@ class BlockEditor extends Component {
     if (e.ctrlKey || e.metaKey) return;
     e.preventDefault();
     const text = e.key;
-    const cur = global.cm.getCursor();
+    const cur = SHARED.cm.getCursor();
     this.props.setQuarantine(cur, text);
   }
 
   handlePaste = (ed, e) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
-    const cur = global.cm.getCursor();
+    const cur = SHARED.cm.getCursor();
     this.props.setQuarantine(cur, text);
   }
 
   editorChange = (cm, changes) => {
     // This if statement has something to do with undo/redo.
     if (!changes.every(change => change.origin.startsWith('cmb:'))) {
-      const newAST = global.parser.parse(cm.getValue());
+      const newAST = SHARED.parser.parse(cm.getValue());
       const patched = patch(this.props.ast, newAST);
       this.props.setAST(patched.tree);
       // TODO(Oak): should we do anything with patched.firstNewId?
@@ -289,7 +289,7 @@ class BlockEditor extends Component {
 
     ed.on('changes', this.editorChange);
 
-    global.cm = ed;
+    SHARED.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
     this.props.setAnnouncer(announcements);
@@ -326,7 +326,7 @@ class BlockEditor extends Component {
   }
 
   componentWillUnmount() {
-    global.buffer.remove();
+    SHARED.buffer.remove();
   }
 
   componentDidMount() {
@@ -335,9 +335,9 @@ class BlockEditor extends Component {
     } = this.props;
 
     // TODO: pass these with a React Context or something sensible like that.
-    global.parser = parser;
-    global.options = options;
-    global.search = search;
+    SHARED.parser = parser;
+    SHARED.options = options;
+    SHARED.search = search;
 
     let languageObj = null;
 
@@ -348,11 +348,11 @@ class BlockEditor extends Component {
     const clipboardBuffer = document.createElement('textarea');
     clipboardBuffer.ariaHidden = true;
     clipboardBuffer.tabIndex = -1;
-    global.buffer = clipboardBuffer;
+    SHARED.buffer = clipboardBuffer;
     // don't make it transparent so that we can debug easily for now
-    // global.buffer.style.opacity = 0;
-    // global.buffer.style.height = '1px';
-    document.body.appendChild(global.buffer);
+    // SHARED.buffer.style.opacity = 0;
+    // SHARED.buffer.style.height = '1px';
+    document.body.appendChild(SHARED.buffer);
   }
 
   // TODO(Emmanuel): is 'data' even needed?
@@ -390,10 +390,10 @@ class BlockEditor extends Component {
 
   renderPortals = () => {
     const portals = [];
-    if (global.cm && this.props.ast) {
+    if (SHARED.cm && this.props.ast) {
       // NOTE(Oak): we need to clear all Blocks markers (containing a NODE_ID)
       // to prevent overlapping the marker issue
-      for (const marker of global.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
+      for (const marker of SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
         console.log('portals rendered!');
 
         // NOTE(Oak): we need to clear all markers up front to prevent
@@ -404,7 +404,7 @@ class BlockEditor extends Component {
         portals.push(<ToplevelBlock key={r.id} node={r} />);
       }
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
-      setTimeout(() => { global.cm.refresh(); console.log('refreshed CM'); }, 1000);
+      setTimeout(() => { SHARED.cm.refresh(); console.log('refreshed CM'); }, 1000);
     }
     return portals;
   }

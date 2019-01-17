@@ -1,5 +1,5 @@
 import CodeMirror from 'codemirror';
-import global from './global';
+import SHARED from './shared';
 import {store} from './store';
 
 const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
@@ -62,16 +62,16 @@ export function partition(arr, f) {
 // }
 
 export function copyToClipboard(text) {
-  global.buffer.value = text;
-  global.buffer.select();
+  SHARED.buffer.value = text;
+  SHARED.buffer.select();
   document.execCommand('copy');
 }
 
 export function pasteFromClipboard(done) {
-  global.buffer.value = '';
-  global.buffer.focus();
+  SHARED.buffer.value = '';
+  SHARED.buffer.focus();
   setTimeout(() => {
-    done(global.buffer.value);
+    done(SHARED.buffer.value);
   }, 50);
 }
 
