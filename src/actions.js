@@ -206,9 +206,16 @@ export function activate(id, options) {
     // anything
     // Note, however, that it is also a good thing that `activate` is invoked
     // when double click because we can set focusId on the to-be-focused node
-    SHARED.cm.setCursor({line: -1, ch: 0});
+
+/* Note(Emmanuel): Oak says this used to be needed to avoid a bug
+  // currently fixed a different way, by allowing CM to preserve state and letting
+  // CMB's cur state remain unchanged (see SET_FOCUS in reducers.js)
+SHARED.cm.setCursor({line: -1, ch: 0});
+*/
+
     setTimeout(() => {
       dispatch({type: 'SET_FOCUS', focusId: node.nid});
+      
       if (options.record) {
         SHARED.search.setCursor(node.from);
       }
@@ -230,6 +237,7 @@ export function activate(id, options) {
         scroller.setAttribute('aria-activedescendent', node.element.id);
         node.element.focus();
       }
+      
     }, 100);
   };
 }

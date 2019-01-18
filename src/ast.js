@@ -147,13 +147,15 @@ export class AST {
    */
   getNodeBeforeCur = cur => {
     function loop(nodes) {
-      let n = nodes.reverse().find(n => poscmp(n.from, cur) < 0); // find the 1st node that begins before cur
+      // find the 1st node that begins before cur
+      let n = nodes.slice(0).reverse().find(n => poscmp(n.from, cur) < 0);
       if(!n) { return; }                              // return null if there's no node before the cursor
       if(poscmp(n.to, cur) <= 0) { return n; }        // if the node *ends* before the cursor too, we're done
       let children = [...n.children()];               // if it contains cur, drill down into the children
       return (children.length == 0)? n : loop(children);
     }
-    return loop(this.rootNodes);
+    let res = loop(this.rootNodes);
+    return res;
   }
 
   // return the node containing the cursor, or false

@@ -15,7 +15,7 @@ export const reducer = (
     console.log(action);
     switch (action.type) {
     case 'SET_FOCUS':
-      return {...state, focusId: action.focusId, cur: null};
+      return {...state, focusId: action.focusId};
     case 'SET_AST':
       return {...state, ast: action.ast};
     case 'SET_SELECTIONS':
