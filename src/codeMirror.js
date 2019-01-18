@@ -26,7 +26,7 @@ export function commitChanges(
     const tree = patch(oldAST, newAST);
     let focusNId = computeFocusIdFromChanges(changeArr, tree);
     store.dispatch({type: 'SET_AST', ast: tree});
-    store.dispatch(activateByNId(focusNId, {allowMove: false}));
+    store.dispatch(activateByNId(focusNId));
     onSuccess({tree, focusNId});
   });
 

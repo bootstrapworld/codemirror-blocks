@@ -179,12 +179,6 @@ export class AST {
                  this.getNodeContaining(cursor, [...n.children()]) || n);
   }
 
-  //TODO(Emmanuel): Probably dead code  
-  // return an array of nodes that fall bwtween two locations
-  getNodesBetween(from, to) {
-    return [...this.nodeIdMap.values()].filter(n => (poscmp(from, n.from) < 1) && (poscmp(to, n.to) > -1));
-  }
-
   // return the parent or false
   getNodeParent = node => {
     return node.parent || false;

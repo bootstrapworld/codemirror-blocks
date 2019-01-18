@@ -29,7 +29,6 @@ export function deleteNodes() {
     );
     // since we sort in descending order, this is the last one in the array
     const firstNode = nodeSelections.pop();
-    //dispatch(activateByNId(firstNode.nid, {allowMove: true}));
     dispatch({type: 'SET_SELECTIONS', selections: []});
   };
 }
@@ -156,9 +155,6 @@ export function pasteNodes(id, isBackward) {
       );
       // NOTE(Oak): always clear selections. Should this be a callback instead?
       dispatch({type: 'SET_SELECTIONS', selections: []});
-      if (focusTarget === 'self') {
-        //dispatch(activateByNId(null, {allowMove: false}));
-      }
     });
 
   };

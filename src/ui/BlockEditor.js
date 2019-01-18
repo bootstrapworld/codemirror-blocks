@@ -278,7 +278,7 @@ class BlockEditor extends Component {
       const tree = patch(this.props.ast, newAST);
       let focusNId = computeFocusIdFromChanges(changes, tree);
       this.props.setAST(tree);
-      this.props.activateByNId(focusNId, {allowMove: false});
+      this.props.activateByNId(focusNId);
     }
   }
 

@@ -174,22 +174,28 @@ export function isDummyPos(pos) {
   return pos.line === -1 && pos.ch === 0;
 }
 
-// compute the focusNId
+// computeFocusIdFromChanges : [CMchanges], AST -> Number
+// compute the focusNId by identifying the node in the newAST that was
+// (a) most-recently added (if there's any insertion)
+// (b) before the first-deleted (in the case of deletion)
+// (c) 0 (in the case of deleting a pre-existing first node)
+// (d) -1 (in the case of deleting the only nodes in the tree)
 export function computeFocusIdFromChanges(changes, newAST) {
-  let insertion = false, deletedFroms = [], focusNId = null, focusNode = null;
-  changes.forEach(c => {
+  let insertion = false, focusNId = false;
+  let startLocs = changes.map(c => {
     c.from = adjustForChange(c.from, c, true);
     c.to   = adjustForChange(c.to,   c, false);
-    if(c.text.join("").length > 0) insertion = c;
-    else deletedFroms.push(c.from);
+    if(c.text.join("").length > 0) insertion = c; // remember the most-recent insertion
+    return c.from;                                // return the starting srcLoc of the change
   });
   if(insertion) {
-    focusNode = newAST.getNodeBeforeCur(insertion.to);
-    focusNId = focusNode? focusNode.nid : -1;
+    // grab the node that ends in insertion's ending srcLoc (won't ever be null post-insertion)
+    focusNId = newAST.getNodeBeforeCur(insertion.to).nid; // case A
   } else {
-    deletedFroms.sort(poscmp);
-    focusNode = newAST.getNodeBeforeCur(deletedFroms[0]);
-    focusNId = focusNode? focusNode.nid : -1;
+    startLocs.sort(poscmp);                                // sort the deleted ranges
+    let focusNode = newAST.getNodeBeforeCur(startLocs[0]); // grab the node before the first
+    // if the node exists, use the NId (case B). If not, use 0 (case C) unless the tree is empty (case D)
+    focusNId = focusNode? focusNode.nid : newAST.rootNodes.length? 0 : -1;
   }
   return focusNId;
 }
