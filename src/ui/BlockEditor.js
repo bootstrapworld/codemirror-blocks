@@ -136,27 +136,24 @@ class BlockEditor extends Component {
     options: {},
     cmOptions: {},
     keyMap : {
-      'ArrowDown' : 'nextNode',
-      'ArrowUp'   : 'prevNode',
+      'Down'      : 'nextNode',
+      'Up'        : 'prevNode',
       'Home'      : 'firstNode',
       'End'       : 'lastVisibleNode',
-      'ArrowLeft' : 'collapseOrSelectParent',
-      'ArrowRight': 'expandOrSelectFirstChild',
+      'Left'      : 'collapseOrSelectParent',
+      'Right'     : 'expandOrSelectFirstChild',
       'Enter'     : 'edit',
-      ' '         : 'toggleSelection',
-      'Escape'    : 'clearSelection',
+      'Cmd-Enter' : 'edit',
+      'Ctrl-Enter': 'edit',
+      'Space'     : 'toggleSelection',
+      'Esc'       : 'clearSelection',
       'Delete'    : 'delete',
       'Backspace' : 'delete',
-      '['         : 'insertLeft',
-      ']'         : 'insertRight',
-      '<'         : 'jumpToRoot',
+      'Ctrl-['    : 'insertLeft',
+      'Ctrl-]'    : 'insertRight',
+      'Shift-,'   : 'jumpToRoot',
       '\\'        : 'readAncestors',
-      '|'         : 'readChildren',
-      'c'         : 'copy',
-      'v'         : 'paste',
-      'x'         : 'cut',
-      'z'         : 'undo',
-      'y'         : 'redo',
+      'Shift-\\'  : 'readChildren',
       'PageUp'    : 'searchPrevious',
       'PageDown'  : 'searchNext',
       'F3'        : 'activateSearchDialog',
@@ -183,7 +180,7 @@ class BlockEditor extends Component {
       const state = getState();
       const {ast, focusId} = state;
 
-      switch (SHARED.keyMap[e.key]) {
+      switch (SHARED.keyMap[SHARED.keyName(e)]) {
       case 'nextNode': {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);

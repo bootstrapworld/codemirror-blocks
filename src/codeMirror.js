@@ -32,3 +32,5 @@ export function commitChanges(
 
   tmpCM.operation(changes(tmpCM));
 }
+
+SHARED.keyName = CodeMirror.keyName;

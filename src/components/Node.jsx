@@ -100,7 +100,7 @@ class Node extends BlockComponent {
         }
       };
 
-      switch (SHARED.keyMap[e.key]) {
+      switch (SHARED.keyMap[SHARED.keyName(e)]) {
       case 'prevNode':
         e.preventDefault();
         activate(fastSkip(node => node.prev));
