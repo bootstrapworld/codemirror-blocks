@@ -186,7 +186,7 @@ class BlockEditor extends Component {
       switch (SHARED.keyMap[e.key]) {
       case 'nextNode': {
         e.preventDefault();
-        const nextNode = ast.getTopLevelNodeAfterCur(this.props.cur);
+        const nextNode = ast.getNodeAfterCur(this.props.cur);
         if (nextNode) {
           this.props.activateByNId(nextNode.nid, {allowMove: true});
         } else {
@@ -197,7 +197,7 @@ class BlockEditor extends Component {
 
       case 'prevNode': {
         e.preventDefault();
-        const prevNode = ast.getTopLevelNodeBeforeCur(this.props.cur);
+        const prevNode = ast.getNodeBeforeCur(this.props.cur);
         if (prevNode) {
           this.props.activateByNId(prevNode.nid, {allowMove: true});
         } else {
@@ -223,7 +223,6 @@ class BlockEditor extends Component {
       }
 
       case 'changeFocus':
-      console.log('tab');
         e.preventDefault();
         if (focusId === -1) {
           if (ast.rootNodes.length > 0) {
@@ -367,6 +366,7 @@ class BlockEditor extends Component {
   // this change was introduced during the switch from onCursor to onCursorActivity
   // if there are selections, pass null. otherwise pass the cursor
   handleCursor = (ed, data) => {
+    console.log('CURSOR ACTIVITY');
     let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
     this.props.setCursor(ed, cur);
   }
@@ -414,7 +414,7 @@ class BlockEditor extends Component {
         portals.push(<ToplevelBlock key={r.id} node={r} />);
       }
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
-      setTimeout(() => { SHARED.cm.refresh(); console.log('refreshed CM'); }, 1000);
+      setTimeout(() => { SHARED.cm.refresh(); console.log('refreshed CM'); }, 100);
     }
     return portals;
   }

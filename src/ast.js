@@ -141,22 +141,6 @@ export class AST {
   }
 
   /**
-   * getToplevelNodeBeforeCur : Cur -> ASTNode
-   *
-   * Returns the previous toplevel node or null
-   */
-  getToplevelNodeBeforeCur = cur => {
-    return this.reverseRootNodes.find(n => poscmp(n.from, cur) < 0) || null;
-  }
-
-  /**
-   * getToplevelNodeAfterCur : Cur -> ASTNode
-   *
-   * Returns the after toplevel node or null
-   */
-  getToplevelNodeAfterCur = cur => this.rootNodes.find(n => poscmp(n.from, cur) >= 0) || null
-
-  /**
    * getNodeBeforeCur : Cur -> ASTNode
    *
    * Returns the previous node or null
