@@ -14,6 +14,8 @@ import {pos} from '../types';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
 import CodeMirror from './DragAndDropEditor';
+import {computeFocusIdFromChanges} from '../utils';
+
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
@@ -184,15 +186,18 @@ class BlockEditor extends Component {
       switch (SHARED.keyMap[e.key]) {
       case 'nextNode': {
         e.preventDefault();
-        const nextNode = ast.getNodeAfterCur(this.props.cur);
-        if (nextNode) this.props.activateByNId(nextNode.nid, {allowMove: true});
-        else playSound(BEEP);
+        const nextNode = ast.getTopLevelNodeAfterCur(this.props.cur);
+        if (nextNode) {
+          this.props.activateByNId(nextNode.nid, {allowMove: true});
+        } else {
+          playSound(BEEP);
+        }
         return;
       }
 
       case 'prevNode': {
         e.preventDefault();
-        const prevNode = ast.getNodeBeforeCur(this.props.cur);
+        const prevNode = ast.getTopLevelNodeBeforeCur(this.props.cur);
         if (prevNode) {
           this.props.activateByNId(prevNode.nid, {allowMove: true});
         } else {
@@ -218,6 +223,7 @@ class BlockEditor extends Component {
       }
 
       case 'changeFocus':
+      console.log('tab');
         e.preventDefault();
         if (focusId === -1) {
           if (ast.rootNodes.length > 0) {
@@ -265,12 +271,14 @@ class BlockEditor extends Component {
   }
 
   editorChange = (cm, changes) => {
-    // This if statement has something to do with undo/redo.
+    // We only care about changes whose origin is *not* 'cmb:'
+    // cmb-originating changes are handled by commitChanges (see codeMirror.js)
     if (!changes.every(change => change.origin.startsWith('cmb:'))) {
       const newAST = SHARED.parser.parse(cm.getValue());
-      const patched = patch(this.props.ast, newAST);
-      this.props.setAST(patched.tree);
-      // TODO(Oak): should we do anything with patched.firstNewId?
+      const tree = patch(this.props.ast, newAST);
+      let focusNId = computeFocusIdFromChanges(changes, tree);
+      this.props.setAST(tree);
+      this.props.activateByNId(focusNId, {allowMove: false});
     }
   }
 

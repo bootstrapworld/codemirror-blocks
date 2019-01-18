@@ -73,5 +73,5 @@ export default function unify(oldTree, newTree) {
   }
   loop(oldTree, newTree);
   newTree.annotateNodes();
-  return {tree: newTree, firstNewId: firstAssignedId};
+  return newTree;
 }

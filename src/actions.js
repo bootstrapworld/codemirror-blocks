@@ -29,7 +29,7 @@ export function deleteNodes() {
     );
     // since we sort in descending order, this is the last one in the array
     const firstNode = nodeSelections.pop();
-    dispatch(activateByNId(firstNode.nid, {allowMove: true}));
+    //dispatch(activateByNId(firstNode.nid, {allowMove: true}));
     dispatch({type: 'SET_SELECTIONS', selections: []});
   };
 }
