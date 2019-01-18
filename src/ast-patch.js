@@ -16,20 +16,13 @@ function copyAllIds(oldTree, newTree) {
   let newPtr = newIter.next();
   while (!oldPtr.done) {
     assert(!newPtr.done);
-    // console.log(oldPtr.value, 'is copied over to ', newPtr.value);
     newPtr.value.id = oldPtr.value.id;
     oldPtr = oldIter.next();
     newPtr = newIter.next();
   }
 }
 
-function assignNewIds(n) {
-  // console.log(n, ' is assigned a new id');
-  // actually the new nodes have new IDs already. Do nothing
-}
-
 export default function unify(oldTree, newTree) {
-  let firstAssignedId = null;
   function loop(oldTree, newTree) {
     newTree.id = oldTree.id;
     const index = {};
@@ -57,17 +50,10 @@ export default function unify(oldTree, newTree) {
     const oldLeftover = [...oldTree.children()].filter(oldNode => {
       return !processed.has(oldNode.id);
     });
-    if (!partiallySuccess && newLeftover.length > 1) {
-      assignNewIds(newTree);
-      if (firstAssignedId === null) firstAssignedId = newTree.id;
-    } else {
+    if (partiallySuccess || newLeftover.length <= 1) {
       const commonLength = Math.min(oldLeftover.length, newLeftover.length);
       for (let i = 0; i < commonLength; i++) {
         loop(oldLeftover[i], newLeftover[i]);
-      }
-      for (let i = commonLength; i < newLeftover.length; i++) {
-        assignNewIds(newLeftover[i]);
-        if (firstAssignedId === null) firstAssignedId = newLeftover[i].id;
       }
     }
   }
