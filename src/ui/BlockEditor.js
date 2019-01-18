@@ -216,22 +216,20 @@ class BlockEditor extends Component {
       }
 
       case 'firstNode':
-        // NOTE: this changes the semantics of normal Home button behavior from what's normal.
-        // If users complain, we should just delete this entire case
+        // NOTE(Emmanuel): shouldn't this go to the first node?
         e.preventDefault();
         this.props.setCursor(null, {line: 0, ch: 0});
         return;
 
-      case 'lastVisibleNode': {
-        // NOTE: this changes the semantics of normal End button behavior from what's normal.
-        // If users complain, we should just delete this entire case
+      case 'lastVisibleNode':
+        // NOTE(Emmanuel): shouldn't this go to the last visible node?
         e.preventDefault();
         const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
         this.props.setCursor(null, {line: idx, ch: text.length});
         return;
-      }
 
       case 'changeFocus':
+        // NOTE(Emmanuel): this is dead code, unless we can trap tab events
         e.preventDefault();
         if (focusId === -1) {
           if (ast.rootNodes.length > 0) {
