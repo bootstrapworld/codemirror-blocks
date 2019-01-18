@@ -132,13 +132,16 @@ class Node extends BlockComponent {
         );
         return;
 
-        // collapse all (shift), collapse current (if collapsable), select parent (if exists)
+      case 'collapseAll':
+        e.preventDefault();
+        dispatch({type: 'COLLAPSE_ALL'});
+        activate(getRoot(node));
+        return;
+
+      // collapse current (if collapsable), select parent (if exists),  or beep
       case 'collapseOrSelectParent':
         e.preventDefault();
-        if (e.shiftKey) { // activate the root
-          dispatch({type: 'COLLAPSE_ALL'});
-          activate(getRoot(node));
-        } else if (expandable && !isCollapsed && !this.isLocked()) {
+        if (expandable && !isCollapsed && !this.isLocked()) {
           collapse(id);
         } else if (node.parent) {
           activate(node.parent);
@@ -146,12 +149,16 @@ class Node extends BlockComponent {
           playSound(BEEP);
         }
         return;
-        // expand all (shift), expand current (if expandable), select first child (if expanded)
+
+      case 'expandAll':
+        e.preventDefault();
+        dispatch({type: 'UNCOLLAPSE_ALL'});
+        return;
+
+      // expand current (if expandable), select first child (if expanded), or beep
       case 'expandOrSelectFirstChild':
         e.preventDefault();
-        if (e.shiftKey) {
-          dispatch({type: 'UNCOLLAPSE_ALL'});
-        } else if (expandable && isCollapsed && !this.isLocked()) {
+        if (expandable && isCollapsed && !this.isLocked()) {
           uncollapse(id);
         } else if (node.next && node.next.parent === node) {
           activate(node.next);
@@ -159,7 +166,8 @@ class Node extends BlockComponent {
           playSound(BEEP);
         }
         return;
-        // toggle selection
+
+      // toggle selection
       case 'toggleSelection':
         e.preventDefault();
         if (selections.includes(id)) {
@@ -167,7 +175,7 @@ class Node extends BlockComponent {
             type: 'SET_SELECTIONS',
             selections: selections.filter(s => s !== id)
           });
-          // announce removal
+        // announce removal
         } else {
           const {from: addedFrom, to: addedTo} = node;
           const isContained = id => {
@@ -194,7 +202,8 @@ class Node extends BlockComponent {
           }
         }
         return;
-        // edit if normally editable, otherwise toggle collapsed state
+
+      // edit if normally editable, otherwise toggle collapsed state
       case 'edit':
         e.preventDefault();
         if (normallyEditable || isControl(e)) {
@@ -205,12 +214,14 @@ class Node extends BlockComponent {
           playSound(BEEP);
         }
         return;
-        // clear selection
+
+      // clear selection
       case 'clearSelection':
         e.preventDefault();
         dispatch({type: 'SET_SELECTIONS', selections: []});
         return;
-        // delete seleted nodes
+
+      // delete seleted nodes
       case 'delete':
         e.preventDefault();
         handleDelete(node.id, nodeSelections => {
@@ -220,7 +231,8 @@ class Node extends BlockComponent {
           return nodeSelections;
         });
         return;
-        // insert-right
+
+      // insert-right
       case 'insertRight':
         e.preventDefault();
         if (e.ctrlKey) { // strictly want ctrlKey
@@ -232,69 +244,69 @@ class Node extends BlockComponent {
           }
         }
         return;
-        // insert-left
+
+      // insert-left
       case 'insertLeft':
         e.preventDefault();
-        if (e.ctrlKey) { // strictly want ctrlKey
-          // TODO: this should go up to the top level block
-          if (this.props.onSetLeft) {
-            this.props.onSetLeft(true);
-          } else {
-            setCursor(node.from);
-          }
+        // TODO: this should go up to the top level block
+        if (this.props.onSetLeft) {
+          this.props.onSetLeft(true);
+        } else {
+          setCursor(node.from);
         }
         return;
-        // copy
+
+      // copy
       case 'copy':
         e.preventDefault();
-        if (isControl(e)) {
-          handleCopy(node.id, nodeSelections => {
-            if (nodeSelections.length == 0) {
-              // NOTE(Oak): no nodes are selected, do it on id instead
-              return [node.id];
-            } else {
-              return nodeSelections;
-            }
-          });
-        }
+        handleCopy(node.id, nodeSelections => {
+          if (nodeSelections.length == 0) {
+            // NOTE(Oak): no nodes are selected, do it on id instead
+            return [node.id];
+          } else {
+            return nodeSelections;
+          }
+        });
         return;
-        // paste
+
+      // paste
       case 'paste':
-        if (isControl(e)) {
-          handlePaste(node.id, e.shiftKey);
-        }
+        handlePaste(node.id, e.shiftKey);
         return;
-        // cut
+
+      // cut
       case 'cut':
         e.preventDefault();
-        if (isControl(e)) {
-          handleCopy(node.id, nodeSelections => {
-            if (nodeSelections.length == 0) {
-              say('Nothing selected');
-            }
-            return nodeSelections;
-          });
-          handleDelete();
-        }
+        handleCopy(node.id, nodeSelections => {
+          if (nodeSelections.length == 0) {
+            say('Nothing selected');
+          }
+          return nodeSelections;
+        });
+        handleDelete();
         return;
-        // go to the very first node in the AST
+
+      // go to the very first node in the AST
       case 'firstNode':
         e.preventDefault();
         this.props.activateByNId(0, {allowMove: true});
         return;
-        // go to last _visible_ node in the AST
+
+      // go to last _visible_ node in the AST
       case 'lastVisibleNode':
         activate(getLastVisibleNode(state));
-        return;
-        // "jump to the root of the active node"
+      return;
+
+      // "jump to the root of the active node"
       case 'jumpToRoot':
         e.preventDefault();
         activate(getRoot(node));
         return;
-        // "read all the ancestors"
-      case 'describeAncestors': {
+
+      // "read all the ancestors"
+      case 'readAncestors': {
         e.preventDefault();
-        const parents = [node.optinos['aria-label']];
+        const parents = [node.options['aria-label']];
         let next = node.parent;
         while (next) {
           parents.push(next.options['aria-label'] + ", at level " + next.level);
@@ -304,28 +316,21 @@ class Node extends BlockComponent {
         else playSound(BEEP);
         return;
       }
+
       // "read the first set of children"
-      case 'describeChildren':
+      case 'readChildren':
         e.preventDefault();
         say(node.toDescription(node.level));
         return;
 
       case 'undo':
-        if (isControl(e)) {
-          e.preventDefault();
-          if (e.shiftKey) {
-            SHARED.cm.redo();
-          } else {
-            SHARED.cm.undo();
-          }
-        }
+        e.preventDefault();
+        SHARED.cm.undo();
         return;
 
       case 'redo':
-        if (isControl(e)) {
-          e.preventDefault();
-          SHARED.cm.redo();
-        }
+        e.preventDefault();
+        SHARED.cm.redo();
         return;
 
       }
