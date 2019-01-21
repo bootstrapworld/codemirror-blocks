@@ -128,7 +128,6 @@ export default class Renderer {
         />
       );
     } else {
-      console.log('vv Error:', node.type, this.extraRenderers, Renderer);
       throw new Error("Don't know how to render node of type: "+node.type);
     }
   }

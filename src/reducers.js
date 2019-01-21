@@ -12,7 +12,7 @@ export const reducer = (
     announcer: null,
   },
   action) => {
-    console.log(action);
+    // console.log(action);
     switch (action.type) {
     case 'SET_FOCUS':
       return {...state, focusId: action.focusId, cur: null};

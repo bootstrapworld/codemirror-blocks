@@ -198,7 +198,6 @@ class BlockEditor extends Component {
     onRenderer: () => {},
   }
 
-
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
 
@@ -321,6 +320,7 @@ class BlockEditor extends Component {
     ed.on('changes', this.editorChange);
 
     global.cm = ed;
+    this.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
     this.props.setAnnouncer(announcements);
@@ -465,4 +465,4 @@ const mapDispatchToProps = dispatch => ({
   activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);
+export default connect(mapStateToProps, mapDispatchToProps, null, {withRef: true})(BlockEditor);
