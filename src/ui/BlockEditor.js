@@ -452,4 +452,4 @@ const mapDispatchToProps = dispatch => ({
   activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);
+export default connect(mapStateToProps, mapDispatchToProps, null, {withRef: true})(BlockEditor);

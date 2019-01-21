@@ -126,9 +126,22 @@ describe('The BlockEditor Component', function() {
         context: {store: initStore()}, 
         childContextTypes: {store: PropTypes.object.isRequired} 
       };
-      const blocks = shallow(initEditor(), options);
-      console.log(blocks);
-      console.log(blocks.state('cm'));
+      const language = example;
+      const parser = language.getParser();
+      this.editorInstance = null;
+      const blocks = (
+        <BlockEditor
+          ref={editor => {
+            if (editor)
+              this.editorInstance = editor.getWrappedInstance();
+          }}
+          language={language.id}
+          value={""}
+          parser={parser} />
+      );
+      const wrapper = mount(blocks, options);
+      console.log("editor instance:", this.editorInstance);
+      console.log("wrapper:", wrapper);
       expect(blocks.language.id).toBe('wescheme');
     });
   });
