@@ -41,6 +41,10 @@ module.exports = function(config) {
         query: {
           cacheDirectory: true
         }
+      },
+      {
+        test: /\.css$/,
+        loaders: ['style-loader', 'css-loader']
       }])
     },
     plugins: plugins,

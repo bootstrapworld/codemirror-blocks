@@ -1,7 +1,10 @@
 import React from 'react';
-import {mount, detatch} from './support/enzyme';
+import PropTypes from 'prop-types';
+import {mount, shallow} from '../support/enzyme';
+import {initStore} from 'codemirror-blocks/store';
 import BlockEditor from 'codemirror-blocks/ui/BlockEditor';
 import example from 'codemirror-blocks/languages/example';
+import wescheme from 'codemirror-blocks/languages/wescheme';
 import CodeMirrorBlocks, {BlockMarker} from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/searchcursor.js';
@@ -19,7 +22,7 @@ import {
   dragleave,
   drop,
   cut,
-} from './support/events';
+} from '../support/events';
 
 import {
   LEFT,
@@ -39,7 +42,7 @@ import {
   DKEY,
 } from 'codemirror-blocks/keycode';
 
-import {wait} from './support/test-utils';
+import {wait} from '../support/test-utils';
 
 const TOGGLE_SELECTION_KEYPRESS =
       keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
@@ -51,91 +54,100 @@ const PRESERVE_PREV_KEYPRESS =
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
 
-describe('The BlockEditor Class', function() {
-  beforeEach(function() {
-    const parser = example.getParser();
-    const options = {
-      parser: parser,
-      renderOptions: example.getRenderOptions(),
-      didInsertNode: function() {},
-      willInsertNode: (cm, sourceNodeText, sourceNode, destination) => {
-        let line = cm.getLine(destination.line);
-        let prev = line[destination.ch - 1] || '\n';
-        let next = line[destination.ch] || '\n';
-        sourceNodeText = sourceNodeText.trim();
-        if (!/\s|[([{]/.test(prev)) {
-          sourceNodeText = ' ' + sourceNodeText;
-        }
-        if (!/\s|[)]}]/.test(next)) {
-          sourceNodeText += ' ';
-        }
-        return sourceNodeText;
+const initEditor = () => {
+  const language = wescheme;
+  const parser = language.getParser();
+  const editorOptions = {
+    parser: parser,
+    renderOptions: language.getRenderOptions(),
+    didInsertNode: function() {},
+    willInsertNode: (cm, sourceNodeText, sourceNode, destination) => {
+      let line = cm.getLine(destination.line);
+      let prev = line[destination.ch - 1] || '\n';
+      let next = line[destination.ch] || '\n';
+      sourceNodeText = sourceNodeText.trim();
+      if (!/\s|[([{]/.test(prev)) {
+        sourceNodeText = ' ' + sourceNodeText;
       }
-    };
-    const cmOptions = {
-      lineNumbers: true,
-      viewportMargin: 10
-    };
+      if (!/\s|[)]}]/.test(next)) {
+        sourceNodeText += ' ';
+      }
+      return sourceNodeText;
+    }
+  };
+  const cmOptions = {
+    lineNumbers: true,
+    viewportMargin: 10
+  };
+  return (
+    <BlockEditor
+      language={language.id}
+      value={""}
+      options={editorOptions}
+      parser={parser}
+      cmOptions={cmOptions} />
+  );
+};
 
-    this.blocks = (
-      <BlockEditor
-        language={example}
-        value={""}
-        options={options}
-        parser={parser}
-        cmOptions={cmOptions} />
-    );
-    this.wrapper = mount(this.blocks, {attachTo: document.body});
-    // while (!this.blocks.cm) {} // wait for cm instance to initialize
-    this.cm = this.blocks.cm;
+describe('The BlockEditor Component', function() {
+  beforeEach(function() {
+    const store = initStore();
 
-    this.trackQuarantine   = spyOn(this.blocks,  'makeQuarantineAt').and.callThrough();
-    this.trackSaveEdit     = spyOn(this.blocks,    'saveQuarantine').and.callThrough();
-    this.trackHandleChange = spyOn(this.blocks,      'handleChange').and.callThrough();
-    this.trackReplaceRange = spyOn(this.cm,          'replaceRange').and.callThrough();
-    this.trackCommitChange = spyOn(this.blocks,      'commitChange').and.callThrough();
-    this.trackWillInsertNode=spyOn(this.blocks,    'willInsertNode').and.callThrough();
+    document.body.insertAdjacentHTML('afterbegin', '<div id="root"></div>');
+    const rootDiv = document.getElementById('root');
+    const options = {
+      attachTo: rootDiv,
+      context: {store}, 
+      childContextTypes: {store: PropTypes.object.isRequired} 
+    }
+    this.wrapper = mount(initEditor(), options);
+    this.editor = this.wrapper.instance();
+    // this.cm = this.wrapper.state('cm');
+
+    // this.trackQuarantine   = spyOn(this.blocks,  'makeQuarantineAt').and.callThrough();
+    // this.trackSaveEdit     = spyOn(this.blocks,    'saveQuarantine').and.callThrough();
+    // this.trackHandleChange = spyOn(this.blocks,      'handleChange').and.callThrough();
+    // this.trackReplaceRange = spyOn(this.cm,          'replaceRange').and.callThrough();
+    // this.trackCommitChange = spyOn(this.blocks,      'commitChange').and.callThrough();
+    // this.trackWillInsertNode=spyOn(this.blocks,    'willInsertNode').and.callThrough();
   });
 
   afterEach(function() {
-    this.wrapper.detatch(); // cleanup blocks and wrapper from DOM tree
+    if (this.wrapper) {
+      this.wrapper.detach(); // cleanup blocks and wrapper from DOM tree
+      this.wrapper = null;
+    }
   });
 
 
-  describe('constructor,', function() {
-
-    it("should take a codemirror instance and a parser instance", function() {
-      expect(this.blocks.cm).toBe(this.cm);
-      expect(this.blocks.parser).toBe(this.parser);
-      expect(this.blocks.ast).toBe(null);
-      expect(this.blocks.blockMode).toBe(false);
-    });
-
-    it("should set block mode to be disabled", function() {
-      expect(this.blocks.blockMode).toBe(false);
+  describe('component,', function() {
+    it("should create a CodeMirror instance for you", function() {
+      const options = {
+        context: {store: initStore()}, 
+        childContextTypes: {store: PropTypes.object.isRequired} 
+      };
+      const blocks = shallow(initEditor(), options);
+      console.log(blocks);
+      console.log(blocks.state('cm'));
+      expect(blocks.language.id).toBe('wescheme');
     });
   });
 
-  describe('constructor,', function() {
-    it('should optionally take a string identifier for a built in language', function() {
-      expect(() => new CodeMirrorBlocks(this.cm, 'foo')).toThrowError(
-        'Could not create CodeMirrorBlocks instance. Unknown language: "foo"'
+  describe('component,', function() {
+    it('should take a language and parser as props', function() {
+      const language = example;
+      const parser = language.getParser();
+      const blocks = (
+        <BlockEditor
+          language={language.id}
+          value={""}
+          parser={parser} />
       );
-      addLanguage(
-        {
-          id: 'foo',
-          name: 'Foo',
-          getParser: () => {
-            return this.parser;
-          }
-        }
-      );
-      var blocks = new CodeMirrorBlocks(this.cm, 'foo');
-      expect(blocks.language.name).toBe('Foo');
-      expect(blocks.parser).toBe(this.parser);
+      expect(blocks.props.language).toBe(language.id);
+      expect(blocks.props.parser).toBe(parser);
     });
   });
-
+/*
   describe('text marking api,', function() {
     beforeEach(function() {
       this.cm.setValue('11 12 (+ 3 4 5)');
@@ -219,66 +231,66 @@ describe('The BlockEditor Class', function() {
     });
   });
 
-  describe('renderer,', function() {
+  // describe('renderer,', function() {
 
-    it("should render itself when block mode is turned on", function() {
-      spyOn(this.blocks.renderer, 'animateTransition').and.callThrough();
-      this.blocks.toggleBlockMode();
-      expect(this.blocks.blockMode).toBe(true);
-      expect(this.blocks.ast).not.toBe(null);
-      expect(this.blocks.ast.rootNodes).toEqual([]);
-      expect(this.blocks.renderer.animateTransition).toHaveBeenCalled();
-    });
+  //   it("should render itself when block mode is turned on", function() {
+  //     spyOn(this.blocks.renderer, 'animateTransition').and.callThrough();
+  //     this.blocks.toggleBlockMode();
+  //     expect(this.blocks.blockMode).toBe(true);
+  //     expect(this.blocks.ast).not.toBe(null);
+  //     expect(this.blocks.ast.rootNodes).toEqual([]);
+  //     expect(this.blocks.renderer.animateTransition).toHaveBeenCalled();
+  //   });
 
-    it("should do nothing if block mode does not change", function() {
-      this.blocks.setBlockMode(true);
-      spyOn(this.blocks, 'render');
-      this.blocks.setBlockMode(true);
-      expect(this.blocks.render).not.toHaveBeenCalled();
-    });
+  //   it("should do nothing if block mode does not change", function() {
+  //     this.blocks.setBlockMode(true);
+  //     spyOn(this.blocks, 'render');
+  //     this.blocks.setBlockMode(true);
+  //     expect(this.blocks.render).not.toHaveBeenCalled();
+  //   });
 
-    it("should automatically re-render when the content changes", function() {
-      spyOn(this.blocks.renderer, 'render');
-      this.blocks.toggleBlockMode();
+  //   it("should automatically re-render when the content changes", function() {
+  //     spyOn(this.blocks.renderer, 'render');
+  //     this.blocks.toggleBlockMode();
 
-      // change the document once...
-      this.cm.setValue('11');
-      expect(this.blocks.ast.rootNodes.length).toBe(1);
-      expect(this.blocks.ast.rootNodes[0].type).toBe('literal');
-      expect(this.blocks.ast.rootNodes[0].value).toBe(11);
-      expect(this.blocks.renderer.render).toHaveBeenCalled();
-      expect(this.blocks.renderer.render).toHaveBeenCalledWith(
-        this.blocks.ast.rootNodes[0]
-      );
-      this.blocks.renderer.render.calls.reset();
+  //     // change the document once...
+  //     this.cm.setValue('11');
+  //     expect(this.blocks.ast.rootNodes.length).toBe(1);
+  //     expect(this.blocks.ast.rootNodes[0].type).toBe('literal');
+  //     expect(this.blocks.ast.rootNodes[0].value).toBe(11);
+  //     expect(this.blocks.renderer.render).toHaveBeenCalled();
+  //     expect(this.blocks.renderer.render).toHaveBeenCalledWith(
+  //       this.blocks.ast.rootNodes[0]
+  //     );
+  //     this.blocks.renderer.render.calls.reset();
 
-      // change the document again
-      this.cm.setValue('5432');
+  //     // change the document again
+  //     this.cm.setValue('5432');
 
-      expect(this.blocks.ast.rootNodes.length).toBe(1);
-      expect(this.blocks.ast.rootNodes[0].type).toBe('literal');
-      expect(this.blocks.ast.rootNodes[0].value).toBe(5432);
-      expect(this.blocks.renderer.render).toHaveBeenCalled();
-      expect(this.blocks.renderer.render).toHaveBeenCalledWith(
-        this.blocks.ast.rootNodes[0]
-      );
-    });
+  //     expect(this.blocks.ast.rootNodes.length).toBe(1);
+  //     expect(this.blocks.ast.rootNodes[0].type).toBe('literal');
+  //     expect(this.blocks.ast.rootNodes[0].value).toBe(5432);
+  //     expect(this.blocks.renderer.render).toHaveBeenCalled();
+  //     expect(this.blocks.renderer.render).toHaveBeenCalledWith(
+  //       this.blocks.ast.rootNodes[0]
+  //     );
+  //   });
 
-    it("should allow for blocks that touch", function() {
-      this.blocks.toggleBlockMode();
-      this.cm.setValue('(+ 1 2)(* 3 6)');
-      expect(this.blocks.ast.rootNodes.length).toEqual(2);
-      expect(this.cm.getAllMarks().length).toEqual(2);
-    });
+  //   it("should allow for blocks that touch", function() {
+  //     this.blocks.toggleBlockMode();
+  //     this.cm.setValue('(+ 1 2)(* 3 6)');
+  //     expect(this.blocks.ast.rootNodes.length).toEqual(2);
+  //     expect(this.cm.getAllMarks().length).toEqual(2);
+  //   });
 
-    it('should unrender itself when block mode is turned off', function() {
-      this.blocks.setBlockMode(true);
-      this.cm.setValue('1');
-      expect(this.cm.getAllMarks().length).toBe(1);
-      this.blocks.setBlockMode(false);
-      expect(this.cm.getAllMarks().length).toBe(0);
-    });
-  });
+  //   it('should unrender itself when block mode is turned off', function() {
+  //     this.blocks.setBlockMode(true);
+  //     this.cm.setValue('1');
+  //     expect(this.cm.getAllMarks().length).toBe(1);
+  //     this.blocks.setBlockMode(false);
+  //     expect(this.cm.getAllMarks().length).toBe(0);
+  //   });
+  // });
 
   describe('events,', function() {
     beforeEach(function() {
@@ -738,27 +750,6 @@ describe('The BlockEditor Class', function() {
 
       describe('and specifically when editing it,', function() {
         
-        /*
-        // fails nondeterministically - figure out how to avoid 
-        // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
-        it('should save whiteSpace on blur', async function() {
-          this.whiteSpaceEl.dispatchEvent(dblclick());
-          await wait(DELAY);
-          expect(this.trackQuarantine).toHaveBeenCalledWith("", this.whiteSpaceEl);
-          let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
-          let trackOnBlur = spyOn(quarantine, 'onblur').and.callThrough();
-          quarantine.appendChild(document.createTextNode('4253'));
-          quarantine.dispatchEvent(blur());
-          await wait(DELAY);
-          expect(trackOnBlur).toHaveBeenCalled();
-          expect(this.trackSaveEdit).toHaveBeenCalledWith(quarantine);
-          expect(quarantine.textContent).toBe('4253'); // confirms text=4253 inside saveEdit, blocks.js line 495
-          expect(this.trackCommitChange).toHaveBeenCalled();
-          expect(this.trackReplaceRange).toHaveBeenCalledWith(' 4253', Object({ ch: 4, line: 0 }), Object({ ch: 4, line: 0 }));
-          expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
-          expect(this.blocks.hasInvalidEdit).toBe(false);
-        });
-        */
         
         it('should blur whitespace you are editing on enter', async function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
@@ -777,18 +768,6 @@ describe('The BlockEditor Class', function() {
             this.quarantine.dispatchEvent(blur());
           });
 
-          /*
-          // fails nondeterministically - figure out how to avoid
-          // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
-          it('should not save anything & set all error state', async function() {
-            expect(this.trackSaveEdit).toHaveBeenCalledWith(this.quarantine);
-            expect(this.quarantine.textContent).toBe('"moo');
-            expect(this.cm.replaceRange).not.toHaveBeenCalled();
-            expect(this.quarantine.classList).toContain('blocks-error');
-            expect(this.quarantine.title).toBe('Error: parse error');
-            expect(this.blocks.hasInvalidEdit).toBe(true);
-          });
-          */
         });
       });
     });
@@ -898,5 +877,5 @@ describe('The BlockEditor Class', function() {
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
     });
-  });
+  });*/
 });
