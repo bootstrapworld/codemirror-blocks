@@ -174,7 +174,6 @@ class BlockEditor extends Component {
     },
   }
 
-
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
 
