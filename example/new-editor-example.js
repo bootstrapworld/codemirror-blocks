@@ -1,6 +1,5 @@
 import wescheme from '../src/languages/wescheme';
 import {CodeMirrorBlocks} from '../src/CodeMirrorBlocks';
-import './example-page.less';
 import bigExampleCode from './ast-test.rkt';
 
 

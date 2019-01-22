@@ -1,6 +1,5 @@
 import '@babel/polyfill';
 import 'codemirror/lib/codemirror.css';
-import 'codemirror/theme/monokai.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
