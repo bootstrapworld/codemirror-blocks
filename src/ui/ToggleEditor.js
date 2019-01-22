@@ -3,6 +3,7 @@ import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
 import 'codemirror/addon/search/searchcursor.js';
 import React from 'react';
+import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import BlockEditor from './BlockEditor';
@@ -16,6 +17,20 @@ import ToggleButton from './ToggleButton';
 import {say} from '../utils';
 import merge from '../merge';
 import SHARED from '../shared';
+
+// Consumes a DOM node to host the editor, a language object and the code
+// to render. Produces an object-representation of CMB, allowing for
+// integration with external (non-react) code
+export class CodeMirrorBlocks {
+  constructor(dom, language, code) {
+    let obj = {};
+    ReactDOM.render(
+      <ToggleEditor language={language} initialCode={code} external={obj} />,
+      dom
+    );
+    return obj;
+  }
+}
 
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
@@ -40,7 +55,8 @@ export default class ToggleEditor extends React.Component {
       name: PropTypes.string.isRequired,
       getParser: PropTypes.func.isRequired,
       getRenderOptions: PropTypes.func
-    })
+    }),
+    external: PropTypes.object,
   }
 
   constructor(props) {
@@ -50,6 +66,9 @@ export default class ToggleEditor extends React.Component {
     this.cmOptions = merge(defaultCmOptions, props.cmOptions);
     this.language = props.language;
     this.parser = this.language.getParser();
+
+    // export the handleToggle method
+    this.props.external.handleToggle = this.handleToggle;
 
     this.options = {
       parser: this.parser,
@@ -120,21 +139,23 @@ export default class ToggleEditor extends React.Component {
         cmOptions={this.cmOptions}
         parser={this.parser}
         code={this.state.code}
-        onBeforeChange={this.handleChange} />
+        onBeforeChange={this.handleChange} 
+        external={this.props.external} />
     );
   }
 
   renderBlocks() {
     return (
-        <div className="col-xs-9 codemirror-pane">
-          <UpgradedBlockEditor
-            language={this.language.id}
-            value={this.state.code}
-            options={this.options}
-            parser={this.parser}
-            cmOptions={this.cmOptions}
-            onBeforeChange={this.handleChange} />
-        </div>
+      <div className="col-xs-9 codemirror-pane">
+        <UpgradedBlockEditor
+          language={this.language.id}
+          value={this.state.code}
+          options={this.options}
+          parser={this.parser}
+          cmOptions={this.cmOptions}
+          onBeforeChange={this.handleChange} 
+          external={this.props.external} />
+      </div>
     );
   }
 }

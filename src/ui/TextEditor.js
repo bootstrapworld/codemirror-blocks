@@ -11,7 +11,8 @@ class TextEditor extends Component {
     parser: PropTypes.object.isRequired,
     code: PropTypes.string.isRequired,
     onBeforeChange: PropTypes.func.isRequired,
-    setAnnouncer: PropTypes.func.isRequired
+    setAnnouncer: PropTypes.func.isRequired,
+    external: PropTypes.object,
   }
 
   handleEditorDidMount = ed => {
@@ -26,8 +27,21 @@ class TextEditor extends Component {
     announcements.setAttribute('aria-live', 'assertive');
     wrapper.appendChild(announcements);
     this.props.setAnnouncer(announcements);
-
+    
     SHARED.cm = ed;
+
+    // export methods to the object interface
+    this.setExternalMethods(ed, this.props.external);
+  }
+
+  // attach all the CM methods to the external object, and 
+  // add/override with CMB-specific methods
+  setExternalMethods(ed, ext) {
+    let protoChain = Object.getPrototypeOf(ed);
+    Object.getOwnPropertyNames(protoChain).forEach(m => 
+      ext[m] = function(_) { return ed[m](...arguments) });
+    // attach a getState method for debugging
+    ext.getState = () => this.props.dispatch((_, getState) => getState());
   }
 
   componentDidMount() {

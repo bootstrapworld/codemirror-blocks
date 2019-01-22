@@ -24,7 +24,7 @@ class ToplevelBlock extends React.Component {
   constructor(props) {
     super(props);
     this.container = document.createElement('span');
-    this.container.className = 'react-container';
+    this.container.classList.add('react-container');
   }
 
   static propTypes = {
@@ -57,7 +57,7 @@ class ToplevelBlockEditableCore extends Component {
     super(props);
     const [pos] = this.props.quarantine;
     this.container = document.createElement('span');
-    this.container.className = 'react-container';
+    this.container.classList.add('react-container');
     this.marker = SHARED.cm.setBookmark(pos, {widget: this.container});
   }
 
@@ -118,6 +118,7 @@ class BlockEditor extends Component {
     }),
     onBeforeChange: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
+    external: PropTypes.object,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -130,6 +131,9 @@ class BlockEditor extends Component {
     super(props);
     this.mouseUsed = false;
     SHARED.keyMap = this.props.keyMap;
+
+    // HERE BE DRAGONS
+    this.props.external.getState = this.getState;
   }
 
   static defaultProps = {
@@ -316,6 +320,21 @@ class BlockEditor extends Component {
     }
 
     this.props.search.setCM(ed);
+
+    // export methods to the object interface
+    this.setExternalMethods(ed, this.props.external);
+  }
+
+  // attach all the CM methods to the external object, and 
+  // add/override with CMB-specific methods
+  setExternalMethods(ed, ext) {
+    let protoChain = Object.getPrototypeOf(ed);
+    Object.getOwnPropertyNames(protoChain).forEach(m => 
+      ext[m] = function(_) { return ed[m](...arguments) });
+    // attach a getState method for debugging
+    ext.getState = () => this.props.dispatch((_, getState) => getState());
+    // override the default markText method with one of our own
+    ext.markText = (from, to, opts) => alert('not yet implemented');
   }
 
   handleEditorWillUnmount = ed => {
