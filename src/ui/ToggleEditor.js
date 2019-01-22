@@ -1,7 +1,6 @@
 import '@babel/polyfill';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/monokai.css';
-import 'codemirror/addon/search/searchcursor.js';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
@@ -17,21 +16,6 @@ import ToggleButton from './ToggleButton';
 import {say} from '../utils';
 import merge from '../merge';
 import SHARED from '../shared';
-
-// Consumes a DOM node to host the editor, a language object and the code
-// to render. Produces an object-representation of CMB, allowing for
-// integration with external (non-react) code
-export class CodeMirrorBlocks {
-  constructor(dom, language, code) {
-    let obj = {};
-    ReactDOM.render(
-      <ToggleEditor language={language} initialCode={code} external={obj} />,
-      dom
-    );
-    return obj;
-  }
-}
-
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 

@@ -283,7 +283,7 @@ class BlockEditor extends Component {
   editorChange = (cm, changes) => {
     // We only care about changes whose origin is *not* 'cmb:'
     // cmb-originating changes are handled by commitChanges (see codeMirror.js)
-    if (!changes.every(change => change.origin.startsWith('cmb:'))) {
+    if (!changes.every(c => c.origin && c.origin.startsWith('cmb:'))) {
       const newAST = SHARED.parser.parse(cm.getValue());
       const tree = patch(this.props.ast, newAST);
       let focusNId = computeFocusIdFromChanges(changes, tree);

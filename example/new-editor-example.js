@@ -1,6 +1,5 @@
-import React from 'react';
 import wescheme from '../src/languages/wescheme';
-import {ToggleEditor, CodeMirrorBlocks} from '../src/ui/ToggleEditor';
+import {CodeMirrorBlocks} from '../src/CodeMirrorBlocks';
 import './example-page.less';
 import bigExampleCode from './ast-test.rkt';
 
