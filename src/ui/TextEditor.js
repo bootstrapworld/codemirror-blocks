@@ -39,7 +39,7 @@ class TextEditor extends Component {
   setExternalMethods(ed, ext) {
     let protoChain = Object.getPrototypeOf(ed);
     Object.getOwnPropertyNames(protoChain).forEach(m => 
-      ext[m] = function(_) { return ed[m](...arguments) });
+      ext[m] = (...args) => ed[m](...args));
     // attach a getState method for debugging
     ext.getState = () => this.props.dispatch((_, getState) => getState());
   }
