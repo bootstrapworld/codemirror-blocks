@@ -1,16 +1,57 @@
 import {withDefaults, say, poscmp, copyToClipboard, pasteFromClipboard} from './utils';
-import {commitChanges} from './codeMirror';
-import SHARED from './shared';
+import SHAREDs from './SHAREDs';
 import {playSound, WRAP} from './sound';
 
 /* This file is for _shared_ actions */
 
 let queuedAnnouncement = null;
 
-export function deleteNodes(id, selectionEditor) {
+function commitChanges(changes) {
+  SHAREDs.cm.on('changes', (change) => {
+    console.log("@after", SHAREDs.cm.getValue());
+  });
+  console.log("@before", SHAREDs.cm.getValue());
+  SHAREDs.cm.operation(changes);
+}
+
+export function deleteNodes() {
   return (dispatch, getState) => {
+    /*
+    SHAREDs.cm.on('changes', (change) => {
+      console.log("@after", SHAREDs.cm.getValue());
+    });
+    console.log("@before", SHAREDs.cm.getValue());
+    SHAREDs.cm.operation(() => {
+      console.log("@delete", 0, 0, 0, 5);
+      cm.replaceRange('', {line: 0, ch: 0}, {line: 0, ch: 5}, 'cmb:delete-nodes');
+      console.log("@delete", 1, 0, 1, 5);
+      cm.replaceRange('', {line: 1, ch: 0}, {line: 1, ch: 5}, 'cmb:delete-nodes');
+    });
+    */
+    commitChanges(
+      () => {
+        // Behaves differently if use SHAREDs.cm
+        console.log("@delete", 0, 0, 0, 5);
+        cm.replaceRange('', {line: 0, ch: 0}, {line: 0, ch: 5}, 'cmb:delete-nodes');
+        console.log("@delete", 1, 0, 1, 5);
+        cm.replaceRange('', {line: 1, ch: 0}, {line: 1, ch: 5}, 'cmb:delete-nodes');
+      }
+    );
+    /*
+    commitChanges(
+      cm => () => {
+        console.log("@mdelete", 0, 0, 0, 5);
+        cm.replaceRange('', {line: 0, ch: 0}, {line: 0, ch: 5}, 'cmb:delete-nodes');
+        console.log("@mdelete", 1, 0, 1, 5);
+        cm.replaceRange('', {line: 1, ch: 0}, {line: 1, ch: 5}, 'cmb:delete-nodes');
+      },
+      () => {},
+      () => {}
+    );
+    */
+    /*
     const {ast, selections} = getState();
-    const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
+    const nodeSelections = selections.map(ast.getNodeById);
     // we delete from the end of the document to the beginning so that
     // the next deletion still has a valid pos
     nodeSelections.sort((a, b) => poscmp(b.from, a.from));
@@ -21,6 +62,7 @@ export function deleteNodes(id, selectionEditor) {
       cm => () => {
         for (const node of nodeSelections) {
           const {from, to} = node.srcRange();
+          console.log("@delete", from.line, from.ch, to.line, to.ch);
           cm.replaceRange('', from, to, 'cmb:delete-nodes');
         }
       },
@@ -29,7 +71,9 @@ export function deleteNodes(id, selectionEditor) {
     );
     // since we sort in descending order, this is the last one in the array
     const firstNode = nodeSelections.pop();
+    dispatch(activateByNId(firstNode.nid, {allowMove: true}));
     dispatch({type: 'SET_SELECTIONS', selections: []});
+    */
   };
 }
 
@@ -49,13 +93,13 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
     // Drag the _whole_ source node, comments and all.
     if (srcNode) {
       var {from: srcFrom, to: srcTo} = srcNode.srcRange();
-      content = SHARED.cm.getRange(srcFrom, srcTo);
+      content = SHAREDs.cm.getRange(srcFrom, srcTo);
     }
 
     let value = null;
-    if (isDropTarget && SHARED.options.willInsertNode) {
-      value = SHARED.options.willInsertNode(
-        SHARED.cm,
+    if (isDropTarget && SHAREDs.options.willInsertNode) {
+      value = SHAREDs.options.willInsertNode(
+        SHAREDs.cm,
         content,
         undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
         destFrom,
@@ -100,7 +144,7 @@ export function copyNodes(id, selectionEditor) {
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
     const texts = nodeSelections.map(node => {
       const {from, to} = node.srcRange();
-      return SHARED.cm.getRange(from, to);
+      return SHAREDs.cm.getRange(from, to);
     });
     // Make sure we don't accidentally merge with a comment.
     if (ast.precedesComment(nodeSelections[0].srcRange().from)) {
@@ -133,10 +177,10 @@ export function pasteNodes(id, isBackward) {
       focusTarget = isBackward ? 'back' : 'next';
       from = pos;
       to = pos;
-      if (SHARED.options.willInsertNode) {
+      if (SHAREDs.options.willInsertNode) {
         textTransform = text =>
-          SHARED.options.willInsertNode(
-            SHARED.cm,
+          SHAREDs.options.willInsertNode(
+            SHAREDs.cm,
             text,
             undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
             pos,
@@ -155,6 +199,9 @@ export function pasteNodes(id, isBackward) {
       );
       // NOTE(Oak): always clear selections. Should this be a callback instead?
       dispatch({type: 'SET_SELECTIONS', selections: []});
+      if (focusTarget === 'self') {
+        dispatch(activateByNId(null, {allowMove: false}));
+      }
     });
 
   };
@@ -206,38 +253,30 @@ export function activate(id, options) {
     // anything
     // Note, however, that it is also a good thing that `activate` is invoked
     // when double click because we can set focusId on the to-be-focused node
-
-/* Note(Emmanuel): Oak says this used to be needed to avoid a bug
-  // currently fixed a different way, by allowing CM to preserve state and letting
-  // CMB's cur state remain unchanged (see SET_FOCUS in reducers.js)
-SHARED.cm.setCursor({line: -1, ch: 0});
-*/
-
+    SHAREDs.cm.setCursor({line: -1, ch: 0});
     setTimeout(() => {
       dispatch({type: 'SET_FOCUS', focusId: node.nid});
-      
       if (options.record) {
-        SHARED.search.setCursor(node.from);
+        SHAREDs.search.setCursor(node.from);
       }
       if (node.element) {
-        const scroller = SHARED.cm.getScrollerElement();
-        const wrapper = SHARED.cm.getWrapperElement();
+        const scroller = SHAREDs.cm.getScrollerElement();
+        const wrapper = SHAREDs.cm.getWrapperElement();
 
         if (options.allowMove) {
-          SHARED.cm.scrollIntoView(node.from);
+          SHAREDs.cm.scrollIntoView(node.from);
           let {top, bottom, left, right} = node.element.getBoundingClientRect(); // get the *actual* bounding rect
           let offset = wrapper.getBoundingClientRect();
-          let scroll = SHARED.cm.getScrollInfo();
+          let scroll = SHAREDs.cm.getScrollInfo();
           top    = top    + scroll.top  - offset.top;
           bottom = bottom + scroll.top  - offset.top;
           left   = left   + scroll.left - offset.left;
           right  = right  + scroll.left - offset.left;
-          SHARED.cm.scrollIntoView({top, bottom, left, right});
+          SHAREDs.cm.scrollIntoView({top, bottom, left, right});
         }
         scroller.setAttribute('aria-activedescendent', node.element.id);
         node.element.focus();
       }
-      
     }, 100);
   };
 }

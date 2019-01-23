@@ -225,8 +225,14 @@ class Node extends BlockComponent {
       case 'delete':
         e.preventDefault();
         handleDelete(node.id, nodeSelections => {
-          if (nodesSelections.length == 0) {
+          if (nodeSelections.length == 0) {
             say('Nothing selected');
+          } else {
+            say("deleted " +
+              nodeSelections
+              .map(ast.getNodeById)
+              .map((node) => node.options['aria-label'])
+              .join(" and "));
           }
           return nodeSelections;
         });
@@ -260,12 +266,14 @@ class Node extends BlockComponent {
       case 'copy':
         e.preventDefault();
         handleCopy(node.id, nodeSelections => {
-          if (nodeSelections.length == 0) {
-            // NOTE(Oak): no nodes are selected, do it on id instead
-            return [node.id];
-          } else {
-            return nodeSelections;
-          }
+          // NOTE(Oak): no nodes are selected, do it on id instead
+          let nodeIds = nodeSelections.length == 0 ? [node.id] : nodeSelections;
+          say("copied " +
+            nodeIds
+            .map(ast.getNodeById)
+            .map((node) => node.options['aria-label'])
+            .join(" and "));
+          return nodeIds;
         });
         return;
 
@@ -280,10 +288,16 @@ class Node extends BlockComponent {
         handleCopy(node.id, nodeSelections => {
           if (nodeSelections.length == 0) {
             say('Nothing selected');
+          } else {
+            say("cut " +
+              nodeSelections
+              .map(ast.getNodeById)
+              .map((node) => node.options['aria-label'])
+              .join(" and "));
           }
           return nodeSelections;
         });
-        handleDelete();
+        handleDelete(id, (nodes) => nodes);
         return;
 
       // go to the very first node in the AST
@@ -447,7 +461,7 @@ const mapDispatchToProps = dispatch => ({
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
-  handleDelete: () => dispatch(deleteNodes()),
+  handleDelete: (id, selectionEditor) => dispatch(deleteNodes(id, selectionEditor)),
   onDrop: (src, dest) => dispatch(dropNode(src, dest)),
   handleCopy: (id, selectionEditor) => dispatch(copyNodes(id, selectionEditor)),
   handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),

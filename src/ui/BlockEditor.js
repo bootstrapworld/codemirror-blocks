@@ -392,7 +392,6 @@ class BlockEditor extends Component {
   // this change was introduced during the switch from onCursor to onCursorActivity
   // if there are selections, pass null. otherwise pass the cursor
   handleCursor = (ed, data) => {
-    console.log('CURSOR ACTIVITY');
     let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
     this.props.setCursor(ed, cur);
   }
