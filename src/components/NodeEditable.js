@@ -12,15 +12,12 @@ import {say} from '../utils';
 class NodeEditable extends Component {
   static defaultProps = {
     children: null,
-    willInsertNode: v => v,
   }
 
   static propTypes = {
     // NOTE: the presence of this Node means ast is not null
     node: PropTypes.instanceOf(ASTNode),
     children: PropTypes.node,
-
-    willInsertNode: PropTypes.func,
     isInsertion: PropTypes.bool.isRequired,
   }
 
@@ -46,7 +43,7 @@ class NodeEditable extends Component {
         return;
       }
 
-      const value = this.props.willInsertNode(this.props.value, this.props.node);
+      const value = ' ' + this.props.value + ' '; // add spaces around inserted content
 
       commitChanges(
         cm => () => {

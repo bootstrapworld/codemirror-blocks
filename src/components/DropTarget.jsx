@@ -45,13 +45,6 @@ class DropTarget extends BlockComponent {
     this.setState({value});
   }
 
-  editableWillInsert = (value, node) => SHARED.options.willInsertNode(
-    SHARED.cm,
-    value,
-    undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
-    node.from,
-  )
-
   render() {
     // TODO: take a look at this and make sure props is right
     const props = {
@@ -73,7 +66,6 @@ class DropTarget extends BlockComponent {
                       value={this.state.value}
                       onChange={this.handleChange}
                       isInsertion={true}
-                      willInsertNode={this.editableWillInsert}
                       contentEditableProps={props}
                       extraClasses={['blocks-node', 'blocks-white-space']}
                       onDisableEditable={this.handleDisableEditable} />

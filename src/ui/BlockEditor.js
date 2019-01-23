@@ -46,13 +46,6 @@ class ToplevelBlockEditableCore extends Component {
 
   static propTypes = {}
 
-  editableWillInsert = (value, node) => SHARED.options.willInsertNode(
-    SHARED.cm,
-    value,
-    undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
-    node.from,
-  )
-
   constructor(props) {
     super(props);
     const [pos] = this.props.quarantine;
@@ -78,7 +71,6 @@ class ToplevelBlockEditableCore extends Component {
     };
     return ReactDOM.createPortal(
       <NodeEditable node={node}
-                    willInsertNode={this.editableWillInsert}
                     value={value}
                     onChange={onChange}
                     contentEditableProps={props}

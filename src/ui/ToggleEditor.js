@@ -57,22 +57,7 @@ export default class ToggleEditor extends React.Component {
       parser: this.parser,
       renderOptions: props.language.getRenderOptions
         ? props.language.getRenderOptions()
-        : {},
-      willInsertNode: (cm, sourceNodeText, sourceNode, destination) => {
-        // TODO: If we pretty-print on every block edit, all this code can go.
-        const line = cm.getLine(destination.line);
-        const prev = line[destination.ch - 1] || '\n';
-        const next = line[destination.ch] || '\n';
-        // Trim spaces and tabs, but not newlines!
-        sourceNodeText.replace(/^[ \t]+|[ \t]+$/gm, '');
-        if (!/\s|[([{]/.test(prev)) {
-          sourceNodeText = ' ' + sourceNodeText;
-        }
-        if (!/\s|[)\]}]/.test(next)) {
-          sourceNodeText += ' ';
-        }
-        return sourceNodeText;
-      }
+        : {}
     };
   }
 
