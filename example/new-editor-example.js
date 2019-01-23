@@ -1,7 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import wescheme from '../src/languages/wescheme';
-import ToggleEditor from '../src/ui/ToggleEditor';
+import 'codemirror/lib/codemirror.css';
+import {CodeMirrorBlocks} from '../src/CodeMirrorBlocks';
 import './example-page.less';
 
 

@@ -3,9 +3,9 @@ import Modal from 'react-modal';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
 
-// Modal.setAppElement('#cmb-\editor');
 
 export default (Editor, searchModes) => {
+  Modal.setAppElement(document.createElement('div'));
   const settings = searchModes.reduce((acc, searchMode, i) => {
     acc[i] = searchMode.setting;
     return acc;

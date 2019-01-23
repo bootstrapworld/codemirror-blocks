@@ -1,7 +1,5 @@
 import '@babel/polyfill';
-import 'codemirror/lib/codemirror.css';
-import 'codemirror/theme/monokai.css';
-import 'codemirror/addon/search/searchcursor.js';
+//import 'codemirror/lib/codemirror.css';
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
@@ -51,6 +49,10 @@ export default class ToggleEditor extends React.Component {
     this.language = props.language;
     this.parser = this.language.getParser();
 
+    // export the handleToggle method
+    this.props.external.handleToggle = this.handleToggle;
+    this.props.external.blockMode = this.state.blockMode;
+
     this.options = {
       parser: this.parser,
       renderOptions: props.language.getRenderOptions
@@ -84,6 +86,7 @@ export default class ToggleEditor extends React.Component {
       try {
         let ast = parser.parse(state.code);
         let code = ast.toString();
+        this.props.external.blockMode = blockMode;
         if (blockMode) {
           say("Switching to block mode");
           return {blockMode: true,
