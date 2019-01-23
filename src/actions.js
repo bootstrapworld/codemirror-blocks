@@ -53,13 +53,8 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
     }
 
     let value = null;
-    if (isDropTarget && SHARED.options.willInsertNode) {
-      value = SHARED.options.willInsertNode(
-        SHARED.cm,
-        content,
-        undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
-        destFrom,
-      );
+    if (isDropTarget) {
+      value = ' ' + content + ' '; // add spaces around inserted content
     } else {
       value = content;
     }
@@ -119,7 +114,7 @@ export function pasteNodes(id, isBackward) {
   return (dispatch, getState) => {
     const {ast, selections} = getState();
     const node = ast.getNodeById(id);
-    let from = null, to = null, textTransform = x => x;
+    let from = null, to = null;
     let focusTarget = null;
     let range = node.srcRange(); // Include any comments the node has.
     if (selections.includes(id)) {
@@ -133,19 +128,10 @@ export function pasteNodes(id, isBackward) {
       focusTarget = isBackward ? 'back' : 'next';
       from = pos;
       to = pos;
-      if (SHARED.options.willInsertNode) {
-        textTransform = text =>
-          SHARED.options.willInsertNode(
-            SHARED.cm,
-            text,
-            undefined, // TODO(Oak): just only for the sake of backward compat. Get rid if possible
-            pos,
-          );
-      }
     }
 
     pasteFromClipboard(text => {
-      text = textTransform(text);
+      text = ' ' + text + ' '; // add spaces around inserted content
       commitChanges(
         cm => () => {
           cm.replaceRange(text, from, to, 'cmb:paste');
