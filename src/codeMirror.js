@@ -5,14 +5,16 @@ import SHARED from './shared';
 import {activateByNId} from './actions';
 import {computeFocusIdFromChanges} from './utils';
 
+const tmpDiv = document.createElement('div');
+const tmpCM = CodeMirror(tmpDiv, {value: ""});
+
 export function commitChanges(
   changes,
   onSuccess=() => {},
   onError=() => {}
 ) {
-  const tmpDiv = document.createElement('div');
-  const tmpCM = CodeMirror(tmpDiv, {value: SHARED.cm.getValue()});
-  tmpCM.on('changes', (cm, changeArr) => {
+  tmpCM.setValue(SHARED.cm.getValue());
+  let handler = (cm, changeArr) => {
     let newAST = null;
     try {
       newAST = SHARED.parser.parse(tmpCM.getValue());
@@ -28,9 +30,11 @@ export function commitChanges(
     store.dispatch({type: 'SET_AST', ast: tree});
     store.dispatch(activateByNId(focusNId));
     onSuccess({tree, focusNId});
-  });
+  };
 
+  tmpCM.on('changes', handler);
   tmpCM.operation(changes(tmpCM));
+  tmpCM.off('changes', handler);
 }
 
 SHARED.keyName = CodeMirror.keyName;
