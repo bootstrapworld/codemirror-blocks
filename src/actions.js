@@ -87,7 +87,7 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
 
 export function copyNodes(id, selectionEditor) {
   return (dispatch, getState) => {
-    const {ast, selections} = getState();
+    const {ast, selections, focusId} = getState();
     const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
     if (nodeSelections.length === 0) {
       return; // Not much to do.
@@ -106,7 +106,9 @@ export function copyNodes(id, selectionEditor) {
       texts[last] = texts[last] + "\n";
     }
     copyToClipboard(texts.join(' '));
-    dispatch(activateByNId(null, {allowMove: false}));
+    // Copy steals focus. Force it back to the node's DOM element
+    // without announcing via activate() or activateByNId().
+    ast.getNodeByNId(focusId).element.focus();
   };
 }
 
