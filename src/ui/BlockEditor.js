@@ -302,6 +302,7 @@ class BlockEditor extends Component {
     SHARED.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
+    this.props.dispatch({type: 'COLLAPSE_ALL'});
     this.props.setAnnouncer(announcements);
 
     // if we have nodes, default to the first one. Note that does NOT
