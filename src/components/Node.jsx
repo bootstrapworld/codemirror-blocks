@@ -2,7 +2,7 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {partition, poscmp, getRoot,
+import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
 import {dropNode, deleteNodes, copyNodes,
   pasteNodes, activate, activateByNId} from '../actions';
@@ -228,11 +228,7 @@ class Node extends BlockComponent {
           if (nodeSelections.length == 0) {
             say('Nothing selected');
           } else {
-            say("deleted " +
-              nodeSelections
-              .map(ast.getNodeById)
-              .map((node) => node.options['aria-label'])
-              .join(" and "));
+            sayActionForNodes(nodeSelections.map(ast.getNodeById), "deleted");
           }
           return nodeSelections;
         });
@@ -266,13 +262,9 @@ class Node extends BlockComponent {
       case 'copy':
         e.preventDefault();
         handleCopy(node.id, nodeSelections => {
-          // NOTE(Oak): no nodes are selected, do it on id instead
+          // if no nodes are selected, do it on focused node's id instead
           let nodeIds = nodeSelections.length == 0 ? [node.id] : nodeSelections;
-          say("copied " +
-            nodeIds
-            .map(ast.getNodeById)
-            .map((node) => node.options['aria-label'])
-            .join(" and "));
+          sayActionForNodes(nodeIds.map(ast.getNodeById), "copied");
           return nodeIds;
         });
         return;
@@ -289,11 +281,7 @@ class Node extends BlockComponent {
           if (nodeSelections.length == 0) {
             say('Nothing selected');
           } else {
-            say("cut " +
-              nodeSelections
-              .map(ast.getNodeById)
-              .map((node) => node.options['aria-label'])
-              .join(" and "));
+            sayActionForNodes(nodeSelections.map(ast.getNodeById), "cut");
           }
           return nodeSelections;
         });
