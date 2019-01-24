@@ -6,8 +6,9 @@ import wescheme from '../src/languages/wescheme';
 // Consumes a DOM node to host the editor, a language object and the code
 // to render. Produces an object-representation of CMB, allowing for
 // integration with external (non-react) code
-export class CodeMirrorBlocks {
+export default class CodeMirrorBlocks {
   constructor(dom, language = wescheme, code = "") {
+  	console.log('@@@@ constructing an editor with language:', language);
     let obj = {};
     ReactDOM.render(
       <ToggleEditor language={language} initialCode={code} external={obj} />,
@@ -16,3 +17,5 @@ export class CodeMirrorBlocks {
     return obj;
   }
 }
+
+module.exports = CodeMirrorBlocks;
