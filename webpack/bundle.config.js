@@ -20,6 +20,22 @@ var configs = [
   })
 ];
 
+configs.push(
+  _.extend({}, baseConfig(), {
+    entry: {
+      "CodeMirrorBlocks-pyret": ['./src/languages/pyret/index.js', './src/CodeMirrorBlocks-pyret.js']
+    },
+    output: {
+      path: path.resolve(__dirname, '..', "dist"),
+      filename: "[name].js",
+      library: ["CodeMirrorBlocks"]
+    },
+    externals: {
+      'codemirror': 'CodeMirror',
+    }
+  })
+);
+
 configs = configs.concat(
   configs.map(function(config) {
     return _.merge({}, config, {
