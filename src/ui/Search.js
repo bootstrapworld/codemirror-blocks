@@ -19,7 +19,7 @@ export default (Editor, searchModes) => {
     }
 
     componentDidMount(){
-      Modal.setAppElement(this.props.AppElement);
+      Modal.setAppElement(this.props.appElement);
     }
 
     handleChangeSetting = i => setting => {
