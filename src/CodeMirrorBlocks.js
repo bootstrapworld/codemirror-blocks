@@ -8,7 +8,6 @@ import wescheme from '../src/languages/wescheme';
 // integration with external (non-react) code
 export default class CodeMirrorBlocks {
   constructor(dom, language = wescheme, code = "") {
-  	console.log('@@@@ constructing an editor with language:', language);
     let obj = {};
     ReactDOM.render(
       <ToggleEditor language={language} initialCode={code} external={obj} />,

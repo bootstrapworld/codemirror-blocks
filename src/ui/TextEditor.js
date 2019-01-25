@@ -54,11 +54,15 @@ class TextEditor extends Component {
 
   render() {
     return (
-      <CodeMirror
-        value={this.props.code}
-        onBeforeChange={this.props.onBeforeChange}
-        cmOptions={this.props.cmOptions}
-        editorDidMount={this.handleEditorDidMount} />
+      // we add a wrapper div to maintain a consistent DOM with BlockEditor
+      // see DragAndDropEditor.js for why the DND context needs a wrapper
+      <div> 
+        <CodeMirror
+          value={this.props.code}
+          onBeforeChange={this.props.onBeforeChange}
+          options={this.props.cmOptions}
+          editorDidMount={this.handleEditorDidMount} />
+      </div>
     );
   }
 }

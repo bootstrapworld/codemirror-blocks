@@ -38,10 +38,7 @@ module.exports = function(config) {
           path.resolve(__dirname, '..', 'node_modules', 'wescheme-js', 'src', 'runtime', 'js-numbers.js')
         ],
         enforce: "pre",
-        loader: "babel-loader?cacheDirectory",
-        query: {
-          cacheDirectory: true
-        }
+        loader: "babel-loader?cacheDirectory=true",
       }])
     },
     plugins: plugins,
