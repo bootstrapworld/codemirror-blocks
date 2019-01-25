@@ -54,13 +54,11 @@ class TextEditor extends Component {
 
   render() {
     return (
-      <div className="col-xs-9 codemirror-pane">
-        <CodeMirror
-          value={this.props.code}
-          onBeforeChange={this.props.onBeforeChange}
-          cmOptions={this.props.cmOptions}
-          editorDidMount={this.handleEditorDidMount} />
-      </div>
+      <CodeMirror
+        value={this.props.code}
+        onBeforeChange={this.props.onBeforeChange}
+        cmOptions={this.props.cmOptions}
+        editorDidMount={this.handleEditorDidMount} />
     );
   }
 }
