@@ -89,6 +89,7 @@ export default class ToggleEditor extends React.Component {
 
   render(_props) { // eslint-disable-line no-unused-vars
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
+    this.root = null;
     return (
       <div className={classes}>
         <ToggleButton onToggle={this.handleToggle}  />
@@ -121,7 +122,8 @@ export default class ToggleEditor extends React.Component {
         parser={this.parser}
         value={this.state.code}
         onBeforeChange={this.handleChange} 
-        external={this.props.external} 
+        external={this.props.external}
+        AppElement={this.props.AppElement}
         language={this.language.id}
         options={this.options} />
     );

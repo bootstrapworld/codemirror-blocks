@@ -10,7 +10,7 @@ export default class CodeMirrorBlocks {
   constructor(dom, language = wescheme, code = "") {
     let obj = {};
     ReactDOM.render(
-      <ToggleEditor language={language} initialCode={code} external={obj} />,
+      <ToggleEditor language={language} initialCode={code} external={obj} AppElement={dom}/>,
       dom
     );
     return obj;
