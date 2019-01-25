@@ -237,12 +237,12 @@ function coerce(thing) {
 
 function intersperse(sep, items) {
   let array = new Array();
-  for (let i in items) {
+  items.forEach((item, i) => {
     if (i != 0) {
       array.push(sep);
     }
-    array.push(items[i]);
-  }
+    array.push(item);
+  });
   return array;
 }
 
