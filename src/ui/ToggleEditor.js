@@ -40,6 +40,7 @@ export default class ToggleEditor extends React.Component {
       getRenderOptions: PropTypes.func
     }),
     external: PropTypes.object,
+    appElement: PropTypes.instanceOf(Element).isRequired
   }
 
   constructor(props) {
@@ -94,10 +95,12 @@ export default class ToggleEditor extends React.Component {
       <div className={classes}>
         <ToggleButton onToggle={this.handleToggle}  />
           <div className={"col-xs-3 toolbar-pane"} tabIndex="-1">
-          <Toolbar primitives={this.parser.primitives}
-                   languageId={this.language.id} />
+            <Toolbar primitives={this.parser.primitives}
+                     languageId={this.language.id} />
           </div>
-          {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+          <div className="col-xs-9 codemirror-pane">
+            {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+          </div>
       </div>
     );
   }
@@ -115,16 +118,15 @@ export default class ToggleEditor extends React.Component {
 
   renderBlocks() {
     return (
-      <div className="col-xs-9 codemirror-pane">
-        <UpgradedBlockEditor
-          language={this.language.id}
-          value={this.state.code}
-          options={this.options}
-          parser={this.parser}
-          cmOptions={this.cmOptions}
-          onBeforeChange={this.handleChange} 
-          external={this.props.external} />
-      </div>
+      <UpgradedBlockEditor
+        cmOptions={this.cmOptions}
+        parser={this.parser}
+        value={this.state.code}
+        onBeforeChange={this.handleChange} 
+        external={this.props.external}
+        appElement={this.props.appElement}
+        language={this.language.id}
+        options={this.options} />
     );
   }
 }

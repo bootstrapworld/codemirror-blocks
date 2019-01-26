@@ -89,6 +89,13 @@ export function say(text, delay=200) {
 }
 
 
+export function sayActionForNodes(nodes, action) {
+  nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
+  say(action + " " +
+    nodes.map((node) => node.options['aria-label'])
+    .join(" and "));
+}
+
 export function skipCollapsed(node, next, state) {
   const {collapsedList, ast} = state;
   const collapsedNodeList = collapsedList.map(ast.getNodeById);

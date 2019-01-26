@@ -302,6 +302,7 @@ class BlockEditor extends Component {
     SHARED.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
+    this.props.dispatch({type: 'COLLAPSE_ALL'});
     this.props.setAnnouncer(announcements);
 
     // if we have nodes, default to the first one. Note that does NOT
@@ -394,24 +395,22 @@ class BlockEditor extends Component {
       classes.push(`blocks-language-${this.props.language}`);
     }
     return (
-      <div className="Editor blocks">
-        <div className="codemirror-pane">
-          <CodeMirror options={this.props.cmOptions}
-                      className={classNames(classes)}
-                      value={this.props.value}
-                      onBeforeChange={this.props.onBeforeChange}
-                      onKeyPress={this.handleKeyPress}
-                      onKeyDown={this.handleKeyDown}
-                      onMouseDown={this.handleMouseDown}
-                      onFocus={this.handleFocus}
-                      onPaste={this.handlePaste}
-                      cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
-                      onCursorActivity={this.handleCursor}
-                      editorDidMount={this.handleEditorDidMount} />
-        </div>
+      <React.Fragment>
+        <CodeMirror options={this.props.cmOptions}
+                    className={classNames(classes)}
+                    value={this.props.value}
+                    onBeforeChange={this.props.onBeforeChange}
+                    onKeyPress={this.handleKeyPress}
+                    onKeyDown={this.handleKeyDown}
+                    onMouseDown={this.handleMouseDown}
+                    onFocus={this.handleFocus}
+                    onPaste={this.handlePaste}
+                    cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
+                    onCursorActivity={this.handleCursor}
+                    editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}
         <FakeCursorManager />
-      </div>
+      </React.Fragment>
     );
   }
 

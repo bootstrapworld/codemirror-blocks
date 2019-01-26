@@ -14,7 +14,6 @@ module.exports = function(env, argv) {
     },
     module: _.extend({}, baseConfig.module, {
       rules: baseConfig.module.rules.concat([
-        { test: /\.css$/, use: ["style-loader", "css-loader"] },
         { test: /\.rkt$/, use: 'raw-loader' }
       ])
     }),

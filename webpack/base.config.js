@@ -8,6 +8,7 @@ module.exports = function(config) {
     {test:/.png$|.jpg$|.jpeg$|.gif$|.svg$|.wav$/, use: "url-loader?limit=10000"},
     {test:/.woff$|.woff2$/, use: "url-loader?limit=10000"},
     {test:/.ttf$|.eot$/, use: "file-loader"},
+    {test:/\.css$/, use: ["style-loader", "css-loader"] },
   ];
   if (config.extractCSS) {
     plugins.push(new ExtractTextPlugin("[name].css"));
@@ -37,10 +38,7 @@ module.exports = function(config) {
           path.resolve(__dirname, '..', 'node_modules', 'wescheme-js', 'src', 'runtime', 'js-numbers.js')
         ],
         enforce: "pre",
-        loader: "babel-loader",
-        query: {
-          cacheDirectory: true
-        }
+        loader: "babel-loader?cacheDirectory=true",
       }])
     },
     plugins: plugins,
