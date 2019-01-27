@@ -10,7 +10,8 @@ module.exports = function(env, argv) {
   return _.extend({}, baseConfig, {
     devtool: 'cheap-module-source-map',
     entry: {
-      "new-editor-example": './example/new-editor-example.js'
+      "new-editor-example": './example/new-editor-example.js',
+      "new-pyret-editor-example": './example/new-pyret-editor-example.js'
     },
     module: _.extend({}, baseConfig.module, {
       rules: baseConfig.module.rules.concat([
@@ -24,6 +25,12 @@ module.exports = function(env, argv) {
         template: 'example/new-editor.html',
         inject: 'body',
         chunks: ['commons','new-editor-example'],
+      }),
+      new HtmlWebpackPlugin({
+        filename: 'new-pyret-editor.html',
+        template: 'example/new-pyret-editor.html',
+        inject: 'body',
+        chunks: ['commons','new-pyret-editor-example'],
       }),
       new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/),
     ]),
