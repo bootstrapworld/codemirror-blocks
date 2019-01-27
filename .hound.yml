@@ -1,7 +1,7 @@
 javascript:
   enabled: false
   exclude:
-  - "src/languages/pyret/pyret/lang*"
+  - "src/languages/pyret/pyret-lang/*"
 eslint:
   enabled: true
   config_file: .eslintrc
