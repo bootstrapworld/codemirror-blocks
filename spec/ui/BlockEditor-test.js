@@ -2,10 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {mount, shallow} from '../support/enzyme';
 import {initStore} from 'codemirror-blocks/store';
+import {Provider} from 'react-redux';
 import BlockEditor from 'codemirror-blocks/ui/BlockEditor';
 import example from 'codemirror-blocks/languages/example';
 import wescheme from 'codemirror-blocks/languages/wescheme';
-import CodeMirrorBlocks, {BlockMarker} from 'codemirror-blocks/blocks';
+// import {BlockMarker} from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/searchcursor.js';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
@@ -79,13 +80,15 @@ const initEditor = () => {
     lineNumbers: true,
     viewportMargin: 10
   };
+  const external = {};
   return (
     <BlockEditor
       language={language.id}
       value={""}
       options={editorOptions}
       parser={parser}
-      cmOptions={cmOptions} />
+      cmOptions={cmOptions}
+      external={external} />
   );
 };
 
@@ -117,32 +120,36 @@ describe('The BlockEditor Component', function() {
       this.wrapper.detach(); // cleanup blocks and wrapper from DOM tree
       this.wrapper = null;
     }
+    document.getElementById("root").remove();
   });
 
 
   describe('component,', function() {
     it("should create a CodeMirror instance for you", function() {
+      const store = initStore();
       const options = {
-        context: {store: initStore()}, 
+        context: {store}, 
         childContextTypes: {store: PropTypes.object.isRequired} 
       };
       const language = example;
       const parser = language.getParser();
-      this.editorInstance = null;
-      const blocks = (
+      const external = {};
+      const tempBlocks = (
         <BlockEditor
-          ref={editor => {
-            if (editor)
-              this.editorInstance = editor.getWrappedInstance();
-          }}
           language={language.id}
           value={""}
-          parser={parser} />
+          parser={parser}
+          external={external} />
       );
-      const wrapper = mount(blocks, options);
-      console.log("editor instance:", this.editorInstance);
-      console.log("wrapper:", wrapper);
-      expect(blocks.language.id).toBe('wescheme');
+      const wrapper = mount(tempBlocks, options);
+      // console.log(external);
+      console.log("cm:", external.getCodeMirror());
+      // for (let i = 0; i < 10000 && !external.getCodeMirror(); i++) {
+      //   console.log("cm loop:", external.getCodeMirror());
+      // }
+      wrapper.mount();
+      expect(tempBlocks.props.language).toBe(language.id);
+      expect(external.getCodeMirror()).not.toBeUndefined();
     });
   });
 

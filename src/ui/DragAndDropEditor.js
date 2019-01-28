@@ -12,6 +12,10 @@ export default
 @connect(null, mapDispatchToProps)
 @DropNodeTarget(({location}) => ({from: location, to: location}))
 class WrappedCodeMirror extends React.Component {
+  constructor(props) {
+    super(props);
+    console.log("DragAndDropEditor constructed!");
+  }
 
   handleDragOver = (ed, e) => {
     if (!e.target.classList.contains('CodeMirror-line')) {
@@ -23,6 +27,10 @@ class WrappedCodeMirror extends React.Component {
     // :( this never fire because of the other onDrop, although this onDrop
     // has the access to the information whether we drop at the right place :(
     console.log(e);
+  }
+
+  componentDidMount() {
+    console.log('DragAndDropEditor mounted!');
   }
 
   render() {
