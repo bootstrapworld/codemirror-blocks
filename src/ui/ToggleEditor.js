@@ -66,7 +66,6 @@ export default class ToggleEditor extends React.Component {
   }
 
   handleChange = (ed, data, value) => {
-    data.canceled = false;
     this.setState({code: value});
   }
 
