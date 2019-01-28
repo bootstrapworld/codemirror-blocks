@@ -1,17 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {mount, shallow} from '../support/enzyme';
+import {mount} from '../support/enzyme';
 import {initStore} from 'codemirror-blocks/store';
-import {Provider} from 'react-redux';
 import BlockEditor from 'codemirror-blocks/ui/BlockEditor';
 import example from 'codemirror-blocks/languages/example';
 import wescheme from 'codemirror-blocks/languages/wescheme';
 // import {BlockMarker} from 'codemirror-blocks/blocks';
-import CodeMirror from 'codemirror';
+// import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/searchcursor.js';
-import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
-import {addLanguage} from 'codemirror-blocks/languages';
+// import {addLanguage} from 'codemirror-blocks/languages';
 
+/* eslint-disable */ //temporary
 import {
   click,
   dblclick,
@@ -46,14 +45,15 @@ import {
 import {wait} from '../support/test-utils';
 
 const TOGGLE_SELECTION_KEYPRESS =
-      keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
+keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
 const PRESERVE_NEXT_KEYPRESS =
-      keydown(DOWN, ISMAC ? {altKey: true} : {ctrlKey: true});
+keydown(DOWN, ISMAC ? {altKey: true} : {ctrlKey: true});
 const PRESERVE_PREV_KEYPRESS =
-      keydown(UP, ISMAC ? {altKey: true} : {ctrlKey: true});
+keydown(UP, ISMAC ? {altKey: true} : {ctrlKey: true});
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
+/* eslint-enable */ //temporary
 
 const initEditor = () => {
   const language = wescheme;
@@ -102,7 +102,7 @@ describe('The BlockEditor Component', function() {
       attachTo: rootDiv,
       context: {store}, 
       childContextTypes: {store: PropTypes.object.isRequired} 
-    }
+    };
     this.wrapper = mount(initEditor(), options);
     this.editor = this.wrapper.instance();
     // this.cm = this.wrapper.state('cm');
