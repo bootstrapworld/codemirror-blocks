@@ -42,6 +42,9 @@ module.exports = function(config) {
       },
       {
         test: /\.css$/,
+        include: [
+          path.resolve(__dirname, '..', 'spec')
+        ],
         loaders: ['style-loader', 'css-loader']
       }])
     },
