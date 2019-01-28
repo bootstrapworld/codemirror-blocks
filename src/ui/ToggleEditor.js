@@ -39,6 +39,7 @@ export default class ToggleEditor extends React.Component {
       getParser: PropTypes.func.isRequired,
       getRenderOptions: PropTypes.func
     }),
+    options: PropTypes.object,
     external: PropTypes.object,
     appElement: PropTypes.instanceOf(Element).isRequired
   }
@@ -54,12 +55,14 @@ export default class ToggleEditor extends React.Component {
     // export the handleToggle method
     this.props.external.handleToggle = this.handleToggle;
 
-    this.options = {
+    let defaultOptions = {
       parser: this.parser,
       renderOptions: props.language.getRenderOptions
         ? props.language.getRenderOptions()
-        : {}
+        : {},
+      collapseAll: true
     };
+    this.options = merge(defaultOptions, props.options);
   }
 
   handleChange = (ed, data, value) => {

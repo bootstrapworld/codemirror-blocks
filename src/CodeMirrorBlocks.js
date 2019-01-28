@@ -7,10 +7,16 @@ import wescheme from '../src/languages/wescheme';
 // to render. Produces an object-representation of CMB, allowing for
 // integration with external (non-react) code
 export default class CodeMirrorBlocks {
-  constructor(container, language = wescheme, code = "") {
+  constructor(container, language = wescheme, code = "", options = {}) {
     let obj = {};
     ReactDOM.render(
-      <ToggleEditor language={language} initialCode={code} external={obj} appElement={container}/>,
+      <ToggleEditor
+        language={language}
+        initialCode={code}
+        external={obj}
+        appElement={container}
+        options={options}
+      />,
       container
     );
     return obj;
