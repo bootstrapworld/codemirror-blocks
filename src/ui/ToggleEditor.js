@@ -27,7 +27,6 @@ const defaultCmOptions = {
 export default class ToggleEditor extends React.Component {
   state = {
     blockMode: false,
-    code: ""
   }
 
   static propTypes = {
@@ -46,7 +45,6 @@ export default class ToggleEditor extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state.code = props.initialCode || "";
 
     this.cmOptions = merge(defaultCmOptions, props.cmOptions);
     this.language = props.language;
@@ -63,25 +61,26 @@ export default class ToggleEditor extends React.Component {
       collapseAll: true
     };
     this.options = merge(defaultOptions, props.options);
+    this.hasMounted = false;
   }
 
-  handleChange = (ed, data, value) => {
-    this.setState({code: value});
+  componentDidMount() {
+    this.hasMounted = true;
   }
 
   handleToggle = blockMode => {
     this.setState((state, props) => {
       try {
-        let ast = SHARED.parser.parse(state.code);
+        let ast = SHARED.parser.parse(SHARED.cm.getValue());
         let code = ast.toString();
         if (blockMode) {
           say("Switching to block mode");
-          return {blockMode: true,
-                  code: code};
+          SHARED.cm.setValue(code);
+          return {blockMode: true};
         } else {
           say("Switching to text mode");
-          return {blockMode: false,
-                  code: code};
+          SHARED.cm.setValue(code);
+          return {blockMode: false};
         }
       } catch (err) {
         // TODO(Justin): properly deal with parse errors
@@ -108,23 +107,23 @@ export default class ToggleEditor extends React.Component {
   }
 
   renderCode() {
+    let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
     return (
       <TextEditor
         cmOptions={this.cmOptions}
         parser={this.parser}
-        code={this.state.code}
-        onBeforeChange={this.handleChange} 
+        initialCode={code}
         external={this.props.external} />
     );
   }
 
   renderBlocks() {
+    let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
     return (
       <UpgradedBlockEditor
         cmOptions={this.cmOptions}
         parser={this.parser}
-        value={this.state.code}
-        onBeforeChange={this.handleChange} 
+        value={code}
         external={this.props.external}
         appElement={this.props.appElement}
         language={this.language.id}

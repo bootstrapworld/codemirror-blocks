@@ -1,4 +1,4 @@
-import {Controlled as CodeMirror} from 'react-codemirror2';
+import {UnControlled as CodeMirror} from 'react-codemirror2';
 import React  from 'react';
 import {DropNodeTarget} from '../dnd';
 import {dropNode} from '../actions';
