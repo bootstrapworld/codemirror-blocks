@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import {Controlled as CodeMirror} from 'react-codemirror2';
+import {UnControlled as CodeMirror} from 'react-codemirror2';
 import SHARED from '../shared';
 
 
@@ -9,8 +9,8 @@ class TextEditor extends Component {
   static propTypes = {
     cmOptions: PropTypes.object,
     parser: PropTypes.object.isRequired,
-    code: PropTypes.string.isRequired,
-    onBeforeChange: PropTypes.func.isRequired,
+    initialCode: PropTypes.string.isRequired,
+    onBeforeChange: PropTypes.func,
     setAnnouncer: PropTypes.func.isRequired,
     external: PropTypes.object,
   }
@@ -58,7 +58,7 @@ class TextEditor extends Component {
       // see DragAndDropEditor.js for why the DND context needs a wrapper
       <div> 
         <CodeMirror
-          value={this.props.code}
+          value={this.props.initialCode}
           onBeforeChange={this.props.onBeforeChange}
           options={this.props.cmOptions}
           editorDidMount={this.handleEditorDidMount} />
