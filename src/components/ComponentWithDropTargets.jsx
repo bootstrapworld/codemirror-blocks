@@ -60,7 +60,7 @@ export default class ComponentWithDropTargets extends Component {
         onSetLeft: onSetLeft,
         onSetRight: onSetRight
       };
-      return node.render(props);
+      return node.reactElement(props);
     };
   }
 }

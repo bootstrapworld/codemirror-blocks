@@ -1,29 +1,26 @@
 import {Component, PureComponent} from 'react';
 
-function basicallyTheSame(x, y) {
-  if (typeof x === "function" && typeof y === "function") {
+// Check to see whether two `prop` or `state` objects are roughly equal to each
+// other, enough so that we don't need to re-render a node if that's all that
+// changed.
+function vaguelyEqual(x, y) {
+  const ignoreProps = ["location", "children"];
+  function ignoreProp(object, prop) {
     // There _shouldn't_ be any relevant differences between functions in `props`.
     // We hope, we hope.
-    return true;
+    return ignoreProps.includes(prop) || typeof object[prop] === "function";
   }
-  return x === y;
-}
-const ignoreProps = ["location", "children"];
-function shallowEqual(x, y) {
+  
   if (x === y) {
     return true;
   }
   for (let prop in x) {
-    if (ignoreProps.includes[prop]) continue;
-    if (x.hasOwnProperty(prop) && !basicallyTheSame(x[prop], y[prop])) {
-      //console.log("@PropChanged:", prop, x[prop], y[prop]);
+    if (x.hasOwnProperty(prop) && !ignoreProp(x, prop) && x[prop] !== y[prop]) {
       return false;
     }
   }
   for (let prop in y) {
-    if (ignoreProps.includes[prop]) continue;
-    if (y.hasOwnProperty(prop) && !basicallyTheSame(y[prop], x[prop])) {
-      //console.log("@PropChanged:", prop, y[prop], x[prop]);
+    if (y.hasOwnProperty(prop) && !ignoreProp(y, prop) && y[prop] !== x[prop]) {
       return false;
     }
   }
@@ -36,26 +33,12 @@ export default class BlockComponent extends Component {
     // with the update already
     const {node: newValue, ...newProps} = props;
     const {node: oldValue, ...oldProps} = this.props;
-
-    const c1 = newValue && oldValue && newValue.hash !== oldValue.hash;
-    const c2 = !shallowEqual(newProps, oldProps);
-    const c3 = !shallowEqual(state, this.state);
-
-    //console.log("@BlockComponent - should update?", oldValue, newValue);
-    if (!c1 && c2) {
-      //console.log("@Rerendering b.c. props changed", oldProps, newProps);
-    } else if (!c1 && c3) {
-      //console.log("@Rerendering b.c. state changed", this.state, state);
-    }
     
     const shouldUpdate = (
       (newValue && oldValue && newValue.hash !== oldValue.hash) ||
-        !shallowEqual(newProps, oldProps) ||
-        !shallowEqual(state, this.state)
+        !vaguelyEqual(newProps, oldProps) ||
+        !vaguelyEqual(state, this.state)
     );
-    if (!shouldUpdate) {
-      //console.log("@Skipping!", oldValue);
-    }
     return shouldUpdate;
   }
 }

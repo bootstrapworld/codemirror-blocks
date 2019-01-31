@@ -17,7 +17,7 @@ class Primitive extends Component {
   render() {
     var {primitive, className, onClick} = this.props;
     let astNode = primitive.getLiteralNode();
-    const elem = astNode ? astNode.render({inToolbar: true}) : primitive.name;
+    const elem = astNode ? astNode.reactElement({inToolbar: true}) : primitive.name;
     return (
       <li className={classNames(className, "Primitive list-group-item")} onClick={onClick}>
         {elem}

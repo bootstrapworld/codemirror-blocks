@@ -269,14 +269,6 @@ export class ASTNode {
     // Two subtrees with identical value are supposed to have the same hash
     this.hash = null; // null for now
 
-    // The React function component for rendering this node.
-    if (typeof this.render === 'function') {
-      this.renderFn = this.render.bind(this);
-    } else {
-      // TODO: Justin
-//      throw new Error("Don't know how to render node of type: " + this.type);
-    }
-
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
       options.comment.id = "block-node-" + this.id + "-comment";
@@ -315,7 +307,6 @@ export class ASTNode {
 
   // Create a React _element_ (an instantiated component) for this node.
   reactElement(props) {
-    let Component = this.renderFn;
     return renderASTNode({node:this, ...props});
   }
 }
@@ -326,20 +317,6 @@ function renderASTNode(props) {
     return node.render.bind(node)(props);
   } else {
     throw new Error("Don't know how to render node of type: " + node.type);
-  }
-}
-
-class ASTNodeComponent extends Component {
-  constructor(props) {
-    super(props);
-    let node = props.node;
-    this.render = node.render.bind(node);
-    console.log("@constructing AstNodeComponent");
-  }
-
-  shouldComponentUpdate() {
-    console.log("@AstNodeComponent - should update?");
-    return true;
   }
 }
 

@@ -335,7 +335,7 @@ export class CondExpression extends ASTNode {
   }
 
   render(props) {
-    const clauses = this.clauses.map((clause, index) => clause.render({key: index}));
+    const clauses = this.clauses.map((clause, index) => clause.reactElement({key: index}));
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">cond</span>
