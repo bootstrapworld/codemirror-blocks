@@ -25,7 +25,7 @@ export class Unknown extends ASTNode {
   }
 
   render(props) {
-    const firstElt = this.elts[0].render();
+    const firstElt = this.elts[0].reactElement();
     const restElts = this.elts.slice(1);
     return (
       <Node node={this} {...props}>
@@ -133,7 +133,7 @@ export class StructDefinition extends ASTNode {
   }
 
   render(props) {
-    const fields = this.fields.render();
+    const fields = this.fields.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -168,7 +168,7 @@ export class VariableDefinition extends ASTNode {
   }
 
   render(props) {
-    const body = this.body.render();
+    const body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -203,8 +203,8 @@ export class LambdaExpression extends ASTNode {
   }
 
   render(props) {
-    const args = this.args.render();
-    const body = this.body.render();
+    const args = this.args.reactElement();
+    const body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">

@@ -312,6 +312,21 @@ export class ASTNode {
       return {from: this.from, to: this.to};
     }
   }
+
+  // Create a React _element_ (an instantiated component) for this node.
+  reactElement(props) {
+    let Component = this.renderFn;
+    return <Component node={this} {...props} />;
+  }
+}
+
+function renderASTNode(props) {
+  let node = props.node;
+  if (typeof node.render === 'function') {
+    return node.render.bind(node)(props);
+  } else {
+    throw new Error("Don't know how to render node of type: " + node.type);
+  }
 }
 
 class ASTNodeComponent extends Component {

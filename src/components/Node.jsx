@@ -423,7 +423,7 @@ class Node extends BlockComponent {
           onDoubleClick = {this.handleDoubleClick}
           onKeyDown     = {this.handleKeyDown}>
           {children}
-          {comment && comment.render()}
+          {comment && comment.reactElement()}
         </span>
       );
       if (this.props.normallyEditable) {

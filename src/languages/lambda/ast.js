@@ -95,7 +95,7 @@ export class Prog extends ASTNode {
         <h4>Your Lambda Program</h4>
         {this.prog.map((node, index) => (
           <span key={index}>
-            {node.render()}
+            {node.reactElement()}
           </span>
         ))}
       </Node>

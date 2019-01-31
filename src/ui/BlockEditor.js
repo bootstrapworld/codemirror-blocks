@@ -44,7 +44,7 @@ class ToplevelBlock extends React.Component {
     mark.BLOCK_NODE_ID = node.id;
 
     console.log("@key", node.id);
-    return ReactDOM.createPortal(node.render(), this.container);
+    return ReactDOM.createPortal(node.reactElement(), this.container);
   }
 }
 
