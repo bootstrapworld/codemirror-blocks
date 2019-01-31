@@ -2,7 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {mount} from '../support/enzyme';
 import {initStore} from 'codemirror-blocks/store';
+import HTML5Backend from 'react-dnd-html5-backend';
+import {DragDropContextProvider} from 'react-dnd';
 import BlockEditor from 'codemirror-blocks/ui/BlockEditor';
+import attachSearch from 'codemirror-blocks/ui/Search';
 import example from 'codemirror-blocks/languages/example';
 import wescheme from 'codemirror-blocks/languages/wescheme';
 // import {BlockMarker} from 'codemirror-blocks/blocks';
@@ -55,57 +58,61 @@ keydown(UP, ISMAC ? {altKey: true} : {ctrlKey: true});
 const DELAY = 750;
 /* eslint-enable */ //temporary
 
-const initEditor = () => {
-  const language = wescheme;
-  const parser = language.getParser();
-  const editorOptions = {
-    parser: parser,
-    renderOptions: language.getRenderOptions(),
-    didInsertNode: function() {},
-    willInsertNode: (cm, sourceNodeText, sourceNode, destination) => {
-      let line = cm.getLine(destination.line);
-      let prev = line[destination.ch - 1] || '\n';
-      let next = line[destination.ch] || '\n';
-      sourceNodeText = sourceNodeText.trim();
-      if (!/\s|[([{]/.test(prev)) {
-        sourceNodeText = ' ' + sourceNodeText;
-      }
-      if (!/\s|[)]}]/.test(next)) {
-        sourceNodeText += ' ';
-      }
-      return sourceNodeText;
-    }
-  };
-  const cmOptions = {
-    lineNumbers: true,
-    viewportMargin: 10
-  };
-  const external = {};
-  return (
-    <BlockEditor
-      language={language.id}
-      value={""}
-      options={editorOptions}
-      parser={parser}
-      cmOptions={cmOptions}
-      external={external} />
-  );
-};
-
 describe('The BlockEditor Component', function() {
   beforeEach(function() {
-    const store = initStore();
-
     document.body.insertAdjacentHTML('afterbegin', '<div id="root"></div>');
     const rootDiv = document.getElementById('root');
     const options = {
       attachTo: rootDiv,
-      context: {store}, 
+      context: {store: initStore()},
       childContextTypes: {store: PropTypes.object.isRequired} 
     };
-    this.wrapper = mount(initEditor(), options);
+    const language = wescheme;
+    const parser = language.getParser();
+    const editorOptions = {
+      parser: parser,
+      renderOptions: language.getRenderOptions(),
+      didInsertNode: function() {},
+      willInsertNode: (cm, sourceNodeText, sourceNode, destination) => {
+        let line = cm.getLine(destination.line);
+        let prev = line[destination.ch - 1] || '\n';
+        let next = line[destination.ch] || '\n';
+        sourceNodeText = sourceNodeText.trim();
+        if (!/\s|[([{]/.test(prev)) {
+          sourceNodeText = ' ' + sourceNodeText;
+        }
+        if (!/\s|[)]}]/.test(next)) {
+          sourceNodeText += ' ';
+        }
+        return sourceNodeText;
+      }
+    };
+    const cmOptions = {
+      lineNumbers: true,
+      viewportMargin: 10
+    };
+    const external = {};
+
+    const UpgradedBlockEditor = attachSearch(BlockEditor, []);
+    const blockEditor = (
+      <UpgradedBlockEditor
+        language={language.id}
+        value={""}
+        options={editorOptions}
+        parser={parser}
+        cmOptions={cmOptions}
+        external={external} />
+    );
+    const completeEditor = (
+      <DragDropContextProvider backend={HTML5Backend}>
+        {blockEditor}
+      </DragDropContextProvider>
+    );
+    this.wrapper = mount(completeEditor, options);
     this.editor = this.wrapper.instance();
-    // this.cm = this.wrapper.state('cm');
+    this.language = language;
+    this.blockEditor = blockEditor;
+    this.cm = external.cm;
 
     // this.trackQuarantine   = spyOn(this.blocks,  'makeQuarantineAt').and.callThrough();
     // this.trackSaveEdit     = spyOn(this.blocks,    'saveQuarantine').and.callThrough();
@@ -126,30 +133,8 @@ describe('The BlockEditor Component', function() {
 
   describe('component,', function() {
     it("should create a CodeMirror instance for you", function() {
-      const store = initStore();
-      const options = {
-        context: {store}, 
-        childContextTypes: {store: PropTypes.object.isRequired} 
-      };
-      const language = example;
-      const parser = language.getParser();
-      const external = {};
-      const tempBlocks = (
-        <BlockEditor
-          language={language.id}
-          value={""}
-          parser={parser}
-          external={external} />
-      );
-      const wrapper = mount(tempBlocks, options);
-      // console.log(external);
-      console.log("cm:", external.getCodeMirror());
-      // for (let i = 0; i < 10000 && !external.getCodeMirror(); i++) {
-      //   console.log("cm loop:", external.getCodeMirror());
-      // }
-      wrapper.mount();
-      expect(tempBlocks.props.language).toBe(language.id);
-      expect(external.getCodeMirror()).not.toBeUndefined();
+      expect(this.blockEditor.props.language).toBe(this.language.id);
+      expect(this.cm).not.toBeUndefined();
     });
   });
 

@@ -126,7 +126,6 @@ class BlockEditor extends Component {
 
     // HERE BE DRAGONS
     this.props.external.getState = this.getState;
-    this.props.external.getCodeMirror = this.getCodeMirror;
   }
 
   static defaultProps = {
@@ -173,10 +172,7 @@ class BlockEditor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
-  }
-
-  getCodeMirror() {
-    return this.cm;
+    external: {}
   }
 
   // NOTE: if there's a focused node, this handler will not be activated
@@ -289,7 +285,6 @@ class BlockEditor extends Component {
   }
 
   handleEditorDidMount = ed => {
-    console.log("CodeMirror component in BlockEditor mounted!");
     const wrapper = ed.getWrapperElement();
     wrapper.setAttribute('role', 'tree');
     wrapper.setAttribute('aria-label', 'Block Editor');
@@ -304,6 +299,7 @@ class BlockEditor extends Component {
 
     ed.on('changes', this.editorChange);
 
+    this.props.external.cm = ed;
     SHARED.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
@@ -335,8 +331,6 @@ class BlockEditor extends Component {
     ext.getState = () => this.props.dispatch((_, getState) => getState());
     // override the default markText method with one of our own
     ext.markText = (from, to, opts) => alert('not yet implemented');
-    // get CodeMirror instance for testing
-    ext.getCodeMirror = this.getCodeMirror;
   }
 
   handleEditorWillUnmount = ed => {
@@ -365,7 +359,6 @@ class BlockEditor extends Component {
   }
 
   componentDidMount() {
-    console.log("BlockEditor mounted!");
     const {
       parser, language, options, search,
     } = this.props;
