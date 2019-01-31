@@ -316,7 +316,7 @@ export class ASTNode {
   // Create a React _element_ (an instantiated component) for this node.
   reactElement(props) {
     let Component = this.renderFn;
-    return <Component node={this} {...props} />;
+    return renderASTNode({node:this, ...props});
   }
 }
 

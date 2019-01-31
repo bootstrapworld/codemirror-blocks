@@ -366,7 +366,7 @@ class Node extends BlockComponent {
       ...passingProps
     } = this.props;
 
-    console.log("@Render", node.value);
+    //console.log("@Render", node.value);
 
     let comment = node.options.comment;
     const locked = this.isLocked();
