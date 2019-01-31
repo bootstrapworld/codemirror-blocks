@@ -48,7 +48,6 @@ export default class ContentEditable extends Component {
     ev.preventDefault();
     const text = ev.clipboardData.getData('text');
     document.execCommand('insertText', false, text);
-    this.props.onPaste(ev);
   }
 
   componentDidMount() {
