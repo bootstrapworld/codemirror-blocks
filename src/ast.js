@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Component} from 'react';
 import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining} from './utils';
 import uuidv4 from 'uuid/v4';
 import hashObject from 'object-hash';
@@ -269,6 +269,14 @@ export class ASTNode {
     // Two subtrees with identical value are supposed to have the same hash
     this.hash = null; // null for now
 
+    // The React function component for rendering this node.
+    if (typeof this.render === 'function') {
+      this.renderFn = this.render.bind(this);
+    } else {
+      // TODO: Justin
+//      throw new Error("Don't know how to render node of type: " + this.type);
+    }
+
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
       options.comment.id = "block-node-" + this.id + "-comment";
@@ -304,22 +312,22 @@ export class ASTNode {
       return {from: this.from, to: this.to};
     }
   }
+}
 
-  // Get a React component for this node, which can be instantiated with angle brackets `<...>`.
-  reactComponent() {
-    if (typeof this.render === 'function') {
-      return this.render.bind(this);
-    } else {
-      throw new Error("Don't know how to render node of type: " + this.type);
-    }
+class ASTNodeComponent extends Component {
+  constructor(props) {
+    super(props);
+    let node = props.node;
+    this.render = node.render.bind(node);
+    console.log("@constructing AstNodeComponent");
   }
 
-  // Create a React _element_ (an instantiated component) for this node.
-  reactElement(props) {
-    let Component = this.reactComponent();
-    return <Component node={this} {...props} />;
+  shouldComponentUpdate() {
+    console.log("@AstNodeComponent - should update?");
+    return true;
   }
 }
+
 
 class ChildrenIterator {
   constructor(self, keys) {

@@ -1,5 +1,5 @@
 import * as P from './pretty';
-import React from 'react';
+import React, {Component} from 'react';
 import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
 import hashObject from 'object-hash';
 import Node from './components/Node';
@@ -25,7 +25,7 @@ export class Unknown extends ASTNode {
   }
 
   render(props) {
-    const firstElt = this.elts[0].reactElement();
+    const firstElt = this.elts[0].render();
     const restElts = this.elts.slice(1);
     return (
       <Node node={this} {...props}>
@@ -133,7 +133,7 @@ export class StructDefinition extends ASTNode {
   }
 
   render(props) {
-    const fields = this.fields.reactElement();
+    const fields = this.fields.render();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -168,7 +168,7 @@ export class VariableDefinition extends ASTNode {
   }
 
   render(props) {
-    const body = this.body.reactElement();
+    const body = this.body.render();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -203,8 +203,8 @@ export class LambdaExpression extends ASTNode {
   }
 
   render(props) {
-    const args = this.args.reactElement();
-    const body = this.body.reactElement();
+    const args = this.args.render();
+    const body = this.body.render();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -244,8 +244,8 @@ export class FunctionDefinition extends ASTNode {
       this);
   }
 
-  reactComponent() {
-    return FunctionDefinitionComponent;
+  render(props) {
+    return <FunctionDefinitionComponent node={this} {...props} />;
   }
 }
 
@@ -287,8 +287,8 @@ export class CondClause extends ASTNode {
     return P.brackets(P.spaceSep([this.testExpr].concat(this.thenExprs)));
   }
 
-  reactComponent() {
-    return CondClauseComponent;
+  render(props) {
+    return <CondClauseComponent node={this} {...props} />;
   }
 }
 
@@ -335,10 +335,7 @@ export class CondExpression extends ASTNode {
   }
 
   render(props) {
-    const clauses = this.clauses.map((clause, index) => {
-      const Component = clause.reactComponent();
-      return <Component node={clause} key={index}/>;
-    });
+    const clauses = this.clauses.map((clause, index) => clause.render({key: index}));
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">cond</span>

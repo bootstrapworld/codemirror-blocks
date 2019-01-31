@@ -20,7 +20,7 @@ export default class PrimitiveBlock extends Component {
     }
 
     const astNode = this.props.primitive.getASTNode();
-    const elem = astNode ? astNode.reactElement({inToolbar: true}) : this.props.primitive.name;
+    const elem = astNode ? astNode.render({inToolbar: true}) : this.props.primitive.name;
     return (
       <span className="RenderedBlockNode" ref={root => this.root = root}>
         {elem}

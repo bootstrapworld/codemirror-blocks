@@ -366,6 +366,8 @@ class Node extends BlockComponent {
       ...passingProps
     } = this.props;
 
+    console.log("@Render", node.value);
+
     let comment = node.options.comment;
     const locked = this.isLocked();
 
@@ -421,7 +423,7 @@ class Node extends BlockComponent {
           onDoubleClick = {this.handleDoubleClick}
           onKeyDown     = {this.handleKeyDown}>
           {children}
-          {comment && comment.reactElement()}
+          {comment && comment.render()}
         </span>
       );
       if (this.props.normallyEditable) {

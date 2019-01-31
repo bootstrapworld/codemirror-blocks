@@ -31,6 +31,11 @@ class ToplevelBlock extends React.Component {
     node: PropTypes.object.isRequired,
   }
 
+  shouldComponentUpdate(props, state) {
+    console.log("@TopLevelBlock: - should update?");
+    return true;
+  }
+
   render() {
     const {node} = this.props;
     const {from, to} = node.srcRange(); // includes the node's comment, if any
@@ -38,7 +43,8 @@ class ToplevelBlock extends React.Component {
     const mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
     mark.BLOCK_NODE_ID = node.id;
 
-    return ReactDOM.createPortal(node.reactElement(), this.container);
+    console.log("@key", node.id);
+    return ReactDOM.createPortal(node.render(), this.container);
   }
 }
 
