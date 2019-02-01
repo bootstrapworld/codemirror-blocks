@@ -34,10 +34,9 @@ class ToplevelBlock extends React.Component {
   render() {
     const {node} = this.props;
     const {from, to} = node.srcRange(); // includes the node's comment, if any
-
-    const mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
-    mark.BLOCK_NODE_ID = node.id;
-
+    if(this.mark) this.mark.clear();    // clear existing mark to prevent overlapping
+    this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
+    this.mark.BLOCK_NODE_ID = node.id;
     return ReactDOM.createPortal(node.reactElement(), this.container);
   }
 }
@@ -417,19 +416,11 @@ class BlockEditor extends Component {
   }
 
   renderPortals = () => {
-    const portals = [];
+    let portals;
     if (SHARED.cm && this.props.ast) {
       // Render all the portals and add TextMarkers -- thunk this so CM only recalculates once
       SHARED.cm.operation( () => {
-        // NOTE(Oak): we need to clear all Blocks markers (containing a NODE_ID)
-        // to prevent overlapping the marker issue
-        for (const marker of SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
-          console.log('portals rendered!');
-          marker.clear();
-        }
-        for (const r of this.props.ast.rootNodes) {
-          portals.push(<ToplevelBlock key={r.id} node={r} />);
-        }
+        portals = this.props.ast.rootNodes.map(r => <ToplevelBlock key={r.id} node={r} />);
         if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
       });
     }
