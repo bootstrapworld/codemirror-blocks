@@ -212,4 +212,4 @@ Some tips:
 ## Continue Reading
 
 For a more detailed overview of how React goes about its business, see
-[React's Algorithm](react-algorithm.html).
+[React's Algorithm](react-algorithm.md).
