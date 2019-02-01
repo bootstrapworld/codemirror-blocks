@@ -209,4 +209,7 @@ Some tips:
 - To share state, put it in its closest common ancestor.
 - Don't use inheritance.
 
+## Continue Reading
 
+For a more detailed overview of how React goes about its business, see
+[React's Algorithm](react-algorithm.html).
