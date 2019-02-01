@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React from 'react';
 import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining} from './utils';
 import uuidv4 from 'uuid/v4';
 import hashObject from 'object-hash';

@@ -1,5 +1,5 @@
 import * as P from './pretty';
-import React, {Component} from 'react';
+import React from 'react';
 import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
 import hashObject from 'object-hash';
 import Node from './components/Node';

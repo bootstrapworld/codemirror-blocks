@@ -17,7 +17,7 @@ export const reducer = (
     case 'SET_FOCUS':
       return {...state, focusId: action.focusId};
     case 'SET_AST':
-      return {...state, ast: action.ast};
+      return {...state, ast: action.ast, collapsedList: state.collapsedList.filter(action.ast.getNodeById)};
     case 'SET_SELECTIONS':
       return {...state, selections: action.selections};
     case 'SET_ERROR_ID':
