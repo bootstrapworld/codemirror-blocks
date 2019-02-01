@@ -27,16 +27,18 @@ Javascript to allow you to construt Elements using HTML-tag-like notation. So,
 for example, you can write a `Clock` Component, that renders itself using
 standard HTML elements:
 
-    class Clock extends React.Component {
-      render() {
-        return (
-          <div>
-            <h1>Hello, world!</h1>
-            <h2>It is {this.props.date.toLocaleTimeString()}.</h2>
-          </div>
-        );
-      }
-    }
+```javascript
+class Clock extends React.Component {
+  render() {
+    return (
+      <div>
+        <h1>Hello, world!</h1>
+        <h2>It is {this.props.date.toLocaleTimeString()}.</h2>
+      </div>
+    );
+  }
+}
+```
 
 This `Clock` Component can then be used as the name of a tag, to produce a
 `Clock` _Element_. This allows nesting Components inside one another.
@@ -45,10 +47,12 @@ In the end, the root of the DOM needs to be hooked into a place in the actual
 browser DOM, via a function called `ReactDOM.render`. In this example, if we
 just want to render the clock, we can say:
 
-    ReactDOM.render(
-      <Clock />,
-      document.getElementById('root')
-    );
+```javascript
+ReactDOM.render(
+  <Clock />,
+  document.getElementById('root')
+);
+```
 
 Most of the rest of React is additional features that you can add to a
 Component. For example, this clock is stateless and does not update itself;
@@ -58,26 +62,28 @@ there are features to fix that.
 
 These three definitions produce approximately the same thing, a _React Element_:
 
-    const element = (
-      <h1 className="greeting">
-        Hello, world!
-      </h1>
-    );
-    
-    const element = React.createElement(
-      'h1',
-      {className: 'greeting'},
-      'Hello, world!'
-    );
-    
-    // Note: this structure is simplified
-    const element = {
-      type: 'h1',
-      props: {
-      className: 'greeting',
-      children: 'Hello, world!'
-      }
-    };
+```javascript
+const element = (
+  <h1 className="greeting">
+    Hello, world!
+  </h1>
+);
+
+const element = React.createElement(
+  'h1',
+  {className: 'greeting'},
+  'Hello, world!'
+);
+
+// Note: this structure is simplified
+const element = {
+  type: 'h1',
+  props: {
+  className: 'greeting',
+  children: 'Hello, world!'
+  }
+};
+```
 
 React Elements are the nodes that make up the virtual DOM tree that represents
 the state of your application. They are **immutable**.
@@ -123,15 +129,17 @@ The tutorial doesn't seem to give any rules about when this is needed.
 There are two ways to define React _Components_ (i.e., things that can be used
 as a JSX tag):
 
-    function Welcome(props) {
-      return <h1>Hello, {props.name}</h1>;
-    }
+```javascript
+function Welcome(props) {
+  return <h1>Hello, {props.name}</h1>;
+}
 
-    class Welcome extends React.Component {
-      render() {
-        return <h1>Hello, {this.props.name}</h1>;
-      }
-    }
+class Welcome extends React.Component {
+  render() {
+    return <h1>Hello, {this.props.name}</h1>;
+  }
+}
+```
 
 They are equivalent, except that you can do some fancy things with the class
 approach. A Component should return a React Element, or `null` if it wants to
@@ -158,9 +166,11 @@ This _would_ often make it impossible to correctly write a program involving
 state. But fortunately, if you pass a callback to `setState`, it will let you do
 a synchronous update. For example:
 
-    this.setState((state, props) => ({
-      counter: state.counter + props.increment
-    }));
+```javascript
+this.setState((state, props) => ({
+  counter: state.counter + props.increment
+}));
+```
 
 So you get to manually CPS your program to make it correct. Yay!
 
@@ -179,7 +189,9 @@ destroyed. These can be useful for setup and teardown.
 Some HTML elements have an attribute that can be set to an event handler, like
 `onClick`. In React, this is done by providing it a JS function. For example:
 
-    <button onClick={this.handleClick}>
+```javascript
+<button onClick={this.handleClick}>
+```
 
 Some tips:
 
