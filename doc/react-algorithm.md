@@ -125,7 +125,7 @@ function align(oldChildren, newChildren) {
   An old child and a new child align if:
     (i) They have the same `key` prop, and
     (ii) their components are `==`
-  If no `key` props are given, use the children's array index as their `key`.
+  If no `key` props are given, use the array index for each child as its `key`.
 }
 ```
 
