@@ -380,6 +380,13 @@ class BlockEditor extends Component {
     // SHARED.buffer.style.opacity = 0;
     // SHARED.buffer.style.height = '1px';
     document.body.appendChild(SHARED.buffer);
+    SHARED.cm.endOperation(); // unblock CM rendering and refresh
+    SHARED.cm.refresh();
+  }
+
+  componentDidUpdate() {
+    SHARED.cm.endOperation(); // unblock CM rendering and refresh
+    SHARED.cm.refresh();
   }
 
   // TODO(Emmanuel): is 'data' even needed?
@@ -391,6 +398,7 @@ class BlockEditor extends Component {
   }
 
   render() {
+    SHARED.cm.startOperation(); // block CM rendering while we update the DOM
     const classes = [];
     if (this.props.language) {
       classes.push(`blocks-language-${this.props.language}`);
@@ -419,10 +427,8 @@ class BlockEditor extends Component {
     let portals;
     if (SHARED.cm && this.props.ast) {
       // Render all the portals and add TextMarkers -- thunk this so CM only recalculates once
-      SHARED.cm.operation( () => {
-        portals = this.props.ast.rootNodes.map(r => <ToplevelBlock key={r.id} node={r} />);
-        if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
-      });
+      portals = this.props.ast.rootNodes.map(r => <ToplevelBlock key={r.id} node={r} />);
+      if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
     }
     return portals;
   }
