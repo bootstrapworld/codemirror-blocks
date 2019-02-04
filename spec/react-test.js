@@ -1,4 +1,4 @@
-import {CodeMirrorBlocks} from '../src/CodeMirrorBlocks';
+import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
 
 import {

@@ -1,19 +1,11 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import {mount} from '../support/enzyme';
-import {initStore} from 'codemirror-blocks/store';
-import HTML5Backend from 'react-dnd-html5-backend';
-import {DragDropContextProvider} from 'react-dnd';
-import BlockEditor from 'codemirror-blocks/ui/BlockEditor';
-import attachSearch from 'codemirror-blocks/ui/Search';
-import example from 'codemirror-blocks/languages/example';
-import wescheme from 'codemirror-blocks/languages/wescheme';
-// import {BlockMarker} from 'codemirror-blocks/blocks';
-// import CodeMirror from 'codemirror';
+import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
+import wescheme from '../src/languages/wescheme';
+import example from '../src/languages/example';
+import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/searchcursor.js';
-// import {addLanguage} from 'codemirror-blocks/languages';
+import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
+import {addLanguage} from 'codemirror-blocks/languages';
 
-/* eslint-disable */ //temporary
 import {
   click,
   dblclick,
@@ -25,7 +17,7 @@ import {
   dragleave,
   drop,
   cut,
-} from '../support/events';
+} from './support/events';
 
 import {
   LEFT,
@@ -45,128 +37,89 @@ import {
   DKEY,
 } from 'codemirror-blocks/keycode';
 
-import {wait} from '../support/test-utils';
+import {wait} from './support/test-utils';
 
 const TOGGLE_SELECTION_KEYPRESS =
-keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
+      keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
 const PRESERVE_NEXT_KEYPRESS =
-keydown(DOWN, ISMAC ? {altKey: true} : {ctrlKey: true});
+      keydown(DOWN, ISMAC ? {altKey: true} : {ctrlKey: true});
 const PRESERVE_PREV_KEYPRESS =
-keydown(UP, ISMAC ? {altKey: true} : {ctrlKey: true});
+      keydown(UP, ISMAC ? {altKey: true} : {ctrlKey: true});
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 1500;
-/* eslint-enable */ //temporary
+const DELAY = 750;
 
-describe('The BlockEditor Component', function() {
+describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    document.body.insertAdjacentHTML('afterbegin', '<div id="root"></div>');
-    const rootDiv = document.getElementById('root');
-    const options = {
-      attachTo: rootDiv,
-      context: {store: initStore()},
-      childContextTypes: {store: PropTypes.object.isRequired} 
-    };
-    const language = wescheme;
-    const parser = language.getParser();
-    const editorOptions = {
-      parser: parser,
-      renderOptions: language.getRenderOptions(),
-      didInsertNode: function() {},
-      willInsertNode: (cm, sourceNodeText, sourceNode, destination) => {
-        let line = cm.getLine(destination.line);
-        let prev = line[destination.ch - 1] || '\n';
-        let next = line[destination.ch] || '\n';
-        sourceNodeText = sourceNodeText.trim();
-        if (!/\s|[([{]/.test(prev)) {
-          sourceNodeText = ' ' + sourceNodeText;
-        }
-        if (!/\s|[)]}]/.test(next)) {
-          sourceNodeText += ' ';
-        }
-        return sourceNodeText;
-      }
-    };
-    const cmOptions = {
-      lineNumbers: true,
-      viewportMargin: 10
-    };
-    const external = {};
-
-    const UpgradedBlockEditor = attachSearch(BlockEditor, []);
-    const blockEditor = (
-      <UpgradedBlockEditor
-        language={language.id}
-        value={""}
-        options={editorOptions}
-        parser={parser}
-        cmOptions={cmOptions}
-        external={external} />
-    );
-    const completeEditor = (
-      <DragDropContextProvider backend={HTML5Backend}>
-        {blockEditor}
-      </DragDropContextProvider>
-    );
-    this.wrapper = mount(completeEditor, options);
-    this.editor = this.wrapper.instance();
-    this.language = language;
-    this.blockEditor = blockEditor;
-    this.cm = external.cm;
-
-    // this.trackQuarantine   = spyOn(this.blocks,  'makeQuarantineAt').and.callThrough();
-    // this.trackSaveEdit     = spyOn(this.blocks,    'saveQuarantine').and.callThrough();
-    // this.trackHandleChange = spyOn(this.blocks,      'handleChange').and.callThrough();
-    // this.trackReplaceRange = spyOn(this.cm,          'replaceRange').and.callThrough();
-    // this.trackCommitChange = spyOn(this.blocks,      'commitChange').and.callThrough();
-    // this.trackWillInsertNode=spyOn(this.blocks,    'willInsertNode').and.callThrough();
+    const fixture = `
+      <div id="root">
+        <div id="cmb-editor" class="editor-container"/>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('afterbegin', fixture);
+    const container = document.getElementById('cmb-editor');
+    this.blocks = new CodeMirrorBlocks(container, wescheme, "");
+    this.blocks.handleToggle(true);
   });
 
   afterEach(function() {
-    if (this.wrapper) {
-      this.wrapper.detach(); // cleanup blocks and wrapper from DOM tree
-      this.wrapper = null;
-    }
-    document.getElementById("root").remove();
+    document.body.removeChild(document.getElementById('root'));
   });
 
 
-  describe('component,', function() {
-    it("should create a CodeMirror instance for you", function() {
-      expect(this.blockEditor.props.language).toBe(this.language.id);
-      expect(this.cm).not.toBeUndefined();
+  describe('constructor,', function() {
+
+    it("should create an empty editor", async function() {
+      const fixture = `
+        <div id="temp">
+          <div id="cmb-editor-temp" class="editor-container"/>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('afterbegin', fixture);
+      const container = document.getElementById('cmb-editor-temp');
+      const tempBlocks = new CodeMirrorBlocks(container, wescheme, "");
+      tempBlocks.handleToggle(true);
+      const state = tempBlocks.getState();
+      expect(tempBlocks.blockMode).toBe(true);
+      expect(state.ast.rootNodes.length).toBe(0);
+      expect(state.collapsedList.length).toBe(0);
+      expect(state.cur).toBe(null);
+      expect(state.errorId).toBe("");
+      expect(state.focusId).toBe(-1);
+      expect(state.quarantine).toBe(null);
+      expect(state.selections.length).toBe(0);
+
+      document.body.removeChild(document.getElementById('temp'));
+    });
+
+    it("should set block mode to false", function() {
+      this.blocks.handleToggle(false);
+      expect(this.blocks.blockMode).toBe(false);
     });
   });
 
-  describe('component,', function() {
-    it('should take a language and parser as props', function() {
-      const language = example;
-      const parser = language.getParser();
-      const blocks = (
-        <BlockEditor
-          language={language.id}
-          value={""}
-          parser={parser} />
-      );
-      expect(blocks.props.language).toBe(language.id);
-      expect(blocks.props.parser).toBe(parser);
-    });
+  it('should optionally take a language object', function() {
+    const b = new CodeMirrorBlocks(document.getElementById('root'), example, "");
+    expect(b.language.id).toBe('example');
   });
-/*
+
   describe('text marking api,', function() {
-    beforeEach(function() {
-      this.cm.setValue('11 12 (+ 3 4 5)');
-      this.blocks.toggleBlockMode();
-      this.literal1 = this.blocks.ast.rootNodes[0];
-      this.literal2 = this.blocks.ast.rootNodes[1];
-      this.expression = this.blocks.ast.rootNodes[2];
+    beforeEach(async function() {
+      this.blocks.setValue('11 12 (+ 3 4 5)');
+      await wait(DELAY);
+      this.state = this.blocks.getState();
+      this.blocks.handleToggle(true);
+      this.literal1 = this.state.ast.rootNodes[0];
+      this.literal2 = this.state.ast.rootNodes[1];
+      this.expression = this.state.ast.rootNodes[2];
     });
 
+    /*
     it("should allow you to mark nodes with the markText method", function() {
+      // console.log("literal1", this.literal1);
       this.blocks.markText(this.literal1.from, this.literal1.to, {css:"color: red"});
-      expect(this.literal1.el.style.color).toBe('red');
+      expect(this.literal1.element.style.color).toBe('red');
     });
-
     it("should return a BlockMarker object", function() {
       let mark = this.blocks.markText(this.literal1.from, this.literal1.to, {css:"color: red"})[0];
       expect(mark).toEqual(jasmine.any(BlockMarker));
@@ -233,7 +186,7 @@ describe('The BlockEditor Component', function() {
         expect(this.mark.find().to.line).toEqual(this.literal1.to.line);
         expect(this.mark.find().to.ch).toEqual(this.literal1.to.ch);
       });
-    });
+    });*/
   });
 
   // describe('renderer,', function() {
@@ -296,7 +249,7 @@ describe('The BlockEditor Component', function() {
   //     expect(this.cm.getAllMarks().length).toBe(0);
   //   });
   // });
-
+/*
   describe('events,', function() {
     beforeEach(function() {
       this.cm.setValue('11');
@@ -756,6 +709,27 @@ describe('The BlockEditor Component', function() {
       describe('and specifically when editing it,', function() {
         
         
+        // fails nondeterministically - figure out how to avoid 
+        // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
+        it('should save whiteSpace on blur', async function() {
+          this.whiteSpaceEl.dispatchEvent(dblclick());
+          await wait(DELAY);
+          expect(this.trackQuarantine).toHaveBeenCalledWith("", this.whiteSpaceEl);
+          let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
+          let trackOnBlur = spyOn(quarantine, 'onblur').and.callThrough();
+          quarantine.appendChild(document.createTextNode('4253'));
+          quarantine.dispatchEvent(blur());
+          await wait(DELAY);
+          expect(trackOnBlur).toHaveBeenCalled();
+          expect(this.trackSaveEdit).toHaveBeenCalledWith(quarantine);
+          expect(quarantine.textContent).toBe('4253'); // confirms text=4253 inside saveEdit, blocks.js line 495
+          expect(this.trackCommitChange).toHaveBeenCalled();
+          expect(this.trackReplaceRange).toHaveBeenCalledWith(' 4253', Object({ ch: 4, line: 0 }), Object({ ch: 4, line: 0 }));
+          expect(this.cm.getValue()).toBe('(+ 1 4253 2) (+)');
+          expect(this.blocks.hasInvalidEdit).toBe(false);
+        });
+        
+        
         it('should blur whitespace you are editing on enter', async function() {
           this.whiteSpaceEl.dispatchEvent(dblclick());
           let quarantine = this.trackQuarantine.calls.mostRecent().returnValue;
@@ -773,6 +747,18 @@ describe('The BlockEditor Component', function() {
             this.quarantine.dispatchEvent(blur());
           });
 
+          
+          // fails nondeterministically - figure out how to avoid
+          // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
+          it('should not save anything & set all error state', async function() {
+            expect(this.trackSaveEdit).toHaveBeenCalledWith(this.quarantine);
+            expect(this.quarantine.textContent).toBe('"moo');
+            expect(this.cm.replaceRange).not.toHaveBeenCalled();
+            expect(this.quarantine.classList).toContain('blocks-error');
+            expect(this.quarantine.title).toBe('Error: parse error');
+            expect(this.blocks.hasInvalidEdit).toBe(true);
+          });
+          
         });
       });
     });
