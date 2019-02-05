@@ -65,8 +65,6 @@ describe("The Pretty-Printing Doc Class", function() {
   });
 
   describe("when wrapping words", function() {
-    function longExample() {
-    }
 
     it("should be able to wrap an eight-word sentence.", function() {
       let sentence =

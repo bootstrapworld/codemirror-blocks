@@ -1,6 +1,6 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
-
+/* eslint-disable */ //temporary
 import {
   click,
   dblclick,
@@ -43,6 +43,7 @@ const PRESERVE_PREV_KEYPRESS =
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 1500;
+/* eslint-enable */ //temporary
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {

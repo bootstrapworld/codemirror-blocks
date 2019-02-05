@@ -1,11 +1,8 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
 import example from '../src/languages/example';
-import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/searchcursor.js';
-import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
-import {addLanguage} from 'codemirror-blocks/languages';
-
+/* eslint-disable */ //temporary
 import {
   click,
   dblclick,
@@ -48,6 +45,7 @@ const PRESERVE_PREV_KEYPRESS =
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
+/* eslint-enable */ //temporary
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
@@ -60,6 +58,9 @@ describe('The CodeMirrorBlocks Class', function() {
     const container = document.getElementById('cmb-editor');
     this.blocks = new CodeMirrorBlocks(container, wescheme, "");
     this.blocks.handleToggle(true);
+    this.cm = this.blocks.cm;
+
+    this.trackSetQuarantine   = spyOn(this.blocks, 'setQuarantine').and.callThrough();
   });
 
   afterEach(function() {
@@ -89,6 +90,9 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(state.quarantine).toBe(null);
       expect(state.selections.length).toBe(0);
 
+      console.log("BLOCKS:", this.blocks);
+      console.log("STATE:", this.blocks.getState());
+
       document.body.removeChild(document.getElementById('temp'));
     });
 
@@ -104,6 +108,7 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   describe('text marking api,', function() {
+    /*
     beforeEach(async function() {
       this.blocks.setValue('11 12 (+ 3 4 5)');
       await wait(DELAY);
@@ -114,7 +119,6 @@ describe('The CodeMirrorBlocks Class', function() {
       this.expression = this.state.ast.rootNodes[2];
     });
 
-    /*
     it("should allow you to mark nodes with the markText method", function() {
       // console.log("literal1", this.literal1);
       this.blocks.markText(this.literal1.from, this.literal1.to, {css:"color: red"});
@@ -189,96 +193,36 @@ describe('The CodeMirrorBlocks Class', function() {
     });*/
   });
 
-  // describe('renderer,', function() {
-
-  //   it("should render itself when block mode is turned on", function() {
-  //     spyOn(this.blocks.renderer, 'animateTransition').and.callThrough();
-  //     this.blocks.toggleBlockMode();
-  //     expect(this.blocks.blockMode).toBe(true);
-  //     expect(this.blocks.ast).not.toBe(null);
-  //     expect(this.blocks.ast.rootNodes).toEqual([]);
-  //     expect(this.blocks.renderer.animateTransition).toHaveBeenCalled();
-  //   });
-
-  //   it("should do nothing if block mode does not change", function() {
-  //     this.blocks.setBlockMode(true);
-  //     spyOn(this.blocks, 'render');
-  //     this.blocks.setBlockMode(true);
-  //     expect(this.blocks.render).not.toHaveBeenCalled();
-  //   });
-
-  //   it("should automatically re-render when the content changes", function() {
-  //     spyOn(this.blocks.renderer, 'render');
-  //     this.blocks.toggleBlockMode();
-
-  //     // change the document once...
-  //     this.cm.setValue('11');
-  //     expect(this.blocks.ast.rootNodes.length).toBe(1);
-  //     expect(this.blocks.ast.rootNodes[0].type).toBe('literal');
-  //     expect(this.blocks.ast.rootNodes[0].value).toBe(11);
-  //     expect(this.blocks.renderer.render).toHaveBeenCalled();
-  //     expect(this.blocks.renderer.render).toHaveBeenCalledWith(
-  //       this.blocks.ast.rootNodes[0]
-  //     );
-  //     this.blocks.renderer.render.calls.reset();
-
-  //     // change the document again
-  //     this.cm.setValue('5432');
-
-  //     expect(this.blocks.ast.rootNodes.length).toBe(1);
-  //     expect(this.blocks.ast.rootNodes[0].type).toBe('literal');
-  //     expect(this.blocks.ast.rootNodes[0].value).toBe(5432);
-  //     expect(this.blocks.renderer.render).toHaveBeenCalled();
-  //     expect(this.blocks.renderer.render).toHaveBeenCalledWith(
-  //       this.blocks.ast.rootNodes[0]
-  //     );
-  //   });
-
-  //   it("should allow for blocks that touch", function() {
-  //     this.blocks.toggleBlockMode();
-  //     this.cm.setValue('(+ 1 2)(* 3 6)');
-  //     expect(this.blocks.ast.rootNodes.length).toEqual(2);
-  //     expect(this.cm.getAllMarks().length).toEqual(2);
-  //   });
-
-  //   it('should unrender itself when block mode is turned off', function() {
-  //     this.blocks.setBlockMode(true);
-  //     this.cm.setValue('1');
-  //     expect(this.cm.getAllMarks().length).toBe(1);
-  //     this.blocks.setBlockMode(false);
-  //     expect(this.cm.getAllMarks().length).toBe(0);
-  //   });
-  // });
-/*
   describe('events,', function() {
     beforeEach(function() {
-      this.cm.setValue('11');
-      this.blocks.setBlockMode(true);
-      this.literal = this.blocks.ast.rootNodes[0];
+      this.blocks.setValue('11');
+      this.blocks.handleToggle(true);
+      this.state = this.blocks.getState();
+      this.literal = this.state.ast.rootNodes[0];
     });
 
     describe("when dealing with top-level input,", function() {
 
       beforeEach(function() {
-        this.cm.setValue('42 11');
+        this.blocks.setValue('42 11');
       });
 
       it('typing at the end of a line', function() {
-        this.cm.setCursor({line: 0, ch: 5});
-        this.cm.getInputField().dispatchEvent(keypress(100));
-        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
+        this.blocks.setCursor({line: 0, ch: 5});
+        this.blocks.getInputField().dispatchEvent(keypress(57));
+        expect(this.blocks.getValue()).toEqual('42 119');
       });
 
       it('typing at the beginning of a line', function() {
-        this.cm.setCursor({line: 0, ch: 0});
-        this.cm.getInputField().dispatchEvent(keypress(100));
-        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
+        this.blocks.setCursor({line: 0, ch: 0});
+        this.blocks.getInputField().dispatchEvent(keypress(57));
+        expect(this.blocks.getValue()).toEqual('942 11');
       });
 
       it('typing between two blocks on a line', function() {
-        this.cm.setCursor({line: 0, ch: 3});
-        this.cm.getInputField().dispatchEvent(keypress(100));
-        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
+        this.blocks.setCursor({line: 0, ch: 3});
+        this.blocks.getInputField().dispatchEvent(keypress(57));
+        expect(this.blocks.getValue()).toEqual('42 911');
       });
 
       // TODO: figure out how to fire a paste event
@@ -287,71 +231,87 @@ describe('The CodeMirrorBlocks Class', function() {
     describe("when dealing with node activation,", function() {
 
       beforeEach(function() {
-        this.cm.setValue('11 54');
-        this.literal = this.blocks.ast.rootNodes[0];
-        this.literal2 = this.blocks.ast.rootNodes[1];
+        this.blocks.setValue('11 54');
+        this.state = this.blocks.getState();
+        this.literal = this.state.ast.rootNodes[0];
+        this.literal2 = this.state.ast.rootNodes[1];
       });
 
       it('should only allow one node to be active at a time', function() {
-        this.literal.el.dispatchEvent(click());
-        this.literal2.el.dispatchEvent(click());
-        expect(this.blocks.getActiveNode()).not.toBe(this.literal);
-        expect(this.blocks.getActiveNode()).toBe(this.literal2);
+        this.literal.element.dispatchEvent(click());
+        this.literal2.element.dispatchEvent(click());
+        const {ast, focusId} = this.blocks.getState();
+        const activeNode = ast.getNodeByNId(focusId);
+        expect(activeNode).not.toBe(this.literal);
+        expect(activeNode).toBe(this.literal2);
       });
 
       it('should put focus on the active node', function() {
-        this.literal.el.dispatchEvent(click());
-        expect(document.activeElement).toBe(this.literal.el);
-        expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
+        this.literal.element.dispatchEvent(click());
+        expect(document.activeElement).toBe(this.literal.element);
+        expect(this.blocks.cm.getScrollerElement().getAttribute('aria-activedescendent')).toBe(this.literal.element.id);
       });
-
+      
       it('should not delete active nodes when the delete key is pressed', async function() {
-        expect(this.cm.getValue()).toBe('11 54');
-        this.literal.el.dispatchEvent(click());
-        expect(this.blocks.getActiveNode()).toBe(this.literal);
-        this.cm.getWrapperElement().dispatchEvent(keydown(DELETE));
+        expect(this.blocks.getValue()).toBe('11 54');
+        this.literal.element.dispatchEvent(click());
+        const {ast, focusId} = this.blocks.getState();
+        const activeNode = ast.getNodeByNId(focusId);
+        expect(activeNode).toBe(this.literal);
+        this.blocks.getWrapperElement().dispatchEvent(keydown(DELETE));
         await wait(DELAY);
-        expect(this.cm.getValue()).toBe('11 54');
+        expect(this.blocks.getValue()).toBe('11 54');
       });
-
+      
       it('should activate the first node when down is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(DOWN));
-        expect(this.blocks.getActiveNode()).toBe(this.literal);
-        expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
+        const {ast, focusId} = this.blocks.getState();
+        const activeNode = ast.getNodeByNId(focusId);
+        expect(activeNode).toBe(this.literal);
+        expect(this.blocks.cm.getScrollerElement().getAttribute('aria-activedescendent')).toBe(this.literal.element.id);
       });
-
+      
       it('should activate the next node when down is pressed', function() {
         this.cm.getWrapperElement().dispatchEvent(keydown(DOWN));
         this.cm.getWrapperElement().dispatchEvent(keydown(DOWN));
-        expect(this.blocks.getActiveNode()).not.toBe(this.literal);
-        expect(this.blocks.getActiveNode()).toBe(this.literal2);
-        expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
+        const {ast, focusId} = this.blocks.getState();
+        const activeNode = ast.getNodeByNId(focusId);
+        expect(activeNode).not.toBe(this.literal);
+        expect(activeNode).toBe(this.literal2);
+        expect(this.blocks.cm.getScrollerElement().getAttribute('aria-activedescendent')).toBe(this.literal2.element.id);
       });
-
+      
       it('should activate the node after the cursor when down is pressed', function() {
         this.cm.setCursor({line: 0, ch: 2});
         this.cm.getWrapperElement().dispatchEvent(keydown(DOWN));
-        expect(this.blocks.getActiveNode()).not.toBe(this.literal);
-        expect(this.blocks.getActiveNode()).toBe(this.literal2);
-        expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal2.el.id);
+        const {ast, focusId} = this.blocks.getState();
+        const activeNode = ast.getNodeByNId(focusId);
+        expect(activeNode).not.toBe(this.literal);
+        expect(activeNode).toBe(this.literal2);
+        expect(this.blocks.cm.getScrollerElement().getAttribute('aria-activedescendent')).toBe(this.literal2.element.id);
       });
-
+      
       it('should activate the node before the cursor when up is pressed', function() {
         this.cm.setCursor({line: 0, ch: 2});
         this.cm.getWrapperElement().dispatchEvent(keydown(UP));
-        expect(this.blocks.getActiveNode()).not.toBe(this.literal2);
-        expect(this.blocks.getActiveNode()).toBe(this.literal);
-        expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.literal.el.id);
+        const {ast, focusId} = this.blocks.getState();
+        const activeNode = ast.getNodeByNId(focusId);
+        expect(activeNode).not.toBe(this.literal2);
+        expect(activeNode).toBe(this.literal);
+        expect(this.blocks.cm.getScrollerElement().getAttribute('aria-activedescendent')).toBe(this.literal.element.id);
       });
-
+      
       it('should toggle the editability of activated node when Enter is pressed', async function() {
-        this.literal.el.dispatchEvent(click());
-        expect(this.blocks.getActiveNode()).toBe(this.literal);
-        this.literal.el.dispatchEvent(keydown(ENTER));
+        this.literal.element.dispatchEvent(click());
+        const {ast, focusId} = this.blocks.getState();
+        const activeNode = ast.getNodeByNId(focusId);
+        expect(activeNode).toBe(this.literal);
+        this.literal.element.dispatchEvent(keydown(ENTER));
         await wait(DELAY);
-        expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
+        expect(this.blocks.setQuarantine).toHaveBeenCalled();
       });
-
+      
+      /*
       it('should cancel the editability of activated node when Esc is pressed', async function() {
         this.literal.el.dispatchEvent(click());
         expect(this.blocks.getActiveNode()).toBe(this.literal);
@@ -487,9 +447,9 @@ describe('The CodeMirrorBlocks Class', function() {
           expect(this.blocks.scroller.getAttribute('aria-activedescendent')).toBe(this.thirdRoot.args[1].el.id);
           
         });
-      });
+      });*/
     });
-
+    /*
     describe("when dealing with node selection, ", function() {
 
       beforeEach(function() {
@@ -867,6 +827,6 @@ describe('The CodeMirrorBlocks Class', function() {
         nodeEl.parentElement.dispatchEvent(dropEvent);
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
-    });
-  });*/
+    });*/
+  });
 });

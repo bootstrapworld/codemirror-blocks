@@ -331,6 +331,8 @@ class BlockEditor extends Component {
     ext.getState = () => this.props.dispatch((_, getState) => getState());
     // override the default markText method with one of our own
     ext.markText = (from, to, opts) => alert('not yet implemented');
+    // attach method to set quarantine for testing
+    ext.setQuarantine = () => this.props.setQuarantine;
   }
 
   handleEditorWillUnmount = ed => {
@@ -423,7 +425,7 @@ class BlockEditor extends Component {
       // NOTE(Oak): we need to clear all Blocks markers (containing a NODE_ID)
       // to prevent overlapping the marker issue
       for (const marker of SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
-        console.log('portals rendered!');
+        // console.log('portals rendered!');
 
         // NOTE(Oak): we need to clear all markers up front to prevent
         // overlapping the marker issue
@@ -433,7 +435,7 @@ class BlockEditor extends Component {
         portals.push(<ToplevelBlock key={r.id} node={r} />);
       }
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
-      setTimeout(() => { SHARED.cm.refresh(); console.log('refreshed CM'); }, 100);
+      setTimeout(() => { SHARED.cm.refresh(); /*console.log('refreshed CM');*/ }, 100);
     }
     return portals;
   }
