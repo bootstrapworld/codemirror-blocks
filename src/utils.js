@@ -93,7 +93,7 @@ export function sayActionForNodes(nodes, action) {
   nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
   say(action + " " +
     nodes.map((node) => node.options['aria-label'])
-    .join(" and "));
+      .join(" and "));
 }
 
 export function skipCollapsed(node, next, state) {
