@@ -380,12 +380,18 @@ class BlockEditor extends Component {
     // SHARED.buffer.style.opacity = 0;
     // SHARED.buffer.style.height = '1px';
     document.body.appendChild(SHARED.buffer);
-    SHARED.cm.endOperation(); // unblock CM rendering and refresh
-    SHARED.cm.refresh();
+    this.unblockCM();
   }
 
-  componentDidUpdate() {
-    SHARED.cm.endOperation(); // unblock CM rendering and refresh
+  componentDidUpdate() { this.unblockCM(); }
+
+  // If there's no quarantine, block CM rendering while we update the DOM
+  blockCM() {
+    if(!this.props.hasQuarantine) SHARED.cm.startOperation();
+  }
+  // If there's no quarantine, unblock CM rendering and refresh line heights
+  unblockCM() {
+    if(!this.props.hasQuarantine) SHARED.cm.endOperation();
     SHARED.cm.refresh();
   }
 
@@ -398,7 +404,7 @@ class BlockEditor extends Component {
   }
 
   render() {
-    SHARED.cm.startOperation(); // block CM rendering while we update the DOM
+    this.blockCM();
     const classes = [];
     if (this.props.language) {
       classes.push(`blocks-language-${this.props.language}`);
