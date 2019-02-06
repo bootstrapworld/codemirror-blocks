@@ -26,8 +26,7 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      // 'spec/index.js'
-      'spec/new-blocks-test.js'
+      'spec/index.js'
     ],
 
 
@@ -40,7 +39,6 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       "spec/index.js": ["webpack", "sourcemap"],
-      'spec/new-blocks-test.js': ["webpack", "sourcemap"]
     },
 
     webpack: webpackConfig,

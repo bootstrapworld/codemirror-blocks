@@ -299,6 +299,7 @@ class BlockEditor extends Component {
 
     ed.on('changes', this.editorChange);
 
+    this.props.external.cm = ed;
     SHARED.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
