@@ -1,6 +1,6 @@
 /*eslint no-unused-vars: 0*/
 
-import {CodeMirrorBlocks} from 'codemirror-blocks/blocks';
+import CodeMirrorBlocks from 'codemirror-blocks/blocks';
 import CodeMirror from 'codemirror';
 import ExampleParser from 'codemirror-blocks/languages/example/ExampleParser';
 import {

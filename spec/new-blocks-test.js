@@ -1,4 +1,4 @@
-import {CodeMirrorBlocks} from '../src/CodeMirrorBlocks';
+import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
 /* eslint-disable */ //temporary
@@ -539,15 +539,14 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.blocks.getState().selections.length).toBe(1);
       });
     });
-    /*
-
+    
     it('should begin editing a node on double click', async function() {
       this.literal.element.dispatchEvent(dblclick());
       await wait(DELAY);
       expect(document.activeElement.classList).toContain('blocks-editing');
       expect(document.activeElement.contentEditable).toBe('true');
     });
-
+    
     it('should save a valid, edited node on blur', async function() {
       this.literal.element.dispatchEvent(dblclick());
       await wait(DELAY);
@@ -564,6 +563,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.cm.getValue()).toEqual('9');
       expect(this.blocks.hasInvalidEdit).toBe(false);
     });
+    /*
 
     it('should return the node being edited on esc', async function() {
       this.literal.element.dispatchEvent(dblclick());
