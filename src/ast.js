@@ -36,7 +36,16 @@ export class AST {
   }
 
   toString() {
-    return this.rootNodes.map(r => r.toString()).join('\n');
+    let lines = [];
+    let prevNode = null;
+    for (let node of this.rootNodes) {
+      let numBlankLines = prevNode
+          ? node.srcRange().from.line - prevNode.srcRange().to.line - 1
+          : 0;
+      lines.push("\n".repeat(numBlankLines) + node.toString());
+      prevNode = node;
+    }
+    return lines.join("\n");
   }
 
   children() {
