@@ -39,6 +39,13 @@ module.exports = function(config) {
         ],
         enforce: "pre",
         loader: "babel-loader?cacheDirectory=true",
+      },
+      {
+        test: /\.css$/,
+        include: [
+          path.resolve(__dirname, '..', 'spec')
+        ],
+        loaders: ['style-loader', 'css-loader']
       }])
     },
     plugins: plugins,

@@ -307,8 +307,10 @@ export class ASTNode {
   srcRange() {
     const comment = this.options.comment;
     if (comment) {
-      return {from: minpos(this.from, comment.from),
-              to:   maxpos(this.to,   comment.to)};
+      return {
+        from: minpos(this.from, comment.from),
+        to:   maxpos(this.to,   comment.to)
+      };
     } else {
       return {from: this.from, to: this.to};
     }

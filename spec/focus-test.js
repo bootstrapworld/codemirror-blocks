@@ -7,7 +7,7 @@ import {
   click,
   blur,
   keydown,
-} from './events';
+} from './support/events';
 import {
   DOWN,
   DELETE,
@@ -15,7 +15,7 @@ import {
   RIGHTBRACKET,
 } from 'codemirror-blocks/keycode';
 
-import {wait} from './test-utils';
+import {wait} from './support/test-utils';
 
 
 // ms delay to let the DOM catch up before testing

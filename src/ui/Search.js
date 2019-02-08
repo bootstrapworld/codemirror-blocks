@@ -47,7 +47,7 @@ export default (Editor, searchModes) => {
       );
       if (result !== null) {
         const {node, cursor} = result;
-        console.log('search cursor 2', cursor);
+        // console.log('search cursor 2', cursor);
         this.setState({cursor});
         return node;
       } else {
@@ -62,7 +62,7 @@ export default (Editor, searchModes) => {
     }
 
     handleSetCursor = cursor => {
-      console.log('search cursor', cursor);
+      // console.log('search cursor', cursor);
       this.setState({cursor});
     }
 

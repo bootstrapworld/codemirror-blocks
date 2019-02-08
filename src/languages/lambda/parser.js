@@ -27,95 +27,95 @@ export function parseToIntermediateAST(code) {
 
 function convertAST(lambdaNode) {
   switch (lambdaNode.type) {
-    case 'prog':
-      return new Prog(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.prog.map(convertAST)
-      );
-    case 'num':
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.value,
-        'number'
-      );
-    case 'str':
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.value,
-        'string'
-      );
-    case 'var':
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.value,
-        'symbol'
-      );
-    case 'bool':
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.value,
-        'bool'
-      );
-    case 'def':
-      return new VariableDefinition(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.name,
-        lambdaNode.body.map(convertAST)
-      );
-    case 'lambda':
-      return new FunctionDefinition(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.name,
-        lambdaNode.vars.map(convertAST),
-        lambdaNode.body.map(convertAST)
-      );
-    case 'call':
-      return new FunctionApp(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.func,
-        lambdaNode.args.map(convertAST)
-      );
-    case 'assign':
-      return new Assignment(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.operator,
-        lambdaNode.left.map(convertAST),
-        lambdaNode.right.map(convertAST)
-      );
-    case 'binary':
-      return new Binary(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.operator,
-        lambdaNode.left.map(convertAST),
-        lambdaNode.right.map(convertAST)
-      );
-    case 'let':
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.vars.map(convertAST),
-        lambdaNode.body.map(convertAST)
-      );
-    case 'if':
-      return new Conditional(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.cond.map(convertAST),
-        lambdaNode.then.map(convertAST),
-        lambdaNode.else.map(convertAST)
-      );
-    default:
-      throw new Error("Don't know how to convert node of type "+ lambdaNode.type);
+  case 'prog':
+    return new Prog(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.prog.map(convertAST)
+    );
+  case 'num':
+    return new Literal(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.value,
+      'number'
+    );
+  case 'str':
+    return new Literal(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.value,
+      'string'
+    );
+  case 'var':
+    return new Literal(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.value,
+      'symbol'
+    );
+  case 'bool':
+    return new Literal(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.value,
+      'bool'
+    );
+  case 'def':
+    return new VariableDefinition(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.name,
+      lambdaNode.body.map(convertAST)
+    );
+  case 'lambda':
+    return new FunctionDefinition(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.name,
+      lambdaNode.vars.map(convertAST),
+      lambdaNode.body.map(convertAST)
+    );
+  case 'call':
+    return new FunctionApp(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.func,
+      lambdaNode.args.map(convertAST)
+    );
+  case 'assign':
+    return new Assignment(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.operator,
+      lambdaNode.left.map(convertAST),
+      lambdaNode.right.map(convertAST)
+    );
+  case 'binary':
+    return new Binary(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.operator,
+      lambdaNode.left.map(convertAST),
+      lambdaNode.right.map(convertAST)
+    );
+  case 'let':
+    return new Literal(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.vars.map(convertAST),
+      lambdaNode.body.map(convertAST)
+    );
+  case 'if':
+    return new Conditional(
+      lambdaNode.from,
+      lambdaNode.to,
+      lambdaNode.cond.map(convertAST),
+      lambdaNode.then.map(convertAST),
+      lambdaNode.else.map(convertAST)
+    );
+  default:
+    throw new Error("Don't know how to convert node of type "+ lambdaNode.type);
   }
 }
 

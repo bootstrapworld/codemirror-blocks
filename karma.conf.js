@@ -38,7 +38,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      "spec/index.js": ["webpack", "sourcemap"]
+      "spec/index.js": ["webpack", "sourcemap"],
     },
 
     webpack: webpackConfig,
@@ -47,7 +47,7 @@ module.exports = function(config) {
     },
     client: {
       // don't log console output in our test console
-      captureConsole: false
+      captureConsole: false,
     },
 
     reporters: reporters,

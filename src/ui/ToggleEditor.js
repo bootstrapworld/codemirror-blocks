@@ -73,6 +73,7 @@ export default class ToggleEditor extends React.Component {
       try {
         let ast = SHARED.parser.parse(SHARED.cm.getValue());
         let code = ast.toString();
+        this.props.external.blockMode = blockMode;
         if (blockMode) {
           say("Switching to block mode");
           SHARED.cm.setValue(code);
