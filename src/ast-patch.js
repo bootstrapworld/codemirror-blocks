@@ -22,7 +22,7 @@ function copyAllIds(oldTree, newTree) {
   }
 }
 
-export default function unify(oldTree, newTree) {
+export default function unify(oldTree, newTree, drag) {
   function loop(oldTree, newTree) {
     newTree.id = oldTree.id;
     const index = {};
@@ -58,6 +58,10 @@ export default function unify(oldTree, newTree) {
     }
   }
   loop(oldTree, newTree);
+  // special-case for drag-and-drop
+  if(drag) {
+    copyAllIds(oldTree.getNodeById(drag.id), newTree.getNodeAfterCur(drag.loc));
+  }
   newTree.annotateNodes();
   return newTree;
 }
