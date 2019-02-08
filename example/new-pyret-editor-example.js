@@ -1,5 +1,5 @@
 import pyret from '../src/languages/pyret';
-import {CodeMirrorBlocks} from '../src/CodeMirrorBlocks-pyret';
+import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import './example-page.less';
 //import bigExampleCode from './ast-test.rkt';
 
