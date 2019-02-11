@@ -2,7 +2,6 @@ import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
 import {
   click,
-  blur,
   keyDown,
   insertText
 } from './support/simulate';
@@ -46,8 +45,8 @@ describe('The CodeMirrorBlocks Class', function() {
       click(this.literal3);
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal3.element);
-      keyDown(this.literal3, " ");
-      keyDown(this.literal3, "Delete");
+      keyDown(" ");
+      keyDown("Delete");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+ 1 2 )');
       expect(this.cmb.getFocusedNode().id).toBe(this.literal2.id);
@@ -57,8 +56,8 @@ describe('The CodeMirrorBlocks Class', function() {
       click(this.literal1);
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal1.element);
-      keyDown(this.literal1, " ");
-      keyDown(this.literal1, "Delete");
+      keyDown(" ");
+      keyDown("Delete");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+  2 3)');
       expect(this.cmb.getFocusedNode().id).toBe(this.func.id);
@@ -68,8 +67,8 @@ describe('The CodeMirrorBlocks Class', function() {
       click(this.literal2);
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal2.element);
-      keyDown(this.literal2, " ");
-      keyDown(this.literal2, "Delete");
+      keyDown(" ");
+      keyDown("Delete");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+ 1  3)');
       expect(this.cmb.getFocusedNode().id).toBe(this.literal1.id);
@@ -77,12 +76,14 @@ describe('The CodeMirrorBlocks Class', function() {
 
     it('deleting multiple nodes should shift focus to the one before', async function() {
       click(this.literal2);
-      keyDown(this.literal2, " ");
-      keyDown(this.literal2, "ArrowDown");
-      keyDown(this.literal3, " ");
+      await wait(DELAY);
+      keyDown(" ");
+      keyDown("ArrowDown");
+      // TODO: why does this only work when node=this.literal3 is specified?
+      keyDown(" ", {}, this.literal3);
       await wait(DELAY);
       expect(this.cmb.getSelectedNodes().length).toBe(2);
-      keyDown(this.literal3, "Delete");
+      keyDown("Delete");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+ 1  )');
       expect(this.cmb.getFocusedNode().id).toBe(this.literal1.id);
@@ -91,10 +92,10 @@ describe('The CodeMirrorBlocks Class', function() {
     it('inserting a node should put focus on the new node', async function() {
       click(this.literal1);
       await wait(DELAY);
-      keyDown(this.literal1, ']', {ctrlKey: true});
+      keyDown(']', {ctrlKey: true});
       await wait(DELAY);
       insertText('99'); // in place of 2x keydown
-      keyDown(document.activeElement, "Enter");
+      keyDown("Enter");
       await wait(DELAY);
       // extra WS is removed when we switch back to text, but in blockmode
       // there's an extra space inserted after 99
@@ -106,10 +107,10 @@ describe('The CodeMirrorBlocks Class', function() {
     it('inserting mulitple nodes should put focus on the last of the new nodes', async function() {
       click(this.literal1);
       await wait(DELAY);
-      keyDown(this.literal1, ']', {ctrlKey: true});
+      keyDown(']', {ctrlKey: true});
       await wait(DELAY);
       insertText('99 88 77');
-      keyDown(document.activeElement, "Enter");
+      keyDown("Enter");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+ 1 99 88 77  2 3)');
       // TODO(Emmanuel): does getFocusedNode().value always return strings?

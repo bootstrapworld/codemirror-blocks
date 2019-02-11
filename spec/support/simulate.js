@@ -8,13 +8,13 @@ export function click(node) {
 export function doubleClick(node) {
   Simulate.doubleClick(toElement(node));
 }
-export function blur(node) {
+export function blur(node=document.activeElement) {
   Simulate.blur(toElement(node));
 }
-export function keyDown(node, key, other={}) {
+export function keyDown(key, other={}, node=document.activeElement) {
   Simulate.keyDown(toElement(node), makeKeyEvent(key, other));
 }
-export function keyPress(node, key, other={}) {
+export function keyPress(key, other={}, node=document.activeElement) {
   Simulate.keyPress(toElement(node), makeKeyEvent(key, other));
 }
 export function insertText(text) {
