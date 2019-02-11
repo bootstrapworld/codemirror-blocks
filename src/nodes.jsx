@@ -244,8 +244,8 @@ export class FunctionDefinition extends ASTNode {
       this);
   }
 
-  reactComponent() {
-    return FunctionDefinitionComponent;
+  render(props) {
+    return <FunctionDefinitionComponent node={this} {...props} />;
   }
 }
 
@@ -287,8 +287,8 @@ export class CondClause extends ASTNode {
     return P.brackets(P.spaceSep([this.testExpr].concat(this.thenExprs)));
   }
 
-  reactComponent() {
-    return CondClauseComponent;
+  render(props) {
+    return <CondClauseComponent node={this} {...props} />;
   }
 }
 
@@ -335,10 +335,7 @@ export class CondExpression extends ASTNode {
   }
 
   render(props) {
-    const clauses = this.clauses.map((clause, index) => {
-      const Component = clause.reactComponent();
-      return <Component node={clause} key={index}/>;
-    });
+    const clauses = this.clauses.map((clause, index) => clause.reactElement({key: index}));
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">cond</span>
