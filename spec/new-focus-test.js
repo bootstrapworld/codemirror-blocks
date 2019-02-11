@@ -5,6 +5,7 @@ import {
   blur,
   keydown,
   keypress,
+  input,
   pressTheDamnKey
 } from './support/events';
 import {
@@ -12,6 +13,8 @@ import {
   DELETE,
   SPACE,
   RIGHTBRACKET,
+  ENTER,
+  DKEY
 } from 'codemirror-blocks/keycode';
 import {wait} from './support/test-utils';
 
@@ -54,8 +57,6 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(document.activeElement).toBe(this.literal3.element);
       this.literal3.element.dispatchEvent(keydown(SPACE));
       this.literal3.element.dispatchEvent(keydown(DELETE));
-      // QUESTION: Was there an important reason the delete key dispatched this way?
-//      this.cmb.getWrapperElement().dispatchEvent(keydown(DELETE));
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+ 1 2 )');
       expect(this.cmb.getFocusedNode().id).toBe(this.literal2.id);
@@ -95,34 +96,23 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.cmb.getValue()).toBe('(+ 1  )');
       expect(this.cmb.getFocusedNode().id).toBe(this.literal1.id);
     });
-
-    // TODO: This test and the next are broken.
-    // The old way of fiddling with the quarantine doesn't work because the
-    // quarantine doesn't seem to be set in this instance any more. And the new
-    // way of just pressing the '9' key doesn't work for unknown reasons.
+    
+    // Karma isn't able to simulate onInput events from keydown, which
+    // contendEditable relies upon. Instead we use execCommand('insertText'),
+    // which bypasses the keydown entirely and just lets us set the contents
     it('inserting a node should put focus on the new node', async function() {
       this.literal1.element.dispatchEvent(click());
       await wait(DELAY);
       this.literal1.element.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
       await wait(DELAY);
-      // New Way:
-      document.dispatchEvent(keypress(48 + 9)); // the '9' key
-      document.dispatchEvent(keypress(48 + 9));
-      this.literal1.element.dispatchEvent(blur());
+      document.execCommand('insertText', false, '99'); // in place of 2x keydown
+      document.activeElement.dispatchEvent(keydown(ENTER));
       await wait(DELAY);
-      /* Old Way:
-      let quarantine = this.cmb.getQuarantine();
-      let selection = window.getSelection();
-      expect(selection.rangeCount).toEqual(1);
-      let range = selection.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(document.createTextNode('99'));
-      this.literal1.element.dispatchEvent(blur());
-      quarantine.dispatchEvent(blur());
-      */
-      await wait(DELAY);
-      expect(this.cmb.getValue()).toBe('(+ 1 99 2 3)');
-      expect(this.cmb.getFocusedNode().value).toBe(99);
+      // extra WS is removed when we switch back to text, but in blockmode
+      // there's an extra space inserted after 99
+      expect(this.cmb.getValue()).toBe('(+ 1 99  2 3)');
+      // TODO(Emmanuel): does getFocusedNode().value always return strings?
+      expect(this.cmb.getFocusedNode().value).toBe('99');
     });
 
     it('inserting mulitple nodes should put focus on the last of the new nodes', async function() {
@@ -130,17 +120,12 @@ describe('The CodeMirrorBlocks Class', function() {
       await wait(DELAY);
       this.literal1.element.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
       await wait(DELAY);
-      // Old Way:
-      let quarantine = this.cmb.getQuarantine();
-      let selection = window.getSelection();
-      expect(selection.rangeCount).toEqual(1);
-      let range = selection.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(document.createTextNode('99 88 77'));
-      quarantine.dispatchEvent(blur());
+      document.execCommand('insertText', false, '99 88 77');
+      document.activeElement.dispatchEvent(keydown(ENTER));
       await wait(DELAY);
-      expect(this.cmb.getValue()).toBe('(+ 1 99 88 77 2 3)');
-      expect(this.cmb.getFocusedNode().value).toBe(77);
+      expect(this.cmb.getValue()).toBe('(+ 1 99 88 77  2 3)');
+      // TODO(Emmanuel): does getFocusedNode().value always return strings?
+      expect(this.cmb.getFocusedNode().value).toBe('77');
     });
   });
 });
