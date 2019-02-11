@@ -10,7 +10,7 @@ class TextEditor extends Component {
     cmOptions: PropTypes.object,
     parser: PropTypes.object.isRequired,
     initialCode: PropTypes.string.isRequired,
-    onBeforeChange: PropTypes.func.isRequired,
+    onBeforeChange: PropTypes.func,
     setAnnouncer: PropTypes.func.isRequired,
     external: PropTypes.object,
   }

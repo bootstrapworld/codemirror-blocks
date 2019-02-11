@@ -34,10 +34,9 @@ class ToplevelBlock extends React.Component {
   render() {
     const {node} = this.props;
     const {from, to} = node.srcRange(); // includes the node's comment, if any
-
-    const mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
-    mark.BLOCK_NODE_ID = node.id;
-
+    if(this.mark) this.mark.clear();    // clear existing mark to prevent overlapping
+    this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
+    this.mark.BLOCK_NODE_ID = node.id;
     return ReactDOM.createPortal(node.reactElement(), this.container);
   }
 }
@@ -394,6 +393,19 @@ class BlockEditor extends Component {
     // SHARED.buffer.style.opacity = 0;
     // SHARED.buffer.style.height = '1px';
     document.body.appendChild(SHARED.buffer);
+    this.unblockCM();
+  }
+
+  componentDidUpdate() { this.unblockCM(); }
+
+  // If there's no quarantine, block CM rendering while we update the DOM
+  blockCM() {
+    if(!this.props.hasQuarantine) SHARED.cm.startOperation();
+  }
+  // If there's no quarantine, unblock CM rendering and refresh line heights
+  unblockCM() {
+    if(!this.props.hasQuarantine) SHARED.cm.endOperation();
+    SHARED.cm.refresh();
   }
 
   // TODO(Emmanuel): is 'data' even needed?
@@ -405,6 +417,7 @@ class BlockEditor extends Component {
   }
 
   render() {
+    this.blockCM();
     const classes = [];
     if (this.props.language) {
       classes.push(`blocks-language-${this.props.language}`);
@@ -430,22 +443,11 @@ class BlockEditor extends Component {
   }
 
   renderPortals = () => {
-    const portals = [];
+    let portals;
     if (SHARED.cm && this.props.ast) {
-      // NOTE(Oak): we need to clear all Blocks markers (containing a NODE_ID)
-      // to prevent overlapping the marker issue
-      for (const marker of SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
-        // console.log('portals rendered!');
-
-        // NOTE(Oak): we need to clear all markers up front to prevent
-        // overlapping the marker issue
-        marker.clear();
-      }
-      for (const r of this.props.ast.rootNodes) {
-        portals.push(<ToplevelBlock key={r.id} node={r} />);
-      }
+      // Render all the portals and add TextMarkers -- thunk this so CM only recalculates once
+      portals = this.props.ast.rootNodes.map(r => <ToplevelBlock key={r.id} node={r} />);
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
-      setTimeout(() => { SHARED.cm.refresh(); /*console.log('refreshed CM');*/ }, 100);
     }
     return portals;
   }

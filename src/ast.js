@@ -316,21 +316,21 @@ export class ASTNode {
     }
   }
 
-  // Get a React component for this node, which can be instantiated with angle brackets `<...>`.
-  reactComponent() {
-    if (typeof this.render === 'function') {
-      return this.render.bind(this);
-    } else {
-      throw new Error("Don't know how to render node of type: " + this.type);
-    }
-  }
-
   // Create a React _element_ (an instantiated component) for this node.
   reactElement(props) {
-    let Component = this.reactComponent();
-    return <Component node={this} {...props} />;
+    return renderASTNode({node:this, ...props});
   }
 }
+
+function renderASTNode(props) {
+  let node = props.node;
+  if (typeof node.render === 'function') {
+    return node.render.bind(node)(props);
+  } else {
+    throw new Error("Don't know how to render node of type: " + node.type);
+  }
+}
+
 
 class ChildrenIterator {
   constructor(self, keys) {
