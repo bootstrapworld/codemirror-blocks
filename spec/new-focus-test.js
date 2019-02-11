@@ -1,5 +1,6 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
+/* eslint-disable no-unused-vars */
 import {
   click,
   blur,
@@ -17,6 +18,7 @@ import {
   DKEY
 } from 'codemirror-blocks/keycode';
 import {wait} from './support/test-utils';
+/* eslint-enable no-unused-vars */
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 200;
