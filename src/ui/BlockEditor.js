@@ -171,8 +171,8 @@ class BlockEditor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
+    external: {}
   }
-
 
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
@@ -298,6 +298,7 @@ class BlockEditor extends Component {
 
     ed.on('changes', this.editorChange);
 
+    this.props.external.cm = ed;
     SHARED.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
@@ -325,10 +326,22 @@ class BlockEditor extends Component {
     let protoChain = Object.getPrototypeOf(ed);
     Object.getOwnPropertyNames(protoChain).forEach(m => 
       ext[m] = (...args) => ed[m](...args));
-    // attach a getState method for debugging
-    ext.getState = () => this.props.dispatch((_, getState) => getState());
-    // override the default markText method with one of our own
+    // TODO: override the default markText method with one of our own
     ext.markText = (from, to, opts) => alert('not yet implemented');
+    // for debugging:
+    ext.getState = () => this.props.dispatch((_, getState) => getState());
+    // for api:
+    ext.getAst = () => this.props.dispatch((_, getState) => getState().ast);
+    // for testing:
+    ext.setQuarantine = () => this.props.setQuarantine;
+    ext.getFocusedNode = () => this.props.dispatch((_, getState) => {
+      let {focusId, ast} = getState();
+      return focusId ? ast.getNodeByNId(focusId) : null;
+    });
+    ext.getSelectedNodes = () => this.props.dispatch((_, getState) => {
+      let {selections, ast} = getState();
+      return selections.map(id => ast.getNodeById(id));
+    });
   }
 
   handleEditorWillUnmount = ed => {

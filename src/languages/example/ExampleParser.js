@@ -132,12 +132,12 @@ export default class ExampleParser {
 
   parseNextToken() {
     switch (this.peekToken().token) {
-      case TOKENS.OPEN_PAREN:
-        return this.parseExpression();
-      case TOKENS.NUMBER:
-        return this.parseLiteral();
-      default:
-        throw new Error("Expected either a number or another expression");
+    case TOKENS.OPEN_PAREN:
+      return this.parseExpression();
+    case TOKENS.NUMBER:
+      return this.parseLiteral();
+    default:
+      throw new Error("Expected either a number or another expression");
     }
   }
 
