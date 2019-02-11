@@ -3,20 +3,11 @@ import wescheme from '../src/languages/wescheme';
 import {
   click,
   blur,
-  keydown,
-  keypress,
-  input,
-  pressTheDamnKey
-} from './support/events';
-import {
-  DOWN,
-  DELETE,
-  SPACE,
-  RIGHTBRACKET,
-  ENTER,
-  DKEY
-} from 'codemirror-blocks/keycode';
+  keyDown,
+  insertText
+} from './support/simulate';
 import {wait} from './support/test-utils';
+
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 200;
@@ -52,61 +43,58 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('deleting the last node should shift focus to the next-to-last', async function() {
-      this.literal3.element.dispatchEvent(click());
+      click(this.literal3);
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal3.element);
-      this.literal3.element.dispatchEvent(keydown(SPACE));
-      this.literal3.element.dispatchEvent(keydown(DELETE));
+      keyDown(this.literal3, " ");
+      keyDown(this.literal3, "Delete");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+ 1 2 )');
       expect(this.cmb.getFocusedNode().id).toBe(this.literal2.id);
     });
 
     it('deleting the first node should shift focus to the parent', async function() {
-      this.literal1.element.dispatchEvent(click());
+      click(this.literal1);
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal1.element);
-      this.literal1.element.dispatchEvent(keydown(SPACE));
-      this.literal1.element.dispatchEvent(keydown(DELETE));
+      keyDown(this.literal1, " ");
+      keyDown(this.literal1, "Delete");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+  2 3)');
       expect(this.cmb.getFocusedNode().id).toBe(this.func.id);
     });
 
     it('deleting the nth node should shift focus to n-1', async function() {
-      this.literal2.element.dispatchEvent(click());
+      click(this.literal2);
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal2.element);
-      this.literal2.element.dispatchEvent(keydown(SPACE));
-      this.literal2.element.dispatchEvent(keydown(DELETE));
+      keyDown(this.literal2, " ");
+      keyDown(this.literal2, "Delete");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+ 1  3)');
       expect(this.cmb.getFocusedNode().id).toBe(this.literal1.id);
     });
 
     it('deleting multiple nodes should shift focus to the one before', async function() {
-      this.literal2.element.dispatchEvent(click());        // activate the node,
-      this.literal2.element.dispatchEvent(keydown(SPACE)); // then select it
-      this.literal2.element.dispatchEvent(keydown(DOWN));
-      this.literal3.element.dispatchEvent(keydown(SPACE));
+      click(this.literal2);
+      keyDown(this.literal2, " ");
+      keyDown(this.literal2, "ArrowDown");
+      keyDown(this.literal3, " ");
       await wait(DELAY);
       expect(this.cmb.getSelectedNodes().length).toBe(2);
-      this.literal3.element.dispatchEvent(keydown(DELETE));
+      keyDown(this.literal3, "Delete");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+ 1  )');
       expect(this.cmb.getFocusedNode().id).toBe(this.literal1.id);
     });
     
-    // Karma isn't able to simulate onInput events from keydown, which
-    // contendEditable relies upon. Instead we use execCommand('insertText'),
-    // which bypasses the keydown entirely and just lets us set the contents
     it('inserting a node should put focus on the new node', async function() {
-      this.literal1.element.dispatchEvent(click());
+      click(this.literal1);
       await wait(DELAY);
-      this.literal1.element.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
+      keyDown(this.literal1, ']', {ctrlKey: true});
       await wait(DELAY);
-      document.execCommand('insertText', false, '99'); // in place of 2x keydown
-      document.activeElement.dispatchEvent(keydown(ENTER));
+      insertText('99'); // in place of 2x keydown
+      keyDown(document.activeElement, "Enter");
       await wait(DELAY);
       // extra WS is removed when we switch back to text, but in blockmode
       // there's an extra space inserted after 99
@@ -116,12 +104,12 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('inserting mulitple nodes should put focus on the last of the new nodes', async function() {
-      this.literal1.element.dispatchEvent(click());
+      click(this.literal1);
       await wait(DELAY);
-      this.literal1.element.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
+      keyDown(this.literal1, ']', {ctrlKey: true});
       await wait(DELAY);
-      document.execCommand('insertText', false, '99 88 77');
-      document.activeElement.dispatchEvent(keydown(ENTER));
+      insertText('99 88 77');
+      keyDown(document.activeElement, "Enter");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe('(+ 1 99 88 77  2 3)');
       // TODO(Emmanuel): does getFocusedNode().value always return strings?

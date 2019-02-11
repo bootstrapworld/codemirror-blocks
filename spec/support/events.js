@@ -1,3 +1,5 @@
+// TODO: Remove this file
+
 export function click() {
   return new MouseEvent('click', {bubbles: true});
 }
