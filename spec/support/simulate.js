@@ -1,6 +1,6 @@
 import ReactTestUtils from 'react-dom/test-utils';
-
 let Simulate = ReactTestUtils.Simulate;
+
 
 export function click(node) {
   Simulate.click(toElement(node));
@@ -21,6 +21,8 @@ export function insertText(text) {
   // TODO: can this be done via Simulate?
   document.execCommand('insertText', false, text);
 }
+
+// -------------------------------------------------------------------------- //
 
 // Given a key name (like "Enter"), fill out the other properties that a key
 // event should have (like `.keyCode=13`).
