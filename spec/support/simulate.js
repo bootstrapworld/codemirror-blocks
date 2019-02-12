@@ -1,6 +1,15 @@
 import ReactTestUtils from 'react-dom/test-utils';
 let Simulate = ReactTestUtils.Simulate;
 
+// These exported functions simulate browser events for testing.
+// They use React's test utilities whenever possible.
+//
+// - `node` is the DOM element being interacted with. You may also pass an
+//   `ASTNode` here, and its `.element` field will be used.
+// - `key` is the name of a keyboard key, given by the `.key` property:
+//   https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
+//   (You can also just look at the table in the source code below.)
+// - `props` sets other properties on the event (whatever you like).
 
 export function click(node) {
   Simulate.click(toElement(node));
@@ -11,11 +20,11 @@ export function doubleClick(node) {
 export function blur(node=document.activeElement) {
   Simulate.blur(toElement(node));
 }
-export function keyDown(key, other={}, node=document.activeElement) {
-  Simulate.keyDown(toElement(node), makeKeyEvent(key, other));
+export function keyDown(key, props={}, node=document.activeElement) {
+  Simulate.keyDown(toElement(node), makeKeyEvent(key, props));
 }
-export function keyPress(key, other={}, node=document.activeElement) {
-  Simulate.keyPress(toElement(node), makeKeyEvent(key, other));
+export function keyPress(key, props={}, node=document.activeElement) {
+  Simulate.keyPress(toElement(node), makeKeyEvent(key, props));
 }
 export function insertText(text) {
   // TODO: can this be done via Simulate?
@@ -24,16 +33,16 @@ export function insertText(text) {
 
 // -------------------------------------------------------------------------- //
 
-// Given a key name (like "Enter"), fill out the other properties that a key
+// Given a key name (like "Enter"), fill out the props properties that a key
 // event should have (like `.keyCode=13`).
-function makeKeyEvent(key, other) {
+function makeKeyEvent(key, props) {
   let keyCode = getKeyCode(key);
   let eventProps = {
     which: keyCode, // deprecated
     keyCode: keyCode, // deprecated
     key: key // Good!
   };
-  Object.assign(eventProps, other);
+  Object.assign(eventProps, props);
   return eventProps;
 }
 
