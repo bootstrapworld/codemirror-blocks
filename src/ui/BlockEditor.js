@@ -354,13 +354,16 @@ class BlockEditor extends Component {
     this.forceUpdate();
   }
   findMarks(from, to) {
-    return SHARED.cm.findMarks(from, to).filter(mark => !mark.BLOCK_NODE_ID);
+    return SHARED.cm.findMarks(from, to)
+      .filter(mark => !mark.BLOCK_NODE_ID && mark.type !== "bookmark");
   }
   findMarksAt(pos) {
-    return SHARED.cm.findMarksAt(pos).filter(mark => !mark.BLOCK_NODE_ID);
+    return SHARED.cm.findMarksAt(pos)
+      .filter(mark => !mark.BLOCK_NODE_ID && mark.type !== "bookmark");
   }
   getAllMarks() {
-    return SHARED.cm.getAllMarks().filter(mark => !mark.BLOCK_NODE_ID);
+    return SHARED.cm.getAllMarks()
+      .filter(mark => !mark.BLOCK_NODE_ID && mark.type !== "bookmark");
   }
   // clear all non-block marks
   _clearMarks() {
@@ -368,6 +371,7 @@ class BlockEditor extends Component {
   }
   renderMarks() {
     this.getAllMarks().forEach(m => {
+      console.log(m);
       let {from, to} = m.find();
       let node = this.props.ast.getNodeAt(from, to);
       if(node && node.element) {
