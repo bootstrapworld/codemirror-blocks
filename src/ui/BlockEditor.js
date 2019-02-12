@@ -341,6 +341,44 @@ class BlockEditor extends Component {
     };
   }
 
+  markText(from, to, options) {
+    let supportedOptions = ['css','className','title'];
+    for (let opt in options) {
+      if (!supportedOptions.includes(opt))
+        throw new Error(`markText: option "${opt}" is not supported in block mode`);
+    };
+    let mark = SHARED.cm.markText(from, to, options);
+    // force an update when a marker is created or cleared
+    mark._clear = mark.clear;
+    mark.clear = () => { mark._clear(); this.forceUpdate(); }
+    this.forceUpdate();
+  }
+  findMarks(from, to) {
+    return SHARED.cm.findMarks(from, to).filter(mark => !mark.BLOCK_NODE_ID);
+  }
+  findMarksAt(pos) {
+    return SHARED.cm.findMarksAt(pos).filter(mark => !mark.BLOCK_NODE_ID);
+  }
+  getAllMarks() {
+    return SHARED.cm.getAllMarks().filter(mark => !mark.BLOCK_NODE_ID);
+  }
+  // clear all non-block marks
+  _clearMarks() {
+    this.getAllMarks().map(m => m.clear());
+  }
+  renderMarks() {
+    this.getAllMarks().forEach(m => {
+      let {from, to} = m.find();
+      let node = this.props.ast.getNodeAt(from, to);
+      if(node && node.element) {
+        let elem = node.element;
+        if(m.css)       node.element.style.cssText = m.css;
+        if(m.title)     node.element.title = m.title;
+        if(m.className) node.element.classList.add(m.className);
+      }
+    });
+  }
+
   handleEditorWillUnmount = ed => {
     ed.off('changes', this.editorChange);
   }
@@ -402,6 +440,7 @@ class BlockEditor extends Component {
   // If there's no quarantine, unblock CM rendering and refresh line heights
   unblockCM() {
     if(!this.props.hasQuarantine) SHARED.cm.endOperation();
+    this.renderMarks();
     SHARED.cm.refresh();
   }
 
