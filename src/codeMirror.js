@@ -2,7 +2,7 @@ import CodeMirror from 'codemirror';
 import {store} from './store';
 import patch from './ast-patch';
 import SHARED from './shared';
-import {activateByNId} from './actions';
+import {activate} from './actions';
 import {computeFocusIdFromChanges} from './utils';
 
 const tmpDiv = document.createElement('div');
@@ -26,10 +26,10 @@ export function commitChanges(
     SHARED.cm.operation(changes(SHARED.cm));
     const {ast: oldAST} = store.getState();
     const tree = patch(oldAST, newAST);
-    let focusNId = computeFocusIdFromChanges(changeArr, tree);
+    let focusId = computeFocusIdFromChanges(changeArr, tree);
     store.dispatch({type: 'SET_AST', ast: tree});
-    store.dispatch(activateByNId(focusNId));
-    onSuccess({tree, focusNId});
+    store.dispatch(activate(focusId));
+    onSuccess({tree, focusId});
   };
 
   tmpCM.on('changes', handler);

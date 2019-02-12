@@ -29,7 +29,6 @@ export class AST {
     // the `nodeIdMap` attribute can be used to look up nodes by their id.
     // the other nodeMaps make it easy to determine node order
     this.nodeIdMap = new Map();
-    this.nodeNIdMap = new Map();
     this.annotateNodes();
     this.id = -1; // just for the sake of having an id, though unused
     this.hash = hashObject(this.rootNodes.map(node => node.hash));
@@ -73,10 +72,8 @@ export class AST {
   // and populating various maps for tree navigation
   annotateNodes() {
     this.nodeIdMap.clear();
-    this.nodeNIdMap.clear();
 
     let lastNode = null;
-    let nid = 0;
 
     const loop = (nodes, parent, level) => {
       nodes.forEach((node, i) => {
@@ -85,13 +82,11 @@ export class AST {
         node.level = level;
         node["aria-setsize"]  = nodes.length;
         node["aria-posinset"] = i + 1;
-        node.nid = nid++;
         if (lastNode) {
           node.prev = lastNode;
           lastNode.next = node;
         }
         this.nodeIdMap.set(node.id, node);
-        this.nodeNIdMap.set(node.nid, node);
         lastNode = node;
         loop([...node.children()], node, level + 1);
       });
@@ -100,7 +95,6 @@ export class AST {
   }
 
   getNodeById = id => this.nodeIdMap.get(id)
-  getNodeByNId = id => this.nodeNIdMap.get(id)
 
   /**
    * Returns whether `u` is a strict ancestor of `v`
@@ -165,6 +159,15 @@ export class AST {
     }
     let res = loop(this.rootNodes);
     return res;
+  }
+
+  /**
+   * getFirstRootNode : -> ASTNode
+   *
+   * Return the first (in source code order) root node, or `null` if there are none.
+   */
+  getFirstRootNode() {
+    return this.rootNodes.length > 0 ? this.rootNodes[0] : null;
   }
 
   // return the node containing the cursor, or false

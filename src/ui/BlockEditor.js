@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import SHARED from '../shared';
 import patch from '../ast-patch';
 import NodeEditable from '../components/NodeEditable';
-import {activate, activateByNId} from '../actions';
+import {activate} from '../actions';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
@@ -102,7 +102,7 @@ class BlockEditor extends Component {
     setQuarantine: PropTypes.func.isRequired,
     setAnnouncer: PropTypes.func.isRequired,
     clearFocus: PropTypes.func.isRequired,
-    activateByNId: PropTypes.func.isRequired,
+    activate: PropTypes.func.isRequired,
     search: PropTypes.shape({
       onSearch: PropTypes.func.isRequired,
       search: PropTypes.func.isRequired,
@@ -193,7 +193,7 @@ class BlockEditor extends Component {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
         if (nextNode) {
-          this.props.activateByNId(nextNode.nid, {allowMove: true});
+          this.props.activate(nextNode.id, {allowMove: true});
         } else {
           playSound(BEEP);
         }
@@ -204,7 +204,7 @@ class BlockEditor extends Component {
         e.preventDefault();
         const prevNode = ast.getNodeBeforeCur(this.props.cur);
         if (prevNode) {
-          this.props.activateByNId(prevNode.nid, {allowMove: true});
+          this.props.activate(prevNode.id, {allowMove: true});
         } else {
           playSound(BEEP);
         }
@@ -227,13 +227,13 @@ class BlockEditor extends Component {
       case 'changeFocus':
         // NOTE(Emmanuel): this is dead code, unless we can trap tab events
         e.preventDefault();
-        if (focusId === -1) {
+        if (focusId === null) {
           if (ast.rootNodes.length > 0) {
-            dispatch(activateByNId(0, {allowMove: true}));
+            dispatch(activate(ast.getFirstRootNode(), {allowMove: true}));
             // NOTE(Oak): can also find the closest node based on current cursor
           }
         } else {
-          dispatch(activateByNId(null, {allowMove: true}));
+          dispatch(activate(null, {allowMove: true}));
         }
         return;
 
@@ -278,9 +278,9 @@ class BlockEditor extends Component {
     if (!changes.every(c => c.origin && c.origin.startsWith('cmb:'))) {
       const newAST = SHARED.parser.parse(cm.getValue());
       const tree = patch(this.props.ast, newAST);
-      let focusNId = computeFocusIdFromChanges(changes, tree);
+      let focusId = computeFocusIdFromChanges(changes, tree);
       this.props.setAST(tree);
-      this.props.activateByNId(focusNId);
+      this.props.activate(focusId);
     }
   }
 
@@ -337,7 +337,7 @@ class BlockEditor extends Component {
     ext.setQuarantine = () => this.props.setQuarantine;
     ext.getFocusedNode = () => this.props.dispatch((_, getState) => {
       let {focusId, ast} = getState();
-      return focusId ? ast.getNodeByNId(focusId) : null;
+      return focusId ? ast.getNodeById(focusId) : null;
     });
     ext.getSelectedNodes = () => this.props.dispatch((_, getState) => {
       let {selections, ast} = getState();
@@ -355,7 +355,7 @@ class BlockEditor extends Component {
       const {cur} = getState();
       if (!this.mouseUsed && cur === null) {
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-        setTimeout(() => this.props.activateByNId(null, {allowMove: true}), 10);
+        setTimeout(() => this.props.activate(null, {allowMove: true}), 10);
         this.mouseUsed = false;
       }
     });
@@ -464,9 +464,9 @@ const mapDispatchToProps = dispatch => ({
   setAST: ast => dispatch({type: 'SET_AST', ast}),
   setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
   setCursor: (_, cur) => dispatch({type: 'SET_CURSOR', cur}),
-  clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: -1}),
+  clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
   setQuarantine: (pos, text) => dispatch({type: 'SET_QUARANTINE', pos, text}),
-  activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
+  activate: (id, options) => dispatch(activate(id, options)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);

@@ -5,7 +5,7 @@ import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
 import {dropNode, deleteNodes, copyNodes,
-  pasteNodes, activate, activateByNId} from '../actions';
+  pasteNodes, activate} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
 import {isErrorFree} from '../store';
@@ -47,7 +47,6 @@ class Node extends BlockComponent {
     expandable: PropTypes.bool,
 
     activate: PropTypes.func.isRequired,
-    activateByNId: PropTypes.func.isRequired,
   }
 
   state = {editable: false, value: null}
@@ -291,7 +290,10 @@ class Node extends BlockComponent {
       // go to the very first node in the AST
       case 'firstNode':
         e.preventDefault();
-        this.props.activateByNId(0, {allowMove: true});
+        dispatch((_, getState) => {
+          let ast = getState().ast;
+          this.props.activate(ast.getFirstRootNode().id, {allowMove: true});
+        });
         return;
 
       // go to last _visible_ node in the AST
@@ -454,7 +456,6 @@ const mapDispatchToProps = dispatch => ({
   handleCopy: (id, selectionEditor) => dispatch(copyNodes(id, selectionEditor)),
   handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
   activate: (id, options) => dispatch(activate(id, options)),
-  activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);

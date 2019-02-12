@@ -4,7 +4,7 @@ export const reducer = (
   state = {
     selections: [],
     ast: null,
-    focusId: -1,
+    focusId: null,
     collapsedList: [],
     errorId: '',
     cur: null,
