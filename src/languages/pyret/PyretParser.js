@@ -24,21 +24,21 @@ class Position {
   constructor(from, to) {
     this.from = from;
     this.to = to;
-  }
+  };
 }
 
 function startOf(srcloc) {
   return {
     "line": srcloc.startRow - 1,
     "ch":   srcloc.startCol
-  }
+  };
 }
 
 function endOf(srcloc) {
   return {
     "line": srcloc.endRow - 1,
     "ch":   srcloc.endCol
-  }
+  };
 }
 
 const opLookup = {
@@ -60,7 +60,7 @@ const opLookup = {
   "and": "opand",
   "or":  "opor"
   // TODO: check ops
-}
+};
 
 // TODO: all of these are preliminary for testing
 const nodeTypes = {

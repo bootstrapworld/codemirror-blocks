@@ -34,7 +34,8 @@ class ToplevelBlock extends React.Component {
   render() {
     const {node} = this.props;
     const {from, to} = node.srcRange(); // includes the node's comment, if any
-    if(this.mark) this.mark.clear();    // clear existing mark to prevent overlapping
+    // if any prior block markers are in this range, clear them
+    SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
     this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
     this.mark.BLOCK_NODE_ID = node.id;
     return ReactDOM.createPortal(node.reactElement(), this.container);
