@@ -68,12 +68,28 @@ export default class ToggleEditor extends React.Component {
     this.hasMounted = true;
   }
 
+  // save any non-block, non-bookmark marks
+  // reconstruct the options object and use pre-computed from/to
+  recordMarks() {
+    SHARED.recordedMarks = SHARED.cm.getAllMarks()
+      .filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
+      .map(m => {
+        let {from, to} = m.find(), opts = {};
+        for(var k in m) if(m.hasOwnProperty(k)) {
+          if(!['lines','type','doc','id','from','to'].includes(k)) opts[k] = m[k];
+        }
+        return {from: from, to: to, options: opts};
+      });
+  }
+
   handleToggle = blockMode => {
     this.setState((state, props) => {
       try {
         let ast = SHARED.parser.parse(SHARED.cm.getValue());
         let code = ast.toString();
         this.props.external.blockMode = blockMode;
+        // record mark information
+        this.recordMarks();
         if (blockMode) {
           say("Switching to block mode");
           SHARED.cm.setValue(code);
@@ -113,7 +129,7 @@ export default class ToggleEditor extends React.Component {
       <TextEditor
         cmOptions={this.cmOptions}
         parser={this.parser}
-        initialCode={code}
+        value={code}
         external={this.props.external} />
     );
   }
@@ -128,7 +144,7 @@ export default class ToggleEditor extends React.Component {
         external={this.props.external}
         appElement={this.props.appElement}
         language={this.language.id}
-        options={this.options} />
+        blockoptions={this.options} />
     );
   }
 }

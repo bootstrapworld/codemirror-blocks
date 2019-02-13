@@ -9,7 +9,7 @@ class TextEditor extends Component {
   static propTypes = {
     cmOptions: PropTypes.object,
     parser: PropTypes.object.isRequired,
-    initialCode: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired,
     onBeforeChange: PropTypes.func,
     setAnnouncer: PropTypes.func.isRequired,
     external: PropTypes.object,
@@ -32,6 +32,11 @@ class TextEditor extends Component {
 
     // export methods to the object interface
     this.setExternalMethods(ed, this.props.external);
+
+    // reconstitute any marks and render them
+    setTimeout( () => {
+      SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
+    }, 250);
   }
 
   // attach all the CM methods to the external object, and 
@@ -51,14 +56,13 @@ class TextEditor extends Component {
 
     SHARED.parser = parser;
   }
-
   render() {
     return (
       // we add a wrapper div to maintain a consistent DOM with BlockEditor
       // see DragAndDropEditor.js for why the DND context needs a wrapper
       <div> 
         <CodeMirror
-          value={this.props.initialCode}
+          value={this.props.value}
           onBeforeChange={this.props.onBeforeChange}
           options={this.props.cmOptions}
           editorDidMount={this.handleEditorDidMount} />
