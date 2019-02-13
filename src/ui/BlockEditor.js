@@ -339,6 +339,11 @@ class BlockEditor extends Component {
         'setQuarantine': () => this.props.setQuarantine,
       }
     };
+    // reconstitute any marks and render them
+    setTimeout( () => {
+      SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
+      this.renderMarks();
+    }, 250);
   }
 
   markText(from, to, options) {
@@ -369,9 +374,9 @@ class BlockEditor extends Component {
   _clearMarks() {
     this.getAllMarks().map(m => m.clear());
   }
+
   renderMarks() {
     this.getAllMarks().forEach(m => {
-      console.log(m);
       let {from, to} = m.find();
       let node = this.props.ast.getNodeAt(from, to);
       if(node && node.element) {
@@ -435,7 +440,7 @@ class BlockEditor extends Component {
     this.unblockCM();
   }
 
-  componentDidUpdate() { this.unblockCM(); }
+  componentDidUpdate() { this.unblockCM(); this.renderMarks(); }
 
   // If there's no quarantine, block CM rendering while we update the DOM
   blockCM() {
@@ -444,7 +449,6 @@ class BlockEditor extends Component {
   // If there's no quarantine, unblock CM rendering and refresh line heights
   unblockCM() {
     if(!this.props.hasQuarantine) SHARED.cm.endOperation();
-    this.renderMarks();
     SHARED.cm.refresh();
   }
 

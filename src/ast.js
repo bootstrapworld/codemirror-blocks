@@ -176,7 +176,7 @@ export class AST {
     return n && ([...n.children()].length === 0 ? n :
                  this.getNodeContaining(cursor, [...n.children()]) || n);
   }
-  
+
   // return a node that whose from/to match two cursor locations, or undefined
   getNodeAt(from, to) {
     let n = [...this.nodeIdMap.values()].find(n => (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0));
