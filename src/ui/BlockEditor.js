@@ -110,7 +110,7 @@ class BlockEditor extends Component {
     }),
     onBeforeChange: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
-    external: PropTypes.object,
+    api: PropTypes.object,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -123,9 +123,6 @@ class BlockEditor extends Component {
     super(props);
     this.mouseUsed = false;
     SHARED.keyMap = this.props.keyMap;
-
-    // HERE BE DRAGONS
-    this.props.external.getState = this.getState;
   }
 
   static defaultProps = {
@@ -172,7 +169,7 @@ class BlockEditor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
-    external: {}
+    api: {}
   }
 
   // NOTE: if there's a focused node, this handler will not be activated
@@ -299,7 +296,6 @@ class BlockEditor extends Component {
 
     ed.on('changes', this.editorChange);
 
-    this.props.external.cm = ed;
     SHARED.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
     this.props.setAST(ast);
@@ -318,31 +314,31 @@ class BlockEditor extends Component {
     this.props.search.setCM(ed);
 
     // export methods to the object interface
-    this.setExternalMethods(ed, this.props.external);
+    merge(this.props.api, this.buildAPI(ed));
   }
 
-  // attach all the CM methods to the external object, and 
-  // add/override with CMB-specific methods
-  setExternalMethods(ed, ext) {
-    let protoChain = Object.getPrototypeOf(ed);
-    Object.getOwnPropertyNames(protoChain).forEach(m => 
-      ext[m] = (...args) => ed[m](...args));
-    // TODO: override the default markText method with one of our own
-    ext.markText = (from, to, opts) => alert('not yet implemented');
-    // for debugging:
-    ext.getState = () => this.props.dispatch((_, getState) => getState());
-    // for api:
-    ext.getAst = () => this.props.dispatch((_, getState) => getState().ast);
-    // for testing:
-    ext.setQuarantine = () => this.props.setQuarantine;
-    ext.getFocusedNode = () => this.props.dispatch((_, getState) => {
-      let {focusId, ast} = getState();
-      return focusId ? ast.getNodeById(focusId) : null;
-    });
-    ext.getSelectedNodes = () => this.props.dispatch((_, getState) => {
-      let {selections, ast} = getState();
-      return selections.map(id => ast.getNodeById(id));
-    });
+  buildAPI(ed) {
+    // TODO: expose the _specific_ CM methods needed, but only under the `testing` property.
+    let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
+    return {
+      'cm': {
+        // TODO: override the default markText method with one of our own
+        'markText': (from, to, opts) => alert('not yet implemented'),
+        'getValue': () => ed.getValue(),
+        'setValue': (value) => ed.setValue(value),
+      },
+      'blocks': {
+        'getAst':
+          () => withState((state) => state.ast),
+        'getFocusedNode':
+          () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : null),
+        'getSelectedNodes':
+          () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
+      },
+      'testing': {
+        'setQuarantine': () => this.props.setQuarantine,
+      }
+    };
   }
 
   handleEditorWillUnmount = ed => {

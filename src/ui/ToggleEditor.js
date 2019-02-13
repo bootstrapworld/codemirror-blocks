@@ -39,7 +39,7 @@ export default class ToggleEditor extends React.Component {
       getRenderOptions: PropTypes.func
     }),
     options: PropTypes.object,
-    external: PropTypes.object,
+    api: PropTypes.object,
     appElement: PropTypes.instanceOf(Element).isRequired
   }
 
@@ -50,9 +50,6 @@ export default class ToggleEditor extends React.Component {
     this.language = props.language;
     this.parser = this.language.getParser();
 
-    // export the handleToggle method
-    this.props.external.handleToggle = this.handleToggle;
-
     let defaultOptions = {
       parser: this.parser,
       renderOptions: props.language.getRenderOptions
@@ -62,6 +59,17 @@ export default class ToggleEditor extends React.Component {
     };
     this.options = merge(defaultOptions, props.options);
     this.hasMounted = false;
+
+    merge(this.props.api, this.buildAPI());
+  }
+
+  buildAPI() {
+    return {
+      'blocks': {
+        'getBlockMode': () => this.props.dispatch((_, getState) => getState().blockMode),
+        'setBlockMode': this.handleToggle
+      }
+    };
   }
 
   componentDidMount() {
@@ -73,7 +81,6 @@ export default class ToggleEditor extends React.Component {
       try {
         let ast = SHARED.parser.parse(SHARED.cm.getValue());
         let code = ast.toString();
-        this.props.external.blockMode = blockMode;
         if (blockMode) {
           say("Switching to block mode");
           SHARED.cm.setValue(code);
@@ -114,7 +121,7 @@ export default class ToggleEditor extends React.Component {
         cmOptions={this.cmOptions}
         parser={this.parser}
         initialCode={code}
-        external={this.props.external} />
+        api={this.props.api} />
     );
   }
 
@@ -125,7 +132,7 @@ export default class ToggleEditor extends React.Component {
         cmOptions={this.cmOptions}
         parser={this.parser}
         value={code}
-        external={this.props.external}
+        api={this.props.api}
         appElement={this.props.appElement}
         language={this.language.id}
         options={this.options} />

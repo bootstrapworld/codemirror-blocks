@@ -21,10 +21,11 @@ describe('The CodeMirrorBlocks Class', function() {
     document.body.insertAdjacentHTML('afterbegin', fixture);
     const container = document.getElementById('cmb-editor');
     this.cmb = new CodeMirrorBlocks(container, wescheme, "");
-    // TODO: rename this to the more descriptive `setBlockMode`
-    this.cmb.handleToggle(true);
+    this.blocks = this.cmb.blocks;
+    this.cm = this.cmb.cm;
+    this.blocks.setBlockMode(true);
 
-    this.trackSetQuarantine = spyOn(this.cmb, 'setQuarantine').and.callThrough();
+    this.trackSetQuarantine = spyOn(this.cmb.testing, 'setQuarantine').and.callThrough();
   });
 
   afterEach(function() {
@@ -33,8 +34,8 @@ describe('The CodeMirrorBlocks Class', function() {
 
   describe('focusing,', function() {
     beforeEach(function() {
-      this.cmb.setValue('(+ 1 2 3)');
-      this.expression = this.cmb.getAst().rootNodes[0];
+      this.cm.setValue('(+ 1 2 3)');
+      this.expression = this.blocks.getAst().rootNodes[0];
       this.func = this.expression.func;
       this.literal1 = this.expression.args[0];
       this.literal2 = this.expression.args[1];
@@ -48,8 +49,8 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown(" ");
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cmb.getValue()).toBe('(+ 1 2 )');
-      expect(this.cmb.getFocusedNode().id).toBe(this.literal2.id);
+      expect(this.cm.getValue()).toBe('(+ 1 2 )');
+      expect(this.blocks.getFocusedNode().id).toBe(this.literal2.id);
     });
 
     it('deleting the first node should shift focus to the parent', async function() {
@@ -59,8 +60,8 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown(" ");
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cmb.getValue()).toBe('(+  2 3)');
-      expect(this.cmb.getFocusedNode().id).toBe(this.func.id);
+      expect(this.cm.getValue()).toBe('(+  2 3)');
+      expect(this.blocks.getFocusedNode().id).toBe(this.func.id);
     });
 
     it('deleting the nth node should shift focus to n-1', async function() {
@@ -70,8 +71,8 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown(" ");
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cmb.getValue()).toBe('(+ 1  3)');
-      expect(this.cmb.getFocusedNode().id).toBe(this.literal1.id);
+      expect(this.cm.getValue()).toBe('(+ 1  3)');
+      expect(this.blocks.getFocusedNode().id).toBe(this.literal1.id);
     });
 
     it('deleting multiple nodes should shift focus to the one before', async function() {
@@ -82,11 +83,11 @@ describe('The CodeMirrorBlocks Class', function() {
       // TODO: why does this only work when node=this.literal3 is specified?
       keyDown(" ", {}, this.literal3);
       await wait(DELAY);
-      expect(this.cmb.getSelectedNodes().length).toBe(2);
+      expect(this.blocks.getSelectedNodes().length).toBe(2);
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cmb.getValue()).toBe('(+ 1  )');
-      expect(this.cmb.getFocusedNode().id).toBe(this.literal1.id);
+      expect(this.cm.getValue()).toBe('(+ 1  )');
+      expect(this.blocks.getFocusedNode().id).toBe(this.literal1.id);
     });
     
     it('inserting a node should put focus on the new node', async function() {
@@ -99,9 +100,9 @@ describe('The CodeMirrorBlocks Class', function() {
       await wait(DELAY);
       // extra WS is removed when we switch back to text, but in blockmode
       // there's an extra space inserted after 99
-      expect(this.cmb.getValue()).toBe('(+ 1 99  2 3)');
+      expect(this.cm.getValue()).toBe('(+ 1 99  2 3)');
       // TODO(Emmanuel): does getFocusedNode().value always return strings?
-      expect(this.cmb.getFocusedNode().value).toBe('99');
+      expect(this.blocks.getFocusedNode().value).toBe('99');
     });
 
     it('inserting mulitple nodes should put focus on the last of the new nodes', async function() {
@@ -112,9 +113,9 @@ describe('The CodeMirrorBlocks Class', function() {
       insertText('99 88 77');
       keyDown("Enter");
       await wait(DELAY);
-      expect(this.cmb.getValue()).toBe('(+ 1 99 88 77  2 3)');
+      expect(this.cm.getValue()).toBe('(+ 1 99 88 77  2 3)');
       // TODO(Emmanuel): does getFocusedNode().value always return strings?
-      expect(this.cmb.getFocusedNode().value).toBe('77');
+      expect(this.blocks.getFocusedNode().value).toBe('77');
     });
   });
 });

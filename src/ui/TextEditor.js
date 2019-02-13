@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {UnControlled as CodeMirror} from 'react-codemirror2';
+import merge from '../merge';
 import SHARED from '../shared';
 
 
@@ -12,7 +13,7 @@ class TextEditor extends Component {
     initialCode: PropTypes.string.isRequired,
     onBeforeChange: PropTypes.func,
     setAnnouncer: PropTypes.func.isRequired,
-    external: PropTypes.object,
+    api: PropTypes.object,
   }
 
   handleEditorDidMount = ed => {
@@ -31,17 +32,17 @@ class TextEditor extends Component {
     SHARED.cm = ed;
 
     // export methods to the object interface
-    this.setExternalMethods(ed, this.props.external);
+    merge(this.props.api, this.buildAPI(ed));
   }
 
-  // attach all the CM methods to the external object, and 
-  // add/override with CMB-specific methods
-  setExternalMethods(ed, ext) {
-    let protoChain = Object.getPrototypeOf(ed);
-    Object.getOwnPropertyNames(protoChain).forEach(m => 
-      ext[m] = (...args) => ed[m](...args));
-    // attach a getState method for debugging
-    ext.getState = () => this.props.dispatch((_, getState) => getState());
+  buildAPI(ed) {
+    return {
+      'cm': {
+        'markText': ed.markText,
+        'getValue': ed.getValue,
+        'setValue': ed.setValue,
+      }
+    };
   }
 
   componentDidMount() {
