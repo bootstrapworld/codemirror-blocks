@@ -39,7 +39,7 @@ export class AST {
     let prevNode = null;
     for (let node of this.rootNodes) {
       let numBlankLines = prevNode
-          ? node.srcRange().from.line - prevNode.srcRange().to.line - 1
+          ? Math.max(0, node.srcRange().from.line - prevNode.srcRange().to.line - 1)
           : 0;
       lines.push("\n".repeat(numBlankLines) + node.toString());
       prevNode = node;
