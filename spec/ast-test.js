@@ -135,12 +135,6 @@ describe("The FunctionApp Class", function() {
   });
 
   it("should return itself and its descendants when iterated over", function() {
-    expect([...nestedExpression]).toEqual([
-      nestedExpression,
-      nestedExpression.func,
-      nestedExpression.args[0],
-      nestedExpression.args[1]
-    ]);
     expect([...nestedExpression.descendants()]).toEqual([
       nestedExpression,
       nestedExpression.func,
@@ -150,7 +144,7 @@ describe("The FunctionApp Class", function() {
   });
 
   it("should have all navigation pointers and aria attributes set", function() {
-    expect(ast.getNodeFirstChild(expression)).toEqual(expression.func);
+    expect(expression.next).toEqual(expression.func);
     expect(ast.getNodeParent(expression.func)).toEqual(expression);
     expect(ast.getNodeAfter(expression.func)).toEqual(expression.args[0]);
     expect(ast.getNodeParent(expression.args[0])).toEqual(expression);
