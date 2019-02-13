@@ -24,8 +24,6 @@ describe('The CodeMirrorBlocks Class', function() {
     this.blocks = this.cmb.blocks;
     this.cm = this.cmb.cm;
     this.blocks.setBlockMode(true);
-
-    this.trackSetQuarantine = spyOn(this.cmb.testing, 'setQuarantine').and.callThrough();
   });
 
   afterEach(function() {
