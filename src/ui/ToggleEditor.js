@@ -152,7 +152,7 @@ export default class ToggleEditor extends React.Component {
         api={this.props.api}
         appElement={this.props.appElement}
         language={this.language.id}
-        blockoptions={this.options} />
+        options={this.options} />
     );
   }
 }
