@@ -38,9 +38,12 @@ class TextEditor extends Component {
   buildAPI(ed) {
     return {
       'cm': {
-        'markText': ed.markText,
-        'getValue': ed.getValue,
-        'setValue': ed.setValue,
+        'markText': (from, to, opts) => ed.markText(from, to, opts),
+        'getValue': (sep) => ed.getValue(sep),
+        'setValue': (value) => ed.setValue(value),
+        'getScrollerElement': () => ed.getScrollerElement(),
+        'getCursor': (start) => ed.getCursor(start),
+        'setCursor': (pos) => ed.setCursor(pos),
       }
     };
   }

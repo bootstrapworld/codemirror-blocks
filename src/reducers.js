@@ -1,16 +1,17 @@
 
+const initialState = {
+  selections: [],
+  ast: null,
+  focusId: null,
+  collapsedList: [],
+  errorId: '',
+  cur: null,
+  quarantine: null,
+  announcer: null,
+}
 
 export const reducer = (
-  state = {
-    selections: [],
-    ast: null,
-    focusId: null,
-    collapsedList: [],
-    errorId: '',
-    cur: null,
-    quarantine: null,
-    announcer: null,
-  },
+  state = initialState,
   action) => {
     console.log(action);
     switch (action.type) {
@@ -40,6 +41,8 @@ export const reducer = (
       return {...state, quarantine: [action.pos, action.text]};
     case 'SET_ANNOUNCER':
       return {...state, announcer: action.announcer};
+    case 'RESET_STORE_FOR_TESTING':
+      return initialState;
     default:
       return state;
     }

@@ -51,6 +51,11 @@ class Node extends BlockComponent {
 
   state = {editable: false, value: null}
 
+  componentDidMount() {
+    // For testing
+    this.props.node.isEditable = () => this.state.editable;
+  }
+
   handleChange = (value) => {
     this.setState({value});
   }
@@ -340,7 +345,6 @@ class Node extends BlockComponent {
       }
     });
   }
-
 
   handleMakeEditable = () => {
     if (!isErrorFree() || this.props.inToolbar) return;

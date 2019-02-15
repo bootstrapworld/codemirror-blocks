@@ -318,14 +318,16 @@ class BlockEditor extends Component {
   }
 
   buildAPI(ed) {
-    // TODO: expose the _specific_ CM methods needed, but only under the `testing` property.
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
     return {
       'cm': {
         // TODO: override the default markText method with one of our own
         'markText': (from, to, opts) => alert('not yet implemented'),
-        'getValue': () => ed.getValue(),
+        'getValue': (sep) => ed.getValue(sep),
         'setValue': (value) => ed.setValue(value),
+        'getScrollerElement': () => ed.getScrollerElement(),
+        'getCursor': (start) => ed.getCursor(start),
+        'setCursor': (pos) => this.props.setCursor(ed, pos),
       },
       'blocks': {
         'getAst':
@@ -336,7 +338,8 @@ class BlockEditor extends Component {
           () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
       },
       'testing': {
-        'setQuarantine': () => this.props.setQuarantine,
+        'getQuarantine': () => withState(({quarantine}) => quarantine),
+        'setQuarantine': (q) => this.props.setQuarantine(q),
       }
     };
   }

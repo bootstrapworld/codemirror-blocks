@@ -20,6 +20,8 @@ export function doubleClick(node) {
 export function blur(node=document.activeElement) {
   Simulate.blur(toElement(node));
 }
+// TODO: document.activeElement isn't always a good default to dispatch to.
+// What does the _browser_ dispatch to?
 export function keyDown(key, props={}, node=document.activeElement) {
   Simulate.keyDown(toElement(node), makeKeyEvent(key, props));
 }
