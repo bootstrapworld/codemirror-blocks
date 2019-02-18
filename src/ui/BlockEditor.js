@@ -328,10 +328,12 @@ class BlockEditor extends Component {
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
     return {
       'cm': {
-        // TODO: override the default markText method with one of our own
-        'markText': (from, to, opts) => this.markText(from, to, opts),
-        'getValue': () => ed.getValue(),
-        'setValue': (value) => ed.setValue(value),
+        'markText':   (from, to, opts) => this.markText(from, to, opts),
+        'findMarks':  (from, to) => this.findMarks(from, to),
+        'findMarksAt':(pos) => this.findMarksAt(pos),
+        'getAllMarks':() => this.getAllMarks(),
+        'getValue':   () => ed.getValue(),
+        'setValue':   (value) => ed.setValue(value),
       },
       'blocks': {
         'getAst':
