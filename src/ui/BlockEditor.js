@@ -315,6 +315,12 @@ class BlockEditor extends Component {
 
     // export methods to the object interface
     merge(this.props.api, this.buildAPI(ed));
+
+    // reconstitute any marks and render them
+    setTimeout( () => {
+      SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
+      this.renderMarks();
+    }, 250);
   }
 
   buildAPI(ed) {
@@ -323,7 +329,7 @@ class BlockEditor extends Component {
     return {
       'cm': {
         // TODO: override the default markText method with one of our own
-        'markText': (from, to, opts) => alert('not yet implemented'),
+        'markText': (from, to, opts) => this.markText(from, to, opts),
         'getValue': () => ed.getValue(),
         'setValue': (value) => ed.setValue(value),
       },
@@ -339,11 +345,6 @@ class BlockEditor extends Component {
         'setQuarantine': () => this.props.setQuarantine,
       }
     };
-    // reconstitute any marks and render them
-    setTimeout( () => {
-      SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
-      this.renderMarks();
-    }, 250);
   }
 
   markText(from, to, options) {

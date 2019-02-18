@@ -42,7 +42,7 @@ class TextEditor extends Component {
   buildAPI(ed) {
     return {
       'cm': {
-        'markText': ed.markText,
+        'markText': (from, to, opts) => ed.markText(from, to, opts),
         'getValue': ed.getValue,
         'setValue': ed.setValue,
       }

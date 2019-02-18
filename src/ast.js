@@ -29,6 +29,7 @@ export class AST {
     // the `nodeIdMap` attribute can be used to look up nodes by their id.
     // the other nodeMaps make it easy to determine node order
     this.nodeIdMap = new Map();
+    this.nodeNIdMap = new Map();
     this.annotateNodes();
     this.id = -1; // just for the sake of having an id, though unused
     this.hash = hashObject(this.rootNodes.map(node => node.hash));
@@ -72,8 +73,10 @@ export class AST {
   // and populating various maps for tree navigation
   annotateNodes() {
     this.nodeIdMap.clear();
+    this.nodeNIdMap.clear();
 
     let lastNode = null;
+    let nid = 0;
 
     const loop = (nodes, parent, level) => {
       nodes.forEach((node, i) => {
@@ -82,11 +85,13 @@ export class AST {
         node.level = level;
         node["aria-setsize"]  = nodes.length;
         node["aria-posinset"] = i + 1;
+        node.nid = nid++;
         if (lastNode) {
           node.prev = lastNode;
           lastNode.next = node;
         }
         this.nodeIdMap.set(node.id, node);
+        this.nodeNIdMap.set(node.nid, node);
         lastNode = node;
         loop([...node.children()], node, level + 1);
       });
@@ -94,7 +99,8 @@ export class AST {
     loop(this.rootNodes, null, 1);
   }
 
-  getNodeById = id => this.nodeIdMap.get(id)
+  getNodeById  = id  => this.nodeIdMap.get(id)
+  getNodeByNId = nid => this.nodeNIdMap.get(nid)
 
   /**
    * Returns whether `u` is a strict ancestor of `v`
