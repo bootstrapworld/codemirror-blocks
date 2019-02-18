@@ -183,9 +183,14 @@ export class AST {
                  this.getNodeContaining(cursor, [...n.children()]) || n);
   }
 
-  // return a node that whose from/to match two cursor locations, or undefined
+  // return a node that whose from/to match two cursor locations, or whose
+  // srcRange matches those locations. If none exists, return undefined
   getNodeAt(from, to) {
-    let n = [...this.nodeIdMap.values()].find(n => (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0));
+    let n = [...this.nodeIdMap.values()].find(n => {
+      let {from: srcFrom, to: srcTo} = n.srcRange();
+      return (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0)
+        || (poscmp(from, srcFrom) == 0) && (poscmp(to, srcTo) == 0);
+    });
     return n || false;
   }
 
