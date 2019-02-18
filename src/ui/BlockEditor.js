@@ -326,7 +326,10 @@ class BlockEditor extends Component {
         'getValue': (sep) => ed.getValue(sep),
         'setValue': (value) => ed.setValue(value),
         'getScrollerElement': () => ed.getScrollerElement(),
+        'getWrapperElement': () => ed.getWrapperElement(),
+        'getInputField': () => ed.getInputField(),
         'getCursor': (start) => ed.getCursor(start),
+        'replaceRange': ed.replaceRange,
         'setCursor': (pos) => this.props.setCursor(ed, pos),
       },
       'blocks': {
