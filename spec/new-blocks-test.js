@@ -122,6 +122,7 @@ describe('The CodeMirrorBlocks Class', function() {
   //   expect(b.language.id).toBe('example');
   // });
 
+<<<<<<< HEAD
   describe('text marking api,', function() {
     /*
     beforeEach(async function() {
@@ -207,6 +208,8 @@ describe('The CodeMirrorBlocks Class', function() {
     });*/
   });
 
+=======
+>>>>>>> 30e4cd5... factor out markText tests
   describe('events,', function() {
     beforeEach(function() {
       this.blocks.setValue('11');
