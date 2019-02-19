@@ -59,6 +59,7 @@ export default class ToggleEditor extends React.Component {
     };
     this.options = merge(defaultOptions, props.options);
     this.hasMounted = false;
+    SHARED.recordedMarks = new Map();
 
     merge(this.props.api, this.buildAPI());
   }
@@ -80,16 +81,19 @@ export default class ToggleEditor extends React.Component {
     setTimeout(this.reconstituteMarks, 250);
   }
 
-  // save any non-block, non-bookmark marks
-  // reconstruct the options object and use pre-computed from/to
+  // save any non-block, non-bookmark markers, and the NId they cover
   recordMarks(oldAST, postPPcode) {
-    SHARED.recordedMarks = new Map();
+    SHARED.recordedMarks.clear();
     let newAST = SHARED.parser.parse(postPPcode);
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach(m => {
         let {from: oldFrom, to: oldTo} = m.find(), opts = {};
         let node = oldAST.getNodeAt(oldFrom, oldTo);    // find the node corresponding to the mark
-        if(!node) return;                               // bail on non-node markers
+        if(!node) { // bail on non-node markers
+          console.error(`Removed TextMarker at [{line:${oldFrom.line}, ch:${oldFrom.ch}},` +
+          `{line:${oldTo.line}, ch:${oldTo.ch}}], since that range does not correspond to a node boundary`);
+          return;
+        };                               
         let {from, to} = newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
         opts.css = m.css; opts.title = m.title; opts.class = m.class;
         SHARED.recordedMarks.set(node.nid, {from: from, to: to, options: opts});

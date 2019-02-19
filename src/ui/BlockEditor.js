@@ -316,11 +316,15 @@ class BlockEditor extends Component {
     // export methods to the object interface
     merge(this.props.api, this.buildAPI(ed));
 
-    // reconstitute any marks and render them
-    setTimeout( () => {
-      SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
+    // once the DOM has loaded, reconstitute any marks and render them
+    window.requestAnimationFrame( () => {
+      this.markMap = new Map();
+      SHARED.recordedMarks.forEach((v, k) => {
+        console.log('drawing marks by nId', k, this.props.ast.getNodeByNId(k));
+        this.markMap.set(this.props.ast.getNodeByNId(k).id, v);
+      });
       this.renderMarks();
-    }, 250);
+    });
   }
 
   buildAPI(ed) {
@@ -350,28 +354,33 @@ class BlockEditor extends Component {
   }
 
   markText(from, to, options) {
+    let node = this.props.ast.getNodeAt(from, to);
+    if(!node) {
+      throw new Error('Could not create TextMarker: there is no AST node at [',from, to,']');
+    }
     let supportedOptions = ['css','className','title'];
     for (let opt in options) {
       if (!supportedOptions.includes(opt))
         throw new Error(`markText: option "${opt}" is not supported in block mode`);
     };
-    let mark = SHARED.cm.markText(from, to, options);
-    // force an update when a marker is created or cleared
-    mark._clear = mark.clear;
-    mark.clear = () => { mark._clear(); this.forceUpdate(); }
+    let mark = {
+      'clear': () => { this.markMap.delete(node.id); this.forceUpdate(); },
+      'find': () => { let n = this.props.ast.getNodeById(node.id); return {from: n.from, to: n.to}; },
+      'options': options,
+      'nodeId': node.id
+    }
+    this.markMap.set(node.id, mark);
     this.forceUpdate();
+    return mark;
   }
   findMarks(from, to) {
-    return SHARED.cm.findMarks(from, to)
-      .filter(mark => !mark.BLOCK_NODE_ID && mark.type !== "bookmark");
+    throw "Not yet implemented!";
   }
   findMarksAt(pos) {
-    return SHARED.cm.findMarksAt(pos)
-      .filter(mark => !mark.BLOCK_NODE_ID && mark.type !== "bookmark");
+    throw "Not yet implemented!";
   }
   getAllMarks() {
-    return SHARED.cm.getAllMarks()
-      .filter(mark => !mark.BLOCK_NODE_ID && mark.type !== "bookmark");
+    return [...this.markMap.values()];
   }
   // clear all non-block marks
   _clearMarks() {
@@ -379,15 +388,20 @@ class BlockEditor extends Component {
   }
 
   renderMarks() {
-    this.getAllMarks().forEach(m => {
-      let {from, to} = m.find();
-      let node = this.props.ast.getNodeAt(from, to);
+    if(!this.markMap) return;
+    // clear all marks
+    SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
+      .forEach(m => m.clear());
+    this.markMap.forEach(({options}, k) => {
+      let node = this.props.ast.getNodeById(k);
+      console.log('drawing marks by Id', k, node);
       if(node && node.element) {
         let elem = node.element;
-        if(m.css)       node.element.style.cssText = m.css;
-        if(m.title)     node.element.title = m.title;
-        if(m.className) node.element.classList.add(m.className);
+        if(options.css)       node.element.style.cssText = options.css;
+        if(options.title)     node.element.title = options.title;
+        if(options.className) node.element.classList.add(options.className);
       }
+      SHARED.cm.markText(node.from, node.to, options);
     });
   }
 
@@ -440,19 +454,19 @@ class BlockEditor extends Component {
     // SHARED.buffer.style.opacity = 0;
     // SHARED.buffer.style.height = '1px';
     document.body.appendChild(SHARED.buffer);
-    this.unblockCM();
+    this.afterDOMUpdate();
   }
 
-  componentDidUpdate() { this.unblockCM(); this.renderMarks(); }
+  componentDidUpdate() { this.afterDOMUpdate(); }
 
-  // If there's no quarantine, block CM rendering while we update the DOM
-  blockCM() {
-    if(!this.props.hasQuarantine) SHARED.cm.startOperation();
-  }
-  // If there's no quarantine, unblock CM rendering and refresh line heights
-  unblockCM() {
-    if(!this.props.hasQuarantine) SHARED.cm.endOperation();
-    SHARED.cm.refresh();
+  // NOTE(Emmanuel): use requestAnimationFrame to make sure that this
+  // all happens once the browser is finished with DOM updates
+  afterDOMUpdate() {
+    window.requestAnimationFrame(() => {
+      console.log('DOM is ready after:', (Date.now() - this.startTime)/1000, 'ms');
+      SHARED.cm.refresh();
+      this.renderMarks();
+    });
   }
 
   // TODO(Emmanuel): is 'data' even needed?
@@ -464,7 +478,7 @@ class BlockEditor extends Component {
   }
 
   render() {
-    this.blockCM();
+    this.startTime = Date.now();
     const classes = [];
     if (this.props.language) {
       classes.push(`blocks-language-${this.props.language}`);

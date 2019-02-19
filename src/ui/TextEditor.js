@@ -43,8 +43,11 @@ class TextEditor extends Component {
     return {
       'cm': {
         'markText': (from, to, opts) => ed.markText(from, to, opts),
-        'getValue': ed.getValue,
-        'setValue': ed.setValue,
+        'getAllMarks': () => ed.getAllMarks(),
+        'findMarks': (from, to) => ed.findMarks(from, to),
+        'findMarksAt': (pos) => ed.findMarksAt(pos),
+        'getValue': () => ed.getValue(),
+        'setValue': (v) => ed.setValue(v),
       }
     };
   }
