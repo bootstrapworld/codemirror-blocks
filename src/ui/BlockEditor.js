@@ -403,11 +403,11 @@ class BlockEditor extends Component {
 
   // If there's no quarantine, block CM rendering while we update the DOM
   blockCM() {
-    if(!this.props.hasQuarantine) SHARED.cm.startOperation();
+    //if(!this.props.hasQuarantine) SHARED.cm.startOperation();
   }
   // If there's no quarantine, unblock CM rendering and refresh line heights
   unblockCM() {
-    if(!this.props.hasQuarantine) SHARED.cm.endOperation();
+    //if(!this.props.hasQuarantine) SHARED.cm.endOperation();
     SHARED.cm.refresh();
   }
 
