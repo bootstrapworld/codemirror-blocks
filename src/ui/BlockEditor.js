@@ -396,19 +396,18 @@ class BlockEditor extends Component {
     // SHARED.buffer.style.opacity = 0;
     // SHARED.buffer.style.height = '1px';
     document.body.appendChild(SHARED.buffer);
-    this.unblockCM();
+    this.refreshCM();
   }
 
-  componentDidUpdate() { this.unblockCM(); }
+  componentDidUpdate() { this.refreshCM(); }
 
-  // If there's no quarantine, block CM rendering while we update the DOM
-  blockCM() {
-    //if(!this.props.hasQuarantine) SHARED.cm.startOperation();
-  }
-  // If there's no quarantine, unblock CM rendering and refresh line heights
-  unblockCM() {
-    //if(!this.props.hasQuarantine) SHARED.cm.endOperation();
-    SHARED.cm.refresh();
+  // NOTE(Emmanuel): use requestAnimationFrame to make sure that cm.refresh() is called
+  // after the DOM has finished updating.
+  refreshCM() {
+    window.requestAnimationFrame(() => {
+      console.log('RAF renderTime:', (Date.now() - this.startTime)/1000, 'ms');
+      SHARED.cm.refresh();
+    });
   }
 
   // TODO(Emmanuel): is 'data' even needed?
@@ -420,7 +419,7 @@ class BlockEditor extends Component {
   }
 
   render() {
-    this.blockCM();
+    this.startTime = Date.now();
     const classes = [];
     if (this.props.language) {
       classes.push(`blocks-language-${this.props.language}`);
