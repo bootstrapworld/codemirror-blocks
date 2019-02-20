@@ -6,6 +6,7 @@ export const reducer = (
     ast: null,
     focusId: null,
     collapsedList: [],
+    markedMap: new Map(),
     errorId: '',
     cur: null,
     quarantine: null,
@@ -40,6 +41,10 @@ export const reducer = (
       return {...state, quarantine: [action.pos, action.text]};
     case 'SET_ANNOUNCER':
       return {...state, announcer: action.announcer};
+    case 'ADD_MARK':
+      return {...state, markedMap: state.markedMap.set(action.id, action.mark)};
+    case 'CLEAR_MARK':
+      return {...state, markedMap: state.markedMap.delete(action.id)};
     default:
       return state;
     }

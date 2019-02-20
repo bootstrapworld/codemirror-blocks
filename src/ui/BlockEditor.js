@@ -319,11 +319,10 @@ class BlockEditor extends Component {
     // once the DOM has loaded, reconstitute any marks and render them
     window.requestAnimationFrame( () => {
       this.markMap = new Map();
-      SHARED.recordedMarks.forEach((v, k) => {
-        console.log('drawing marks by nId', k, this.props.ast.getNodeByNId(k));
-        this.markMap.set(this.props.ast.getNodeByNId(k).id, v);
+      SHARED.recordedMarks.forEach((m, k) => {
+        let node = this.props.ast.getNodeByNId(k);
+        this.markText(node.from, node.to, m.options);
       });
-      this.renderMarks();
     });
   }
 
@@ -364,13 +363,13 @@ class BlockEditor extends Component {
         throw new Error(`markText: option "${opt}" is not supported in block mode`);
     };
     let mark = {
-      'clear': () => { this.markMap.delete(node.id); this.forceUpdate(); },
+      'clear': () => { this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); },
       'find': () => { let n = this.props.ast.getNodeById(node.id); return {from: n.from, to: n.to}; },
       'options': options,
       'nodeId': node.id
     }
-    this.markMap.set(node.id, mark);
-    this.forceUpdate();
+    this.props.dispatch({type: 'ADD_MARK', id: node.id, mark: mark});
+    SHARED.cm.markText(from, to, options); // keep CM in sync
     return mark;
   }
   findMarks(from, to) {
@@ -388,20 +387,15 @@ class BlockEditor extends Component {
   }
 
   renderMarks() {
-    if(!this.markMap) return;
     // clear all marks
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach(m => m.clear());
-    this.markMap.forEach(({options}, k) => {
-      let node = this.props.ast.getNodeById(k);
-      console.log('drawing marks by Id', k, node);
-      if(node && node.element) {
-        let elem = node.element;
-        if(options.css)       node.element.style.cssText = options.css;
-        if(options.title)     node.element.title = options.title;
-        if(options.className) node.element.classList.add(options.className);
-      }
-      SHARED.cm.markText(node.from, node.to, options);
+    this.props.dispatch((_, getState) => {
+      const {markedMap} = getState();
+      markedMap.forEach(v => {
+        let {from, to} = v.find();
+        SHARED.cm.markText(from, to, v.options);
+      });
     });
   }
 

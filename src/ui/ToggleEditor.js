@@ -95,7 +95,7 @@ export default class ToggleEditor extends React.Component {
           return;
         };                               
         let {from, to} = newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
-        opts.css = m.css; opts.title = m.title; opts.class = m.class;
+        opts.css = m.css; opts.title = m.title; opts.className = m.className;
         SHARED.recordedMarks.set(node.nid, {from: from, to: to, options: opts});
       });
   }
