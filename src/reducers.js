@@ -6,7 +6,7 @@ export const reducer = (
     ast: null,
     focusId: null,
     collapsedList: [],
-    markedMap: new Map(),
+    markedList: new Map(),
     errorId: '',
     cur: null,
     quarantine: null,
@@ -18,7 +18,9 @@ export const reducer = (
     case 'SET_FOCUS':
       return {...state, focusId: action.focusId};
     case 'SET_AST':
-      return {...state, ast: action.ast, collapsedList: state.collapsedList.filter(action.ast.getNodeById)};
+      return {...state, ast: action.ast, 
+        collapsedList: state.collapsedList.filter(action.ast.getNodeById),
+        markedMap: state.markedMap.forEach((v, k) => action.ast.getNodeById(k))};
     case 'SET_SELECTIONS':
       return {...state, selections: action.selections};
     case 'SET_ERROR_ID':
