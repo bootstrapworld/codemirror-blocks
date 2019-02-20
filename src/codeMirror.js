@@ -50,10 +50,10 @@ export function commitChanges(
     });
     // if there are still (non-DnD) changes to be patched, do so
     if(oldAST.hash !== newAST.hash) newAST = patch(oldAST, newAST);
-    let focusNId = computeFocusIdFromChanges(changeArr, tree);
-    store.dispatch({type: 'SET_AST', ast: tree});
+    let focusId = computeFocusIdFromChanges(changeArr, newAST);
+    store.dispatch({type: 'SET_AST', ast: newAST});
     store.dispatch(activate(focusId));
-    onSuccess({tree, focusId});
+    onSuccess({newAST, focusId});
   };
 
   tmpCM.on('changes', handler);
