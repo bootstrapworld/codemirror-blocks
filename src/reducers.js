@@ -36,9 +36,9 @@ export const reducer = (
     case 'DISABLE_QUARANTINE':
       return {...state, quarantine: null};
     case 'CHANGE_QUARANTINE':
-      return {...state, quarantine: [state.quarantine[0], action.text]};
+      return {...state, quarantine: [state.quarantine[0], state.quarantine[1], action.text]};
     case 'SET_QUARANTINE':
-      return {...state, quarantine: [action.pos, action.text]};
+      return {...state, quarantine: [action.start, action.end, action.text]};
     case 'SET_ANNOUNCER':
       return {...state, announcer: action.announcer};
     case 'RESET_STORE_FOR_TESTING':

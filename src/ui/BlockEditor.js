@@ -14,7 +14,7 @@ import {pos} from '../types';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
 import CodeMirror from './DragAndDropEditor';
-import {computeFocusIdFromChanges} from '../utils';
+import {computeFocusIdFromChanges, poscmp} from '../utils';
 
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it
@@ -30,6 +30,8 @@ class ToplevelBlock extends React.Component {
   static propTypes = {
     node: PropTypes.object.isRequired,
   }
+
+  componentWillUnmount() { this.mark.clear(); }
 
   render() {
     const {node} = this.props;
@@ -48,10 +50,15 @@ class ToplevelBlockEditableCore extends Component {
 
   constructor(props) {
     super(props);
-    const [pos] = this.props.quarantine;
+    const [start, end] = this.props.quarantine;
     this.container = document.createElement('span');
     this.container.classList.add('react-container');
-    this.marker = SHARED.cm.setBookmark(pos, {widget: this.container});
+    // CM treats 0-width ranges differently than other ranges, so check
+    if(poscmp(start, end) === 0) {
+      this.marker = SHARED.cm.setBookmark(start, {widget: this.container});
+    } else {
+      this.marker = SHARED.cm.markText(start, end, {replacedWith: this.container});
+    }
   }
 
   componentWillUnmount() {
@@ -60,8 +67,8 @@ class ToplevelBlockEditableCore extends Component {
 
   render() {
     const {onDisableEditable, onChange, quarantine} = this.props;
-    const [pos, value] = quarantine;
-    const node = {id: 'editing', from: pos, to: pos};
+    const [start, end, value] = quarantine;
+    const node = {id: 'editing', from: start, to: end};
     const props = {
       tabIndex          : '-1',
       role              : 'text box',
@@ -258,15 +265,17 @@ class BlockEditor extends Component {
     if (e.ctrlKey || e.metaKey) return;
     e.preventDefault();
     const text = e.key;
-    const cur = SHARED.cm.getCursor();
-    this.props.setQuarantine(cur, text);
+    const start = SHARED.cm.getCursor(true);
+    const end = SHARED.cm.getCursor(false);
+    this.props.setQuarantine(start, end, text);
   }
 
   handlePaste = (ed, e) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
-    const cur = SHARED.cm.getCursor();
-    this.props.setQuarantine(cur, text);
+    const start = SHARED.cm.getCursor(true);
+    const end = SHARED.cm.getCursor(false);
+    this.props.setQuarantine(start, end, text);
   }
 
   editorChange = (cm, changes) => {
@@ -466,7 +475,7 @@ const mapDispatchToProps = dispatch => ({
   setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
   setCursor: (_, cur) => dispatch({type: 'SET_CURSOR', cur}),
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
-  setQuarantine: (pos, text) => dispatch({type: 'SET_QUARANTINE', pos, text}),
+  setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
   activate: (id, options) => dispatch(activate(id, options)),
 });
 

@@ -33,7 +33,6 @@ class NodeEditable extends Component {
   saveEdit = e => {
     e.stopPropagation();
     const {node, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
-
     dispatch((_, getState) => {
       const {focusId} = getState();
 
