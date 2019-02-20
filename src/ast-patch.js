@@ -61,7 +61,6 @@ export default function unify(oldTree, newTree, drag) {
   loop(oldTree, newTree);
   // special-case for drag-and-drop
   if(drag) {
-    console.log(oldTree.getNodeById(drag.id), 'was dragged and dropped at', newTree.getNodeAfterCur(drag.loc));
     copyAllIds(oldTree.getNodeById(drag.id), newTree.getNodeAfterCur(drag.loc));
   }
   newTree.annotateNodes();
