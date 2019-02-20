@@ -40,7 +40,7 @@ export class AST {
     let prevNode = null;
     for (let node of this.rootNodes) {
       let numBlankLines = prevNode
-          ? node.srcRange().from.line - prevNode.srcRange().to.line - 1
+          ? Math.max(0, node.srcRange().from.line - prevNode.srcRange().to.line - 1)
           : 0;
       lines.push("\n".repeat(numBlankLines) + node.toString());
       prevNode = node;
@@ -99,8 +99,8 @@ export class AST {
     loop(this.rootNodes, null, 1);
   }
 
-  getNodeById = id => this.nodeIdMap.get(id)
-  getNodeByNId = id => this.nodeNIdMap.get(id)
+  getNodeById  = id  => this.nodeIdMap.get(id)
+  getNodeByNId = nid => this.nodeNIdMap.get(nid)
 
   /**
    * Returns whether `u` is a strict ancestor of `v`
@@ -167,11 +167,31 @@ export class AST {
     return res;
   }
 
+  /**
+   * getFirstRootNode : -> ASTNode
+   *
+   * Return the first (in source code order) root node, or `null` if there are none.
+   */
+  getFirstRootNode() {
+    return this.rootNodes.length > 0 ? this.rootNodes[0] : null;
+  }
+
   // return the node containing the cursor, or false
   getNodeContaining(cursor, nodes = this.rootNodes) {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
     return n && ([...n.children()].length === 0 ? n :
                  this.getNodeContaining(cursor, [...n.children()]) || n);
+  }
+
+  // return a node that whose from/to match two cursor locations, or whose
+  // srcRange matches those locations. If none exists, return undefined
+  getNodeAt(from, to) {
+    let n = [...this.nodeIdMap.values()].find(n => {
+      let {from: srcFrom, to: srcTo} = n.srcRange();
+      return (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0)
+        || (poscmp(from, srcFrom) == 0) && (poscmp(to, srcTo) == 0);
+    });
+    return n || false;
   }
 
   // return the parent or false
@@ -307,28 +327,30 @@ export class ASTNode {
   srcRange() {
     const comment = this.options.comment;
     if (comment) {
-      return {from: minpos(this.from, comment.from),
-              to:   maxpos(this.to,   comment.to)};
+      return {
+        from: minpos(this.from, comment.from),
+        to:   maxpos(this.to,   comment.to)
+      };
     } else {
       return {from: this.from, to: this.to};
     }
   }
 
-  // Get a React component for this node, which can be instantiated with angle brackets `<...>`.
-  reactComponent() {
-    if (typeof this.render === 'function') {
-      return this.render.bind(this);
-    } else {
-      throw new Error("Don't know how to render node of type: " + this.type);
-    }
-  }
-
   // Create a React _element_ (an instantiated component) for this node.
   reactElement(props) {
-    let Component = this.reactComponent();
-    return <Component node={this} {...props} />;
+    return renderASTNode({node:this, ...props});
   }
 }
+
+function renderASTNode(props) {
+  let node = props.node;
+  if (typeof node.render === 'function') {
+    return node.render.bind(node)(props);
+  } else {
+    throw new Error("Don't know how to render node of type: " + node.type);
+  }
+}
+
 
 class ChildrenIterator {
   constructor(self, keys) {

@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import SHARED from '../shared';
 import patch from '../ast-patch';
 import NodeEditable from '../components/NodeEditable';
-import {activate, activateByNId} from '../actions';
+import {activate} from '../actions';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
@@ -34,10 +34,10 @@ class ToplevelBlock extends React.Component {
   render() {
     const {node} = this.props;
     const {from, to} = node.srcRange(); // includes the node's comment, if any
-
-    const mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
-    mark.BLOCK_NODE_ID = node.id;
-
+    // if any prior block markers are in this range, clear them
+    SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
+    this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
+    this.mark.BLOCK_NODE_ID = node.id;
     return ReactDOM.createPortal(node.reactElement(), this.container);
   }
 }
@@ -102,7 +102,7 @@ class BlockEditor extends Component {
     setQuarantine: PropTypes.func.isRequired,
     setAnnouncer: PropTypes.func.isRequired,
     clearFocus: PropTypes.func.isRequired,
-    activateByNId: PropTypes.func.isRequired,
+    activate: PropTypes.func.isRequired,
     search: PropTypes.shape({
       onSearch: PropTypes.func.isRequired,
       search: PropTypes.func.isRequired,
@@ -110,7 +110,7 @@ class BlockEditor extends Component {
     }),
     onBeforeChange: PropTypes.func,
     hasQuarantine: PropTypes.bool.isRequired,
-    external: PropTypes.object,
+    api: PropTypes.object,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -123,9 +123,6 @@ class BlockEditor extends Component {
     super(props);
     this.mouseUsed = false;
     SHARED.keyMap = this.props.keyMap;
-
-    // HERE BE DRAGONS
-    this.props.external.getState = this.getState;
   }
 
   static defaultProps = {
@@ -172,8 +169,8 @@ class BlockEditor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
+    api: {}
   }
-
 
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
@@ -193,7 +190,7 @@ class BlockEditor extends Component {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
         if (nextNode) {
-          this.props.activateByNId(nextNode.nid, {allowMove: true});
+          this.props.activate(nextNode.id, {allowMove: true});
         } else {
           playSound(BEEP);
         }
@@ -204,7 +201,7 @@ class BlockEditor extends Component {
         e.preventDefault();
         const prevNode = ast.getNodeBeforeCur(this.props.cur);
         if (prevNode) {
-          this.props.activateByNId(prevNode.nid, {allowMove: true});
+          this.props.activate(prevNode.id, {allowMove: true});
         } else {
           playSound(BEEP);
         }
@@ -227,13 +224,13 @@ class BlockEditor extends Component {
       case 'changeFocus':
         // NOTE(Emmanuel): this is dead code, unless we can trap tab events
         e.preventDefault();
-        if (focusId === -1) {
+        if (focusId === null) {
           if (ast.rootNodes.length > 0) {
-            dispatch(activateByNId(0, {allowMove: true}));
+            dispatch(activate(ast.getFirstRootNode(), {allowMove: true}));
             // NOTE(Oak): can also find the closest node based on current cursor
           }
         } else {
-          dispatch(activateByNId(null, {allowMove: true}));
+          dispatch(activate(null, {allowMove: true}));
         }
         return;
 
@@ -278,9 +275,9 @@ class BlockEditor extends Component {
     if (!changes.every(c => c.origin && c.origin.startsWith('cmb:'))) {
       const newAST = SHARED.parser.parse(cm.getValue());
       const tree = patch(this.props.ast, newAST);
-      let focusNId = computeFocusIdFromChanges(changes, tree);
+      let focusId = computeFocusIdFromChanges(changes, tree);
       this.props.setAST(tree);
-      this.props.activateByNId(focusNId);
+      this.props.activate(focusId);
     }
   }
 
@@ -317,19 +314,81 @@ class BlockEditor extends Component {
     this.props.search.setCM(ed);
 
     // export methods to the object interface
-    this.setExternalMethods(ed, this.props.external);
+    merge(this.props.api, this.buildAPI(ed));
+
+    // reconstitute any marks and render them
+    setTimeout( () => {
+      SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
+      this.renderMarks();
+    }, 250);
   }
 
-  // attach all the CM methods to the external object, and 
-  // add/override with CMB-specific methods
-  setExternalMethods(ed, ext) {
-    let protoChain = Object.getPrototypeOf(ed);
-    Object.getOwnPropertyNames(protoChain).forEach(m => 
-      ext[m] = (...args) => ed[m](...args));
-    // attach a getState method for debugging
-    ext.getState = () => this.props.dispatch((_, getState) => getState());
-    // override the default markText method with one of our own
-    ext.markText = (from, to, opts) => alert('not yet implemented');
+  buildAPI(ed) {
+    // TODO: expose the _specific_ CM methods needed, but only under the `testing` property.
+    let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
+    return {
+      'cm': {
+        'markText':   (from, to, opts) => this.markText(from, to, opts),
+        'findMarks':  (from, to) => this.findMarks(from, to),
+        'findMarksAt':(pos) => this.findMarksAt(pos),
+        'getAllMarks':() => this.getAllMarks(),
+        'getValue':   () => ed.getValue(),
+        'setValue':   (value) => ed.setValue(value),
+      },
+      'blocks': {
+        'getAst':
+          () => withState((state) => state.ast),
+        'getFocusedNode':
+          () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : null),
+        'getSelectedNodes':
+          () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
+      },
+      'testing': {
+        'setQuarantine': () => this.props.setQuarantine,
+      }
+    };
+  }
+
+  markText(from, to, options) {
+    let supportedOptions = ['css','className','title'];
+    for (let opt in options) {
+      if (!supportedOptions.includes(opt))
+        throw new Error(`markText: option "${opt}" is not supported in block mode`);
+    };
+    let mark = SHARED.cm.markText(from, to, options);
+    // force an update when a marker is created or cleared
+    mark._clear = mark.clear;
+    mark.clear = () => { mark._clear(); this.forceUpdate(); }
+    this.forceUpdate();
+  }
+  findMarks(from, to) {
+    return SHARED.cm.findMarks(from, to)
+      .filter(mark => !mark.BLOCK_NODE_ID && mark.type !== "bookmark");
+  }
+  findMarksAt(pos) {
+    return SHARED.cm.findMarksAt(pos)
+      .filter(mark => !mark.BLOCK_NODE_ID && mark.type !== "bookmark");
+  }
+  getAllMarks() {
+    return SHARED.cm.getAllMarks()
+      .filter(mark => !mark.BLOCK_NODE_ID && mark.type !== "bookmark");
+  }
+  // clear all non-block marks
+  _clearMarks() {
+    this.getAllMarks().map(m => m.clear());
+  }
+
+  renderMarks() {
+    this.getAllMarks().forEach(m => {
+      let {from, to} = m.find();
+      let node = this.props.ast.getNodeAt(from, to);
+      if(node && node.element) {
+        let elem = node.element;
+        if(m.css)       node.element.style.cssText = m.css;
+        if(m.title)     node.element.title = m.title;
+        if(m.className) node.element.classList.add(m.className);
+      }
+    });
   }
 
   handleEditorWillUnmount = ed => {
@@ -342,7 +401,7 @@ class BlockEditor extends Component {
       const {cur} = getState();
       if (!this.mouseUsed && cur === null) {
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-        setTimeout(() => this.props.activateByNId(null, {allowMove: true}), 10);
+        setTimeout(() => this.props.activate(null, {allowMove: true}), 10);
         this.mouseUsed = false;
       }
     });
@@ -381,6 +440,19 @@ class BlockEditor extends Component {
     // SHARED.buffer.style.opacity = 0;
     // SHARED.buffer.style.height = '1px';
     document.body.appendChild(SHARED.buffer);
+    this.unblockCM();
+  }
+
+  componentDidUpdate() { this.unblockCM(); this.renderMarks(); }
+
+  // If there's no quarantine, block CM rendering while we update the DOM
+  blockCM() {
+    if(!this.props.hasQuarantine) SHARED.cm.startOperation();
+  }
+  // If there's no quarantine, unblock CM rendering and refresh line heights
+  unblockCM() {
+    if(!this.props.hasQuarantine) SHARED.cm.endOperation();
+    SHARED.cm.refresh();
   }
 
   // TODO(Emmanuel): is 'data' even needed?
@@ -392,6 +464,7 @@ class BlockEditor extends Component {
   }
 
   render() {
+    this.blockCM();
     const classes = [];
     if (this.props.language) {
       classes.push(`blocks-language-${this.props.language}`);
@@ -417,22 +490,11 @@ class BlockEditor extends Component {
   }
 
   renderPortals = () => {
-    const portals = [];
+    let portals;
     if (SHARED.cm && this.props.ast) {
-      // NOTE(Oak): we need to clear all Blocks markers (containing a NODE_ID)
-      // to prevent overlapping the marker issue
-      for (const marker of SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID)) {
-        console.log('portals rendered!');
-
-        // NOTE(Oak): we need to clear all markers up front to prevent
-        // overlapping the marker issue
-        marker.clear();
-      }
-      for (const r of this.props.ast.rootNodes) {
-        portals.push(<ToplevelBlock key={r.id} node={r} />);
-      }
+      // Render all the portals and add TextMarkers -- thunk this so CM only recalculates once
+      portals = this.props.ast.rootNodes.map(r => <ToplevelBlock key={r.id} node={r} />);
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
-      setTimeout(() => { SHARED.cm.refresh(); console.log('refreshed CM'); }, 100);
     }
     return portals;
   }
@@ -448,9 +510,9 @@ const mapDispatchToProps = dispatch => ({
   setAST: ast => dispatch({type: 'SET_AST', ast}),
   setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
   setCursor: (_, cur) => dispatch({type: 'SET_CURSOR', cur}),
-  clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: -1}),
+  clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
   setQuarantine: (pos, text) => dispatch({type: 'SET_QUARANTINE', pos, text}),
-  activateByNId: (nid, options) => dispatch(activateByNId(nid, options)),
+  activate: (id, options) => dispatch(activate(id, options)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);

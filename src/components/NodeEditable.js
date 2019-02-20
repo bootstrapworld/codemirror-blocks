@@ -6,7 +6,7 @@ import ContentEditable from './ContentEditable';
 import {commitChanges} from '../codeMirror';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {activateByNId, activate} from '../actions';
+import {activate} from '../actions';
 import {say} from '../utils';
 
 class NodeEditable extends Component {
@@ -39,7 +39,7 @@ class NodeEditable extends Component {
 
       if (this.props.value === null || this.props.value === this.cachedValue) {
         this.props.onDisableEditable(false);
-        dispatch(activateByNId(focusId, true));
+        dispatch(activate(focusId, true));
         return;
       }
 
@@ -53,7 +53,7 @@ class NodeEditable extends Component {
           if (firstNewId !== null) {
             dispatch(activate(firstNewId, {allowMove: true}));
           } else {
-            dispatch(activateByNId(null, {allowMove: false}));
+            dispatch(activate(null, {allowMove: false}));
           }
           onChange(null);
           onDisableEditable(false);
@@ -167,7 +167,7 @@ const mapStateToProps = ({cm, errorId}, {node}) => {
 const mapDispatchToProps = dispatch => ({
   dispatch,
   setErrorId: errorId => dispatch({type: 'SET_ERROR_ID', errorId}),
-  focusSelf: () => dispatch(activateByNId(null, {allowMove: false})),
+  focusSelf: () => dispatch(activate(null, {allowMove: false})),
   clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []}),
 });
 

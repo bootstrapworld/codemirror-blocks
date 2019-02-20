@@ -15,7 +15,7 @@ import {
   dragleave,
   drop,
   cut,
-} from './events';
+} from './support/events';
 
 import {
   LEFT,
@@ -35,7 +35,7 @@ import {
   DKEY,
 } from 'codemirror-blocks/keycode';
 
-import {wait} from './test-utils';
+import {wait} from './support/test-utils';
 
 const TOGGLE_SELECTION_KEYPRESS =
       keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
@@ -785,7 +785,8 @@ describe('The CodeMirrorBlocks Class', function() {
         });
       });
     });
-
+/*
+    // these are now factored out into drag-test.js
     describe('when dealing with dragging,', function() {
       beforeEach(function() {
         this.cm.setValue('(+ 1 2 3)');
@@ -891,5 +892,6 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       });
     });
+*/
   });
 });

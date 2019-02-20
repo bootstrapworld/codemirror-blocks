@@ -39,7 +39,7 @@ export default class ToggleEditor extends React.Component {
       getRenderOptions: PropTypes.func
     }),
     options: PropTypes.object,
-    external: PropTypes.object,
+    api: PropTypes.object,
     appElement: PropTypes.instanceOf(Element).isRequired
   }
 
@@ -50,9 +50,6 @@ export default class ToggleEditor extends React.Component {
     this.language = props.language;
     this.parser = this.language.getParser();
 
-    // export the handleToggle method
-    this.props.external.handleToggle = this.handleToggle;
-
     let defaultOptions = {
       parser: this.parser,
       renderOptions: props.language.getRenderOptions
@@ -62,17 +59,51 @@ export default class ToggleEditor extends React.Component {
     };
     this.options = merge(defaultOptions, props.options);
     this.hasMounted = false;
+
+    merge(this.props.api, this.buildAPI());
+  }
+
+  buildAPI() {
+    return {
+      'blocks': {
+        'getBlockMode': () => this.props.dispatch((_, getState) => getState().blockMode),
+        'setBlockMode': this.handleToggle
+      }
+    };
   }
 
   componentDidMount() {
     this.hasMounted = true;
   }
 
+  componentDidUpdate() {
+    setTimeout(this.reconstituteMarks, 250);
+  }
+
+  // save any non-block, non-bookmark marks
+  // reconstruct the options object and use pre-computed from/to
+  recordMarks(oldAST, postPPcode) {
+    SHARED.recordedMarks = new Map();
+    let newAST = SHARED.parser.parse(postPPcode);
+    SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
+      .forEach(m => {
+        let {from: oldFrom, to: oldTo} = m.find(), opts = {};
+        let node = oldAST.getNodeAt(oldFrom, oldTo);    // find the node corresponding to the mark
+        if(!node) return;                               // bail on non-node markers
+        let {from, to} = newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
+        opts.css = m.css; opts.title = m.title; opts.class = m.class;
+        SHARED.recordedMarks.set(node.nid, {from: from, to: to, options: opts});
+      });
+  }
+
   handleToggle = blockMode => {
     this.setState((state, props) => {
       try {
         let ast = SHARED.parser.parse(SHARED.cm.getValue());
-        let code = ast.toString();
+        let code = ast.toString(); // pretty-print
+        this.props.api.blockMode = blockMode;
+        // record mark information
+        this.recordMarks(ast, code);
         if (blockMode) {
           say("Switching to block mode");
           SHARED.cm.setValue(code);
@@ -112,8 +143,8 @@ export default class ToggleEditor extends React.Component {
       <TextEditor
         cmOptions={this.cmOptions}
         parser={this.parser}
-        initialCode={code}
-        external={this.props.external} />
+        value={code}
+        api={this.props.api} />
     );
   }
 
@@ -124,7 +155,7 @@ export default class ToggleEditor extends React.Component {
         cmOptions={this.cmOptions}
         parser={this.parser}
         value={code}
-        external={this.props.external}
+        api={this.props.api}
         appElement={this.props.appElement}
         language={this.language.id}
         options={this.options} />

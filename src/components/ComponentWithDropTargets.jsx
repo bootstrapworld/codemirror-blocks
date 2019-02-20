@@ -56,11 +56,11 @@ export default class ComponentWithDropTargets extends Component {
         ? () => {}
         : this.handleSetEditable(rightIndex);
       const props = {
+        key: key,
         onSetLeft: onSetLeft,
         onSetRight: onSetRight
       };
-      const Component = node.reactComponent();
-      return <Component node={node} key={key} {...props} />;
+      return node.reactElement(props);
     };
   }
 }

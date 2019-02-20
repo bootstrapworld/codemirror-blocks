@@ -17,6 +17,7 @@ function copyAllIds(oldTree, newTree) {
   while (!oldPtr.done) {
     assert(!newPtr.done);
     newPtr.value.id = oldPtr.value.id;
+    newPtr.value.element = oldPtr.value.element;
     oldPtr = oldIter.next();
     newPtr = newIter.next();
   }

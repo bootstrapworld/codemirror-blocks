@@ -107,8 +107,8 @@ export function copyNodes(id, selectionEditor) {
     }
     copyToClipboard(texts.join(' '));
     // Copy steals focus. Force it back to the node's DOM element
-    // without announcing via activate() or activateByNId().
-    ast.getNodeByNId(focusId).element.focus();
+    // without announcing via activate() or activate().
+    ast.getNodeById(focusId).element.focus();
   };
 }
 
@@ -148,32 +148,19 @@ export function pasteNodes(id, isBackward) {
   };
 }
 
-export function activateByNId(nid, options) {
-  return (dispatch, getState) => {
-    const {ast, focusId} = getState();
-    if (nid === null) nid = focusId;
-    const node = ast.getNodeByNId(nid);
-    if (node) {
-      dispatch(activate(node.id, options));
-    }
-  };
-}
-
 export function activate(id, options) {
   return (dispatch, getState) => {
-    // TODO(Oak): is this a dead code?
-    if (id === null) return;
-
     options = withDefaults(options, {allowMove: true, record: true});
     const state = getState();
     const {ast, focusId, collapsedList} = state;
+    if (id === null) { id = focusId }
     const node = ast.getNodeById(id);
 
     // If the node is part of the toolbar...
     // TODO(Emmanuel): right now we bail, but shouldn't we at least say the label?
     if (!node) { return; }
 
-    if (node.nid === focusId) {
+    if (node.id === focusId) {
       say(node.options['aria-label']);
     }
     // FIXME(Oak): if possible, let's not hard code like this
@@ -202,7 +189,7 @@ SHARED.cm.setCursor({line: -1, ch: 0});
 */
 
     setTimeout(() => {
-      dispatch({type: 'SET_FOCUS', focusId: node.nid});
+      dispatch({type: 'SET_FOCUS', focusId: node.id});
       
       if (options.record) {
         SHARED.search.setCursor(node.from);

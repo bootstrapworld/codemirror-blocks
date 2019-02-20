@@ -4,6 +4,9 @@ import {reducer} from './reducers';
 
 export const store = createStore(reducer, undefined, applyMiddleware(thunk));
 
+// used in unit tests
+export const initStore = () => createStore(reducer, undefined, applyMiddleware(thunk));
+
 /**
  * isErrorFree: (-> Boolean)
  *

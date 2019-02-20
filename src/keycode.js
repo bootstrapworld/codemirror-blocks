@@ -1,3 +1,5 @@
+// TODO: Remove this file
+// (tests should use `support/simulate`; src basically doesn't use this file)
 export const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
 export const MODKEY  = ISMAC ? "Alt" : "Ctrl";
 export const CTRLKEY = ISMAC ? "Cmd" : "Ctrl";
