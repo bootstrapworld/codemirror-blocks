@@ -7,7 +7,8 @@ import {computeFocusIdFromChanges} from './utils';
 
 const tmpDiv = document.createElement('div');
 const tmpCM = CodeMirror(tmpDiv, {value: ""});
-const raw = lines => lines.join("\"").trim();
+const raw = lines => lines.join('').trim();
+
 export function commitChanges(
   changes,
   onSuccess=() => {},
