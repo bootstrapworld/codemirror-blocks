@@ -2,7 +2,7 @@ import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
 import {store} from '../src/store';
-import {wait} from './support/test-utils';
+import {wait, cleanupAfterTest} from './support/test-utils';
 import {
   click,
   keyDown,
@@ -32,13 +32,7 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   afterEach(function() {
-    document.body.removeChild(document.getElementById('root'));
-    store.dispatch({type: "RESET_STORE_FOR_TESTING"});
-    const textareas = document.getElementsByTagName("textarea");
-    while (textareas[0]) {
-      const current = textareas[0];
-      current.parentNode.removeChild(current);
-    }
+    cleanupAfterTest('root', store);
   });
 
   describe("when dealing with node activation,", function() {

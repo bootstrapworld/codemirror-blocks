@@ -1,11 +1,12 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
+import {store} from '../src/store';
 import {
   click,
   keyDown,
   insertText
 } from './support/simulate';
-import {wait} from './support/test-utils';
+import {wait, cleanupAfterTest} from './support/test-utils';
 
 
 // ms delay to let the DOM catch up before testing
@@ -27,7 +28,7 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   afterEach(function() {
-    document.body.removeChild(document.getElementById('root'));
+    cleanupAfterTest('root', store);
   });
 
   describe('focusing,', function() {
