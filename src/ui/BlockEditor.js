@@ -242,7 +242,6 @@ class BlockEditor extends Component {
       case 'searchPrevious':
         e.preventDefault();
         const result = SHARED.search.search(false, state);
-        console.log(result);
         activateNoRecord(result);
         return;
 
