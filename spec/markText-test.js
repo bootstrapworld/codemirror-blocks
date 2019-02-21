@@ -35,13 +35,6 @@ import {
 
 import {wait} from './support/test-utils';
 
-const TOGGLE_SELECTION_KEYPRESS =
-      keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
-const PRESERVE_NEXT_KEYPRESS =
-      keydown(DOWN, ISMAC ? {altKey: true} : {ctrlKey: true});
-const PRESERVE_PREV_KEYPRESS =
-      keydown(UP, ISMAC ? {altKey: true} : {ctrlKey: true});
-
 // ms delay to let the DOM catch up before testing
 const DELAY = 750;
 /* eslint-enable */ //temporary
@@ -78,7 +71,7 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   describe('text marking api,', function() {
-    /*
+    
     beforeEach(async function() {
       this.blocks.setValue('11 12 (+ 3 4 5)');
       await wait(DELAY);
@@ -159,6 +152,6 @@ describe('The CodeMirrorBlocks Class', function() {
         expect(this.mark.find().to.line).toEqual(this.literal1.to.line);
         expect(this.mark.find().to.ch).toEqual(this.literal1.to.ch);
       });
-    });*/
+    });
   });
 });
