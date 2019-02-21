@@ -1,17 +1,17 @@
-
+const initialState = {
+  selections: [],
+  ast: null,
+  focusId: null,
+  collapsedList: [],
+  markedMap: new Map(),
+  errorId: '',
+  cur: null,
+  quarantine: null,
+  announcer: null,
+}
 
 export const reducer = (
-  state = {
-    selections: [],
-    ast: null,
-    focusId: null,
-    collapsedList: [],
-    markedMap: new Map(),
-    errorId: '',
-    cur: null,
-    quarantine: null,
-    announcer: null,
-  },
+  state = initialState,
   action) => {
     console.log(action);
     switch (action.type) {
@@ -44,7 +44,10 @@ export const reducer = (
     case 'ADD_MARK':
       return {...state, markedMap: state.markedMap.set(action.id, action.mark)};
     case 'CLEAR_MARK':
-      return {...state, markedMap: state.markedMap.delete(action.id)};
+      state.markedMap.delete(action.id);
+      return {...state};
+    case 'RESET_STORE_FOR_TESTING':
+      return initialState;
     default:
       return state;
     }

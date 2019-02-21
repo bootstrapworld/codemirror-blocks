@@ -346,7 +346,8 @@ class BlockEditor extends Component {
           () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
       },
       'testing': {
-        'setQuarantine': () => this.props.setQuarantine,
+        'getQuarantine': () => withState(({quarantine}) => quarantine),
+        'setQuarantine': (q) => this.props.setQuarantine(q),
       }
     };
   }
@@ -361,24 +362,22 @@ class BlockEditor extends Component {
       if (!supportedOptions.includes(opt))
         throw new Error(`markText: option "${opt}" is not supported in block mode`);
     };
-    let mark = {
-      'clear': () => { this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); },
-      'find': () => { let n = this.props.ast.getNodeById(node.id); return {from: n.from, to: n.to}; },
-      'options': options,
-      'nodeId': node.id
-    }
+    let mark = SHARED.cm.markText(from, to, options); // keep CM in sync
+    mark._clear = mark.clear;
+    mark.clear = () => { mark._clear(); this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); };
+    mark.find = () => { let {from, to} = this.props.ast.getNodeById(node.id); return {from, to}; };
+    mark.options = options;
     this.props.dispatch({type: 'ADD_MARK', id: node.id, mark: mark});
-    SHARED.cm.markText(from, to, options); // keep CM in sync
     return mark;
   }
   findMarks(from, to) {
-    throw "Not yet implemented!";
+    return SHARED.cm.findMarks(from, to).filter(m => !m.BLOCK_NODE_ID);
   }
   findMarksAt(pos) {
-    throw "Not yet implemented!";
+    return SHARED.cm.findMarksAt(pos).filter(m => !m.BLOCK_NODE_ID);
   }
   getAllMarks() {
-    return [...this.markMap.values()];
+    return SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID);
   }
   // clear all non-block marks
   _clearMarks() {
@@ -386,7 +385,6 @@ class BlockEditor extends Component {
   }
 
   renderMarks() {
-    // clear all marks
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach(m => m.clear());
     this.props.dispatch((_, getState) => {
