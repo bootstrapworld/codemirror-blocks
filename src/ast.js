@@ -29,6 +29,7 @@ export class AST {
     // the `nodeIdMap` attribute can be used to look up nodes by their id.
     // the other nodeMaps make it easy to determine node order
     this.nodeIdMap = new Map();
+    this.nodeNIdMap = new Map();
     this.annotateNodes();
     this.id = -1; // just for the sake of having an id, though unused
     this.hash = hashObject(this.rootNodes.map(node => node.hash));
@@ -72,8 +73,10 @@ export class AST {
   // and populating various maps for tree navigation
   annotateNodes() {
     this.nodeIdMap.clear();
+    this.nodeNIdMap.clear();
 
     let lastNode = null;
+    let nid = 0;
 
     const loop = (nodes, parent, level) => {
       nodes.forEach((node, i) => {
@@ -82,11 +85,13 @@ export class AST {
         node.level = level;
         node["aria-setsize"]  = nodes.length;
         node["aria-posinset"] = i + 1;
+        node.nid = nid++;
         if (lastNode) {
           node.prev = lastNode;
           lastNode.next = node;
         }
         this.nodeIdMap.set(node.id, node);
+        this.nodeNIdMap.set(node.nid, node);
         lastNode = node;
         loop([...node.children()], node, level + 1);
       });
@@ -95,6 +100,7 @@ export class AST {
   }
 
   getNodeById = id => this.nodeIdMap.get(id)
+  getNodeByNId = nid => this.nodeNIdMap.get(nid)
 
   /**
    * Returns whether `u` is a strict ancestor of `v`
@@ -174,6 +180,17 @@ export class AST {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
     return n && ([...n.children()].length === 0 ? n :
                  this.getNodeContaining(cursor, [...n.children()]) || n);
+  }
+
+  // return a node that whose from/to match two cursor locations, or whose
+  // srcRange matches those locations. If none exists, return undefined
+  getNodeAt(from, to) {
+    let n = [...this.nodeIdMap.values()].find(n => {
+      let {from: srcFrom, to: srcTo} = n.srcRange();
+      return (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0)
+        || (poscmp(from, srcFrom) == 0) && (poscmp(to, srcTo) == 0);
+    });
+    return n || false;
   }
 
   // return the parent or false

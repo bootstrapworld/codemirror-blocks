@@ -31,6 +31,11 @@ class TextEditor extends Component {
     
     SHARED.cm = ed;
 
+    // reconstitute any marks and render them
+    setTimeout( () => {
+      SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
+    }, 250);
+
     // export methods to the object interface
     merge(this.props.api, this.buildAPI(ed));
   }
@@ -39,6 +44,9 @@ class TextEditor extends Component {
     return {
       'cm': {
         'markText': (from, to, opts) => ed.markText(from, to, opts),
+        'getAllMarks': () => ed.getAllMarks(),
+        'findMarks': (from, to) => ed.findMarks(from, to),
+        'findMarksAt': (pos) => ed.findMarksAt(pos),
         'getValue': (sep) => ed.getValue(sep),
         'setValue': (value) => ed.setValue(value),
         'getScrollerElement': () => ed.getScrollerElement(),

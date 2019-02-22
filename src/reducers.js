@@ -1,9 +1,9 @@
-
 const initialState = {
   selections: [],
   ast: null,
   focusId: null,
   collapsedList: [],
+  markedMap: new Map(),
   errorId: '',
   cur: null,
   quarantine: null,
@@ -41,6 +41,11 @@ export const reducer = (
       return {...state, quarantine: [action.start, action.end, action.text]};
     case 'SET_ANNOUNCER':
       return {...state, announcer: action.announcer};
+    case 'ADD_MARK':
+      return {...state, markedMap: state.markedMap.set(action.id, action.mark)};
+    case 'CLEAR_MARK':
+      state.markedMap.delete(action.id);
+      return {...state}; // NOTE(Emmanuel): simply returning 'state' here will NOT work!
     case 'RESET_STORE_FOR_TESTING':
       return initialState;
     default:
