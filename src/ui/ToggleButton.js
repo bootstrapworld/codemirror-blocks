@@ -4,26 +4,20 @@ import PropTypes from 'prop-types';
 
 export default class ToggleButton extends Component {
   static propTypes = {
-    onToggle: PropTypes.func.isRequired
+    setBlockMode: PropTypes.func.isRequired,
+    blockMode: PropTypes.bool.isRequired
   }
 
-  state = {
-    blockMode: false
-  }
-
+  // call setBlockMode on the opposite of the current mode
   handleToggle = () => {
-    this.setState((state, props) => {
-      let newBlockMode = !state.blockMode;
-      props.onToggle(newBlockMode);
-      return {blockMode: newBlockMode};
-    });
+    this.props.setBlockMode(!this.props.blockMode);
   }
 
   render() {
-    const glyphClass = this.state.blockMode
+    const glyphClass = this.props.blockMode
       ? 'glyphicon glyphicon-pencil'
       : 'glyphicon glyphicon-align-left';
-    const modeName = this.state.blockMode ? "text" : "blocks";
+    const modeName = this.props.blockMode ? "text" : "blocks";
     const buttonAria = "Switch to " + modeName + " mode";
     return (
       <button className="blocks-toggle-btn btn btn-default btn-sm"
