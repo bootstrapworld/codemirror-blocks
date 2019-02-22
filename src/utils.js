@@ -181,6 +181,11 @@ export function isDummyPos(pos) {
   return pos.line === -1 && pos.ch === 0;
 }
 
+export function posAfterChanges(changes, pos, isFrom) {
+  changes.forEach(c => pos = adjustForChange(pos, c, isFrom));
+  return pos;
+}
+
 // computeFocusIdFromChanges : [CMchanges], AST -> Number
 // compute the focusId by identifying the node in the newAST that was
 // (a) most-recently added (if there's any insertion)

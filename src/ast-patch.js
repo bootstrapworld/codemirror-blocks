@@ -1,4 +1,5 @@
 import {assert} from './utils';
+import uuidv4 from 'uuid/v4';
 
 // defaultdict with empty list
 function addIndex(container, k, v) {
@@ -9,7 +10,7 @@ function addIndex(container, k, v) {
   }
 }
 
-function copyAllIds(oldTree, newTree) {
+function copyAllIds(oldTree, newTree, drag) {
   const oldIter = oldTree.descendants()[Symbol.iterator]();
   const newIter = newTree.descendants()[Symbol.iterator]();
   let oldPtr = oldIter.next();
@@ -23,7 +24,7 @@ function copyAllIds(oldTree, newTree) {
   }
 }
 
-export default function unify(oldTree, newTree) {
+export default function unify(oldTree, newTree, drag) {
   function loop(oldTree, newTree) {
     newTree.id = oldTree.id;
     const index = {};
@@ -60,5 +61,13 @@ export default function unify(oldTree, newTree) {
   }
   loop(oldTree, newTree);
   newTree.annotateNodes();
+  // special-case for drag-and-drop: (1) make sure ID isn't in use by another node
+  // (2) copy the dragged properties, and (3) re-annotated since the IDs have changed
+  // TODO(Emmanuel): could this be moved to the top, with the dragged node stored in 'processed'?
+  if(drag) {
+    if(newTree.getNodeById(drag.id)) newTree.getNodeById(drag.id).id = uuidv4();
+    copyAllIds(oldTree.getNodeById(drag.id), newTree.getNodeAfterCur(drag.loc));
+    newTree.annotateNodes();
+  }
   return newTree;
 }
