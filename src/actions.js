@@ -46,15 +46,15 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
       return;
     }
 
-    // Drag the _whole_ source node, comments and all.
+    // Drag the pretty-printed source node, comments and all.
     if (srcNode) {
       var {from: srcFrom, to: srcTo} = srcNode.srcRange();
-      content = SHARED.cm.getRange(srcFrom, srcTo);
+      content = srcNode.toString();
     }
 
     let value = null;
     if (isDropTarget) {
-      value = ' ' + content + ' '; // add spaces around inserted content
+      value = addWhitespacePadding(content, destFrom, destTo);
     } else {
       value = content;
     }
@@ -93,18 +93,8 @@ export function copyNodes(id, selectionEditor) {
       return; // Not much to do.
     }
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
-    const texts = nodeSelections.map(node => {
-      const {from, to} = node.srcRange();
-      return SHARED.cm.getRange(from, to);
-    });
-    // Make sure we don't accidentally merge with a comment.
-    if (ast.precedesComment(nodeSelections[0].srcRange().from)) {
-      texts[0] = "\n" + texts[0];
-    }
-    const last = nodeSelections.length - 1;
-    if (ast.followsComment(nodeSelections[last].srcRange().to)) {
-      texts[last] = texts[last] + "\n";
-    }
+    const texts = nodeSelections.map(node => node.toString()); // pretty-print the selection
+    console.log("@copy", "`" + texts.join(' ') + "`");
     copyToClipboard(texts.join(' '));
     // Copy steals focus. Force it back to the node's DOM element
     // without announcing via activate() or activate().
@@ -113,7 +103,9 @@ export function copyNodes(id, selectionEditor) {
 }
 
 export function pasteNodes(id, isBackward) {
+  console.log("@gunna-paste-1");
   return (dispatch, getState) => {
+  console.log("@gunna-paste-2");
     const {ast, selections} = getState();
     const node = ast.getNodeById(id);
     let from = null, to = null;
@@ -133,7 +125,8 @@ export function pasteNodes(id, isBackward) {
     }
 
     pasteFromClipboard(text => {
-      text = ' ' + text + ' '; // add spaces around inserted content
+      text = addWhitespacePadding(text, from, to);
+      console.log("@paste", "`" + text + "`", from.line, from.ch, to.line, to.ch);
       commitChanges(
         cm => () => {
           cm.replaceRange(text, from, to, 'cmb:paste');
@@ -217,3 +210,14 @@ SHARED.cm.setCursor({line: -1, ch: 0});
   };
 }
 
+// Pad `text` with spaces as needed, when a block will be inserted.
+export function addWhitespacePadding(text, from, to) {
+  let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
+  let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
+  // If we're at the beginning of the line or if the previous char is a space,
+  // then it's safe not to prepend a space. Otherwise we should.
+  let prePad = !(prevChar == "" || prevChar == " ");
+  // Similarly for postpending.
+  let postPad = !(nextChar == "" || nextChar == " ");
+  return (prePad ? " " : "") + text + (postPad ? " " : "");
+}

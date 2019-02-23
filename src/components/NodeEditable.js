@@ -6,7 +6,7 @@ import ContentEditable from './ContentEditable';
 import {commitChanges} from '../codeMirror';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {activate} from '../actions';
+import {activate, addWhitespacePadding} from '../actions';
 import {say} from '../utils';
 
 class NodeEditable extends Component {
@@ -42,7 +42,7 @@ class NodeEditable extends Component {
         return;
       }
 
-      const value = ' ' + this.props.value + ' '; // add spaces around inserted content
+      const value = addWhitespacePadding(this.props.value, node.from, node.to);
 
       commitChanges(
         cm => () => {

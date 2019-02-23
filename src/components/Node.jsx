@@ -22,7 +22,7 @@ import {playSound, BEEP} from '../sound';
 @DragNodeSource
 @DropNodeTarget(({node}) => {
   node = store.getState().ast.getNodeById(node.id);
-  return {from: node.from, to: node.to};
+  return node.srcRange();
 })
 class Node extends BlockComponent {
   static defaultProps = {
@@ -275,6 +275,7 @@ class Node extends BlockComponent {
 
       // paste
       case 'paste':
+        console.log("@Node.paste");
         handlePaste(node.id, e.shiftKey);
         return;
 
