@@ -200,7 +200,7 @@ export class AST {
   /**
    * followsComment : {line, ch} -> bool
    *
-   * Is this position on the same line as a comment, following it?
+   * Is there a comment or a commented node to the left of this position, on the same line?
    */
   followsComment(pos) {
     // TODO: efficiency
@@ -209,6 +209,10 @@ export class AST {
           && node.options.comment.to.line == pos.line
           && node.options.comment.to.ch <= pos.ch) {
         return true;
+      } else if (node.options.comment
+                 && node.to.line == pos.line
+                 && node.to.ch <= pos.ch) {
+        return true
       }
     }
     return false;
@@ -217,7 +221,7 @@ export class AST {
   /**
    * precedesComment : {line, ch} -> bool
    *
-   * Is this position on the same line as a comment, before it?
+   * Is there a comment or a commented node to the right of this position, on the same line?
    */
   precedesComment(pos) {
     // TODO: efficiency
@@ -225,6 +229,10 @@ export class AST {
       if (node.options.comment
           && node.options.comment.from.line == pos.line
           && pos.ch <= node.options.comment.from.ch) {
+        return true;
+      } else if (node.options.comment
+                 && node.from.line == pos.line
+                 && pos.ch <= node.from.ch) {
         return true;
       }
     }

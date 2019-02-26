@@ -34,7 +34,7 @@ class NodeEditable extends Component {
     e.stopPropagation();
     const {node, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
     dispatch((_, getState) => {
-      const {focusId} = getState();
+      const {ast, focusId} = getState();
 
       if (this.props.value === null || this.props.value === this.cachedValue) {
         this.props.onDisableEditable(false);
@@ -42,7 +42,7 @@ class NodeEditable extends Component {
         return;
       }
 
-      const value = addWhitespacePadding(this.props.value, node.from, node.to);
+      const value = addWhitespacePadding(ast, this.props.value, node.from, node.to);
 
       commitChanges(
         cm => () => {
