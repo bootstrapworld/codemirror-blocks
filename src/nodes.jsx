@@ -254,7 +254,7 @@ class FunctionDefinitionComponent extends ComponentWithDropTargets {
     const {node} = this.props;
     const DropTarget = this.DropTarget;
     return (
-      <Node node={node} {...this.props}>
+      <Node node={node} alwaysUpdate={true} {...this.props}>
         <span className="blocks-operator">
           define (
           <DropTarget index={0} location={node.name.from} />
@@ -297,7 +297,7 @@ class CondClauseComponent extends ComponentWithDropTargets {
     const {node} = this.props;
     const DropTarget = this.DropTarget;
     return (
-      <Node node={node} {...this.props}>
+      <Node node={node} alwaysUpdate={true} {...this.props}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">
             <DropTarget index={0} location={node.testExpr.from} />
@@ -383,7 +383,7 @@ class IfExpressionComponent extends ComponentWithDropTargets {
     const {node} = this.props;
     const DropTarget = this.DropTarget;
     return (
-      <Node node={node} {...this.props}>
+      <Node node={node} alwaysUpdate={true} {...this.props}>
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">

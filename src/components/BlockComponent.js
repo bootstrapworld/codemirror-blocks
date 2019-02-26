@@ -33,7 +33,10 @@ export default class BlockComponent extends Component {
     // with the update already
     const {node: newValue, ...newProps} = props;
     const {node: oldValue, ...oldProps} = this.props;
-    
+
+    if (props.alwaysUpdate || this.props.alwaysUpdate) {
+      return true;
+    }
     const shouldUpdate = (
       (newValue && oldValue && newValue.hash !== oldValue.hash) ||
         !vaguelyEqual(newProps, oldProps) ||
