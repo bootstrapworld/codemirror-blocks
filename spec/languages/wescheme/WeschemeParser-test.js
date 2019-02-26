@@ -166,10 +166,10 @@ describe("The WeScheme Parser,", function() {
   describe("when parsing cond expressions,", function() {
     beforeEach(function() {
       this.ast = this.parser.parse(
-        `(cond
-          [(positive? -5) (error "doesn't get here")]
-          [(zero? -5) (error "doesn't get here, either")]
-          [(positive? 5) #t])`
+`(cond
+  [(positive? -5) (error "doesn't get here")]
+  [(zero? -5) (error "doesn't get here, either")]
+  [(positive? 5) #t])`
       );
     });
 
@@ -185,10 +185,10 @@ describe("The WeScheme Parser,", function() {
 
     it("should have a sane toString method", function() {
       expect(this.ast.rootNodes[0].toString()).toEqual(
-        `(cond
-          [(positive? -5) (error "doesn't get here")]
-          [(zero? -5) (error "doesn't get here, either")]
-          [(positive? 5) #t])`
+`(cond
+  [(positive? -5) (error "doesn't get here")]
+  [(zero? -5) (error "doesn't get here, either")]
+  [(positive? 5) #t])`
       );
     });
   });
