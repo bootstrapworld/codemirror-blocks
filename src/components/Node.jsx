@@ -275,7 +275,6 @@ class Node extends BlockComponent {
 
       // paste
       case 'paste':
-        console.log("@Node.paste");
         handlePaste(node.id, e.shiftKey);
         return;
 

@@ -88,7 +88,6 @@ export function copyNodes(id, selectionEditor) {
     }
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
     const texts = nodeSelections.map(node => node.toString()); // pretty-print the selection
-    console.log("@copy", "`" + texts.join(' ') + "`");
     copyToClipboard(texts.join("\n"));
     // Copy steals focus. Force it back to the node's DOM element
     // without announcing via activate() or activate().
@@ -97,9 +96,7 @@ export function copyNodes(id, selectionEditor) {
 }
 
 export function pasteNodes(id, isBackward) {
-  console.log("@gunna-paste-1");
   return (dispatch, getState) => {
-  console.log("@gunna-paste-2");
     const {ast, selections} = getState();
     const node = ast.getNodeById(id);
     let from = null, to = null;
@@ -120,7 +117,6 @@ export function pasteNodes(id, isBackward) {
 
     pasteFromClipboard(text => {
       text = addWhitespacePadding(ast, text, from, to);
-      console.log("@paste", "`" + text + "`", from.line, from.ch, to.line, to.ch);
       commitChanges(
         cm => () => {
           cm.replaceRange(text, from, to, 'cmb:paste');

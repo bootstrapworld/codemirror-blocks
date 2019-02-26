@@ -17,7 +17,6 @@ export function commitChanges(
   let handler = (cm, changeArr) => {
     let newAST = null;
     try {
-      console.log("@parsing", "`"+tmpCM.getValue()+"`");
       newAST = SHARED.parser.parse(tmpCM.getValue());
     } catch (exception) {
       onError(exception);

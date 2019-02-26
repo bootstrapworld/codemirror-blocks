@@ -275,7 +275,6 @@ class BlockEditor extends Component {
     const text = e.clipboardData.getData('text/plain');
     const start = SHARED.cm.getCursor(true);
     const end = SHARED.cm.getCursor(false);
-    console.log("@BlockEditor.paste", start, end, "`"+text+"`");
     this.props.setQuarantine(start, end, text);
   }
 
