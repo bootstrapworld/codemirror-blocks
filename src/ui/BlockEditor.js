@@ -295,11 +295,7 @@ class BlockEditor extends Component {
       const tree = patch(this.props.ast, newAST);
       let focusId = computeFocusIdFromChanges(changes, tree);
       this.props.setAST(tree);
-      // only call activate() if there's no cursor defined
-      this.props.dispatch((_, getState) => {
-        const {cur} = getState();
-        if(!cur) this.props.activate(focusId);
-      });
+      this.props.activate(focusId);
     }
   }
 
