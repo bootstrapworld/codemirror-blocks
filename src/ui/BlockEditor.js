@@ -481,8 +481,12 @@ class BlockEditor extends Component {
   // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
   afterDOMUpdate() {
     window.requestAnimationFrame(() => setTimeout( () => {
+      const {dispatch} = this.props;
+      dispatch((_, getState) => {
+        const {quarantine} = getState();
+        if(!quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
         console.log('Browser is ready after:', (Date.now() - this.startTime)/1000, 'ms');
-        SHARED.cm.refresh(); 
+      });
       }, 0));
   }
 
