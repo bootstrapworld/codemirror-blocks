@@ -20,8 +20,8 @@ describe('The CodeMirrorBlocks Class', function() {
       const container = document.getElementById('cmb-editor');
       this.cmb = new CodeMirrorBlocks(container, wescheme, "");
       this.editor = this.cmb;
-      this.cm = this.editor.cm;
-      this.editor.blocks.setBlockMode(true);
+      this.cm = this.editor;
+      this.editor.setBlockMode(true);
     });
 
     afterEach(function() {
