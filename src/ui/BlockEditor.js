@@ -352,7 +352,7 @@ class BlockEditor extends Component {
         'getCursor': (start) => ed.getCursor(start),
         'replaceRange': ed.replaceRange,
         'setCursor': (pos) => this.props.setCursor(ed, pos),
-        'runMode': (src, lang, container) => ed.runMode(src, lang, container),
+        'runMode': (_src, _lang, _container) => () => {}, // no-op since not an editing command
         'refresh': () => ed.refresh(),
       },
       'blocks': {
