@@ -42,17 +42,30 @@ class TextEditor extends Component {
 
   buildAPI(ed) {
     return {
-      'cm': {
-        'markText': (from, to, opts) => ed.markText(from, to, opts),
-        'getAllMarks': () => ed.getAllMarks(),
-        'findMarks': (from, to) => ed.findMarks(from, to),
-        'findMarksAt': (pos) => ed.findMarksAt(pos),
-        'getValue': (sep) => ed.getValue(sep),
-        'setValue': (value) => ed.setValue(value),
-        'getScrollerElement': () => ed.getScrollerElement(),
-        'getCursor': (start) => ed.getCursor(start),
-        'setCursor': (pos) => ed.setCursor(pos),
-      }
+      'markText': (from, to, opts) => ed.markText(from, to, opts),
+      'getAllMarks': () => ed.getAllMarks(),
+      'findMarks': (from, to) => ed.findMarks(from, to),
+      'findMarksAt': (pos) => ed.findMarksAt(pos),
+      'getValue': (sep) => ed.getValue(sep),
+      'setValue': (value) => ed.setValue(value),
+      'getScrollerElement': () => ed.getScrollerElement(),
+      'getCursor': (start) => ed.getCursor(start),
+      'setCursor': (pos) => ed.setCursor(pos),
+      'runMode': (src, lang, container) => ed.runMode(src, lang, container),
+      'refresh': () => ed.refresh(),
+      'defineOption': (name, _default, updateFunc) => ed.defineOption(name, _default, updateFunc),
+      'Pos': (line, ch, sticky) => ed.Pos(line, ch, sticky),
+      'Doc': (text, mode, firstLineNumber, lineSeparator) => ed.Doc(text, mode, firstLineNumber, lineSeparator),
+      'swapDoc': (doc) => ed.swapDoc(doc),
+      'getDoc': () => ed.getDoc(),
+      'charCoords': (pos, mode) => ed.charCoords(pos, mode),
+      'getScrollInfo': () => ed.getScrollInfo(),
+      'getWrapperElement': () => ed.getWrapperElement(),
+      'scrollIntoView': (what, margin) => ed.scrollIntoView(what, margin),
+      'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
+      'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
+      'off': (type, func) => ed.off(type, func),
+      'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
     };
   }
 

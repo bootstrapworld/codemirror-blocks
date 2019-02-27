@@ -66,10 +66,8 @@ export default class ToggleEditor extends React.Component {
 
   buildAPI() {
     return {
-      'blocks': {
-        'getBlockMode': () => this.state.blockMode,
-        'setBlockMode': this.handleToggle
-      }
+      'getBlockMode': () => this.state.blockMode,
+      'setBlockMode': this.handleToggle
     };
   }
 
