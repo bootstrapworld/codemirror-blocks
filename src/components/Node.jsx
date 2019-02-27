@@ -70,10 +70,18 @@ class Node extends BlockComponent {
   }
 
   handleDoubleClick = e => {
+    const {
+      inToolbar, isCollapsed, normallyEditable, 
+      collapse, uncollapse, node
+    } = this.props;
     e.stopPropagation();
-    if(this.props.inToolbar) return;
-    if (this.props.normallyEditable) {
+    if(inToolbar) return;
+    if(normallyEditable) {
       this.handleMakeEditable();
+    } else if(isCollapsed) {
+      uncollapse(node.id);
+    } else {
+      collapse(node.id);
     }
   }
 
