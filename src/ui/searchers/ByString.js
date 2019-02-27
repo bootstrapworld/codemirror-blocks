@@ -91,6 +91,7 @@ export default {
           <div className="form-group">
             <input type="text" className="form-control search-input"
                    name="searchString"
+                   aria-label="Search String"
                    onChange={this.handleChange}
                    value={setting.searchString} />
           </div>
