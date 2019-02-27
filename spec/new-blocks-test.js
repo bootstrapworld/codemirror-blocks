@@ -1,19 +1,9 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
+import {store} from '../src/store';
 import 'codemirror/addon/search/searchcursor.js';
 /* eslint-disable */ //temporary
-import {
-  click,
-  dblclick,
-  blur,
-  keydown,
-  keypress,
-  dragstart,
-  dragenter,
-  dragleave,
-  drop,
-  cut,
-} from './support/events';
+import { keydown } from './support/events';
 
 import {
   click as sclick,
@@ -42,17 +32,10 @@ import {
   DKEY,
 } from 'codemirror-blocks/keycode';
 
-import {wait} from './support/test-utils';
-
-const TOGGLE_SELECTION_KEYPRESS =
-      keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
-const PRESERVE_NEXT_KEYPRESS =
-      keydown(DOWN, ISMAC ? {altKey: true} : {ctrlKey: true});
-const PRESERVE_PREV_KEYPRESS =
-      keydown(UP, ISMAC ? {altKey: true} : {ctrlKey: true});
+import {wait, cleanupAfterTest} from './support/test-utils';
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 750;
+const DELAY = 500;
 /* eslint-enable */ //temporary
 
 describe('The CodeMirrorBlocks Class', function() {
@@ -72,23 +55,8 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   afterEach(function() {
-    const root = document.getElementById('root');
-    if (root)
-      root.parentNode.removeChild(root);
-
-    const portals = document.getElementsByClassName("ReactModalPortal");
-    while (portals[0]) {
-      const current = portals[0];
-      current.parentNode.removeChild(current);
-    }
-    
-    const textareas = document.getElementsByTagName("textarea");
-    while (textareas[0]) {
-      const current = textareas[0];
-      current.parentNode.removeChild(current);
-    }
+    cleanupAfterTest('root', store);
   });
-
 
   describe('constructor,', function() {
 
@@ -128,8 +96,9 @@ describe('The CodeMirrorBlocks Class', function() {
   // });
 
   describe('events,', function() {
-    beforeEach(function() {
+    beforeEach(async function() {
       this.blocks.cm.setValue('11');
+      await wait(DELAY);
       this.blocks.blocks.setBlockMode(true);
       // this.ast = this.blocks.blocks.getAst();
       this.literal = this.blocks.blocks.getAst().rootNodes[0];
@@ -137,8 +106,9 @@ describe('The CodeMirrorBlocks Class', function() {
 
     describe("when dealing with top-level input,", function() {
 
-      beforeEach(function() {
+      beforeEach(async function() {
         this.blocks.cm.setValue('42 11');
+        await wait(DELAY);
       });
 
       /*it('typing at the end of a line', function() {
@@ -196,7 +166,6 @@ describe('The CodeMirrorBlocks Class', function() {
     });*/
     
     it('should return the node being edited on esc', async function() {
-      this.literal.element.dispatchEvent(dblclick());
       sdoubleClick(this.literal.element);
       await wait(DELAY);
       const quarantine = document.activeElement;
@@ -230,7 +199,6 @@ describe('The CodeMirrorBlocks Class', function() {
     describe('when "saving" bad inputs,', function() {
       beforeEach(async function() {
         spyOn(this.blocks.cm, 'replaceRange');
-        this.literal.element.dispatchEvent(dblclick());
         sdoubleClick(this.literal.element);
         await wait(DELAY);
         let quarantine = document.activeElement;
@@ -253,8 +221,9 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     describe('when dealing with whitespace,', function() {
-      beforeEach(function() {
+      beforeEach(async function() {
         this.blocks.cm.setValue('(+ 1 2) (+)');
+        await wait(DELAY)
         this.ast = this.blocks.blocks.getAst();
         this.firstRoot = this.ast.rootNodes[0];
         this.firstArg = this.ast.rootNodes[0].args[0];
@@ -264,9 +233,7 @@ describe('The CodeMirrorBlocks Class', function() {
       });
 
       it('Ctrl-[ should jump to the left of a top-level node', function() {
-        // this.firstRoot.element.dispatchEvent(click());
         sclick(this.firstRoot.element);
-        // this.firstRoot.element.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
         skeyDown("[", {ctrlKey: true}, this.firstRoot.element);
         let cursor = this.blocks.cm.getCursor();
         expect(cursor.line).toBe(0);
@@ -274,9 +241,7 @@ describe('The CodeMirrorBlocks Class', function() {
       });
       
       it('Ctrl-] should jump to the right of a top-level node', function() {
-        // this.firstRoot.element.dispatchEvent(click());
         sclick(this.firstRoot.element);
-        // this.firstRoot.element.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
         skeyDown("]", {ctrlKey: true}, this.firstRoot.element);
         let cursor = this.blocks.cm.getCursor();
         expect(cursor.line).toBe(0);
@@ -284,9 +249,7 @@ describe('The CodeMirrorBlocks Class', function() {
       });
       
       it('Ctrl-[ should activate a quarantine to the left', async function() {
-        this.firstArg.element.dispatchEvent(click());
         sclick(this.firstArg.element);
-        this.firstArg.element.dispatchEvent(keydown(LEFTBRACKET, {ctrlKey: true}));
         skeyDown("[", {ctrlKey: true}, this.firstArg.element);
         await wait(DELAY);
         // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled(); //old assertion
@@ -294,9 +257,7 @@ describe('The CodeMirrorBlocks Class', function() {
       });
       
       it('Ctrl-] should activate a quarantine to the right', async function() {
-        this.firstArg.element.dispatchEvent(click());
         sclick(this.firstArg.element);
-        this.firstArg.element.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
         skeyDown("]", {ctrlKey: true}, this.firstArg.element);
         await wait(DELAY);
         // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
@@ -304,9 +265,7 @@ describe('The CodeMirrorBlocks Class', function() {
       });
       
       it('Ctrl-] should activate a quarantine in the first arg position', async function() {
-        this.blank.func.element.dispatchEvent(click());
         sclick(this.blank.func.element);
-        this.blank.func.element.dispatchEvent(keydown(RIGHTBRACKET, {ctrlKey: true}));
         skeyDown("]", {ctrlKey: true}, this.blank.func.element);
         await wait(DELAY);
         // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
@@ -314,7 +273,6 @@ describe('The CodeMirrorBlocks Class', function() {
       });
       
       it('should activate a quarantine on dblclick', async function() {
-        this.whiteSpaceEl.dispatchEvent(dblclick());
         sdoubleClick(this.whiteSpaceEl);
         await wait(DELAY);
         // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
@@ -322,8 +280,9 @@ describe('The CodeMirrorBlocks Class', function() {
       });
       
       describe('in corner-cases with no arguments,', function() {
-        beforeEach(function() {
+        beforeEach(async function() {
           this.blocks.cm.setValue('(f)');
+          await wait(DELAY);
           this.ast = this.blocks.blocks.getAst();
           this.firstRoot = this.ast.rootNodes[0];
           this.func = this.ast.rootNodes[0].func;
@@ -332,7 +291,6 @@ describe('The CodeMirrorBlocks Class', function() {
         }); 
         
         it('should allow editing the argument whitespace', async function() { /* left off here*/
-          this.argWS.dispatchEvent(dblclick());
           sdoubleClick(this.argWS);
           await wait(DELAY);
           // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
@@ -340,7 +298,6 @@ describe('The CodeMirrorBlocks Class', function() {
         }); 
         
         it('should allow editing the whitespace after the function', async function() {
-          this.wsAfterFunc.dispatchEvent(dblclick());
           sdoubleClick(this.wsAfterFunc);
           await wait(DELAY);
           // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();

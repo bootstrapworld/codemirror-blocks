@@ -10,7 +10,7 @@ import {wait, cleanupAfterTest} from './support/test-utils';
 
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 200;
+const DELAY = 750;
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
@@ -32,8 +32,9 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   describe('focusing,', function() {
-    beforeEach(function() {
+    beforeEach(async function() {
       this.cm.setValue('(+ 1 2 3)');
+      await wait(DELAY);
       this.expression = this.blocks.getAst().rootNodes[0];
       this.func = this.expression.func;
       this.literal1 = this.expression.args[0];
@@ -44,6 +45,8 @@ describe('The CodeMirrorBlocks Class', function() {
     it('deleting the last node should shift focus to the next-to-last', async function() {
       click(this.literal3);
       await wait(DELAY);
+      this.literal3.element.focus();
+      this.literal3.element.click();
       expect(document.activeElement).toBe(this.literal3.element);
       keyDown(" ");
       keyDown("Delete");
@@ -55,6 +58,7 @@ describe('The CodeMirrorBlocks Class', function() {
     it('deleting the first node should shift focus to the parent', async function() {
       click(this.literal1);
       await wait(DELAY);
+      this.literal1.element.focus();
       expect(document.activeElement).toBe(this.literal1.element);
       keyDown(" ");
       keyDown("Delete");
