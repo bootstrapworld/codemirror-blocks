@@ -348,8 +348,7 @@ class BlockEditor extends Component {
   buildAPI(ed) {
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
     return {
-      'cm': {
-        // TODO: override the default markText method with one of our own
+      // cm methods
         'markText':   (from, to, opts) => this.markText(from, to, opts),
         'findMarks':  (from, to) => this.findMarks(from, to),
         'findMarksAt':(pos) => this.findMarksAt(pos),
@@ -377,19 +376,16 @@ class BlockEditor extends Component {
         'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
         'off': (type, func) => ed.off(type, func),
         'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
-      },
-      'blocks': {
+      // block methods
         'getAst':
           () => withState((state) => state.ast),
         'getFocusedNode':
           () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : null),
         'getSelectedNodes':
           () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
-      },
-      'testing': {
+      // testing methods
         'getQuarantine': () => withState(({quarantine}) => quarantine),
         'setQuarantine': (q) => this.props.setQuarantine(q),
-      }
     };
   }
 
