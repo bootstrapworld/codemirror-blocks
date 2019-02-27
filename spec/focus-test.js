@@ -22,8 +22,8 @@ describe('The CodeMirrorBlocks Class', function() {
     document.body.insertAdjacentHTML('afterbegin', fixture);
     const container = document.getElementById('cmb-editor');
     this.cmb = new CodeMirrorBlocks(container, wescheme, "");
-    this.blocks = this.cmb.blocks;
-    this.cm = this.cmb.cm;
+    this.blocks = this.cmb;
+    this.cm = this.cmb;
     this.blocks.setBlockMode(true);
   });
 
