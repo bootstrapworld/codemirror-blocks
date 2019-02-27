@@ -379,6 +379,7 @@ class Node extends BlockComponent {
       expandable,
       textMarker,
       children,
+      inToolbar,
       node,
       ...passingProps
     } = this.props;
@@ -431,7 +432,7 @@ class Node extends BlockComponent {
           {...props}
           className     = {classNames(classes)}
           ref           = {el => node.element = el}
-          role          = "treeitem"
+          role          = {inToolbar? "listitem" : "treeitem"}
           style={{
             opacity: isDragging ? 0.5 : 1,
             cssText : textMarker? textMarker.options.css : null,
