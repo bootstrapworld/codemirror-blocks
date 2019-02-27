@@ -205,13 +205,17 @@ export class PyretParser {
     const tokenizer = TOK.Tokenizer;
     tokenizer.tokenizeFrom(text);
     // Parse
+    console.log("@going to parse");
     const parsed = P.PyretGrammar.parse(tokenizer);
     if (parsed) {
+      console.log("@valid parse");
       // Count parse trees
       const countParses = P.PyretGrammar.countAllParses(parsed);
       if (countParses === 1) {
+        console.log("@exactly one valid parse", parsed);
         // Construct parse tree
         const parseTree = P.PyretGrammar.constructUniqueParse(parsed);
+        console.log("@reconstructed unique parse");
         // Translate parse tree to AST
         const ast = translateParseTree(parseTree, "<editor>.arr");
         return ast;
@@ -223,6 +227,10 @@ export class PyretParser {
       console.log("Next token is " + tokens.curTok.toRepr(true)
                   + " at " + tokens.curTok.pos.toString(true));
     }
+  }
+
+  getExceptionMessage(error) {
+    return error;
   }
 }
 

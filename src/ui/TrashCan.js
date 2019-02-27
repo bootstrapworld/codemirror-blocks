@@ -32,6 +32,7 @@ export default class TrashCan extends Component {
   handleDrop = (event) => {
     this.setState({isOverTrashCan: false});
     let nodeId = event.dataTransfer.getData("text/id");
+    // TODO: This calls `actions::dropNode`, which looks like it will error on this input?
     this.props.onDrop(nodeId);
   }
 

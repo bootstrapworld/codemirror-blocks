@@ -10,7 +10,7 @@ import {wait, cleanupAfterTest} from './support/test-utils';
 
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 200;
+const DELAY = 750;
 
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
@@ -32,8 +32,9 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   describe('focusing,', function() {
-    beforeEach(function() {
+    beforeEach(async function() {
       this.cm.setValue('(+ 1 2 3)');
+      await wait(DELAY);
       this.expression = this.blocks.getAst().rootNodes[0];
       this.func = this.expression.func;
       this.literal1 = this.expression.args[0];
@@ -59,7 +60,7 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown(" ");
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cm.getValue()).toBe('(+  2 3)');
+      expect(this.cm.getValue()).toBe('(+ 2 3)');
       expect(this.blocks.getFocusedNode().id).toBe(this.func.id);
     });
 
@@ -70,7 +71,7 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown(" ");
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cm.getValue()).toBe('(+ 1  3)');
+      expect(this.cm.getValue()).toBe('(+ 1 3)');
       expect(this.blocks.getFocusedNode().id).toBe(this.literal1.id);
     });
 
@@ -85,7 +86,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.getSelectedNodes().length).toBe(2);
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cm.getValue()).toBe('(+ 1  )');
+      expect(this.cm.getValue()).toBe('(+ 1 )');
       expect(this.blocks.getFocusedNode().id).toBe(this.literal1.id);
     });
     
@@ -99,7 +100,7 @@ describe('The CodeMirrorBlocks Class', function() {
       await wait(DELAY);
       // extra WS is removed when we switch back to text, but in blockmode
       // there's an extra space inserted after 99
-      expect(this.cm.getValue()).toBe('(+ 1 99  2 3)');
+      expect(this.cm.getValue()).toBe('(+ 1 99 2 3)');
       // TODO(Emmanuel): does getFocusedNode().value always return strings?
       expect(this.blocks.getFocusedNode().value).toBe('99');
     });
@@ -112,7 +113,7 @@ describe('The CodeMirrorBlocks Class', function() {
       insertText('99 88 77');
       keyDown("Enter");
       await wait(DELAY);
-      expect(this.cm.getValue()).toBe('(+ 1 99 88 77  2 3)');
+      expect(this.cm.getValue()).toBe('(+ 1 99 88 77 2 3)');
       // TODO(Emmanuel): does getFocusedNode().value always return strings?
       expect(this.blocks.getFocusedNode().value).toBe('77');
     });

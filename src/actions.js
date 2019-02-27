@@ -20,7 +20,8 @@ export function deleteNodes(id, selectionEditor) {
     commitChanges(
       cm => () => {
         for (const node of nodeSelections) {
-          const {from, to} = node.srcRange();
+          var {from, to} = node.srcRange();
+          var {from, to} = removeClearedSpace(from, to);
           cm.replaceRange('', from, to, 'cmb:delete-nodes');
         }
       },
@@ -46,25 +47,18 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
       return;
     }
 
-    // Drag the _whole_ source node, comments and all.
+    // Drag the pretty-printed source node, comments and all.
     if (srcNode) {
       var {from: srcFrom, to: srcTo} = srcNode.srcRange();
-      content = SHARED.cm.getRange(srcFrom, srcTo);
+      var {from: srcFrom, to: srcTo} = removeClearedSpace(srcFrom, srcTo);
+      content = srcNode.toString();
     }
 
     let value = null;
     if (isDropTarget) {
-      value = ' ' + content + ' '; // add spaces around inserted content
+      value = addWhitespacePadding(ast, content, destFrom, destTo);
     } else {
       value = content;
-    }
-
-    // Make sure we don't accidentally merge with a comment.
-    if (ast.followsComment(destFrom) || srcFrom && ast.precedesComment(srcFrom)) {
-      value = "\n" + value;
-    }
-    if (ast.precedesComment(destTo) || srcTo && ast.followsComment(srcTo)) {
-      value = value + "\n";
     }
 
     commitChanges(
@@ -93,19 +87,8 @@ export function copyNodes(id, selectionEditor) {
       return; // Not much to do.
     }
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
-    const texts = nodeSelections.map(node => {
-      const {from, to} = node.srcRange();
-      return SHARED.cm.getRange(from, to);
-    });
-    // Make sure we don't accidentally merge with a comment.
-    if (ast.precedesComment(nodeSelections[0].srcRange().from)) {
-      texts[0] = "\n" + texts[0];
-    }
-    const last = nodeSelections.length - 1;
-    if (ast.followsComment(nodeSelections[last].srcRange().to)) {
-      texts[last] = texts[last] + "\n";
-    }
-    copyToClipboard(texts.join(' '));
+    const texts = nodeSelections.map(node => node.toString()); // pretty-print the selection
+    copyToClipboard(texts.join("\n"));
     // Copy steals focus. Force it back to the node's DOM element
     // without announcing via activate() or activate().
     ast.getNodeById(focusId).element.focus();
@@ -133,7 +116,7 @@ export function pasteNodes(id, isBackward) {
     }
 
     pasteFromClipboard(text => {
-      text = ' ' + text + ' '; // add spaces around inserted content
+      text = addWhitespacePadding(ast, text, from, to);
       commitChanges(
         cm => () => {
           cm.replaceRange(text, from, to, 'cmb:paste');
@@ -217,3 +200,38 @@ SHARED.cm.setCursor({line: -1, ch: 0});
   };
 }
 
+// If deleting a block would leave behind excessive whitespace, delete some of
+// that whitespace.
+export function removeClearedSpace(from, to) {
+  let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
+  let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
+  if (prevChar == " " && (nextChar == " " || nextChar == "")) {
+    // Delete an excess space.
+    return {from: {line: from.line, ch: from.ch - 1}, to: to};
+  } else if (nextChar == " " && prevChar == "") {
+    // Delete an excess space.
+    return {from: from, to: {line: to.line, ch: to.ch + 1}};
+  } else {
+    return {from: from, to: to};
+  }
+}
+
+// Pad `text` with spaces as needed, when a block will be inserted.
+export function addWhitespacePadding(ast, text, from, to) {
+  // We may need to insert a newline to make sure that comments don't end up
+  // getting associated with the wrong node, and we may need to insert a space
+  // to ensure that different tokens don't end up getting glommed together.
+  let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
+  let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
+  if (ast.followsComment(from) && prevChar != "") {
+    text = "\n" + text;
+  } else if (!(prevChar == "" || prevChar == " ")) {
+    text = " " + text;
+  }
+  if (ast.precedesComment(to) && nextChar != "") {
+    text = text + "\n";
+  } else if (!(nextChar == "" || nextChar == " ")) {
+    text = text + " ";
+  }
+  return text;
+}

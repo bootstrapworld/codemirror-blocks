@@ -22,7 +22,7 @@ import {playSound, BEEP} from '../sound';
 @DragNodeSource
 @DropNodeTarget(({node}) => {
   node = store.getState().ast.getNodeById(node.id);
-  return {from: node.from, to: node.to};
+  return node.srcRange();
 })
 class Node extends BlockComponent {
   static defaultProps = {

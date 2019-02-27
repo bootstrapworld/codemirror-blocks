@@ -15,12 +15,14 @@ import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
 import CodeMirror from './DragAndDropEditor';
 import {computeFocusIdFromChanges, poscmp} from '../utils';
+import BlockComponent from '../components/BlockComponent';
+
 
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
 
-class ToplevelBlock extends React.Component {
+class ToplevelBlock extends BlockComponent {
   constructor(props) {
     super(props);
     this.container = document.createElement('span');
@@ -29,6 +31,14 @@ class ToplevelBlock extends React.Component {
 
   static propTypes = {
     node: PropTypes.object.isRequired,
+  }
+
+  // we need to trigger a render if the node was moved at the top-level,
+  // in order to re-mark the node and put the DOM in the new marker
+  shouldComponentUpdate(props, state) {
+    let topLevelDragged = !this.mark.find();
+    let nodeChanged = super.shouldComponentUpdate(props, state);
+    return topLevelDragged || nodeChanged;
   }
 
   componentWillUnmount() { this.mark.clear(); }
@@ -473,8 +483,12 @@ class BlockEditor extends Component {
   // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
   afterDOMUpdate() {
     window.requestAnimationFrame(() => setTimeout( () => {
+      const {dispatch} = this.props;
+      dispatch((_, getState) => {
+        const {quarantine} = getState();
+        if(!quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
         console.log('Browser is ready after:', (Date.now() - this.startTime)/1000, 'ms');
-        SHARED.cm.refresh(); 
+      });
       }, 0));
   }
 
