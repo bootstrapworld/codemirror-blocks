@@ -1,6 +1,6 @@
 {
   "name": "codemirror-blocks",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "lib/codemirror-blocks.js",
   "engines": {
@@ -111,10 +111,9 @@
     "lint": "eslint src spec --ext .js || true",
     "site": "jekyll serve --baseurl \"\""
   },
-  "author": "Emmanuel Schanzer, Sorawee Porncharoenwase, and Paul Carduner",
+  "author": "Emmanuel Schanzer, Sorawee Porncharoenwase, Justin Pombrio, and Paul Carduner",
   "contributors": [
     "Zachary Espiritu",
-    "Justin Pombrio",
     "Aleksey Kliger"
   ],
   "license": "MIT License"
