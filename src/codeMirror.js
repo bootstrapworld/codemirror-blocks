@@ -3,7 +3,7 @@ import {store} from './store';
 import patch from './ast-patch';
 import SHARED from './shared';
 import {activate} from './actions';
-import {computeFocusIdFromChanges, posAfterChanges} from './utils';
+import {computeFocusNodeFromChanges, posAfterChanges} from './utils';
 
 const tmpDiv = document.createElement('div');
 const tmpCM = CodeMirror(tmpDiv, {value: ""});
@@ -25,8 +25,8 @@ export function commitChanges(
     }
     // patch the tree and set the state
     SHARED.cm.operation(changes(SHARED.cm));
-    let {ast: oldAST} = store.getState();
-    let lastChange = changeArr[0], dragId, dragTo;
+    let {ast: oldAST, collapsedList} = store.getState();
+    let lastChange = changeArr[0], dragId, dragTo, focusId;
     // walk through the change array to look for drag events, defined as
     // consecutive changes where identical text is removed in one and inserted
     // in the other. For each one, perform an interim patch operation using
@@ -50,8 +50,11 @@ export function commitChanges(
     });
     // if there are still (non-DnD) changes to be patched, do so
     if(oldAST.hash !== newAST.hash) newAST = patch(oldAST, newAST);
-    let focusId = computeFocusIdFromChanges(changeArr, newAST);
+    let focusNode = computeFocusNodeFromChanges(changeArr, newAST);
     store.dispatch({type: 'SET_AST', ast: newAST});
+    while(focusNode.parent && (focusNode = focusNode.parent)) {
+      if(collapsedList.includes(focusNode.id)) focusId = focusNode.id;
+    }
     store.dispatch(activate(focusId));
     onSuccess({newAST, focusId});
   };

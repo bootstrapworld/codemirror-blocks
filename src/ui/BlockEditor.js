@@ -14,7 +14,7 @@ import {pos} from '../types';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
 import CodeMirror from './DragAndDropEditor';
-import {computeFocusIdFromChanges, poscmp} from '../utils';
+import {computeFocusNodeFromChanges, poscmp} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 
@@ -293,7 +293,7 @@ class BlockEditor extends Component {
     if (!changes.every(c => c.origin && c.origin.startsWith('cmb:'))) {
       const newAST = SHARED.parser.parse(cm.getValue());
       const tree = patch(this.props.ast, newAST);
-      let focusId = computeFocusIdFromChanges(changes, tree);
+      let focusId = computeFocusNodeFromChanges(changes, tree).id;
       this.props.setAST(tree);
       this.props.activate(focusId);
     }
