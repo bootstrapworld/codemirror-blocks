@@ -104,7 +104,6 @@ export class DropTarget extends BlockComponent {
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
     this.setEditable(true);
-    SHARED.cm.refresh(); // is this needed?
   }
 
   handleChange = (value) => {
