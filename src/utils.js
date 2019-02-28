@@ -201,13 +201,17 @@ export function computeFocusNodeFromChanges(changes, newAST) {
     return c.from;                                // return the starting srcLoc of the change
   });
   if(insertion) {
-    // grab the node that ends in insertion's ending srcLoc (won't ever be null post-insertion)
-    return newAST.getNodeBeforeCur(insertion.to); // case A
+    // Case A: grab the inserted node, *or* the node that ends in
+    // insertion's ending srcLoc (won't ever be null post-insertion)
+    let insertedNode = newAST.getNodeAt(insertion.from, insertion.to);
+    let lastNodeInserted = newAST.getNodeBeforeCur(insertion.to);
+    return insertedNode || lastNodeInserted;
   } else {
     startLocs.sort(poscmp);                                // sort the deleted ranges
     let focusNode = newAST.getNodeBeforeCur(startLocs[0]); // grab the node before the first
-    // if the node exists, use the Id (case B). If not, use the first node
-    // (case C) unless the tree is empty (case D)
+    // Case B: If the node exists, use the Id. 
+    // Case C: If not, use the first node...unless...
+    // Case D: the tree is empty, so return null
     return focusNode || newAST.getFirstRootNode() || null;
   }
 }
