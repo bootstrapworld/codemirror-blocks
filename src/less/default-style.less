@@ -218,6 +218,7 @@
     margin: 0px 5px;
     min-width: 20px;
     outline: 0;
+    text-align: left;
     &.blocks-error {
       border: @border-width solid @error-border-color;
     }
@@ -257,9 +258,7 @@
   border-color: @editing-border-color;
   outline: 0;
 }
-.blocks-identifierList:focus{
-  border-style: none;
-  background: @editing-border-color;
+.blocks-identifierList{
   border-radius: 15px;
 }
 
@@ -360,7 +359,8 @@
 .blocks-node[aria-expanded="false"] {
   max-height: 30px;
   min-width: 75px;
-  padding: 3px;
+  max-width: 150px;
+  padding-left: 1px;
   background: linear-gradient(to right, rgba(0,0,0,1), white 90%);
   * { display: none;}
   .blocks-operator, .blocks-operator * { 
@@ -374,8 +374,9 @@
     background: none;
     text-align: left;
   }
+  &.blocks-editing {background: white; max-width: none; border-radius: 0px; }
 }
-.blocks-node[aria-expanded="true"] .blocks-identifierList[aria-expanded="false"]:before{
+.blocks-node[aria-expanded="true"] .blocks-identifierList[aria-expanded="false"]:not(.blocks-editing):before{
   content: "...";
   color: white;
 }
