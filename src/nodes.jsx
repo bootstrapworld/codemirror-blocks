@@ -246,18 +246,20 @@ export class FunctionDefinition extends ASTNode {
 
   render(props) {
     return (
-      <Node node={this} containsDropTargets={true} {...props}>
-        <span className="blocks-operator">
-          define (
-            <DropTarget index={0} location={this.name.from} />
-            <DropTargetSibling node={this.name} left={0} />
-            <DropTargetSibling node={this.params} />
-          )
-        </span>
-        <span className="blocks-args">
-          <DropTargetSibling node={this.body} />
-        </span>
-      </Node>
+      <DropTargetContainer>
+        <Node node={this} {...props}>
+          <span className="blocks-operator">
+            define (
+              <DropTarget index={0} location={this.name.from} />
+              <DropTargetSibling node={this.name} left={0} />
+              <DropTargetSibling node={this.params} />
+            )
+          </span>
+          <span className="blocks-args">
+            <DropTargetSibling node={this.body} />
+          </span>
+        </Node>
+      </DropTargetContainer>
     );
   }
 }
@@ -281,22 +283,24 @@ export class CondClause extends ASTNode {
 
   render(props) {
     return (
-      <Node node={this} containsDropTargets={true} {...props}>
-        <div className="blocks-cond-row">
-          <div className="blocks-cond-predicate">
-            <DropTarget index={0} location={this.testExpr.from} />
-            <DropTargetSibling node={this.testExpr} left={0} right={1} />
+      <DropTargetContainer>
+        <Node node={this} {...props}>
+          <div className="blocks-cond-row">
+            <div className="blocks-cond-predicate">
+              <DropTarget index={0} location={this.testExpr.from} />
+              <DropTargetSibling node={this.testExpr} left={0} right={1} />
+            </div>
+            <div className="blocks-cond-result">
+              {this.thenExprs.map((thenExpr, index) => (
+                <span key={index}>
+                  <DropTarget index={index+1} location={thenExpr.from} />
+                  <DropTargetSibling node={thenExpr} left={index+1} right={index+2} />
+                </span>))}
+            </div>
           </div>
-          <div className="blocks-cond-result">
-            {this.thenExprs.map((thenExpr, index) => (
-              <span key={index}>
-                <DropTarget index={index+1} location={thenExpr.from} />
-                <DropTargetSibling node={thenExpr} left={index+1} right={index+2} />
-              </span>))}
-          </div>
-        </div>
-        <DropTarget index={this.thenExprs.length + 1} location={this.from} />
-      </Node>
+          <DropTarget index={this.thenExprs.length + 1} location={this.from} />
+        </Node>
+      </DropTargetContainer>
     );
   }
 }
@@ -355,33 +359,35 @@ export class IfExpression extends ASTNode {
 
   render(props) {
     return (
-      <Node node={this} containsDropTargets={true} {...props}>
-        <span className="blocks-operator">if</span>
-        <div className="blocks-cond-table">
-          <div className="blocks-cond-row">
-            <div className="blocks-cond-predicate">
-              <DropTarget index={0} location={this.testExpr.from} />
-              <DropTargetSibling node={this.testExpr} left={0} right={1} />
+      <DropTargetContainer>
+        <Node node={this} {...props}>
+          <span className="blocks-operator">if</span>
+          <div className="blocks-cond-table">
+            <div className="blocks-cond-row">
+              <div className="blocks-cond-predicate">
+                <DropTarget index={0} location={this.testExpr.from} />
+                <DropTargetSibling node={this.testExpr} left={0} right={1} />
+              </div>
+              <div className="blocks-cond-result">
+                <DropTarget index={1} location={this.thenExpr.from} />
+                <DropTargetSibling node={this.thenExpr} left={1} right={2} />
+              </div>
             </div>
-            <div className="blocks-cond-result">
-              <DropTarget index={1} location={this.thenExpr.from} />
-              <DropTargetSibling node={this.thenExpr} left={1} right={2} />
+            <div className="blocks-cond-row">
+              <div className="blocks-cond-predicate blocks-cond-else">
+                else
+              </div>
+              <div className="blocks-cond-result">
+                <DropTarget index={2} location={this.elseExpr.from} />
+                <DropTargetSibling node={this.elseExpr} left={2} right={3} />
+              </div>
+              <div className="blocks-cond-result">
+                <DropTarget index={3} location={this.elseExpr.to} />
+              </div>
             </div>
           </div>
-          <div className="blocks-cond-row">
-            <div className="blocks-cond-predicate blocks-cond-else">
-              else
-            </div>
-            <div className="blocks-cond-result">
-              <DropTarget index={2} location={this.elseExpr.from} />
-              <DropTargetSibling node={this.elseExpr} left={2} right={3} />
-            </div>
-            <div className="blocks-cond-result">
-              <DropTarget index={3} location={this.elseExpr.to} />
-            </div>
-          </div>
-        </div>
-      </Node>
+        </Node>
+      </DropTargetContainer>
     );
   }
 }

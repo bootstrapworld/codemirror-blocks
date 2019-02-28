@@ -169,16 +169,16 @@ CodeMirror-Blocks components:
     and intersperses them between drop targets. If the array might be
     empty, you must also pass it a `location={SRCLOC}` property so
     that it knows where to insert.
-  - You can also add drop targets yourself. Import `DropTarget` and
-    `DropTargetSibling` from `components/DropTarget`. Pass the prop
-    `containsDropTargets={true}` to the `Node` that you construct.
-    You can now use `DropTarget`s inside that node. Each one needs an `index` (a
-    number that uniquely identifies it among the drop targets within this
-    `Node`), and a `location` of where to insert. You should render nodes that
-    are adjacent to drop targets in a `DropTargetSibling`, which takes `node`---
-    the node to render---and `left` and `right`---the index of the droptarget to
-    the left and right. (If there is a drop target to one side but not the
-    other, just omit the `left` or `right` property.)
+  - You can also add drop targets yourself. Import `DropTargetContainer`,
+    `DropTarget` and `DropTargetSibling` from `components/DropTarget`. Wrap the
+    result you want to return in a `<DropTargetContainer>`. Inside of it you can
+    use `DropTarget`s. Each one needs an `index` (a number
+    that uniquely identifies it among the drop targets within this `Node`), and
+    a `location` of where to insert. You should render nodes that are adjacent
+    to drop targets in a `DropTargetSibling`, which takes `node`--- the node to
+    render---and `left` and `right`---the index of the droptarget to the left
+    and right. (If there is a drop target to one side but not the other, just
+    omit the unneeded `left` or `right` property.)
 - To render a child that is also an `ASTNode`, use `child.reactElement()`. This
   produces a React Element. If you wish to pass it any `props`, you may pass
   them in as a dictionary: `child.reactElement({prop: value})`.
