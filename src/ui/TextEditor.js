@@ -49,6 +49,7 @@ class TextEditor extends Component {
       'getValue': (sep) => ed.getValue(sep),
       'setValue': (value) => ed.setValue(value),
       'getScrollerElement': () => ed.getScrollerElement(),
+      'getGutterElement': () => ed.getGutterElement(),
       'getCursor': (start) => ed.getCursor(start),
       'setCursor': (pos) => ed.setCursor(pos),
       'runMode': (src, lang, container) => ed.runMode(src, lang, container),
@@ -66,6 +67,11 @@ class TextEditor extends Component {
       'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
       'off': (type, func) => ed.off(type, func),
       'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
+      'getOption': (option) => ed.getOption(option), 
+      'clearHistory': () => ed.clearHistory(),
+      'getDoc': () => ed.getDoc(),
+      'posFromIndex': (index) => ed.posFromIndex(index),
+      'replaceRange': (str, from, to, origin) => ed.replaceRange(str, from, to, origin),
     };
   }
 
