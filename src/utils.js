@@ -84,8 +84,8 @@ export function say(text, delay=200) {
   console.log('say:', text);
   const announcement = document.createTextNode(text + ', ');
   const announcer = store.getState().announcer;
-  setTimeout(() => announcer.appendChild(announcement), delay);
-  setTimeout(() => announcer.removeChild(announcement), delay + 300);
+  setTimeout(() => { if (announcer != null) announcer.appendChild(announcement); }, delay);
+  setTimeout(() => { if (announcer != null) announcer.removeChild(announcement); }, delay + 300);
 }
 
 
@@ -186,13 +186,13 @@ export function posAfterChanges(changes, pos, isFrom) {
   return pos;
 }
 
-// computeFocusIdFromChanges : [CMchanges], AST -> Number
+// computeFocusNodeFromChanges : [CMchanges], AST -> Number
 // compute the focusId by identifying the node in the newAST that was
 // (a) most-recently added (if there's any insertion)
 // (b) before the first-deleted (in the case of deletion)
 // (c) first root node (in the case of deleting a pre-existing first node)
 // (d) null (in the case of deleting the only nodes in the tree)
-export function computeFocusIdFromChanges(changes, newAST) {
+export function computeFocusNodeFromChanges(changes, newAST) {
   let insertion = false, focusId = false;
   let startLocs = changes.map(c => {
     c.from = adjustForChange(c.from, c, true);
@@ -201,19 +201,18 @@ export function computeFocusIdFromChanges(changes, newAST) {
     return c.from;                                // return the starting srcLoc of the change
   });
   if(insertion) {
-    // grab the node that ends in insertion's ending srcLoc (won't ever be null post-insertion)
-    return newAST.getNodeBeforeCur(insertion.to).id; // case A
+    // Case A: grab the inserted node, *or* the node that ends in
+    // insertion's ending srcLoc (won't ever be null post-insertion)
+    let insertedNode = newAST.getNodeAt(insertion.from, insertion.to);
+    let lastNodeInserted = newAST.getNodeBeforeCur(insertion.to);
+    return insertedNode || lastNodeInserted;
   } else {
     startLocs.sort(poscmp);                                // sort the deleted ranges
     let focusNode = newAST.getNodeBeforeCur(startLocs[0]); // grab the node before the first
-    // if the node exists, use the Id (case B). If not, use the first node
-    // (case C) unless the tree is empty (case D)
-    if (focusNode) {
-      return focusNode.id;
-    } else {
-      let firstRootNode = newAST.getFirstRootNode();
-      return firstRootNode ? firstRootNode.id : null;
-    }
+    // Case B: If the node exists, use the Id. 
+    // Case C: If not, use the first node...unless...
+    // Case D: the tree is empty, so return null
+    return focusNode || newAST.getFirstRootNode() || null;
   }
 }
 

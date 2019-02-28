@@ -23,12 +23,12 @@ describe('The CodeMirrorBlocks Class', function() {
     document.body.insertAdjacentHTML('afterbegin', fixture);
     const container = document.getElementById('cmb-editor');
     this.cmb = new CodeMirrorBlocks(container, wescheme, "", {collapseAll: false});
-    this.cmb.blocks.setBlockMode(true);
+    this.cmb.setBlockMode(true);
     
-    this.activeNode = () => this.cmb.blocks.getFocusedNode();
+    this.activeNode = () => this.cmb.getFocusedNode();
     this.activeAriaId = () =>
-      this.cmb.cm.getScrollerElement().getAttribute('aria-activedescendent');
-    this.selectedNodes = () => this.cmb.blocks.getSelectedNodes();
+      this.cmb.getScrollerElement().getAttribute('aria-activedescendent');
+    this.selectedNodes = () => this.cmb.getSelectedNodes();
   });
 
   afterEach(function() {
@@ -38,8 +38,8 @@ describe('The CodeMirrorBlocks Class', function() {
   describe("when dealing with node activation,", function() {
     
     beforeEach(function() {
-      this.cmb.cm.setValue('11\n54');
-      let ast = this.cmb.blocks.getAst();
+      this.cmb.setValue('11\n54');
+      let ast = this.cmb.getAst();
       this.literal1 = ast.rootNodes[0];
       this.literal2 = ast.rootNodes[1];
     });
@@ -60,14 +60,14 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('should not delete active nodes when the delete key is pressed', async function() {
-      expect(this.cmb.cm.getValue()).toBe('11\n54');
+      expect(this.cmb.getValue()).toBe('11\n54');
       click(this.literal1);
       await wait(DELAY);
       expect(this.activeNode()).toBe(this.literal1);
       
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cmb.cm.getValue()).toBe('11\n54');
+      expect(this.cmb.getValue()).toBe('11\n54');
     });
 
     // // TODO: this test legitimately fails
@@ -76,7 +76,7 @@ describe('The CodeMirrorBlocks Class', function() {
     //   keyDown("ArrowDown");
     //   await wait(DELAY);
     //   expect(this.activeNode()).toBe(this.literal1);
-    //   expect(this.cmb.cm.getScrollerElement().getAttribute('aria-activedescendent'))
+    //   expect(this.cmb.getScrollerElement().getAttribute('aria-activedescendent'))
     //     .toBe('blocks-node-'this.literal1.id);
     // });
 
@@ -90,7 +90,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('should activate the node after the cursor when down is pressed', async function() {
-      this.cmb.cm.setCursor({line: 0, ch: 2});
+      this.cmb.setCursor({line: 0, ch: 2});
       keyDown("ArrowDown");
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
@@ -100,7 +100,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
     // TODO: this test fails because `setCursor` doesn't seem to work.
     // it('should activate the node before the cursor when up is pressed', async function() {
-    //   this.cmb.cm.setCursor({line: 0, ch: 2});
+    //   this.cmb.setCursor({line: 0, ch: 2});
     //   keyDown("ArrowUp");
     //   await wait(DELAY);
     //   expect(this.activeNode()).not.toBe(this.literal2);
@@ -132,14 +132,14 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown("Escape");
       await wait(DELAY);
       expect(this.literal1.isEditable()).toBe(false);
-      expect(this.cmb.cm.getValue()).toBe('11\n54');
+      expect(this.cmb.getValue()).toBe('11\n54');
     });
   });
 
   describe('cut/copy/paste', function() {
     beforeEach(function() {
-      this.cmb.cm.setValue('11\n54');
-      let ast = this.cmb.blocks.getAst();
+      this.cmb.setValue('11\n54');
+      let ast = this.cmb.getAst();
       this.literal1 = ast.rootNodes[0];
       this.literal2 = ast.rootNodes[1];
     });
@@ -151,7 +151,7 @@ describe('The CodeMirrorBlocks Class', function() {
       
       keyDown("X", {ctrlKey: true}, this.literal1);
       await wait(DELAY);
-      expect(this.cmb.cm.getValue()).toBe('\n54');
+      expect(this.cmb.getValue()).toBe('\n54');
       expect(this.activeNode().id).toBe(this.literal2.id);
       expect(this.activeNode().hash).toBe(this.literal2.hash);
     });
@@ -168,15 +168,15 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown("X", {ctrlKey: true}, this.literal2);
       await wait(DELAY);
       expect(this.selectedNodes().length).toBe(0);
-      expect(this.cmb.cm.getValue()).toBe('\n');
+      expect(this.cmb.getValue()).toBe('\n');
       expect(this.activeNode()).toBe(undefined);
     });
   });
 
   describe('tree navigation', function() {
     beforeEach(function() {
-      this.cmb.cm.setValue('(+ 1 2 3) 99 (* 7 (* 1 2))');
-      let ast = this.cmb.blocks.getAst();
+      this.cmb.setValue('(+ 1 2 3) 99 (* 7 (* 1 2))');
+      let ast = this.cmb.getAst();
       this.firstRoot  = ast.rootNodes[0];
       this.secondRoot = ast.rootNodes[1];
       this.thirdRoot  = ast.rootNodes[2];
@@ -295,8 +295,8 @@ describe('The CodeMirrorBlocks Class', function() {
 
   describe("when dealing with node selection, ", function() {
     beforeEach(function() {
-      this.cmb.cm.setValue('11\n54\n(+ 1 2)');
-      let ast = this.cmb.blocks.getAst();
+      this.cmb.setValue('11\n54\n(+ 1 2)');
+      let ast = this.cmb.getAst();
       this.literal1 = ast.rootNodes[0];
       this.literal2 = ast.rootNodes[1];
       this.expr     = ast.rootNodes[2];

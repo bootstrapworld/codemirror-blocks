@@ -14,7 +14,7 @@ import {pos} from '../types';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
 import CodeMirror from './DragAndDropEditor';
-import {computeFocusIdFromChanges, poscmp} from '../utils';
+import {computeFocusNodeFromChanges, poscmp} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 
@@ -293,13 +293,9 @@ class BlockEditor extends Component {
     if (!changes.every(c => c.origin && c.origin.startsWith('cmb:'))) {
       const newAST = SHARED.parser.parse(cm.getValue());
       const tree = patch(this.props.ast, newAST);
-      let focusId = computeFocusIdFromChanges(changes, tree);
+      let focusId = computeFocusNodeFromChanges(changes, tree).id;
       this.props.setAST(tree);
-      // only call activate() if there's no cursor defined
-      this.props.dispatch((_, getState) => {
-        const {cur} = getState();
-        if(!cur) this.props.activate(focusId);
-      });
+      this.props.activate(focusId);
     }
   }
 
@@ -352,33 +348,43 @@ class BlockEditor extends Component {
   buildAPI(ed) {
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
     return {
-      'cm': {
-        // TODO: override the default markText method with one of our own
-        'markText':   (from, to, opts) => this.markText(from, to, opts),
-        'findMarks':  (from, to) => this.findMarks(from, to),
-        'findMarksAt':(pos) => this.findMarksAt(pos),
-        'getAllMarks':() => this.getAllMarks(),
-        'getValue': (sep) => ed.getValue(sep),
-        'setValue': (value) => ed.setValue(value),
-        'getScrollerElement': () => ed.getScrollerElement(),
-        'getWrapperElement': () => ed.getWrapperElement(),
-        'getInputField': () => ed.getInputField(),
-        'getCursor': (start) => ed.getCursor(start),
-        'replaceRange': ed.replaceRange,
-        'setCursor': (pos) => this.props.setCursor(ed, pos),
-      },
-      'blocks': {
-        'getAst':
-          () => withState((state) => state.ast),
-        'getFocusedNode':
-          () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : null),
-        'getSelectedNodes':
-          () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
-      },
-      'testing': {
-        'getQuarantine': () => withState(({quarantine}) => quarantine),
-        'setQuarantine': (q) => this.props.setQuarantine(q),
-      }
+      // cm methods
+      'markText':   (from, to, opts) => this.markText(from, to, opts),
+      'findMarks':  (from, to) => this.findMarks(from, to),
+      'findMarksAt':(pos) => this.findMarksAt(pos),
+      'getAllMarks':() => this.getAllMarks(),
+      'getValue': (sep) => ed.getValue(sep),
+      'setValue': (value) => ed.setValue(value),
+      'getScrollerElement': () => ed.getScrollerElement(),
+      'getWrapperElement': () => ed.getWrapperElement(),
+      'getInputField': () => ed.getInputField(),
+      'getCursor': (start) => ed.getCursor(start),
+      'replaceRange': ed.replaceRange,
+      'setCursor': (pos) => this.props.setCursor(ed, pos),
+      'runMode': (_src, _lang, _container) => () => {}, // no-op since not an editing command
+      'refresh': () => ed.refresh(),
+      'defineOption': (name, _default, updateFunc) => ed.defineOption(name, _default, updateFunc),
+      'Pos': (line, ch, sticky) => ed.Pos(line, ch, sticky),
+      'Doc': (text, mode, firstLineNumber, lineSeparator) => ed.Doc(text, mode, firstLineNumber, lineSeparator),
+      'swapDoc': (doc) => ed.swapDoc(doc),
+      'getDoc': () => ed.getDoc(),
+      'charCoords': (pos, mode) => ed.charCoords(pos, mode),
+      'getScrollInfo': () => ed.getScrollInfo(),
+      'scrollIntoView': (what, margin) => ed.scrollIntoView(what, margin),
+      'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
+      'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
+      'off': (type, func) => ed.off(type, func),
+      'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
+      // block methods
+      'getAst':
+        () => withState((state) => state.ast),
+      'getFocusedNode':
+        () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : null),
+      'getSelectedNodes':
+        () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
+      // testing methods
+      'getQuarantine': () => withState(({quarantine}) => quarantine),
+      'setQuarantine': (q) => this.props.setQuarantine(q),
     };
   }
 
