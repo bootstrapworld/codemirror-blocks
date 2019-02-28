@@ -370,7 +370,6 @@ class BlockEditor extends Component {
       'getDoc': () => ed.getDoc(),
       'charCoords': (pos, mode) => ed.charCoords(pos, mode),
       'getScrollInfo': () => ed.getScrollInfo(),
-      'getWrapperElement': () => ed.getWrapperElement(),
       'scrollIntoView': (what, margin) => ed.scrollIntoView(what, margin),
       'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
       'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
