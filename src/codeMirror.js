@@ -51,12 +51,11 @@ export function commitChanges(
     // if there are still (non-DnD) changes to be patched, do so
     if(oldAST.hash !== newAST.hash) newAST = patch(oldAST, newAST);
     let focusNode = computeFocusNodeFromChanges(changeArr, newAST);
-    let focusId = focusNode.id;
+    let focusId = focusNode? focusNode.id : null;
     store.dispatch({type: 'SET_AST', ast: newAST});
-    while(focusNode.parent && (focusNode = focusNode.parent)) {
+    while(focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
       if(collapsedList.includes(focusNode.id)) focusId = focusNode.id;
     }
-    console.log('focusing on', focusId);
     store.dispatch(activate(focusId));
     onSuccess({newAST, focusId});
   };
