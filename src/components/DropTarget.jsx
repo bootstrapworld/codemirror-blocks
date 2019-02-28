@@ -1,4 +1,5 @@
 import React from 'react';
+import {Component} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import NodeEditable from './NodeEditable';
@@ -9,13 +10,79 @@ import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
 import BlockComponent from './BlockComponent';
 
-@DropNodeTarget(({location}) => ({from: location, to: location}))
-class DropTarget extends BlockComponent {
+
+const DropTargetContext = React.createContext({
+  isEditable: [],
+  setEditable: () => {},
+});
+
+export class DropTargetContainer extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {editableDropTargets: {}};
+
+    this.setEditable = (i, b) => {
+      this.setState({editableDropTargets: {...this.state.editableDropTargets, [i]: b}});
+    };
+  }
+
+  render() {
+    return (
+      <DropTargetContext.Provider value={{
+        isEditable: this.state.editableDropTargets,
+        setEditable: this.setEditable,
+      }}>
+      {this.props.children}
+      </DropTargetContext.Provider>
+    );
+  }
+}
+
+// Use this class to render non-drop-target children of this node. Pass
+// in the `node` to be rendered, the index of the drop target to the `left` (or
+// `null` if there is none), and likewise for the `right`.
+export class DropTargetSibling extends Component {
+  static contextType = DropTargetContext;
 
   static propTypes = {
+    node: PropTypes.object.isRequired,
+    left: PropTypes.number,
+    right: PropTypes.number,
+  }
+
+  constructor(props) {
+    super(props);
+    this.onSetLeft = props.left === undefined
+    ? () => {}
+    : (b) => this.context.setEditable(props.left, b);
+    this.onSetRight = props.right === undefined
+    ? () => {}
+    : (b) => this.context.setEditable(props.right, b);
+  }
+
+  render() {
+    let props = {
+      onSetLeft: this.onSetLeft,
+      onSetRight: this.onSetRight,
+    };
+    return this.props.node.reactElement(props);
+  }
+}
+
+const mapDispatchToProps = dispatch => ({
+  onDrop: (src, dest) => dispatch(dropNode(src, {...dest, isDropTarget: true})),
+});
+
+@connect(null, mapDispatchToProps)
+@DropNodeTarget(({location}) => ({from: location, to: location}))
+export class DropTarget extends BlockComponent {
+
+  static contextType = DropTargetContext;
+  
+  static propTypes = {
+    index: PropTypes.number.isRequired,
     location: PropTypes.instanceOf(Object).isRequired,
-    editable: PropTypes.bool,
-    onSetEditable: PropTypes.func.isRequired,
 
     // fulfilled by DropNodeTarget
     connectDropTarget: PropTypes.func.isRequired,
@@ -24,20 +91,19 @@ class DropTarget extends BlockComponent {
 
   state = {value: ''}
 
-  handleDisableEditable = () => {
-    this.props.onSetEditable(false);
-  }
-
+  isEditable = () => this.context.isEditable[this.props.index];
+  setEditable = (b) => this.context.setEditable(this.props.index, b);
+  
   // NOTE(Oak): DropTarget should not handle click event since clicking it
   // should activate the node
   handleClick = e => {
     e.stopPropagation();
   }
 
-  handleDoubleClick  = e => {
+  handleDoubleClick = e => {
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
-    this.props.onSetEditable(true);
+    this.setEditable(true);
     SHARED.cm.refresh(); // is this needed?
   }
 
@@ -60,7 +126,7 @@ class DropTarget extends BlockComponent {
       to: location,
       id: 'editing', // TODO(Oak): error focusing is going to be wrong
     };
-    if (this.props.editable) {
+    if (this.isEditable()) {
       return (
         <NodeEditable node={node}
                       value={this.state.value}
@@ -68,7 +134,7 @@ class DropTarget extends BlockComponent {
                       isInsertion={true}
                       contentEditableProps={props}
                       extraClasses={['blocks-node', 'blocks-white-space']}
-                      onDisableEditable={this.handleDisableEditable} />
+                      onDisableEditable={() => this.setEditable(false)} />
       );
     }
     const classes = [
@@ -84,9 +150,3 @@ class DropTarget extends BlockComponent {
     );
   }
 }
-
-const mapDispatchToProps = dispatch => ({
-  onDrop: (src, dest) => dispatch(dropNode(src, {...dest, isDropTarget: true})),
-});
-
-export default connect(null, mapDispatchToProps)(DropTarget);

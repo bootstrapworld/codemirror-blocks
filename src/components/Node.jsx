@@ -14,6 +14,8 @@ import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
 import {playSound, BEEP} from '../sound';
+import {DropTarget, DropTargetContainer, DropTargetSibling} from './DropTarget';
+
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -42,7 +44,7 @@ class Node extends BlockComponent {
     inToolbar: PropTypes.bool,
 
     normallyEditable: PropTypes.bool,
-    alwaysUpdate: PropTypes.bool,
+    containsDropTargets: PropTypes.bool,
 
     isSelected: PropTypes.bool.isRequired,
     expandable: PropTypes.bool,
@@ -380,6 +382,7 @@ class Node extends BlockComponent {
       textMarker,
       children,
       inToolbar,
+      containsDropTargets,
       node,
       ...passingProps
     } = this.props;
@@ -408,7 +411,7 @@ class Node extends BlockComponent {
 
     if (this.state.editable) {
       // TODO: combine passingProps and contentEditableProps
-      return (
+      let node = (
         <NodeEditable {...passingProps}
                       onDisableEditable={this.handleDisableEditable}
                       extraClasses={classes}
@@ -418,6 +421,8 @@ class Node extends BlockComponent {
                       onChange={this.handleChange}
                       contentEditableProps={props} />
       );
+      if (containsDropTargets) { node = (<DropTargetContainer>{node}</DropTargetContainer>); }
+      return node;
     } else {
       const {
         connectDragSource, isDragging,
@@ -448,7 +453,9 @@ class Node extends BlockComponent {
       if (this.props.normallyEditable) {
         result = connectDropTarget(result);
       }
-      return connectDragPreview(connectDragSource(result), {offsetX: 1, offsetY: 1});
+      result = connectDragPreview(connectDragSource(result), {offsetX: 1, offsetY: 1});
+      if (containsDropTargets) { result = <DropTargetContainer>{result}</DropTargetContainer>; }
+      return result;
     }
   }
 }

@@ -162,8 +162,7 @@ export class AST {
       let children = [...n.children()];               // if it contains cur, drill down into the children
       return (children.length == 0)? n : loop(children);
     }
-    let res = loop(this.rootNodes);
-    return res;
+    return loop(this.rootNodes);
   }
 
   /**
