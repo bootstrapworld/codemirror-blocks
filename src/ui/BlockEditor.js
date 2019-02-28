@@ -375,6 +375,7 @@ class BlockEditor extends Component {
       'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
       'off': (type, func) => ed.off(type, func),
       'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
+      'normalizeKeyMap': (keymap) => ed.normalizeKeyMap(keymap),
       // block methods
       'getAst':
         () => withState((state) => state.ast),
