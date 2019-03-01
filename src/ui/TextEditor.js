@@ -42,37 +42,12 @@ class TextEditor extends Component {
 
   buildAPI(ed) {
     return {
-      'markText': (from, to, opts) => ed.markText(from, to, opts),
-      'getAllMarks': () => ed.getAllMarks(),
       'findMarks': (from, to) => ed.findMarks(from, to),
       'findMarksAt': (pos) => ed.findMarksAt(pos),
-      'getValue': (sep) => ed.getValue(sep),
-      'setValue': (value) => ed.setValue(value),
-      'getScrollerElement': () => ed.getScrollerElement(),
-      'getGutterElement': () => ed.getGutterElement(),
-      'getCursor': (start) => ed.getCursor(start),
-      'setCursor': (pos) => ed.setCursor(pos),
+      'getAllMarks': () => ed.getAllMarks(),
+      'markText': (from, to, opts) => ed.markText(from, to, opts),
       'runMode': (src, lang, container) => ed.runMode(src, lang, container),
-      'refresh': () => ed.refresh(),
-      'defineOption': (name, _default, updateFunc) => ed.defineOption(name, _default, updateFunc),
-      'Pos': (line, ch, sticky) => ed.Pos(line, ch, sticky),
-      'Doc': (text, mode, firstLineNumber, lineSeparator) => ed.Doc(text, mode, firstLineNumber, lineSeparator),
-      'swapDoc': (doc) => ed.swapDoc(doc),
-      'getDoc': () => ed.getDoc(),
-      'charCoords': (pos, mode) => ed.charCoords(pos, mode),
-      'getScrollInfo': () => ed.getScrollInfo(),
-      'getWrapperElement': () => ed.getWrapperElement(),
-      'scrollIntoView': (what, margin) => ed.scrollIntoView(what, margin),
-      'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
-      'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
-      'off': (type, func) => ed.off(type, func),
-      'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
-      'normalizeKeyMap': (keymap) => ed.normalizeKeyMap(keymap),
-      'getOption': (option) => ed.getOption(option), 
-      'clearHistory': () => ed.clearHistory(),
-      'getDoc': () => ed.getDoc(),
-      'posFromIndex': (index) => ed.posFromIndex(index),
-      'replaceRange': (str, from, to, origin) => ed.replaceRange(str, from, to, origin),
+      'setCursor': (pos) => ed.setCursor(pos),
     };
   }
 

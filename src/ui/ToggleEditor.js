@@ -64,10 +64,36 @@ export default class ToggleEditor extends React.Component {
     merge(this.props.api, this.buildAPI());
   }
 
-  buildAPI() {
+  buildAPI(ed) {
     return {
       'getBlockMode': () => this.state.blockMode,
-      'setBlockMode': this.handleToggle
+      'setBlockMode': this.handleToggle,
+      'getValue': (sep) => ed.getValue(sep),
+      'setValue': (value) => ed.setValue(value),
+      'getScrollerElement': () => ed.getScrollerElement(),
+      'getWrapperElement': () => ed.getWrapperElement(),
+      'getGutterElement': () => ed.getGutterElement(),
+      'getInputField': () => ed.getInputField(), // wasn't in text editor
+      'getCursor': (start) => ed.getCursor(start),
+      'replaceRange': (str, from, to, origin) => ed.replaceRange(str, from, to, origin),
+      'refresh': () => ed.refresh(),
+      'defineOption': (name, _default, updateFunc) => ed.defineOption(name, _default, updateFunc),
+      'Pos': (line, ch, sticky) => ed.Pos(line, ch, sticky),
+      'Doc': (text, mode, firstLineNumber, lineSeparator) => ed.Doc(text, mode, firstLineNumber, lineSeparator),
+      'swapDoc': (doc) => ed.swapDoc(doc),
+      'getDoc': () => ed.getDoc(),
+      'charCoords': (pos, mode) => ed.charCoords(pos, mode),
+      'getScrollInfo': () => ed.getScrollInfo(),
+      'scrollIntoView': (what, margin) => ed.scrollIntoView(what, margin),
+      'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
+      'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
+      'off': (type, func) => ed.off(type, func),
+      'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
+      'normalizeKeyMap': (keymap) => ed.normalizeKeyMap(keymap),
+      'getOption': (option) => ed.getOption(option),
+      'clearHistory': () => ed.clearHistory(),
+      'getDoc': () => ed.getDoc(),
+      'posFromIndex': (index) => ed.posFromIndex(index),
     };
   }
 
