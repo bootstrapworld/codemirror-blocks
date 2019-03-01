@@ -36,9 +36,12 @@ class ToplevelBlock extends BlockComponent {
   // we need to trigger a render if the node was moved at the top-level,
   // in order to re-mark the node and put the DOM in the new marker
   shouldComponentUpdate(props, state) {
-    let topLevelDragged = !this.mark.find();
-    let nodeChanged = super.shouldComponentUpdate(props, state);
-    return topLevelDragged || nodeChanged;
+    // TODO: `!this.mark.find()` doesn't work on commented nodes.
+    // As a fix for the moment, we'll be inefficient and always update.
+    return true;
+    // let topLevelDragged = !this.mark.find();
+    // let nodeChanged = super.shouldComponentUpdate(props, state);
+    // return topLevelDragged || nodeChanged;
   }
 
   componentWillUnmount() { this.mark.clear(); }
