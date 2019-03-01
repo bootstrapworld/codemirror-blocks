@@ -126,6 +126,7 @@ class BlockEditor extends Component {
       setCursor: PropTypes.func.isRequired,
     }),
     onBeforeChange: PropTypes.func,
+    onMount:PropTypes.func.isRequired,
     hasQuarantine: PropTypes.bool.isRequired,
     api: PropTypes.object,
 
@@ -340,6 +341,8 @@ class BlockEditor extends Component {
         this.markText(node.from, node.to, m.options);
       });
     }, 0));
+
+    this.props.onMount(ed);
 
     // export methods to the object interface
     merge(this.props.api, this.buildAPI(ed));

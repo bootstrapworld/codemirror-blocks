@@ -60,8 +60,6 @@ export default class ToggleEditor extends React.Component {
     this.options = merge(defaultOptions, props.options);
     this.hasMounted = false;
     SHARED.recordedMarks = new Map();
-
-    merge(this.props.api, this.buildAPI());
   }
 
   buildAPI(ed) {
@@ -95,6 +93,10 @@ export default class ToggleEditor extends React.Component {
       'getDoc': () => ed.getDoc(),
       'posFromIndex': (index) => ed.posFromIndex(index),
     };
+  }
+
+  handleEditorMounted = (ed) => {
+    merge(this.props.api, this.buildAPI(ed));
   }
 
   componentDidMount() {
@@ -172,6 +174,7 @@ export default class ToggleEditor extends React.Component {
         cmOptions={this.cmOptions}
         parser={this.parser}
         initialCode={code}
+        onMount={this.handleEditorMounted}
         api={this.props.api} />
     );
   }
@@ -183,6 +186,7 @@ export default class ToggleEditor extends React.Component {
         cmOptions={this.cmOptions}
         parser={this.parser}
         value={code}
+        onMount={this.handleEditorMounted}
         api={this.props.api}
         appElement={this.props.appElement}
         language={this.language.id}

@@ -12,6 +12,7 @@ class TextEditor extends Component {
     parser: PropTypes.object.isRequired,
     initialCode: PropTypes.string.isRequired,
     onBeforeChange: PropTypes.func,
+    onMount:PropTypes.func.isRequired,
     setAnnouncer: PropTypes.func.isRequired,
     api: PropTypes.object,
   }
@@ -35,6 +36,8 @@ class TextEditor extends Component {
     setTimeout( () => {
       SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
     }, 250);
+
+    this.props.onMount(ed);
 
     // export methods to the object interface
     merge(this.props.api, this.buildAPI(ed));
