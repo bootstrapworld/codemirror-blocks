@@ -357,9 +357,10 @@ class BlockEditor extends Component {
       'setValue': (value) => ed.setValue(value),
       'getScrollerElement': () => ed.getScrollerElement(),
       'getWrapperElement': () => ed.getWrapperElement(),
+      'getGutterElement': () => ed.getGutterElement(),
       'getInputField': () => ed.getInputField(),
       'getCursor': (start) => ed.getCursor(start),
-      'replaceRange': ed.replaceRange,
+      'replaceRange': (str, from, to, origin) => ed.replaceRange(str, from, to, origin),
       'setCursor': (pos) => this.props.setCursor(ed, pos),
       'runMode': (_src, _lang, _container) => () => {}, // no-op since not an editing command
       'refresh': () => ed.refresh(),
@@ -376,6 +377,10 @@ class BlockEditor extends Component {
       'off': (type, func) => ed.off(type, func),
       'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
       'normalizeKeyMap': (keymap) => ed.normalizeKeyMap(keymap),
+      'getOption': (option) => ed.getOption(option),
+      'clearHistory': () => ed.clearHistory(),
+      'getDoc': () => ed.getDoc(),
+      'posFromIndex': (index) => ed.posFromIndex(index),
       // block methods
       'getAst':
         () => withState((state) => state.ast),
