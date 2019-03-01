@@ -90,7 +90,6 @@ export default class ToggleEditor extends React.Component {
       'normalizeKeyMap': (keymap) => ed.normalizeKeyMap(keymap),
       'getOption': (option) => ed.getOption(option),
       'clearHistory': () => ed.clearHistory(),
-      'getDoc': () => ed.getDoc(),
       'posFromIndex': (index) => ed.posFromIndex(index),
     };
   }

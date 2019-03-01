@@ -27,7 +27,7 @@ export default class CodeMirrorBlocks {
   buildAPI = () => {
     return {
       'fromTextArea': this.fromTextArea,
-    }
+    };
   }
 
   fromTextArea = myTextArea => {
