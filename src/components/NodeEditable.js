@@ -41,12 +41,12 @@ class NodeEditable extends Component {
         dispatch(activate(focusId, true));
         return;
       }
-
-      const value = addWhitespacePadding(ast, this.props.value, node.from, node.to);
-
+      // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
+      const {from, to} = (node.id !== "editing")? ast.getNodeById(node.id) : node;
+      const value = addWhitespacePadding(ast, this.props.value, from, to);
       commitChanges(
         cm => () => {
-          cm.replaceRange(value, node.from, node.to, 'cmb:edit');
+          cm.replaceRange(value, from, to, 'cmb:edit');
         },
         ({firstNewId}) => {
           if (firstNewId !== null) {
