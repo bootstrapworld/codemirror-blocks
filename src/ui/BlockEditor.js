@@ -191,7 +191,6 @@ class BlockEditor extends Component {
 
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
-
     const {dispatch} = this.props;
 
     const activateNoRecord = node => {
@@ -295,7 +294,11 @@ class BlockEditor extends Component {
       const tree = patch(this.props.ast, newAST);
       let focusId = computeFocusNodeFromChanges(changes, tree).id;
       this.props.setAST(tree);
-      this.props.activate(focusId);
+      // only call activate() if there's no cursor defined
+      this.props.dispatch((_, getState) => {
+        const {cur} = getState();
+        if(!cur) this.props.activate(focusId);
+      });
     }
   }
 
@@ -311,7 +314,6 @@ class BlockEditor extends Component {
     announcements.setAttribute('role', 'log');
     announcements.setAttribute('aria-live', 'assertive');
     wrapper.appendChild(announcements);
-
     ed.on('changes', this.editorChange);
 
     SHARED.cm = ed;
