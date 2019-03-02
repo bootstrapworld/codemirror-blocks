@@ -23,10 +23,14 @@ class NodeEditable extends Component {
 
   constructor(props) {
     super(props);
-    if (this.props.value === null) {
-      // TODO(Oak): this is bad. Shouldn't access .from and .to directly here
-      // since it might be incorrect
-      this.cachedValue = SHARED.cm.getRange(this.props.node.from, this.props.node.to);
+    const {value, node, dispatch} = this.props
+    if (value === null) {
+      dispatch((_, getState) => {
+        const {ast} = getState();
+        // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
+        const {from, to} = (node.id !== "editing")? ast.getNodeById(node.id) : node;
+        this.cachedValue = SHARED.cm.getRange(from, to);
+      });
     }
   }
 
