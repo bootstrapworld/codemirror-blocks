@@ -2,13 +2,14 @@
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
 var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
-//var reporters = ['jasmine-diff', 'dots'];
-var reporters = ['coverage', 'coveralls'];
+var reporters = ['jasmine-diff', 'dots'];
 
 if (envConfig.runCoverage) {
+  console.log('running coverage');
   reporters.push('coverage');
 
   if (envConfig.isCI) {
+    console.log('running coveralls');
     reporters.push('coveralls');
   }
 }
@@ -45,8 +46,6 @@ module.exports = function(config) {
     exclude: [
     ],
 
-    plugins: ['karma-coverage', 'karma-coveralls']
-
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
@@ -66,7 +65,7 @@ module.exports = function(config) {
     coverageReporter: {
       type: 'lcov', // lcov or lcovonly are required for generating lcov.info files
       dir: 'coverage/'
-    }
+    },
 
     jasmineDiffReporter: {
       pretty: true,
