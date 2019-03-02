@@ -2,16 +2,11 @@
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
 var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
-var reporters = ['jasmine-diff', 'dots'];
+var reporters = ['jasmine-diff', 'dots', 'coverage'];
 
-if (envConfig.runCoverage) {
-  console.log('running coverage');
-  reporters.push('coverage');
-
-  if (envConfig.isCI) {
-    console.log('running coveralls');
-    reporters.push('coveralls');
-  }
+if (envConfig.isCI) {
+  console.log('running coveralls');
+  reporters.push('coveralls');
 }
 
 module.exports = function(config) {
