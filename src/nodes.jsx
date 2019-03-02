@@ -21,7 +21,10 @@ export class Unknown extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr(this.elts[0], this.elts.slice(1));
+    return P.withSchemeComment(
+      P.standardSexpr(this.elts[0], this.elts.slice(1)),
+      this.options.comment,
+      this);
   }
 
   render(props) {

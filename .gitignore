@@ -9,3 +9,4 @@ site-build
 .sass-cache
 vendors
 doc/*.html
+.DS_Store
