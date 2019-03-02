@@ -126,6 +126,7 @@ class BlockEditor extends Component {
       setCursor: PropTypes.func.isRequired,
     }),
     onBeforeChange: PropTypes.func,
+    onMount:PropTypes.func.isRequired,
     hasQuarantine: PropTypes.bool.isRequired,
     api: PropTypes.object,
 
@@ -343,6 +344,8 @@ class BlockEditor extends Component {
       });
     }, 0));
 
+    this.props.onMount(ed);
+
     // export methods to the object interface
     merge(this.props.api, this.buildAPI(ed));
   }
@@ -351,37 +354,12 @@ class BlockEditor extends Component {
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
     return {
       // cm methods
-      'markText':   (from, to, opts) => this.markText(from, to, opts),
       'findMarks':  (from, to) => this.findMarks(from, to),
       'findMarksAt':(pos) => this.findMarksAt(pos),
       'getAllMarks':() => this.getAllMarks(),
-      'getValue': (sep) => ed.getValue(sep),
-      'setValue': (value) => ed.setValue(value),
-      'getScrollerElement': () => ed.getScrollerElement(),
-      'getWrapperElement': () => ed.getWrapperElement(),
-      'getGutterElement': () => ed.getGutterElement(),
-      'getInputField': () => ed.getInputField(),
-      'getCursor': (start) => ed.getCursor(start),
-      'replaceRange': (str, from, to, origin) => ed.replaceRange(str, from, to, origin),
-      'setCursor': (pos) => this.props.setCursor(ed, pos),
+      'markText':   (from, to, opts) => this.markText(from, to, opts),
       'runMode': (_src, _lang, _container) => () => {}, // no-op since not an editing command
-      'refresh': () => ed.refresh(),
-      'defineOption': (name, _default, updateFunc) => ed.defineOption(name, _default, updateFunc),
-      'Pos': (line, ch, sticky) => ed.Pos(line, ch, sticky),
-      'Doc': (text, mode, firstLineNumber, lineSeparator) => ed.Doc(text, mode, firstLineNumber, lineSeparator),
-      'swapDoc': (doc) => ed.swapDoc(doc),
-      'getDoc': () => ed.getDoc(),
-      'charCoords': (pos, mode) => ed.charCoords(pos, mode),
-      'getScrollInfo': () => ed.getScrollInfo(),
-      'scrollIntoView': (what, margin) => ed.scrollIntoView(what, margin),
-      'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
-      'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
-      'off': (type, func) => ed.off(type, func),
-      'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
-      'getOption': (option) => ed.getOption(option),
-      'clearHistory': () => ed.clearHistory(),
-      'getDoc': () => ed.getDoc(),
-      'posFromIndex': (index) => ed.posFromIndex(index),
+      'setCursor': (pos) => this.props.setCursor(ed, pos),
       // block methods
       'getAst':
         () => withState((state) => state.ast),
