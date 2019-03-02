@@ -139,14 +139,14 @@ export class AST {
    * Returns the next node or null
    */
   getNodeAfterCur = cur => {
-    function loop(nodes) {
+    function loop(nodes, parentFallback) {
       let n = nodes.find(n => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
-      if(!n) { return; }                              // return null if there's no node after the cursor
+      if(!n) { return parentFallback; }               // return null if there's no node after the cursor
       if(poscmp(n.from, cur) >= 0) { return n; }      // if the node *starts* after the cursor too, we're done
       let children = [...n.children()];               // if *contains* cur, drill down into the children
-      return (children.length == 0)? n : loop(children);
+      return (children.length == 0)? n : loop(children, n);
     }
-    return loop(this.rootNodes);
+    return loop(this.rootNodes, null);
   }
 
   /**
@@ -155,14 +155,14 @@ export class AST {
    * Returns the previous node or null
    */
   getNodeBeforeCur = cur => {
-    function loop(nodes) {
+    function loop(nodes, parentFallback) {
       // find the last node that begins before cur
       let n = nodes.slice(0).reverse().find(n => poscmp(n.from, cur) < 0);
-      if(!n) { return; }                              // return null if there's no node before the cursor
+      if(!n) { return parentFallback; }               // return null if there's no node before the cursor
       let children = [...n.children()];               // if it contains cur, drill down into the children
-      return (children.length == 0)? n : loop(children);
+      return (children.length == 0)? n : loop(children, n);
     }
-    let res = loop(this.rootNodes);
+    let res = loop(this.rootNodes, null);
     return res;
   }
 
