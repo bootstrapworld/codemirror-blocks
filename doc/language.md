@@ -163,30 +163,53 @@ CodeMirror-Blocks components:
 - The `blocks-operator` span makes the black bar at the top of the
   block, and the `blocks-args` span makes the section at the bottom.
   For more options, see the [stylesheet guide](stylesheet.html).
-- Blocks should come with ample "drop targets": spots that you can
-  drag other blocks onto. There are two ways to get these:
-  - `<Args helpers={helpers}>...</Args>` expects an array of elements,
-    and intersperses them between drop targets. If the array might be
-    empty, you must also pass it a `location={SRCLOC}` property so
-    that it knows where to insert.
-  - You can also add drop targets yourself. Import `DropTargetContainer`,
-    `DropTarget` and `DropTargetSibling` from `components/DropTarget`. Wrap the
-    result you want to return in a `<DropTargetContainer>`. Inside of it you can
-    use `DropTarget`s. Each one needs an `index` (a number
-    that uniquely identifies it among the drop targets within this `Node`), and
-    a `location` of where to insert. You should render nodes that are adjacent
-    to drop targets in a `DropTargetSibling`, which takes `node`--- the node to
-    render---and `left` and `right`---the index of the droptarget to the left
-    and right. (If there is a drop target to one side but not the other, just
-    omit the unneeded `left` or `right` property.)
 - To render a child that is also an `ASTNode`, use `child.reactElement()`. This
   produces a React Element. If you wish to pass it any `props`, you may pass
   them in as a dictionary: `child.reactElement({prop: value})`.
-- You may sometimes find that a Function Component is not enough to render your
-  AST node, and you want the full power of a Class Component. If so, write an
-  ordinary React Class Component, and then in your AST node definition, instead
-  of supplying a `render()` method, supply a `reactComponent()` method that
-  returns that class. (We really do mean "return the _class_". Don't instantiate
-  it!)
+
+#### Rendering DropTargets
+
+If you've played around with the editor, you will have noticed "drop targets":
+the small squares betweeen nodes that you can drag blocks onto, or edit to
+insert a new child. When defining your blocks, you should include ample drop
+targets to make them easy to edit. There are two ways to get these.
+
+Most of the time, you should use `Args`. The syntax is `<Args
+location={loc}>{elts}</Args>`, which will intersperse drop targets horizontally
+among `elts` (which should be an array of elements). The prop `loc` is a source
+location---it is used only if `elts` is an empty array, in which case `Args` will
+have a single drop target and needs to know the source location for it.
+
+In our `VariableDefinition` example, `Args` was sufficient so we just used that.
+
+However, if you want to put drop targets in a more interesting arrangement than
+`Args` gives you, you have a second option: you can use `DropTargetContainer`.
+Wrap the entirety of your `render()` result with
+`<DropTargetContainer>...</DropTargetContainer>`. Inside, you can freely use
+drop targets anywhere you like. The syntax is
+
+    <DropTarget index={i} location={loc}/>
+
+This constructs a drop target with source location `loc` (i.e., if you drop
+something on it, that's the source location it will end up at). The index `i`
+distinguishes this drop target from any others inside the `DropTargetContainer`.
+
+There's one more thing you should do if you use `DropTargetContainer`.
+CodeMirror-Blocks comes with a shortcut that lets you insert text to the left or
+right of a child of a node. For example, if you select the `1` in `(+ 1 2)` and
+type `ctrl-]`, then it will go into insert mode at the drop target between `1`
+and `2`. Args automatically does this, but in general CodeMirror-Blocks doesn't
+want to try to dictate which nodes count as adjacent to which drop targets.
+Instead, for `ctrl-[` and `ctrl-]` to work, you must explicitly say what drop
+targets a node is adjacent to. This is done via `DropTargetSibling`. Its syntax
+is:
+
+    <DropTargetSibling node={n} left={i} right={j}/>
+
+This renders the node `n`, while linking it to the drop target of index `i` on
+the left, and the drop target of index `j` on the right. If you want to omit a
+link, just omit `left` and/or `right`.
+
+-----
 
 That's it! We've fully defined the `VariableDefinition` node type.
