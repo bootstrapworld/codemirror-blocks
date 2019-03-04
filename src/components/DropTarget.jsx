@@ -54,11 +54,11 @@ export class DropTargetSibling extends Component {
   constructor(props) {
     super(props);
     this.onSetLeft = props.left === undefined
-    ? () => {}
-    : (b) => this.context.setEditable(props.left, b);
+      ? () => {}
+      : (b) => this.context.setEditable(props.left, b);
     this.onSetRight = props.right === undefined
-    ? () => {}
-    : (b) => this.context.setEditable(props.right, b);
+      ? () => {}
+      : (b) => this.context.setEditable(props.right, b);
   }
 
   render() {
