@@ -2,7 +2,7 @@
   "name": "codemirror-blocks",
   "version": "0.7.0",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
-  "main": "lib/codemirror-blocks.js",
+  "main": "CodeMirrorBlocks.js",
   "engines": {
     "node": ">=6.x",
     "npm": ">=3.x"
@@ -112,10 +112,10 @@
     "site": "jekyll serve --baseurl \"\""
   },
   "author": "The Bootstrap Team",
-  "contributors": [ 
-    "Paul Carudner",
+  "contributors": [
+    "Paul Carduner",
     "Zachary Espiritu",
-    "Aleksey Kliger"
+    "Aleksey Kliger",
     "Justin Pombrio",
     "Sorawee Porncharoenwase",
     "Emmanuel Schanzer",

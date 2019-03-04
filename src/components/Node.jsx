@@ -15,6 +15,7 @@ import classNames from 'classnames';
 import {store} from '../store';
 import {playSound, BEEP} from '../sound';
 
+
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
@@ -42,7 +43,6 @@ class Node extends BlockComponent {
     inToolbar: PropTypes.bool,
 
     normallyEditable: PropTypes.bool,
-    alwaysUpdate: PropTypes.bool,
 
     isSelected: PropTypes.bool.isRequired,
     expandable: PropTypes.bool,
