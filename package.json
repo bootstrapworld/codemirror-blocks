@@ -111,10 +111,15 @@
     "lint": "eslint src spec --ext .js || true",
     "site": "jekyll serve --baseurl \"\""
   },
-  "author": "Emmanuel Schanzer, Sorawee Porncharoenwase, Justin Pombrio, and Paul Carduner",
-  "contributors": [
+  "author": "The Bootstrap Team",
+  "contributors": [ 
+    "Paul Carudner",
     "Zachary Espiritu",
     "Aleksey Kliger"
+    "Justin Pombrio",
+    "Sorawee Porncharoenwase",
+    "Emmanuel Schanzer",
+    "Preston Tunnell Wilson"
   ],
   "license": "MIT License"
 }
