@@ -60,15 +60,44 @@ export default class ToggleEditor extends React.Component {
     this.options = merge(defaultOptions, props.options);
     this.hasMounted = false;
     SHARED.recordedMarks = new Map();
-
-    merge(this.props.api, this.buildAPI());
   }
 
-  buildAPI() {
+  buildAPI(ed) {
     return {
+      // CMB methods
       'getBlockMode': () => this.state.blockMode,
-      'setBlockMode': this.handleToggle
+      'setBlockMode': this.handleToggle,
+      // CM methods
+      'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
+      'charCoords': (pos, mode) => ed.charCoords(pos, mode),
+      'clearHistory': () => ed.clearHistory(),
+      'defineOption': (name, _default, updateFunc) => ed.defineOption(name, _default, updateFunc),
+      'Doc': (text, mode, firstLineNumber, lineSeparator) => ed.Doc(text, mode, firstLineNumber, lineSeparator),
+      'getCursor': (start) => ed.getCursor(start),
+      'getDoc': () => ed.getDoc(),
+      'getGutterElement': () => ed.getGutterElement(),
+      'getInputField': () => ed.getInputField(),
+      'getOption': (option) => ed.getOption(option),
+      'getScrollerElement': () => ed.getScrollerElement(),
+      'getScrollInfo': () => ed.getScrollInfo(),
+      'getValue': (sep) => ed.getValue(sep),
+      'getWrapperElement': () => ed.getWrapperElement(),
+      'normalizeKeyMap': (keymap) => ed.normalizeKeyMap(keymap),
+      'off': (type, func) => ed.off(type, func),
+      'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
+      'Pos': (line, ch, sticky) => ed.Pos(line, ch, sticky),
+      'posFromIndex': (index) => ed.posFromIndex(index),
+      'refresh': () => ed.refresh(),
+      'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
+      'replaceRange': (str, from, to, origin) => ed.replaceRange(str, from, to, origin),
+      'scrollIntoView': (what, margin) => ed.scrollIntoView(what, margin),
+      'setValue': (value) => ed.setValue(value),
+      'swapDoc': (doc) => ed.swapDoc(doc),
     };
+  }
+
+  handleEditorMounted = (ed) => {
+    merge(this.props.api, this.buildAPI(ed));
   }
 
   componentDidMount() {
@@ -146,6 +175,7 @@ export default class ToggleEditor extends React.Component {
         cmOptions={this.cmOptions}
         parser={this.parser}
         initialCode={code}
+        onMount={this.handleEditorMounted}
         api={this.props.api} />
     );
   }
@@ -157,6 +187,7 @@ export default class ToggleEditor extends React.Component {
         cmOptions={this.cmOptions}
         parser={this.parser}
         value={code}
+        onMount={this.handleEditorMounted}
         api={this.props.api}
         appElement={this.props.appElement}
         language={this.language.id}

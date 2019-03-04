@@ -73,13 +73,6 @@ describe('The CodeMirrorBlocks Class', function() {
       const ast = tempBlocks.getAst();
       expect(tempBlocks.getBlockMode()).toBe(true); //broken
       expect(ast.rootNodes.length).toBe(0);
-      // expect(state.collapsedList.length).toBe(0);
-      // expect(state.cur).toBe(null);
-      // expect(state.errorId).toBe("");
-      // expect(state.focusId).toBe(-1);
-      // expect(state.quarantine).toBe(null);
-      // expect(state.selections.length).toBe(0);
-
       document.body.removeChild(document.getElementById('temp'));
     });
 
@@ -111,13 +104,12 @@ describe('The CodeMirrorBlocks Class', function() {
         await wait(DELAY);
       });
 
-      /*it('typing at the end of a line', function() {
+      it('typing at the end of a line', function() {
         this.blocks.setCursor({line: 0, ch: 5});
-        // this.blocks.getInputField().dispatchEvent(keydown(57));
-        skeyDown("9", {}, this.blocks.getInputField());
+        skeyDown("9");
         sinsertText("9");
         expect(this.blocks.getValue()).toEqual('42 119');
-      });*/
+      });
 
       it('typing at the beginning of a line', function() {
         this.blocks.setCursor({line: 0, ch: 0});
@@ -166,7 +158,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });*/
     
     it('should return the node being edited on esc', async function() {
-      sdoubleClick(this.literal.element);
+      sdoubleClick(this.literal);
       await wait(DELAY);
       const quarantine = document.activeElement;
       quarantine.dispatchEvent(keydown(ESC));
@@ -174,28 +166,28 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.getValue()).toEqual('11');
     });
     
-    /*it('should blur the node being edited on enter', async function() {
-      this.literal.element.dispatchEvent(dblclick());
+    /*
+    NOTE(Emmanuel): we still don't know how to get the DOM elt of a 
+    NodeEditable - these two tests rely on that
+    it('should blur the node being edited on enter', async function() {
       sdoubleClick(this.literal.element);
       await wait(DELAY);
       let quarantine = document.activeElement;
       spyOn(quarantine, 'blur');
-      quarantine.dispatchEvent(keydown(ENTER));
-      skeyDown("Enter", {}, quarantine);
+      skeyDown("Enter", {}, this.literal);
+      await wait(DELAY);
       expect(quarantine.blur).toHaveBeenCalled();
-    });*/
+    });
     
-    /*it('should blur the node being edited on top-level click', async function() {
-      this.literal.element.dispatchEvent(dblclick());
+    it('should blur the node being edited on top-level click', async function() {
       sdoubleClick(this.literal.element);
       await wait(DELAY);
       let quarantine = document.activeElement;
       spyOn(quarantine, 'blur');
-      this.blocks.getScrollerElement().click();
-      //sclick(this.blocks.getWrapperElement());
+      sclick(this.blocks.getWrapperElement());
       expect(quarantine.blur).toHaveBeenCalled();
-    })*/;
-
+    });
+  */
     describe('when "saving" bad inputs,', function() {
       beforeEach(async function() {
         spyOn(this.blocks, 'replaceRange');
@@ -250,9 +242,8 @@ describe('The CodeMirrorBlocks Class', function() {
       
       it('Ctrl-[ should activate a quarantine to the left', async function() {
         sclick(this.firstArg.element);
-        skeyDown("[", {ctrlKey: true}, this.firstArg.element);
+        skeyDown("[", {ctrlKey: true});
         await wait(DELAY);
-        // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled(); //old assertion
         //expect(this.blocks.setQuarantine).toHaveBeenCalled();
       });
       
@@ -260,7 +251,6 @@ describe('The CodeMirrorBlocks Class', function() {
         sclick(this.firstArg.element);
         skeyDown("]", {ctrlKey: true}, this.firstArg.element);
         await wait(DELAY);
-        // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
         //expect(this.blocks.setQuarantine).toHaveBeenCalled();
       });
       
@@ -268,14 +258,12 @@ describe('The CodeMirrorBlocks Class', function() {
         sclick(this.blank.func.element);
         skeyDown("]", {ctrlKey: true}, this.blank.func.element);
         await wait(DELAY);
-        // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
         //expect(this.blocks.setQuarantine).toHaveBeenCalled();
       });
       
       it('should activate a quarantine on dblclick', async function() {
         sdoubleClick(this.whiteSpaceEl);
         await wait(DELAY);
-        // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
         //expect(this.blocks.setQuarantine).toHaveBeenCalled();
       });
       
@@ -293,14 +281,12 @@ describe('The CodeMirrorBlocks Class', function() {
         it('should allow editing the argument whitespace', async function() { /* left off here*/
           sdoubleClick(this.argWS);
           await wait(DELAY);
-          // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
           //expect(this.blocks.setQuarantine).toHaveBeenCalled();
         }); 
         
         it('should allow editing the whitespace after the function', async function() {
           sdoubleClick(this.wsAfterFunc);
           await wait(DELAY);
-          // expect(this.blocks.makeQuarantineAt).toHaveBeenCalled();
           //expect(this.blocks.setQuarantine).toHaveBeenCalled();
         });
         

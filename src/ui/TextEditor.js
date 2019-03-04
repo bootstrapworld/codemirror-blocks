@@ -12,6 +12,7 @@ class TextEditor extends Component {
     parser: PropTypes.object.isRequired,
     initialCode: PropTypes.string.isRequired,
     onBeforeChange: PropTypes.func,
+    onMount:PropTypes.func.isRequired,
     setAnnouncer: PropTypes.func.isRequired,
     api: PropTypes.object,
   }
@@ -36,36 +37,20 @@ class TextEditor extends Component {
       SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
     }, 250);
 
+    this.props.onMount(ed);
+
     // export methods to the object interface
     merge(this.props.api, this.buildAPI(ed));
   }
 
   buildAPI(ed) {
     return {
-      'markText': (from, to, opts) => ed.markText(from, to, opts),
-      'getAllMarks': () => ed.getAllMarks(),
       'findMarks': (from, to) => ed.findMarks(from, to),
       'findMarksAt': (pos) => ed.findMarksAt(pos),
-      'getValue': (sep) => ed.getValue(sep),
-      'setValue': (value) => ed.setValue(value),
-      'getScrollerElement': () => ed.getScrollerElement(),
-      'getCursor': (start) => ed.getCursor(start),
-      'setCursor': (pos) => ed.setCursor(pos),
+      'getAllMarks': () => ed.getAllMarks(),
+      'markText': (from, to, opts) => ed.markText(from, to, opts),
       'runMode': (src, lang, container) => ed.runMode(src, lang, container),
-      'refresh': () => ed.refresh(),
-      'defineOption': (name, _default, updateFunc) => ed.defineOption(name, _default, updateFunc),
-      'Pos': (line, ch, sticky) => ed.Pos(line, ch, sticky),
-      'Doc': (text, mode, firstLineNumber, lineSeparator) => ed.Doc(text, mode, firstLineNumber, lineSeparator),
-      'swapDoc': (doc) => ed.swapDoc(doc),
-      'getDoc': () => ed.getDoc(),
-      'charCoords': (pos, mode) => ed.charCoords(pos, mode),
-      'getScrollInfo': () => ed.getScrollInfo(),
-      'getWrapperElement': () => ed.getWrapperElement(),
-      'scrollIntoView': (what, margin) => ed.scrollIntoView(what, margin),
-      'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
-      'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
-      'off': (type, func) => ed.off(type, func),
-      'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
+      'setCursor': (pos) => ed.setCursor(pos),
     };
   }
 

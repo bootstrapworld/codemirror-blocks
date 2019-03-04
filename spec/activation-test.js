@@ -70,15 +70,14 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.cmb.getValue()).toBe('11\n54');
     });
 
-    // // TODO: this test legitimately fails
-    // it('should activate the first node when down is pressed', async function() {
-    //   await wait(DELAY);
-    //   keyDown("ArrowDown");
-    //   await wait(DELAY);
-    //   expect(this.activeNode()).toBe(this.literal1);
-    //   expect(this.cmb.getScrollerElement().getAttribute('aria-activedescendent'))
-    //     .toBe('blocks-node-'this.literal1.id);
-    // });
+    it('should activate the first node when down is pressed', async function() {
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).toBe(this.literal1);
+      expect(this.cmb.getScrollerElement().getAttribute('aria-activedescendent'))
+        .toBe('block-node-'+this.literal1.id);
+    });
 
     it('should activate the next node when down is pressed', async function() {
       keyDown("ArrowDown");
@@ -98,15 +97,14 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.activeAriaId()).toBe(this.literal2.element.id);
     });
 
-    // TODO: this test fails because `setCursor` doesn't seem to work.
-    // it('should activate the node before the cursor when up is pressed', async function() {
-    //   this.cmb.setCursor({line: 0, ch: 2});
-    //   keyDown("ArrowUp");
-    //   await wait(DELAY);
-    //   expect(this.activeNode()).not.toBe(this.literal2);
-    //   expect(this.activeNode()).toBe(this.literal1);
-    //   expect(this.activeAriaId()).toBe(this.literal1.element.id);
-    // });
+    it('should activate the node before the cursor when up is pressed', async function() {
+      this.cmb.setCursor({line: 0, ch: 2});
+      keyDown("ArrowUp");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal2);
+      expect(this.activeNode()).toBe(this.literal1);
+      expect(this.activeAriaId()).toBe(this.literal1.element.id);
+    });
 
     it('should toggle the editability of activated node when Enter is pressed', async function() {
       click(this.literal1);
@@ -184,6 +182,7 @@ describe('The CodeMirrorBlocks Class', function() {
       this.firstArg   = ast.rootNodes[0].args[0];
       this.secondArg  = ast.rootNodes[0].args[1];
       this.thirdArg   = ast.rootNodes[0].args[2];
+      this.nestedExpr = ast.rootNodes[2].args[1];
       this.lastNode   = this.thirdRoot.args[1].args[1];
     });
 
@@ -236,6 +235,52 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown("ArrowLeft", {}, this.secondRoot);
       await wait(DELAY);
       expect(this.secondRoot.element.getAttribute("aria-expanded")).toBe(null);
+    });
+
+    it('shift-left-arrow should collapse all blocks', async function() {
+      click(this.firstRoot);
+      keyDown("ArrowLeft", {shiftKey: true}, this.firstRoot);
+      await wait(DELAY);
+      expect(this.firstRoot.element.getAttribute("aria-expanded")).toBe("false");
+      expect(this.secondRoot.element.getAttribute("aria-expanded")).toBe(null);
+      expect(this.thirdRoot.element.getAttribute("aria-expanded")).toBe("false");
+      expect(this.thirdArg.element.getAttribute("aria-expanded")).toBe(null);
+    });
+
+    it('shift-right-arrow should expand all blocks', async function() {
+      click(this.firstRoot);
+      keyDown("ArrowLeft", {shiftKey: true}, this.firstRoot);
+      await wait(DELAY);
+      keyDown("ArrowRight", {shiftKey: true}, this.firstRoot);
+      expect(this.firstRoot.element.getAttribute("aria-expanded")).toBe("true");
+      expect(this.secondRoot.element.getAttribute("aria-expanded")).toBe(null);
+      expect(this.thirdRoot.element.getAttribute("aria-expanded")).toBe("true");
+      expect(this.nestedExpr.element.getAttribute("aria-expanded")).toBe("true");
+    });
+
+    it('shift-alt-left-arrow should collapse only the currently-active root', async function() {
+      click(this.lastNode);
+      keyDown("ArrowLeft", {shiftKey: true}, this.firstRoot); // collapse all
+      await wait(DELAY);
+      expect(this.firstRoot.element.getAttribute("aria-expanded")).toBe("false");
+      expect(this.secondRoot.element.getAttribute("aria-expanded")).toBe(null);
+      expect(this.thirdRoot.element.getAttribute("aria-expanded")).toBe("false");
+      expect(this.thirdArg.element.getAttribute("aria-expanded")).toBe(null);
+      keyDown("ArrowRight", {shiftKey: true, altKey: true}, this.lastNode);
+      expect(this.firstRoot.element.getAttribute("aria-expanded")).toBe("false");
+      expect(this.secondRoot.element.getAttribute("aria-expanded")).toBe(null);
+      expect(this.thirdRoot.element.getAttribute("aria-expanded")).toBe("true");
+      expect(this.nestedExpr.element.getAttribute("aria-expanded")).toBe("true");
+    });
+
+    it('shift-alt-right-arrow should expand only the currently-active root', async function() {
+      click(this.lastNode);
+      await wait(DELAY);
+      keyDown("ArrowLeft", {shiftKey: true, altKey: true}, this.lastNode);
+      expect(this.firstRoot.element.getAttribute("aria-expanded")).toBe("true");
+      expect(this.secondRoot.element.getAttribute("aria-expanded")).toBe(null);
+      expect(this.thirdRoot.element.getAttribute("aria-expanded")).toBe("false");
+      expect(this.nestedExpr.element.getAttribute("aria-expanded")).toBe("false");
     });
 
     it('less-than should activate root without collapsing', async function() {
@@ -300,9 +345,6 @@ describe('The CodeMirrorBlocks Class', function() {
       this.literal1 = ast.rootNodes[0];
       this.literal2 = ast.rootNodes[1];
       this.expr     = ast.rootNodes[2];
-      console.log("@NT:literal1", this.literal1.id);
-      console.log("@NT:literal2", this.literal2.id);
-      console.log("@NT:expr", this.expr.id);
     });
 
     it('space key toggles selection on and off', async function() {

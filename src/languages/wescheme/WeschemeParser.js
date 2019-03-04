@@ -309,8 +309,9 @@ function parseNode(node, i) {
       {'aria-label': `${symbolAria(form)} expression`});
   } else if (node instanceof structures.unsupportedExpr) {
     if(node.val.constructor !== Array) return null;
-    return new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
-      {msg: node.errorMsg, 'aria-label': 'invalid expression'});
+    let unknown = new Unknown(from, to, node.val.map(parseNode).filter(item => item !== null),
+      {msg: node.errorMsg, 'aria-label': 'invalid expression', 'comment': comment});
+    return unknown;
   } else if (node instanceof structures.requireExpr) {
     return new FunctionApp(from, to, parseNode(node.stx), [parseNode(node.spec)],
       {'aria-label': 'require '+node.spec.val ,'comment' : comment}
