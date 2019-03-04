@@ -155,6 +155,8 @@ class BlockEditor extends Component {
       'Right'     : 'expandOrSelectFirstChild',
       'Shift-Left': 'collapseAll',
       'Shift-Right':'expandAll',
+      'Shift-Alt-Left': 'collapseCurrentRoot',
+      'Shift-Alt-Right':'expandCurrentRoot',
       'Enter'     : 'edit',
       'Cmd-Enter' : 'edit',
       'Ctrl-Enter': 'edit',
