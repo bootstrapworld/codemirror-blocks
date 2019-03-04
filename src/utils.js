@@ -239,7 +239,6 @@ function adjustForChange(pos, change, from) {
 // (like the DOM). Make sure to call `ready` after.
 export function notReady(element) {
   SHARED.notReady[element] = null;
-//  console.log("@notReady", element, SHARED.notReady[element], Object.keys(SHARED.notReady).length);
 }
 
 // Announce, for testing purposes, that an update previously registered with
@@ -248,7 +247,6 @@ export function ready(element) {
   let thunk = SHARED.notReady[element];
   if (thunk) thunk();
   delete SHARED.notReady[element];
-//  console.log("@ready", element, SHARED.notReady[element], Object.keys(SHARED.notReady).length);
 }
 
 // For testing purposes, wait until everything (at least everything that knows
@@ -256,7 +254,6 @@ export function ready(element) {
 // wait for DOM updates. DO NOT CALL THIS TWICE CONCURRENTLY, or it will not return.
 export function waitUntilReady() {
   let waitingOn = Object.keys(SHARED.notReady).length;
-//  console.log("@waitingOn", Object.keys(SHARED.notReady));
   return new Promise(function(resolve, _) {
     for (let element of SHARED.notReady) {
       SHARED.notReady[element] = () => {
