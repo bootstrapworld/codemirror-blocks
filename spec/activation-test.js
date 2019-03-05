@@ -132,6 +132,22 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.literal1.isEditable()).toBe(false);
       expect(this.cmb.getValue()).toBe('11\n54');
     });
+
+    it('should cancel the editability of activated node when Shift-Esc is pressed', async function() {
+      click(this.literal1);
+      await wait(DELAY);
+      expect(this.activeNode()).toBe(this.literal1);
+      
+      keyDown("Enter");
+      await wait(DELAY);
+      expect(this.literal1.isEditable()).toBe(true);
+      insertText("sugarPlums");
+      
+      keyDown("Escape", {shiftKey: true});
+      await wait(DELAY);
+      expect(this.literal1.isEditable()).toBe(false);
+      expect(this.cmb.getValue()).toBe('11\n54');
+    });
   });
 
   describe('cut/copy/paste', function() {
@@ -357,6 +373,38 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown(" ", {}, this.literal1);
       await wait(DELAY);
       expect(this.literal1.element.getAttribute("aria-selected")).toBe('false');
+      expect(this.selectedNodes().length).toBe(0);
+    });
+
+    it('esc key clears selection', async function() {
+      click(this.literal1);
+      keyDown(" ", {}, this.literal1);
+      await wait(DELAY);
+      expect(this.literal1.element.getAttribute("aria-selected")).toBe('true');
+      expect(this.selectedNodes().length).toBe(1);
+      click(this.literal2);
+      keyDown(" ", {}, this.literal2);
+      await wait(DELAY);
+      expect(this.literal2.element.getAttribute("aria-selected")).toBe('true');
+      expect(this.selectedNodes().length).toBe(2);
+      keyDown("Escape", {}, this.literal2);
+      await wait(DELAY);
+      expect(this.selectedNodes().length).toBe(0);
+    });
+
+    it('shift-esc key clears selection', async function() {
+      click(this.literal1);
+      keyDown(" ", {}, this.literal1);
+      await wait(DELAY);
+      expect(this.literal1.element.getAttribute("aria-selected")).toBe('true');
+      expect(this.selectedNodes().length).toBe(1);
+      click(this.literal2);
+      keyDown(" ", {}, this.literal2);
+      await wait(DELAY);
+      expect(this.literal2.element.getAttribute("aria-selected")).toBe('true');
+      expect(this.selectedNodes().length).toBe(2);
+      keyDown("Escape", {shiftKey: true}, this.literal2);
+      await wait(DELAY);
       expect(this.selectedNodes().length).toBe(0);
     });
 

@@ -75,13 +75,14 @@ class NodeEditable extends Component {
   }
 
   handleKeyDown = e => {
-    switch (e.key) {
+    switch (SHARED.keyName(e)) {
     case 'Enter': {
       this.ignoreBlur = true;
       this.saveEdit(e);
       return;
     }
-    case 'Escape':
+    case 'Shift-Esc':
+    case 'Esc':
       this.ignoreBlur = true;
       e.stopPropagation();
       this.props.onChange(null);

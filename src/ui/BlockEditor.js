@@ -162,6 +162,7 @@ class BlockEditor extends Component {
       'Ctrl-Enter': 'edit',
       'Space'     : 'toggleSelection',
       'Esc'       : 'clearSelection',
+      'Shift-Esc' : 'clearSelection',
       'Delete'    : 'delete',
       'Backspace' : 'delete',
       'Ctrl-['    : 'insertLeft',
