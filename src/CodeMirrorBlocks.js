@@ -8,7 +8,7 @@ import merge from './merge';
 // to render. Produces an object-representation of CMB, allowing for
 // integration with external (non-react) code
 export default class CodeMirrorBlocks {
-  constructor(container, language = wescheme, code = "", options = {}) {
+  constructor(container, options = {}, language = wescheme, code = "", ) {
     let api = {};
     ReactDOM.render(
       <ToggleEditor

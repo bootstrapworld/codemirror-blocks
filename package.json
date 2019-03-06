@@ -98,7 +98,7 @@
     "codemirror": "5.44.0"
   },
   "optionalDependencies": {
-    "wescheme-js": "bootstrapworld/wescheme-js"
+    "wescheme-js": "github:bootstrapworld/wescheme-js"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
