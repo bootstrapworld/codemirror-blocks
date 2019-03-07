@@ -297,7 +297,6 @@ class BlockEditor extends Component {
       const newAST = SHARED.parser.parse(cm.getValue());
       const tree = patch(this.props.ast, newAST);
       let focusId = computeFocusNodeFromChanges(changes, tree).id;
-      console.log('setting ast')
       this.props.setAST(tree);
       // only call activate() if there's no cursor defined
       this.props.dispatch((_, getState) => {
@@ -425,17 +424,14 @@ class BlockEditor extends Component {
     ed.off('changes', this.editorChange);
   }
 
- handleFocus = (ed, e) => {
-    if(this.mouseUsed) {
-      this.mouseUsed = false;
-      return;
-    }
-    this.props.dispatch((_, getState) => {
-      const {cur, focusId, ast} = getState();
-      const node = ast.getNodeByNId(focusId);
-      if(node && !cur) {
+  handleFocus = (ed, e) => {
+    const {dispatch} = this.props;
+    dispatch((_, getState) => {
+      const {cur} = getState();
+      if (!this.mouseUsed && cur === null) {
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-        setTimeout(() => this.props.activate(node? node.id : null, {allowMove: true}), 10);
+        setTimeout(() => this.props.activate(null, {allowMove: true}), 10);
+        this.mouseUsed = false;
       }
     });
   }
