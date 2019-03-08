@@ -10,6 +10,7 @@ import {span} from '../types';
 
 export default class Args extends Component {
   static propTypes = {
+    node: PropTypes.instanceOf(ASTNode).isRequired,
     children: PropTypes.arrayOf(PropTypes.instanceOf(ASTNode)).isRequired,
     location: span,
   }
@@ -26,6 +27,6 @@ export default class Args extends Component {
                              index={index+1}
                              location={child.to} />);
     });
-    return (<DropTargetContainer>{elems}</DropTargetContainer>);
+    return (<DropTargetContainer node={this.props.node}>{elems}</DropTargetContainer>);
   }
 }

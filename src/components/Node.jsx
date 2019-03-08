@@ -43,6 +43,7 @@ class Node extends BlockComponent {
     inToolbar: PropTypes.bool,
 
     normallyEditable: PropTypes.bool,
+    forcedUpdate: PropTypes.bool, // TODO(Justin): explain this too.
 
     isSelected: PropTypes.bool.isRequired,
     expandable: PropTypes.bool,

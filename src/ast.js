@@ -1,4 +1,6 @@
-import React from 'react';
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
 import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining} from './utils';
 import uuidv4 from 'uuid/v4';
 import hashObject from 'object-hash';
@@ -344,16 +346,46 @@ export class ASTNode {
 
   // Create a React _element_ (an instantiated component) for this node.
   reactElement(props) {
-    return renderASTNode({node:this, ...props});
+    return (
+        <ASTNodeComponent
+          node={this}
+          setupForceUpdate={(f) => { this.doForceUpdate = f; }}
+        />);
   }
 }
 
-function renderASTNode(props) {
-  let node = props.node;
-  if (typeof node.render === 'function') {
-    return node.render.bind(node)(props);
-  } else {
-    throw new Error("Don't know how to render node of type: " + node.type);
+@connect(() => ({}), dispatch => ({dispatch}))
+class ASTNodeComponent extends Component {
+  static propTypes = {
+    node: PropTypes.instanceOf(ASTNode).isRequired,
+    setupForceUpdate: PropTypes.func.isRequired,
+    dispatch: PropTypes.func.isRequired,
+  }
+
+  state = {forcedUpdate: false}
+
+  constructor(props) {
+    super(props);
+    this.forcedUpdate = false;
+    this.props.setupForceUpdate(() => {
+      this.forcedUpdate = true;
+      this.forceUpdate();
+    });
+  }
+  
+  render() {
+    let node = this.props.node;
+    this.props.dispatch((_, getState) => {
+      let {ast} = getState();
+      if (ast) { node = ast.getNodeById(node.id); }
+    });
+    let forcedUpdate = this.forcedUpdate;
+    this.forcedUpdate = false;
+    if (typeof node.render === 'function') {
+      return node.render.bind(node)({node, forcedUpdate, ...this.props});
+    } else {
+      throw new Error("Don't know how to render node of type: " + node.type);
+    }
   }
 }
 

@@ -34,6 +34,9 @@ export default class BlockComponent extends Component {
     const {node: newValue, ...newProps} = props;
     const {node: oldValue, ...oldProps} = this.props;
 
+    if (newProps.forcedUpdate) {
+      return true;
+    }
     const shouldUpdate = (
       (newValue && oldValue && newValue.hash !== oldValue.hash) ||
         !vaguelyEqual(newProps, oldProps) ||

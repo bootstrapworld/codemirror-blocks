@@ -9,6 +9,7 @@ import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
 import BlockComponent from './BlockComponent';
+import {ASTNode} from '../ast';
 
 
 const DropTargetContext = React.createContext({
@@ -16,7 +17,12 @@ const DropTargetContext = React.createContext({
   setEditable: () => {},
 });
 
+
 export class DropTargetContainer extends Component {
+  static propTypes = {
+    node: PropTypes.instanceOf(ASTNode).isRequired,
+  }
+  
   constructor(props) {
     super(props);
 
@@ -32,6 +38,7 @@ export class DropTargetContainer extends Component {
       <DropTargetContext.Provider value={{
         isEditable: this.state.editableDropTargets,
         setEditable: this.setEditable,
+        containingNode: this.props.node,
       }}>
       {this.props.children}
       </DropTargetContext.Provider>
@@ -103,6 +110,10 @@ export class DropTarget extends BlockComponent {
   handleDoubleClick = e => {
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
+    
+    // TODO(Justin) explain what this is all about
+    this.context.containingNode.doForceUpdate();
+    
     this.setEditable(true);
   }
 
