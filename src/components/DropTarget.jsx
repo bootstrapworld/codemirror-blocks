@@ -32,6 +32,7 @@ export class DropTargetContainer extends Component {
       <DropTargetContext.Provider value={{
         isEditable: this.state.editableDropTargets,
         setEditable: this.setEditable,
+        children: this.props.children,
       }}>
       {this.props.children}
       </DropTargetContext.Provider>
@@ -72,6 +73,7 @@ export class DropTargetSibling extends Component {
 
 const mapDispatchToProps = dispatch => ({
   onDrop: (src, dest) => dispatch(dropNode(src, {...dest, isDropTarget: true})),
+  dispatch
 });
 
 @connect(null, mapDispatchToProps)
@@ -100,7 +102,19 @@ export class DropTarget extends BlockComponent {
     e.stopPropagation();
   }
 
+  getLocation = () => {
+    const siblings = this.context.children;
+    const idx  = siblings.findIndex(c => c.key == 'drop-'+this.props.index);
+    let before = siblings.slice(0,idx).filter(c => c.key.startsWith('node')).pop();
+    let after  = siblings.slice(idx).filter(c => c.key.startsWith('node'))[0];
+    const nodeId = before? before.props.node.id : after? after.props.node.id : null;
+    const node = this.props.dispatch((_, getState) => getState().ast.getNodeById(nodeId));
+    const location = before? node.from : after? node.to : null;
+    return location;
+  }
+
   handleDoubleClick = e => {
+    this.getLocation();
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
     this.setEditable(true);
