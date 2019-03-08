@@ -23,10 +23,14 @@ class NodeEditable extends Component {
 
   constructor(props) {
     super(props);
-    if (this.props.value === null) {
-      // TODO(Oak): this is bad. Shouldn't access .from and .to directly here
-      // since it might be incorrect
-      this.cachedValue = SHARED.cm.getRange(this.props.node.from, this.props.node.to);
+    const {value, node, dispatch} = this.props
+    if (value === null) {
+      dispatch((_, getState) => {
+        const {ast} = getState();
+        // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
+        const {from, to} = (node.id !== "editing")? ast.getNodeById(node.id) : node;
+        this.cachedValue = SHARED.cm.getRange(from, to);
+      });
     }
   }
 
@@ -41,12 +45,12 @@ class NodeEditable extends Component {
         dispatch(activate(focusId, true));
         return;
       }
-
-      const value = addWhitespacePadding(ast, this.props.value, node.from, node.to);
-
+      // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
+      const {from, to} = (node.id !== "editing")? ast.getNodeById(node.id) : node;
+      const value = addWhitespacePadding(ast, this.props.value, from, to);
       commitChanges(
         cm => () => {
-          cm.replaceRange(value, node.from, node.to, 'cmb:edit');
+          cm.replaceRange(value, from, to, 'cmb:edit');
         },
         ({firstNewId}) => {
           if (firstNewId !== null) {
@@ -71,13 +75,14 @@ class NodeEditable extends Component {
   }
 
   handleKeyDown = e => {
-    switch (e.key) {
+    switch (SHARED.keyName(e)) {
     case 'Enter': {
       this.ignoreBlur = true;
       this.saveEdit(e);
       return;
     }
-    case 'Escape':
+    case 'Shift-Esc':
+    case 'Esc':
       this.ignoreBlur = true;
       e.stopPropagation();
       this.props.onChange(null);

@@ -3,7 +3,7 @@
 var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
 var reporters = ['jasmine-diff', 'dots'];
-
+/*
 if (envConfig.runCoverage) {
   reporters.push('coverage');
 
@@ -11,7 +11,7 @@ if (envConfig.runCoverage) {
     reporters.push('coveralls');
   }
 }
-
+*/
 module.exports = function(config) {
   config.set({
 
@@ -21,6 +21,19 @@ module.exports = function(config) {
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['parallel', 'jasmine'],
+
+    parallelOptions: {
+      executors: 3, // Defaults to cpu-count - 1
+      shardStrategy: 'round-robin'
+      // shardStrategy: 'description-length'
+      // shardStrategy: 'custom'
+      // customShardStrategy: function(config) {
+      //   config.executors // number, the executors set above
+      //   config.shardIndex // number, the specific index for the shard currently running
+      //   config.description // string, the name of the top-level describe string. Useful //     for determining how to shard the current specs
+      //   return config.
+      // }
+    },
 
     // list of files / patterns to load in the browser
     files: [
@@ -45,7 +58,7 @@ module.exports = function(config) {
       // don't log console output in our test console
       captureConsole: false,
     },
-
+/*
     reporters: reporters,
     coverageReporter: {
       dir: '.coverage',
@@ -54,6 +67,7 @@ module.exports = function(config) {
         { type: 'lcovonly' }
       ]
     },
+*/
     jasmineDiffReporter: {
       pretty: true,
     },

@@ -15,6 +15,7 @@ import classNames from 'classnames';
 import {store} from '../store';
 import {playSound, BEEP} from '../sound';
 
+
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
@@ -42,7 +43,6 @@ class Node extends BlockComponent {
     inToolbar: PropTypes.bool,
 
     normallyEditable: PropTypes.bool,
-    alwaysUpdate: PropTypes.bool,
 
     isSelected: PropTypes.bool.isRequired,
     expandable: PropTypes.bool,
@@ -164,6 +164,20 @@ class Node extends BlockComponent {
         }
         return;
 
+      // if we're on a root that cannot be collapsed, beep. 
+      // otherwise collapse all nodes in this root, and select the root
+      case 'collapseCurrentRoot':
+        e.preventDefault();
+        if(!node.parent && (isCollapsed || !expandable)) {
+          playSound(BEEP);
+        } else {
+          let root = getRoot(node); 
+          let descendants = [...root.descendants()];
+          descendants.forEach(d => collapse(d.id));
+          activate(root);
+        }
+        return;
+
       case 'expandAll':
         e.preventDefault();
         dispatch({type: 'UNCOLLAPSE_ALL'});
@@ -179,6 +193,16 @@ class Node extends BlockComponent {
         } else {
           playSound(BEEP);
         }
+        return;
+
+      // if we're on a root that cannot be collapsed, beep. 
+      // otherwise collapse all nodes in this root, and select the root
+      case 'expandCurrentRoot':
+        e.preventDefault();
+        let root = getRoot(node); 
+        let descendants = [...root.descendants()];
+        descendants.forEach(d => uncollapse(d.id));
+        activate(root);
         return;
 
       // toggle selection

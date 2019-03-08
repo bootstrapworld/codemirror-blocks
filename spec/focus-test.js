@@ -80,7 +80,6 @@ describe('The CodeMirrorBlocks Class', function() {
       await wait(DELAY);
       keyDown(" ");
       keyDown("ArrowDown");
-      // TODO: why does this only work when node=this.literal3 is specified?
       keyDown(" ", {}, this.literal3);
       await wait(DELAY);
       expect(this.blocks.getSelectedNodes().length).toBe(2);

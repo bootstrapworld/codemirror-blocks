@@ -23,7 +23,15 @@ export function blur(node=document.activeElement) {
 // TODO: document.activeElement isn't always a good default to dispatch to.
 // What does the _browser_ dispatch to?
 export function keyDown(key, props={}, node=document.activeElement) {
-  Simulate.keyDown(toElement(node), makeKeyEvent(key, props));
+  // NOTE(Emmanuel): if it's a textarea, use native browser events
+  if(node.nodeName == 'TEXTAREA') {
+    let event = new CustomEvent('keydown', {bubbles: true});
+    event.which = event.keyCode = getKeyCode(key);
+    Object.assign(event, props);
+    node.dispatchEvent(event);
+  } else {
+    Simulate.keyDown(toElement(node), makeKeyEvent(key, props));
+  }
 }
 export function keyPress(key, props={}, node=document.activeElement) {
   Simulate.keyPress(toElement(node), makeKeyEvent(key, props));

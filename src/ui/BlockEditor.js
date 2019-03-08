@@ -35,10 +35,10 @@ class ToplevelBlock extends BlockComponent {
 
   // we need to trigger a render if the node was moved at the top-level,
   // in order to re-mark the node and put the DOM in the new marker
-  shouldComponentUpdate(props, state) {
-    let topLevelDragged = !this.mark.find();
-    let nodeChanged = super.shouldComponentUpdate(props, state);
-    return topLevelDragged || nodeChanged;
+  shouldComponentUpdate(nextProps, nextState) {
+    let moved = poscmp(this.props.node.from, nextProps.node.from) !== 0;
+    let changed = super.shouldComponentUpdate(nextProps, nextState);
+    return moved || changed;
   }
 
   componentWillUnmount() { this.mark.clear(); }
@@ -155,11 +155,14 @@ class BlockEditor extends Component {
       'Right'     : 'expandOrSelectFirstChild',
       'Shift-Left': 'collapseAll',
       'Shift-Right':'expandAll',
+      'Shift-Alt-Left': 'collapseCurrentRoot',
+      'Shift-Alt-Right':'expandCurrentRoot',
       'Enter'     : 'edit',
       'Cmd-Enter' : 'edit',
       'Ctrl-Enter': 'edit',
       'Space'     : 'toggleSelection',
       'Esc'       : 'clearSelection',
+      'Shift-Esc' : 'clearSelection',
       'Delete'    : 'delete',
       'Backspace' : 'delete',
       'Ctrl-['    : 'insertLeft',
@@ -192,7 +195,6 @@ class BlockEditor extends Component {
 
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
-
     const {dispatch} = this.props;
 
     const activateNoRecord = node => {
@@ -296,7 +298,11 @@ class BlockEditor extends Component {
       const tree = patch(this.props.ast, newAST);
       let focusId = computeFocusNodeFromChanges(changes, tree).id;
       this.props.setAST(tree);
-      this.props.activate(focusId);
+      // only call activate() if there's no cursor defined
+      this.props.dispatch((_, getState) => {
+        const {cur} = getState();
+        if(!cur) this.props.activate(focusId);
+      });
     }
   }
 
@@ -312,7 +318,6 @@ class BlockEditor extends Component {
     announcements.setAttribute('role', 'log');
     announcements.setAttribute('aria-live', 'assertive');
     wrapper.appendChild(announcements);
-
     ed.on('changes', this.editorChange);
 
     SHARED.cm = ed;
