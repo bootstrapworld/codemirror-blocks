@@ -47,7 +47,7 @@ describe('The CodeMirrorBlocks Class', function() {
     `;
     document.body.insertAdjacentHTML('afterbegin', fixture);
     const container = document.getElementById('cmb-editor');
-    this.blocks = new CodeMirrorBlocks(container, wescheme, "");
+    this.blocks = new CodeMirrorBlocks(container, {}, wescheme, "");
     this.blocks.setBlockMode(true);
 
     console.log("BLOCKS:", this.blocks);
@@ -68,7 +68,7 @@ describe('The CodeMirrorBlocks Class', function() {
       `;
       document.body.insertAdjacentHTML('afterbegin', fixture);
       const container = document.getElementById('cmb-editor-temp');
-      const tempBlocks = new CodeMirrorBlocks(container, wescheme, "");
+      const tempBlocks = new CodeMirrorBlocks(container, {}, wescheme, "");
       tempBlocks.setBlockMode(true);
       const ast = tempBlocks.getAst();
       expect(tempBlocks.getBlockMode()).toBe(true); //broken
@@ -91,7 +91,7 @@ describe('The CodeMirrorBlocks Class', function() {
 
   // Should we make the language prop accessible externally so we can run this?
   // it('should optionally take a language object', function() {
-  //   const b = new CodeMirrorBlocks(document.getElementById('root'), example, "");
+  //   const b = new CodeMirrorBlocks(document.getElementById('root'), {}, example, "");
   //   expect(b.language.id).toBe('example');
   // });
 
