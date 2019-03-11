@@ -9,6 +9,7 @@ import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
 import BlockComponent from './BlockComponent';
+import {ASTNode} from '../ast';
 
 
 const DropTargetContext = React.createContext({
@@ -17,6 +18,11 @@ const DropTargetContext = React.createContext({
 });
 
 export class DropTargetContainer extends Component {
+  static propTypes = {
+    node: PropTypes.instanceOf(ASTNode).isRequired,
+    children: PropTypes.node,
+  }
+
   constructor(props) {
     super(props);
 
@@ -33,6 +39,7 @@ export class DropTargetContainer extends Component {
         isEditable: this.state.editableDropTargets,
         setEditable: this.setEditable,
         children: this.props.children,
+        node: this.props.node,
       }}>
       {this.props.children}
       </DropTargetContext.Provider>
@@ -71,13 +78,14 @@ export class DropTargetSibling extends Component {
   }
 }
 
-const mapDispatchToProps = dispatch => ({
-  onDrop: (src, dest) => dispatch(dropNode(src, {...dest, isDropTarget: true})),
-  dispatch
-});
+const mapDispatchToProps = dispatch => ({dispatch});
 
 @connect(null, mapDispatchToProps)
-@DropNodeTarget(({location}) => ({from: location, to: location}))
+@DropNodeTarget(function(monitor) {
+  let loc = this.getLocation();
+  let dest = {from: loc, to: loc, isDropTarget: true};
+  return this.props.dispatch(dropNode(monitor.getItem(), dest));
+})
 export class DropTarget extends BlockComponent {
 
   static contextType = DropTargetContext;
@@ -102,19 +110,44 @@ export class DropTarget extends BlockComponent {
     e.stopPropagation();
   }
 
-  getLocation = () => {
-    const siblings = this.context.children;
-    const idx  = siblings.findIndex(c => c.key == 'drop-'+this.props.index);
-    let before = siblings.slice(0,idx).filter(c => c.key.startsWith('node')).pop();
-    let after  = siblings.slice(idx).filter(c => c.key.startsWith('node'))[0];
-    const nodeId = before? before.props.node.id : after? after.props.node.id : null;
-    const node = this.props.dispatch((_, getState) => getState().ast.getNodeById(nodeId));
-    const location = before? node.from : after? node.to : null;
-    return location;
+  getLocation() {
+    let dispatch = this.props.dispatch;
+    function findLoc(parent, prevNodeId) {
+      for (let sibling of parent.children) {
+        console.log("@sibling", sibling);
+        if (sibling instanceof ASTNode) {
+//        if (sibling.key && sibling.key.startsWith('node')) {
+          // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
+          prevNodeId = sibling.id;
+        } else if (sibling instanceof DropTarget) {
+          // TODO: check that it's the right droptarget
+          // We've found the drop target! Return the `to` location of the previous ASTNode.
+          return dispatch((_, getState) => {
+            if (!prevNodeId) {
+              return {found: false, id: null};
+            }
+            return {found: true, location: getState().ast.getNodeById(prevNodeId).to};
+          });
+        } else if (sibling.props && sibling.props.children) {
+//        } else if (sibling.children || sibling.props && sibling.props.children) {
+          // We're... somewhere else. If it has children, traverse them to look for the drop target.
+          let answer = findLoc(sibling, prevNodeId);
+          if (answer.found) {
+            return answer;
+          }
+          if (answer.id) {
+            prevNodeId = answer.id;
+          }
+        }
+      }
+      return {found: false, id: null};
+    }
+    console.log("@CONTEXT", this.context);
+    let answer = findLoc(this.context.node.element, null);
+    return answer.found ? answer.location : null;
   }
 
   handleDoubleClick = e => {
-    this.getLocation();
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
     this.setEditable(true);

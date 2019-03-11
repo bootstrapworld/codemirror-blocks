@@ -21,9 +21,9 @@ import {playSound, BEEP} from '../sound';
 // EVEN BETTER: is it possible to just pass an id?
 
 @DragNodeSource
-@DropNodeTarget(({node}) => {
-  node = store.getState().ast.getNodeById(node.id);
-  return node.srcRange();
+@DropNodeTarget(function(monitor) {
+  let node = store.getState().ast.getNodeById(this.props.node.id);
+  return this.props.dispatch(dropNode(monitor.getItem(), node.srcRange()));
 })
 class Node extends BlockComponent {
   static defaultProps = {
@@ -496,7 +496,6 @@ const mapDispatchToProps = dispatch => ({
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
   handleDelete: (id, selectionEditor) => dispatch(deleteNodes(id, selectionEditor)),
-  onDrop: (src, dest) => dispatch(dropNode(src, dest)),
   handleCopy: (id, selectionEditor) => dispatch(copyNodes(id, selectionEditor)),
   handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
   activate: (id, options) => dispatch(activate(id, options)),

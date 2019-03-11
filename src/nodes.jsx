@@ -72,12 +72,14 @@ export class FunctionApp extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
-          <Args>{[this.func]}</Args>
-        </span>
-        <span className="blocks-args">
-          <Args location={this.func.to}>{this.args}</Args>
-        </span>
+        <DropTargetContainer node={this}>
+          <span className="blocks-operator">
+            <Args>{[this.func]}</Args>
+          </span>
+          <span className="blocks-args">
+            <Args location={this.func.to}>{this.args}</Args>
+          </span>
+        </DropTargetContainer>
       </Node>
     );
   }
@@ -249,7 +251,7 @@ export class FunctionDefinition extends ASTNode {
 
   render(props) {
     return (
-      <DropTargetContainer>
+      <DropTargetContainer node={this}>
         <Node node={this} {...props}>
           <span className="blocks-operator">
             define (
@@ -286,7 +288,7 @@ export class CondClause extends ASTNode {
 
   render(props) {
     return (
-      <DropTargetContainer>
+      <DropTargetContainer node={this}>
         <Node node={this} {...props}>
           <div className="blocks-cond-row">
             <div className="blocks-cond-predicate">
@@ -362,7 +364,7 @@ export class IfExpression extends ASTNode {
 
   render(props) {
     return (
-      <DropTargetContainer>
+      <DropTargetContainer node={this}>
         <Node node={this} {...props}>
           <span className="blocks-operator">if</span>
           <div className="blocks-cond-table">

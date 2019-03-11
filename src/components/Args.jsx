@@ -26,6 +26,6 @@ export default class Args extends Component {
                              index={index+1}
                              location={child.to} />);
     });
-    return (<DropTargetContainer>{elems}</DropTargetContainer>);
+    return elems;
   }
 }
