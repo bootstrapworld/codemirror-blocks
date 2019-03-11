@@ -221,6 +221,7 @@ export function addWhitespacePadding(ast, text, from, to) {
   // We may need to insert a newline to make sure that comments don't end up
   // getting associated with the wrong node, and we may need to insert a space
   // to ensure that different tokens don't end up getting glommed together.
+  console.log("@addWhitespacePadding", ast, text, from, to);
   let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
   let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
   if (ast.followsComment(from) && prevChar != "") {

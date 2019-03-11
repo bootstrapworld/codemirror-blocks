@@ -10,6 +10,7 @@ import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
 import BlockComponent from './BlockComponent';
 import {ASTNode} from '../ast';
+import uuidv4 from 'uuid/v4';
 
 
 const DropTargetContext = React.createContext({
@@ -99,10 +100,21 @@ export class DropTarget extends BlockComponent {
     isOver: PropTypes.bool.isRequired,
   }
 
-  state = {value: ''}
+  constructor(props) {
+    super(props);
 
-  isEditable = () => this.context.isEditable[this.props.index];
-  setEditable = (b) => this.context.setEditable(this.props.index, b);
+    this.state = {value: ''};
+
+    // Every DropTarget has a globally unique `id` which can be used to look up
+    // its corresponding DOM element.
+    this.id = uuidv4(); // generate a unique ID
+    
+    // These methods allow DropTargetSiblings to check to see whether an
+    // adjacent DropTarget is being edited, or, for when the insert-left or
+    // insert-right shortcut is pressed, _set_ an adjacent DropTarget as editable.
+    this.isEditable = () => this.context.isEditable[this.props.index];
+    this.setEditable = (b) => this.context.setEditable(this.props.index, b);
+  }
   
   // NOTE(Oak): DropTarget should not handle click event since clicking it
   // should activate the node
@@ -111,40 +123,41 @@ export class DropTarget extends BlockComponent {
   }
 
   getLocation() {
-    let dispatch = this.props.dispatch;
-    function findLoc(parent, prevNodeId) {
+    let prevNodeId = null;
+    let targetId = `block-drop-target-${this.id}`;
+    let ast = this.props.dispatch((_, getState) => getState().ast);
+    
+    function findLoc(parent) {
+      if (!parent.children) {
+        return null;
+      }
       for (let sibling of parent.children) {
         console.log("@sibling", sibling);
-        if (sibling instanceof ASTNode) {
-//        if (sibling.key && sibling.key.startsWith('node')) {
+        if (sibling.id && sibling.id.startsWith("block-node-")) {
+          console.log("  @ast_node");
           // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
-          prevNodeId = sibling.id;
-        } else if (sibling instanceof DropTarget) {
-          // TODO: check that it's the right droptarget
-          // We've found the drop target! Return the `to` location of the previous ASTNode.
-          return dispatch((_, getState) => {
-            if (!prevNodeId) {
-              return {found: false, id: null};
-            }
-            return {found: true, location: getState().ast.getNodeById(prevNodeId).to};
-          });
-        } else if (sibling.props && sibling.props.children) {
-//        } else if (sibling.children || sibling.props && sibling.props.children) {
+          prevNodeId = sibling.id.substring(11); // skip "block-node-"
+        } else if (sibling.id == targetId) {
+          console.log("  @target", prevNodeId);
+          // We've found this drop target! Return the `to` location of the previous ASTNode.
+          return prevNodeId ? ast.getNodeById(prevNodeId).to : null;
+        } else if (sibling.id && sibling.id.startsWith("block-drop-target")) {
+          console.log("  @drop_target");
+          // It's a different drop target. Skip it.
+        } else if (sibling.children) {
+          console.log("  @elsewhere");
           // We're... somewhere else. If it has children, traverse them to look for the drop target.
-          let answer = findLoc(sibling, prevNodeId);
-          if (answer.found) {
-            return answer;
-          }
-          if (answer.id) {
-            prevNodeId = answer.id;
+          let result = findLoc(sibling);
+          if (result !== null) {
+            return result; // drop target found.
           }
         }
       }
-      return {found: false, id: null};
+      return null;
     }
+    
     console.log("@CONTEXT", this.context);
-    let answer = findLoc(this.context.node.element, null);
-    return answer.found ? answer.location : null;
+    return findLoc(this.context.node.element);
   }
 
   handleDoubleClick = e => {
@@ -190,6 +203,7 @@ export class DropTarget extends BlockComponent {
     ];
     return this.props.connectDropTarget(
       <span
+        id={`block-drop-target-${this.id}`}
         className={classNames(classes)}
         onDoubleClick = {this.handleDoubleClick}
         onClick = {this.handleClick} />
