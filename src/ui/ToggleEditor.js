@@ -104,6 +104,7 @@ export default class ToggleEditor extends React.Component {
 
   handleEditorMounted = (ed) => {
     merge(this.props.api, this.buildAPI(ed));
+    this.props.api.display = ed.display;
   }
 
   componentDidMount() {
