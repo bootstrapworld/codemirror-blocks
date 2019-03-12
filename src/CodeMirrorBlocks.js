@@ -10,10 +10,11 @@ import merge from './merge';
 export default class CodeMirrorBlocks {
   constructor(container, options = {}, language = wescheme) {
     let api = {};
+    let initialCode = options.value;
     ReactDOM.render(
       <ToggleEditor
         language={language}
-        initialCode={options.value}
+        initialCode={(initialCode == null)? "" : initialCode}
         api={api}
         appElement={container}
         options={options}
