@@ -108,8 +108,8 @@ export class Func extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
-        <span className="blocks-args">{this.args.reactElement()}</span>
-        {this.body.reactElement()}
+        <span className="blocks-args">{this.args.reactElement}</span>
+        {this.body.reactElement}
       </Node>
     );
   }
