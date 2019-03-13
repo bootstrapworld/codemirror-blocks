@@ -36,12 +36,11 @@ class ToplevelBlock extends BlockComponent {
   // we need to trigger a render if the node was moved or resized at the
   // top-level, in order to re-mark the node and put the DOM in the new marker
   shouldComponentUpdate(nextProps, nextState) {
-    let moved   = poscmp(this.props.node.from, nextProps.node.from) !== 0;
-    let resized = poscmp(this.props.node.to,   nextProps.node.to  ) !== 0;
-    let changed = super.shouldComponentUpdate(nextProps, nextState);
-    return moved || resized || changed;
+    return poscmp(this.props.node.from, nextProps.node.from) !== 0 // moved
+      ||   poscmp(this.props.node.to,   nextProps.node.to  ) !== 0 // resized
+      ||   super.shouldComponentUpdate(nextProps, nextState);      // changed
   }
-  
+
   componentWillUnmount() { this.mark.clear(); }
 
   render() {
