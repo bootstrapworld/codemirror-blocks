@@ -224,8 +224,8 @@ export class PyretParser {
       }
     } else {
       console.log("Invalid parse");
-      console.log("Next token is " + tokens.curTok.toRepr(true)
-                  + " at " + tokens.curTok.pos.toString(true));
+      console.log("Next token is " + tokenizer.curTok.toRepr(true)
+                  + " at " + tokenizer.curTok.pos.toString(true));
     }
   }
 
