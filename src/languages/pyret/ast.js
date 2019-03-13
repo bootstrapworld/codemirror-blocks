@@ -23,7 +23,7 @@ export class Binop extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr(this.op, [this.left, this.right]);
+    return P.horzArray([this.left, P.txt(" "), this.op, P.txt(" "), this.right]);
   }
 
   render(props) {
@@ -61,6 +61,7 @@ export class ABlank extends ASTNode {
 }
 
 export class Bind extends ASTNode {
+  // PTW: not quite sure what this is...
   constructor(from, to, id, ann, options={}) {
     super(from, to, 'bind', ['ann'], options);
     this.id = id;
@@ -73,7 +74,11 @@ export class Bind extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr(this.id, [this.ann]);
+    console.log(this.id);
+    if (this.ann.type != "a-blank")
+      return P.horzArray([this.id.value, P.txt(" :: "), this.ann]);
+    else
+      return P.horzArray([this.id.value]);
   }
 
   render(props) {
@@ -101,7 +106,8 @@ export class Func extends ASTNode {
   }
 
   pretty() {
-    return P.lambdaLikeSexpr(this.id, this.args, this.body);
+    console.log(this.id);
+    return P.horzArray([P.txt("fun "), this.name, P.txt("("), P.horzArray(this.args.map(p => p.pretty())), P.txt("):"), this.body, P.txt(" end")]);
   }
 
   render(props) {
@@ -128,7 +134,7 @@ export class Sekwence extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr(this.name, this.exprs);
+    return P.horzArray([this.name, this.exprs]);
   }
 
   render(props) {
@@ -154,7 +160,7 @@ export class Var extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr('var', [this.id, this.rhs]);
+    return P.horzArray([this.id, P.txt('var'), this.rhs]);
   }
 
   render(props) {
@@ -183,7 +189,7 @@ export class Assign extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr(':=', [this.id, this.rhs]);
+    return P.horzArray([this.id, P.txt(' := '), this.rhs]);
   }
 
   render(props) {
@@ -212,7 +218,7 @@ export class Let extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr('let', [this.id, this.rhs]);
+    return P.horzArray([this.id, P.txt('let'), this.rhs]);
   }
 
   render(props) {
@@ -228,3 +234,5 @@ export class Let extends ASTNode {
   }
 }
 
+
+// where are the literals?
