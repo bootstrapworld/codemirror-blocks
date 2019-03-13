@@ -16,6 +16,10 @@ import {store} from '../store';
 import {playSound, BEEP} from '../sound';
 
 
+export const NodeContext = React.createContext({
+  node: null,
+});
+
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
@@ -276,7 +280,6 @@ class Node extends BlockComponent {
       case 'insertRight':
         e.preventDefault();
         if (e.ctrlKey) { // strictly want ctrlKey
-          // TODO: this should go up to the top level block
           if (this.props.onSetRight) {
             this.props.onSetRight(true);
           } else {
@@ -288,7 +291,6 @@ class Node extends BlockComponent {
       // insert-left
       case 'insertLeft':
         e.preventDefault();
-        // TODO: this should go up to the top level block
         if (this.props.onSetLeft) {
           this.props.onSetLeft(true);
         } else {
@@ -472,7 +474,9 @@ class Node extends BlockComponent {
       if (this.props.normallyEditable) {
         result = connectDropTarget(result);
       }
-      return connectDragPreview(connectDragSource(result), {offsetX: 1, offsetY: 1});
+      result = connectDragPreview(connectDragSource(result), {offsetX: 1, offsetY: 1});
+      result = (<NodeContext.Provider value={{node: this.props.node}}>{result}</NodeContext.Provider>);
+      return result;
     }
   }
 }

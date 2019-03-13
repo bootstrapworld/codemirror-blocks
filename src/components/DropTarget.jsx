@@ -10,76 +10,99 @@ import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
 import BlockComponent from './BlockComponent';
 import {ASTNode} from '../ast';
+import {NodeContext} from './Node';
 import uuidv4 from 'uuid/v4';
 
-
-const DropTargetContext = React.createContext({
-  isEditable: [],
-  setEditable: () => {},
-});
-
-export class DropTargetContainer extends Component {
-  static propTypes = {
-    node: PropTypes.instanceOf(ASTNode).isRequired,
-    children: PropTypes.node,
-  }
-
-  constructor(props) {
-    super(props);
-
-    this.state = {editableDropTargets: {}};
-
-    this.setEditable = (i, b) => {
-      this.setState({editableDropTargets: {...this.state.editableDropTargets, [i]: b}});
-    };
-  }
-
-  render() {
-    return (
-      <DropTargetContext.Provider value={{
-        isEditable: this.state.editableDropTargets,
-        setEditable: this.setEditable,
-        children: this.props.children,
-        node: this.props.node,
-      }}>
-      {this.props.children}
-      </DropTargetContext.Provider>
-    );
-  }
-}
 
 // Use this class to render non-drop-target children of this node. Pass
 // in the `node` to be rendered, the index of the drop target to the `left` (or
 // `null` if there is none), and likewise for the `right`.
+const mapDispatchToPropsSibling = dispatch => ({
+  dispatch,
+  isEditable: id => dispatch((_, getState) => getState().editable[i] || false),
+  setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
+});
+@connect(null, mapDispatchToPropsSibling)
 export class DropTargetSibling extends Component {
-  static contextType = DropTargetContext;
+  static contextType = NodeContext;
 
   static propTypes = {
     node: PropTypes.object.isRequired,
-    left: PropTypes.number,
-    right: PropTypes.number,
+    left: PropTypes.bool,
+    right: PropTypes.bool,
   }
 
-  constructor(props) {
-    super(props);
-    this.onSetLeft = props.left === undefined
-      ? () => {}
-      : (b) => this.context.setEditable(props.left, b);
-    this.onSetRight = props.right === undefined
-      ? () => {}
-      : (b) => this.context.setEditable(props.right, b);
+  findAdjacentDropTarget(onLeft) {
+    if (onLeft && !this.props.left || !onLeft && !this.props.right) {
+      // We're not connected to a drop target on that side.
+      return false;
+    }
+
+    let prevDropTargetId = null;
+    let targetId = `block-node-${this.props.node.id}`;
+    let ast = this.props.dispatch((_, getState) => getState().ast);
+    
+    function findDT(parent) {
+      if (!parent.children) {
+        return null;
+      }
+      // Convert array-like object into an Array.
+      let children = [...parent.children];
+      // If we want the drop-target to the right, iterate in reverse
+      if (!onLeft) { children.reverse(); }
+      
+      for (let sibling of children) {
+        if (sibling.id && sibling.id.startsWith("block-drop-target-")) {
+          // We've hit a drop-target. Remember its id, in case it's adjacent to the node.
+          prevDropTargetId = sibling.id.substring(18); // skip "block-drop-target-"
+        } else if (sibling.id == targetId) {
+          // We've found this node! Return the id of the adjacent drop target.
+          return prevDropTargetId;
+        } else if (sibling.id && sibling.id.startsWith("block-node-")) {
+          // It's a different node. Skip it.
+        } else if (sibling.children) {
+          // We're... somewhere else. If it has children, traverse them to look for the node.
+          let result = findDT(sibling);
+          if (result !== null) {
+            return result; // node found.
+          }
+        }
+      }
+      return null;
+    }
+
+    return findDT(this.context.node.element);
   }
 
+  setLeft() {
+    let dropTargetId = this.findAdjacentDropTarget(true);
+    if (dropTargetId) {
+      this.props.setEditable(dropTargetId, true);
+    }    
+  }
+
+  setRight() {
+    let dropTarget = this.findAdjacentDropTarget(false);
+    if (dropTarget) {
+      this.props.setEditable(dropTarget.id, true);
+    }
+  }
+  
   render() {
     let props = {
-      onSetLeft: this.onSetLeft,
-      onSetRight: this.onSetRight,
+      onSetLeft: () => this.setLeft(),
+      onSetRight: () => this.setRight(),
     };
     return this.props.node.reactElement(props);
   }
 }
 
-const mapDispatchToProps = dispatch => ({dispatch});
+
+const mapDispatchToProps = dispatch => ({
+  dispatch,
+  isEditable: id => dispatch((_, getState) => getState().editable[id] || false),
+  setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
+});
 
 @connect(null, mapDispatchToProps)
 @DropNodeTarget(function(monitor) {
@@ -89,12 +112,9 @@ const mapDispatchToProps = dispatch => ({dispatch});
 })
 export class DropTarget extends BlockComponent {
 
-  static contextType = DropTargetContext;
+  static contextType = NodeContext;
   
   static propTypes = {
-    index: PropTypes.number.isRequired,
-    location: PropTypes.instanceOf(Object).isRequired,
-
     // fulfilled by DropNodeTarget
     connectDropTarget: PropTypes.func.isRequired,
     isOver: PropTypes.bool.isRequired,
@@ -103,7 +123,14 @@ export class DropTarget extends BlockComponent {
   constructor(props) {
     super(props);
 
-    this.state = {value: ''};
+    this.state = {
+      value: "",
+      // NOTE(Justin): This state is redundant with the `editable` Redux state.
+      // It would be *really* nice if we could just use that.
+      // But the only way to attach it is with mapStateToProps,
+      // and AFAIK we can't get at `this.id` from within that function.
+      editable: false,
+    };
 
     // Every DropTarget has a globally unique `id` which can be used to look up
     // its corresponding DOM element.
@@ -112,8 +139,13 @@ export class DropTarget extends BlockComponent {
     // These methods allow DropTargetSiblings to check to see whether an
     // adjacent DropTarget is being edited, or, for when the insert-left or
     // insert-right shortcut is pressed, _set_ an adjacent DropTarget as editable.
-    this.isEditable = () => this.context.isEditable[this.props.index];
-    this.setEditable = (b) => this.context.setEditable(this.props.index, b);
+    this.isEditable = () => this.props.isEditable(this.id);
+    this.setEditable = (b) => {
+      this.setState((_, __) => {
+        this.props.setEditable(this.id, b);
+        return {editable: b};
+      });
+    }
   }
   
   // NOTE(Oak): DropTarget should not handle click event since clicking it
@@ -164,7 +196,7 @@ export class DropTarget extends BlockComponent {
     
     let loc = findLoc(this.context.node.element);
     if (!loc) {
-      throw "Could not find drop target location";
+      console.warn("Could not find drop target location");
     }
     return loc;
   }
@@ -187,7 +219,7 @@ export class DropTarget extends BlockComponent {
       'aria-setsize'    : '1',
       'aria-posinset'   : '1',
       'aria-level'      : '1',
-      id                : `block-drop-target-${this.id}!!`,
+      id                : `block-drop-target-${this.id}`,
     };
     if (this.isEditable()) {
       let loc = this.getLocation();

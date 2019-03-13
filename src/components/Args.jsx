@@ -18,15 +18,11 @@ export default class Args extends Component {
   render() {
     let {node, children} = this.props;
     const elems = [];
-    elems.push(<DropTarget key={'drop-0'}
-                           index={0}
-                           location={children.length ? children[0].from : this.props.location} />);
+    elems.push(<DropTarget key={'drop-0'} />);
     children.forEach((child, index) => {
-      elems.push(<DropTargetSibling node={child} left={index} right={index+1} key={'node'+index} />);
-      elems.push(<DropTarget key={'drop-'+(index+1)}
-                             index={index+1}
-                             location={child.to} />);
+      elems.push(<DropTargetSibling node={child} left={true} right={true} key={'node'+index} />);
+      elems.push(<DropTarget key={'drop-'+(index+1)} />);
     });
-    return (<DropTargetContainer node={node}>{elems}</DropTargetContainer>);
+    return elems;
   }
 }

@@ -16,7 +16,7 @@ class NodeEditable extends Component {
 
   static propTypes = {
     // NOTE: the presence of this Node means ast is not null
-    node: PropTypes.instanceOf(ASTNode),
+    node: PropTypes.object,
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
   }
@@ -34,7 +34,6 @@ class NodeEditable extends Component {
   }
 
   saveEdit = e => {
-    console.log("@saveEdit");
     e.stopPropagation();
     const {node, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
     dispatch((_, getState) => {
@@ -109,7 +108,6 @@ class NodeEditable extends Component {
    */
 
   handleBlur = e => {
-    console.log("@blur", e.nativeEvent);
     if (this.ignoreBlur) return;
     this.saveEdit(e);
   }
