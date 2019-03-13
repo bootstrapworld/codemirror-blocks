@@ -126,26 +126,32 @@ export class DropTarget extends BlockComponent {
     let prevNodeId = null;
     let targetId = `block-drop-target-${this.id}`;
     let ast = this.props.dispatch((_, getState) => getState().ast);
+    let dropTargetWasFirst = false;
     
     function findLoc(parent) {
       if (!parent.children) {
         return null;
       }
       for (let sibling of parent.children) {
-        console.log("@sibling", sibling);
         if (sibling.id && sibling.id.startsWith("block-node-")) {
-          console.log("  @ast_node");
           // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
           prevNodeId = sibling.id.substring(11); // skip "block-node-"
+          if (dropTargetWasFirst) {
+            // Edge case: the drop target was literally the first thing, so we
+            // need to return the `from` of its _next_ sibling. That's this one.
+            return ast.getNodeById(prevNodeId).from;
+          }
         } else if (sibling.id == targetId) {
-          console.log("  @target", prevNodeId);
           // We've found this drop target! Return the `to` location of the previous ASTNode.
-          return prevNodeId ? ast.getNodeById(prevNodeId).to : null;
+          if (prevNodeId) {
+            return ast.getNodeById(prevNodeId).to;
+          } else {
+            // Edge case: nothing is before the drop target.
+            dropTargetWasFirst = true;
+          }
         } else if (sibling.id && sibling.id.startsWith("block-drop-target")) {
-          console.log("  @drop_target");
           // It's a different drop target. Skip it.
         } else if (sibling.children) {
-          console.log("  @elsewhere");
           // We're... somewhere else. If it has children, traverse them to look for the drop target.
           let result = findLoc(sibling);
           if (result !== null) {
@@ -156,8 +162,11 @@ export class DropTarget extends BlockComponent {
       return null;
     }
     
-    console.log("@CONTEXT", this.context);
-    return findLoc(this.context.node.element);
+    let loc = findLoc(this.context.node.element);
+    if (!loc) {
+      throw "Could not find drop target location";
+    }
+    return loc;
   }
 
   handleDoubleClick = e => {
@@ -178,16 +187,17 @@ export class DropTarget extends BlockComponent {
       'aria-setsize'    : '1',
       'aria-posinset'   : '1',
       'aria-level'      : '1',
-    };
-    const {location} = this.props;
-    const node = {
-      from: location,
-      to: location,
-      id: 'editing', // TODO(Oak): error focusing is going to be wrong
+      id                : `block-drop-target-${this.id}!!`,
     };
     if (this.isEditable()) {
+      let loc = this.getLocation();
+      const nodeProps = {
+        id: 'editing', // TODO(Oak): error focusing is going to be wrong
+        from: loc,
+        to: loc,
+      };
       return (
-        <NodeEditable node={node}
+        <NodeEditable node={nodeProps}
                       value={this.state.value}
                       onChange={this.handleChange}
                       isInsertion={true}

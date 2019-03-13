@@ -27,14 +27,14 @@ class NodeEditable extends Component {
     if (value === null) {
       dispatch((_, getState) => {
         const {ast} = getState();
-        // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
-        const {from, to} = (node.id !== "editing")? ast.getNodeById(node.id) : node;
+        const {from, to} = getNodeLocation(ast, node);
         this.cachedValue = SHARED.cm.getRange(from, to);
       });
     }
   }
 
   saveEdit = e => {
+    console.log("@saveEdit");
     e.stopPropagation();
     const {node, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
     dispatch((_, getState) => {
@@ -45,8 +45,7 @@ class NodeEditable extends Component {
         dispatch(activate(focusId, true));
         return;
       }
-      // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
-      const {from, to} = (node.id !== "editing")? ast.getNodeById(node.id) : node;
+      const {from, to} = getNodeLocation(ast, node);
       const value = addWhitespacePadding(ast, this.props.value, from, to);
       commitChanges(
         cm => () => {
@@ -110,6 +109,7 @@ class NodeEditable extends Component {
    */
 
   handleBlur = e => {
+    console.log("@blur", e.nativeEvent);
     if (this.ignoreBlur) return;
     this.saveEdit(e);
   }
@@ -160,6 +160,19 @@ class NodeEditable extends Component {
         aria-label = {text}
         value      = {text} />
     );
+  }
+}
+
+function getNodeLocation(ast, node) {
+  if (node.id === "editing") {
+    if (!node.from || !node.to) {
+      throw "Invalid NodeEditable location";
+    }
+    return {from: node.from, to: node.to};
+  } else {
+    // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
+    let {from, to} = ast.getNodeById(node.id);
+    return {from, to};
   }
 }
 

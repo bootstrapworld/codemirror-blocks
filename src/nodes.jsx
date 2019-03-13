@@ -34,7 +34,7 @@ export class Unknown extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
-        <Args location={firstElt.to}>{restElts}</Args>
+        <Args node={this} location={firstElt.to}>{restElts}</Args>
         </span>
       </Node>
     );
@@ -74,10 +74,10 @@ export class FunctionApp extends ASTNode {
       <Node node={this} {...props}>
         <DropTargetContainer node={this}>
           <span className="blocks-operator">
-            <Args>{[this.func]}</Args>
+            <Args node={this}>{[this.func]}</Args>
           </span>
           <span className="blocks-args">
-            <Args location={this.func.to}>{this.args}</Args>
+            <Args node={this} location={this.func.to}>{this.args}</Args>
           </span>
         </DropTargetContainer>
       </Node>
@@ -109,7 +109,7 @@ export class IdentifierList extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-args">
-          <Args location={this.from}>{this.ids}</Args>
+          <Args node={this} location={this.from}>{this.ids}</Args>
         </span>
       </Node>
     );
@@ -143,7 +143,7 @@ export class StructDefinition extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define-struct
-          <Args>{[this.name]}</Args>
+          <Args node={this}>{[this.name]}</Args>
         </span>
         {fields}
       </Node>
@@ -178,7 +178,7 @@ export class VariableDefinition extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define
-          <Args>{[this.name]}</Args>
+          <Args node={this}>{[this.name]}</Args>
         </span>
         <span className="blocks-args">
           {body}
@@ -490,7 +490,7 @@ export class Sequence extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
         <div className="blocks-sequence-exprs">
-          <Args location={this.name.to}>{this.exprs}</Args>
+          <Args node={this} location={this.name.to}>{this.exprs}</Args>
         </div>
       </Node>
     );
