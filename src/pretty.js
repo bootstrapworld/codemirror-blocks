@@ -222,7 +222,7 @@ function coerce(thing) {
     return thing;
   } else if (typeof thing === 'string') {
     return txt(thing);
-  } else if (typeof thing.pretty === 'function') {
+  } else if (thing != null && typeof thing.pretty === 'function') {
     let doc = thing.pretty();
     if (!(doc instanceof Doc)) {
       // TODO: `+ thing` is an awful way to print something; replace with something better?
