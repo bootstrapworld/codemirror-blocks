@@ -34,7 +34,7 @@ export class Unknown extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
-        <Args node={this} location={firstElt.to}>{restElts}</Args>
+        <Args node={this}>{restElts}</Args>
         </span>
       </Node>
     );
@@ -76,7 +76,7 @@ export class FunctionApp extends ASTNode {
           <Args node={this}>{[this.func]}</Args>
         </span>
         <span className="blocks-args">
-          <Args node={this} location={this.func.to}>{this.args}</Args>
+          <Args node={this}>{this.args}</Args>
         </span>
     </Node>
     );
@@ -107,7 +107,7 @@ export class IdentifierList extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-args">
-          <Args node={this} location={this.from}>{this.ids}</Args>
+          <Args node={this}>{this.ids}</Args>
         </span>
       </Node>
     );
@@ -482,7 +482,7 @@ export class Sequence extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
         <div className="blocks-sequence-exprs">
-          <Args node={this} location={this.name.to}>{this.exprs}</Args>
+          <Args node={this}>{this.exprs}</Args>
         </div>
       </Node>
     );

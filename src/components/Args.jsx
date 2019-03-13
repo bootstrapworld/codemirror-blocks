@@ -5,14 +5,10 @@ import {ASTNode} from '../ast';
 import {DropTarget, DropTargetContainer, DropTargetSibling} from './DropTarget';
 import {span} from '../types';
 
-// NOTE: `location` is required in case `children` is empty!
-//       Otherwise, it can be omitted.
-
 export default class Args extends Component {
   static propTypes = {
     node: PropTypes.instanceOf(ASTNode).isRequired,
     children: PropTypes.arrayOf(PropTypes.instanceOf(ASTNode)).isRequired,
-    location: span,
   }
 
   render() {
