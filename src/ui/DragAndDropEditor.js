@@ -19,7 +19,7 @@ export default
   });
   if (validTopLevelDrop) {
     let loc = SHARED.cm.coordsChar({left, top});
-    let dest = {from: loc, to: loc, isDropTarget: true}
+    let dest = {from: loc, to: loc, isDropTarget: true};
     return this.props.dispatch(dropNode(monitor.getItem(), dest));
   } else { // beep and make it a no-op
     playSound(BEEP);

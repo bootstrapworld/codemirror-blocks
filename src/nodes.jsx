@@ -34,7 +34,7 @@ export class Unknown extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
-        <Args node={this}>{restElts}</Args>
+        <Args>{restElts}</Args>
         </span>
       </Node>
     );
@@ -73,10 +73,10 @@ export class FunctionApp extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          <Args node={this}>{[this.func]}</Args>
+          <Args>{[this.func]}</Args>
         </span>
         <span className="blocks-args">
-          <Args node={this}>{this.args}</Args>
+          <Args>{this.args}</Args>
         </span>
     </Node>
     );
@@ -107,7 +107,7 @@ export class IdentifierList extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-args">
-          <Args node={this}>{this.ids}</Args>
+          <Args>{this.ids}</Args>
         </span>
       </Node>
     );
@@ -141,7 +141,7 @@ export class StructDefinition extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define-struct
-          <Args node={this}>{[this.name]}</Args>
+          <Args>{[this.name]}</Args>
         </span>
         {fields}
       </Node>
@@ -176,7 +176,7 @@ export class VariableDefinition extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define
-          <Args node={this}>{[this.name]}</Args>
+          <Args>{[this.name]}</Args>
         </span>
         <span className="blocks-args">
           {body}
@@ -484,7 +484,7 @@ export class Sequence extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
         <div className="blocks-sequence-exprs">
-          <Args node={this}>{this.exprs}</Args>
+          <Args>{this.exprs}</Args>
         </div>
       </Node>
     );

@@ -9,7 +9,6 @@ import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import {dropNode} from '../actions';
 import BlockComponent from './BlockComponent';
-import {ASTNode} from '../ast';
 import {NodeContext} from './Node';
 import uuidv4 from 'uuid/v4';
 
@@ -17,12 +16,11 @@ import uuidv4 from 'uuid/v4';
 // Use this class to render non-drop-target children of this node. Pass
 // in the `node` to be rendered, the index of the drop target to the `left` (or
 // `null` if there is none), and likewise for the `right`.
-const mapStateToProps1 = ({ast}) => ({ast});
 const mapDispatchToProps1 = dispatch => ({
   dispatch,
   setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
 });
-@connect(mapStateToProps1, mapDispatchToProps1)
+@connect(null, mapDispatchToProps1)
 export class DropTargetSibling extends Component {
   static contextType = NodeContext;
 
@@ -40,7 +38,6 @@ export class DropTargetSibling extends Component {
 
     let prevDropTargetId = null;
     let targetId = `block-node-${this.props.node.id}`;
-    let ast = this.props.ast;
     
     function findDT(parent) {
       if (!parent.children) {
@@ -139,6 +136,9 @@ class ActualDropTarget extends BlockComponent {
   static contextType = NodeContext;
   
   static propTypes = {
+    // fulfilled by @connect
+    isEditable: PropTypes.bool.isRequired,
+    setEditable: PropTypes.func.isRequired,
     // Every DropTarget has a globally unique `id` which can be used to look up
     // its corresponding DOM element.
     id: PropTypes.string.isRequired,

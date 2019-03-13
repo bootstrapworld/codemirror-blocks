@@ -7,12 +7,11 @@ import {span} from '../types';
 
 export default class Args extends Component {
   static propTypes = {
-    node: PropTypes.instanceOf(ASTNode).isRequired,
     children: PropTypes.arrayOf(PropTypes.instanceOf(ASTNode)).isRequired,
   }
 
   render() {
-    let {node, children} = this.props;
+    let {children} = this.props;
     const elems = [];
     elems.push(<DropTarget key={'drop-0'} />);
     children.forEach((child, index) => {
