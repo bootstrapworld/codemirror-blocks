@@ -248,17 +248,19 @@ export class FunctionDefinition extends ASTNode {
   }
 
   render(props) {
+    let params = this.params.reactElement();
+    let body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define (
             <DropTarget/>
             <DropTargetSibling node={this.name} left={true} />
-            {this.params}
+            {params}
           )
         </span>
         <span className="blocks-args">
-          {this.body}
+          {body}
         </span>
       </Node>
     );
