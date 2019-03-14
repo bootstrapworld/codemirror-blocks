@@ -106,8 +106,7 @@ export class Func extends ASTNode {
   }
 
   pretty() {
-    console.log(this.id);
-    return P.horzArray([P.txt("fun "), this.name, P.txt("("), P.horzArray(this.args.map(p => p.pretty())), P.txt("):"), this.body, P.txt(" end")]);
+    return P.horzArray([P.txt("fun "), this.name, P.txt("("), P.horzArray(this.args.map(p => p.pretty())), P.txt(")"), this.body]);
   }
 
   render(props) {
@@ -134,7 +133,7 @@ export class Sekwence extends ASTNode {
   }
 
   pretty() {
-    return P.horzArray([this.name, this.exprs]);
+    return P.horzArray([P.txt(":"), P.horzArray(this.exprs), P.txt("end")]);
   }
 
   render(props) {
