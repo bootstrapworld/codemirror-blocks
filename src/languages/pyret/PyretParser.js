@@ -7,13 +7,12 @@ import {
 } from '../../ast';
 import {
   Literal, 
-  Sequence
 } from '../../nodes';
 import {Binop,
   ABlank,
   Bind,
   Func,
-  Sekwence,
+  Sekwence as Sequence,
   Var,
   Assign,
   Let
