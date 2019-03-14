@@ -4,7 +4,7 @@ import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
 import hashObject from 'object-hash';
 import Node from './components/Node';
 import Args from './components/Args';
-import {DropTarget, DropTargetContainer, DropTargetSibling} from './components/DropTarget';
+import {DropTarget, DropTargetSibling} from './components/DropTarget';
 
 
 export class Unknown extends ASTNode {
@@ -34,7 +34,7 @@ export class Unknown extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
-        <Args location={firstElt.to}>{restElts}</Args>
+        <Args>{restElts}</Args>
         </span>
       </Node>
     );
@@ -76,9 +76,9 @@ export class FunctionApp extends ASTNode {
           <Args>{[this.func]}</Args>
         </span>
         <span className="blocks-args">
-          <Args location={this.func.to}>{this.args}</Args>
+          <Args>{this.args}</Args>
         </span>
-      </Node>
+    </Node>
     );
   }
 }
@@ -107,7 +107,7 @@ export class IdentifierList extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-args">
-          <Args location={this.from}>{this.ids}</Args>
+          <Args>{this.ids}</Args>
         </span>
       </Node>
     );
@@ -248,21 +248,21 @@ export class FunctionDefinition extends ASTNode {
   }
 
   render(props) {
+    let params = this.params.reactElement();
+    let body = this.body.reactElement();
     return (
-      <DropTargetContainer>
-        <Node node={this} {...props}>
-          <span className="blocks-operator">
-            define (
-              <DropTarget index={0} location={this.name.from} />
-              <DropTargetSibling node={this.name} left={0} />
-              <DropTargetSibling node={this.params} />
-            )
-          </span>
-          <span className="blocks-args">
-            <DropTargetSibling node={this.body} />
-          </span>
-        </Node>
-      </DropTargetContainer>
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          define (
+            <DropTarget/>
+            <DropTargetSibling node={this.name} left={true} />
+            {params}
+          )
+        </span>
+        <span className="blocks-args">
+          {body}
+        </span>
+      </Node>
     );
   }
 }
@@ -286,24 +286,22 @@ export class CondClause extends ASTNode {
 
   render(props) {
     return (
-      <DropTargetContainer>
-        <Node node={this} {...props}>
-          <div className="blocks-cond-row">
-            <div className="blocks-cond-predicate">
-              <DropTarget index={0} location={this.testExpr.from} />
-              <DropTargetSibling node={this.testExpr} left={0} right={1} />
-            </div>
-            <div className="blocks-cond-result">
-              {this.thenExprs.map((thenExpr, index) => (
-                <span key={index}>
-                  <DropTarget index={index+1} location={thenExpr.from} />
-                  <DropTargetSibling node={thenExpr} left={index+1} right={index+2} />
-                </span>))}
-            </div>
+      <Node node={this} {...props}>
+        <div className="blocks-cond-row">
+          <div className="blocks-cond-predicate">
+            <DropTarget/>
+            <DropTargetSibling node={this.testExpr} left={true} right={true} />
           </div>
-          <DropTarget index={this.thenExprs.length + 1} location={this.from} />
-        </Node>
-      </DropTargetContainer>
+          <div className="blocks-cond-result">
+            {this.thenExprs.map((thenExpr, index) => (
+              <span key={index}>
+                <DropTarget/>
+                <DropTargetSibling node={thenExpr} left={true} right={true} />
+              </span>))}
+          </div>
+        </div>
+        <DropTarget/>
+      </Node>
     );
   }
 }
@@ -362,35 +360,33 @@ export class IfExpression extends ASTNode {
 
   render(props) {
     return (
-      <DropTargetContainer>
-        <Node node={this} {...props}>
-          <span className="blocks-operator">if</span>
-          <div className="blocks-cond-table">
-            <div className="blocks-cond-row">
-              <div className="blocks-cond-predicate">
-                <DropTarget index={0} location={this.testExpr.from} />
-                <DropTargetSibling node={this.testExpr} left={0} right={1} />
-              </div>
-              <div className="blocks-cond-result">
-                <DropTarget index={1} location={this.thenExpr.from} />
-                <DropTargetSibling node={this.thenExpr} left={1} right={2} />
-              </div>
+      <Node node={this} {...props}>
+        <span className="blocks-operator">if</span>
+        <div className="blocks-cond-table">
+          <div className="blocks-cond-row">
+            <div className="blocks-cond-predicate">
+              <DropTarget/>
+              <DropTargetSibling node={this.testExpr} left={true} right={true} />
             </div>
-            <div className="blocks-cond-row">
-              <div className="blocks-cond-predicate blocks-cond-else">
-                else
-              </div>
-              <div className="blocks-cond-result">
-                <DropTarget index={2} location={this.elseExpr.from} />
-                <DropTargetSibling node={this.elseExpr} left={2} right={3} />
-              </div>
-              <div className="blocks-cond-result">
-                <DropTarget index={3} location={this.elseExpr.to} />
-              </div>
+            <div className="blocks-cond-result">
+              <DropTarget/>
+              <DropTargetSibling node={this.thenExpr} left={true} right={true} />
             </div>
           </div>
-        </Node>
-      </DropTargetContainer>
+          <div className="blocks-cond-row">
+            <div className="blocks-cond-predicate blocks-cond-else">
+              else
+            </div>
+            <div className="blocks-cond-result">
+              <DropTarget/>
+              <DropTargetSibling node={this.elseExpr} left={true} right={true} />
+            </div>
+            <div className="blocks-cond-result">
+              <DropTarget/>
+            </div>
+          </div>
+        </div>
+      </Node>
     );
   }
 }
@@ -488,7 +484,7 @@ export class Sequence extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
         <div className="blocks-sequence-exprs">
-          <Args location={this.name.to}>{this.exprs}</Args>
+          <Args>{this.exprs}</Args>
         </div>
       </Node>
     );

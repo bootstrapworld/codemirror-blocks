@@ -78,7 +78,7 @@ class ToplevelBlockEditableCore extends Component {
   render() {
     const {onDisableEditable, onChange, quarantine} = this.props;
     const [start, end, value] = quarantine;
-    const node = {id: 'editing', from: start, to: end};
+    const nodeProps = {id: 'editing', from: start, to: end};
     const props = {
       tabIndex          : '-1',
       role              : 'text box',
@@ -87,7 +87,7 @@ class ToplevelBlockEditableCore extends Component {
       'aria-level'      : '1',
     };
     return ReactDOM.createPortal(
-      <NodeEditable node={node}
+      <NodeEditable node={nodeProps}
                     value={value}
                     onChange={onChange}
                     contentEditableProps={props}

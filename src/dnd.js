@@ -1,7 +1,6 @@
 import {DragSource, DropTarget} from 'react-dnd';
 import {isDummyPos} from './utils';
 import SHARED from './shared';
-import {playSound, BEEP} from './sound';
 
 export const ItemTypes = {
   NODE: 'node',
@@ -25,29 +24,14 @@ export function collectSource(connect, monitor) {
   };
 }
 
-export const nodeTarget = nodeTargetFn => ({
-  drop(props, monitor) {
-    if (monitor.didDrop()) return;
-    const {x: left, y: top} = monitor.getClientOffset();
-    // if it's a drop-target or a drop-node, execute the drop
-    if(props.location || props.node) {
-      return props.onDrop(monitor.getItem(), nodeTargetFn(props));
-    }
-    // if not, make sure it's a valid drop (i.e. - not on any CM node marker)
-    let roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
-    let validTopLevelDrop = !roots.some(root => {
-      let r = root.replacedWith.firstChild.getBoundingClientRect();
-      return (r.left<left) && (left<r.right) && (r.top<top) && (top<r.bottom);
-    });
-    if(validTopLevelDrop) {
-      props.onDrop(
-        monitor.getItem(),
-        nodeTargetFn({...props, location: SHARED.cm.coordsChar({left, top})}));
-    } else { // beep and make it a no-op
-      playSound(BEEP);
+function nodeTarget(dropMethod) {
+  return {
+    drop(_, monitor, component) {
+      if (monitor.didDrop()) return;
+      return dropMethod.call(component, monitor);
     }
   }
-});
+}
 
 export function collectTarget(connect, monitor) {
   return {
@@ -58,5 +42,4 @@ export function collectTarget(connect, monitor) {
 
 
 export const DragNodeSource = DragSource(ItemTypes.NODE, nodeSource, collectSource);
-export const DropNodeTarget = nodeTargetFn =>
-  DropTarget(ItemTypes.NODE, nodeTarget(nodeTargetFn), collectTarget);
+export const DropNodeTarget = (f) => DropTarget(ItemTypes.NODE, nodeTarget(f), collectTarget);

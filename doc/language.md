@@ -174,27 +174,18 @@ the small squares betweeen nodes that you can drag blocks onto, or edit to
 insert a new child. When defining your blocks, you should include ample drop
 targets to make them easy to edit. There are two ways to get these.
 
-Most of the time, you should use `Args`. The syntax is `<Args
-location={loc}>{elts}</Args>`, which will intersperse drop targets horizontally
-among `elts` (which should be an array of elements). The prop `loc` is a source
-location---it is used only if `elts` is an empty array, in which case `Args` will
-have a single drop target and needs to know the source location for it.
+Most of the time, you should use `Args`. The syntax is `<Args>{elts}</Args>`,
+which will intersperse drop targets horizontally among `elts` (which should be
+an array of elements).
 
 In our `VariableDefinition` example, `Args` was sufficient so we just used that.
 
 However, if you want to put drop targets in a more interesting arrangement than
-`Args` gives you, you have a second option: you can use `DropTargetContainer`.
-Wrap the entirety of your `render()` result with
-`<DropTargetContainer>...</DropTargetContainer>`. Inside, you can freely use
-drop targets anywhere you like. The syntax is
+`Args` gives you, you have a second option: you can use `DropTarget`s directly.
+Simply construct them with `<DropTarget/>` anywhere in your node. They will
+figure out their correct source location automatically.
 
-    <DropTarget index={i} location={loc}/>
-
-This constructs a drop target with source location `loc` (i.e., if you drop
-something on it, that's the source location it will end up at). The index `i`
-distinguishes this drop target from any others inside the `DropTargetContainer`.
-
-There's one more thing you should do if you use `DropTargetContainer`.
+There's one more thing you should do if you make your own drop targets, though.
 CodeMirror-Blocks comes with a shortcut that lets you insert text to the left or
 right of a child of a node. For example, if you select the `1` in `(+ 1 2)` and
 type `ctrl-]`, then it will go into insert mode at the drop target between `1`
@@ -204,11 +195,10 @@ Instead, for `ctrl-[` and `ctrl-]` to work, you must explicitly say what drop
 targets a node is adjacent to. This is done via `DropTargetSibling`. Its syntax
 is:
 
-    <DropTargetSibling node={n} left={i} right={j}/>
+    <DropTargetSibling node={n} left={bool} right={bool}/>
 
-This renders the node `n`, while linking it to the drop target of index `i` on
-the left, and the drop target of index `j` on the right. If you want to omit a
-link, just omit `left` and/or `right`.
+This renders the node `n`, links it to the drop target to its left if `left`
+is true, and links it to the drop target to its right if `right` is true.
 
 -----
 

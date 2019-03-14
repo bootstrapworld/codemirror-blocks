@@ -16,7 +16,7 @@ class NodeEditable extends Component {
 
   static propTypes = {
     // NOTE: the presence of this Node means ast is not null
-    node: PropTypes.instanceOf(ASTNode),
+    node: PropTypes.object,
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
   }
@@ -27,8 +27,7 @@ class NodeEditable extends Component {
     if (value === null) {
       dispatch((_, getState) => {
         const {ast} = getState();
-        // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
-        const {from, to} = (node.id !== "editing")? ast.getNodeById(node.id) : node;
+        const {from, to} = getNodeLocation(ast, node);
         this.cachedValue = SHARED.cm.getRange(from, to);
       });
     }
@@ -45,8 +44,7 @@ class NodeEditable extends Component {
         dispatch(activate(focusId, true));
         return;
       }
-      // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
-      const {from, to} = (node.id !== "editing")? ast.getNodeById(node.id) : node;
+      const {from, to} = getNodeLocation(ast, node);
       const value = addWhitespacePadding(ast, this.props.value, from, to);
       commitChanges(
         cm => () => {
@@ -160,6 +158,19 @@ class NodeEditable extends Component {
         aria-label = {text}
         value      = {text} />
     );
+  }
+}
+
+function getNodeLocation(ast, node) {
+  if (node.id === "editing") {
+    if (!node.from || !node.to) {
+      throw "Invalid NodeEditable location";
+    }
+    return {from: node.from, to: node.to};
+  } else {
+    // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
+    let {from, to} = ast.getNodeById(node.id);
+    return {from, to};
   }
 }
 

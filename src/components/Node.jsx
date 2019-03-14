@@ -16,14 +16,18 @@ import {store} from '../store';
 import {playSound, BEEP} from '../sound';
 
 
+export const NodeContext = React.createContext({
+  node: null,
+});
+
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
 
 @DragNodeSource
-@DropNodeTarget(({node}) => {
-  node = store.getState().ast.getNodeById(node.id);
-  return node.srcRange();
+@DropNodeTarget(function(monitor) {
+  let node = store.getState().ast.getNodeById(this.props.node.id);
+  return this.props.dispatch(dropNode(monitor.getItem(), node.srcRange()));
 })
 class Node extends BlockComponent {
   static defaultProps = {
@@ -276,7 +280,6 @@ class Node extends BlockComponent {
       case 'insertRight':
         e.preventDefault();
         if (e.ctrlKey) { // strictly want ctrlKey
-          // TODO: this should go up to the top level block
           if (this.props.onSetRight) {
             this.props.onSetRight(true);
           } else {
@@ -288,7 +291,6 @@ class Node extends BlockComponent {
       // insert-left
       case 'insertLeft':
         e.preventDefault();
-        // TODO: this should go up to the top level block
         if (this.props.onSetLeft) {
           this.props.onSetLeft(true);
         } else {
@@ -472,7 +474,9 @@ class Node extends BlockComponent {
       if (this.props.normallyEditable) {
         result = connectDropTarget(result);
       }
-      return connectDragPreview(connectDragSource(result), {offsetX: 1, offsetY: 1});
+      result = connectDragPreview(connectDragSource(result), {offsetX: 1, offsetY: 1});
+      result = (<NodeContext.Provider value={{node: this.props.node}}>{result}</NodeContext.Provider>);
+      return result;
     }
   }
 }
@@ -496,7 +500,6 @@ const mapDispatchToProps = dispatch => ({
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
   handleDelete: (id, selectionEditor) => dispatch(deleteNodes(id, selectionEditor)),
-  onDrop: (src, dest) => dispatch(dropNode(src, dest)),
   handleCopy: (id, selectionEditor) => dispatch(copyNodes(id, selectionEditor)),
   handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
   activate: (id, options) => dispatch(activate(id, options)),

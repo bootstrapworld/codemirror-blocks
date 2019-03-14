@@ -30,6 +30,7 @@ export default class ContentEditable extends Component {
     onKeyDown: PropTypes.func,
     itDidMount: PropTypes.func,
     value: PropTypes.string,
+    id: PropTypes.string,
   }
 
   handleChange = e => {
