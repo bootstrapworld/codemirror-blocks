@@ -1,5 +1,6 @@
 const initialState = {
   selections: [],
+  editable: {},
   ast: null,
   focusId: null,
   collapsedList: [],
@@ -21,6 +22,8 @@ export const reducer = (
       return {...state, ast: action.ast, collapsedList: state.collapsedList.filter(action.ast.getNodeById)};
     case 'SET_SELECTIONS':
       return {...state, selections: action.selections};
+    case 'SET_EDITABLE':
+      return {...state, editable: {...state.editable, [action.id]: action.bool}};
     case 'SET_ERROR_ID':
       return {...state, errorId: action.errorId};
     case 'COLLAPSE':

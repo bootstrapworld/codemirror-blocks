@@ -33,12 +33,12 @@ class ToplevelBlock extends BlockComponent {
     node: PropTypes.object.isRequired,
   }
 
-  // we need to trigger a render if the node was moved at the top-level,
-  // in order to re-mark the node and put the DOM in the new marker
+  // we need to trigger a render if the node was moved or resized at the
+  // top-level, in order to re-mark the node and put the DOM in the new marker
   shouldComponentUpdate(nextProps, nextState) {
-    let moved = poscmp(this.props.node.from, nextProps.node.from) !== 0;
-    let changed = super.shouldComponentUpdate(nextProps, nextState);
-    return moved || changed;
+    return poscmp(this.props.node.from, nextProps.node.from) !== 0 // moved
+      ||   poscmp(this.props.node.to,   nextProps.node.to  ) !== 0 // resized
+      ||   super.shouldComponentUpdate(nextProps, nextState);      // changed
   }
 
   componentWillUnmount() { this.mark.clear(); }
@@ -78,7 +78,7 @@ class ToplevelBlockEditableCore extends Component {
   render() {
     const {onDisableEditable, onChange, quarantine} = this.props;
     const [start, end, value] = quarantine;
-    const node = {id: 'editing', from: start, to: end};
+    const nodeProps = {id: 'editing', from: start, to: end};
     const props = {
       tabIndex          : '-1',
       role              : 'text box',
@@ -87,7 +87,7 @@ class ToplevelBlockEditableCore extends Component {
       'aria-level'      : '1',
     };
     return ReactDOM.createPortal(
-      <NodeEditable node={node}
+      <NodeEditable node={nodeProps}
                     value={value}
                     onChange={onChange}
                     contentEditableProps={props}
@@ -274,9 +274,10 @@ class BlockEditor extends Component {
   }
 
   handleKeyPress = (ed, e) => {
-    if (e.ctrlKey || e.metaKey) return;
-    e.preventDefault();
     const text = e.key;
+    // let CM handle kbd shortcuts or whitespace insertion
+    if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
+    e.preventDefault();
     const start = SHARED.cm.getCursor(true);
     const end = SHARED.cm.getCursor(false);
     this.props.setQuarantine(start, end, text);
