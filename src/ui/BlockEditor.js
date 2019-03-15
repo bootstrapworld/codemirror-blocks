@@ -275,7 +275,7 @@ class BlockEditor extends Component {
 
   handleKeyPress = (ed, e) => {
     const text = e.key;
-    // let CM handle whitespace insertion or kbd shortcuts
+    // let CM handle kbd shortcuts or whitespace insertion
     if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
     e.preventDefault();
     const start = SHARED.cm.getCursor(true);
