@@ -274,9 +274,10 @@ class BlockEditor extends Component {
   }
 
   handleKeyPress = (ed, e) => {
-    if (e.ctrlKey || e.metaKey) return;
-    e.preventDefault();
     const text = e.key;
+    if (e.ctrlKey || e.metaKey) return;
+    if(text.match(/\s+/)) return; // let CM handle whitespace insertion
+    e.preventDefault();
     const start = SHARED.cm.getCursor(true);
     const end = SHARED.cm.getCursor(false);
     this.props.setQuarantine(start, end, text);
