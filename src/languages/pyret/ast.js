@@ -92,7 +92,7 @@ export class Bind extends ASTNode {
 
 export class Func extends ASTNode {
   constructor(from, to, name, args, retAnn, doc, body, options={}) {
-    super(from, to, 'func', ['args', 'retAnn', 'body'], options);
+    super(from, to, 'functionDefinition', ['args', 'retAnn', 'body'], options);
     this.name = name;
     this.args = args;
     this.retAnn = retAnn;
@@ -110,11 +110,15 @@ export class Func extends ASTNode {
   }
 
   render(props) {
+    // TODO: uncommenting this expression leads to using an object instead of a react element
+    let args = /* this.args[0].reactElement() */ undefined;
+    let body = this.body.reactElement();
+    // console.log(args, body);
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
-        <span className="blocks-args">{this.args.reactElement}</span>
-        {this.body.reactElement}
+        <span className="blocks-args">{args}</span>
+        {body}
       </Node>
     );
   }
@@ -137,10 +141,11 @@ export class Sekwence extends ASTNode {
   }
 
   render(props) {
+    // TODO: extend to `exprs` of more than length 1
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
-        {this.exprs.reactElement()}
+        {this.exprs[0].reactElement()}
       </Node>
     );
   }
