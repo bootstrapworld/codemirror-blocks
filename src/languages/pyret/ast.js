@@ -70,7 +70,7 @@ export class Bind extends ASTNode {
 
   toDescription(level) {
     if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a bind expression with ${this.id} and ${this.ann}`;
+    return `a bind expression with ${this.id.value} and ${this.ann}`;
   }
 
   pretty() {
@@ -84,7 +84,7 @@ export class Bind extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-literal-symbol">{this.id}</span>
+        <span className="blocks-literal-symbol">{this.id.value}</span>
       </Node>
     );
   }
@@ -110,10 +110,9 @@ export class Func extends ASTNode {
   }
 
   render(props) {
-    // TODO: uncommenting this expression leads to using an object instead of a react element
-    let args = /* this.args[0].reactElement() */ undefined;
+    // TODO: iterate over all arguments; temporary!
+    let args = this.args[0].reactElement();
     let body = this.body.reactElement();
-    // console.log(args, body);
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
