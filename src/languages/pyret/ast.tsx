@@ -145,7 +145,7 @@ export class Func extends ASTNode {
 }
 
 export class Sekwence extends ASTNode {
-  exprs: any;
+  exprs: any[];
   name: any;
   level: any;
   options: any;
@@ -161,7 +161,7 @@ export class Sekwence extends ASTNode {
   }
 
   pretty() {
-    return P.horzArray([P.txt(":"), P.horzArray(this.exprs), P.txt("end")]);
+    return P.vertArray(this.exprs.map(e => P.txt(e)));
   }
 
   render(props) {
@@ -169,7 +169,7 @@ export class Sekwence extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
-        {this.exprs[0].reactElement()}
+        {this.exprs.map(e => e.reactElement())}
       </Node>
     );
   }
@@ -225,7 +225,7 @@ export class Assign extends ASTNode {
   }
 
   pretty() {
-    return P.horzArray([this.id, P.txt(' := '), this.rhs]);
+    return P.txt(this.id + ' := ' + this.rhs);
   }
 
   render(props) {
