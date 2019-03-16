@@ -9,7 +9,16 @@ import {ASTNode, pluralize, descDepth} from '../../ast';
 
 // each class has constructor toDescription pretty render
 
+interface Identifier {
+  value: string;
+  reactElement: () => any;
+}
 export class Binop extends ASTNode {
+  op: any;
+  left: any;
+  right: any;
+  level: any;
+  options: any;
   constructor(from, to, op, left, right, options={}) {
     super(from, to, 'binop', ['left', 'right'], options);
     this.op = op;
@@ -22,7 +31,7 @@ export class Binop extends ASTNode {
     return `a ${this.op} expression with ${this.left.toDescription(level)} and ${this.right.toDescription(level)}`;
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return P.horzArray([this.left, P.txt(" "), this.op, P.txt(" "), this.right]);
   }
 
@@ -38,6 +47,8 @@ export class Binop extends ASTNode {
 }
 
 export class ABlank extends ASTNode {
+  level: any;
+  options: any;
   constructor(from, to, options={}) {
     super(from, to, 'a-blank', [], options);
   }
@@ -61,8 +72,11 @@ export class ABlank extends ASTNode {
 }
 
 export class Bind extends ASTNode {
-  // PTW: not quite sure what this is...
-  constructor(from, to, id, ann, options={}) {
+  ann: any;
+  level: any;
+  id: Identifier;
+  options: any;
+  constructor(from: any, to: any, id: Identifier, ann: any, options={}) {
     super(from, to, 'bind', ['ann'], options);
     this.id = id;
     this.ann = ann;
@@ -76,9 +90,9 @@ export class Bind extends ASTNode {
   pretty() {
     console.log(this.id);
     if (this.ann.type != "a-blank")
-      return P.horzArray([this.id.value, P.txt(" :: "), this.ann]);
+      return P.txt(this.id.value + " :: " + this.ann);
     else
-      return P.horzArray([this.id.value]);
+      return P.txt(this.id.value);
   }
 
   render(props) {
@@ -91,6 +105,13 @@ export class Bind extends ASTNode {
 }
 
 export class Func extends ASTNode {
+  name: any;
+  args: any;
+  retAnn: any;
+  doc: any;
+  body: any;
+  level: any;
+  options: any;
   constructor(from, to, name, args, retAnn, doc, body, options={}) {
     super(from, to, 'functionDefinition', ['args', 'retAnn', 'body'], options);
     this.name = name;
@@ -124,6 +145,10 @@ export class Func extends ASTNode {
 }
 
 export class Sekwence extends ASTNode {
+  exprs: any;
+  name: any;
+  level: any;
+  options: any;
   constructor(from, to, exprs, name, options={}) {
     super(from, to, 'sekwence', ['exprs'], options);
     this.exprs = exprs;
@@ -151,6 +176,10 @@ export class Sekwence extends ASTNode {
 }
 
 export class Var extends ASTNode {
+  rhs: any;
+  level: any;
+  id: any;
+  options: any;
   constructor(from, to, id, rhs, options={}) {
     super(from, to, 'var', ['id', 'rhs'], options);
     this.id = id;
@@ -163,7 +192,7 @@ export class Var extends ASTNode {
   }
 
   pretty() {
-    return P.horzArray([this.id, P.txt('var'), this.rhs]);
+    return P.txt(this.id + " = " + this.rhs);
   }
 
   render(props) {
@@ -180,6 +209,10 @@ export class Var extends ASTNode {
 }
 
 export class Assign extends ASTNode {
+  rhs: any;
+  level: any;
+  id: any;
+  options: any;
   constructor(from, to, id, rhs, options={}) {
     super(from, to, 'assign', ['id', 'rhs'], options);
     this.id = id;
@@ -209,6 +242,10 @@ export class Assign extends ASTNode {
 }
 
 export class Let extends ASTNode {
+  rhs: any;
+  level: any;
+  id: any;
+  options: any;
   constructor(from, to, id, rhs, options={}) {
     super(from, to, 'let', ['id', 'rhs'], options);
     this.id = id;

@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        // "noImplicitAny": true,
+        // "removeComments": true,
+        // "preserveConstEnums": true,
+        // "sourceMap": true,
+        "target": "es6",
+        "jsx": "react"
+    },
+    "include": [
+        "src/languages/pyret/*"
+    ]
+}

@@ -57,7 +57,7 @@ export function fullLine(doc) {
  * 
  ******************************************************************************/
 
-class Doc {
+export class Doc {
   constructor(flat_width) {
     this.flat_width = flat_width;
   }

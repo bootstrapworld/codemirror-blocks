@@ -1,18 +1,17 @@
 "use strict";
-exports.__esModule = true;
-var TOK = require("./pyret-lang/pyret-tokenizer.js");
-var P = require("./pyret-lang/pyret-parser.js");
-var TR = require("./pyret-lang/translate-parse-tree.js");
-var ast_1 = require("../../ast");
-var nodes_1 = require("../../nodes");
-var ast_js_1 = require("./ast.js");
-var Range = /** @class */ (function () {
-    function Range(from, to) {
+Object.defineProperty(exports, "__esModule", { value: true });
+const TOK = require("./pyret-lang/pyret-tokenizer.js");
+const P = require("./pyret-lang/pyret-parser.js");
+const TR = require("./pyret-lang/translate-parse-tree.js");
+const ast_1 = require("../../ast");
+const nodes_1 = require("../../nodes");
+const ast_js_1 = require("./ast.js");
+class Range {
+    constructor(from, to) {
         this.from = from;
         this.to = to;
     }
-    return Range;
-}());
+}
 function startOf(srcloc) {
     return {
         "line": srcloc.startRow - 1,
@@ -25,7 +24,7 @@ function endOf(srcloc) {
         "ch": srcloc.endCol
     };
 }
-var opLookup = {
+const opLookup = {
     "+": "op+",
     "-": "op-",
     "*": "op*",
@@ -42,12 +41,10 @@ var opLookup = {
     "<>": "op<>",
     "and": "opand",
     "or": "opor"
-    // TODO: check ops
 };
-// TODO: all of these are preliminary for testing
-var nodeTypes = {
+const nodeTypes = {
     "s-program": function (_pos, _prov, _provTy, _impt, body) {
-        var rootNodes = body.exprs;
+        let rootNodes = body.exprs;
         return new ast_1.AST(rootNodes);
     },
     "s-name": function (pos, str) {
@@ -66,14 +63,11 @@ var nodeTypes = {
         return new ast_js_1.Binop(pos.from, pos.to, op.substr(2), left, right);
     },
     "s-bind": function (pos, _shadows, id, ann) {
-        // TODO: ignoring shadowing for now.
         return new ast_js_1.Bind(pos.from, pos.to, id, ann);
     },
     "s-fun": function (pos, name, _params, args, ann, doc, body, _checkLoc, _check, _blodky) {
-        // TODO: ignoring params, check, blocky
         return new ast_js_1.Func(pos.from, pos.to, name, args, ann, doc, body);
     },
-    // Annotations
     "a-blank": function () {
         return new ast_js_1.ABlank();
     },
@@ -82,8 +76,8 @@ var nodeTypes = {
     }
 };
 function makeNode(nodeType) {
-    var args = Array.prototype.slice.call(arguments, 1);
-    var constructor = nodeTypes[nodeType];
+    const args = Array.prototype.slice.call(arguments, 1);
+    const constructor = nodeTypes[nodeType];
     if (constructor === undefined) {
         console.log("Warning: node type", nodeType, "NYI");
         return;
@@ -104,11 +98,11 @@ function translateParseTree(parseTree, fileName) {
             console.log(msg, "not yet implemented");
         };
     }
-    var constructors = {
+    const constructors = {
         "makeNode": makeNode,
         "opLookup": opLookup,
         "makeLink": function (a, b) {
-            b.push(a); // Probably safe?
+            b.push(a);
             return b;
         },
         "makeEmpty": function () {
@@ -118,7 +112,6 @@ function translateParseTree(parseTree, fileName) {
             return str;
         },
         "makeNumberFromString": function (str) {
-            // TODO: error handling
             return parseFloat(str);
         },
         "makeBoolean": function (bool) {
@@ -139,29 +132,20 @@ function translateParseTree(parseTree, fileName) {
     };
     return TR.translate(parseTree, fileName, constructors);
 }
-var PyretParser = /** @class */ (function () {
-    function PyretParser() {
-    }
-    // TODO: Proper error handling.
-    //       See `pyret-lang/src/js/trove/parse-pyret.js`.
-    PyretParser.prototype.parse = function (text) {
-        // Tokenize
-        var tokenizer = TOK.Tokenizer;
+class PyretParser {
+    parse(text) {
+        const tokenizer = TOK.Tokenizer;
         tokenizer.tokenizeFrom(text);
-        // Parse
         console.log("@going to parse");
-        var parsed = P.PyretGrammar.parse(tokenizer);
+        const parsed = P.PyretGrammar.parse(tokenizer);
         if (parsed) {
             console.log("@valid parse");
-            // Count parse trees
-            var countParses = P.PyretGrammar.countAllParses(parsed);
+            const countParses = P.PyretGrammar.countAllParses(parsed);
             if (countParses === 1) {
                 console.log("@exactly one valid parse", parsed);
-                // Construct parse tree
-                var parseTree = P.PyretGrammar.constructUniqueParse(parsed);
+                const parseTree = P.PyretGrammar.constructUniqueParse(parsed);
                 console.log("@reconstructed unique parse");
-                // Translate parse tree to AST
-                var ast = translateParseTree(parseTree, "<editor>.arr");
+                const ast = translateParseTree(parseTree, "<editor>.arr");
                 return ast;
             }
             else {
@@ -170,24 +154,27 @@ var PyretParser = /** @class */ (function () {
         }
         else {
             console.log("Invalid parse");
-            // really, curTok does exist, but ts isn't smart enough to detect
             console.log("Next token is " + tokenizer.curTok.toRepr(true)
                 + " at " + tokenizer.curTok.pos.toString(true));
         }
-    };
-    PyretParser.prototype.getExceptionMessage = function (error) {
+    }
+    getExceptionMessage(error) {
         return error;
-    };
-    return PyretParser;
-}());
+    }
+}
 exports.PyretParser = PyretParser;
 module.exports = PyretParser;
 function testRun() {
-    var data = "\n  fun foo(x :: Number):\n  x + 3\n  end\n  ";
-    var parser = new PyretParser();
-    var ast = parser.parse(data);
+    const data = `
+  fun foo(x :: Number):
+  x + 3
+  end
+  `;
+    const parser = new PyretParser();
+    const ast = parser.parse(data);
     console.log("\nBlocky AST:\n");
     console.log(ast.toString());
     console.log("\nBlocky AST (JS view):\n");
     console.log(ast);
 }
+//# sourceMappingURL=PyretParser.js.map

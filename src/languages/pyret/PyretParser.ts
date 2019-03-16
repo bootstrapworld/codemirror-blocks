@@ -128,7 +128,7 @@ const nodeTypes = {
   },
   // Annotations
   "a-blank": function() {
-    return new ABlank();
+    return new ABlank(undefined, undefined);
   },
   "a-name": function(pos: Range, str: any) {
     return new Literal(
