@@ -2,7 +2,7 @@ import React from 'react';
 import Node from '../../components/Node';
 import * as P from '../../pretty';
 
-import {ASTNode, pluralize, descDepth} from '../../ast';
+import { ASTNode, pluralize, descDepth } from '../../ast';
 
 
 // Binop ABlank Bind Func Sekwence Var Assign Let
@@ -19,7 +19,7 @@ export class Binop extends ASTNode {
   right: any;
   level: any;
   options: any;
-  constructor(from, to, op, left, right, options={}) {
+  constructor(from, to, op, left, right, options = {}) {
     super(from, to, 'binop', ['left', 'right'], options);
     this.op = op;
     this.left = left;
@@ -49,7 +49,7 @@ export class Binop extends ASTNode {
 export class ABlank extends ASTNode {
   level: any;
   options: any;
-  constructor(from, to, options={}) {
+  constructor(from, to, options = {}) {
     super(from, to, 'a-blank', [], options);
   }
 
@@ -76,7 +76,7 @@ export class Bind extends ASTNode {
   level: any;
   id: Identifier;
   options: any;
-  constructor(from: any, to: any, id: Identifier, ann: any, options={}) {
+  constructor(from: any, to: any, id: Identifier, ann: any, options = {}) {
     super(from, to, 'bind', ['ann'], options);
     this.id = id;
     this.ann = ann;
@@ -90,7 +90,7 @@ export class Bind extends ASTNode {
   pretty() {
     console.log(this.id);
     if (this.ann.type != "a-blank")
-      return P.txt(this.id.value + " :: " + this.ann);
+      return P.horzArray(P.txt(this.id.value), P.txt(" :: "), P.txt(this.ann));
     else
       return P.txt(this.id.value);
   }
@@ -112,7 +112,7 @@ export class Func extends ASTNode {
   body: any;
   level: any;
   options: any;
-  constructor(from, to, name, args, retAnn, doc, body, options={}) {
+  constructor(from, to, name, args, retAnn, doc, body, options = {}) {
     super(from, to, 'functionDefinition', ['args', 'retAnn', 'body'], options);
     this.name = name;
     this.args = args;
@@ -143,8 +143,7 @@ export class Func extends ASTNode {
   }
 
   render(props) {
-    // TODO: iterate over all arguments; temporary!
-    let args = this.args[0].reactElement();
+    let args = this.args.map(e => e.reactElement());
     let body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
@@ -161,7 +160,7 @@ export class Sekwence extends ASTNode {
   name: any;
   level: any;
   options: any;
-  constructor(from, to, exprs, name, options={}) {
+  constructor(from, to, exprs, name, options = {}) {
     super(from, to, 'sekwence', ['exprs'], options);
     this.exprs = exprs;
     this.name = name;
@@ -177,7 +176,6 @@ export class Sekwence extends ASTNode {
   }
 
   render(props) {
-    // TODO: extend to `exprs` of more than length 1
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
@@ -192,7 +190,7 @@ export class Var extends ASTNode {
   level: any;
   id: any;
   options: any;
-  constructor(from, to, id, rhs, options={}) {
+  constructor(from, to, id, rhs, options = {}) {
     super(from, to, 'var', ['id', 'rhs'], options);
     this.id = id;
     this.rhs = rhs;
@@ -212,8 +210,8 @@ export class Var extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">VAR</span>
         <span className="block-args">
-        {this.id.reactElement()}
-        {this.rhs.reactElement()}
+          {this.id.reactElement()}
+          {this.rhs.reactElement()}
         </span>
       </Node>
     );
@@ -225,7 +223,7 @@ export class Assign extends ASTNode {
   level: any;
   id: any;
   options: any;
-  constructor(from, to, id, rhs, options={}) {
+  constructor(from, to, id, rhs, options = {}) {
     super(from, to, 'assign', ['id', 'rhs'], options);
     this.id = id;
     this.rhs = rhs;
@@ -233,7 +231,7 @@ export class Assign extends ASTNode {
 
   toDescription(level) {
     if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a assign setting ${this.id} to ${this.rhs}`;
+    return `an assign setting ${this.id} to ${this.rhs}`;
   }
 
   pretty() {
@@ -245,8 +243,8 @@ export class Assign extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">:=</span>
         <span className="block-args">
-        {this.id.reactElement()}
-        {this.rhs.reactElement()}
+          {this.id.reactElement()}
+          {this.rhs.reactElement()}
         </span>
       </Node>
     );
@@ -258,7 +256,7 @@ export class Let extends ASTNode {
   level: any;
   id: any;
   options: any;
-  constructor(from, to, id, rhs, options={}) {
+  constructor(from, to, id, rhs, options = {}) {
     super(from, to, 'let', ['id', 'rhs'], options);
     this.id = id;
     this.rhs = rhs;
@@ -278,8 +276,8 @@ export class Let extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">LET</span>
         <span className="block-args">
-        {this.id.reactElement()}
-        {this.rhs.reactElement()}
+          {this.id.reactElement()}
+          {this.rhs.reactElement()}
         </span>
       </Node>
     );

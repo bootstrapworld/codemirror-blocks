@@ -55,7 +55,7 @@ export class Bind extends ASTNode {
     pretty() {
         console.log(this.id);
         if (this.ann.type != "a-blank")
-            return P.txt(this.id.value + " :: " + this.ann);
+            return P.horzArray(P.txt(this.id.value), P.txt(" :: "), P.txt(this.ann));
         else
             return P.txt(this.id.value);
     }
@@ -79,11 +79,19 @@ export class Func extends ASTNode {
         return `a func expression with ${this.name}, ${this.args} and ${this.body.toDescription(level)}`;
     }
     pretty() {
-        return P.horzArray([P.txt("fun "), this.name, P.txt("("), P.horzArray(this.args.map(p => p.pretty())), P.txt(")"), this.body]);
+        // either one line or multiple; helper for joining args together
+        let args = this.args.slice();
+        args.reverse();
+        console.log(args);
+        let header = P.horzArray([P.txt("fun "), this.name,
+            P.txt("("), P.sepBy(", ", "", args.reverse().map(p => p.pretty())), P.txt("):")]);
+        return P.ifFlat(P.horzArray([header, P.txt(" "), this.body, " end"]), P.vertArray([header,
+            P.horz("  ", this.body),
+            "end"
+        ]));
     }
     render(props) {
-        // TODO: iterate over all arguments; temporary!
-        let args = this.args[0].reactElement();
+        let args = this.args.map(e => e.reactElement());
         let body = this.body.reactElement();
         return (React.createElement(Node, Object.assign({ node: this }, props),
             React.createElement("span", { className: "blocks-operator" }, this.name),
@@ -106,7 +114,6 @@ export class Sekwence extends ASTNode {
         return P.vertArray(this.exprs.map(e => P.txt(e)));
     }
     render(props) {
-        // TODO: extend to `exprs` of more than length 1
         return (React.createElement(Node, Object.assign({ node: this }, props),
             React.createElement("span", { className: "blocks-operator" }, this.name),
             this.exprs.map(e => e.reactElement())));
@@ -143,7 +150,7 @@ export class Assign extends ASTNode {
     toDescription(level) {
         if ((this.level - level) >= descDepth)
             return this.options['aria-label'];
-        return `a assign setting ${this.id} to ${this.rhs}`;
+        return `an assign setting ${this.id} to ${this.rhs}`;
     }
     pretty() {
         return P.txt(this.id + ' := ' + this.rhs);
