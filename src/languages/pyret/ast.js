@@ -84,7 +84,7 @@ export class Func extends ASTNode {
     args.reverse();
     console.log(args);
     let header = P.horzArray([P.txt("fun "), this.name,
-    P.txt("("), P.sepBy(", ", "", args.reverse().map(p => p.pretty())), P.txt("):")]);
+      P.txt("("), P.sepBy(", ", "", args.reverse().map(p => p.pretty())), P.txt("):")]);
     return P.ifFlat(P.horzArray([header, P.txt(" "), this.body, " end"]), P.vertArray([header,
       P.horz("  ", this.body),
       "end"
