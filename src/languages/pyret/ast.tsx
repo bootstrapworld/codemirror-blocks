@@ -127,7 +127,19 @@ export class Func extends ASTNode {
   }
 
   pretty() {
-    return P.horzArray([P.txt("fun "), this.name, P.txt("("), P.horzArray(this.args.map(p => p.pretty())), P.txt(")"), this.body]);
+    // args are normally backwards??
+    let args = this.args.slice();
+    args.reverse();
+    console.log(args);
+    let header = P.horzArray([P.txt("fun "), this.name,
+    P.txt("("), P.sepBy(", ", "", args.reverse().map(p => p.pretty())), P.txt("):")]);
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(P.horzArray([header, P.txt(" "), this.body, " end"]),
+      P.vertArray([header,
+        P.horz("  ", this.body),
+        "end"
+      ])
+    );
   }
 
   render(props) {
