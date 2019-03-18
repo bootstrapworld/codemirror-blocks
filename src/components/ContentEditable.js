@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {ENTER} from '../keycode';
 import shallowequal from 'shallowequal';
 
 /**
@@ -38,7 +37,7 @@ export default class ContentEditable extends Component {
   }
 
   handleKeyDown = e => {
-    if (e.keyCode === ENTER) {
+    if (e.keyCode === 13) { // ENTER
       e.preventDefault();
     }
     e.stopPropagation();
