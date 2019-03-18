@@ -63,7 +63,7 @@ class NodeEditable extends Component {
         },
         e => {
           const errorText = SHARED.parser.getExceptionMessage(e);
-          say(errorText);
+          console.log(errorText);
           this.ignoreBlur = false;
           setErrorId(node.id);
           this.setSelection(false);

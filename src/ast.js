@@ -310,7 +310,7 @@ export class ASTNode {
     }
   }
 
-  toDescription(){
+  toDescription(_level){
     return this.options["aria-label"];
   }
 

@@ -104,6 +104,7 @@ export default class ToggleEditor extends React.Component {
 
   handleEditorMounted = (ed) => {
     merge(this.props.api, this.buildAPI(ed));
+    this.props.api.display = ed.display;
   }
 
   componentDidMount() {
@@ -153,7 +154,7 @@ export default class ToggleEditor extends React.Component {
       } catch (err) {
         // TODO(Justin): properly deal with parse errors
         let msg = SHARED.parser.getExceptionMessage(err);
-        say(msg);
+        console.log(msg);
       }
     });
   };
