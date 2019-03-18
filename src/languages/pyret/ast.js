@@ -53,7 +53,6 @@ export class Bind extends ASTNode {
     return `a bind expression with ${this.id.value} and ${this.ann}`;
   }
   pretty() {
-    console.log(this.id);
     if (this.ann.type != "a-blank")
       return P.horzArray(P.txt(this.id.value), P.txt(" :: "), P.txt(this.ann));
     else
@@ -72,26 +71,25 @@ export class Func extends ASTNode {
     this.retAnn = retAnn;
     this.doc = doc;
     this.body = body;
+    // args are normally backwards??
+    this.args_reversed = args.slice().reverse();
   }
   toDescription(level) {
     if ((this.level - level) >= descDepth)
       return this.options['aria-label'];
-    return `a func expression with ${this.name}, ${this.args} and ${this.body.toDescription(level)}`;
+    return `a func expression with ${this.name}, ${this.args_reversed} and ${this.body.toDescription(level)}`;
   }
   pretty() {
-    // either one line or multiple; helper for joining args together
-    let args = this.args.slice();
-    args.reverse();
-    console.log(args);
     let header = P.horzArray([P.txt("fun "), this.name,
-      P.txt("("), P.sepBy(", ", "", args.reverse().map(p => p.pretty())), P.txt("):")]);
+      P.txt("("), P.sepBy(", ", "", this.args_reversed.map(p => p.pretty())), P.txt("):")]);
+    // either one line or multiple; helper for joining args together
     return P.ifFlat(P.horzArray([header, P.txt(" "), this.body, " end"]), P.vertArray([header,
       P.horz("  ", this.body),
       "end"
     ]));
   }
   render(props) {
-    let args = this.args.map(e => e.reactElement());
+    let args = this.args_reversed.map(e => e.reactElement());
     let body = this.body.reactElement();
     return (React.createElement(Node, Object.assign({ node: this }, props),
       React.createElement("span", { className: "blocks-operator" }, this.name),
