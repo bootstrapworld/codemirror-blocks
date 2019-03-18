@@ -1,10 +1,7 @@
 import React from 'react';
 import Node from '../../components/Node';
 import * as P from '../../pretty';
-import {
-  ASTNode,
-  descDepth
-} from '../../ast';
+import { ASTNode, descDepth } from '../../ast';
 export class Binop extends ASTNode {
   constructor(from, to, op, left, right, options = {}) {
     super(from, to, 'binop', ['left', 'right'], options);
@@ -21,12 +18,8 @@ export class Binop extends ASTNode {
     return P.horzArray([this.left, P.txt(" "), this.op, P.txt(" "), this.right]);
   }
   render(props) {
-    return (React.createElement(Node, Object.assign({
-        node: this
-      }, props),
-      React.createElement("span", {
-        className: "blocks-operator"
-      }, this.op),
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, this.op),
       this.left.reactElement(),
       this.right.reactElement()));
   }
@@ -44,12 +37,8 @@ export class ABlank extends ASTNode {
     return P.standardSexpr('Any');
   }
   render(props) {
-    return (React.createElement(Node, Object.assign({
-        node: this
-      }, props),
-      React.createElement("span", {
-        className: "blocks-literal-symbol"
-      }, "BLANK")));
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-literal-symbol" }, "BLANK")));
   }
 }
 export class Bind extends ASTNode {
@@ -70,12 +59,8 @@ export class Bind extends ASTNode {
       return P.txt(this.id.value);
   }
   render(props) {
-    return (React.createElement(Node, Object.assign({
-        node: this
-      }, props),
-      React.createElement("span", {
-        className: "blocks-literal-symbol"
-      }, this.id.value)));
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-literal-symbol" }, this.id.value)));
   }
 }
 export class Func extends ASTNode {
@@ -107,15 +92,9 @@ export class Func extends ASTNode {
   render(props) {
     let args = this.args_reversed.map(e => e.reactElement());
     let body = this.body.reactElement();
-    return (React.createElement(Node, Object.assign({
-        node: this
-      }, props),
-      React.createElement("span", {
-        className: "blocks-operator"
-      }, this.name),
-      React.createElement("span", {
-        className: "blocks-args"
-      }, args),
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, this.name),
+      React.createElement("span", { className: "blocks-args" }, args),
       body));
   }
 }
@@ -134,12 +113,8 @@ export class Sekwence extends ASTNode {
     return P.vertArray(this.exprs.map(e => P.txt(e)));
   }
   render(props) {
-    return (React.createElement(Node, Object.assign({
-        node: this
-      }, props),
-      React.createElement("span", {
-        className: "blocks-operator"
-      }, this.name),
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, this.name),
       this.exprs.map(e => e.reactElement())));
   }
 }
@@ -158,15 +133,9 @@ export class Var extends ASTNode {
     return P.txt(this.id + " = " + this.rhs);
   }
   render(props) {
-    return (React.createElement(Node, Object.assign({
-        node: this
-      }, props),
-      React.createElement("span", {
-        className: "blocks-operator"
-      }, "VAR"),
-      React.createElement("span", {
-          className: "block-args"
-        },
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, "VAR"),
+      React.createElement("span", { className: "block-args" },
         this.id.reactElement(),
         this.rhs.reactElement())));
   }
@@ -186,15 +155,9 @@ export class Assign extends ASTNode {
     return P.txt(this.id + ' := ' + this.rhs);
   }
   render(props) {
-    return (React.createElement(Node, Object.assign({
-        node: this
-      }, props),
-      React.createElement("span", {
-        className: "blocks-operator"
-      }, ":="),
-      React.createElement("span", {
-          className: "block-args"
-        },
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, ":="),
+      React.createElement("span", { className: "block-args" },
         this.id.reactElement(),
         this.rhs.reactElement())));
   }
@@ -214,15 +177,9 @@ export class Let extends ASTNode {
     return P.horzArray([this.id, P.txt('let'), this.rhs]);
   }
   render(props) {
-    return (React.createElement(Node, Object.assign({
-        node: this
-      }, props),
-      React.createElement("span", {
-        className: "blocks-operator"
-      }, "LET"),
-      React.createElement("span", {
-          className: "block-args"
-        },
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, "LET"),
+      React.createElement("span", { className: "block-args" },
         this.id.reactElement(),
         this.rhs.reactElement())));
   }

@@ -1,19 +1,9 @@
 import * as TOK from "./pyret-lang/pyret-tokenizer.js";
 import * as P from "./pyret-lang/pyret-parser.js";
 import * as TR from "./pyret-lang/translate-parse-tree.js";
-import {
-  AST
-} from '../../ast';
-import {
-  Literal,
-} from '../../nodes';
-import {
-  Binop,
-  ABlank,
-  Bind,
-  Func,
-  Sekwence as Sequence
-} from "./ast.js";
+import { AST } from '../../ast';
+import { Literal, } from '../../nodes';
+import { Binop, ABlank, Bind, Func, Sekwence as Sequence } from "./ast.js";
 class Range {
   constructor(from, to) {
     this.from = from;
