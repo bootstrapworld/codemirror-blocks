@@ -110,6 +110,8 @@
     "build": "webpack --mode production",
     "build-debug": "webpack --mode development",
     "build-watch": "webpack --watch --mode development",
+    "watch-tsc": "tsc --watch",
+    "format-tsc-output": "make -B",
     "lint": "eslint src spec --ext .js || true",
     "site": "jekyll serve --baseurl \"\""
   },

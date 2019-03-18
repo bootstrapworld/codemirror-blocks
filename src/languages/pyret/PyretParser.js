@@ -10,12 +10,14 @@ class Range {
     this.to = to;
   }
 }
+
 function startOf(srcloc) {
   return {
     "line": srcloc.startRow - 1,
     "ch": srcloc.startCol
   };
 }
+
 function endOf(srcloc) {
   return {
     "line": srcloc.endRow - 1,
@@ -43,94 +45,97 @@ const opLookup = {
 };
 // TODO: all of these are preliminary for testing
 const nodeTypes = {
-  "s-program": function (_pos, _prov, _provTy, _impt, body) {
+  "s-program": function(_pos, _prov, _provTy, _impt, body) {
     let rootNodes = body.exprs;
     return new AST(rootNodes);
   },
-  "s-name": function (pos, str) {
+  "s-name": function(pos, str) {
     return new Literal(pos.from, pos.to, str, 'symbol');
   },
-  "s-id": function (pos, str) {
+  "s-id": function(pos, str) {
     return new Literal(pos.from, pos.to, str, 'symbol');
   },
-  "s-num": function (pos, x) {
+  "s-num": function(pos, x) {
     return new Literal(pos.from, pos.to, x, 'number');
   },
-  "s-block": function (pos, stmts) {
+  "s-block": function(pos, stmts) {
     return new Sequence(pos.from, pos.to, stmts, 'block');
   },
-  "s-op": function (pos, _opPos, op, left, right) {
+  "s-op": function(pos, _opPos, op, left, right) {
     return new Binop(pos.from, pos.to, op.substr(2), left, right);
   },
-  "s-bind": function (pos, _shadows, id, ann) {
+  "s-bind": function(pos, _shadows, id, ann) {
     // TODO: ignoring shadowing for now.
     return new Bind(pos.from, pos.to, id, ann);
   },
-  "s-fun": function (pos, name, _params, args, ann, doc, body, _checkLoc, _check, _blodky) {
+  "s-fun": function(pos, name, _params, args, ann, doc, body, _checkLoc, _check, _blodky) {
     // TODO: ignoring params, check, blocky
     return new Func(pos.from, pos.to, name, args, ann, doc, body);
   },
   // Annotations
-  "a-blank": function () {
+  "a-blank": function() {
     return new ABlank(undefined, undefined);
   },
-  "a-name": function (pos, str) {
+  "a-name": function(pos, str) {
     return new Literal(pos.from, pos.to, str, 'symbol');
   }
 };
+
 function makeNode(nodeType) {
   const args = Array.prototype.slice.call(arguments, 1);
   const constructor = nodeTypes[nodeType];
   if (constructor === undefined) {
     console.log("Warning: node type", nodeType, "NYI");
     return;
-  }
-  else {
+  } else {
     return constructor.apply(this, args);
   }
 }
+
 function makeSrcloc(_fileName, srcloc) {
   return new Range(startOf(srcloc), endOf(srcloc));
 }
+
 function combineSrcloc(_fileName, startPos, endPos) {
   return new Range(startOf(startPos), endOf(endPos));
 }
+
 function translateParseTree(parseTree, fileName) {
   function NYI(msg) {
-    return function () {
+    return function() {
       console.log(msg, "not yet implemented");
     };
   }
   const constructors = {
     "makeNode": makeNode,
     "opLookup": opLookup,
-    "makeLink": function (a, b) {
+    "makeLink": function(a, b) {
       b.push(a); // Probably safe?
       return b;
     },
-    "makeEmpty": function () {
+    "makeEmpty": function() {
       return new Array();
     },
-    "makeString": function (str) {
+    "makeString": function(str) {
       return str;
     },
-    "makeNumberFromString": function (str) {
+    "makeNumberFromString": function(str) {
       // TODO: error handling
       return parseFloat(str);
     },
-    "makeBoolean": function (bool) {
+    "makeBoolean": function(bool) {
       return bool;
     },
-    "makeNone": function () {
+    "makeNone": function() {
       return null;
     },
-    "makeSome": function (value) {
+    "makeSome": function(value) {
       return value;
     },
     "getRecordFields": NYI("getRecordFields"),
     "makeSrcloc": makeSrcloc,
     "combineSrcloc": combineSrcloc,
-    "detectAndComplainAboutOperatorWhitespace": function (_kids, _fileName) {
+    "detectAndComplainAboutOperatorWhitespace": function(_kids, _fileName) {
       return;
     }
   };
@@ -158,16 +163,14 @@ export class PyretParser {
         // Translate parse tree to AST
         const ast = translateParseTree(parseTree, "<editor>.arr");
         return ast;
-      }
-      else {
+      } else {
         throw "Multiple parses";
       }
-    }
-    else {
+    } else {
       console.log("Invalid parse");
       // really, curTok does exist, but ts isn't smart enough to detect
-      console.log("Next token is " + tokenizer.curTok.toRepr(true)
-        + " at " + tokenizer.curTok.pos.toString(true));
+      console.log("Next token is " + tokenizer.curTok.toRepr(true) +
+        " at " + tokenizer.curTok.pos.toString(true));
     }
   }
   getExceptionMessage(error) {
@@ -175,6 +178,7 @@ export class PyretParser {
   }
 }
 module.exports = PyretParser;
+
 function testRun() {
   const data = `
   fun foo(x :: Number):

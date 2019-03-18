@@ -16,12 +16,13 @@ import {Binop,
   Var,
   Assign,
   Let
-} from "./ast.js"
+} from "./ast.js";
 
 interface Position {
   line: number;
   ch: number;
 }
+
 class Range {
   from: Position;
   to: Position;
