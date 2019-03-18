@@ -7,8 +7,12 @@
       "ignoredNodes": ["JSXElement", "JSXElement > *", "JSXAttribute", "JSXIdentifier", "JSXNamespacedName", "JSXMemberExpression", "JSXSpreadAttribute", "JSXExpressionContainer", "JSXOpeningElement", "JSXClosingElement", "JSXText", "JSXEmptyExpression", "JSXSpreadChild"]
     }],
     "linebreak-style": ["error", "unix"],
-    "semi": ["error", "always"],
-    "no-console": 0
+    "no-console": 0,
+    "no-unused-vars": ["error", {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }],
+    "semi": ["error", "always"]
   },
   "env": {
     "es6": true,
