@@ -56,7 +56,8 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
 
     let value = null;
     if (isDropTarget) {
-      value = addWhitespacePadding(ast, content, destFrom, destTo);
+      let needsPrecedingNewline = !!(srcNode && srcNode.options.comment);
+      value = addWhitespacePadding(ast, content, destFrom, destTo, needsPrecedingNewline);
     } else {
       value = content;
     }
@@ -86,9 +87,18 @@ export function copyNodes(id, selectionEditor) {
     if (nodeSelections.length === 0) {
       return; // Not much to do.
     }
+    // Pretty-print each copied node. Join them with spaces, or newlines for
+    // commented nodes (to prevent a comment from attaching itself to a
+    // different node after pasting).
     nodeSelections.sort((a, b) => poscmp(a.from, b.from));
-    const texts = nodeSelections.map(node => node.toString()); // pretty-print the selection
-    copyToClipboard(texts.join("\n"));
+    let text = "";
+    let postfix = "";
+    for (let node of nodeSelections) {
+      let prefix = node.options.comment ? "\n" : postfix;
+      text = text + prefix + node.toString();
+      postfix = node.options.comment ? "\n" : " ";
+    }
+    copyToClipboard(text);
     // Copy steals focus. Force it back to the node's DOM element
     // without announcing via activate() or activate().
     ast.getNodeById(focusId).element.focus();
@@ -116,7 +126,7 @@ export function pasteNodes(id, isBackward) {
     }
 
     pasteFromClipboard(text => {
-      text = addWhitespacePadding(ast, text, from, to);
+      text = addWhitespacePadding(ast, text, from, to, false /*handled by copy*/);
       commitChanges(
         cm => () => {
           cm.replaceRange(text, from, to, 'cmb:paste');
@@ -217,13 +227,13 @@ export function removeClearedSpace(from, to) {
 }
 
 // Pad `text` with spaces as needed, when a block will be inserted.
-export function addWhitespacePadding(ast, text, from, to) {
+export function addWhitespacePadding(ast, text, from, to, needsPrecedingNewline) {
   // We may need to insert a newline to make sure that comments don't end up
   // getting associated with the wrong node, and we may need to insert a space
   // to ensure that different tokens don't end up getting glommed together.
   let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
   let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
-  if (ast.followsComment(from) && prevChar != "") {
+  if ((ast.followsComment(from) && prevChar != "") || needsPrecedingNewline) {
     text = "\n" + text;
   } else if (!(prevChar == "" || prevChar == " ")) {
     text = " " + text;
