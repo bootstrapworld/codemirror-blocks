@@ -38,7 +38,8 @@ class ToplevelBlock extends BlockComponent {
   shouldComponentUpdate(nextProps, nextState) {
     return poscmp(this.props.node.from, nextProps.node.from) !== 0 // moved
       ||   poscmp(this.props.node.to,   nextProps.node.to  ) !== 0 // resized
-      ||   super.shouldComponentUpdate(nextProps, nextState);      // changed
+      ||   super.shouldComponentUpdate(nextProps, nextState)       // changed
+      ||   !document.contains(this.mark.replacedWith);             // removed from DOM
   }
 
   componentWillUnmount() { this.mark.clear(); }
