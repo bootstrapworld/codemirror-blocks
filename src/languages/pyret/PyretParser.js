@@ -43,7 +43,7 @@ const opLookup = {
 };
 // TODO: all of these are preliminary for testing
 const nodeTypes = {
-  "s-program": function (_pos, _prov, _provTy, _impt, body) {
+  "s-program": function (_pos, _prov, _provTy, _impt, body, _dummy) {
     let rootNodes = body.exprs;
     return new AST(rootNodes);
   },
