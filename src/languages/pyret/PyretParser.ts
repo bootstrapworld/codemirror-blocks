@@ -236,7 +236,7 @@ function translateParseTree(parseTree: any, fileName: string) {
     "makeNode": makeNode,
     "opLookup": opLookup,
     "makeLink": function(a: any, b: any[]) {
-      b.push(a); // Probably safe?
+      b.unshift(a); // Probably safe?
       return b;
     },
     "makeEmpty": function() {

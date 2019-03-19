@@ -40,8 +40,9 @@ const opLookup = {
   "<=>": "op<=>",
   "<>": "op<>",
   "and": "opand",
-  "or": "opor"
+  "or": "opor",
   // TODO: check ops
+  "is": l => "s-op-is",
 };
 // TODO: all of these are preliminary for testing
 const nodeTypes = {
@@ -50,13 +51,13 @@ const nodeTypes = {
     return new AST(rootNodes);
   },
   "s-name": function(pos, str) {
-    return new Literal(pos.from, pos.to, str, 'symbol');
+    return new Literal(pos.from, pos.to, str, 'symbol', { 'aria-label': `${str}, a name` });
   },
   "s-id": function(pos, str) {
-    return new Literal(pos.from, pos.to, str, 'symbol');
+    return new Literal(pos.from, pos.to, str, 'symbol', { 'aria-label': `${str}, an identifier` });
   },
   "s-num": function(pos, x) {
-    return new Literal(pos.from, pos.to, x, 'number');
+    return new Literal(pos.from, pos.to, x, 'number', { 'aria-label': `${x}, a number` });
   },
   "s-block": function(pos, stmts) {
     return new Sequence(pos.from, pos.to, stmts, 'block');
@@ -77,12 +78,43 @@ const nodeTypes = {
     return new ABlank(undefined, undefined);
   },
   "a-name": function(pos, str) {
-    return new Literal(pos.from, pos.to, str, 'symbol');
+    return new Literal(pos.from, pos.to, str, 'symbol',
+      // make sure that this matches the pedagogy used in classroom:
+      // "variable", "identifier", "name", ...; other languages
+      { 'aria-label': `${str}, an identifier` });
   },
   "s-let": function(pos, id, rhs, options) {
     return new Let(pos.from, pos.to, id, rhs, options);
-  }
-  // add s-construct; s-app; s-tuple
+  },
+  "s-bool": function(pos, value) {
+    let ret = new Literal(pos.from, pos.to, value, 'boolean', { 'aria-label': `${value}, a boolean` });
+    console.log(ret);
+    return ret;
+  },
+  "s-str": function(pos, value) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, value, 'string', { 'aria-label': `${value}, a string` });
+  },
+  "s-construct": function(pos) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, "test", 'string');
+  },
+  "s-app": function(pos) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, "test", 'string');
+  },
+  "s-tuple": function(pos) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, "test", 'string');
+  },
+  "s-check": function(pos) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, "test", 'string');
+  },
+  "s-check-test": function(pos) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, "test", 'string');
+  },
 };
 
 function makeNode(nodeType) {
