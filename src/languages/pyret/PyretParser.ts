@@ -62,8 +62,10 @@ const opLookup = {
   "<=>": "op<=>",
   "<>":  "op<>",
   "and": "opand",
-  "or":  "opor"
+  "or":  "opor",
   // TODO: check ops
+  "is": l => "s-op-is", // from parse-pyret.js: 
+      // "is":                function(l){return RUNTIME.getField(ast, "s-op-is").app(l);},
 };
 
 // TODO: all of these are preliminary for testing
@@ -152,8 +154,57 @@ const nodeTypes = {
       rhs,
       options
     );
-  }
-  // add s-construct; s-app; s-tuple
+  },
+  "s-bool": function(pos: Range, value: boolean) {
+    let ret = new Literal(
+      pos.from,
+      pos.to,
+      value,
+      'boolean',
+      {'aria-label': `${value}, a boolean`});
+    console.log(ret);
+    return ret;
+  },
+  "s-str": function(pos: Range, value: string) {
+    console.log(arguments);
+    return new Literal(
+      pos.from,
+      pos.to,
+      value,
+      'string',
+      {'aria-label': `${value}, a string`}
+    );
+  },
+  "s-construct": function(pos: Range) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, "test", 'string', 
+    );
+  },
+  "s-app": function(pos: Range) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, "test", 'string', 
+    );
+  },
+  "s-tuple": function(pos: Range) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, "test", 'string', 
+    );
+  },
+  "s-check": function(pos: Range) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, "test", 'string', 
+    );
+  },
+  "s-check-test": function(pos: Range) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, "test", 'string', 
+    );
+  },
 }
 
 function makeNode(nodeType: string) {
