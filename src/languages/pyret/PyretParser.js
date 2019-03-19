@@ -110,7 +110,7 @@ function translateParseTree(parseTree, fileName) {
     "makeNode": makeNode,
     "opLookup": opLookup,
     "makeLink": function(a, b) {
-      b.push(a); // Probably safe?
+      b.unshift(a);
       return b;
     },
     "makeEmpty": function() {
