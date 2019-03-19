@@ -21,6 +21,7 @@ describe("The Pyret Parser,", function() {
     test('1');
     test('"hello"');
     test('x');
+    test('{1; 2}');
   });
 
   /* it("should treat vector literals like expressions", function() {
