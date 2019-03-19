@@ -200,8 +200,8 @@ export class Construct extends ASTNode {
     let values = P.sepBy(", ", "", this.values.map(p => p.pretty()));
     let footer = P.txt("]");
     // either one line or multiple; helper for joining args together
-    return P.ifFlat(P.horzArray([header, values, footer]), P.vertArray([header,
-      values,
+    return P.ifFlat(P.horzArray([header, P.txt(" "), values, footer]), P.vertArray([header,
+      P.horz("  ", values),
       footer,
     ]));
   }
@@ -209,7 +209,7 @@ export class Construct extends ASTNode {
     let values = this.values.map(e => e.reactElement());
     return (React.createElement(Node, Object.assign({ node: this }, props),
       React.createElement("span", { className: "blocks-operator" }, this.constructor_name),
-      React.createElement("span", { className: "blocks-args" }, values)));
+      values));
   }
 }
 // where are the literals?

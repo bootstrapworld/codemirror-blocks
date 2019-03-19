@@ -306,9 +306,9 @@ export class Construct extends ASTNode {
     let values = P.sepBy(", ", "", this.values.map(p => p.pretty()));
     let footer = P.txt("]");
     // either one line or multiple; helper for joining args together
-    return P.ifFlat(P.horzArray([header, values, footer]),
+    return P.ifFlat(P.horzArray([header, P.txt(" "), values, footer]),
       P.vertArray([header,
-        values,
+        P.horz("  ", values), // maybe make values in P.vertArray
         footer,
       ])
     );
@@ -319,7 +319,7 @@ export class Construct extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.constructor_name}</span>
-        <span className="blocks-args">{values}</span>
+        {values}
       </Node>
     );
   }
