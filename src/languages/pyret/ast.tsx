@@ -266,7 +266,7 @@ export class Let extends ASTNode {
   }
 
   pretty() {
-    return P.horzArray([this.id, P.txt('let'), this.rhs]);
+    return P.horzArray([this.id, P.txt(' = '), this.rhs]);
   }
 
   render(props) {

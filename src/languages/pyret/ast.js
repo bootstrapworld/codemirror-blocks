@@ -174,7 +174,7 @@ export class Let extends ASTNode {
     return `a let setting ${this.id} to ${this.rhs}`;
   }
   pretty() {
-    return P.horzArray([this.id, P.txt('let'), this.rhs]);
+    return P.horzArray([this.id, P.txt(' = '), this.rhs]);
   }
   render(props) {
     return (React.createElement(Node, Object.assign({ node: this }, props),
