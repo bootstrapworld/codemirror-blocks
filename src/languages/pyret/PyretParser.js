@@ -3,7 +3,7 @@ import * as P from "./pyret-lang/pyret-parser.js";
 import * as TR from "./pyret-lang/translate-parse-tree.js";
 import { AST } from '../../ast';
 import { Literal, } from '../../nodes';
-import { Binop, ABlank, Bind, Func, Sekwence as Sequence, Let } from "./ast.js";
+import { Binop, ABlank, Bind, Construct, Func, Sekwence as Sequence, Let } from "./ast.js";
 class Range {
   constructor(from, to) {
     this.from = from;
@@ -42,7 +42,7 @@ const opLookup = {
   "and": "opand",
   "or": "opor",
   // TODO: check ops
-  "is": l => "s-op-is",
+  "is": (loc, node) => new Literal(loc.from, loc.to, 'checkop-is'),
 };
 // TODO: all of these are preliminary for testing
 const nodeTypes = {
@@ -95,23 +95,22 @@ const nodeTypes = {
     console.log(arguments);
     return new Literal(pos.from, pos.to, value, 'string', { 'aria-label': `${value}, a string` });
   },
-  "s-construct": function(pos) {
+  "s-construct": function(pos, modifier, constructor, values) {
+    console.log(arguments);
+    return new Construct(pos.from, pos.to, modifier, constructor, values, { 'aria-label': `${constructor} with values ${values}` });
+  },
+  "s-app": function(pos, fun, args) {
     console.log(arguments);
     return new Literal(pos.from, pos.to, "test", 'string');
   },
-  "s-app": function(pos) {
+  "s-tuple": function(pos, fields) {
     console.log(arguments);
     return new Literal(pos.from, pos.to, "test", 'string');
   },
-  "s-tuple": function(pos) {
-    console.log(arguments);
+  "s-check": function(pos, name, body, keyword_check) {
     return new Literal(pos.from, pos.to, "test", 'string');
   },
-  "s-check": function(pos) {
-    console.log(arguments);
-    return new Literal(pos.from, pos.to, "test", 'string');
-  },
-  "s-check-test": function(pos) {
+  "s-check-test": function(pos, check_op, refinement, lhs, rhs) {
     console.log(arguments);
     return new Literal(pos.from, pos.to, "test", 'string');
   },

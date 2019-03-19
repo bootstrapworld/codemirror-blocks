@@ -272,11 +272,54 @@ export class Let extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">LET</span>
+        <span className="blocks-operator">{this.id.reactElement()}</span>
         <span className="block-args">
-          {this.id.reactElement()}
           {this.rhs.reactElement()}
         </span>
+      </Node>
+    );
+  }
+}
+
+export class Construct extends ASTNode {
+  modifier: any;
+  construktor: any;
+  constructor_name: string;
+  values: any[];
+  options: any;
+  level: any;
+  constructor(from, to, modifier, construktor, values, options = {}) {
+    super(from, to, 'constructor', ['modifier', 'construktor', 'values'], options);
+    this.modifier = modifier;
+    this.construktor = construktor;
+    this.constructor_name = this.construktor.value.value;
+    this.values = values;
+  }
+
+  toDescription(level) {
+    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+    return `${this.constructor_name} with ${this.values}`;
+  }
+
+  pretty() {
+    let header = P.txt("[" + this.constructor_name + ":");
+    let values = P.sepBy(", ", "", this.values.map(p => p.pretty()));
+    let footer = P.txt("]");
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(P.horzArray([header, values, footer]),
+      P.vertArray([header,
+        values,
+        footer,
+      ])
+    );
+  }
+
+  render(props) {
+    let values = this.values.map(e => e.reactElement());
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">{this.constructor_name}</span>
+        <span className="blocks-args">{values}</span>
       </Node>
     );
   }

@@ -178,10 +178,38 @@ export class Let extends ASTNode {
   }
   render(props) {
     return (React.createElement(Node, Object.assign({ node: this }, props),
-      React.createElement("span", { className: "blocks-operator" }, "LET"),
-      React.createElement("span", { className: "block-args" },
-        this.id.reactElement(),
-        this.rhs.reactElement())));
+      React.createElement("span", { className: "blocks-operator" }, this.id.reactElement()),
+      React.createElement("span", { className: "block-args" }, this.rhs.reactElement())));
+  }
+}
+export class Construct extends ASTNode {
+  constructor(from, to, modifier, construktor, values, options = {}) {
+    super(from, to, 'constructor', ['modifier', 'construktor', 'values'], options);
+    this.modifier = modifier;
+    this.construktor = construktor;
+    this.constructor_name = this.construktor.value.value;
+    this.values = values;
+  }
+  toDescription(level) {
+    if ((this.level - level) >= descDepth)
+      return this.options['aria-label'];
+    return `${this.constructor_name} with ${this.values}`;
+  }
+  pretty() {
+    let header = P.txt("[" + this.constructor_name + ":");
+    let values = P.sepBy(", ", "", this.values.map(p => p.pretty()));
+    let footer = P.txt("]");
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(P.horzArray([header, values, footer]), P.vertArray([header,
+      values,
+      footer,
+    ]));
+  }
+  render(props) {
+    let values = this.values.map(e => e.reactElement());
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, this.constructor_name),
+      React.createElement("span", { className: "blocks-args" }, values)));
   }
 }
 // where are the literals?

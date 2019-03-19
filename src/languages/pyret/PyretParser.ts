@@ -11,6 +11,7 @@ import {
 import {Binop,
   ABlank,
   Bind,
+  Construct,
   Func,
   Sekwence as Sequence,
   Var,
@@ -64,7 +65,7 @@ const opLookup = {
   "and": "opand",
   "or":  "opor",
   // TODO: check ops
-  "is": l => "s-op-is", // from parse-pyret.js: 
+  "is": (loc, node) => new Literal(loc.from, loc.to, 'checkop-is'), // from parse-pyret.js: 
       // "is":                function(l){return RUNTIME.getField(ast, "s-op-is").app(l);},
 };
 
@@ -175,31 +176,30 @@ const nodeTypes = {
       {'aria-label': `${value}, a string`}
     );
   },
-  "s-construct": function(pos: Range) {
+  "s-construct": function (pos: Range, modifier: any, constructor: any, values: any[]) {
+    console.log(arguments);
+    return new Construct(
+      pos.from, pos.to, modifier, constructor, values, { 'aria-label': `${constructor} with values ${values}` }
+    );
+  },
+  "s-app": function(pos: Range, fun: any, args: any[]) {
     console.log(arguments);
     return new Literal(
       pos.from, pos.to, "test", 'string', 
     );
   },
-  "s-app": function(pos: Range) {
+  "s-tuple": function(pos: Range, fields: any[]) {
     console.log(arguments);
     return new Literal(
       pos.from, pos.to, "test", 'string', 
     );
   },
-  "s-tuple": function(pos: Range) {
-    console.log(arguments);
+  "s-check": function(pos: Range, name: string | undefined, body: any, keyword_check: boolean) {
     return new Literal(
       pos.from, pos.to, "test", 'string', 
     );
   },
-  "s-check": function(pos: Range) {
-    console.log(arguments);
-    return new Literal(
-      pos.from, pos.to, "test", 'string', 
-    );
-  },
-  "s-check-test": function(pos: Range) {
+  "s-check-test": function(pos: Range, check_op: any, refinement: any | undefined, lhs: any, rhs: any) {
     console.log(arguments);
     return new Literal(
       pos.from, pos.to, "test", 'string', 
@@ -236,7 +236,7 @@ function translateParseTree(parseTree: any, fileName: string) {
     "makeNode": makeNode,
     "opLookup": opLookup,
     "makeLink": function(a: any, b: any[]) {
-      b.unshift(a); // Probably safe?
+      b.unshift(a);
       return b;
     },
     "makeEmpty": function() {
