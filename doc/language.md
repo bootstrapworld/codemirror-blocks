@@ -49,6 +49,10 @@ The call to `addLanguage` takes the following arguments:
   - The result is an `AST`, as defined in `src/ast.js`. This AST will
   have nodes that are specific to your language. The rest of this
   guide describes how to define these node types.
+  - The source locations on the resulting `AST` must be well ordered.
+    Specifically: (i) the source location range of a parent must encompass the
+    source location ranges of its children, and (ii) the source location ranges
+    of a node's children must be non-overlapping and in-order.
 * `getRenderOptions` [FILL]
 
 You can see that this file is also importing a
