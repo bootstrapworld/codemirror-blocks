@@ -3,7 +3,7 @@ import * as P from "./pyret-lang/pyret-parser.js";
 import * as TR from "./pyret-lang/translate-parse-tree.js";
 import { AST } from '../../ast';
 import { Literal, } from '../../nodes';
-import { Binop, ABlank, Bind, Func, Sekwence as Sequence } from "./ast.js";
+import { Binop, ABlank, Bind, Func, Sekwence as Sequence, Let } from "./ast.js";
 class Range {
   constructor(from, to) {
     this.from = from;
@@ -78,7 +78,11 @@ const nodeTypes = {
   },
   "a-name": function(pos, str) {
     return new Literal(pos.from, pos.to, str, 'symbol');
+  },
+  "s-let": function(pos, id, rhs, options) {
+    return new Let(pos.from, pos.to, id, rhs, options);
   }
+  // add s-construct; s-app; s-tuple
 };
 
 function makeNode(nodeType) {

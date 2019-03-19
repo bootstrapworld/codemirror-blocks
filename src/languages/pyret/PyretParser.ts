@@ -137,10 +137,20 @@ const nodeTypes = {
       pos.to,
       str,
       'symbol');
+  },
+  "s-let": function(pos: Range, id: any, rhs: any, options: any) {
+    return new Let(
+      pos.from,
+      pos.to,
+      id,
+      rhs,
+      options
+    );
   }
+  // add s-construct; s-app; s-tuple
 }
 
-function makeNode(nodeType: string | number) {
+function makeNode(nodeType: string) {
   const args = Array.prototype.slice.call(arguments, 1);
   const constructor = nodeTypes[nodeType];
   if (constructor === undefined) {
