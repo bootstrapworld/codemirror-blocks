@@ -77,21 +77,24 @@ const nodeTypes = {
       pos.from,
       pos.to,
       str,
-      'symbol');
+      'symbol',
+      {'aria-label': `${str}, a name`});
   },
   "s-id": function(pos: Range, str: string) {
     return new Literal(
       pos.from,
       pos.to,
       str,
-      'symbol');
+      'symbol',
+      {'aria-label': `${str}, an identifier`});
   },
   "s-num": function(pos: Range, x: string) {
     return new Literal(
       pos.from,
       pos.to,
       x,
-      'number');
+      'number',
+      {'aria-label': `${x}, a number`});
   },
   "s-block": function(pos: Range, stmts: [any]) {
     return new Sequence(
@@ -136,7 +139,10 @@ const nodeTypes = {
       pos.from,
       pos.to,
       str,
-      'symbol');
+      'symbol',
+      // make sure that this matches the pedagogy used in classroom:
+      // "variable", "identifier", "name", ...; other languages
+      {'aria-label': `${str}, an identifier`});
   },
   "s-let": function(pos: Range, id: any, rhs: any, options: any) {
     return new Let(
