@@ -205,6 +205,7 @@ class BlockEditor extends Component {
     dispatch((_, getState) => {
       const state = getState();
       const {ast, focusId} = state;
+      console.log("handlekeydown", ast);
 
       switch (SHARED.keyMap[SHARED.keyName(e)]) {
       case 'nextNode': {
