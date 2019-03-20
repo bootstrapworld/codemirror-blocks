@@ -3,7 +3,7 @@ import * as P from "./pyret-lang/pyret-parser.js";
 import * as TR from "./pyret-lang/translate-parse-tree.js";
 import { AST } from '../../ast';
 import { Literal, } from '../../nodes';
-import { Binop, ABlank, Bind, Construct, Func, Sekwence as Sequence, Let, FunctionApp, Tuple, Check, } from "./ast.js";
+import { Binop, ABlank, Bind, Construct, Func, Sekwence as Sequence, Let, FunctionApp, Tuple, Check, CheckTest, } from "./ast.js";
 class Range {
   constructor(from, to) {
     this.from = from;
@@ -42,7 +42,7 @@ const opLookup = {
   "and": "opand",
   "or": "opor",
   // TODO: check ops
-  "is": (loc, node) => new Literal(loc.from, loc.to, 'checkop-is'),
+  "is": (loc, _node) => new Literal(loc.from, loc.to, 'is', 'check-op'),
 };
 // TODO: all of these are preliminary for testing
 const nodeTypes = {
@@ -112,7 +112,7 @@ const nodeTypes = {
   },
   "s-check-test": function(pos, check_op, refinement, lhs, rhs) {
     console.log(arguments);
-    return new Literal(pos.from, pos.to, "test", 'string');
+    return new CheckTest(pos.from, pos.to, check_op, refinement, lhs, rhs, { 'aria-label': `${check_op} ${lhs} ${rhs}` });
   },
 };
 

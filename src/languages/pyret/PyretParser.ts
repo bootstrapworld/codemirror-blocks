@@ -20,6 +20,7 @@ import {Binop,
   FunctionApp,
   Tuple,
   Check,
+  CheckTest,
 } from "./ast.js";
 
 interface Position {
@@ -68,8 +69,7 @@ const opLookup = {
   "and": "opand",
   "or":  "opor",
   // TODO: check ops
-  "is": (loc, node) => new Literal(loc.from, loc.to, 'checkop-is'), // from parse-pyret.js: 
-      // "is":                function(l){return RUNTIME.getField(ast, "s-op-is").app(l);},
+  "is": (loc, _node) => new Literal(loc.from, loc.to, 'is', 'check-op'),
 };
 
 // TODO: all of these are preliminary for testing
@@ -202,10 +202,10 @@ const nodeTypes = {
       pos.from, pos.to, name, body, keyword_check, { 'aria-label': ((name != undefined)? `${name} `: "") + `checking ${body}`}
     );
   },
-  "s-check-test": function(pos: Range, check_op: any, refinement: any | undefined, lhs: any, rhs: any) {
+  "s-check-test": function(pos: Range, check_op: any, refinement: any | undefined, lhs: any, rhs: any | undefined) {
     console.log(arguments);
-    return new Literal(
-      pos.from, pos.to, "test", 'string', 
+    return new CheckTest(
+      pos.from, pos.to, check_op, refinement, lhs, rhs, {'aria-label': `${check_op} ${lhs} ${rhs}`}
     );
   },
 }

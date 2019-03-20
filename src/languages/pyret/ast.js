@@ -312,4 +312,36 @@ export class Check extends ASTNode {
       values));
   }
 }
-// where are the literals?
+export class CheckTest extends ASTNode {
+  constructor(from, to, check_op, refinement, lhs, rhs, options = {}) {
+    super(from, to, 'functionApp', ['func', 'args'], options);
+    this.op = check_op;
+    this.refinement = refinement;
+    this.lhs = lhs;
+    this.rhs = rhs;
+    // this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
+  }
+  toDescription(level) {
+    if ((this.level - level) >= descDepth)
+      return this.options['aria-label'];
+    // how to deal with when rhs is undefined
+    return `${this.op.toDescription()} ${this.lhs.toDescription()} ${(this.rhs != null) ? this.rhs : ""}`;
+  }
+  pretty() {
+    let left = this.lhs.pretty();
+    let op = P.txt(this.op.toString());
+    let right = (this.rhs != null) ? this.rhs.pretty() : P.txt("");
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(P.horzArray([left, P.txt(" "), op, P.txt(" "), right]), P.vertArray([left,
+      P.horz("  ", op),
+      right,
+    ]));
+  }
+  render(props) {
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, this.op.toString()),
+      React.createElement("span", { className: "blocks-args" },
+        this.lhs.reactElement(),
+        this.rhs.reactElement())));
+  }
+}

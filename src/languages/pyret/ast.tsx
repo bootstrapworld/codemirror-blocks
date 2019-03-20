@@ -328,7 +328,7 @@ export class Construct extends ASTNode {
 }
 
 export class FunctionApp extends ASTNode {
-  func: string; // maybe has toDescription too?
+  func: {toString: () => string, toDescription: () => string};
   args: any[];
   hash: any;
   level: any;
@@ -463,4 +463,54 @@ export class Check extends ASTNode {
     );
   }
 }
-// where are the literals?
+
+export class CheckTest extends ASTNode {
+  op: {toString: () => string, toDescription: () => string};
+  hash: any;
+  level: any;
+  options: any;
+  refinement: any;
+  lhs: any;
+  rhs: any | undefined;
+  constructor(from, to, check_op, refinement, lhs, rhs, options={}) {
+    super(from, to, 'functionApp', ['func', 'args'], options);
+    this.op = check_op;
+    this.refinement = refinement;
+    this.lhs = lhs;
+    this.rhs = rhs;
+    // this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
+  }
+
+  toDescription(level){
+    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+    // how to deal with when rhs is undefined
+    return `${this.op.toDescription()} ${this.lhs.toDescription()} ${(this.rhs != null)? this.rhs : ""}`;
+  }
+
+  pretty() {
+    let left = this.lhs.pretty();
+    let op = P.txt(this.op.toString());
+    let right = (this.rhs != null)? this.rhs.pretty() : P.txt("");
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(P.horzArray([left, P.txt(" "), op, P.txt(" "), right]),
+      P.vertArray([left,
+        P.horz("  ", op), // maybe make values in P.vertArray
+        right,
+      ])
+    );
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          {this.op.toString()}
+        </span>
+        <span className="blocks-args">
+          {this.lhs.reactElement()}
+          {this.rhs.reactElement()}
+        </span>
+      </Node>
+    );
+  }
+}
