@@ -63,7 +63,8 @@ const nodeTypes = {
     return new Sequence(pos.from, pos.to, stmts, 'block');
   },
   "s-op": function(pos, _opPos, op, left, right) {
-    return new Binop(pos.from, pos.to, op.substr(2), left, right);
+    let name = op.substr(2);
+    return new Binop(pos.from, pos.to, name, left, right, { 'aria-label': `${left} ${name} ${right}` });
   },
   "s-bind": function(pos, _shadows, id, ann) {
     // TODO: ignoring shadowing for now.
@@ -71,7 +72,7 @@ const nodeTypes = {
   },
   "s-fun": function(pos, name, _params, args, ann, doc, body, _checkLoc, _check, _blodky) {
     // TODO: ignoring params, check, blocky
-    return new Func(pos.from, pos.to, name, args, ann, doc, body);
+    return new Func(pos.from, pos.to, name, args, ann, doc, body, { 'aria-label': `${name}, a function with ${args} with ${body}` });
   },
   // Annotations
   "a-blank": function() {
@@ -83,7 +84,10 @@ const nodeTypes = {
       // "variable", "identifier", "name", ...; other languages
       { 'aria-label': `${str}, an identifier` });
   },
-  "s-let": function(pos, id, rhs, options) {
+  "s-let": function(pos, id, rhs, _rec) {
+    console.log(arguments);
+    let options = {};
+    options['aria-label'] = `${id} set to ${rhs}`;
     return new Let(pos.from, pos.to, id, rhs, options);
   },
   "s-bool": function(pos, value) {
@@ -114,6 +118,18 @@ const nodeTypes = {
     console.log(arguments);
     return new CheckTest(pos.from, pos.to, check_op, refinement, lhs, rhs, { 'aria-label': `${check_op} ${lhs} ${rhs}` });
   },
+  's-include': function(pos) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, 'test', 'string');
+  },
+  's-const-import': function(pos) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, 'test', 'string');
+  },
+  's-bracket': function(pos, base, index) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, 'test', 'string');
+  }
 };
 
 function makeNode(nodeType) {

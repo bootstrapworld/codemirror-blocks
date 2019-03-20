@@ -21,7 +21,42 @@ describe("The Pyret Parser,", function() {
     test('1');
     test('"hello"');
     test('x');
-    test('{1; 2}');
+  });
+
+  it("should have some label for Bootstrap constructs", function() {
+    let test = (str) => expect(this.parser.parse(str).rootNodes[0].options["aria-label"]).not.toBe(undefined);
+    /**
+     * From Justin and Emmanuel
+     * import
+     * load-spreadhseet
+	   * load-table
+	   * simple let bindings -> improve stylings and rendering
+	   * funciton definition -> works
+	   * func app -> similar as simple let (s-app NYI)
+	   * method invocation -> same
+	   * binop -> works
+	   * check-expects -> hash error
+	   * is -> not recognized as an operator
+	   * tuples -> NYI
+	   * constructor ([list: 1, 2, 3]) -> all except styling
+	   * dot accessor
+	   * if would be nice to have
+     */
+    // test('include gdrive-sheets');
+//     test('presidents-sheet = load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")');
+//     test(`presidents = load-table: nth, name, home-state, year-started, year-ended, party
+//   source: presidents-sheet.sheet-by-name("presidents", true)
+// end`);
+    test(`x = 3`);
+    test(`3 + 5`);
+    test(`fun f(x): x + 3 end`);
+    test('f(5)');
+    // test(`x.len()`);
+    test(`3 + 4 is 7`);
+    test(`check: 3 + 5 is 8 end`);
+    test('{1;2}');
+    test('[list: 1, 2, 3]');
+    // test('row["field"]');
   });
 
   /* it("should treat vector literals like expressions", function() {

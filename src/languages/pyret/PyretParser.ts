@@ -109,13 +109,15 @@ const nodeTypes = {
       stmts,
       'block');
   },
-  "s-op": function(pos: Range, _opPos: any, op: { substr: (arg0: number) => void; }, left: any, right: any) {
+  "s-op": function(pos: Range, _opPos: any, op: { substr: (arg0: number) => any; }, left: any, right: any) {
+    let name = op.substr(2);
     return new Binop(
       pos.from,
       pos.to,
-      op.substr(2),
+      name,
       left,
-      right);
+      right,
+      {'aria-label': `${left} ${name} ${right}`});
   },
   "s-bind": function(pos: Range, _shadows: any, id: any, ann: any) {
     // TODO: ignoring shadowing for now.
@@ -134,7 +136,8 @@ const nodeTypes = {
       args,
       ann,
       doc,
-      body);
+      body,
+      {'aria-label': `${name}, a function with ${args} with ${body}`});
   },
   // Annotations
   "a-blank": function() {
@@ -150,7 +153,10 @@ const nodeTypes = {
       // "variable", "identifier", "name", ...; other languages
       {'aria-label': `${str}, an identifier`});
   },
-  "s-let": function(pos: Range, id: any, rhs: any, options: any) {
+  "s-let": function(pos: Range, id: any, rhs: any, _rec: boolean) {
+    console.log(arguments);
+    let options = {};
+    options['aria-label'] = `${id} set to ${rhs}`;
     return new Let(
       pos.from,
       pos.to,
@@ -208,6 +214,24 @@ const nodeTypes = {
       pos.from, pos.to, check_op, refinement, lhs, rhs, {'aria-label': `${check_op} ${lhs} ${rhs}`}
     );
   },
+  's-include': function(pos: Range) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, 'test', 'string'
+    )
+  },
+  's-const-import': function(pos: Range) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, 'test', 'string'
+    )
+  },
+  's-bracket': function(pos: Range, base: any, index: any) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, 'test', 'string'
+    )
+  }
 }
 
 function makeNode(nodeType: string) {
