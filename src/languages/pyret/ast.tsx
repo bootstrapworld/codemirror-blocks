@@ -1,5 +1,7 @@
 import React from 'react';
+import hashObject from 'object-hash';
 import Node from '../../components/Node';
+import Args from '../../components/Args';
 import * as P from '../../pretty';
 
 import { ASTNode, pluralize, descDepth } from '../../ast';
@@ -292,7 +294,7 @@ export class Construct extends ASTNode {
     super(from, to, 'constructor', ['modifier', 'construktor', 'values'], options);
     this.modifier = modifier;
     this.construktor = construktor;
-    this.constructor_name = this.construktor.value.value;
+    this.constructor_name = this.construktor.toString();
     this.values = values;
   }
 
@@ -325,5 +327,140 @@ export class Construct extends ASTNode {
   }
 }
 
+export class FunctionApp extends ASTNode {
+  func: string; // maybe has toDescription too?
+  args: any[];
+  hash: any;
+  level: any;
+  options: any;
+  constructor(from, to, func, args, options={}) {
+    super(from, to, 'functionApp', ['func', 'args'], options);
+    this.func = func;
+    this.args = args;
+    this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
+  }
 
+  toDescription(level){
+    // if it's the top level, enumerate the args
+    if((this.level  - level) == 0) {
+      return `applying the function ${this.func.toDescription()} to ${pluralize("argument", this.args)} `+
+      this.args.map((a, i, args)  => (args.length>1? (i+1) + ": " : "")+ a.toDescription(level)).join(", ");
+    }
+    // if we've bottomed out, use the aria label
+    if((this.level  - level) >= descDepth) return this.options['aria-label'];
+    // if we're in between, use "f of A, B, C" format
+    else return `${this.func.toDescription()} of `+ this.args.map(a  => a.toDescription(level)).join(", ");
+      
+  }
+
+  pretty() {
+    let header = P.txt(this.func + "(");
+    let values = P.sepBy(", ", "", this.args.map(p => p.pretty()));
+    let footer = P.txt(")");
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(P.horzArray([header, values, footer]),
+      P.vertArray([header,
+        P.horz("  ", values), // maybe make values in P.vertArray
+        footer,
+      ])
+    );
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          <Args>{[this.func]}</Args>
+        </span>
+        <span className="blocks-args">
+          <Args>{this.args}</Args>
+        </span>
+    </Node>
+    );
+  }
+}
+
+// could maybe combine this with list to make generic data structure pyret block
+export class Tuple extends ASTNode {
+  fields: any[];
+  options: any;
+  level: any;
+  constructor(from, to, fields, options = {}) {
+    super(from, to, 'tuple', ['fields'], options);
+    this.fields = fields;
+  }
+
+  toDescription(level) {
+    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+    return `tuple with ${this.fields}`;
+  }
+
+  pretty() {
+    let header = P.txt("{");
+    let values = P.sepBy("; ", "", this.fields.map(p => p.pretty()));
+    let footer = P.txt("}");
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(P.horzArray([header, values, footer]),
+      P.vertArray([header,
+        P.horz("  ", values), // maybe make values in P.vertArray
+        footer,
+      ])
+    );
+  }
+
+  render(props) {
+    let values = this.fields.map(e => e.reactElement());
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">tuple</span>
+        {values}
+      </Node>
+    );
+  }
+}
+
+export class Check extends ASTNode {
+  options: any;
+  level: any;
+  name: string | undefined;
+  body: any;
+  keyword_check: boolean;
+  constructor(from, to, name, body, keyword_check, options = {}) {
+    super(from, to, 'check', ['name', 'body', 'keyword_check'], options);
+    this.name = name;
+    this.body = body;
+    this.keyword_check = keyword_check;
+  }
+
+  toDescription(level) {
+    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+    return `check with ${this.body}`;
+  }
+
+  pretty() {
+    console.log(this.name);
+    let header = P.txt("check" + ((this.name != null)? (` "${this.name}"`) : "") + ":");
+    let values = this.body.pretty();
+    let footer = P.txt("end");
+    // either one line or multiple; helper for joining args together
+    let ret = P.ifFlat(P.horzArray([header, P.txt(" "), values, P.txt(" "), footer]),
+      P.vertArray([header,
+        P.horz("  ", values), // maybe make values in P.vertArray?
+        footer,
+      ])
+    );
+    console.log(ret);
+    return ret;
+  }
+
+  render(props) {
+    let values = this.body.reactElement();
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">{"check" + (this.name != null? " " + this.name : "")}</span>
+        {values}
+      </Node>
+    );
+  }
+}
 // where are the literals?

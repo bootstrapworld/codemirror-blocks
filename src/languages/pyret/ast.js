@@ -1,7 +1,9 @@
 import React from 'react';
+import hashObject from 'object-hash';
 import Node from '../../components/Node';
+import Args from '../../components/Args';
 import * as P from '../../pretty';
-import { ASTNode, descDepth } from '../../ast';
+import { ASTNode, pluralize, descDepth } from '../../ast';
 export class Binop extends ASTNode {
   constructor(from, to, op, left, right, options = {}) {
     super(from, to, 'binop', ['left', 'right'], options);
@@ -187,7 +189,7 @@ export class Construct extends ASTNode {
     super(from, to, 'constructor', ['modifier', 'construktor', 'values'], options);
     this.modifier = modifier;
     this.construktor = construktor;
-    this.constructor_name = this.construktor.value.value;
+    this.constructor_name = this.construktor.toString();
     this.values = values;
   }
   toDescription(level) {
@@ -209,6 +211,104 @@ export class Construct extends ASTNode {
     let values = this.values.map(e => e.reactElement());
     return (React.createElement(Node, Object.assign({ node: this }, props),
       React.createElement("span", { className: "blocks-operator" }, this.constructor_name),
+      values));
+  }
+}
+export class FunctionApp extends ASTNode {
+  constructor(from, to, func, args, options = {}) {
+    super(from, to, 'functionApp', ['func', 'args'], options);
+    this.func = func;
+    this.args = args;
+    this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
+  }
+  toDescription(level) {
+    // if it's the top level, enumerate the args
+    if ((this.level - level) == 0) {
+      return `applying the function ${this.func.toDescription()} to ${pluralize("argument", this.args)} ` +
+        this.args.map((a, i, args) => (args.length > 1 ? (i + 1) + ": " : "") + a.toDescription(level)).join(", ");
+    }
+    // if we've bottomed out, use the aria label
+    if ((this.level - level) >= descDepth)
+      return this.options['aria-label'];
+    // if we're in between, use "f of A, B, C" format
+    else
+      return `${this.func.toDescription()} of ` + this.args.map(a => a.toDescription(level)).join(", ");
+  }
+  pretty() {
+    let header = P.txt(this.func + "(");
+    let values = P.sepBy(", ", "", this.args.map(p => p.pretty()));
+    let footer = P.txt(")");
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(P.horzArray([header, values, footer]), P.vertArray([header,
+      P.horz("  ", values),
+      footer,
+    ]));
+  }
+  render(props) {
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" },
+        React.createElement(Args, null, [this.func])),
+      React.createElement("span", { className: "blocks-args" },
+        React.createElement(Args, null, this.args))));
+  }
+}
+// could maybe combine this with list to make generic data structure pyret block
+export class Tuple extends ASTNode {
+  constructor(from, to, fields, options = {}) {
+    super(from, to, 'tuple', ['fields'], options);
+    this.fields = fields;
+  }
+  toDescription(level) {
+    if ((this.level - level) >= descDepth)
+      return this.options['aria-label'];
+    return `tuple with ${this.fields}`;
+  }
+  pretty() {
+    let header = P.txt("{");
+    let values = P.sepBy("; ", "", this.fields.map(p => p.pretty()));
+    let footer = P.txt("}");
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(P.horzArray([header, values, footer]), P.vertArray([header,
+      P.horz("  ", values),
+      footer,
+    ]));
+  }
+  render(props) {
+    let values = this.fields.map(e => e.reactElement());
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, "tuple"),
+      values));
+  }
+}
+export class Check extends ASTNode {
+  constructor(from, to, name, body, keyword_check, options = {}) {
+    super(from, to, 'check', ['name', 'body', 'keyword_check'], options);
+    this.name = name;
+    this.body = body;
+    this.keyword_check = keyword_check;
+  }
+  toDescription(level) {
+    if ((this.level - level) >= descDepth)
+      return this.options['aria-label'];
+    return `check with ${this.body}`;
+  }
+  pretty() {
+    console.log(this.name);
+    let header = P.txt("check" + ((this.name != null) ? (` "${this.name}"`) : "") + ":");
+    let values = this.body.pretty();
+    let footer = P.txt("end");
+    // either one line or multiple; helper for joining args together
+    let ret = P.ifFlat(P.horzArray([header, P.txt(" "), values, P.txt(" "), footer]), P.vertArray([header,
+      P.horz("  ", values),
+      footer,
+    ]));
+    console.log(ret);
+    return ret;
+  }
+  render(props) {
+    let values = this.body.reactElement();
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, "check" + (this.name != null ? " " + this.name : "")),
       values));
   }
 }

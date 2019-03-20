@@ -16,7 +16,10 @@ import {Binop,
   Sekwence as Sequence,
   Var,
   Assign,
-  Let
+  Let,
+  FunctionApp,
+  Tuple,
+  Check,
 } from "./ast.js";
 
 interface Position {
@@ -171,7 +174,7 @@ const nodeTypes = {
     return new Literal(
       pos.from,
       pos.to,
-      value,
+      "\"" + value + "\"",
       'string',
       {'aria-label': `${value}, a string`}
     );
@@ -184,19 +187,19 @@ const nodeTypes = {
   },
   "s-app": function(pos: Range, fun: any, args: any[]) {
     console.log(arguments);
-    return new Literal(
-      pos.from, pos.to, "test", 'string', 
+    return new FunctionApp(
+      pos.from, pos.to, fun, args, {'aria-label': `${fun} applied to ${args}`}, 
     );
   },
   "s-tuple": function(pos: Range, fields: any[]) {
     console.log(arguments);
-    return new Literal(
-      pos.from, pos.to, "test", 'string', 
+    return new Tuple(
+      pos.from, pos.to, fields, {'aria-label': `tuple with ${fields}`}, 
     );
   },
   "s-check": function(pos: Range, name: string | undefined, body: any, keyword_check: boolean) {
-    return new Literal(
-      pos.from, pos.to, "test", 'string', 
+    return new Check(
+      pos.from, pos.to, name, body, keyword_check, { 'aria-label': ((name != undefined)? `${name} `: "") + `checking ${body}`}
     );
   },
   "s-check-test": function(pos: Range, check_op: any, refinement: any | undefined, lhs: any, rhs: any) {

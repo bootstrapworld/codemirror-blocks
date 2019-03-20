@@ -3,7 +3,7 @@ import * as P from "./pyret-lang/pyret-parser.js";
 import * as TR from "./pyret-lang/translate-parse-tree.js";
 import { AST } from '../../ast';
 import { Literal, } from '../../nodes';
-import { Binop, ABlank, Bind, Construct, Func, Sekwence as Sequence, Let } from "./ast.js";
+import { Binop, ABlank, Bind, Construct, Func, Sekwence as Sequence, Let, FunctionApp, Tuple, Check, } from "./ast.js";
 class Range {
   constructor(from, to) {
     this.from = from;
@@ -93,7 +93,7 @@ const nodeTypes = {
   },
   "s-str": function(pos, value) {
     console.log(arguments);
-    return new Literal(pos.from, pos.to, value, 'string', { 'aria-label': `${value}, a string` });
+    return new Literal(pos.from, pos.to, "\"" + value + "\"", 'string', { 'aria-label': `${value}, a string` });
   },
   "s-construct": function(pos, modifier, constructor, values) {
     console.log(arguments);
@@ -101,14 +101,14 @@ const nodeTypes = {
   },
   "s-app": function(pos, fun, args) {
     console.log(arguments);
-    return new Literal(pos.from, pos.to, "test", 'string');
+    return new FunctionApp(pos.from, pos.to, fun, args, { 'aria-label': `${fun} applied to ${args}` });
   },
   "s-tuple": function(pos, fields) {
     console.log(arguments);
-    return new Literal(pos.from, pos.to, "test", 'string');
+    return new Tuple(pos.from, pos.to, fields, { 'aria-label': `tuple with ${fields}` });
   },
   "s-check": function(pos, name, body, keyword_check) {
-    return new Literal(pos.from, pos.to, "test", 'string');
+    return new Check(pos.from, pos.to, name, body, keyword_check, { 'aria-label': ((name != undefined) ? `${name} ` : "") + `checking ${body}` });
   },
   "s-check-test": function(pos, check_op, refinement, lhs, rhs) {
     console.log(arguments);
