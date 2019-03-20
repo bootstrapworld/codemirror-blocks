@@ -217,21 +217,27 @@ const nodeTypes = {
   's-include': function(pos: Range) {
     console.log(arguments);
     return new Literal(
-      pos.from, pos.to, 'test', 'string'
+      pos.from, pos.to, 'test', 'string', {'aria-label': 'include'}
     )
   },
   's-const-import': function(pos: Range) {
     console.log(arguments);
     return new Literal(
-      pos.from, pos.to, 'test', 'string'
+      pos.from, pos.to, 'test', 'string', {'aria-label': 'const import'}
     )
   },
   's-bracket': function(pos: Range, base: any, index: any) {
     console.log(arguments);
     return new Literal(
+      pos.from, pos.to, 'test', 'string', {'aria-label': `bracket`}
+    )
+  },
+  's-dot': function(pos: Range, base: any, method: string) {
+    console.log(arguments);
+    return new Literal(
       pos.from, pos.to, 'test', 'string'
     )
-  }
+  },
 }
 
 function makeNode(nodeType: string) {

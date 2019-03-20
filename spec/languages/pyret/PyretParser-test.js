@@ -51,12 +51,12 @@ describe("The Pyret Parser,", function() {
     test(`3 + 5`);
     test(`fun f(x): x + 3 end`);
     test('f(5)');
-    // test(`x.len()`);
+    test(`x.len()`);
     test(`3 + 4 is 7`);
     test(`check: 3 + 5 is 8 end`);
     test('{1;2}');
     test('[list: 1, 2, 3]');
-    // test('row["field"]');
+    test('row["field"]');
   });
 
   /* it("should treat vector literals like expressions", function() {

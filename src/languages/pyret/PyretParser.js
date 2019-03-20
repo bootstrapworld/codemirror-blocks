@@ -120,16 +120,20 @@ const nodeTypes = {
   },
   's-include': function(pos) {
     console.log(arguments);
-    return new Literal(pos.from, pos.to, 'test', 'string');
+    return new Literal(pos.from, pos.to, 'test', 'string', { 'aria-label': 'include' });
   },
   's-const-import': function(pos) {
     console.log(arguments);
-    return new Literal(pos.from, pos.to, 'test', 'string');
+    return new Literal(pos.from, pos.to, 'test', 'string', { 'aria-label': 'const import' });
   },
   's-bracket': function(pos, base, index) {
     console.log(arguments);
+    return new Literal(pos.from, pos.to, 'test', 'string', { 'aria-label': `bracket` });
+  },
+  's-dot': function(pos, base, method) {
+    console.log(arguments);
     return new Literal(pos.from, pos.to, 'test', 'string');
-  }
+  },
 };
 
 function makeNode(nodeType) {
