@@ -64,6 +64,27 @@ describe("The Pretty-Printing Doc Class", function() {
     });
   });
 
+  describe("when rendering the Pyret example from the docs", function() {
+
+    function showFunc(name, args, body) {
+      let header = horz(txt("fun "), name, txt("("), args, txt("):"));
+      let onOneLine = horz(header, txt(" "), body, txt(" end"));
+      let onMultipleLines = vert(header, horz(txt("    "), body), txt("end"));
+      return ifFlat(onOneLine, onMultipleLines);
+    }
+
+    function funcExample() {
+      return showFunc(txt("greet"), txt("name"), txt('"Welcome back, " + name'));
+    }
+
+    it("Pyret functions should match the documentation", function() {
+      expect(funcExample().display(80))
+        .toEqual(['fun greet(name): "Welcome back, " + name end']);
+      expect(funcExample().display(40))
+        .toEqual(['fun greet(name):', '    "Welcome back, " + name', 'end']);
+    });
+  });
+
   describe("when wrapping words", function() {
 
     it("should be able to wrap an eight-word sentence.", function() {
