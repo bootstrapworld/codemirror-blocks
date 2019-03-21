@@ -110,12 +110,9 @@ class Node extends BlockComponent {
       const node = ast.getNodeById(id);
 
       const fastSkip = next => skipCollapsed(node, next, state);
-      const activate = (node, options={allowMove: true, record: true}) => {
-        if (!node) {
-          playSound(BEEP);
-        } else {
-          this.props.activate(node.id, options);
-        }
+      const activate = (n, options={allowMove: true, record: true}) => {
+        if (!n) { playSound(BEEP); }
+        this.props.activate(n? n.id : node.id, options);
       };
 
       switch (SHARED.keyMap[SHARED.keyName(e)]) {
