@@ -235,7 +235,7 @@ const nodeTypes = {
   's-dot': function(pos: Range, base: any, method: string) {
     console.log(arguments);
     return new Literal(
-      pos.from, pos.to, 'test', 'string'
+      pos.from, pos.to, base.toString() + "." + method , 'method', {'aria-label': `${method} on data ${base}`}
     )
   },
 }
