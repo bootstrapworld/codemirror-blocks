@@ -42,6 +42,7 @@ describe("The Pyret Parser,", function() {
 	   * dot accessor
 	   * if would be nice to have
      */
+    // includes aren't part of the parse tree for now
     // test('include gdrive-sheets');
     // ends up just being fun app
     test('load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")');
