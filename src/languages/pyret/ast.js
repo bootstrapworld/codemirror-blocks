@@ -345,3 +345,30 @@ export class CheckTest extends ASTNode {
         this.rhs.reactElement())));
   }
 }
+export class Bracket extends ASTNode {
+  constructor(from, to, base, index, options = {}) {
+    super(from, to, 'let', ['id', 'rhs'], options);
+    this.index = index;
+    this.base = base;
+  }
+  toDescription(level) {
+    if ((this.level - level) >= descDepth)
+      return this.options['aria-label'];
+    return `${this.index} of ${this.base}`;
+  }
+  pretty() {
+    let base_string = this.base.pretty();
+    let index_string = this.index.pretty();
+    console.log(base_string, index_string);
+    return P.horzArray([base_string, P.txt('['), index_string, P.txt(']')]);
+  }
+  render(props) {
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" },
+        this.base.reactElement(),
+        " [ ",
+        this.index.reactElement(),
+        "]"),
+      React.createElement("span", { className: "block-args" })));
+  }
+}

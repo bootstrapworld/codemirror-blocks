@@ -21,6 +21,7 @@ import {Binop,
   Tuple,
   Check,
   CheckTest,
+  Bracket,
 } from "./ast.js";
 
 interface Position {
@@ -228,8 +229,8 @@ const nodeTypes = {
   },
   's-bracket': function(pos: Range, base: any, index: any) {
     console.log(arguments);
-    return new Literal(
-      pos.from, pos.to, 'test', 'string', {'aria-label': `bracket`}
+    return new Bracket(
+      pos.from, pos.to, base, index, {'aria-label': `${index} of ${base}`}
     )
   },
   's-dot': function(pos: Range, base: any, method: string) {

@@ -3,7 +3,7 @@ import * as P from "./pyret-lang/pyret-parser.js";
 import * as TR from "./pyret-lang/translate-parse-tree.js";
 import { AST } from '../../ast';
 import { Literal, } from '../../nodes';
-import { Binop, ABlank, Bind, Construct, Func, Sekwence as Sequence, Let, FunctionApp, Tuple, Check, CheckTest, } from "./ast.js";
+import { Binop, ABlank, Bind, Construct, Func, Sekwence as Sequence, Let, FunctionApp, Tuple, Check, CheckTest, Bracket, } from "./ast.js";
 class Range {
   constructor(from, to) {
     this.from = from;
@@ -128,7 +128,7 @@ const nodeTypes = {
   },
   's-bracket': function(pos, base, index) {
     console.log(arguments);
-    return new Literal(pos.from, pos.to, 'test', 'string', { 'aria-label': `bracket` });
+    return new Bracket(pos.from, pos.to, base, index, { 'aria-label': `${index} of ${base}` });
   },
   's-dot': function(pos, base, method) {
     console.log(arguments);
