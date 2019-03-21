@@ -21,8 +21,9 @@ export const descDepth = 1;
 export class AST {
   constructor(rootNodes) {
     // the `rootNodes` attribute simply contains a list of the top level nodes
-    // that were parsed.
+    // that were parsed, in srcLoc order
     this.rootNodes = rootNodes;
+    this.rootNodes.sort((a,b) => poscmp(a.from, b.from));
     // the `reverseRootNodes` attribute is a shallow, reversed copy of the rootNodes
     this.reverseRootNodes = rootNodes.slice().reverse();
 

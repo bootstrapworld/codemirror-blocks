@@ -14,7 +14,7 @@ import {pos} from '../types';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
 import CodeMirror from './DragAndDropEditor';
-import {computeFocusNodeFromChanges, poscmp} from '../utils';
+import {computeFocusNodeFromChanges, poscmp, say} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 
@@ -329,6 +329,7 @@ class BlockEditor extends Component {
       this.props.dispatch({type: 'COLLAPSE_ALL'});
     }
     this.props.setAnnouncer(announcements);
+    say("Block Mode Enabled", 500);
 
     // if we have nodes, default to the first one. Note that does NOT
     // activate a node; only when the editor is focused, the focused node will be
