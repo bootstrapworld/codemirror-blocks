@@ -22,6 +22,7 @@ import {Binop,
   Check,
   CheckTest,
   Bracket,
+  LoadTable,
 } from "./ast.js";
 
 interface Position {
@@ -236,7 +237,26 @@ const nodeTypes = {
   's-dot': function(pos: Range, base: any, method: string) {
     console.log(arguments);
     return new Literal(
-      pos.from, pos.to, base.toString() + "." + method , 'method', {'aria-label': `${method} on data ${base}`}
+      pos.from, pos.to, base.toString() + "." + method, 'method', {'aria-label': `${method} on data ${base}`}
+    )
+  },
+  's-table-src': function(pos: Range, source: any) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, source, 'table-source', {'aria-label': `${source}, a table source`}
+    )
+  },
+  's-load-table': function(pos: Range, rows: any[], sources: any[]) {
+    console.log(arguments);
+    return new LoadTable(
+      pos.from, pos.to, rows, sources, {'aria-label': `${rows} of table from ${sources}`}
+    )
+  },
+  // examples of this _other have been ABlank...
+  's-field-name': function(pos: Range, name: string, _other: any) {
+    console.log(arguments);
+    return new Literal(
+      pos.from, pos.to, name, 'field-name', {'aria-label': `${name} field`}
     )
   },
 }
@@ -329,6 +349,7 @@ export class PyretParser {
       }
     } else {
       console.log("Invalid parse");
+      console.log(text);
       // really, curTok does exist, but ts isn't smart enough to detect
       console.log("Next token is " + (tokenizer as any).curTok.toRepr(true)
                   + " at " + (tokenizer as any).curTok.pos.toString(true));

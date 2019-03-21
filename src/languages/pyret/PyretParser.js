@@ -3,7 +3,7 @@ import * as P from "./pyret-lang/pyret-parser.js";
 import * as TR from "./pyret-lang/translate-parse-tree.js";
 import { AST } from '../../ast';
 import { Literal, } from '../../nodes';
-import { Binop, ABlank, Bind, Construct, Func, Sekwence as Sequence, Let, FunctionApp, Tuple, Check, CheckTest, Bracket, } from "./ast.js";
+import { Binop, ABlank, Bind, Construct, Func, Sekwence as Sequence, Let, FunctionApp, Tuple, Check, CheckTest, Bracket, LoadTable, } from "./ast.js";
 class Range {
   constructor(from, to) {
     this.from = from;
@@ -134,6 +134,19 @@ const nodeTypes = {
     console.log(arguments);
     return new Literal(pos.from, pos.to, base.toString() + "." + method, 'method', { 'aria-label': `${method} on data ${base}` });
   },
+  's-table-src': function(pos, source) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, source, 'table-source', { 'aria-label': `${source}, a table source` });
+  },
+  's-load-table': function(pos, rows, sources) {
+    console.log(arguments);
+    return new LoadTable(pos.from, pos.to, rows, sources, { 'aria-label': `${rows} of table from ${sources}` });
+  },
+  // examples of this _other have been ABlank...
+  's-field-name': function(pos, name, _other) {
+    console.log(arguments);
+    return new Literal(pos.from, pos.to, name, 'field-name', { 'aria-label': `${name} field` });
+  },
 };
 
 function makeNode(nodeType) {
@@ -223,6 +236,7 @@ export class PyretParser {
       }
     } else {
       console.log("Invalid parse");
+      console.log(text);
       // really, curTok does exist, but ts isn't smart enough to detect
       console.log("Next token is " + tokenizer.curTok.toRepr(true) +
         " at " + tokenizer.curTok.pos.toString(true));

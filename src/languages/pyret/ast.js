@@ -372,3 +372,36 @@ export class Bracket extends ASTNode {
       React.createElement("span", { className: "block-args" })));
   }
 }
+export class LoadTable extends ASTNode {
+  constructor(from, to, rows, sources, options = {}) {
+    super(from, to, 'functionApp', ['func', 'args'], options);
+    this.rows = rows;
+    this.sources = sources;
+  }
+  toDescription(level) {
+    if ((this.level - level) >= descDepth) {
+      return `${this.rows} in a table from ${this.sources}`;
+    }
+    // if we've bottomed out, use the aria label
+    return this.options['aria-label'];
+  }
+  pretty() {
+    let header = P.txt("load-table: ");
+    let row_names = P.sepBy(", ", "", this.rows.map(e => e.pretty()));
+    let row_pretty = P.ifFlat(row_names, P.vertArray(this.rows.map(e => e.pretty())));
+    let sources = P.horz("source: ", P.sepBy("", "source: ", this.sources.map(s => s.pretty())));
+    let footer = P.txt("end");
+    return P.vertArray([
+      P.ifFlat(P.horz(header, row_pretty), P.vert(header, P.horz(P.txt("  "), row_pretty))),
+      P.horz("  ", sources),
+      footer
+    ]);
+  }
+  render(props) {
+    return (React.createElement(Node, Object.assign({ node: this }, props),
+      React.createElement("span", { className: "blocks-operator" }, "load-table"),
+      React.createElement("span", { className: "blocks-args" },
+        React.createElement(Args, null, this.rows)),
+      this.sources.map(e => e.reactElement())));
+  }
+}

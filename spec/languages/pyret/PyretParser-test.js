@@ -43,15 +43,16 @@ describe("The Pyret Parser,", function() {
 	   * if would be nice to have
      */
     // test('include gdrive-sheets');
-//     test('presidents-sheet = load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")');
-//     test(`presidents = load-table: nth, name, home-state, year-started, year-ended, party
-//   source: presidents-sheet.sheet-by-name("presidents", true)
-// end`);
+    // ends up just being fun app
+    test('load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")');
+    test(`load-table: nth, name, home-state, year-started, year-ended, party
+  source: presidents-sheet.sheet-by-name("presidents", true)
+end`);
     test(`x = 3`);
     test(`3 + 5`);
     test(`fun f(x): x + 3 end`);
     test('f(5)');
-    test(`x.len()`);
+    test(`x.len()`); // actually not the right test since shows up as funapp
     test(`3 + 4 is 7`);
     test(`check: 3 + 5 is 8 end`);
     test('{1;2}');
@@ -59,6 +60,7 @@ describe("The Pyret Parser,", function() {
     test('row["field"]');
   });
 
+  // check to make sure that it produces a pareable program on swapping from blocks to tests
   /* it("should treat vector literals like expressions", function() {
     let ast = this.parser.parse('#(1 3)');
     expect(ast.rootNodes[0].type).toBe('functionApp');

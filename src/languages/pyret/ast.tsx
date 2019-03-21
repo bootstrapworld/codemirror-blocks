@@ -550,3 +550,51 @@ export class Bracket extends ASTNode {
     );
   }
 }
+
+export class LoadTable extends ASTNode {
+  rows: any[];
+  sources: any[];
+  hash: any;
+  level: any;
+  options: any;
+  constructor(from, to, rows, sources, options={}) {
+    super(from, to, 'functionApp', ['func', 'args'], options);
+    this.rows = rows;
+    this.sources = sources;
+  }
+
+  toDescription(level){
+    if((this.level  - level) >= descDepth) {
+      return `${this.rows} in a table from ${this.sources}`;
+    }
+    // if we've bottomed out, use the aria label
+    return this.options['aria-label'];
+  }
+
+  pretty() {
+    let header = P.txt("load-table: ");
+    let row_names = P.sepBy(", ", "", this.rows.map(e => e.pretty()));
+    let row_pretty = P.ifFlat(row_names, P.vertArray(this.rows.map(e => e.pretty())));
+    let sources = P.horz("source: ", P.sepBy("", "source: ", this.sources.map(s => s.pretty())));
+    let footer = P.txt("end");
+    return P.vertArray([
+      P.ifFlat(P.horz(header, row_pretty),
+        P.vert(header, P.horz(P.txt("  "), row_pretty))),
+      P.horz("  ", sources),
+      footer]);
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          load-table
+        </span>
+        <span className="blocks-args">
+          <Args>{this.rows}</Args>
+        </span>
+        {this.sources.map(e => e.reactElement())}
+    </Node>
+    );
+  }
+}
