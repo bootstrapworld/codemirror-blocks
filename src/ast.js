@@ -186,6 +186,9 @@ export class AST {
   getNodeAt(from, to) {
     let n = [...this.nodeIdMap.values()].find(n => {
       let {from: srcFrom, to: srcTo} = n.srcRange();
+      // happens when node is an ABlank
+      if (n.from == null || n.to == null)
+        return undefined;
       return (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0)
         || (poscmp(from, srcFrom) == 0) && (poscmp(to, srcTo) == 0);
     });
