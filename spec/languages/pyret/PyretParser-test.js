@@ -59,26 +59,27 @@ end`);
     test(`fun f(x, jake): x + 3 end`);
     test(`fun f(x, jake): x + jake + 3 end`);
     test(`fun g(): 2 * 4 end`)
-//     test(`fun g() block: 2 * 4 end`)
-//     test(`fun g():
-//   block:
-//     x = 2 * 4
-//     x
-//   end
-// end`)
-//     test(`fun g() block:
-//   x = 2 * 4
-//   x
-// end`)
+    // don't need blocks for BS:DS
+    /*test(`fun g() block: 2 * 4 end`)
+    test(`fun g():
+  block:
+    x = 2 * 4
+    x
+  end
+end`)
+    test(`fun g() block:
+  x = 2 * 4
+  x
+end`)*/
     test('f(5)');
-    test('f()')
+    test('f()');
     test(`x.len()`); // actually not the right test since shows up as funapp
-    test(`l.len()`)
-    test(`x.len(3)`)
-    test(`x.len(3, 4)`)
+    test(`l.len()`);
+    test(`x.len(3)`);
+    test(`x.len(3, 4)`);
     test(`3 + 4 is 7`);
     test(`check: 3 + 5 is 8 end`);
-    test(`check: 3 + 4 end`)
+    test(`check: 3 + 4 end`);
     test('{1;2}');
     test('{1; 2}');
     test('{1}');
