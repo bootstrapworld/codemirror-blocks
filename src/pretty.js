@@ -23,10 +23,14 @@ export function concat() {
   return concatArray(Array.from(arguments));
 }
 export function horzArray(array) {
+  if (array.length == 0)
+    return empty();
   let docArray = array.map(item => coerce(item));
   return docArray.reduce((result, doc) => new HorzDoc(result, doc));
 }
 export function vertArray(array) {
+  if (array.length == 0)
+    return empty();
   let docArray = array.map(item => coerce(item));
   return docArray.reduce((result, doc) => new VertDoc(result, doc));
 }
@@ -256,6 +260,9 @@ function intersperse(sep, items) {
 // `vertSep` is empty(), this implements word wrap.
 // Neither `sep` nor `vertSep` may contain newlines.
 export function wrap(sep, vertSep, items) {
+  if (items.length == 0) {
+    return empty();
+  }
   return items.reduce(
     (acc, item) =>
       concat(acc, ifFlat(horz(sep, item),
@@ -265,6 +272,9 @@ export function wrap(sep, vertSep, items) {
 // Wrap items like `wrap()`, and additionally begin each line with `prefix`.
 // This is useful for, e.g., a comment whose lines must start with `//`.
 export function wrapAndPrefix(prefix, sep, vertSep, items) {
+  if (items.length == 0) {
+    return empty();
+  }
   return concat(prefix, items.reduce(
     (acc, item) =>
       concat(acc, ifFlat(horz(sep, item),
