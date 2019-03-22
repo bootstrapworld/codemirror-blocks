@@ -73,8 +73,6 @@ export class Func extends ASTNode {
     this.retAnn = retAnn;
     this.doc = doc;
     this.body = body;
-    // args are normally backwards??
-    this.args_reversed = args.slice().reverse();
   }
   toDescription(level) {
     if ((this.level - level) >= descDepth)
@@ -83,7 +81,7 @@ export class Func extends ASTNode {
   }
   pretty() {
     let header = P.horzArray([P.txt("fun "), this.name,
-      P.txt("("), P.sepBy(", ", "", this.args_reversed.map(p => p.pretty())), P.txt("):")
+      P.txt("("), P.sepBy(", ", "", this.args.map(p => p.pretty())), P.txt("):")
     ]);
     // either one line or multiple; helper for joining args together
     return P.ifFlat(P.horzArray([header, P.txt(" "), this.body, " end"]), P.vertArray([header,
@@ -92,7 +90,7 @@ export class Func extends ASTNode {
     ]));
   }
   render(props) {
-    let args = this.args_reversed.map(e => e.reactElement());
+    let args = this.args.map(e => e.reactElement());
     let body = this.body.reactElement();
     return (React.createElement(Node, Object.assign({ node: this }, props),
       React.createElement("span", { className: "blocks-operator" }, this.name),
