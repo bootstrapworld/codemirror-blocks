@@ -50,17 +50,78 @@ describe("The Pyret Parser,", function() {
   source: presidents-sheet.sheet-by-name("presidents", true)
 end`);
     test(`x = 3`);
+    test(`x = true`)
+    test(`data-type = "string"`)
     test(`3 + 5`);
+    test(`3 - 5`);
+    test(`"hello" + ", there"`)
     test(`fun f(x): x + 3 end`);
+    test(`fun f(x, jake): x + 3 end`);
+    test(`fun f(x, jake): x + jake + 3 end`);
+    test(`fun g(): 2 * 4 end`)
+//     test(`fun g() block: 2 * 4 end`)
+//     test(`fun g():
+//   block:
+//     x = 2 * 4
+//     x
+//   end
+// end`)
+//     test(`fun g() block:
+//   x = 2 * 4
+//   x
+// end`)
     test('f(5)');
+    test('f()')
     test(`x.len()`); // actually not the right test since shows up as funapp
+    test(`l.len()`)
+    test(`x.len(3)`)
+    test(`x.len(3, 4)`)
     test(`3 + 4 is 7`);
     test(`check: 3 + 5 is 8 end`);
+    test(`check: 3 + 4 end`)
     test('{1;2}');
+    test('{1; 2}');
+    test('{1}');
+    // test('{}');
     test('[list: 1, 2, 3]');
+    test('[list: ]');
+    test('[list:]');
     test('row["field"]');
+    test('row[""]');
+    test('row["three word column"]');
   });
 
+  it("should render the sample ds pyret program", function() {
+let text = `# include gdrive-sheets
+
+load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")
+
+load-table: nth, name, home-state, year-started, year-ended, party
+  source: presidents-sheet.sheet-by-name("presidents", true)
+end
+
+x = 3
+
+3 + 5
+
+fun f(x): x + 3 end
+
+f(5)
+
+l = [list: 1, 2, 3]
+
+l.len()
+
+check:
+  3 + 5 is 8
+end
+
+{1; 2}
+
+row["field"]`;
+
+    expect(this.parser.parse(text).rootNodes[0].options["aria-label"]).not.toBe(undefined);
+  })
   // check to make sure that it produces a pareable program on swapping from blocks to tests
   /* it("should treat vector literals like expressions", function() {
     let ast = this.parser.parse('#(1 3)');
