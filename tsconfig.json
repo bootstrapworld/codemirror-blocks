@@ -6,7 +6,9 @@
         // "preserveConstEnums": true,
         // "sourceMap": true,
         "target": "es6",
-        "jsx": "react"
+        "jsx": "react",
+        "moduleResolution": "node",
+        "sourceMap": true,
     },
     "include": [
         "src/languages/pyret/*"
