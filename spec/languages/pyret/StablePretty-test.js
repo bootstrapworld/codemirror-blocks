@@ -71,31 +71,31 @@ describe('The CodeMirrorBlocks Class', function() {
       })
     };
 
-    testify("load-spreadsheet", `load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")`);
-    testify("load-table", `load-table: nth, name, home-state, year-started, year-ended, party
+    testify(`load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")`);
+    testify(`load-table: nth, name, home-state, year-started, year-ended, party
   source: presidents-sheet.sheet-by-name("presidents", true)
 end`);
-    testify("assignment to number", `x = 3`);
-    testify("assignment to boolean", `x = true`)
-    testify("assignment to string", `data-type = "string"`)
-    testify("addition statement", `3 + 5`);
-    testify("subtraction statement", `3 - 5`);
-    testify("concat strings", `"hello" + ", there"`)
-    testify("function", "fun f(x): x + 3 end");
-    testify("function multiple params", `fun f(x, jake): x + 3 end`);
-    testify("function multiple binops", `fun f(x, jake): x + jake + 3 end`);
-    testify("function no params", `fun g(): 2 * 4 end`);
-    testify("function app one arg", 'f(5)');
-    testify("function app two args", 'f(5, 4)');
-    testify("function app no args", 'f()');
-    testify("method call no args", `x.len()`); // actually not the right testify since shows up as funapp
-    testify("length of list", `l.len()`);
+    testify(`x = 3`);
+    testify(`x = true`)
+    testify(`data-type = "string"`)
+    testify(`3 + 5`);
+    testify(`3 - 5`);
+    testify(`"hello" + ", there"`)
+    testify("fun f(x): x + 3 end");
+    testify(`fun f(x, jake): x + 3 end`);
+    testify(`fun f(x, jake): x + jake + 3 end`);
+    testify(`fun g(): 2 * 4 end`);
+    testify('f(5)');
+    testify('f(5, 4)');
+    testify('f()');
+    testify(`x.len()`); // actually not the right testify since shows up as funapp
+    testify(`l.len()`);
     testify(`x.len(3)`);
     testify(`x.len(3, 4)`);
     testify(`3 + 4 is 7`);
     testify(`check: 3 + 5 is 8 end`);
     testify(`check: 3 + 4 end`);
-    testify('{1;2}');
+    // testify('{1;2}');
     testify('{1; 2}');
     testify('{1}');
     testify('[list: 1, 2, 3]');
