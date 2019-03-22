@@ -56,9 +56,13 @@ describe('The CodeMirrorBlocks Class', function() {
       await DELAY;
     });
 
-    let testify = function (name = text, text) {
-      return it(name, function() {
-        this.blocks.setValue(text);
+    let testify = function (text, name = text) {
+      return it(name, async function() {
+        this.blocks.setCursor({ line: 0, ch: 0 });
+        keyDown("9", {}, this.blocks.getInputField());
+        insertText(text);
+        await DELAY;
+
         this.blocks.setBlockMode(false);
         expect(this.blocks.getBlockMode()).toBe(false);
         expect(this.blocks.getValue()).toEqual(text);
