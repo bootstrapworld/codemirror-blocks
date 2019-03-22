@@ -10,9 +10,9 @@ x = 3
 
 3 + 5
 
-fun f(x): x + 3 end
+fun f(x, y): x + 3 end
 
-f(5)
+f(1, 2)
 
 l = [list: 1, 2, 3]
 
