@@ -56,7 +56,7 @@ describe('The CodeMirrorBlocks Class', function() {
       await DELAY;
     });
 
-    let testify = function (text, name = text) {
+    let testify = function (text, name = text, already_pretty = true) {
       return it(name, async function() {
         this.blocks.setCursor({ line: 0, ch: 0 });
         keyDown("9", {}, this.blocks.getInputField());
@@ -67,9 +67,18 @@ describe('The CodeMirrorBlocks Class', function() {
         await DELAY;
         // sometimes this is true???
         expect(this.blocks.getBlockMode()).toBe(false);
-        expect(this.blocks.getValue()).toEqual(text);
+        if (already_pretty) {
+          expect(this.blocks.getValue()).toEqual(text);
+        }
+        else {
+          expect(this.blocks.getValue()).not.toEqual(text);
+        }
       })
     };
+
+    let format = function(text, name = text) {
+      testify(text, "pretty-print " + name, false);
+    }
 
     testify(`load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")`);
     testify(`load-table: nth, name, home-state, year-started, year-ended, party
@@ -88,19 +97,19 @@ end`);
     testify('f(5)');
     testify('f(5, 4)');
     testify('f()');
-    testify(`x.len()`); // actually not the right testify since shows up as funapp
+    testify(`x.len()`);
     testify(`l.len()`);
     testify(`x.len(3)`);
     testify(`x.len(3, 4)`);
     testify(`3 + 4 is 7`);
     testify(`check: 3 + 5 is 8 end`);
     testify(`check: 3 + 4 end`);
-    // testify('{1;2}');
+    format('{1;2}');
     testify('{1; 2}');
     testify('{1}');
     testify('[list: 1, 2, 3]');
     testify('[list: ]');
-    testify('[list:]');
+    format('[list:]');
     testify('row["field"]');
     testify('row[""]');
     testify('row["three word column"]');
