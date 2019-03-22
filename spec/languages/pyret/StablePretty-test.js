@@ -42,11 +42,59 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.getValue()).toBe(insert);
       this.blocks.setBlockMode(true);
       // see if pretty-printed now
-      // expect(this.blocks.getValue()).toBe(insert); // fails, so pretty-prints!
-      expect(this.blocks.getValue()).toBe("fun f(x): x + 3 end"); // fails, so pretty-prints!
+      expect(this.blocks.getValue()).not.toBe(insert);
+      expect(this.blocks.getValue()).toBe("fun f(x): x + 3 end");
     });
   });
 
+  describe('small DS programs', function() {
+    beforeEach(function() {
+      this.blocks.setBlockMode(true);
+    });
+
+    let testify = function (name = text, text) {
+      return it(name, function() {
+        this.blocks.setValue(text);
+        this.blocks.setBlockMode(false);
+        expect(this.blocks.getBlockMode()).toBe(false);
+        expect(this.blocks.getValue()).toEqual(text);
+      })
+    };
+
+    testify("load-spreadsheet", `load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")`);
+    testify("load-table", `load-table: nth, name, home-state, year-started, year-ended, party
+  source: presidents-sheet.sheet-by-name("presidents", true)
+end`);
+    testify("assignment to number", `x = 3`);
+    testify("assignment to boolean", `x = true`)
+    testify("assignment to string", `data-type = "string"`)
+    testify("addition statement", `3 + 5`);
+    testify("subtraction statement", `3 - 5`);
+    testify("concat strings", `"hello" + ", there"`)
+    testify("function", "fun f(x): x + 3 end");
+    testify("function multiple params", `fun f(x, jake): x + 3 end`);
+    testify("function multiple binops", `fun f(x, jake): x + jake + 3 end`);
+    testify("function no params", `fun g(): 2 * 4 end`);
+    testify("function app one arg", 'f(5)');
+    testify("function app two args", 'f(5, 4)');
+    testify("function app no args", 'f()');
+    testify("method call no args", `x.len()`); // actually not the right testify since shows up as funapp
+    testify("length of list", `l.len()`);
+    testify(`x.len(3)`);
+    testify(`x.len(3, 4)`);
+    testify(`3 + 4 is 7`);
+    testify(`check: 3 + 5 is 8 end`);
+    testify(`check: 3 + 4 end`);
+    testify('{1;2}');
+    testify('{1; 2}');
+    testify('{1}');
+    testify('[list: 1, 2, 3]');
+    testify('[list: ]');
+    testify('[list:]');
+    testify('row["field"]');
+    testify('row[""]');
+    testify('row["three word column"]');
+  })
   // Should we make the language prop accessible externally so we can run this?
   // it('should optionally take a language object', function() {
   //   const b = new CodeMirrorBlocks(document.getElementById('root'), {value: ""}, example);

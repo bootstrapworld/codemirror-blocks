@@ -50,15 +50,15 @@ describe("The Pyret Parser,", function() {
   source: presidents-sheet.sheet-by-name("presidents", true)
 end`);
     test(`x = 3`);
-    test(`x = true`)
-    test(`data-type = "string"`)
+    test(`x = true`);
+    test(`data-type = "string"`);
     test(`3 + 5`);
     test(`3 - 5`);
-    test(`"hello" + ", there"`)
+    test(`"hello" + ", there"`);
     test(`fun f(x): x + 3 end`);
     test(`fun f(x, jake): x + 3 end`);
     test(`fun f(x, jake): x + jake + 3 end`);
-    test(`fun g(): 2 * 4 end`)
+    test(`fun g(): 2 * 4 end`);
     // don't need blocks for BS:DS
     /*test(`fun g() block: 2 * 4 end`)
     test(`fun g():
@@ -72,6 +72,7 @@ end`)
   x
 end`)*/
     test('f(5)');
+    test('f(5, 4)');
     test('f()');
     test(`x.len()`); // actually not the right test since shows up as funapp
     test(`l.len()`);
