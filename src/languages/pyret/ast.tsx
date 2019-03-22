@@ -355,7 +355,7 @@ export class FunctionApp extends ASTNode {
 
   pretty() {
     let header = P.txt(this.func + "(");
-    let values = P.sepBy(", ", "", this.args.map(p => p.pretty()));
+    let values = (this.args.length != 0)? P.sepBy(", ", "", this.args.map(p => p.pretty())) : P.txt("");
     let footer = P.txt(")");
     // either one line or multiple; helper for joining args together
     return P.ifFlat(P.horzArray([header, values, footer]),
