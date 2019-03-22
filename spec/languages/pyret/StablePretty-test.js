@@ -64,6 +64,8 @@ describe('The CodeMirrorBlocks Class', function() {
         await DELAY;
 
         this.blocks.setBlockMode(false);
+        await DELAY;
+        // sometimes this is true???
         expect(this.blocks.getBlockMode()).toBe(false);
         expect(this.blocks.getValue()).toEqual(text);
       })
