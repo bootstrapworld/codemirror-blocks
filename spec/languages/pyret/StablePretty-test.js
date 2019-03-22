@@ -36,8 +36,10 @@ describe('The CodeMirrorBlocks Class', function() {
   describe('testing method', function() {
     it("pretty-ify non-pretty text", function() {
       this.blocks.setBlockMode(false);
+      this.blocks.setCursor({ line: 0, ch: 0 });
       let insert = "fun f(x):\n  x + 3\nend";
-      this.blocks.setValue(insert);
+      keyDown("9", {}, this.blocks.getInputField());
+      insertText(insert);
       expect(this.blocks.getBlockMode()).toBe(false);
       expect(this.blocks.getValue()).toBe(insert);
       this.blocks.setBlockMode(true);
@@ -48,8 +50,10 @@ describe('The CodeMirrorBlocks Class', function() {
   });
 
   describe('small DS programs', function() {
-    beforeEach(function() {
+    beforeEach(async function() {
       this.blocks.setBlockMode(true);
+      this.blocks.setValue("");
+      await DELAY;
     });
 
     let testify = function (name = text, text) {
