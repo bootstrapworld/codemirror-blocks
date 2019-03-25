@@ -23,7 +23,7 @@ import {Binop,
   CheckTest,
   Bracket,
   LoadTable,
-} from "./ast.js";
+} from "./ast";
 
 interface Position {
   line: number;

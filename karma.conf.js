@@ -20,10 +20,10 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['parallel', 'jasmine'],
+    frameworks: ['parallel', 'jasmine', 'karma-typescript'],
 
     parallelOptions: {
-      executors: 3, // Defaults to cpu-count - 1
+      // executors: , // Defaults to cpu-count - 1
       shardStrategy: 'round-robin'
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
@@ -37,7 +37,7 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'spec/index.js'
+      'spec/index.js',
     ],
 
     // list of files to exclude
@@ -50,6 +50,10 @@ module.exports = function(config) {
       "spec/index.js": ["webpack", "sourcemap"],
     },
 
+    karmaTypescriptConfig: {
+      tsconfig: './tsconfig.json',
+    },
+
     webpack: webpackConfig,
     webpackMiddleware: {
       noInfo: true
@@ -58,6 +62,7 @@ module.exports = function(config) {
       // don't log console output in our test console
       captureConsole: false,
     },
+    // reporters: ["karma-typescript"],
 /*
     reporters: reporters,
     coverageReporter: {
