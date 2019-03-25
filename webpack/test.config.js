@@ -21,7 +21,7 @@ module.exports = _.extend({}, baseConfig, {
     alias: {
       'codemirror-blocks': path.resolve(__dirname, '..', 'src')
     },
-    extensions: ['.js', '.jsx'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
   },
   devtool: 'inline-source-map',
   module: _.extend({}, baseConfig.module, {
