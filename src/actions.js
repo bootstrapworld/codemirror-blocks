@@ -206,7 +206,7 @@ SHARED.cm.setCursor({line: -1, ch: 0});
         node.element.focus();
       }
       
-    }, 100);
+    }, 25);
   };
 }
 

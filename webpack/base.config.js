@@ -20,13 +20,21 @@ module.exports = function(config) {
     rules.push({test: /\.less$/, use:["style-loader","css-loader","less-loader"]});
   }
   return {
-    resolve : {extensions: ['.js', '.jsx'] },
+    resolve : {extensions: ['.ts', '.tsx', '.js', '.jsx'] }, // Order matters!
     output: {
       path: path.resolve(__dirname, '..', "build"),
       filename: "[name].js"
     },
     module: {
       rules: rules.concat([{
+        test: /\.(ts|tsx)$/,
+        include: [
+          path.resolve(__dirname, '..', 'example'),
+          path.resolve(__dirname, '..', 'src'),
+          path.resolve(__dirname, '..', 'spec')
+        ],
+        use: "ts-loader",
+      },{
         test: /\.(js|jsx)$/,
         include: [
           path.resolve(__dirname, '..', 'example'),

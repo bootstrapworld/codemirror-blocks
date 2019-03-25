@@ -322,7 +322,7 @@ function translateParseTree(parseTree: any, fileName: string) {
   return TR.translate(parseTree, fileName, constructors);
 }
 
-export class PyretParser {
+export default class PyretParser {
   // TODO: Proper error handling.
   //       See `pyret-lang/src/js/trove/parse-pyret.js`.
   parse(text: string) {
@@ -360,8 +360,6 @@ export class PyretParser {
     return error;
   }
 }
-
-module.exports = PyretParser;
 
 function testRun() {
   const data = `
