@@ -279,7 +279,7 @@ export class ASTNode {
     // function call node may have a field called `func` that contains
     // the function expression being called, and a field called `args`
     // that contains an Array of the argument expressions. Fields like
-    // `func` and `args` that can contain other nodes must be listed
+    // `func` and `args` that contain an ASTNode must be listed
     // under `keys`. In this example, `keys === ["func", "args"]`.
     // Each key must name a field that contains one of the following:
     //
