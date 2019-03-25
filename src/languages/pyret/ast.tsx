@@ -154,7 +154,7 @@ export class Func extends ASTNode {
 }
 
 export class Sekwence extends ASTNode {
-  exprs: any[];
+  exprs: any;
   name: any;
   level: any;
   options: any;

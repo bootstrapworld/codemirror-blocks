@@ -8,7 +8,7 @@ This is a brief overview of how to define your language's pretty
 printing functions, which describe how to display them as text.
 
 More specifically, each of your blocks must have a method called
-`pretty()` which returns a pretty-printing `Doc`, as defined by
+`pretty()` which returns a pretty printing `Doc`, as defined by
 `src/pretty.js`. A `Doc` is a data structure describing how to display
 your blocks as text. It's different than a string because it can adapt
 the layout of the code based on the screen width: the method
@@ -86,7 +86,7 @@ More precisely, `doc1` will be used iff:
 1. It can be rendered flat. A "flat" document has no newlines,
    i.e., no `vert`.
 2. When rendered flat, it fits on the current line without going over
-   the pretty printing width.
+a   the pretty printing width.
 
 **Sidenote:** This seems like an oddly specific way of implementing
 choice, doesn't it? We use it because it allows the pretty printing
@@ -123,10 +123,55 @@ rendering as:
 This is helpful for line comments. For example, `fullLine("// comment")` will
 ensure that (if at all possible) nothing is placed after the comment.
 
+## Putting it all Together
+
+Let's put all of this together with an example. We'll look at how to use these
+constructs to pretty print functions in a language called [Pyret](pyret.org).
+Pyret functions can be displayed either on multiple lines:
+
+    fun greet(name):
+        "Welcome back, " + name
+    end
+
+or on one line:
+
+    fun greet(name): "Welcome back, " + name end
+
+Here is how you can define a method that pretty prints these functions in either
+of the two styles above, putting everything on one line if it fits within the
+given line width, and splitting it up across multiple lines if it doesn't:
+
+    class Function extends ASTNode {
+      ...
+      pretty() {
+        let name = this.name.pretty();
+        let args = this.args.pretty();
+        let body = this.body.pretty();
+
+        let header = horz(txt("fun "), name, txt("("), args, txt("):"));
+        let onOneLine = horz(header, txt(" "), body, txt(" end"));
+        let onMultipleLines = vert(header, horz(txt("    "), body), txt("end"));
+
+        return ifFlat(onOneLine, onMultipleLines);
+      }
+    }
+
+There are a couple lessons to learn from this example:
+
+- If you want to allow something to be displayed in more than one way---like the
+  two ways that a function can be displayed here---then you must use `ifFlat`.
+  It is the only "choice" operator.
+- To indent a chunk of code by a fixed amount, use `horz` and spaces. In this
+  example, we used `horz(txt("    "), body)` to indent `body` by 4 spaces. (And
+  typically, you'll want to stick _that_ inside a `vert`, to combine it with the
+  code above and below.)
+
 ## Other Constructors
 
 Besides the primitive constructors, there are some other useful
-"utility" constructors that can be defined in terms of them.
+"utility" constructors. These constructors don't provide any extra power, as
+they are all defined in terms of the "primitive" constructors described above.
+But they capture some useful pretty printing patterns.
 
 #### Wrap
 

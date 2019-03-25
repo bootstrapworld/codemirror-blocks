@@ -4,7 +4,7 @@ import {connect} from 'react-redux';
 import {UnControlled as CodeMirror} from 'react-codemirror2';
 import merge from '../merge';
 import SHARED from '../shared';
-
+import {say} from '../utils';
 
 class TextEditor extends Component {
   static propTypes = {
@@ -29,6 +29,7 @@ class TextEditor extends Component {
     announcements.setAttribute('aria-live', 'assertive');
     wrapper.appendChild(announcements);
     this.props.setAnnouncer(announcements);
+    say("Text Mode Enabled", 500);
     
     SHARED.cm = ed;
 

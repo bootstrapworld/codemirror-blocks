@@ -12,7 +12,6 @@ import ByBlock from './searchers/ByBlock';
 import attachSearch from './Search';
 import Toolbar from './Toolbar';
 import ToggleButton from './ToggleButton';
-import {say} from '../utils';
 import merge from '../merge';
 import SHARED from '../shared';
 
@@ -143,11 +142,9 @@ export default class ToggleEditor extends React.Component {
         // record mark information
         this.recordMarks(ast, code);
         if (blockMode) {
-          say("Switching to block mode");
           SHARED.cm.setValue(code);
           return {blockMode: true};
         } else {
-          say("Switching to text mode");
           SHARED.cm.setValue(code);
           return {blockMode: false};
         }
