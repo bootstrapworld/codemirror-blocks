@@ -16,7 +16,7 @@ import {Binop,
   Var,
   Assign,
   Let
-} from "./ast.js";
+} from "./ast";
 
 interface Position {
   line: number;

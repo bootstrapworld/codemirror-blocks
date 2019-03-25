@@ -80,6 +80,7 @@
     "karma-jasmine": "^2.0.1",
     "karma-jasmine-diff-reporter": "^2.0.0",
     "karma-sourcemap-loader": "^0.3.7",
+    "karma-typescript": "^4.0.0",
     "karma-webpack": "^3.0.5",
     "less": "3.9.0",
     "less-loader": "^4.0.6",
@@ -113,8 +114,6 @@
     "build": "webpack --mode production",
     "build-debug": "webpack --mode development",
     "build-watch": "webpack --watch --mode development",
-    "watch-tsc": "tsc --watch",
-    "format-tsc-output": "make -B",
     "lint": "eslint src spec --ext .js || true",
     "site": "jekyll serve --baseurl \"\""
   },
