@@ -9,20 +9,19 @@ import {
   Literal, 
 } from '../../nodes';
 import {Binop,
-  ABlank,
-  Bind,
-  Construct,
-  Func,
-  Sekwence as Sequence,
-  Var,
   Assign,
-  Let,
-  FunctionApp,
-  Tuple,
+  Bind,
+  Bracket,
   Check,
   CheckTest,
-  Bracket,
+  Construct,
+  Func,
+  FunctionApp,
+  Let,
   LoadTable,
+  Sekwence as Sequence,
+  Tuple,
+  Var,
 } from "./ast";
 
 interface Position {
@@ -143,7 +142,7 @@ const nodeTypes = {
   },
   // Annotations
   "a-blank": function() {
-    return new ABlank(undefined, undefined);
+    return null;
   },
   "a-name": function(pos: Range, str: any) {
     return new Literal(
