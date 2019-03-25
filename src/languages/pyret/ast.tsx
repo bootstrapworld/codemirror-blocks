@@ -48,31 +48,6 @@ export class Binop extends ASTNode {
   }
 }
 
-export class ABlank extends ASTNode {
-  level: any;
-  options: any;
-  constructor(from, to, options = {}) {
-    super(from, to, 'a-blank', [], options);
-  }
-
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a blank expression`;
-  }
-
-  pretty() {
-    return P.standardSexpr('Any');
-  }
-
-  render(props) {
-    return (
-      <Node node={this} {...props}>
-        <span className="blocks-literal-symbol">BLANK</span>
-      </Node>
-    );
-  }
-}
-
 export class Bind extends ASTNode {
   ann: any;
   level: any;

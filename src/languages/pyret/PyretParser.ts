@@ -9,7 +9,7 @@ import {
   Literal, 
 } from '../../nodes';
 import {Binop,
-  ABlank,
+  Assign,
   Bind,
   Construct,
   Func,
@@ -143,7 +143,7 @@ const nodeTypes = {
   },
   // Annotations
   "a-blank": function() {
-    return new ABlank(undefined, undefined);
+    return null;
   },
   "a-name": function(pos: Range, str: any) {
     return new Literal(
