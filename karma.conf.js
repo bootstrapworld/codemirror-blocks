@@ -23,7 +23,7 @@ module.exports = function(config) {
     frameworks: ['parallel', 'jasmine', 'karma-typescript'],
 
     parallelOptions: {
-      executors: 1, // Defaults to cpu-count - 1
+      // executors: , // Defaults to cpu-count - 1
       shardStrategy: 'round-robin'
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
@@ -37,8 +37,6 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'src/languages/pyret/PyretParser.ts',
-      'src/languages/pyret/ast.tsx',
       'spec/index.js',
     ],
 
@@ -49,8 +47,6 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      "**/*.ts": ["karma-typescript", 'coverage'],
-      "**/*.tsx": ["karma-typescript", 'coverage'],
       "spec/index.js": ["webpack", "sourcemap"],
     },
 
