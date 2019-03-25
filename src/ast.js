@@ -188,8 +188,6 @@ export class AST {
     let n = [...this.nodeIdMap.values()].find(n => {
       let {from: srcFrom, to: srcTo} = n.srcRange();
       // happens when node is an ABlank
-      if (n.from == null || n.to == null)
-        return undefined;
       return (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0)
         || (poscmp(from, srcFrom) == 0) && (poscmp(to, srcTo) == 0);
     });
@@ -306,7 +304,7 @@ export class ASTNode {
     // but not on srcloc and id.
     //
     // Two subtrees with identical value are supposed to have the same hash
-    this.hash = null; // null for now
+    this.hash = hashObject([type, [...this.children()].map(c => c.hash)]); // null for now
 
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
