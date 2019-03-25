@@ -15,6 +15,7 @@ const exampleCode = useBigCode? dsExampleCode : smallExampleCode;
 // grab the DOM Node to host the editor, and use it to instantiate
 const container = document.getElementById('cmb-editor');
 const editor = new CodeMirrorBlocks(container, {value: exampleCode}, pyret);
+editor.setBlockMode(true);
 
 // for debugging purposes
 window.editor = editor
