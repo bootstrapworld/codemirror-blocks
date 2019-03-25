@@ -49,33 +49,32 @@ export class Binop extends ASTNode {
 }
 
 export class Bind extends ASTNode {
-  ann: any;
+  ann: any | null;
   level: any;
-  id: Identifier;
+  ident: Identifier;
   options: any;
-  constructor(from: any, to: any, id: Identifier, ann: any, options = {}) {
-    super(from, to, 'bind', ['ann'], options);
-    this.id = id;
+  constructor(from: any, to: any, id: Identifier, ann: any | null, options = {}) {
+    super(from, to, 'bind', ['ident', 'ann'], options);
+    this.ident = id;
     this.ann = ann;
   }
 
   toDescription(level) {
     if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a bind expression with ${this.id.value} and ${this.ann}`;
+    return `a bind expression with ${this.ident.value} and ${this.ann}`;
   }
 
   pretty() {
-    if (this.ann.type != "a-blank")
-      return P.horzArray(P.txt(this.id.value), P.txt(" :: "), P.txt(this.ann));
+    if (this.ann != null)
+      return P.horzArray(P.txt(this.ident.value), P.txt(" :: "), P.txt(this.ann));
     else
-      return P.txt(this.id.value);
+      return P.txt(this.ident.value);
   }
 
   render(props) {
     return (
-      <Node node={this} {...props}>
-        <span className="blocks-literal-symbol">{this.id.value}</span>
-      </Node>
+      // format with span if annotation?
+      this.ident.reactElement()
     );
   }
 }
@@ -161,21 +160,21 @@ export class Sekwence extends ASTNode {
 export class Var extends ASTNode {
   rhs: any;
   level: any;
-  id: any;
+  ident: any;
   options: any;
   constructor(from, to, id, rhs, options = {}) {
-    super(from, to, 'var', ['id', 'rhs'], options);
-    this.id = id;
+    super(from, to, 'var', ['ident', 'rhs'], options);
+    this.ident = id;
     this.rhs = rhs;
   }
 
   toDescription(level) {
     if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a var setting ${this.id} to ${this.rhs}`;
+    return `a var setting ${this.ident} to ${this.rhs}`;
   }
 
   pretty() {
-    return P.txt(this.id + " = " + this.rhs);
+    return P.txt(this.ident + " = " + this.rhs);
   }
 
   render(props) {
@@ -183,7 +182,7 @@ export class Var extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">VAR</span>
         <span className="block-args">
-          {this.id.reactElement()}
+          {this.ident.reactElement()}
           {this.rhs.reactElement()}
         </span>
       </Node>
@@ -194,21 +193,21 @@ export class Var extends ASTNode {
 export class Assign extends ASTNode {
   rhs: any;
   level: any;
-  id: any;
+  ident: any;
   options: any;
   constructor(from, to, id, rhs, options = {}) {
-    super(from, to, 'assign', ['id', 'rhs'], options);
-    this.id = id;
+    super(from, to, 'assign', ['ident', 'rhs'], options);
+    this.ident = id;
     this.rhs = rhs;
   }
 
   toDescription(level) {
     if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `an assign setting ${this.id} to ${this.rhs}`;
+    return `an assign setting ${this.ident} to ${this.rhs}`;
   }
 
   pretty() {
-    return P.txt(this.id + ' := ' + this.rhs);
+    return P.txt(this.ident + ' := ' + this.rhs);
   }
 
   render(props) {
@@ -216,7 +215,7 @@ export class Assign extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">:=</span>
         <span className="block-args">
-          {this.id.reactElement()}
+          {this.ident.reactElement()}
           {this.rhs.reactElement()}
         </span>
       </Node>
@@ -227,30 +226,29 @@ export class Assign extends ASTNode {
 export class Let extends ASTNode {
   rhs: any;
   level: any;
-  id: any;
+  ident: any;
   options: any;
   constructor(from, to, id, rhs, options = {}) {
-    super(from, to, 'let', ['id', 'rhs'], options);
-    this.id = id;
+    super(from, to, 'let', ['ident', 'rhs'], options);
+    this.ident = id;
     this.rhs = rhs;
   }
 
   toDescription(level) {
     if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a let setting ${this.id} to ${this.rhs}`;
+    return `a let setting ${this.ident} to ${this.rhs}`;
   }
 
   pretty() {
-    return P.horzArray([this.id, P.txt(' = '), this.rhs]);
+    return P.horzArray([this.ident, P.txt(' = '), this.rhs]);
   }
 
   render(props) {
+    let identifier = this.ident.reactElement();
+    console.log(identifier);
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{this.id.reactElement()}</span>
-        <span className="block-args">
-          {this.rhs.reactElement()}
-        </span>
+        <span className="blocks-operator">{identifier} = {this.rhs.reactElement()}</span>
       </Node>
     );
   }
@@ -494,7 +492,7 @@ export class Bracket extends ASTNode {
   level: any;
   options: any;
   constructor(from, to, base, index, options = {}) {
-    super(from, to, 'let', ['id', 'rhs'], options);
+    super(from, to, 'let', ['ident', 'rhs'], options);
     this.index = index;
     this.base = base;
   }
