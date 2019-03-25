@@ -304,7 +304,7 @@ export class ASTNode {
     // but not on srcloc and id.
     //
     // Two subtrees with identical value are supposed to have the same hash
-    this.hash = hashObject([type, [...this.children()].map(c => c.hash)]); // null for now
+    this.hash = hashObject([type, [...this.children()].map(c => c.hash)]);
 
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
