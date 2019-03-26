@@ -111,6 +111,7 @@ export class StructDefinition extends ASTNode {
     super(from, to, 'structDefinition', ['name', 'fields'], options);
     this.name = name;
     this.fields = fields;
+    this.hash = hashObject(['structDefinition', name.hash, fields.hash]);
   }
 
   longDescription(level) {
