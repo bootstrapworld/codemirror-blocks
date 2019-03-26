@@ -374,6 +374,7 @@ export class Literal extends ASTNode {
     super(from, to, 'literal', [], options);
     this.value = value;
     this.dataType = dataType;
+    this.hash = hashObject(['literal', this.value, this.dataType]);
   }
 
   describe(level) {
