@@ -186,7 +186,6 @@ export class LambdaExpression extends ASTNode {
     super(from, to, 'lambdaExpression', ['args', 'body'], options);
     this.args = args;
     this.body = body;
-    this.hash = hashObject(['lambdaExpression', args.hash, body.hash]);
   }
 
   toDescription(level){
