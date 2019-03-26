@@ -11,6 +11,7 @@ export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
     super(from, to, 'unknown', ['elts'], options);
     this.elts = elts;
+    this.hash = hashObject(['unknown', elts.map(elt => elt.hash)]);
   }
 
   longDescription(level) {

@@ -1,4 +1,5 @@
 import React from 'react';
+import hashObject from 'object-hash';
 import Node from '../../components/Node';
 import Args from '../../components/Args';
 import * as P from '../../pretty';
@@ -295,12 +296,14 @@ export class Construct extends ASTNode {
 export class FunctionApp extends ASTNode {
   func: ASTNode;
   args: any[];
+  hash: any;
   level: any;
   options: any;
   constructor(from, to, func, args, options={}) {
     super(from, to, 'functionApp', ['func', 'args'], options);
     this.func = func;
     this.args = args;
+    this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
   }
 
   longDescription(level) {
@@ -435,6 +438,7 @@ export class CheckTest extends ASTNode {
     this.refinement = refinement;
     this.lhs = lhs;
     this.rhs = rhs;
+    // this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
   }
 
   longDescription(level) {
