@@ -111,6 +111,7 @@ const nodeTypes = {
       'block');
   },
   "s-op": function(pos: Range, _opPos: any, op: { substr: (arg0: number) => any; }, left: any, right: any) {
+    console.log(arguments);
     let name = op.substr(2);
     return new Binop(
       pos.from,
@@ -128,8 +129,9 @@ const nodeTypes = {
       id,
       ann);
   },
-  "s-fun": function(pos: Range, name: any, _params: any, args: any, ann: any, doc: any, body: any, _checkLoc: any, _check: any, _blodky: any) {
+  "s-fun": function(pos: Range, name: string, _params: any, args: any, ann: any, doc: any, body: any, _checkLoc: any, _check: any, _blodky: any) {
     // TODO: ignoring params, check, blocky
+    console.log(arguments);
     return new Func(
       pos.from,
       pos.to,

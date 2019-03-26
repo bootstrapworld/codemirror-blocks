@@ -15,13 +15,14 @@ interface Identifier {
   reactElement: () => any;
 }
 export class Binop extends ASTNode {
-  op: any;
+  op: string;
   left: any;
   right: any;
   level: any;
   options: any;
   constructor(from, to, op, left, right, options = {}) {
     super(from, to, 'binop', ['left', 'right'], options);
+    // op is just a string, so not a part of children
     this.op = op;
     this.left = left;
     this.right = right;
@@ -39,7 +40,9 @@ export class Binop extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{this.op}</span>
+        <span className="blocks-operator">
+          {this.op}
+        </span>
         {this.left.reactElement()}
         {this.right.reactElement()}
       </Node>
@@ -79,7 +82,7 @@ export class Bind extends ASTNode {
 }
 
 export class Func extends ASTNode {
-  name: any;
+  name: string;
   args: any[];
   retAnn: any;
   doc: any;
@@ -87,7 +90,7 @@ export class Func extends ASTNode {
   level: any;
   options: any;
   args_reversed: any[];
-  constructor(from, to, name, args, retAnn, doc, body, options = {}) {
+  constructor(from, to, name: string, args: any[], retAnn: any, doc: any, body: any, options = {}) {
     super(from, to, 'functionDefinition', ['args', 'retAnn', 'body'], options);
     this.name = name;
     this.args = args;
@@ -118,8 +121,9 @@ export class Func extends ASTNode {
     let body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{this.name}</span>
-        <span className="blocks-args">{args}</span>
+        <span className="blocks-operator">
+          fun {this.name}(<Args>{this.args}</Args>):
+        </span>
         {body}
       </Node>
     );
@@ -149,7 +153,6 @@ export class Sekwence extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{this.name}</span>
         {this.exprs.map(e => e.reactElement())}
       </Node>
     );
@@ -212,10 +215,8 @@ export class Assign extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">:=</span>
-        <span className="block-args">
-          {this.ident.reactElement()}
-          {this.rhs.reactElement()}
+        <span className="blocks-operator">
+          {this.ident.reactElement()} := {this.rhs.reactElement()}
         </span>
       </Node>
     );
@@ -247,7 +248,9 @@ export class Let extends ASTNode {
     console.log(identifier);
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{identifier} = {this.rhs.reactElement()}</span>
+        <span className="blocks-operator">
+          {identifier} = {this.rhs.reactElement()}
+        </span>
       </Node>
     );
   }
@@ -380,8 +383,7 @@ export class Tuple extends ASTNode {
     let values = this.fields.map(e => e.reactElement());
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">tuple</span>
-        {values}
+        <span className="blocks-operator">{"{"}<Args>{this.fields}</Args>{"}"}</span>
       </Node>
     );
   }
@@ -441,7 +443,7 @@ export class CheckTest extends ASTNode {
   lhs: any;
   rhs: any | undefined;
   constructor(from, to, check_op, refinement, lhs, rhs, options={}) {
-    super(from, to, 'functionApp', ['func', 'args'], options);
+    super(from, to, 'functionApp', ['op', 'refinement', 'lhs', 'rhs'], options);
     this.op = check_op;
     this.refinement = refinement;
     this.lhs = lhs;
@@ -488,7 +490,7 @@ export class Bracket extends ASTNode {
   level: any;
   options: any;
   constructor(from, to, base, index, options = {}) {
-    super(from, to, 'let', ['ident', 'rhs'], options);
+    super(from, to, 'let', ['index', 'base'], options);
     this.index = index;
     this.base = base;
   }
@@ -525,7 +527,7 @@ export class LoadTable extends ASTNode {
   level: any;
   options: any;
   constructor(from, to, rows, sources, options={}) {
-    super(from, to, 'functionApp', ['func', 'args'], options);
+    super(from, to, 'functionApp', ['rows', 'sources'], options);
     this.rows = rows;
     this.sources = sources;
   }
