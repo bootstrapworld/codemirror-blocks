@@ -82,6 +82,7 @@ export class IdentifierList extends ASTNode {
     super(from, to, 'identifierList', ['ids'], options);
     this.kind = kind;
     this.ids = ids;
+    this.hash = hashObject(['identifierList', this.kind, this.ids.map(id => id.hash)]);
   }
 
   longDescription(level) {
