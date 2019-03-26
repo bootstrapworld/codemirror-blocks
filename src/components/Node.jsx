@@ -362,7 +362,7 @@ class Node extends BlockComponent {
       // "read the first set of children"
       case 'readChildren':
         e.preventDefault();
-        say(node.toDescription(node.level));
+        say(node.describe(node.level));
         return;
 
       case 'undo':
