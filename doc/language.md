@@ -81,17 +81,22 @@ Our new node type must extend `ASTNode`, which is defined in `src/ast.js`.
 
 And we'll want a constructor. `ASTNode`'s constructor takes a `from`
 and a `to` source location (in CodeMirror `{line:_, ch:_}` style), a
-name for the node type, and a set of open-ended options that you can
+name for the node type, a list of names corresponding to its children,
+and a set of open-ended options that you can
 use however you like. After that, you can set whatever fields are relevant for
-this node (in this case, `this.name` and `this.body`). And finally, every node
-must store a hash of its contents.
+this node (in this case, `this.name` and `this.body`).
+These fields should be a superset of the names in the `keys` list.
 
+```js
       constructor(from, to, name, body, options={}) {
-        super(from, to, 'variableDefinition', options);
+        // children are `name` and `body`
+        super(from, to, 'variableDefinition', ['name', 'body'], options);
         this.name = name;
         this.body = body;
-        this.hash = hashObject(['variableDefinition', name.hash, body.hash]);
+        // not a child node, so not included in the children list
+        this.reversed_body = body.reverse();
       }
+```
 
 Our new node type must now implement some methods.
 

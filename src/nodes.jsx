@@ -11,7 +11,6 @@ export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
     super(from, to, 'unknown', ['elts'], options);
     this.elts = elts;
-    this.hash = hashObject(['unknown', elts.map(elt => elt.hash)]);
   }
 
   toDescription(level){
@@ -46,7 +45,6 @@ export class FunctionApp extends ASTNode {
     super(from, to, 'functionApp', ['func', 'args'], options);
     this.func = func;
     this.args = args;
-    this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
   }
 
   toDescription(level){
@@ -88,7 +86,6 @@ export class IdentifierList extends ASTNode {
     super(from, to, 'identifierList', ['ids'], options);
     this.kind = kind;
     this.ids = ids;
-    this.hash = hashObject(['identifierList', this.kind, this.ids.map(id => id.hash)]);
   }
 
   toDescription(level){
@@ -119,7 +116,6 @@ export class StructDefinition extends ASTNode {
     super(from, to, 'structDefinition', ['name', 'fields'], options);
     this.name = name;
     this.fields = fields;
-    this.hash = hashObject(['structDefinition', name.hash, fields.hash]);
   }
 
   toDescription(level){
@@ -154,7 +150,6 @@ export class VariableDefinition extends ASTNode {
     super(from, to, 'variableDefinition', ['name', 'body'], options);
     this.name = name;
     this.body = body;
-    this.hash = hashObject(['variableDefinition', name.hash, body.hash]);
   }
 
   toDescription(level){
@@ -191,7 +186,6 @@ export class LambdaExpression extends ASTNode {
     super(from, to, 'lambdaExpression', ['args', 'body'], options);
     this.args = args;
     this.body = body;
-    this.hash = hashObject(['lambdaExpression', args.hash, body.hash]);
   }
 
   toDescription(level){
@@ -227,7 +221,6 @@ export class FunctionDefinition extends ASTNode {
     this.name = name;
     this.params = params;
     this.body = body;
-    this.hash = hashObject(['functionDefinition', name.hash, params.hash, body.hash]);
   }
 
   toDescription(level){
@@ -272,7 +265,6 @@ export class CondClause extends ASTNode {
     super(from, to, 'condClause', ['testExpr', 'thenExprs'], options);
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
-    this.hash = hashObject(['condClause', testExpr.hash, thenExprs.map(e => e.hash)]);
   }
 
   toDescription(level){
@@ -310,7 +302,6 @@ export class CondExpression extends ASTNode {
   constructor(from, to, clauses, options={}) {
     super(from, to, 'condExpression', ['clauses'], options);
     this.clauses = clauses;
-    this.hash = hashObject(['condExpression', this.clauses.map(clause => clause.hash)]);
   }
 
   toDescription(level){
@@ -342,7 +333,6 @@ export class IfExpression extends ASTNode {
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
-    this.hash = hashObject(['ifExpression', testExpr.hash, thenExpr.hash, elseExpr.hash]);
   }
 
   toDescription(level){
@@ -396,7 +386,6 @@ export class Literal extends ASTNode {
     super(from, to, 'literal', [], options);
     this.value = value;
     this.dataType = dataType;
-    this.hash = hashObject(['literal', this.value, this.dataType]);
   }
 
   pretty() {
@@ -421,7 +410,6 @@ export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
     super(from, to, 'comment', [], options);
     this.comment = comment;
-    this.hash = hashObject(['comment', this.comment]);
   }
 
   pretty() {
@@ -443,7 +431,6 @@ export class Blank extends ASTNode {
     super(from, to, 'blank', [], options);
     this.value = value || "...";
     this.dataType = dataType;
-    this.hash = hashObject(['blank', this.value, this.dataType]);
   }
 
   pretty() {
@@ -467,7 +454,6 @@ export class Sequence extends ASTNode {
     super(from, to, 'sequence', ['exprs'], options);
     this.exprs = exprs;
     this.name = name;
-    this.hash = hashObject(['sequence', this.name, this.exprs.map(expr => expr.hash)]);
   }
 
   toDescription(level) {
