@@ -44,6 +44,7 @@ export class FunctionApp extends ASTNode {
     super(from, to, 'functionApp', ['func', 'args'], options);
     this.func = func;
     this.args = args;
+    this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
   }
 
   longDescription(level) {
