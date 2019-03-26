@@ -38,9 +38,10 @@ just prints itself.
     xxyyyyy
       yyyy    // notice that this line is indented to match the first
 
-If instead of a fixed number of documents, you have an array of them,
-you can instead use `horzArray(docArray)`, which is equivalent to
-`horz.apply(null, docArray)`.
+While `horz` can take any number of arguments, if you have an _indefinite number_
+of document in an array, you can instead use `horzArray(docArray)`. This is
+equivalent to `horz.apply(null, docArray)`.
+
 
 #### Simple Concatenation
 
@@ -56,8 +57,7 @@ two documents `x` and `y` looks like this:
 
 Most of the time, you should prefer `horz` over `concat`.
 
-If instead of a fixed number of documents, you have an array of them,
-you can use `concatArray(docArray)`.
+If you have an array of documents, you can use `concatArray(docArray)`.
 
 
 #### Vertical Concatenation
@@ -71,8 +71,7 @@ you can use `concatArray(docArray)`.
     yyyyy
     yyyy
 
-If instead of a fixed number of documents, you have an array of them,
-you can use `vertArray(docArray)`
+If you have an array of documents, you can use `vertArray(docArray)`.
 
 
 #### IfFlat: Choose between two Layouts
