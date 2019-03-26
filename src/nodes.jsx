@@ -454,6 +454,7 @@ export class Sequence extends ASTNode {
     super(from, to, 'sequence', ['exprs'], options);
     this.exprs = exprs;
     this.name = name;
+    this.hash = hashObject(['sequence', this.name, this.exprs.map(expr => expr.hash)]);
   }
 
   longDescription(level) {
