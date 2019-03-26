@@ -5,7 +5,7 @@ import hashObject from 'object-hash';
 
 
 export function enumerateList(lst, level) {
-  lst = lst.map(l => l.toDescription(level)).slice(0);
+  lst = lst.map(l => l.describe(level)).slice(0);
   var last = lst.pop();
   return (lst.length == 0)? last : lst.join(', ') + " and "+last;
 }
@@ -14,7 +14,7 @@ export function pluralize(noun, set) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
-export const descDepth = 1;
+const descDepth = 1;
 
 // This is the root of the *Abstract Syntax Tree*.  parse implementations are
 // required to spit out an `AST` instance.
@@ -312,8 +312,20 @@ export class ASTNode {
     }
   }
 
-  toDescription(_level){
+  describe(level) {
+    if ((this.level - level) >= descDepth) {
+      return this.shortDescription(level);
+    } else {
+      return this.longDescription(level);
+    }
+  }
+
+  shortDescription(_level) {
     return this.options["aria-label"];
+  }
+
+  longDescription(_level) {
+    throw "ASTNodes must implement `.longDescription()`";
   }
 
   toString() {

@@ -3,12 +3,12 @@ import Node from '../../components/Node';
 import Args from '../../components/Args';
 import * as P from '../../pretty';
 
-import { ASTNode, pluralize, descDepth } from '../../ast';
+import { ASTNode, pluralize } from '../../ast';
 
 
 // Binop ABlank Bind Func Sekwence Var Assign Let
 
-// each class has constructor toDescription pretty render
+// each class has constructor longDescription pretty render
 
 interface Identifier {
   value: string;
@@ -28,9 +28,8 @@ export class Binop extends ASTNode {
     this.right = right;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a ${this.op} expression with ${this.left.toDescription(level)} and ${this.right.toDescription(level)}`;
+  longDescription(level) {
+    return `a ${this.op} expression with ${this.left.describe(level)} and ${this.right.describe(level)}`;
   }
 
   pretty(): P.Doc {
@@ -61,8 +60,7 @@ export class Bind extends ASTNode {
     this.ann = ann;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `a bind expression with ${this.ident.value} and ${this.ann}`;
   }
 
@@ -99,9 +97,8 @@ export class Func extends ASTNode {
     this.body = body;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a func expression with ${this.name}, ${this.args_reversed} and ${this.body.toDescription(level)}`;
+  longDescription(level) {
+    return `a func expression with ${this.name}, ${this.args_reversed} and ${this.body.describe(level)}`;
   }
 
   pretty() {
@@ -141,9 +138,8 @@ export class Sekwence extends ASTNode {
     this.name = name;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a sequence containing ${this.exprs.toDescription(level)}`;
+  longDescription(level) {
+    return `a sequence containing ${this.exprs.describe(level)}`;
   }
 
   pretty() {
@@ -170,8 +166,7 @@ export class Var extends ASTNode {
     this.rhs = rhs;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `a var setting ${this.ident} to ${this.rhs}`;
   }
 
@@ -203,8 +198,7 @@ export class Assign extends ASTNode {
     this.rhs = rhs;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `an assign setting ${this.ident} to ${this.rhs}`;
   }
 
@@ -234,8 +228,7 @@ export class Let extends ASTNode {
     this.rhs = rhs;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `a let setting ${this.ident} to ${this.rhs}`;
   }
 
@@ -271,8 +264,7 @@ export class Construct extends ASTNode {
     this.values = values;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `${this.constructor_name} with ${this.values}`;
   }
 
@@ -301,7 +293,7 @@ export class Construct extends ASTNode {
 }
 
 export class FunctionApp extends ASTNode {
-  func: {toString: () => string, toDescription: () => string};
+  func: ASTNode;
   args: any[];
   level: any;
   options: any;
@@ -311,17 +303,14 @@ export class FunctionApp extends ASTNode {
     this.args = args;
   }
 
-  toDescription(level){
+  longDescription(level) {
     // if it's the top level, enumerate the args
     if((this.level  - level) == 0) {
-      return `applying the function ${this.func.toDescription()} to ${pluralize("argument", this.args)} `+
-      this.args.map((a, i, args)  => (args.length>1? (i+1) + ": " : "")+ a.toDescription(level)).join(", ");
+      return `applying the function ${this.func.describe(level)} to ${pluralize("argument", this.args)} `+
+      this.args.map((a, i, args)  => (args.length>1? (i+1) + ": " : "")+ a.describe(level)).join(", ");
     }
-    // if we've bottomed out, use the aria label
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
-    // if we're in between, use "f of A, B, C" format
-    else return `${this.func.toDescription()} of `+ this.args.map(a  => a.toDescription(level)).join(", ");
-      
+    // if we're lower than that (but not so low that `.shortDescription()` is used), use "f of A, B, C" format
+    else return `${this.func.describe(level)} of `+ this.args.map(a  => a.describe(level)).join(", ");
   }
 
   pretty() {
@@ -361,8 +350,7 @@ export class Tuple extends ASTNode {
     this.fields = fields;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `tuple with ${this.fields}`;
   }
 
@@ -402,8 +390,7 @@ export class Check extends ASTNode {
     this.keyword_check = keyword_check;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `check with ${this.body}`;
   }
 
@@ -435,7 +422,7 @@ export class Check extends ASTNode {
 }
 
 export class CheckTest extends ASTNode {
-  op: {toString: () => string, toDescription: () => string};
+  op: ASTNode;
   hash: any;
   level: any;
   options: any;
@@ -450,10 +437,9 @@ export class CheckTest extends ASTNode {
     this.rhs = rhs;
   }
 
-  toDescription(level){
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     // how to deal with when rhs is undefined
-    return `${this.op.toDescription()} ${this.lhs.toDescription()} ${(this.rhs != null)? this.rhs : ""}`;
+    return `${this.op.describe(level)} ${this.lhs.describe(level)} ${(this.rhs != null)? this.rhs : ""}`;
   }
 
   pretty() {
@@ -495,8 +481,7 @@ export class Bracket extends ASTNode {
     this.base = base;
   }
 
-  toDescription(level) {
-    if ((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `${this.index} of ${this.base}`;
   }
 
@@ -532,12 +517,8 @@ export class LoadTable extends ASTNode {
     this.sources = sources;
   }
 
-  toDescription(level){
-    if((this.level  - level) >= descDepth) {
-      return `${this.rows} in a table from ${this.sources}`;
-    }
-    // if we've bottomed out, use the aria label
-    return this.options['aria-label'];
+  longDescription(level) {
+    return `${this.rows} in a table from ${this.sources}`;
   }
 
   pretty() {
