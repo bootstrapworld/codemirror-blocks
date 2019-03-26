@@ -431,7 +431,6 @@ export class Blank extends ASTNode {
     super(from, to, 'blank', [], options);
     this.value = value || "...";
     this.dataType = dataType;
-    this.hash = hashObject(['blank', this.value, this.dataType]);
   }
 
   pretty() {
