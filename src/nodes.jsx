@@ -410,7 +410,6 @@ export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
     super(from, to, 'comment', [], options);
     this.comment = comment;
-    this.hash = hashObject(['comment', this.comment]);
   }
 
   pretty() {
