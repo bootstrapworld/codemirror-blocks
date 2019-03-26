@@ -265,7 +265,6 @@ export class CondClause extends ASTNode {
     super(from, to, 'condClause', ['testExpr', 'thenExprs'], options);
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
-    this.hash = hashObject(['condClause', testExpr.hash, thenExprs.map(e => e.hash)]);
   }
 
   toDescription(level){
