@@ -213,6 +213,7 @@ export class FunctionDefinition extends ASTNode {
     this.name = name;
     this.params = params;
     this.body = body;
+    this.hash = hashObject(['functionDefinition', name.hash, params.hash, body.hash]);
   }
 
   longDescription(level) {
