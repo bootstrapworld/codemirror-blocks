@@ -292,6 +292,7 @@ export class CondExpression extends ASTNode {
   constructor(from, to, clauses, options={}) {
     super(from, to, 'condExpression', ['clauses'], options);
     this.clauses = clauses;
+    this.hash = hashObject(['condExpression', this.clauses.map(clause => clause.hash)]);
   }
 
   longDescription(level) {
