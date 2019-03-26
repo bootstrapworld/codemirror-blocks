@@ -144,6 +144,7 @@ export class VariableDefinition extends ASTNode {
     super(from, to, 'variableDefinition', ['name', 'body'], options);
     this.name = name;
     this.body = body;
+    this.hash = hashObject(['variableDefinition', name.hash, body.hash]);
   }
 
   longDescription(level) {
