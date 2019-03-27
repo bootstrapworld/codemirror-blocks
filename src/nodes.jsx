@@ -443,11 +443,7 @@ export class Blank extends ASTNode {
     super(from, to, 'blank', [], options);
     this.value = value || "...";
     this.dataType = dataType;
-    this.hash = this.computeHash();
-  }
-
-  computeHash() {
-    return hashObject(['literal', this.value, this.dataType]);
+    this.hash = hashObject(['literal', this.value, this.dataType]);
   }
 
   pretty() {
