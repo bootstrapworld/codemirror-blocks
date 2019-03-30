@@ -153,15 +153,15 @@ export function activate(id, options) {
     // TODO(Emmanuel): right now we bail, but shouldn't we at least say the label?
     if (!node) { return; }
 
+    // force the screenreader to re-announce if we're on the same node by blurring/refocusing
     if (node.id === focusId) {
-      say(node.options['aria-label']);
+      node.element.blur();
+      setTimeout(() => node.element.focus(), 10);
     }
     // FIXME(Oak): if possible, let's not hard code like this
     if (['blank', 'literal'].includes(node.type) && !collapsedList.includes(node.id)) {
-      if (queuedAnnouncement) clearTimeout(queuedAnnouncement);
-      queuedAnnouncement = setTimeout(() => {
-        say('Use enter to edit', 1250);
-      });
+      if(queuedAnnouncement) { clearTimeout(queuedAnnouncement); } 
+      queuedAnnouncement = setTimeout(() => say('Use enter to edit'), 1250 );
     }
     // FIXME(Oak): here's a problem. When we double click, the click event will
     // be fired as well. That is, it tries to activate a node and then edit

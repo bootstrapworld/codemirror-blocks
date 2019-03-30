@@ -85,7 +85,7 @@ export function say(text, delay=200) {
   const announcement = document.createTextNode(text + ', ');
   const announcer = store.getState().announcer;
   setTimeout(() => { if (announcer != null) announcer.appendChild(announcement); }, delay);
-  setTimeout(() => { if (announcer != null) announcer.removeChild(announcement); }, delay + 300);
+  setTimeout(() => { if (announcer != null) announcer.removeChild(announcement); }, delay + 10);
 }
 
 
