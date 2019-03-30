@@ -133,7 +133,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.cmb.getValue()).toBe('11\n54');
     });
 
-    it('should cancel the editability of activated node when Shift-Esc is pressed', async function() {
+    it('should cancel the editability of activated node when Alt-Q is pressed', async function() {
       click(this.literal1);
       await wait(DELAY);
       expect(this.activeNode()).toBe(this.literal1);
@@ -143,7 +143,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.literal1.isEditable()).toBe(true);
       insertText("sugarPlums");
       
-      keyDown("Escape", {shiftKey: true});
+      keyDown("Q", {altKey: true});
       await wait(DELAY);
       expect(this.literal1.isEditable()).toBe(false);
       expect(this.cmb.getValue()).toBe('11\n54');
@@ -392,7 +392,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.selectedNodes().length).toBe(0);
     });
 
-    it('shift-esc key clears selection', async function() {
+    it('Alt-Q key clears selection', async function() {
       click(this.literal1);
       keyDown(" ", {}, this.literal1);
       await wait(DELAY);
@@ -403,7 +403,7 @@ describe('The CodeMirrorBlocks Class', function() {
       await wait(DELAY);
       expect(this.literal2.element.getAttribute("aria-selected")).toBe('true');
       expect(this.selectedNodes().length).toBe(2);
-      keyDown("Escape", {shiftKey: true}, this.literal2);
+      keyDown("Q", {altKey: true}, this.literal2);
       await wait(DELAY);
       expect(this.selectedNodes().length).toBe(0);
     });
