@@ -149,12 +149,12 @@ export function activate(id, options) {
     if (id === null) { id = focusId }
     const node = ast.getNodeById(id);
 
-    // If the node is part of the toolbar...
-    // TODO(Emmanuel): right now we bail, but shouldn't we at least say the label?
+    // Don't activate a toolbar node. (Screenreaders will still announce it)
     if (!node) { return; }
 
     // force the screenreader to re-announce if we're on the same node by blurring/refocusing
-    if (node.id === focusId) {
+    // check for node.element, since the test suite may run so fast that the element isn't there
+    if (node.id === focusId && node.element) {
       node.element.blur();
       setTimeout(() => node.element.focus(), 10);
     }
