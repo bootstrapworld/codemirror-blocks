@@ -1,4 +1,4 @@
-import PyretParser from '../pyret/PyretParser';
+import WeschemeParser from './WeschemeParser';
 import {addLanguage} from '../../languages/';
 require('./style.less');
 
@@ -8,7 +8,7 @@ export default addLanguage(
     name: 'WeScheme',
     description: 'The WeScheme language',
     getParser() {
-      return new PyretParser();
+      return new WeschemeParser();
     },
     getRenderOptions() {
       return {
