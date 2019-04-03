@@ -24,6 +24,7 @@ export class Binop extends ASTNode {
     this.op = op;
     this.left = left;
     this.right = right;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -56,6 +57,7 @@ export class Bind extends ASTNode {
     super(from, to, 'bind', ['ann', 'ident'], options);
     this.ident = id;
     this.ann = ann;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -93,6 +95,7 @@ export class Func extends ASTNode {
     this.retAnn = retAnn;
     this.doc = doc;
     this.body = body;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -136,6 +139,7 @@ export class Block extends ASTNode {
     super(from, to, 'block', ['stmts'], options);
     this.stmts = stmts;
     this.name = name;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -163,6 +167,7 @@ export class Let extends ASTNode {
     super(from, to, 'let', ['ident', 'rhs'], options);
     this.ident = id;
     this.rhs = rhs;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -196,6 +201,7 @@ export class Var extends ASTNode {
     super(from, to, 'var', ['ident', 'rhs'], options);
     this.ident = id;
     this.rhs = rhs;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -229,6 +235,7 @@ export class Assign extends ASTNode {
     super(from, to, 'assign', ['ident', 'rhs'], options);
     this.ident = id;
     this.rhs = rhs;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -263,6 +270,7 @@ export class Construct extends ASTNode {
     this.modifier = modifier;
     this.construktor = construktor;
     this.values = values;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -300,6 +308,7 @@ export class FunctionApp extends ASTNode {
     super(from, to, 'functionApp', ['func', 'args'], options);
     this.func = func;
     this.args = args;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -344,6 +353,7 @@ export class Tuple extends ASTNode {
   constructor(from, to, fields, options = {}) {
     super(from, to, 'tuple', ['fields'], options);
     this.fields = fields;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -381,6 +391,7 @@ export class Check extends ASTNode {
     this.name = name;
     this.body = body;
     this.keyword_check = keyword_check;
+    super.hash = hashObject(['check', this.name, ...[this.body, this.keyword_check].map(c => c.hash)]);
   }
 
   longDescription(level) {
@@ -424,7 +435,7 @@ export class CheckTest extends ASTNode {
     this.refinement = refinement;
     this.lhs = lhs;
     this.rhs = rhs;
-    // this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -472,6 +483,7 @@ export class Bracket extends ASTNode {
     super(from, to, 'let', ['base', 'index'], options);
     this.base = base;
     this.index = index;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
@@ -509,6 +521,7 @@ export class LoadTable extends ASTNode {
     super(from, to, 'functionApp', ['rows', 'sources'], options);
     this.rows = rows;
     this.sources = sources;
+    super.hash = super.computeHash();
   }
 
   longDescription(level) {
