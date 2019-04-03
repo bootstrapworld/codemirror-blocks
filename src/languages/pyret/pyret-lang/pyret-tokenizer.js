@@ -418,6 +418,7 @@ const pyretTokenizer = (function(E) {
       }},
     { name: "STRING", val: "\"",
       process: function tokenizeDQString(tok_spec) {
+        var match = undefined;
         var line = this.curLine, col = this.curCol, pos = this.pos;
         dquot_str.lastIndex = this.pos;
         unterminated_string.lastIndex = this.pos;
@@ -437,6 +438,7 @@ const pyretTokenizer = (function(E) {
       }},
     { name: "STRING", val: "'",
       process: function tokenizeSQString(tok_spec) {
+        var match = undefined;
         var line = this.curLine, col = this.curCol, pos = this.pos;
         squot_str.lastIndex = this.pos;
         unterminated_string.lastIndex = this.pos;
@@ -455,6 +457,7 @@ const pyretTokenizer = (function(E) {
       }},
     { name: "STRING", val: "```",
       process: function tokenizeTQString(tok_spec) {
+        var match = undefined;
         var line = this.curLine, col = this.curCol, pos = this.pos;
         tquot_str.lastIndex = this.pos;
         unterminated_string.lastIndex = this.pos;
