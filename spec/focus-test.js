@@ -104,7 +104,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.getFocusedNode().value).toBe('99');
     });
 
-    it('inserting mulitple nodes should put focus on the last of the new nodes', async function() {
+    it('inserting multiple nodes should put focus on the last of the new nodes', async function() {
       click(this.literal1);
       await wait(DELAY);
       keyDown(']', {ctrlKey: true});
