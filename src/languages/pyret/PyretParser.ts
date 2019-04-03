@@ -53,22 +53,22 @@ function endOf(srcloc: { endRow: number; endCol: number; }) {
 }
 
 const opLookup = {
-  "+":   "op+",
-  "-":   "op-",
-  "*":   "op*",
-  "/":   "op/",
-  "$":   "op$",
-  "^":   "op^",
-  "<":   "op<",
-  "<=":  "op<=",
-  ">":   "op>",
-  ">=":  "op>=",
-  "==":  "op==",
-  "=~":  "op=~",
-  "<=>": "op<=>",
-  "<>":  "op<>",
-  "and": "opand",
-  "or":  "opor",
+  "+":   "+",
+  "-":   "-",
+  "*":   "*",
+  "/":   "/",
+  "$":   "$",
+  "^":   "^",
+  "<":   "<",
+  "<=":  "<=",
+  ">":   ">",
+  ">=":  ">=",
+  "==":  "==",
+  "=~":  "=~",
+  "<=>": "<=>",
+  "<>":  "<>",
+  "and": "and",
+  "or":  "or",
   // TODO: check ops
   "is": (loc, _node) => new Literal(loc.from, loc.to, 'is', 'check-op'),
 };
@@ -110,13 +110,12 @@ const nodeTypes = {
       stmts,
       'block');
   },
-  "s-op": function(pos: Range, _opPos: any, op: { substr: (arg0: number) => any; }, left: any, right: any) {
+  "s-op": function(pos: Range, opPos: Range, op: string, left: any, right: any) {
     console.log(arguments);
-    let name = op.substr(2);
     return new Binop(
       pos.from,
       pos.to,
-      name,
+      new Literal(opPos.from, opPos.to, op, 'operator'),
       left,
       right,
       {'aria-label': `${left} ${name} ${right}`});

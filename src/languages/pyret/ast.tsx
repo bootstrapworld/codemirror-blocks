@@ -14,12 +14,12 @@ import { Literal } from '../../nodes';
 const INDENT = P.txt("  ");
 
 export class Binop extends ASTNode {
-  op: string;
+  op: ASTNode;
   left: ASTNode;
   right: ASTNode;
 
   constructor(from, to, op, left, right, options = {}) {
-    super(from, to, 'binop', ['left', 'right'], options);
+    super(from, to, 'binop', ['op', 'left', 'right'], options);
     // op is just a string, so not a part of children
     this.op = op;
     this.left = left;
@@ -28,7 +28,7 @@ export class Binop extends ASTNode {
   }
 
   longDescription(level) {
-    return `a ${this.op} expression with ${this.left.describe(level)} and ${this.right.describe(level)}`;
+    return `a ${this.op.describe(level)} expression with ${this.left.describe(level)} and ${this.right.describe(level)}`;
   }
 
   pretty(): P.Doc {
@@ -40,7 +40,7 @@ export class Binop extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          {this.op}
+          {this.op.reactElement()}
         </span>
         {this.left.reactElement()}
         {this.right.reactElement()}
