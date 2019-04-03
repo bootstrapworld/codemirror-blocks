@@ -11,6 +11,7 @@ import {
 import {Binop,
   Assign,
   Bind,
+  Block,
   Bracket,
   Check,
   CheckTest,
@@ -19,7 +20,6 @@ import {Binop,
   FunctionApp,
   Let,
   LoadTable,
-  Sekwence as Sequence,
   Tuple,
   Var,
 } from "./ast";
@@ -104,7 +104,7 @@ const nodeTypes = {
       {'aria-label': `${x}, a number`});
   },
   "s-block": function(pos: Range, stmts: [any]) {
-    return new Sequence(
+    return new Block(
       pos.from,
       pos.to,
       stmts,
