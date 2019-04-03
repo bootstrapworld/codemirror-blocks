@@ -81,6 +81,10 @@ export class AST {
 
     const loop = (nodes, parent, level) => {
       nodes.forEach((node, i) => {
+        this.validateNode(node);
+        if (node.id === undefined) {
+          node.id = uuidv4();
+        }
         node.parent = parent;
         node.path = parent ? parent.path + ("," + i) : i.toString();
         node.level = level;
@@ -98,6 +102,42 @@ export class AST {
       });
     };
     loop(this.rootNodes, null, 1);
+  }
+
+  validateNode(node) {
+    const newFieldNames = ["id", "parent", "path", "level", "nid", "prev", "next"];
+    if (!node.__alreadyValidated) {
+      for (let p in node) {
+        if (newFieldNames.includes(p)) {
+          throw new Error(`The property ${p} is used by ASTNode, and should not be overridden in subclasses.`);
+        }
+      }
+    }
+    node.__alreadyValidated = true;
+    if (typeof node.type !== "string") {
+      throw new Error(`ASTNodes must each have a fixed 'type', which must be a string.`);
+    }
+    if (typeof node.hash !== "string") {
+      throw new Error(`ASTNode.hash is required and must be a string. This rule was broken by ${node.type}.`);
+    }
+    if (!(node.keys instanceof Array)) {
+      throw new Error(`ASTNode.keys is required and must be an array of strings. This rule was broken by ${node.type}.`);
+    }
+    if (typeof node.options !== "object") {
+      throw new Error(`ASTNode.keys is required and must be an object. This rule was broken by ${node.type}.`);
+    }
+    if (!node.from || !node.to
+        || typeof node.from.line !== "number" || typeof node.from.ch !== "number"
+        || typeof node.to.line !== "number" || typeof node.to.ch !== "number") {
+      throw new Error(`ASTNode.from and .to are required and must have the form {line: number, to: number}
+(they are source locations). This rule was broken by ${node.type}.`);
+    }
+    if (typeof node.pretty !== "function") {
+      throw new Error(`ASTNode ${node.type} needs to have a pretty() method, but does not.`);
+    }
+    if (typeof node.render !== "function") {
+      throw new Error(`ASTNode ${node.type} needs to have a render() method, but does not.`);
+    }
   }
 
   getNodeById = id => this.nodeIdMap.get(id)
@@ -294,9 +334,9 @@ export class ASTNode {
     this.options = options;
 
     // Every node also has a globally unique `id` which can be used to look up
-    // it's corresponding DOM element, or to look it up in `AST.nodeIdMap`
-    this.id = uuidv4(); // generate a unique ID
-
+    // its corresponding DOM element, or to look it up in `AST.nodeIdMap`.
+    // It is set in AST.annotateNodes().
+    
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
       options.comment.id = "block-node-" + this.id + "-comment";
