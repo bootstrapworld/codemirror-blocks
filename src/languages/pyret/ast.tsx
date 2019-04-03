@@ -1,4 +1,5 @@
 import React from 'react';
+import hashObject from 'object-hash';
 import Node from '../../components/Node';
 import Args from '../../components/Args';
 import * as P from '../../pretty';
@@ -423,6 +424,7 @@ export class CheckTest extends ASTNode {
     this.refinement = refinement;
     this.lhs = lhs;
     this.rhs = rhs;
+    // this.hash = hashObject(['function-app', func.hash, args.map(arg => arg.hash)]);
   }
 
   longDescription(level) {
@@ -441,7 +443,7 @@ export class CheckTest extends ASTNode {
                P.horz(INDENT, op)));
     } else {
       return P.ifFlat(
-        P.horz(left, " ", op, right),
+        P.horz(left, " ", op, " ", right),
         P.vert(left,
                P.horz(INDENT, op, right)));
     }

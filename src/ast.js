@@ -188,6 +188,8 @@ export class AST {
     let n = [...this.nodeIdMap.values()].find(n => {
       let {from: srcFrom, to: srcTo} = n.srcRange();
       // happens when node is an ABlank
+      if (n.from == null || n.to == null)
+        return undefined;
       return (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0)
         || (poscmp(from, srcFrom) == 0) && (poscmp(to, srcTo) == 0);
     });
@@ -298,14 +300,6 @@ export class ASTNode {
     // it's corresponding DOM element, or to look it up in `AST.nodeIdMap`
     this.id = uuidv4(); // generate a unique ID
 
-    // Every node has a hash value which is dependent on
-    // 1. type
-    // 2. children (ordered)
-    // but not on srcloc and id.
-    //
-    // Two subtrees with identical value are supposed to have the same hash
-    this.hash = hashObject([type, [...this.children()].map(c => c.hash)]);
-
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
       options.comment.id = "block-node-" + this.id + "-comment";
@@ -318,6 +312,13 @@ export class ASTNode {
     } else {
       return this.longDescription(level);
     }
+  }
+
+  // Every node has a hash value which is dependent on type and (ordered) children,
+  // but not on srcloc and id. Subtrees with identical values must have the same hash
+  // This can be overridden by ASTNodes that hash on special qualities (see Literal, Comment)
+  computeHash() {
+    return this.hash = hashObject([this.type, [...this.children()].map(c => c.hash)]);
   }
 
   shortDescription(_level) {

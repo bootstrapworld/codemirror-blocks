@@ -79,7 +79,7 @@ class NodeEditable extends Component {
       this.saveEdit(e);
       return;
     }
-    case 'Shift-Esc':
+    case 'Alt-Q':
     case 'Esc':
       this.ignoreBlur = true;
       e.stopPropagation();
@@ -97,7 +97,7 @@ class NodeEditable extends Component {
 
   componentDidMount() {
     const text = this.props.value !== null ? this.props.value : this.cachedValue;
-    say(`${this.props.isInsertion ? 'inserting' : 'editing'} ${text}. Use Enter to save, and Shift-Escape to cancel`);
+    say(`${this.props.isInsertion ? 'inserting' : 'editing'} ${text}. Use Enter to save, and Alt-Q to cancel`);
     this.props.clearSelections();
   }
 

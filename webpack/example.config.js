@@ -2,11 +2,22 @@ var _ = require('lodash');
 var path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
 
 var baseConfig = require('./base.config.js')();
 
 // this is the config for generating the files needed to run the examples.
 module.exports = function(env, argv) {
+  // Display bundle size when building for production
+  if(argv['mode'] == 'production') { 
+    console.log(process);
+    baseConfig.plugins.push(new BundleAnalyzerPlugin({
+      analyzerMode: 'static', 
+      openAnalyzer: !('TRAVIS' in process.env && 'CI' in process.env)
+    }));
+  }
+
   return _.extend({}, baseConfig, {
     devtool: 'cheap-module-source-map',
     entry: {
@@ -33,7 +44,7 @@ module.exports = function(env, argv) {
         inject: 'body',
         chunks: ['commons','new-pyret-editor-example'],
       }),
-      new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/),
+      new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/)
     ]),
     optimization: {
       minimize: argv['mode'] == 'production',
