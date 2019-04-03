@@ -75,8 +75,8 @@ const opLookup = {
 
 // TODO: all of these are preliminary for testing
 const nodeTypes = {
-  "s-program": function(_pos: Range, _prov: any, _provTy: any, _impt: any, body: { exprs: any; }) {
-    let rootNodes = body.exprs;
+  "s-program": function(_pos: Range, _prov: any, _provTy: any, _impt: any, body: Block) {
+    let rootNodes = body.stmts;
     return new AST(rootNodes);
   },
   "s-name": function(pos: Range, str: string) {
