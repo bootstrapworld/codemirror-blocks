@@ -1,4 +1,4 @@
-import * as cycle from "./cyclicJSON.js";
+const rnglr = (function(cycle) {
 
   function SrcLoc(startRow, startCol, startChar, endRow, endCol, endChar) {
     this.startRow = startRow;
@@ -2673,8 +2673,7 @@ import * as cycle from "./cyclicJSON.js";
 
   }
 
-
-module.exports = {
+  return {
     Atom: Atom,
     Nonterm: Nonterm,
     Token: Token,
@@ -2686,3 +2685,6 @@ module.exports = {
     SrcLoc: SrcLoc
   };
 
+})(require("./cyclicJSON"));
+
+module.exports = rnglr;

@@ -1,5 +1,4 @@
-import * as E from "./rnglr";
-
+const jglr = (function(E) {
   const SrcLoc = E.SrcLoc
   const NS_PER_SEC = 1e9;
   var start;
@@ -325,7 +324,7 @@ import * as E from "./rnglr";
     return Tokenizer;
   })();
 
-module.exports = {
+  return {
     'Tokenizer': Tokenizer,
     'Tokenizer2': Tokenizer2,
     'STICKY_REGEXP': '',
@@ -339,4 +338,6 @@ module.exports = {
     'EPSILON': E.EPSILON,
     'SrcLoc': E.SrcLoc
   };
+})(require("./rnglr"));
 
+module.exports = jglr;
