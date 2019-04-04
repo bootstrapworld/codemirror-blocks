@@ -1,4 +1,4 @@
-const pyretParser = (
+module.exports = (
 /** @param {{Grammar : {fromSerializable : !Function}, Nonterm : !Object, Token : !Object, Rule : !Object}} E */
 function(E) {
   const Grammar = E.Grammar;
@@ -92608,5 +92608,3 @@ function(E) {
   };
   return { PyretGrammar: Grammar.fromSerializable(g_json) };
 })(require("./jglr"));
-
-module.exports = pyretParser;

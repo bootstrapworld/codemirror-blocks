@@ -1,4 +1,4 @@
-const rnglr = (function(cycle) {
+module.exports = (function(cycle) {
 
   function SrcLoc(startRow, startCol, startChar, endRow, endCol, endChar) {
     this.startRow = startRow;
@@ -2686,5 +2686,3 @@ const rnglr = (function(cycle) {
   };
 
 })(require("./cyclicJSON"));
-
-module.exports = rnglr;

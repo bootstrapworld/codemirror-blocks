@@ -1,4 +1,4 @@
-const pyretTokenizer = (function(E) {
+module.exports = (function(E) {
   const SrcLoc = E.SrcLoc
   const GenTokenizer = E.Tokenizer2;
   const IGNORED_WS = {name: "WS"};
@@ -573,5 +573,3 @@ const pyretTokenizer = (function(E) {
     'Tokenizer': new Tokenizer(spec)
   };
 })(require("./jglr"));
-
-module.exports = pyretTokenizer;

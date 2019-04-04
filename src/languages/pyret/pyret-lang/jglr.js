@@ -1,4 +1,4 @@
-const jglr = (function(E) {
+module.exports = (function(E) {
   const SrcLoc = E.SrcLoc
   const NS_PER_SEC = 1e9;
   var start;
@@ -339,5 +339,3 @@ const jglr = (function(E) {
     'SrcLoc': E.SrcLoc
   };
 })(require("./rnglr"));
-
-module.exports = jglr;
