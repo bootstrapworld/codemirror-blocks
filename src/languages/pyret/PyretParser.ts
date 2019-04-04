@@ -130,11 +130,13 @@ const nodeTypes = {
   },
   "s-fun": function(pos: Range, name: string, _params: any, args: any, ann: any, doc: any, body: any, _checkLoc: any, _check: any, _blodky: any) {
     // TODO: ignoring params, check, blocky
+    let fun_from = {line: pos.from.line, ch: pos.from.ch + 4};
+    let fun_to = {line: pos.from.line, ch: fun_from.ch + name.length};
     console.log(arguments);
     return new Func(
       pos.from,
       pos.to,
-      name,
+      new Literal(fun_from, fun_to, name, 'function'),
       args,
       ann,
       doc,

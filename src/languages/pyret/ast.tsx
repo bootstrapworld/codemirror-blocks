@@ -82,14 +82,14 @@ export class Bind extends ASTNode {
 }
 
 export class Func extends ASTNode {
-  name: string;
+  name: ASTNode;
   args: ASTNode[];
   retAnn: ASTNode | null;
   doc: string | null;
   body: ASTNode;
 
   constructor(from, to, name, args, retAnn, doc, body, options = {}) {
-    super(from, to, 'functionDefinition', ['args', 'retAnn', 'body'], options);
+    super(from, to, 'functionDefinition', ['name', 'args', 'retAnn', 'body'], options);
     this.name = name;
     this.args = args;
     this.retAnn = retAnn;
@@ -99,7 +99,7 @@ export class Func extends ASTNode {
   }
 
   longDescription(level) {
-    return `a func expression with ${this.name}, ${this.args} and ${this.body.describe(level)}`;
+    return `a func expression with ${this.name.describe(level)}, ${this.args} and ${this.body.describe(level)}`;
   }
 
   pretty() {
@@ -123,7 +123,7 @@ export class Func extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          fun {this.name}(<Args>{this.args}</Args>):
+          fun {this.name.reactElement()}(<Args>{this.args}</Args>):
         </span>
         {body}
       </Node>
