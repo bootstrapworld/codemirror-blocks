@@ -123,7 +123,7 @@ export class Func extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          fun {this.name.reactElement()}(<Args>{this.args}</Args>):
+          fun&nbsp;{this.name.reactElement()}(<Args>{this.args}</Args>):
         </span>
         {body}
       </Node>
