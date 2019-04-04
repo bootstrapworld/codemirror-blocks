@@ -10,6 +10,7 @@ export class LetLikeExpr extends ASTNode {
     this.form = form;
     this.bindings = bindings;
     this.expr = expr;
+    this.hash = this.computeHash();
   }
 
   toDescription(level){
@@ -38,6 +39,7 @@ export class WhenUnless extends ASTNode {
     this.form = form;
     this.predicate = predicate;
     this.exprs = exprs;
+    this.hash = this.computeHash();
   }
 
   toDescription(level){
