@@ -54,7 +54,7 @@ export class Bind extends ASTNode {
   ident: Literal;
 
   constructor(from, to, id: Literal, ann, options = {}) {
-    super(from, to, 'bind', ['ann', 'ident'], options);
+    super(from, to, 'bind', ['ident', 'ann'], options);
     this.ident = id;
     this.ann = ann;
     super.hash = super.computeHash();
@@ -73,11 +73,11 @@ export class Bind extends ASTNode {
   }
 
   render(props) {
-    if (this.ann === null) {
-      return this.ident.reactElement();
-    } else {
-      return (<span>{this.ident.reactElement()} :: {this.ann.reactElement()}</span>)
-    }
+    return <Node node={this} {...props}>
+      {(this.ann === null) ? <span className="blocks-operator">{this.ident.reactElement()}</span>
+        :
+        (<span className="blocks-operator">{this.ident.reactElement()} :: {this.ann.reactElement()}</span>)
+      }</Node>
   }
 }
 
@@ -160,7 +160,7 @@ export class Block extends ASTNode {
 }
 
 export class Let extends ASTNode {
-  ident: Literal;
+  ident: ASTNode; // really Bind
   rhs: ASTNode;
 
   constructor(from, to, id, rhs, options = {}) {
