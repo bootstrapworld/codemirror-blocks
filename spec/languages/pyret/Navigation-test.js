@@ -41,8 +41,10 @@ describe('The CodeMirrorBlocks Class', function() {
       this.literal1 = ast.rootNodes[0];
     });
     
-    it('should activate the first sub-component when down is pressed', async function () {
-      keyDown(" ", {}, this.literal1);
+    it('should activate the binding when down is pressed', async function () {
+      click(this.literal1);
+      await wait(DELAY);
+      keyDown(" ");
       keyDown("ArrowDown");
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
@@ -50,8 +52,35 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.activeNode()).not.toBe(this.literal1.rhs);
     });
 
-    it('should activate the second sub-component node when down is pressed twice', async function() {
-      keyDown(" ", {}, this.literal1);
+    it('should activate the identifier when down is pressed in binding', async function() {
+      click(this.literal1.ident);
+      await wait(DELAY);
+      keyDown(" ");
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).not.toBe(this.literal1.ident);
+      expect(this.activeNode()).toBe(this.literal1.ident.ident);
+      expect(this.activeNode()).not.toBe(this.literal1.rhs);
+    });
+
+    it('should activate the identifier when down is pressed twice', async function () {
+      click(this.literal1);
+      await wait(DELAY);
+      keyDown(" ");
+      keyDown("ArrowDown");
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).not.toBe(this.literal1.ident);
+      expect(this.activeNode()).toBe(this.literal1.ident.ident);
+      expect(this.activeNode()).not.toBe(this.literal1.rhs);
+    });
+
+    it('should activate the rhs when down is pressed three times', async function () {
+      click(this.literal1);
+      await wait(DELAY);
+      keyDown("ArrowDown");
       keyDown("ArrowDown");
       keyDown("ArrowDown");
       await wait(DELAY);
