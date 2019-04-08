@@ -1,1 +1,1 @@
-fun f(x): x + 3 end
+x :: Number = 3
