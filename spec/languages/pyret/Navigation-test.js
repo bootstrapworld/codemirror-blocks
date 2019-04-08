@@ -80,6 +80,7 @@ describe('The CodeMirrorBlocks Class', function() {
     it('should activate the rhs when down is pressed three times', async function () {
       click(this.literal1);
       await wait(DELAY);
+      keyDown(" ");
       keyDown("ArrowDown");
       keyDown("ArrowDown");
       keyDown("ArrowDown");
