@@ -128,7 +128,7 @@ const nodeTypes = {
       id,
       ann);
   },
-  "s-fun": function(pos: Range, name: string, _params: any, args: any, ann: any, doc: any, body: any, _checkLoc: any, _check: any, _blodky: any) {
+  "s-fun": function(pos: Range, name: string, _params: any, args: any, ann: any, doc: any, body: any, _checkLoc: any, _check: any, block: boolean) {
     // TODO: ignoring params, check, blocky
     let fun_from = {line: pos.from.line, ch: pos.from.ch + 4};
     let fun_to = {line: pos.from.line, ch: fun_from.ch + name.length};
@@ -137,10 +137,11 @@ const nodeTypes = {
       pos.from,
       pos.to,
       new Literal(fun_from, fun_to, name, 'function'),
-      args,
+      args.map(a => idToLiteral(a)),
       ann,
       doc,
       body,
+      block,
       {'aria-label': `${name}, a function with ${args} with ${body}`});
   },
   // Annotations

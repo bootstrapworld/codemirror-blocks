@@ -87,14 +87,16 @@ export class Func extends ASTNode {
   retAnn: ASTNode | null;
   doc: string | null;
   body: ASTNode;
+  block: boolean
 
-  constructor(from, to, name, args, retAnn, doc, body, options = {}) {
+  constructor(from, to, name, args, retAnn, doc, body, block, options = {}) {
     super(from, to, 'functionDefinition', ['name', 'args', 'retAnn', 'body'], options);
     this.name = name;
     this.args = args;
     this.retAnn = retAnn;
     this.doc = doc;
     this.body = body;
+    this.block = block;
     super.hash = super.computeHash();
   }
 
@@ -105,8 +107,9 @@ export class Func extends ASTNode {
   pretty() {
     // TODO: show doc
     let retAnn = this.retAnn ? P.horz(" -> ", this.retAnn) : "";
+    let header_ending = (this.block)? " block:" : ":";
     let header = P.ifFlat(
-      P.horz("fun ", this.name, "(", P.sepBy(", ", "", this.args), ")", retAnn, ":"),
+      P.horz("fun ", this.name, "(", P.sepBy(", ", "", this.args), ")", retAnn, header_ending),
       P.vert(P.horz("fun ", this.name, "("),
              P.horz(INDENT, P.sepBy(", ", "", this.args), ")", retAnn, ":")));
     // either one line or multiple; helper for joining args together
@@ -151,11 +154,14 @@ export class Block extends ASTNode {
   }
 
   render(props) {
-    // NOTE: This is not returning a Node, as `render` generally should!
-    // The reason we can get away with that here is that 
-    console.log("?", this.stmts);
     // TODO: This probably doesn't render well; need vertical alignment
-    return this.stmts.map(e => e.reactElement());
+    // include name here? is it ever a time when it's not block?
+    return (
+      <Node node = {this} {...props}>
+        <span className="blocks-operator">{this.name}</span>
+        <Args>{this.stmts}</Args>
+      </Node>
+    )
   }
 }
 
