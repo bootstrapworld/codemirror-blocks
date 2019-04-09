@@ -5,6 +5,7 @@ import Args from '../../components/Args';
 import * as P from '../../pretty';
 
 import { ASTNode, pluralize, enumerateList } from '../../ast';
+import {DropTarget} from '../../components/DropTarget';
 import { Literal } from '../../nodes';
 
 // Binop ABlank Bind Func Sekwence Var Assign Let
@@ -121,12 +122,18 @@ export class Func extends ASTNode {
   }
 
   render(props) {
-    // TODO: show doc, retAnn
+    // TODO: show doc
+    let name = this.name.reactElement();
     let body = this.body.reactElement();
+    let args = <Args>{this.args}</Args>;
+    let header_ending = <span>
+      {(this.retAnn == null && this.block == false)? <DropTarget />
+      : <>{this.retAnn != null? this.retAnn : <DropTarget />} {this.block ? "block" : <DropTarget />}</>}
+    </span>
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          fun&nbsp;{this.name.reactElement()}(<Args>{this.args}</Args>):
+          fun&nbsp;{name}({args}){header_ending}:
         </span>
         {body}
       </Node>
@@ -155,11 +162,11 @@ export class Block extends ASTNode {
 
   render(props) {
     // TODO: This probably doesn't render well; need vertical alignment
+    // vertically aligns when not surrounded by args
     // include name here? is it ever a time when it's not block?
     return (
       <Node node = {this} {...props}>
-        <span className="blocks-operator">{this.name}</span>
-        <Args>{this.stmts}</Args>
+        <span className="blocks-arguments"><Args>{this.stmts}</Args></span>
       </Node>
     )
   }
