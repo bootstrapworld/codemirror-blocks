@@ -157,14 +157,14 @@ const nodeTypes = {
       // "variable", "identifier", "name", ...; other languages
       {'aria-label': `${str}, an identifier`});
   },
-  "s-let": function(pos: Range, id: any, rhs: any, _rec: boolean) {
+  "s-let": function(pos: Range, id: Bind, rhs: any, _rec: boolean) {
     console.log(arguments);
     let options = {};
     options['aria-label'] = `${id} set to ${rhs}`;
     return new Let(
       pos.from,
       pos.to,
-      id,
+      idToLiteral(id),
       rhs,
       options
     );
@@ -261,6 +261,13 @@ const nodeTypes = {
       pos.from, pos.to, name, 'field-name', {'aria-label': `${name} field`}
     )
   },
+}
+
+function idToLiteral(id: Bind): Literal {
+  let name = id.ident.value;
+  return new Literal(
+    (id as ASTNode).from, (id as ASTNode).to, (id.ann != null)? name + " :: " + id.ann : name, {'aria-label': name}
+  )
 }
 
 function makeNode(nodeType: string) {
