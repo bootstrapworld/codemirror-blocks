@@ -86,6 +86,7 @@ end`)*/
     test('{1;2}');
     test('{1; 2}');
     test('{1}');
+    test(`tupple.{0}`);
     // test('{}');
     test('[list: 1, 2, 3]');
     test('[list: ]');
