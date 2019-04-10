@@ -395,6 +395,44 @@ export class Tuple extends ASTNode {
   }
 }
 
+export class TupleGet extends ASTNode {
+  base: ASTNode;
+  index: ASTNode;
+
+  constructor(from, to, base, index, options = {}) {
+    super(from, to, 'let', ['base', 'index'], options);
+    this.base = base;
+    this.index = index;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `${this.index.describe(level)} of ${this.base.describe(level)}`;
+  }
+
+  pretty() {
+    let base = this.base.pretty();
+    let index = this.index.pretty();
+    return P.ifFlat(
+      P.horz(base, '.{', index, '}'),
+      P.vert(P.horz(base, '.{'),
+             P.horz(INDENT, index),
+             '}'));
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          {this.base.reactElement()}{".{"}{this.index.reactElement()}{"}"}
+        </span>
+        <span className="block-args">
+        </span>
+      </Node>
+    );
+  }
+}
+
 export class Check extends ASTNode {
   name: string | null;
   body: ASTNode;

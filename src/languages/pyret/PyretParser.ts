@@ -21,6 +21,7 @@ import {Binop,
   Let,
   LoadTable,
   Tuple,
+  TupleGet,
   Var,
 } from "./ast";
 
@@ -207,6 +208,12 @@ const nodeTypes = {
     return new Tuple(
       pos.from, pos.to, fields, {'aria-label': `tuple with ${fields}`}, 
     );
+  },
+  "s-tuple-get": function(pos: Range, lhs: ASTNode, index: number, index_pos: Range) {
+    console.log(arguments);
+    return new TupleGet(
+      pos.from, pos.to, lhs, new Literal(index_pos.from, index_pos.to, index, "number"), {'aria-label': `${index} element of ${lhs} tuple`}
+    )
   },
   "s-check": function(pos: Range, name: string | undefined, body: any, keyword_check: boolean) {
     return new Check(
