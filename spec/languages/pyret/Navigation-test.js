@@ -273,7 +273,82 @@ end`);
   });
 
   describe("checks and testing", function () {
+    let test_binop = function (text) {
+      describe(text, function () {
+        beforeEach(function () {
+          this.cmb.setValue(text);
+          let ast = this.cmb.getAst();
+          this.literal1 = ast.rootNodes[0];
+          this.op = this.literal1.op;
+          this.left = this.literal1.lhs;
+          this.right = this.literal1.rhs;
+        });
 
+        it('should activate the operator when down is pressed', async function () {
+          click(this.literal1);
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).toBe(this.op);
+          expect(this.activeNode()).not.toBe(this.left);
+          expect(this.activeNode()).not.toBe(this.right);
+        });
+
+        it('should activate the lhs when down is pressed twice', async function () {
+          click(this.literal1);
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).not.toBe(this.op);
+          expect(this.activeNode()).toBe(this.left);
+          expect(this.activeNode()).not.toBe(this.right);
+        });
+
+        it('should activate the rhs when down is pressed thrice', async function () {
+          click(this.literal1);
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).not.toBe(this.op);
+          expect(this.activeNode()).not.toBe(this.left);
+          expect(this.activeNode()).toBe(this.right);
+        });
+      });
+    };
+    test_binop("7 is 7");
+
+    let test = function (text) {
+      describe(text, function () {
+        beforeEach(function () {
+          this.cmb.setValue(text);
+          let ast = this.cmb.getAst();
+          this.literal1 = ast.rootNodes[0];
+          this.body = this.literal1.body;
+        });
+
+        it("should move to body", async function () {
+          click(this.literal1);
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).toBe(this.body);
+        });
+      })
+    };
+
+    test(`check: 3 + 5 is 8 end`);
+    test(`check "arithmetic": 3 + 5 is 8 end`);
+    test(`check: 3 + 4 end`);
   });
 
   describe("tuples", function () {
