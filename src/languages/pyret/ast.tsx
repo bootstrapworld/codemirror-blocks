@@ -478,7 +478,7 @@ export class CheckTest extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          {this.op.toString()}
+          {this.op.reactElement()}
         </span>
         <span className="blocks-args">
           {this.lhs.reactElement()}
