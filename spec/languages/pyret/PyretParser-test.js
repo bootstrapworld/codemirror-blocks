@@ -81,6 +81,7 @@ end`)*/
     test(`x.len(3, 4)`);
     test(`3 + 4 is 7`);
     test(`check: 3 + 5 is 8 end`);
+    test(`check "arithmetic": 3 + 5 is 8 end`);
     test(`check: 3 + 4 end`);
     test('{1;2}');
     test('{1; 2}');
