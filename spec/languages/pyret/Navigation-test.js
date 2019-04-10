@@ -115,33 +115,38 @@ end`);
     });
   });
 
-  describe("when dealing with variable declarations", function() {
-    beforeEach(function() {
-      this.cmb.setValue('x = 3');
-      let ast = this.cmb.getAst();
-      this.literal1 = ast.rootNodes[0];
-    });
-    
-    it('should activate the binding when down is pressed', async function () {
-      click(this.literal1);
-      await wait(DELAY);
-      keyDown("ArrowDown");
-      await wait(DELAY);
-      expect(this.activeNode()).not.toBe(this.literal1);
-      expect(this.activeNode()).toBe(this.literal1.ident);
-      expect(this.activeNode()).not.toBe(this.literal1.rhs);
-    });
+  let test_let = function(text) {
+    describe(text, function () {
+      beforeEach(function () {
+        this.cmb.setValue(text);
+        let ast = this.cmb.getAst();
+        this.literal1 = ast.rootNodes[0];
+      });
 
-    it('should activate the rhs when down is pressed twice', async function () {
-      click(this.literal1);
-      await wait(DELAY);
-      keyDown("ArrowDown");
-      await wait(DELAY);
-      keyDown("ArrowDown");
-      await wait(DELAY);
-      expect(this.activeNode()).not.toBe(this.literal1);
-      expect(this.activeNode()).not.toBe(this.literal1.ident);
-      expect(this.activeNode()).toBe(this.literal1.rhs);
+      it('should activate the binding when down is pressed', async function () {
+        click(this.literal1);
+        await wait(DELAY);
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).toBe(this.literal1.ident);
+        expect(this.activeNode()).not.toBe(this.literal1.rhs);
+      });
+
+      it('should activate the rhs when down is pressed twice', async function () {
+        click(this.literal1);
+        await wait(DELAY);
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).not.toBe(this.literal1.ident);
+        expect(this.activeNode()).toBe(this.literal1.rhs);
+      });
     });
-  });
+  };
+  test_let("x = 3");
+  test_let("x = true");
+  test_let(`data-type = "string"`);
 });
