@@ -210,4 +210,32 @@ end`);
     test_binop("3 / 5");
     test_binop(`"hello" + ", there"`);
   });
+
+  describe("functions", function() {
+    describe("fun f(x): x + 3 end", function() {
+
+    });
+    describe("fun f(x, jake): x + jake end", function() {
+
+    });
+    describe("fun g(): 2 * 4 end", function() {
+
+    });
+  });
+
+  describe("method and function applications", function() {
+
+  });
+
+  describe("checks and testing", function() {
+
+  });
+
+  describe("tuples", function() {
+
+  });
+
+  describe("lists", function() {
+
+  });
 });
