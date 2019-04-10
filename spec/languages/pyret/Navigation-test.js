@@ -67,6 +67,54 @@ describe('The CodeMirrorBlocks Class', function() {
     });
   });
 
+  describe("load-table", function() {
+    beforeEach(function() {
+      this.cmb.setValue(`load-table: nth, name, home-state
+  source: presidents-sheet.sheet-by-name("presidents", true)
+end`);
+      let ast = this.cmb.getAst();
+      this.literal1 = ast.rootNodes[0];
+    });
+    
+    it('should activate the column names when down is pressed', async function () {
+      click(this.literal1);
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).toBe(this.literal1.rows[0]);
+      expect(this.activeNode()).not.toBe(this.literal1.rhs);
+
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).toBe(this.literal1.rows[1]);
+      expect(this.activeNode()).not.toBe(this.literal1.rhs);
+
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).toBe(this.literal1.rows[2]);
+      expect(this.activeNode()).not.toBe(this.literal1.rhs);
+    });
+
+    it('should activate the sources when down is pressed', async function () {
+      click(this.literal1);
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).toBe(this.literal1.sources[0]);
+    });
+  });
+
   describe("when dealing with variable declarations", function() {
     beforeEach(function() {
       this.cmb.setValue('x = 3');
@@ -77,7 +125,6 @@ describe('The CodeMirrorBlocks Class', function() {
     it('should activate the binding when down is pressed', async function () {
       click(this.literal1);
       await wait(DELAY);
-      keyDown(" ");
       keyDown("ArrowDown");
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
