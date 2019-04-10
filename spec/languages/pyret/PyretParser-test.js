@@ -89,6 +89,7 @@ end`)*/
     test(`tupple.{0}`);
     // test('{}');
     test('[list: 1, 2, 3]');
+    test('[list: 1]');
     test('[list: ]');
     test('[list:]');
     test('row["field"]');

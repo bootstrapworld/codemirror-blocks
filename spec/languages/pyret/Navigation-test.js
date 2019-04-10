@@ -328,6 +328,64 @@ end`);
   });
 
   describe("lists", function () {
+    let test = function (text) {
+      describe(text, function () {
+        beforeEach(function () {
+          this.cmb.setValue(text);
+          let ast = this.cmb.getAst();
+          this.literal1 = ast.rootNodes[0];
+          this.construct = this.literal1.construktor;
+          this.fields = this.literal1.values;
+        });
 
+        it('should activate the arguments on each press', async function () {
+          click(this.literal1);
+          await wait(DELAY);
+          expect(this.activeNode()).toBe(this.literal1);
+
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).toBe(this.construct);
+
+          for (let i = 0; i < this.fields.length; i++) {
+            keyDown("ArrowDown");
+            await wait(DELAY);
+            expect(this.activeNode()).not.toBe(this.literal1);
+            expect(this.activeNode()).not.toBe(this.construct);
+            expect(this.activeNode()).toBe(this.fields[i]);
+          }
+        });
+      });
+    };
+    test('[list: 1, 2, 3]');
+    test('[list: 1]');
+    test('[list: ]');
+    test('[list:]');
+
+    let test_get = function (text) {
+      describe(text, function () {
+        beforeEach(function () {
+          this.cmb.setValue(text);
+          let ast = this.cmb.getAst();
+          this.literal1 = ast.rootNodes[0];
+          this.base = this.literal1.base;
+          this.index = this.literal1.index;
+        })
+
+        it('should activate the index', async function () {
+          click(this.literal1);
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).toBe(this.base);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).toBe(this.index);
+        })
+      })
+    };
+    test_get('row["field"]');
+    test_get('row[""]');
+    test_get('row["three word column"]');
   });
 });
