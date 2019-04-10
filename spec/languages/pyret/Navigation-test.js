@@ -277,7 +277,37 @@ end`);
   });
 
   describe("tuples", function() {
+    let test = function (text) {
+      describe(text, function() {
+        beforeEach(function () {
+          this.cmb.setValue(text);
+          let ast = this.cmb.getAst();
+          this.literal1 = ast.rootNodes[0];
+          this.fields = this.literal1.fields;
+        });
 
+        it('should activate the arguments on each press', async function () {
+          click(this.literal1);
+          await wait(DELAY);
+          expect(this.activeNode()).toBe(this.literal1);
+
+          for (let i = 0; i < this.fields.length; i ++) {
+            keyDown("ArrowDown");
+            await wait(DELAY);
+            expect(this.activeNode()).not.toBe(this.literal1);
+            expect(this.activeNode()).toBe(this.fields[i]);
+          }
+        });
+      });
+    };
+    test('{1;2}');
+    test('{1; 2}');
+    test('{1; 2; 3}');
+    test('{1}');
+
+    describe("tuple-get", function() {
+
+    })
   });
 
   describe("lists", function() {
