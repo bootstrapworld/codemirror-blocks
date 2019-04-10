@@ -211,21 +211,21 @@ end`);
     test_binop(`"hello" + ", there"`);
   });
 
-  describe("functions", function() {
-    describe("fun f(x): x + 3 end", function() {
+  describe("functions", function () {
+    describe("fun f(x): x + 3 end", function () {
 
     });
-    describe("fun f(x, jake): x + jake end", function() {
+    describe("fun f(x, jake): x + jake end", function () {
 
     });
-    describe("fun g(): 2 * 4 end", function() {
+    describe("fun g(): 2 * 4 end", function () {
 
     });
   });
 
-  describe("method and function applications", function() {
-    let test = function(text) {
-      describe(text, function() {
+  describe("method and function applications", function () {
+    let test = function (text) {
+      describe(text, function () {
         beforeEach(function () {
           this.cmb.setValue(text);
           let ast = this.cmb.getAst();
@@ -253,7 +253,7 @@ end`);
           expect(this.activeNode()).toBe(this.func);
           expect(this.activeNode()).not.toBe(this.args);
 
-          for (let i = 0; i < this.args.length; i ++) {
+          for (let i = 0; i < this.args.length; i++) {
             keyDown("ArrowDown");
             await wait(DELAY);
             expect(this.activeNode()).not.toBe(this.literal1);
@@ -272,13 +272,13 @@ end`);
     test(`x.len(3, 4)`);
   });
 
-  describe("checks and testing", function() {
+  describe("checks and testing", function () {
 
   });
 
-  describe("tuples", function() {
+  describe("tuples", function () {
     let test = function (text) {
-      describe(text, function() {
+      describe(text, function () {
         beforeEach(function () {
           this.cmb.setValue(text);
           let ast = this.cmb.getAst();
@@ -291,7 +291,7 @@ end`);
           await wait(DELAY);
           expect(this.activeNode()).toBe(this.literal1);
 
-          for (let i = 0; i < this.fields.length; i ++) {
+          for (let i = 0; i < this.fields.length; i++) {
             keyDown("ArrowDown");
             await wait(DELAY);
             expect(this.activeNode()).not.toBe(this.literal1);
@@ -305,12 +305,29 @@ end`);
     test('{1; 2; 3}');
     test('{1}');
 
-    describe("tuple-get", function() {
+    describe("tuple-get", function () {
+      beforeEach(function () {
+        this.cmb.setValue("tupple.{0}");
+        let ast = this.cmb.getAst();
+        this.literal1 = ast.rootNodes[0];
+        this.base = this.literal1.base;
+        this.index = this.literal1.index;
+      })
 
+      it('should activate the index', async function () {
+        click(this.literal1);
+        await wait(DELAY);
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).toBe(this.base);
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).toBe(this.index);
+      })
     })
   });
 
-  describe("lists", function() {
+  describe("lists", function () {
 
   });
 });
