@@ -224,7 +224,52 @@ end`);
   });
 
   describe("method and function applications", function() {
+    let test = function(text) {
+      describe(text, function() {
+        beforeEach(function () {
+          this.cmb.setValue(text);
+          let ast = this.cmb.getAst();
+          this.literal1 = ast.rootNodes[0];
+          this.func = this.literal1.func;
+          this.args = this.literal1.args;
+        });
 
+        it('should activate the function when down is pressed', async function () {
+          click(this.literal1);
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).toBe(this.func);
+          expect(this.activeNode()).not.toBe(this.args);
+        });
+
+        it('should activate the arguments on each press', async function () {
+          click(this.literal1);
+          await wait(DELAY);
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).toBe(this.func);
+          expect(this.activeNode()).not.toBe(this.args);
+
+          for (let i = 0; i < this.args.length; i ++) {
+            keyDown("ArrowDown");
+            await wait(DELAY);
+            expect(this.activeNode()).not.toBe(this.literal1);
+            expect(this.activeNode()).not.toBe(this.func);
+            expect(this.activeNode()).toBe(this.args[i]);
+          }
+        });
+      });
+    };
+    test('f(5)');
+    test('f(5, 4)');
+    test('f()');
+    test(`x.len()`);
+    test(`l.len()`);
+    test(`x.len(3)`);
+    test(`x.len(3, 4)`);
   });
 
   describe("checks and testing", function() {
