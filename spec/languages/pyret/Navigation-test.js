@@ -34,6 +34,39 @@ describe('The CodeMirrorBlocks Class', function() {
     cleanupAfterTest('root', store);
   });
 
+  /** //////////////////////////////////////////////////////////
+   * Specific navigation tests for programs that use BSDS constructs below
+   */
+  describe("load-spreadsheet", function() {
+    beforeEach(function() {
+      this.cmb.setValue('load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")');
+      let ast = this.cmb.getAst();
+      this.literal1 = ast.rootNodes[0];
+    });
+    
+    it('should activate load-spreadsheet when down is pressed', async function () {
+      click(this.literal1);
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).toBe(this.literal1.func);
+      expect(this.activeNode()).not.toBe(this.literal1.args);
+    });
+
+    it('should activate the url when down is pressed twice', async function () {
+      click(this.literal1);
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).not.toBe(this.literal1.func);
+      expect(this.activeNode()).toBe(this.literal1.args[0]);
+    });
+  });
+
   describe("when dealing with variable declarations", function() {
     beforeEach(function() {
       this.cmb.setValue('x = 3');
