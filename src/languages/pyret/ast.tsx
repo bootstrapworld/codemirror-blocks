@@ -162,7 +162,8 @@ export class Block extends ASTNode {
 
   render(props) {
     // TODO: This probably doesn't render well; need vertical alignment
-    // vertically aligns when not surrounded by args
+    // vertically aligns when not in a node,
+    // but then keyboard navigation is lost
     // include name here? is it ever a time when it's not block?
     return (
       <Node node = {this} {...props}>
