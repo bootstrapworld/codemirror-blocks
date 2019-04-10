@@ -304,7 +304,7 @@ export class Construct extends ASTNode {
 
   render(props) {
     let construktor = this.construktor.reactElement();
-    let values = this.values.map(e => e.reactElement());
+    let values = <Args>{this.values}</Args>;
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{construktor}</span>
