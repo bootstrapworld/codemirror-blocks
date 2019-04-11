@@ -6,8 +6,8 @@ import { wait, cleanupAfterTest } from '../../support/test-utils';
 import {
   click,
   keyDown,
-  keyPress,
-  insertText,
+  _keyPress,
+  _insertText,
 } from '../../support/simulate';
 
 const DELAY = 250;
@@ -123,7 +123,7 @@ end`);
           expect(this.activeNode()).not.toBe(this.literal1.ident);
           expect(this.activeNode()).toBe(this.literal1.rhs);
         });
-        });
+      });
     };
     test_let("x = 3");
     test_let("x = true");
@@ -311,7 +311,7 @@ end`);
           expect(this.activeNode()).not.toBe(this.literal1);
           expect(this.activeNode()).toBe(this.body);
         });
-      })
+      });
     };
 
     test(`check: 3 + 5 is 8 end`);
@@ -355,7 +355,7 @@ end`);
         this.literal1 = ast.rootNodes[0];
         this.base = this.literal1.base;
         this.index = this.literal1.index;
-      })
+      });
 
       it('should activate the index', async function () {
         click(this.literal1);
@@ -366,8 +366,8 @@ end`);
         keyDown("ArrowDown");
         await wait(DELAY);
         expect(this.activeNode()).toBe(this.index);
-      })
-    })
+      });
+    });
   });
 
   describe("lists", function () {
@@ -413,7 +413,7 @@ end`);
           this.literal1 = ast.rootNodes[0];
           this.base = this.literal1.base;
           this.index = this.literal1.index;
-        })
+        });
 
         it('should activate the index', async function () {
           click(this.literal1);
@@ -424,8 +424,8 @@ end`);
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).toBe(this.index);
-        })
-      })
+        });
+      });
     };
     test_get('row["field"]');
     test_get('row[""]');

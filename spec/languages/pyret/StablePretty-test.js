@@ -85,11 +85,11 @@ describe('The CodeMirrorBlocks Class', function() {
   source: presidents-sheet.sheet-by-name("presidents", true)
 end`);
     testify(`x = 3`);
-    testify(`x = true`)
-    testify(`data-type = "string"`)
+    testify(`x = true`);
+    testify(`data-type = "string"`);
     testify(`3 + 5`);
     testify(`3 - 5`);
-    testify(`"hello" + ", there"`)
+    testify(`"hello" + ", there"`);
     testify("fun f(x): x + 3 end");
     testify(`fun f(x, jake): x + 3 end`);
     testify(`fun f(x, jake): x + jake + 3 end`);
@@ -113,7 +113,7 @@ end`);
     testify('row["field"]');
     testify('row[""]');
     testify('row["three word column"]');
-  })
+  });
 
   describe("larger pyret programs", function() {
     beforeEach(async function () {
@@ -126,11 +126,11 @@ end`);
       let text = `fun f(x) block:
   print(x)
   x + 3
-end`
+end`;
       this.blocks.setValue(text);
       this.blocks.setBlockMode(false);
       await DELAY;
       expect(this.blocks.getValue()).toEqual(text);
-    })
+    });
   });
 });
