@@ -44,7 +44,7 @@ describe('The CodeMirrorBlocks Class', function () {
       this.literal1 = ast.rootNodes[0];
     });
 
-    it('should activate load-spreadsheet when down is pressed', async function () {
+    it('should activate load-spreadsheet and then url when down is pressed', async function () {
       click(this.literal1);
       await wait(DELAY);
       keyDown("ArrowDown");
@@ -52,13 +52,7 @@ describe('The CodeMirrorBlocks Class', function () {
       expect(this.activeNode()).not.toBe(this.literal1);
       expect(this.activeNode()).toBe(this.literal1.func);
       expect(this.activeNode()).not.toBe(this.literal1.args);
-    });
 
-    it('should activate the url when down is pressed twice', async function () {
-      click(this.literal1);
-      await wait(DELAY);
-      keyDown("ArrowDown");
-      await wait(DELAY);
       keyDown("ArrowDown");
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
@@ -76,12 +70,12 @@ end`);
       this.literal1 = ast.rootNodes[0];
     });
 
-    it('should activate the column names when down is pressed', async function () {
+    it('should activate the column names and then sources when down is pressed', async function () {
       click(this.literal1);
       await wait(DELAY);
+
       keyDown("ArrowDown");
       await wait(DELAY);
-
       expect(this.activeNode()).not.toBe(this.literal1);
       expect(this.activeNode()).toBe(this.literal1.rows[0]);
       expect(this.activeNode()).not.toBe(this.literal1.rhs);
@@ -97,17 +91,7 @@ end`);
       expect(this.activeNode()).not.toBe(this.literal1);
       expect(this.activeNode()).toBe(this.literal1.rows[2]);
       expect(this.activeNode()).not.toBe(this.literal1.rhs);
-    });
 
-    it('should activate the sources when down is pressed', async function () {
-      click(this.literal1);
-      await wait(DELAY);
-      keyDown("ArrowDown");
-      await wait(DELAY);
-      keyDown("ArrowDown");
-      await wait(DELAY);
-      keyDown("ArrowDown");
-      await wait(DELAY);
       keyDown("ArrowDown");
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
@@ -124,7 +108,7 @@ end`);
           this.literal1 = ast.rootNodes[0];
         });
 
-        it('should activate the binding when down is pressed', async function () {
+        it('should activate the binding and then the rhs when down is pressed', async function () {
           click(this.literal1);
           await wait(DELAY);
           keyDown("ArrowDown");
@@ -132,20 +116,14 @@ end`);
           expect(this.activeNode()).not.toBe(this.literal1);
           expect(this.activeNode()).toBe(this.literal1.ident);
           expect(this.activeNode()).not.toBe(this.literal1.rhs);
-        });
 
-        it('should activate the rhs when down is pressed twice', async function () {
-          click(this.literal1);
-          await wait(DELAY);
-          keyDown("ArrowDown");
-          await wait(DELAY);
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
           expect(this.activeNode()).not.toBe(this.literal1.ident);
           expect(this.activeNode()).toBe(this.literal1.rhs);
         });
-      });
+        });
     };
     test_let("x = 3");
     test_let("x = true");
@@ -164,7 +142,7 @@ end`);
           this.right = this.literal1.right;
         });
 
-        it('should activate the operator when down is pressed', async function () {
+        it('should activate the operator, lhs, and rhs when down is pressed', async function () {
           click(this.literal1);
           await wait(DELAY);
           keyDown("ArrowDown");
@@ -173,28 +151,14 @@ end`);
           expect(this.activeNode()).toBe(this.op);
           expect(this.activeNode()).not.toBe(this.left);
           expect(this.activeNode()).not.toBe(this.right);
-        });
 
-        it('should activate the lhs when down is pressed twice', async function () {
-          click(this.literal1);
-          await wait(DELAY);
-          keyDown("ArrowDown");
-          await wait(DELAY);
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
           expect(this.activeNode()).not.toBe(this.op);
           expect(this.activeNode()).toBe(this.left);
           expect(this.activeNode()).not.toBe(this.right);
-        });
 
-        it('should activate the rhs when down is pressed thrice', async function () {
-          click(this.literal1);
-          await wait(DELAY);
-          keyDown("ArrowDown");
-          await wait(DELAY);
-          keyDown("ArrowDown");
-          await wait(DELAY);
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
@@ -234,17 +198,7 @@ end`);
           this.args = this.literal1.args;
         });
 
-        it('should activate the function when down is pressed', async function () {
-          click(this.literal1);
-          await wait(DELAY);
-          keyDown("ArrowDown");
-          await wait(DELAY);
-          expect(this.activeNode()).not.toBe(this.literal1);
-          expect(this.activeNode()).toBe(this.func);
-          expect(this.activeNode()).not.toBe(this.args);
-        });
-
-        it('should activate the arguments on each press', async function () {
+        it('should activate the function and arguments when down is pressed', async function () {
           click(this.literal1);
           await wait(DELAY);
           keyDown("ArrowDown");
@@ -284,7 +238,7 @@ end`);
           this.right = this.literal1.rhs;
         });
 
-        it('should activate the operator when down is pressed', async function () {
+        it('should activate the operator, lhs, and rhs when down is pressed', async function () {
           click(this.literal1);
           await wait(DELAY);
           keyDown("ArrowDown");
@@ -293,28 +247,14 @@ end`);
           expect(this.activeNode()).toBe(this.op);
           expect(this.activeNode()).not.toBe(this.left);
           expect(this.activeNode()).not.toBe(this.right);
-        });
 
-        it('should activate the lhs when down is pressed twice', async function () {
-          click(this.literal1);
-          await wait(DELAY);
-          keyDown("ArrowDown");
-          await wait(DELAY);
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
           expect(this.activeNode()).not.toBe(this.op);
           expect(this.activeNode()).toBe(this.left);
           expect(this.activeNode()).not.toBe(this.right);
-        });
 
-        it('should activate the rhs when down is pressed thrice', async function () {
-          click(this.literal1);
-          await wait(DELAY);
-          keyDown("ArrowDown");
-          await wait(DELAY);
-          keyDown("ArrowDown");
-          await wait(DELAY);
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
