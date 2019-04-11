@@ -2,12 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ToggleEditor from './ui/ToggleEditor';
 import merge from './merge';
+import pyret from './languages/pyret';
 
 // Consumes a DOM node to host the editor, a language object and the code
 // to render. Produces an object-representation of CMB, allowing for
 // integration with external (non-react) code
 export default class CodeMirrorBlocks {
-  constructor(container, options = {}, language) {
+  constructor(container, options = {}, language = pyret) {
     let api = {};
     let initialCode = options.value;
     ReactDOM.render(
