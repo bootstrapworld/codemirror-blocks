@@ -13,7 +13,7 @@ export class LetLikeExpr extends ASTNode {
     this.hash = this.computeHash();
   }
 
-  longDescription(level) {
+  longDescription(_level) {
     return `a ${this.form} expression with ${pluralize("binding", this.bindings.exprs)}`;
   }
 

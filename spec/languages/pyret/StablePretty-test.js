@@ -4,14 +4,14 @@ import {store} from '../../../src/store';
 import 'codemirror/addon/search/searchcursor.js';
 
 import {
-  click,
-  doubleClick,
-  blur,
+  _click,
+  _doubleClick,
+  _blur,
   keyDown,
   insertText,
 } from '../../support/simulate';
 
-import {wait, cleanupAfterTest} from '../../support/test-utils';
+import {_wait, cleanupAfterTest} from '../../support/test-utils';
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 500;
@@ -73,12 +73,12 @@ describe('The CodeMirrorBlocks Class', function() {
         else {
           expect(this.blocks.getValue()).not.toEqual(text);
         }
-      })
+      });
     };
 
     let format = function(text, name = text) {
       testify(text, "pretty-print " + name, false);
-    }
+    };
 
     testify(`load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")`);
     testify(`load-table: nth, name, home-state, year-started, year-ended, party

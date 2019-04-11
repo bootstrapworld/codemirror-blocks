@@ -9,7 +9,7 @@ describe("The Pyret Parser,", function() {
   it("should set the appropriate data type for literals", function() {
     let test = (str, dt) => {
       expect(this.parser.parse(str).rootNodes[0].dataType).toBe(dt);
-    }
+    };
     test('true', 'boolean');
     test('1', 'number');
     test('"true"', 'string');
@@ -99,7 +99,7 @@ end`)*/
   });
 
   it("should render the sample ds pyret program", function() {
-let text = `# include gdrive-sheets
+    let text = `# include gdrive-sheets
 
 load-spreadsheet("14er5Mh443Lb5SIFxXZHdAnLCuQZaA8O6qtgGlibQuEg")
 
@@ -128,5 +128,5 @@ end
 row["field"]`;
 
     expect(this.parser.parse(text).rootNodes[0].options["aria-label"]).not.toBe(undefined);
-  })
+  });
 });

@@ -387,7 +387,7 @@ export class Literal extends ASTNode {
     this.hash = hashObject(['literal', this.value, this.dataType]);
   }
 
-  describe(level) {
+  describe(_level) {
     return this.options["aria-label"];
   }
 
@@ -416,7 +416,7 @@ export class Comment extends ASTNode {
     this.hash = hashObject(['comment', this.comment]);
   }
 
-  describe(level) {
+  describe(_level) {
     return this.options["aria-label"];
   }
 
@@ -442,7 +442,7 @@ export class Blank extends ASTNode {
     this.hash = hashObject(['literal', this.value, this.dataType]);
   }
 
-  describe(level) {
+  describe(_level) {
     return this.options["aria-label"];
   }
 
