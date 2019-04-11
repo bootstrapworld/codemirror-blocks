@@ -95,6 +95,7 @@ end`)*/
     test('row["field"]');
     test('row[""]');
     test('row["three word column"]');
+    test('row[0]');
   });
 
   it("should render the sample ds pyret program", function() {

@@ -430,5 +430,6 @@ end`);
     test_get('row["field"]');
     test_get('row[""]');
     test_get('row["three word column"]');
+    test_get('row[0]');
   });
 });
