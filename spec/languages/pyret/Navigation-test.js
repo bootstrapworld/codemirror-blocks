@@ -232,48 +232,52 @@ end`);
 
   describe("functions", function () {
     let test = function (text) {
-      it(text, async function () {
-        this.cmb.setValue(text);
-        let ast = this.cmb.getAst();
-        this.literal1 = ast.rootNodes[0];
-        this.fun_name = this.literal1.name;
-        this.args = this.literal1.args;
-        this.body = this.literal1.body;
+      describe(text, function () {
+        beforeEach(function () {
+          this.cmb.setValue(text);
+          let ast = this.cmb.getAst();
+          this.literal1 = ast.rootNodes[0];
+          this.fun_name = this.literal1.name;
+          this.args = this.literal1.args;
+          this.body = this.literal1.body;
+        });
 
-        click(this.literal1);
-        await wait(DELAY);
+        it("should activate function name, arguments, and body", async function () {
+          click(this.literal1);
+          await wait(DELAY);
 
-        keyDown("ArrowDown");
-        await wait(DELAY);
-        expect(this.activeNode()).not.toBe(this.literal1);
-        expect(this.activeNode()).toBe(this.fun_name);
-        expect(this.activeNode()).not.toBe(this.body);
-
-        keyDown("Enter");
-        await wait(DELAY);
-        keyDown("Enter");
-        await wait(DELAY);
-
-        for (let i = 0; i < this.args.length; i++) {
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
-          expect(this.activeNode()).not.toBe(this.fun_name);
-          expect(this.activeNode()).toBe(this.args[i]);
+          expect(this.activeNode()).toBe(this.fun_name);
           expect(this.activeNode()).not.toBe(this.body);
 
           keyDown("Enter");
           await wait(DELAY);
           keyDown("Enter");
           await wait(DELAY);
-        }
 
-        keyDown("ArrowDown");
-        await wait(DELAY);
-        expect(this.activeNode()).not.toBe(this.literal1);
-        expect(this.activeNode()).not.toBe(this.fun_name);
-        expect(this.activeNode()).toBe(this.body);
-      });
+          for (let i = 0; i < this.args.length; i++) {
+            keyDown("ArrowDown");
+            await wait(DELAY);
+            expect(this.activeNode()).not.toBe(this.literal1);
+            expect(this.activeNode()).not.toBe(this.fun_name);
+            expect(this.activeNode()).toBe(this.args[i]);
+            expect(this.activeNode()).not.toBe(this.body);
+
+            keyDown("Enter");
+            await wait(DELAY);
+            keyDown("Enter");
+            await wait(DELAY);
+          }
+
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).not.toBe(this.fun_name);
+          expect(this.activeNode()).toBe(this.body);
+        });
+      })
     };
     test("fun f(x): x + 3 end");
     test("fun f(x, jake): x + jake end");
