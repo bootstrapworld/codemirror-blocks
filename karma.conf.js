@@ -20,7 +20,7 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['parallel', 'jasmine', 'karma-typescript'],
+    frameworks: ['jasmine', 'karma-typescript'],
 
     parallelOptions: {
       // executors: , // Defaults to cpu-count - 1
@@ -61,6 +61,9 @@ module.exports = function(config) {
     client: {
       // don't log console output in our test console
       captureConsole: false,
+      jasmine: {
+        timeoutInterval: 9500
+      }
     },
     // reporters: ["karma-typescript"],
 /*

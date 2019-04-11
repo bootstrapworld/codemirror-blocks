@@ -80,7 +80,7 @@ end`);
       this.literal1 = ast.rootNodes[0];
     });
 
-    it('should activate the column names and then sources when down is pressed', async function () {
+    it('should activate the first column name', async function () {
       click(this.literal1);
       await wait(DELAY);
 
@@ -93,6 +93,11 @@ end`);
       await wait(DELAY);
       keyDown("Enter");
       await wait(DELAY);
+    });
+
+    it('should activate the second column name', async function () {
+      click(this.literal1.rows[0]);
+      await wait(DELAY);
 
       keyDown("ArrowDown");
       await wait(DELAY);
@@ -103,6 +108,11 @@ end`);
       await wait(DELAY);
       keyDown("Enter");
       await wait(DELAY);
+    });
+
+    it('should activate the third column name', async function () {
+      click(this.literal1.rows[1]);
+      await wait(DELAY);
 
       keyDown("ArrowDown");
       await wait(DELAY);
@@ -112,6 +122,11 @@ end`);
       keyDown("Enter");
       await wait(DELAY);
       keyDown("Enter");
+      await wait(DELAY);
+    });
+
+    it('should activate the source when down is pressed', async function () {
+      click(this.literal1.rows[2]);
       await wait(DELAY);
 
       keyDown("ArrowDown");
