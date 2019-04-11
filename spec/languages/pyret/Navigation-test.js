@@ -53,11 +53,21 @@ describe('The CodeMirrorBlocks Class', function () {
       expect(this.activeNode()).toBe(this.literal1.func);
       expect(this.activeNode()).not.toBe(this.literal1.args);
 
+      keyDown("Enter");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
+
       keyDown("ArrowDown");
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
       expect(this.activeNode()).not.toBe(this.literal1.func);
       expect(this.activeNode()).toBe(this.literal1.args[0]);
+
+      keyDown("Enter");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
     });
   });
 
@@ -80,11 +90,21 @@ end`);
       expect(this.activeNode()).toBe(this.literal1.rows[0]);
       expect(this.activeNode()).not.toBe(this.literal1.rhs);
 
+      keyDown("Enter");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
+
       keyDown("ArrowDown");
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
       expect(this.activeNode()).toBe(this.literal1.rows[1]);
       expect(this.activeNode()).not.toBe(this.literal1.rhs);
+
+      keyDown("Enter");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
 
       keyDown("ArrowDown");
       await wait(DELAY);
@@ -92,10 +112,20 @@ end`);
       expect(this.activeNode()).toBe(this.literal1.rows[2]);
       expect(this.activeNode()).not.toBe(this.literal1.rhs);
 
+      keyDown("Enter");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
+
       keyDown("ArrowDown");
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
       expect(this.activeNode()).toBe(this.literal1.sources[0]);
+
+      keyDown("Enter");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
     });
   });
 
@@ -117,11 +147,21 @@ end`);
           expect(this.activeNode()).toBe(this.literal1.ident);
           expect(this.activeNode()).not.toBe(this.literal1.rhs);
 
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
           expect(this.activeNode()).not.toBe(this.literal1.ident);
           expect(this.activeNode()).toBe(this.literal1.rhs);
+
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
         });
       });
     };
@@ -152,6 +192,11 @@ end`);
           expect(this.activeNode()).not.toBe(this.left);
           expect(this.activeNode()).not.toBe(this.right);
 
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
@@ -159,12 +204,22 @@ end`);
           expect(this.activeNode()).toBe(this.left);
           expect(this.activeNode()).not.toBe(this.right);
 
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
           expect(this.activeNode()).not.toBe(this.op);
           expect(this.activeNode()).not.toBe(this.left);
           expect(this.activeNode()).toBe(this.right);
+
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
         });
       });
     };
@@ -194,6 +249,11 @@ end`);
         expect(this.activeNode()).toBe(this.fun_name);
         expect(this.activeNode()).not.toBe(this.body);
 
+        keyDown("Enter");
+        await wait(DELAY);
+        keyDown("Enter");
+        await wait(DELAY);
+
         for (let i = 0; i < this.args.length; i++) {
           keyDown("ArrowDown");
           await wait(DELAY);
@@ -201,6 +261,11 @@ end`);
           expect(this.activeNode()).not.toBe(this.fun_name);
           expect(this.activeNode()).toBe(this.args[i]);
           expect(this.activeNode()).not.toBe(this.body);
+
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
         }
 
         keyDown("ArrowDown");
@@ -235,12 +300,22 @@ end`);
           expect(this.activeNode()).toBe(this.func);
           expect(this.activeNode()).not.toBe(this.args);
 
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+
           for (let i = 0; i < this.args.length; i++) {
             keyDown("ArrowDown");
             await wait(DELAY);
             expect(this.activeNode()).not.toBe(this.literal1);
             expect(this.activeNode()).not.toBe(this.func);
             expect(this.activeNode()).toBe(this.args[i]);
+
+            keyDown("Enter");
+            await wait(DELAY);
+            keyDown("Enter");
+            await wait(DELAY);
           }
         });
       });
@@ -276,6 +351,11 @@ end`);
           expect(this.activeNode()).not.toBe(this.left);
           expect(this.activeNode()).not.toBe(this.right);
 
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
@@ -283,12 +363,22 @@ end`);
           expect(this.activeNode()).toBe(this.left);
           expect(this.activeNode()).not.toBe(this.right);
 
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).not.toBe(this.literal1);
           expect(this.activeNode()).not.toBe(this.op);
           expect(this.activeNode()).not.toBe(this.left);
           expect(this.activeNode()).toBe(this.right);
+
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
         });
       });
     };
@@ -339,6 +429,11 @@ end`);
             await wait(DELAY);
             expect(this.activeNode()).not.toBe(this.literal1);
             expect(this.activeNode()).toBe(this.fields[i]);
+
+            keyDown("Enter");
+            await wait(DELAY);
+            keyDown("Enter");
+            await wait(DELAY);
           }
         });
       });
@@ -363,9 +458,20 @@ end`);
         keyDown("ArrowDown");
         await wait(DELAY);
         expect(this.activeNode()).toBe(this.base);
+
+        keyDown("Enter");
+        await wait(DELAY);
+        keyDown("Enter");
+        await wait(DELAY);
+
         keyDown("ArrowDown");
         await wait(DELAY);
         expect(this.activeNode()).toBe(this.index);
+
+        keyDown("Enter");
+        await wait(DELAY);
+        keyDown("Enter");
+        await wait(DELAY);
       });
     });
   });
@@ -390,12 +496,22 @@ end`);
           await wait(DELAY);
           expect(this.activeNode()).toBe(this.construct);
 
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+
           for (let i = 0; i < this.fields.length; i++) {
             keyDown("ArrowDown");
             await wait(DELAY);
             expect(this.activeNode()).not.toBe(this.literal1);
             expect(this.activeNode()).not.toBe(this.construct);
             expect(this.activeNode()).toBe(this.fields[i]);
+
+            keyDown("Enter");
+            await wait(DELAY);
+            keyDown("Enter");
+            await wait(DELAY);
           }
         });
       });
@@ -421,9 +537,20 @@ end`);
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).toBe(this.base);
+
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).toBe(this.index);
+
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
         });
       });
     };
