@@ -88,7 +88,6 @@ end`);
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
       expect(this.activeNode()).toBe(this.literal1.rows[0]);
-      expect(this.activeNode()).not.toBe(this.literal1.rhs);
 
       keyDown("Enter");
       await wait(DELAY);
@@ -99,7 +98,6 @@ end`);
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
       expect(this.activeNode()).toBe(this.literal1.rows[1]);
-      expect(this.activeNode()).not.toBe(this.literal1.rhs);
 
       keyDown("Enter");
       await wait(DELAY);
@@ -110,7 +108,6 @@ end`);
       await wait(DELAY);
       expect(this.activeNode()).not.toBe(this.literal1);
       expect(this.activeNode()).toBe(this.literal1.rows[2]);
-      expect(this.activeNode()).not.toBe(this.literal1.rhs);
 
       keyDown("Enter");
       await wait(DELAY);
