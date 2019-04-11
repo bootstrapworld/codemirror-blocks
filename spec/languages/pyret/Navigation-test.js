@@ -176,15 +176,43 @@ end`);
   });
 
   describe("functions", function () {
-    describe("fun f(x): x + 3 end", function () {
+    let test = function (text) {
+      it(text, async function () {
+        this.cmb.setValue(text);
+        let ast = this.cmb.getAst();
+        this.literal1 = ast.rootNodes[0];
+        this.fun_name = this.literal1.name;
+        this.args = this.literal1.args;
+        this.body = this.literal1.body;
 
-    });
-    describe("fun f(x, jake): x + jake end", function () {
+        click(this.literal1);
+        await wait(DELAY);
 
-    });
-    describe("fun g(): 2 * 4 end", function () {
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).toBe(this.fun_name);
+        expect(this.activeNode()).not.toBe(this.body);
 
-    });
+        for (let i = 0; i < this.args.length; i++) {
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).not.toBe(this.fun_name);
+          expect(this.activeNode()).toBe(this.args[i]);
+          expect(this.activeNode()).not.toBe(this.body);
+        }
+
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).not.toBe(this.fun_name);
+        expect(this.activeNode()).toBe(this.body);
+      });
+    };
+    test("fun f(x): x + 3 end");
+    test("fun f(x, jake): x + jake end");
+    test("fun g(): 2 * 4 end");
   });
 
   describe("method and function applications", function () {
