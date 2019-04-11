@@ -274,7 +274,7 @@ end`);
           expect(this.activeNode()).not.toBe(this.fun_name);
           expect(this.activeNode()).toBe(this.body);
         });
-      })
+      });
     };
     test("fun f(x): x + 3 end");
     test("fun f(x, jake): x + jake end");
