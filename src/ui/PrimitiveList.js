@@ -11,7 +11,7 @@ class Primitive extends Component {
   static propTypes = {
     primitive: PropTypes.instanceOf(LanguagePrimitive).isRequired,
     className: PropTypes.string.isRequired,
-    onClick: PropTypes.instanceOf(Function).isRequired,
+    onClick: PropTypes.func.isRequired,
   }
 
   render() {
@@ -37,8 +37,7 @@ class PrimitiveGroup extends Component {
   }
 
   static propTypes = {
-    //group: PropTypes.instanceOf(ASTFunctionDefinitionNode).isRequired,
-    onSelect: PropTypes.instanceOf(Function).isRequired,
+    onSelect: PropTypes.func.isRequired,
     selected: PropTypes.string, // to start, no primitive is selected
   }
 
@@ -82,12 +81,11 @@ export default class PrimitiveList extends Component {
   }
 
   static propTypes = {
-    onSelect: PropTypes.instanceOf(Function).isRequired,
+    onSelect: PropTypes.func.isRequired,
     selected: PropTypes.string,
   }
   render() {
-    const {primitives, selected} = this.props;
-    const onSelect = this.props.onSelect || function(){};
+    const {primitives, selected, onSelect} = this.props;
     let nodes = [];
     for (let primitive of primitives) {
       if (primitive instanceof PrimitiveGroupModel) {
