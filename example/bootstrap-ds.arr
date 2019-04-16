@@ -13,3 +13,7 @@ fun f(x) block:
   print(x)
   x + 3
 end
+
+animals-table = load-table: name, species, gender, age, fixed, legs, pounds, weeks
+ source: shelter-sheet.sheet-by-name("pets", true)
+end
