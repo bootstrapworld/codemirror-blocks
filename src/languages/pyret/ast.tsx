@@ -387,9 +387,18 @@ export class Tuple extends ASTNode {
   }
 
   render(props) {
+    let fields = [];
+    this.fields.forEach((child, index) => {
+      if (index != 0) {
+        fields.push(";");
+      }
+      fields.push(child.reactElement());
+    });
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{"{"}<Args>{this.fields}</Args>{"}"}</span>
+        <span className="blocks-operator">
+          {"{"}{fields}{"}"}
+        </span>
       </Node>
     );
   }

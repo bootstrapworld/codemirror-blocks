@@ -62,7 +62,7 @@ module.exports = function(config) {
       // don't log console output in our test console
       captureConsole: false,
       jasmine: {
-        timeoutInterval: 9500
+        timeoutInterval: 10000
       }
     },
     // reporters: ["karma-typescript"],
@@ -111,6 +111,8 @@ module.exports = function(config) {
     // how many browser should be started simultanous
     concurrency: Infinity,
     captureTimeout: 60000,
-    browserNoActivityTimeout: 60000 // 60 seconds
+    browserDisconnectTolerance: 3,
+    browserDisconnectTimeout: 10000,
+    browserNoActivityTimeout: 60000, // 60 seconds
   });
 };
