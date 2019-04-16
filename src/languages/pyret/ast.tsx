@@ -613,7 +613,7 @@ export class LoadTable extends ASTNode {
         <span className="blocks-args">
           <Args>{this.rows}</Args>
         </span>
-        {this.sources.map(e => e.reactElement())}
+        {this.sources.map((e, i) => e.reactElement({key: i}))}
     </Node>
     );
   }
