@@ -62,7 +62,7 @@ module.exports = function(config) {
       // don't log console output in our test console
       captureConsole: false,
       jasmine: {
-        timeoutInterval: 9500
+        timeoutInterval: 10000
       }
     },
     // reporters: ["karma-typescript"],
