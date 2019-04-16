@@ -5,7 +5,7 @@ import Args from '../../components/Args';
 import * as P from '../../pretty';
 
 import { ASTNode, pluralize, enumerateList } from '../../ast';
-import {DropTarget} from '../../components/DropTarget';
+import {DropTarget, DropTargetSibling} from '../../components/DropTarget';
 import { Literal } from '../../nodes';
 
 // Binop ABlank Bind Func Sekwence Var Assign Let
@@ -654,7 +654,7 @@ export class IfPipe extends ASTNode {
   branches: ASTNode[];
   blocky: boolean;
   constructor(from, to, branches, blocky, options) {
-    super(from, to, 'ifPipe', ['branches'], options);
+    super(from, to, 'condExpression', ['branches'], options);
     this.branches = branches;
     this.blocky = blocky;
     super.hash = hashObject(['ifPipe', ...(this.branches.map(c => c.hash)), this.blocky]);
@@ -675,14 +675,15 @@ export class IfPipe extends ASTNode {
   }
 
   render(props) {
+    let branches = this.branches.map((branch, index) => branch.reactElement({key: index}));
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
           ask:
-      </span>
-        <span className="blocks-arguments">
-          <Args>{this.branches}</Args>
         </span>
+        <div className="blocks-cond-table">
+          {branches}
+        </div>
       </Node>
     );
   }
@@ -692,7 +693,7 @@ export class IfPipeBranch extends ASTNode {
   test: ASTNode;
   body: ASTNode;
   constructor(from, to, test, body, options) {
-    super(from, to, 'ifPipeBranch', ['test', 'body'], options);
+    super(from, to, 'condClause', ['test', 'body'], options);
     this.test = test;
     this.body = body;
     super.hash = super.computeHash();
@@ -713,9 +714,14 @@ export class IfPipeBranch extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
-          {this.test.reactElement()}&nbsp;then:&nbsp;{this.body.reactElement()}
-        </span>
+        <div className="blocks-cond-row">
+          <div className="blocks-cond-predicate">
+            {this.test.reactElement()}
+          </div>
+          <div className="blocks-cond-result">
+            {this.body.reactElement()}
+          </div>
+        </div>
       </Node>
     )
   }
