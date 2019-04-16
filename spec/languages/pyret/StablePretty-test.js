@@ -113,6 +113,15 @@ end`);
     testify('row["field"]');
     testify('row[""]');
     testify('row["three word column"]');
+    testify(`fun img(animal):
+  ask:
+    | (animal["species"] == "dog") then: dog-img
+    | (animal["species"] == "cat") then: cat-img
+    | (animal["species"] == "rabbit") then: rabbit-img
+    | (animal["species"] == "tarantula") then: tarantula-img
+    | (animal["species"] == "lizard") then: lizard-img
+  end
+end`);
   });
 
   describe("larger pyret programs", function() {

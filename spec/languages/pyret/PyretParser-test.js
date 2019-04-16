@@ -129,4 +129,48 @@ row["field"]`;
 
     expect(this.parser.parse(text).rootNodes[0].options["aria-label"]).not.toBe(undefined);
   });
+
+  it("should render Emmanuel's demo ds program", function() {
+    let text = `# include the DataScience Library
+include shared-gdrive("Bootstrap-DataScience-v1.4.arr", "189UgLQQ3Eag5JtrxpBjFzLMS3BO9rA21")
+# include Google Sheets and Tables library
+include gdrive-sheets
+include tables
+include image
+
+# load the file
+shelter-sheet = load-spreadsheet("19m1bUCQo3fCzmSEmWMjTfnmsNIMqiByLytHE0JYtnQM")
+
+# load the ‘animals’ sheet as a table
+animals-table = load-table: name, species, gender, age, fixed, legs, pounds, weeks
+ source: shelter-sheet.sheet-by-name("pets", true)
+end
+
+fun is-cat(r): r["species"] == "cat" end
+fun is-dog(r): r["species"] == "dog" end
+fun is-fixed(r): r["fixed"] end
+
+cats = animals-table.filter(is-cat)
+dogs = animals-table.filter(is-dog)
+
+dog-img = bitmap-url("http://icons.iconarchive.com/icons/shrikant-rawa/animals/64/dog-icon.png")
+cat-img = bitmap-url("http://icons.iconarchive.com/icons/iconka/saint-whiskers/64/cat-food-hearts-icon.png")
+rabbit-img = bitmap-url("http://icons.iconarchive.com/icons/yellowicon/easter/64/rabbit-icon.png")
+tarantula-img = bitmap-url("http://icons.iconarchive.com/icons/kearone/helloween/64/spider-icon.png")
+lizard-img = bitmap-url("http://icons.iconarchive.com/icons/google/noto-emoji-animals-nature/64/22284-lizard-icon.png")
+
+fun img(animal):
+ ask:
+   | (animal["species"] == "dog") then: dog-img
+   | (animal["species"] == "cat") then: cat-img
+   | (animal["species"] == "rabbit") then: rabbit-img
+   | (animal["species"] == "tarantula") then: tarantula-img
+   | (animal["species"] == "lizard") then: lizard-img
+ end
+end`;
+    let parsed = this.parser.parse(text);
+    for (let i = 0; i < parsed.rootNodes.length; i++) {
+      expect(parsed.rootNodes[i].options["aria-label"]).not.toBe(undefined);
+    }
+  })
 });

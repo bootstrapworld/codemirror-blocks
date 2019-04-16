@@ -18,8 +18,11 @@ import {Binop,
   Construct,
   Func,
   FunctionApp,
+  IfPipe,
+  IfPipeBranch,
   Let,
   LoadTable,
+  Paren,
   Tuple,
   TupleGet,
   Var,
@@ -260,14 +263,24 @@ const nodeTypes = {
     console.log(arguments);
     return new LoadTable(
       pos.from, pos.to, rows, sources, {'aria-label': `${rows} of table from ${sources}`}
-    )
+    );
   },
   // examples of this _other have been ABlank...
   's-field-name': function(pos: Range, name: string, _other: any) {
     console.log(arguments);
     return new Literal(
       pos.from, pos.to, name, 'field-name', {'aria-label': `${name} field`}
-    )
+    );
+  },
+  's-paren': function(pos: Range, expr: ASTNode) {
+    return new Paren(pos.from, pos.to, expr, {'aria-label': 'parentheses'});
+  },
+  // really, branches is a list of IfPipeBranch
+  's-if-pipe': function(pos: Range, branches: ASTNode[], blocky: boolean) {
+    return new IfPipe(pos.from, pos.to, branches, blocky, {'aria-label': 'if pipe'});
+  },
+  's-if-pipe-branch': function(pos: Range, test: ASTNode, body: ASTNode) {
+    return new IfPipeBranch(pos.from, pos.to, test, body, {'aria-label': `${test} testing with result ${body} branch`});
   },
 }
 
