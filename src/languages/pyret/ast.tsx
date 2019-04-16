@@ -609,3 +609,108 @@ export class LoadTable extends ASTNode {
     );
   }
 }
+
+export class Paren extends ASTNode {
+  expr: ASTNode;
+  constructor(from, to, expr, options) {
+    super(from, to, 'paren', ['expr'], options);
+    this.expr = expr;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `${this.expr.describe(level)} in parentheses`;
+  }
+
+  pretty() {
+    let inner = this.expr.pretty();
+    return P.ifFlat(
+      P.horz("(", inner, ")"),
+      P.vert("(", P.horz(INDENT, inner), ")")
+    );
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          ({this.expr.reactElement()})
+      </span>
+      </Node>
+    );
+  }
+}
+
+export class IfPipe extends ASTNode {
+  branches: ASTNode[];
+  blocky: boolean;
+  constructor(from, to, branches, blocky, options) {
+    super(from, to, 'ifPipe', ['branches'], options);
+    this.branches = branches;
+    this.blocky = blocky;
+    super.hash = hashObject(['ifPipe', ...(this.branches.map(c => c.hash)), this.blocky]);
+  }
+
+  longDescription(level) {
+    return `${enumerateList(this.branches, level)} in an if pipe`;
+  }
+
+  pretty() {
+    let prefix = "ask:";
+    let suffix = "end";
+    let branches = P.sepBy("", "", this.branches);
+    return P.ifFlat(
+      P.horz(prefix, " ", branches, " ", suffix),
+      P.vert(prefix, P.horz(INDENT, branches), suffix)
+    );
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          ask:
+      </span>
+        <span className="blocks-arguments">
+          <Args>{this.branches}</Args>
+        </span>
+      </Node>
+    );
+  }
+}
+
+export class IfPipeBranch extends ASTNode {
+  test: ASTNode;
+  body: ASTNode;
+  constructor(from, to, test, body, options) {
+    super(from, to, 'ifPipeBranch', ['test', 'body'], options);
+    this.test = test;
+    this.body = body;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `${this.test.describe(level)} testing with ${this.body.describe(level)} body in an if pipe`;
+  }
+
+  pretty() {
+    let prefix = "|";
+    let intermediate = "then:";
+    let test = this.test.pretty();
+    let body = this.body.pretty();
+    return P.sepBy(" ", "", [prefix, test, intermediate, body]);
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          {this.test.reactElement()}
+        </span>
+        <span className="blocks-arguments">
+          {this.body.reactElement()}
+        </span>
+      </Node>
+    )
+  }
+}
