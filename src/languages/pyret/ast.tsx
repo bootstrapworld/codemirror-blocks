@@ -705,10 +705,7 @@ export class IfPipeBranch extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          {this.test.reactElement()}
-        </span>
-        <span className="blocks-arguments">
-          {this.body.reactElement()}
+          {this.test.reactElement()}&nbsp;then:&nbsp;{this.body.reactElement()}
         </span>
       </Node>
     )
