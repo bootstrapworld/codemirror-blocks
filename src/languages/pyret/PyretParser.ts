@@ -150,12 +150,12 @@ const nodeTypes = {
   // "s-provide": function(pos: Loc, block: ASTNode) {},
   // "s-provide-complete": function(pos: Loc, values: ProvidedValue[], ailases: ProvidedAlias[], data_definition: ProvidedDatatype[]) {},
   // "s-provide-all": function(pos: Loc) {},
-  // "s-provide-none": function(pos: Loc) {},
+  "s-provide-none": function(_pos: Loc) { return null; },
 
   // data ProvideTypes
   // "s-provide-types": function(pos: Loc, ann: AField[]) {},
   // "s-provide-types-all": function(l: Loc) {},
-  // "s-provide-types-none": function(l: Loc) {},
+  "s-provide-types-none": function(_l: Loc) { return null; },
 
   // data ImportType
   // "s-const-import": function(l: Loc, mod: string) {},
@@ -388,7 +388,9 @@ const nodeTypes = {
   // data TableRow
   // 's-table-row': function(l: Loc, elems: Expr[]) {},
   
-  // don't need to do for data ConstructModifer
+  // data ConstructModifer
+  's-construct-normal': function() { return null; },
+  // 's-construct-lazy': function() { return null; },
 
   // data Bind
   "s-bind": function (pos: Loc, _shadows: boolean, id: Name, ann: Ann) {
