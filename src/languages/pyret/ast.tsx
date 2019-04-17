@@ -161,13 +161,19 @@ export class Block extends ASTNode {
   }
 
   render(props) {
-    // TODO: This probably doesn't render well; need vertical alignment
-    // vertically aligns when not in a node,
-    // but then keyboard navigation is lost
+    const NEWLINE = <br />;
+    let statements = [];
+    this.stmts.forEach((element, index) => {
+      statements.push(<DropTarget />);
+      statements.push(NEWLINE);
+      statements.push(<DropTargetSibling node={element} left={true} right={true} />)
+      statements.push(NEWLINE);
+    });
+    statements.push(<DropTarget />);
     // include name here? is it ever a time when it's not block?
     return (
       <Node node = {this} {...props}>
-        <span className="blocks-arguments"><Args>{this.stmts}</Args></span>
+        <span className="blocks-arguments">{statements}</span>
       </Node>
     )
   }
