@@ -90,6 +90,20 @@ type Member = any;
 
 // TODO: all of these are preliminary for testing
 const nodeTypes = {
+  // data Name
+  's-underscore': function(l: Loc) {},
+  "s-name": function (pos: Loc, str: string) {
+    return new Literal(
+      pos.from,
+      pos.to,
+      str,
+      'symbol',
+      {'aria-label': `${str}, a name`});
+  },
+  's-global': function(s: string) {},
+  's-type-global': function(s: string) {},
+  's-atom': function(base: string, serial: number) {},
+
   // data Program
   "s-program": function(_pos: Loc, _prov: any, _provTy: any, _impt: any, body: Block) {
     let rootNodes = body.stmts;
@@ -447,30 +461,33 @@ end
 
   // data CheckOp --> not doing for now?
 
-  // found in data Name above data Program
-  "s-name": function(pos: Loc, str: string) {
-    return new Literal(
-      pos.from,
-      pos.to,
-      str,
-      'symbol',
-      {'aria-label': `${str}, a name`});
-  },
-  // Annotations
+  // data Ann
   "a-blank": function() {
     return null;
   },
-
-  "a-name": function(pos: Loc, str: any) {
+  'a-any': function(l: Loc) {},
+  "a-name": function(pos: Loc, id: Name) {
     return new Literal(
       pos.from,
       pos.to,
-      str,
+      id,
       'symbol',
       // make sure that this matches the pedagogy used in classroom:
       // "variable", "identifier", "name", ...; other languages
-      {'aria-label': `${str}, an identifier`});
+      {'aria-label': `${id}, an identifier`});
   },
+  'a-type-var': function(l: Loc, id: Name) {},
+  'a-arrow': function(l: Loc, args: Ann[], ret: Ann, use_parens: boolean) {},
+  'a-method': function(l: Let, args: Ann[], ret: Ann) {},
+  'a-record': function(l: Loc, fields: AField[]) {},
+  'a-tuple': function(l: Loc, fields: AField[]) {},
+  'a-app': function(l: Loc, ann: Ann, args: Ann[]) {},
+  'a-pred': function(l: Loc, ann: Ann, exp: Expr) {},
+  'a-dot': function(l: Loc, obj: Name, field: string) {},
+  'a-checked': function(checked: Ann, residual: Ann) {},
+
+  // data AField
+  'a-field': function(l: Loc, name: string, ann: Ann) {},
 }
 
 function idToLiteral(id: Bind): Literal {
