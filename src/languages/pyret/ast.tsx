@@ -163,13 +163,16 @@ export class Block extends ASTNode {
   render(props) {
     const NEWLINE = <br />;
     let statements = [];
-    this.stmts.forEach((element, index) => {
-      statements.push(<DropTarget />);
-      statements.push(NEWLINE);
-      statements.push(<DropTargetSibling node={element} left={true} right={true} />)
-      statements.push(NEWLINE);
+    this.stmts.forEach((element, key) => {
+      let span = <span key={key}>
+        <DropTarget />
+        {NEWLINE}
+        <DropTargetSibling  node={element} left={true} right={true} />
+        {NEWLINE}
+      </span>
+      statements.push(span);
     });
-    statements.push(<DropTarget />);
+    statements.push(<DropTarget key={this.stmts.length} />);
     // include name here? is it ever a time when it's not block?
     return (
       <Node node = {this} {...props}>
