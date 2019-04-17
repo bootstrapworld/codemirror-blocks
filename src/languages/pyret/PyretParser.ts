@@ -77,18 +77,38 @@ const opLookup = {
   "is": (loc, _node) => new Literal(loc.from, loc.to, 'is', 'check-op'),
 };
 
-type ImportType = Number;
-type Name = String;
+type AField = any;
 type Ann = String;
-type ASTNode = {
-  from: any,
-  to: any,
-}; // should fill this in soon
+type CasesBind = any;
+type CasesBindType = any;
+type CasesBranch = any;
+type CheckOp = any;
+type ColumnBinds = any;
+type ColumnSort = any;
+type ColumnSortOrder = any;
+type DefinedType = any;
+type DefinedValue = any;
 type Expr = ASTNode;
+type FieldName = any;
+type ForBind = any;
+type Hint = any;
+type IfBranch = any;
+type ImportType = Number;
+type LetBind = any;
+type LetrecBind = any;
 type Member = any;
+type Name = String;
+type ProvidedAlias = any;
+type ProvidedDatatype = any;
+type ProvidedValue = any;
+type TableExtendField = any;
+type TableRow = any;
+type TypeLetBind = any;
+type Variant = any;
+type VariantMember = any;
+type VariantMemberType = any;
 
 
-// TODO: all of these are preliminary for testing
 const nodeTypes = {
   // data Name
   's-underscore': function(l: Loc) {},
