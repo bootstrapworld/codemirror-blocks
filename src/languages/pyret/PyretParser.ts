@@ -111,7 +111,7 @@ type VariantMemberType = any;
 
 const nodeTypes = {
   // data Name
-  's-underscore': function(l: Loc) {},
+  // 's-underscore': function(l: Loc) {},
   "s-name": function (pos: Loc, str: string) {
     return new Literal(
       pos.from,
@@ -120,9 +120,9 @@ const nodeTypes = {
       'symbol',
       {'aria-label': `${str}, a name`});
   },
-  's-global': function(s: string) {},
-  's-type-global': function(s: string) {},
-  's-atom': function(base: string, serial: number) {},
+  // 's-global': function(s: string) {},
+  // 's-type-global': function(s: string) {},
+  // 's-atom': function(base: string, serial: number) {},
 
   // data Program
   "s-program": function(_pos: Loc, _prov: any, _provTy: any, _impt: any, body: Block) {
@@ -131,64 +131,64 @@ const nodeTypes = {
   },
 
   // data Import
-  "s-include": function(pos: Loc, mod: ImportType) {},
-  "s-import": function(pos: Loc, file: ImportType, name: Name) {},
-  "s-import-types": function(pos: Loc, file: ImportType, name: Name, types: Name) {},
-  "s-import-fields": function(pos: Loc, fields: Name[], file: ImportType) {},
-  "s-import-complete": function(pos: Loc, values: Name[], types: Name[], import_type: ImportType, vals_name: Name, types_name: Name) {},
+  // "s-include": function(pos: Loc, mod: ImportType) {},
+  // "s-import": function(pos: Loc, file: ImportType, name: Name) {},
+  // "s-import-types": function(pos: Loc, file: ImportType, name: Name, types: Name) {},
+  // "s-import-fields": function(pos: Loc, fields: Name[], file: ImportType) {},
+  // "s-import-complete": function(pos: Loc, values: Name[], types: Name[], import_type: ImportType, vals_name: Name, types_name: Name) {},
 
   // data ProvidedValue
-  "p-value": function(pos: Loc, v: Name, ann: Ann) {},
+  // "p-value": function(pos: Loc, v: Name, ann: Ann) {},
 
   // data Provided Alias
-  "p-alias": function(pos: Loc, in_name: Name, out_name: Name, mod: ImportType | null) {},
+  // "p-alias": function(pos: Loc, in_name: Name, out_name: Name, mod: ImportType | null) {},
 
   // data ProvidedDatatype
-  "p-data": function(pos: Loc, d: Name, mod: ImportType | null) {},
+  // "p-data": function(pos: Loc, d: Name, mod: ImportType | null) {},
 
   // data Provide
-  "s-provide": function(pos: Loc, block: ASTNode) {},
-  "s-provide-complete": function(pos: Loc, values: ProvidedValue[], ailases: ProvidedAlias[], data_definition: ProvidedDatatype[]) {},
-  "s-provide-all": function(pos: Loc) {},
-  "s-provide-none": function(pos: Loc) {},
+  // "s-provide": function(pos: Loc, block: ASTNode) {},
+  // "s-provide-complete": function(pos: Loc, values: ProvidedValue[], ailases: ProvidedAlias[], data_definition: ProvidedDatatype[]) {},
+  // "s-provide-all": function(pos: Loc) {},
+  // "s-provide-none": function(pos: Loc) {},
 
   // data ProvideTypes
-  "s-provide-types": function(pos: Loc, ann: AField[]) {},
-  "s-provide-types-all": function(l: Loc) {},
-  "s-provide-types-none": function(l: Loc) {},
+  // "s-provide-types": function(pos: Loc, ann: AField[]) {},
+  // "s-provide-types-all": function(l: Loc) {},
+  // "s-provide-types-none": function(l: Loc) {},
 
   // data ImportType
-  "s-const-import": function(l: Loc, mod: string) {},
-  "s-special-import": function(l: Loc, kind: string, args: string[]) {},
+  // "s-const-import": function(l: Loc, mod: string) {},
+  // "s-special-import": function(l: Loc, kind: string, args: string[]) {},
 
   // data Hint
-  "h-use-loc": function(l: Loc) {},
+  // "h-use-loc": function(l: Loc) {},
 
   // data LetBind
-  "s-let-bind": function(l: Loc, b: Bind, value: Expr) {},
-  "s-var-bind": function(l: Loc, b: Bind, value: Expr) {},
+  // "s-let-bind": function(l: Loc, b: Bind, value: Expr) {},
+  // "s-var-bind": function(l: Loc, b: Bind, value: Expr) {},
 
   // data LetrecBind
-  "s-letrec-bind": function(l: Loc, b: Bind, value: Expr) {},
+  // "s-letrec-bind": function(l: Loc, b: Bind, value: Expr) {},
 
   // data TypeLetBind
-  "s-type-bind": function(l: Loc, name: Name, params: Name[], ann: Ann) {},
-  "s-newtype-bind": function(l: Loc, name: Name, namet: Name) {},
+  // "s-type-bind": function(l: Loc, name: Name, params: Name[], ann: Ann) {},
+  // "s-newtype-bind": function(l: Loc, name: Name, namet: Name) {},
 
   // data DefinedValue
-  "s-defined-value": function(name: string, value: Expr) {},
+  // "s-defined-value": function(name: string, value: Expr) {},
 
   // data DefinedType
-  "s-defined-type": function(name: string, typ: Ann) {},
+  // "s-defined-type": function(name: string, typ: Ann) {},
 
   // data Expr
-  "s-module": function(l: Loc, answer: XPathExpression, defined_values: DefinedValue[], defined_types: DefinedType[], provided_values: Expr, provided_types: AField[], checks: Expr) {},
-  "s-template": function(l: Loc) {},
-  "s-type-let-expr": function(l: Loc, binds: TypeLetBind[], body: Expr, block: boolean) {},
-  "s-let-expr": function(l: LoadTable, binds: LetBind[], body: Expr, block: boolean) {},
-  "s-letrec": function(l: Loc, binds: LetrecBind[], body: Expr, block: boolean) {},
-  "s-hint-exp": function(l: Loc, hints: Hint[], exp: Expr) {},
-  "s-instantiate": function(l: Loc, expr: Expr, params: Ann[]) {},
+  // "s-module": function(l: Loc, answer: XPathExpression, defined_values: DefinedValue[], defined_types: DefinedType[], provided_values: Expr, provided_types: AField[], checks: Expr) {},
+  // "s-template": function(l: Loc) {},
+  // "s-type-let-expr": function(l: Loc, binds: TypeLetBind[], body: Expr, block: boolean) {},
+  // "s-let-expr": function(l: LoadTable, binds: LetBind[], body: Expr, block: boolean) {},
+  // "s-letrec": function(l: Loc, binds: LetrecBind[], body: Expr, block: boolean) {},
+  // "s-hint-exp": function(l: Loc, hints: Hint[], exp: Expr) {},
+  // "s-instantiate": function(l: Loc, expr: Expr, params: Ann[]) {},
   "s-block": function (pos: Loc, stmts: Expr[]) {
     return new Block(
       pos.from,
@@ -196,7 +196,7 @@ const nodeTypes = {
       stmts,
       'block');
   },
-  "s-user-block": function(l: Loc, body: Expr) {},
+  // "s-user-block": function(l: Loc, body: Expr) {},
   "s-fun": function (pos: Loc, name: string, _params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, _check: Expr | null, block: boolean) {
     // TODO: ignoring params, check, blocky
     let fun_from = {line: pos.from.line, ch: pos.from.ch + 4};
@@ -213,10 +213,10 @@ const nodeTypes = {
       block,
       {'aria-label': `${name}, a function with ${args} with ${body}`});
   },
-  "s-type": function(l: Loc, name: Name, params: Name[], ann: Ann) {},
-  "s-newtype": function(l: Loc, name: Name, namet: Name) {},
-  "s-var": function(l: Loc, name: Bind, value: Expr) {},
-  "s-rec": function(l: Loc, name: Bind, value: Expr) {},
+  // "s-type": function(l: Loc, name: Name, params: Name[], ann: Ann) {},
+  // "s-newtype": function(l: Loc, name: Name, namet: Name) {},
+  // "s-var": function(l: Loc, name: Bind, value: Expr) {},
+  // "s-rec": function(l: Loc, name: Bind, value: Expr) {},
   "s-let": function (pos: Loc, id: Bind, rhs: Expr, _keyword_val: boolean) {
     console.log(arguments);
     let options = {};
@@ -229,18 +229,18 @@ const nodeTypes = {
       options
     );
   },
-  "s-ref": function(l: Loc, ann: Ann | null) {},
-  "s-contract": function(l: Loc, name: Name, ann: Ann) {},
-  "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {},
-  "s-assign": function(l: Loc, id: Name, value: Expr) {},
+  // "s-ref": function(l: Loc, ann: Ann | null) {},
+  // "s-contract": function(l: Loc, name: Name, ann: Ann) {},
+  // "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {},
+  // "s-assign": function(l: Loc, id: Name, value: Expr) {},
   's-if-pipe': function(pos: Loc, branches: IfPipeBranch[], blocky: boolean) {
     return new IfPipe(pos.from, pos.to, branches, blocky, {'aria-label': 'if pipe'});
   },
-  "s-if-pipe-else": function(l: Loc, branches: IfPipeBranch[], _else: Expr, blocky: boolean) {},
-  "s-if": function(l: Loc, branches: IfBranch[], blocky: boolean) {},
-  "s-if-else": function(l: Loc, branches: IfBranch[], _else: Expr, blocky: boolean) {},
-  "s-cases": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], blocky: boolean) {},
-  "s-cases-else": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], _else: Expr, blocky: boolean) {},
+  // "s-if-pipe-else": function(l: Loc, branches: IfPipeBranch[], _else: Expr, blocky: boolean) {},
+  // "s-if": function(l: Loc, branches: IfBranch[], blocky: boolean) {},
+  // "s-if-else": function(l: Loc, branches: IfBranch[], _else: Expr, blocky: boolean) {},
+  // "s-cases": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], blocky: boolean) {},
+  // "s-cases-else": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], _else: Expr, blocky: boolean) {},
   "s-op": function (pos: Loc, opPos: Loc, op: string, left: Expr, right: Expr) {
     console.log(arguments);
     return new Binop(
@@ -257,15 +257,15 @@ const nodeTypes = {
       pos.from, pos.to, check_op, refinement, lhs, rhs, {'aria-label': `${check_op} ${lhs} ${rhs}`}
     );
   },
-  "s-check-expr": function(l: Loc, expr: Expr, ann: Ann) {},
+  // "s-check-expr": function(l: Loc, expr: Expr, ann: Ann) {},
   's-paren': function(pos: Loc, expr: ASTNode) {
     return new Paren(pos.from, pos.to, expr, {'aria-label': 'parentheses'});
   },
   // note this name string is "" if anonymous
-  "s-lam": function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
-  "s-method": function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
-  "s-extend": function(l: Loc, supe: Expr, fields: Member[]) {},
-  "s-update": function(l: Loc, supe: Expr, fields: Member[]) {},
+  // "s-lam": function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
+  // "s-method": function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
+  // "s-extend": function(l: Loc, supe: Expr, fields: Member[]) {},
+  // "s-update": function(l: Loc, supe: Expr, fields: Member[]) {},
   "s-tuple": function(pos: Loc, fields: Expr[]) {
     console.log(arguments);
     return new Tuple(
@@ -278,8 +278,8 @@ const nodeTypes = {
       pos.from, pos.to, lhs, new Literal(index_pos.from, index_pos.to, index, "number"), {'aria-label': `${index} element of ${lhs} tuple`}
     )
   },
-  "s-obj": function(l: Loc, fields: Member[]) {},
-  "s-array": function(l: Loc, values: Expr[]) {},
+  // "s-obj": function(l: Loc, fields: Member[]) {},
+  // "s-array": function(l: Loc, values: Expr[]) {},
   "s-construct": function (pos: Loc, modifier: any, constructor: any, values: any[]) {
     console.log(arguments);
     return new Construct(
@@ -292,8 +292,8 @@ const nodeTypes = {
       pos.from, pos.to, fun, args, {'aria-label': `${fun} applied to ${args}`}, 
     );
   },
-  "s-prim-app": function(pos: Loc, fun: string, args: Expr[]) {},
-  "s-prim-val": function(pos: Loc, name: string) {},
+  // "s-prim-app": function(pos: Loc, fun: string, args: Expr[]) {},
+  // "s-prim-val": function(pos: Loc, name: string) {},
   "s-id": function(pos: Loc, str: Name) {
     return new Literal(
       pos.from,
@@ -311,9 +311,9 @@ const nodeTypes = {
       'symbol',
       {'aria-label': `${str}, an identifier`});
   },
-  "s-id-letrec": function(pos: Loc, id: Name, safe: boolean) {},
-  "s-undefined": function(pos: Loc) {},
-  "s-srcloc": function(pos: Loc, loc: Loc) {},
+  // "s-id-letrec": function(pos: Loc, id: Name, safe: boolean) {},
+  // "s-undefined": function(pos: Loc) {},
+  // "s-srcloc": function(pos: Loc, loc: Loc) {},
   "s-num": function(pos: Loc, x: Number) {
     return new Literal(
       pos.from,
@@ -322,7 +322,7 @@ const nodeTypes = {
       'number',
       {'aria-label': `${x}, a number`});
   },
-  "s-frac": function(l: Loc, num: number, den: number) {},
+  // "s-frac": function(l: Loc, num: number, den: number) {},
   "s-bool": function(pos: Loc, value: boolean) {
     let ret = new Literal(
       pos.from,
@@ -362,22 +362,22 @@ const nodeTypes = {
       pos.from, pos.to, base, index, {'aria-label': `${index} of ${base}`}
     )
   },
-  "s-data": function(l: Loc, name: string, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
-  "s-data-expr": function(l: Loc, name: string, namet: Name, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
-  's-for': function(l: Loc, iterator: Expr, bindings: ForBind[], ann: Ann, body: Expr, blocky: boolean) {},
+  // "s-data": function(l: Loc, name: string, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
+  // "s-data-expr": function(l: Loc, name: string, namet: Name, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
+  // 's-for': function(l: Loc, iterator: Expr, bindings: ForBind[], ann: Ann, body: Expr, blocky: boolean) {},
   "s-check": function(pos: Loc, name: string | undefined, body: any, keyword_check: boolean) {
     return new Check(
       pos.from, pos.to, name, body, keyword_check, { 'aria-label': ((name != undefined)? `${name} `: "") + `checking ${body}`}
     );
   },
-  's-reactor': function(l: Loc, fields: Member[]) {},
-  's-table-extend': function(l: LoadTable, column_binds: ColumnBinds, extensions: TableExtendField[]) {},
-  's-table-update': function(l: Loc, column_binds: ColumnBinds, updates: Member[]) {},
-  's-table-select': function(l: Loc, columns: Name[], table: Expr) {},
-  's-table-order': function(l: Loc, table: Expr, ordering: ColumnSort) {},
-  's-table-filter': function(l: Loc, column_binds: ColumnBinds, predicate: Expr) {},
-  's-table-extract': function(l: Loc, column: Name, table: Expr) {},
-  's-table': function(l: Loc, headers: FieldName[], rows: TableRow[]) {},
+  // 's-reactor': function(l: Loc, fields: Member[]) {},
+  // 's-table-extend': function(l: LoadTable, column_binds: ColumnBinds, extensions: TableExtendField[]) {},
+  // 's-table-update': function(l: Loc, column_binds: ColumnBinds, updates: Member[]) {},
+  // 's-table-select': function(l: Loc, columns: Name[], table: Expr) {},
+  // 's-table-order': function(l: Loc, table: Expr, ordering: ColumnSort) {},
+  // 's-table-filter': function(l: Loc, column_binds: ColumnBinds, predicate: Expr) {},
+  // 's-table-extract': function(l: Loc, column: Name, table: Expr) {},
+  // 's-table': function(l: Loc, headers: FieldName[], rows: TableRow[]) {},
   's-load-table': function (pos: Loc, rows: any[], sources: any[]) {
     console.log(arguments);
     return new LoadTable(
@@ -386,7 +386,7 @@ const nodeTypes = {
   },
 
   // data TableRow
-  's-table-row': function(l: Loc, elems: Expr[]) {},
+  // 's-table-row': function(l: Loc, elems: Expr[]) {},
   
   // don't need to do for data ConstructModifer
 
@@ -399,12 +399,12 @@ const nodeTypes = {
       id,
       ann);
   },
-  's-tuple-bind': function(l: LoadTable, fields: Bind[], as_name: Bind | null) {},
+  // 's-tuple-bind': function(l: LoadTable, fields: Bind[], as_name: Bind | null) {},
 
   // data Member
-  's-data-field': function(l: Loc, name: string, value: Expr) {},
-  's-mutable-field': function(l: Loc, name: string, ann: Ann, value: Expr) {},
-  's-method-field': function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
+  // 's-data-field': function(l: Loc, name: string, value: Expr) {},
+  // 's-mutable-field': function(l: Loc, name: string, ann: Ann, value: Expr) {},
+  // 's-method-field': function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
 
   // data FieldName
   // examples of this _other have been ABlank...
@@ -416,10 +416,10 @@ const nodeTypes = {
   },
   
   // data ForBind
-  's-for-bind': function(l: Loc, bind: Bind, value: Expr) {},
+  // 's-for-bind': function(l: Loc, bind: Bind, value: Expr) {},
 
   // data ColumnBinds
-  's-column-binds': function(l: Loc, binds: Bind[], table: Expr) {},
+  // 's-column-binds': function(l: Loc, binds: Bind[], table: Expr) {},
 
   /**
    * Not sure what to do with this for now...
@@ -440,14 +440,14 @@ end
    */
   
   // data ColumnSort
-  's-column-sort': function(l: LoadTable, column: Name, direction: ColumnSortOrder) {},
+  // 's-column-sort': function(l: LoadTable, column: Name, direction: ColumnSortOrder) {},
 
   // data TableExtendField
-  's-table-extend-field': function(l: Loc, name: string, value: Expr, ann: Ann) {},
-  's-table-extend-reducer': function(l: Loc, name: string, reducer: Expr, col: Name, ann: Ann) {},
+  // 's-table-extend-field': function(l: Loc, name: string, value: Expr, ann: Ann) {},
+  // 's-table-extend-reducer': function(l: Loc, name: string, reducer: Expr, col: Name, ann: Ann) {},
 
   // data LoadTableSpec
-  's-sanitize': function(l: Loc, name: Name, sanitizer: Expr) {},
+  // 's-sanitize': function(l: Loc, name: Name, sanitizer: Expr) {},
   's-table-src': function (pos: Loc, source: any) {
     console.log(arguments);
     return new Literal(
@@ -458,14 +458,14 @@ end
   // not doing data VariantMemberType
 
   // data VariantMember
-  's-variant-member': function(l: Loc, member_type: VariantMemberType, bind: Bind) {},
+  // 's-variant-member': function(l: Loc, member_type: VariantMemberType, bind: Bind) {},
 
   // data Variant
-  's-variant': function(l: Loc, constr_loc: Loc, name: string, members: VariantMember[], with_members: Member[]) {},
-  's-singleton-variant': function(l: Loc, name: string, with_members: Member[]) {},
+  // 's-variant': function(l: Loc, constr_loc: Loc, name: string, members: VariantMember[], with_members: Member[]) {},
+  // 's-singleton-variant': function(l: Loc, name: string, with_members: Member[]) {},
 
   //data IfBranch
-  's-if-branch': function(l: Loc, test: Expr, body: Expr) {},
+  // 's-if-branch': function(l: Loc, test: Expr, body: Expr) {},
 
   //data IfPipeBranch
   's-if-pipe-branch': function(pos: Loc, test: ASTNode, body: ASTNode) {
@@ -473,11 +473,11 @@ end
   },
   
   // data CasesBind
-  's-cases-bind': function(l: Loc, field_type: CasesBindType, bind: Bind) {},
+  // 's-cases-bind': function(l: Loc, field_type: CasesBindType, bind: Bind) {},
 
   // data CasesBranch
-  's-cases-branch': function(l: Loc, pattern_loc: Loc, name: string, args: CasesBind[], body: Expr) {},
-  's-singleton-cases-branch': function(l: LoadTable, pattern_loc: Loc, name: string, body: Expr) {},
+  // 's-cases-branch': function(l: Loc, pattern_loc: Loc, name: string, args: CasesBind[], body: Expr) {},
+  // 's-singleton-cases-branch': function(l: LoadTable, pattern_loc: Loc, name: string, body: Expr) {},
 
   // data CheckOp --> not doing for now?
 
@@ -485,7 +485,7 @@ end
   "a-blank": function() {
     return null;
   },
-  'a-any': function(l: Loc) {},
+  // 'a-any': function(l: Loc) {},
   "a-name": function(pos: Loc, id: Name) {
     return new Literal(
       pos.from,
@@ -496,18 +496,18 @@ end
       // "variable", "identifier", "name", ...; other languages
       {'aria-label': `${id}, an identifier`});
   },
-  'a-type-var': function(l: Loc, id: Name) {},
-  'a-arrow': function(l: Loc, args: Ann[], ret: Ann, use_parens: boolean) {},
-  'a-method': function(l: Let, args: Ann[], ret: Ann) {},
-  'a-record': function(l: Loc, fields: AField[]) {},
-  'a-tuple': function(l: Loc, fields: AField[]) {},
-  'a-app': function(l: Loc, ann: Ann, args: Ann[]) {},
-  'a-pred': function(l: Loc, ann: Ann, exp: Expr) {},
-  'a-dot': function(l: Loc, obj: Name, field: string) {},
-  'a-checked': function(checked: Ann, residual: Ann) {},
+  // 'a-type-var': function(l: Loc, id: Name) {},
+  // 'a-arrow': function(l: Loc, args: Ann[], ret: Ann, use_parens: boolean) {},
+  // 'a-method': function(l: Let, args: Ann[], ret: Ann) {},
+  // 'a-record': function(l: Loc, fields: AField[]) {},
+  // 'a-tuple': function(l: Loc, fields: AField[]) {},
+  // 'a-app': function(l: Loc, ann: Ann, args: Ann[]) {},
+  // 'a-pred': function(l: Loc, ann: Ann, exp: Expr) {},
+  // 'a-dot': function(l: Loc, obj: Name, field: string) {},
+  // 'a-checked': function(checked: Ann, residual: Ann) {},
 
   // data AField
-  'a-field': function(l: Loc, name: string, ann: Ann) {},
+  // 'a-field': function(l: Loc, name: string, ann: Ann) {},
 }
 
 function idToLiteral(id: Bind): Literal {
