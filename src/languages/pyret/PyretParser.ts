@@ -20,6 +20,7 @@ import {Binop,
   FunctionApp,
   IfPipe,
   IfPipeBranch,
+  Lambda,
   Let,
   LoadTable,
   Paren,
@@ -266,10 +267,11 @@ const nodeTypes = {
     console.log(arguments);
     let fun_from = { line: l.from.line, ch: l.from.ch + 4 };
     let fun_to = {line: l.from.line, ch: fun_from.ch + name.length};
-    return new Func(
+    let real_name = (name == "")? null : new Literal(fun_from, fun_to, name, 'lambda');
+    return new Lambda(
       l.from,
       l.to,
-      new Literal(fun_from, fun_to, name, 'function'),
+      real_name,
       args.map(a => idToLiteral(a)),
       ann,
       doc,

@@ -141,6 +141,67 @@ export class Func extends ASTNode {
   }
 }
 
+export class Lambda extends ASTNode {
+  name: ASTNode | null;
+  args: ASTNode[];
+  retAnn: ASTNode | null;
+  doc: string | null;
+  body: ASTNode;
+  block: boolean
+
+  constructor(from, to, name, args, retAnn, doc, body, block, options = {}) {
+    // TODO change this from function definition?
+    super(from, to, 'functionDefinition', ['name', 'args', 'retAnn', 'body'], options);
+    this.name = name;
+    this.args = args;
+    this.retAnn = retAnn;
+    this.doc = doc;
+    this.body = body;
+    this.block = block;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `a func expression with ${this.name.describe(level)}, ${this.args} and ${this.body.describe(level)}`;
+  }
+
+  pretty() {
+    // TODO: show doc
+    let retAnn = this.retAnn ? P.horz(" -> ", this.retAnn) : "";
+    let header_ending = (this.block)? " block:" : ":";
+    let prefix = (this.name == null)? ["lam("] : ["lam ", this.name, "("];
+    let header = P.ifFlat(
+      P.horz(P.horzArray(prefix), P.sepBy(", ", "", this.args), ")", retAnn, header_ending),
+      P.vert(P.horzArray(prefix),
+             P.horz(INDENT, P.sepBy(", ", "", this.args), ")", retAnn, ":")));
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(
+      P.horz(header, " ", this.body, " end"),
+      P.vert(header,
+             P.horz(INDENT, this.body),
+             "end"));
+  }
+
+  render(props) {
+    // TODO: show doc
+    let name = (this.name == null)? null : this.name.reactElement();
+    let body = this.body.reactElement();
+    let args = <Args>{this.args}</Args>;
+    let header_ending = <span>
+      {(this.retAnn == null && this.block == false)? <DropTarget />
+      : <>{this.retAnn != null? this.retAnn : <DropTarget />} {this.block ? "block" : <DropTarget />}</>}
+    </span>
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          lam&nbsp;{name}({args}){header_ending}:
+        </span>
+        {body}
+      </Node>
+    );
+  }
+}
+
 export class Block extends ASTNode {
   stmts: ASTNode[];
   name: string;
