@@ -197,7 +197,7 @@ const nodeTypes = {
       'block');
   },
   // "s-user-block": function(l: Loc, body: Expr) {},
-  "s-fun": function (pos: Loc, name: string, _params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, _check: Expr | null, block: boolean) {
+  "s-fun": function (pos: Loc, name: string, _params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, _check_loc: Loc | null, _check: Expr | null, block: boolean) {
     // TODO: ignoring params, check, blocky
     let fun_from = {line: pos.from.line, ch: pos.from.ch + 4};
     let fun_to = {line: pos.from.line, ch: fun_from.ch + name.length};
@@ -262,7 +262,21 @@ const nodeTypes = {
     return new Paren(pos.from, pos.to, expr, {'aria-label': 'parentheses'});
   },
   // note this name string is "" if anonymous
-  // "s-lam": function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
+  "s-lam": function(l: Loc, name: string, _params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, _check_loc: Loc | null, _check: Expr | null, blocky: boolean) {
+    console.log(arguments);
+    let fun_from = { line: l.from.line, ch: l.from.ch + 4 };
+    let fun_to = {line: l.from.line, ch: fun_from.ch + name.length};
+    return new Func(
+      l.from,
+      l.to,
+      new Literal(fun_from, fun_to, name, 'function'),
+      args.map(a => idToLiteral(a)),
+      ann,
+      doc,
+      body,
+      blocky,
+      {'aria-label': `${name}, a function with ${args} with ${body}`});
+  },
   // "s-method": function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
   // "s-extend": function(l: Loc, supe: Expr, fields: Member[]) {},
   // "s-update": function(l: Loc, supe: Expr, fields: Member[]) {},
