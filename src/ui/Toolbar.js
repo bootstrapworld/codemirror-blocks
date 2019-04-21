@@ -10,7 +10,8 @@ import SHARED from '../shared';
 export default class Toolbar extends Component {
   constructor(props) {
     super(props);
-    this.selectPrimitive = this.selectPrimitive.bind(this);
+    this.handleFocusPrimitive = this.handleFocusPrimitive.bind(this);
+    this.handleBlurPrimitive  = this.handleBlurPrimitive.bind(this);
   }
 
   static propTypes = {
@@ -42,7 +43,7 @@ export default class Toolbar extends Component {
     // If nothing is selected, select the first primitive, otherwise select the next.
     if (i === primitives.length - 1) i -= 1;
     if (i === null) i = -1;
-    this.setState({selectedPrimitive: primitives[i + 1]});
+    this.selectPrimitive(primitives[i + 1]);
   }
 
   prev() {
@@ -50,14 +51,29 @@ export default class Toolbar extends Component {
     if (primitives.length == 0) return; // Nothing to select.
     let i = this.getSelectedPrimitiveIndex(primitives);
     // If the first primitive is selected, unselect, otherwise select the previous.
-    this.setState({selectedPrimitive: (i == null || i == 0) ? null : primitives[i - 1]});
+    this.selectPrimitive((i == null || i == 0) ? null : primitives[i - 1]);
+  }
+
+  handleFocusPrimitive(selectedPrimitive) {
+    this.setState({selectedPrimitive});
   }
 
   selectPrimitive(selectedPrimitive) {
-    if (selectedPrimitive === this.state.selectedPrimitive) {
-      selectedPrimitive = null;
+    if (selectedPrimitive.element) {
+      selectedPrimitive.element.focus(); // will set state
+    } else {
+      this.setState({selectedPrimitive});
     }
-    this.setState({selectedPrimitive});
+  }
+
+  handleBlurPrimitive(primitive) {
+    // NOTE(Justin): This fires in many situations, including on `next` and
+    // `prev`. We really only care about the case where the focus entirely
+    // leaves the toolbar, but I don't know of a way to do that without
+    // responding to every single blur.
+    if (this.state.selectedPrimitive === primitive) {
+      this.setState({selectedPrimitive: null});
+    }
   }
 
   handleKeyDown = event => {
@@ -115,7 +131,9 @@ export default class Toolbar extends Component {
         <div className="primitives-box">
           <PrimitiveList
             primitives={primitives}
-            onSelect={this.selectPrimitive}
+            onFocus={this.handleFocusPrimitive}
+            onBlur={this.handleBlurPrimitive}
+            onKeyDown={this.handleKeyDown}
             selected={selected && selected.name}
             />
         </div>
