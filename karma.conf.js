@@ -3,6 +3,7 @@
 var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
 var reporters = ['jasmine-diff', 'dots'];
+
 /*
 if (envConfig.runCoverage) {
   reporters.push('coverage');
@@ -61,6 +62,9 @@ module.exports = function(config) {
     client: {
       // don't log console output in our test console
       captureConsole: false,
+      jasmine: {
+        timeoutInterval: 30000
+      }
     },
     // reporters: ["karma-typescript"],
 /*
@@ -76,6 +80,7 @@ module.exports = function(config) {
     jasmineDiffReporter: {
       pretty: true,
     },
+
 
     // web server port
     port: 9876,
