@@ -6,6 +6,11 @@ export const ItemTypes = {
   NODE: 'node',
 };
 
+export const primitiveSource = {
+  beginDrag(props) {
+    return {content: props.primitive.name};
+  }
+};
 
 export const nodeSource = {
   beginDrag(props) {
@@ -41,5 +46,6 @@ export function collectTarget(connect, monitor) {
 }
 
 
+export const DragPrimitiveSource = DragSource(ItemTypes.NODE, primitiveSource, collectSource);
 export const DragNodeSource = DragSource(ItemTypes.NODE, nodeSource, collectSource);
 export const DropNodeTarget = (f) => DropTarget(ItemTypes.NODE, nodeTarget(f), collectTarget);

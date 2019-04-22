@@ -4,25 +4,55 @@ import PropTypes from 'prop-types';
 import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
 import {RenderedBlockNode} from './PrimitiveBlock';
 import {Primitive as LanguagePrimitive} from '../parsers/primitives';
+import {DragPrimitiveSource} from '../dnd';
+import {say, dummyPos} from '../utils';
+import SHARED from '../shared';
+import {copyNodes} from '../actions';
 
 require('./PrimitiveList.less');
 
+
+@DragPrimitiveSource
 class Primitive extends Component {
   static propTypes = {
     primitive: PropTypes.instanceOf(LanguagePrimitive).isRequired,
     className: PropTypes.string.isRequired,
-    onClick: PropTypes.instanceOf(Function).isRequired,
+    onFocus: PropTypes.func.isRequired,
+    onBlur: PropTypes.func.isRequired,
+    onKeyDown: PropTypes.func.isRequired,
   }
 
+  handleKeyDown = e => {
+    switch (SHARED.keyMap[SHARED.keyName(e)]) {
+    case 'copy':
+      e.preventDefault();
+      copyNodes([this.props.primitive]);
+      say("copied " + this.props.primitive.toString());
+      if (this.props.primitive.element) {
+        this.props.primitive.element.focus(); // restore focus
+      }
+      return;
+    default:
+      this.props.onKeyDown(e);
+      return;
+    }
+  }
+  
   render() {
-    var {primitive, className, onClick} = this.props;
-    let astNode = primitive.getLiteralNode();
-    const elem = astNode ? astNode.reactElement({inToolbar: true}) : primitive.name;
-    return (
-      <li className={classNames(className, "Primitive list-group-item")} onClick={onClick}>
-        {elem}
-      </li>
+    let {primitive, className, onFocus, onBlur, onKeyDown,
+         connectDragPreview, connectDragSource} = this.props;
+    let elem = (
+      <span tabIndex={-1}
+            onKeyDown={this.handleKeyDown}
+            onFocus={() => onFocus(primitive)}
+            onBlur={() => onBlur(primitive)}
+            ref = {elem => primitive.element = elem}
+            className={classNames(className, "Primitive list-group-item")}>
+        {primitive.name}
+      </span>
     );
+    elem = connectDragPreview(connectDragSource(elem), {offsetX: 1, offsetY: 1});
+    return (<li>{elem}</li>);
   }
 }
 
@@ -31,14 +61,13 @@ class PrimitiveGroup extends Component {
     group: {
       name: '',
       primitives: []
-    },
-    onSelect: null,
-    selected: null,
+    }
   }
 
   static propTypes = {
-    //group: PropTypes.instanceOf(ASTFunctionDefinitionNode).isRequired,
-    onSelect: PropTypes.instanceOf(Function).isRequired,
+    onFocus: PropTypes.func.isRequired,
+    onBlur: PropTypes.func.isRequired,
+    onKeyDown: PropTypes.func.isRequired,
     selected: PropTypes.string, // to start, no primitive is selected
   }
 
@@ -51,7 +80,7 @@ class PrimitiveGroup extends Component {
   }
 
   render() {
-    let {group, onSelect, selected} = this.props;
+    let {group, onFocus, onBlur, onKeyDown, selected} = this.props;
     let expanded = this.state.expanded;
     let expandoClass = classNames(
       'glyphicon',
@@ -59,13 +88,15 @@ class PrimitiveGroup extends Component {
     );
     return (
       <li className="PrimitiveGroup list-group-item" role="list">
-        <div onClick={this.toggleExpanded} className="group-header">
+        <div onFocus={this.toggleExpanded} className="group-header">
           <span className={expandoClass} aria-hidden="true"/>
         </div>
         {expanded ?
           <PrimitiveList
             primitives={group.primitives}
-            onSelect={onSelect}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            onKeyDown={onKeyDown}
             selected={selected}
           />
           : null}
@@ -76,18 +107,17 @@ class PrimitiveGroup extends Component {
 
 export default class PrimitiveList extends Component {
   static defaultProps = {
-    primitive: null,
-    onSelect: null,
     selected: null,
   }
 
   static propTypes = {
-    onSelect: PropTypes.instanceOf(Function).isRequired,
+    onFocus: PropTypes.func.isRequired,
+    onBlur: PropTypes.func.isRequired,
+    onKeyDown: PropTypes.func.isRequired,
     selected: PropTypes.string,
   }
   render() {
-    const {primitives, selected} = this.props;
-    const onSelect = this.props.onSelect || function(){};
+    const {primitives, selected, onFocus, onBlur, onKeyDown} = this.props;
     let nodes = [];
     for (let primitive of primitives) {
       if (primitive instanceof PrimitiveGroupModel) {
@@ -96,7 +126,9 @@ export default class PrimitiveList extends Component {
           <PrimitiveGroup
             key={primitive.name}
             group={primitive}
-            onSelect={onSelect}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            onKeyDown={onKeyDown}
             selected={selected}
           />
         );
@@ -106,7 +138,9 @@ export default class PrimitiveList extends Component {
         <Primitive
           key={primitive.name}
           primitive={primitive}
-          onClick={() => onSelect(primitive)}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
           className={selected == primitive ? 'selected' : ''}
         />
       );
