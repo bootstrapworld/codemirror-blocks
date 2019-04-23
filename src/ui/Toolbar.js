@@ -50,8 +50,9 @@ export default class Toolbar extends Component {
     let primitives = this.getPrimitives();
     if (primitives.length == 0) return; // Nothing to select.
     let i = this.getSelectedPrimitiveIndex(primitives);
-    // If the first primitive is selected, unselect, otherwise select the previous.
-    this.selectPrimitive((i == null || i == 0) ? null : primitives[i - 1]);
+    // If the first primitive is selected, keep it, otherwise select the previous.
+    if (i === 0) i = 1;
+    this.selectPrimitive(i === null ? null : primitives[i - 1]);
   }
 
   handleFocusPrimitive(selectedPrimitive) {
@@ -59,7 +60,7 @@ export default class Toolbar extends Component {
   }
 
   selectPrimitive(selectedPrimitive) {
-    if (selectedPrimitive.element) {
+    if (selectedPrimitive && selectedPrimitive.element) {
       selectedPrimitive.element.focus(); // will set state
     } else {
       this.setState({selectedPrimitive});
@@ -77,16 +78,20 @@ export default class Toolbar extends Component {
   }
 
   handleKeyDown = event => {
-    event.stopPropagation();
     switch(SHARED.keyName(event)) {
     case 'Esc':
       event.target.blur();
       return;
     case 'Down':
+      event.preventDefault();
       this.next();
       return;
     case 'Up':
+      event.preventDefault();
       this.prev();
+      return;
+    default:
+      event.stopPropagation();
       return;
     }
   }
