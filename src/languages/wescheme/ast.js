@@ -1,6 +1,6 @@
 import React from 'react';
 import Node from '../../components/Node';
-import * as P from '../../pretty';
+import * as P from 'pretty-fast-pretty-printer';
 
 import {ASTNode, pluralize, descDepth} from '../../ast';
 
