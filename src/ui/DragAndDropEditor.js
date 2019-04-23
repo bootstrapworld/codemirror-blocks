@@ -11,19 +11,12 @@ export default
 @connect(null, dispatch => ({dispatch}))
 
 @DropNodeTarget(function(monitor) {
-  let roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
-  const {x: left, y: top} = monitor.getClientOffset();
-  let notDroppedOnRootNode = !roots.some(root => {
-    // CM will keep the longest line in the DOM for scrollbar purposes, but use visibility:hidden
-    // if that line is outside of the viewport so that it doesn't show up. We need to check for
-    // this, since getBoundingClientRect() ignores whether an elt is hidden. 
-    if(window.getComputedStyle(root.replacedWith).visibility == "hidden") return false;
-    // for visible nodes, see if the drop location falls within the root's ClientRect
-    let r = root.replacedWith.firstChild.getBoundingClientRect();
-    return (r.left<left) && (left<r.right) && (r.top<top) && (top<r.bottom);
-  });
+  const roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
+  const {x:left, y:top} = monitor.getClientOffset();
+  const droppedOn = document.elementFromPoint(left, top);
+  const isDroppedOnWhitespace = !roots.some(r => r.replacedWith.contains(droppedOn));
 
-  if (notDroppedOnRootNode) {
+  if (isDroppedOnWhitespace) {
     let loc = SHARED.cm.coordsChar({left, top});
     let dest = {from: loc, to: loc, isDropTarget: true};
     return this.props.dispatch(dropNode(monitor.getItem(), dest));
