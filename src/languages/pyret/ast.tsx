@@ -1,6 +1,6 @@
 import React from 'react';
 import Node from '../../components/Node';
-import * as P from '../../pretty';
+import * as P from 'pretty-fast-pretty-printer';
 
 import { ASTNode, pluralize, descDepth } from '../../ast';
 
@@ -129,8 +129,9 @@ export class Func extends ASTNode {
   }
 
   pretty() {
+    let args = this.args_reversed.map(p => p.pretty());
     let header = P.horzArray([P.txt("fun "), this.name,
-      P.txt("("), P.sepBy(", ", "", this.args_reversed.map(p => p.pretty())), P.txt("):")]);
+      P.txt("("), P.sepBy(args, ", ", ","), P.txt("):")]);
     // either one line or multiple; helper for joining args together
     return P.ifFlat(P.horzArray([header, P.txt(" "), this.body, " end"]),
       P.vertArray([header,
