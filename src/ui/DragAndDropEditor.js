@@ -12,7 +12,6 @@ export default
 
 @DropNodeTarget(function(monitor) {
   let roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
-  let measureDOM = SHARED.cm.getWrapperElement().getElementsByClassName('CodeMirror-measure')[0];
   const {x: left, y: top} = monitor.getClientOffset();
   let notDroppedOnRootNode = !roots.some(root => {
     // CM will keep the longest line in the DOM for scrollbar purposes, but use visibility:hidden
