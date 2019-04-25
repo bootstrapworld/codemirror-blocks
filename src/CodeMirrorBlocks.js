@@ -9,6 +9,7 @@ export const AST = require('./ast');
 export const Nodes = require('./nodes');
 export const Languages = require('./languages');
 export const DefaultStyle = require('./less/default-style.less');
+export const Pretty = require('./pretty');
 
 // Consumes a DOM node to host the editor, a language object and the code
 // to render. Produces an object-representation of CMB, allowing for
