@@ -7,7 +7,7 @@ var baseConfig = require('./base.config.js');
 var configs = [
   _.extend({}, baseConfig(), {
     entry: {
-      "CodeMirrorBlocks": ['./src/languages/wescheme/index.js', './src/CodeMirrorBlocks.jsx']
+      "CodeMirrorBlocks": ['./src/languages/wescheme/index.js', './src/CodeMirrorBlocks.js']
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
