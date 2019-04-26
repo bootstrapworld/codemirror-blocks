@@ -8,7 +8,6 @@ export const DropTarget = require('./components/DropTarget');
 export const AST = require('./ast');
 export const Nodes = require('./nodes');
 export const Languages = require('./languages');
-export const DefaultStyle = require('./less/default-style.less');
 export const Pretty = require('./pretty');
 
 // Consumes a DOM node to host the editor, a language object and the code
@@ -45,15 +44,12 @@ export default class CodeMirrorBlocks {
   }
 }
 
-module.exports = {
-  CodeMirrorBlocks: CodeMirrorBlocks,
-  Args: Args,
-  DropTarget: DropTarget,
-  AST: AST,
-  Nodes: Nodes,
-  Languages: Languages,
-  DefaultStyle: DefaultStyle,
-  Pretty: Pretty,
-};
+module.exports.CodeMirrorBlocks = CodeMirrorBlocks;
+module.exports.Args = Args;
+module.exports.DropTarget = DropTarget;
+module.exports.AST = AST;
+module.exports.Nodes = Nodes;
+module.exports.Languages = Languages;
+module.exports.Pretty = Pretty;
 
 console.log(module.exports);
