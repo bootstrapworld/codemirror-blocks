@@ -802,7 +802,7 @@ export class ArrowArgnames extends ASTNode {
   ret: ASTNode; // TODO: is ret ever empty?
   uses_parens: boolean;
   constructor(from, to, args, ret, uses_parens, options) {
-    super(from, to, 'ArrowArgnames', [args, ret], options);
+    super(from, to, 'ArrowArgnames', ["args", "ret"], options);
     this.args = args;
     this.ret = ret;
     this.uses_parens = uses_parens;
