@@ -122,6 +122,7 @@ end`);
     | (animal["species"] == "lizard") then: lizard-img
   end
 end`);
+    testify(`is-fixed :: (animal :: Row) -> Boolean`);
   });
 
   describe("larger pyret programs", function() {
