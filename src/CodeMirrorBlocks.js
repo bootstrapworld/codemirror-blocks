@@ -45,4 +45,15 @@ export default class CodeMirrorBlocks {
   }
 }
 
-module.exports = CodeMirrorBlocks;
+module.exports = {
+  CodeMirrorBlocks: CodeMirrorBlocks,
+  Args: Args,
+  DropTarget: DropTarget,
+  AST: AST,
+  Nodes: Nodes,
+  Languages: Languages,
+  DefaultStyle: DefaultStyle,
+  Pretty: Pretty,
+};
+
+console.log(module.exports);
