@@ -3,12 +3,13 @@ import ReactDOM from 'react-dom';
 import ToggleEditor from './ui/ToggleEditor';
 import merge from './merge';
 import pyret from './languages/pyret';
-export const Args = require('./components/Args');
-export const DropTarget = require('./components/DropTarget');
-export const AST = require('./ast');
-export const Nodes = require('./nodes');
-export const Languages = require('./languages');
-export const Pretty = require('./pretty');
+const Args = require('./components/Args');
+const DropTarget = require('./components/DropTarget');
+const Node = require('./components/Node');
+const AST = require('./ast');
+const Nodes = require('./nodes');
+const Languages = require('./languages');
+const Pretty = require('./pretty');
 
 // Consumes a DOM node to host the editor, a language object and the code
 // to render. Produces an object-representation of CMB, allowing for
@@ -45,10 +46,11 @@ export default class CodeMirrorBlocks {
 }
 
 module.exports.CodeMirrorBlocks = CodeMirrorBlocks;
-module.exports.Args = Args;
+module.exports.Args = Args.default;
 module.exports.DT = DropTarget;
 module.exports.AST = AST;
 module.exports.Nodes = Nodes;
+module.exports.Node = Node.default;
 module.exports.Languages = Languages;
 module.exports.Pretty = Pretty;
 
