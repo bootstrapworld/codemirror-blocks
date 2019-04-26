@@ -231,7 +231,7 @@ const nodeTypes = {
     );
   },
   // "s-ref": function(l: Loc, ann: Ann | null) {},
-  // "s-contract": function(l: Loc, name: Name, ann: Ann) {},
+  "s-contract": function(l: Loc, name: Name, ann: Ann) {},
   // "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {},
   // "s-assign": function(l: Loc, id: Name, value: Expr) {},
   's-if-pipe': function(pos: Loc, branches: IfPipeBranch[], blocky: boolean) {
@@ -516,6 +516,7 @@ end
   },
   // 'a-type-var': function(l: Loc, id: Name) {},
   // 'a-arrow': function(l: Loc, args: Ann[], ret: Ann, use_parens: boolean) {},
+  'a-arrow-argnames': function(l: Loc, args: AField[], ret: Ann, uses_parens: boolean) {},
   // 'a-method': function(l: Let, args: Ann[], ret: Ann) {},
   // 'a-record': function(l: Loc, fields: AField[]) {},
   // 'a-tuple': function(l: Loc, fields: AField[]) {},
@@ -525,7 +526,7 @@ end
   // 'a-checked': function(checked: Ann, residual: Ann) {},
 
   // data AField
-  // 'a-field': function(l: Loc, name: string, ann: Ann) {},
+  'a-field': function(l: Loc, name: string, ann: Ann) {},
 }
 
 function idToLiteral(id: Bind): Literal {
