@@ -796,3 +796,41 @@ export class IfPipeBranch extends ASTNode {
     )
   }
 }
+
+export class ArrowArgnames extends ASTNode {
+  args: ASTNode[];
+  ret: ASTNode; // TODO: is ret ever empty?
+  uses_parens: boolean;
+  constructor(from, to, args, ret, uses_parens, options) {
+    super(from, to, 'ArrowArgnames', [args, ret], options);
+    this.args = args;
+    this.ret = ret;
+    this.uses_parens = uses_parens;
+    super.hash = hashObject(['ArrowArgnames', ...(this.args.map(c => c.hash)), this.ret.hash, this.uses_parens]);
+  }
+
+  longDescription(level) {
+    return `parameters ${enumerateList(this.args, level)} resulting in ${this.ret.describe(level)}`;
+  }
+
+  pretty() {
+    let args = P.commaSep(this.args.map(e => e.pretty()));
+    let ret = this.ret.pretty();
+    let inner = P.sepBy(" ", "", [P.parens(args), "->", ret]);
+    return this.uses_parens? P.parens(inner) : inner;
+  }
+
+  render(props) {
+    let args = this.args.map(e => e.reactElement());
+    let inner = <>({args})&nbsp;->&nbsp;{this.ret.reactElement()}</>;
+    return (
+      <Node node={this} {...props}>
+        <div className="blocks-operator">
+          <div className="blocks-cond-result">
+            {this.uses_parens? <> ( {inner}) </> : inner}
+          </div>
+        </div>
+      </Node>
+    )
+  }
+}

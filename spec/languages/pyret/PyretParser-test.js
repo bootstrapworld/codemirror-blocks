@@ -13,7 +13,7 @@ describe("The Pyret Parser,", function() {
     test('true', 'boolean');
     test('1', 'number');
     test('"true"', 'string');
-    test('x', 'symbol');
+    test('x', 's-id');
   });
 
   it("should have some label for literals", function () {

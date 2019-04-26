@@ -10,6 +10,7 @@ import {
 } from '../../nodes';
 import {Binop,
   Assign,
+  ArrowArgnames,
   Bind,
   Block,
   Bracket,
@@ -79,7 +80,7 @@ const opLookup = {
 };
 
 type AField = any;
-type Ann = String;
+type Ann = Literal;
 type CasesBind = any;
 type CasesBindType = any;
 type CasesBranch = any;
@@ -118,7 +119,7 @@ const nodeTypes = {
       pos.from,
       pos.to,
       str,
-      'symbol',
+      's-name',
       {'aria-label': `${str}, a name`});
   },
   // 's-global': function(s: string) {},
@@ -231,7 +232,11 @@ const nodeTypes = {
     );
   },
   // "s-ref": function(l: Loc, ann: Ann | null) {},
-  "s-contract": function(l: Loc, name: Name, ann: Ann) {},
+  "s-contract": function(l: Loc, name: Name, _params: Name[], ann: Ann) {
+    console.log(arguments);
+    // TODO: don't know what params do, using binding for now
+    return new Bind(l.from, l.to, name, ann, {'aria-label': `contract for ${name}: ${ann}`});
+  },
   // "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {},
   // "s-assign": function(l: Loc, id: Name, value: Expr) {},
   's-if-pipe': function(pos: Loc, branches: IfPipeBranch[], blocky: boolean) {
@@ -315,7 +320,7 @@ const nodeTypes = {
       pos.from,
       pos.to,
       str,
-      'symbol',
+      's-id',
       {'aria-label': `${str}, an identifier`});
   },
   "s-id-var": function(pos: Loc, str: Name) {
@@ -324,7 +329,7 @@ const nodeTypes = {
       pos.from,
       pos.to,
       "!" + str,
-      'symbol',
+      's-id-var',
       {'aria-label': `${str}, an identifier`});
   },
   // "s-id-letrec": function(pos: Loc, id: Name, safe: boolean) {},
@@ -509,14 +514,21 @@ end
       pos.from,
       pos.to,
       id,
-      'symbol',
+      'a-name',
       // make sure that this matches the pedagogy used in classroom:
       // "variable", "identifier", "name", ...; other languages
       {'aria-label': `${id}, an identifier`});
   },
   // 'a-type-var': function(l: Loc, id: Name) {},
   // 'a-arrow': function(l: Loc, args: Ann[], ret: Ann, use_parens: boolean) {},
-  'a-arrow-argnames': function(l: Loc, args: AField[], ret: Ann, uses_parens: boolean) {},
+  'a-arrow-argnames': function(l: Loc, args: AField[], ret: Ann, uses_parens: boolean) {
+    console.log(arguments);
+    return new ArrowArgnames(l.from, l.to,
+      args,
+      ret,
+      uses_parens,
+      {'aria-label': `${args} to ${ret}`});
+  },
   // 'a-method': function(l: Let, args: Ann[], ret: Ann) {},
   // 'a-record': function(l: Loc, fields: AField[]) {},
   // 'a-tuple': function(l: Loc, fields: AField[]) {},
@@ -526,7 +538,14 @@ end
   // 'a-checked': function(checked: Ann, residual: Ann) {},
 
   // data AField
-  'a-field': function(l: Loc, name: string, ann: Ann) {},
+  'a-field': function(l: Loc, name: string, ann: Ann) {
+    console.log(arguments);
+    return new Literal(
+      l.from, l.to,
+      name + " :: " + ann.value, 'a-field',
+      {'aria-label': `${name}, annotated as a ${ann}`}
+    )
+  },
 }
 
 function idToLiteral(id: Bind): Literal {
