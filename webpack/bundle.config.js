@@ -14,9 +14,6 @@ var configs = [
       filename: "[name].js",
       library: ["CodeMirrorBlocks"]
     },
-    externals: {
-      'codemirror': 'CodeMirror',
-    }
   })
 ];
 
