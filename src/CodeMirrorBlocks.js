@@ -46,7 +46,7 @@ export default class CodeMirrorBlocks {
 
 module.exports.CodeMirrorBlocks = CodeMirrorBlocks;
 module.exports.Args = Args;
-module.exports.DropTarget = DropTarget;
+module.exports.DT = DropTarget;
 module.exports.AST = AST;
 module.exports.Nodes = Nodes;
 module.exports.Languages = Languages;
