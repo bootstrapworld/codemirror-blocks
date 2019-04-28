@@ -1,10 +1,10 @@
 import * as P from 'pretty-fast-pretty-printer';
 import React from 'react';
 import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
-import hashObject from 'object-hash';
 import Node from './components/Node';
 import Args from './components/Args';
 import {DropTarget, DropTargetSibling} from './components/DropTarget';
+import * as Spec from './nodeSpec';
 
 
 
@@ -35,8 +35,11 @@ export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
     super(from, to, 'unknown', ['elts'], options);
     this.elts = elts;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('elts')
+  ])
 
   toDescription(level){
     if((this.level - level) >= descDepth) return this.options['aria-label'];
@@ -70,8 +73,12 @@ export class FunctionApp extends ASTNode {
     super(from, to, 'functionApp', ['func', 'args'], options);
     this.func = func;
     this.args = args;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('func'),
+    Spec.list('args')
+  ])
 
   toDescription(level){
     // if it's the top level, enumerate the args
@@ -112,8 +119,12 @@ export class IdentifierList extends ASTNode {
     super(from, to, 'identifierList', ['ids'], options);
     this.kind = kind;
     this.ids = ids;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('kind'),
+    Spec.list('ids')
+  ])
 
   toDescription(level){
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
@@ -143,8 +154,12 @@ export class StructDefinition extends ASTNode {
     super(from, to, 'structDefinition', ['name', 'fields'], options);
     this.name = name;
     this.fields = fields;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('name'),
+    Spec.required('fields')
+  ])
 
   toDescription(level){
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
@@ -178,8 +193,12 @@ export class VariableDefinition extends ASTNode {
     super(from, to, 'variableDefinition', ['name', 'body'], options);
     this.name = name;
     this.body = body;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('name'),
+    Spec.required('body')
+  ])
 
   toDescription(level){
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
@@ -215,8 +234,12 @@ export class LambdaExpression extends ASTNode {
     super(from, to, 'lambdaExpression', ['args', 'body'], options);
     this.args = args;
     this.body = body;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('args'),
+    Spec.required('body')
+  ])
 
   toDescription(level){
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
@@ -251,8 +274,13 @@ export class FunctionDefinition extends ASTNode {
     this.name = name;
     this.params = params;
     this.body = body;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('name'),
+    Spec.required('params'),
+    Spec.required('body')
+  ])
 
   toDescription(level){
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
@@ -296,8 +324,12 @@ export class CondClause extends ASTNode {
     super(from, to, 'condClause', ['testExpr', 'thenExprs'], options);
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('testExpr'),
+    Spec.list('thenExprs')
+  ])
 
   toDescription(level){
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
@@ -334,8 +366,11 @@ export class CondExpression extends ASTNode {
   constructor(from, to, clauses, options={}) {
     super(from, to, 'condExpression', ['clauses'], options);
     this.clauses = clauses;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('clauses')
+  ])
 
   toDescription(level){
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
@@ -366,8 +401,13 @@ export class IfExpression extends ASTNode {
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('testExpr'),
+    Spec.required('thenExpr'),
+    Spec.required('elseExpr')
+  ])
 
   toDescription(level){
     if((this.level  - level) >= descDepth) return this.options['aria-label'];
@@ -420,8 +460,12 @@ export class Literal extends ASTNode {
     super(from, to, 'literal', [], options);
     this.value = value;
     this.dataType = dataType;
-    this.hash = hashObject(['literal', this.value, this.dataType]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('value'),
+    Spec.value('dataType')
+  ])
 
   pretty() {
     return withSchemeComment(P.txt(this.value), this.options.comment, this);
@@ -445,8 +489,11 @@ export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
     super(from, to, 'comment', [], options);
     this.comment = comment;
-    this.hash = hashObject(['comment', this.comment]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('comment')
+  ])
 
   pretty() {
     let words = this.comment.trim().split(/\s+/);
@@ -467,8 +514,12 @@ export class Blank extends ASTNode {
     super(from, to, 'blank', [], options);
     this.value = value || "...";
     this.dataType = dataType;
-    this.hash = hashObject(['literal', this.value, this.dataType]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('value'),
+    Spec.value('dataType')
+  ])
 
   pretty() {
     return P.txt(this.value);
@@ -491,8 +542,12 @@ export class Sequence extends ASTNode {
     super(from, to, 'sequence', ['exprs'], options);
     this.exprs = exprs;
     this.name = name;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('exprs'),
+    Spec.value('name')
+  ])
 
   toDescription(level) {
     if((this.level  - level) >= descDepth) return this.options['aria-label'];

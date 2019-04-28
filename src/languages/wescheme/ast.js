@@ -1,8 +1,9 @@
 import React from 'react';
 import Node from '../../components/Node';
 import * as P from 'pretty-fast-pretty-printer';
-
+import * as Spec from '../../nodeSpec';
 import {ASTNode, pluralize, descDepth} from '../../ast';
+
 
 export class LetLikeExpr extends ASTNode {
   constructor(from, to, form, bindings, expr, options={}) {
@@ -10,8 +11,13 @@ export class LetLikeExpr extends ASTNode {
     this.form = form;
     this.bindings = bindings;
     this.expr = expr;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('form'),
+    Spec.required('bindings'),
+    Spec.required('expr')
+  ])
 
   toDescription(level){
     if((this.level - level) >= descDepth) return this.options['aria-label'];
@@ -39,8 +45,13 @@ export class WhenUnless extends ASTNode {
     this.form = form;
     this.predicate = predicate;
     this.exprs = exprs;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('form'),
+    Spec.required('predicate'),
+    Spec.required('exprs')
+  ])
 
   toDescription(level){
     if((this.level - level) >= descDepth) return this.options['aria-label'];
