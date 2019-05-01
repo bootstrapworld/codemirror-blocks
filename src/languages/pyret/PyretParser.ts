@@ -17,6 +17,7 @@ import {Binop,
   Check,
   CheckTest,
   Construct,
+  Contract,
   Func,
   FunctionApp,
   IfPipe,
@@ -235,7 +236,7 @@ const nodeTypes = {
   "s-contract": function(l: Loc, name: Name, _params: Name[], ann: Ann) {
     console.log(arguments);
     // TODO: don't know what params do, using binding for now
-    return new Bind(l.from, l.to, name, ann, {'aria-label': `contract for ${name}: ${ann}`});
+    return new Contract(l.from, l.to, name, ann, {'aria-label': `contract for ${name}: ${ann}`});
   },
   // "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {},
   // "s-assign": function(l: Loc, id: Name, value: Expr) {},

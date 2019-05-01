@@ -834,3 +834,29 @@ export class ArrowArgnames extends ASTNode {
     )
   }
 }
+
+export class Contract extends ASTNode {
+  ann: ASTNode;
+  name: Literal;
+
+  constructor(from, to, id: Literal, ann, options = {}) {
+    super(from, to, 'contract', ['name', 'ann'], options);
+    this.name = id;
+    this.ann = ann;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `a contract with ${this.name.describe(level)} and ${this.ann.describe(level)}`;
+  }
+
+  pretty() {
+    return P.horz(this.name, P.txt(" :: "), this.ann);
+  }
+
+  render(props) {
+    return <Node node={this} {...props}>
+      <span className="blocks-operator">{this.name.reactElement()} :: {this.ann.reactElement()}</span>
+    </Node>
+  }
+}
