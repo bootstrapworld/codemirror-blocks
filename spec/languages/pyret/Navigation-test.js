@@ -575,4 +575,38 @@ end`);
     test_get('row["three word column"]');
     test_get('row[0]');
   });
+  describe("contracts", function () {
+    beforeEach(function () {
+      this.cmb.setValue("is-fixed :: (animal :: Row) -> Boolean");
+      let ast = this.cmb.getAst();
+      this.literal1 = ast.rootNodes[0];
+      this.name = this.literal1.name;
+      this.ann = this.literal1.ann;
+    });
+    it('should activate the name and then the annotation when down is pressed', async function () {
+      click(this.literal1);
+      await wait(DELAY);
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).toBe(this.name);
+      expect(this.activeNode()).not.toBe(this.ann);
+
+      keyDown("Enter");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
+
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      expect(this.activeNode()).not.toBe(this.literal1);
+      expect(this.activeNode()).not.toBe(this.literal1.name);
+      expect(this.activeNode()).toBe(this.literal1.ann);
+
+      keyDown("Enter");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
+    });
+  });
 });
