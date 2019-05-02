@@ -822,13 +822,11 @@ export class ArrowArgnames extends ASTNode {
 
   render(props) {
     let args = this.args.map(e => e.reactElement());
-    let inner = <>({args})&nbsp;->&nbsp;{this.ret.reactElement()}</>;
+    let inner = <>({args})&nbsp;&rarr;&nbsp;{this.ret.reactElement()}</>;
     return (
       <Node node={this} {...props}>
-        <div className="blocks-operator">
-          <div className="blocks-cond-result">
-            {this.uses_parens? <> ( {inner}) </> : inner}
-          </div>
+        <div className="blocks-cond-result">
+          {this.uses_parens? <> ( {inner}) </> : inner}
         </div>
       </Node>
     )
