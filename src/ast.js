@@ -16,6 +16,8 @@ export function pluralize(noun, set) {
 
 export const descDepth = 1;
 
+export const prettyPrintingWidth = 80;
+
 // This is the root of the *Abstract Syntax Tree*.  parse implementations are
 // required to spit out an `AST` instance.
 export class AST {
@@ -106,7 +108,7 @@ export class AST {
   }
 
   validateNode(node) {
-    const astFieldNames = ["from", "to", "type", "keys", "options", "spec", "__alreadyValidated", "element"];
+    const astFieldNames = ["from", "to", "type", "options", "spec", "__alreadyValidated", "element"];
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames = ["id", "parent", "path", "level", "nid", "prev", "next", "hash", "aria-setsize", "aria-posinset"];
     if (!node.__alreadyValidated) {
@@ -121,11 +123,8 @@ export class AST {
     if (typeof node.type !== "string") {
       throw new Error(`ASTNodes must each have a fixed 'type', which must be a string.`);
     }
-    if (!(node.keys instanceof Array)) {
-      throw new Error(`ASTNode.keys is required and must be an array of strings. This rule was broken by ${node.type}.`);
-    }
     if (typeof node.options !== "object") {
-      throw new Error(`ASTNode.keys is required and must be an object. This rule was broken by ${node.type}.`);
+      throw new Error(`ASTNode.options is optional, but if provided it must be an object. This rule was broken by ${node.type}.`);
     }
     if (!node.from || !node.to
         || typeof node.from.line !== "number" || typeof node.from.ch !== "number"
@@ -317,7 +316,7 @@ export class AST {
 // Every node in the AST inherits from the `ASTNode` class, which is used to
 // house some common attributes.
 export class ASTNode {
-  constructor(from, to, type, keys, options) {
+  constructor(from, to, type, options) {
 
     // The `from` and `to` attributes are objects containing the start and end
     // positions of this node within the source document. They are in the format
@@ -329,19 +328,6 @@ export class ASTNode {
     // string sepcifying what type of node it is. This helps with debugging and
     // with writing renderers.
     this.type = type;
-
-    // A node can contain other nodes in its fields. For example, a
-    // function call node may have a field called `func` that contains
-    // the function expression being called, and a field called `args`
-    // that contains an Array of the argument expressions. Fields like
-    // `func` and `args` that can contain other nodes must be listed
-    // under `keys`. In this example, `keys === ["func", "args"]`.
-    // Each key must name a field that contains one of the following:
-    //
-    // 1. an ASTNode
-    // 2. An Array of ASTNodes
-    // 3. null (this is to allow an optional ASTNode)
-    this.keys = keys;
 
     // Every node also has an `options` attribute, which is just an open ended
     // object that you can put whatever you want in it. This is useful if you'd
@@ -362,6 +348,11 @@ export class ASTNode {
 
     // Make the spec more easily available.
     this.spec = this.constructor.spec;
+    // Internal use only (in actions/edits.js)
+    this._clone = () => this.spec.clone(this);
+    this._insertChild = (pos, text) => this.spec.insertChild(this, pos, text);
+    this._deleteChild = (child) => this.spec.deleteChild(this, child);
+    this._replaceChild = (child, text) => this.spec.replaceChild(this, child, text);
   }
 
   toDescription(_level){
@@ -369,7 +360,7 @@ export class ASTNode {
   }
 
   toString() {
-    return this.pretty().display(80).join("\n");
+    return this.pretty().display(prettyPrintingWidth).join("\n");
   }
 
   // Produces an iterator over the children of this node.

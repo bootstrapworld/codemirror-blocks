@@ -33,7 +33,7 @@ function withSchemeComment(doc, comment, container) {
 
 export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
-    super(from, to, 'unknown', ['elts'], options);
+    super(from, to, 'unknown', options);
     this.elts = elts;
   }
 
@@ -68,9 +68,32 @@ export class Unknown extends ASTNode {
   }
 }
 
+export class FakeInsertNode extends ASTNode {
+  constructor(from, to, text, options={}) {
+    super(from, to, 'fakeInsertNode', options);
+    this.text = text;
+  }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('text')
+  ])
+
+  toDescription(level) {
+    return "";
+  }
+
+  pretty() {
+    return P.txt(this.text);
+  }
+
+  render(props) {
+    console.warn("FakeInsertNode: didn't expect to be rendered!");
+  }
+}
+
 export class FunctionApp extends ASTNode {
   constructor(from, to, func, args, options={}) {
-    super(from, to, 'functionApp', ['func', 'args'], options);
+    super(from, to, 'functionApp', options);
     this.func = func;
     this.args = args;
   }
@@ -116,7 +139,7 @@ export class FunctionApp extends ASTNode {
 
 export class IdentifierList extends ASTNode {
   constructor(from, to, kind, ids, options={}) {
-    super(from, to, 'identifierList', ['ids'], options);
+    super(from, to, 'identifierList', options);
     this.kind = kind;
     this.ids = ids;
   }
@@ -151,7 +174,7 @@ export class IdentifierList extends ASTNode {
 
 export class StructDefinition extends ASTNode {
   constructor(from, to, name, fields, options={}) {
-    super(from, to, 'structDefinition', ['name', 'fields'], options);
+    super(from, to, 'structDefinition', options);
     this.name = name;
     this.fields = fields;
   }
@@ -190,7 +213,7 @@ export class StructDefinition extends ASTNode {
 
 export class VariableDefinition extends ASTNode {
   constructor(from, to, name, body, options={}) {
-    super(from, to, 'variableDefinition', ['name', 'body'], options);
+    super(from, to, 'variableDefinition', options);
     this.name = name;
     this.body = body;
   }
@@ -231,7 +254,7 @@ export class VariableDefinition extends ASTNode {
 
 export class LambdaExpression extends ASTNode {
   constructor(from, to, args, body, options={}) {
-    super(from, to, 'lambdaExpression', ['args', 'body'], options);
+    super(from, to, 'lambdaExpression', options);
     this.args = args;
     this.body = body;
   }
@@ -270,7 +293,7 @@ export class LambdaExpression extends ASTNode {
 
 export class FunctionDefinition extends ASTNode {
   constructor(from, to, name, params, body, options={}) {
-    super(from, to, 'functionDefinition', ['name', 'params', 'body'], options);
+    super(from, to, 'functionDefinition', options);
     this.name = name;
     this.params = params;
     this.body = body;
@@ -321,7 +344,7 @@ export class FunctionDefinition extends ASTNode {
 
 export class CondClause extends ASTNode {
   constructor(from, to, testExpr, thenExprs, options={}) {
-    super(from, to, 'condClause', ['testExpr', 'thenExprs'], options);
+    super(from, to, 'condClause', options);
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
   }
@@ -364,7 +387,7 @@ export class CondClause extends ASTNode {
 
 export class CondExpression extends ASTNode {
   constructor(from, to, clauses, options={}) {
-    super(from, to, 'condExpression', ['clauses'], options);
+    super(from, to, 'condExpression', options);
     this.clauses = clauses;
   }
 
@@ -397,7 +420,7 @@ export class CondExpression extends ASTNode {
 
 export class IfExpression extends ASTNode {
   constructor(from, to, testExpr, thenExpr, elseExpr, options={}) {
-    super(from, to, 'ifExpression', ['testExpr', 'thenExpr', 'elseExpr'], options);
+    super(from, to, 'ifExpression', options);
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
@@ -457,7 +480,7 @@ export class IfExpression extends ASTNode {
 
 export class Literal extends ASTNode {
   constructor(from, to, value, dataType='unknown', options={}) {
-    super(from, to, 'literal', [], options);
+    super(from, to, 'literal', options);
     this.value = value;
     this.dataType = dataType;
   }
@@ -487,7 +510,7 @@ export class Literal extends ASTNode {
 
 export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
-    super(from, to, 'comment', [], options);
+    super(from, to, 'comment', options);
     this.comment = comment;
   }
 
@@ -511,7 +534,7 @@ export class Comment extends ASTNode {
 
 export class Blank extends ASTNode {
   constructor(from, to, value, dataType='blank', options={}) {
-    super(from, to, 'blank', [], options);
+    super(from, to, 'blank', options);
     this.value = value || "...";
     this.dataType = dataType;
   }
@@ -539,7 +562,7 @@ export class Blank extends ASTNode {
 
 export class Sequence extends ASTNode {
   constructor(from, to, exprs, name, options={}) {
-    super(from, to, 'sequence', ['exprs'], options);
+    super(from, to, 'sequence', options);
     this.exprs = exprs;
     this.name = name;
   }

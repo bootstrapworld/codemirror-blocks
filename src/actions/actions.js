@@ -1,12 +1,32 @@
-import {withDefaults, say, poscmp, copyToClipboard, pasteFromClipboard} from './utils';
-import {commitChanges} from './codeMirror';
-import SHARED from './shared';
-import {playSound, WRAP} from './sound';
-import {store} from './store';
+import {withDefaults, say, poscmp} from '../utils';
+import SHARED from '../shared';
+import {store} from '../store';
+import {playSound, WRAP} from '../sound';
+import {performEdits, edit_insert, edit_delete, edit_replace, copyTextWithPadding} from './edit';
+
 
 /* This file is for _shared_ actions */
 
 let queuedAnnouncement = null;
+
+export function deleteSelectedNodes(id, selectionEditor) {
+  return (dispatch, getState) => {
+    const {ast, selections} = getState();
+    const selectedNodes = selectionEditor(selections).map(ast.getNodeById);
+    deleteNodes(selectedNodes);
+  }
+}
+
+function deleteNodes(nodes) {
+  const {ast, focusId} = store.getState();
+  if (nodes.length === 0) {
+    return;
+  }
+  performEdits(nodes.map(node => {
+    edit_delete(node, 'cmb:delete-node');
+  }));
+  dispatch({type: 'SET_SELECTIONS', selections: []});
+}
 
 export function deleteNodes(id, selectionEditor) {
   return (dispatch, getState) => {
@@ -16,7 +36,7 @@ export function deleteNodes(id, selectionEditor) {
     // the next deletion still has a valid pos
     nodeSelections.sort((a, b) => poscmp(b.from, a.from));
     if (nodeSelections.length === 0) {
-      return; // Not much to do.
+      return;
     }
     commitChanges(
       cm => () => {
@@ -58,7 +78,7 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
     let value = null;
     if (isDropTarget) {
       let needsPrecedingNewline = !!(srcNode && srcNode.options.comment);
-      value = addWhitespacePadding(ast, content, destFrom, destTo, needsPrecedingNewline);
+      value = copyTextWithPadding(ast, destFrom, destTo, needsPrecedingNewline);
     } else {
       value = content;
     }
@@ -84,15 +104,15 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
 export function copySelectedNodes(id, selectionEditor) {
   return (dispatch, getState) => {
     const {ast, selections} = getState();
-    const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
-    if (nodeSelections.length === 0) {
-      return; // Not much to do.
-    }
-    copyNodes(nodeSelections);
+    const selectedNodes = selectionEditor(selections).map(ast.getNodeById);
+    copyNodes(selectedNodes);
   }
 }
 
 export function copyNodes(nodes) {
+  if (nodes.length === 0) {
+    return;
+  }
   const {ast, focusId} = store.getState();
   // Pretty-print each copied node. Join them with spaces, or newlines for
   // commented nodes (to prevent a comment from attaching itself to a
@@ -134,7 +154,6 @@ export function pasteNodes(id, isBackward) {
     }
 
     pasteFromClipboard(text => {
-      text = addWhitespacePadding(ast, text, from, to, false /*handled by copy*/);
       commitChanges(
         cm => () => {
           cm.replaceRange(text, from, to, 'cmb:paste');
@@ -218,38 +237,16 @@ SHARED.cm.setCursor({line: -1, ch: 0});
   };
 }
 
-// If deleting a block would leave behind excessive whitespace, delete some of
-// that whitespace.
-export function removeClearedSpace(from, to) {
-  let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
-  let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
-  if (prevChar == " " && (nextChar == " " || nextChar == "")) {
-    // Delete an excess space.
-    return {from: {line: from.line, ch: from.ch - 1}, to: to};
-  } else if (nextChar == " " && prevChar == "") {
-    // Delete an excess space.
-    return {from: from, to: {line: to.line, ch: to.ch + 1}};
-  } else {
-    return {from: from, to: to};
-  }
+function copyToClipboard(text) {
+  SHARED.buffer.value = text;
+  SHARED.buffer.select();
+  document.execCommand('copy');
 }
 
-// Pad `text` with spaces as needed, when a block will be inserted.
-export function addWhitespacePadding(ast, text, from, to, needsPrecedingNewline) {
-  // We may need to insert a newline to make sure that comments don't end up
-  // getting associated with the wrong node, and we may need to insert a space
-  // to ensure that different tokens don't end up getting glommed together.
-  let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
-  let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
-  if ((ast.followsComment(from) && prevChar != "") || needsPrecedingNewline) {
-    text = "\n" + text;
-  } else if (!(prevChar == "" || prevChar == " ")) {
-    text = " " + text;
-  }
-  if (ast.precedesComment(to) && nextChar != "") {
-    text = text + "\n";
-  } else if (!(nextChar == "" || nextChar == " ")) {
-    text = text + " ";
-  }
-  return text;
+function pasteFromClipboard(done) {
+  SHARED.buffer.value = '';
+  SHARED.buffer.focus();
+  setTimeout(() => {
+    done(SHARED.buffer.value);
+  }, 50);
 }

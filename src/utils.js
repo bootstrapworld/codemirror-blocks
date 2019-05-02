@@ -17,6 +17,25 @@ export function maxpos(a, b) {
   return poscmp(a, b) >= 0 ? a : b;
 }
 
+// srcRangeIncludes(
+//   outerRange: {from: Pos, to: Pos},
+//   innerRange: {from: Pos, to: Pos})
+// -> boolean
+//
+// Returns true iff innerRange is contained within outerRange.
+export function srcRangeIncludes(outerRange, innerRange) {
+  return poscmp(outerRange.from, innerRange.from) <= 0
+    && poscmp(innerRange.to, outerRange.to) <= 0;
+}
+
+// srcRangeContains(range: {from: Pos, to: Pos}, pos: Pos) -> boolean
+//
+// Returns true iff `pos` is inside of `range`.
+// (Being on the boundary counts as inside.)
+export function srcRangeContains(range, pos) {
+  return poscmp(range.from, pos) <= 0 && poscmp(pos, range.to);
+}
+
 export function skipWhile(skipper, start, next) {
   let now = start;
   while (skipper(now)) {
@@ -29,6 +48,10 @@ export function assert(x) {
   if (!x) {
     throw new Error("assertion fails");
   }
+}
+
+export function warn(origin, message) {
+  console.warn(`CodeMirrorBlocks - ${origin} - ${message}`);
 }
 
 export function partition(arr, f) {
@@ -60,20 +83,6 @@ export function partition(arr, f) {
 //     if (callNow) func.apply(context, args);
 //   };
 // }
-
-export function copyToClipboard(text) {
-  SHARED.buffer.value = text;
-  SHARED.buffer.select();
-  document.execCommand('copy');
-}
-
-export function pasteFromClipboard(done) {
-  SHARED.buffer.value = '';
-  SHARED.buffer.focus();
-  setTimeout(() => {
-    done(SHARED.buffer.value);
-  }, 50);
-}
 
 export function isControl(e) {
   return ISMAC ? e.metaKey : e.ctrlKey;

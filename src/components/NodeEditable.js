@@ -6,8 +6,9 @@ import ContentEditable from './ContentEditable';
 import {commitChanges} from '../codeMirror';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {activate, addWhitespacePadding} from '../actions';
+import {activate} from '../actions';
 import {say} from '../utils';
+
 
 class NodeEditable extends Component {
   static defaultProps = {
@@ -45,7 +46,6 @@ class NodeEditable extends Component {
         return;
       }
       const {from, to} = getNodeLocation(ast, node);
-      const value = addWhitespacePadding(ast, this.props.value, from, to);
       commitChanges(
         cm => () => {
           cm.replaceRange(value, from, to, 'cmb:edit');

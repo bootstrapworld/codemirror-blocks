@@ -1,3 +1,4 @@
+import {warn, srcRangeContains} from './utils';
 import {Blank} from './nodes';
 import {ASTNode} from './ast';
 import hashObject from 'object-hash';
@@ -31,10 +32,6 @@ class NodeSpec {
     }
   }
 
-  // NOTE(Justin): This assumes that nodes have a `.hash` field (see
-  // HashIterator below), and that they have a `.type`. These assumptions couple
-  // ast.js with this file, so that this isn't _quite_ an independent library
-  // (though it's fairly close).
   hash(node) {
     let hashes = new HashIterator(node, this);
     return hashObject([node.type, [...hashes]]);
@@ -46,6 +43,74 @@ class NodeSpec {
 
   fieldNames() {
     return this.childSpecs.map((spec) => spec.fieldName);
+  }
+
+  clone(oldNode) {
+    let newNode = new ASTNode(oldNode.from, oldNode.to, oldNode.type, oldNode.options);
+    for (const spec of this.childSpecs) {
+      if (spec instanceof Required || spec instanceof Optional) {
+        if (oldNode[spec.fieldName]) {
+          newNode[spec.fieldName] = oldNode[spec.fieldName].clone();
+        } else {
+          newNode[spec.fieldName] = null;
+        }
+      } else if (spec instanceof Value) {
+        newNode[spec.fieldName] = oldNode[spec.fieldName];
+      } else if (spec instanceof List) {
+        newNode[spec.fieldName] = oldNode[spec.fieldName]
+          .map(node => node.clone());
+      }
+    }
+    newNode.id = oldNode.id;
+    newNode.hash = oldNode.hash;
+    newNode.spec = oldNode.spec;
+  }
+
+  insertChild(parent, pos, text) {
+    let inserted = false;
+    for (const spec of this.childSpecs) {
+      if (spec instanceof List) {
+        $$$TODO
+      }
+    }
+    if (!inserted) {
+      warn('insertChild', "Failed to find List to insert child into.");
+    }
+  }
+
+  deleteChild(parent, child) {
+    for (const spec of this.childSpecs) {
+      let field = parent[spec.fieldName];
+      if (spec instanceof Required && field.id === child.id) {
+        parent[spec.fieldName] = new Blank(child.from, child.to);
+      } else if (spec instanceof Optional && field && field.id === child.id) {
+        parent[spec.fieldName] = null;
+      } else if (spec instanceof List) {
+        for (let i in field) {
+          if (field[i].id === child.id) {
+            field.splice(i, 1); // remove the i'th element.
+          }
+        }
+      }
+    }
+  }
+
+  replaceChild(parent, child, text) {
+    let newNode = new FakeInsertNode(child.from, child.to, text);
+    for (const spec of this.childSpecs) {
+      let field = parent[spec.fieldName];
+      if (spec instanceof Required && field.id === child.id) {
+        parent[spec.fieldName] = newNode;
+      } else if (spec instanceof Optional && field && field.id === child.id) {
+        parent[spec.fieldName] = newNode;
+      } else if (spec instanceof List) {
+        for (let i in field) {
+          if (field[i].id === child.id) {
+            field[i] = newNode;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -105,10 +170,6 @@ class Required extends ChildSpec {
       throw new Error(`Expected the required field '${this.fieldName}' of '${parent.type}' to contain an ASTNode.`);
     }
   }
-
-  remove(child, parent) {
-    parent[this.fieldName] = new Blank(child.from, child.to);
-  }
 }
 
 class Optional extends ChildSpec {
@@ -122,10 +183,6 @@ class Optional extends ChildSpec {
     if (true || child !== null && !(child instanceof ASTNode)) {
       throw new Error(`Expected the optional field '${this.fieldName}' of '${parent.type}' to contain an ASTNode or null.`);
     }
-  }
-
-  remove(child, parent) {
-    parent[this.fieldName] = null;
   }
 }
 
@@ -148,16 +205,6 @@ class List extends ChildSpec {
     if (!valid) {
       throw new Error(`Expected the listy field '${this.fieldName}' of '${parent.type}' to contain an array of ASTNodes.`);
     }
-  }
-
-  remove(child, parent) {
-    let array = parent[this.fieldName];
-    for (let i in array) {
-      if (array[i] === child) {
-        var index = i;
-      }
-    }
-    array.splice(index, 1); // delete the index'th element.
   }
 }
 
