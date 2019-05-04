@@ -17,10 +17,12 @@ export default class Toolbar extends Component {
   static propTypes = {
     primitives: PropTypes.instanceOf(PrimitiveGroup),
     languageId: PropTypes.string, // used to find the .blocks-language-{languageId} CSS class
+    blockMode: PropTypes.boolean,
   }
 
   static defaultProps = {
-    primitives: null
+    primitives: null,
+    blockMode: false
   }
 
   state = {
@@ -125,6 +127,7 @@ export default class Toolbar extends Component {
           <input type="search"
             id="search_box"
             placeholder="Search functions"
+            disabled={!this.props.blockMode}
             className="form-control"
             value={this.state.search}
             onKeyDown={this.handleKeyDown}

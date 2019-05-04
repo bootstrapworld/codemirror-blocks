@@ -163,7 +163,8 @@ export default class ToggleEditor extends React.Component {
         <ToggleButton setBlockMode={this.handleToggle} blockMode={this.state.blockMode} />
           <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
             <Toolbar primitives={this.parser.primitives}
-                     languageId={this.language.id} />
+                     languageId={this.language.id}
+                     blockMode={this.state.blockMode} />
           </div>
           <div className="col-xs-9 codemirror-pane">
             {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
