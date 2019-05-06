@@ -18,6 +18,7 @@ import {Binop,
   CheckTest,
   Construct,
   Contract,
+  DataField,
   Func,
   FunctionApp,
   IfPipe,
@@ -27,6 +28,7 @@ import {Binop,
   Let,
   LoadTable,
   Paren,
+  Reactor,
   Tuple,
   TupleGet,
   Var,
@@ -406,7 +408,10 @@ const nodeTypes = {
       pos.from, pos.to, name, body, keyword_check, { 'aria-label': ((name != undefined)? `${name} `: "") + `checking ${body}`}
     );
   },
-  // 's-reactor': function(l: Loc, fields: Member[]) {},
+  's-reactor': function(l: Loc, fields: Member[]) {
+    if (DEBUG) console.log(arguments);
+    return new Reactor(l.from, l.to, fields, {'aria-label': `reactor with fields ${fields}`});
+  },
   // 's-table-extend': function(l: LoadTable, column_binds: ColumnBinds, extensions: TableExtendField[]) {},
   // 's-table-update': function(l: Loc, column_binds: ColumnBinds, updates: Member[]) {},
   // 's-table-select': function(l: Loc, columns: Name[], table: Expr) {},
@@ -440,7 +445,11 @@ const nodeTypes = {
   // 's-tuple-bind': function(l: LoadTable, fields: Bind[], as_name: Bind | null) {},
 
   // data Member
-  // 's-data-field': function(l: Loc, name: string, value: Expr) {},
+  's-data-field': function(l: Loc, name: string, value: Expr) {
+    if(DEBUG) console.log(arguments);
+    return new DataField(l.from, l.to, name, value,
+      {'aria-label': `${name}, a data field, with value ${value}`});
+  },
   // 's-mutable-field': function(l: Loc, name: string, ann: Ann, value: Expr) {},
   // 's-method-field': function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
 

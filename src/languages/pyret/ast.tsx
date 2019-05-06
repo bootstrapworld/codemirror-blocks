@@ -882,3 +882,67 @@ export class Include extends ASTNode {
     </Node>
   }
 }
+
+export class DataField extends ASTNode {
+  name: string;
+  value: ASTNode;
+
+  constructor(from, to, name: string, value, options = {}) {
+    super(from, to, 'data-field', ['value'], options);
+    this.name = name;
+    this.value = value;
+    super.hash = hashObject(["DataField", this.name, this.value.hash]);
+  }
+
+  longDescription(level) {
+    return `a data field with name ${this.name} and value ${this.value.describe(level)}`;
+  }
+
+  pretty() {
+    return P.horz(this.name, P.txt(": "), this.value.pretty());
+  }
+
+  render(props) {
+    return <Node node={this} {...props}>
+      <span className="blocks-operator">{this.name}:&nbsp;{this.value.reactElement()}</span>
+    </Node>
+  }
+}
+
+export class Reactor extends ASTNode {
+  fields: ASTNode[];
+  
+  constructor(from, to, fields, options) {
+    super(from, to, 'reactor', ['fields'], options);
+    this.fields = fields;
+    super.hash = hashObject(['reactor', ...(this.fields.map(c => c.hash))]);
+  }
+
+  longDescription(level) {
+    return `${enumerateList(this.fields, level)} in a reactor`;
+  }
+
+  pretty() {
+    let prefix = "reactor:";
+    let suffix = "end";
+    let branches = P.sepBy(",", ",", this.fields);
+    return P.ifFlat(
+      P.horz(prefix, " ", branches, " ", suffix),
+      P.vert(prefix, P.horz(INDENT, branches), suffix)
+    );
+  }
+
+  render(props) {
+    let branches = this.fields.map((branch, index) => branch.reactElement({key: index}));
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          reactor:
+        </span>
+        <div className="blocks-cond-table">
+          {branches}
+        </div>
+      </Node>
+    );
+  }
+}
