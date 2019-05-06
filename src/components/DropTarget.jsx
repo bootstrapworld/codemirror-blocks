@@ -7,7 +7,7 @@ import SHARED from '../shared';
 import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
-import {dropNode} from '../actions';
+import {dropOntoDropTarget} from '../actions';
 import BlockComponent from './BlockComponent';
 import {NodeContext} from './Node';
 import uuidv4 from 'uuid/v4';
@@ -128,8 +128,8 @@ const mapDispatchToProps2 = (dispatch, {id}) => ({
 @connect(mapStateToProps2, mapDispatchToProps2)
 @DropNodeTarget(function(monitor) {
   let loc = this.getLocation();
-  let dest = {from: loc, to: loc, isDropTarget: true};
-  return this.props.dispatch(dropNode(monitor.getItem(), dest));
+  let parent = this.context.node;
+  return this.props.dispatch(dropOntoDropTarget(monitor.getItem(), loc, parent));
 })
 class ActualDropTarget extends BlockComponent {
 

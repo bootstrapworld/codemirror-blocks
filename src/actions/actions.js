@@ -1,8 +1,8 @@
-import {withDefaults, say, poscmp} from '../utils';
+import {withDefaults, say, poscmp, srcRangeContains} from '../utils';
 import SHARED from '../shared';
 import {store} from '../store';
 import {playSound, WRAP} from '../sound';
-import {performEdits, edit_insert, edit_delete, edit_replace, copyTextWithPadding} from './edit';
+import {performEdits, edit_insert, edit_delete, edit_replace, padCopiedText} from './edit';
 
 
 /* This file is for _shared_ actions */
@@ -13,91 +13,60 @@ export function deleteSelectedNodes(id, selectionEditor) {
   return (dispatch, getState) => {
     const {ast, selections} = getState();
     const selectedNodes = selectionEditor(selections).map(ast.getNodeById);
-    deleteNodes(selectedNodes);
+    deleteNodes(selectedNodes)(dispatch, getState);
   }
 }
 
 function deleteNodes(nodes) {
-  const {ast, focusId} = store.getState();
-  if (nodes.length === 0) {
-    return;
-  }
-  performEdits(nodes.map(node => {
-    edit_delete(node, 'cmb:delete-node');
-  }));
-  dispatch({type: 'SET_SELECTIONS', selections: []});
-}
-
-export function deleteNodes(id, selectionEditor) {
   return (dispatch, getState) => {
-    const {ast, selections} = getState();
-    const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
-    // we delete from the end of the document to the beginning so that
-    // the next deletion still has a valid pos
-    nodeSelections.sort((a, b) => poscmp(b.from, a.from));
-    if (nodeSelections.length === 0) {
+    const {ast, focusId} = store.getState();
+    if (nodes.length === 0) {
       return;
     }
-    commitChanges(
-      cm => () => {
-        for (const node of nodeSelections) {
-          var {from, to} = node.srcRange();
-          var {from, to} = removeClearedSpace(from, to);
-          cm.replaceRange('', from, to, 'cmb:delete-nodes');
-        }
-      },
-      () => {},
-      () => {},
-    );
-    // since we sort in descending order, this is the last one in the array
-    const firstNode = nodeSelections.pop();
+    performEdits('cmb:delete-node', ast, nodes.map(node => edit_delete(node)));
     dispatch({type: 'SET_SELECTIONS', selections: []});
-  };
+  }
 }
 
-export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDropTarget}) {
+
+export function dropOntoNode(src, node) {
+  let range = node.srcRange();
+  dropNode(src, {type: 'node', from: range.from, to: range.to, node: node});
+}
+
+export function dropOntoDropTarget(src, pos, parentNode) {
+  dropNode(src, {type: 'dropTarget', from: pos, to: pos, parentNode: parentNode});
+}
+
+export function dropOntoTopLevel(src, pos) {
+  dropNode(src, {type: 'topLevel', from: pos, to: pos});
+}
+
+function dropNode(src, dest) {
   return (dispatch, getState) => {
-    if (!destFrom) {
-      // TODO: Where are these spurious events coming from?
-      return;
-    }
+    const {id: srcId, content} = src;
     const {ast} = getState();
-    // srcNode is null if there's nothing to delete; e.g. if dragged from toolbar
-    const srcNode = srcId ? ast.getNodeById(srcId) : null;
-    if (srcNode && poscmp(destFrom, srcNode.from) > 0 && poscmp(destTo, srcNode.to) < 0) {
+    const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
+
+    // If we dropped the node _inside_ where we dragged it from, do nothing.
+    if (srcNode && srcRangeIncludes(srcNode.srcRange(), dest)) {
       return;
     }
-
-    // Drag the pretty-printed source node, comments and all.
-    if (srcNode) {
-      var {from: srcFrom, to: srcTo} = srcNode.srcRange();
-      var {from: srcFrom, to: srcTo} = removeClearedSpace(srcFrom, srcTo);
-      content = srcNode.toString();
+    let edits = [];
+    // Delete the dragged node, unless it came from the toolbar.
+    if (srcNode !== null) {
+      edits.push(edit_delete(srcNode));
     }
-
-    let value = null;
-    if (isDropTarget) {
-      let needsPrecedingNewline = !!(srcNode && srcNode.options.comment);
-      value = copyTextWithPadding(ast, destFrom, destTo, needsPrecedingNewline);
-    } else {
-      value = content;
+    // Insert or replace at the drop location, depending on what we dropped it on.
+    if (dest.type === 'node') {
+      edits.push(edit_replace(content, dest.node));
+    } else if (dest.type === 'dropTarget') {
+      edits.push(edit_insert(content, dest.from, dest.parentNode));
+    } else if (dest.type === 'topLevel') {
+      edits.push(edit_insert(content, dest.from));
     }
-
-    commitChanges(
-      cm => () => {
-        if (srcNode === null) {
-          cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
-        } else if (poscmp(srcFrom, destFrom) < 0) {
-          cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
-          cm.replaceRange('', srcFrom, srcTo, 'cmb: drop-node');
-        } else {
-          cm.replaceRange('', srcFrom, srcTo, 'cmb:drop-node');
-          cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
-        }
-      },
-      () => {},
-      () => {}
-    );
+    // Perform the edits.
+    performEdits('cmb:drop-node', ast, edits);
   };
 }
 
@@ -109,7 +78,7 @@ export function copySelectedNodes(id, selectionEditor) {
   }
 }
 
-export function copyNodes(nodes) {
+function copyNodes(nodes) {
   if (nodes.length === 0) {
     return;
   }
@@ -137,35 +106,30 @@ export function pasteNodes(id, isBackward) {
   return (dispatch, getState) => {
     const {ast, selections} = getState();
     const node = ast.getNodeById(id);
-    let from = null, to = null;
-    let focusTarget = null;
     let range = node.srcRange(); // Include any comments the node has.
     if (selections.includes(id)) {
       // NOTE(Oak): overwrite in this case
-      from = range.from;
-      to = range.to;
-      focusTarget = 'self';
+      var edit = (text) => edit_replace(text, node);
     } else {
       // NOTE(Oak): otherwise, we do not overwrite
       const pos = isBackward ? range.from : range.to;
-      focusTarget = isBackward ? 'back' : 'next';
-      from = pos;
-      to = pos;
+      var edit = (text) => edit_insert(text, pos, node.parent);
     }
-
     pasteFromClipboard(text => {
-      commitChanges(
-        cm => () => {
-          cm.replaceRange(text, from, to, 'cmb:paste');
-        },
-        () => {},
-        () => {}
-      );
+      performEdits('cmb:paste', ast, [edit(text)]);
       // NOTE(Oak): always clear selections. Should this be a callback instead?
       dispatch({type: 'SET_SELECTIONS', selections: []});
     });
-
   };
+}
+
+export function editNode(text, node, onSuccess, onError) {
+  return (dispatch, getState) => {
+    const {ast, selections} = getState();
+    const node = ast.getNodeById(id);
+    const edits = [edit_replace(text, node)];
+    performEdits('cmb:edit', ast, edits, onSuccess, onError);
+  }
 }
 
 export function activate(id, options) {

@@ -3,10 +3,9 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import ContentEditable from './ContentEditable';
-import {commitChanges} from '../codeMirror';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {activate} from '../actions';
+import {activate, editNode} from '../actions';
 import {say} from '../utils';
 
 
@@ -28,8 +27,8 @@ class NodeEditable extends Component {
     if (value === null) {
       dispatch((_, getState) => {
         const {ast} = getState();
-        const {from, to} = getNodeLocation(ast, node);
-        this.cachedValue = SHARED.cm.getRange(from, to);
+        const node = getNode(ast, node);
+        this.cachedValue = SHARED.cm.getRange(node.from, node.to);
       });
     }
   }
@@ -37,7 +36,7 @@ class NodeEditable extends Component {
   saveEdit = e => {
     e.stopPropagation();
     const {node, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
-    dispatch((_, getState) => {
+    dispatch((dispatch, getState) => {
       const {ast, focusId} = getState();
 
       if (this.props.value === null || this.props.value === this.cachedValue) {
@@ -45,30 +44,27 @@ class NodeEditable extends Component {
         dispatch(activate(focusId, true));
         return;
       }
-      const {from, to} = getNodeLocation(ast, node);
-      commitChanges(
-        cm => () => {
-          cm.replaceRange(value, from, to, 'cmb:edit');
-        },
-        ({firstNewId}) => {
-          if (firstNewId !== null) {
-            dispatch(activate(firstNewId, {allowMove: true}));
-          } else {
-            dispatch(activate(null, {allowMove: false}));
-          }
-          onChange(null);
-          onDisableEditable(false);
-          setErrorId('');
-          say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
-        },
-        e => {
-          const errorText = SHARED.parser.getExceptionMessage(e);
-          console.log(errorText);
-          this.ignoreBlur = false;
-          setErrorId(node.id);
-          this.setSelection(false);
+
+      const value = this.props.value;
+      const onSuccess = ({firstNewId}) => {
+        if (firstNewId !== null) {
+          dispatch(activate(firstNewId, {allowMove: true}));
+        } else {
+          dispatch(activate(null, {allowMove: false}));
         }
-      );
+        onChange(null);
+        onDisableEditable(false);
+        setErrorId('');
+        say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
+      };
+      const onError = e => {
+        const errorText = SHARED.parser.getExceptionMessage(e);
+        console.log(errorText);
+        this.ignoreBlur = false;
+        setErrorId(node.id);
+        this.setSelection(false);
+      };
+      editNode(value, getNode(ast, node), onSuccess, onError);
     });
   }
 
@@ -161,16 +157,15 @@ class NodeEditable extends Component {
   }
 }
 
-function getNodeLocation(ast, node) {
+function getNode(ast, node) {
   if (node.id === "editing") {
     if (!node.from || !node.to) {
       throw "Invalid NodeEditable location";
     }
-    return {from: node.from, to: node.to};
+    return node;
   } else {
     // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
-    let {from, to} = ast.getNodeById(node.id);
-    return {from, to};
+    return ast.getNodeById(node.id);
   }
 }
 

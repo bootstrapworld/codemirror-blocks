@@ -1,11 +1,12 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
+import CodeMirror from 'codemirror';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
-import patch from '../ast-patch';
+import patch from '../actions/patchAst'; // TODO: eliminate this import
 import NodeEditable from '../components/NodeEditable';
 import {activate} from '../actions';
 import {playSound, BEEP} from '../sound';
@@ -13,7 +14,7 @@ import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
-import CodeMirror from './DragAndDropEditor';
+import DragAndDropEditor from './DragAndDropEditor';
 import {computeFocusNodeFromChanges, poscmp, say} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
@@ -297,6 +298,7 @@ class BlockEditor extends Component {
     // We only care about changes whose origin is *not* 'cmb:'
     // cmb-originating changes are handled by commitChanges (see codeMirror.js)
     if (!changes.every(c => c.origin && c.origin.startsWith('cmb:'))) {
+      console.warn("Old `editorChange` code path deprecated!");
       const newAST = SHARED.parser.parse(cm.getValue());
       const tree = patch(this.props.ast, newAST);
       let focusId = computeFocusNodeFromChanges(changes, tree).id;
@@ -487,7 +489,6 @@ class BlockEditor extends Component {
       dispatch((_, getState) => {
         const {quarantine} = getState();
         if(!quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
-        console.log('Browser is ready after:', (Date.now() - this.startTime)/1000, 'ms');
       });
       }, 0));
   }
@@ -508,18 +509,19 @@ class BlockEditor extends Component {
     }
     return (
       <React.Fragment>
-        <CodeMirror options={this.props.cmOptions}
-                    className={classNames(classes)}
-                    value={this.props.value}
-                    onBeforeChange={this.props.onBeforeChange}
-                    onKeyPress={this.handleKeyPress}
-                    onKeyDown={this.handleKeyDown}
-                    onMouseDown={this.handleMouseDown}
-                    onFocus={this.handleFocus}
-                    onPaste={this.handlePaste}
-                    cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
-                    onCursorActivity={this.handleCursor}
-                    editorDidMount={this.handleEditorDidMount} />
+        <DragAndDropEditor
+          options={this.props.cmOptions}
+          className={classNames(classes)}
+          value={this.props.value}
+          onBeforeChange={this.props.onBeforeChange}
+          onKeyPress={this.handleKeyPress}
+          onKeyDown={this.handleKeyDown}
+          onMouseDown={this.handleMouseDown}
+          onFocus={this.handleFocus}
+          onPaste={this.handlePaste}
+          cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
+          onCursorActivity={this.handleCursor}
+          editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}
         <FakeCursorManager />
       </React.Fragment>

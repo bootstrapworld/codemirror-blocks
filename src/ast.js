@@ -108,9 +108,12 @@ export class AST {
   }
 
   validateNode(node) {
-    const astFieldNames = ["from", "to", "type", "options", "spec", "__alreadyValidated", "element"];
+    const astFieldNames = ["from", "to", "type", "options", "spec",
+    "__alreadyValidated", "element", "_clone", "_insertChild", "_deleteChild",
+    "_replaceChild"];
     // Check that the node doesn't define any of the fields we're going to add to it.
-    const newFieldNames = ["id", "parent", "path", "level", "nid", "prev", "next", "hash", "aria-setsize", "aria-posinset"];
+    const newFieldNames = ["id", "parent", "path", "level", "nid", "prev",
+    "next", "hash", "aria-setsize", "aria-posinset"];
     if (!node.__alreadyValidated) {
       for (let p in node) {
         if (newFieldNames.includes(p)) {

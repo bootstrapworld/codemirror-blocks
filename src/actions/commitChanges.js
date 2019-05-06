@@ -3,7 +3,7 @@ import {store} from '../store';
 import SHARED from '../shared';
 import {computeFocusNodeFromChanges, posAfterChanges} from '../utils';
 import {activate} from './actions';
-import patch from './ast-patch';
+import patch from './patchAst';
 
 
 const tmpDiv = document.createElement('div');

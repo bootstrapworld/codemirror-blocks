@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
-import {dropNode, deleteNodes, copySelectedNodes,
+import {dropOntoNode, deleteSelectedNodes, copySelectedNodes,
   pasteNodes, activate} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
@@ -27,7 +27,7 @@ export const NodeContext = React.createContext({
 @DragNodeSource
 @DropNodeTarget(function(monitor) {
   let node = store.getState().ast.getNodeById(this.props.node.id);
-  return this.props.dispatch(dropNode(monitor.getItem(), node.srcRange()));
+  return this.props.dispatch(dropOntoNode(monitor.getItem(), node));
 })
 class Node extends BlockComponent {
   static defaultProps = {
@@ -322,7 +322,7 @@ class Node extends BlockComponent {
           }
           return nodeSelections;
         });
-        handleDelete(id, (nodes) => nodes);
+        handleDelete(node.id, (nodes) => nodes);
         return;
 
       // go to the very first node in the AST
@@ -496,7 +496,7 @@ const mapDispatchToProps = dispatch => ({
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
-  handleDelete: (id, selectionEditor) => dispatch(deleteNodes(id, selectionEditor)),
+  handleDelete: (id, selectionEditor) => dispatch(deleteSelectedNodes(id, selectionEditor)),
   handleCopy: (id, selectionEditor) => dispatch(copySelectedNodes(id, selectionEditor)),
   handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
   activate: (id, options) => dispatch(activate(id, options)),

@@ -1,33 +1,34 @@
-import {srcRangeIncludes} from '../utils';
+import {warn, poscmp, srcRangeIncludes} from '../utils';
 import {prettyPrintingWidth} from '../ast';
 import {commitChanges} from './commitChanges';
+import SHARED from '../shared';
 
 
-export function edit_insert(text, pos, parent, label) {
+export function edit_insert(text, pos, parent=null) {
   if (parent) {
-    return new InsertChildEdit(text, pos, parent, label);
+    return new InsertChildEdit(text, pos, parent);
   } else {
-    return new InsertRootEdit(text, pos, label);
+    return new InsertRootEdit(text, pos);
   }
 }
 
-export function edit_delete(node, label) {
+export function edit_delete(node) {
   if (node.parent) {
-    return new DeleteChildEdit(node, node.parent, label);
+    return new DeleteChildEdit(node, node.parent);
   } else {
-    return new DeleteRootEdit(node, label);
+    return new DeleteRootEdit(node);
   }
 }
 
-export function edit_replace(text, node, label) {
+export function edit_replace(text, node) {
   if (node.parent) {
-    return new ReplaceChildEdit(text, node, node.parent, label);
+    return new ReplaceChildEdit(text, node, node.parent);
   } else {
-    return new ReplaceRootEdit(text, node, label);
+    return new ReplaceRootEdit(text, node);
   }
 }
 
-export function performEdits(edits, ast) {
+export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}) {
   // Ensure that all of the edits are valid.
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {
@@ -37,34 +38,38 @@ export function performEdits(edits, ast) {
   // Sort the edits from last to first, so that they don't interfere with
   // each other's source locations or indices.
   edits.sort((a, b) => poscmp(b.from, a.from));
+  console.log("@? EDITS:", edits); // TODO: temporary logging
   // Group edits by shared ancestor, so that edits so grouped can be made with a
   // single textual edit.
   const editToEditGroup = groupEditsByAncestor(edits);
   // Convert the edits into text edits.
   let textEdits = new Array();
   for (const edit of edits) {
-    if (let group = editToEditGroup[edit]) {
-      if (let textEdit = group.toTextEdit()) {
+    let group = editToEditGroup.get(edit);
+    if (group) {
+      let textEdit = group.toTextEdit();
+      if (textEdit) {
         textEdits.push(textEdit); // Non-root edit: edit is oldText->newText
       }
     } else {
       textEdits.push(edit.toTextEdit(ast)); // Root edit
     }
   }
+  console.log("@? TEXT EDITS:", textEdits); // TODO: temporary logging
   // Commit the text edits.
-  commitChanges(cm => () => {
+  const changes = cm => () => {
     for (const edit of textEdits) {
-      cm.replaceRange(edit.text, edit.from, edit.to, edit.label);
+      cm.replaceRange(edit.text, edit.from, edit.to, label);
     }
-  });
+  };
+  commitChanges(changes, onSuccess, onError);
 }
 
 
-class Edit() {
-  constructor(from, to, label) {
+class Edit {
+  constructor(from, to) {
     this.from = from;
     this.to = to;
-    this.label = label;
   }
 
   findDescendantNode(ancestor, id) {
@@ -73,12 +78,13 @@ class Edit() {
         return node;
       }
     }
+    warn('edit', `Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`);
   }
 }
 
 class InsertRootEdit extends Edit {
-  constructor(text, pos, label) {
-    super(pos, pos, label);
+  constructor(text, pos) {
+    super(pos, pos);
     this.text = text;
     this.pos = pos;
   }
@@ -88,19 +94,18 @@ class InsertRootEdit extends Edit {
   }
 
   toTextEdit(ast) {
-    let text = addWhitespace(this.pos, this.pos, this.text);
+    let text = addWhitespace(ast, this.pos, this.pos, this.text);
     return {
       text,
       from: this.pos,
-      to: this.pos,
-      label: this.label
+      to: this.pos
     };
   }
 }
 
 class InsertChildEdit extends Edit {
-  constructor(text, pos, parent, label) {
-    super(pos, pos, label);
+  constructor(text, pos, parent) {
+    super(pos, pos);
     this.text = text;
     this.pos = pos;
     this.parent = parent;
@@ -117,9 +122,9 @@ class InsertChildEdit extends Edit {
 }
 
 class DeleteRootEdit extends Edit {
-  constructor(node, label) {
-    let range = this.node.srcRange();
-    super(range.from, range.to, label);
+  constructor(node) {
+    let range = node.srcRange();
+    super(range.from, range.to);
     this.node = node;
   }
 
@@ -132,16 +137,15 @@ class DeleteRootEdit extends Edit {
     return {
       text: "",
       from,
-      to,
-      label: this.label
+      to
     };
   }
 }
 
 class DeleteChildEdit extends Edit {
-  constructor(node, parent, label) {
-    let range = this.node.srcRange();
-    super(range.from, range.to, label);
+  constructor(node, parent) {
+    let range = node.srcRange();
+    super(range.from, range.to);
     this.node = node;
     this.parent = parent;
   }
@@ -157,9 +161,9 @@ class DeleteChildEdit extends Edit {
 }
 
 class ReplaceRootEdit extends Edit {
-  constructor(text, node, label) {
-    let range = this.node.srcRange();
-    super(range.from, range.to, label);
+  constructor(text, node) {
+    let range = node.srcRange();
+    super(range.from, range.to);
     this.text = text;
     this.node = node;
   }
@@ -172,16 +176,15 @@ class ReplaceRootEdit extends Edit {
     return {
       text: "",
       from: this.from,
-      to: this.to,
-      label: this.label
+      to: this.to
     };
   }
 }
 
 class ReplaceChildEdit extends Edit {
-  constructor(text, node, parent, label) {
-    let range = this.node.srcRange();
-    super(range.from, range.to, label);
+  constructor(text, node, parent) {
+    let range = node.srcRange();
+    super(range.from, range.to);
     this.text = text;
     this.node = node;
     this.parent = parent;
@@ -219,8 +222,7 @@ class EditGroup {
     return {
       from: range.from,
       to: range.to,
-      text: newText,
-      label: this.edits[0].label
+      text: newText
     };
   }
 }
@@ -233,17 +235,17 @@ function groupEditsByAncestor(edits) {
     if (!edit.isTextEdit()) {
       // Start with the default assumption that this parent is independent.
       let group = new EditGroup(edit.parent, []);
-      editToEditGroup[edit] = group;
+      editToEditGroup.set(edit, group);
       // Check if any existing ancestors are below the parent.
       for (const [e, group] of editToEditGroup) {
         if (srcRangeIncludes(edit.parent.srcRange(), group.ancestor.srcRange())) {
-          editToEditGroup[e] = group;
+          editToEditGroup.set(e, group);
         }
       }
       // Check if the parent is below an existing ancestor.
       for (const [_, group] of editToEditGroup) {
         if (srcRangeIncludes(group.ancestor.srcRange(), edit.parent.srcRange())) {
-          editToEditGroup[edit] = group;
+          editToEditGroup.set(edit, group);
           break; // Ancestors are disjoint; can only be contained in one.
         }
       }
@@ -251,7 +253,8 @@ function groupEditsByAncestor(edits) {
   }
   // Fill out the edit list of each edit group.
   for (const edit of edits) {
-    if (let group = editToEditGroup[edit]) {
+    let group = editToEditGroup.get(edit);
+    if (group) {
       group.edits.push(edit);
     }
   }
@@ -275,29 +278,21 @@ function removeWhitespace(from, to) {
 }
 
 // Pad `text` with spaces as needed, when a block will be inserted.
-function addWhitespace(from, to, text) {
-  // We may need to insert a space to ensure that different tokens don't end up
-  // getting glommed together.
+export function addWhitespace(ast, from, to, text) {
+  // We may need to insert a newline to make sure that comments don't end up
+  // getting associated with the wrong node, and we may need to insert a space
+  // to ensure that different tokens don't end up getting glommed together.
   let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
   let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
-  if (!(prevChar == "" || prevChar == " ")) {
+  if (ast.followsComment(from) && prevChar != "") {
+    text = "\n" + text;
+  } else if (!(prevChar == "" || prevChar == " ")) {
     text = " " + text;
   }
-  if (!(nextChar == "" || nextChar == " ")) {
-    text = text + " ";
-  }
-  return text;
-}
-
-// Get the text from `from` to `to`, but padded with newlines as needed to
-// prevent comments from (i) commenting out code or (ii) becoming associated
-// with the wrong node.
-export function copyTextWithPadding(ast, from, to, needsPrecedingNewline) {
-  if (ast.followsComment(from) || needsPrecedingNewline) {
-    text = "\n" + text;
-  }
-  if (ast.precedesComment(to)) {
+  if (ast.precedesComment(to) && nextChar != "") {
     text = text + "\n";
+  } else if (!(nextChar == "" || nextChar == " ")) {
+    text = text + " ";
   }
   return text;
 }

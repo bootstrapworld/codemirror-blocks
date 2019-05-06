@@ -50,7 +50,7 @@ class NodeSpec {
     for (const spec of this.childSpecs) {
       if (spec instanceof Required || spec instanceof Optional) {
         if (oldNode[spec.fieldName]) {
-          newNode[spec.fieldName] = oldNode[spec.fieldName].clone();
+          newNode[spec.fieldName] = oldNode[spec.fieldName]._clone();
         } else {
           newNode[spec.fieldName] = null;
         }
@@ -58,19 +58,40 @@ class NodeSpec {
         newNode[spec.fieldName] = oldNode[spec.fieldName];
       } else if (spec instanceof List) {
         newNode[spec.fieldName] = oldNode[spec.fieldName]
-          .map(node => node.clone());
+          .map(node => node._clone());
       }
     }
+    newNode.type = oldNode.type;
     newNode.id = oldNode.id;
     newNode.hash = oldNode.hash;
     newNode.spec = oldNode.spec;
+    newNode.pretty = oldNode.pretty;
+    return newNode;
   }
 
   insertChild(parent, pos, text) {
     let inserted = false;
+    let newNode = new FakeInsertNode(pos, pos, text);
     for (const spec of this.childSpecs) {
       if (spec instanceof List) {
-        $$$TODO
+        const list = parent[spec.fieldName];
+        if (list.length === 0) {
+          // This had better be the only list.
+          // It has no elements, so we can't tell whether it's the *right* list.
+          list.push(newNode);
+          break;
+        } else if (poscmp(list[0].srcRange().from, pos) <= 0
+                  && poscmp(pos, list[list.length - 1].srcRange().to) <= 0) {
+          // `pos` lies inside this list.
+          // We'll find out exactly where it is, and insert at that point.
+          for (const i in list) {
+            if (poscmp(pos, list[i].srcRange().from) <= 0) {
+              list.splice(i, 0, newNode);
+              break;
+            }
+          }
+          list.splice(list.length, 0, newNode);
+        }
       }
     }
     if (!inserted) {
