@@ -64,7 +64,7 @@ class NodeEditable extends Component {
         setErrorId(node.id);
         this.setSelection(false);
       };
-      editNode(value, getNode(ast, node), onSuccess, onError);
+      editNode(ast, value, getNode(ast, node), onSuccess, onError);
     });
   }
 

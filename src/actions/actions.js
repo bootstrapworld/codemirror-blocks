@@ -2,7 +2,7 @@ import {withDefaults, say, poscmp, srcRangeContains} from '../utils';
 import SHARED from '../shared';
 import {store} from '../store';
 import {playSound, WRAP} from '../sound';
-import {performEdits, edit_insert, edit_delete, edit_replace, padCopiedText} from './edit';
+import {performEdits, edit_insert, edit_delete, edit_replace, padCopiedText} from './performEdit';
 
 
 /* This file is for _shared_ actions */
@@ -123,13 +123,9 @@ export function pasteNodes(id, isBackward) {
   };
 }
 
-export function editNode(text, node, onSuccess, onError) {
-  return (dispatch, getState) => {
-    const {ast, selections} = getState();
-    const node = ast.getNodeById(id);
-    const edits = [edit_replace(text, node)];
-    performEdits('cmb:edit', ast, edits, onSuccess, onError);
-  }
+export function editNode(ast, text, node, onSuccess, onError) {
+  const edits = [edit_replace(text, node)];
+  performEdits('cmb:edit', ast, edits, onSuccess, onError);
 }
 
 export function activate(id, options) {
