@@ -22,6 +22,7 @@ import {Binop,
   FunctionApp,
   IfPipe,
   IfPipeBranch,
+  Include,
   Lambda,
   Let,
   LoadTable,
@@ -136,7 +137,7 @@ const nodeTypes = {
   // data Import
   "s-include": function(pos: Loc, mod: ImportType) {
     console.log(arguments);
-    return new Include(pos.from, pos.to, mod);
+    return new Include(pos.from, pos.to, mod, {'aria-label': `include ${mod}`});
   },
   // "s-import": function(pos: Loc, file: ImportType, name: Name) {},
   // "s-import-types": function(pos: Loc, file: ImportType, name: Name, types: Name) {},
@@ -168,7 +169,13 @@ const nodeTypes = {
     console.log(arguments);
     return new Literal(l.from, l.to, mod, "const-import");
   },
-  // "s-special-import": function(l: Loc, kind: string, args: string[]) {},
+  "s-special-import": function(l: Loc, kind: string, args: string[]) {
+    console.log(arguments);
+    let kind_literal = new Literal(l.from, l.to, kind, "special-import");
+    let args_literals = args.map(e => new Literal(l.from, l.to, '"' + e + '"', 'string'))
+    return new FunctionApp(l.from, l.to, kind_literal, args_literals,
+      {'aria-label': `include ${kind}: ${args}`});
+  },
 
   // data Hint
   // "h-use-loc": function(l: Loc) {},
