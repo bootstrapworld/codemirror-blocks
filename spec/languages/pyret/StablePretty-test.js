@@ -124,7 +124,7 @@ end`);
 end`);
     testify(`is-fixed :: (animal :: Row) -> Boolean`);
     testify(`include world
-big-bang('inert', [list: ])
+big-bang("inert", [list: ])
 
 fun increment(x): x + 1 end
 
