@@ -112,6 +112,7 @@ type Variant = any;
 type VariantMember = any;
 type VariantMemberType = any;
 
+const DEBUG = false;
 
 const nodeTypes = {
   // data Name
@@ -136,7 +137,7 @@ const nodeTypes = {
 
   // data Import
   "s-include": function(pos: Loc, mod: ImportType) {
-    console.log(arguments);
+    if (DEBUG) console.log(arguments);
     return new Include(pos.from, pos.to, mod, {'aria-label': `include ${mod}`});
   },
   // "s-import": function(pos: Loc, file: ImportType, name: Name) {},
@@ -166,11 +167,11 @@ const nodeTypes = {
 
   // data ImportType
   "s-const-import": function(l: Loc, mod: string) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Literal(l.from, l.to, mod, "const-import");
   },
   "s-special-import": function(l: Loc, kind: string, args: string[]) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     let kind_literal = new Literal(l.from, l.to, kind, "special-import");
     let args_literals = args.map(e => new Literal(l.from, l.to, '"' + e + '"', 'string'))
     return new FunctionApp(l.from, l.to, kind_literal, args_literals,
@@ -217,7 +218,7 @@ const nodeTypes = {
     // TODO: ignoring params, check, blocky
     let fun_from = {line: pos.from.line, ch: pos.from.ch + 4};
     let fun_to = {line: pos.from.line, ch: fun_from.ch + name.length};
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Func(
       pos.from,
       pos.to,
@@ -234,7 +235,7 @@ const nodeTypes = {
   // "s-var": function(l: Loc, name: Bind, value: Expr) {},
   // "s-rec": function(l: Loc, name: Bind, value: Expr) {},
   "s-let": function (pos: Loc, id: Bind, rhs: Expr, _keyword_val: boolean) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     let options = {};
     options['aria-label'] = `${id} set to ${rhs}`;
     return new Let(
@@ -247,7 +248,7 @@ const nodeTypes = {
   },
   // "s-ref": function(l: Loc, ann: Ann | null) {},
   "s-contract": function(l: Loc, name: Name, _params: Name[], ann: Ann) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     // TODO: don't know what params do, using binding for now
     return new Contract(l.from, l.to, name, ann, {'aria-label': `contract for ${name}: ${ann}`});
   },
@@ -262,7 +263,7 @@ const nodeTypes = {
   // "s-cases": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], blocky: boolean) {},
   // "s-cases-else": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], _else: Expr, blocky: boolean) {},
   "s-op": function (pos: Loc, opPos: Loc, op: string, left: Expr, right: Expr) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Binop(
       pos.from,
       pos.to,
@@ -272,7 +273,7 @@ const nodeTypes = {
       {'aria-label': `${left} ${name} ${right}`});
   },
   "s-check-test": function(pos: Loc, check_op: CheckOp, refinement: Expr | null, lhs: Expr, rhs: Expr | null) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new CheckTest(
       pos.from, pos.to, check_op, refinement, lhs, rhs, {'aria-label': `${check_op} ${lhs} ${rhs}`}
     );
@@ -283,7 +284,7 @@ const nodeTypes = {
   },
   // note this name string is "" if anonymous
   "s-lam": function(l: Loc, name: string, _params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, _check_loc: Loc | null, _check: Expr | null, blocky: boolean) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     let fun_from = { line: l.from.line, ch: l.from.ch + 4 };
     let fun_to = {line: l.from.line, ch: fun_from.ch + name.length};
     let real_name = (name == "")? null : new Literal(fun_from, fun_to, name, 'lambda');
@@ -302,13 +303,13 @@ const nodeTypes = {
   // "s-extend": function(l: Loc, supe: Expr, fields: Member[]) {},
   // "s-update": function(l: Loc, supe: Expr, fields: Member[]) {},
   "s-tuple": function(pos: Loc, fields: Expr[]) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Tuple(
       pos.from, pos.to, fields, {'aria-label': `tuple with ${fields}`}, 
     );
   },
   "s-tuple-get": function(pos: Loc, lhs: ASTNode, index: number, index_pos: Loc) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new TupleGet(
       pos.from, pos.to, lhs, new Literal(index_pos.from, index_pos.to, index, "number"), {'aria-label': `${index} element of ${lhs} tuple`}
     )
@@ -316,13 +317,13 @@ const nodeTypes = {
   // "s-obj": function(l: Loc, fields: Member[]) {},
   // "s-array": function(l: Loc, values: Expr[]) {},
   "s-construct": function (pos: Loc, modifier: any, constructor: any, values: any[]) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Construct(
       pos.from, pos.to, modifier, constructor, values, { 'aria-label': `${constructor} with values ${values}` }
     );
   },
   "s-app": function(pos: Loc, fun: Expr, args: Expr[]) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new FunctionApp(
       pos.from, pos.to, fun, args, {'aria-label': `${fun} applied to ${args}`}, 
     );
@@ -369,7 +370,7 @@ const nodeTypes = {
     return ret;
   },
   "s-str": function(pos: Loc, value: string) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Literal(
       pos.from,
       pos.to,
@@ -379,20 +380,20 @@ const nodeTypes = {
     );
   },
   's-dot': function(pos: Loc, base: any, method: string) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Literal(
       pos.from, pos.to, base.toString() + "." + method, 'method', {'aria-label': `${method} on data ${base}`}
     )
   },
   's-get-bang': function (pos: Loc, obj: Expr, field: string) {
     // TODO make sure correct
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Literal(
       pos.from, pos.to, obj.toString() + "." + field, 'method', {'aria-label': `${field} on data ${obj}`}
     )
   },
   's-bracket': function(pos: Loc, base: any, index: any) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Bracket(
       pos.from, pos.to, base, index, {'aria-label': `${index} of ${base}`}
     )
@@ -414,7 +415,7 @@ const nodeTypes = {
   // 's-table-extract': function(l: Loc, column: Name, table: Expr) {},
   // 's-table': function(l: Loc, headers: FieldName[], rows: TableRow[]) {},
   's-load-table': function (pos: Loc, rows: any[], sources: any[]) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new LoadTable(
       pos.from, pos.to, rows, sources, {'aria-label': `${rows} of table from ${sources}`}
     );
@@ -446,7 +447,7 @@ const nodeTypes = {
   // data FieldName
   // examples of this _other have been ABlank...
   's-field-name': function(pos: Loc, name: string, _other: any) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Literal(
       pos.from, pos.to, name, 'field-name', {'aria-label': `${name} field`}
     );
@@ -486,7 +487,7 @@ end
   // data LoadTableSpec
   // 's-sanitize': function(l: Loc, name: Name, sanitizer: Expr) {},
   's-table-src': function (pos: Loc, source: any) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Literal(
       pos.from, pos.to, source, 'table-source', {'aria-label': `${source}, a table source`}
     )
@@ -536,7 +537,7 @@ end
   // 'a-type-var': function(l: Loc, id: Name) {},
   // 'a-arrow': function(l: Loc, args: Ann[], ret: Ann, use_parens: boolean) {},
   'a-arrow-argnames': function(l: Loc, args: AField[], ret: Ann, uses_parens: boolean) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new ArrowArgnames(l.from, l.to,
       args,
       ret,
@@ -553,7 +554,7 @@ end
 
   // data AField
   'a-field': function(l: Loc, name: string, ann: Ann) {
-    console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return new Literal(
       l.from, l.to,
       name + " :: " + ann.value, 'a-field',
