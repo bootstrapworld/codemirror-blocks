@@ -127,9 +127,8 @@ export class Func extends ASTNode {
     let body = this.body.reactElement();
     let args = <Args>{this.args}</Args>;
     let header_ending = <span>
-      {(this.retAnn == null && this.block == false)? <DropTarget />
-      : <>{this.retAnn != null? this.retAnn : <DropTarget />} {this.block ? "block" : <DropTarget />}</>}
-    </span>
+      {(this.retAnn != null)? <>&nbsp;->&nbsp;{this.retAnn.reactElement()}</> : null}{this.block ? <>&nbsp;{"block"}</> : null}
+    </span>;
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">

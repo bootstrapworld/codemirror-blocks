@@ -146,8 +146,27 @@ end`);
       await DELAY;
     });
 
-    it("blocky function", async function() {
+    it("blocky function", async function () {
       let text = `fun f(x) block:
+  print(x)
+  x + 3
+end`;
+      this.blocks.setValue(text);
+      this.blocks.setBlockMode(false);
+      await DELAY;
+      expect(this.blocks.getValue()).toEqual(text);
+    });
+
+    it("ret ann function", async function() {
+      let text = `fun f(x) -> Number: x + 3 end`;
+      this.blocks.setValue(text);
+      this.blocks.setBlockMode(false);
+      await DELAY;
+      expect(this.blocks.getValue()).toEqual(text);
+    });
+
+    it("blocky and ret ann function", async function () {
+      let text = `fun f(x) -> Number block:
   print(x)
   x + 3
 end`;
