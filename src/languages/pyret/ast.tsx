@@ -858,3 +858,27 @@ export class Contract extends ASTNode {
     </Node>
   }
 }
+
+export class Include extends ASTNode {
+  mod: ASTNode;
+
+  constructor(from, to, mod, options = {}) {
+    super(from, to, 'include', ['mod'], options);
+    this.mod = mod;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `include the module ${this.mod.describe(level)}`;
+  }
+
+  pretty() {
+    return P.horz("include ", this.mod.pretty());
+  }
+
+  render(props) {
+    return <Node node={this} {...props}>
+      <span className="blocks-operator">include&nbsp;{this.mod.reactElement()}</span>
+    </Node>
+  }
+}

@@ -128,13 +128,16 @@ const nodeTypes = {
   // 's-atom': function(base: string, serial: number) {},
 
   // data Program
-  "s-program": function(_pos: Loc, _prov: any, _provTy: any, _impt: any, body: Block) {
-    let rootNodes = body.stmts;
+  "s-program": function(_pos: Loc, _prov: any, _provTy: any, imports: ASTNode[], body: Block) {
+    let rootNodes = imports.concat(body.stmts);
     return new AST(rootNodes);
   },
 
   // data Import
-  // "s-include": function(pos: Loc, mod: ImportType) {},
+  "s-include": function(pos: Loc, mod: ImportType) {
+    console.log(arguments);
+    return new Include(pos.from, pos.to, mod);
+  },
   // "s-import": function(pos: Loc, file: ImportType, name: Name) {},
   // "s-import-types": function(pos: Loc, file: ImportType, name: Name, types: Name) {},
   // "s-import-fields": function(pos: Loc, fields: Name[], file: ImportType) {},
@@ -161,7 +164,10 @@ const nodeTypes = {
   "s-provide-types-none": function(_l: Loc) { return null; },
 
   // data ImportType
-  // "s-const-import": function(l: Loc, mod: string) {},
+  "s-const-import": function(l: Loc, mod: string) {
+    console.log(arguments);
+    return new Literal(l.from, l.to, mod, "const-import");
+  },
   // "s-special-import": function(l: Loc, kind: string, args: string[]) {},
 
   // data Hint
