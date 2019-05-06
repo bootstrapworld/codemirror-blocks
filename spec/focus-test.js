@@ -49,7 +49,7 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown(" ");
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cm.getValue()).toBe('(+ 1 2 )');
+      expect(this.cm.getValue()).toBe('(+ 1 2)');
       expect(this.blocks.getFocusedNode().id).toBe(this.literal2.id);
     });
 
