@@ -925,7 +925,7 @@ export class Reactor extends ASTNode {
   pretty() {
     let prefix = "reactor:";
     let suffix = "end";
-    let branches = P.sepBy(",", ",", this.fields);
+    let branches = P.sepBy(", ", ",", this.fields);
     return P.ifFlat(
       P.horz(prefix, " ", branches, " ", suffix),
       P.vert(prefix, P.horz(INDENT, branches), suffix)
