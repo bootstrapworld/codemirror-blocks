@@ -1,7 +1,7 @@
-include reactors
+lam(x): x + 3 end
 
-fun tencrement(x) -> number block: x + 10 end
+lam(x) -> Number: x + 3 end
 
-fun tencrement(x) block: x + 10 end
+lam(x) block: x + 3 end
 
-fun tencrement(x): x + 10 end
+lam(x) -> Number block: x + 3 end

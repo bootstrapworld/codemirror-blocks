@@ -139,41 +139,40 @@ reactor:
 end`);
   });
 
-  describe("larger pyret programs", function() {
+  describe("other pyret programs", function() {
     beforeEach(async function () {
       this.blocks.setBlockMode(true);
       this.blocks.setValue("");
       await DELAY;
     });
 
-    it("blocky function", async function () {
-      let text = `fun f(x) block:
+    let testify = function(name, text) {
+      it(name, async function () {
+        this.blocks.setValue(text);
+        this.blocks.setBlockMode(false);
+        await DELAY;
+        expect(this.blocks.getValue()).toEqual(text);
+      })
+    };
+
+    testify("blocky function", `fun f(x) block:
   print(x)
   x + 3
-end`;
-      this.blocks.setValue(text);
-      this.blocks.setBlockMode(false);
-      await DELAY;
-      expect(this.blocks.getValue()).toEqual(text);
-    });
+end`);
 
-    it("ret ann function", async function() {
-      let text = `fun f(x) -> Number: x + 3 end`;
-      this.blocks.setValue(text);
-      this.blocks.setBlockMode(false);
-      await DELAY;
-      expect(this.blocks.getValue()).toEqual(text);
-    });
+    testify("ret ann function", `fun f(x) -> Number: x + 3 end`);
 
-    it("blocky and ret ann function", async function () {
-      let text = `fun f(x) -> Number block:
+    testify("blocky and ret ann function", `fun f(x) -> Number block:
   print(x)
   x + 3
-end`;
-      this.blocks.setValue(text);
-      this.blocks.setBlockMode(false);
-      await DELAY;
-      expect(this.blocks.getValue()).toEqual(text);
-    });
+end`);
+
+    testify("default lambda", `lam(x): x + 3 end`);
+
+    testify("lambda with ret ann", `lam(x) -> Number: x + 3 end`);
+
+    testify("lambda with block", `lam(x) block: x + 3 end`);
+
+    testify("lambda with ret ann and block", `lam(x) -> Number block: x + 3 end`);
   });
 });
