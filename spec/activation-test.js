@@ -13,7 +13,7 @@ const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
-let teardown = function () { cleanupAfterTest('root', store) };
+let teardown = function () { cleanupAfterTest('root', store); };
 
 describe("when dealing with node activation,", function () {
   beforeEach(function () {
