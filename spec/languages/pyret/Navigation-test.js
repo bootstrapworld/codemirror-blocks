@@ -426,11 +426,14 @@ describe("checks and testing", function () {
   let test = function (text) {
     describe(text, function () {
       beforeEach(function () {
+        setup.call(this);
         this.cmb.setValue(text);
         let ast = this.cmb.getAst();
         this.literal1 = ast.rootNodes[0];
         this.body = this.literal1.body;
       });
+
+      afterEach(function() { teardown(); });
 
       it("should move to body", async function () {
         click(this.literal1);
@@ -487,12 +490,15 @@ describe("tuples", function () {
 
   describe("tuple-get", function () {
     beforeEach(function () {
+      setup.call(this);
       this.cmb.setValue("tupple.{0}");
       let ast = this.cmb.getAst();
       this.literal1 = ast.rootNodes[0];
       this.base = this.literal1.base;
       this.index = this.literal1.index;
     });
+
+    afterEach(function () { teardown(); });
 
     it('should activate the index', async function () {
       click(this.literal1);
@@ -569,12 +575,16 @@ describe("lists", function () {
   let test_get = function (text) {
     describe(text, function () {
       beforeEach(function () {
+        setup.call(this);
+
         this.cmb.setValue(text);
         let ast = this.cmb.getAst();
         this.literal1 = ast.rootNodes[0];
         this.base = this.literal1.base;
         this.index = this.literal1.index;
       });
+
+      afterEach(function() { teardown(); });
 
       it('should activate the index', async function () {
         click(this.literal1);
