@@ -22,17 +22,17 @@ export function cleanupAfterTest(rootId, store) {
   }
 }
 
+const fixture = `
+  <div id="root">
+    <div id="cmb-editor" class="editor-container"/>
+  </div>
+`;
 /**
  * Setup, be sure to use with `apply` (`activationSetup.apply(this, [pyret])`)
  * or `call` (`activationSetup.call(this, pyret)`)
  * so that `this` is scoped correctly!
  */
 export function activationSetup(language) {
-  const fixture = `
-      <div id="root">
-        <div id="cmb-editor" class="editor-container"/>
-      </div>
-    `;
   document.body.insertAdjacentHTML('afterbegin', fixture);
   const container = document.getElementById('cmb-editor');
   this.cmb = new CodeMirrorBlocks(container, { collapseAll: false, value: "" }, language);
@@ -50,11 +50,6 @@ export function activationSetup(language) {
  * so that `this` is scoped correctly!
  */
 export function cmSetup(language) {
-  const fixture = `
-      <div id="root">
-        <div id="cmb-editor" class="editor-container"/>
-      </div>
-    `;
   document.body.insertAdjacentHTML('afterbegin', fixture);
   const container = document.getElementById('cmb-editor');
   this.cmb = new CodeMirrorBlocks(container, { collapseAll: false, value: "" }, language);
