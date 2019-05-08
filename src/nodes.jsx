@@ -1,4 +1,4 @@
-import * as P from './pretty';
+import * as P from 'pretty-fast-pretty-printer';
 import React from 'react';
 import {ASTNode, enumerateList, pluralize} from './ast';
 import hashObject from 'object-hash';
@@ -6,6 +6,30 @@ import Node from './components/Node';
 import Args from './components/Args';
 import {DropTarget, DropTargetSibling} from './components/DropTarget';
 
+
+
+// Display a Scheme-style comment.
+//
+// - `doc` is what's being commented.
+// - `comment` is the comment itself. If it is falsy, there is no comment.
+// - `container` is the ast node that owns the comment. This argument is used to
+//   determine if the comment is a line comment (appears after `container` on
+//   the same line). Line comments will stay as line comments _as long as they
+//   fit on the line_. If they don't, they'll be converted into a comment on the
+//   previous line.
+function withSchemeComment(doc, comment, container) {
+  if (comment) {
+    if (container && container.to.line == comment.from.line) {
+      // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
+      return P.ifFlat(P.horz(doc, " ", comment),
+                      P.vert(comment, doc));
+    } else {
+      return P.vert(comment, doc);
+    }
+  } else {
+    return doc;
+  }
+}
 
 export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
@@ -20,7 +44,7 @@ export class Unknown extends ASTNode {
   }
 
   pretty() {
-    return P.withSchemeComment(
+    return withSchemeComment(
       P.standardSexpr(this.elts[0], this.elts.slice(1)),
       this.options.comment,
       this);
@@ -59,7 +83,7 @@ export class FunctionApp extends ASTNode {
   }
 
   pretty() {
-    return P.withSchemeComment(
+    return withSchemeComment(
       P.standardSexpr(this.func, this.args),
       this.options.comment,
       this);
@@ -92,8 +116,8 @@ export class IdentifierList extends ASTNode {
   }
 
   pretty() {
-    return P.withSchemeComment(
-      P.spaceSep(this.ids),
+    return withSchemeComment(
+      P.sepBy(this.ids, " "),
       this.options.comment,
       this);
   }
@@ -123,8 +147,8 @@ export class StructDefinition extends ASTNode {
   }
 
   pretty() {
-    return P.withSchemeComment(
-      P.lambdaLikeSexpr("define-struct", this.name, P.parens(this.fields)),
+    return withSchemeComment(
+      P.lambdaLikeSexpr("define-struct", this.name, P.horz("(", this.fields, ")")),
       this.options.comment,
       this);
   }
@@ -157,7 +181,7 @@ export class VariableDefinition extends ASTNode {
   }
 
   pretty() {
-    return P.withSchemeComment(
+    return withSchemeComment(
       P.lambdaLikeSexpr("define", this.name, this.body),
       this.options.comment,
       this);
@@ -194,7 +218,7 @@ export class LambdaExpression extends ASTNode {
   }
 
   pretty() {
-    return P.lambdaLikeSexpr("lambda", P.parens(this.args), this.body);
+    return P.lambdaLikeSexpr("lambda(", P.horz("(", this.args, ")"), this.body);
   }
 
   render(props) {
@@ -229,7 +253,7 @@ export class FunctionDefinition extends ASTNode {
   }
 
   pretty() {
-    return P.withSchemeComment(
+    return withSchemeComment(
       P.lambdaLikeSexpr(
         "define",
         P.standardSexpr(this.name, this.params),
@@ -271,7 +295,7 @@ export class CondClause extends ASTNode {
   }
 
   pretty() {
-    return P.brackets(P.spaceSep([this.testExpr].concat(this.thenExprs)));
+    return P.horz("[", P.sepBy([this.testExpr].concat(this.thenExprs), " "), "]");
   }
 
   render(props) {
@@ -340,7 +364,7 @@ export class IfExpression extends ASTNode {
   }
 
   pretty() {
-    return P.withSchemeComment(
+    return withSchemeComment(
       P.standardSexpr("if", [this.testExpr, this.thenExpr, this.elseExpr]),
       this.options.comment,
       this);
@@ -392,7 +416,7 @@ export class Literal extends ASTNode {
   }
 
   pretty() {
-    return P.withSchemeComment(P.txt(this.value), this.options.comment, this);
+    return withSchemeComment(P.txt(this.value), this.options.comment, this);
   }
 
   render(props) {
@@ -422,7 +446,7 @@ export class Comment extends ASTNode {
 
   pretty() {
     let words = this.comment.trim().split(/\s+/);
-    let wrapped = P.wrap(" ", "", words);
+    let wrapped = P.wrap(words);
     // Normalize all comments to block comments
     return P.concat("#| ", wrapped, " |#");
   }

@@ -177,6 +177,8 @@ export function getNodeContainingBiased(cursor, ast) {
   return iter(ast.rootNodes);
 }
 
+export const dummyPos = {line: -1, ch: 0};
+
 export function isDummyPos(pos) {
   return pos.line === -1 && pos.ch === 0;
 }

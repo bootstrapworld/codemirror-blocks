@@ -2,6 +2,7 @@ import {withDefaults, say, poscmp, copyToClipboard, pasteFromClipboard} from './
 import {commitChanges} from './codeMirror';
 import SHARED from './shared';
 import {playSound, WRAP} from './sound';
+import {store} from './store';
 
 /* This file is for _shared_ actions */
 
@@ -80,29 +81,36 @@ export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDr
   };
 }
 
-export function copyNodes(id, selectionEditor) {
+export function copySelectedNodes(id, selectionEditor) {
   return (dispatch, getState) => {
-    const {ast, selections, focusId} = getState();
+    const {ast, selections} = getState();
     const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
     if (nodeSelections.length === 0) {
       return; // Not much to do.
     }
-    // Pretty-print each copied node. Join them with spaces, or newlines for
-    // commented nodes (to prevent a comment from attaching itself to a
-    // different node after pasting).
-    nodeSelections.sort((a, b) => poscmp(a.from, b.from));
-    let text = "";
-    let postfix = "";
-    for (let node of nodeSelections) {
-      let prefix = node.options.comment ? "\n" : postfix;
-      text = text + prefix + node.toString();
-      postfix = node.options.comment ? "\n" : " ";
-    }
-    copyToClipboard(text);
-    // Copy steals focus. Force it back to the node's DOM element
-    // without announcing via activate() or activate().
+    copyNodes(nodeSelections);
+  }
+}
+
+export function copyNodes(nodes) {
+  const {ast, focusId} = store.getState();
+  // Pretty-print each copied node. Join them with spaces, or newlines for
+  // commented nodes (to prevent a comment from attaching itself to a
+  // different node after pasting).
+  nodes.sort((a, b) => poscmp(a.from, b.from));
+  let text = "";
+  let postfix = "";
+  for (let node of nodes) {
+    let prefix = (node.options && node.options.comment) ? "\n" : postfix;
+    text = text + prefix + node.toString();
+    postfix = (node.options && node.options.comment) ? "\n" : " ";
+  }
+  copyToClipboard(text);
+  // Copy steals focus. Force it back to the node's DOM element
+  // without announcing via activate() or activate().
+  if (focusId) {
     ast.getNodeById(focusId).element.focus();
-  };
+  }
 }
 
 export function pasteNodes(id, isBackward) {

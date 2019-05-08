@@ -9,6 +9,10 @@ export class Primitive {
     this.returnType = returnType;
   }
 
+  toString() {
+    return this.name;
+  }
+
   getASTNode() {
     if (this.parser && this.parser.getASTNodeForPrimitive) {
       return this.parser.getASTNodeForPrimitive(this);

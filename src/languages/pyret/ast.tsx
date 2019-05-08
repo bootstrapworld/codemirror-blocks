@@ -2,7 +2,7 @@ import React from 'react';
 import hashObject from 'object-hash';
 import Node from '../../components/Node';
 import Args from '../../components/Args';
-import * as P from '../../pretty';
+import * as P from 'pretty-fast-pretty-printer';
 
 import { ASTNode, pluralize, enumerateList } from '../../ast';
 import {DropTarget, DropTargetSibling} from '../../components/DropTarget';
@@ -110,9 +110,9 @@ export class Func extends ASTNode {
     let retAnn = this.retAnn ? P.horz(" -> ", this.retAnn) : "";
     let header_ending = (this.block)? " block:" : ":";
     let header = P.ifFlat(
-      P.horz("fun ", this.name, "(", P.sepBy(", ", "", this.args), ")", retAnn, header_ending),
+      P.horz("fun ", this.name, "(", P.sepBy(this.args, ", ", ","), ")", retAnn, header_ending),
       P.vert(P.horz("fun ", this.name, "("),
-             P.horz(INDENT, P.sepBy(", ", "", this.args), ")", retAnn, ":")));
+             P.horz(INDENT, P.sepBy(this.args, ", ", ","), ")", retAnn, ":")));
     // either one line or multiple; helper for joining args together
     return P.ifFlat(
       P.horz(header, " ", this.body, " end"),
@@ -170,9 +170,9 @@ export class Lambda extends ASTNode {
     let header_ending = (this.block)? " block:" : ":";
     let prefix = (this.name == null)? ["lam("] : ["lam ", this.name, "("];
     let header = P.ifFlat(
-      P.horz(P.horzArray(prefix), P.sepBy(", ", "", this.args), ")", retAnn, header_ending),
+      P.horz(P.horzArray(prefix), P.sepBy(this.args, ", ", ","), ")", retAnn, header_ending),
       P.vert(P.horzArray(prefix),
-             P.horz(INDENT, P.sepBy(", ", "", this.args), ")", retAnn, ":")));
+             P.horz(INDENT, P.sepBy(this.args, ", ", ","), ")", retAnn, ":")));
     // either one line or multiple; helper for joining args together
     return P.ifFlat(
       P.horz(header, " ", this.body, " end"),
@@ -361,7 +361,7 @@ export class Construct extends ASTNode {
 
   pretty() {
     let header = P.horz("[", this.construktor, ":");
-    let values = P.sepBy(", ", "", this.values);
+    let values = P.sepBy(this.values, ", ", "");
     let footer = P.txt("]");
     // either one line or multiple; helper for joining args together
     return P.ifFlat(P.horz(header, P.txt(" "), values, footer),
@@ -405,7 +405,7 @@ export class FunctionApp extends ASTNode {
 
   pretty() {
     let header = P.txt(this.func + "(");
-    let values = (this.args.length != 0)? P.sepBy(", ", "", this.args.map(p => p.pretty())) : P.txt("");
+    let values = (this.args.length != 0)? P.sepBy(this.args.map(p => p.pretty()), ", ", "") : P.txt("");
     // either one line or multiple; helper for joining args together
     return P.ifFlat(
       P.horz(header, values, ")"),
@@ -444,7 +444,7 @@ export class Tuple extends ASTNode {
 
   pretty() {
     let header = P.txt("{");
-    let values = P.sepBy("; ", "", this.fields);
+    let values = P.sepBy(this.fields, "; ", "");
     let footer = P.txt("}");
     // either one line or multiple; helper for joining args together
     return P.ifFlat(
@@ -659,9 +659,9 @@ export class LoadTable extends ASTNode {
 
   pretty() {
     let header = P.txt("load-table: ");
-    let row_names = P.sepBy(", ", "", this.rows.map(e => e.pretty()));
+    let row_names = P.sepBy(this.rows.map(e => e.pretty()), ", ", "");
     let row_pretty = P.ifFlat(row_names, P.vertArray(this.rows.map(e => e.pretty())));
-    let sources = P.horz("source: ", P.sepBy("", "source: ", this.sources.map(s => s.pretty())));
+    let sources = P.horz("source: ", P.sepBy(this.sources.map(s => s.pretty()), "", "source: "));
     let footer = P.txt("end");
     return P.vert(
       P.ifFlat(
@@ -735,7 +735,7 @@ export class IfPipe extends ASTNode {
   pretty() {
     let prefix = "ask:";
     let suffix = "end";
-    let branches = P.sepBy("", "", this.branches);
+    let branches = P.sepBy(this.branches, "", "");
     return P.ifFlat(
       P.horz(prefix, " ", branches, " ", suffix),
       P.vert(prefix, P.horz(INDENT, branches), suffix)
@@ -776,7 +776,7 @@ export class IfPipeBranch extends ASTNode {
     let intermediate = "then:";
     let test = this.test.pretty();
     let body = this.body.pretty();
-    return P.sepBy(" ", "", [prefix, test, intermediate, body]);
+    return P.sepBy([prefix, test, intermediate, body], " ", "");
   }
 
   render(props) {
@@ -812,10 +812,10 @@ export class ArrowArgnames extends ASTNode {
   }
 
   pretty() {
-    let args = P.commaSep(this.args.map(e => e.pretty()));
+    let args = P.sepBy(this.args.map(e => e.pretty()), ", ", ",");
     let ret = this.ret.pretty();
-    let inner = P.sepBy(" ", "", [P.parens(args), "->", ret]);
-    return this.uses_parens? P.parens(inner) : inner;
+    let inner = P.sepBy([P.horz("(", args, ")"), "->", ret], " ", "");
+    return this.uses_parens? P.horz("(", inner, ")") : inner;
   }
 
   render(props) {
@@ -923,7 +923,7 @@ export class Reactor extends ASTNode {
   pretty() {
     let prefix = "reactor:";
     let suffix = "end";
-    let branches = P.sepBy(", ", ",", this.fields);
+    let branches = P.sepBy(this.fields, ", ", ",");
     return P.ifFlat(
       P.horz(prefix, " ", branches, " ", suffix),
       P.vert(prefix, P.horz(INDENT, branches), suffix)

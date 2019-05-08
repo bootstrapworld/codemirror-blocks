@@ -11,13 +11,12 @@ export default
 @connect(null, dispatch => ({dispatch}))
 
 @DropNodeTarget(function(monitor) {
-  let roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
-  const {x: left, y: top} = monitor.getClientOffset();
-  let validTopLevelDrop = !roots.some(root => {
-    let r = root.replacedWith.firstChild.getBoundingClientRect();
-    return (r.left<left) && (left<r.right) && (r.top<top) && (top<r.bottom);
-  });
-  if (validTopLevelDrop) {
+  const roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
+  const {x:left, y:top} = monitor.getClientOffset();
+  const droppedOn = document.elementFromPoint(left, top);
+  const isDroppedOnWhitespace = !roots.some(r => r.replacedWith.contains(droppedOn));
+
+  if (isDroppedOnWhitespace) {
     let loc = SHARED.cm.coordsChar({left, top});
     let dest = {from: loc, to: loc, isDropTarget: true};
     return this.props.dispatch(dropNode(monitor.getItem(), dest));
