@@ -17,6 +17,14 @@ export function maxpos(a, b) {
   return poscmp(a, b) >= 0 ? a : b;
 }
 
+export function minposArray(elems) {
+  let min = elems[0];
+  for (const x of elems) {
+    min = minpos(min, x);
+  }
+  return min;
+}
+
 // srcRangeIncludes(
 //   outerRange: {from: Pos, to: Pos},
 //   innerRange: {from: Pos, to: Pos})
@@ -195,36 +203,6 @@ export function isDummyPos(pos) {
 export function posAfterChanges(changes, pos, isFrom) {
   changes.forEach(c => pos = adjustForChange(pos, c, isFrom));
   return pos;
-}
-
-// computeFocusNodeFromChanges : [CMchanges], AST -> Number
-// compute the focusId by identifying the node in the newAST that was
-// (a) most-recently added (if there's any insertion)
-// (b) before the first-deleted (in the case of deletion)
-// (c) first root node (in the case of deleting a pre-existing first node)
-// (d) null (in the case of deleting the only nodes in the tree)
-export function computeFocusNodeFromChanges(changes, newAST) {
-  let insertion = false, focusId = false;
-  let startLocs = changes.map(c => {
-    c.from = adjustForChange(c.from, c, true);
-    c.to   = adjustForChange(c.to,   c, false);
-    if(c.text.join("").length > 0) insertion = c; // remember the most-recent insertion
-    return c.from;                                // return the starting srcLoc of the change
-  });
-  if(insertion) {
-    // Case A: grab the inserted node, *or* the node that ends in
-    // insertion's ending srcLoc (won't ever be null post-insertion)
-    let insertedNode = newAST.getNodeAt(insertion.from, insertion.to);
-    let lastNodeInserted = newAST.getNodeBeforeCur(insertion.to);
-    return insertedNode || lastNodeInserted;
-  } else {
-    startLocs.sort(poscmp);                                // sort the deleted ranges
-    let focusNode = newAST.getNodeBeforeCur(startLocs[0]); // grab the node before the first
-    // Case B: If the node exists, use the Id. 
-    // Case C: If not, use the first node...unless...
-    // Case D: the tree is empty, so return null
-    return focusNode || newAST.getFirstRootNode() || null;
-  }
 }
 
 // Compute the position of the end of a change (its 'to' property refers to the pre-change end).

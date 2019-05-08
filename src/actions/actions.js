@@ -2,7 +2,7 @@ import {withDefaults, say, poscmp, srcRangeContains} from '../utils';
 import SHARED from '../shared';
 import {store} from '../store';
 import {playSound, WRAP} from '../sound';
-import {performEdits, edit_insert, edit_delete, edit_replace, padCopiedText} from './performEdit';
+import {performEdits, edit_insert, edit_delete, edit_replace, padCopiedText} from './performEdits';
 
 
 /* This file is for _shared_ actions */

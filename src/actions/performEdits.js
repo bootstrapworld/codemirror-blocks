@@ -4,6 +4,10 @@ import {commitChanges} from './commitChanges';
 import SHARED from '../shared';
 
 
+// edit_insert : String, Pos, ASTNode|null -> Edit
+//
+// Construct an edit to insert `text` at `pos`, which is contained in `parent`.
+// `parent` should be `null` iff the edit is at the top level.
 export function edit_insert(text, pos, parent=null) {
   if (parent) {
     return new InsertChildEdit(text, pos, parent);
@@ -12,6 +16,9 @@ export function edit_insert(text, pos, parent=null) {
   }
 }
 
+// edit_delete : ASTNode -> Edit
+//
+// Construct an edit to delete the given node.
 export function edit_delete(node) {
   if (node.parent) {
     return new DeleteChildEdit(node, node.parent);
@@ -20,6 +27,9 @@ export function edit_delete(node) {
   }
 }
 
+// edit_replace : String, ASTNode -> Edit
+//
+// Construct an edit to replace `node` with `text`.
 export function edit_replace(text, node) {
   if (node.parent) {
     return new ReplaceChildEdit(text, node, node.parent);
@@ -28,7 +38,11 @@ export function edit_replace(text, node) {
   }
 }
 
-export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}) {
+// Attempt to commit a set of changes to Code Mirror. For more details, see the
+// `commitChanges` function. This function is identical to `commitChanges`,
+// except that this one takes higher-level `Edit` operations, constructed by the
+// functions: `edit_insert`, `edit_delete`, and `edit_replace`.
+export function performEdits(label, ast, edits, focusHint=undefined, onSuccess=()=>{}, onError=()=>{}) {
   // Ensure that all of the edits are valid.
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {
@@ -62,7 +76,7 @@ export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}
       cm.replaceRange(edit.text, edit.from, edit.to, label);
     }
   };
-  commitChanges(changes, onSuccess, onError);
+  commitChanges(changes, focusHint, onSuccess, onError);
 }
 
 
