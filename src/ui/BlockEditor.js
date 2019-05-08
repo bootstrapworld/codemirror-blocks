@@ -7,6 +7,7 @@ import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
 import patch from '../actions/patchAst'; // TODO: eliminate this import
+import {computeFocusNodeFromChanges} from '../actions/commitChanges'; // TODO: eliminate this import
 import NodeEditable from '../components/NodeEditable';
 import {activate} from '../actions';
 import {playSound, BEEP} from '../sound';
@@ -15,7 +16,7 @@ import {pos} from '../types';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
 import DragAndDropEditor from './DragAndDropEditor';
-import {computeFocusNodeFromChanges, poscmp, say} from '../utils';
+import {poscmp, say} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 

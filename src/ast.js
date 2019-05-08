@@ -87,7 +87,6 @@ export class AST {
         if (node.id === undefined) {
           node.id = uuidv4();
         }
-        node.hash = node.spec.hash(node);
         node.parent = parent;
         node.path = parent ? parent.path + ("," + i) : i.toString();
         node.level = level;
@@ -102,6 +101,7 @@ export class AST {
         this.nodeNIdMap.set(node.nid, node);
         lastNode = node;
         loop([...node.children()], node, level + 1);
+        node.hash = node.spec.hash(node); // Relies on child hashes; must be bottom-up
       });
     };
     loop(this.rootNodes, null, 1);

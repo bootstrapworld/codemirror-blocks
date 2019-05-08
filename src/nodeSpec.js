@@ -1,5 +1,5 @@
-import {warn, srcRangeContains} from './utils';
-import {Blank} from './nodes';
+import {warn, poscmp, srcRangeContains} from './utils';
+import {Blank, FakeInsertNode} from './nodes';
 import {ASTNode} from './ast';
 import hashObject from 'object-hash';
 

@@ -52,7 +52,6 @@ export function performEdits(label, ast, edits, focusHint=undefined, onSuccess=(
   // Sort the edits from last to first, so that they don't interfere with
   // each other's source locations or indices.
   edits.sort((a, b) => poscmp(b.from, a.from));
-  console.log("@? EDITS:", edits); // TODO: temporary logging
   // Group edits by shared ancestor, so that edits so grouped can be made with a
   // single textual edit.
   const editToEditGroup = groupEditsByAncestor(edits);
@@ -69,7 +68,7 @@ export function performEdits(label, ast, edits, focusHint=undefined, onSuccess=(
       textEdits.push(edit.toTextEdit(ast)); // Root edit
     }
   }
-  console.log("@? TEXT EDITS:", textEdits); // TODO: temporary logging
+  console.log(label, "edits:", edits, "textEdits:", textEdits); // temporary logging
   // Commit the text edits.
   const changes = cm => () => {
     for (const edit of textEdits) {
@@ -188,7 +187,7 @@ class ReplaceRootEdit extends Edit {
 
   toTextEdit(ast) {
     return {
-      text: "",
+      text: this.text,
       from: this.from,
       to: this.to
     };
@@ -210,7 +209,7 @@ class ReplaceChildEdit extends Edit {
 
   makeAstEdit(ancestor) {
     let parent = super.findDescendantNode(ancestor, this.parent.id);
-    parent._replaceChild(this.node, text);
+    parent._replaceChild(this.node, this.text);
   }
 }
 

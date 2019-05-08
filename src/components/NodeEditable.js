@@ -16,19 +16,20 @@ class NodeEditable extends Component {
 
   static propTypes = {
     // NOTE: the presence of this Node means ast is not null
-    node: PropTypes.object,
+    node: PropTypes.object.isRequired,
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
   }
 
   constructor(props) {
     super(props);
-    const {value, node, dispatch} = this.props
+    const {value, dispatch} = this.props
     if (value === null) {
       dispatch((_, getState) => {
+        let {node} = this.props;
         const {ast} = getState();
-        const node = getNode(ast, node);
-        this.cachedValue = SHARED.cm.getRange(node.from, node.to);
+        const {from, to} = node.id === "editing" ? node : ast.getNodeById(node.id);
+        this.cachedValue = SHARED.cm.getRange(from, to);
       });
     }
   }
@@ -58,13 +59,20 @@ class NodeEditable extends Component {
         say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
       };
       const onError = e => {
+        console.log("@?edit failed?");
         const errorText = SHARED.parser.getExceptionMessage(e);
         console.log(errorText);
         this.ignoreBlur = false;
         setErrorId(node.id);
         this.setSelection(false);
       };
-      editNode(ast, value, getNode(ast, node), onSuccess, onError);
+      if (node.id === "editing") {
+        const focusHint = (newAST) => newAST.getNodeAfterCur(node.to);
+        insertNode(ast, value, {from: node.from, to: node.to}, focusHint, onSuccess, onError);
+      } else {
+        const focusHint = (newAST) => newAST.getNodeById(node.id);
+        editNode(ast, value, ast.getNodeById(node), focusHint, onSuccess, onError);
+      }
     });
   }
 
@@ -154,18 +162,6 @@ class NodeEditable extends Component {
         aria-label = {text}
         value      = {text} />
     );
-  }
-}
-
-function getNode(ast, node) {
-  if (node.id === "editing") {
-    if (!node.from || !node.to) {
-      throw "Invalid NodeEditable location";
-    }
-    return node;
-  } else {
-    // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
-    return ast.getNodeById(node.id);
   }
 }
 

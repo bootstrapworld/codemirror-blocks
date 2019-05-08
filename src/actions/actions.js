@@ -1,4 +1,4 @@
-import {withDefaults, say, poscmp, srcRangeContains} from '../utils';
+import {withDefaults, say, poscmp, srcRangeContains, minposArray} from '../utils';
 import SHARED from '../shared';
 import {store} from '../store';
 import {playSound, WRAP} from '../sound';
@@ -23,7 +23,13 @@ function deleteNodes(nodes) {
     if (nodes.length === 0) {
       return;
     }
-    performEdits('cmb:delete-node', ast, nodes.map(node => edit_delete(node)));
+    const edits = nodes.map(node => edit_delete(node));
+    const firstEdit = minposArray(edits);
+    const prevNode = ast.getNodeBefore(firstEdit.node);
+    const focusHint = (newAST) => {
+      return prevNode ? newAST.getNodeById(prevNode.id) : newAST.getFirstRootNode();
+    };
+    performEdits('cmb:delete-node', ast, edits, focusHint);
     dispatch({type: 'SET_SELECTIONS', selections: []});
   }
 }
@@ -59,6 +65,7 @@ function dropNode(src, dest) {
     }
     // Insert or replace at the drop location, depending on what we dropped it on.
     if (dest.type === 'node') {
+      console.log("@?drop:edit_replace");
       edits.push(edit_replace(content, dest.node));
     } else if (dest.type === 'dropTarget') {
       edits.push(edit_insert(content, dest.from, dest.parentNode));
@@ -107,16 +114,14 @@ export function pasteNodes(id, isBackward) {
     const {ast, selections} = getState();
     const node = ast.getNodeById(id);
     let range = node.srcRange(); // Include any comments the node has.
-    if (selections.includes(id)) {
-      // NOTE(Oak): overwrite in this case
-      var edit = (text) => edit_replace(text, node);
-    } else {
-      // NOTE(Oak): otherwise, we do not overwrite
-      const pos = isBackward ? range.from : range.to;
-      var edit = (text) => edit_insert(text, pos, node.parent);
-    }
     pasteFromClipboard(text => {
-      performEdits('cmb:paste', ast, [edit(text)]);
+      // Overwrite if a node is selected. Otherwise, insert.
+      console.log("@?paste:edit_replace", selections.includes(id));
+      const edit = selections.includes(id)
+            ? edit_replace(text, node)
+            : edit_insert(text, isBackward ? range.from : range.to, node.parent);
+      const focusHint = (newAST) => newAST.getNodeById(node.id);
+      performEdits('cmb:paste', ast, [edit], focusHint);
       // NOTE(Oak): always clear selections. Should this be a callback instead?
       dispatch({type: 'SET_SELECTIONS', selections: []});
     });
@@ -124,8 +129,10 @@ export function pasteNodes(id, isBackward) {
 }
 
 export function editNode(ast, text, node, onSuccess, onError) {
+  console.log("@?editNode:edit_replace");
   const edits = [edit_replace(text, node)];
-  performEdits('cmb:edit', ast, edits, onSuccess, onError);
+  const focusHint = (newAST) => newAST.getNodeById(node.id);
+  performEdits('cmb:edit', ast, edits, focusHint, onSuccess, onError);
 }
 
 export function activate(id, options) {
