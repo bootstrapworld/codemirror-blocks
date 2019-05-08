@@ -37,7 +37,7 @@ export default class ContentEditable extends Component {
   }
 
   handleKeyDown = e => {
-    if (e.keyCode === 13) { // ENTER
+    if (e.keyCode === 13 && !e.shiftKey) { // ENTER
       e.preventDefault();
     }
     e.stopPropagation();
