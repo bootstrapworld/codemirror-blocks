@@ -28,6 +28,7 @@ import {Binop,
   Let,
   LoadTable,
   Paren,
+  SpecialImport,
   Reactor,
   Tuple,
   TupleGet,
@@ -174,10 +175,10 @@ const nodeTypes = {
   },
   "s-special-import": function(l: Loc, kind: string, args: string[]) {
     if(DEBUG) console.log(arguments);
-    let kind_literal = new Literal(l.from, l.to, kind, "special-import");
-    let args_literals = args.map(e => new Literal(l.from, l.to, '"' + e + '"', 'string'))
-    return new FunctionApp(l.from, l.to, kind_literal, args_literals,
-      {'aria-label': `include ${kind}: ${args}`});
+    let kind_literal = new Literal(l.from, l.to, kind, "special-import", {"aria-label": `${kind} import`});
+    let args_literals = args.map(e => new Literal(l.from, l.to, '"' + e + '"', 'string', {"aria-label": `import piece`}));
+    return new SpecialImport(l.from, l.to, kind_literal, args_literals,
+      {'aria-label': `special import`});
   },
 
   // data Hint

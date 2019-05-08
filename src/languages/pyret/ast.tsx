@@ -881,6 +881,52 @@ export class Include extends ASTNode {
   }
 }
 
+export class SpecialImport extends ASTNode {
+  func: ASTNode;
+  args: ASTNode[];
+
+  constructor(from, to, func, args, options={}) {
+    super(from, to, 'specialImport', ['func', 'args'], options);
+    this.func = func;
+    this.args = args;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    // if it's the top level, enumerate the args
+    if ((super.level  - level) == 0) {
+      return `importing the module ${this.func.describe(level)} with ${pluralize("argument", this.args)} `+
+      this.args.map((a, i, args) => (args.length>1? (i+1) + ": " : "") + a.describe(level)).join(", ");
+    }
+    // if we're lower than that (but not so low that `.shortDescription()` is used), use "f of A, B, C" format
+    else return `${this.func.describe(level)} of `+ this.args.map(a  => a.describe(level)).join(", ");
+  }
+
+  pretty() {
+    let header = P.txt(this.func + "(");
+    let values = (this.args.length != 0)? P.sepBy(this.args.map(p => p.pretty()), ", ", "") : P.txt("");
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(
+      P.horz(header, values, ")"),
+      P.vert(header,
+             P.horz(INDENT, values),
+             ")"));
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          <Args>{[this.func]}</Args>
+        </span>
+        <span className="blocks-args">
+          <Args>{this.args}</Args>
+        </span>
+    </Node>
+    );
+  }
+}
+
 export class DataField extends ASTNode {
   name: string;
   value: ASTNode;
