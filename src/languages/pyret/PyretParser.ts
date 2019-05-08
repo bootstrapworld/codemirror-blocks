@@ -283,7 +283,7 @@ const nodeTypes = {
   },
   // "s-check-expr": function(l: Loc, expr: Expr, ann: Ann) {},
   's-paren': function(pos: Loc, expr: ASTNode) {
-    return new Paren(pos.from, pos.to, expr, {'aria-label': 'parentheses'});
+    return expr;
   },
   // note this name string is "" if anonymous
   "s-lam": function(l: Loc, name: string, _params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, _check_loc: Loc | null, _check: Expr | null, blocky: boolean) {
@@ -498,9 +498,7 @@ end
   // 's-sanitize': function(l: Loc, name: Name, sanitizer: Expr) {},
   's-table-src': function (pos: Loc, source: any) {
     if(DEBUG) console.log(arguments);
-    return new Literal(
-      pos.from, pos.to, source, 'table-source', {'aria-label': `${source}, a table source`}
-    )
+    return source;
   },
 
   // not doing data VariantMemberType

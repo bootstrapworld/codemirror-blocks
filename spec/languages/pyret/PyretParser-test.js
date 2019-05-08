@@ -1,5 +1,4 @@
 import PyretParser from 'codemirror-blocks/languages/pyret/PyretParser';
-import _wescheme from '../../../src/languages/wescheme';
 
 describe("The Pyret Parser,", function() {
   beforeEach(function() {
@@ -25,7 +24,10 @@ describe("The Pyret Parser,", function() {
   });
 
   it("should have some label for Bootstrap constructs", function() {
-    let test = (str) => expect(this.parser.parse(str).rootNodes[0].options["aria-label"]).not.toBe(undefined);
+    let test = (str) => {
+      let result = this.parser.parse(str).rootNodes[0].options["aria-label"];
+      expect(result).not.toBe(undefined);
+    }
     /**
      * From Justin and Emmanuel
      * import
@@ -127,7 +129,11 @@ end
 
 row["field"]`;
 
-    expect(this.parser.parse(text).rootNodes[0].options["aria-label"]).not.toBe(undefined);
+    let parsed = this.parser.parse(text);
+
+    for (let i = 0; i < parsed.rootNodes.length; i++) {
+      expect(parsed.rootNodes[i].options["aria-label"]).not.toBe(undefined);
+    }
   });
 
   it("should render Emmanuel's demo ds program", function() {
