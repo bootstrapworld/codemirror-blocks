@@ -14,6 +14,15 @@ describe("Pyret node aria-labels", function() {
     });
   };
 
+  let closure_test = function(text, c, label, piece_label = label) {
+    it(`${text}'s ${piece_label} should have label ${label}`, function() {
+      let parsed = this.parser.parse(text);
+      let ast = parsed.rootNodes[0];
+      let to_test = c(ast);
+      expect(to_test.options[ariaLabel]).toBe(label);
+    });
+  };
+
   it("should have a label for identifiers", function () {
     let text = "x = 3";
     expect(this.parser.parse(text).rootNodes[0].ident.options[ariaLabel]).not.toBe(undefined);
@@ -55,4 +64,26 @@ end`;
   init: 10,
   on-tick: increase
 end`, "reactor");
+
+  it("branches of ask should be labeled with number", function() {
+    let text = `ask:
+  | (animal["species"] == "dog") then: dog-img
+  | (animal["species"] == "cat") then: cat-img
+  | (animal["species"] == "rabbit") then: rabbit-img
+  | (animal["species"] == "tarantula") then: tarantula-img
+  | (animal["species"] == "lizard") then: lizard-img
+end`;
+    let parsed = this.parser.parse(text);
+    let ask_node = parsed.rootNodes[0];
+
+    for (let i = 0; i < ask_node.branches.length; i++) {
+      expect(ask_node.branches[i].option[ariaLabel]).toBe(`branch ${i + 1}`);
+    }
+  });
+
+  closure_test(`include shared-gdrive("Bootstrap-DataScience-v1.4.arr", "189UgLQQ3Eag5JtrxpBjFzLMS3BO9rA21")`,
+    e => e.args[0], "resource name", "resource name");
+
+  closure_test(`include shared-gdrive("Bootstrap-DataScience-v1.4.arr", "189UgLQQ3Eag5JtrxpBjFzLMS3BO9rA21")`,
+    e => e.args[1], "resource url", "resource extension");
 });

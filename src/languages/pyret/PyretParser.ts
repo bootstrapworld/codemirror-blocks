@@ -141,7 +141,7 @@ const nodeTypes = {
   // data Import
   "s-include": function(pos: Loc, mod: ImportType) {
     if (DEBUG) console.log(arguments);
-    return new Include(pos.from, pos.to, mod, {'aria-label': `include ${mod}`});
+    return new Include(pos.from, pos.to, mod, {'aria-label': `include statement`});
   },
   // "s-import": function(pos: Loc, file: ImportType, name: Name) {},
   // "s-import-types": function(pos: Loc, file: ImportType, name: Name, types: Name) {},
@@ -258,7 +258,7 @@ const nodeTypes = {
   // "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {},
   // "s-assign": function(l: Loc, id: Name, value: Expr) {},
   's-if-pipe': function(pos: Loc, branches: IfPipeBranch[], blocky: boolean) {
-    return new IfPipe(pos.from, pos.to, branches, blocky, {'aria-label': 'if pipe'});
+    return new IfPipe(pos.from, pos.to, branches, blocky, {'aria-label': 'ask expression'});
   },
   // "s-if-pipe-else": function(l: Loc, branches: IfPipeBranch[], _else: Expr, blocky: boolean) {},
   // "s-if": function(l: Loc, branches: IfBranch[], blocky: boolean) {},
@@ -449,7 +449,7 @@ const nodeTypes = {
   's-data-field': function(l: Loc, name: string, value: Expr) {
     if(DEBUG) console.log(arguments);
     return new DataField(l.from, l.to, name, value,
-      {'aria-label': `${name}, a data field, with value ${value}`});
+      {'aria-label': `${name}`});
   },
   // 's-mutable-field': function(l: Loc, name: string, ann: Ann, value: Expr) {},
   // 's-method-field': function(l: Loc, name: string, params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, check: Expr | null, blocky: boolean) {},
