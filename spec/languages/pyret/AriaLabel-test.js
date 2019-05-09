@@ -52,11 +52,11 @@ end`;
 
   it("table fields should be columns", function() {
     let parsed = this.parser.parse(table_text);
-    expect(parsed.rootNodes[0].columns[0].option[ariaLabel]).toBe("name, a column");
+    expect(parsed.rootNodes[0].columns[0].options[ariaLabel]).toBe("name, a column");
   });
 
-  simple_test("fun f(x): x + 3 end", "f, a function definition with 1 input x");
-  simple_test("fun g(): 5 + 3 end", "g, a function definition with no inputs");
+  simple_test("fun f(x): x + 3 end", "f, a function definition with 1 input: x");
+  simple_test("fun g(): 5 + 3 end", "g, a function definition with 0 inputs");
   simple_test("fun h(a, b):  a * b end", "h, a function definition with 2 inputs: a, b");
   simple_test(`row["name"]`, `"name" of row, a lookup expression`);
 
@@ -77,13 +77,13 @@ end`;
     let ask_node = parsed.rootNodes[0];
 
     for (let i = 0; i < ask_node.branches.length; i++) {
-      expect(ask_node.branches[i].option[ariaLabel]).toBe(`branch ${i + 1}`);
+      expect(ask_node.branches[i].options[ariaLabel]).toBe(`branch ${i + 1}`);
     }
   });
 
   closure_test(`include shared-gdrive("Bootstrap-DataScience-v1.4.arr", "189UgLQQ3Eag5JtrxpBjFzLMS3BO9rA21")`,
-    e => e.args[0], "resource name", "resource name");
+    e => e.mod.args[0], "resource name", "resource name");
 
   closure_test(`include shared-gdrive("Bootstrap-DataScience-v1.4.arr", "189UgLQQ3Eag5JtrxpBjFzLMS3BO9rA21")`,
-    e => e.args[1], "resource url", "resource extension");
+    e => e.mod.args[1], "resource url", "resource extension");
 });

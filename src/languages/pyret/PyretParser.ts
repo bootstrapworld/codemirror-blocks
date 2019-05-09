@@ -177,6 +177,12 @@ const nodeTypes = {
     if(DEBUG) console.log(arguments);
     let kind_literal = new Literal(l.from, l.to, kind, "special-import", {"aria-label": `${kind} import`});
     let args_literals = args.map(e => new Literal(l.from, l.to, '"' + e + '"', 'string', {"aria-label": `import piece`}));
+
+    // then seems likely to be of name, url format... anytime when it's not?
+    if (args.length == 2) {
+      args_literals[0].options["aria-label"] = "resource name";
+      args_literals[1].options["aria-label"] = "resource url";
+    }
     return new SpecialImport(l.from, l.to, kind_literal, args_literals,
       {'aria-label': `special import`});
   },
@@ -231,7 +237,7 @@ const nodeTypes = {
       doc,
       body,
       block,
-      {'aria-label': `${name}, a function with ${args} with ${body}`});
+      {'aria-label': `${name}, a function definition with ${args.length} ${inputs_to_fun(args)}`});
   },
   // "s-type": function(l: Loc, name: Name, params: Name[], ann: Ann) {},
   // "s-newtype": function(l: Loc, name: Name, namet: Name) {},
@@ -240,7 +246,7 @@ const nodeTypes = {
   "s-let": function (pos: Loc, id: Bind, rhs: Expr, _keyword_val: boolean) {
     if(DEBUG) console.log(arguments);
     let options = {};
-    options['aria-label'] = `${id} set to ${rhs}`;
+    options['aria-label'] = `${id}, a value definition`;
     return new Let(
       pos.from,
       pos.to,
@@ -258,6 +264,10 @@ const nodeTypes = {
   // "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {},
   // "s-assign": function(l: Loc, id: Name, value: Expr) {},
   's-if-pipe': function(pos: Loc, branches: IfPipeBranch[], blocky: boolean) {
+    if (DEBUG) console.log(arguments);
+    branches.forEach((element, index) => {
+      (element as any).options["aria-label"] = `branch ${index + 1}`;
+    });
     return new IfPipe(pos.from, pos.to, branches, blocky, {'aria-label': 'ask expression'});
   },
   // "s-if-pipe-else": function(l: Loc, branches: IfPipeBranch[], _else: Expr, blocky: boolean) {},
@@ -267,13 +277,14 @@ const nodeTypes = {
   // "s-cases-else": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], _else: Expr, blocky: boolean) {},
   "s-op": function (pos: Loc, opPos: Loc, op: string, left: Expr, right: Expr) {
     if(DEBUG) console.log(arguments);
+    let name = op;
     return new Binop(
       pos.from,
       pos.to,
       new Literal(opPos.from, opPos.to, op, 'operator'),
       left,
       right,
-      {'aria-label': `${left} ${name} ${right}`});
+      {'aria-label': `${name} expression`});
   },
   "s-check-test": function(pos: Loc, check_op: CheckOp, refinement: Expr | null, lhs: Expr, rhs: Expr | null) {
     if(DEBUG) console.log(arguments);
@@ -369,7 +380,6 @@ const nodeTypes = {
       value,
       'boolean',
       {'aria-label': `${value}, a boolean`});
-    console.log(ret);
     return ret;
   },
   "s-str": function(pos: Loc, value: string) {
@@ -398,7 +408,7 @@ const nodeTypes = {
   's-bracket': function(pos: Loc, base: any, index: any) {
     if(DEBUG) console.log(arguments);
     return new Bracket(
-      pos.from, pos.to, base, index, {'aria-label': `${index} of ${base}`}
+      pos.from, pos.to, base, index, {'aria-label': `${index} of ${base}, a lookup expression`}
     )
   },
   // "s-data": function(l: Loc, name: string, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
@@ -411,7 +421,7 @@ const nodeTypes = {
   },
   's-reactor': function(l: Loc, fields: Member[]) {
     if (DEBUG) console.log(arguments);
-    return new Reactor(l.from, l.to, fields, {'aria-label': `reactor with fields ${fields}`});
+    return new Reactor(l.from, l.to, fields, {'aria-label': `reactor`});
   },
   // 's-table-extend': function(l: LoadTable, column_binds: ColumnBinds, extensions: TableExtendField[]) {},
   // 's-table-update': function(l: Loc, column_binds: ColumnBinds, updates: Member[]) {},
@@ -423,7 +433,7 @@ const nodeTypes = {
   's-load-table': function (pos: Loc, rows: any[], sources: any[]) {
     if(DEBUG) console.log(arguments);
     return new LoadTable(
-      pos.from, pos.to, rows, sources, {'aria-label': `${rows} of table from ${sources}`}
+      pos.from, pos.to, rows, sources, {'aria-label': `load table with ${rows.length} columns`}
     );
   },
 
@@ -459,7 +469,7 @@ const nodeTypes = {
   's-field-name': function(pos: Loc, name: string, _other: any) {
     if(DEBUG) console.log(arguments);
     return new Literal(
-      pos.from, pos.to, name, 'field-name', {'aria-label': `${name} field`}
+      pos.from, pos.to, name, 'field-name', {'aria-label': `${name}, a column`}
     );
   },
   
@@ -572,10 +582,25 @@ end
 }
 
 function idToLiteral(id: Bind): Literal {
+  if (DEBUG) console.log(id);
   let name = id.ident.value;
+  if (DEBUG) console.log(name);
+
   return new Literal(
-    (id as ASTNode).from, (id as ASTNode).to, (id.ann != null)? name + " :: " + id.ann : name, {'aria-label': name}
-  )
+    (id as ASTNode).from, (id as ASTNode).to, (id.ann != null)? name + " :: " + id.ann : name, "identifier", {'aria-label': name}
+  );
+}
+
+function inputs_to_fun(args: Bind[]): string {
+  if (args.length == 0) {
+    return "inputs";
+  }
+  else if (args.length == 1) {
+    return "input: " + args[0];
+  }
+  else {
+    return "inputs: " + args.join(", ");
+  }
 }
 
 function makeNode(nodeType: string) {
