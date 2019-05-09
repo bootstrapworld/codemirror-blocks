@@ -103,6 +103,7 @@ type IfBranch = any;
 type ImportType = Number;
 type LetBind = any;
 type LetrecBind = any;
+type LoadTableSpec = any;
 type Member = any;
 type Name = String;
 type ProvidedAlias = any;
@@ -432,7 +433,7 @@ const nodeTypes = {
   // 's-table-filter': function(l: Loc, column_binds: ColumnBinds, predicate: Expr) {},
   // 's-table-extract': function(l: Loc, column: Name, table: Expr) {},
   // 's-table': function(l: Loc, headers: FieldName[], rows: TableRow[]) {},
-  's-load-table': function (pos: Loc, rows: any[], sources: any[]) {
+  's-load-table': function (pos: Loc, rows: FieldName[], sources: LoadTableSpec[]) {
     if(DEBUG) console.log(arguments);
     return new LoadTable(
       pos.from, pos.to, rows, sources, {'aria-label': `load table with ${rows.length} columns`}
