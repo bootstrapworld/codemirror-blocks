@@ -737,7 +737,19 @@ export class IfPipe extends ASTNode {
   }
 
   render(props) {
-    let branches = this.branches.map((branch, index) => branch.reactElement({key: index}));
+    const NEWLINE = <br />
+    let branches = [];
+    this.branches.forEach((element, index) => {
+      let span = <span key={index}>
+        <DropTarget />
+        {NEWLINE}
+        <DropTargetSibling node={element} left={true} right={true} />
+        {NEWLINE}
+      </span>;
+      branches.push(span);
+    });
+    branches.push(<DropTarget key={this.branches.length} />);
+
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
