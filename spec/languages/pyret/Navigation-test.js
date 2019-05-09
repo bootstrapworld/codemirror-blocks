@@ -84,6 +84,7 @@ describe("load-table", function () {
 end`);
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
+    this.columns = this.literal1.columns;
   });
 
   afterEach(function () { teardown(); });
@@ -95,7 +96,7 @@ end`);
     keyDown("ArrowDown");
     await wait(DELAY);
     expect(this.activeNode()).not.toBe(this.literal1);
-    expect(this.activeNode()).toBe(this.literal1.rows[0]);
+    expect(this.activeNode()).toBe(this.columns[0]);
 
     keyDown("Enter");
     await wait(DELAY);
@@ -104,13 +105,13 @@ end`);
   });
 
   it('should activate the second column name', async function () {
-    click(this.literal1.rows[0]);
+    click(this.columns[0]);
     await wait(DELAY);
 
     keyDown("ArrowDown");
     await wait(DELAY);
     expect(this.activeNode()).not.toBe(this.literal1);
-    expect(this.activeNode()).toBe(this.literal1.rows[1]);
+    expect(this.activeNode()).toBe(this.columns[1]);
 
     keyDown("Enter");
     await wait(DELAY);
@@ -119,13 +120,13 @@ end`);
   });
 
   it('should activate the third column name', async function () {
-    click(this.literal1.rows[1]);
+    click(this.columns[1]);
     await wait(DELAY);
 
     keyDown("ArrowDown");
     await wait(DELAY);
     expect(this.activeNode()).not.toBe(this.literal1);
-    expect(this.activeNode()).toBe(this.literal1.rows[2]);
+    expect(this.activeNode()).toBe(this.columns[2]);
 
     keyDown("Enter");
     await wait(DELAY);
@@ -134,7 +135,7 @@ end`);
   });
 
   it('should activate the source when down is pressed', async function () {
-    click(this.literal1.rows[2]);
+    click(this.columns[2]);
     await wait(DELAY);
 
     keyDown("ArrowDown");

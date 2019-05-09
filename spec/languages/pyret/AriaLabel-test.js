@@ -86,4 +86,8 @@ end`;
 
   closure_test(`include shared-gdrive("Bootstrap-DataScience-v1.4.arr", "189UgLQQ3Eag5JtrxpBjFzLMS3BO9rA21")`,
     e => e.mod.args[1], "resource url", "resource extension");
+
+  closure_test(`f(5)`,
+    e => e.func, "f, an identifier", "function name"
+  );
 });

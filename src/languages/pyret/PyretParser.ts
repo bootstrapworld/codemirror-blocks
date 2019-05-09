@@ -294,7 +294,9 @@ const nodeTypes = {
   },
   // "s-check-expr": function(l: Loc, expr: Expr, ann: Ann) {},
   's-paren': function(pos: Loc, expr: ASTNode) {
-    return expr;
+    // should maybe have this have aria-label of child?
+    // or maybe should be fine since won't render s-paren
+    return new Paren(pos.from, pos.to, expr, {'aria-label': 'parenthetical expression'});
   },
   // note this name string is "" if anonymous
   "s-lam": function(l: Loc, name: string, _params: Name[], args: Bind[], ann: Ann, doc: string, body: Expr, _check_loc: Loc | null, _check: Expr | null, blocky: boolean) {
