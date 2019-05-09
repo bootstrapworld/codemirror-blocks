@@ -91,7 +91,7 @@ export class Func extends ASTNode {
   block: boolean
 
   constructor(from, to, name, args, retAnn, doc, body, block, options = {}) {
-    super(from, to, 'functionDefinition', ['name', 'args', 'retAnn', 'body'], options);
+    super(from, to, 'funDef', ['name', 'args', 'retAnn', 'body'], options);
     this.name = name;
     this.args = args;
     this.retAnn = retAnn;
@@ -150,7 +150,7 @@ export class Lambda extends ASTNode {
 
   constructor(from, to, name, args, retAnn, doc, body, block, options = {}) {
     // TODO change this from function definition?
-    super(from, to, 'functionDefinition', ['name', 'args', 'retAnn', 'body'], options);
+    super(from, to, 'lambdaExp', ['name', 'args', 'retAnn', 'body'], options);
     this.name = name;
     this.args = args;
     this.retAnn = retAnn;
@@ -387,7 +387,7 @@ export class FunctionApp extends ASTNode {
   args: ASTNode[];
 
   constructor(from, to, func, args, options={}) {
-    super(from, to, 'functionApp', ['func', 'args'], options);
+    super(from, to, 'funApp', ['func', 'args'], options);
     this.func = func;
     this.args = args;
     super.hash = super.computeHash();
@@ -559,7 +559,7 @@ export class CheckTest extends ASTNode {
   rhs: ASTNode | null;
   
   constructor(from, to, check_op, refinement, lhs, rhs, options={}) {
-    super(from, to, 'functionApp', ['op', 'refinement', 'lhs', 'rhs'], options);
+    super(from, to, 'checkTest', ['op', 'refinement', 'lhs', 'rhs'], options);
     this.op = check_op;
     this.refinement = refinement;
     this.lhs = lhs;
@@ -647,7 +647,7 @@ export class LoadTable extends ASTNode {
   sources: ASTNode[];
 
   constructor(from, to, rows, sources, options={}) {
-    super(from, to, 'functionApp', ['columns', 'sources'], options);
+    super(from, to, 'loadTable', ['columns', 'sources'], options);
     this.columns = rows;
     this.sources = sources;
     super.hash = super.computeHash();
@@ -716,7 +716,7 @@ export class IfPipe extends ASTNode {
   branches: ASTNode[];
   blocky: boolean;
   constructor(from, to, branches, blocky, options) {
-    super(from, to, 'condExpression', ['branches'], options);
+    super(from, to, 'ifPipeExpression', ['branches'], options);
     this.branches = branches;
     this.blocky = blocky;
     super.hash = hashObject(['ifPipe', ...(this.branches.map(c => c.hash)), this.blocky]);
