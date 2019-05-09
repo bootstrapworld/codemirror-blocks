@@ -643,24 +643,24 @@ export class Bracket extends ASTNode {
 }
 
 export class LoadTable extends ASTNode {
-  rows: ASTNode[];
+  columns: ASTNode[];
   sources: ASTNode[];
 
   constructor(from, to, rows, sources, options={}) {
-    super(from, to, 'functionApp', ['rows', 'sources'], options);
-    this.rows = rows;
+    super(from, to, 'functionApp', ['columns', 'sources'], options);
+    this.columns = rows;
     this.sources = sources;
     super.hash = super.computeHash();
   }
 
   longDescription(level) {
-    return `${enumerateList(this.rows, level)} in a table from ${enumerateList(this.sources, level)}`;
+    return `${enumerateList(this.columns, level)} in a table from ${enumerateList(this.sources, level)}`;
   }
 
   pretty() {
     let header = P.txt("load-table: ");
-    let row_names = P.sepBy(this.rows.map(e => e.pretty()), ", ", "");
-    let row_pretty = P.ifFlat(row_names, P.vertArray(this.rows.map(e => e.pretty())));
+    let row_names = P.sepBy(this.columns.map(e => e.pretty()), ", ", "");
+    let row_pretty = P.ifFlat(row_names, P.vertArray(this.columns.map(e => e.pretty())));
     let sources = P.horz("source: ", P.sepBy(this.sources.map(s => s.pretty()), "", "source: "));
     let footer = P.txt("end");
     return P.vert(
@@ -679,7 +679,7 @@ export class LoadTable extends ASTNode {
           load-table
         </span>
         <span className="blocks-args">
-          <Args>{this.rows}</Args>
+          <Args>{this.columns}</Args>
         </span>
         {this.sources.map((e, i) => e.reactElement({key: i}))}
     </Node>
