@@ -5,7 +5,7 @@ import {ASTNode} from '../ast';
 import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {activate, editNode} from '../actions';
+import {activate, editNode, insertNode} from '../actions';
 import {say} from '../utils';
 
 
@@ -67,11 +67,10 @@ class NodeEditable extends Component {
         this.setSelection(false);
       };
       if (node.id === "editing") {
-        const focusHint = (newAST) => newAST.getNodeAfterCur(node.to);
-        insertNode(ast, value, {from: node.from, to: node.to}, focusHint, onSuccess, onError);
+        // TODO: get DT parent
+        insertNode(ast, value, node.from, null, onSuccess, onError);
       } else {
-        const focusHint = (newAST) => newAST.getNodeById(node.id);
-        editNode(ast, value, ast.getNodeById(node), focusHint, onSuccess, onError);
+        editNode(ast, value, ast.getNodeById(node.id), onSuccess, onError);
       }
     });
   }

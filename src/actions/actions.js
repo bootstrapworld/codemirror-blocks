@@ -65,7 +65,6 @@ function dropNode(src, dest) {
     }
     // Insert or replace at the drop location, depending on what we dropped it on.
     if (dest.type === 'node') {
-      console.log("@?drop:edit_replace");
       edits.push(edit_replace(content, dest.node));
     } else if (dest.type === 'dropTarget') {
       edits.push(edit_insert(content, dest.from, dest.parentNode));
@@ -116,7 +115,6 @@ export function pasteNodes(id, isBackward) {
     let range = node.srcRange(); // Include any comments the node has.
     pasteFromClipboard(text => {
       // Overwrite if a node is selected. Otherwise, insert.
-      console.log("@?paste:edit_replace", selections.includes(id));
       const edit = selections.includes(id)
             ? edit_replace(text, node)
             : edit_insert(text, isBackward ? range.from : range.to, node.parent);
@@ -129,10 +127,26 @@ export function pasteNodes(id, isBackward) {
 }
 
 export function editNode(ast, text, node, onSuccess, onError) {
-  console.log("@?editNode:edit_replace");
   const edits = [edit_replace(text, node)];
   const focusHint = (newAST) => newAST.getNodeById(node.id);
   performEdits('cmb:edit', ast, edits, focusHint, onSuccess, onError);
+}
+
+export function insertNode(ast, text, pos, parent, onSuccess, onError) {
+  const edits = [edit_insert(text, pos, parent)];
+  const info = parent ? parent._findInsertionPoint(pos) : null;
+  const focusHint = (newAST) => {
+    if (parent) {
+      // We inserted a new child node. Find it through its parent.
+      const {spec, index} = info;
+      const newParent = newAST.getNodeById(parent.id);
+      return newParent[spec.fieldName][index];
+    } else {
+      // We inserted a new root node. Grab it by location.
+      return newAST.getNodeAfterCur(pos);
+    }
+  };
+  performEdits('cmb:insert', ast, edits, focusHint, onSuccess, onError);
 }
 
 export function activate(id, options) {

@@ -69,68 +69,72 @@ class NodeSpec {
     return newNode;
   }
 
-  insertChild(parent, pos, text) {
-    let inserted = false;
-    let newNode = new FakeInsertNode(pos, pos, text);
+  findInsertionPoint(parent, pos) {
     for (const spec of this.childSpecs) {
       if (spec instanceof List) {
         const list = parent[spec.fieldName];
         if (list.length === 0) {
           // This had better be the only list.
           // It has no elements, so we can't tell whether it's the *right* list.
-          list.push(newNode);
-          break;
+          return {spec, index: 0};
         } else if (poscmp(list[0].srcRange().from, pos) <= 0
                   && poscmp(pos, list[list.length - 1].srcRange().to) <= 0) {
           // `pos` lies inside this list.
           // We'll find out exactly where it is, and insert at that point.
           for (const i in list) {
             if (poscmp(pos, list[i].srcRange().from) <= 0) {
-              list.splice(i, 0, newNode);
-              break;
+              return {spec, index: i};
             }
           }
-          list.splice(list.length, 0, newNode);
+          return {spec, index: list.length};
         }
       }
     }
-    if (!inserted) {
-      warn('insertChild', "Failed to find List to insert child into.");
+    warn('findInsertionPoint', "Failed to find list to insert child into.");
+  }
+
+  findReplacementPoint(parent, child) {
+    for (const spec of this.childSpecs) {
+      const field = parent[spec.fieldName];
+      if (spec instanceof Required && field.id === child.id) {
+        return {spec};
+      } else if (spec instanceof Optional && field && field.id === child.id) {
+        return {spec};
+      } else if (spec instanceof List) {
+        for (const i in field) {
+          if (field[i].id === child.id) {
+            return {spec, index: i};
+          }
+        }
+      }
     }
+    warn('findReplacementPoint', "Failed to find child to be replaced/deleted.");
+  }
+
+  insertChild(parent, pos, text) {
+    let newNode = new FakeInsertNode(pos, pos, text);
+    let {spec, index} = parent._findInsertionPoint(pos);
+    parent[spec.fieldName].splice(index, 0, newNode);
   }
 
   deleteChild(parent, child) {
-    for (const spec of this.childSpecs) {
-      let field = parent[spec.fieldName];
-      if (spec instanceof Required && field.id === child.id) {
-        parent[spec.fieldName] = new Blank(child.from, child.to);
-      } else if (spec instanceof Optional && field && field.id === child.id) {
-        parent[spec.fieldName] = null;
-      } else if (spec instanceof List) {
-        for (let i in field) {
-          if (field[i].id === child.id) {
-            field.splice(i, 1); // remove the i'th element.
-          }
-        }
-      }
+    const info = parent._findReplacementPoint(child);
+    if (info.index) {
+      parent[info.spec.fieldName].splice(info.index, 1); // Remove the i'th element.
+    } else if (info.spec instanceof Optional) {
+      parent[info.spec.fieldName] = null;
+    } else {
+      parent[info.spec.fieldName] = new Blank(child.from, child.to);
     }
   }
 
   replaceChild(parent, child, text) {
-    let newNode = new FakeInsertNode(child.from, child.to, text);
-    for (const spec of this.childSpecs) {
-      let field = parent[spec.fieldName];
-      if (spec instanceof Required && field.id === child.id) {
-        parent[spec.fieldName] = newNode;
-      } else if (spec instanceof Optional && field && field.id === child.id) {
-        parent[spec.fieldName] = newNode;
-      } else if (spec instanceof List) {
-        for (let i in field) {
-          if (field[i].id === child.id) {
-            field[i] = newNode;
-          }
-        }
-      }
+    const newNode = new FakeInsertNode(child.from, child.to, text);
+    const info = parent._findReplacementPoint(child);
+    if (info.index) {
+      parent[info.spec.fieldName][info.index] = newNode;
+    } else {
+      parent[info.spec.fieldName] = newNode;
     }
   }
 }

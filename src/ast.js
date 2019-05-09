@@ -108,12 +108,14 @@ export class AST {
   }
 
   validateNode(node) {
-    const astFieldNames = ["from", "to", "type", "options", "spec",
-    "__alreadyValidated", "element", "_clone", "_insertChild", "_deleteChild",
-    "_replaceChild"];
+    const astFieldNames =
+          ["from", "to", "type", "options", "spec", "__alreadyValidated",
+           "element","_clone", "_insertChild", "_deleteChild", "_replaceChild",
+           "_findInsertionPoint", "_findReplacementPoint"];
     // Check that the node doesn't define any of the fields we're going to add to it.
-    const newFieldNames = ["id", "parent", "path", "level", "nid", "prev",
-    "next", "hash", "aria-setsize", "aria-posinset"];
+    const newFieldNames =
+          ["id", "parent", "path", "level", "nid", "prev", "next", "hash",
+           "aria-setsize", "aria-posinset"];
     if (!node.__alreadyValidated) {
       for (let p in node) {
         if (newFieldNames.includes(p)) {
@@ -353,6 +355,8 @@ export class ASTNode {
     this.spec = this.constructor.spec;
     // Internal use only (in actions/edits.js)
     this._clone = () => this.spec.clone(this);
+    this._findInsertionPoint = (pos) => this.spec.findInsertionPoint(this, pos);
+    this._findReplacementPoint = (child) => this.spec.findReplacementPoint(this, child);
     this._insertChild = (pos, text) => this.spec.insertChild(this, pos, text);
     this._deleteChild = (child) => this.spec.deleteChild(this, child);
     this._replaceChild = (child, text) => this.spec.replaceChild(this, child, text);
