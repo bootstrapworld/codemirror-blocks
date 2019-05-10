@@ -2,7 +2,7 @@ import CodeMirror from 'codemirror';
 import {store} from '../store';
 import SHARED from '../shared';
 import {poscmp} from '../utils';
-import {activate} from './actions';
+import {activate} from '../actions';
 import patch from './patchAst';
 
 

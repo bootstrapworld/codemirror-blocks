@@ -7,7 +7,7 @@ import SHARED from '../shared';
 import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
-import {dropOntoDropTarget} from '../actions';
+import * as Targets from '../targets';
 import BlockComponent from './BlockComponent';
 import {NodeContext} from './Node';
 import uuidv4 from 'uuid/v4';
@@ -229,14 +229,11 @@ class ActualDropTarget extends BlockComponent {
       id                : `block-drop-target-${this.props.id}`,
     };
     if (this.props.isEditable) {
-      let loc = this.getLocation();
-      const nodeProps = {
-        id: 'editing', // TODO(Oak): error focusing is going to be wrong
-        from: loc,
-        to: loc,
-      };
+      const pos = this.getLocation();
+      const parent = this.context.node;
+      const target = Targets.dropTarget(pos, parent);
       return (
-        <NodeEditable node={nodeProps}
+        <NodeEditable target={target}
                       value={this.state.value}
                       onChange={this.handleChange}
                       isInsertion={true}

@@ -6,10 +6,11 @@ import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
-import patch from '../actions/patchAst'; // TODO: eliminate this import
-import {computeFocusNodeFromChanges} from '../actions/commitChanges'; // TODO: eliminate this import
+import patch from '../edits/patchAst'; // TODO: eliminate this import
+import {computeFocusNodeFromChanges} from '../edits/commitChanges'; // TODO: eliminate this import
 import NodeEditable from '../components/NodeEditable';
 import {activate} from '../actions';
+import * as Targets from '../targets';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
@@ -81,7 +82,6 @@ class ToplevelBlockEditableCore extends Component {
   render() {
     const {onDisableEditable, onChange, quarantine} = this.props;
     const [start, end, value] = quarantine;
-    const nodeProps = {id: 'editing', from: start, to: end};
     const props = {
       tabIndex          : '-1',
       role              : 'text box',
@@ -90,7 +90,7 @@ class ToplevelBlockEditableCore extends Component {
       'aria-level'      : '1',
     };
     return ReactDOM.createPortal(
-      <NodeEditable node={nodeProps}
+      <NodeEditable target={Targets.topLevel(start, end)}
                     value={value}
                     onChange={onChange}
                     contentEditableProps={props}
@@ -302,7 +302,8 @@ class BlockEditor extends Component {
       console.warn("Old `editorChange` code path deprecated!");
       const newAST = SHARED.parser.parse(cm.getValue());
       const tree = patch(this.props.ast, newAST);
-      let focusId = computeFocusNodeFromChanges(changes, tree).id;
+      const focusNode = computeFocusNodeFromChanges(changes, tree);
+      let focusId = focusNode ? focusNode.id : null;
       this.props.setAST(tree);
       // only call activate() if there's no cursor defined
       this.props.dispatch((_, getState) => {

@@ -17,14 +17,6 @@ export function maxpos(a, b) {
   return poscmp(a, b) >= 0 ? a : b;
 }
 
-export function minposArray(elems) {
-  let min = elems[0];
-  for (const x of elems) {
-    min = minpos(min, x);
-  }
-  return min;
-}
-
 // srcRangeIncludes(
 //   outerRange: {from: Pos, to: Pos},
 //   innerRange: {from: Pos, to: Pos})

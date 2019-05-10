@@ -12,7 +12,7 @@ export function edit_insert(text, pos, parent=null) {
   if (parent) {
     return new InsertChildEdit(text, pos, parent);
   } else {
-    return new InsertRootEdit(text, pos);
+    return new InsertRootEdit(text, pos, pos);
   }
 }
 
@@ -36,6 +36,14 @@ export function edit_replace(text, node) {
   } else {
     return new ReplaceRootEdit(text, node);
   }
+}
+
+// edit_replace_toplevel_text : String, Pos, Pos -> Edit
+//
+// Construct an edit to replace a range of source code with `text`. The range
+// must be at the toplevel: it can neither being nor end inside a root node.
+export function edit_replaceToplevelText(text, from, to) {
+  return new InsertRootEdit(text, from, to);
 }
 
 // Attempt to commit a set of changes to Code Mirror. For more details, see the
@@ -96,10 +104,9 @@ class Edit {
 }
 
 class InsertRootEdit extends Edit {
-  constructor(text, pos) {
-    super(pos, pos);
+  constructor(text, from, to) {
+    super(from, to);
     this.text = text;
-    this.pos = pos;
   }
 
   isTextEdit() {
@@ -107,11 +114,11 @@ class InsertRootEdit extends Edit {
   }
 
   toTextEdit(ast) {
-    let text = addWhitespace(ast, this.pos, this.pos, this.text);
+    let text = addWhitespace(ast, this.from, this.to, this.text);
     return {
       text,
-      from: this.pos,
-      to: this.pos
+      from: this.from,
+      to: this.to
     };
   }
 }
@@ -130,7 +137,7 @@ class InsertChildEdit extends Edit {
 
   makeAstEdit(ancestor) {
     let parent = super.findDescendantNode(ancestor, this.parent.id);
-    parent._insertChild(this.pos, this.text);
+    parent._findInsertionPoint(this.pos).insertChild(this.text);
   }
 }
 
@@ -168,8 +175,8 @@ class DeleteChildEdit extends Edit {
   }
 
   makeAstEdit(ancestor) {
-    let parent = super.findDescendantNode(ancestor, this.parent.id);
-    parent._deleteChild(this.node);
+    const parent = super.findDescendantNode(ancestor, this.parent.id);
+    parent._findReplacementPoint(this.node).deleteChild();
   }
 }
 
@@ -209,7 +216,7 @@ class ReplaceChildEdit extends Edit {
 
   makeAstEdit(ancestor) {
     let parent = super.findDescendantNode(ancestor, this.parent.id);
-    parent._replaceChild(this.node, this.text);
+    parent._findReplacementPoint(this.node).replaceChild(this.text);
   }
 }
 

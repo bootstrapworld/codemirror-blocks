@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
-import {dropOntoNode, deleteSelectedNodes, copySelectedNodes,
-  pasteNodes, activate} from '../actions';
+import {drop, delete_, copy, paste, activate} from '../actions';
+import * as Targets from '../targets';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
 import {isErrorFree} from '../store';
@@ -26,8 +26,9 @@ export const NodeContext = React.createContext({
 
 @DragNodeSource
 @DropNodeTarget(function(monitor) {
-  let node = store.getState().ast.getNodeById(this.props.node.id);
-  return this.props.dispatch(dropOntoNode(monitor.getItem(), node));
+  const node = store.getState().ast.getNodeById(this.props.node.id);
+  const target = Target.node(node);
+  return drop(monitor.getItem(), target);
 })
 class Node extends BlockComponent {
   static defaultProps = {
@@ -97,7 +98,6 @@ class Node extends BlockComponent {
     const {
       node, expandable, isCollapsed,
       uncollapse, collapse, normallyEditable, setCursor,
-      handleCopy, handlePaste, handleDelete,
       dispatch
     } = this.props;
 
@@ -263,14 +263,13 @@ class Node extends BlockComponent {
       // delete seleted nodes
       case 'delete':
         e.preventDefault();
-        handleDelete(node.id, nodeSelections => {
-          if (nodeSelections.length == 0) {
-            say('Nothing selected');
-          } else {
-            sayActionForNodes(nodeSelections.map(ast.getNodeById), "deleted");
-          }
-          return nodeSelections;
-        });
+        if (selections.length === 0) {
+          say('Nothing selected');
+          return;
+        }
+        const nodesToDelete = selections.map(ast.getNodeById);
+        sayActionForNodes(nodesToDelete, "deleted");
+        delete_(nodesToDelete);
         return;
 
       // insert-right
@@ -298,31 +297,35 @@ class Node extends BlockComponent {
       // copy
       case 'copy':
         e.preventDefault();
-        handleCopy(node.id, nodeSelections => {
-          // if no nodes are selected, do it on focused node's id instead
-          let nodeIds = nodeSelections.length == 0 ? [node.id] : nodeSelections;
-          sayActionForNodes(nodeIds.map(ast.getNodeById), "copied");
-          return nodeIds;
-        });
+        // if no nodes are selected, do it on focused node's id instead
+        const nodeIds = selections.length == 0 ? [node.id] : selections;
+        const nodesToCopy = nodeIds.map(ast.getNodeById);
+        sayActionForNodes(nodesToCopy, "copied");
+        copy(nodesToCopy);
         return;
 
       // paste
       case 'paste':
-        handlePaste(node.id, e.shiftKey);
+        // Overwrite if a node is selected. Otherwise, insert.
+        if (selections.includes(id)) {
+          var target = Targets.node(node);
+        } else {
+          var target = e.shiftKey ? Targets.leftOf(node) : Targets.rightOf(node);
+        }
+        paste(target);
         return;
 
       // cut
       case 'cut':
         e.preventDefault();
-        handleCopy(node.id, nodeSelections => {
-          if (nodeSelections.length == 0) {
-            say('Nothing selected');
-          } else {
-            sayActionForNodes(nodeSelections.map(ast.getNodeById), "cut");
-          }
-          return nodeSelections;
-        });
-        handleDelete(node.id, (nodes) => nodes);
+        if (selections.length === 0) {
+          say('Nothing selected');
+          return;
+        }
+        const nodesToCut = selections.map(ast.getNodeById);
+        sayActionForNodes(nodesToCut, "cut");
+        copy(nodesToCut);
+        delete_(nodesToCut);
         return;
 
       // go to the very first node in the AST
@@ -436,7 +439,7 @@ class Node extends BlockComponent {
                       onDisableEditable={this.handleDisableEditable}
                       extraClasses={classes}
                       isInsertion={false}
-                      node={node}
+                      target={Targets.node(node)}
                       value={this.state.value}
                       onChange={this.handleChange}
                       contentEditableProps={props} />
@@ -496,9 +499,6 @@ const mapDispatchToProps = dispatch => ({
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
-  handleDelete: (id, selectionEditor) => dispatch(deleteSelectedNodes(id, selectionEditor)),
-  handleCopy: (id, selectionEditor) => dispatch(copySelectedNodes(id, selectionEditor)),
-  handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
   activate: (id, options) => dispatch(activate(id, options)),
 });
 

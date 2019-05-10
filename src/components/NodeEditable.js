@@ -5,7 +5,8 @@ import {ASTNode} from '../ast';
 import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {activate, editNode, insertNode} from '../actions';
+import {insert, activate} from '../actions';
+import * as Targets from '../targets';
 import {say} from '../utils';
 
 
@@ -16,7 +17,7 @@ class NodeEditable extends Component {
 
   static propTypes = {
     // NOTE: the presence of this Node means ast is not null
-    node: PropTypes.object.isRequired,
+    target: PropTypes.instanceOf(Targets.Target).isRequired,
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
   }
@@ -26,17 +27,15 @@ class NodeEditable extends Component {
     const {value, dispatch} = this.props
     if (value === null) {
       dispatch((_, getState) => {
-        let {node} = this.props;
-        const {ast} = getState();
-        const {from, to} = node.id === "editing" ? node : ast.getNodeById(node.id);
-        this.cachedValue = SHARED.cm.getRange(from, to);
+        const {target} = this.props;
+        this.cachedValue = target.getText();
       });
     }
   }
 
   saveEdit = e => {
     e.stopPropagation();
-    const {node, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
+    const {target, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
     dispatch((dispatch, getState) => {
       const {ast, focusId} = getState();
 
@@ -59,19 +58,13 @@ class NodeEditable extends Component {
         say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
       };
       const onError = e => {
-        console.log("@?edit failed?");
         const errorText = SHARED.parser.getExceptionMessage(e);
         console.log(errorText);
         this.ignoreBlur = false;
-        setErrorId(node.id);
+        setErrorId(target.node ? target.node.id : 'editing');
         this.setSelection(false);
       };
-      if (node.id === "editing") {
-        // TODO: get DT parent
-        insertNode(ast, value, node.from, null, onSuccess, onError);
-      } else {
-        editNode(ast, value, ast.getNodeById(node.id), onSuccess, onError);
-      }
+      insert(value, target, onSuccess, onError);
     });
   }
 
@@ -164,8 +157,9 @@ class NodeEditable extends Component {
   }
 }
 
-const mapStateToProps = ({cm, errorId}, {node}) => {
-  const isErrored = errorId == node.id;
+const mapStateToProps = ({cm, errorId}, {target}) => {
+  const nodeId = target.node ? target.node.id : 'editing';
+  const isErrored = errorId == nodeId;
   return {cm, isErrored};
 };
 

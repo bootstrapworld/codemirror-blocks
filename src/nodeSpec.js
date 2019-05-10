@@ -70,72 +70,11 @@ class NodeSpec {
   }
 
   findInsertionPoint(parent, pos) {
-    for (const spec of this.childSpecs) {
-      if (spec instanceof List) {
-        const list = parent[spec.fieldName];
-        if (list.length === 0) {
-          // This had better be the only list.
-          // It has no elements, so we can't tell whether it's the *right* list.
-          return {spec, index: 0};
-        } else if (poscmp(list[0].srcRange().from, pos) <= 0
-                  && poscmp(pos, list[list.length - 1].srcRange().to) <= 0) {
-          // `pos` lies inside this list.
-          // We'll find out exactly where it is, and insert at that point.
-          for (const i in list) {
-            if (poscmp(pos, list[i].srcRange().from) <= 0) {
-              return {spec, index: i};
-            }
-          }
-          return {spec, index: list.length};
-        }
-      }
-    }
-    warn('findInsertionPoint', "Failed to find list to insert child into.");
+    return new InsertionPoint(parent, pos);
   }
 
   findReplacementPoint(parent, child) {
-    for (const spec of this.childSpecs) {
-      const field = parent[spec.fieldName];
-      if (spec instanceof Required && field.id === child.id) {
-        return {spec};
-      } else if (spec instanceof Optional && field && field.id === child.id) {
-        return {spec};
-      } else if (spec instanceof List) {
-        for (const i in field) {
-          if (field[i].id === child.id) {
-            return {spec, index: i};
-          }
-        }
-      }
-    }
-    warn('findReplacementPoint', "Failed to find child to be replaced/deleted.");
-  }
-
-  insertChild(parent, pos, text) {
-    let newNode = new FakeInsertNode(pos, pos, text);
-    let {spec, index} = parent._findInsertionPoint(pos);
-    parent[spec.fieldName].splice(index, 0, newNode);
-  }
-
-  deleteChild(parent, child) {
-    const info = parent._findReplacementPoint(child);
-    if (info.index) {
-      parent[info.spec.fieldName].splice(info.index, 1); // Remove the i'th element.
-    } else if (info.spec instanceof Optional) {
-      parent[info.spec.fieldName] = null;
-    } else {
-      parent[info.spec.fieldName] = new Blank(child.from, child.to);
-    }
-  }
-
-  replaceChild(parent, child, text) {
-    const newNode = new FakeInsertNode(child.from, child.to, text);
-    const info = parent._findReplacementPoint(child);
-    if (info.index) {
-      parent[info.spec.fieldName][info.index] = newNode;
-    } else {
-      parent[info.spec.fieldName] = newNode;
-    }
+    return new ReplacementPoint(parent, child);
   }
 }
 
@@ -178,6 +117,104 @@ class HashIterator {
       } else {
         yield field.hash;
       }
+    }
+  }
+}
+
+class InsertionPoint {
+  constructor(parent, pos) {
+    this.parent = parent;
+    this.pos = pos;
+    for (const spec of parent.spec.childSpecs) {
+      if (spec instanceof List) {
+        const list = parent[spec.fieldName];
+        if (list.length === 0) {
+          // This had better be the only list.
+          // It has no elements, so we can't tell whether it's the *right* list.
+          this.spec = spec;
+          this.index = 0;
+          return;
+        } else if (poscmp(list[0].srcRange().from, pos) <= 0
+                  && poscmp(pos, list[list.length - 1].srcRange().to) <= 0) {
+          // `pos` lies inside this list.
+          // We'll find out exactly where it is, and insert at that point.
+          for (const i in list) {
+            if (poscmp(pos, list[i].srcRange().from) <= 0) {
+              this.spec = spec;
+              this.index = i;
+              return;
+            }
+          }
+          this.spec = spec;
+          this.index = list.length;
+          return;
+        }
+      }
+    }
+    warn('new InsertionPoint', "Failed to find list to insert child into.");
+  }
+
+  insertChild(text) {
+    const newChildNode = new FakeInsertNode(this.pos, this.pos, text);
+    this.parent[this.spec.fieldName].splice(this.index, 0, newChildNode);
+  }
+
+  findChild(newAST) {
+    const newParent = newAST.getNodeById(this.parent.id);
+    return newParent[this.spec.fieldName][this.index];
+  }
+}
+
+class ReplacementPoint {
+  constructor(parent, child) {
+    this.parent = parent;
+    this.child = child;
+    for (const spec of parent.spec.childSpecs) {
+      const field = parent[spec.fieldName];
+      if (spec instanceof Required && field.id === child.id) {
+        this.spec = spec;
+        return;
+      } else if (spec instanceof Optional && field && field.id === child.id) {
+        this.spec = spec;
+        return;
+      } else if (spec instanceof List) {
+        for (const i in field) {
+          if (field[i].id === child.id) {
+            this.spec = spec;
+            this.index = i;
+            return;
+          }
+        }
+      }
+    }
+    warn('new ReplacementPoint', "Failed to find child to be replaced/deleted.");
+  }
+
+  replaceChild(text) {
+    const newChildNode = new FakeInsertNode(this.child.from, this.child.to, text);
+    if (this.index) {
+      this.parent[this.spec.fieldName][this.index] = newChildNode;
+    } else {
+      this.parent[this.spec.fieldName] = newChildNode;
+    }
+  }
+
+  deleteChild() {
+    if (this.index) {
+      this.parent[this.spec.fieldName].splice(this.index, 1); // Remove the i'th element.
+    } else if (this.spec instanceof Optional) {
+      this.parent[this.spec.fieldName] = null;
+    } else {
+      this.parent[this.spec.fieldName] = new Blank(this.child.from, this.child.to);
+    }
+  }
+
+  findChild(newAST) {
+    const newParent = newAST.getNodeById(this.parent.id);
+    if (this.index) {
+      return this.parent[this.spec.fieldName][this.index];
+    } else {
+      return this.parent[this.spec.fieldName];
     }
   }
 }
