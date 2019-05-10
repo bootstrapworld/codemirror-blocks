@@ -314,6 +314,176 @@ describe("functions", function () {
   test("fun g(): 2 * 4 end");
 });
 
+describe("functions with return annotations", function () {
+  let test = function (text) {
+    describe(text, function () {
+      beforeEach(function () {
+        setup.call(this);
+        this.cmb.setValue(text);
+        let ast = this.cmb.getAst();
+        this.literal1 = ast.rootNodes[0];
+        this.fun_name = this.literal1.name;
+        this.args = this.literal1.args;
+        this.retAnn = this.literal1.retAnn;
+        this.body = this.literal1.body;
+      });
+
+      afterEach(function () { teardown(); });
+
+      it("should activate function name, arguments, return annotation and body", async function () {
+        click(this.literal1);
+        await wait(DELAY);
+
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).toBe(this.fun_name);
+        expect(this.activeNode()).not.toBe(this.body);
+
+        keyDown("Enter");
+        await wait(DELAY);
+        keyDown("Enter");
+        await wait(DELAY);
+
+        for (let i = 0; i < this.args.length; i++) {
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).not.toBe(this.fun_name);
+          expect(this.activeNode()).toBe(this.args[i]);
+          expect(this.activeNode()).not.toBe(this.body);
+
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+        }
+
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).not.toBe(this.fun_name);
+        expect(this.activeNode()).toBe(this.retAnn);
+        expect(this.activeNode()).not.toBe(this.body);
+
+        keyDown("Enter");
+        await wait(DELAY);
+        keyDown("Enter");
+        await wait(DELAY);
+
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).not.toBe(this.fun_name);
+        expect(this.activeNode()).not.toBe(this.retAnn);
+        expect(this.activeNode()).toBe(this.body);
+      });
+    });
+  };
+  test("fun f(x) -> Number: x + 3 end");
+  test("fun f(x, jake) -> String: x + jake end");
+  test("fun g() -> Number: 2 * 4 end");
+});
+
+describe("lambdas", function () {
+  let test = function (text) {
+    describe(text, function () {
+      beforeEach(function () {
+        setup.call(this);
+        this.cmb.setValue(text);
+        let ast = this.cmb.getAst();
+        this.literal1 = ast.rootNodes[0];
+        this.args = this.literal1.args;
+        this.body = this.literal1.body;
+      });
+
+      afterEach(function () { teardown(); });
+
+      it("should activate arguments, and body", async function () {
+        click(this.literal1);
+        await wait(DELAY);
+
+        for (let i = 0; i < this.args.length; i++) {
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).toBe(this.args[i]);
+          expect(this.activeNode()).not.toBe(this.body);
+
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+        }
+
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).toBe(this.body);
+      });
+    });
+  };
+  test("lam(x): x + 3 end");
+  test("lam(x, jake): x + jake end");
+  test("lam(): 2 * 4 end");
+});
+
+describe("lambdas with return annotations", function () {
+  let test = function (text) {
+    describe(text, function () {
+      beforeEach(function () {
+        setup.call(this);
+        this.cmb.setValue(text);
+        let ast = this.cmb.getAst();
+        this.literal1 = ast.rootNodes[0];
+        this.args = this.literal1.args;
+        this.retAnn = this.literal1.retAnn;
+        this.body = this.literal1.body;
+      });
+
+      afterEach(function () { teardown(); });
+
+      it("should activate arguments, return annotation and body", async function () {
+        click(this.literal1);
+        await wait(DELAY);
+
+        for (let i = 0; i < this.args.length; i++) {
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).not.toBe(this.literal1);
+          expect(this.activeNode()).toBe(this.args[i]);
+          expect(this.activeNode()).not.toBe(this.body);
+
+          keyDown("Enter");
+          await wait(DELAY);
+          keyDown("Enter");
+          await wait(DELAY);
+        }
+
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).toBe(this.retAnn);
+        expect(this.activeNode()).not.toBe(this.body);
+
+        keyDown("Enter");
+        await wait(DELAY);
+        keyDown("Enter");
+        await wait(DELAY);
+
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).not.toBe(this.literal1);
+        expect(this.activeNode()).not.toBe(this.retAnn);
+        expect(this.activeNode()).toBe(this.body);
+      });
+    });
+  };
+  test("lam(x) -> Number: x + 3 end");
+  test("lam(x, jake) -> String: x + jake end");
+  test("lam() -> Number: 2 * 4 end");
+});
+
 describe("method and function applications", function () {
   let test = function (text) {
     describe(text, function () {
