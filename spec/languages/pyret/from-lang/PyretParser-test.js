@@ -1,4 +1,13 @@
-#lang pyret
+import PyretParser from 'codemirror-blocks/languages/pyret/PyretParser';
+
+describe("The Pyret Parser,", function() {
+  beforeEach(function() {
+    this.parser = new PyretParser();
+  });
+
+  
+  it("should render test-array.arr", function () {
+    let text = `#lang pyret
 
 
 fun negate(f): lam(x): not(f(x)) end end
@@ -273,4 +282,10 @@ check:
   end, big-array)
 
   filtered is=~ raw-array-build(lam(x): x * 2 end, 2500)
-end
+end`;
+    let parsed = this.parser.parse(text);
+    for (let i = 0; i < parsed.rootNodes.length; i++) {
+      expect(parsed.rootNodes[i].options["aria-label"]).not.toBe(undefined);
+    }
+  })
+});
