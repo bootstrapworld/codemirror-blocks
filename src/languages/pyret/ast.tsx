@@ -520,7 +520,7 @@ export class Check extends ASTNode {
     this.name = name;
     this.body = body;
     this.keyword_check = keyword_check;
-    super.hash = hashObject(['check', this.name, ...[this.body, this.keyword_check].map(c => c.hash)]);
+    super.hash = hashObject(['check', this.name, this.body.hash, this.keyword_check]);
   }
 
   longDescription(level) {
@@ -988,6 +988,94 @@ export class Reactor extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">
           reactor:
+        </span>
+        <div className="blocks-cond-table">
+          {branches}
+        </div>
+      </Node>
+    );
+  }
+}
+
+export class IfBranch extends ASTNode {
+  test: ASTNode;
+  body: ASTNode;
+  constructor(from, to, test, body, options) {
+    super(from, to, 'if-clause', ['test', 'body'], options);
+    this.test = test;
+    this.body = body;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `${this.test.describe(level)} testing with ${this.body.describe(level)} body in an if branch`;
+  }
+
+  pretty() {
+    let intermediate = ":";
+    let test = this.test.pretty();
+    let body = this.body.pretty();
+    return P.sepBy([test, intermediate, body], " ", "");
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <div className="blocks-cond-row">
+          <div className="blocks-cond-predicate">
+            {this.test.reactElement()}
+          </div>
+          <div className="blocks-cond-result">
+            {this.body.reactElement()}
+          </div>
+        </div>
+      </Node>
+    )
+  }
+}
+
+export class IfExpression extends ASTNode {
+  branches: IfBranch[];
+  blocky: boolean;
+  constructor(from, to, branches, blocky, options) {
+    super(from, to, 'ifPipeExpression', ['branches'], options);
+    this.branches = branches;
+    this.blocky = blocky;
+    super.hash = hashObject(['ifPipe', ...(this.branches.map(c => c.hash)), this.blocky]);
+  }
+
+  longDescription(level) {
+    return `${enumerateList(this.branches, level)} in an if pipe`;
+  }
+
+  pretty() {
+    let prefix = "ask:";
+    let suffix = "end";
+    let branches = P.sepBy(this.branches, "", "");
+    return P.ifFlat(
+      P.horz(prefix, " ", branches, " ", suffix),
+      P.vert(prefix, P.horz(INDENT, branches), suffix)
+    );
+  }
+
+  render(props) {
+    const NEWLINE = <br />
+    let branches = [];
+    this.branches.forEach((element, index) => {
+      let span = <span key={index}>
+        <DropTarget />
+        {NEWLINE}
+        <DropTargetSibling node={element} left={true} right={true} />
+        {NEWLINE}
+      </span>;
+      branches.push(span);
+    });
+    branches.push(<DropTarget key={this.branches.length} />);
+
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          ask:
         </span>
         <div className="blocks-cond-table">
           {branches}

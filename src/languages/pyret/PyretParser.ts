@@ -21,6 +21,7 @@ import {Binop,
   DataField,
   Func,
   FunctionApp,
+  IfBranch,
   IfPipe,
   IfPipeBranch,
   Include,
@@ -63,6 +64,10 @@ function endOf(srcloc: { endRow: number; endCol: number; }) {
   };
 }
 
+const checkOP = 'check-op';
+
+const ariaLabel = "aria-label";
+
 const opLookup = {
   "+":   "+",
   "-":   "-",
@@ -81,7 +86,8 @@ const opLookup = {
   "and": "and",
   "or":  "or",
   // TODO: check ops
-  "is": (loc, _node) => new Literal(loc.from, loc.to, 'is', 'check-op'),
+  "is": (loc, _node) => new Literal(loc.from, loc.to, 'is', checkOP),
+  "is=~": (loc, _node) => new Literal(loc.from, loc.to, 'is=~', checkOP),
 };
 
 type AField = any;
@@ -99,7 +105,6 @@ type Expr = ASTNode;
 type FieldName = any;
 type ForBind = any;
 type Hint = any;
-type IfBranch = any;
 type ImportType = Number;
 type LetBind = any;
 type LetrecBind = any;
@@ -267,13 +272,13 @@ const nodeTypes = {
   's-if-pipe': function(pos: Loc, branches: IfPipeBranch[], blocky: boolean) {
     if (DEBUG) console.log(arguments);
     branches.forEach((element, index) => {
-      (element as any).options["aria-label"] = `branch ${index + 1}`;
+      element.options["aria-label"] = `branch ${index + 1}`;
     });
     return new IfPipe(pos.from, pos.to, branches, blocky, {'aria-label': 'ask expression'});
   },
   // "s-if-pipe-else": function(l: Loc, branches: IfPipeBranch[], _else: Expr, blocky: boolean) {},
-  // "s-if": function(l: Loc, branches: IfBranch[], blocky: boolean) {},
-  // "s-if-else": function(l: Loc, branches: IfBranch[], _else: Expr, blocky: boolean) {},
+  "s-if": function(l: Loc, branches: IfBranch[], blocky: boolean) {},
+  "s-if-else": function(l: Loc, branches: IfBranch[], _else: Expr, blocky: boolean) {},
   // "s-cases": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], blocky: boolean) {},
   // "s-cases-else": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], _else: Expr, blocky: boolean) {},
   "s-op": function (pos: Loc, opPos: Loc, op: string, left: Expr, right: Expr) {
@@ -524,11 +529,14 @@ end
   // 's-singleton-variant': function(l: Loc, name: string, with_members: Member[]) {},
 
   //data IfBranch
-  // 's-if-branch': function(l: Loc, test: Expr, body: Expr) {},
+  's-if-branch': function(l: Loc, test: Expr, body: Expr) {
+    if (DEBUG) console.log(arguments);
+    return new IfBranch(l.from, l.to, test, body, {ariaLabel: `if branch`});
+  },
 
   //data IfPipeBranch
   's-if-pipe-branch': function(pos: Loc, test: ASTNode, body: ASTNode) {
-    return new IfPipeBranch(pos.from, pos.to, test, body, {'aria-label': `${test} testing with result ${body} branch`});
+    return new IfPipeBranch(pos.from, pos.to, test, body, {'aria-label': `ask branch`});
   },
   
   // data CasesBind
@@ -590,7 +598,7 @@ function idToLiteral(id: Bind): Literal {
   if (DEBUG) console.log(name);
 
   return new Literal(
-    (id as ASTNode).from, (id as ASTNode).to, (id.ann != null)? name + " :: " + id.ann : name, "identifier", {'aria-label': name}
+    id.from, id.to, (id.ann != null)? name + " :: " + id.ann : name, "identifier", {'aria-label': name}
   );
 }
 

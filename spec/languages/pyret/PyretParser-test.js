@@ -178,5 +178,21 @@ end`;
     for (let i = 0; i < parsed.rootNodes.length; i++) {
       expect(parsed.rootNodes[i].options["aria-label"]).not.toBe(undefined);
     }
-  })
+  });
+
+  it("should be able to test non-ds programs:", function() {
+    const test = (text, label = text) => {
+      it(`${label}`, function() {
+        let result = this.parser.parse(str).rootNodes[0].options["aria-label"];
+        expect(result).not.toBe(undefined);
+      });
+    };
+
+    test(`if num-modulo(i, 5) == 0:
+      some(i * i)
+    else:
+      none
+    end`);
+    test(`if x == 3: 3 else if x > 0: 0 else if x < -1: 4 else: -1 end`);
+  });
 });
