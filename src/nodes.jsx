@@ -372,14 +372,14 @@ export class CondClause extends ASTNode {
             {testExpr}
           </div>
           <div className="blocks-cond-result">
-            <DropTargetContext field="thenExprs">
+            <DropTargetContainer field="thenExprs">
               {this.thenExprs.map((thenExpr, index) => (
                 <span key={index}>
                   <DropTarget/>
                   {thenExpr.reactElement()}
                 </span>))}
               <DropTarget/>
-            </DropTargetContext>
+            </DropTargetContainer>
           </div>
         </div>
       </Node>

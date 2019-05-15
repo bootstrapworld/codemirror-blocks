@@ -17,7 +17,8 @@ const raw = lines => lines.join('').trim();
 //   Changes has the form:
 //     [{text: string, from: Pos, to: Pos, label: string}]
 //   FocusHint is a function of type:
-//     ast -> ASTNode|null
+//     ast -> ASTNode|null|"fallback"
+//     (If null, remove focus. If "fallback", fall back on computeFocusNodeFromChanges.)
 //
 // Attempt to commit a set of text changes to Code Mirror.
 // If successful (i.e., if the resulting program parses),
@@ -43,11 +44,16 @@ export function commitChanges(
     SHARED.cm.operation(changes(SHARED.cm));
     let {ast: oldAST, collapsedList} = store.getState();
     if(oldAST.hash !== newAST.hash) newAST = patch(oldAST, newAST);
-    let focusNode = (focusHint === undefined)
-        ? computeFocusNodeFromChanges(changeArr, newAST)
-        : focusHint(newAST);
-    let focusId = focusNode ? focusNode.id : null;
     store.dispatch({type: 'SET_AST', ast: newAST});
+    // Use the focus hint to determine focus, unless:
+    // 1. There is no focus hint, or
+    // 2. There is a focus hint, but when you call it it returns "fallback".
+    // In those cases, use `computeFocusNodeFromChanges` instead.
+    let focusNode = focusHint ? focusHint(newAST) : "fallback";
+    if (focusNode === "fallback") {
+      focusNode = computeFocusNodeFromChanges(changeArr, newAST);
+    }
+    let focusId = focusNode ? focusNode.id : null;
     while (focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
       if (collapsedList.includes(focusNode.id)) focusId = focusNode.id;
     }
@@ -61,6 +67,7 @@ export function commitChanges(
 }
 
 // TODO: make this private
+// TODO: update this heuristic to work better with Editing-Syntax-style edits.
 // computeFocusNodeFromChanges : [CMchanges], AST -> Number
 // compute the focusId by identifying the node in the newAST that was
 //   (a) most-recently added (if there's any insertion)

@@ -189,6 +189,7 @@ class InsertionPoint {
 
   findChild(newAST) {
     const newParent = newAST.getNodeById(this.parent.id);
+    if (!newParent) return "fallback";
     return newParent[this.spec.fieldName][this.index];
   }
 }
@@ -239,6 +240,7 @@ class ReplacementPoint {
 
   findChild(newAST) {
     const newParent = newAST.getNodeById(this.parent.id);
+    if (!newParent) return "fallback";
     if (this.index) {
       return this.parent[this.spec.fieldName][this.index];
     } else {

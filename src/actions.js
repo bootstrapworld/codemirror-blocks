@@ -25,7 +25,7 @@ import {performEdits, edit_insert, edit_delete, edit_replace,
 export function insert(text, target, onSuccess, onError) {
   const {ast} = store.getState();
   const edits = [target.toEdit(text)];
-  const focusHint = (newAST) => target.findMe(newAST);
+  const focusHint = (newAST) => target.focusHint(newAST);
   performEdits('cmb:insert', ast, edits, focusHint, onSuccess, onError);
 }
 
@@ -37,7 +37,11 @@ export function delete_(nodes, onSuccess, onError) { // 'delete' is a reserved w
   const lastEdit = edits[edits.length - 1];
   const prevNode = ast.getNodeBefore(lastEdit.node);
   const focusHint = (newAST) => {
-    return prevNode ? newAST.getNodeById(prevNode.id) : newAST.getFirstRootNode();
+    if (prevNode) {
+      return newAST.getNodeById(prevNode.id) || "fallback";
+    } else {
+      return newAST.getFirstRootNode();
+    }
   };
   performEdits('cmb:delete-node', ast, edits, focusHint, onSuccess, onError);
   store.dispatch({type: 'SET_SELECTIONS', selections: []});
@@ -72,7 +76,7 @@ export function paste(target, onSuccess, onError) {
   pasteFromClipboard(text => {
     const {ast} = store.getState();
     const edits = [target.toEdit(text)];
-    const focusHint = (newAST) => target.findMe(newAST);
+    const focusHint = (newAST) => target.focusHint(newAST);
     performEdits('cmb:paste', ast, edits, focusHint, onSuccess, onError);
     store.dispatch({type: 'SET_SELECTIONS', selections: []});
   });
@@ -98,7 +102,7 @@ export function drop(src, target, onSuccess, onError) {
   // Insert or replace at the drop location, depending on what we dropped it on.
   edits.push(target.toEdit(content));
   // Perform the edits.
-  const focusHint = (newAST) => target.findMe(newAST);
+  const focusHint = (newAST) => target.focusHint(newAST);
   performEdits('cmb:drop-node', ast, edits, focusHint);
 }
 

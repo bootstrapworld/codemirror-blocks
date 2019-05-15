@@ -70,7 +70,7 @@ class NodeTarget extends Target {
     return edit_replace(text, this.node);
   }
 
-  findMe(newAST) {
+  focusHint(newAST) {
     if (this.replacementPoint) {
       return this.replacementPoint.findChild(newAST);
     } else {
@@ -95,7 +95,7 @@ class DropTargetTarget extends Target {
     return edit_insert(text, this.parent, this.field, this.from);
   }
 
-  findMe(newAST) {
+  focusHint(newAST) {
     return this.insertionPoint.findChild(newAST);
   }
 }
@@ -113,7 +113,7 @@ class TopLevelTarget extends Target {
     return edit_overwrite(text, this.from, this.to);
   }
 
-  findMe(newAST) {
+  focusHint(newAST) {
     return newAST.getNodeAfterCur(this.from);
   }
 }
