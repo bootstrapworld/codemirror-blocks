@@ -109,8 +109,7 @@ export class AST {
 
   validateNode(node) {
     const astFieldNames =
-          ["from", "to", "type", "options", "spec", "__alreadyValidated",
-           "element","_clone", "_findInsertionPoint", "_findReplacementPoint"];
+          ["from", "to", "type", "options", "spec", "__alreadyValidated", "element"];
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames =
           ["id", "parent", "path", "level", "nid", "prev", "next", "hash",
@@ -352,10 +351,6 @@ export class ASTNode {
 
     // Make the spec more easily available.
     this.spec = this.constructor.spec;
-    // Internal use only (in actions/edits.js)
-    this._clone = () => this.spec.clone(this);
-    this._findInsertionPoint = (pos) => this.spec.findInsertionPoint(this, pos);
-    this._findReplacementPoint = (child) => this.spec.findReplacementPoint(this, child);
   }
 
   toDescription(_level){

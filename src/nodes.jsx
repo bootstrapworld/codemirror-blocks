@@ -3,7 +3,7 @@ import React from 'react';
 import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
 import Node from './components/Node';
 import Args from './components/Args';
-import {DropTarget, DropTargetSibling} from './components/DropTarget';
+import {DropTarget, DropTargetContainer} from './components/DropTarget';
 import * as Spec from './nodeSpec';
 
 
@@ -61,7 +61,7 @@ export class Unknown extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
-        <Args>{restElts}</Args>
+        <Args field="elts">{restElts}</Args>
         </span>
       </Node>
     );
@@ -124,13 +124,14 @@ export class FunctionApp extends ASTNode {
   }
 
   render(props) {
+    const func = this.func.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          <Args>{[this.func]}</Args>
+          {func}
         </span>
         <span className="blocks-args">
-          <Args>{this.args}</Args>
+          <Args field="args">{this.args}</Args>
         </span>
     </Node>
     );
@@ -165,7 +166,7 @@ export class IdentifierList extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-args">
-          <Args>{this.ids}</Args>
+          <Args field="ids">{this.ids}</Args>
         </span>
       </Node>
     );
@@ -198,12 +199,13 @@ export class StructDefinition extends ASTNode {
   }
 
   render(props) {
+    const name = this.name.reactElement();
     const fields = this.fields.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define-struct
-          <Args>{[this.name]}</Args>
+          {name}
         </span>
         {fields}
       </Node>
@@ -238,11 +240,12 @@ export class VariableDefinition extends ASTNode {
 
   render(props) {
     const body = this.body.reactElement();
+    const name = this.name.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define
-          <Args>{[this.name]}</Args>
+          {name}
         </span>
         <span className="blocks-args">
           {body}
@@ -325,14 +328,11 @@ export class FunctionDefinition extends ASTNode {
   render(props) {
     let params = this.params.reactElement();
     let body = this.body.reactElement();
+    let name = this.name.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          define (
-            <DropTarget/>
-            <DropTargetSibling node={this.name} left={true} />
-            {params}
-          )
+          define ({name} {params})
         </span>
         <span className="blocks-args">
           {body}
@@ -364,22 +364,24 @@ export class CondClause extends ASTNode {
   }
 
   render(props) {
+    const testExpr = this.testExpr.reactElement();
     return (
       <Node node={this} {...props}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">
-            <DropTarget/>
-            <DropTargetSibling node={this.testExpr} left={true} right={true} />
+            {testExpr}
           </div>
           <div className="blocks-cond-result">
-            {this.thenExprs.map((thenExpr, index) => (
-              <span key={index}>
-                <DropTarget/>
-                <DropTargetSibling node={thenExpr} left={true} right={true} />
-              </span>))}
+            <DropTargetContext field="thenExprs">
+              {this.thenExprs.map((thenExpr, index) => (
+                <span key={index}>
+                  <DropTarget/>
+                  {thenExpr.reactElement()}
+                </span>))}
+              <DropTarget/>
+            </DropTargetContext>
           </div>
         </div>
-        <DropTarget/>
       </Node>
     );
   }
@@ -446,18 +448,19 @@ export class IfExpression extends ASTNode {
   }
 
   render(props) {
+    const testExpr = this.testExpr.reactElement();
+    const thenExpr = this.thenExpr.reactElement();
+    const elseExpr = this.elseExpr.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">
             <div className="blocks-cond-predicate">
-              <DropTarget/>
-              <DropTargetSibling node={this.testExpr} left={true} right={true} />
+              {testExpr}
             </div>
             <div className="blocks-cond-result">
-              <DropTarget/>
-              <DropTargetSibling node={this.thenExpr} left={true} right={true} />
+              {thenExpr}
             </div>
           </div>
           <div className="blocks-cond-row">
@@ -465,11 +468,7 @@ export class IfExpression extends ASTNode {
               else
             </div>
             <div className="blocks-cond-result">
-              <DropTarget/>
-              <DropTargetSibling node={this.elseExpr} left={true} right={true} />
-            </div>
-            <div className="blocks-cond-result">
-              <DropTarget/>
+              {elseExpr}
             </div>
           </div>
         </div>
@@ -586,7 +585,7 @@ export class Sequence extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
         <div className="blocks-sequence-exprs">
-          <Args>{this.exprs}</Args>
+          <Args field="exprs">{this.exprs}</Args>
         </div>
       </Node>
     );

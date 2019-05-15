@@ -1,5 +1,7 @@
 import SHARED from './shared';
-import {edit_replace, edit_insert, edit_replaceToplevelText} from './edits/performEdits';
+import {edit_replace, edit_insert, edit_overwrite} from './edits/performEdits';
+import {findInsertionPoint, findReplacementPoint} from './nodeSpec';
+import {findAdjacentDropTarget} from './components/DropTarget';
 
 
 // A _Target_ says where an action is directed. For example, a target may be a
@@ -18,8 +20,8 @@ export function node(n) {
 }
 
 // Target a DropTarget. 
-export function dropTarget(pos, parentNode) {
-  return new DropTargetTarget(pos, parentNode);
+export function dropTarget(parentNode, field, pos) {
+  return new DropTargetTarget(parentNode, field, pos);
 }
 
 // Target a source range at the top level. This really has to be at the top
@@ -30,22 +32,12 @@ export function topLevel(from, to) {
 
 // Target just to the left of a node.
 export function leftOf(node) {
-  if (node.parent) {
-    return new DropTargetTarget(node.srcRange().from, node.parent);
-  } else {
-    const pos = node.srcRange().from;
-    return new TopLevelTarget(pos, pos);
-  }
+  return findAdjacentDropTarget(node, true).getTarget();
 }
 
 // Target just to the right of a node.
 export function rightOf(node) {
-  if (node.parent) {
-    return new DropTargetTarget(node.srcRange().to, node.parent);
-  } else {
-    const pos = node.srcRange().to;
-    return new TopLevelTarget(pos, pos);
-  }
+  return findAdjacentDropTarget(node, false).getTarget();
 }
 
 
@@ -66,7 +58,7 @@ class NodeTarget extends Target {
     super(range.from, range.to);
     this.node = node;
     if (this.node.parent) {
-      this.replacementPoint = node.parent._findReplacementPoint(node);
+      this.replacementPoint = findReplacementPoint(node.parent, node);
     }
   }
 
@@ -82,16 +74,17 @@ class NodeTarget extends Target {
     if (this.replacementPoint) {
       return this.replacementPoint.findChild(newAST);
     } else {
-      return ast.getNodeAfterCur(this.from);
+      return newAST.getNodeAfterCur(this.from);
     }
   }
 }
 
 class DropTargetTarget extends Target {
-  constructor(pos, parent) {
+  constructor(parent, field, pos) {
     super(pos, pos);
     this.parent = parent;
-    this.insertionPoint = parent._findInsertionPoint(pos);
+    this.field = field;
+    this.insertionPoint = findInsertionPoint(parent, field, pos);
   }
 
   getText() {
@@ -99,7 +92,7 @@ class DropTargetTarget extends Target {
   }
 
   toEdit(text) {
-    return edit_insert(text, this.from, this.parent);
+    return edit_insert(text, this.parent, this.field, this.from);
   }
 
   findMe(newAST) {
@@ -117,11 +110,7 @@ class TopLevelTarget extends Target {
   }
 
   toEdit(text) {
-    if (this.from === this.to) {
-      return edit_insert(text, this.from);
-    } else {
-      return edit_replaceToplevelText(text, this.from, this.to);
-    }
+    return edit_overwrite(text, this.from, this.to);
   }
 
   findMe(newAST) {

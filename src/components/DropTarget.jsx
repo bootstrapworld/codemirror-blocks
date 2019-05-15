@@ -9,89 +9,80 @@ import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import * as Targets from '../targets';
 import BlockComponent from './BlockComponent';
-import {NodeContext} from './Node';
 import uuidv4 from 'uuid/v4';
+import {warn} from '../utils';
+import {ASTNode} from '../ast';
+import {drop} from '../actions';
 
 
-// Use this class to render non-drop-target children of this node. Pass
-// in the `node` to be rendered, the index of the drop target to the `left` (or
-// `null` if there is none), and likewise for the `right`.
-const mapDispatchToProps1 = dispatch => ({
-  dispatch,
-  setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
+// Provided by `Node`
+export const NodeContext = React.createContext({
+  node: null
 });
-@connect(null, mapDispatchToProps1)
-export class DropTargetSibling extends Component {
-  static contextType = NodeContext;
 
+// Provided by `DropTargetContainer`
+export const DropTargetContext = React.createContext({
+  node: null,
+  field: null
+});
+
+// Every set of DropTargets must be wrapped in a DropTargetContainer.
+//   `field`: the name of the field containing a list of ASTNodes, that this is
+//     a DropTarget for.
+export class DropTargetContainer extends Component {
+  static contextType = NodeContext;
+  
   static propTypes = {
-    node: PropTypes.object.isRequired,
-    left: PropTypes.bool,
-    right: PropTypes.bool,
+    field: PropTypes.string.isRequired,
   }
 
-  findAdjacentDropTarget(onLeft) {
-    if (onLeft && !this.props.left || !onLeft && !this.props.right) {
-      // We're not connected to a drop target on that side.
-      return false;
-    }
+  render() {
+    const value = {
+      field: this.props.field,
+      node: this.context.node
+    };
+    return (
+      <DropTargetContext.Provider value={value}>
+        {this.props.children}
+      </DropTargetContext.Provider>
+    );
+  }
+}
 
-    let prevDropTargetId = null;
-    let targetId = `block-node-${this.props.node.id}`;
+// Find the drop target (if any) on the given side of `child` node.
+export function findAdjacentDropTarget(child, onLeft) {
+  let prevDropTargetId = null;
+  let targetId = `block-node-${child.id}`;
     
-    function findDT(parent) {
-      if (!parent.children) {
-        return null;
-      }
-      // Convert array-like object into an Array.
-      let children = [...parent.children];
-      // If we want the drop-target to the right, iterate in reverse
-      if (!onLeft) { children.reverse(); }
-      
-      for (let sibling of children) {
-        if (sibling.id && sibling.id.startsWith("block-drop-target-")) {
-          // We've hit a drop-target. Remember its id, in case it's adjacent to the node.
-          prevDropTargetId = sibling.id.substring(18); // skip "block-drop-target-"
-        } else if (sibling.id == targetId) {
-          // We've found this node! Return the id of the adjacent drop target.
-          return prevDropTargetId;
-        } else if (sibling.id && sibling.id.startsWith("block-node-")) {
-          // It's a different node. Skip it.
-        } else if (sibling.children) {
-          // We're... somewhere else. If it has children, traverse them to look for the node.
-          let result = findDT(sibling);
-          if (result !== null) {
-            return result; // node found.
-          }
-        }
-      }
+  function findDT(elem) {
+    if (!elem.children) {
       return null;
     }
-
-    return findDT(this.context.node.element);
-  }
-
-  setLeft() {
-    let dropTargetId = this.findAdjacentDropTarget(true);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
-    }    
-  }
-
-  setRight() {
-    let dropTargetId = this.findAdjacentDropTarget(false);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
+    // Convert array-like object into an Array.
+    let children = [...elem.children];
+    // If we want the drop-target to the right, iterate in reverse
+    if (!onLeft) { children.reverse(); }
+      
+    for (let sibling of children) {
+      if (sibling.id && sibling.id.startsWith("block-drop-target-")) {
+        // We've hit a drop-target. Remember its id, in case it's adjacent to the node.
+        prevDropTargetId = sibling.id.substring(18); // skip "block-drop-target-"
+      } else if (sibling.id == targetId) {
+        // We've found this node! Return the id of the adjacent drop target.
+        return prevDropTargetId;
+      } else if (sibling.id && sibling.id.startsWith("block-node-")) {
+        // It's a different node. Skip it.
+      } else if (sibling.children) {
+        // We're... somewhere else. If it has children, traverse them to look for the node.
+        let result = findDT(sibling);
+        if (result !== null) {
+          return result; // node found.
+        }
+      }
     }
+    return null;
   }
-  
-  render() {
-    let props = {
-      onSetLeft: () => this.setLeft(),
-      onSetRight: () => this.setRight(),
-    };
-    return this.props.node.reactElement(props);
-  }
+  return findDT(child.parent.element);
 }
 
 
@@ -127,14 +118,12 @@ const mapDispatchToProps2 = (dispatch, {id}) => ({
 
 @connect(mapStateToProps2, mapDispatchToProps2)
 @DropNodeTarget(function(monitor) {
-  let loc = this.getLocation();
-  let parent = this.context.node;
-  return this.props.dispatch(dropOntoDropTarget(monitor.getItem(), loc, parent));
+  return drop(monitor.getItem(), this.getTarget());
 })
 class ActualDropTarget extends BlockComponent {
 
-  static contextType = NodeContext;
-  
+  static contextType = DropTargetContext;
+
   static propTypes = {
     // fulfilled by @connect
     isEditable: PropTypes.bool.isRequired,
@@ -161,17 +150,24 @@ class ActualDropTarget extends BlockComponent {
     e.stopPropagation();
   }
 
+  getTarget() {
+    let parentNode = this.context.node;
+    let fieldName = this.context.field;
+    let pos = this.getLocation();
+    return Targets.dropTarget(parentNode, fieldName, pos);
+  }
+
   getLocation() {
     let prevNodeId = null;
     let targetId = `block-drop-target-${this.props.id}`;
     let ast = this.props.ast;
     let dropTargetWasFirst = false;
     
-    function findLoc(parent) {
-      if (!parent.children) {
+    function findLoc(elem) {
+      if (!elem.children) {
         return null;
       }
-      for (let sibling of parent.children) {
+      for (let sibling of elem.children) {
         if (sibling.id && sibling.id.startsWith("block-node-")) {
           // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
           prevNodeId = sibling.id.substring(11); // skip "block-node-"
@@ -200,12 +196,8 @@ class ActualDropTarget extends BlockComponent {
       }
       return null;
     }
-    
-    let loc = findLoc(this.context.node.element);
-    if (!loc) {
-      console.warn("Could not find drop target location");
-    }
-    return loc;
+
+    return findLoc(this.context.node.element) || this.context.pos;
   }
 
   handleDoubleClick = e => {
@@ -229,9 +221,7 @@ class ActualDropTarget extends BlockComponent {
       id                : `block-drop-target-${this.props.id}`,
     };
     if (this.props.isEditable) {
-      const pos = this.getLocation();
-      const parent = this.context.node;
-      const target = Targets.dropTarget(pos, parent);
+      const target = this.getTarget();
       return (
         <NodeEditable target={target}
                       value={this.state.value}

@@ -1,19 +1,23 @@
 import {warn, poscmp, srcRangeIncludes} from '../utils';
 import {prettyPrintingWidth} from '../ast';
 import {commitChanges} from './commitChanges';
+import {findInsertionPoint, findReplacementPoint, cloneNode} from '../nodeSpec';
 import SHARED from '../shared';
 
 
-// edit_insert : String, Pos, ASTNode|null -> Edit
+// edit_insert : String, ASTNode, String, Pos -> Edit
 //
-// Construct an edit to insert `text` at `pos`, which is contained in `parent`.
-// `parent` should be `null` iff the edit is at the top level.
-export function edit_insert(text, pos, parent=null) {
-  if (parent) {
-    return new InsertChildEdit(text, pos, parent);
-  } else {
-    return new InsertRootEdit(text, pos, pos);
-  }
+// Construct an edit to insert `text` in the list `parent.field` at the given `pos`.
+export function edit_insert(text, parent, field, pos) {
+  return new InsertChildEdit(text, parent, field, pos);
+}
+
+// edit_overwrite : String, Pos, Pos -> Edit
+//
+// Construct an edit to replace a range of source code with `text`. The range
+// must be at the toplevel: it can neither begin nor end inside a root node.
+export function edit_overwrite(text, from, to) {
+  return new OverwriteEdit(text, from, to);
 }
 
 // edit_delete : ASTNode -> Edit
@@ -38,14 +42,8 @@ export function edit_replace(text, node) {
   }
 }
 
-// edit_replace_toplevel_text : String, Pos, Pos -> Edit
+// performEdits : String, AST, Array<Edit>, ASTNode|null, Callback?, Callback? -> Void
 //
-// Construct an edit to replace a range of source code with `text`. The range
-// must be at the toplevel: it can neither being nor end inside a root node.
-export function edit_replaceToplevelText(text, from, to) {
-  return new InsertRootEdit(text, from, to);
-}
-
 // Attempt to commit a set of changes to Code Mirror. For more details, see the
 // `commitChanges` function. This function is identical to `commitChanges`,
 // except that this one takes higher-level `Edit` operations, constructed by the
@@ -103,7 +101,7 @@ class Edit {
   }
 }
 
-class InsertRootEdit extends Edit {
+class OverwriteEdit extends Edit {
   constructor(text, from, to) {
     super(from, to);
     this.text = text;
@@ -124,11 +122,11 @@ class InsertRootEdit extends Edit {
 }
 
 class InsertChildEdit extends Edit {
-  constructor(text, pos, parent) {
+  constructor(text, parent, field, pos) {
     super(pos, pos);
     this.text = text;
-    this.pos = pos;
     this.parent = parent;
+    this.field = field;
   }
 
   isTextEdit() {
@@ -137,7 +135,7 @@ class InsertChildEdit extends Edit {
 
   makeAstEdit(ancestor) {
     let parent = super.findDescendantNode(ancestor, this.parent.id);
-    parent._findInsertionPoint(this.pos).insertChild(this.text);
+    findInsertionPoint(parent, this.field, this.from).insertChild(this.text);
   }
 }
 
@@ -176,7 +174,7 @@ class DeleteChildEdit extends Edit {
 
   makeAstEdit(ancestor) {
     const parent = super.findDescendantNode(ancestor, this.parent.id);
-    parent._findReplacementPoint(this.node).deleteChild();
+    findReplacementPoint(parent, this.node).deleteChild();
   }
 }
 
@@ -216,7 +214,7 @@ class ReplaceChildEdit extends Edit {
 
   makeAstEdit(ancestor) {
     let parent = super.findDescendantNode(ancestor, this.parent.id);
-    parent._findReplacementPoint(this.node).replaceChild(this.text);
+    findReplacementPoint(parent, this.node).replaceChild(this.text);
   }
 }
 
@@ -232,7 +230,7 @@ class EditGroup {
     this.completed = true;
     // Perform the edits on a copy of the shared ancestor node.
     let range = this.ancestor.srcRange();
-    let clonedAncestor = this.ancestor._clone();
+    let clonedAncestor = cloneNode(this.ancestor);
     for (const edit of this.edits) {
       edit.makeAstEdit(clonedAncestor);
     }

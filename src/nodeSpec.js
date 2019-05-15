@@ -4,6 +4,7 @@ import {ASTNode} from './ast';
 import hashObject from 'object-hash';
 
 
+
 // A NodeSpec declares the types of the fields of an ASTNode.
 // It is used to compute hashes, to validate nodes (to prevent the construction
 // of an ill-formed AST), and to deal with some edits.
@@ -13,6 +14,66 @@ import hashObject from 'object-hash';
 // - optional: either an ASTNode, or `null`.
 // - list: an array of ASTNodes.
 // - value: an ordinary value that does not contain an ASTNode.
+
+// nodeSpec :: Array<ChildSpec> -> NodeSpec
+export function nodeSpec(childSpecs) {
+  return new NodeSpec(childSpecs);
+}
+
+// required :: String -> ChildSpec
+export function required(fieldName) {
+  return new Required(fieldName);
+}
+
+// optional :: String -> ChildSpec
+export function optional(fieldName) {
+  return new Optional(fieldName);
+}
+
+// list :: String -> ChildSpec
+export function list(fieldName) {
+  return new List(fieldName);
+}
+
+// value :: any -> ChildSpec
+export function value(fieldName) {
+  return new Value(fieldName);
+}
+
+// Private-ish - used only in `edits/`
+export function findInsertionPoint(parent, fieldName, pos) {
+  return new InsertionPoint(parent, fieldName, pos);
+}
+
+// Private-ish - used only in `edits/`
+export function findReplacementPoint(parent, child) {
+  return new ReplacementPoint(parent, child);
+}
+
+// Private-ish - used only in `edits/`
+export function cloneNode(oldNode) {
+  let newNode = new ASTNode(oldNode.from, oldNode.to, oldNode.type, oldNode.options);
+  for (const spec of oldNode.spec.childSpecs) {
+    if (spec instanceof Required || spec instanceof Optional) {
+      if (oldNode[spec.fieldName]) {
+        newNode[spec.fieldName] = cloneNode(oldNode[spec.fieldName]);
+      } else {
+        newNode[spec.fieldName] = null;
+      }
+    } else if (spec instanceof Value) {
+      newNode[spec.fieldName] = oldNode[spec.fieldName];
+    } else if (spec instanceof List) {
+      newNode[spec.fieldName] = oldNode[spec.fieldName].map(cloneNode);
+    }
+  }
+  newNode.type = oldNode.type;
+  newNode.id = oldNode.id;
+  newNode.hash = oldNode.hash;
+  newNode.spec = oldNode.spec;
+  newNode.pretty = oldNode.pretty;
+  return newNode;
+}
+
 class NodeSpec {
   constructor(childSpecs) {
     if (!childSpecs instanceof Array) {
@@ -43,38 +104,6 @@ class NodeSpec {
 
   fieldNames() {
     return this.childSpecs.map((spec) => spec.fieldName);
-  }
-
-  clone(oldNode) {
-    let newNode = new ASTNode(oldNode.from, oldNode.to, oldNode.type, oldNode.options);
-    for (const spec of this.childSpecs) {
-      if (spec instanceof Required || spec instanceof Optional) {
-        if (oldNode[spec.fieldName]) {
-          newNode[spec.fieldName] = oldNode[spec.fieldName]._clone();
-        } else {
-          newNode[spec.fieldName] = null;
-        }
-      } else if (spec instanceof Value) {
-        newNode[spec.fieldName] = oldNode[spec.fieldName];
-      } else if (spec instanceof List) {
-        newNode[spec.fieldName] = oldNode[spec.fieldName]
-          .map(node => node._clone());
-      }
-    }
-    newNode.type = oldNode.type;
-    newNode.id = oldNode.id;
-    newNode.hash = oldNode.hash;
-    newNode.spec = oldNode.spec;
-    newNode.pretty = oldNode.pretty;
-    return newNode;
-  }
-
-  findInsertionPoint(parent, pos) {
-    return new InsertionPoint(parent, pos);
-  }
-
-  findReplacementPoint(parent, child) {
-    return new ReplacementPoint(parent, child);
   }
 }
 
@@ -122,36 +151,35 @@ class HashIterator {
 }
 
 class InsertionPoint {
-  constructor(parent, pos) {
+  constructor(parent, fieldName, pos) {
     this.parent = parent;
     this.pos = pos;
-    for (const spec of parent.spec.childSpecs) {
-      if (spec instanceof List) {
-        const list = parent[spec.fieldName];
-        if (list.length === 0) {
-          // This had better be the only list.
-          // It has no elements, so we can't tell whether it's the *right* list.
-          this.spec = spec;
-          this.index = 0;
-          return;
-        } else if (poscmp(list[0].srcRange().from, pos) <= 0
-                  && poscmp(pos, list[list.length - 1].srcRange().to) <= 0) {
-          // `pos` lies inside this list.
-          // We'll find out exactly where it is, and insert at that point.
-          for (const i in list) {
-            if (poscmp(pos, list[i].srcRange().from) <= 0) {
-              this.spec = spec;
-              this.index = i;
-              return;
-            }
-          }
-          this.spec = spec;
-          this.index = list.length;
-          return;
-        }
+    // Find the spec that matches the supplied field name.
+    let spec = null;
+    for (const s of parent.spec.childSpecs) {
+      if (s instanceof List && s.fieldName === fieldName) {
+        spec = s;
       }
     }
-    warn('new InsertionPoint', "Failed to find list to insert child into.");
+    if (spec === null) {
+      warn('NodeSpec', "Failed to find list to insert child into.");
+    }
+    this.spec = spec;
+    // If `pos` is null, that means the list is empty.
+    if (pos === null) {
+      this.index = 0;
+      return;
+    }
+    // `pos` lies inside the list. Find out where.
+    const list = parent[fieldName];
+    for (const i in list) {
+      if (poscmp(pos, list[i].srcRange().from) <= 0) {
+        this.index = i;
+        return;
+      }
+    }
+    this.index = list.length;
+    return;
   }
 
   insertChild(text) {
@@ -279,24 +307,4 @@ class Value extends ChildSpec {
   validate(parent) {
     // Any value is valid, even `undefined`, so there's nothing to check.
   }
-}
-
-export function nodeSpec(childSpecs) {
-  return new NodeSpec(childSpecs);
-}
-
-export function required(fieldName) {
-  return new Required(fieldName);
-}
-
-export function optional(fieldName) {
-  return new Optional(fieldName);
-}
-
-export function list(fieldName) {
-  return new List(fieldName);
-}
-
-export function value(fieldName) {
-  return new Value(fieldName);
 }

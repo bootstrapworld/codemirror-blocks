@@ -8,6 +8,7 @@ import {drop, delete_, copy, paste, activate} from '../actions';
 import * as Targets from '../targets';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
+import {NodeContext, DropTargetContext, findAdjacentDropTarget} from './DropTarget';
 import {isErrorFree} from '../store';
 import SHARED from '../shared';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
@@ -16,9 +17,6 @@ import {store} from '../store';
 import {playSound, BEEP} from '../sound';
 
 
-export const NodeContext = React.createContext({
-  node: null,
-});
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -27,10 +25,12 @@ export const NodeContext = React.createContext({
 @DragNodeSource
 @DropNodeTarget(function(monitor) {
   const node = store.getState().ast.getNodeById(this.props.node.id);
-  const target = Target.node(node);
+  const target = Targets.node(node);
   return drop(monitor.getItem(), target);
 })
 class Node extends BlockComponent {
+  static contextType = DropTargetContext;
+
   static defaultProps = {
     children: null,
     normallyEditable: false,
@@ -276,9 +276,7 @@ class Node extends BlockComponent {
       case 'insertRight':
         e.preventDefault();
         if (e.ctrlKey) { // strictly want ctrlKey
-          if (this.props.onSetRight) {
-            this.props.onSetRight(true);
-          } else {
+          if (!this.setRight()) {
             setCursor(node.to);
           }
         }
@@ -287,9 +285,7 @@ class Node extends BlockComponent {
       // insert-left
       case 'insertLeft':
         e.preventDefault();
-        if (this.props.onSetLeft) {
-          this.props.onSetLeft(true);
-        } else {
+        if (!this.setLeft()) {
           setCursor(node.from);
         }
         return;
@@ -389,6 +385,26 @@ class Node extends BlockComponent {
   };
 
   handleDisableEditable = () => this.setState({editable: false});
+
+  setLeft() {
+    const dropTargetId = findAdjacentDropTarget(this, true);
+    if (dropTargetId) {
+      this.props.setEditable(dropTargetId, true);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  setRight() {
+    const dropTargetId = findAdjacentDropTarget(this, false);
+    if (dropTargetId) {
+      this.props.setEditable(dropTargetId, true);
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   isLocked() {
     if (SHARED.options && SHARED.options.renderOptions) {
@@ -500,6 +516,7 @@ const mapDispatchToProps = dispatch => ({
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
   activate: (id, options) => dispatch(activate(id, options)),
+  setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);

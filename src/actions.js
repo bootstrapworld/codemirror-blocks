@@ -81,10 +81,11 @@ export function paste(target, onSuccess, onError) {
 // Drag from `src` (which should be a d&d monitor thing) to `target`.
 // See `src/targets.js` for what kinds of `target` there are.
 export function drop(src, target, onSuccess, onError) {
-  const {id: srcId, content} = src;
+  const {id: srcId, content: srcContent} = src;
   const {ast} = store.getState();
   const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
-
+  const content = srcNode ? srcNode.toString() : srcContent;
+  
   // If we dropped the node _inside_ where we dragged it from, do nothing.
   if (srcNode && srcRangeContains(srcNode.srcRange(), target.srcRange())) {
     return;
