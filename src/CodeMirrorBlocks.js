@@ -57,5 +57,6 @@ module.exports.Nodes = Nodes;
 module.exports.Node = Node.default;
 module.exports.Languages = Languages;
 module.exports.Pretty = Pretty;
+module.exports.store = store;
 
 console.log(module.exports);
