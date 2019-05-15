@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom';
 import ToggleEditor from './ui/ToggleEditor';
 import merge from './merge';
 import pyret from './languages/pyret';
+import {store} from './store';
+import {Provider} from 'react-redux';
 const Args = require('./components/Args');
 const DropTarget = require('./components/DropTarget');
 const Node = require('./components/Node');
@@ -19,13 +21,15 @@ export default class CodeMirrorBlocks {
     let api = {};
     let initialCode = options.value;
     ReactDOM.render(
-      <ToggleEditor
-        language={language}
-        initialCode={(initialCode == null)? "" : initialCode}
-        api={api}
-        appElement={container}
-        options={options}
-      />,
+      <Provider store={store}>
+        <ToggleEditor
+          language={language}
+          initialCode={(initialCode == null) ? "" : initialCode}
+          api={api}
+          appElement={container}
+          options={options}
+        />
+      </Provider>,
       container
     );
     merge(api, this.buildAPI());
