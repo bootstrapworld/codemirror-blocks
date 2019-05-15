@@ -1,7 +1,9 @@
 import React from 'react';
 import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining} from './utils';
+import * as P from 'pretty-fast-pretty-printer';
 import uuidv4 from 'uuid/v4';
 import hashObject from 'object-hash';
+import { node } from 'prop-types';
 
 
 export function enumerateList(lst, level) {
@@ -19,6 +21,13 @@ const descDepth = 1;
 // This is the root of the *Abstract Syntax Tree*.  parse implementations are
 // required to spit out an `AST` instance.
 export class AST {
+  rootNodes: ASTNode[];
+  reverseRootNodes: ASTNode[];
+  nodeIdMap: Map<any, any>;
+  nodeNIdMap: Map<any, any>;
+  id: number;
+  hash: any;
+
   constructor(rootNodes) {
     // the `rootNodes` attribute simply contains a list of the top level nodes
     // that were parsed, in srcLoc order
@@ -63,7 +72,7 @@ export class AST {
     return {
       *[Symbol.iterator]() {
         for (const node in that.rootNodes) {
-          yield* node.descendants();
+          yield* (node as unknown as ASTNode).descendants();
         }
       }
     };
@@ -302,6 +311,14 @@ export class AST {
 // Every node in the AST inherits from the `ASTNode` class, which is used to
 // house some common attributes.
 export class ASTNode {
+  from: any;
+  to: any;
+  type: any;
+  keys: any;
+  options: any;
+  id: string;
+  level: any;
+  hash: any;
   constructor(from, to, type, keys, options) {
 
     // The `from` and `to` attributes are objects containing the start and end
@@ -382,6 +399,9 @@ export class ASTNode {
   toString() {
     return this.pretty().display(80).join("\n");
   }
+  pretty(): P.Doc {
+    throw new Error("Method not implemented.");
+  }
 
   // Produces an iterator over the children of this node.
   children() {
@@ -408,7 +428,7 @@ export class ASTNode {
   }
 
   // Create a React _element_ (an instantiated component) for this node.
-  reactElement(props) {
+  reactElement(props?) {
     return renderASTNode({node:this, ...props});
   }
 }
@@ -424,6 +444,8 @@ function renderASTNode(props) {
 
 
 class ChildrenIterator {
+  self: any;
+  keys: any;
   constructor(self, keys) {
     this.self = self;
     this.keys = keys;
@@ -448,6 +470,8 @@ class ChildrenIterator {
 }
 
 class DescendantsIterator {
+  self: any;
+  keys: any;
   constructor(self, keys) {
     this.self = self;
     this.keys = keys;
