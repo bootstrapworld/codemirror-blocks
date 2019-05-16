@@ -6,8 +6,7 @@ import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';
 import {insert, activate} from '../actions';
-import * as Targets from '../targets';
-import {say} from '../utils';
+import {say, warn} from '../utils';
 
 
 class NodeEditable extends Component {
@@ -16,19 +15,19 @@ class NodeEditable extends Component {
   }
 
   static propTypes = {
-    // NOTE: the presence of this Node means ast is not null
-    target: PropTypes.instanceOf(Targets.Target).isRequired,
+    target: PropTypes.object.isRequired,
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
   }
 
   constructor(props) {
     super(props);
-    const {value, dispatch} = this.props
+    const {target, value, dispatch} = this.props
     if (value === null) {
       dispatch((_, getState) => {
+        const {ast} = getState();
         const {target} = this.props;
-        this.cachedValue = target.getText();
+        this.cachedValue = getTargetText(ast, target);
       });
     }
   }
@@ -154,6 +153,19 @@ class NodeEditable extends Component {
         aria-label = {text}
         value      = {text} />
     );
+  }
+}
+
+function getTargetText(ast, target) {
+  if (target instanceof ASTNode) {
+    const {from, to} = ast.getNodeById(target.id);
+    return SHARED.cm.getRange(from, to);
+  } else if (target.isDropTarget) {
+    return "";
+  } else if (target.type === "toplevelEdit" && target.from && target.to) {
+    return SHARED.cm.getRange(target.from, target.to);
+  } else {
+    warn('NodeEditable', `Invalid NodeEditable location: ${target}`);
   }
 }
 

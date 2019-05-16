@@ -182,14 +182,14 @@ class InsertionPoint {
     return;
   }
 
-  insertChild(text) {
+  insertChild(clonedParent, text) {
     const newChildNode = new FakeInsertNode(this.pos, this.pos, text);
-    this.parent[this.spec.fieldName].splice(this.index, 0, newChildNode);
+    clonedParent[this.spec.fieldName].splice(this.index, 0, newChildNode);
   }
 
   findChild(newAST) {
     const newParent = newAST.getNodeById(this.parent.id);
-    if (!newParent) return "fallback";
+    if (!newParent) return null;
     return newParent[this.spec.fieldName][this.index];
   }
 }
@@ -219,28 +219,28 @@ class ReplacementPoint {
     warn('new ReplacementPoint', "Failed to find child to be replaced/deleted.");
   }
 
-  replaceChild(text) {
+  replaceChild(clonedParent, text) {
     const newChildNode = new FakeInsertNode(this.child.from, this.child.to, text);
     if (this.index) {
-      this.parent[this.spec.fieldName][this.index] = newChildNode;
+      clonedParent[this.spec.fieldName][this.index] = newChildNode;
     } else {
-      this.parent[this.spec.fieldName] = newChildNode;
+      clonedParent[this.spec.fieldName] = newChildNode;
     }
   }
 
-  deleteChild() {
+  deleteChild(clonedParent) {
     if (this.index) {
-      this.parent[this.spec.fieldName].splice(this.index, 1); // Remove the i'th element.
+      clonedParent[this.spec.fieldName].splice(this.index, 1); // Remove the i'th element.
     } else if (this.spec instanceof Optional) {
-      this.parent[this.spec.fieldName] = null;
+      clonedParent[this.spec.fieldName] = null;
     } else {
-      this.parent[this.spec.fieldName] = new Blank(this.child.from, this.child.to);
+      clonedParent[this.spec.fieldName] = new Blank(this.child.from, this.child.to);
     }
   }
 
   findChild(newAST) {
     const newParent = newAST.getNodeById(this.parent.id);
-    if (!newParent) return "fallback";
+    if (!newParent) return null;
     if (this.index) {
       return this.parent[this.spec.fieldName][this.index];
     } else {

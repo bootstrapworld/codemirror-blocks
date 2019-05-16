@@ -5,7 +5,6 @@ import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
 import {drop, delete_, copy, paste, activate} from '../actions';
-import * as Targets from '../targets';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
 import {NodeContext, DropTargetContext, findAdjacentDropTarget} from './DropTarget';
@@ -25,8 +24,7 @@ import {playSound, BEEP} from '../sound';
 @DragNodeSource
 @DropNodeTarget(function(monitor) {
   const node = store.getState().ast.getNodeById(this.props.node.id);
-  const target = Targets.node(node);
-  return drop(monitor.getItem(), target);
+  return drop(monitor.getItem(), node);
 })
 class Node extends BlockComponent {
   static contextType = DropTargetContext;
@@ -304,9 +302,14 @@ class Node extends BlockComponent {
       case 'paste':
         // Overwrite if a node is selected. Otherwise, insert.
         if (selections.includes(id)) {
-          var target = Targets.node(node);
+          var target = node;
         } else {
-          var target = e.shiftKey ? Targets.leftOf(node) : Targets.rightOf(node);
+          var target = findAdjacentDropTarget(node, e.shiftKey);
+          if (!target) {
+            let direction = e.shiftKey ? "before" : "after";
+            say(`Cannot paste ${direction} this node.`);
+            return;
+          }
         }
         paste(target);
         return;
@@ -455,7 +458,7 @@ class Node extends BlockComponent {
                       onDisableEditable={this.handleDisableEditable}
                       extraClasses={classes}
                       isInsertion={false}
-                      target={Targets.node(node)}
+                      target={node}
                       value={this.state.value}
                       onChange={this.handleChange}
                       contentEditableProps={props} />

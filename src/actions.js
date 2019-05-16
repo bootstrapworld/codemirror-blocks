@@ -1,32 +1,39 @@
-import {withDefaults, say, poscmp, srcRangeContains, minposOfArray} from './utils';
+import {withDefaults, say, poscmp, srcRangeIncludes, minposOfArray, warn} from './utils';
 import SHARED from './shared';
 import {store} from './store';
 import {playSound, WRAP} from './sound';
+import {ASTNode} from './ast';
 import {performEdits, edit_insert, edit_delete, edit_replace,
-        edit_replace_toplevel_text, padCopiedText} from './edits/performEdits';
+        edit_overwrite, padCopiedText} from './edits/performEdits';
 
 
 // All editing actions are defined here.
-// 
+//
+// Many actions take a "target" as an option. A target may be:
+//
+// - A DropTarget, to insert at that drop target.
+// - An ASTNode, to replace that node.
+// - An object of the form {type: "toplevelEdit", from: {line, ch}, to: {line, ch}},
+//   to replace that top-level region. This really has to be at the top level:
+//   neither `from` nor `to` can be inside any root node.
+//
 // Just about every action can take an optional `onSuccess` and `onError`
 // callback. If the action is successful, it will call `onSuccess(newAST)`. If
 // it fails, it will call `onError(theError)`.
 //
 // The implementation of actions is in the folder `src/actions/`. IT IS PRIVATE,
-// AND NO FILE EXCEPT src/actions.js AND src/targets.js SHOULD EVER NEED TO
-// IMPORT IT. The implementation is complex, because while edits are best
-// thought of as operations on the AST, they must all be transformed into text
-// edits, and the only interface we have into the language's textual syntax are
-// the `pretty` and `parse` methods.
-
+// AND NO FILE EXCEPT src/actions.js SHOULD EVER NEED TO IMPORT IT. The
+// implementation is complex, because while edits are best thought of as
+// operations on the AST, they must all be transformed into text edits, and the
+// only interface we have into the language's textual syntax are the `pretty`
+// and `parse` methods.
 
 // Insert `text` at the given `target`.
-// See `src/targets.js` for what kinds of `Target` there are.
+// See the comment at the top of the file for what kinds of `target` there are.
 export function insert(text, target, onSuccess, onError) {
   const {ast} = store.getState();
-  const edits = [target.toEdit(text)];
-  const focusHint = (newAST) => target.focusHint(newAST);
-  performEdits('cmb:insert', ast, edits, focusHint, onSuccess, onError);
+  const edits = [convertTargetToEdit(target, text)];
+  performEdits('cmb:insert', ast, edits, onSuccess, onError);
 }
 
 // Delete the given nodes.
@@ -34,16 +41,7 @@ export function delete_(nodes, onSuccess, onError) { // 'delete' is a reserved w
   if (nodes.length === 0) return;
   const {ast} = store.getState();
   const edits = nodes.map(node => edit_delete(node));
-  const lastEdit = edits[edits.length - 1];
-  const prevNode = ast.getNodeBefore(lastEdit.node);
-  const focusHint = (newAST) => {
-    if (prevNode) {
-      return newAST.getNodeById(prevNode.id) || "fallback";
-    } else {
-      return newAST.getFirstRootNode();
-    }
-  };
-  performEdits('cmb:delete-node', ast, edits, focusHint, onSuccess, onError);
+  performEdits('cmb:delete-node', ast, edits, onSuccess, onError);
   store.dispatch({type: 'SET_SELECTIONS', selections: []});
 }
 
@@ -71,19 +69,18 @@ export function copy(nodes) {
 }
 
 // Paste from the clipboard at the given `target`.
-// See `src/targets.js` for what kinds of `target` there are.
+// See the comment at the top of the file for what kinds of `target` there are.
 export function paste(target, onSuccess, onError) {
   pasteFromClipboard(text => {
     const {ast} = store.getState();
-    const edits = [target.toEdit(text)];
-    const focusHint = (newAST) => target.focusHint(newAST);
-    performEdits('cmb:paste', ast, edits, focusHint, onSuccess, onError);
+    const edits = [convertTargetToEdit(target, text)];
+    performEdits('cmb:paste', ast, edits, onSuccess, onError);
     store.dispatch({type: 'SET_SELECTIONS', selections: []});
   });
 }
 
 // Drag from `src` (which should be a d&d monitor thing) to `target`.
-// See `src/targets.js` for what kinds of `target` there are.
+// See the comment at the top of the file for what kinds of `target` there are.
 export function drop(src, target, onSuccess, onError) {
   const {id: srcId, content: srcContent} = src;
   const {ast} = store.getState();
@@ -91,7 +88,7 @@ export function drop(src, target, onSuccess, onError) {
   const content = srcNode ? srcNode.toString() : srcContent;
   
   // If we dropped the node _inside_ where we dragged it from, do nothing.
-  if (srcNode && srcRangeContains(srcNode.srcRange(), target.srcRange())) {
+  if (srcNode && srcRangeIncludes(srcNode.srcRange(), getTargetSrcRange(target))) {
     return;
   }
   let edits = [];
@@ -100,10 +97,9 @@ export function drop(src, target, onSuccess, onError) {
     edits.push(edit_delete(srcNode));
   }
   // Insert or replace at the drop location, depending on what we dropped it on.
-  edits.push(target.toEdit(content));
+  edits.push(convertTargetToEdit(target, content));
   // Perform the edits.
-  const focusHint = (newAST) => target.focusHint(newAST);
-  performEdits('cmb:drop-node', ast, edits, focusHint);
+  performEdits('cmb:drop-node', ast, edits, onSuccess, onError);
 }
 
 let queuedAnnouncement = null;
@@ -178,6 +174,33 @@ SHARED.cm.setCursor({line: -1, ch: 0});
   };
 }
 
+// Convert a target to an Edit. (See top comment for what a target can be.)
+function convertTargetToEdit(target, text) {
+  if (target.isDropTarget) {
+    return edit_insert(text, target.context.node, target.context.field, target.getLocation());
+  } else if (target instanceof ASTNode) {
+    return edit_replace(text, target);
+  } else if (target.type === "toplevelEdit" && target.from && target.to) {
+    return edit_overwrite(text, target.from, target.to);
+  } else {
+    warn('actions', `Could not convert target '${target}' into Edit.`);
+  }
+}
+
+// Get the {from, to} of a target. (See top comment for what a target can be.)
+function getTargetSrcRange(target) {
+  if (target.isDropTarget) {
+    const pos = target.getLocation();
+    return {from: pos, to: pos};
+  } else if (target instanceof ASTNode) {
+    return target.srcRange();
+  } else if (target.type === "toplevelEdit" && target.from && target.to) {
+    return {from: target.from, to: target.to};
+  } else {
+    warn('actions', `Could not get target '${target}' source location.`);
+  }
+}
+
 function copyToClipboard(text) {
   SHARED.buffer.value = text;
   SHARED.buffer.select();
@@ -191,4 +214,3 @@ function pasteFromClipboard(done) {
     done(SHARED.buffer.value);
   }, 50);
 }
-

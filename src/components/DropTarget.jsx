@@ -7,7 +7,6 @@ import SHARED from '../shared';
 import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
-import * as Targets from '../targets';
 import BlockComponent from './BlockComponent';
 import uuidv4 from 'uuid/v4';
 import {warn} from '../utils';
@@ -89,9 +88,11 @@ export function findAdjacentDropTarget(child, onLeft) {
 // NOTE(Justin) It sure would be nice to generate the id inside of DropTarget.
 // But AFAIK that's not feasible, because the `id` needs to be accessible
 // inside `mapStateToProps`, and it's only accessible if it's a `prop`.
+// Hence this extraneous class.
 export class DropTarget extends Component {
   constructor(props) {
     super(props);
+    this.isDropTarget = true;
     this.id = uuidv4(); // generate a unique ID
   }
 
@@ -118,7 +119,7 @@ const mapDispatchToProps2 = (dispatch, {id}) => ({
 
 @connect(mapStateToProps2, mapDispatchToProps2)
 @DropNodeTarget(function(monitor) {
-  return drop(monitor.getItem(), this.getTarget());
+  return drop(monitor.getItem(), this);
 })
 class ActualDropTarget extends BlockComponent {
 
@@ -138,6 +139,7 @@ class ActualDropTarget extends BlockComponent {
 
   constructor(props) {
     super(props);
+    this.isDropTarget = true;
 
     this.state = {
       value: "",
@@ -148,13 +150,6 @@ class ActualDropTarget extends BlockComponent {
   // should activate the node
   handleClick = e => {
     e.stopPropagation();
-  }
-
-  getTarget() {
-    let parentNode = this.context.node;
-    let fieldName = this.context.field;
-    let pos = this.getLocation();
-    return Targets.dropTarget(parentNode, fieldName, pos);
   }
 
   getLocation() {
@@ -221,9 +216,8 @@ class ActualDropTarget extends BlockComponent {
       id                : `block-drop-target-${this.props.id}`,
     };
     if (this.props.isEditable) {
-      const target = this.getTarget();
       return (
-        <NodeEditable target={target}
+        <NodeEditable target={this}
                       value={this.state.value}
                       onChange={this.handleChange}
                       isInsertion={true}

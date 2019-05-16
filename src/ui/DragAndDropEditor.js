@@ -1,7 +1,6 @@
 import {UnControlled as CodeMirror} from 'react-codemirror2';
 import React  from 'react';
 import {DropNodeTarget} from '../dnd';
-import * as Targets from '../targets';
 import {drop} from '../actions';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
@@ -19,7 +18,11 @@ export default
 
   if (isDroppedOnWhitespace) {
     const loc = SHARED.cm.coordsChar({left, top});
-    const target = Targets.topLevel(loc, loc);
+    const target = {
+      type: 'toplevelEdit',
+      from: loc,
+      to: loc
+    };
     drop(monitor.getItem(), target);
   } else { // beep and make it a no-op
     playSound(BEEP);

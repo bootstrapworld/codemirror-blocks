@@ -42,19 +42,22 @@ export function edit_replace(text, node) {
   }
 }
 
-// performEdits : String, AST, Array<Edit>, ASTNode|null, Callback?, Callback? -> Void
+// performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
 //
 // Attempt to commit a set of changes to Code Mirror. For more details, see the
 // `commitChanges` function. This function is identical to `commitChanges`,
 // except that this one takes higher-level `Edit` operations, constructed by the
 // functions: `edit_insert`, `edit_delete`, and `edit_replace`.
-export function performEdits(label, ast, edits, focusHint=undefined, onSuccess=()=>{}, onError=()=>{}) {
+export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}) {
   // Ensure that all of the edits are valid.
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {
       throw new Error(`performEdits - invalid edit ${edit}: all edits must be instances of Edit.`);
     }
   }
+  // Use the focus hint from the last edit provided.
+  const lastEdit = edits[edits.length - 1];
+  const focusHint = (newAST) => lastEdit.focusHint(newAST);
   // Sort the edits from last to first, so that they don't interfere with
   // each other's source locations or indices.
   edits.sort((a, b) => poscmp(b.from, a.from));
@@ -119,6 +122,10 @@ class OverwriteEdit extends Edit {
       to: this.to
     };
   }
+
+  focusHint(newAST) {
+    return newAST.getNodeAfterCur(this.from);
+  }
 }
 
 class InsertChildEdit extends Edit {
@@ -126,16 +133,21 @@ class InsertChildEdit extends Edit {
     super(pos, pos);
     this.text = text;
     this.parent = parent;
-    this.field = field;
+    this.pos = pos;
+    this.insertionPoint = findInsertionPoint(parent, field, pos);
   }
 
   isTextEdit() {
     return false;
   }
 
-  makeAstEdit(ancestor) {
-    let parent = super.findDescendantNode(ancestor, this.parent.id);
-    findInsertionPoint(parent, this.field, this.from).insertChild(this.text);
+  makeAstEdit(clonedAncestor) {
+    let clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
+    this.insertionPoint.insertChild(clonedParent, this.text);
+  }
+
+  focusHint(newAST) {
+    return this.insertionPoint.findChild(newAST) || "fallback";
   }
 }
 
@@ -150,13 +162,21 @@ class DeleteRootEdit extends Edit {
     return true;
   }
 
-  toTextEdit(ast) {
+  toTextEdit(_ast) {
     const {from, to} = removeWhitespace(this.from, this.to);
     return {
       text: "",
       from,
       to
     };
+  }
+
+  focusHint(newAST) {
+    if (this.node.prev) {
+      return newAST.getNodeById(this.node.prev.id) || "fallback";
+    } else {
+      return newAST.getFirstRootNode();
+    }
   }
 }
 
@@ -166,15 +186,24 @@ class DeleteChildEdit extends Edit {
     super(range.from, range.to);
     this.node = node;
     this.parent = parent;
+    this.replacementPoint = findReplacementPoint(parent, node);
   }
 
   isTextEdit() {
     return false;
   }
 
-  makeAstEdit(ancestor) {
-    const parent = super.findDescendantNode(ancestor, this.parent.id);
-    findReplacementPoint(parent, this.node).deleteChild();
+  makeAstEdit(clonedAncestor) {
+    const clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
+    this.replacementPoint.deleteChild(clonedParent);
+  }
+
+  focusHint(newAST) {
+    if (this.node.prev) {
+      return newAST.getNodeById(this.node.prev.id) || "fallback";
+    } else {
+      return newAST.getFirstRootNode();
+    }
   }
 }
 
@@ -197,6 +226,10 @@ class ReplaceRootEdit extends Edit {
       to: this.to
     };
   }
+
+  focusHint(newAST) {
+    return newAST.getNodeAfterCur(this.from);
+  }
 }
 
 class ReplaceChildEdit extends Edit {
@@ -206,15 +239,20 @@ class ReplaceChildEdit extends Edit {
     this.text = text;
     this.node = node;
     this.parent = parent;
+    this.replacementPoint = findReplacementPoint(parent, node);
   }
 
   isTextEdit() {
     return false;
   }
 
-  makeAstEdit(ancestor) {
-    let parent = super.findDescendantNode(ancestor, this.parent.id);
-    findReplacementPoint(parent, this.node).replaceChild(this.text);
+  makeAstEdit(clonedAncestor) {
+    let clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
+    this.replacementPoint.replaceChild(clonedParent, this.text);
+  }
+
+  focusHint(newAST) {
+    return this.replacementPoint.findChild(newAST) || "fallback";
   }
 }
 
