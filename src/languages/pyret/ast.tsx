@@ -723,7 +723,7 @@ export class IfPipe extends ASTNode {
   }
 
   longDescription(level) {
-    return `${enumerateList(this.branches, level)} in an if pipe`;
+    return `${enumerateList(this.branches, level)} in an ask expression`;
   }
 
   pretty() {
@@ -1015,7 +1015,7 @@ export class IfBranch extends ASTNode {
     let intermediate = ":";
     let test = this.test.pretty();
     let body = this.body.pretty();
-    return P.sepBy([test, intermediate, body], " ", "");
+    return P.sepBy([P.horz(test, intermediate), body], " ", "");
   }
 
   render(props) {
@@ -1038,20 +1038,20 @@ export class IfExpression extends ASTNode {
   branches: IfBranch[];
   blocky: boolean;
   constructor(from, to, branches, blocky, options) {
-    super(from, to, 'ifPipeExpression', ['branches'], options);
+    super(from, to, 'if-Expression', ['branches'], options);
     this.branches = branches;
     this.blocky = blocky;
-    super.hash = hashObject(['ifPipe', ...(this.branches.map(c => c.hash)), this.blocky]);
+    super.hash = hashObject(['ifExpression', ...(this.branches.map(c => c.hash)), this.blocky]);
   }
 
   longDescription(level) {
-    return `${enumerateList(this.branches, level)} in an if pipe`;
+    return `${enumerateList(this.branches, level)} in an if expression`;
   }
 
   pretty() {
-    let prefix = "ask:";
+    let prefix = "if";
     let suffix = "end";
-    let branches = P.sepBy(this.branches, "", "");
+    let branches = P.sepBy(this.branches, " else if ", "else if");
     return P.ifFlat(
       P.horz(prefix, " ", branches, " ", suffix),
       P.vert(prefix, P.horz(INDENT, branches), suffix)
@@ -1075,7 +1075,60 @@ export class IfExpression extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          ask:
+          if:
+        </span>
+        <div className="blocks-cond-table">
+          {branches}
+        </div>
+      </Node>
+    );
+  }
+}
+
+export class IfElseExpression extends ASTNode {
+  branches: IfBranch[];
+  else_branch: IfBranch;
+  blocky: boolean;
+  constructor(from, to, branches, else_branch, blocky, options) {
+    super(from, to, 'if-else-Expression', ['branches', 'else_branch'], options);
+    this.branches = branches;
+    this.else_branch = else_branch;
+    this.blocky = blocky;
+    super.hash = hashObject(['ifElseExpression', ...(this.branches.map(c => c.hash)), this.else_branch.hash, this.blocky]);
+  }
+
+  longDescription(level) {
+    return `${enumerateList([this.branches, this.else_branch], level)} in an if expression`;
+  }
+
+  pretty() {
+    let prefix = "if";
+    let suffix = "end";
+    let branches = P.sepBy(this.branches, " else if ", "else if ");
+    return P.ifFlat(
+      P.horz(prefix, " ", branches, " ", suffix),
+      P.vert(prefix, P.horz(INDENT, branches), suffix)
+    );
+  }
+
+  render(props) {
+    const NEWLINE = <br />
+    let branches = [];
+    this.branches.forEach((element, index) => {
+      let span = <span key={index}>
+        <DropTarget />
+        {NEWLINE}
+        <DropTargetSibling node={element} left={true} right={true} />
+        {NEWLINE}
+      </span>;
+      branches.push(span);
+    });
+    branches.push(<DropTarget key={this.branches.length} />);
+
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-operator">
+          if:
         </span>
         <div className="blocks-cond-table">
           {branches}

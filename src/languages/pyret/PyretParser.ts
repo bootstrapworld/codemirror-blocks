@@ -34,6 +34,8 @@ import {Binop,
   Tuple,
   TupleGet,
   Var,
+  IfExpression,
+  IfElseExpression,
 } from "./ast";
 
 interface Position {
@@ -277,8 +279,12 @@ const nodeTypes = {
     return new IfPipe(pos.from, pos.to, branches, blocky, {'aria-label': 'ask expression'});
   },
   // "s-if-pipe-else": function(l: Loc, branches: IfPipeBranch[], _else: Expr, blocky: boolean) {},
-  "s-if": function(l: Loc, branches: IfBranch[], blocky: boolean) {},
-  "s-if-else": function(l: Loc, branches: IfBranch[], _else: Expr, blocky: boolean) {},
+  "s-if": function(l: Loc, branches: IfBranch[], blocky: boolean) {
+    return new IfExpression(l.from, l.to, branches, blocky, {ariaLabel: `if expression with ${branches.length} branches}`});
+  },
+  "s-if-else": function(l: Loc, branches: IfBranch[], _else: Expr, blocky: boolean) {
+    return new IfElseExpression(l.from, l.to, branches, _else, blocky, {ariaLabel: `if expression with ${branches.length} branches and an else branch`});
+  },
   // "s-cases": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], blocky: boolean) {},
   // "s-cases-else": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], _else: Expr, blocky: boolean) {},
   "s-op": function (pos: Loc, opPos: Loc, op: string, left: Expr, right: Expr) {

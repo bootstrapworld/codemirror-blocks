@@ -174,5 +174,33 @@ end`);
     testify("lambda with block", `lam(x) block: x + 3 end`);
 
     testify("lambda with ret ann and block", `lam(x) -> Number block: x + 3 end`);
+
+    testify("simple if", `if x == 4:
+  4
+end`);
+
+    testify("simple if and else", `if x == 3:
+  2
+else:
+  3
+end`);
+
+    testify("if with else if's", `if x == 5:
+  5
+else if x >= 5:
+  7
+else if x < 3:
+  2
+end`);
+
+    testify("if with else if's and else", `if x == 5:
+  5
+else if x >= 5:
+  7
+else if x < 3:
+  2
+else:
+  0
+end`);
   });
 });
