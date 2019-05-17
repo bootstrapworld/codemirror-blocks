@@ -69,12 +69,14 @@ export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}
   for (const edit of edits) {
     let group = editToEditGroup.get(edit);
     if (group) {
+      // Convert the group into a text edit.
+      // If this group has already been visited, `toTextEdit` will return null.
       let textEdit = group.toTextEdit();
       if (textEdit) {
-        textEdits.push(textEdit); // Non-root edit: edit is oldText->newText
+        textEdits.push(textEdit);
       }
     } else {
-      textEdits.push(edit.toTextEdit(ast)); // Root edit
+      textEdits.push(edit.toTextEdit(ast));
     }
   }
   console.log(label, "edits:", edits, "textEdits:", textEdits); // temporary logging
@@ -293,15 +295,15 @@ function groupEditsByAncestor(edits) {
       let group = new EditGroup(edit.parent, []);
       editToEditGroup.set(edit, group);
       // Check if any existing ancestors are below the parent.
-      for (const [e, group] of editToEditGroup) {
-        if (srcRangeIncludes(edit.parent.srcRange(), group.ancestor.srcRange())) {
+      for (const [e, g] of editToEditGroup) {
+        if (e !== edit && srcRangeIncludes(edit.parent.srcRange(), g.ancestor.srcRange())) {
           editToEditGroup.set(e, group);
         }
       }
       // Check if the parent is below an existing ancestor.
-      for (const [_, group] of editToEditGroup) {
-        if (srcRangeIncludes(group.ancestor.srcRange(), edit.parent.srcRange())) {
-          editToEditGroup.set(edit, group);
+      for (const [e, g] of editToEditGroup) {
+        if (e !== edit && srcRangeIncludes(g.ancestor.srcRange(), edit.parent.srcRange())) {
+          editToEditGroup.set(edit, g);
           break; // Ancestors are disjoint; can only be contained in one.
         }
       }
