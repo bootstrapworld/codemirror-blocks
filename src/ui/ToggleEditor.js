@@ -150,8 +150,8 @@ export default class ToggleEditor extends React.Component {
         }
       } catch (err) {
         // TODO(Justin): properly deal with parse errors
-        let msg = SHARED.parser.getExceptionMessage(err);
-        console.log(msg);
+        let _msg = SHARED.parser.getExceptionMessage(err);
+        throw err;
       }
     });
   };
