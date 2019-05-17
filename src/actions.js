@@ -236,9 +236,9 @@ class InsertTarget extends Target {
 
 class ReplaceNodeTarget extends Target {
   constructor(node) {
-    this.node = node;
     const range = node.srcRange();
     super(range.from, range.to);
+    this.node = node;
   }
 
   getText(ast) {

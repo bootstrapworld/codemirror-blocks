@@ -25,8 +25,9 @@ class NodeEditable extends Component {
     const {target, value, dispatch} = this.props
     if (value === null) {
       dispatch((_, getState) => {
+        const {ast} = getState();
         const {target} = this.props;
-        this.cachedValue = target.getText();
+        this.cachedValue = target.getText(ast);
       });
     }
   }
