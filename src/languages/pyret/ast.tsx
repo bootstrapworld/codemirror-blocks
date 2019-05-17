@@ -1060,8 +1060,13 @@ const prettyIfs = function(branches: IfBranch[], _else: ASTNode | undefined, blo
   else {
     let prefix = ifPrefix(branches[0]);
     let suffix = "end";
-    let pretty_branches = branches.slice(1, length).map(b => P.horz("else if ", b.pretty()));
-    return P.vert(prefix, ...pretty_branches, suffix);
+    let pretty_branches = branches.slice(1, length).map(b => P.concat("else if ", b.pretty()));
+    if (_else != undefined) {
+      return P.vert(prefix, ...pretty_branches, ifElse(_else), suffix);
+    }
+    else {
+      return P.vert(prefix, ...pretty_branches, suffix);
+    }
   }
 };
 
