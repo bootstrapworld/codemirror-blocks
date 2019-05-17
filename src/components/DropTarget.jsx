@@ -11,7 +11,7 @@ import BlockComponent from './BlockComponent';
 import uuidv4 from 'uuid/v4';
 import {warn} from '../utils';
 import {ASTNode} from '../ast';
-import {drop} from '../actions';
+import {drop, Targets} from '../actions';
 
 
 // Provided by `Node`
@@ -23,7 +23,6 @@ export const NodeContext = React.createContext({
 export const DropTargetContext = React.createContext({
   node: null,
   field: null,
-  registry: null,
 });
 
 // Every set of DropTargets must be wrapped in a DropTargetContainer.
@@ -44,7 +43,6 @@ export class DropTargetContainer extends Component {
     const value = {
       field: this.props.field,
       node: this.context.node,
-      registry: new Map(),
     };
     return (
       <DropTargetContext.Provider value={value}>
@@ -54,8 +52,8 @@ export class DropTargetContainer extends Component {
   }
 }
 
-// Find the drop target (if any) on the given side of `child` node.
-export function findAdjacentDropTarget(dropTargetContext, child, onLeft) {
+// Find the id of the drop target (if any) on the given side of `child` node.
+export function findAdjacentDropTargetId(child, onLeft) {
   let prevDropTargetId = null;
   let targetId = `block-node-${child.id}`;
     
@@ -88,12 +86,7 @@ export function findAdjacentDropTarget(dropTargetContext, child, onLeft) {
     return null;
   }
   if (!child.parent) return null;
-  const id = findDT(child.parent.element);
-  if (id) {
-    return dropTargetContext.registry.get(id);
-  } else {
-    return null;
-  }
+  return findDT(child.parent.element);
 }
 
 
@@ -131,7 +124,8 @@ const mapDispatchToProps2 = (dispatch, {id}) => ({
 
 @connect(mapStateToProps2, mapDispatchToProps2)
 @DropNodeTarget(function(monitor) {
-  return drop(monitor.getItem(), this);
+  const target = Targets.insertAt(this.context.node, this.context.field, this.getLocation());
+  return drop(monitor.getItem(), target);
 })
 class ActualDropTarget extends BlockComponent {
 
@@ -149,7 +143,7 @@ class ActualDropTarget extends BlockComponent {
     isOver: PropTypes.bool.isRequired,
   }
 
-  constructor(props) {
+  constructor(props, context) {
     super(props);
     this.isDropTarget = true;
 
@@ -218,8 +212,6 @@ class ActualDropTarget extends BlockComponent {
   }
 
   render() {
-    // (This line should really be in the constructor, but `context` isn't available there.)
-    this.context.registry.set(this.props.id, this);
     const props = {
       tabIndex          : "-1",
       role              : 'textbox',
@@ -229,8 +221,9 @@ class ActualDropTarget extends BlockComponent {
       id                : `block-drop-target-${this.props.id}`,
     };
     if (this.props.isEditable) {
+      const target = Targets.insertAt(this.context.node, this.context.field, this.getLocation());
       return (
-        <NodeEditable target={this}
+        <NodeEditable target={target}
                       value={this.state.value}
                       onChange={this.handleChange}
                       isInsertion={true}

@@ -9,13 +9,8 @@ import {performEdits, edit_insert, edit_delete, edit_replace,
 
 // All editing actions are defined here.
 //
-// Many actions take a "target" as an option. A target may be:
-//
-// - A DropTarget, to insert at that drop target.
-// - An ASTNode, to replace that node.
-// - An object of the form {type: "toplevelEdit", from: {line, ch}, to: {line, ch}},
-//   to replace that top-level region. This really has to be at the top level:
-//   neither `from` nor `to` can be inside any root node.
+// Many actions take a Target as an option. A Target may be constructed by any
+// of the methods on the `Targets` export below.
 //
 // Just about every action can take an optional `onSuccess` and `onError`
 // callback. If the action is successful, it will call `onSuccess(newAST)`. If
@@ -28,11 +23,25 @@ import {performEdits, edit_insert, edit_delete, edit_replace,
 // only interface we have into the language's textual syntax are the `pretty`
 // and `parse` methods.
 
+
+// A _Target_ says where an action is directed. For example, a target may be a
+// node or a drop target.
+//
+// These kinds of actions _have_ a target:
+//
+// - Paste: the target says where to paste.
+// - Drag&Drop: the target says what's being dropped on.
+// - Insert/Edit: the target says where the text is being inserted/edited.
+//
+// The Target methods are defined at the bottom of this file.
+
+
 // Insert `text` at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function insert(text, target, onSuccess, onError) {
+  checkTarget(target);
   const {ast} = store.getState();
-  const edits = [convertTargetToEdit(target, text)];
+  const edits = [target.toEdit(text)];
   performEdits('cmb:insert', ast, edits, onSuccess, onError);
 }
 
@@ -71,9 +80,10 @@ export function copy(nodes) {
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function paste(target, onSuccess, onError) {
+  checkTarget(target);
   pasteFromClipboard(text => {
     const {ast} = store.getState();
-    const edits = [convertTargetToEdit(target, text)];
+    const edits = [target.toEdit(text)];
     performEdits('cmb:paste', ast, edits, onSuccess, onError);
     store.dispatch({type: 'SET_SELECTIONS', selections: []});
   });
@@ -82,13 +92,14 @@ export function paste(target, onSuccess, onError) {
 // Drag from `src` (which should be a d&d monitor thing) to `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function drop(src, target, onSuccess, onError) {
+  checkTarget(target);
   const {id: srcId, content: srcContent} = src;
   const {ast} = store.getState();
   const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
   const content = srcNode ? srcNode.toString() : srcContent;
   
   // If we dropped the node _inside_ where we dragged it from, do nothing.
-  if (srcNode && srcRangeIncludes(srcNode.srcRange(), getTargetSrcRange(target))) {
+  if (srcNode && srcRangeIncludes(srcNode.srcRange(), target.srcRange())) {
     return;
   }
   let edits = [];
@@ -97,7 +108,7 @@ export function drop(src, target, onSuccess, onError) {
     edits.push(edit_delete(srcNode));
   }
   // Insert or replace at the drop location, depending on what we dropped it on.
-  edits.push(convertTargetToEdit(target, content));
+  edits.push(target.toEdit(content));
   // Perform the edits.
   performEdits('cmb:drop-node', ast, edits, onSuccess, onError);
 }
@@ -174,30 +185,9 @@ SHARED.cm.setCursor({line: -1, ch: 0});
   };
 }
 
-// Convert a target to an Edit. (See top comment for what a target can be.)
-function convertTargetToEdit(target, text) {
-  if (target.isDropTarget) {
-    return edit_insert(text, target.context.node, target.context.field, target.getLocation());
-  } else if (target instanceof ASTNode) {
-    return edit_replace(text, target);
-  } else if (target.type === "toplevelEdit" && target.from && target.to) {
-    return edit_overwrite(text, target.from, target.to);
-  } else {
-    warn('actions', `Could not convert target '${target}' into Edit.`);
-  }
-}
-
-// Get the {from, to} of a target. (See top comment for what a target can be.)
-function getTargetSrcRange(target) {
-  if (target.isDropTarget) {
-    const pos = target.getLocation();
-    return {from: pos, to: pos};
-  } else if (target instanceof ASTNode) {
-    return target.srcRange();
-  } else if (target.type === "toplevelEdit" && target.from && target.to) {
-    return {from: target.from, to: target.to};
-  } else {
-    warn('actions', `Could not get target '${target}' source location.`);
+function checkTarget(target) {
+  if (!(target instanceof Target)) {
+    warn('actions', `Expected target ${target} to be an instance of the Target class.`);
   }
 }
 
@@ -213,4 +203,76 @@ function pasteFromClipboard(done) {
   setTimeout(() => {
     done(SHARED.buffer.value);
   }, 50);
+}
+
+
+class Target {
+  constructor(from, to) {
+    this.from = from;
+    this.to = to;
+  }
+
+  srcRange() {
+    return {from: this.from, to: this.to};
+  }
+}
+
+class InsertTarget extends Target {
+  constructor(parentNode, fieldName, pos) {
+    super(pos, pos);
+    this.parent = parentNode;
+    this.field = fieldName;
+    this.pos = pos;
+  }
+
+  getText(_ast) {
+    return "";
+  }
+
+  toEdit(text) {
+    return edit_insert(text, this.parent, this.field, this.pos);
+  }
+}
+
+class ReplaceNodeTarget extends Target {
+  constructor(node) {
+    this.node = node;
+    const range = node.srcRange();
+    super(range.from, range.to);
+  }
+
+  getText(ast) {
+    const {from, to} = ast.getNodeById(this.node.id);
+    return SHARED.cm.getRange(from, to);
+  }
+
+  toEdit(text) {
+    return edit_replace(text, this.node);
+  }
+}
+
+class OverwriteTarget extends Target {
+  constructor(from, to) {
+    super(from, to);
+  }
+
+  getText(_ast) {
+    return SHARED.cm.getRange(this.from, this.to);
+  }
+
+  toEdit(text) {
+    return edit_overwrite(text, this.from, this.to);
+  }
+}
+
+export const Targets = {
+  // Insert at an arbitrary location.
+  insertAt: (parent, field, pos) => new InsertTarget(parent, field, pos),
+  // Target an ASTNode. This will replace the node.
+  replaceNode: (n) => new ReplaceNodeTarget(n),
+  // Target a source range at the top level. This really has to be at the top
+  // level: neither `from` nor `to` can be inside any root node.
+  overwriteRegion: (from, to) => new OverwriteTarget(from, to),
+  // The class of all targets.  
+  Target: Target,
 }

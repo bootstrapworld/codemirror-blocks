@@ -4,10 +4,10 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
-import {drop, delete_, copy, paste, activate} from '../actions';
+import {drop, delete_, copy, paste, activate, Targets} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
-import {NodeContext, DropTargetContext, findAdjacentDropTarget} from './DropTarget';
+import {NodeContext, DropTargetContext, findAdjacentDropTargetId} from './DropTarget';
 import {isErrorFree} from '../store';
 import SHARED from '../shared';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
@@ -24,7 +24,7 @@ import {playSound, BEEP} from '../sound';
 @DragNodeSource
 @DropNodeTarget(function(monitor) {
   const node = store.getState().ast.getNodeById(this.props.node.id);
-  return drop(monitor.getItem(), node);
+  return drop(monitor.getItem(), Targets.replaceNode(node));
 })
 class Node extends BlockComponent {
   static contextType = DropTargetContext;
@@ -301,11 +301,11 @@ class Node extends BlockComponent {
       // paste
       case 'paste':
         if (selections.includes(id)) {
-          // A node is selected. Overwrite it.
-          paste(node);
+          paste(Targets.replaceNode(node));
         } else if (node.parent) {
-          // We're inside the AST somewhere. Try to paste onto an adjacent drop target.
-          var target = findAdjacentDropTarget(this.context, node, e.shiftKey);
+          // We're inside the AST somewhere. Try to paste to the left/right.
+          const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
+          const target = Targets.insertAt(this.context.node, this.context.field, pos);
           if (target) {
             paste(target);
           } else {
@@ -315,11 +315,7 @@ class Node extends BlockComponent {
         } else {
           // We're at a root node. Insert to the left or right, at the top level.
           const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
-          paste({
-            type: "toplevelEdit",
-            from: pos,
-            to: pos
-          });
+          paste(Targets.overwriteRegion(pos, pos));
         }
         return;
 
@@ -399,9 +395,9 @@ class Node extends BlockComponent {
   handleDisableEditable = () => this.setState({editable: false});
 
   setLeft() {
-    const dropTarget = findAdjacentDropTarget(this.context, this.props.node, true);
-    if (dropTarget) {
-      this.props.setEditable(dropTarget.props.id, true);
+    const dropTargetId = findAdjacentDropTargetId(this.props.node, true);
+    if (dropTargetId) {
+      this.props.setEditable(dropTargetId, true);
       return true;
     } else {
       return false;
@@ -409,9 +405,9 @@ class Node extends BlockComponent {
   }
 
   setRight() {
-    const dropTarget = findAdjacentDropTarget(this.context, this.props.node, false);
-    if (dropTarget) {
-      this.props.setEditable(dropTarget.props.id, true);
+    const dropTargetId = findAdjacentDropTargetId(this.props.node, false);
+    if (dropTargetId) {
+      this.props.setEditable(dropTargetId, true);
       return true;
     } else {
       return false;
@@ -467,7 +463,7 @@ class Node extends BlockComponent {
                       onDisableEditable={this.handleDisableEditable}
                       extraClasses={classes}
                       isInsertion={false}
-                      target={node}
+                      target={Targets.replaceNode(node)}
                       value={this.state.value}
                       onChange={this.handleChange}
                       contentEditableProps={props} />

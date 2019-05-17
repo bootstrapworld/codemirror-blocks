@@ -9,7 +9,7 @@ import SHARED from '../shared';
 import patch from '../edits/patchAst'; // TODO: eliminate this import
 import {computeFocusNodeFromChanges} from '../edits/commitChanges'; // TODO: eliminate this import
 import NodeEditable from '../components/NodeEditable';
-import {activate} from '../actions';
+import {activate, Targets} from '../actions';
 import {playSound, BEEP} from '../sound';
 import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
@@ -88,13 +88,8 @@ class ToplevelBlockEditableCore extends Component {
       'aria-posinset'   : '1',
       'aria-level'      : '1',
     };
-    const target = {
-      type: 'toplevelEdit',
-      from: start,
-      to: end
-    };
     return ReactDOM.createPortal(
-      <NodeEditable target={target}
+      <NodeEditable target={Targets.overwriteRegion(start, end)}
                     value={value}
                     onChange={onChange}
                     contentEditableProps={props}
