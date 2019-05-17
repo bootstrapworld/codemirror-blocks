@@ -1156,6 +1156,9 @@ export class IfElseExpression extends ASTNode {
         </span>
         <div className="blocks-cond-table">
           {branches}
+          {NEWLINE}
+          else:{NEWLINE}
+          {this.else_branch.reactElement()}
         </div>
       </Node>
     );

@@ -824,3 +824,92 @@ describe("contracts", function () {
     await wait(DELAY);
   });
 });
+
+const click_expect = async function(to_click, active_node, result, check_editable = false) {
+  click(to_click);
+  await wait(DELAY);
+
+  keyDown("ArrowDown");
+  expect(active_node()).toBe(result);
+
+  if (check_editable) {
+    keyDown("Enter");
+    await wait(DELAY);
+    keyDown("Enter");
+    await wait(DELAY);
+  }
+};
+
+describe("if statements", function () {
+  const testify = function (text) {
+    describe(text, function () {
+      beforeEach(function () {
+        setup.call(this);
+        this.cmb.setValue(text);
+        let ast = this.cmb.getAst();
+        this.literal1 = ast.rootNodes[0];
+        this.branches = this.literal1.branches;
+        this.else_branch = this.literal1.else_branch;
+      });
+
+      afterEach(function () { teardown(); });
+
+      it('should activate the first branch', async function() {
+        click(this.literal1);
+        await wait(DELAY);
+
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        expect(this.activeNode()).toBe(this.branches[0]);
+      });
+
+      it('should activate each branch', async function() {
+        for(let i = 0; i < this.branches.length - 1; i ++) {
+          click(this.branches[i].body.stmts[0]);
+          await wait(DELAY);
+
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).toBe(this.branches[i + 1]);
+        }
+      });
+
+      it('should activate the else branch if it exists', async function() {
+        if (this.else_branch != undefined) {
+          let length = this.branches.length;
+          click(this.branches[length - 1].body.stmts[0]);
+          await wait(DELAY);
+
+          keyDown("ArrowDown");
+          await wait(DELAY);
+          expect(this.activeNode()).toBe(this.else_branch);
+        };
+      });
+    })
+  };
+
+  testify(`if x == 4:
+  4
+end`);
+  testify(`if x == 3:
+  2
+else:
+  3
+end`);
+  testify(`if x == 5:
+  5
+else if x >= 5:
+  7
+else if x < 3:
+  2
+end`);
+  testify(`if x == 5:
+  5
+else if x >= 5:
+  7
+else if x < 3:
+  2
+else:
+  0
+end`);
+});
