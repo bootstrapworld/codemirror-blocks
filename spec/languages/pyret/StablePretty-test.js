@@ -202,5 +202,13 @@ else if x < 3:
 else:
   0
 end`);
+
+    testify('if inside of a function', `fun f(x):
+  if x > 3:
+    "hello"
+  else:
+    "goodbye"
+  end
+end`);
   });
 });

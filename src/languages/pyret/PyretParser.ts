@@ -91,6 +91,7 @@ const opLookup = {
   "is": (loc, _node) => new Literal(loc.from, loc.to, 'is', checkOP),
   "is=~": (loc, _node) => new Literal(loc.from, loc.to, 'is=~', checkOP),
   "is-not=~": (loc, _node) => new Literal(loc.from, loc.to, 'is-not=~', checkOP),
+  "is-not==": (loc, _node) => new Literal(loc.from, loc.to, 'is-not==', checkOP),
 };
 
 type AField = any;

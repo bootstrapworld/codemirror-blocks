@@ -1015,7 +1015,7 @@ export class IfBranch extends ASTNode {
     let intermediate = ":";
     let test = this.test.pretty();
     let body = this.body.pretty();
-    return P.sepBy([P.horz(test, intermediate), body], " ", "");
+    return P.vert(P.horz(test, intermediate), P.horz(INDENT, body));
   }
 
   render(props) {
@@ -1034,6 +1034,37 @@ export class IfBranch extends ASTNode {
   }
 }
 
+const ifPrefix = function(first_branch: IfBranch): P.Doc {
+  return P.concat("if ", first_branch.pretty());
+}
+
+const ifElse = function(_else: ASTNode): P.Doc {
+  return P.vert("else:", P.horz(INDENT, _else.pretty()));
+}
+
+const prettyIfs = function(branches: IfBranch[], _else: ASTNode | undefined, blocky: boolean): P.Doc {
+  // TODO what do do if empty branches?
+  let length = branches.length;
+  if (length == 0) {
+    throw new Error("if constructed with no branches—this should not have parsed(?)");
+  }
+  else if (length == 1) {
+    let prefix = ifPrefix(branches[0]);
+    if (_else != undefined) {
+      return P.vert(prefix, ifElse(_else), "end");
+    }
+    else {
+      return P.vert(P.concat("if ", branches[0].pretty()), "end");
+    }
+  }
+  else {
+    let prefix = ifPrefix(branches[0]);
+    let suffix = "end";
+    let pretty_branches = branches.slice(1, length).map(b => P.horz("else if ", b.pretty()));
+    return P.vert(prefix, pretty_branches, suffix);
+  }
+};
+
 export class IfExpression extends ASTNode {
   branches: IfBranch[];
   blocky: boolean;
@@ -1049,13 +1080,7 @@ export class IfExpression extends ASTNode {
   }
 
   pretty() {
-    let prefix = "if";
-    let suffix = "end";
-    let branches = P.sepBy(this.branches, " else if ", "else if");
-    return P.ifFlat(
-      P.horz(prefix, " ", branches, " ", suffix),
-      P.vert(prefix, P.horz(INDENT, branches), suffix)
-    );
+    return prettyIfs(this.branches, undefined, this.blocky);
   }
 
   render(props) {
@@ -1102,13 +1127,7 @@ export class IfElseExpression extends ASTNode {
   }
 
   pretty() {
-    let prefix = "if";
-    let suffix = "end";
-    let branches = P.sepBy(this.branches, " else if ", "else if ");
-    return P.ifFlat(
-      P.horz(prefix, " ", branches, " ", suffix),
-      P.vert(prefix, P.horz(INDENT, branches), suffix)
-    );
+    return prettyIfs(this.branches, this.else_branch, this.blocky);
   }
 
   render(props) {
