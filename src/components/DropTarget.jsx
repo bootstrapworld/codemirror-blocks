@@ -22,7 +22,8 @@ export const NodeContext = React.createContext({
 // Provided by `DropTargetContainer`
 export const DropTargetContext = React.createContext({
   node: null,
-  field: null
+  field: null,
+  registry: null,
 });
 
 // Every set of DropTargets must be wrapped in a DropTargetContainer.
@@ -30,6 +31,10 @@ export const DropTargetContext = React.createContext({
 //     a DropTarget for.
 export class DropTargetContainer extends Component {
   static contextType = NodeContext;
+
+  constructor(props) {
+    super(props);
+  }
   
   static propTypes = {
     field: PropTypes.string.isRequired,
@@ -38,7 +43,8 @@ export class DropTargetContainer extends Component {
   render() {
     const value = {
       field: this.props.field,
-      node: this.context.node
+      node: this.context.node,
+      registry: new Map(),
     };
     return (
       <DropTargetContext.Provider value={value}>
@@ -49,7 +55,7 @@ export class DropTargetContainer extends Component {
 }
 
 // Find the drop target (if any) on the given side of `child` node.
-export function findAdjacentDropTarget(child, onLeft) {
+export function findAdjacentDropTarget(dropTargetContext, child, onLeft) {
   let prevDropTargetId = null;
   let targetId = `block-node-${child.id}`;
     
@@ -81,7 +87,13 @@ export function findAdjacentDropTarget(child, onLeft) {
     }
     return null;
   }
-  return findDT(child.parent.element);
+  if (!child.parent) return null;
+  const id = findDT(child.parent.element);
+  if (id) {
+    return dropTargetContext.registry.get(id);
+  } else {
+    return null;
+  }
 }
 
 
@@ -206,7 +218,8 @@ class ActualDropTarget extends BlockComponent {
   }
 
   render() {
-    // TODO: take a look at this and make sure props is right
+    // (This line should really be in the constructor, but `context` isn't available there.)
+    this.context.registry.set(this.props.id, this);
     const props = {
       tabIndex          : "-1",
       role              : 'textbox',

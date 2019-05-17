@@ -300,18 +300,27 @@ class Node extends BlockComponent {
 
       // paste
       case 'paste':
-        // Overwrite if a node is selected. Otherwise, insert.
         if (selections.includes(id)) {
-          var target = node;
-        } else {
-          var target = findAdjacentDropTarget(node, e.shiftKey);
-          if (!target) {
+          // A node is selected. Overwrite it.
+          paste(node);
+        } else if (node.parent) {
+          // We're inside the AST somewhere. Try to paste onto an adjacent drop target.
+          var target = findAdjacentDropTarget(this.context, node, e.shiftKey);
+          if (target) {
+            paste(target);
+          } else {
             let direction = e.shiftKey ? "before" : "after";
             say(`Cannot paste ${direction} this node.`);
-            return;
           }
+        } else {
+          // We're at a root node. Insert to the left or right, at the top level.
+          const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
+          paste({
+            type: "toplevelEdit",
+            from: pos,
+            to: pos
+          });
         }
-        paste(target);
         return;
 
       // cut
@@ -390,9 +399,9 @@ class Node extends BlockComponent {
   handleDisableEditable = () => this.setState({editable: false});
 
   setLeft() {
-    const dropTargetId = findAdjacentDropTarget(this, true);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
+    const dropTarget = findAdjacentDropTarget(this.context, this.props.node, true);
+    if (dropTarget) {
+      this.props.setEditable(dropTarget.props.id, true);
       return true;
     } else {
       return false;
@@ -400,9 +409,9 @@ class Node extends BlockComponent {
   }
 
   setRight() {
-    const dropTargetId = findAdjacentDropTarget(this, false);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
+    const dropTarget = findAdjacentDropTarget(this.context, this.props.node, false);
+    if (dropTarget) {
+      this.props.setEditable(dropTarget.props.id, true);
       return true;
     } else {
       return false;
