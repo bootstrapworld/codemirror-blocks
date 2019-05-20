@@ -75,7 +75,7 @@ export class Bind extends ASTNode {
 
   render(props) {
     return <Node node={this} {...props}>
-      {(this.ann === null) ? <span className="blocks-operator">{this.ident.reactElement()}</span>
+      {(this.ann === null) ? <span className="blocks-bind">{this.ident.reactElement()}</span>
         :
         (<span className="blocks-operator">{this.ident.reactElement()} :: {this.ann.reactElement()}</span>)
       }</Node>
@@ -131,7 +131,7 @@ export class Func extends ASTNode {
     </span>;
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-func">
           fun&nbsp;{name}({args}){header_ending}:
         </span>
         {body}
@@ -191,7 +191,7 @@ export class Lambda extends ASTNode {
     </span>;
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-lambda">
           lam&nbsp;{name}({args}){header_ending}:
         </span>
         {body}
@@ -267,7 +267,7 @@ export class Let extends ASTNode {
     let identifier = this.ident.reactElement();
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-let">
           {identifier} &nbsp;=&nbsp; {this.rhs.reactElement()}
         </span>
       </Node>
@@ -300,7 +300,7 @@ export class Var extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">VAR</span>
+        <span className="blocks-var">VAR</span>
         <span className="blocks-args">
           <Args>{[this.ident, this.rhs]}</Args>
         </span>
@@ -334,7 +334,7 @@ export class Assign extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-assign">
           {this.ident.reactElement()} := {this.rhs.reactElement()}
         </span>
       </Node>
@@ -375,7 +375,7 @@ export class Construct extends ASTNode {
     let values = <Args>{this.values}</Args>;
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{construktor}</span>
+        <span className="blocks-construct">{construktor}</span>
         {values}
       </Node>
     );
@@ -417,7 +417,7 @@ export class FunctionApp extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-funapp">
           <Args>{[this.func]}</Args>
         </span>
         <span className="blocks-args">
@@ -464,7 +464,7 @@ export class Tuple extends ASTNode {
     });
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-tuple">
           {"{"}{fields}{"}"}
         </span>
       </Node>
@@ -500,7 +500,7 @@ export class TupleGet extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-tuple-access">
           {this.base.reactElement()}{".{"}{this.index.reactElement()}{"}"}
         </span>
         <span className="block-args">
@@ -541,7 +541,7 @@ export class Check extends ASTNode {
     let body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-check">
           {"check" + (this.name != null ? " " + this.name : "")}
         </span>
         <span className="blocks-args">
@@ -592,7 +592,7 @@ export class CheckTest extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-check-test">
           {this.op.reactElement()}
         </span>
         <span className="blocks-args">
@@ -632,7 +632,7 @@ export class Bracket extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-bracket">
           {this.base.reactElement()} [ {this.index.reactElement()}]
         </span>
         <span className="block-args">
@@ -675,7 +675,7 @@ export class LoadTable extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-load-table">
           load-table
         </span>
         <span className="blocks-args">
@@ -752,7 +752,7 @@ export class IfPipe extends ASTNode {
 
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-ask">
           ask:
         </span>
         <div className="blocks-cond-table">
@@ -858,7 +858,7 @@ export class Contract extends ASTNode {
 
   render(props) {
     return <Node node={this} {...props}>
-      <span className="blocks-operator">{this.name.reactElement()} :: {this.ann.reactElement()}</span>
+      <span className="blocks-contract">{this.name.reactElement()} :: {this.ann.reactElement()}</span>
     </Node>
   }
 }
@@ -882,7 +882,7 @@ export class Include extends ASTNode {
 
   render(props) {
     return <Node node={this} {...props}>
-      <span className="blocks-operator">include&nbsp;{this.mod.reactElement()}</span>
+      <span className="blocks-include">include&nbsp;{this.mod.reactElement()}</span>
     </Node>
   }
 }
@@ -922,7 +922,7 @@ export class SpecialImport extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-special-import">
           <Args>{[this.func]}</Args>
         </span>
         <span className="blocks-args">
@@ -954,7 +954,7 @@ export class DataField extends ASTNode {
 
   render(props) {
     return <Node node={this} {...props}>
-      <span className="blocks-operator">{this.name}:&nbsp;{this.value.reactElement()}</span>
+      <span className="blocks-data-field">{this.name}:&nbsp;{this.value.reactElement()}</span>
     </Node>
   }
 }
@@ -986,7 +986,7 @@ export class Reactor extends ASTNode {
     let branches = this.fields.map((branch, index) => branch.reactElement({key: index}));
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-reactor">
           reactor:
         </span>
         <div className="blocks-cond-table">
@@ -1104,7 +1104,7 @@ export class IfExpression extends ASTNode {
 
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-if">
           if:
         </span>
         <div className="blocks-cond-table">
@@ -1151,7 +1151,7 @@ export class IfElseExpression extends ASTNode {
 
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">
+        <span className="blocks-if">
           if:
         </span>
         <div className="blocks-cond-table">
