@@ -4,7 +4,8 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
-import {drop, delete_, copy, paste, activate, Targets} from '../actions';
+import {drop, delete_, copy, paste, activate,
+        InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
 import {NodeContext, DropTargetContext, findAdjacentDropTargetId} from './DropTarget';
@@ -24,7 +25,7 @@ import {playSound, BEEP} from '../sound';
 @DragNodeSource
 @DropNodeTarget(function(monitor) {
   const node = store.getState().ast.getNodeById(this.props.node.id);
-  return drop(monitor.getItem(), Targets.replaceNode(node));
+  return drop(monitor.getItem(), new ReplaceNodeTarget(node));
 })
 class Node extends BlockComponent {
   static contextType = DropTargetContext;
@@ -301,11 +302,11 @@ class Node extends BlockComponent {
       // paste
       case 'paste':
         if (selections.includes(id)) {
-          paste(Targets.replaceNode(node));
+          paste(new ReplaceNodeTarget(node));
         } else if (node.parent) {
           // We're inside the AST somewhere. Try to paste to the left/right.
           const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
-          const target = Targets.insertAt(this.context.node, this.context.field, pos);
+          const target = new InsertTarget(this.context.node, this.context.field, pos);
           if (target) {
             paste(target);
           } else {
@@ -315,7 +316,7 @@ class Node extends BlockComponent {
         } else {
           // We're at a root node. Insert to the left or right, at the top level.
           const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
-          paste(Targets.overwriteRegion(pos, pos));
+          paste(new OverwriteTarget(pos, pos));
         }
         return;
 
@@ -463,7 +464,7 @@ class Node extends BlockComponent {
                       onDisableEditable={this.handleDisableEditable}
                       extraClasses={classes}
                       isInsertion={false}
-                      target={Targets.replaceNode(node)}
+                      target={new ReplaceNodeTarget(node)}
                       value={this.state.value}
                       onChange={this.handleChange}
                       contentEditableProps={props} />

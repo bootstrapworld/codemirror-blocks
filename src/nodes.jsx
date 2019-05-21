@@ -68,29 +68,6 @@ export class Unknown extends ASTNode {
   }
 }
 
-export class FakeInsertNode extends ASTNode {
-  constructor(from, to, text, options={}) {
-    super(from, to, 'fakeInsertNode', options);
-    this.text = text;
-  }
-
-  static spec = Spec.nodeSpec([
-    Spec.value('text')
-  ])
-
-  toDescription(level) {
-    return "";
-  }
-
-  pretty() {
-    return P.txt(this.text);
-  }
-
-  render(props) {
-    console.warn("FakeInsertNode: didn't expect to be rendered!");
-  }
-}
-
 export class FunctionApp extends ASTNode {
   constructor(from, to, func, args, options={}) {
     super(from, to, 'functionApp', options);

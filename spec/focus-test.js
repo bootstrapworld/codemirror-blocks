@@ -85,7 +85,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.getSelectedNodes().length).toBe(2);
       keyDown("Delete");
       await wait(DELAY);
-      expect(this.cm.getValue()).toBe('(+ 1 )');
+      expect(this.cm.getValue()).toBe('(+ 1)');
       expect(this.blocks.getFocusedNode().id).toBe(this.literal1.id);
     });
     

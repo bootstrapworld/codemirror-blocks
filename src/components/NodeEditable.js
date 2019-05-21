@@ -5,7 +5,7 @@ import {ASTNode} from '../ast';
 import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {insert, activate, Targets} from '../actions';
+import {insert, activate, Target} from '../actions';
 import {say, warn} from '../utils';
 
 
@@ -15,7 +15,7 @@ class NodeEditable extends Component {
   }
 
   static propTypes = {
-    target: PropTypes.instanceOf(Targets.Target),
+    target: PropTypes.instanceOf(Target),
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
   }

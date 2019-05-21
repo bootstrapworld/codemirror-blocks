@@ -27,13 +27,17 @@ import {performEdits, edit_insert, edit_delete, edit_replace,
 // A _Target_ says where an action is directed. For example, a target may be a
 // node or a drop target.
 //
-// These kinds of actions _have_ a target:
+// These are the kinds of targets:
+// - InsertTarget: insert at a location inside the AST.
+// - ReplaceNodeTarget: replace an ast node.
+// - OverwriteTarget: replace a range of text at the top level.
 //
+// These kinds of actions _have_ a target:
 // - Paste: the target says where to paste.
 // - Drag&Drop: the target says what's being dropped on.
 // - Insert/Edit: the target says where the text is being inserted/edited.
 //
-// The Target methods are defined at the bottom of this file.
+// Targets are defined at the bottom of this file.
 
 
 // Insert `text` at the given `target`.
@@ -205,8 +209,8 @@ function pasteFromClipboard(done) {
   }, 50);
 }
 
-
-class Target {
+// The class of all targets.
+export class Target {
   constructor(from, to) {
     this.from = from;
     this.to = to;
@@ -217,7 +221,8 @@ class Target {
   }
 }
 
-class InsertTarget extends Target {
+// Insert at a location inside the AST.
+export class InsertTarget extends Target {
   constructor(parentNode, fieldName, pos) {
     super(pos, pos);
     this.parent = parentNode;
@@ -234,7 +239,8 @@ class InsertTarget extends Target {
   }
 }
 
-class ReplaceNodeTarget extends Target {
+// Target an ASTNode. This will replace the node.
+export class ReplaceNodeTarget extends Target {
   constructor(node) {
     const range = node.srcRange();
     super(range.from, range.to);
@@ -251,7 +257,9 @@ class ReplaceNodeTarget extends Target {
   }
 }
 
-class OverwriteTarget extends Target {
+// Target a source range at the top level. This really has to be at the top
+// level: neither `from` nor `to` can be inside any root node.
+export class OverwriteTarget extends Target {
   constructor(from, to) {
     super(from, to);
   }
@@ -263,16 +271,4 @@ class OverwriteTarget extends Target {
   toEdit(text) {
     return edit_overwrite(text, this.from, this.to);
   }
-}
-
-export const Targets = {
-  // Insert at an arbitrary location.
-  insertAt: (parent, field, pos) => new InsertTarget(parent, field, pos),
-  // Target an ASTNode. This will replace the node.
-  replaceNode: (n) => new ReplaceNodeTarget(n),
-  // Target a source range at the top level. This really has to be at the top
-  // level: neither `from` nor `to` can be inside any root node.
-  overwriteRegion: (from, to) => new OverwriteTarget(from, to),
-  // The class of all targets.  
-  Target: Target,
 }

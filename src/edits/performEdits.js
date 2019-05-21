@@ -1,8 +1,8 @@
 import {warn, poscmp, srcRangeIncludes} from '../utils';
 import {prettyPrintingWidth} from '../ast';
-import {commitChanges} from './commitChanges';
-import {findInsertionPoint, findReplacementPoint, cloneNode} from '../nodeSpec';
 import SHARED from '../shared';
+import {commitChanges} from './commitChanges';
+import {FakeAstInsertion, FakeAstReplacement, cloneNode} from './fakeAstEdits';
 
 
 // edit_insert : String, ASTNode, String, Pos -> Edit
@@ -71,9 +71,9 @@ export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}
     if (group) {
       // Convert the group into a text edit.
       // If this group has already been visited, `toTextEdit` will return null.
-      let textEdit = group.toTextEdit();
-      if (textEdit) {
-        textEdits.push(textEdit);
+      if (!group.completed) {
+        textEdits.push(group.toTextEdit());
+        group.completed = true;
       }
     } else {
       textEdits.push(edit.toTextEdit(ast));
@@ -102,7 +102,7 @@ class Edit {
         return node;
       }
     }
-    warn('edit', `Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`);
+    warn('performEdits', `Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`);
   }
 }
 
@@ -126,7 +126,7 @@ class OverwriteEdit extends Edit {
   }
 
   focusHint(newAST) {
-    return newAST.getNodeAfterCur(this.from);
+    return newAST.getNodeBeforeCur(this.to);
   }
 }
 
@@ -136,7 +136,7 @@ class InsertChildEdit extends Edit {
     this.text = text;
     this.parent = parent;
     this.pos = pos;
-    this.insertionPoint = findInsertionPoint(parent, field, pos);
+    this.fakeAstInsertion = new FakeAstInsertion(parent, field, pos);
   }
 
   isTextEdit() {
@@ -145,11 +145,11 @@ class InsertChildEdit extends Edit {
 
   makeAstEdit(clonedAncestor) {
     let clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
-    this.insertionPoint.insertChild(clonedParent, this.text);
+    this.fakeAstInsertion.insertChild(clonedParent, this.text);
   }
 
   focusHint(newAST) {
-    return this.insertionPoint.findChild(newAST) || "fallback";
+    return this.fakeAstInsertion.findChild(newAST) || "fallback";
   }
 }
 
@@ -188,7 +188,7 @@ class DeleteChildEdit extends Edit {
     super(range.from, range.to);
     this.node = node;
     this.parent = parent;
-    this.replacementPoint = findReplacementPoint(parent, node);
+    this.fakeAstReplacement = new FakeAstReplacement(parent, node);
   }
 
   isTextEdit() {
@@ -197,7 +197,7 @@ class DeleteChildEdit extends Edit {
 
   makeAstEdit(clonedAncestor) {
     const clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
-    this.replacementPoint.deleteChild(clonedParent);
+    this.fakeAstReplacement.deleteChild(clonedParent);
   }
 
   focusHint(newAST) {
@@ -241,7 +241,7 @@ class ReplaceChildEdit extends Edit {
     this.text = text;
     this.node = node;
     this.parent = parent;
-    this.replacementPoint = findReplacementPoint(parent, node);
+    this.fakeAstReplacement = new FakeAstReplacement(parent, node);
   }
 
   isTextEdit() {
@@ -250,11 +250,11 @@ class ReplaceChildEdit extends Edit {
 
   makeAstEdit(clonedAncestor) {
     let clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
-    this.replacementPoint.replaceChild(clonedParent, this.text);
+    this.fakeAstReplacement.replaceChild(clonedParent, this.text);
   }
 
   focusHint(newAST) {
-    return this.replacementPoint.findChild(newAST) || "fallback";
+    return this.fakeAstReplacement.findChild(newAST) || "fallback";
   }
 }
 
@@ -265,9 +265,6 @@ class EditGroup {
   }
 
   toTextEdit() {
-    // Only perform the edit once.
-    if (this.completed) return null;
-    this.completed = true;
     // Perform the edits on a copy of the shared ancestor node.
     let range = this.ancestor.srcRange();
     let clonedAncestor = cloneNode(this.ancestor);

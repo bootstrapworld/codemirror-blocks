@@ -85,10 +85,10 @@ export class AST {
       nodes.forEach((node, i) => {
         this.validateNode(node);
         if (node.id === undefined) {
+          // May be defined, if this piece of AST came from the previous AST.
           node.id = uuidv4();
         }
         node.parent = parent;
-        node.path = parent ? parent.path + ("," + i) : i.toString();
         node.level = level;
         node["aria-setsize"]  = nodes.length;
         node["aria-posinset"] = i + 1;
@@ -112,7 +112,7 @@ export class AST {
           ["from", "to", "type", "options", "spec", "__alreadyValidated", "element"];
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames =
-          ["id", "parent", "path", "level", "nid", "prev", "next", "hash",
+          ["id", "parent", "level", "nid", "prev", "next", "hash",
            "aria-setsize", "aria-posinset"];
     if (!node.__alreadyValidated) {
       for (let p in node) {

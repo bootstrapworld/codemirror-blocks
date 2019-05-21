@@ -11,7 +11,7 @@ import BlockComponent from './BlockComponent';
 import uuidv4 from 'uuid/v4';
 import {warn} from '../utils';
 import {ASTNode} from '../ast';
-import {drop, Targets} from '../actions';
+import {drop, InsertTarget} from '../actions';
 
 
 // Provided by `Node`
@@ -124,7 +124,7 @@ const mapDispatchToProps2 = (dispatch, {id}) => ({
 
 @connect(mapStateToProps2, mapDispatchToProps2)
 @DropNodeTarget(function(monitor) {
-  const target = Targets.insertAt(this.context.node, this.context.field, this.getLocation());
+  const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
   return drop(monitor.getItem(), target);
 })
 class ActualDropTarget extends BlockComponent {
@@ -221,7 +221,7 @@ class ActualDropTarget extends BlockComponent {
       id                : `block-drop-target-${this.props.id}`,
     };
     if (this.props.isEditable) {
-      const target = Targets.insertAt(this.context.node, this.context.field, this.getLocation());
+      const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
       return (
         <NodeEditable target={target}
                       value={this.state.value}
