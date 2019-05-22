@@ -1,7 +1,7 @@
 import CodeMirror from 'codemirror';
 import {store} from '../store';
 import SHARED from '../shared';
-import {poscmp} from '../utils';
+import {poscmp, adjustForChange} from '../utils';
 import {activate} from '../actions';
 import patch from './patchAst';
 
@@ -99,28 +99,4 @@ export function computeFocusNodeFromChanges(changes, newAST) {
     // Case D: the tree is empty, so return null
     return focusNode || newAST.getFirstRootNode() || null;
   }
-}
-
-function posAfterChanges(changes, pos, isFrom) {
-  changes.forEach(c => pos = adjustForChange(pos, c, isFrom));
-  return pos;
-}
-
-// Compute the position of the end of a change (its 'to' property refers to the pre-change end).
-// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
-function changeEnd({from, to, text}) {
-  if (!text) return to;
-  let lastText = text[text.length-1];
-  return {line: from.line+text.length-1, ch: lastText.length+(text.length==1 ? from.ch : 0)};
-}
-
-// Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
-// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
-function adjustForChange(pos, change, from) {
-  if (poscmp(pos, change.from) < 0)           return pos;
-  if (poscmp(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
-  if (poscmp(pos, change.to) <= 0)            return changeEnd(change);
-  let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
-  if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
-  return {line: line, ch: ch};
 }

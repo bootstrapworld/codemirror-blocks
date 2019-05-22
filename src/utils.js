@@ -222,3 +222,25 @@ export function waitUntilReady() {
     }
   });
 }
+
+// Compute the position of the end of a change (its 'to' property refers to the pre-change end).
+// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
+export function changeEnd({from, to, text}) {
+  if (!text) return to;
+  let lastLine = text[text.length - 1];
+  return {
+    line: from.line + text.length - 1,
+    ch: lastLine.length + (text.length == 1 ? from.ch : 0)
+  };
+}
+
+// Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
+// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
+export function adjustForChange(pos, change, from) {
+  if (poscmp(pos, change.from) < 0)           return pos;
+  if (poscmp(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
+  if (poscmp(pos, change.to) <= 0)            return changeEnd(change);
+  let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
+  if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
+  return {line: line, ch: ch};
+}

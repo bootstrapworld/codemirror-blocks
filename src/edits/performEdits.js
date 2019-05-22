@@ -1,4 +1,4 @@
-import {warn, poscmp, srcRangeIncludes} from '../utils';
+import {warn, poscmp, srcRangeIncludes, changeEnd} from '../utils';
 import {prettyPrintingWidth} from '../ast';
 import SHARED from '../shared';
 import {commitChanges} from './commitChanges';
@@ -133,15 +133,25 @@ class OverwriteEdit extends Edit {
 
   toTextEdit(ast) {
     let text = addWhitespace(ast, this.from, this.to, this.text);
-    return {
+    this.textEdit = {
       text,
       from: this.from,
       to: this.to
     };
+    return this.textEdit;
   }
 
   focusHint(newAST) {
-    return newAST.getNodeBeforeCur(this.to);
+    if (this.textEdit) {
+      const end = changeEnd({
+        from: this.textEdit.from,
+        to: this.textEdit.to,
+        text: this.textEdit.text.split("\n")});
+      return newAST.getNodeBeforeCur(end);
+    } else {
+      warn('OverwriteEdit', `Cannot determine focus hint before `.toTextEdit(ast)` is called.`);
+      return "fallback";
+    }
   }
 
   toString() {
