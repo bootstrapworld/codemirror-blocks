@@ -16,7 +16,7 @@ import {performEdits, edit_insert, edit_delete, edit_replace,
 // callback. If the action is successful, it will call `onSuccess(newAST)`. If
 // it fails, it will call `onError(theError)`.
 //
-// The implementation of actions is in the folder `src/actions/`. IT IS PRIVATE,
+// The implementation of actions is in the folder `src/edits/`. IT IS PRIVATE,
 // AND NO FILE EXCEPT src/actions.js SHOULD EVER NEED TO IMPORT IT. The
 // implementation is complex, because while edits are best thought of as
 // operations on the AST, they must all be transformed into text edits, and the
