@@ -47,7 +47,8 @@ export function edit_replace(text, node) {
 // Attempt to commit a set of changes to Code Mirror. For more details, see the
 // `commitChanges` function. This function is identical to `commitChanges`,
 // except that this one takes higher-level `Edit` operations, constructed by the
-// functions: `edit_insert`, `edit_delete`, and `edit_replace`.
+// functions: `edit_insert`, `edit_delete`, and `edit_replace`. Focus is
+// determined by the focus of the _last_ edit in `edits`.
 export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}) {
   // Ensure that all of the edits are valid.
   for (const edit of edits) {
@@ -80,6 +81,16 @@ export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}
     }
   }
   console.log(label, "edits:", edits, "textEdits:", textEdits); // temporary logging
+  /* More detailed logging:
+  console.log(`${label} - edits:`);
+  for (let edit of edits) {
+    console.log(`    ${edit.toString()}`);
+  }
+  console.log(`${label} - text edits:`);
+  for (let edit of textEdits) {
+    console.log(`    ${edit.from.line}:${edit.from.ch}-${edit.to.line}:${edit.to.ch}="${edit.text}"`);
+  }
+  */
   // Commit the text edits.
   const changes = cm => () => {
     for (const edit of textEdits) {
@@ -103,6 +114,10 @@ class Edit {
       }
     }
     warn('performEdits', `Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`);
+  }
+
+  toString() {
+    return `${this.from.line}:${this.from.ch}-${this.to.line}:${this.to.ch}`;
   }
 }
 
@@ -128,6 +143,10 @@ class OverwriteEdit extends Edit {
   focusHint(newAST) {
     return newAST.getNodeBeforeCur(this.to);
   }
+
+  toString() {
+    return `Overwrite ${super.toString()}`;
+  }
 }
 
 class InsertChildEdit extends Edit {
@@ -150,6 +169,10 @@ class InsertChildEdit extends Edit {
 
   focusHint(newAST) {
     return this.fakeAstInsertion.findChild(newAST) || "fallback";
+  }
+
+  toString() {
+    return `InsertChild ${super.toString()}`;
   }
 }
 
@@ -180,6 +203,10 @@ class DeleteRootEdit extends Edit {
       return newAST.getFirstRootNode();
     }
   }
+
+  toString() {
+    return `DeleteRoot ${super.toString()}`;
+  }
 }
 
 class DeleteChildEdit extends Edit {
@@ -207,6 +234,10 @@ class DeleteChildEdit extends Edit {
       return newAST.getFirstRootNode();
     }
   }
+
+  toString() {
+    return `DeleteChild ${super.toString()}`;
+  }
 }
 
 class ReplaceRootEdit extends Edit {
@@ -232,6 +263,10 @@ class ReplaceRootEdit extends Edit {
   focusHint(newAST) {
     return newAST.getNodeAfterCur(this.from);
   }
+
+  toString() {
+    return `ReplaceRoot ${super.toString()}="${this.text}"`;
+  }
 }
 
 class ReplaceChildEdit extends Edit {
@@ -255,6 +290,10 @@ class ReplaceChildEdit extends Edit {
 
   focusHint(newAST) {
     return this.fakeAstReplacement.findChild(newAST) || "fallback";
+  }
+
+  toString() {
+    return `ReplaceChild ${super.toString()}="${this.text}"`;
   }
 }
 
