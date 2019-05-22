@@ -53,6 +53,7 @@ export function insert(text, target, onSuccess, onError) {
 export function delete_(nodes, onSuccess, onError) { // 'delete' is a reserved word
   if (nodes.length === 0) return;
   const {ast} = store.getState();
+  nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
   const edits = nodes.map(node => edit_delete(node));
   performEdits('cmb:delete-node', ast, edits, onSuccess, onError);
   store.dispatch({type: 'SET_SELECTIONS', selections: []});
@@ -115,6 +116,18 @@ export function drop(src, target, onSuccess, onError) {
   edits.push(target.toEdit(content));
   // Perform the edits.
   performEdits('cmb:drop-node', ast, edits, onSuccess, onError);
+}
+
+// Set the cursor position.
+export function setCursor(cur) {
+  return (dispatch, getState) => {
+    if (SHARED.cm && cur) {
+      SHARED.cm.focus();
+      SHARED.search.setCursor(cur);
+      SHARED.cm.setCursor(cur);
+    }
+    dispatch({type: 'SET_CURSOR', cur});
+  }
 }
 
 let queuedAnnouncement = null;

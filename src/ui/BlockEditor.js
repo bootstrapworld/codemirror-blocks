@@ -9,9 +9,8 @@ import SHARED from '../shared';
 import patch from '../edits/patchAst'; // TODO: eliminate this import
 import {computeFocusNodeFromChanges} from '../edits/commitChanges'; // TODO: eliminate this import
 import NodeEditable from '../components/NodeEditable';
-import {activate, OverwriteTarget} from '../actions';
+import {activate, setCursor, OverwriteTarget} from '../actions';
 import {playSound, BEEP} from '../sound';
-import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
@@ -520,11 +519,9 @@ class BlockEditor extends Component {
           onMouseDown={this.handleMouseDown}
           onFocus={this.handleFocus}
           onPaste={this.handlePaste}
-          cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
           onCursorActivity={this.handleCursor}
           editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}
-        <FakeCursorManager />
       </React.Fragment>
     );
   }
@@ -549,7 +546,7 @@ const mapDispatchToProps = dispatch => ({
   dispatch,
   setAST: ast => dispatch({type: 'SET_AST', ast}),
   setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
-  setCursor: (_, cur) => dispatch({type: 'SET_CURSOR', cur}),
+  setCursor: (_, cur) => dispatch(setCursor(cur)),
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
   activate: (id, options) => dispatch(activate(id, options)),

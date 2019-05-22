@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
-import {drop, delete_, copy, paste, activate,
+import {drop, delete_, copy, paste, activate, setCursor,
         InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
@@ -523,7 +523,7 @@ const mapDispatchToProps = dispatch => ({
   dispatch,
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
-  setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
+  setCursor: cur => dispatch(setCursor(cur)),
   activate: (id, options) => dispatch(activate(id, options)),
   setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
 });
