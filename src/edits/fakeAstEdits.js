@@ -78,7 +78,9 @@ export class FakeAstInsertion {
   findChild(newAST) {
     const newParent = newAST.getNodeById(this.parent.id);
     if (!newParent) return null;
-    return newParent[this.spec.fieldName][this.index];
+    const indexFromEnd = this.parent[this.spec.fieldName].length - this.index;
+    const newIndex = newParent[this.spec.fieldName].length - indexFromEnd - 1;
+    return newParent[this.spec.fieldName][newIndex];
   }
 }
 
@@ -124,7 +126,7 @@ export class FakeAstReplacement {
     } else if (this.spec instanceof Optional) {
       clonedParent[this.spec.fieldName] = null;
     } else {
-      clonedParent[this.spec.fieldName] = new Blank(this.child.from, this.child.to);
+      clonedParent[this.spec.fieldName] = new FakeBlankNode(this.child.from, this.child.to);
     }
   }
 
