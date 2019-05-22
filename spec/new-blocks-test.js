@@ -27,9 +27,6 @@ describe('The CodeMirrorBlocks Class', function() {
     const container = document.getElementById('cmb-editor');
     this.blocks = new CodeMirrorBlocks(container, {value: ""}, wescheme);
     this.blocks.setBlockMode(true);
-
-    console.log("BLOCKS:", this.blocks);
-    console.log("AST:", this.blocks.getAst());
   });
 
   afterEach(function() {
