@@ -69,7 +69,6 @@ class Node extends BlockComponent {
   handleClick = e => {
     if(!this.props.inToolbar) e.stopPropagation(); // prevent ancestors to steal focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
-
     this.props.activate(this.props.node.id, {allowMove: false});
   }
 

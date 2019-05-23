@@ -1,7 +1,7 @@
 import CodeMirror from 'codemirror';
 import {store} from '../store';
 import SHARED from '../shared';
-import {poscmp, adjustForChange} from '../utils';
+import {poscmp, adjustForChange, minimizeChange} from '../utils';
 import {activate} from '../actions';
 import patch from './patchAst';
 
@@ -15,7 +15,7 @@ const raw = lines => lines.join('').trim();
 //   -> Void
 // where
 //   Changes has the form:
-//     [{text: string, from: Pos, to: Pos, label: string}]
+//     [{text: Array<string>, from: Pos, to: Pos, label: string}]
 //   FocusHint is a function of type:
 //     ast -> ASTNode|null|"fallback"
 //     (If null, remove focus. If "fallback", fall back on computeFocusNodeFromChanges.)
@@ -80,6 +80,7 @@ export function commitChanges(
 export function computeFocusNodeFromChanges(changes, newAST) {
   let insertion = false, focusId = false;
   let startLocs = changes.map(c => {
+    c = minimizeChange(c);
     c.from = adjustForChange(c.from, c, true);
     c.to   = adjustForChange(c.to,   c, false);
     if(c.text.join("").length > 0) insertion = c; // remember the most-recent insertion

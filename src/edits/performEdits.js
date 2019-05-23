@@ -49,7 +49,7 @@ export function edit_replace(text, node) {
 // except that this one takes higher-level `Edit` operations, constructed by the
 // functions: `edit_insert`, `edit_delete`, and `edit_replace`. Focus is
 // determined by the focus of the _last_ edit in `edits`.
-export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}) {
+export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{}) {
   // Ensure that all of the edits are valid.
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {
@@ -65,36 +65,36 @@ export function performEdits(label, ast, edits, onSuccess=()=>{}, onError=()=>{}
   // Group edits by shared ancestor, so that edits so grouped can be made with a
   // single textual edit.
   const editToEditGroup = groupEditsByAncestor(edits);
-  // Convert the edits into text edits.
-  let textEdits = new Array();
+  // Convert the edits into CodeMirror-style change objects
+  // (with `from`, `to`, and `text`, but not `removed` or `origin`).
+  let changeArray = new Array();
   for (const edit of edits) {
     let group = editToEditGroup.get(edit);
     if (group) {
       // Convert the group into a text edit.
-      // If this group has already been visited, `toTextEdit` will return null.
       if (!group.completed) {
-        textEdits.push(group.toTextEdit());
+        changeArray.push(group.toChangeObject());
         group.completed = true;
       }
     } else {
-      textEdits.push(edit.toTextEdit(ast));
+      changeArray.push(edit.toChangeObject(ast));
     }
   }
-  console.log(label, "edits:", edits, "textEdits:", textEdits); // temporary logging
+  console.log(origin, "edits:", edits, "changeArray:", changeArray); // temporary logging
   /* More detailed logging:
-  console.log(`${label} - edits:`);
+  console.log(`${origin} - edits:`);
   for (let edit of edits) {
     console.log(`    ${edit.toString()}`);
   }
-  console.log(`${label} - text edits:`);
-  for (let edit of textEdits) {
+  console.log(`${origin} - text edits:`);
+  for (let edit of changeArray) {
     console.log(`    ${edit.from.line}:${edit.from.ch}-${edit.to.line}:${edit.to.ch}="${edit.text}"`);
   }
   */
   // Commit the text edits.
   const changes = cm => () => {
-    for (const edit of textEdits) {
-      cm.replaceRange(edit.text, edit.from, edit.to, label);
+    for (const c of changeArray) {
+      cm.replaceRange(c.text, c.from, c.to, origin);
     }
   };
   commitChanges(changes, focusHint, onSuccess, onError);
@@ -131,25 +131,21 @@ class OverwriteEdit extends Edit {
     return true;
   }
 
-  toTextEdit(ast) {
+  toChangeObject(ast) {
     let text = addWhitespace(ast, this.from, this.to, this.text);
-    this.textEdit = {
-      text,
+    this.changeObject = {
+      text: text.split("\n"),
       from: this.from,
       to: this.to
     };
-    return this.textEdit;
+    return this.changeObject;
   }
 
   focusHint(newAST) {
-    if (this.textEdit) {
-      const end = changeEnd({
-        from: this.textEdit.from,
-        to: this.textEdit.to,
-        text: this.textEdit.text.split("\n")});
-      return newAST.getNodeBeforeCur(end);
+    if (this.changeObject) {
+      return newAST.getNodeBeforeCur(this.changeObject);
     } else {
-      warn('OverwriteEdit', `Cannot determine focus hint before `.toTextEdit(ast)` is called.`);
+      warn('OverwriteEdit', `Cannot determine focus hint before `.toChangeObject(ast)` is called.`);
       return "fallback";
     }
   }
@@ -197,10 +193,10 @@ class DeleteRootEdit extends Edit {
     return true;
   }
 
-  toTextEdit(_ast) {
+  toChangeObject(_ast) {
     const {from, to} = removeWhitespace(this.from, this.to);
     return {
-      text: "",
+      text: [""],
       from,
       to
     };
@@ -262,9 +258,9 @@ class ReplaceRootEdit extends Edit {
     return true;
   }
 
-  toTextEdit(ast) {
+  toChangeObject(ast) {
     return {
-      text: this.text,
+      text: this.text.split("\n"),
       from: this.from,
       to: this.to
     };
@@ -313,20 +309,20 @@ class EditGroup {
     this.edits = edits;
   }
 
-  toTextEdit() {
+  toChangeObject() {
     // Perform the edits on a copy of the shared ancestor node.
     let range = this.ancestor.srcRange();
     let clonedAncestor = cloneNode(this.ancestor);
     for (const edit of this.edits) {
       edit.makeAstEdit(clonedAncestor);
     }
-    // Return the text diff.
+    // Pretty-print to determine the new text.
     let width = prettyPrintingWidth - range.from.ch;
-    let newText = clonedAncestor.pretty().display(width).join("\n");
+    let newText = clonedAncestor.pretty().display(width);
     return {
       from: range.from,
       to: range.to,
-      text: newText
+      text: newText,
     };
   }
 }

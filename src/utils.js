@@ -244,3 +244,26 @@ export function adjustForChange(pos, change, from) {
   if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
   return {line: line, ch: ch};
 }
+
+// Minimize a CodeMirror-style change object, by excluding any shared prefix
+// between the old and new text. Mutates part of the change object.
+export function minimizeChange({from, to, text, removed, origin=undefined}) {
+  // Remove shared lines
+  while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
+    text.shift();
+    removed.shift();
+    from.line += 1;
+    from.ch = 0;
+  }
+  // Remove shared chars
+  let n = 0;
+  for (let i in text[0]) {
+    if (text[0][i] !== removed[0][i]) break;
+    n = (+i) + 1;
+  }
+  text[0] = text[0].substr(n);
+  removed[0] = removed[0].substr(n);
+  from.ch += n;
+  // Return the result.
+  return origin ? {from, to, text, removed, origin} : {from, to, text, removed};
+}

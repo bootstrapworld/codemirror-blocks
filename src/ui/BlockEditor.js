@@ -297,7 +297,7 @@ class BlockEditor extends Component {
     // We only care about changes whose origin is *not* 'cmb:'
     // cmb-originating changes are handled by commitChanges (see codeMirror.js)
     if (!changes.every(c => c.origin && c.origin.startsWith('cmb:'))) {
-      console.warn("Old `editorChange` code path deprecated!");
+      console.warn('BlockEditor', `Old editorChange code path deprecated! ${changes.map(c => c.origin)}`);
       const newAST = SHARED.parser.parse(cm.getValue());
       const tree = patch(this.props.ast, newAST);
       const focusNode = computeFocusNodeFromChanges(changes, tree);
