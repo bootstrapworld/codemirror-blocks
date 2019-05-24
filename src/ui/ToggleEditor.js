@@ -47,7 +47,6 @@ export default class ToggleEditor extends React.Component {
 
     this.cmOptions = merge(defaultCmOptions, props.cmOptions);
     this.language = props.language;
-    console.log(this.language);
     this.parser = this.language.getParser();
 
     let defaultOptions = {
