@@ -139,7 +139,7 @@ const nodeTypes = {
   // data Name
   's-underscore': function(l: Loc) {
     return new Literal(
-      l.from, l.to, '_', 's-underscore', {ariaLabel: `underscore identifier`}
+      l.from, l.to, '_', 's-underscore', {[ariaLabel]: `underscore identifier`}
     );
   },
   "s-name": function (pos: Loc, str: string) {
@@ -285,7 +285,7 @@ const nodeTypes = {
   },
   "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {
     if (DEBUG) console.log(arguments);
-    return new When(l.from, l.to, test, block, blocky, {ariaLabel: `when statement`});
+    return new When(l.from, l.to, test, block, blocky, {[ariaLabel]: `when statement`});
   },
   // "s-assign": function(l: Loc, id: Name, value: Expr) {},
   's-if-pipe': function(pos: Loc, branches: IfPipeBranch[], blocky: boolean) {
@@ -297,10 +297,10 @@ const nodeTypes = {
   },
   // "s-if-pipe-else": function(l: Loc, branches: IfPipeBranch[], _else: Expr, blocky: boolean) {},
   "s-if": function(l: Loc, branches: IfBranch[], blocky: boolean) {
-    return new IfExpression(l.from, l.to, branches, blocky, {ariaLabel: `if expression with ${branches.length} branches}`});
+    return new IfExpression(l.from, l.to, branches, blocky, {[ariaLabel]: `if expression with ${branches.length} branches}`});
   },
   "s-if-else": function(l: Loc, branches: IfBranch[], _else: Expr, blocky: boolean) {
-    return new IfElseExpression(l.from, l.to, branches, _else, blocky, {ariaLabel: `if expression with ${branches.length} branches and an else branch`});
+    return new IfElseExpression(l.from, l.to, branches, _else, blocky, {[ariaLabel]: `if expression with ${branches.length} branches and an else branch`});
   },
   // "s-cases": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], blocky: boolean) {},
   // "s-cases-else": function(l: Loc, typ: Ann, val: Expr, branches: CasesBranch[], _else: Expr, blocky: boolean) {},
@@ -446,7 +446,7 @@ const nodeTypes = {
   // "s-data-expr": function(l: Loc, name: string, namet: Name, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
   's-for': function(l: Loc, iterator: Expr, bindings: ForBind[], ann: Ann, body: Expr, blocky: boolean) {
     if (DEBUG || true) console.log(arguments);
-    return new For(l.from, l.to, iterator, bindings, ann, body, blocky, {ariaLabel: `a for expression`});
+    return new For(l.from, l.to, iterator, bindings, ann, body, blocky, {[ariaLabel]: `a for expression`});
   },
   "s-check": function(pos: Loc, name: string | undefined, body: any, keyword_check: boolean) {
     return new Check(
@@ -560,7 +560,7 @@ end
   //data IfBranch
   's-if-branch': function(l: Loc, test: Expr, body: Expr) {
     if (DEBUG) console.log(arguments);
-    return new IfBranch(l.from, l.to, test, body, {ariaLabel: `if branch`});
+    return new IfBranch(l.from, l.to, test, body, {[ariaLabel]: `if branch`});
   },
 
   //data IfPipeBranch
@@ -607,7 +607,7 @@ end
   // 'a-tuple': function(l: Loc, fields: AField[]) {},
   'a-app': function(l: Loc, ann: Ann, args: Ann[]) {
     if (DEBUG || true) console.log(arguments);
-    return new AnnotationApp(l.from, l.to, ann, args, {ariaLabel: `appication annotation`});
+    return new AnnotationApp(l.from, l.to, ann, args, {[ariaLabel]: `appication annotation`});
   },
   // 'a-pred': function(l: Loc, ann: Ann, exp: Expr) {},
   // 'a-dot': function(l: Loc, obj: Name, field: string) {},

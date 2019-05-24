@@ -180,10 +180,10 @@ end`;
     }
   });
 
-  it("should be able to test non-ds programs:", function() {
+  describe("should be able to test non-ds programs:", function() {
     const test = (text, label = text) => {
       it(`${label}`, function() {
-        let result = this.parser.parse(str).rootNodes[0].options["aria-label"];
+        let result = this.parser.parse(text).rootNodes[0].options["aria-label"];
         expect(result).not.toBe(undefined);
       });
     };
