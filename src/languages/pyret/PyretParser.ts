@@ -19,6 +19,8 @@ import {Binop,
   Construct,
   Contract,
   DataField,
+  For,
+  ForBind,
   Func,
   FunctionApp,
   IfBranch,
@@ -34,6 +36,7 @@ import {Binop,
   Tuple,
   TupleGet,
   Var,
+  When,
   IfExpression,
   IfElseExpression,
 } from "./ast";
@@ -92,6 +95,9 @@ const opLookup = {
   "is=~": (loc, _node) => new Literal(loc.from, loc.to, 'is=~', checkOP),
   "is-not=~": (loc, _node) => new Literal(loc.from, loc.to, 'is-not=~', checkOP),
   "is-not==": (loc, _node) => new Literal(loc.from, loc.to, 'is-not==', checkOP),
+  "raises": (loc, _node) => new Literal(loc.from, loc.to, 'raises', 'raises'),
+  "satisfies": (loc, _node) => new Literal(loc.from, loc.to, 'satisfies', 'satisfies'),
+  "is-not<=>": (loc, _node) => new Literal(loc.from, loc.to, 'is-not<=>', checkOP),
 };
 
 type AField = any;
@@ -107,7 +113,6 @@ type DefinedType = any;
 type DefinedValue = any;
 type Expr = ASTNode;
 type FieldName = any;
-type ForBind = any;
 type Hint = any;
 type ImportType = Number;
 type LetBind = any;
@@ -129,7 +134,11 @@ const DEBUG = false;
 
 const nodeTypes = {
   // data Name
-  // 's-underscore': function(l: Loc) {},
+  's-underscore': function(l: Loc) {
+    return new Literal(
+      l.from, l.to, '_', 's-underscore', {ariaLabel: `underscore identifier`}
+    );
+  },
   "s-name": function (pos: Loc, str: string) {
     return new Literal(
       pos.from,
@@ -271,7 +280,10 @@ const nodeTypes = {
     // TODO: don't know what params do, using binding for now
     return new Contract(l.from, l.to, name, ann, {'aria-label': `contract for ${name}: ${ann}`});
   },
-  // "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {},
+  "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {
+    if (DEBUG) console.log(arguments);
+    return new When(l.from, l.to, test, block, blocky);
+  },
   // "s-assign": function(l: Loc, id: Name, value: Expr) {},
   's-if-pipe': function(pos: Loc, branches: IfPipeBranch[], blocky: boolean) {
     if (DEBUG) console.log(arguments);
@@ -429,7 +441,10 @@ const nodeTypes = {
   },
   // "s-data": function(l: Loc, name: string, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
   // "s-data-expr": function(l: Loc, name: string, namet: Name, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
-  // 's-for': function(l: Loc, iterator: Expr, bindings: ForBind[], ann: Ann, body: Expr, blocky: boolean) {},
+  's-for': function(l: Loc, iterator: Expr, bindings: ForBind[], ann: Ann, body: Expr, blocky: boolean) {
+    if (DEBUG || true) console.log(arguments);
+    return new For(l.from, l.to, iterator, bindings, ann, body, blocky, {ariaLabel: `a for expression`});
+  },
   "s-check": function(pos: Loc, name: string | undefined, body: any, keyword_check: boolean) {
     return new Check(
       pos.from, pos.to, name, body, keyword_check, { 'aria-label': ((name != undefined)? `${name} `: "") + `checking ${body}`}
@@ -490,7 +505,10 @@ const nodeTypes = {
   },
   
   // data ForBind
-  // 's-for-bind': function(l: Loc, bind: Bind, value: Expr) {},
+  's-for-bind': function(l: Loc, bind: Bind, value: Expr) {
+    if (DEBUG || true) console.log(arguments);
+    return new ForBind(l.from, l.to, idToLiteral(bind), value, {aria: `binding for for expression`});
+  },
 
   // data ColumnBinds
   // 's-column-binds': function(l: Loc, binds: Bind[], table: Expr) {},

@@ -66,8 +66,10 @@ export class Bind extends ASTNode {
   }
 
   pretty() {
+    let ident = this.ident.pretty();
+    console.log(ident);
     if (this.ann === null) {
-      return this.ident.pretty();
+      return ident;
     } else {
       return P.horz(this.ident, P.txt(" :: "), this.ann);
     }
@@ -77,7 +79,7 @@ export class Bind extends ASTNode {
     return <Node node={this} {...props}>
       {(this.ann === null) ? <span className="blocks-bind">{this.ident.reactElement()}</span>
         :
-        (<span className="blocks-operator">{this.ident.reactElement()} :: {this.ann.reactElement()}</span>)
+        (<span className="blocks-bind">{this.ident.reactElement()} :: {this.ann.reactElement()}</span>)
       }</Node>
   }
 }
@@ -1162,5 +1164,88 @@ export class IfElseExpression extends ASTNode {
         </div>
       </Node>
     );
+  }
+}
+
+export class For extends ASTNode {
+  iterator: ASTNode;
+  bindings: ASTNode[];
+  ann: ASTNode | null;
+  body: ASTNode;
+  block: boolean
+
+  constructor(from, to, iterator: ASTNode, bindings: ForBind[], ann, body: ASTNode, blocky: boolean, options = {}) {
+    super(from, to, 'for', ['iterator', 'bindings', 'ann', 'body'], options);
+    this.iterator = iterator;
+    this.bindings = bindings;
+    this.ann = ann;
+    this.body = body;
+    this.block = blocky;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    let ann_description = (this.ann == null)? "no annotation," : `annotation ${this.ann.describe(level)},`;
+    return `a for expression with iterator ${this.iterator.describe(level)}, bindings ${enumerateList(this.bindings, level)}, ${ann_description} and ${this.body.describe(level)}`;
+  }
+
+  pretty() {
+    let retAnn = this.ann ? P.horz(" -> ", this.ann) : "";
+    let header_ending = (this.block)? " block:" : ":";
+    let header = P.ifFlat(
+      P.horz("for ", this.iterator, "(", P.sepBy(this.bindings, ", ", ","), ")", retAnn, header_ending),
+      P.vert(P.horz("fun ", this.iterator, "("),
+             P.horz(INDENT, P.sepBy(this.bindings, ", ", ","), ")", retAnn, ":")));
+    // either one line or multiple; helper for joining args together
+    return P.ifFlat(
+      P.horz(header, " ", this.body, " end"),
+      P.vert(header,
+             P.horz(INDENT, this.body),
+             "end"));
+  }
+
+  render(props) {
+    let name = this.iterator.reactElement();
+    let body = this.body.reactElement();
+    let args = <Args>{this.bindings}</Args>;
+    let header_ending = <span>
+      {(this.ann != null)? <>&nbsp;->&nbsp;{this.ann.reactElement()}</> : null}{this.block ? <>&nbsp;{"block"}</> : null}
+    </span>;
+    return (
+      <Node node={this} {...props}>
+        <span className="blocks-for">
+          for&nbsp;{name}({args}){header_ending}:
+        </span>
+        {body}
+      </Node>
+    );
+  }
+}
+
+export class ForBind extends ASTNode {
+  value: ASTNode;
+  bind: Bind;
+
+  constructor(from, to, bind: Bind, value: ASTNode, options = {}) {
+    super(from, to, 'for-bind', ['bind', 'value'], options);
+    this.bind = bind;
+    this.value = value;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `a for binding with ${this.bind.describe(level)} and ${this.value.describe(level)}`;
+  }
+
+  pretty() {
+    return P.horz(this.bind, " from ", this.value);
+  }
+
+  render(props) {
+    return <Node node={this} {...props}>
+      <span className="blocks-for-bind">
+        {this.bind.reactElement()}from&nbsp;{this.value.reactElement()}
+      </span>
+    </Node>
   }
 }

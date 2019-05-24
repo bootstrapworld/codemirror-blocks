@@ -153,5 +153,20 @@ end`);
     "goodbye"
   end
 end`);
+
+    testify('for each', `for each(n from non-nums): a1.get-now(n) raises "Number" end`);
+    testify('for build-array', `for build-array(i from 7): (i * i) - i end`);
+    testify('for each check', `for each(i from range(1, 4)): raw-array-get(a1, i) is "init" end`);
+    testify('multiple fors', `for raw-array-fold(acc from 0, elt from bigarr, ix from 0):
+  for raw-array-fold(acc2 from acc, elt2 from bigarr, ix2 from 0):
+    acc2 + elt2
+  end
+end`);
+    testify('should display parens', `(i * i) - i`);
+    testify('when', `when not(is-array(v)): raise("not an Array") end`);
+    testify('a-app', `fun f(v :: Array<Number>) block:
+  when not(is-array(v)): raise("not an Array") end
+  v
+end`);
   });
 });
