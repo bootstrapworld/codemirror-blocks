@@ -8,6 +8,7 @@ import patch from './patchAst';
 
 const tmpDiv = document.createElement('div');
 const tmpCM = CodeMirror(tmpDiv, {value: ""});
+tmpCM.name = "tmpCM"; // @?
 const raw = lines => lines.join('').trim();
 
 // commitChanges :
@@ -35,6 +36,7 @@ export function commitChanges(
   tmpCM.setValue(SHARED.cm.getValue());
   if (isUndoOrRedo) tmpCM.setHistory(SHARED.cm.getHistory());
   let handler = (cm, changeArr) => {
+    console.log("@?commitChanges:handler");
     let newAST = null;
     try {
       newAST = SHARED.parser.parse(tmpCM.getValue());
@@ -76,7 +78,9 @@ export function commitChanges(
   };
 
   tmpCM.on('changes', handler);
+  console.log("@?commitChanges <operation>");
   tmpCM.operation(changes(tmpCM));
+  console.log("@?commitChanges </operation>");
   tmpCM.off('changes', handler);
 }
 
