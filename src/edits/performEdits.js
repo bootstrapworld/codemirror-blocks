@@ -143,7 +143,7 @@ class OverwriteEdit extends Edit {
 
   focusHint(newAST) {
     if (this.changeObject) {
-      return newAST.getNodeBeforeCur(this.changeObject);
+      return newAST.getNodeBeforeCur(changeEnd(this.changeObject));
     } else {
       warn('OverwriteEdit', `Cannot determine focus hint before `.toChangeObject(ast)` is called.`);
       return "fallback";
