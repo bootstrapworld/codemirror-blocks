@@ -710,7 +710,9 @@ export class Paren extends ASTNode {
   }
 
   render(props) {
-    return this.expr.reactElement();
+    return <Node node={this} {...props}>
+      {this.expr.reactElement()}
+    </Node>;
   }
 }
 

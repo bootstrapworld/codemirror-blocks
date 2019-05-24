@@ -922,9 +922,10 @@ describe('parentheses', function() {
     this.literal1 = ast.rootNodes[0];
     this.outside_op = this.literal1.op;
     this.parens = this.literal1.left;
-    this.inside_op = this.parens.op;
-    this.inner_left = this.parens.left;
-    this.inner_right = this.parens.right;
+    this.inner = this.parens.expr;
+    this.inside_op = this.inner.op;
+    this.inner_left = this.inner.left;
+    this.inner_right = this.inner.right;
     this.i = this.literal1.right;
   });
 
@@ -941,6 +942,10 @@ describe('parentheses', function() {
     keyDown("ArrowDown");
     await wait(DELAY);
     expect(this.activeNode()).toBe(this.parens);
+
+    keyDown("ArrowDown");
+    await wait(DELAY);
+    expect(this.activeNode()).toBe(this.inner);
 
     keyDown("ArrowDown");
     await wait(DELAY);
