@@ -39,6 +39,7 @@ import {Binop,
   When,
   IfExpression,
   IfElseExpression,
+  AnnotationApp,
 } from "./ast";
 
 interface Position {
@@ -98,6 +99,8 @@ const opLookup = {
   "raises": (loc, _node) => new Literal(loc.from, loc.to, 'raises', 'raises'),
   "satisfies": (loc, _node) => new Literal(loc.from, loc.to, 'satisfies', 'satisfies'),
   "is-not<=>": (loc, _node) => new Literal(loc.from, loc.to, 'is-not<=>', checkOP),
+  "is-not": (loc, _node) => new Literal(loc.from, loc.to, 'is-not', checkOP),
+  "is<=>": (loc, _node) => new Literal(loc.from, loc.to, 'is<=>', checkOP),
 };
 
 type AField = any;
@@ -602,7 +605,10 @@ end
   // 'a-method': function(l: Let, args: Ann[], ret: Ann) {},
   // 'a-record': function(l: Loc, fields: AField[]) {},
   // 'a-tuple': function(l: Loc, fields: AField[]) {},
-  // 'a-app': function(l: Loc, ann: Ann, args: Ann[]) {},
+  'a-app': function(l: Loc, ann: Ann, args: Ann[]) {
+    if (DEBUG || true) console.log(arguments);
+    return new AnnotationApp(l.from, l.to, ann, args, {ariaLabel: `appication annotation`});
+  },
   // 'a-pred': function(l: Loc, ann: Ann, exp: Expr) {},
   // 'a-dot': function(l: Loc, obj: Name, field: string) {},
   // 'a-checked': function(checked: Ann, residual: Ann) {},

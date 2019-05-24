@@ -1278,7 +1278,8 @@ export class When extends ASTNode {
   render(props) {
     return (
       <Node node={this} {...props}>
-        <div className="blocks-cond-row">
+        <div className="blocks-when">
+          when
           <div className="blocks-cond-predicate">
             {this.test.reactElement()}
           </div>
@@ -1288,5 +1289,31 @@ export class When extends ASTNode {
         </div>
       </Node>
     )
+  }
+}
+
+export class AnnotationApp extends ASTNode {
+  ann: ASTNode;
+  args: ASTNode[];
+
+  constructor(from, to, ann: ASTNode, args: ASTNode[], options = {}) {
+    super(from, to, 'a-app', ['ann', 'args'], options);
+    this.ann = ann;
+    this.args = args;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `an application annotation with ${this.ann.describe(level)} and ${enumerateList(this.args, level)}`;
+  }
+
+  pretty() {
+    return P.horz(this.ann, P.txt("<"), P.sepBy(this.args, ", ", ","), P.txt(">"));
+  }
+
+  render(props) {
+    return <Node node={this} {...props}>
+      <span className="blocks-a-app">{this.ann.reactElement()} :: </span>
+    </Node>
   }
 }
