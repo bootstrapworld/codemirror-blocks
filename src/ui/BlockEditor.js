@@ -6,10 +6,8 @@ import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
-import patch from '../edits/patchAst'; // TODO: eliminate this import
-import {computeFocusNodeFromChanges} from '../edits/commitChanges'; // TODO: eliminate this import
 import NodeEditable from '../components/NodeEditable';
-import {activate, setCursor, OverwriteTarget} from '../actions';
+import {activate, setCursor, insert, OverwriteTarget, undo, redo} from '../actions';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import merge from '../merge';
@@ -271,6 +269,23 @@ class BlockEditor extends Component {
         e.preventDefault();
         activateNoRecord(SHARED.search.search(true, state));
         return;
+
+      case 'undo':
+        e.preventDefault();
+        this.props.undo();
+        return;
+
+      case 'redo':
+        e.preventDefault();
+        this.props.redo();
+        return;
+
+      case 'delete':
+        e.preventDefault();
+        const dFrom = SHARED.cm.getCursor(true);
+        const dTo = SHARED.cm.getCursor(false);
+        insert("", new OverwriteTarget(dFrom, dTo));
+        return;
       }
     });
   }
@@ -294,20 +309,14 @@ class BlockEditor extends Component {
   }
 
   editorChange = (cm, changes) => {
-    // We only care about changes whose origin is *not* 'cmb:'
-    // cmb-originating changes are handled by commitChanges (see codeMirror.js)
-    if (!changes.every(c => c.origin && c.origin.startsWith('cmb:'))) {
-      console.warn('BlockEditor', `Old editorChange code path deprecated! ${changes.map(c => c.origin)}`);
-      const newAST = SHARED.parser.parse(cm.getValue());
-      const tree = patch(this.props.ast, newAST);
-      const focusNode = computeFocusNodeFromChanges(changes, tree);
-      let focusId = focusNode ? focusNode.id : null;
-      this.props.setAST(tree);
-      // only call activate() if there's no cursor defined
-      this.props.dispatch((_, getState) => {
-        const {cur} = getState();
-        if(!cur) this.props.activate(focusId);
-      });
+    // We must intercept _every_ change, so that we can keep our undo history in
+    // sync with CodeMirror's. If a change shows up here that we didn't
+    // initiate, that's very bad because it means our undo history is going to
+    // be out of sync.
+    const knownOrigin = (origin) =>
+          origin.startsWith('cmb:') || origin === "undo" || origin === "redo";
+    if (!changes.every(c => c.origin && knownOrigin(c.origin))) {
+      throw new Error(`CodeMirror - BlockEditor.editorChange: missed a change! ${changes.map(c => c.origin)}`);
     }
   }
 
@@ -550,6 +559,8 @@ const mapDispatchToProps = dispatch => ({
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
   activate: (id, options) => dispatch(activate(id, options)),
+  undo: () => dispatch(undo()),
+  redo: () => dispatch(redo()),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);

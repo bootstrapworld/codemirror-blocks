@@ -28,10 +28,12 @@ const raw = lines => lines.join('').trim();
 export function commitChanges(
   changes,
   focusHint = undefined,
+  isUndoOrRedo = false,
   onSuccess = () => {},
   onError = () => {}
 ) {
   tmpCM.setValue(SHARED.cm.getValue());
+  if (isUndoOrRedo) tmpCM.setHistory(SHARED.cm.getHistory());
   let handler = (cm, changeArr) => {
     let newAST = null;
     try {
@@ -40,9 +42,14 @@ export function commitChanges(
       onError(exception);
       return;
     }
+    let {ast: oldAST, collapsedList, focusId: oldFocusId} = store.getState();
+    if (!isUndoOrRedo) {
+      // Remember the previous focus. See the next `!idUndoOrRedo` block.
+      let oldFocus = oldAST.getNodeById(oldFocusId);
+      var oldFocusNId = oldFocus ? oldFocus.nid : null;
+    }
     // patch the tree and set the state
     SHARED.cm.operation(changes(SHARED.cm));
-    let {ast: oldAST, collapsedList} = store.getState();
     if(oldAST.hash !== newAST.hash) newAST = patch(oldAST, newAST);
     store.dispatch({type: 'SET_AST', ast: newAST});
     // Use the focus hint to determine focus, unless:
@@ -57,6 +64,13 @@ export function commitChanges(
     while (focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
       if (collapsedList.includes(focusNode.id)) focusId = focusNode.id;
     }
+    if (!isUndoOrRedo) {
+      // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
+      // this is what populates our undo stack.
+      let newFocus = newAST.getNodeById(focusId);
+      let newFocusNId = newFocus ? newFocus.nid : null;
+      store.dispatch({type: 'DO', focus: {oldFocusNId, newFocusNId}});
+    }
     store.dispatch(activate(focusId));
     onSuccess({newAST, focusId});
   };
@@ -66,8 +80,6 @@ export function commitChanges(
   tmpCM.off('changes', handler);
 }
 
-// TODO: make this private
-// TODO: update this heuristic to work better with Editing-Syntax-style edits.
 // computeFocusNodeFromChanges : [CMchanges], AST -> Number
 // compute the focusId by identifying the node in the newAST that was
 //   (a) most-recently added (if there's any insertion)
@@ -77,7 +89,7 @@ export function commitChanges(
 // NOTE(Justin): This is a set of _heuristics_ that are likely but not
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
-export function computeFocusNodeFromChanges(changes, newAST) {
+function computeFocusNodeFromChanges(changes, newAST) {
   let insertion = false, focusId = false;
   let startLocs = changes.map(c => {
     c = minimizeChange(c);

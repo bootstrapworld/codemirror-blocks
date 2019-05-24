@@ -5,6 +5,8 @@ const initialState = {
   focusId: null,
   collapsedList: [],
   markedMap: new Map(),
+  undoFocusStack: [],
+  redoFocusStack: [],
   errorId: '',
   cur: null,
   quarantine: null,
@@ -47,8 +49,15 @@ export const reducer = (
     case 'ADD_MARK':
       return {...state, markedMap: state.markedMap.set(action.id, action.mark)};
     case 'CLEAR_MARK':
-      state.markedMap.delete(action.id);
       return {...state}; // NOTE(Emmanuel): simply returning 'state' here will NOT work!
+    case 'DO':
+      return {...state, undoFocusStack: [...state.undoFocusStack, action.focus], redoFocusStack: []};
+    case 'UNDO':
+      state.redoFocusStack.push(state.undoFocusStack.pop());
+      return {...state};
+    case 'REDO':
+      state.undoFocusStack.push(state.redoFocusStack.pop());
+      return {...state};
     case 'RESET_STORE_FOR_TESTING':
       return initialState;
     default:

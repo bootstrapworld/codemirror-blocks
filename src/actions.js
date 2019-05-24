@@ -5,6 +5,7 @@ import {playSound, WRAP} from './sound';
 import {ASTNode} from './ast';
 import {performEdits, edit_insert, edit_delete, edit_replace,
         edit_overwrite, padCopiedText} from './edits/performEdits';
+import * as Undo from './edits/undo';
 
 
 // All editing actions are defined here.
@@ -116,6 +117,14 @@ export function drop(src, target, onSuccess, onError) {
   edits.push(target.toEdit(content));
   // Perform the edits.
   performEdits('cmb:drop-node', ast, edits, onSuccess, onError);
+}
+
+export function undo() {
+  return Undo.undo();
+}
+
+export function redo() {
+  return Undo.redo();
 }
 
 // Set the cursor position.

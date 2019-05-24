@@ -97,7 +97,7 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
       cm.replaceRange(c.text, c.from, c.to, origin);
     }
   };
-  commitChanges(changes, focusHint, onSuccess, onError);
+  commitChanges(changes, focusHint, false, onSuccess, onError);
 }
 
 
