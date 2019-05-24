@@ -313,9 +313,8 @@ class BlockEditor extends Component {
     // sync with CodeMirror's. If a change shows up here that we didn't
     // initiate, that's very bad because it means our undo history is going to
     // be out of sync.
-    const knownOrigin = (origin) =>
-          origin.startsWith('cmb:') || origin === "undo" || origin === "redo";
-    if (!changes.every(c => c.origin && knownOrigin(c.origin))) {
+    const knownOrigins = /cmb:.*|undo|redo|setValue/;
+    if (!changes.every(c => c.origin && knownOrigins.test(c.origin))) {
       throw new Error(`CodeMirror - BlockEditor.editorChange: missed a change! ${changes.map(c => c.origin)}`);
     }
   }
