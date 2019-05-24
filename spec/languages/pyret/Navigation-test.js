@@ -927,6 +927,9 @@ describe('parentheses', function() {
     this.inner_right = this.parens.right;
     this.i = this.literal1.right;
   });
+
+  afterEach(function () { teardown(); });
+
   it('should move to inside of parens', async function () {
     click(this.literal1);
     await wait(DELAY);

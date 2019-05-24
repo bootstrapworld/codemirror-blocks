@@ -1249,3 +1249,44 @@ export class ForBind extends ASTNode {
     </Node>
   }
 }
+
+export class When extends ASTNode {
+  test: ASTNode;
+  body: ASTNode;
+  blocky: boolean;
+  constructor(from, to, test, body, blocky, options) {
+    super(from, to, 'when', ['test', 'body'], options);
+    this.test = test;
+    this.body = body;
+    this.blocky = blocky;
+    super.hash = super.computeHash();
+  }
+
+  longDescription(level) {
+    return `when statement testing ${this.test.describe(level)} with result ${this.body.describe(level)}`;
+  }
+
+  pretty() {
+    let prefix = "when ";
+    let intermediate = ":";
+    let suffix = "end";
+    let test = this.test.pretty();
+    let body = this.body.pretty();
+    return P.vert(P.horz(prefix, test, intermediate), P.horz(INDENT, body), suffix);
+  }
+
+  render(props) {
+    return (
+      <Node node={this} {...props}>
+        <div className="blocks-cond-row">
+          <div className="blocks-cond-predicate">
+            {this.test.reactElement()}
+          </div>
+          <div className="blocks-cond-result">
+            {this.body.reactElement()}
+          </div>
+        </div>
+      </Node>
+    )
+  }
+}

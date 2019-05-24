@@ -282,7 +282,7 @@ const nodeTypes = {
   },
   "s-when": function(l: Loc, test: Expr, block: Expr, blocky: boolean) {
     if (DEBUG) console.log(arguments);
-    return new When(l.from, l.to, test, block, blocky);
+    return new When(l.from, l.to, test, block, blocky, {ariaLabel: `when statement`});
   },
   // "s-assign": function(l: Loc, id: Name, value: Expr) {},
   's-if-pipe': function(pos: Loc, branches: IfPipeBranch[], blocky: boolean) {
