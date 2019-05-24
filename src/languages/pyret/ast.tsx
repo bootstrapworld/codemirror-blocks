@@ -55,7 +55,7 @@ export class Bind extends ASTNode {
   ident: Literal;
 
   constructor(from, to, id: Literal, ann, options = {}) {
-    super(from, to, 'bind', ['ident', 'ann'], options);
+    super(from, to, 's-bind', ['ident', 'ann'], options);
     this.ident = id;
     this.ann = ann;
     super.hash = super.computeHash();
@@ -248,7 +248,7 @@ export class Let extends ASTNode {
   rhs: ASTNode;
 
   constructor(from, to, id, rhs, options = {}) {
-    super(from, to, 'let', ['ident', 'rhs'], options);
+    super(from, to, 's-let', ['ident', 'rhs'], options);
     this.ident = id;
     this.rhs = rhs;
     super.hash = super.computeHash();
@@ -282,7 +282,7 @@ export class Var extends ASTNode {
   rhs: ASTNode;
 
   constructor(from, to, id, rhs, options = {}) {
-    super(from, to, 'var', ['ident', 'rhs'], options);
+    super(from, to, 's-var', ['ident', 'rhs'], options);
     this.ident = id;
     this.rhs = rhs;
     super.hash = super.computeHash();
@@ -316,7 +316,7 @@ export class Assign extends ASTNode {
   rhs: ASTNode;
 
   constructor(from, to, id, rhs, options = {}) {
-    super(from, to, 'assign', ['ident', 'rhs'], options);
+    super(from, to, 's-assign', ['ident', 'rhs'], options);
     this.ident = id;
     this.rhs = rhs;
     super.hash = super.computeHash();
@@ -435,7 +435,7 @@ export class Tuple extends ASTNode {
   fields: ASTNode[];
 
   constructor(from, to, fields, options = {}) {
-    super(from, to, 'tuple', ['fields'], options);
+    super(from, to, 's-tuple', ['fields'], options);
     this.fields = fields;
     super.hash = super.computeHash();
   }
@@ -479,7 +479,7 @@ export class TupleGet extends ASTNode {
   index: ASTNode;
 
   constructor(from, to, base, index, options = {}) {
-    super(from, to, 'let', ['base', 'index'], options);
+    super(from, to, 'tuple-get', ['base', 'index'], options);
     this.base = base;
     this.index = index;
     super.hash = super.computeHash();
@@ -518,7 +518,7 @@ export class Check extends ASTNode {
   keyword_check: boolean;
 
   constructor(from, to, name, body, keyword_check, options = {}) {
-    super(from, to, 'check', ['body'], options);
+    super(from, to, 's-check', ['body'], options);
     this.name = name;
     this.body = body;
     this.keyword_check = keyword_check;
@@ -611,7 +611,7 @@ export class Bracket extends ASTNode {
   index: ASTNode;
 
   constructor(from, to, base, index, options = {}) {
-    super(from, to, 'let', ['base', 'index'], options);
+    super(from, to, 's-bracket', ['base', 'index'], options);
     this.base = base;
     this.index = index;
     super.hash = super.computeHash();
@@ -846,7 +846,7 @@ export class Contract extends ASTNode {
   name: Literal;
 
   constructor(from, to, id: Literal, ann, options = {}) {
-    super(from, to, 'contract', ['name', 'ann'], options);
+    super(from, to, 's-contract', ['name', 'ann'], options);
     this.name = id;
     this.ann = ann;
     super.hash = super.computeHash();
@@ -871,7 +871,7 @@ export class Include extends ASTNode {
   mod: ASTNode;
 
   constructor(from, to, mod, options = {}) {
-    super(from, to, 'include', ['mod'], options);
+    super(from, to, 's-include', ['mod'], options);
     this.mod = mod;
     super.hash = super.computeHash();
   }
@@ -942,7 +942,7 @@ export class DataField extends ASTNode {
   value: ASTNode;
 
   constructor(from, to, name: string, value, options = {}) {
-    super(from, to, 'data-field', ['value'], options);
+    super(from, to, 's-data-field', ['value'], options);
     this.name = name;
     this.value = value;
     super.hash = hashObject(["DataField", this.name, this.value.hash]);
@@ -967,7 +967,7 @@ export class Reactor extends ASTNode {
   fields: ASTNode[];
   
   constructor(from, to, fields, options) {
-    super(from, to, 'reactor', ['fields'], options);
+    super(from, to, 's-reactor', ['fields'], options);
     this.fields = fields;
     super.hash = hashObject(['reactor', ...(this.fields.map(c => c.hash))]);
   }
@@ -1177,7 +1177,7 @@ export class For extends ASTNode {
   block: boolean
 
   constructor(from, to, iterator: ASTNode, bindings: ForBind[], ann, body: ASTNode, blocky: boolean, options = {}) {
-    super(from, to, 'for', ['iterator', 'bindings', 'ann', 'body'], options);
+    super(from, to, 's-for', ['iterator', 'bindings', 'ann', 'body'], options);
     this.iterator = iterator;
     this.bindings = bindings;
     this.ann = ann;
@@ -1229,7 +1229,7 @@ export class ForBind extends ASTNode {
   bind: Bind;
 
   constructor(from, to, bind: Bind, value: ASTNode, options = {}) {
-    super(from, to, 'for-bind', ['bind', 'value'], options);
+    super(from, to, 's-for-bind', ['bind', 'value'], options);
     this.bind = bind;
     this.value = value;
     super.hash = super.computeHash();
@@ -1257,7 +1257,7 @@ export class When extends ASTNode {
   body: ASTNode;
   blocky: boolean;
   constructor(from, to, test, body, blocky, options) {
-    super(from, to, 'when', ['test', 'body'], options);
+    super(from, to, 's-when', ['test', 'body'], options);
     this.test = test;
     this.body = body;
     this.blocky = blocky;
@@ -1299,7 +1299,7 @@ export class AnnotationApp extends ASTNode {
   args: ASTNode[];
 
   constructor(from, to, ann: ASTNode, args: ASTNode[], options = {}) {
-    super(from, to, 'a-app', ['ann', 'args'], options);
+    super(from, to, 'annApp', ['ann', 'args'], options);
     this.ann = ann;
     this.args = args;
     super.hash = super.computeHash();
