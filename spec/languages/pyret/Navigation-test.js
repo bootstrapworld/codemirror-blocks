@@ -913,3 +913,46 @@ else:
   0
 end`);
 });
+
+describe('parentheses', function() {
+  beforeEach(function() {
+    setup.call(this);
+    this.cmb.setValue('(i * i) - i');
+    let ast = this.cmb.getAst();
+    this.literal1 = ast.rootNodes[0];
+    this.outside_op = this.literal1.op;
+    this.parens = this.literal1.left;
+    this.inside_op = this.parens.op;
+    this.inner_left = this.parens.left;
+    this.inner_right = this.parens.right;
+    this.i = this.literal1.right;
+  });
+  it('should move to inside of parens', async function () {
+    click(this.literal1);
+    await wait(DELAY);
+    
+    keyDown("ArrowDown");
+    await wait(DELAY);
+    expect(this.activeNode()).toBe(this.outside_op);
+
+    keyDown("ArrowDown");
+    await wait(DELAY);
+    expect(this.activeNode()).toBe(this.parens);
+
+    keyDown("ArrowDown");
+    await wait(DELAY);
+    expect(this.activeNode()).toBe(this.inside_op);
+
+    keyDown("ArrowDown");
+    await wait(DELAY);
+    expect(this.activeNode()).toBe(this.inner_left);
+
+    keyDown("ArrowDown");
+    await wait(DELAY);
+    expect(this.activeNode()).toBe(this.inner_right);
+
+    keyDown("ArrowDown");
+    await wait(DELAY);
+    expect(this.activeNode()).toBe(this.i);
+  });
+})
