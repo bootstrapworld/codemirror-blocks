@@ -1,4 +1,1 @@
-fun f(v :: Array<Number>) block:
-  when not(is-array(v)): raise("not an Array") end
-  v
-end
+fun f(x): x + 3 end
