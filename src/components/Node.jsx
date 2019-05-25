@@ -115,7 +115,9 @@ class Node extends BlockComponent {
         this.props.activate(n? n.id : node.id, options);
       };
 
-      switch (SHARED.keyMap[SHARED.keyName(e)]) {
+      const result = SHARED.keyMap[SHARED.keyName(e)];
+      console.log("Node.jsx handleKeyDown", state, node, result);
+      switch (result) {
       case 'prevNode':
         e.preventDefault();
         activate(fastSkip(node => node.prev));
