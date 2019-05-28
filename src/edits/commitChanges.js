@@ -81,7 +81,7 @@ export function commitChanges(
   console.log("@?commitChanges <operation>");
   tmpCM.operation(changes(tmpCM));
   console.log("@?commitChanges </operation>");
-  tmpCM.off('changes', handler);
+  setTimeout(() => tmpCM.off('changes', handler), 0);
 }
 
 // computeFocusNodeFromChanges : [CMchanges], AST -> Number
