@@ -5,7 +5,6 @@ import {playSound, WRAP} from './sound';
 import {ASTNode} from './ast';
 import {performEdits, edit_insert, edit_delete, edit_replace,
         edit_overwrite, padCopiedText} from './edits/performEdits';
-import * as Undo from './edits/undo';
 
 
 // All editing actions are defined here.
@@ -18,8 +17,9 @@ import * as Undo from './edits/undo';
 // it fails, it will call `onError(theError)`.
 //
 // The implementation of actions is in the folder `src/edits/`. IT IS PRIVATE,
-// AND NO FILE EXCEPT src/actions.js SHOULD EVER NEED TO IMPORT IT. The
-// implementation is complex, because while edits are best thought of as
+// AND FOR THE MOST PART, NO FILE EXCEPT src/actions.js SHOULD NEED TO IMPORT IT.
+// (Exception: speculateChanges and commitChanges are sometimes imported.)
+// The implementation is complex, because while edits are best thought of as
 // operations on the AST, they must all be transformed into text edits, and the
 // only interface we have into the language's textual syntax are the `pretty`
 // and `parse` methods.
@@ -117,14 +117,6 @@ export function drop(src, target, onSuccess, onError) {
   edits.push(target.toEdit(content));
   // Perform the edits.
   performEdits('cmb:drop-node', ast, edits, onSuccess, onError);
-}
-
-export function undo() {
-  return Undo.undo();
-}
-
-export function redo() {
-  return Undo.redo();
 }
 
 // Set the cursor position.

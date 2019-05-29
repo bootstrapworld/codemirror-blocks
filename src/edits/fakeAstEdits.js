@@ -154,7 +154,8 @@ class FakeInsertNode extends ASTNode {
   }
 
   pretty() {
-    return P.txt(this.text);
+    let lines = this.text.split("\n");
+    return P.vertArray(lines.map(P.txt));
   }
 
   render(props) {

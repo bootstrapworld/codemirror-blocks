@@ -5,8 +5,7 @@ import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
 import {drop, delete_, copy, paste, activate, setCursor,
-        InsertTarget, ReplaceNodeTarget, OverwriteTarget,
-        undo, redo} from '../actions';
+        InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
 import {NodeContext, DropTargetContext, findAdjacentDropTargetId} from './DropTarget';
@@ -375,12 +374,12 @@ class Node extends BlockComponent {
 
       case 'undo':
         e.preventDefault();
-        this.props.undo();
+        SHARED.cm.undo();
         return;
 
       case 'redo':
         e.preventDefault();
-        this.props.redo();
+        SHARED.cm.redo();
         return;
 
       }
@@ -526,8 +525,6 @@ const mapDispatchToProps = dispatch => ({
   setCursor: cur => dispatch(setCursor(cur)),
   activate: (id, options) => dispatch(activate(id, options)),
   setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
-  undo: () => dispatch(undo()),
-  redo: () => dispatch(redo()),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);

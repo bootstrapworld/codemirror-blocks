@@ -7,7 +7,9 @@ import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
 import NodeEditable from '../components/NodeEditable';
-import {activate, setCursor, insert, OverwriteTarget, undo, redo} from '../actions';
+import {activate, setCursor, insert, OverwriteTarget} from '../actions';
+import {commitChanges} from '../edits/commitChanges';
+import {speculateChanges} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import merge from '../merge';
@@ -272,12 +274,12 @@ class BlockEditor extends Component {
 
       case 'undo':
         e.preventDefault();
-        this.props.undo();
+        SHARED.cm.undo();
         return;
 
       case 'redo':
         e.preventDefault();
-        this.props.redo();
+        SHARED.cm.redo();
         return;
 
       case 'delete':
@@ -308,15 +310,46 @@ class BlockEditor extends Component {
     this.props.setQuarantine(start, end, text);
   }
 
-  editorChange = (cm, changes) => {
-    // We must intercept _every_ change, so that we can keep our undo history in
-    // sync with CodeMirror's. If a change shows up here that we didn't
-    // initiate, that's very bad because it means our undo history is going to
-    // be out of sync.
-    const knownOrigins = /cmb:.*|undo|redo|setValue/;
-    if (!changes.every(c => c.origin && knownOrigins.test(c.origin))) {
-      throw new Error(`CodeMirror - BlockEditor.editorChange: missed a change! ${changes.map(c => c.origin)}`);
+
+  handleBeforeChange = (cm, change) => {
+    let knownOrigin = (origin) =>
+        origin && (origin.startsWith("cmb:") || origin=="undo" || origin=="redo");
+    if (!knownOrigin(change.origin)) {
+      // We did not produce this change. It may not be valid.
+      // Check to see if it's valid, and if not cancel the change.
+      if (!speculateChanges([change])) {
+        change.cancel();
+      }
     }
+  }
+
+  handleChanges = (cm, changes) => {
+    this.props.dispatch((dispatch, getState) => {
+      if (!changes.every(c => c.origin && c.origin.startsWith("cmb:"))) {
+        // These changes did not originate from us. However, they've all gone
+        // passed the `handleBeforeChange` function, so they must be valid edits.
+        // (There's almost certainly just one edit here; I (Justin) am not
+        // convinced this will always work if there is more than one edit here.)
+        // Since the edit(s) is valid, commit it.
+        if (changes[0].origin === "undo") {
+          for (let c of changes) c.origin = "cmb:undo";
+          const undoFocusStack = getState().undoFocusStack;
+          const {oldFocusNId, newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
+          const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
+          commitChanges(changes, true, focusHint);
+          dispatch({type: 'UNDO'});
+        } else if (changes[0].origin === "redo") {
+          for (let c of changes) c.origin = "cmb:redo";
+          const redoFocusStack = getState().redoFocusStack;
+          const {oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
+          const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
+          commitChanges(changes, true, focusHint);
+          dispatch({type: 'REDO'});
+        } else {
+          commitChanges(changes, false);
+        }
+      }
+    });
   }
 
   handleEditorDidMount = ed => {
@@ -331,7 +364,8 @@ class BlockEditor extends Component {
     announcements.setAttribute('role', 'log');
     announcements.setAttribute('aria-live', 'assertive');
     wrapper.appendChild(announcements);
-    ed.on('changes', this.editorChange);
+    ed.on('beforeChange', this.handleBeforeChange);
+    ed.on('changes', this.handleChanges);
 
     SHARED.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
@@ -435,7 +469,8 @@ class BlockEditor extends Component {
   }
 
   handleEditorWillUnmount = ed => {
-    ed.off('changes', this.editorChange);
+    ed.off('beforeChange', this.handleBeforeChange);
+    ed.off('changes', this.handleChanges);
   }
 
   handleFocus = (ed, e) => {
@@ -558,8 +593,6 @@ const mapDispatchToProps = dispatch => ({
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
   activate: (id, options) => dispatch(activate(id, options)),
-  undo: () => dispatch(undo()),
-  redo: () => dispatch(redo()),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);

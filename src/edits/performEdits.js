@@ -2,7 +2,9 @@ import {warn, poscmp, srcRangeIncludes, changeEnd} from '../utils';
 import {prettyPrintingWidth} from '../ast';
 import SHARED from '../shared';
 import {commitChanges} from './commitChanges';
+import {speculateChanges} from './speculateChanges';
 import {FakeAstInsertion, FakeAstReplacement, cloneNode} from './fakeAstEdits';
+import {store} from '../store';
 
 
 // edit_insert : String, ASTNode, String, Pos -> Edit
@@ -91,13 +93,24 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
     console.log(`    ${edit.from.line}:${edit.from.ch}-${edit.to.line}:${edit.to.ch}="${edit.text}"`);
   }
   */
-  // Commit the text edits.
-  const changes = cm => () => {
-    for (const c of changeArray) {
-      cm.replaceRange(c.text, c.from, c.to, origin);
-    }
-  };
-  commitChanges(changes, focusHint, false, onSuccess, onError);
+  // Set the origins
+  for (const c of changeArray) {
+    c.origin = origin;
+  }
+  // Validate the text edits.
+  let result = speculateChanges(changeArray);
+  if (result.successful) {
+    // Perform the text edits, and update the ast.
+    SHARED.cm.operation(() => {
+      for (let c of changeArray) {
+        SHARED.cm.replaceRange(c.text, c.from, c.to, c.origin);
+      }
+    });
+    let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST);
+    onSuccess({newAST, focusId});
+  } else {
+    onError(result.exception);
+  }
 }
 
 
@@ -159,9 +172,9 @@ class InsertChildEdit extends Edit {
   constructor(text, parent, field, pos) {
     super(pos, pos);
     this.text = text;
-    this.parent = parent;
+    this.parent = getNode(parent);
     this.pos = pos;
-    this.fakeAstInsertion = new FakeAstInsertion(parent, field, pos);
+    this.fakeAstInsertion = new FakeAstInsertion(this.parent, field, pos);
   }
 
   isTextEdit() {
@@ -184,6 +197,7 @@ class InsertChildEdit extends Edit {
 
 class DeleteRootEdit extends Edit {
   constructor(node) {
+    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to);
     this.node = node;
@@ -217,6 +231,8 @@ class DeleteRootEdit extends Edit {
 
 class DeleteChildEdit extends Edit {
   constructor(node, parent) {
+    node = getNode(node);
+    parent = getNode(parent);
     let range = node.srcRange();
     super(range.from, range.to);
     this.node = node;
@@ -248,6 +264,7 @@ class DeleteChildEdit extends Edit {
 
 class ReplaceRootEdit extends Edit {
   constructor(text, node) {
+    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to);
     this.text = text;
@@ -277,6 +294,8 @@ class ReplaceRootEdit extends Edit {
 
 class ReplaceChildEdit extends Edit {
   constructor(text, node, parent) {
+    node = getNode(node);
+    parent = getNode(parent);
     let range = node.srcRange();
     super(range.from, range.to);
     this.text = text;
@@ -305,7 +324,7 @@ class ReplaceChildEdit extends Edit {
 
 class EditGroup {
   constructor(ancestor, edits) {
-    this.ancestor = ancestor;
+    this.ancestor = getNode(ancestor);
     this.edits = edits;
   }
 
@@ -395,4 +414,9 @@ export function addWhitespace(ast, from, to, text) {
     text = text + " ";
   }
   return text;
+}
+
+function getNode(node) {
+  let {ast} = store.getState();
+  return ast.getNodeById(node.id);
 }

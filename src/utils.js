@@ -248,6 +248,7 @@ export function adjustForChange(pos, change, from) {
 // Minimize a CodeMirror-style change object, by excluding any shared prefix
 // between the old and new text. Mutates part of the change object.
 export function minimizeChange({from, to, text, removed, origin=undefined}) {
+  if (!removed) removed = SHARED.cm.getRange(from, to).split("\n");
   // Remove shared lines
   while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
     text.shift();
