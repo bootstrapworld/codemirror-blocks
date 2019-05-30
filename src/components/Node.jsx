@@ -435,6 +435,7 @@ class Node extends BlockComponent {
     } = this.props;
 
     let comment = node.options.comment;
+    if(comment) comment.id = `block-node-${node.id}-comment`;
     const locked = this.isLocked();
 
     const props = {
@@ -476,7 +477,6 @@ class Node extends BlockComponent {
       } = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
       if(textMarker && textMarker.options.className) classes.push(textMarker.options.className);
-
       let result = (
         <span
           {...props}
