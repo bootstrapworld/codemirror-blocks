@@ -44,21 +44,40 @@ The call to `addLanguage` takes the following arguments:
 * `description` [TODO: should say where this is used, or remove it if it's not]
 * `getParser()` is a function of no arguments that returns a parser
   for your language. This parser must have a function `parse(text:
-  String) -> AST`:
-  - The `text` argument is a String, with newlines separated by `\n`.
-  - The result is an `AST`, as defined in `src/ast.js`. This AST will
-  have nodes that are specific to your language. The rest of this
-  guide describes how to define these node types.
-  - The source locations on the resulting `AST` must be well ordered.
-    Specifically: (i) the source location range of a parent must encompass the
-    source location ranges of its children, and (ii) the source location ranges
-    of a node's children must be non-overlapping and in-order.
-* `getRenderOptions` [FILL]
+  String) -> AST`, described in the next section.
+* `getRenderOptions` Right now, the only render option is `lockNodesOfType`,
+  which lists the names of nodes that should be "locked", and made opaque to
+  novice users.
 
 You can see that this file is also importing a
 [`lesscss`](http://lesscss.org/) style file. Follow
 [the stylesheet guide](stylesheet.html) to style your blocks with
 `lesscss`.
+
+## Defining the Parser
+
+Your parser must have a `parse()` function. Its argument is the source code for
+a program, represented as a string with newlines separates by `\n`.
+
+The `parse()` function must produce an `AST` by calling `new AST(rootNodes)`,
+where `rootNodes` is an array of top-level AST nodes. These nodes will be
+specific to your language, and the rest of this guide describes how to define
+them.
+
+You'll see below that ASTNodes must be given a source location range (a `from`
+and a `to`) when they are constructed. The source location ranges must obey
+these rules:
+
+1. The source location ranges must be well-formed: for each node, `node.from <=
+   node.to`. (By `A <= B`, we mean that `A` comes before `B` in the document:
+   either it's on an earlier line, or it's on the same line but to the left, or
+   it's at exactly the same location.)
+2. The source location range of a parent node must encompass the source location
+   ranges of its children. (I.e., `parent.from <= child.from` and `child.to <=
+   parent.to` for each child.)
+3. The source location ranges of a node's children must be non-overlapping and
+   in-order. (I.e., if `child1` comes before `child2` in the AST, then
+   `child1.to <= child2.from`.)
 
 ## Defining Node Types
 
@@ -73,42 +92,90 @@ and as blocks, they'll look like this:
 
 We'll walk through the code to add this kind of node, piece by piece.
 
-#### Setup
+### Setup
 
-Our new node type must extend `ASTNode`, which is defined in `src/ast.js`.
+Our new node type must extend `ASTNode`: [FILL: include import statement for ASTNode.]
 
     class VariableDefinition extends ASTNode {
 
-And we'll want a constructor. `ASTNode`'s constructor takes a `from`
-and a `to` source location (in CodeMirror `{line:_, ch:_}` style), a
-name for the node type, and a set of open-ended options that you can
-use however you like. After that, you can set whatever fields are relevant for
-this node (in this case, `this.name` and `this.body`). And finally, every node
-must store a hash of its contents.
+And we'll want a constructor:
 
-      constructor(from, to, name, body, options={}) {
-        super(from, to, 'variableDefinition', options);
-        this.name = name;
-        this.body = body;
-        this.hash = hashObject(['variableDefinition', name.hash, body.hash]);
-      }
+```js
+constructor(from, to, name, body, options={}) {
+  super(from, to, 'variableDefinition', options);
+  this.name = name;
+  this.body = body;
+}
+```
 
-Our new node type must now implement some methods.
+Here's an explanation of what this constructor is doing:
 
-#### To Description
+- `from` and `to` are source location, giving the left and right boundaries of
+  this node in the code. Both `from` and `to` have the form `{line:_, ch:_}`
+  (this is the same convention as CodeMirror).
+- `variableDefinition` is a name for this node type. This is a pretty private
+  name. It won't get displayed/read to users, but it might show up in a console error
+  message if something goes wrong.
+- `options` - [TODO: describe available options, including aria-label].
+- This constructor is expecting a variable `name` and a definition `body` as
+  ASTNodes. In general, you can set whatever fields you want, as long as you
+  declare them in the Spec, which is described next.
 
-The `toDescription(level)` method describes the node aloud for a
-screen reader. 
+### Spec
 
-      toDescription(level){
-        if((this['aria-level'] - level) >= descDepth) return this.options['aria-label'];
-        let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:";
-        return `define ${this.name} to be ${insert} ${this.body.toDescription(level)}`;
-      }
+All of the fields stored in an `ASTNode` must be declared under a static member
+called `spec`:
 
-[TODO: this if statement's conditional is leaking implementation details; there should be a method for that.]
+[TODO: import line for `Spec`]
 
-#### Rendering as Text
+```js
+static spec = Spec.nodeSpec([
+  Spec.required('name'),
+  Spec.required('body')
+])
+```
+
+There are four kinds of field specs:
+
+- `Spec.required`: the field stores an `ASTNode`, and it must always be present.
+- `Spec.optional`: the field stores either an `ASTNode`, or `null`.
+- `Spec.list`: the field stores an array of `ASTNode`s.
+- `Spec.value`: the field stores any other kind of value, that does not contain
+  any `ASTNode`s.
+
+Declaring all of a node's field types up front like this allows CodeMirrorBlocks
+to automatically compute things like the hash of a node. It also allows the
+block editor to behave intelligently: for example, if you delete a required
+block it will be replaced by a "blank" block (shown as `?` by default), but if
+you delete a block stored in a `Spec.list` field, that will remove the list
+element.
+
+Next, this new node type must now implement some methods.
+
+### Speaking out Loud
+
+The `longDescription(level)` method describes the node aloud for a
+screen reader:
+
+```js
+longDescription(level) {
+  let insert = ["literal", "blank"].includes(this.body.type) ? "" : "the result of:";
+  return `define ${this.name} to be ${insert} ${this.body.describe(level)}`;
+}
+```
+
+It should return a string describing the node.
+
+Most of the time, the description should include descriptions of the node's
+children. _Do not use `child.longDescription(level)` for this!_ If you do, and a
+user asks a 1000-line function to describe itself, it will read the entire
+function recursively, which is too much detail.
+
+Instead, you should use `ASTNode.describe(level)`. This will automatically
+use a shorter description for deeply nested nodes. (Specifically, it will use
+`node.options["aria-label"]`.)
+
+### Rendering as Text
 
 Nodes need to know how to render themselves as text. Furthermore, the
 _best_ way to render something as text depends on the width of the
@@ -121,40 +188,47 @@ This _particular_ node type is an s-expression, so it can just use the
 pretty printing library's built-in support for displaying various
 kinds of s-expressions:
 
-      pretty() {
-        return P.lambdaLikeSexpr("define", this.name, this.body);
-      }
+```js
+pretty() {
+  return P.lambdaLikeSexpr("define", this.name, this.body);
+}
+```
 
-To learn how to implement `pretty()` in general, see the
-[pretty printing guide](pretty.html).
+To learn how to implement `pretty()` in general, see the documentation for the
+[pretty printing library](https://github.com/brownplt/pretty-fast-pretty-printer).
+You don't need to declare this module as a dependency: CodeMirrorBlocks provides
+it to you under the import [FILL].
 
 
-#### Rendering as a Block
+### Rendering as a Block
 
-Finally, our node needs to know how to render itself as a block. This
-is accomplished by a `render(props)` function that returns a DOM node:
+Finally, the node needs to know how to render itself as a block. This
+is accomplished by a `render(props)` function that returns a React element:
 
-    render(props) {
-      const body = this.body.reactElement();
-      return (
-        <Node node={this} {...props}>
-          <span className="blocks-operator">
-            define
-            <Args>{[this.name]}</Args>
-          </span>
-          <span className="blocks-args">
-            {body}
-          </span>
-        </Node>
-      );
-    }
+```js
+render(props) {
+  const body = this.body.reactElement();
+  const name = this.name.reactElement();
+  return (
+    <Node node={this} {...props}>
+      <span className="blocks-operator">
+        define
+        {name}
+      </span>
+      <span className="blocks-args">
+        {body}
+      </span>
+    </Node>
+  );
+}
+```
 
 Specifically, this is a
 [React "Function Component"](https://reactjs.org/docs/components-and-props.html).
 Read the React documentation for an overview of what Components are
 and how you can define them.
 
-Beyond that, here are things you should know about defining
+Beyond that, here are some things you should know about defining
 CodeMirror-Blocks components:
 
 - This function was written using
@@ -178,31 +252,17 @@ the small squares betweeen nodes that you can drag blocks onto, or edit to
 insert a new child. When defining your blocks, you should include ample drop
 targets to make them easy to edit. There are two ways to get these.
 
-Most of the time, you should use `Args`. The syntax is `<Args>{elts}</Args>`,
-which will intersperse drop targets horizontally among `elts` (which should be
-an array of elements).
-
-In our `VariableDefinition` example, `Args` was sufficient so we just used that.
+Most of the time, you should use `Args`. The syntax is `<Args
+field="FIELDNAME">{elts}</Args>`, which will intersperse drop targets
+horizontally among `elts` (which should be an array of elements). "FIELDNAME" is
+the name of the field containing `elts`, which must be declared as type `Spec.list`.
 
 However, if you want to put drop targets in a more interesting arrangement than
 `Args` gives you, you have a second option: you can use `DropTarget`s directly.
-Simply construct them with `<DropTarget/>` anywhere in your node. They will
-figure out their correct source location automatically.
+Simply construct them with `<DropTarget field="FIELDNAME"/>` anywhere in your
+node.
 
-There's one more thing you should do if you make your own drop targets, though.
-CodeMirror-Blocks comes with a shortcut that lets you insert text to the left or
-right of a child of a node. For example, if you select the `1` in `(+ 1 2)` and
-type `ctrl-]`, then it will go into insert mode at the drop target between `1`
-and `2`. Args automatically does this, but in general CodeMirror-Blocks doesn't
-want to try to dictate which nodes count as adjacent to which drop targets.
-Instead, for `ctrl-[` and `ctrl-]` to work, you must explicitly say what drop
-targets a node is adjacent to. This is done via `DropTargetSibling`. Its syntax
-is:
-
-    <DropTargetSibling node={n} left={bool} right={bool}/>
-
-This renders the node `n`, links it to the drop target to its left if `left`
-is true, and links it to the drop target to its right if `right` is true.
+[TODO: eliminate DropTargetContainers]
 
 -----
 

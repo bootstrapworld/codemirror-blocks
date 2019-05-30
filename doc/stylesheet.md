@@ -20,15 +20,15 @@ Your style file should look like this:
     }
 
 The rest of this documentation has two sections, describing (i) the
-parameters you need to set, and (ii) the css classes you can tweak the
+parameters you can override, and (ii) the css classes you can tweak the
 style of.
 
 ## Parameters
 
 `default-style.less` can take a number of parameters (more
-specifically `less` variables). Here they are, together with some
-reasonable defaults. To set these, define them _after_ importing
-`default-style.less`.
+specifically `less` variables). Here they are, together with their
+defaults. To set these, define them _after_ importing
+`default-style.less`. Parameters you do not set will use their default.
 
 ### Sizes
 
@@ -37,15 +37,15 @@ reasonable defaults. To set these, define them _after_ importing
     
         @border-radius: 5px;
 
+- **large-border-radius**:  An extra-large curve radius used for certain blocks.
+    
+        @large-border-radius: 15px;
+
 - **border-width**: The width of the border of a block.
 
         @border-width: 1px;
 
 ### Colors
-
-- **name-color**: The color for variable names.
-
-        @name-color: steelblue;
 
 - **comment-color**: The foreground color of comments (i.e., the color
   of their text).
