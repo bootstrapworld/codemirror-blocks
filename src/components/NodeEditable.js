@@ -3,11 +3,11 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import ContentEditable from './ContentEditable';
-import {commitChanges} from '../codeMirror';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {activate, addWhitespacePadding} from '../actions';
+import {insert, activate, Target} from '../actions';
 import {say} from '../utils';
+
 
 class NodeEditable extends Component {
   static defaultProps = {
@@ -15,28 +15,27 @@ class NodeEditable extends Component {
   }
 
   static propTypes = {
-    // NOTE: the presence of this Node means ast is not null
-    node: PropTypes.object,
+    target: PropTypes.instanceOf(Target),
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
   }
 
   constructor(props) {
     super(props);
-    const {value, node, dispatch} = this.props
+    const {value, dispatch} = this.props;
     if (value === null) {
       dispatch((_, getState) => {
         const {ast} = getState();
-        const {from, to} = getNodeLocation(ast, node);
-        this.cachedValue = SHARED.cm.getRange(from, to);
+        const {target} = this.props;
+        this.cachedValue = target.getText(ast);
       });
     }
   }
 
   saveEdit = e => {
     e.stopPropagation();
-    const {node, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
-    dispatch((_, getState) => {
+    const {target, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
+    dispatch((dispatch, getState) => {
       const {ast, focusId} = getState();
 
       if (this.props.value === null || this.props.value === this.cachedValue) {
@@ -44,31 +43,27 @@ class NodeEditable extends Component {
         dispatch(activate(focusId, true));
         return;
       }
-      const {from, to} = getNodeLocation(ast, node);
-      const value = addWhitespacePadding(ast, this.props.value, from, to);
-      commitChanges(
-        cm => () => {
-          cm.replaceRange(value, from, to, 'cmb:edit');
-        },
-        ({firstNewId}) => {
-          if (firstNewId !== null) {
-            dispatch(activate(firstNewId, {allowMove: true}));
-          } else {
-            dispatch(activate(null, {allowMove: false}));
-          }
-          onChange(null);
-          onDisableEditable(false);
-          setErrorId('');
-          say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
-        },
-        e => {
-          const errorText = SHARED.parser.getExceptionMessage(e);
-          console.log(errorText);
-          this.ignoreBlur = false;
-          setErrorId(node.id);
-          this.setSelection(false);
+
+      const value = this.props.value;
+      const onSuccess = ({firstNewId}) => {
+        if (firstNewId !== null) {
+          dispatch(activate(firstNewId, {allowMove: true}));
+        } else {
+          dispatch(activate(null, {allowMove: false}));
         }
-      );
+        onChange(null);
+        onDisableEditable(false);
+        setErrorId('');
+        say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
+      };
+      const onError = e => {
+        const errorText = SHARED.parser.getExceptionMessage(e);
+        console.log(errorText);
+        this.ignoreBlur = false;
+        setErrorId(target.node ? target.node.id : 'editing');
+        this.setSelection(false);
+      };
+      insert(value, target, onSuccess, onError);
     });
   }
 
@@ -161,21 +156,9 @@ class NodeEditable extends Component {
   }
 }
 
-function getNodeLocation(ast, node) {
-  if (node.id === "editing") {
-    if (!node.from || !node.to) {
-      throw "Invalid NodeEditable location";
-    }
-    return {from: node.from, to: node.to};
-  } else {
-    // NOTE(Emmanuel): node can be out of date. Fetch a fresh copy from the ast
-    let {from, to} = ast.getNodeById(node.id);
-    return {from, to};
-  }
-}
-
-const mapStateToProps = ({cm, errorId}, {node}) => {
-  const isErrored = errorId == node.id;
+const mapStateToProps = ({cm, errorId}, {target}) => {
+  const nodeId = target.node ? target.node.id : 'editing';
+  const isErrored = errorId == nodeId;
   return {cm, isErrored};
 };
 

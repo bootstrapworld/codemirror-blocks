@@ -100,7 +100,7 @@ function toElement(node) {
   if (node instanceof Element) {
     return node;
   }
-  if (node.element instanceof Element) {
+  if (node && node.element instanceof Element) {
     return node.element;
   }
   throw new Error("Cannot convert value into a DOM node:" + node);

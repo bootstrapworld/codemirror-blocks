@@ -1,98 +1,66 @@
-import {withDefaults, say, poscmp, copyToClipboard, pasteFromClipboard} from './utils';
-import {commitChanges} from './codeMirror';
+import {withDefaults, say, poscmp, srcRangeIncludes, warn} from './utils';
 import SHARED from './shared';
-import {playSound, WRAP} from './sound';
 import {store} from './store';
+import {performEdits, edit_insert, edit_delete, edit_replace,
+        edit_overwrite} from './edits/performEdits';
 
-/* This file is for _shared_ actions */
 
-let queuedAnnouncement = null;
+// All editing actions are defined here.
+//
+// Many actions take a Target as an option. A Target may be constructed by any
+// of the methods on the `Targets` export below.
+//
+// Just about every action can take an optional `onSuccess` and `onError`
+// callback. If the action is successful, it will call `onSuccess(newAST)`. If
+// it fails, it will call `onError(theError)`.
+//
+// The implementation of actions is in the folder `src/edits/`. IT IS PRIVATE,
+// AND FOR THE MOST PART, NO FILE EXCEPT src/actions.js SHOULD NEED TO IMPORT IT.
+// (Exception: speculateChanges and commitChanges are sometimes imported.)
+// The implementation is complex, because while edits are best thought of as
+// operations on the AST, they must all be transformed into text edits, and the
+// only interface we have into the language's textual syntax are the `pretty`
+// and `parse` methods.
 
-export function deleteNodes(id, selectionEditor) {
-  return (dispatch, getState) => {
-    const {ast, selections} = getState();
-    const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
-    // we delete from the end of the document to the beginning so that
-    // the next deletion still has a valid pos
-    nodeSelections.sort((a, b) => poscmp(b.from, a.from));
-    if (nodeSelections.length === 0) {
-      return; // Not much to do.
-    }
-    commitChanges(
-      cm => () => {
-        for (const node of nodeSelections) {
-          var {from, to} = node.srcRange();
-          var {from, to} = removeClearedSpace(from, to);
-          cm.replaceRange('', from, to, 'cmb:delete-nodes');
-        }
-      },
-      () => {},
-      () => {},
-    );
-    // since we sort in descending order, this is the last one in the array
-    const firstNode = nodeSelections.pop();
-    dispatch({type: 'SET_SELECTIONS', selections: []});
-  };
+
+// A _Target_ says where an action is directed. For example, a target may be a
+// node or a drop target.
+//
+// These are the kinds of targets:
+// - InsertTarget: insert at a location inside the AST.
+// - ReplaceNodeTarget: replace an ast node.
+// - OverwriteTarget: replace a range of text at the top level.
+//
+// These kinds of actions _have_ a target:
+// - Paste: the target says where to paste.
+// - Drag&Drop: the target says what's being dropped on.
+// - Insert/Edit: the target says where the text is being inserted/edited.
+//
+// Targets are defined at the bottom of this file.
+
+
+// Insert `text` at the given `target`.
+// See the comment at the top of the file for what kinds of `target` there are.
+export function insert(text, target, onSuccess, onError) {
+  checkTarget(target);
+  const {ast} = store.getState();
+  const edits = [target.toEdit(text)];
+  performEdits('cmb:insert', ast, edits, onSuccess, onError);
 }
 
-export function dropNode({id: srcId, content}, {from: destFrom, to: destTo, isDropTarget}) {
-  return (dispatch, getState) => {
-    if (!destFrom) {
-      // TODO: Where are these spurious events coming from?
-      return;
-    }
-    const {ast} = getState();
-    // srcNode is null if there's nothing to delete; e.g. if dragged from toolbar
-    const srcNode = srcId ? ast.getNodeById(srcId) : null;
-    if (srcNode && poscmp(destFrom, srcNode.from) > 0 && poscmp(destTo, srcNode.to) < 0) {
-      return;
-    }
-
-    // Drag the pretty-printed source node, comments and all.
-    if (srcNode) {
-      var {from: srcFrom, to: srcTo} = srcNode.srcRange();
-      var {from: srcFrom, to: srcTo} = removeClearedSpace(srcFrom, srcTo);
-      content = srcNode.toString();
-    }
-
-    let value = null;
-    if (isDropTarget) {
-      let needsPrecedingNewline = !!(srcNode && srcNode.options.comment);
-      value = addWhitespacePadding(ast, content, destFrom, destTo, needsPrecedingNewline);
-    } else {
-      value = content;
-    }
-
-    commitChanges(
-      cm => () => {
-        if (srcNode === null) {
-          cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
-        } else if (poscmp(srcFrom, destFrom) < 0) {
-          cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
-          cm.replaceRange('', srcFrom, srcTo, 'cmb: drop-node');
-        } else {
-          cm.replaceRange('', srcFrom, srcTo, 'cmb:drop-node');
-          cm.replaceRange(value, destFrom, destTo, 'cmb:drop-node');
-        }
-      },
-      () => {},
-      () => {}
-    );
-  };
+// Delete the given nodes.
+export function delete_(nodes, onSuccess, onError) { // 'delete' is a reserved word
+  if (nodes.length === 0) return;
+  const {ast} = store.getState();
+  nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
+  const edits = nodes.map(node => edit_delete(node));
+  performEdits('cmb:delete-node', ast, edits, onSuccess, onError);
+  store.dispatch({type: 'SET_SELECTIONS', selections: []});
 }
 
-export function copySelectedNodes(id, selectionEditor) {
-  return (dispatch, getState) => {
-    const {ast, selections} = getState();
-    const nodeSelections = selectionEditor(selections).map(ast.getNodeById);
-    if (nodeSelections.length === 0) {
-      return; // Not much to do.
-    }
-    copyNodes(nodeSelections);
-  }
-}
-
-export function copyNodes(nodes) {
+// Copy the given nodes onto the clipboard.
+export function copy(nodes) {
+  if (nodes.length === 0) return;
   const {ast, focusId} = store.getState();
   // Pretty-print each copied node. Join them with spaces, or newlines for
   // commented nodes (to prevent a comment from attaching itself to a
@@ -113,42 +81,57 @@ export function copyNodes(nodes) {
   }
 }
 
-export function pasteNodes(id, isBackward) {
-  return (dispatch, getState) => {
-    const {ast, selections} = getState();
-    const node = ast.getNodeById(id);
-    let from = null, to = null;
-    let focusTarget = null;
-    let range = node.srcRange(); // Include any comments the node has.
-    if (selections.includes(id)) {
-      // NOTE(Oak): overwrite in this case
-      from = range.from;
-      to = range.to;
-      focusTarget = 'self';
-    } else {
-      // NOTE(Oak): otherwise, we do not overwrite
-      const pos = isBackward ? range.from : range.to;
-      focusTarget = isBackward ? 'back' : 'next';
-      from = pos;
-      to = pos;
+// Paste from the clipboard at the given `target`.
+// See the comment at the top of the file for what kinds of `target` there are.
+export function paste(target, onSuccess, onError) {
+  checkTarget(target);
+  pasteFromClipboard(text => {
+    const {ast} = store.getState();
+    const edits = [target.toEdit(text)];
+    performEdits('cmb:paste', ast, edits, onSuccess, onError);
+    store.dispatch({type: 'SET_SELECTIONS', selections: []});
+  });
+}
+
+// Drag from `src` (which should be a d&d monitor thing) to `target`.
+// See the comment at the top of the file for what kinds of `target` there are.
+export function drop(src, target, onSuccess, onError) {
+  checkTarget(target);
+  const {id: srcId, content: srcContent} = src;
+  const {ast} = store.getState();
+  const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
+  const content = srcNode ? srcNode.toString() : srcContent;
+  
+  // If we dropped the node _inside_ where we dragged it from, do nothing.
+  if (srcNode && srcRangeIncludes(srcNode.srcRange(), target.srcRange())) {
+    return;
+  }
+  let edits = [];
+  // Delete the dragged node, unless it came from the toolbar.
+  if (srcNode !== null) {
+    edits.push(edit_delete(srcNode));
+  }
+  // Insert or replace at the drop location, depending on what we dropped it on.
+  edits.push(target.toEdit(content));
+  // Perform the edits.
+  performEdits('cmb:drop-node', ast, edits, onSuccess, onError);
+}
+
+// Set the cursor position.
+export function setCursor(cur) {
+  return (dispatch, _getState) => {
+    if (SHARED.cm && cur) {
+      SHARED.cm.focus();
+      SHARED.search.setCursor(cur);
+      SHARED.cm.setCursor(cur);
     }
-
-    pasteFromClipboard(text => {
-      text = addWhitespacePadding(ast, text, from, to, false /*handled by copy*/);
-      commitChanges(
-        cm => () => {
-          cm.replaceRange(text, from, to, 'cmb:paste');
-        },
-        () => {},
-        () => {}
-      );
-      // NOTE(Oak): always clear selections. Should this be a callback instead?
-      dispatch({type: 'SET_SELECTIONS', selections: []});
-    });
-
+    dispatch({type: 'SET_CURSOR', cur});
   };
 }
 
+let queuedAnnouncement = null;
+
+// Activate the node with the given `id`.
 export function activate(id, options) {
   return (dispatch, getState) => {
     options = withDefaults(options, {allowMove: true, record: true});
@@ -218,38 +201,86 @@ SHARED.cm.setCursor({line: -1, ch: 0});
   };
 }
 
-// If deleting a block would leave behind excessive whitespace, delete some of
-// that whitespace.
-export function removeClearedSpace(from, to) {
-  let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
-  let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
-  if (prevChar == " " && (nextChar == " " || nextChar == "")) {
-    // Delete an excess space.
-    return {from: {line: from.line, ch: from.ch - 1}, to: to};
-  } else if (nextChar == " " && prevChar == "") {
-    // Delete an excess space.
-    return {from: from, to: {line: to.line, ch: to.ch + 1}};
-  } else {
-    return {from: from, to: to};
+function checkTarget(target) {
+  if (!(target instanceof Target)) {
+    warn('actions', `Expected target ${target} to be an instance of the Target class.`);
   }
 }
 
-// Pad `text` with spaces as needed, when a block will be inserted.
-export function addWhitespacePadding(ast, text, from, to, needsPrecedingNewline) {
-  // We may need to insert a newline to make sure that comments don't end up
-  // getting associated with the wrong node, and we may need to insert a space
-  // to ensure that different tokens don't end up getting glommed together.
-  let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
-  let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
-  if ((ast.followsComment(from) && prevChar != "") || needsPrecedingNewline) {
-    text = "\n" + text;
-  } else if (!(prevChar == "" || prevChar == " ")) {
-    text = " " + text;
+function copyToClipboard(text) {
+  SHARED.buffer.value = text;
+  SHARED.buffer.select();
+  document.execCommand('copy');
+}
+
+function pasteFromClipboard(done) {
+  SHARED.buffer.value = '';
+  SHARED.buffer.focus();
+  setTimeout(() => {
+    done(SHARED.buffer.value);
+  }, 50);
+}
+
+// The class of all targets.
+export class Target {
+  constructor(from, to) {
+    this.from = from;
+    this.to = to;
   }
-  if (ast.precedesComment(to) && nextChar != "") {
-    text = text + "\n";
-  } else if (!(nextChar == "" || nextChar == " ")) {
-    text = text + " ";
+
+  srcRange() {
+    return {from: this.from, to: this.to};
   }
-  return text;
+}
+
+// Insert at a location inside the AST.
+export class InsertTarget extends Target {
+  constructor(parentNode, fieldName, pos) {
+    super(pos, pos);
+    this.parent = parentNode;
+    this.field = fieldName;
+    this.pos = pos;
+  }
+
+  getText(_ast) {
+    return "";
+  }
+
+  toEdit(text) {
+    return edit_insert(text, this.parent, this.field, this.pos);
+  }
+}
+
+// Target an ASTNode. This will replace the node.
+export class ReplaceNodeTarget extends Target {
+  constructor(node) {
+    const range = node.srcRange();
+    super(range.from, range.to);
+    this.node = node;
+  }
+
+  getText(ast) {
+    const {from, to} = ast.getNodeById(this.node.id);
+    return SHARED.cm.getRange(from, to);
+  }
+
+  toEdit(text) {
+    return edit_replace(text, this.node);
+  }
+}
+
+// Target a source range at the top level. This really has to be at the top
+// level: neither `from` nor `to` can be inside any root node.
+export class OverwriteTarget extends Target {
+  constructor(from, to) {
+    super(from, to);
+  }
+
+  getText(_ast) {
+    return SHARED.cm.getRange(this.from, this.to);
+  }
+
+  toEdit(text) {
+    return edit_overwrite(text, this.from, this.to);
+  }
 }

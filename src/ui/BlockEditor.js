@@ -1,20 +1,21 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
+import CodeMirror from 'codemirror';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
-import patch from '../ast-patch';
 import NodeEditable from '../components/NodeEditable';
-import {activate} from '../actions';
+import {activate, setCursor, insert, OverwriteTarget} from '../actions';
+import {commitChanges} from '../edits/commitChanges';
+import {speculateChanges} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
-import FakeCursorManager from './FakeCursorManager';
 import {pos} from '../types';
 import merge from '../merge';
 import {addLanguage, getLanguage} from '../languages/';
-import CodeMirror from './DragAndDropEditor';
-import {computeFocusNodeFromChanges, poscmp, say} from '../utils';
+import DragAndDropEditor from './DragAndDropEditor';
+import {poscmp, say} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 
@@ -79,7 +80,6 @@ class ToplevelBlockEditableCore extends Component {
   render() {
     const {onDisableEditable, onChange, quarantine} = this.props;
     const [start, end, value] = quarantine;
-    const nodeProps = {id: 'editing', from: start, to: end};
     const props = {
       tabIndex          : '-1',
       role              : 'text box',
@@ -88,7 +88,7 @@ class ToplevelBlockEditableCore extends Component {
       'aria-level'      : '1',
     };
     return ReactDOM.createPortal(
-      <NodeEditable node={nodeProps}
+      <NodeEditable target={new OverwriteTarget(start, end)}
                     value={value}
                     onChange={onChange}
                     contentEditableProps={props}
@@ -142,6 +142,7 @@ class BlockEditor extends Component {
     super(props);
     this.mouseUsed = false;
     SHARED.keyMap = this.props.keyMap;
+    SHARED.keyName = CodeMirror.keyName;
   }
 
   static defaultProps = {
@@ -270,6 +271,23 @@ class BlockEditor extends Component {
         e.preventDefault();
         activateNoRecord(SHARED.search.search(true, state));
         return;
+
+      case 'undo':
+        e.preventDefault();
+        SHARED.cm.undo();
+        return;
+
+      case 'redo':
+        e.preventDefault();
+        SHARED.cm.redo();
+        return;
+
+      case 'delete':
+        e.preventDefault();
+        const dFrom = SHARED.cm.getCursor(true);
+        const dTo = SHARED.cm.getCursor(false);
+        insert("", new OverwriteTarget(dFrom, dTo));
+        return;
       }
     });
   }
@@ -292,20 +310,46 @@ class BlockEditor extends Component {
     this.props.setQuarantine(start, end, text);
   }
 
-  editorChange = (cm, changes) => {
-    // We only care about changes whose origin is *not* 'cmb:'
-    // cmb-originating changes are handled by commitChanges (see codeMirror.js)
-    if (!changes.every(c => c.origin && c.origin.startsWith('cmb:'))) {
-      const newAST = SHARED.parser.parse(cm.getValue());
-      const tree = patch(this.props.ast, newAST);
-      let focusId = computeFocusNodeFromChanges(changes, tree).id;
-      this.props.setAST(tree);
-      // only call activate() if there's no cursor defined
-      this.props.dispatch((_, getState) => {
-        const {cur} = getState();
-        if(!cur) this.props.activate(focusId);
-      });
+
+  handleBeforeChange = (cm, change) => {
+    let knownOrigin = (origin) =>
+      origin && (origin.startsWith("cmb:") || origin=="undo" || origin=="redo");
+    if (!knownOrigin(change.origin)) {
+      // We did not produce this change. It may not be valid.
+      // Check to see if it's valid, and if not cancel the change.
+      if (!speculateChanges([change])) {
+        change.cancel();
+      }
     }
+  }
+
+  handleChanges = (cm, changes) => {
+    this.props.dispatch((dispatch, getState) => {
+      if (!changes.every(c => c.origin && c.origin.startsWith("cmb:"))) {
+        // These changes did not originate from us. However, they've all gone
+        // passed the `handleBeforeChange` function, so they must be valid edits.
+        // (There's almost certainly just one edit here; I (Justin) am not
+        // convinced this will always work if there is more than one edit here.)
+        // Since the edit(s) is valid, commit it.
+        if (changes[0].origin === "undo") {
+          for (let c of changes) c.origin = "cmb:undo";
+          const undoFocusStack = getState().undoFocusStack;
+          const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
+          const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
+          commitChanges(changes, true, focusHint);
+          dispatch({type: 'UNDO'});
+        } else if (changes[0].origin === "redo") {
+          for (let c of changes) c.origin = "cmb:redo";
+          const redoFocusStack = getState().redoFocusStack;
+          const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
+          const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
+          commitChanges(changes, true, focusHint);
+          dispatch({type: 'REDO'});
+        } else {
+          commitChanges(changes, false);
+        }
+      }
+    });
   }
 
   handleEditorDidMount = ed => {
@@ -320,7 +364,8 @@ class BlockEditor extends Component {
     announcements.setAttribute('role', 'log');
     announcements.setAttribute('aria-live', 'assertive');
     wrapper.appendChild(announcements);
-    ed.on('changes', this.editorChange);
+    ed.on('beforeChange', this.handleBeforeChange);
+    ed.on('changes', this.handleChanges);
 
     SHARED.cm = ed;
     const ast = this.props.parser.parse(ed.getValue());
@@ -424,7 +469,8 @@ class BlockEditor extends Component {
   }
 
   handleEditorWillUnmount = ed => {
-    ed.off('changes', this.editorChange);
+    ed.off('beforeChange', this.handleBeforeChange);
+    ed.off('changes', this.handleChanges);
   }
 
   handleFocus = (ed, e) => {
@@ -486,7 +532,6 @@ class BlockEditor extends Component {
       dispatch((_, getState) => {
         const {quarantine} = getState();
         if(!quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
-        console.log('Browser is ready after:', (Date.now() - this.startTime)/1000, 'ms');
       });
       }, 0));
   }
@@ -507,20 +552,19 @@ class BlockEditor extends Component {
     }
     return (
       <React.Fragment>
-        <CodeMirror options={this.props.cmOptions}
-                    className={classNames(classes)}
-                    value={this.props.value}
-                    onBeforeChange={this.props.onBeforeChange}
-                    onKeyPress={this.handleKeyPress}
-                    onKeyDown={this.handleKeyDown}
-                    onMouseDown={this.handleMouseDown}
-                    onFocus={this.handleFocus}
-                    onPaste={this.handlePaste}
-                    cursor={this.props.cur ? this.props.cur : {line: -1, ch: 0}}
-                    onCursorActivity={this.handleCursor}
-                    editorDidMount={this.handleEditorDidMount} />
+        <DragAndDropEditor
+          options={this.props.cmOptions}
+          className={classNames(classes)}
+          value={this.props.value}
+          onBeforeChange={this.props.onBeforeChange}
+          onKeyPress={this.handleKeyPress}
+          onKeyDown={this.handleKeyDown}
+          onMouseDown={this.handleMouseDown}
+          onFocus={this.handleFocus}
+          onPaste={this.handlePaste}
+          onCursorActivity={this.handleCursor}
+          editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}
-        <FakeCursorManager />
       </React.Fragment>
     );
   }
@@ -545,7 +589,7 @@ const mapDispatchToProps = dispatch => ({
   dispatch,
   setAST: ast => dispatch({type: 'SET_AST', ast}),
   setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
-  setCursor: (_, cur) => dispatch({type: 'SET_CURSOR', cur}),
+  setCursor: (_, cur) => dispatch(setCursor(cur)),
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
   activate: (id, options) => dispatch(activate(id, options)),

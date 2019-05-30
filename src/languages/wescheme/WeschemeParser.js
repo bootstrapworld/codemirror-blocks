@@ -143,6 +143,7 @@ function parseNode(node, i) {
         ,'comment' : comment}
     );
   } else if (node instanceof structures.andExpr) {
+    let comment = node.comment? makeComment(node) : false;
     return new FunctionApp(
       from,
       to,
@@ -154,9 +155,10 @@ function parseNode(node, i) {
         {'aria-label': 'and'}
       ),
       node.exprs.map(parseNode).filter(item => item !== null),
-      {'aria-label': expressionAria('and', node.exprs)}
+      {'aria-label': expressionAria('and', node.exprs), 'comment' : comment}
     );
   } else if (node instanceof structures.orExpr) {
+    let comment = node.comment? makeComment(node) : false;
     return new FunctionApp(
       from,
       to,
@@ -168,7 +170,7 @@ function parseNode(node, i) {
         {'aria-label': 'or'}
       ),
       node.exprs.map(parseNode).filter(item => item !== null),
-      {'aria-label': expressionAria('or', node.exprs)}
+      {'aria-label': expressionAria('or', node.exprs), 'comment' : comment}
     );
   } else if (node instanceof structures.defVar) {
     return new VariableDefinition(

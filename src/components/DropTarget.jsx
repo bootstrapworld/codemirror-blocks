@@ -7,100 +7,96 @@ import SHARED from '../shared';
 import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
-import {dropNode} from '../actions';
 import BlockComponent from './BlockComponent';
-import {NodeContext} from './Node';
 import uuidv4 from 'uuid/v4';
+import {drop, InsertTarget} from '../actions';
 
 
-// Use this class to render non-drop-target children of this node. Pass
-// in the `node` to be rendered, the index of the drop target to the `left` (or
-// `null` if there is none), and likewise for the `right`.
-const mapDispatchToProps1 = dispatch => ({
-  dispatch,
-  setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
+// Provided by `Node`
+export const NodeContext = React.createContext({
+  node: null
 });
-@connect(null, mapDispatchToProps1)
-export class DropTargetSibling extends Component {
+
+// Provided by `DropTargetContainer`
+export const DropTargetContext = React.createContext({
+  node: null,
+  field: null,
+});
+
+// Every set of DropTargets must be wrapped in a DropTargetContainer.
+//   `field`: the name of the field containing a list of ASTNodes, that this is
+//     a DropTarget for.
+export class DropTargetContainer extends Component {
   static contextType = NodeContext;
 
-  static propTypes = {
-    node: PropTypes.object.isRequired,
-    left: PropTypes.bool,
-    right: PropTypes.bool,
-  }
-
-  findAdjacentDropTarget(onLeft) {
-    if (onLeft && !this.props.left || !onLeft && !this.props.right) {
-      // We're not connected to a drop target on that side.
-      return false;
-    }
-
-    let prevDropTargetId = null;
-    let targetId = `block-node-${this.props.node.id}`;
-    
-    function findDT(parent) {
-      if (!parent.children) {
-        return null;
-      }
-      // Convert array-like object into an Array.
-      let children = [...parent.children];
-      // If we want the drop-target to the right, iterate in reverse
-      if (!onLeft) { children.reverse(); }
-      
-      for (let sibling of children) {
-        if (sibling.id && sibling.id.startsWith("block-drop-target-")) {
-          // We've hit a drop-target. Remember its id, in case it's adjacent to the node.
-          prevDropTargetId = sibling.id.substring(18); // skip "block-drop-target-"
-        } else if (sibling.id == targetId) {
-          // We've found this node! Return the id of the adjacent drop target.
-          return prevDropTargetId;
-        } else if (sibling.id && sibling.id.startsWith("block-node-")) {
-          // It's a different node. Skip it.
-        } else if (sibling.children) {
-          // We're... somewhere else. If it has children, traverse them to look for the node.
-          let result = findDT(sibling);
-          if (result !== null) {
-            return result; // node found.
-          }
-        }
-      }
-      return null;
-    }
-
-    return findDT(this.context.node.element);
-  }
-
-  setLeft() {
-    let dropTargetId = this.findAdjacentDropTarget(true);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
-    }    
-  }
-
-  setRight() {
-    let dropTargetId = this.findAdjacentDropTarget(false);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
-    }
+  constructor(props) {
+    super(props);
   }
   
-  render() {
-    let props = {
-      onSetLeft: () => this.setLeft(),
-      onSetRight: () => this.setRight(),
-    };
-    return this.props.node.reactElement(props);
+  static propTypes = {
+    field: PropTypes.string.isRequired,
+    children: PropTypes.node.isRequired,
   }
+
+  render() {
+    const value = {
+      field: this.props.field,
+      node: this.context.node,
+    };
+    return (
+      <DropTargetContext.Provider value={value}>
+        {this.props.children}
+      </DropTargetContext.Provider>
+    );
+  }
+}
+
+// Find the id of the drop target (if any) on the given side of `child` node.
+export function findAdjacentDropTargetId(child, onLeft) {
+  let prevDropTargetId = null;
+  let targetId = `block-node-${child.id}`;
+    
+  function findDT(elem) {
+    if (!elem.children) {
+      return null;
+    }
+    // Convert array-like object into an Array.
+    let children = [...elem.children];
+    // If we want the drop-target to the right, iterate in reverse
+    if (!onLeft) { children.reverse(); }
+      
+    for (let sibling of children) {
+      if (sibling.id && sibling.id.startsWith("block-drop-target-")) {
+        // We've hit a drop-target. Remember its id, in case it's adjacent to the node.
+        prevDropTargetId = sibling.id.substring(18); // skip "block-drop-target-"
+      } else if (sibling.id == targetId) {
+        // We've found this node! Return the id of the adjacent drop target.
+        return prevDropTargetId;
+      } else if (sibling.id && sibling.id.startsWith("block-node-")) {
+        // It's a different node. Skip it.
+      } else if (sibling.children) {
+        // We're... somewhere else. If it has children, traverse them to look for the node.
+        let result = findDT(sibling);
+        if (result !== null) {
+          return result; // node found.
+        }
+      }
+    }
+    return null;
+  }
+  if (!child.parent) return null;
+  return findDT(child.parent.element);
 }
 
 
 // NOTE(Justin) It sure would be nice to generate the id inside of DropTarget.
 // But AFAIK that's not feasible, because the `id` needs to be accessible
 // inside `mapStateToProps`, and it's only accessible if it's a `prop`.
+// Hence this extraneous class.
 export class DropTarget extends Component {
   constructor(props) {
     super(props);
+    this.isDropTarget = true;
     this.id = uuidv4(); // generate a unique ID
   }
 
@@ -127,14 +123,13 @@ const mapDispatchToProps2 = (dispatch, {id}) => ({
 
 @connect(mapStateToProps2, mapDispatchToProps2)
 @DropNodeTarget(function(monitor) {
-  let loc = this.getLocation();
-  let dest = {from: loc, to: loc, isDropTarget: true};
-  return this.props.dispatch(dropNode(monitor.getItem(), dest));
+  const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
+  return drop(monitor.getItem(), target);
 })
 class ActualDropTarget extends BlockComponent {
 
-  static contextType = NodeContext;
-  
+  static contextType = DropTargetContext;
+
   static propTypes = {
     // fulfilled by @connect
     isEditable: PropTypes.bool.isRequired,
@@ -149,6 +144,7 @@ class ActualDropTarget extends BlockComponent {
 
   constructor(props) {
     super(props);
+    this.isDropTarget = true;
 
     this.state = {
       value: "",
@@ -167,11 +163,11 @@ class ActualDropTarget extends BlockComponent {
     let ast = this.props.ast;
     let dropTargetWasFirst = false;
     
-    function findLoc(parent) {
-      if (!parent.children) {
+    function findLoc(elem) {
+      if (!elem.children) {
         return null;
       }
-      for (let sibling of parent.children) {
+      for (let sibling of elem.children) {
         if (sibling.id && sibling.id.startsWith("block-node-")) {
           // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
           prevNodeId = sibling.id.substring(11); // skip "block-node-"
@@ -200,12 +196,8 @@ class ActualDropTarget extends BlockComponent {
       }
       return null;
     }
-    
-    let loc = findLoc(this.context.node.element);
-    if (!loc) {
-      console.warn("Could not find drop target location");
-    }
-    return loc;
+
+    return findLoc(this.context.node.element) || this.context.pos;
   }
 
   handleDoubleClick = e => {
@@ -219,7 +211,6 @@ class ActualDropTarget extends BlockComponent {
   }
 
   render() {
-    // TODO: take a look at this and make sure props is right
     const props = {
       tabIndex          : "-1",
       role              : 'textbox',
@@ -229,14 +220,9 @@ class ActualDropTarget extends BlockComponent {
       id                : `block-drop-target-${this.props.id}`,
     };
     if (this.props.isEditable) {
-      let loc = this.getLocation();
-      const nodeProps = {
-        id: 'editing', // TODO(Oak): error focusing is going to be wrong
-        from: loc,
-        to: loc,
-      };
+      const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
       return (
-        <NodeEditable node={nodeProps}
+        <NodeEditable target={target}
                       value={this.state.value}
                       onChange={this.handleChange}
                       isInsertion={true}

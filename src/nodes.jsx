@@ -1,10 +1,10 @@
 import * as P from 'pretty-fast-pretty-printer';
 import React from 'react';
 import {ASTNode, enumerateList, pluralize} from './ast';
-import hashObject from 'object-hash';
 import Node from './components/Node';
 import Args from './components/Args';
-import {DropTarget, DropTargetSibling} from './components/DropTarget';
+import {DropTarget, DropTargetContainer} from './components/DropTarget';
+import * as Spec from './nodeSpec';
 
 
 
@@ -33,10 +33,13 @@ function withSchemeComment(doc, comment, container) {
 
 export class Unknown extends ASTNode {
   constructor(from, to, elts, options={}) {
-    super(from, to, 'unknown', ['elts'], options);
+    super(from, to, 'unknown', options);
     this.elts = elts;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('elts')
+  ])
 
   longDescription(level) {
     return `an unknown expression with ${pluralize("children", this.elts)} `+ 
@@ -57,7 +60,7 @@ export class Unknown extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
-        <Args>{restElts}</Args>
+        <Args field="elts">{restElts}</Args>
         </span>
       </Node>
     );
@@ -66,11 +69,15 @@ export class Unknown extends ASTNode {
 
 export class FunctionApp extends ASTNode {
   constructor(from, to, func, args, options={}) {
-    super(from, to, 'functionApp', ['func', 'args'], options);
+    super(from, to, 'functionApp', options);
     this.func = func;
     this.args = args;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('func'),
+    Spec.list('args')
+  ])
 
   longDescription(level) {
     // if it's the top level, enumerate the args
@@ -90,13 +97,14 @@ export class FunctionApp extends ASTNode {
   }
 
   render(props) {
+    const func = this.func.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          <Args>{[this.func]}</Args>
+          {func}
         </span>
         <span className="blocks-args">
-          <Args>{this.args}</Args>
+          <Args field="args">{this.args}</Args>
         </span>
     </Node>
     );
@@ -105,11 +113,15 @@ export class FunctionApp extends ASTNode {
 
 export class IdentifierList extends ASTNode {
   constructor(from, to, kind, ids, options={}) {
-    super(from, to, 'identifierList', ['ids'], options);
+    super(from, to, 'identifierList', options);
     this.kind = kind;
     this.ids = ids;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('kind'),
+    Spec.list('ids')
+  ])
 
   longDescription(level) {
     return enumerateList(this.ids, level);
@@ -126,7 +138,7 @@ export class IdentifierList extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-args">
-          <Args>{this.ids}</Args>
+          <Args field="ids">{this.ids}</Args>
         </span>
       </Node>
     );
@@ -135,15 +147,18 @@ export class IdentifierList extends ASTNode {
 
 export class StructDefinition extends ASTNode {
   constructor(from, to, name, fields, options={}) {
-    super(from, to, 'structDefinition', ['name', 'fields'], options);
+    super(from, to, 'structDefinition', options);
     this.name = name;
     this.fields = fields;
-    this.hash = this.computeHash();
   }
 
+  static spec = Spec.nodeSpec([
+    Spec.value('name'),
+    Spec.required('fields')
+  ])
+
   longDescription(level) {
-    return `define ${this.name.describe(level)} to be a structure with
-            ${this.fields.describe(level)}`;
+    return `define ${this.name.describe(level)} to be a structure with ${this.fields.describe(level)}`;
   }
 
   pretty() {
@@ -154,12 +169,13 @@ export class StructDefinition extends ASTNode {
   }
 
   render(props) {
+    const name = this.name.reactElement();
     const fields = this.fields.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define-struct
-          <Args>{[this.name]}</Args>
+          {name}
         </span>
         {fields}
       </Node>
@@ -169,11 +185,15 @@ export class StructDefinition extends ASTNode {
 
 export class VariableDefinition extends ASTNode {
   constructor(from, to, name, body, options={}) {
-    super(from, to, 'variableDefinition', ['name', 'body'], options);
+    super(from, to, 'variableDefinition', options);
     this.name = name;
     this.body = body;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('name'),
+    Spec.required('body')
+  ])
 
   longDescription(level) {
     let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:";
@@ -189,11 +209,12 @@ export class VariableDefinition extends ASTNode {
 
   render(props) {
     const body = this.body.reactElement();
+    const name = this.name.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
           define
-          <Args>{[this.name]}</Args>
+          {name}
         </span>
         <span className="blocks-args">
           {body}
@@ -205,11 +226,15 @@ export class VariableDefinition extends ASTNode {
 
 export class LambdaExpression extends ASTNode {
   constructor(from, to, args, body, options={}) {
-    super(from, to, 'lambdaExpression', ['args', 'body'], options);
+    super(from, to, 'lambdaExpression', options);
     this.args = args;
     this.body = body;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('args'),
+    Spec.required('body')
+  ])
 
   longDescription(level) {
     return `an anonymous function of ${pluralize("argument", this.args.ids)}: 
@@ -239,12 +264,17 @@ export class LambdaExpression extends ASTNode {
 
 export class FunctionDefinition extends ASTNode {
   constructor(from, to, name, params, body, options={}) {
-    super(from, to, 'functionDefinition', ['name', 'params', 'body'], options);
+    super(from, to, 'functionDefinition', options);
     this.name = name;
     this.params = params;
     this.body = body;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('name'),
+    Spec.required('params'),
+    Spec.required('body')
+  ])
 
   longDescription(level) {
     return `define ${this.name} to be a function of 
@@ -265,14 +295,11 @@ export class FunctionDefinition extends ASTNode {
   render(props) {
     let params = this.params.reactElement();
     let body = this.body.reactElement();
+    let name = this.name.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          define (
-            <DropTarget/>
-            <DropTargetSibling node={this.name} left={true} />
-            {params}
-          )
+          define ({name} {params})
         </span>
         <span className="blocks-args">
           {body}
@@ -284,11 +311,15 @@ export class FunctionDefinition extends ASTNode {
 
 export class CondClause extends ASTNode {
   constructor(from, to, testExpr, thenExprs, options={}) {
-    super(from, to, 'condClause', ['testExpr', 'thenExprs'], options);
+    super(from, to, 'condClause', options);
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('testExpr'),
+    Spec.list('thenExprs')
+  ])
 
   longDescription(level) {
     return `condition: if ${this.testExpr.describe(level)}, then, ${this.thenExprs.map(te => te.describe(level))}`;
@@ -299,22 +330,24 @@ export class CondClause extends ASTNode {
   }
 
   render(props) {
+    const testExpr = this.testExpr.reactElement();
     return (
       <Node node={this} {...props}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">
-            <DropTarget/>
-            <DropTargetSibling node={this.testExpr} left={true} right={true} />
+            {testExpr}
           </div>
           <div className="blocks-cond-result">
-            {this.thenExprs.map((thenExpr, index) => (
-              <span key={index}>
-                <DropTarget/>
-                <DropTargetSibling node={thenExpr} left={true} right={true} />
-              </span>))}
+            <DropTargetContainer field="thenExprs">
+              {this.thenExprs.map((thenExpr, index) => (
+                <span key={index}>
+                  <DropTarget/>
+                  {thenExpr.reactElement()}
+                </span>))}
+              <DropTarget/>
+            </DropTargetContainer>
           </div>
         </div>
-        <DropTarget/>
       </Node>
     );
   }
@@ -322,10 +355,13 @@ export class CondClause extends ASTNode {
 
 export class CondExpression extends ASTNode {
   constructor(from, to, clauses, options={}) {
-    super(from, to, 'condExpression', ['clauses'], options);
+    super(from, to, 'condExpression', options);
     this.clauses = clauses;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('clauses')
+  ])
 
   longDescription(level) {
     return `a conditional expression with ${pluralize("condition", this.clauses)}: 
@@ -351,12 +387,17 @@ export class CondExpression extends ASTNode {
 
 export class IfExpression extends ASTNode {
   constructor(from, to, testExpr, thenExpr, elseExpr, options={}) {
-    super(from, to, 'ifExpression', ['testExpr', 'thenExpr', 'elseExpr'], options);
+    super(from, to, 'ifExpression', options);
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('testExpr'),
+    Spec.required('thenExpr'),
+    Spec.required('elseExpr')
+  ])
 
   longDescription(level) {
     return `an if expression: if ${this.testExpr.describe(level)}, then ${this.thenExpr.describe(level)} `+
@@ -371,18 +412,19 @@ export class IfExpression extends ASTNode {
   }
 
   render(props) {
+    const testExpr = this.testExpr.reactElement();
+    const thenExpr = this.thenExpr.reactElement();
+    const elseExpr = this.elseExpr.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">
             <div className="blocks-cond-predicate">
-              <DropTarget/>
-              <DropTargetSibling node={this.testExpr} left={true} right={true} />
+              {testExpr}
             </div>
             <div className="blocks-cond-result">
-              <DropTarget/>
-              <DropTargetSibling node={this.thenExpr} left={true} right={true} />
+              {thenExpr}
             </div>
           </div>
           <div className="blocks-cond-row">
@@ -390,11 +432,7 @@ export class IfExpression extends ASTNode {
               else
             </div>
             <div className="blocks-cond-result">
-              <DropTarget/>
-              <DropTargetSibling node={this.elseExpr} left={true} right={true} />
-            </div>
-            <div className="blocks-cond-result">
-              <DropTarget/>
+              {elseExpr}
             </div>
           </div>
         </div>
@@ -405,11 +443,15 @@ export class IfExpression extends ASTNode {
 
 export class Literal extends ASTNode {
   constructor(from, to, value, dataType='unknown', options={}) {
-    super(from, to, 'literal', [], options);
+    super(from, to, 'literal', options);
     this.value = value;
     this.dataType = dataType;
-    this.hash = hashObject(['literal', this.value, this.dataType]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('value'),
+    Spec.value('dataType')
+  ])
 
   describe(_level) {
     return this.options["aria-label"];
@@ -435,10 +477,13 @@ export class Literal extends ASTNode {
 
 export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
-    super(from, to, 'comment', [], options);
+    super(from, to, 'comment', options);
     this.comment = comment;
-    this.hash = hashObject(['comment', this.comment]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('comment')
+  ])
 
   describe(_level) {
     return this.options["aria-label"];
@@ -460,11 +505,15 @@ export class Comment extends ASTNode {
 
 export class Blank extends ASTNode {
   constructor(from, to, value, dataType='blank', options={}) {
-    super(from, to, 'blank', [], options);
+    super(from, to, 'blank', options);
     this.value = value || "...";
     this.dataType = dataType;
-    this.hash = hashObject(['literal', this.value, this.dataType]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('value'),
+    Spec.value('dataType')
+  ])
 
   describe(_level) {
     return this.options["aria-label"];
@@ -488,11 +537,15 @@ export class Blank extends ASTNode {
 
 export class Sequence extends ASTNode {
   constructor(from, to, exprs, name, options={}) {
-    super(from, to, 'sequence', ['exprs'], options);
+    super(from, to, 'sequence', options);
     this.exprs = exprs;
     this.name = name;
-    this.hash = this.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('exprs'),
+    Spec.value('name')
+  ])
 
   longDescription(level) {
     return `a sequence containing ${enumerateList(this.exprs, level)}`;
@@ -507,7 +560,7 @@ export class Sequence extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
         <div className="blocks-sequence-exprs">
-          <Args>{this.exprs}</Args>
+          <Args field="exprs">{this.exprs}</Args>
         </div>
       </Node>
     );
