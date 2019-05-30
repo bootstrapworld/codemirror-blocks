@@ -91,8 +91,11 @@ class Node extends BlockComponent {
 
   handleKeyDown = e => {
     e.stopPropagation();
+    console.log("stopped navigation");
     if(this.props.inToolbar) return;
+    console.log("not in toolbar");
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
+    console.log("is error free");
 
     const {
       node, expandable, isCollapsed,
@@ -115,7 +118,9 @@ class Node extends BlockComponent {
         this.props.activate(n? n.id : node.id, options);
       };
 
-      switch (SHARED.keyMap[SHARED.keyName(e)]) {
+      const result = SHARED.keyMap[SHARED.keyName(e)];
+      console.log("Node.jsx handleKeyDown", state, node, result);
+      switch (result) {
       case 'prevNode':
         e.preventDefault();
         activate(fastSkip(node => node.prev));

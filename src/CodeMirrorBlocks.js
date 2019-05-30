@@ -3,6 +3,14 @@ import ReactDOM from 'react-dom';
 import ToggleEditor from './ui/ToggleEditor';
 import merge from './merge';
 import pyret from './languages/pyret';
+const store = require('./store');
+const Args = require('./components/Args');
+const DropTarget = require('./components/DropTarget');
+const Node = require('./components/Node');
+const AST = require('./ast');
+const Nodes = require('./nodes');
+const Languages = require('./languages');
+const Pretty = require('pretty-fast-pretty-printer');
 
 // Consumes a DOM node to host the editor, a language object and the code
 // to render. Produces an object-representation of CMB, allowing for
@@ -14,7 +22,7 @@ export default class CodeMirrorBlocks {
     ReactDOM.render(
       <ToggleEditor
         language={language}
-        initialCode={(initialCode == null)? "" : initialCode}
+        initialCode={(initialCode == null) ? "" : initialCode}
         api={api}
         appElement={container}
         options={options}
@@ -38,4 +46,14 @@ export default class CodeMirrorBlocks {
   }
 }
 
-module.exports = CodeMirrorBlocks;
+module.exports.CodeMirrorBlocks = CodeMirrorBlocks;
+module.exports.Args = Args.default;
+module.exports.DT = DropTarget;
+module.exports.AST = AST;
+module.exports.Nodes = Nodes;
+module.exports.Node = Node.default;
+module.exports.Languages = Languages;
+module.exports.Pretty = Pretty;
+module.exports.store = store;
+
+console.log(module.exports);
