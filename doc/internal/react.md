@@ -195,7 +195,7 @@ Some HTML elements have an attribute that can be set to an event handler, like
 
 Some tips:
 
-- JS class methods don't bind `self` when mentioned by name. So you probably
+- JS class methods don't bind `this` when mentioned by name. So you probably
   want to write `handleClick = e => ...` in the class, rather than
   `handleClick() { ... }`.
 - To prevent an event from _also_ having its default behavior, call
@@ -205,7 +205,7 @@ Some tips:
 ## Suggestions for using React
 
 - React has exactly one rule. **Obey the one rule**:
-      > All React Components must act like pure functions with respect to their props.
+  All React Components must act like pure functions with respect to their props.
 - To share state, put it in its closest common ancestor.
 - Don't use inheritance.
 
