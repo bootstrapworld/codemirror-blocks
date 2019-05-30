@@ -313,7 +313,7 @@ class BlockEditor extends Component {
 
   handleBeforeChange = (cm, change) => {
     let knownOrigin = (origin) =>
-        origin && (origin.startsWith("cmb:") || origin=="undo" || origin=="redo");
+      origin && (origin.startsWith("cmb:") || origin=="undo" || origin=="redo");
     if (!knownOrigin(change.origin)) {
       // We did not produce this change. It may not be valid.
       // Check to see if it's valid, and if not cancel the change.
@@ -334,14 +334,14 @@ class BlockEditor extends Component {
         if (changes[0].origin === "undo") {
           for (let c of changes) c.origin = "cmb:undo";
           const undoFocusStack = getState().undoFocusStack;
-          const {oldFocusNId, newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
+          const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
           commitChanges(changes, true, focusHint);
           dispatch({type: 'UNDO'});
         } else if (changes[0].origin === "redo") {
           for (let c of changes) c.origin = "cmb:redo";
           const redoFocusStack = getState().redoFocusStack;
-          const {oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
+          const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
           commitChanges(changes, true, focusHint);
           dispatch({type: 'REDO'});

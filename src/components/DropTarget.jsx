@@ -9,8 +9,6 @@ import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import BlockComponent from './BlockComponent';
 import uuidv4 from 'uuid/v4';
-import {warn} from '../utils';
-import {ASTNode} from '../ast';
 import {drop, InsertTarget} from '../actions';
 
 
@@ -37,6 +35,7 @@ export class DropTargetContainer extends Component {
   
   static propTypes = {
     field: PropTypes.string.isRequired,
+    children: PropTypes.node.isRequired,
   }
 
   render() {
@@ -143,7 +142,7 @@ class ActualDropTarget extends BlockComponent {
     isOver: PropTypes.bool.isRequired,
   }
 
-  constructor(props, context) {
+  constructor(props) {
     super(props);
     this.isDropTarget = true;
 

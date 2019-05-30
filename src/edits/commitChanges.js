@@ -1,4 +1,3 @@
-import CodeMirror from 'codemirror';
 import {store} from '../store';
 import SHARED from '../shared';
 import {poscmp, adjustForChange, minimizeChange} from '../utils';
@@ -31,7 +30,7 @@ export function commitChanges(
   focusHint = undefined,
   astHint = undefined,
 ) {
-  let {ast: oldAST, collapsedList, focusId: oldFocusId} = store.getState();
+  let {ast: oldAST, focusId: oldFocusId} = store.getState();
   if (!isUndoOrRedo) {
     // Remember the previous focus. See the next `!isUndoOrRedo` block.
     let oldFocus = oldAST.getNodeById(oldFocusId);
@@ -52,7 +51,7 @@ export function commitChanges(
     store.dispatch({type: 'DO', focus: {oldFocusNId, newFocusNId}});
   }
   return {newAST, focusId};
-};
+}
 
 // Use the focus hint to determine focus, unless:
 // 1. There is no focus hint, or
@@ -82,7 +81,7 @@ function setFocus(changes, focusHint, newAST) {
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
 function computeFocusNodeFromChanges(changes, newAST) {
-  let insertion = false, focusId = false;
+  let insertion = false;
   let startLocs = changes.map(c => {
     c = minimizeChange(c);
     c.from = adjustForChange(c.from, c, true);

@@ -6,7 +6,7 @@ import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';
 import {insert, activate, Target} from '../actions';
-import {say, warn} from '../utils';
+import {say} from '../utils';
 
 
 class NodeEditable extends Component {
@@ -22,7 +22,7 @@ class NodeEditable extends Component {
 
   constructor(props) {
     super(props);
-    const {target, value, dispatch} = this.props
+    const {value, dispatch} = this.props;
     if (value === null) {
       dispatch((_, getState) => {
         const {ast} = getState();
