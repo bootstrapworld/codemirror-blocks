@@ -1,8 +1,8 @@
 import React from 'react';
-import hashObject from 'object-hash';
 import Node from '../../components/Node';
 import Args from '../../components/Args';
 import * as P from 'pretty-fast-pretty-printer';
+import * as Spec from '../../nodeSpec';
 
 import { ASTNode, pluralize, enumerateList } from '../../ast';
 import {DropTarget, DropTargetSibling} from '../../components/DropTarget';
@@ -20,13 +20,18 @@ export class Binop extends ASTNode {
   right: ASTNode;
 
   constructor(from, to, op, left, right, options = {}) {
-    super(from, to, 'binop', ['op', 'left', 'right'], options);
+    super(from, to, 'binop', options);
     // op is just a string, so not a part of children
     this.op = op;
     this.left = left;
     this.right = right;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('op'),
+    Spec.required('left'),
+    Spec.required('right'),
+  ])
 
   longDescription(level) {
     return `a ${this.op.describe(level)} expression with ${this.left.describe(level)} and ${this.right.describe(level)}`;
@@ -55,11 +60,15 @@ export class Bind extends ASTNode {
   ident: Literal;
 
   constructor(from, to, id: Literal, ann, options = {}) {
-    super(from, to, 's-bind', ['ident', 'ann'], options);
+    super(from, to, 's-bind', options);
     this.ident = id;
     this.ann = ann;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('ident'),
+    Spec.optional('ann'),
+  ])
 
   longDescription(level) {
     return `a bind expression with ${this.ident.value} and ${this.ann}`;
@@ -93,15 +102,23 @@ export class Func extends ASTNode {
   block: boolean
 
   constructor(from, to, name, args, retAnn, doc, body, block, options = {}) {
-    super(from, to, 'funDef', ['name', 'args', 'retAnn', 'body'], options);
+    super(from, to, 'funDef', options);
     this.name = name;
     this.args = args;
     this.retAnn = retAnn;
     this.doc = doc;
     this.body = body;
     this.block = block;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('name'),
+    Spec.list('args'),
+    Spec.optional('retAnn'),
+    Spec.value('doc'),
+    Spec.required('body'),
+    Spec.value('block'),
+  ])
 
   longDescription(level) {
     return `a func expression with ${this.name.describe(level)}, ${this.args} and ${this.body.describe(level)}`;
@@ -152,15 +169,23 @@ export class Lambda extends ASTNode {
 
   constructor(from, to, name, args, retAnn, doc, body, block, options = {}) {
     // TODO change this from function definition?
-    super(from, to, 'lambdaExp', ['name', 'args', 'retAnn', 'body'], options);
+    super(from, to, 'lambdaExp', options);
     this.name = name;
     this.args = args;
     this.retAnn = retAnn;
     this.doc = doc;
     this.body = body;
     this.block = block;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.optional('name'),
+    Spec.list('args'),
+    Spec.optional('retAnn'),
+    Spec.value('doc'),
+    Spec.required('body'),
+    Spec.value('block'),
+  ])
 
   longDescription(level) {
     return `a func expression with ${this.name.describe(level)}, ${this.args} and ${this.body.describe(level)}`;
@@ -207,11 +232,15 @@ export class Block extends ASTNode {
   name: string;
 
   constructor(from, to, stmts, name, options = {}) {
-    super(from, to, 'block', ['stmts'], options);
+    super(from, to, 'block', options);
     this.stmts = stmts;
     this.name = name;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('stmts'),
+    Spec.value('name'),
+  ])
 
   longDescription(level) {
     return `a sequence containing ${enumerateList(this.stmts, level)}`;
@@ -248,11 +277,15 @@ export class Let extends ASTNode {
   rhs: ASTNode;
 
   constructor(from, to, id, rhs, options = {}) {
-    super(from, to, 's-let', ['ident', 'rhs'], options);
+    super(from, to, 's-let', options);
     this.ident = id;
     this.rhs = rhs;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('ident'),
+    Spec.required('rhs'),
+  ])
 
   longDescription(level) {
     return `a let setting ${this.ident} to ${this.rhs}`;
@@ -282,11 +315,15 @@ export class Var extends ASTNode {
   rhs: ASTNode;
 
   constructor(from, to, id, rhs, options = {}) {
-    super(from, to, 's-var', ['ident', 'rhs'], options);
+    super(from, to, 's-var', options);
     this.ident = id;
     this.rhs = rhs;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('ident'),
+    Spec.required('rhs'),
+  ])
 
   longDescription(level) {
     return `a var setting ${this.ident} to ${this.rhs}`;
@@ -316,11 +353,15 @@ export class Assign extends ASTNode {
   rhs: ASTNode;
 
   constructor(from, to, id, rhs, options = {}) {
-    super(from, to, 's-assign', ['ident', 'rhs'], options);
+    super(from, to, 's-assign', options);
     this.ident = id;
     this.rhs = rhs;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('ident'),
+    Spec.required('rhs'),
+  ])
 
   longDescription(level) {
     return `an assignment setting ${this.ident} to ${this.rhs}`;
@@ -350,12 +391,17 @@ export class Construct extends ASTNode {
   values: ASTNode[];
 
   constructor(from, to, modifier, construktor, values, options = {}) {
-    super(from, to, 'constructor', ['modifier', 'construktor', 'values'], options);
+    super(from, to, 'constructor', options);
     this.modifier = modifier;
     this.construktor = construktor;
     this.values = values;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('modifier'),
+    Spec.required('construktor'),
+    Spec.list('values'),
+  ])
 
   longDescription(level) {
     return `${this.construktor.describe(level)} with ${enumerateList(this.values, level)}`;
@@ -389,11 +435,15 @@ export class FunctionApp extends ASTNode {
   args: ASTNode[];
 
   constructor(from, to, func, args, options={}) {
-    super(from, to, 'funApp', ['func', 'args'], options);
+    super(from, to, 'funApp', options);
     this.func = func;
     this.args = args;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('func'),
+    Spec.list('args'),
+  ])
 
   longDescription(level) {
     // if it's the top level, enumerate the args
@@ -435,10 +485,13 @@ export class Tuple extends ASTNode {
   fields: ASTNode[];
 
   constructor(from, to, fields, options = {}) {
-    super(from, to, 's-tuple', ['fields'], options);
+    super(from, to, 's-tuple', options);
     this.fields = fields;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('fields'),
+  ])
 
   longDescription(level) {
     return `tuple with ${enumerateList(this.fields, level)}`;
@@ -479,11 +532,15 @@ export class TupleGet extends ASTNode {
   index: ASTNode;
 
   constructor(from, to, base, index, options = {}) {
-    super(from, to, 'tuple-get', ['base', 'index'], options);
+    super(from, to, 'tuple-get', options);
     this.base = base;
     this.index = index;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('base'),
+    Spec.required('index'),
+  ])
 
   longDescription(level) {
     return `${this.index.describe(level)} of ${this.base.describe(level)}`;
@@ -518,12 +575,17 @@ export class Check extends ASTNode {
   keyword_check: boolean;
 
   constructor(from, to, name, body, keyword_check, options = {}) {
-    super(from, to, 's-check', ['body'], options);
+    super(from, to, 's-check', options);
     this.name = name;
     this.body = body;
     this.keyword_check = keyword_check;
-    super.hash = hashObject(['check', this.name, this.body.hash, this.keyword_check]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('name'),
+    Spec.required('body'),
+    Spec.value('keyword_check'),
+  ])
 
   longDescription(level) {
     return `check with ${this.body}`;
@@ -556,18 +618,24 @@ export class Check extends ASTNode {
 
 export class CheckTest extends ASTNode {
   op: ASTNode;
-  refinement: ASTNode;
+  refinement: ASTNode | null;
   lhs: ASTNode;
   rhs: ASTNode | null;
   
   constructor(from, to, check_op, refinement, lhs, rhs, options={}) {
-    super(from, to, 'checkTest', ['op', 'refinement', 'lhs', 'rhs'], options);
+    super(from, to, 'checkTest', options);
     this.op = check_op;
     this.refinement = refinement;
     this.lhs = lhs;
     this.rhs = rhs;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('op'),
+    Spec.optional('refinement'),
+    Spec.required('lhs'),
+    Spec.optional('rhs'),
+  ])
 
   longDescription(level) {
     // how to deal with when rhs is undefined
@@ -611,11 +679,15 @@ export class Bracket extends ASTNode {
   index: ASTNode;
 
   constructor(from, to, base, index, options = {}) {
-    super(from, to, 's-bracket', ['base', 'index'], options);
+    super(from, to, 's-bracket', options);
     this.base = base;
     this.index = index;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('base'),
+    Spec.required('index'),
+  ])
 
   longDescription(level) {
     return `${this.index.describe(level)} of ${this.base.describe(level)}`;
@@ -649,11 +721,15 @@ export class LoadTable extends ASTNode {
   sources: ASTNode[];
 
   constructor(from, to, rows, sources, options={}) {
-    super(from, to, 'loadTable', ['columns', 'sources'], options);
+    super(from, to, 'loadTable', options);
     this.columns = rows;
     this.sources = sources;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('columns'),
+    Spec.list('sources'),
+  ])
 
   longDescription(level) {
     return `${enumerateList(this.columns, level)} in a table from ${enumerateList(this.sources, level)}`;
@@ -692,10 +768,13 @@ export class LoadTable extends ASTNode {
 export class Paren extends ASTNode {
   expr: ASTNode;
   constructor(from, to, expr, options) {
-    super(from, to, 'paren', ['expr'], options);
+    super(from, to, 'paren', options);
     this.expr = expr;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('expr'),
+  ])
 
   longDescription(level) {
     return `${this.expr.describe(level)} in parentheses`;
@@ -720,11 +799,15 @@ export class IfPipe extends ASTNode {
   branches: ASTNode[];
   blocky: boolean;
   constructor(from, to, branches, blocky, options) {
-    super(from, to, 'ifPipeExpression', ['branches'], options);
+    super(from, to, 'ifPipeExpression', options);
     this.branches = branches;
     this.blocky = blocky;
-    super.hash = hashObject(['ifPipe', ...(this.branches.map(c => c.hash)), this.blocky]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('branches'),
+    Spec.value('blocky'),
+  ])
 
   longDescription(level) {
     return `${enumerateList(this.branches, level)} in an ask expression`;
@@ -771,11 +854,15 @@ export class IfPipeBranch extends ASTNode {
   test: ASTNode;
   body: ASTNode;
   constructor(from, to, test, body, options) {
-    super(from, to, 'condClause', ['test', 'body'], options);
+    super(from, to, 'condClause', options);
     this.test = test;
     this.body = body;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('test'),
+    Spec.required('body'),
+  ])
 
   longDescription(level) {
     return `${this.test.describe(level)} testing with ${this.body.describe(level)} body in an if pipe`;
@@ -810,12 +897,17 @@ export class ArrowArgnames extends ASTNode {
   ret: ASTNode; // TODO: is ret ever empty?
   uses_parens: boolean;
   constructor(from, to, args, ret, uses_parens, options) {
-    super(from, to, 'ArrowArgnames', ["args", "ret"], options);
+    super(from, to, 'ArrowArgnames', options);
     this.args = args;
     this.ret = ret;
     this.uses_parens = uses_parens;
-    super.hash = hashObject(['ArrowArgnames', ...(this.args.map(c => c.hash)), this.ret.hash, this.uses_parens]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('args'),
+    Spec.required('ret'),
+    Spec.value('uses_parens'),
+  ])
 
   longDescription(level) {
     return `parameters ${enumerateList(this.args, level)} resulting in ${this.ret.describe(level)}`;
@@ -846,11 +938,15 @@ export class Contract extends ASTNode {
   name: Literal;
 
   constructor(from, to, id: Literal, ann, options = {}) {
-    super(from, to, 's-contract', ['name', 'ann'], options);
+    super(from, to, 's-contract', options);
     this.name = id;
     this.ann = ann;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('name'),
+    Spec.required('ann'),
+  ])
 
   longDescription(level) {
     return `a contract with ${this.name.describe(level)} and ${this.ann.describe(level)}`;
@@ -871,10 +967,13 @@ export class Include extends ASTNode {
   mod: ASTNode;
 
   constructor(from, to, mod, options = {}) {
-    super(from, to, 's-include', ['mod'], options);
+    super(from, to, 's-include', options);
     this.mod = mod;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('mod'),
+  ])
 
   longDescription(level) {
     return `include the module ${this.mod.describe(level)}`;
@@ -896,11 +995,15 @@ export class SpecialImport extends ASTNode {
   args: ASTNode[];
 
   constructor(from, to, func, args, options={}) {
-    super(from, to, 'specialImport', ['func', 'args'], options);
+    super(from, to, 'specialImport', options);
     this.func = func;
     this.args = args;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('func'),
+    Spec.list('args'),
+  ])
 
   longDescription(level) {
     // if it's the top level, enumerate the args
@@ -942,11 +1045,15 @@ export class DataField extends ASTNode {
   value: ASTNode;
 
   constructor(from, to, name: string, value, options = {}) {
-    super(from, to, 's-data-field', ['value'], options);
+    super(from, to, 's-data-field', options);
     this.name = name;
     this.value = value;
-    super.hash = hashObject(["DataField", this.name, this.value.hash]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.value('name'),
+    Spec.required('value'),
+  ])
 
   longDescription(level) {
     return `a data field with name ${this.name} and value ${this.value.describe(level)}`;
@@ -967,10 +1074,13 @@ export class Reactor extends ASTNode {
   fields: ASTNode[];
   
   constructor(from, to, fields, options) {
-    super(from, to, 's-reactor', ['fields'], options);
+    super(from, to, 's-reactor', options);
     this.fields = fields;
-    super.hash = hashObject(['reactor', ...(this.fields.map(c => c.hash))]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('fields'),
+  ])
 
   longDescription(level) {
     return `${enumerateList(this.fields, level)} in a reactor`;
@@ -1005,11 +1115,15 @@ export class IfBranch extends ASTNode {
   test: ASTNode;
   body: ASTNode;
   constructor(from, to, test, body, options) {
-    super(from, to, 'if-clause', ['test', 'body'], options);
+    super(from, to, 'if-clause', options);
     this.test = test;
     this.body = body;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('test'),
+    Spec.required('body'),
+  ])
 
   longDescription(level) {
     return `${this.test.describe(level)} testing with ${this.body.describe(level)} body in an if branch`;
@@ -1078,11 +1192,15 @@ export class IfExpression extends ASTNode {
   branches: IfBranch[];
   blocky: boolean;
   constructor(from, to, branches, blocky, options) {
-    super(from, to, 'if-Expression', ['branches'], options);
+    super(from, to, 'if-Expression', options);
     this.branches = branches;
     this.blocky = blocky;
-    super.hash = hashObject(['ifExpression', ...(this.branches.map(c => c.hash)), this.blocky]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('branches'),
+    Spec.value('blocky'),
+  ])
 
   longDescription(level) {
     return `${enumerateList(this.branches, level)} in an if expression`;
@@ -1124,12 +1242,17 @@ export class IfElseExpression extends ASTNode {
   else_branch: IfBranch;
   blocky: boolean;
   constructor(from, to, branches, else_branch, blocky, options) {
-    super(from, to, 'if-else-Expression', ['branches', 'else_branch'], options);
+    super(from, to, 'if-else-Expression', options);
     this.branches = branches;
     this.else_branch = else_branch;
     this.blocky = blocky;
-    super.hash = hashObject(['ifElseExpression', ...(this.branches.map(c => c.hash)), this.else_branch.hash, this.blocky]);
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.list('branches'),
+    Spec.required('else_branch'),
+    Spec.value('blocky'),
+  ])
 
   longDescription(level) {
     return `${enumerateList([this.branches, this.else_branch], level)} in an if expression`;
@@ -1177,14 +1300,21 @@ export class For extends ASTNode {
   block: boolean
 
   constructor(from, to, iterator: ASTNode, bindings: ForBind[], ann, body: ASTNode, blocky: boolean, options = {}) {
-    super(from, to, 's-for', ['iterator', 'bindings', 'ann', 'body'], options);
+    super(from, to, 's-for', options);
     this.iterator = iterator;
     this.bindings = bindings;
     this.ann = ann;
     this.body = body;
     this.block = blocky;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('iterator'),
+    Spec.list('bindings'),
+    Spec.optional('ann'),
+    Spec.required('body'),
+    Spec.value('block'),
+  ])
 
   longDescription(level) {
     let ann_description = (this.ann == null)? "no annotation," : `annotation ${this.ann.describe(level)},`;
@@ -1229,11 +1359,15 @@ export class ForBind extends ASTNode {
   bind: Bind;
 
   constructor(from, to, bind: Bind, value: ASTNode, options = {}) {
-    super(from, to, 's-for-bind', ['bind', 'value'], options);
+    super(from, to, 's-for-bind', options);
     this.bind = bind;
     this.value = value;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('bind'),
+    Spec.required('value'),
+  ])
 
   longDescription(level) {
     return `a for binding with ${this.bind.describe(level)} and ${this.value.describe(level)}`;
@@ -1257,12 +1391,17 @@ export class When extends ASTNode {
   body: ASTNode;
   blocky: boolean;
   constructor(from, to, test, body, blocky, options) {
-    super(from, to, 's-when', ['test', 'body'], options);
+    super(from, to, 's-when', options);
     this.test = test;
     this.body = body;
     this.blocky = blocky;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('test'),
+    Spec.required('body'),
+    Spec.value('blocky'),
+  ])
 
   longDescription(level) {
     return `when statement testing ${this.test.describe(level)} with result ${this.body.describe(level)}`;
@@ -1299,11 +1438,15 @@ export class AnnotationApp extends ASTNode {
   args: ASTNode[];
 
   constructor(from, to, ann: ASTNode, args: ASTNode[], options = {}) {
-    super(from, to, 'annApp', ['ann', 'args'], options);
+    super(from, to, 'annApp', options);
     this.ann = ann;
     this.args = args;
-    super.hash = super.computeHash();
   }
+
+  static spec = Spec.nodeSpec([
+    Spec.required('ann'),
+    Spec.list('args'),
+  ])
 
   longDescription(level) {
     return `an application annotation with ${this.ann.describe(level)} and ${enumerateList(this.args, level)}`;
