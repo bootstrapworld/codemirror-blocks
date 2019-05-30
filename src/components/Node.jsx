@@ -91,8 +91,11 @@ class Node extends BlockComponent {
 
   handleKeyDown = e => {
     e.stopPropagation();
+    console.log("stopped navigation");
     if(this.props.inToolbar) return;
+    console.log("not in toolbar");
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
+    console.log("is error free");
 
     const {
       node, expandable, isCollapsed,
