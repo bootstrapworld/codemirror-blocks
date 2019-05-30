@@ -64,9 +64,8 @@ travel, record/replay, or hot reloading".
 ## Redux in React
 
 React is very protective of its state, so Redux needs special permission to be
-able to connect to it.
-
-[FILL]
+able to connect to it. This is done via the
+[connect](https://redux.js.org/basics/usage-with-react) function.
 
 
 ## Our use of Redux
