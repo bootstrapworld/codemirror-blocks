@@ -1,15 +1,19 @@
 ; This is a comment. It just stays where it is.
 
 ; We can have literals of various types
-42   ; number
-"hello"   ; string
-#\m    ; character
-#t     ; boolean
-quuz   ; symbol
+42   ; this is a number
+"hello"   ; this is a string
+#\m    ; this is a character
+#t     ; this is a boolean
+quuz   ; this is a symbol
 
+; we can have expressions
 (print "hello world")
 
-(+ 1 2)
+; a child of this expression has a nested comment
+(+ 
+	1  ; this is a nested comment
+	2)
 
 (* (- 1 2) (+ 9 8))
 
@@ -49,4 +53,5 @@ quuz   ; symbol
 
 ; we can also evaluate boolean expressions
 (and #t #f)
-(or #t #f)
+
+(or #t #f) ; this is an expression

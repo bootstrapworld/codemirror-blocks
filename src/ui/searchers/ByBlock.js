@@ -15,7 +15,7 @@ export default {
   setting: {blockType: ''},
   component: class extends React.Component {
     static propTypes = {
-      cmbState: PropTypes.object.isRequired,
+      cmbState: PropTypes.object,
       setting: PropTypes.object.isRequired,
       onChange: PropTypes.func.isRequired,
     }

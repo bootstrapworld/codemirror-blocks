@@ -1,7 +1,7 @@
 import {UnControlled as CodeMirror} from 'react-codemirror2';
 import React  from 'react';
 import {DropNodeTarget} from '../dnd';
-import {dropNode} from '../actions';
+import {drop, OverwriteTarget} from '../actions';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
 import {playSound, BEEP} from '../sound';
@@ -17,9 +17,8 @@ export default
   const isDroppedOnWhitespace = !roots.some(r => r.replacedWith.contains(droppedOn));
 
   if (isDroppedOnWhitespace) {
-    let loc = SHARED.cm.coordsChar({left, top});
-    let dest = {from: loc, to: loc, isDropTarget: true};
-    return this.props.dispatch(dropNode(monitor.getItem(), dest));
+    const loc = SHARED.cm.coordsChar({left, top});
+    drop(monitor.getItem(), new OverwriteTarget(loc, loc));
   } else { // beep and make it a no-op
     playSound(BEEP);
   }

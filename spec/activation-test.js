@@ -55,6 +55,8 @@ describe("when dealing with node activation,", function () {
 
   it('should activate the first node when down is pressed', async function () {
     await wait(DELAY);
+    this.cmb.setCursor({line:0,ch:0}); // set cursor to just before first literal
+    await wait(DELAY);
     keyDown("ArrowDown");
     await wait(DELAY);
     expect(this.activeNode()).toBe(this.literal1);

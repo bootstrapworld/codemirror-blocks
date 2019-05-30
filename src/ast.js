@@ -16,6 +16,8 @@ export function pluralize(noun, set) {
 
 export const descDepth = 1;
 
+export const prettyPrintingWidth = 80;
+
 // This is the root of the *Abstract Syntax Tree*.  parse implementations are
 // required to spit out an `AST` instance.
 export class AST {
@@ -83,10 +85,10 @@ export class AST {
       nodes.forEach((node, i) => {
         this.validateNode(node);
         if (node.id === undefined) {
+          // May be defined, if this piece of AST came from the previous AST.
           node.id = uuidv4();
         }
         node.parent = parent;
-        node.path = parent ? parent.path + ("," + i) : i.toString();
         node.level = level;
         node["aria-setsize"]  = nodes.length;
         node["aria-posinset"] = i + 1;
@@ -99,13 +101,19 @@ export class AST {
         this.nodeNIdMap.set(node.nid, node);
         lastNode = node;
         loop([...node.children()], node, level + 1);
+        node.hash = node.spec.hash(node); // Relies on child hashes; must be bottom-up
       });
     };
     loop(this.rootNodes, null, 1);
   }
 
   validateNode(node) {
-    const newFieldNames = ["id", "parent", "path", "level", "nid", "prev", "next"];
+    const astFieldNames =
+          ["from", "to", "type", "options", "spec", "__alreadyValidated", "element"];
+    // Check that the node doesn't define any of the fields we're going to add to it.
+    const newFieldNames =
+          ["id", "parent", "level", "nid", "prev", "next", "hash",
+           "aria-setsize", "aria-posinset"];
     if (!node.__alreadyValidated) {
       for (let p in node) {
         if (newFieldNames.includes(p)) {
@@ -114,17 +122,12 @@ export class AST {
       }
     }
     node.__alreadyValidated = true;
+    // Check that the node declares all of the required fields and methods.
     if (typeof node.type !== "string") {
       throw new Error(`ASTNodes must each have a fixed 'type', which must be a string.`);
     }
-    if (typeof node.hash !== "string") {
-      throw new Error(`ASTNode.hash is required and must be a string. This rule was broken by ${node.type}.`);
-    }
-    if (!(node.keys instanceof Array)) {
-      throw new Error(`ASTNode.keys is required and must be an array of strings. This rule was broken by ${node.type}.`);
-    }
     if (typeof node.options !== "object") {
-      throw new Error(`ASTNode.keys is required and must be an object. This rule was broken by ${node.type}.`);
+      throw new Error(`ASTNode.options is optional, but if provided it must be an object. This rule was broken by ${node.type}.`);
     }
     if (!node.from || !node.to
         || typeof node.from.line !== "number" || typeof node.from.ch !== "number"
@@ -137,6 +140,23 @@ export class AST {
     }
     if (typeof node.render !== "function") {
       throw new Error(`ASTNode ${node.type} needs to have a render() method, but does not.`);
+    }
+    // Check that the node obeys its own spec.
+    if (!node.spec) {
+      throw new Error(`ASTNode ${node.type} needs to have a static 'spec' of type NodeSpec, declaring the types of its fields.`);
+    }
+    node.spec.validate(node);
+    // Check that the node doesn't contain any extraneous data.
+    // (If it does, its hash is probably wrong. All data should be declared in the spec.)
+    let speccedFieldNames = node.spec.fieldNames();
+    for (let field in node) {
+      if (node.hasOwnProperty(field)) {
+        if (!newFieldNames.includes(field)
+            && !speccedFieldNames.includes(field)
+            && !astFieldNames.includes(field)) {
+          throw new Error(`An ASTNode ${node.type} contains a field called '${field}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`);
+        }
+      }
     }
   }
 
@@ -299,7 +319,7 @@ export class AST {
 // Every node in the AST inherits from the `ASTNode` class, which is used to
 // house some common attributes.
 export class ASTNode {
-  constructor(from, to, type, keys, options) {
+  constructor(from, to, type, options) {
 
     // The `from` and `to` attributes are objects containing the start and end
     // positions of this node within the source document. They are in the format
@@ -311,19 +331,6 @@ export class ASTNode {
     // string sepcifying what type of node it is. This helps with debugging and
     // with writing renderers.
     this.type = type;
-
-    // A node can contain other nodes in its fields. For example, a
-    // function call node may have a field called `func` that contains
-    // the function expression being called, and a field called `args`
-    // that contains an Array of the argument expressions. Fields like
-    // `func` and `args` that can contain other nodes must be listed
-    // under `keys`. In this example, `keys === ["func", "args"]`.
-    // Each key must name a field that contains one of the following:
-    //
-    // 1. an ASTNode
-    // 2. An Array of ASTNodes
-    // 3. null (this is to allow an optional ASTNode)
-    this.keys = keys;
 
     // Every node also has an `options` attribute, which is just an open ended
     // object that you can put whatever you want in it. This is useful if you'd
@@ -341,23 +348,9 @@ export class ASTNode {
     if (options.comment) {
       options.comment.id = "block-node-" + this.id + "-comment";
     }
-  }
 
-  // Every node must, on construction, set its own `.hash` field. Its hash must
-  // be determined by its type, its (ordered) children, and any other content it
-  // contains, but _not_ on its `srcloc` or `id`. Subtrees with identical values
-  // must have the same hash.
-  //
-  // `computeHash()` computes a hash for a node in the common case where the
-  // _only_ content of a node is `this.type` and `this.children()`. However,
-  // some nodes have other content. For example, a Binop node could have an `op`
-  // field that's a string like "+" or "*". In this case, `computeHash()` will
-  // not include `op` in the hash because `op` is not a child (only ASTNodes are
-  // children). Thus you would need to compute `.hash` yourself. For other
-  // examples of node types that cannot rely on `.computeHash()`, see Literal and
-  // Comment.
-  computeHash() {
-    return this.hash = hashObject([this.type, [...this.children()].map(c => c.hash)]);
+    // Make the spec more easily available.
+    this.spec = this.constructor.spec;
   }
 
   toDescription(_level){
@@ -365,17 +358,17 @@ export class ASTNode {
   }
 
   toString() {
-    return this.pretty().display(80).join("\n");
+    return this.pretty().display(prettyPrintingWidth).join("\n");
   }
 
   // Produces an iterator over the children of this node.
   children() {
-    return new ChildrenIterator(this, this.keys);
+    return this.spec.children(this);
   }
 
   // Produces an iterator over all descendants of this node, including itself.
   descendants() {
-    return new DescendantsIterator(this, this.keys);
+    return new DescendantsIterator(this);
   }
 
   // srcRange :: -> {from: {line, ch}, to: {line, ch}}
@@ -408,39 +401,14 @@ function renderASTNode(props) {
 }
 
 
-class ChildrenIterator {
-  constructor(self, keys) {
-    this.self = self;
-    this.keys = keys;
-  }
-
-  *[Symbol.iterator]() {
-    for (let i in this.keys) {
-      let key = this.keys[i];
-      let value = this.self[key];
-      if (value instanceof ASTNode) {
-        yield value;
-      } else if (value instanceof Array) {
-        for (let j in value) {
-          let element = value[j];
-          if (element instanceof ASTNode) {
-            yield element;
-          }
-        }
-      }
-    }
-  }
-}
-
 class DescendantsIterator {
-  constructor(self, keys) {
-    this.self = self;
-    this.keys = keys;
+  constructor(node) {
+    this.node = node;
   }
 
   *[Symbol.iterator]() {
-    yield this.self;
-    for (let child of this.self.children()) {
+    yield this.node;
+    for (let child of this.node.children()) {
       for (let descendant of child.descendants()) {
         yield descendant;
       }

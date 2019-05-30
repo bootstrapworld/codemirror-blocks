@@ -17,6 +17,25 @@ export function maxpos(a, b) {
   return poscmp(a, b) >= 0 ? a : b;
 }
 
+// srcRangeIncludes(
+//   outerRange: {from: Pos, to: Pos},
+//   innerRange: {from: Pos, to: Pos})
+// -> boolean
+//
+// Returns true iff innerRange is contained within outerRange.
+export function srcRangeIncludes(outerRange, innerRange) {
+  return poscmp(outerRange.from, innerRange.from) <= 0
+    && poscmp(innerRange.to, outerRange.to) <= 0;
+}
+
+// srcRangeContains(range: {from: Pos, to: Pos}, pos: Pos) -> boolean
+//
+// Returns true iff `pos` is inside of `range`.
+// (Being on the boundary counts as inside.)
+export function srcRangeContains(range, pos) {
+  return poscmp(range.from, pos) <= 0 && poscmp(pos, range.to);
+}
+
 export function skipWhile(skipper, start, next) {
   let now = start;
   while (skipper(now)) {
@@ -29,6 +48,10 @@ export function assert(x) {
   if (!x) {
     throw new Error("assertion fails");
   }
+}
+
+export function warn(origin, message) {
+  console.warn(`CodeMirrorBlocks - ${origin} - ${message}`);
 }
 
 export function partition(arr, f) {
@@ -60,20 +83,6 @@ export function partition(arr, f) {
 //     if (callNow) func.apply(context, args);
 //   };
 // }
-
-export function copyToClipboard(text) {
-  SHARED.buffer.value = text;
-  SHARED.buffer.select();
-  document.execCommand('copy');
-}
-
-export function pasteFromClipboard(done) {
-  SHARED.buffer.value = '';
-  SHARED.buffer.focus();
-  setTimeout(() => {
-    done(SHARED.buffer.value);
-  }, 50);
-}
 
 export function isControl(e) {
   return ISMAC ? e.metaKey : e.ctrlKey;
@@ -183,60 +192,6 @@ export function isDummyPos(pos) {
   return pos.line === -1 && pos.ch === 0;
 }
 
-export function posAfterChanges(changes, pos, isFrom) {
-  changes.forEach(c => pos = adjustForChange(pos, c, isFrom));
-  return pos;
-}
-
-// computeFocusNodeFromChanges : [CMchanges], AST -> Number
-// compute the focusId by identifying the node in the newAST that was
-// (a) most-recently added (if there's any insertion)
-// (b) before the first-deleted (in the case of deletion)
-// (c) first root node (in the case of deleting a pre-existing first node)
-// (d) null (in the case of deleting the only nodes in the tree)
-export function computeFocusNodeFromChanges(changes, newAST) {
-  let insertion = false, focusId = false;
-  let startLocs = changes.map(c => {
-    c.from = adjustForChange(c.from, c, true);
-    c.to   = adjustForChange(c.to,   c, false);
-    if(c.text.join("").length > 0) insertion = c; // remember the most-recent insertion
-    return c.from;                                // return the starting srcLoc of the change
-  });
-  if(insertion) {
-    // Case A: grab the inserted node, *or* the node that ends in
-    // insertion's ending srcLoc (won't ever be null post-insertion)
-    let insertedNode = newAST.getNodeAt(insertion.from, insertion.to);
-    let lastNodeInserted = newAST.getNodeBeforeCur(insertion.to);
-    return insertedNode || lastNodeInserted;
-  } else {
-    startLocs.sort(poscmp);                                // sort the deleted ranges
-    let focusNode = newAST.getNodeBeforeCur(startLocs[0]); // grab the node before the first
-    // Case B: If the node exists, use the Id. 
-    // Case C: If not, use the first node...unless...
-    // Case D: the tree is empty, so return null
-    return focusNode || newAST.getFirstRootNode() || null;
-  }
-}
-
-// Compute the position of the end of a change (its 'to' property refers to the pre-change end).
-// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
-function changeEnd({from, to, text}) {
-  if (!text) return to;
-  let lastText = text[text.length-1];
-  return {line: from.line+text.length-1, ch: lastText.length+(text.length==1 ? from.ch : 0)};
-}
-
-// Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
-// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
-function adjustForChange(pos, change, from) {
-  if (poscmp(pos, change.from) < 0)           return pos;
-  if (poscmp(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
-  if (poscmp(pos, change.to) <= 0)            return changeEnd(change);
-  let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
-  if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
-  return {line: line, ch: ch};
-}
-
 // Announce, for testing purposes, that something important is about to update
 // (like the DOM). Make sure to call `ready` after.
 export function notReady(element) {
@@ -266,4 +221,50 @@ export function waitUntilReady() {
       };
     }
   });
+}
+
+// Compute the position of the end of a change (its 'to' property refers to the pre-change end).
+// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
+export function changeEnd({from, to, text}) {
+  if (!text) return to;
+  let lastLine = text[text.length - 1];
+  return {
+    line: from.line + text.length - 1,
+    ch: lastLine.length + (text.length == 1 ? from.ch : 0)
+  };
+}
+
+// Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
+// based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
+export function adjustForChange(pos, change, from) {
+  if (poscmp(pos, change.from) < 0)           return pos;
+  if (poscmp(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
+  if (poscmp(pos, change.to) <= 0)            return changeEnd(change);
+  let line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
+  if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
+  return {line: line, ch: ch};
+}
+
+// Minimize a CodeMirror-style change object, by excluding any shared prefix
+// between the old and new text. Mutates part of the change object.
+export function minimizeChange({from, to, text, removed, origin=undefined}) {
+  if (!removed) removed = SHARED.cm.getRange(from, to).split("\n");
+  // Remove shared lines
+  while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
+    text.shift();
+    removed.shift();
+    from.line += 1;
+    from.ch = 0;
+  }
+  // Remove shared chars
+  let n = 0;
+  for (let i in text[0]) {
+    if (text[0][i] !== removed[0][i]) break;
+    n = (+i) + 1;
+  }
+  text[0] = text[0].substr(n);
+  removed[0] = removed[0].substr(n);
+  from.ch += n;
+  // Return the result.
+  return origin ? {from, to, text, removed, origin} : {from, to, text, removed};
 }

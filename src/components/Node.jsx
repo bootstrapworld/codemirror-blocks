@@ -4,10 +4,11 @@ import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
-import {dropNode, deleteNodes, copySelectedNodes,
-  pasteNodes, activate} from '../actions';
+import {drop, delete_, copy, paste, activate, setCursor,
+        InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
+import {NodeContext, DropTargetContext, findAdjacentDropTargetId} from './DropTarget';
 import {isErrorFree} from '../store';
 import SHARED from '../shared';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
@@ -16,9 +17,6 @@ import {store} from '../store';
 import {playSound, BEEP} from '../sound';
 
 
-export const NodeContext = React.createContext({
-  node: null,
-});
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -26,10 +24,12 @@ export const NodeContext = React.createContext({
 
 @DragNodeSource
 @DropNodeTarget(function(monitor) {
-  let node = store.getState().ast.getNodeById(this.props.node.id);
-  return this.props.dispatch(dropNode(monitor.getItem(), node.srcRange()));
+  const node = store.getState().ast.getNodeById(this.props.node.id);
+  return drop(monitor.getItem(), new ReplaceNodeTarget(node));
 })
 class Node extends BlockComponent {
+  static contextType = DropTargetContext;
+
   static defaultProps = {
     children: null,
     normallyEditable: false,
@@ -69,7 +69,6 @@ class Node extends BlockComponent {
   handleClick = e => {
     if(!this.props.inToolbar) e.stopPropagation(); // prevent ancestors to steal focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
-
     this.props.activate(this.props.node.id, {allowMove: false});
   }
 
@@ -97,7 +96,6 @@ class Node extends BlockComponent {
     const {
       node, expandable, isCollapsed,
       uncollapse, collapse, normallyEditable, setCursor,
-      handleCopy, handlePaste, handleDelete,
       dispatch
     } = this.props;
 
@@ -263,23 +261,20 @@ class Node extends BlockComponent {
       // delete seleted nodes
       case 'delete':
         e.preventDefault();
-        handleDelete(node.id, nodeSelections => {
-          if (nodeSelections.length == 0) {
-            say('Nothing selected');
-          } else {
-            sayActionForNodes(nodeSelections.map(ast.getNodeById), "deleted");
-          }
-          return nodeSelections;
-        });
+        if (selections.length === 0) {
+          say('Nothing selected');
+          return;
+        }
+        const nodesToDelete = selections.map(ast.getNodeById);
+        sayActionForNodes(nodesToDelete, "deleted");
+        delete_(nodesToDelete);
         return;
 
       // insert-right
       case 'insertRight':
         e.preventDefault();
         if (e.ctrlKey) { // strictly want ctrlKey
-          if (this.props.onSetRight) {
-            this.props.onSetRight(true);
-          } else {
+          if (!this.setRight()) {
             setCursor(node.to);
           }
         }
@@ -288,9 +283,7 @@ class Node extends BlockComponent {
       // insert-left
       case 'insertLeft':
         e.preventDefault();
-        if (this.props.onSetLeft) {
-          this.props.onSetLeft(true);
-        } else {
+        if (!this.setLeft()) {
           setCursor(node.from);
         }
         return;
@@ -298,31 +291,45 @@ class Node extends BlockComponent {
       // copy
       case 'copy':
         e.preventDefault();
-        handleCopy(node.id, nodeSelections => {
-          // if no nodes are selected, do it on focused node's id instead
-          let nodeIds = nodeSelections.length == 0 ? [node.id] : nodeSelections;
-          sayActionForNodes(nodeIds.map(ast.getNodeById), "copied");
-          return nodeIds;
-        });
+        // if no nodes are selected, do it on focused node's id instead
+        const nodeIds = selections.length == 0 ? [node.id] : selections;
+        const nodesToCopy = nodeIds.map(ast.getNodeById);
+        sayActionForNodes(nodesToCopy, "copied");
+        copy(nodesToCopy);
         return;
 
       // paste
       case 'paste':
-        handlePaste(node.id, e.shiftKey);
+        if (selections.includes(id)) {
+          paste(new ReplaceNodeTarget(node));
+        } else if (node.parent) {
+          // We're inside the AST somewhere. Try to paste to the left/right.
+          const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
+          const target = new InsertTarget(this.context.node, this.context.field, pos);
+          if (target) {
+            paste(target);
+          } else {
+            let direction = e.shiftKey ? "before" : "after";
+            say(`Cannot paste ${direction} this node.`);
+          }
+        } else {
+          // We're at a root node. Insert to the left or right, at the top level.
+          const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
+          paste(new OverwriteTarget(pos, pos));
+        }
         return;
 
       // cut
       case 'cut':
         e.preventDefault();
-        handleCopy(node.id, nodeSelections => {
-          if (nodeSelections.length == 0) {
-            say('Nothing selected');
-          } else {
-            sayActionForNodes(nodeSelections.map(ast.getNodeById), "cut");
-          }
-          return nodeSelections;
-        });
-        handleDelete(id, (nodes) => nodes);
+        if (selections.length === 0) {
+          say('Nothing selected');
+          return;
+        }
+        const nodesToCut = selections.map(ast.getNodeById);
+        sayActionForNodes(nodesToCut, "cut");
+        copy(nodesToCut);
+        delete_(nodesToCut);
         return;
 
       // go to the very first node in the AST
@@ -387,6 +394,26 @@ class Node extends BlockComponent {
 
   handleDisableEditable = () => this.setState({editable: false});
 
+  setLeft() {
+    const dropTargetId = findAdjacentDropTargetId(this.props.node, true);
+    if (dropTargetId) {
+      this.props.setEditable(dropTargetId, true);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  setRight() {
+    const dropTargetId = findAdjacentDropTargetId(this.props.node, false);
+    if (dropTargetId) {
+      this.props.setEditable(dropTargetId, true);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   isLocked() {
     if (SHARED.options && SHARED.options.renderOptions) {
       const lockedList = SHARED.options.renderOptions.lockNodesOfType;
@@ -437,7 +464,7 @@ class Node extends BlockComponent {
                       onDisableEditable={this.handleDisableEditable}
                       extraClasses={classes}
                       isInsertion={false}
-                      node={node}
+                      target={new ReplaceNodeTarget(node)}
                       value={this.state.value}
                       onChange={this.handleChange}
                       contentEditableProps={props} />
@@ -495,11 +522,9 @@ const mapDispatchToProps = dispatch => ({
   dispatch,
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
-  setCursor: cur => dispatch({type: 'SET_CURSOR', cur}),
-  handleDelete: (id, selectionEditor) => dispatch(deleteNodes(id, selectionEditor)),
-  handleCopy: (id, selectionEditor) => dispatch(copySelectedNodes(id, selectionEditor)),
-  handlePaste: (id, isBackward) => dispatch(pasteNodes(id, isBackward)),
+  setCursor: cur => dispatch(setCursor(cur)),
   activate: (id, options) => dispatch(activate(id, options)),
+  setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Node);

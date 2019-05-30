@@ -27,9 +27,6 @@ describe('The CodeMirrorBlocks Class', function() {
     const container = document.getElementById('cmb-editor');
     this.blocks = new CodeMirrorBlocks(container, {value: ""}, wescheme);
     this.blocks.setBlockMode(true);
-
-    console.log("BLOCKS:", this.blocks);
-    console.log("AST:", this.blocks.getAst());
   });
 
   afterEach(function() {
@@ -249,7 +246,6 @@ describe('The CodeMirrorBlocks Class', function() {
           this.ast = this.blocks.getAst();
           this.firstRoot = this.ast.rootNodes[0];
           this.func = this.ast.rootNodes[0].func;
-          this.wsAfterFunc = this.func.element.nextElementSibling;
           this.argWS = this.firstRoot.element.getElementsByClassName('blocks-args')[0].firstChild;
         }); 
         
@@ -258,13 +254,6 @@ describe('The CodeMirrorBlocks Class', function() {
           await wait(DELAY);
           //expect(this.blocks.setQuarantine).toHaveBeenCalled();
         }); 
-        
-        it('should allow editing the whitespace after the function', async function() {
-          doubleClick(this.wsAfterFunc);
-          await wait(DELAY);
-          //expect(this.blocks.setQuarantine).toHaveBeenCalled();
-        });
-        
       });
 
       describe('and specifically when editing it,', function() {

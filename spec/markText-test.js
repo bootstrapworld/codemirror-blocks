@@ -6,7 +6,7 @@ import { store } from '../src/store';
 import { wait, cleanupAfterTest } from './support/test-utils';
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 750;
+const DELAY = 250;
 /* eslint-enable */ //temporary
 
 describe('The CodeMirrorBlocks Class', function () {
