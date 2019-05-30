@@ -5,10 +5,8 @@ import * as P from 'pretty-fast-pretty-printer';
 import * as Spec from '../../nodeSpec';
 
 import { ASTNode, pluralize, enumerateList } from '../../ast';
-import {DropTarget, DropTargetSibling} from '../../components/DropTarget';
+import {DropTarget, DropTargetContainer} from '../../components/DropTarget';
 import { Literal } from '../../nodes';
-
-// Binop ABlank Bind Func Sekwence Var Assign Let
 
 // each class has constructor longDescription pretty render
 
@@ -144,7 +142,7 @@ export class Func extends ASTNode {
     // TODO: show doc
     let name = this.name.reactElement();
     let body = this.body.reactElement();
-    let args = <Args>{this.args}</Args>;
+    let args = <Args field="args">{this.args}</Args>;
     let header_ending = <span>
       {(this.retAnn != null)? <>&nbsp;->&nbsp;{this.retAnn.reactElement()}</> : null}{this.block ? <>&nbsp;{"block"}</> : null}
     </span>;
@@ -212,7 +210,7 @@ export class Lambda extends ASTNode {
     // TODO: show doc
     let name = (this.name == null)? null : this.name.reactElement();
     let body = this.body.reactElement();
-    let args = <Args>{this.args}</Args>;
+    let args = <Args field="args">{this.args}</Args>;
     let header_ending = <span>
       {(this.retAnn != null)? <>&nbsp;->&nbsp;{this.retAnn.reactElement()}</> : null}{this.block ? <>&nbsp;{"block"}</> : null}
     </span>;
@@ -255,9 +253,9 @@ export class Block extends ASTNode {
     let statements = [];
     this.stmts.forEach((element, key) => {
       let span = <span key={key}>
-        <DropTarget />
+        <DropTarget/>
         {NEWLINE}
-        <DropTargetSibling  node={element} left={true} right={true} />
+        {element.reactElement()}
         {NEWLINE}
       </span>
       statements.push(span);
@@ -266,7 +264,10 @@ export class Block extends ASTNode {
     // include name here? is it ever a time when it's not block?
     return (
       <Node node = {this} {...props}>
-        <span className="blocks-arguments">{statements}</span>
+        <span className="blocks-arguments">
+          <DropTargetContainer field="stmts">
+            {statements}
+          </DropTargetContainer></span>
       </Node>
     )
   }
@@ -420,7 +421,7 @@ export class Construct extends ASTNode {
 
   render(props) {
     let construktor = this.construktor.reactElement();
-    let values = <Args>{this.values}</Args>;
+    let values = <Args field="values">{this.values}</Args>;
     return (
       <Node node={this} {...props}>
         <span className="blocks-construct">{construktor}</span>
@@ -470,10 +471,10 @@ export class FunctionApp extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-funapp">
-          <Args>{[this.func]}</Args>
+          <Args field="func">{[this.func]}</Args>
         </span>
         <span className="blocks-args">
-          <Args>{this.args}</Args>
+          <Args field="args">{this.args}</Args>
         </span>
     </Node>
     );
@@ -830,7 +831,7 @@ export class IfPipe extends ASTNode {
       let span = <span key={index}>
         <DropTarget />
         {NEWLINE}
-        <DropTargetSibling node={element} left={true} right={true} />
+        {element.reactElement()}
         {NEWLINE}
       </span>;
       branches.push(span);
@@ -843,7 +844,9 @@ export class IfPipe extends ASTNode {
           ask:
         </span>
         <div className="blocks-cond-table">
-          {branches}
+          <DropTargetContainer field="branches">
+            {branches}
+          </DropTargetContainer>
         </div>
       </Node>
     );
@@ -1217,7 +1220,7 @@ export class IfExpression extends ASTNode {
       let span = <span key={index}>
         <DropTarget />
         {NEWLINE}
-        <DropTargetSibling node={element} left={true} right={true} />
+        {element.reactElement()}
         {NEWLINE}
       </span>;
       branches.push(span);
@@ -1230,7 +1233,9 @@ export class IfExpression extends ASTNode {
           if:
         </span>
         <div className="blocks-cond-table">
-          {branches}
+          <DropTargetContainer field="branches">
+            {branches}
+          </DropTargetContainer>
         </div>
       </Node>
     );
@@ -1269,7 +1274,7 @@ export class IfElseExpression extends ASTNode {
       let span = <span key={index}>
         <DropTarget />
         {NEWLINE}
-        <DropTargetSibling node={element} left={true} right={true} />
+        {element.reactElement()}
         {NEWLINE}
       </span>;
       branches.push(span);
@@ -1282,7 +1287,9 @@ export class IfElseExpression extends ASTNode {
           if:
         </span>
         <div className="blocks-cond-table">
-          {branches}
+          <DropTargetContainer field="branches">
+            {branches}
+          </DropTargetContainer>
           {NEWLINE}
           else:{NEWLINE}
           {this.else_branch.reactElement()}
