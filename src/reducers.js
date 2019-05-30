@@ -49,7 +49,8 @@ export const reducer = (
     case 'ADD_MARK':
       return {...state, markedMap: state.markedMap.set(action.id, action.mark)};
     case 'CLEAR_MARK':
-      return {...state}; // NOTE(Emmanuel): simply returning 'state' here will NOT work!
+      state.markedMap.delete(action.id);
+      return {...state};
     case 'DO':
       return {...state, undoFocusStack: [...state.undoFocusStack, action.focus], redoFocusStack: []};
     case 'UNDO':
