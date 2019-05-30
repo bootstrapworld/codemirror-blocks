@@ -1,5 +1,5 @@
 import * as P from 'pretty-fast-pretty-printer';
-import {warn, poscmp, srcRangeContains} from '../utils';
+import {warn, poscmp} from '../utils';
 import {Required, Optional, List, Value} from '../nodeSpec';
 import {ASTNode} from '../ast';
 
@@ -149,7 +149,7 @@ class FakeInsertNode extends ASTNode {
     this.text = text;
   }
 
-  toDescription(level) {
+  toDescription(_level) {
     return "";
   }
 
@@ -158,7 +158,7 @@ class FakeInsertNode extends ASTNode {
     return P.vertArray(lines.map(P.txt));
   }
 
-  render(props) {
+  render(_props) {
     warn('fakeAstEdits', "FakeInsertNode didn't expect to be rendered!");
   }
 }
@@ -169,7 +169,7 @@ class FakeBlankNode extends ASTNode {
     super(from, to, 'fakeBlankNode', options);
   }
 
-  toDescription(level) {
+  toDescription(_level) {
     return "";
   }
 
@@ -177,7 +177,7 @@ class FakeBlankNode extends ASTNode {
     return P.txt("...");
   }
 
-  render(props) {
+  render(_props) {
     warn('fakeAstEdits', "FakeBlankNode didn't expect to be rendered!");
   }
 }

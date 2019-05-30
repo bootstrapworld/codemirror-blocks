@@ -39,7 +39,7 @@ export function value(fieldName) {
 
 class NodeSpec {
   constructor(childSpecs) {
-    if (!childSpecs instanceof Array) {
+    if (!(childSpecs instanceof Array)) {
       throw new Error("NodeSpec: expected to receive an array of required/optional/list specs.");
     }
     for (const childSpec of childSpecs) {
@@ -136,7 +136,7 @@ export class Optional extends ChildSpec {
 
   validate(parent) {
     let child = parent[this.fieldName];
-    if (true || child !== null && !(child instanceof ASTNode)) {
+    if (child !== null && !(child instanceof ASTNode)) {
       throw new Error(`Expected the optional field '${this.fieldName}' of '${parent.type}' to contain an ASTNode or null.`);
     }
   }
@@ -170,7 +170,7 @@ export class Value extends ChildSpec {
     this.fieldName = fieldName;
   }
 
-  validate(parent) {
+  validate(_parent) {
     // Any value is valid, even `undefined`, so there's nothing to check.
   }
 }

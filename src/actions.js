@@ -1,10 +1,9 @@
-import {withDefaults, say, poscmp, srcRangeIncludes, minposOfArray, warn} from './utils';
+import {withDefaults, say, poscmp, srcRangeIncludes, warn} from './utils';
 import SHARED from './shared';
 import {store} from './store';
-import {playSound, WRAP} from './sound';
-import {ASTNode} from './ast';
+import {playSound} from './sound';
 import {performEdits, edit_insert, edit_delete, edit_replace,
-        edit_overwrite, padCopiedText} from './edits/performEdits';
+        edit_overwrite} from './edits/performEdits';
 
 
 // All editing actions are defined here.
@@ -121,14 +120,14 @@ export function drop(src, target, onSuccess, onError) {
 
 // Set the cursor position.
 export function setCursor(cur) {
-  return (dispatch, getState) => {
+  return (dispatch, _getState) => {
     if (SHARED.cm && cur) {
       SHARED.cm.focus();
       SHARED.search.setCursor(cur);
       SHARED.cm.setCursor(cur);
     }
     dispatch({type: 'SET_CURSOR', cur});
-  }
+  };
 }
 
 let queuedAnnouncement = null;

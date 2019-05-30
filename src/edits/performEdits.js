@@ -158,7 +158,7 @@ class OverwriteEdit extends Edit {
     if (this.changeObject) {
       return newAST.getNodeBeforeCur(changeEnd(this.changeObject));
     } else {
-      warn('OverwriteEdit', `Cannot determine focus hint before `.toChangeObject(ast)` is called.`);
+      warn('OverwriteEdit', `Cannot determine focus hint before .toChangeObject(ast) is called.`);
       return "fallback";
     }
   }
@@ -275,7 +275,7 @@ class ReplaceRootEdit extends Edit {
     return true;
   }
 
-  toChangeObject(ast) {
+  toChangeObject(_ast) {
     return {
       text: this.text.split("\n"),
       from: this.from,
