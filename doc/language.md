@@ -94,9 +94,14 @@ We'll walk through the code to add this kind of node, piece by piece.
 
 ### Setup
 
-Our new node type must extend `ASTNode`: [FILL: include import statement for ASTNode.]
+Our new node type must extend `ASTNode`:
 
-    class VariableDefinition extends ASTNode {
+```js
+import { ASTNode } from '../../ast';
+
+class VariableDefinition extends ASTNode {
+  ...
+```
 
 And we'll want a constructor:
 
@@ -129,10 +134,14 @@ called `spec`:
 [TODO: import line for `Spec`]
 
 ```js
-static spec = Spec.nodeSpec([
-  Spec.required('name'),
-  Spec.required('body')
-])
+import * as Spec from '../../nodeSpec';
+
+...
+
+  static spec = Spec.nodeSpec([
+    Spec.required('name'),
+    Spec.required('body')
+  ])
 ```
 
 There are four kinds of field specs:
