@@ -1,7 +1,6 @@
 import {withDefaults, say, poscmp, srcRangeIncludes, warn} from './utils';
 import SHARED from './shared';
 import {store} from './store';
-import {playSound} from './sound';
 import {performEdits, edit_insert, edit_delete, edit_replace,
         edit_overwrite} from './edits/performEdits';
 
