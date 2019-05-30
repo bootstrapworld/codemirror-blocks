@@ -164,7 +164,7 @@ class ActualDropTarget extends BlockComponent {
     let dropTargetWasFirst = false;
     
     function findLoc(elem) {
-      if (!elem.children) {
+      if (elem == null || elem.children == null) {
         return null;
       }
       for (let sibling of elem.children) {
