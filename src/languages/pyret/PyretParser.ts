@@ -6,7 +6,8 @@ import {
   ASTNode
 } from '../../ast';
 import {
-  Literal, 
+  Blank,
+  Literal,
 } from '../../nodes';
 import {Binop,
   Assign,
@@ -231,7 +232,9 @@ const nodeTypes = {
 
   // data Expr
   // "s-module": function(l: Loc, answer: XPathExpression, defined_values: DefinedValue[], defined_types: DefinedType[], provided_values: Expr, provided_types: AField[], checks: Expr) {},
-  // "s-template": function(l: Loc) {},
+  "s-template": function(l: Loc) {
+    return new Blank(l.from, l.to, null, "blank", {[ariaLabel]: "a placeholder"});
+  },
   // "s-type-let-expr": function(l: Loc, binds: TypeLetBind[], body: Expr, block: boolean) {},
   // "s-let-expr": function(l: LoadTable, binds: LetBind[], body: Expr, block: boolean) {},
   // "s-letrec": function(l: Loc, binds: LetrecBind[], body: Expr, block: boolean) {},
