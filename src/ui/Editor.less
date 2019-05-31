@@ -35,29 +35,11 @@
   &.text {
     > .toolbar-pane { border: none; width: 0px; min-width: 0px; }
   }
-
-  > .TrashCan {
-    height: 0px;
-    opacity: 0;
-    transition: opacity .25s, transform .15s;
-  }
-
-  &.show-trashcan {
-    > .TrashCan {
-      height: 100%;
-      opacity: 1;
-      transform: scale(1);
-    }
-    > .Toolbar {
-      height: 0px;
-      opacity: 0;
-    }
-  }
   
   .blocks-toggle-btn {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 16px;
+    right: 16px;
     z-index: 100;
     width: 34px;
     height: 34px;

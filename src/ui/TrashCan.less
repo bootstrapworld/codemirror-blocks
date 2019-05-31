@@ -1,22 +1,19 @@
 .TrashCan {
-  * {
-    pointer-events: none;
-  }
-  text-align: center;
-  color: #ccc;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  transform: scale(.15);
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 100;
+  width: 34px;
+  height: 34px;
+  border-radius: 3px;
+  box-shadow: 2px 2px 2px black, 4px 4px 4px white;
   > .glyphicon-trash {
-    font-size: 80px;
-    display: inline-block;
-    margin-bottom: 10px;
-    &:before {content: "\e020"; }
+    &:before { content: "\e020"; }
   }
-
   &.over {
     color: #777;
+  }
+  &:focus {
+    outline: 0;
   }
 }

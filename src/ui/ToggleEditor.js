@@ -12,6 +12,7 @@ import ByBlock from './searchers/ByBlock';
 import attachSearch from './Search';
 import Toolbar from './Toolbar';
 import ToggleButton from './ToggleButton';
+import TrashCan from './TrashCan';
 import merge from '../merge';
 import SHARED from '../shared';
 
@@ -161,14 +162,15 @@ export default class ToggleEditor extends React.Component {
     return (
       <div className={classes}>
         <ToggleButton setBlockMode={this.handleToggle} blockMode={this.state.blockMode} />
-          <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
-            <Toolbar primitives={this.parser.primitives}
-                     languageId={this.language.id}
-                     blockMode={this.state.blockMode} />
-          </div>
-          <div className="col-xs-9 codemirror-pane">
-            {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
-          </div>
+        {this.state.blockMode ? <TrashCan/> : null}
+        <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
+          <Toolbar primitives={this.parser.primitives}
+                   languageId={this.language.id}
+                   blockMode={this.state.blockMode} />
+        </div>
+        <div className="col-xs-9 codemirror-pane">
+          {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+        </div>
       </div>
     );
   }

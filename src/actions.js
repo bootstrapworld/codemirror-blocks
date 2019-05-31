@@ -117,6 +117,16 @@ export function drop(src, target, onSuccess, onError) {
   performEdits('cmb:drop-node', ast, edits, onSuccess, onError);
 }
 
+// Drag from `src` (which should be a d&d monitor thing) to the trash can, which
+// just deletes the block.
+export function dropOntoTrashCan(src) {
+  const {ast} = store.getState();
+  const srcNode = src.id ? ast.getNodeById(src.id) : null; // null if dragged from toolbar
+  if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
+  let edits = [edit_delete(srcNode)];
+  performEdits('cmb:trash-node', ast, edits);
+}
+
 // Set the cursor position.
 export function setCursor(cur) {
   return (dispatch, _getState) => {
