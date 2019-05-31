@@ -1,8 +1,7 @@
 import CodeMirrorBlocks from '../../../src/CodeMirrorBlocks';
 import pyret from '../../../src/languages/pyret';
 import 'codemirror/addon/search/searchcursor.js';
-import { store } from '../../../src/store';
-import { wait, cleanupAfterTest } from '../../support/test-utils';
+import { wait, teardown } from '../../support/test-utils';
 import {
   click,
   keyDown,
@@ -28,10 +27,6 @@ let setup = function () {
     this.cmb.getScrollerElement().getAttribute('aria-activedescendent');
   this.selectedNodes = () => this.cmb.getSelectedNodes();
 };
-
-function teardown() {
-  cleanupAfterTest('root', store);
-}
 
 /** //////////////////////////////////////////////////////////
  * Specific navigation tests for programs that use BSDS constructs below
