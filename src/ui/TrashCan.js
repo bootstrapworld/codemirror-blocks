@@ -32,14 +32,14 @@ export default class TrashCan extends Component {
   render() {
     let classNames = "TrashCan" + (this.state.isOverTrashCan ? " over" : "");
     return this.props.connectDropTarget(
-      <button className={classNames}
-              onClick={this.handleToggle}
-              onDragEnter={this.handleDragEnter}
-              onDragLeave={this.handleDragLeave}
-              onDragOver={this.handleDragOver}>
+      <div className={classNames}
+           onClick={this.handleToggle}
+           onDragEnter={this.handleDragEnter}
+           onDragLeave={this.handleDragLeave}
+           onDragOver={this.handleDragOver}>
         <span className="glyphicon glyphicon-trash"></span>
         <p>drag here to delete</p>
-      </button>
+      </div>
     );
   }
 }
