@@ -11,7 +11,6 @@ export default class Toolbar extends Component {
   constructor(props) {
     super(props);
     this.handleFocusPrimitive = this.handleFocusPrimitive.bind(this);
-    this.handleBlurPrimitive  = this.handleBlurPrimitive.bind(this);
   }
 
   static propTypes = {
@@ -57,30 +56,18 @@ export default class Toolbar extends Component {
     this.selectPrimitive(i === null ? null : primitives[i - 1]);
   }
 
+  // HACK: clear the selectedPrimitive state, then set it again
+  // to trigger a second refresh
   handleFocusPrimitive(selectedPrimitive) {
-    this.setState({selectedPrimitive});
+    this.setState({selectedPrimitive: null});
+    setTimeout(() => this.setState({selectedPrimitive}), 0);
   }
 
-  // HACK: clear the selectedPrimitive state, then call focus
-  // after a timeout to trigger handleFocusPrimitive
   selectPrimitive(selectedPrimitive) {
-    this.handleBlurPrimitive(this.state.selectedPrimitive);
-    setTimeout(() => {
-      if (selectedPrimitive && selectedPrimitive.element) {
-        selectedPrimitive.element.focus(); // will set state
-      } else {
-        this.setState({selectedPrimitive});
-      }
-    }, 0);
-  }
-
-  handleBlurPrimitive(primitive) {
-    // NOTE(Justin): This fires in many situations, including on `next` and
-    // `prev`. We really only care about the case where the focus entirely
-    // leaves the toolbar, but I don't know of a way to do that without
-    // responding to every single blur.
-    if (this.state.selectedPrimitive === primitive) {
-      this.setState({selectedPrimitive: null});
+    if (selectedPrimitive && selectedPrimitive.element) {
+      selectedPrimitive.element.focus(); // will set state
+    } else {
+      this.setState({selectedPrimitive});
     }
   }
 

@@ -39,13 +39,12 @@ class Primitive extends Component {
   }
   
   render() {
-    let {primitive, className, onFocus, onBlur, onKeyDown,
+    let {primitive, className, onFocus, onKeyDown,
          connectDragPreview, connectDragSource} = this.props;
     let elem = (
       <span tabIndex={-1}
             onKeyDown={this.handleKeyDown}
             onFocus={() => onFocus(primitive)}
-            onBlur={() => onBlur(primitive)}
             ref = {elem => primitive.element = elem}
             className={classNames(className, "Primitive list-group-item")}>
         {primitive.name}
