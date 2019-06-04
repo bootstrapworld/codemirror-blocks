@@ -61,12 +61,17 @@ export default class Toolbar extends Component {
     this.setState({selectedPrimitive});
   }
 
+  // HACK: clear the selectedPrimitive state, then call focus
+  // after a timeout to trigger handleFocusPrimitive
   selectPrimitive(selectedPrimitive) {
-    if (selectedPrimitive && selectedPrimitive.element) {
-      selectedPrimitive.element.focus(); // will set state
-    } else {
-      this.setState({selectedPrimitive});
-    }
+    this.handleBlurPrimitive(this.state.selectedPrimitive);
+    setTimeout(() => {
+      if (selectedPrimitive && selectedPrimitive.element) {
+        selectedPrimitive.element.focus(); // will set state
+      } else {
+        this.setState({selectedPrimitive});
+      }
+    }, 0);
   }
 
   handleBlurPrimitive(primitive) {
