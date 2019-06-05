@@ -116,8 +116,10 @@ class Node extends BlockComponent {
         this.props.activate(n? n.id : node.id, options);
       };
 
+      const keyname = SHARED.keyNam(e);
       const result = SHARED.keyMap[SHARED.keyName(e)];
       console.log("Node.jsx handleKeyDown", state, node, result);
+      console.log("shared's keymap", SHARED.keyMap, keyname);
       switch (result) {
       case 'prevNode':
         e.preventDefault();
