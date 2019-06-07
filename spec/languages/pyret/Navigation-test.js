@@ -959,3 +959,44 @@ describe('parentheses', function() {
     expect(this.activeNode()).toBe(this.i);
   });
 })
+
+function general_test(text, label = text) {
+  describe(label, function() {
+    beforeEach(function() {
+      setup.call(this);
+      let final_text = `${text}\nx = 3`;
+      this.cmb.setValue(final_text);
+      let ast = this.cmb.getAst();
+      let length = ast.rootNodes.length;
+      this.start = ast.rootNodes[0];
+      this.end = ast.rootNodes[length - 1];
+    });
+
+    afterEach(function() { teardown(); });
+
+    it('should progress', async function() {
+      let previous = this.start;
+      click(this.start);
+      await wait(DELAY);
+
+      keyDown("ArrowDown");
+      await wait(DELAY);
+      let current = this.activeNode();
+
+      while(current != this.end) {
+        expect(current).not.toBe(previous);
+        if (current == previous) {
+          break;
+        }
+        previous = current;
+        keyDown("ArrowDown");
+        await wait(DELAY);
+        current = this.activeNode();
+      }
+    });
+  })
+}
+
+general_test(`load-table: nth, name, home-state
+  source: presidents-sheet.sheet-by-name("presidents", true)
+end`);

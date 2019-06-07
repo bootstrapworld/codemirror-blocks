@@ -547,7 +547,7 @@ end
   // data LoadTableSpec
   // 's-sanitize': function(l: Loc, name: Name, sanitizer: Expr) {},
   's-table-src': function (pos: Loc, source: any) {
-    if(DEBUG) console.log(arguments);
+    if(DEBUG || true) console.log(arguments);
     return source;
   },
 
