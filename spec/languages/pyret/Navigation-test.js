@@ -983,9 +983,9 @@ function general_test(text, label = text) {
       await wait(DELAY);
       let current = this.activeNode();
 
-      while(current != this.end) {
+      while(current !== this.end) {
         expect(current).not.toBe(previous);
-        if (current == previous) {
+        if (current === previous) {
           break;
         }
         previous = current;
@@ -1000,3 +1000,6 @@ function general_test(text, label = text) {
 general_test(`load-table: nth, name, home-state
   source: presidents-sheet.sheet-by-name("presidents", true)
 end`);
+
+general_test(`(3 - 4)`);
+general_test(`3 - 4`);

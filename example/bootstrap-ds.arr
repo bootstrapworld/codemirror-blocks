@@ -3,3 +3,7 @@ load-table: nth, name, home-state
 end
 
 x = 3
+
+(3 - 4)
+
+x = 2
