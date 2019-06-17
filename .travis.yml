@@ -25,7 +25,6 @@ before_install:
 install: npm install
 notifications:
   email:
-    - paul@carduner.net
     - schanzer@bootstrapworld.org
   webhooks:
     urls:
