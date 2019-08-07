@@ -8,8 +8,8 @@
     "npm": ">=3.x"
   },
   "dependencies": {
-    "babel-core": "^6.26.3",
-    "babel-polyfill": "^6.26.0",
+    "@babel/core": "^7.0.0",
+    "@babel/polyfill": "^7.0.0",
     "classnames": "^2.2.5",
     "codemirror": "5.48.2",
     "diff": "^4.0.1",

@@ -1,9 +1,14 @@
 {
   "plugins": [
     "react-hot-loader/babel",
-    ["@babel/plugin-proposal-decorators", {"legacy": true}],
+    [
+      "@babel/plugin-proposal-decorators",
+      {
+        "legacy": true
+      }
+    ],
     "@babel/plugin-proposal-class-properties",
-    "@babel/plugin-transform-modules-commonjs",
+    "@babel/plugin-transform-modules-commonjs"
   ],
   "presets": [
     [
@@ -11,10 +16,9 @@
       {
         "targets": {
           "browsers": [
-            "Firefox >= 57",
-            "Safari >= 10",
-            "Chrome >= 68",
-            "IE >= 12",
+            "Firefox >= 65",
+            "Safari >= 12",
+            "Chrome >= 75",
             "Edge >= 14"
           ]
         }
