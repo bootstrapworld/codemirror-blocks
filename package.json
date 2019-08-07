@@ -38,23 +38,23 @@
     "uuid": "3.3.2"
   },
   "devDependencies": {
-    "@babel/cli": "^7.5.0",
-    "@babel/code-frame": "^7.0.0",
-    "@babel/core": "^7.5.4",
-    "@babel/generator": "^7.5.0",
+    "@babel/cli": "7.5.5",
+    "@babel/code-frame": "^7.5.5",
+    "@babel/core": "7.5.5",
+    "@babel/generator": "^7.5.5",
     "@babel/helper-function-name": "^7.1.0",
     "@babel/highlight": "^7.5.0",
-    "@babel/plugin-proposal-class-properties": "^7.5.0",
+    "@babel/plugin-proposal-class-properties": "7.5.5",
     "@babel/plugin-proposal-decorators": "^7.4.4",
     "@babel/plugin-transform-modules-commonjs": "^7.5.0",
     "@babel/plugin-transform-react-jsx": "^7.3.0",
     "@babel/polyfill": "^7.4.4",
-    "@babel/preset-env": "^7.5.4",
+    "@babel/preset-env": "^7.5.5",
     "@babel/preset-react": "^7.0.0",
     "@babel/template": "^7.4.4",
-    "@babel/traverse": "^7.5.0",
+    "@babel/traverse": "^7.5.5",
     "@babel/types": "^7.5.0",
-    "@types/react": "^16.8.23",
+    "@types/react": "^16.8.24",
     "@types/react-dom": "^16.8.4",
     "babel-eslint": "10.0.2",
     "babel-loader": "^8.0.6",
@@ -85,7 +85,7 @@
     "karma-webpack": "4.0.2",
     "less": "3.9.0",
     "less-loader": "5.0.0",
-    "lodash": ">=4.17.13",
+    "lodash": "4.17.15",
     "raw-loader": "3.1.0",
     "react-hot-loader": "4.12.10",
     "react-test-renderer": "16.8.6",
@@ -100,7 +100,7 @@
     "webpack-dev-server": "3.7.2"
   },
   "peerDependencies": {
-    "codemirror": "5.48.0"
+    "codemirror": "5.48.2"
   },
   "optionalDependencies": {
     "wescheme-js": "github:bootstrapworld/wescheme-js"
