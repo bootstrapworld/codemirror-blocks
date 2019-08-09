@@ -16,7 +16,7 @@ const initialState = {
 export const reducer = (
   state = initialState,
   action) => {
-    console.log(action);
+//    console.log(action); // for debugging only
     switch (action.type) {
     case 'SET_FOCUS':
       return {...state, focusId: action.focusId};

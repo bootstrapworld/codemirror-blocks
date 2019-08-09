@@ -380,7 +380,6 @@ class BlockEditor extends Component {
     // activate a node; only when the editor is focused, the focused node will be
     // active
     if (ast.rootNodes.length > 0) {
-      console.log('setting focus to', ast.rootNodes[0].id);
       this.props.dispatch({type: 'SET_FOCUS', focusId: ast.rootNodes[0].id});
     }
     // a tree element should know how many roots it has
