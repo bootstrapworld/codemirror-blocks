@@ -380,9 +380,11 @@ class BlockEditor extends Component {
     // activate a node; only when the editor is focused, the focused node will be
     // active
     if (ast.rootNodes.length > 0) {
-      this.props.dispatch({type: 'SET_FOCUS', focusId: 0});
+      console.log('setting focus to', ast.rootNodes[0].id);
+      this.props.dispatch({type: 'SET_FOCUS', focusId: ast.rootNodes[0].id});
     }
-
+    // a tree element should know how many roots it has
+    wrapper.setAttribute('aria-setsize', ast.rootNodes.length);
     this.props.search.setCM(ed);
 
     // once the DOM has loaded, reconstitute any marks and render them
@@ -477,7 +479,8 @@ class BlockEditor extends Component {
     const {dispatch} = this.props;
     dispatch((_, getState) => {
       const {cur} = getState();
-      if (!this.mouseUsed && cur === null) {
+      if (!this.mouseUsed && (cur === null)) {
+        console.log('focus inner node');
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
         setTimeout(() => this.props.activate(null, {allowMove: true}), 10);
         this.mouseUsed = false;
