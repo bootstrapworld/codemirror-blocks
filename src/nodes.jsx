@@ -503,7 +503,7 @@ export class Comment extends ASTNode {
 
   render(_props) { // eslint-disable-line no-unused-vars
     return (<span className="blocks-comment" id={this.id} aria-hidden="true">
-      <span className="screenreader-only">Has comment,</span> {this.comment.toString()}
+      <span className="screenreader-only">Has comment,</span> <span>{this.comment.toString()}</span>
     </span>);
   }
 }
