@@ -55,14 +55,7 @@ module.exports = function(config) {
       tsconfig: './tsconfig.json',
     },
 
-    webpack: merge(webpackConfig, {
-      // Work around webpack 4 compatibility issues:
-      // https://github.com/webpack-contrib/karma-webpack/issues/322
-      optimization: {
-        splitChunks: false,
-        runtimeChunk: false
-      }
-    }),
+    webpack: webpackConfig,
     webpackMiddleware: {
       noInfo: true
     },
