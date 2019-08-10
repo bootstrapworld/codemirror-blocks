@@ -24,7 +24,7 @@ module.exports = function(config) {
     frameworks: ['parallel', 'jasmine', 'karma-typescript'],
 
     parallelOptions: {
-       executors: 1, // Defaults to cpu-count - 1
+      executors: 1, // Defaults to cpu-count - 1
       shardStrategy: 'round-robin'
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
@@ -60,8 +60,8 @@ module.exports = function(config) {
       noInfo: true
     },
     client: {
-      // don't log console output in our test console
-      captureConsole: false,
+      // DO log console output in our test console
+      captureConsole: true,
       jasmine: {
         timeoutInterval: 30000
       }
@@ -90,7 +90,7 @@ module.exports = function(config) {
 
     // level of logging
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
-    logLevel: config.LOG_ERROR,
+    logLevel: config.LOG_DEBUG,
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
