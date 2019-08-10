@@ -27,5 +27,6 @@ module.exports = _.extend({}, baseConfig, {
   module: _.extend({}, baseConfig.module, {
     rules: rules
   }),
-  mode: 'development'
+  mode: 'development',
+  output: { filename: '[name]' }
 });
