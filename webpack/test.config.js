@@ -28,5 +28,5 @@ module.exports = _.extend({}, baseConfig, {
     rules: rules
   }),
   mode: 'development',
-  output: { filename: '[name]' }
+  output: { filename: '[name].js' }
 });
