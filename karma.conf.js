@@ -66,7 +66,7 @@ module.exports = function(config) {
         timeoutInterval: 30000
       }
     },
-    // reporters: ["karma-typescript"],
+    reporters: ["dots"],
 /*
     reporters: reporters,
     coverageReporter: {
