@@ -15,6 +15,9 @@ if (envConfig.runCoverage) {
   });
 }
 
+    console.log(process);
+console.log('on travis-ci?', ('TRAVIS' in process.env && 'CI' in process.env));
+
 // this is the config for generating the files needed to run the examples.
 module.exports = _.extend({}, baseConfig, {
   resolve: {
