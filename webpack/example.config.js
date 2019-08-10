@@ -44,7 +44,7 @@ module.exports = function(env, argv) {
       }),
       new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/)
     ]),
-    optimization: {
+    optimization: !('TRAVIS' in process.env && 'CI' in process.env) && {
       minimize: argv['mode'] == 'production',
       splitChunks: {
         cacheGroups: {
