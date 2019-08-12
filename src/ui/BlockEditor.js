@@ -479,9 +479,8 @@ class BlockEditor extends Component {
     dispatch((_, getState) => {
       const {cur} = getState();
       if (!this.mouseUsed && (cur === null)) {
-        console.log('focus inner node');
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-        setTimeout(() => this.props.activate(null, {allowMove: true}), 10);
+        setTimeout(() => this.props.activate(null, {allowMove: true}), 0);
         this.mouseUsed = false;
       }
     });

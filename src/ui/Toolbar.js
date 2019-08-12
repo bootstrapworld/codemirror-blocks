@@ -128,7 +128,7 @@ export default class Toolbar extends Component {
             <span className="glyphicon glyphicon-remove" onClick={this.clearSearch} />
             : null}
         </div>
-        <div className="primitives-box">
+        <div className="primitives-box" tabIndex="-1">
           <PrimitiveList
             primitives={primitives}
             onFocus={this.handleFocusPrimitive}
