@@ -6,6 +6,8 @@ env:
     - GH_REF: github.com/bootstrapworld/codemirror-blocks.git
     # GH_TOKEN
     - secure: SWsZE+DqgHfoajKe/dqq0ao4ENJKSnsqDbKCI1vSn0kEq9UFQ6QGLdU+0yOhHNoY9UGyWiV/jV1MT90IpYv+7kcKuxIbFBuCDnAgoq88GVAuFyKu/auC/2HSZSkZDwlZ2PmUpcXfU35itBx84tspQBHGM/LQC+zaxV09i1saV0nXMr8rvPjFsas6SfNMdg6n8Tr96Dcb7lrXhoqXXC8GQt8gusHjZY+fR3MeysPfc2dORsLIFWkG+1aIM9/65et6GGIYhhasPkHgYnOBsCOXxLG48AJ84EIa16e4U0pkxSZHpqbfGwcnLQprRHJ46jGI7khgSxsigejpIgZcnD4gAyYocM1h9WTW2YmE813gK1Vrw0jieEx8Gy/xKvnmzvgr+K6TG3LhAaZWOMTDaUNzzZhBYXcGlgHG3hhX55IznRAN2dDweT0HeSOXf48j+jBmzZ7j7ea1MBxtuTZBtMMvU1GI5WFkinJVfXzTq8tQs6Uqz1V/GAc0N9Hzb35EUukF3sggTQ3VMv/8aViIT788K42EMa0kAbBge0NKWaJDye3dhafB2sdMWoQUByf4tlDhHfM7EkcipsKhDlauLSRa0I8BTrSTNh+VxB1Oj6BDqIwNz5ACkNB67l7sSq4qyAO4Hl1+t3ekcKEVJDXiKFP/+xc5qdB3Niu2Cewq3O7D3og=
+addons:
+  chrome: stable
 cache:
   directories:
     - node_modules
