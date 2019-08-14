@@ -24,7 +24,7 @@ module.exports = function(config) {
     frameworks: ['parallel', 'jasmine', 'karma-typescript'],
 
     parallelOptions: {
-      executors: 1, // Defaults to cpu-count - 1
+      executors: envConfig.isCI ? 1 : undefined, // undefined: defaults to cpu-count - 1
       shardStrategy: 'round-robin'
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
