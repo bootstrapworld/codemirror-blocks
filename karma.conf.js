@@ -101,7 +101,7 @@ module.exports = function(config) {
     customLaunchers: {
       ChromeTravisCI: {
         base: 'Chrome',
-        flags: ['--no-sandbox', '--headless']
+        flags: ['--no-sandbox']
       }
     },
 
