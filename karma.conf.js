@@ -105,8 +105,6 @@ module.exports = function(config) {
       }
     },
 
-    hostname: '0.0.0.0',
-
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: envConfig.isCI,
