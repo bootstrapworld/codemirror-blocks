@@ -11,7 +11,6 @@ var baseConfig = require('./base.config.js')();
 module.exports = function(env, argv) {
   // Display bundle size when building for production
   if(argv['mode'] == 'production') { 
-    console.log(process);
     baseConfig.plugins.push(new BundleAnalyzerPlugin({
       analyzerMode: 'static', 
       openAnalyzer: !('TRAVIS' in process.env && 'CI' in process.env)
