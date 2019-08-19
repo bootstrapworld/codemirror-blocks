@@ -100,8 +100,8 @@ module.exports = function(config) {
     browsers: [ envConfig.isCI ? 'ChromeTravisCI' : envConfig.devBrowser ],
     customLaunchers: {
       ChromeTravisCI: {
-        base: 'ChromeHeadless',
-        flags: ['--no-sandbox', '--headless']
+        base: 'Chrome',
+        flags: ['--no-sandbox', '--headless', '--no-proxy-server'
       }
     },
 
