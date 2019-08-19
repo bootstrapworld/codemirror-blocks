@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "classnames": "^2.2.5",
-    "codemirror": "5.48.2",
+    "codemirror": "5.48.4",
     "diff": "^4.0.1",
     "event-emitter": "^0.3.5",
     "icss-utils": "^4.1.1",
@@ -32,7 +32,7 @@
     "redux-thunk": "^2.3.0",
     "shallowequal": "^1.1.0",
     "spdy": "^4.0.1",
-    "uuid": "3.3.2"
+    "uuid": "3.3.3"
   },
   "devDependencies": {
     "@babel/cli": "7.5.5",
@@ -51,7 +51,7 @@
     "@babel/template": "^7.4.4",
     "@babel/traverse": "^7.5.5",
     "@babel/types": "^7.5.5",
-    "@types/react": "^16.8.25",
+    "@types/react": "^16.9.2",
     "@types/react-dom": "^16.8.5",
     "babel-eslint": "10.0.2",
     "babel-loader": "^8.0.6",
@@ -59,7 +59,7 @@
     "docco": "^0.8.0",
     "enzyme": "^3.10.0",
     "enzyme-adapter-react-16": "^1.14.0",
-    "eslint": "6.1.0",
+    "eslint": "6.2.0",
     "eslint-loader": "^2.2.1",
     "eslint-plugin-react": "^7.14.3",
     "express": "^4.17.1",
@@ -75,13 +75,13 @@
     "karma-chrome-launcher": "3.1.0",
     "karma-coverage": "1.1.2",
     "karma-coveralls": "2.1.0",
-    "karma-parallel": "^0.3.1",
     "karma-jasmine": "^2.0.1",
     "karma-jasmine-diff-reporter": "^2.0.0",
+    "karma-parallel": "^0.3.1",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-typescript": "^4.1.1",
     "karma-webpack": "4.0.2",
-    "less": "3.9.0",
+    "less": "3.10.1",
     "less-loader": "5.0.0",
     "lodash": "4.17.15",
     "raw-loader": "3.1.0",
@@ -94,11 +94,11 @@
     "url-loader": "2.1.0",
     "webpack": "4.39.2",
     "webpack-bundle-analyzer": "^3.4.1",
-    "webpack-cli": "3.3.6",
+    "webpack-cli": "3.3.7",
     "webpack-dev-server": "3.8.0"
   },
   "peerDependencies": {
-    "codemirror": "5.48.2"
+    "codemirror": "5.48.4"
   },
   "optionalDependencies": {
     "wescheme-js": "github:bootstrapworld/wescheme-js"
