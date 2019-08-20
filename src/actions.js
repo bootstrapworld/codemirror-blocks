@@ -157,7 +157,7 @@ export function activate(id, options) {
     // check for element on blur AND on focus, since tests or node editing may happen so fast 
     // that the element isn't there yet
     if (node.id === focusId) {
-      if(node.element) node.element.blur();
+//      if(node.element) node.element.blur();
       setTimeout(() => { if(node.element) node.element.focus(); }, 10);
     }
     // FIXME(Oak): if possible, let's not hard code like this
