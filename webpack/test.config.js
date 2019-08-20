@@ -29,6 +29,9 @@ module.exports = _.extend({}, baseConfig, {
   module: _.extend({}, baseConfig.module, {
     rules: rules
   }),
+  externals: {
+    'codemirror': 'CodeMirror',
+  },
   mode: 'development',
   output: { filename: '[name].js' },
   // Work around webpack 4 compatibility issues:

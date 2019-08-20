@@ -1,6 +1,6 @@
 import wescheme from '../src/languages/wescheme';
-import 'codemirror/addon/search/searchcursor.js';
 import { store } from '../src/store';
+import 'codemirror/addon/search/searchcursor.js';
 import { wait, cleanupAfterTest, activationSetup } from './support/test-utils';
 import {
   click,

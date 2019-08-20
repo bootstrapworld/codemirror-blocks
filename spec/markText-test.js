@@ -1,13 +1,10 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
-import 'codemirror/addon/search/searchcursor.js';
-/* eslint-disable */ //temporary
 import { store } from '../src/store';
 import { wait, cleanupAfterTest } from './support/test-utils';
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 250;
-/* eslint-enable */ //temporary
 
 describe('The CodeMirrorBlocks Class', function () {
   beforeEach(function () {

@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "classnames": "^2.2.5",
-    "codemirror": "5.48.4",
     "diff": "^4.0.1",
     "event-emitter": "^0.3.5",
     "icss-utils": "^4.1.1",

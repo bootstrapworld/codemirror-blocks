@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import 'codemirror/addon/search/searchcursor.js';
 import {skipCollapsed, poscmp, skipWhile,
         getBeginCursor, getEndCursor,
         getNodeContainingBiased} from '../../utils';
