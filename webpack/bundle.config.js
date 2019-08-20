@@ -14,6 +14,10 @@ var configs = [
       filename: "[name].js",
       library: ["CodeMirrorBlocks"]
     },
+    plugins: [new webpack.ProvidePlugin({ codemirror: "codemirror" })],
+    externals: {
+      'codemirror': 'CodeMirror',
+    },
   })
 ];
 

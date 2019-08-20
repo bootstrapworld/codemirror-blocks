@@ -60,8 +60,8 @@ module.exports = function(config) {
       noInfo: true
     },
     client: {
-      // DO log console output in our test console
-      captureConsole: true,
+      // Don't log console output in our test console
+      captureConsole: false,
       jasmine: {
         timeoutInterval: 30000
       }
@@ -90,7 +90,7 @@ module.exports = function(config) {
 
     // level of logging
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
-    logLevel: config.LOG_DEBUG,
+    logLevel: config.LOG_WARN,
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,

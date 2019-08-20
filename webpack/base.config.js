@@ -27,16 +27,11 @@ module.exports = function(config) {
   } else {
     rules.push({test: /\.less$/, use:["style-loader","css-loader","less-loader"]});
   }
-  // load CodeMirror externally
-  plugins.push(new webpack.ProvidePlugin({ codemirror: "codemirror" }));
   return {
     resolve : {extensions: ['.ts', '.tsx', '.js', '.jsx'] }, // Order matters!
     output: {
       path: path.resolve(__dirname, '..', "build"),
       filename: "[name].js"
-    },
-    externals: {
-      'codemirror': 'CodeMirror',
     },
     module: {
       rules: rules.concat([{
