@@ -1,15 +1,14 @@
 {
   "name": "codemirror-blocks",
-  "version": "0.7.0",
+  "version": "0.7.5",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
-  "main": "CodeMirrorBlocks.js",
+  "main": "dist/CodeMirrorBlocks.js",
   "engines": {
     "node": ">=6.x",
     "npm": ">=3.x"
   },
   "dependencies": {
     "classnames": "^2.2.5",
-    "codemirror": "5.48.4",
     "diff": "^4.0.1",
     "event-emitter": "^0.3.5",
     "icss-utils": "^4.1.1",
@@ -55,6 +54,7 @@
     "@types/react-dom": "^16.8.5",
     "babel-eslint": "10.0.2",
     "babel-loader": "^8.0.6",
+    "codemirror": "5.48.4",
     "css-loader": "3.2.0",
     "docco": "^0.8.0",
     "enzyme": "^3.10.0",
@@ -106,6 +106,8 @@
   "scripts": {
     "prepublishOnly": "npm run build",
     "test": "./node_modules/karma/bin/karma start karma.conf.js --single-run",
+    "prepare": "npm run build",
+    "prepublish": "npm run build",
     "test-watch": "karma start",
     "start": "webpack-dev-server --mode development --config webpack/example.config.js",
     "heroku-server": "node heroku-server.js",

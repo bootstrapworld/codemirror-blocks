@@ -23,6 +23,65 @@
   @literal-boolean-color: darkred;
   @literal-symbol-color: steelblue;
   
+  .blocks-contract {
+    border-radius: 0px;
+    opacity: 0.5;
+  }
+
+  // css classes
+  .blocks-ask,
+  .blocks-assign,
+  .blocks-bind,
+  .blocks-bracket,
+  .blocks-check,
+  .blocks-check-test,
+  .blocks-construct,
+  .blocks-contract,
+  .blocks-data-field,
+  .blocks-for,
+  .blocks-func,
+  .blocks-funapp,
+  .blocks-include,
+  .blocks-if,
+  .blocks-lambda,
+  .blocks-let,
+  .blocks-load-table,
+  .blocks-reactor,
+  .blocks-special-import,
+  .blocks-tuple,
+  .blocks-tuple-access,
+  .blocks-var,
+  .blocks-when,
+  .blocks-operator {
+    display: flex;
+    justify-content: center;
+    font-weight: bold;
+    padding: 1px 5px;
+    text-align: center;
+    background: black;
+    color: white;
+    > .blocks-white-space:not(.blocks-editing) {
+      min-width: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+    .blocks-white-space {
+      border-width: 1px;
+      min-width: 10px;
+    }
+    > .blocks-white-space:hover {
+      background: black;
+      border: dotted 2px darkgray;
+    }
+    > .blocks-node {
+      box-shadow: 0px 0px 10px 1px white;
+    }
+    >.blocks-literal, .blocks-identifierList {
+      box-shadow: none;
+    }
+    .blocks-literal{ border: @border-width inset; }
+  }
+
   .blocks-literal {
     .blocks-literal-number {
       color: @literal-number-color;
@@ -44,4 +103,114 @@
       border-radius: @large-border-radius @large-border-radius 0px 0px;
     }
   }
+
+  // ast nodes (in constructors)
+  .blocks-s-assign,
+  .blocks-s-bind,
+  .blocks-binop,
+  // .blocks-block,
+  .blocks-s-bracket,
+  .blocks-s-check,
+  .blocks-checkTest,
+  .blocks-constructor,
+  .blocks-s-contract,
+  .blocks-s-data-field,
+  .blocks-s-for,
+  .blocks-s-for-bind,
+  .blocks-funApp,
+  .blocks-funDef,
+  .blocks-ifPipeExpression,
+  .blocks-if-Expression,
+  .blocks-if-else-Expression,
+  .blocks-s-include,
+  .blocks-lambdaExp,
+  .blocks-s-let,
+  .blocks-loadTable,
+  .blocks-s-reactor,
+  .blocks-specialImport,
+  .blocks-s-tuple,
+  .blocks-tuple-get,
+  .blocks-s-var,
+  .blocks-s-when
+  {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    color: black;
+    border: @border-width solid black;
+    border-radius: 15px;
+    margin: 2px;
+    background: #eee;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: all 0.5s;
+
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+
+    user-select: none;
+  }
+
+  .blocks-ifPipeExpression,
+  .blocks-if-else-Expression,
+  .blocks-if-Expression {
+    border-radius: 0px;
+    background: white;
+    > .blocks-if {
+      justify-content: flex-start;
+    }
+    > .blocks-cond-table {
+      display: table;
+      padding: 2px;
+      margin: 1px;
+      .blocks-cond-drop-row {
+        display: table-row;
+        .blocks-white-space, .quarantine { min-width: 100%; margin: 0px; height: 5px; transition: height .5s; }
+        .blocks-white-space:hover, .quarantine { height: 20px; }
+      }
+      .blocks-condClause,
+      .blocks-if-clause {
+        display: table-row-group;
+        padding: 3px;
+        text-align: center;
+        min-width: 200px;
+        &:focus {
+          outline: @editing-border-color @border-width solid;
+        }
+        .blocks-cond-row {
+          border: 1px solid black;
+          text-align: left;
+          display: table-row;
+          border-top: 1px solid #aaa;
+          .blocks-cond-predicate, .blocks-cond-result {
+            display: inline-block;
+            &.blocks-cond-else {
+              color: #777;
+            }
+          }
+          .blocks-cond-predicate {float: left; }
+          .blocks-cond-result {float: right; }
+        }
+        .blocks-cond-row:first-child {
+          border-top: 0px;
+        }
+      }
+      .blocks-condClause[aria-expanded=false] {
+        display: block;
+        height: 20px;
+        margin: 5px;
+      }
+    }
+  }
+
+  .blocks-operator .blocks-literal{
+    background-color: white;
+    .blocks-literal-symbol { color: @literal-symbol-color; }
+  }
+
+  /* override default CSS rules */
+  .blocks-condClause .blocks-cond-row { text-align: center !important; }
+
+  .blocks-condClause .blocks-cond-result { float: none !important; }
 }

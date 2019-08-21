@@ -1,7 +1,6 @@
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
-import { store } from '../src/store';
-import { wait, cleanupAfterTest, activationSetup } from './support/test-utils';
+import { wait, teardown, activationSetup } from './support/test-utils';
 import {
   click,
   keyDown,
@@ -13,7 +12,6 @@ const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
-let teardown = function () { cleanupAfterTest('root', store); };
 
 describe("when dealing with node activation,", function () {
   beforeEach(function () {

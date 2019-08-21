@@ -12,26 +12,15 @@ var configs = [
     output: {
       path: path.resolve(__dirname, '..', "dist"),
       filename: "[name].js",
-      library: ["CodeMirrorBlocks"]
+      library: "CodeMirrorBlocks",
+      libraryTarget: 'umd',
+    },
+    plugins: [new webpack.ProvidePlugin({ codemirror: "codemirror" })],
+    externals: {
+      'codemirror': 'CodeMirror',
     },
   })
 ];
-
-/*configs.push(
-  _.extend({}, baseConfig(), {
-    entry: {
-      "CodeMirrorBlocks-pyret": ['./src/languages/pyret/index.js', './src/CodeMirrorBlocks.js']
-    },
-    output: {
-      path: path.resolve(__dirname, '..', "dist"),
-      filename: "[name].js",
-      library: ["CodeMirrorBlocks"]
-    },
-    externals: {
-      'codemirror': 'CodeMirror',
-    }
-  })
-);*/
 
 configs = configs.concat(
   configs.map(function(config) {

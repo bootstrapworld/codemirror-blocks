@@ -1,5 +1,6 @@
 // Default parameters. You can override these when importing this file
 // just by declaring the same variable names _after_ the import.
+@large-border-radius: 15px;
 @border-radius: 5px;
 @border-width: 2px;
 
@@ -37,18 +38,17 @@
   }
 }
 
-.blocks-structDefinition,
-.blocks-functionDefinition,
-.blocks-binop,
-.blocks-lambdaExpression,
-.blocks-variableDefinition,
-.blocks-functionApp,
-.blocks-ifExpression,
 .blocks-condExpression,
-.blocks-sequence,
-.blocks-whenUnlessExpr,
+.blocks-functionApp,
+.blocks-functionDefinition,
+.blocks-ifExpression,
+.blocks-lambdaExpression,
 .blocks-letLikeExpr,
-.blocks-unknown {
+.blocks-sequence,
+.blocks-structDefinition,
+.blocks-unknown,
+.blocks-variableDefinition,
+.blocks-whenUnlessExpr {
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
@@ -168,8 +168,7 @@
   > .blocks-node {
     box-shadow: 0px 0px 10px 1px white;
   }
-  .blocks-literal, .blocks-identifierList {
-    color: white;
+  >.blocks-literal, .blocks-identifierList {
     box-shadow: none;
   }
   .blocks-literal{ border: @border-width inset; }

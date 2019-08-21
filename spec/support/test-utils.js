@@ -1,4 +1,5 @@
 import CodeMirrorBlocks from '../../src/CodeMirrorBlocks';
+import { store } from '../../src/store';
 
 export async function wait(ms) {
   return new Promise(resolve => {
@@ -20,6 +21,10 @@ export function cleanupAfterTest(rootId, store) {
     const current = textareas[0];
     current.parentNode.removeChild(current);
   }
+}
+
+export function teardown() {
+  cleanupAfterTest('root', store);
 }
 
 const fixture = `

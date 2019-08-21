@@ -1,4 +1,4 @@
-const E = require("./jglr.js");
+module.exports = (function(E) {
   const SrcLoc = E.SrcLoc
   const GenTokenizer = E.Tokenizer2;
   const IGNORED_WS = {name: "WS"};
@@ -418,6 +418,7 @@ const E = require("./jglr.js");
       }},
     { name: "STRING", val: "\"",
       process: function tokenizeDQString(tok_spec) {
+        var match = undefined;
         var line = this.curLine, col = this.curCol, pos = this.pos;
         dquot_str.lastIndex = this.pos;
         unterminated_string.lastIndex = this.pos;
@@ -437,6 +438,7 @@ const E = require("./jglr.js");
       }},
     { name: "STRING", val: "'",
       process: function tokenizeSQString(tok_spec) {
+        var match = undefined;
         var line = this.curLine, col = this.curCol, pos = this.pos;
         squot_str.lastIndex = this.pos;
         unterminated_string.lastIndex = this.pos;
@@ -455,6 +457,7 @@ const E = require("./jglr.js");
       }},
     { name: "STRING", val: "```",
       process: function tokenizeTQString(tok_spec) {
+        var match = undefined;
         var line = this.curLine, col = this.curCol, pos = this.pos;
         tquot_str.lastIndex = this.pos;
         unterminated_string.lastIndex = this.pos;
@@ -566,8 +569,7 @@ const E = require("./jglr.js");
     ignore: new Set(["WS", "COMMENT"])
   };
 
-
-module.exports = {
+  return {
     'Tokenizer': new Tokenizer(spec)
-  }; 
-
+  };
+})(require("./jglr"));
