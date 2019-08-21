@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ToggleEditor from './ui/ToggleEditor';
 import merge from './merge';
-import pyret from './languages/pyret';
 const Args = require('./components/Args');
 const DropTarget = require('./components/DropTarget');
 const Node = require('./components/Node');
@@ -57,5 +56,3 @@ module.exports.NodeSpec = NodeSpec;
 module.exports.Languages = Languages;
 module.exports.Pretty = Pretty;
 module.exports.TeardownAfterTest = teardown;
-
-console.log(module.exports);
