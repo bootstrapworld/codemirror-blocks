@@ -819,7 +819,8 @@ describe("contracts", function () {
     await wait(DELAY);
   });
 });
-
+/*
+NOTE(Emmanuel): this appears to be dead code
 const click_expect = async function(to_click, active_node, result, check_editable = false) {
   click(to_click);
   await wait(DELAY);
@@ -834,7 +835,7 @@ const click_expect = async function(to_click, active_node, result, check_editabl
     await wait(DELAY);
   }
 };
-
+*/
 describe("if statements", function () {
   const testify = function (text) {
     describe(text, function () {
@@ -878,9 +879,9 @@ describe("if statements", function () {
           keyDown("ArrowDown");
           await wait(DELAY);
           expect(this.activeNode()).toBe(this.else_branch);
-        };
+        }
       });
-    })
+    });
   };
 
   testify(`if x == 4:
@@ -958,7 +959,7 @@ describe('parentheses', function() {
     await wait(DELAY);
     expect(this.activeNode()).toBe(this.i);
   });
-})
+});
 
 function general_test(text, label = text) {
   describe(label, function() {
@@ -994,7 +995,7 @@ function general_test(text, label = text) {
         current = this.activeNode();
       }
     });
-  })
+  });
 }
 
 general_test(`load-table: nth, name, home-state
