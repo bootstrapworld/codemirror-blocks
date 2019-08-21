@@ -153,11 +153,9 @@ export function activate(id, options) {
     // Don't activate a toolbar node. (Screenreaders will still announce it)
     if (!node) { return; }
 
-    // if we're on the same node, force the screenreader to re-announce by blurring/refocusing.
-    // check for element on blur AND on focus, since tests or node editing may happen so fast 
+    // check for element on focus, since tests or node editing may happen so fast 
     // that the element isn't there yet
     if (node.id === focusId) {
-//      if(node.element) node.element.blur();
       setTimeout(() => { if(node.element) node.element.focus(); }, 10);
     }
     // FIXME(Oak): if possible, let's not hard code like this

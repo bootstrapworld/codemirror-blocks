@@ -15,24 +15,12 @@ var configs = [
       library: "CodeMirrorBlocks",
       libraryTarget: 'umd',
     },
-  })
-];
-
-/*configs.push(
-  _.extend({}, baseConfig(), {
-    entry: {
-      "CodeMirrorBlocks-pyret": ['./src/languages/pyret/index.js', './src/CodeMirrorBlocks.js']
-    },
-    output: {
-      path: path.resolve(__dirname, '..', "dist"),
-      filename: "[name].js",
-      library: ["CodeMirrorBlocks"]
-    },
+    plugins: [new webpack.ProvidePlugin({ codemirror: "codemirror" })],
     externals: {
       'codemirror': 'CodeMirror',
-    }
+    },
   })
-);*/
+];
 
 configs = configs.concat(
   configs.map(function(config) {

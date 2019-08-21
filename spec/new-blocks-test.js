@@ -1,7 +1,6 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
 import {store} from '../src/store';
-import 'codemirror/addon/search/searchcursor.js';
 
 import {
   click,
