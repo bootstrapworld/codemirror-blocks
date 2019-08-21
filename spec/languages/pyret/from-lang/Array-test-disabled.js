@@ -287,5 +287,5 @@ end`;
     for (let i = 0; i < parsed.rootNodes.length; i++) {
       expect(parsed.rootNodes[i].options["aria-label"]).not.toBe(undefined);
     }
-  })
+  });
 });

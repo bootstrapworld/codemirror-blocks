@@ -27,7 +27,7 @@ describe("The Pyret Parser,", function() {
     let test = (str) => {
       let result = this.parser.parse(str).rootNodes[0].options["aria-label"];
       expect(result).not.toBe(undefined);
-    }
+    };
     /**
      * From Justin and Emmanuel
      * import

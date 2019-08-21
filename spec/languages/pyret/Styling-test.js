@@ -3,8 +3,6 @@ import pyret from '../../../src/languages/pyret';
 import 'codemirror/addon/search/searchcursor.js';
 import { teardown } from '../../support/test-utils';
 import {
-  click,
-  keyDown,
   _keyPress,
   _insertText,
 } from '../../support/simulate';

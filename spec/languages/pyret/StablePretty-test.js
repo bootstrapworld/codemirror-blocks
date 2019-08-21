@@ -82,7 +82,7 @@ fun increment(x): x + 1 end
 
 big-bang(10, [list: on-tick(increment)])
 big-bang(10, [list: on-tick-n(increment, 3)])`);
-  testify(`include reactors
+    testify(`include reactors
 
 fun tencrement(x): x + 10 end
 
@@ -95,7 +95,7 @@ end`);
     let testify = function(name, text) {
       it(name, async function () {
         expect(this.parser.parse(text).toString()).toEqual(text);
-      })
+      });
     };
 
     testify("blocky function", `fun f(x) block:
