@@ -60,8 +60,8 @@ module.exports = function(config) {
       noInfo: true
     },
     client: {
-      // DO log console output in our test console
-      captureConsole: true,
+      // should we log console output in our test console?
+      captureConsole: false,
       jasmine: {
         timeoutInterval: 30000
       }
