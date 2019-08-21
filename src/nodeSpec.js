@@ -107,7 +107,7 @@ class HashIterator {
           yield elem.hash;
         }
       } else {
-        yield field.hash;
+        yield (field == null)? hashObject(null) : field.hash;
       }
     }
   }

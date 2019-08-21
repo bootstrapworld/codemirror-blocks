@@ -12,7 +12,8 @@ var configs = [
     output: {
       path: path.resolve(__dirname, '..', "dist"),
       filename: "[name].js",
-      library: ["CodeMirrorBlocks"]
+      library: "CodeMirrorBlocks",
+      libraryTarget: 'umd',
     },
   })
 ];

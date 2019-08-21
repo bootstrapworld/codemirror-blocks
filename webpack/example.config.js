@@ -25,7 +25,8 @@ module.exports = function(env, argv) {
     },
     module: _.extend({}, baseConfig.module, {
       rules: baseConfig.module.rules.concat([
-        { test: /\.rkt$/, use: 'raw-loader' }
+        { test: /\.rkt$/, use: 'raw-loader' },
+        { test: /\.arr$/, use: 'raw-loader' }
       ])
     }),
     plugins: baseConfig.plugins.concat([

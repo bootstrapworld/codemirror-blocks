@@ -1,11 +1,13 @@
 import React from 'react';
 import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining} from './utils';
+import * as P from 'pretty-fast-pretty-printer';
 import uuidv4 from 'uuid/v4';
 import hashObject from 'object-hash';
+import { node } from 'prop-types';
 
 
 export function enumerateList(lst, level) {
-  lst = lst.map(l => l.toDescription(level)).slice(0);
+  lst = lst.map(l => l.describe(level)).slice(0);
   var last = lst.pop();
   return (lst.length == 0)? last : lst.join(', ') + " and "+last;
 }
@@ -14,13 +16,20 @@ export function pluralize(noun, set) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
-export const descDepth = 1;
+const descDepth = 1;
 
 export const prettyPrintingWidth = 80;
 
 // This is the root of the *Abstract Syntax Tree*.  parse implementations are
 // required to spit out an `AST` instance.
 export class AST {
+  rootNodes: ASTNode[];
+  reverseRootNodes: ASTNode[];
+  nodeIdMap: Map<any, any>;
+  nodeNIdMap: Map<any, any>;
+  id: number;
+  hash: any;
+
   constructor(rootNodes) {
     // the `rootNodes` attribute simply contains a list of the top level nodes
     // that were parsed, in srcLoc order
@@ -65,7 +74,7 @@ export class AST {
     return {
       *[Symbol.iterator]() {
         for (const node in that.rootNodes) {
-          yield* node.descendants();
+          yield* (node as unknown as ASTNode).descendants();
         }
       }
     };
@@ -247,6 +256,9 @@ export class AST {
   getNodeAt(from, to) {
     let n = [...this.nodeIdMap.values()].find(n => {
       let {from: srcFrom, to: srcTo} = n.srcRange();
+      // happens when node is an ABlank
+      if (n.from == null || n.to == null)
+        return undefined;
       return (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0)
         || (poscmp(from, srcFrom) == 0) && (poscmp(to, srcTo) == 0);
     });
@@ -319,6 +331,15 @@ export class AST {
 // Every node in the AST inherits from the `ASTNode` class, which is used to
 // house some common attributes.
 export class ASTNode {
+  from: any;
+  to: any;
+  type: any;
+  options: any;
+  id: string;
+  level: any;
+  hash: any;
+  public static spec: any;
+  spec: any;
   constructor(from, to, type, options) {
 
     // The `from` and `to` attributes are objects containing the start and end
@@ -350,15 +371,47 @@ export class ASTNode {
     }
 
     // Make the spec more easily available.
-    this.spec = this.constructor.spec;
+    this.spec = (this.constructor as any).spec;
   }
 
-  toDescription(_level){
+  describe(level) {
+    if ((this.level - level) >= descDepth) {
+      return this.shortDescription(level);
+    } else {
+      return this.longDescription(level);
+    }
+  }
+
+  // Every node must, on construction, set its own `.hash` field. Its hash must
+  // be determined by its type, its (ordered) children, and any other content it
+  // contains, but _not_ on its `srcloc` or `id`. Subtrees with identical values
+  // must have the same hash.
+  //
+  // `computeHash()` computes a hash for a node in the common case where the
+  // _only_ content of a node is `this.type` and `this.children()`. However,
+  // some nodes have other content. For example, a Binop node could have an `op`
+  // field that's a string like "+" or "*". In this case, `computeHash()` will
+  // not include `op` in the hash because `op` is not a child (only ASTNodes are
+  // children). Thus you would need to compute `.hash` yourself. For other
+  // examples of node types that cannot rely on `.computeHash()`, see Literal and
+  // Comment.
+  computeHash() {
+    return this.hash = hashObject([this.type, [...this.children()].map(c => c.hash)]);
+  }
+
+  shortDescription(_level) {
     return this.options["aria-label"];
+  }
+
+  longDescription(_level) {
+    throw "ASTNodes must implement `.longDescription()`";
   }
 
   toString() {
     return this.pretty().display(prettyPrintingWidth).join("\n");
+  }
+  pretty(): P.Doc {
+    throw new Error("Method not implemented.");
   }
 
   // Produces an iterator over the children of this node.
@@ -386,7 +439,7 @@ export class ASTNode {
   }
 
   // Create a React _element_ (an instantiated component) for this node.
-  reactElement(props) {
+  reactElement(props?) {
     return renderASTNode({node:this, ...props});
   }
 }
@@ -400,8 +453,8 @@ function renderASTNode(props) {
   }
 }
 
-
 class DescendantsIterator {
+  node: ASTNode;
   constructor(node) {
     this.node = node;
   }

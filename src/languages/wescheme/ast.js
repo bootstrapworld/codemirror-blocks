@@ -2,7 +2,7 @@ import React from 'react';
 import Node from '../../components/Node';
 import * as P from 'pretty-fast-pretty-printer';
 import * as Spec from '../../nodeSpec';
-import {ASTNode, pluralize, descDepth} from '../../ast';
+import {ASTNode, pluralize} from '../../ast';
 
 
 export class LetLikeExpr extends ASTNode {
@@ -19,8 +19,7 @@ export class LetLikeExpr extends ASTNode {
     Spec.required('expr')
   ])
 
-  toDescription(level){
-    if((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(_level) {
     return `a ${this.form} expression with ${pluralize("binding", this.bindings.exprs)}`;
   }
 
@@ -53,9 +52,8 @@ export class WhenUnless extends ASTNode {
     Spec.required('exprs')
   ])
 
-  toDescription(level){
-    if((this.level - level) >= descDepth) return this.options['aria-label'];
-    return `a ${this.form} expression: ${this.form} ${this.predicate.toDescription(level)}, ${this.exprs.toDescription(level)}`;
+  longDescription(level) {
+    return `a ${this.form} expression: ${this.form} ${this.predicate.describe(level)}, ${this.exprs.describe(level)}`;
   }
 
   pretty() {

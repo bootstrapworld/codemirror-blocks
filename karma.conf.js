@@ -113,6 +113,8 @@ module.exports = function(config) {
     // how many browser should be started simultanous
     concurrency: Infinity,
     captureTimeout: 60000,
-    browserNoActivityTimeout: 60000 // 60 seconds
+    browserDisconnectTolerance: 3,
+    browserDisconnectTimeout: 10000,
+    browserNoActivityTimeout: 60000, // 60 seconds
   });
 };

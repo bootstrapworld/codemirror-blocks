@@ -1,6 +1,6 @@
 import * as P from 'pretty-fast-pretty-printer';
 import React from 'react';
-import {ASTNode, descDepth, enumerateList, pluralize} from './ast';
+import {ASTNode, enumerateList, pluralize} from './ast';
 import Node from './components/Node';
 import Args from './components/Args';
 import {DropTarget, DropTargetContainer} from './components/DropTarget';
@@ -41,10 +41,9 @@ export class Unknown extends ASTNode {
     Spec.list('elts')
   ])
 
-  toDescription(level){
-    if((this.level - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `an unknown expression with ${pluralize("children", this.elts)} `+ 
-      this.elts.map((e, i, elts) => (elts.length>1? (i+1) + ": " : "")+ e.toDescription(level)).join(", ");
+      this.elts.map((e, i, elts)  => (elts.length>1? (i+1) + ": " : "")+ e.describe(level)).join(", ");
   }
 
   pretty() {
@@ -80,17 +79,14 @@ export class FunctionApp extends ASTNode {
     Spec.list('args')
   ])
 
-  toDescription(level){
+  longDescription(level) {
     // if it's the top level, enumerate the args
     if((this.level  - level) == 0) {
-      return `applying the function ${this.func.toDescription()} to ${pluralize("argument", this.args)} `+
-      this.args.map((a, i, args) => (args.length>1? (i+1) + ": " : "")+ a.toDescription(level)).join(", ");
+      return `applying the function ${this.func.describe(level)} to ${pluralize("argument", this.args)} `+
+      this.args.map((a, i, args)  => (args.length>1? (i+1) + ": " : "")+ a.describe(level)).join(", ");
     }
-    // if we've bottomed out, use the aria label
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
-    // if we're in between, use "f of A, B, C" format
-    else return `${this.func.toDescription()} of `+ this.args.map(a  => a.toDescription(level)).join(", ");
-      
+    // if we're lower than that (but not so low that `.shortDescription()` is used), use "f of A, B, C" format
+    else return `${this.func.describe(level)} of `+ this.args.map(a  => a.describe(level)).join(", ");
   }
 
   pretty() {
@@ -127,8 +123,7 @@ export class IdentifierList extends ASTNode {
     Spec.list('ids')
   ])
 
-  toDescription(level){
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return enumerateList(this.ids, level);
   }
 
@@ -162,10 +157,8 @@ export class StructDefinition extends ASTNode {
     Spec.required('fields')
   ])
 
-  toDescription(level){
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
-    return `define ${this.name.toDescription(level)} to be a structure with
-            ${this.fields.toDescription(level)}`;
+  longDescription(level) {
+    return `define ${this.name.describe(level)} to be a structure with ${this.fields.describe(level)}`;
   }
 
   pretty() {
@@ -202,10 +195,9 @@ export class VariableDefinition extends ASTNode {
     Spec.required('body')
   ])
 
-  toDescription(level){
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:";
-    return `define ${this.name} to be ${insert} ${this.body.toDescription(level)}`;
+    return `define ${this.name} to be ${insert} ${this.body.describe(level)}`;
   }
 
   pretty() {
@@ -244,11 +236,10 @@ export class LambdaExpression extends ASTNode {
     Spec.required('body')
   ])
 
-  toDescription(level){
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `an anonymous function of ${pluralize("argument", this.args.ids)}: 
-            ${this.args.toDescription(level)}, with body:
-            ${this.body.toDescription(level)}`;
+            ${this.args.describe(level)}, with body:
+            ${this.body.describe(level)}`;
   }
 
   pretty() {
@@ -285,11 +276,10 @@ export class FunctionDefinition extends ASTNode {
     Spec.required('body')
   ])
 
-  toDescription(level){
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `define ${this.name} to be a function of 
-            ${this.params.toDescription(level)}, with body:
-            ${this.body.toDescription(level)}`;
+            ${this.params.describe(level)}, with body:
+            ${this.body.describe(level)}`;
   }
 
   pretty() {
@@ -331,9 +321,8 @@ export class CondClause extends ASTNode {
     Spec.list('thenExprs')
   ])
 
-  toDescription(level){
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
-    return `condition: if ${this.testExpr.toDescription(level)}, then, ${this.thenExprs.map(te => te.toDescription(level))}`;
+  longDescription(level) {
+    return `condition: if ${this.testExpr.describe(level)}, then, ${this.thenExprs.map(te => te.describe(level))}`;
   }
 
   pretty() {
@@ -374,10 +363,9 @@ export class CondExpression extends ASTNode {
     Spec.list('clauses')
   ])
 
-  toDescription(level){
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `a conditional expression with ${pluralize("condition", this.clauses)}: 
-            ${this.clauses.map(c => c.toDescription(level))}`;
+            ${this.clauses.map(c => c.describe(level))}`;
   }
 
   pretty() {
@@ -411,10 +399,9 @@ export class IfExpression extends ASTNode {
     Spec.required('elseExpr')
   ])
 
-  toDescription(level){
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
-    return `an if expression: if ${this.testExpr.toDescription(level)}, then ${this.thenExpr.toDescription(level)} `+
-            `else ${this.elseExpr.toDescription(level)}`;
+  longDescription(level) {
+    return `an if expression: if ${this.testExpr.describe(level)}, then ${this.thenExpr.describe(level)} `+
+            `else ${this.elseExpr.describe(level)}`;
   }
 
   pretty() {
@@ -466,6 +453,10 @@ export class Literal extends ASTNode {
     Spec.value('dataType')
   ])
 
+  describe(_level) {
+    return this.options["aria-label"];
+  }
+
   pretty() {
     return withSchemeComment(P.txt(this.value), this.options.comment, this);
   }
@@ -494,6 +485,10 @@ export class Comment extends ASTNode {
     Spec.value('comment')
   ])
 
+  describe(_level) {
+    return this.options["aria-label"];
+  }
+
   pretty() {
     let words = this.comment.trim().split(/\s+/);
     let wrapped = P.wrap(words);
@@ -519,6 +514,10 @@ export class Blank extends ASTNode {
     Spec.value('value'),
     Spec.value('dataType')
   ])
+
+  describe(_level) {
+    return this.options["aria-label"];
+  }
 
   pretty() {
     return P.txt(this.value);
@@ -548,8 +547,7 @@ export class Sequence extends ASTNode {
     Spec.value('name')
   ])
 
-  toDescription(level) {
-    if((this.level  - level) >= descDepth) return this.options['aria-label'];
+  longDescription(level) {
     return `a sequence containing ${enumerateList(this.exprs, level)}`;
   }
 
