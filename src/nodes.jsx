@@ -3,7 +3,7 @@ import React from 'react';
 import {ASTNode, enumerateList, pluralize} from './ast';
 import Node from './components/Node';
 import Args from './components/Args';
-import {DropTarget, DropTargetContainer} from './components/DropTarget';
+import { DropTarget } from './components/DropTarget';
 import * as Spec from './nodeSpec';
 
 
@@ -338,14 +338,12 @@ export class CondClause extends ASTNode {
             {testExpr}
           </div>
           <div className="blocks-cond-result">
-            <DropTargetContainer field="thenExprs">
-              {this.thenExprs.map((thenExpr, index) => (
-                <span key={index}>
-                  <DropTarget/>
-                  {thenExpr.reactElement()}
-                </span>))}
-              <DropTarget/>
-            </DropTargetContainer>
+            {this.thenExprs.map((thenExpr, index) => (
+              <span key={index}>
+                <DropTarget field="thenExprs"/>
+                {thenExpr.reactElement()}
+              </span>))}
+            <DropTarget field="thenExprs"/>
           </div>
         </div>
       </Node>
