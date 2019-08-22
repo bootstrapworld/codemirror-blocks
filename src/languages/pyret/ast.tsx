@@ -74,7 +74,6 @@ export class Bind extends ASTNode {
 
   pretty() {
     let ident = this.ident.pretty();
-    console.log(ident);
     if (this.ann === null) {
       return ident;
     } else {
@@ -341,7 +340,7 @@ export class Var extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-var">VAR</span>
         <span className="blocks-args">
-          <Args>{[this.ident, this.rhs]}</Args>
+          <Args field="var">{[this.ident, this.rhs]}</Args>
         </span>
       </Node>
     );
@@ -601,7 +600,6 @@ export class Check extends ASTNode {
   }
 
   render(props) {
-    console.log("?", this.body);
     let body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
@@ -757,7 +755,7 @@ export class LoadTable extends ASTNode {
           load-table
         </span>
         <span className="blocks-args">
-          <Args>{this.columns}</Args>
+          <Args field="columns">{this.columns}</Args>
         </span>
         {this.sources.map((e, i) => e.reactElement({key: i}))}
     </Node>
@@ -1030,10 +1028,10 @@ export class SpecialImport extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-special-import">
-          <Args>{[this.func]}</Args>
+          <Args field="func">{[this.func]}</Args>
         </span>
         <span className="blocks-args">
-          <Args>{this.args}</Args>
+          <Args field="func">{this.args}</Args>
         </span>
     </Node>
     );
@@ -1339,7 +1337,7 @@ export class For extends ASTNode {
   render(props) {
     let name = this.iterator.reactElement();
     let body = this.body.reactElement();
-    let args = <Args>{this.bindings}</Args>;
+    let args = <Args field="bindings">{this.bindings}</Args>;
     let header_ending = <span>
       {(this.ann != null)? <>&nbsp;->&nbsp;{this.ann.reactElement()}</> : null}{this.block ? <>&nbsp;{"block"}</> : null}
     </span>;
