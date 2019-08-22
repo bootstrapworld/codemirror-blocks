@@ -14,13 +14,11 @@ export default class Args extends Component {
   render() {
     let {children} = this.props;
     const elems = [];
-    elems.push(<DropTarget key={'drop-0'} />);
+    elems.push(<DropTarget key={'drop-0'} field={this.props.field}/>);
     children.forEach((child, index) => {
       elems.push(child.reactElement({key : 'node' + index}));
       elems.push(<DropTarget key={'drop-' + (index+1)} field={this.props.field}/>);
     });
-    return (
-      {elems}
-    );
+    return elems;
   }
 }

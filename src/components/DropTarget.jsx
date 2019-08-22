@@ -23,34 +23,6 @@ export const DropTargetContext = React.createContext({
   field: null,
 });
 
-// Every set of DropTargets must be wrapped in a DropTargetContainer.
-//   `field`: the name of the field containing a list of ASTNodes, that this is
-//     a DropTarget for.
-export class DropTargetContainer extends Component {
-  static contextType = NodeContext;
-
-  constructor(props) {
-    super(props);
-  }
-  
-  static propTypes = {
-    field: PropTypes.string.isRequired,
-    children: PropTypes.node.isRequired,
-  }
-
-  render() {
-    const value = {
-      field: this.props.field,
-      node: this.context.node,
-    };
-    return (
-      <DropTargetContext.Provider value={value}>
-        {this.props.children}
-      </DropTargetContext.Provider>
-    );
-  }
-}
-
 // Find the id of the drop target (if any) on the given side of `child` node.
 export function findAdjacentDropTargetId(child, onLeft) {
   let prevDropTargetId = null;
@@ -94,6 +66,7 @@ export function findAdjacentDropTargetId(child, onLeft) {
 // inside `mapStateToProps`, and it's only accessible if it's a `prop`.
 // Hence this extraneous class.
 export class DropTarget extends Component {
+  static contextType = NodeContext;
   constructor(props) {
     super(props);
     this.isDropTarget = true;
@@ -101,8 +74,14 @@ export class DropTarget extends Component {
   }
 
   render() {
+    const value = {
+      field: this.props.field,
+      node: this.context.node,
+    };
     return (
-      <ActualDropTarget id={this.id} />
+      <DropTargetContext.Provider value={value}>
+        <ActualDropTarget id={this.id} />
+      </DropTargetContext.Provider>
     );
   }
 }
@@ -167,6 +146,7 @@ class ActualDropTarget extends BlockComponent {
       if (elem == null || elem.children == null) { // if it's a new element (insertion)
         return null;
       }
+      if(!ast) console.log('@@@ null AST FOUND!!');
       for (let sibling of elem.children) {
         if (sibling.id && sibling.id.startsWith("block-node-")) {
           // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
@@ -196,6 +176,7 @@ class ActualDropTarget extends BlockComponent {
       }
       return null;
     }
+    console.log('ActualDropTarget Context:', this.context)
 
     return findLoc(this.context.node.element) || this.context.pos;
   }
