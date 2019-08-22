@@ -62,11 +62,14 @@ export default (Editor, searchModes) => {
     }
 
     handleSetCursor = cursor => {
-      // console.log('search cursor', cursor);
       this.setState({cursor});
     }
 
-    handleTab = searchEngine => this.setState({searchEngine})
+    // Override default: only allow tab switching via left/right, NOT up/down
+    handleTab = (searchTabIdx, lastTabIdx, event) => {
+      if(["ArrowDown", "ArrowUp"].includes(event.key)) return false;
+      return this.setState({searchTabIdx});
+    }
 
     handleSetCM = cm => this.cm = cm
 
