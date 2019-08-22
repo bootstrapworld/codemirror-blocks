@@ -271,8 +271,6 @@ However, if you want to put drop targets in a more interesting arrangement than
 Simply construct them with `<DropTarget field="FIELDNAME"/>` anywhere in your
 node.
 
-[TODO: eliminate DropTargetContainers]
-
 -----
 
 That's it! We've fully defined the `VariableDefinition` node type.

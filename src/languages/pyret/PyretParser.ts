@@ -448,7 +448,7 @@ const nodeTypes = {
   // "s-data": function(l: Loc, name: string, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
   // "s-data-expr": function(l: Loc, name: string, namet: Name, params: Name[], mixins: Expr[], variants: Variant[], shared_members: Member[], check: Expr | null) {},
   's-for': function(l: Loc, iterator: Expr, bindings: ForBind[], ann: Ann, body: Expr, blocky: boolean) {
-    if (DEBUG || true) console.log(arguments);
+    if (DEBUG) console.log(arguments);
     return new For(l.from, l.to, iterator, bindings, ann, body, blocky, {[ariaLabel]: `a for expression`});
   },
   "s-check": function(pos: Loc, name: string | undefined, body: any, keyword_check: boolean) {
@@ -512,7 +512,7 @@ const nodeTypes = {
   
   // data ForBind
   's-for-bind': function(l: Loc, bind: Bind, value: Expr) {
-    if (DEBUG || true) console.log(arguments);
+    if (DEBUG) console.log(arguments);
     return new ForBind(l.from, l.to, idToLiteral(bind), value, {aria: `binding for for expression`});
   },
 
@@ -547,7 +547,7 @@ end
   // data LoadTableSpec
   // 's-sanitize': function(l: Loc, name: Name, sanitizer: Expr) {},
   's-table-src': function (pos: Loc, source: any) {
-    if(DEBUG || true) console.log(arguments);
+    if(DEBUG) console.log(arguments);
     return source;
   },
 
@@ -609,7 +609,7 @@ end
   // 'a-record': function(l: Loc, fields: AField[]) {},
   // 'a-tuple': function(l: Loc, fields: AField[]) {},
   'a-app': function(l: Loc, ann: Ann, args: Ann[]) {
-    if (DEBUG || true) console.log(arguments);
+    if (DEBUG) console.log(arguments);
     return new AnnotationApp(l.from, l.to, ann, args, {[ariaLabel]: `appication annotation`});
   },
   // 'a-pred': function(l: Loc, ann: Ann, exp: Expr) {},
@@ -718,17 +718,13 @@ export default class PyretParser {
     const tokenizer = TOK.Tokenizer;
     tokenizer.tokenizeFrom(text);
     // Parse
-    console.log("@going to parse");
     const parsed = P.PyretGrammar.parse(tokenizer);
     if (parsed) {
-      console.log("@valid parse");
       // Count parse trees
       const countParses = P.PyretGrammar.countAllParses(parsed);
       if (countParses === 1) {
-        console.log("@exactly one valid parse", parsed);
         // Construct parse tree
         const parseTree = P.PyretGrammar.constructUniqueParse(parsed);
-        console.log("@reconstructed unique parse");
         // Translate parse tree to AST
         const ast = translateParseTree(parseTree, "<editor>.arr");
         return ast;

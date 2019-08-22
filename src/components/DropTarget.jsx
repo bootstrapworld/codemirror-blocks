@@ -23,34 +23,6 @@ export const DropTargetContext = React.createContext({
   field: null,
 });
 
-// Every set of DropTargets must be wrapped in a DropTargetContainer.
-//   `field`: the name of the field containing a list of ASTNodes, that this is
-//     a DropTarget for.
-export class DropTargetContainer extends Component {
-  static contextType = NodeContext;
-
-  constructor(props) {
-    super(props);
-  }
-  
-  static propTypes = {
-    field: PropTypes.string.isRequired,
-    children: PropTypes.node.isRequired,
-  }
-
-  render() {
-    const value = {
-      field: this.props.field,
-      node: this.context.node,
-    };
-    return (
-      <DropTargetContext.Provider value={value}>
-        {this.props.children}
-      </DropTargetContext.Provider>
-    );
-  }
-}
-
 // Find the id of the drop target (if any) on the given side of `child` node.
 export function findAdjacentDropTargetId(child, onLeft) {
   let prevDropTargetId = null;
@@ -94,6 +66,12 @@ export function findAdjacentDropTargetId(child, onLeft) {
 // inside `mapStateToProps`, and it's only accessible if it's a `prop`.
 // Hence this extraneous class.
 export class DropTarget extends Component {
+  static contextType = NodeContext;
+
+  static propTypes = {
+    field: PropTypes.string.isRequired,
+  }
+
   constructor(props) {
     super(props);
     this.isDropTarget = true;
@@ -101,8 +79,14 @@ export class DropTarget extends Component {
   }
 
   render() {
+    const value = {
+      field: this.props.field,
+      node: this.context.node,
+    };
     return (
-      <ActualDropTarget id={this.id} />
+      <DropTargetContext.Provider value={value}>
+        <ActualDropTarget id={this.id} />
+      </DropTargetContext.Provider>
     );
   }
 }
@@ -196,7 +180,6 @@ class ActualDropTarget extends BlockComponent {
       }
       return null;
     }
-
     return findLoc(this.context.node.element) || this.context.pos;
   }
 

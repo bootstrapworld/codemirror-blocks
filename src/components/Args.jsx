@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
 import {ASTNode} from '../ast';
-import {DropTarget, DropTargetContainer} from './DropTarget';
+import {DropTarget} from './DropTarget';
 import {span} from '../types';
 
 export default class Args extends Component {
@@ -14,15 +14,11 @@ export default class Args extends Component {
   render() {
     let {children} = this.props;
     const elems = [];
-    elems.push(<DropTarget key={'drop-0'} />);
+    elems.push(<DropTarget key={'drop-0'} field={this.props.field}/>);
     children.forEach((child, index) => {
       elems.push(child.reactElement({key : 'node' + index}));
-      elems.push(<DropTarget key={'drop-' + (index+1)} />);
+      elems.push(<DropTarget key={'drop-' + (index+1)} field={this.props.field}/>);
     });
-    return (
-      <DropTargetContainer field={this.props.field}>
-        {elems}
-      </DropTargetContainer>
-    );
+    return elems;
   }
 }
