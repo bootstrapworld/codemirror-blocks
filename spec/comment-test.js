@@ -45,10 +45,9 @@ describe('When editing and moving commented nodes', function() {
 #| comment2 |#
 2`);
     });
-/*
-  // TODO(Emmanuel): figure out an alternative mechanism for paste operations.
-  // maybe simulated drag events?
-
+    /*
+    // TODO(Emmanuel): figure out an alternative mechanism for paste operations.
+    // maybe simulated drag events?
     it('you should be able to paste a commented node after a commented node', async function() {
       click(this.expr1);
       keyDown(" ", {}, this.expr1);
@@ -94,6 +93,6 @@ describe('When editing and moving commented nodes', function() {
 `);
 
     });
-  */
+    */
   });
 });
