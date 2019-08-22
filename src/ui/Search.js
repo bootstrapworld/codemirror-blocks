@@ -97,11 +97,12 @@ export default (Editor, searchModes) => {
               <div className="modal-content" role="document">
                 <div className="modal-header">
                   <button type="button" className="close" data-dismiss="modal"
-                          aria-label="Close"
+                          aria-label="Save and Return to Editor"
                           onClick={this.handleCloseModal}>
                     &times;
                   </button>
-                  <h5 className="modal-title">Search</h5>
+                  <h5 className="modal-title">Search Settings</h5>
+                  <span>What should <kbd>PgUp</kbd> and <kbd>PgDown</kbd> search for?</span>
                 </div>
                 <div className="modal-body">
                   <Tabs selectedIndex={this.state.searchEngine}
