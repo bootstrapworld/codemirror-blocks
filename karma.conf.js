@@ -66,7 +66,7 @@ module.exports = function(config) {
         timeoutInterval: 30000
       }
     },
-    // reporters: ["karma-typescript"],
+    reporters: ["dots"],
 /*
     reporters: reporters,
     coverageReporter: {
@@ -97,7 +97,8 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: [ envConfig.isCI ? 'ChromeTravisCI' : envConfig.devBrowser ],
+    //browsers: [ envConfig.isCI ? 'ChromeTravisCI' : envConfig.devBrowser ],
+    browsers: ['ChromeHeadless'],
     customLaunchers: {
       ChromeTravisCI: {
         base: 'Chrome',
