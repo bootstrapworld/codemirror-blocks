@@ -16,10 +16,10 @@
       {
         "targets": {
           "browsers": [
-            "Firefox >= 65",
-            "Safari >= 12",
-            "Chrome >= 75",
-            "Edge >= 14"
+            "Firefox >= 50",
+            "Safari >= 10",
+            "Chrome >= 60",
+            "Edge >= 13"
           ]
         }
       }
