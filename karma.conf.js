@@ -102,7 +102,7 @@ module.exports = function(config) {
     customLaunchers: {
       ChromeTravisCI: {
         base: 'Chrome',
-        flags: ['--no-sandbox', '--headless', '--no-proxy-server']
+        flags: ['--no-sandbox', '--headless', '--no-proxy-server', '--remote-debugging-port=9222']
       }
     },
 

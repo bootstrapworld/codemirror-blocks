@@ -18,7 +18,7 @@ branches:
 services:
     - xvfb
 before_install:
-  - export CHROME_BIN=chromium-browser
+  - export CHROME_BIN=google-chrome-stable
   - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
   - rvm install 2.2.3
   - gem install public_suffix -v 2.0.5
