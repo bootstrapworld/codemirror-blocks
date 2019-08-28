@@ -34,6 +34,7 @@ class Node extends BlockComponent {
     children: null,
     normallyEditable: false,
     expandable: true,
+    debug: false,
   }
 
   static propTypes = {
@@ -53,6 +54,7 @@ class Node extends BlockComponent {
     textMarker: PropTypes.object,
 
     activate: PropTypes.func.isRequired,
+    debug: PropTypes.bool,
   }
 
   state = {editable: false, value: null}
@@ -115,6 +117,7 @@ class Node extends BlockComponent {
 
       const keyname = SHARED.keyName(e);
       const result = SHARED.keyMap[keyname];
+      if(this.props.debug) console.log('keyName', result);
       switch (result) {
       case 'prevNode':
         e.preventDefault();
@@ -435,6 +438,7 @@ class Node extends BlockComponent {
       node,
       ...passingProps
     } = this.props;
+    console.log(passingProps);
 
     let comment = node.options.comment;
     if(comment) comment.id = `block-node-${node.id}-comment`;

@@ -32,6 +32,7 @@ class ToplevelBlock extends BlockComponent {
 
   static propTypes = {
     node: PropTypes.object.isRequired,
+    debug: PropTypes.bool,
   }
 
   // we need to trigger a render if the node was moved or resized at the
@@ -52,13 +53,15 @@ class ToplevelBlock extends BlockComponent {
     SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
     this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
     this.mark.BLOCK_NODE_ID = node.id;
-    return ReactDOM.createPortal(node.reactElement(), this.container);
+    return ReactDOM.createPortal(node.reactElement({debug: this.props.debug}), this.container);
   }
 }
 
 class ToplevelBlockEditableCore extends Component {
 
-  static propTypes = {}
+  static propTypes = {
+    debug: PropTypes.bool.isRequired,
+  }
 
   constructor(props) {
     super(props);
@@ -94,7 +97,8 @@ class ToplevelBlockEditableCore extends Component {
                     contentEditableProps={props}
                     isInsertion={true}
                     extraClasses={[]}
-                    onDisableEditable={onDisableEditable} />,
+                    onDisableEditable={onDisableEditable} 
+                    debug={this.props.debug} />,
       this.container
     );
   }
@@ -197,7 +201,7 @@ class BlockEditor extends Component {
 
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
-    const {dispatch} = this.props;
+    const {dispatch, options} = this.props;
 
     const activateNoRecord = node => {
       dispatch(activate(node.id, {record: false, allowMove: true}));
@@ -208,16 +212,13 @@ class BlockEditor extends Component {
       const {ast, focusId} = state;
 
       const message = SHARED.keyMap[SHARED.keyName(e)];
-      console.log("message:", message);
+      if(options.debug) console.log("keyName:", message);
       switch (message) {
       case 'nextNode': {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
-        console.log(nextNode);
         if (nextNode) {
-          console.log("about to activate");
           this.props.activate(nextNode.id, {allowMove: true});
-          console.log("done activating");
         } else {
           playSound(BEEP);
         }
@@ -579,8 +580,12 @@ class BlockEditor extends Component {
     let portals;
     if (SHARED.cm && this.props.ast) {
       // Render all the portals and add TextMarkers -- thunk this so CM only recalculates once
-      portals = this.props.ast.rootNodes.map(r => <ToplevelBlock key={r.id} node={r} />);
-      if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
+      portals = this.props.ast.rootNodes.map(r => 
+        <ToplevelBlock key={r.id} node={r} debug={this.props.options.debug || false} />
+      );
+      if (this.props.hasQuarantine) portals.push(
+        <ToplevelBlockEditable key="-1" debug={this.props.options.debug || false} />
+      );
     }
     return portals;
   }

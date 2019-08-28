@@ -11,7 +11,7 @@ const exampleCode = useBigCode ? bigExampleCode : smallExampleCode;
 
 // grab the DOM Node to host the editor, and use it to instantiate
 const container = document.getElementById('cmb-editor');
-const editor = new CodeMirrorBlocks(container, {collapseAll: false, value: exampleCode}, wescheme);
+const editor = new CodeMirrorBlocks(container, {collapseAll: false, value: exampleCode, debug: true}, wescheme);
 
 // for debugging purposes
 window.editor = editor
