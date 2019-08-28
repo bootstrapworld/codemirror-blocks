@@ -17,7 +17,7 @@ var configs = [
     },
     plugins: [new webpack.ProvidePlugin({ codemirror: "codemirror" })],
     externals: {
-      'codemirror': 'CodeMirror',
+      'codemirror': 'codemirror',
     },
   })
 ];
