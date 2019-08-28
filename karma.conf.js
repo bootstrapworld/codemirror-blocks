@@ -31,7 +31,8 @@ module.exports = function(config) {
       // customShardStrategy: function(config) {
       //   config.executors // number, the executors set above
       //   config.shardIndex // number, the specific index for the shard currently running
-      //   config.description // string, the name of the top-level describe string. Useful //     for determining how to shard the current specs
+      //   config.description // string, the name of the top-level describe string. Useful 
+      //     for determining how to shard the current specs
       //   return config.
       // }
     },
