@@ -212,14 +212,17 @@ class BlockEditor extends Component {
       const {ast, focusId} = state;
 
       const message = SHARED.keyMap[SHARED.keyName(e)];
-      if(options.debug) console.log("keyName:", message);
+      if(options.debug) console.log("keyName:", message,'dispatched on', document.activeElement);
       switch (message) {
       case 'nextNode': {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
+        console.log('@@next node is', nextNode);
         if (nextNode) {
+          console.log('@@activating ', nextNode.id);
           this.props.activate(nextNode.id, {allowMove: true});
         } else {
+          console.log('@BEEP - no next node')
           playSound(BEEP);
         }
         return;

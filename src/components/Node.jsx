@@ -125,8 +125,10 @@ class Node extends BlockComponent {
         return;
 
       case 'nextNode':
+      console.log('before keypress', document.activeNode);
         e.preventDefault();
         activate(fastSkip(node => node.next));
+        console.log('before keypress', document.activeNode);
         return;
 
       case 'activateSearchDialog':
