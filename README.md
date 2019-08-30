@@ -23,7 +23,7 @@ A library for making functional languages editable using visual blocks inside of
 
 4. Hook it up:
 
-        import CodeMirror from 'CodeMirror'
+        import CodeMirror from 'codemirror'
         import CodeMirrorBlocks from 'codemirror-blocks'
         import MyParser from './MyParser.js' //See example/parser.js for an example
 
