@@ -201,6 +201,7 @@ class BlockEditor extends Component {
 
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
+    console.log('starting CMB::handleKeyDown');
     const {dispatch, options} = this.props;
 
     const activateNoRecord = node => {
@@ -208,6 +209,7 @@ class BlockEditor extends Component {
     };
 
     dispatch((_, getState) => {
+      if(options.debug) console.log('1: dispatch called with', e, e.nativeEvent);
       const state = getState();
       const {ast, focusId} = state;
 
@@ -215,6 +217,7 @@ class BlockEditor extends Component {
       if(options.debug) console.log("keyName:", message,'dispatched on', document.activeElement);
       switch (message) {
       case 'nextNode': {
+        if(options.debug) console.log('starting nextNode branch');
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
         console.log('@@next node is', nextNode);
