@@ -202,7 +202,7 @@ class BlockEditor extends Component {
 
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
-    console.log('starting CMB::handleKeyDown');
+    console.log('starting CMB::BlockEditor::handleKeyDown');
     const {dispatch, options} = this.props;
 
     const activateNoRecord = node => {

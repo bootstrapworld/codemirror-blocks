@@ -91,6 +91,7 @@ class Node extends BlockComponent {
   }
 
   handleKeyDown = e => {
+        console.log('starting CMB::Node.jsx::handleKeyDown');
     e.stopPropagation();
     if(this.props.inToolbar) return;
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
@@ -104,6 +105,7 @@ class Node extends BlockComponent {
     const id = node.id;
 
     dispatch((_, getState) => {
+      if(options.debug) console.log('1: dispatch called with', e, e.nativeEvent);
       const state = getState();
       const {ast, selections} = state;
       // so that we get the accurate node
@@ -117,6 +119,7 @@ class Node extends BlockComponent {
 
       const keyname = SHARED.keyName(e);
       const result = SHARED.keyMap[keyname];
+      if(options.debug) console.log("keyName:", result,'dispatched on', document.activeElement);
       if(this.props.debug) console.log('keyName', result);
       switch (result) {
       case 'prevNode':
@@ -125,10 +128,10 @@ class Node extends BlockComponent {
         return;
 
       case 'nextNode':
-      console.log('before keypress', document.activeNode);
+      console.log('starting nextNode. Active node before keypress', document.activeNode);
         e.preventDefault();
         activate(fastSkip(node => node.next));
-        console.log('before keypress', document.activeNode);
+        console.log('after activate, activeNode is', document.activeNode);
         return;
 
       case 'activateSearchDialog':
