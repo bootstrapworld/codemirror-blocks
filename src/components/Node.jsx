@@ -105,7 +105,7 @@ class Node extends BlockComponent {
     const id = node.id;
 
     dispatch((_, getState) => {
-      if(options.debug) console.log('1: dispatch called with', e, e.nativeEvent);
+      console.log('1: dispatch called with', e, e.nativeEvent);
       const state = getState();
       const {ast, selections} = state;
       // so that we get the accurate node
@@ -119,8 +119,8 @@ class Node extends BlockComponent {
 
       const keyname = SHARED.keyName(e);
       const result = SHARED.keyMap[keyname];
-      if(options.debug) console.log("keyName:", result,'dispatched on', document.activeElement);
-      if(this.props.debug) console.log('keyName', result);
+      console.log("keyName:", result,'dispatched on', document.activeElement);
+      console.log('keyName', result);
       switch (result) {
       case 'prevNode':
         e.preventDefault();
