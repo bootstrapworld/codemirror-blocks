@@ -112,7 +112,7 @@ export default class Toolbar extends Component {
     const selected = this.state.selectedPrimitive;
     return (
       <div className={classNames('blocks-ui Toolbar', {'has-selected':!!selected})}>
-        <div className="search-box">
+        <div className="search-box" role="search">
           <label className="screenreader-only" htmlFor="search_box">
             <h2>Search Functions</h2>
           </label>
@@ -125,7 +125,10 @@ export default class Toolbar extends Component {
             onKeyDown={this.handleKeyDown}
             onChange={this.changeSearch} />
           {this.state.search ?
-            <span className="glyphicon glyphicon-remove" onClick={this.clearSearch} />
+            <button 
+              arial-label="clear text" 
+              className="glyphicon glyphicon-remove" 
+              onClick={this.clearSearch} />
             : null}
         </div>
         <div className="primitives-box" tabIndex="-1">
@@ -135,6 +138,7 @@ export default class Toolbar extends Component {
             onBlur={this.handleBlurPrimitive}
             onKeyDown={this.handleKeyDown}
             selected={selected && selected.name}
+            searchString={this.state.search}
             />
         </div>
         <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>

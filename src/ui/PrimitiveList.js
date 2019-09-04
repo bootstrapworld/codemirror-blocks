@@ -20,6 +20,7 @@ class Primitive extends Component {
     onFocus: PropTypes.func.isRequired,
     onBlur: PropTypes.func.isRequired,
     onKeyDown: PropTypes.func.isRequired,
+    searchString: PropTypes.string,
   }
 
   handleKeyDown = e => {
@@ -116,7 +117,7 @@ export default class PrimitiveList extends Component {
     selected: PropTypes.string,
   }
   render() {
-    const {primitives, selected, onFocus, onBlur, onKeyDown} = this.props;
+    const {primitives, selected, onFocus, onBlur, onKeyDown, searchString} = this.props;
     let nodes = [];
     for (let primitive of primitives) {
       if (primitive instanceof PrimitiveGroupModel) {
@@ -145,9 +146,17 @@ export default class PrimitiveList extends Component {
       );
 
     }
+    const text = searchString? (primitives.length == 0? "No" : primitives.length) + " blocks found" : "blocks";
+
     return (
       <div>
-        <h3 id="toolbar_heading" className="screenreader-only">Built-ins</h3>
+        <h3 
+          id="toolbar_heading" 
+          className="screenreader-only" 
+          aria-live="assertive" 
+          atomic="true">
+            {text}
+          </h3>
         <ul className="PrimitiveList list-group" aria-labelledby="toolbar_heading">{nodes}</ul>
       </div>
     );
