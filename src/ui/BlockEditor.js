@@ -147,6 +147,7 @@ class BlockEditor extends Component {
     this.mouseUsed = false;
     SHARED.keyMap = this.props.keyMap;
     SHARED.keyName = CodeMirror.keyName;
+    console.log('@@making BlockEditor');
   }
 
   static defaultProps = {
