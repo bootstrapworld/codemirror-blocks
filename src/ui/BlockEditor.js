@@ -519,7 +519,7 @@ class BlockEditor extends Component {
     SHARED.search = search;
 
     let languageObj = null;
-
+console.log('in CMB componentDidMount, language is:', language);
     if (getLanguage(language)) {
       languageObj = getLanguage(language);
     }
