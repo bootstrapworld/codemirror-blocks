@@ -1,7 +1,7 @@
 import CodeMirrorBlocks from '../../../src/CodeMirrorBlocks';
 import pyret from '../../../src/languages/pyret';
 import 'codemirror/addon/search/searchcursor.js';
-import { teardown } from '../../support/test-utils';
+import { wait, teardown, activationSetup } from '../../support/test-utils';
 import {
   _keyPress,
   _insertText,
@@ -9,22 +9,9 @@ import {
 
 const DELAY = 250;
 
-let setup = function () {
-  const fixture = `
-      <div id="root">
-        <div id="cmb-editor" class="editor-container"/>
-      </div>
-    `;
-  document.body.insertAdjacentHTML('afterbegin', fixture);
-  const container = document.getElementById('cmb-editor');
-  this.cmb = new CodeMirrorBlocks(container, { collapseAll: false, value: "" }, pyret);
-  this.cmb.setBlockMode(true);
+// be sure to call with `apply` or `call`
+let setup = function () { activationSetup.call(this, pyret); };
 
-  this.activeNode = () => this.cmb.getFocusedNode();
-  this.activeAriaId = () =>
-    this.cmb.getScrollerElement().getAttribute('aria-activedescendent');
-  this.selectedNodes = () => this.cmb.getSelectedNodes();
-};
 
 /** //////////////////////////////////////////////////////////
  * Specific navigation tests for programs that use BSDS constructs below
