@@ -10,7 +10,7 @@ const Nodes = require('./nodes');
 const NodeSpec = require('./nodeSpec');
 const Languages = require('./languages');
 const Pretty = require('pretty-fast-pretty-printer');
-const { teardown } = require('../spec/support/test-utils');
+const { teardown, activationSetup } = require('../spec/support/test-utils');
 const { click, doubleClick, blur, keyDown, keyPress, insertText } = require('../spec/support/simulate');
 
 // Consumes a DOM node to host the editor, a language object and the code
@@ -57,6 +57,7 @@ module.exports.NodeSpec = NodeSpec;
 module.exports.Languages = Languages;
 module.exports.Pretty = Pretty;
 module.exports.testing = {
+  activationSetup : activationSetup,
   TeardownAfterTest : teardown,
   click : click,
   doubleClick : doubleClick,
