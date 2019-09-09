@@ -56,7 +56,6 @@ module.exports.Nodes = Nodes;
 module.exports.NodeSpec = NodeSpec;
 module.exports.Languages = Languages;
 module.exports.Pretty = Pretty;
-module.exports.TeardownAfterTest = teardown;
 module.exports.testing = {
   TeardownAfterTest : teardown,
   click : click,

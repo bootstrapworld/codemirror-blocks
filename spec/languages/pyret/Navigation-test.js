@@ -35,7 +35,7 @@ describe("load-spreadsheet", function () {
     expect(this.activeNode()).not.toBe(this.literal1);
     expect(this.activeNode()).toBe(this.literal1.func);
     expect(this.activeNode()).not.toBe(this.literal1.args);
-/*
+
     keyDown("Enter");
     await wait(DELAY);
     keyDown("Enter");
@@ -51,7 +51,6 @@ describe("load-spreadsheet", function () {
     await wait(DELAY);
     keyDown("Enter");
     await wait(DELAY);
-    */
   });
 });
 
