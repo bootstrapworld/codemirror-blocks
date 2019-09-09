@@ -1,6 +1,7 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
 import {store} from '../src/store';
+import {wait, teardown, activationSetup} from './support/test-utils';
 
 import {
   click,
@@ -10,27 +11,20 @@ import {
   insertText,
 } from './support/simulate';
 
-import {wait, cleanupAfterTest} from './support/test-utils';
-
 // ms delay to let the DOM catch up before testing
 const DELAY = 500;
 
+// be sure to call with `apply` or `call`
+let setup = function () { activationSetup.call(this, wescheme); };
+
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
-    const fixture = `
-      <div id="root">
-        <div id="cmb-editor" class="editor-container"/>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('afterbegin', fixture);
-    const container = document.getElementById('cmb-editor');
-    this.blocks = new CodeMirrorBlocks(container, {value: ""}, wescheme);
+    setup.call(this);
+    this.blocks = this.cmb;
     this.blocks.setBlockMode(true);
   });
 
-  afterEach(function() {
-    cleanupAfterTest('root', store);
-  });
+  afterEach(function () { teardown(); });
 
   describe('constructor,', function() {
 
