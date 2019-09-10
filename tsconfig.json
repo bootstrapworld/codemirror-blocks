@@ -10,8 +10,5 @@
         "moduleResolution": "node",
         "sourceMap": true,
         "allowSyntheticDefaultImports": true
-    },
-    "include": [
-        "src/languages/pyret/*"
-    ]
+    }
 }
