@@ -11,7 +11,7 @@ const NodeSpec = require('./nodeSpec');
 const Languages = require('./languages');
 const Pretty = require('pretty-fast-pretty-printer');
 const { teardown } = require('../spec/support/test-utils');
-const { PrimitiveGroup } = require('./ui/PrimitiveBlock');
+const { PrimitiveGroup } = require('./ui/PrimitiveList');
 const { click, doubleClick, blur, keyDown, keyPress, insertText } = require('../spec/support/simulate');
 
 // Consumes a DOM node to host the editor, a language object and the code

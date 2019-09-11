@@ -56,7 +56,7 @@ class Primitive extends Component {
   }
 }
 
-class PrimitiveGroup extends Component {
+export class PrimitiveGroup extends Component {
   static defaultProps = {
     group: {
       name: '',
