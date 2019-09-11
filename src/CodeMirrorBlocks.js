@@ -13,7 +13,7 @@ const Pretty = require('pretty-fast-pretty-printer');
 const { teardown } = require('../spec/support/test-utils');
 const { PrimitiveGroup } = require('./parsers/primitives');
 const { click, doubleClick, blur, keyDown, keyPress, insertText } = require('../spec/support/simulate');
-console.log(PrimitiveGroup);
+
 // Consumes a DOM node to host the editor, a language object and the code
 // to render. Produces an object-representation of CMB, allowing for
 // integration with external (non-react) code
