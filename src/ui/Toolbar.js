@@ -142,7 +142,7 @@ export default class Toolbar extends Component {
             />
         </div>
         <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
-          <div className="contract-header">Contract</div>
+          <div className="block-header">Block</div>
           <PrimitiveBlock primitive={selected}/>
         </div>
       </div>
