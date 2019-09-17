@@ -58,7 +58,9 @@ export class FakeAstInsertion {
     }
     // `pos` lies inside the list. Find out where.
     const list = parent[fieldName];
-    for (const i in list) {
+    // ideally, we'd use for(i in list) {...} here, but some badly-behaved
+    // IDEs monkeypatch the Array prototype, causing that to fail
+    for (var i = 0; i < list.length; i++) {
       if (poscmp(pos, list[i].srcRange().from) <= 0) {
         this.index = i;
         return;
