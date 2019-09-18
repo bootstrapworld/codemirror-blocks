@@ -128,7 +128,11 @@ class Node extends BlockComponent {
 
       case 'activateSearchDialog':
         e.preventDefault();
-        SHARED.search.onSearch(state, () => activate(node));
+        SHARED.search.onSearch(
+          state, 
+          () => {}, 
+          () => SHARED.search.search(true, state)
+        );
         return;
 
       case 'searchPrevious':

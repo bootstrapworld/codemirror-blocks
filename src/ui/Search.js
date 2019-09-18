@@ -26,10 +26,11 @@ export default (Editor, searchModes) => {
       this.setState({settings: {...this.state.settings, [i]: setting}});
     }
 
-    handleActivateSearch = (state, done) => {
+    handleActivateSearch = (state, done, searchForward) => {
       this.setState({showSearchDialog: true});
       this.callback = done;
       this.setState({cmbState: state});
+      this.setState({searchForward: searchForward})
     }
 
     handleCloseModal = () => {
@@ -47,7 +48,6 @@ export default (Editor, searchModes) => {
       );
       if (result !== null) {
         const {node, cursor} = result;
-        // console.log('search cursor 2', cursor);
         this.setState({cursor});
         return node;
       } else {
@@ -58,6 +58,7 @@ export default (Editor, searchModes) => {
     handleKeyModal = e => {
       if (e.key === 'Enter' || e.key === 'Escape') { // enter or escape
         this.handleCloseModal();
+        this.state.searchForward();
       }
     }
 
@@ -68,7 +69,7 @@ export default (Editor, searchModes) => {
     // Override default: only allow tab switching via left/right, NOT up/down
     handleTab = (searchTabIdx, lastTabIdx, event) => {
       if(["ArrowDown", "ArrowUp"].includes(event.key)) return false;
-      return this.setState({searchTabIdx});
+      return this.setState({searchEngine: searchTabIdx});
     }
 
     handleSetCM = cm => this.cm = cm
@@ -96,11 +97,11 @@ export default (Editor, searchModes) => {
           <Modal isOpen={this.state.showSearchDialog}
                  className="wrapper-modal">
             <div tabIndex="-1" className="react-modal" onKeyUp={this.handleKeyModal}
-                 role="dialog">
+                 role="dialog" aria-label="Search Settings">
               <div className="modal-content" role="document">
                 <div className="modal-header">
                   <button type="button" className="close" data-dismiss="modal"
-                          aria-label="Save and Return to Editor"
+                          aria-label="Save and Find"
                           onClick={this.handleCloseModal}>
                     &times;
                   </button>
