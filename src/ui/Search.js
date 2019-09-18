@@ -79,7 +79,7 @@ export default (Editor, searchModes) => {
     handleTab = (searchTabIdx, lastTabIdx, event) => {
       this.setState({firstTime: false});
       if(["ArrowDown", "ArrowUp"].includes(event.key)) return false;
-      return this.setState({searchTabIdx});
+      return this.setState({searchEngine: searchTabIdx});
     }
 
     handleSetCM = cm => this.cm = cm
@@ -109,11 +109,10 @@ export default (Editor, searchModes) => {
                  className="wrapper-modal">
             <div tabIndex="-1" className="react-modal" onKeyUp={this.handleKeyModal}
                  role="dialog" aria-label="Search Settings">
-              <div className="modal-content">
+              <div className="modal-content" role="document">
                 <div className="modal-header">
                   <button type="button" className="close" data-dismiss="modal"
-                          aria-labelledby="searchTitle"
-                          aria-describedby="searchTitle searchDescription"
+                          aria-label="Save and Find"
                           onClick={this.handleCloseModal}>
                     &times;
                   </button>

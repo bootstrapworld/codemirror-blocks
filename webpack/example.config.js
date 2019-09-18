@@ -9,14 +9,6 @@ var baseConfig = require('./base.config.js')();
 
 // this is the config for generating the files needed to run the examples.
 module.exports = function(env, argv) {
-  // Display bundle size when building for production
-  if(argv['mode'] == 'production') { 
-    baseConfig.plugins.push(new BundleAnalyzerPlugin({
-      analyzerMode: 'static', 
-      openAnalyzer: !('TRAVIS' in process.env && 'CI' in process.env)
-    }));
-  }
-
   return _.extend({}, baseConfig, {
     devtool: 'cheap-module-source-map',
     entry: {
