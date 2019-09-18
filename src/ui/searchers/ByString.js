@@ -76,6 +76,15 @@ export default {
       onChange: PropTypes.func.isRequired,
     }
 
+    constructor(props) {
+      super(props);
+      this.inputRef = React.createRef();
+    }
+
+    componentDidMount(props) {
+      this.inputRef.current.focus();
+    }
+
     handleChange = e => {
       this.props.onChange({
         ...this.props.setting,
@@ -90,17 +99,18 @@ export default {
           <div className="form-group">
             <input type="text" className="form-control search-input"
                    name="searchString"
+                   ref={this.inputRef}
                    aria-label="Search String"
                    onChange={this.handleChange}
                    value={setting.searchString} />
           </div>
           <div className="search-options">
             <SearchOption setting={setting} onChange={this.handleChange}
-                          name="isRegex" value="Regex" />
+                          name="isIgnoreCase" value="Ignore case" />
             <SearchOption setting={setting} onChange={this.handleChange}
                           name="isExactMatch" value="Exact match" />
             <SearchOption setting={setting} onChange={this.handleChange}
-                          name="isIgnoreCase" value="Ignore case" />
+                          name="isRegex" value="Regex" />
           </div>
         </React.Fragment>
       );

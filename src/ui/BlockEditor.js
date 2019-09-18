@@ -175,6 +175,7 @@ class BlockEditor extends Component {
       'PageUp'    : 'searchPrevious',
       'PageDown'  : 'searchNext',
       'F3'        : 'activateSearchDialog',
+      'Ctrl-F'    : 'activateSearchDialog',
       'Tab'       : 'changeFocus',
       'Ctrl-Z'    : 'undo',
       'Cmd-Z'     : 'undo',
@@ -206,7 +207,7 @@ class BlockEditor extends Component {
     dispatch((_, getState) => {
       const state = getState();
       const {ast, focusId} = state;
-
+console.log(e);
       const message = SHARED.keyMap[SHARED.keyName(e)];
       console.log("message:", message);
       switch (message) {
@@ -263,7 +264,11 @@ class BlockEditor extends Component {
 
       case 'activateSearchDialog':
         e.preventDefault();
-        SHARED.search.onSearch(state, () => {});
+        SHARED.search.onSearch(
+          state, 
+          () => {}, 
+          () => SHARED.search.search(true, state)
+        );
         return;
 
       case 'searchPrevious':
