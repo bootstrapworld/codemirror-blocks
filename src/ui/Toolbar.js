@@ -126,7 +126,7 @@ export default class Toolbar extends Component {
             onChange={this.changeSearch} />
           {this.state.search ?
             <button 
-              arial-label="clear text" 
+              aria-label="clear text" 
               className="glyphicon glyphicon-remove" 
               onClick={this.clearSearch} />
             : null}
