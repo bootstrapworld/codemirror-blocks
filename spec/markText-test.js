@@ -1,6 +1,4 @@
-import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
-import {store} from '../src/store';
 import {wait, teardown, activationSetup} from './support/test-utils';
 
 // ms delay to let the DOM catch up before testing

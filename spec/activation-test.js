@@ -1,12 +1,7 @@
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
 import { wait, teardown, activationSetup } from './support/test-utils';
-import {
-  click,
-  keyDown,
-  keyPress,
-  insertText,
-} from './support/simulate';
+import { click, keyDown, insertText } from './support/simulate';
 
 const DELAY = 250;
 
