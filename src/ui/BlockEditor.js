@@ -207,7 +207,6 @@ class BlockEditor extends Component {
     dispatch((_, getState) => {
       const state = getState();
       const {ast, focusId} = state;
-console.log(e);
       const message = SHARED.keyMap[SHARED.keyName(e)];
       console.log("message:", message);
       switch (message) {

@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import Modal from 'react-modal';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
+import {say} from '../utils';
 
 export default (Editor, searchModes) => {
   const settings = searchModes.reduce((acc, searchMode, i) => {
@@ -12,7 +13,7 @@ export default (Editor, searchModes) => {
   return class extends Component {
     state = {
       showSearchDialog: false,
-      searchEngine: 0,
+      searchEngine: null,
       cursor: null,
       settings: settings,
       cmbState: null,
@@ -20,6 +21,7 @@ export default (Editor, searchModes) => {
 
     componentDidMount(){
       Modal.setAppElement(this.props.appElement);
+      this.setState({firstTime: true});
     }
 
     handleChangeSetting = i => setting => {
@@ -34,11 +36,15 @@ export default (Editor, searchModes) => {
     }
 
     handleCloseModal = () => {
-      this.setState({showSearchDialog: false});
+      this.setState({showSearchDialog: false, firstTime: true});
       this.callback();
     }
 
     handleSearch = (forward, cmbState) => {
+      if(!this.state.searchEngine) {
+        say("No search setting have been selected.");
+        return;
+      }
       const result = searchModes[this.state.searchEngine].search(
         this.state.cursor,
         this.state.settings[this.state.searchEngine],
@@ -68,8 +74,9 @@ export default (Editor, searchModes) => {
 
     // Override default: only allow tab switching via left/right, NOT up/down
     handleTab = (searchTabIdx, lastTabIdx, event) => {
+      this.setState({firstTime: false});
       if(["ArrowDown", "ArrowUp"].includes(event.key)) return false;
-      return this.setState({searchEngine: searchTabIdx});
+      return this.setState({searchTabIdx});
     }
 
     handleSetCM = cm => this.cm = cm
@@ -86,6 +93,7 @@ export default (Editor, searchModes) => {
       const tabPanels = searchModes.map(({component: SearchMode}, i) => (
         <TabPanel key={i}>
           <SearchMode setting={this.state.settings[i]}
+                      firstTime={this.state.firstTime}
                       onChange={this.handleChangeSetting(i)}
                       cmbState={this.state.cmbState} />
         </TabPanel>
@@ -101,7 +109,7 @@ export default (Editor, searchModes) => {
               <div className="modal-content" role="document">
                 <div className="modal-header">
                   <button type="button" className="close" data-dismiss="modal"
-                          aria-label="Save and Find"
+                          aria-label="Find Next"
                           onClick={this.handleCloseModal}>
                     &times;
                   </button>
