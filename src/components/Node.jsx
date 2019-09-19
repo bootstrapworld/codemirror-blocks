@@ -100,8 +100,7 @@ class Node extends BlockComponent {
     } = this.props;
 
     const activateNoRecord = node => {
-      if(!node){ playSound(BEEP); } // nothing to activate
-      else { dispatch(activate(node.id, {record: false, allowMove: true})); }
+      dispatch(activate(node.id, {record: false, allowMove: true}));
     };
 
     const id = node.id;
@@ -136,25 +135,19 @@ class Node extends BlockComponent {
         e.preventDefault();
         SHARED.search.onSearch(
           state, 
-          () => { this.props.activate }, 
+          () => {}, 
           () => activateNoRecord(SHARED.search.search(true, state))
         );
         return;
 
       case 'searchPrevious':
         e.preventDefault();
-        activate(
-          SHARED.search.search(false, state),
-          {allowMove: true, record: false}
-        );
+        activateNoRecord(SHARED.search.search(false, state));
         return;
       
       case 'searchNext': 
         e.preventDefault();
-        activate(
-          SHARED.search.search(true, state),
-          {allowMove: true, record: false}
-        );
+        activateNoRecord(SHARED.search.search(true, state));
         return;
       
       case 'collapseAll':

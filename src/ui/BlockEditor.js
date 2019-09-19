@@ -17,6 +17,8 @@ import {addLanguage, getLanguage} from '../languages/';
 import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, say} from '../utils';
 import BlockComponent from '../components/BlockComponent';
+import 'codemirror/addon/search/search';
+import 'codemirror/addon/search/searchcursor';
 
 
 
@@ -207,16 +209,12 @@ class BlockEditor extends Component {
       const state = getState();
       const {ast, focusId} = state;
       const message = SHARED.keyMap[SHARED.keyName(e)];
-      console.log("message:", message);
       switch (message) {
       case 'nextNode': {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
-        console.log(nextNode);
         if (nextNode) {
-          console.log("about to activate");
           this.props.activate(nextNode.id, {allowMove: true});
-          console.log("done activating");
         } else {
           playSound(BEEP);
         }
@@ -265,7 +263,7 @@ class BlockEditor extends Component {
         SHARED.search.onSearch(
           state, 
           () => {}, 
-          () => SHARED.search.search(true, state)
+          () => activateNoRecord(SHARED.search.search(true, state))
         );
         return;
 

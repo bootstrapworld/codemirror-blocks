@@ -18,15 +18,18 @@ export default (Editor, searchModes) => {
       cursor: null,
       settings: settings,
       cmbState: null,
+      firstTime: true
     }
 
     componentDidMount(){
       Modal.setAppElement(this.props.appElement);
-      this.setState({firstTime: true});
     }
 
     handleChangeSetting = i => setting => {
-      this.setState({settings: {...this.state.settings, [i]: setting}});
+      this.setState({
+        settings: {...this.state.settings, [i]: setting}, 
+        searchEngine: i
+      });
     }
 
     handleActivateSearch = (state, done, searchForward) => {
@@ -68,6 +71,7 @@ export default (Editor, searchModes) => {
         this.handleCloseModal();
         if (e.key === 'Escape') return; // don't initiate search
         this.state.searchForward();
+        say("Searching for next match. Use PageUp and PageDown to search forwards and backwards");
       }
     }
 
@@ -76,10 +80,10 @@ export default (Editor, searchModes) => {
     }
 
     // Override default: only allow tab switching via left/right, NOT up/down
-    handleTab = (searchTabIdx, lastTabIdx, event) => {
+    handleTab = (searchEngine, lastTabIdx, event) => {
       this.setState({firstTime: false});
       if(["ArrowDown", "ArrowUp"].includes(event.key)) return false;
-      return this.setState({searchEngine: searchTabIdx});
+      return this.setState({searchEngine});
     }
 
     handleSetCM = cm => this.cm = cm
@@ -124,7 +128,7 @@ export default (Editor, searchModes) => {
                   </span>
                 </div>
                 <div className="modal-body">
-                  <Tabs selectedIndex={this.state.searchEngine}
+                  <Tabs
                         onSelect={this.handleTab}
                         defaultFocus={true}>
                     <TabList>{tabs}</TabList>
