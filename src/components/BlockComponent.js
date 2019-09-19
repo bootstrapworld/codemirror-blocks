@@ -1,4 +1,5 @@
-import {Component, PureComponent} from 'react';
+import { Component } from 'react';
+import PropTypes from 'prop-types';
 
 // Check to see whether two `prop` or `state` objects are roughly equal to each
 // other, enough so that we don't need to re-render a node if that's all that
@@ -28,6 +29,10 @@ function vaguelyEqual(x, y) {
 }
 
 export default class BlockComponent extends Component {
+  static propTypes = {
+    node: PropTypes.object
+  }
+
   shouldComponentUpdate(props, state) {
     // NOTE: don't care about the node since the patching algorithm will deal
     // with the update already

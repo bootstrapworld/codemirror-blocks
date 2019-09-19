@@ -1,6 +1,6 @@
 {
   "name": "codemirror-blocks",
-  "version": "0.7.9",
+  "version": "0.8.0",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "dist/CodeMirrorBlocks.js",
   "engines": {

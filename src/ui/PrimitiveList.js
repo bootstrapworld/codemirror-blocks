@@ -2,10 +2,9 @@ import React, {Component} from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
-import {RenderedBlockNode} from './PrimitiveBlock';
 import {Primitive as LanguagePrimitive} from '../parsers/primitives';
 import {DragPrimitiveSource} from '../dnd';
-import {say, dummyPos} from '../utils';
+import {say} from '../utils';
 import SHARED from '../shared';
 import {copyNodes} from '../actions';
 
@@ -40,8 +39,8 @@ class Primitive extends Component {
   }
   
   render() {
-    let {primitive, className, onFocus, onKeyDown,
-         connectDragPreview, connectDragSource} = this.props;
+    let {primitive, className, onFocus,
+      connectDragPreview, connectDragSource} = this.props;
     let elem = (
       <span tabIndex={-1}
             onKeyDown={this.handleKeyDown}
@@ -115,6 +114,8 @@ export default class PrimitiveList extends Component {
     onBlur: PropTypes.func.isRequired,
     onKeyDown: PropTypes.func.isRequired,
     selected: PropTypes.string,
+    primitives: PropTypes.array,
+    searchString: PropTypes.string
   }
   render() {
     const {primitives, selected, onFocus, onBlur, onKeyDown, searchString} = this.props;

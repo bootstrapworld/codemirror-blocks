@@ -35,7 +35,7 @@ export default (Editor, searchModes) => {
       this.setState({showSearchDialog: true});
       this.callback = done;
       this.setState({cmbState: state});
-      this.setState({searchForward: searchForward})
+      this.setState({searchForward: searchForward});
     }
 
     handleCloseModal = () => {

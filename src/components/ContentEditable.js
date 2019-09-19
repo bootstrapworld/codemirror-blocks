@@ -30,9 +30,10 @@ export default class ContentEditable extends Component {
     itDidMount: PropTypes.func,
     value: PropTypes.string,
     id: PropTypes.string,
+    'aria-label': PropTypes.string,
   }
 
-  handleChange = e => {
+  handleChange = _ => {
     this.props.onChange(this.elem.textContent);
   }
 
@@ -66,7 +67,7 @@ export default class ContentEditable extends Component {
   }
 
   render () {
-    const {value, itDidMount, ...props} = this.props;
+    const {value, ...props} = this.props;
     return (
       <span
         {...props}
