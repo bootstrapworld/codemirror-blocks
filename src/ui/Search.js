@@ -17,15 +17,18 @@ export default (Editor, searchModes) => {
       cursor: null,
       settings: settings,
       cmbState: null,
+      firstTime: true
     }
 
     componentDidMount(){
       Modal.setAppElement(this.props.appElement);
-      this.setState({firstTime: true});
     }
 
     handleChangeSetting = i => setting => {
-      this.setState({settings: {...this.state.settings, [i]: setting}});
+      this.setState({
+        settings: {...this.state.settings, [i]: setting}, 
+        searchEngine: i
+      });
     }
 
     handleActivateSearch = (state, done, searchForward) => {
@@ -41,7 +44,7 @@ export default (Editor, searchModes) => {
     }
 
     handleSearch = (forward, cmbState) => {
-      if(!this.state.searchEngine) {
+      if(this.state.searchEngine == null) {
         say("No search setting have been selected.");
         return;
       }
@@ -65,6 +68,7 @@ export default (Editor, searchModes) => {
       if (e.key === 'Enter' || e.key === 'Escape') { // enter or escape
         this.handleCloseModal();
         this.state.searchForward();
+        say("Searching for next match. Use PageUp and PageDown to search forwards and backwards");
       }
     }
 
@@ -73,10 +77,10 @@ export default (Editor, searchModes) => {
     }
 
     // Override default: only allow tab switching via left/right, NOT up/down
-    handleTab = (searchTabIdx, lastTabIdx, event) => {
+    handleTab = (searchEngine, lastTabIdx, event) => {
       this.setState({firstTime: false});
       if(["ArrowDown", "ArrowUp"].includes(event.key)) return false;
-      return this.setState({searchTabIdx});
+      return this.setState({searchEngine});
     }
 
     handleSetCM = cm => this.cm = cm
@@ -117,7 +121,7 @@ export default (Editor, searchModes) => {
                   <span>What should <kbd>PgUp</kbd> and <kbd>PgDown</kbd> search for?</span>
                 </div>
                 <div className="modal-body">
-                  <Tabs selectedIndex={this.state.searchEngine}
+                  <Tabs
                         onSelect={this.handleTab}
                         defaultFocus={true}>
                     <TabList>{tabs}</TabList>

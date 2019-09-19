@@ -32,18 +32,10 @@ export default {
 
       const allNodeTypes = getAllNodeTypes(ast);
       const types = Array.from(allNodeTypes).sort();
-      let currentBadOption = null;
-      if (!allNodeTypes.has(setting.blockType)) {
-        currentBadOption = (
-          <option key={setting.blockType} value={setting.blockType} disabled hidden>
-            {setting.blockType}
-          </option>
-        );
-      }
       return (
         <select name="blockType" value={setting.blockType} onChange={this.handleChange}>
-          {currentBadOption}
           {types.map(t => <option key={t} value={t}>{t}</option>)}
+          }
         </select>
       );
     }
