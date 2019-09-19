@@ -81,8 +81,8 @@ export default {
       this.inputRef = React.createRef();
     }
 
-    componentDidMount(props) {
-      this.inputRef.current.focus();
+    componentDidMount() {
+      if(this.props.firstTime) this.inputRef.current.focus();
     }
 
     handleChange = e => {
