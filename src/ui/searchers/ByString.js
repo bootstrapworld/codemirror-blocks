@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {skipCollapsed, poscmp, skipWhile,
-        getBeginCursor, getEndCursor,
-        getNodeContainingBiased} from '../../utils';
+import {skipCollapsed, poscmp, skipWhile, getNodeContainingBiased } from '../../utils';
 
 /**
  * Returns a query from settings. If the query is a regex but is invalid (indicating
@@ -74,6 +72,7 @@ export default {
     static propTypes = {
       setting: PropTypes.object.isRequired,
       onChange: PropTypes.func.isRequired,
+      firstTime: PropTypes.bool
     }
 
     constructor(props) {

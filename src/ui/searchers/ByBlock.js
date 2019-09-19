@@ -35,7 +35,6 @@ export default {
       return (
         <select name="blockType" value={setting.blockType} onChange={this.handleChange}>
           {types.map(t => <option key={t} value={t}>{t}</option>)}
-          }
         </select>
       );
     }
