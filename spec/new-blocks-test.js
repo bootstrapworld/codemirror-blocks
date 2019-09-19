@@ -1,6 +1,5 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
-import {store} from '../src/store';
 import {wait, teardown, activationSetup} from './support/test-utils';
 
 import {
@@ -180,7 +179,7 @@ describe('The CodeMirrorBlocks Class', function() {
     describe('when dealing with whitespace,', function() {
       beforeEach(async function() {
         this.blocks.setValue('(+ 1 2) (+)');
-        await wait(DELAY)
+        await wait(DELAY);
         this.ast = this.blocks.getAst();
         this.firstRoot = this.ast.rootNodes[0];
         this.firstArg = this.ast.rootNodes[0].args[0];
