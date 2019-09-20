@@ -99,6 +99,11 @@ class Node extends BlockComponent {
       dispatch
     } = this.props;
 
+    const activateNoRecord = node => {
+      if(!node){ playSound(BEEP); } // nothing to activate
+      else { dispatch(activate(node.id, {record: false, allowMove: true})); }
+    };
+
     const id = node.id;
 
     dispatch((_, getState) => {
@@ -106,6 +111,7 @@ class Node extends BlockComponent {
       const {ast, selections} = state;
       // so that we get the accurate node
       const node = ast.getNodeById(id);
+      let result;
 
       const fastSkip = next => skipCollapsed(node, next, state);
       const activate = (n, options={allowMove: true, record: true}) => {
@@ -114,8 +120,8 @@ class Node extends BlockComponent {
       };
 
       const keyname = SHARED.keyName(e);
-      const result = SHARED.keyMap[keyname];
-      switch (result) {
+      const message = SHARED.keyMap[keyname];
+      switch (message) {
       case 'prevNode':
         e.preventDefault();
         activate(fastSkip(node => node.prev));
@@ -130,8 +136,8 @@ class Node extends BlockComponent {
         e.preventDefault();
         SHARED.search.onSearch(
           state, 
-          () => {}, 
-          () => SHARED.search.search(true, state)
+          () => { this.props.activate }, 
+          () => activateNoRecord(SHARED.search.search(true, state))
         );
         return;
 
@@ -142,15 +148,15 @@ class Node extends BlockComponent {
           {allowMove: true, record: false}
         );
         return;
-
-      case 'searchNext':
+      
+      case 'searchNext': 
         e.preventDefault();
         activate(
           SHARED.search.search(true, state),
           {allowMove: true, record: false}
         );
         return;
-
+      
       case 'collapseAll':
         e.preventDefault();
         dispatch({type: 'COLLAPSE_ALL'});

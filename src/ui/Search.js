@@ -3,6 +3,7 @@ import Modal from 'react-modal';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
 import {say} from '../utils';
+import {store} from '../store';
 
 export default (Editor, searchModes) => {
   const settings = searchModes.reduce((acc, searchMode, i) => {
@@ -41,7 +42,8 @@ export default (Editor, searchModes) => {
     }
 
     handleSearch = (forward, cmbState) => {
-      if(!this.state.searchEngine) {
+      if(this.state.searchEngine == null) {
+        if(store.queuedAnnouncement) { clearTimeout(store.queuedAnnouncement); } 
         say("No search setting have been selected.");
         return;
       }
@@ -64,6 +66,7 @@ export default (Editor, searchModes) => {
     handleKeyModal = e => {
       if (e.key === 'Enter' || e.key === 'Escape') { // enter or escape
         this.handleCloseModal();
+        if (e.key === 'Escape') return; // don't initiate search
         this.state.searchForward();
       }
     }
@@ -106,15 +109,20 @@ export default (Editor, searchModes) => {
                  className="wrapper-modal">
             <div tabIndex="-1" className="react-modal" onKeyUp={this.handleKeyModal}
                  role="dialog" aria-label="Search Settings">
-              <div className="modal-content" role="document">
+              <div className="modal-content">
                 <div className="modal-header">
                   <button type="button" className="close" data-dismiss="modal"
-                          aria-label="Find Next"
+                          aria-labelledby="searchTitle"
+                          aria-describedby="searchTitle searchDescription"
                           onClick={this.handleCloseModal}>
                     &times;
                   </button>
-                  <h5 className="modal-title">Search Settings</h5>
-                  <span>What should <kbd>PgUp</kbd> and <kbd>PgDown</kbd> search for?</span>
+                  <h5 id="searchTitle" className="modal-title" arial-level="1">
+                    Search Settings
+                  </h5>
+                  <span id="searchDescription">
+                    <i>What should <kbd>PgUp</kbd> and <kbd>PgDown</kbd> search for?</i>
+                  </span>
                 </div>
                 <div className="modal-body">
                   <Tabs selectedIndex={this.state.searchEngine}
@@ -127,11 +135,10 @@ export default (Editor, searchModes) => {
                 <div className="modal-footer">
                   <small className="form-text text-muted">
                     <div>
-                      <kbd>&uarr;</kbd>
-                      <kbd>&darr;</kbd> to change modes;
+                      <kbd>&larr;</kbd>
+                      <kbd>&rarr;</kbd> to change modes;
                       <kbd>&crarr;</kbd>
-                      <kbd>esc</kbd> to save search config;
-                      <kbd>⇥</kbd> to focus next element
+                      <kbd>esc</kbd> to close and find next;
                     </div>
                   </small>
                 </div>
