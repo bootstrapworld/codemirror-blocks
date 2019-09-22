@@ -58,8 +58,6 @@ class ToplevelBlock extends BlockComponent {
 
 class ToplevelBlockEditableCore extends Component {
 
-  static propTypes = {}
-
   constructor(props) {
     super(props);
     const [start, end] = this.props.quarantine;
@@ -287,12 +285,6 @@ class BlockEditor extends Component {
         SHARED.cm.redo();
         return;
 
-      case 'delete':
-        e.preventDefault();
-        const dFrom = SHARED.cm.getCursor(true);
-        const dTo = SHARED.cm.getCursor(false);
-        insert("", new OverwriteTarget(dFrom, dTo));
-        return;
       }
     });
   }
@@ -351,7 +343,8 @@ class BlockEditor extends Component {
           commitChanges(changes, true, focusHint);
           dispatch({type: 'REDO'});
         } else {
-          commitChanges(changes, false);
+          console.log('non-undo/redo whitespace change at the top level');
+          commitChanges(changes, false, -1);
         }
       }
     });
