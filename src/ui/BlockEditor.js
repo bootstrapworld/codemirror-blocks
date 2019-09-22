@@ -59,12 +59,6 @@ class ToplevelBlock extends BlockComponent {
 
 class ToplevelBlockEditableCore extends Component {
 
-  static propTypes = {
-    onChange: PropTypes.function,
-    onDisableEditable: PropTypes.function,
-    quarantine: PropTypes.bool,
-  }
-
   constructor(props) {
     super(props);
     const [start, end] = this.props.quarantine;
@@ -204,7 +198,7 @@ class BlockEditor extends Component {
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
     const {dispatch} = this.props;
-    
+
     const activateNoRecord = node => {
       if(!node){ playSound(BEEP); } // nothing to activate
       else { dispatch(activate(node.id, {record: false, allowMove: true})); }
@@ -292,13 +286,6 @@ class BlockEditor extends Component {
         SHARED.cm.redo();
         return;
 
-      case 'delete': {
-        e.preventDefault();
-        const dFrom = SHARED.cm.getCursor(true);
-        const dTo = SHARED.cm.getCursor(false);
-        insert("", new OverwriteTarget(dFrom, dTo));
-        return;
-      }
       }
     });
   }
@@ -357,7 +344,8 @@ class BlockEditor extends Component {
           commitChanges(changes, true, focusHint);
           dispatch({type: 'REDO'});
         } else {
-          commitChanges(changes, false);
+          console.log('non-undo/redo whitespace change at the top level');
+          commitChanges(changes, false, -1);
         }
       }
     });

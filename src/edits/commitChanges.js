@@ -41,7 +41,7 @@ export function commitChanges(
   // Patch the tree and set the state
   if (oldAST.hash !== newAST.hash) newAST = patch(oldAST, newAST);
   store.dispatch({type: 'SET_AST', ast: newAST});
-  // Set the focus
+  // Set the focus.
   let focusId = setFocus(changes, focusHint, newAST);
   if (!isUndoOrRedo) {
     // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
@@ -57,7 +57,9 @@ export function commitChanges(
 // 1. There is no focus hint, or
 // 2. There is a focus hint, but when you call it it returns "fallback".
 // In those cases, use `computeFocusNodeFromChanges` instead.
+// Note: a focusHint of -1 means "let CodeMirror set the focus"
 function setFocus(changes, focusHint, newAST) {
+  if(focusHint == -1) return;
   let {collapsedList} = store.getState();
   let focusNode = focusHint ? focusHint(newAST) : "fallback";
   if (focusNode === "fallback") {
