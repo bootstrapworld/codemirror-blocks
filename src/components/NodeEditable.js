@@ -18,13 +18,6 @@ class NodeEditable extends Component {
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
     value: PropTypes.string,
-    onChange: PropTypes.function,
-    onDisableEditable: PropTypes.function,
-    dispatch: PropTypes.function,
-    setErrorId: PropTypes.function,
-    clearSelections: PropTypes.function,
-    focusSelf: PropTypes.function,
-    isErrored: PropTypes.function,
   }
 
   constructor(props) {
