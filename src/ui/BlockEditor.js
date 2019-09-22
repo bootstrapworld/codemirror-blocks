@@ -197,7 +197,7 @@ class BlockEditor extends Component {
   // NOTE: if there's a focused node, this handler will not be activated
   handleKeyDown = (ed, e) => {
     const {dispatch} = this.props;
-    
+
     const activateNoRecord = node => {
       if(!node){ playSound(BEEP); } // nothing to activate
       else { dispatch(activate(node.id, {record: false, allowMove: true})); }
