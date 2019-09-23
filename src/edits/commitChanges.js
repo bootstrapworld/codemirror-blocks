@@ -39,7 +39,7 @@ export function commitChanges(
   // If we haven't already parsed the AST during speculateChanges, parse it now.
   let newAST = astHint || SHARED.parser.parse(SHARED.cm.getValue());
   // Patch the tree and set the state
-  if (oldAST.hash !== newAST.hash) newAST = patch(oldAST, newAST);
+  newAST = patch(oldAST, newAST);
   store.dispatch({type: 'SET_AST', ast: newAST});
   // Set the focus.
   let focusId = setFocus(changes, focusHint, newAST);

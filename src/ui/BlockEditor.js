@@ -344,7 +344,6 @@ class BlockEditor extends Component {
           commitChanges(changes, true, focusHint);
           dispatch({type: 'REDO'});
         } else {
-          console.log('non-undo/redo whitespace change at the top level');
           commitChanges(changes, false, -1);
         }
       }
