@@ -37,6 +37,7 @@ export default class TrashCan extends Component {
            onClick={this.handleToggle}
            onDragEnter={this.handleDragEnter}
            onDragLeave={this.handleDragLeave}
+           onDrop={this.handleDragLeave}
            onDragOver={this.handleDragOver}>
            🗑️
       </div>
