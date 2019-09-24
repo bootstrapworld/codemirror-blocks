@@ -472,7 +472,7 @@ class BlockEditor extends Component {
     ed.off('changes', this.handleChanges);
   }
 
-  handleFocus = (ed, e) => {
+  handleFocus = _ => {
     const {dispatch} = this.props;
     dispatch((_, getState) => {
       const {cur} = getState();
@@ -494,7 +494,7 @@ class BlockEditor extends Component {
   }
 
   componentDidMount() {
-    const { parser, language, options, search } = this.props;
+    const { parser, options, search } = this.props;
 
     // TODO: pass these with a React Context or something sensible like that.
     SHARED.parser = parser;
@@ -524,13 +524,12 @@ class BlockEditor extends Component {
         const {quarantine} = getState();
         if(!quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
       });
-      }, 0));
+    }, 0));
   }
 
-  // TODO(Emmanuel): is 'data' even needed?
   // this change was introduced during the switch from onCursor to onCursorActivity
   // if there are selections, pass null. otherwise pass the cursor
-  handleCursor = (ed, data) => {
+  handleCursor = (ed, _) => {
     let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
     this.props.setCursor(ed, cur);
   }

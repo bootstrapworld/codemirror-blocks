@@ -29,6 +29,10 @@ function vaguelyEqual(x, y) {
 }
 
 export default class BlockComponent extends Component {
+  static propTypes = {
+    node: PropTypes.object
+  }
+
   shouldComponentUpdate(props, state) {
     // NOTE: don't care about the node since the patching algorithm will deal
     // with the update already

@@ -30,9 +30,10 @@ export default class ContentEditable extends Component {
     itDidMount: PropTypes.func,
     value: PropTypes.string,
     id: PropTypes.string,
+    'aria-label': PropTypes.string,
   }
 
-  handleChange = e => {
+  handleChange = _ => {
     this.props.onChange(this.elem.textContent);
   }
 

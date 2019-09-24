@@ -17,6 +17,7 @@ class NodeEditable extends Component {
     target: PropTypes.instanceOf(Target),
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
+    value: PropTypes.string,
   }
 
   constructor(props) {

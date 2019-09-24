@@ -103,6 +103,7 @@ class Node extends BlockComponent {
       if(!node){ playSound(BEEP); } // nothing to activate
       else { dispatch(activate(node.id, {record: false, allowMove: true})); }
     };
+
     const id = node.id;
 
     dispatch((_, getState) => {

@@ -114,6 +114,8 @@ export default class PrimitiveList extends Component {
     onBlur: PropTypes.func.isRequired,
     onKeyDown: PropTypes.func.isRequired,
     selected: PropTypes.string,
+    primitives: PropTypes.array,
+    searchString: PropTypes.string
   }
   render() {
     const {primitives, selected, onFocus, onBlur, onKeyDown, searchString} = this.props;
