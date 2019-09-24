@@ -1,6 +1,8 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 import CodeMirror from 'codemirror';
+import 'codemirror/addon/search/search';
+import 'codemirror/addon/search/searchcursor';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import './Editor.less';
@@ -16,8 +18,6 @@ import merge from '../merge';
 import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, say} from '../utils';
 import BlockComponent from '../components/BlockComponent';
-import 'codemirror/addon/search/search';
-import 'codemirror/addon/search/searchcursor';
 
 
 
