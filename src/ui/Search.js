@@ -36,7 +36,7 @@ export default (Editor, searchModes) => {
       this.setState({showSearchDialog: true});
       this.callback = done;
       this.setState({cmbState: state});
-      this.setState({searchForward: searchForward})
+      this.setState({searchForward: searchForward});
     }
 
     handleCloseModal = () => {
@@ -113,10 +113,11 @@ export default (Editor, searchModes) => {
                  className="wrapper-modal">
             <div tabIndex="-1" className="react-modal" onKeyUp={this.handleKeyModal}
                  role="dialog" aria-label="Search Settings">
-              <div className="modal-content" role="document">
+              <div className="modal-content">
                 <div className="modal-header">
                   <button type="button" className="close" data-dismiss="modal"
-                          aria-label="Save and Find"
+                          aria-labelledby="searchTitle"
+                          aria-describedby="searchTitle searchDescription"
                           onClick={this.handleCloseModal}>
                     &times;
                   </button>

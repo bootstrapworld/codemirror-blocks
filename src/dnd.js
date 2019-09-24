@@ -1,6 +1,5 @@
 import {DragSource, DropTarget} from 'react-dnd';
 import {isDummyPos} from './utils';
-import SHARED from './shared';
 
 export const ItemTypes = {
   NODE: 'node',
@@ -35,7 +34,7 @@ function nodeTarget(dropMethod) {
       if (monitor.didDrop()) return;
       return dropMethod.call(component, monitor);
     }
-  }
+  };
 }
 
 export function collectTarget(connect, monitor) {

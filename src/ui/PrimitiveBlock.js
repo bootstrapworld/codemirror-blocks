@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {ASTNode} from '../ast';
 import {Primitive} from '../parsers/primitives';
 import './PrimitiveBlock.less';
 

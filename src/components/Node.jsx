@@ -100,9 +100,9 @@ class Node extends BlockComponent {
     } = this.props;
 
     const activateNoRecord = node => {
-      dispatch(activate(node.id, {record: false, allowMove: true}));
+      if(!node){ playSound(BEEP); } // nothing to activate
+      else { dispatch(activate(node.id, {record: false, allowMove: true})); }
     };
-
     const id = node.id;
 
     dispatch((_, getState) => {
@@ -135,7 +135,7 @@ class Node extends BlockComponent {
         e.preventDefault();
         SHARED.search.onSearch(
           state, 
-          () => {}, 
+          () => { this.props.activate }, 
           () => activateNoRecord(SHARED.search.search(true, state))
         );
         return;

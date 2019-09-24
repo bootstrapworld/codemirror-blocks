@@ -13,7 +13,6 @@ import {speculateChanges} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import merge from '../merge';
-import {addLanguage, getLanguage} from '../languages/';
 import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, say} from '../utils';
 import BlockComponent from '../components/BlockComponent';
@@ -238,13 +237,13 @@ class BlockEditor extends Component {
         this.props.setCursor(null, {line: 0, ch: 0});
         return;
 
-      case 'lastVisibleNode':
+      case 'lastVisibleNode': {
         // NOTE(Emmanuel): shouldn't this go to the last visible node?
         e.preventDefault();
         const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
         this.props.setCursor(null, {line: idx, ch: text.length});
         return;
-
+      }
       case 'changeFocus':
         // NOTE(Emmanuel): this is dead code, unless we can trap tab events
         e.preventDefault();
@@ -269,8 +268,7 @@ class BlockEditor extends Component {
 
       case 'searchPrevious':
         e.preventDefault();
-        const result = SHARED.search.search(false, state);
-        activateNoRecord(result);
+        activateNoRecord(SHARED.search.search(false, state));
         return;
 
       case 'searchNext':
@@ -496,20 +494,12 @@ class BlockEditor extends Component {
   }
 
   componentDidMount() {
-    const {
-      parser, language, options, search,
-    } = this.props;
+    const { parser, language, options, search } = this.props;
 
     // TODO: pass these with a React Context or something sensible like that.
     SHARED.parser = parser;
     SHARED.options = options;
     SHARED.search = search;
-
-    let languageObj = null;
-
-    if (getLanguage(language)) {
-      languageObj = getLanguage(language);
-    }
 
     const clipboardBuffer = document.createElement('textarea');
     clipboardBuffer.ariaHidden = true;

@@ -1,7 +1,6 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import {ASTNode} from '../ast';
 import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';
@@ -36,7 +35,7 @@ class NodeEditable extends Component {
     e.stopPropagation();
     const {target, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
     dispatch((dispatch, getState) => {
-      const {ast, focusId} = getState();
+      const {focusId} = getState();
 
       if (this.props.value === null || this.props.value === this.cachedValue) {
         this.props.onDisableEditable(false);
