@@ -149,6 +149,7 @@ class NodeEditable extends Component {
         onChange   = {onChange}
         onBlur     = {this.handleBlur}
         onKeyDown  = {this.handleKeyDown}
+        onDoubleClick = {e => e.stopPropagation() } // trap doubleclicks
         onClick    = {this.handleClick}
         aria-label = {text}
         value      = {text} />
