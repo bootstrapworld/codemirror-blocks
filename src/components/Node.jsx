@@ -66,10 +66,20 @@ class Node extends BlockComponent {
     this.setState({value});
   }
 
-  handleClick = e => {
+  handleMouseDown = e => {
     if(!this.props.inToolbar) e.stopPropagation(); // prevent ancestors to steal focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
     this.props.activate(this.props.node.id, {allowMove: false});
+  }
+
+  handleClick = e => {
+    const {
+      inToolbar, isCollapsed, normallyEditable, 
+      collapse, uncollapse, node
+    } = this.props;
+    e.stopPropagation();
+    if(inToolbar) return;
+    if(normallyEditable) this.handleMakeEditable();
   }
 
   handleDoubleClick = e => {
@@ -79,9 +89,7 @@ class Node extends BlockComponent {
     } = this.props;
     e.stopPropagation();
     if(inToolbar) return;
-    if(normallyEditable) {
-      this.handleMakeEditable();
-    } else if(isCollapsed) {
+    if(isCollapsed) {
       uncollapse(node.id);
     } else {
       collapse(node.id);
@@ -494,6 +502,7 @@ class Node extends BlockComponent {
             cssText : textMarker? textMarker.options.css : null,
           }}
           title         = {textMarker? textMarker.options.title : null}
+          onMouseDown   = {this.handleMouseDown}
           onClick       = {this.handleClick}
           onDoubleClick = {this.handleDoubleClick}
           onKeyDown     = {this.handleKeyDown}>

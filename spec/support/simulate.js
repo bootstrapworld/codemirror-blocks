@@ -14,6 +14,9 @@ let Simulate = ReactTestUtils.Simulate;
 export function click(node) {
   Simulate.click(toElement(node));
 }
+export function mouseDown(node) {
+  Simulate.mouseDown(toElement(node));
+}
 export function doubleClick(node) {
   Simulate.doubleClick(toElement(node));
 }
