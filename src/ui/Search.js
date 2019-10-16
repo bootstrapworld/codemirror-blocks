@@ -50,13 +50,18 @@ export default (Editor, searchModes) => {
         say("No search setting have been selected.");
         return;
       }
-      const result = searchModes[this.state.searchEngine].search(
-        this.state.cursor,
-        this.state.settings[this.state.searchEngine],
-        this.cm,
-        cmbState,
-        forward,
-      );
+      var searchFrom = this.state.cursor;
+      var result;
+      while(!result || result.node.id == cmbState.focusId) {
+        result = searchModes[this.state.searchEngine].search(
+          searchFrom,
+          this.state.settings[this.state.searchEngine],
+          this.cm,
+          cmbState,
+          forward,
+        );
+        if(result) searchFrom = result.cursor;
+      }
       if (result !== null) {
         const {node, cursor} = result;
         this.setState({cursor});
