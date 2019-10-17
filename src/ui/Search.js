@@ -50,17 +50,16 @@ export default (Editor, searchModes) => {
         say("No search setting have been selected.");
         return;
       }
-      var searchFrom = this.state.cursor;
-      var result;
-      while(!result || result.node.id == cmbState.focusId) {
-        result = searchModes[this.state.searchEngine].search(
+      var searchFrom = this.state.cursor, result;
+      // keep searching until we find an unfocused node, or we run out of results
+      while(result = searchModes[this.state.searchEngine].search(
           searchFrom,
           this.state.settings[this.state.searchEngine],
           this.cm,
           cmbState,
-          forward,
-        );
-        if(result) searchFrom = result.cursor;
+          forward)) {
+        if(result && result.node.id !== cmbState.focusId) break;
+        searchFrom = result.cursor;
       }
       if (result !== null) {
         const {node, cursor} = result;
