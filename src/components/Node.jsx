@@ -73,10 +73,7 @@ class Node extends BlockComponent {
   }
 
   handleClick = e => {
-    const {
-      inToolbar, isCollapsed, normallyEditable, 
-      collapse, uncollapse, node
-    } = this.props;
+    const { inToolbar, isCollapsed, normallyEditable } = this.props;
     e.stopPropagation();
     if(inToolbar) return;
     if(normallyEditable) this.handleMakeEditable();

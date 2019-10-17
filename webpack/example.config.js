@@ -9,6 +9,7 @@ var baseConfig = require('./base.config.js')();
 
 // this is the config for generating the files needed to run the examples.
 module.exports = function(env, argv) {
+
   return _.extend({}, baseConfig, {
     devtool: 'cheap-module-source-map',
     entry: {
