@@ -135,12 +135,6 @@ class ActualDropTarget extends BlockComponent {
     };
   }
   
-  // NOTE(Oak): DropTarget should not handle click event since clicking it
-  // should activate the node
-  handleClick = e => {
-    e.stopPropagation();
-  }
-
   getLocation() {
     let prevNodeId = null;
     let targetId = `block-drop-target-${this.props.id}`;
@@ -183,7 +177,7 @@ class ActualDropTarget extends BlockComponent {
     return findLoc(this.context.node.element) || this.context.pos;
   }
 
-  handleDoubleClick = e => {
+  handleClick = e => {
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
     this.props.setEditable(true);
@@ -223,7 +217,6 @@ class ActualDropTarget extends BlockComponent {
       <span
         id={`block-drop-target-${this.props.id}`}
         className={classNames(classes)}
-        onDoubleClick = {this.handleDoubleClick}
         onClick = {this.handleClick} />
     );
   }

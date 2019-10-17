@@ -81,7 +81,7 @@ export default {
     }
 
     componentDidMount() {
-      if(this.props.firstTime) this.inputRef.current.focus();
+      if(this.props.firstTime) this.inputRef.current.select();
     }
 
     handleChange = e => {
@@ -101,7 +101,8 @@ export default {
                    ref={this.inputRef}
                    aria-label="Search String"
                    onChange={this.handleChange}
-                   value={setting.searchString} />
+                   value={setting.searchString}
+                   spellCheck="false"/>
           </div>
           <div className="search-options">
             <SearchOption setting={setting} onChange={this.handleChange}

@@ -1,6 +1,7 @@
 import wescheme from '../src/languages/wescheme';
 import {
   click,
+  mouseDown,
   keyDown,
   insertText
 } from './support/simulate';
@@ -35,7 +36,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('deleting the last node should shift focus to the next-to-last', async function() {
-      click(this.literal3);
+      mouseDown(this.literal3);
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal3.element);
       keyDown(" ");
@@ -46,7 +47,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('deleting the first node should shift focus to the parent', async function() {
-      click(this.literal1);
+      mouseDown(this.literal1);
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal1.element);
       keyDown(" ");
@@ -57,7 +58,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('deleting the nth node should shift focus to n-1', async function() {
-      click(this.literal2);
+      mouseDown(this.literal2);
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal2.element);
       keyDown(" ");
@@ -68,7 +69,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('deleting multiple nodes should shift focus to the one before', async function() {
-      click(this.literal2);
+      mouseDown(this.literal2);
       await wait(DELAY);
       keyDown(" ");
       keyDown("ArrowDown");
@@ -82,7 +83,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
     
     it('inserting a node should put focus on the new node', async function() {
-      click(this.literal1);
+      mouseDown(this.literal1);
       await wait(DELAY);
       keyDown(']', {ctrlKey: true});
       await wait(DELAY);
@@ -97,7 +98,7 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it('inserting multiple nodes should put focus on the last of the new nodes', async function() {
-      click(this.literal1);
+      mouseDown(this.literal1);
       await wait(DELAY);
       keyDown(']', {ctrlKey: true});
       await wait(DELAY);
