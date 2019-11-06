@@ -114,7 +114,7 @@ class NodeEditable extends Component {
       if (isCollapsed) range.collapse(false);
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
-    }, 10);
+    }, 20);
   }
 
   contentEditableDidMount = el => {
