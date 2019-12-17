@@ -1,100 +1,56 @@
-import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
 /* eslint-disable */ //temporary
+import {wait, teardown, activationSetup} from './support/test-utils';
+
 import {
-  click,
-  dblclick,
-  blur,
-  keydown,
-  keypress,
-  dragstart,
-  dragenter,
-  dragleave,
+  dragStart,
   drop,
-  cut,
-} from './support/events';
+} from './support/simulate';
 
-import {
-  LEFT,
-  UP,
-  RIGHT,
-  DOWN,
-  LESS_THAN,
-  DELETE,
-  ENTER,
-  SPACE,
-  HOME,
-  END,
-  ESC,
-  LEFTBRACKET,
-  RIGHTBRACKET,
-  ISMAC,
-  DKEY,
-} from 'codemirror-blocks/keycode';
+// be sure to call with `apply` or `call`
+let setup = function () { activationSetup.call(this, wescheme); };
 
-import {wait} from './support/test-utils';
+function createBubbledEvent(type, props = {}) {
+  const event = new Event(type, { bubbles: true });
+  Object.assign(event, props);
+  return event;
+};
 
-const TOGGLE_SELECTION_KEYPRESS =
-      keydown(SPACE, ISMAC ? {altKey: true} : {ctrlKey: true});
-const PRESERVE_NEXT_KEYPRESS =
-      keydown(DOWN, ISMAC ? {altKey: true} : {ctrlKey: true});
-const PRESERVE_PREV_KEYPRESS =
-      keydown(UP, ISMAC ? {altKey: true} : {ctrlKey: true});
 
-// ms delay to let the DOM catch up before testing
-const DELAY = 750;
-/* eslint-enable */ //temporary
-
-describe('The CodeMirrorBlocks Class', function() {
+describe('Drag and drop', function() {
   beforeEach(function() {
-    const fixture = `
-      <div id="root">
-        <div id="cmb-editor" class="editor-container"/>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('afterbegin', fixture);
-    const container = document.getElementById('cmb-editor');
-    this.cmb = new CodeMirrorBlocks(container, {value: ""}, wescheme);
-    this.blocks = this.cmb.blocks;
-    this.cm = this.cmb.cm;
-    this.blocks.setBlockMode(true);
+    setup.call(this);
+    this.cmb.setBlockMode(true);
   });
 
   afterEach(function() {
-    const root = document.getElementById('root');
-    if (root)
-      root.parentNode.removeChild(root);
-
-    const portals = document.getElementsByClassName("ReactModalPortal");
-    while (portals[0]) {
-      const current = portals[0];
-      current.parentNode.removeChild(current);
-    }
-    
-    const textareas = document.getElementsByTagName("textarea");
-    while (textareas[0]) {
-      const current = textareas[0];
-      current.parentNode.removeChild(current);
-    }
+    teardown();
   });
-/*
-  describe('when dealing with dragging,', function() {
+
+  describe('when drag existing node and drop on existing node,', function() {
     beforeEach(function() {
-      this.cm.setValue('(+ 1 2 3)');
-      this.funcSymbol = this.blocks.getAst().rootNodes[0].func;
-      this.firstArg = this.blocks.getAst().rootNodes[0].args[0];
-      this.secondArg = this.blocks.getAst().rootNodes[0].args[1];
-      this.dropTargetEls = this.blocks.getAst().rootNodes[0].element.querySelectorAll(
-        '.blocks-drop-target'
-      );
+      this.cmb.setValue('(+ 1 2 3)');
+      this.retrieve = function() {
+        this.funcSymbol = this.cmb.getAst().rootNodes[0].func;
+        this.firstArg = this.cmb.getAst().rootNodes[0].args[0];
+        this.secondArg = this.cmb.getAst().rootNodes[0].args[1];
+        this.dropTargetEls = this.cmb.getAst().rootNodes[0].element.querySelectorAll(
+          '.blocks-drop-target'
+        );
+      };
+      this.retrieve();
     });
 
-    it('should set the right drag data on dragstart', function() {
-      this.firstArg.element.dispatchEvent(dragstart());
-      expect(this.firstArg.element.classList).toContain('blocks-dragging');
+    it('should override nodes', function() {
+      expect(this.secondArg.element.innerText).toBe('2');
+      dragStart(this.firstArg);
+      drop(this.secondArg);
+      this.retrieve();
+      expect(this.secondArg.element.innerText).toBe('3');
     });
 
+    /*
     it('should set the right css class on dragenter', function() {
       this.dropTargetEls[3].dispatchEvent(dragenter());
       expect(this.dropTargetEls[3].classList).toContain('blocks-over-target');
@@ -172,6 +128,6 @@ describe('The CodeMirrorBlocks Class', function() {
       nodeEl.parentElement.dispatchEvent(dropEvent);
       expect(this.cm.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
     });
+    */
   });
-*/
 });

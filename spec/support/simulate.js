@@ -23,6 +23,19 @@ export function doubleClick(node) {
 export function blur(node=document.activeElement) {
   Simulate.blur(toElement(node));
 }
+
+function createBubbledEvent(type, props = {}) {
+  const event = new Event(type, { bubbles: true });
+  Object.assign(event, props);
+  return event;
+}
+
+export function drop(node=document.activeElement) {
+  toElement(node).dispatchEvent(createBubbledEvent('drop'));
+}
+export function dragStart(node=document.activeElement) {
+  toElement(node).dispatchEvent(createBubbledEvent('dragstart'));
+}
 // TODO: document.activeElement isn't always a good default to dispatch to.
 // What does the _browser_ dispatch to?
 export function keyDown(key, props={}, node=document.activeElement) {
@@ -94,6 +107,7 @@ function getKeyCode(key) {
   case "/": return 191;
   case "<": return 188;
   // If you extend this, make sure to match the official table linked above.
+  default: throw new Error("Unknown key: " + key);
   }
 }
 
