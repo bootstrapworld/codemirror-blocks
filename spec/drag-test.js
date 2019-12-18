@@ -11,13 +11,6 @@ import {
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
 
-function createBubbledEvent(type, props = {}) {
-  const event = new Event(type, { bubbles: true });
-  Object.assign(event, props);
-  return event;
-};
-
-
 describe('Drag and drop', function() {
   beforeEach(function() {
     setup.call(this);
