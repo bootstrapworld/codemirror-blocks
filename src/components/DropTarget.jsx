@@ -8,7 +8,7 @@ import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import BlockComponent from './BlockComponent';
-import uuidv4 from 'uuid/v4';
+import {v4 as uuidv4} from 'uuid';
 import {drop, InsertTarget} from '../actions';
 
 
