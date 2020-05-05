@@ -33,8 +33,14 @@ function createBubbledEvent(type, props = {}) {
 export function drop(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('drop'));
 }
-export function dragStart(node=document.activeElement) {
+export function dragstart(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('dragstart'));
+}
+export function dragenter(node=document.activeElement) {
+  toElement(node).dispatchEvent(createBubbledEvent('dragenter', { isOver: true }));
+}
+export function dragleave(node=document.activeElement) {
+  toElement(node).dispatchEvent(createBubbledEvent('dragleave', { isOver: false }));
 }
 // TODO: document.activeElement isn't always a good default to dispatch to.
 // What does the _browser_ dispatch to?
