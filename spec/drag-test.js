@@ -61,7 +61,7 @@ describe('Drag and drop', function() {
       console.log('dragenter started'); // can't spot it in log
       dragenter(elt); // causes hang
       console.log('dragenter done');
-      //expect(elt.classList).toContain('blocks-over-target');
+      expect(elt.classList).toContain('blocks-over-target');
 
     });
 
