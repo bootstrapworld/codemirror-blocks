@@ -13,55 +13,100 @@ const initialState = {
   announcer: null,
 };
 
+const activities = [];
+
 export const reducer = (
   state = initialState,
   action) => {
   console.log(action);
+    let result = null;
   switch (action.type) {
   case 'SET_FOCUS':
-    return {...state, focusId: action.focusId};
+    result = {...state, focusId: action.focusId};
+    activities.push(result);
+    return result;
   case 'SET_AST':
-    return {...state, ast: action.ast, collapsedList: state.collapsedList.filter(action.ast.getNodeById)};
+    result = {...state, ast: action.ast, collapsedList: state.collapsedList.filter(action.ast.getNodeById)};
+    activities.push(result);
+    return result;
   case 'SET_SELECTIONS':
-    return {...state, selections: action.selections};
+    result = {...state, selections: action.selections};
+    activities.push(result);
+    return result;
   case 'SET_EDITABLE':
-    return {...state, editable: {...state.editable, [action.id]: action.bool}};
+    result = {...state, editable: {...state.editable, [action.id]: action.bool}};
+    activities.push(result);
+    return result;
   case 'SET_ERROR_ID':
-    return {...state, errorId: action.errorId};
+    result = {...state, errorId: action.errorId};
+    activities.push(result);
+    return result;
   case 'COLLAPSE':
-    return {...state, collapsedList: state.collapsedList.concat([action.id])};
+    result = {...state, collapsedList: state.collapsedList.concat([action.id])};
+    activities.push(result);
+    return result;
   case 'UNCOLLAPSE':
-    return {...state, collapsedList: state.collapsedList.filter(e => e !== action.id)};
+    result = {...state, collapsedList: state.collapsedList.filter(e => e !== action.id)};
+    activities.push(result);
+    return result;
   case 'COLLAPSE_ALL':
-    return {...state, collapsedList: [...state.ast.nodeIdMap.keys()]};
+    result = {...state, collapsedList: [...state.ast.nodeIdMap.keys()]};
+    activities.push(result);
+    return result;
   case 'UNCOLLAPSE_ALL':
-    return {...state, collapsedList: []};
+    result = {...state, collapsedList: []};
+    activities.push(result);
+    return result;
   case 'SET_CURSOR':
-    return {...state, cur: action.cur};
+    result = {...state, cur: action.cur};
+    activities.push(result);
+    return result;
   case 'DISABLE_QUARANTINE':
-    return {...state, quarantine: null};
+    result = {...state, quarantine: null};
+    activities.push(result);
+    return result;
   case 'CHANGE_QUARANTINE':
-    return {...state, quarantine: [state.quarantine[0], state.quarantine[1], action.text]};
+    result = {...state, quarantine: [state.quarantine[0], state.quarantine[1], action.text]};
+    activities.push(result);
+    return result;
   case 'SET_QUARANTINE':
-    return {...state, quarantine: [action.start, action.end, action.text]};
+    result = {...state, quarantine: [action.start, action.end, action.text]};
+    activities.push(result);
+    return result;
   case 'SET_ANNOUNCER':
-    return {...state, announcer: action.announcer};
+    result = {...state, announcer: action.announcer};
+    activities.push(result);
+    return result;
   case 'ADD_MARK':
-    return {...state, markedMap: state.markedMap.set(action.id, action.mark)};
+    result = {...state, markedMap: state.markedMap.set(action.id, action.mark)};
+    activities.push(result);
+    return result;
   case 'CLEAR_MARK':
     state.markedMap.delete(action.id);
-    return {...state};
+    result = {...state};
+    activities.push(result);
+    return result;
   case 'DO':
-    return {...state, undoFocusStack: [...state.undoFocusStack, action.focus], redoFocusStack: []};
+    result = {...state, undoFocusStack: [...state.undoFocusStack, action.focus], redoFocusStack: []};
+    activities.push(result);
+    return result;
   case 'UNDO':
     state.redoFocusStack.push(state.undoFocusStack.pop());
-    return {...state};
+    result = {...state};
+    activities.push(result);
+    return result;
   case 'REDO':
     state.undoFocusStack.push(state.redoFocusStack.pop());
-    return {...state};
+    result = {...state};
+    activities.push(result);
+    return result;
   case 'RESET_STORE_FOR_TESTING':
-    return initialState;
+    result =  initialState;
+    activities.push(result);
+    return result;
   default:
-    return state;
+    result =  state;
+    activities.push(result);
+    return result;
   }
 };
