@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "classnames": "^2.2.6",
+    "log4js": "6.3.0",
     "object-hash": "^2.0.3",
     "pretty-fast-pretty-printer": "^0.9.7",
     "prop-types": "^15.7.2",
@@ -85,7 +86,7 @@
     "webpack": "^4.43.0",
     "webpack-bundle-analyzer": "^3.7.0",
     "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "^3.10.3"
+    "webpack-dev-server": "^3.11.0"
   },
   "peerDependencies": {
     "codemirror": "^5.48.4"
