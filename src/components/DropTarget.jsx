@@ -79,6 +79,8 @@ export class DropTarget extends Component {
   }
 
   render() {
+    //console.log('DS26GTE calling DropTarget/render');
+    //console.log(this.props);
     const value = {
       field: this.props.field,
       node: this.context.node,
@@ -132,6 +134,7 @@ class ActualDropTarget extends BlockComponent {
 
     this.state = {
       value: "",
+      mouseOver: false,
     };
   }
   
@@ -183,11 +186,24 @@ class ActualDropTarget extends BlockComponent {
     this.props.setEditable(true);
   }
 
+  handleMouseOver = e => {
+    e.stopPropagation();
+    console.log('DS26GTE handleMouseOver (D) CALLED!', e.target);
+    this.setState({mouseOver: true});
+  }
+
+  handleDragEnter = e => {
+    e.stopPropagation();
+    console.log('DS26GTE handleDragEnter (D) CALLED!');
+  }
+
   handleChange = (value) => {
     this.setState({value});
   }
 
   render() {
+    //console.log('DS26GTE calling ActualDropTarget/render');
+    //console.log(this.props);
     const props = {
       tabIndex          : "-1",
       role              : 'textbox',
@@ -202,6 +218,8 @@ class ActualDropTarget extends BlockComponent {
         <NodeEditable target={target}
                       value={this.state.value}
                       onChange={this.handleChange}
+                      onMouseOver={this.handleMouseOver}
+                      onDragEnter={this.handleDragEnter}
                       isInsertion={true}
                       contentEditableProps={props}
                       extraClasses={['blocks-node', 'blocks-white-space']}
@@ -211,12 +229,14 @@ class ActualDropTarget extends BlockComponent {
     const classes = [
       'blocks-drop-target',
       'blocks-white-space',
-      {'blocks-over-target' : this.props.isOver}
+      {'blocks-over-target' : this.props.isOver || this.state.mouseOver}
     ];
     return this.props.connectDropTarget(
       <span
         id={`block-drop-target-${this.props.id}`}
         className={classNames(classes)}
+        onMouseOver={this.handleMouseOver}
+        onDragEnter={this.handleDragEnter}
         onClick = {this.handleClick} />
     );
   }

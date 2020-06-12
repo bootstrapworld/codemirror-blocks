@@ -67,6 +67,16 @@ class NodeEditable extends Component {
     });
   }
 
+  handleMouseOver = e => {
+    e.stopPropagation();
+    console.log('DS26GTE handleMouseOver (NE) CALLED!');
+  }
+
+  handleDragEnter = e => {
+    e.stopPropagation();
+    console.log('DS26GTE handleDragEnter (NE) CALLED!');
+  }
+
   handleKeyDown = e => {
     switch (SHARED.keyName(e)) {
     case 'Enter': {
@@ -123,6 +133,8 @@ class NodeEditable extends Component {
   }
 
   render() {
+    //console.log('DS2GTE calling NodeEditable/render');
+    //console.log(this.props);
     const {
       contentEditableProps,
       extraClasses,
@@ -149,6 +161,8 @@ class NodeEditable extends Component {
         onChange   = {onChange}
         onBlur     = {this.handleBlur}
         onKeyDown  = {this.handleKeyDown}
+        onMouseOver = {this.handleMouseOver}
+        onDragEnter = {this.handleDragEnter}
         // trap mousedown, clicks and doubleclicks, to prevent focus change, or
         // parent nodes from toggling collapsed state
         onMouseDown= {this.suppressEvent}

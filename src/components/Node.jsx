@@ -93,6 +93,16 @@ class Node extends BlockComponent {
     }
   }
 
+  handleMouseOver = e => {
+    e.stopPropagation();
+    console.log('DS26GTE handleMouseOver CALLED!');
+  }
+
+  handleDragEnter = e => {
+    e.stopPropagation();
+    console.log('DS26GTE handleDragEnter CALLED!');
+  }
+
   handleKeyDown = e => {
     e.stopPropagation();
     if(this.props.inToolbar) return;
@@ -434,6 +444,8 @@ class Node extends BlockComponent {
   }
 
   render() {
+    //console.log('DS26GTE calling Node/render');
+    //console.log(this.props);
     const {
       isSelected,
       isCollapsed,
@@ -478,6 +490,8 @@ class Node extends BlockComponent {
                       target={new ReplaceNodeTarget(node)}
                       value={this.state.value}
                       onChange={this.handleChange}
+                      onMouseOver={this.handleMouseOver}
+                      onDragEnter={this.handleDragEnter}
                       contentEditableProps={props} />
       );
     } else {
@@ -502,6 +516,8 @@ class Node extends BlockComponent {
           onMouseDown   = {this.handleMouseDown}
           onClick       = {this.handleClick}
           onDoubleClick = {this.handleDoubleClick}
+          onMouseOver   = {this.handleMouseOver}
+          onDragEnter   = {this.handleDragEnter}
           onKeyDown     = {this.handleKeyDown}>
           {children}
           {comment && comment.reactElement()}

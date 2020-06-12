@@ -30,6 +30,7 @@ describe('Drag and drop', function() {
         this.funcSymbol = this.cmb.getAst().rootNodes[0].func;
         this.firstArg = this.cmb.getAst().rootNodes[0].args[0];
         this.secondArg = this.cmb.getAst().rootNodes[0].args[1];
+        this.thirdArg = this.cmb.getAst().rootNodes[0].args[2];
         this.dropTargetEls = this.cmb.getAst().rootNodes[0].element.querySelectorAll(
           '.blocks-drop-target'
         );
@@ -38,31 +39,43 @@ describe('Drag and drop', function() {
     });
 
     it('should override nodes', function() {
+      // dragstart,drop
+      console.log('################ 1');
+      console.log('DS26GTE doing dragstart/drop');
+
       expect(this.secondArg.element.innerText).toBe('2');
       dragstart(this.firstArg);
       drop(this.secondArg);
       this.retrieve();
       expect(this.secondArg.element.innerText).toBe('3');
+
+      console.log('DS26GTE done dragstart/drop\n');
+      console.log('%%%%%%%%%%%%%%%% 1');
     });
 
     it('should set the right css class on dragenter', function() {
-     
-      //original 
+
+      //original
       //which was commented and wouldn't have worked without a defn of dragenter anyway:
       //
       //this.dropTargetEls[3].dispatchEvent(dragenter());
       //expect(this.dropTargetEls[3].classList).toContain('blocks-over-target');
 
+      console.log('################ 2');
+      console.log('DS26GTE doing dragstart/dragenter');
 
       //ds26gte try, after suitable defns in simulate.js
 
+      dragstart(this.firstArg);
+
       let elt = this.dropTargetEls[3];
       expect(elt.classList).toContain('blocks-drop-target');
-      console.log('dragenter started'); // can't spot it in log
-      dragenter(elt); // causes hang
-      console.log('dragenter done');
-      // FIXME: The following causes error!
-      //expect(elt.classList).toContain('blocks-over-target');
+
+      dragenter(elt);
+      expect(elt.classList).toContain('blocks-over-target');
+
+      console.log('DS26GTE done dragstart/dragenter');
+      console.log('%%%%%%%%%%%%%%%% 2');
 
     });
 

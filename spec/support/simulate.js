@@ -30,17 +30,35 @@ function createBubbledEvent(type, props = {}) {
   return event;
 }
 
+function createBubbledMouseEvent(type, props = {}) {
+  const event = new MouseEvent(type, { bubbles: true });
+  Object.assign(event, props);
+  return event;
+}
+
 export function drop(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('drop'));
 }
 export function dragstart(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('dragstart'));
 }
-export function dragenter(node=document.activeElement) {
-  toElement(node).dispatchEvent(createBubbledEvent('dragenter', { isOver: true }));
+
+export function dragover(node=document.activeElement) {
+  toElement(node).dispatchEvent(createBubbledEvent('dragover'));
 }
+
+export function dragenter(node=document.activeElement) {
+  toElement(node).dispatchEvent(createBubbledEvent('dragenter'));
+  toElement(node).dispatchEvent(createBubbledEvent('mouseover'));
+}
+
+export function mouseover(node=document.activeElement) {
+  console.log('doing mouseover');
+  toElement(node).dispatchEvent(createBubbledEvent('mouseover'));
+}
+
 export function dragleave(node=document.activeElement) {
-  toElement(node).dispatchEvent(createBubbledEvent('dragleave', { isOver: false }));
+  toElement(node).dispatchEvent(createBubbledEvent('dragleave'));
 }
 // TODO: document.activeElement isn't always a good default to dispatch to.
 // What does the _browser_ dispatch to?
