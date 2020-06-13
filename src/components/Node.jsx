@@ -16,8 +16,6 @@ import classNames from 'classnames';
 import {store} from '../store';
 import {playSound, BEEP} from '../sound';
 
-
-
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
@@ -81,7 +79,7 @@ class Node extends BlockComponent {
 
   handleDoubleClick = e => {
     const {
-      inToolbar, isCollapsed, normallyEditable, 
+      inToolbar, isCollapsed, normallyEditable,
       collapse, uncollapse, node
     } = this.props;
     e.stopPropagation();
@@ -91,16 +89,6 @@ class Node extends BlockComponent {
     } else {
       collapse(node.id);
     }
-  }
-
-  handleMouseOver = e => {
-    e.stopPropagation();
-    console.log('DS26GTE handleMouseOver CALLED!');
-  }
-
-  handleDragEnter = e => {
-    e.stopPropagation();
-    console.log('DS26GTE handleDragEnter CALLED!');
   }
 
   handleKeyDown = e => {
@@ -150,8 +138,8 @@ class Node extends BlockComponent {
       case 'activateSearchDialog':
         e.preventDefault();
         SHARED.search.onSearch(
-          state, 
-          () => { this.props.activate }, 
+          state,
+          () => { this.props.activate },
           () => activateNoRecord(SHARED.search.search(true, state))
         );
         return;
@@ -160,12 +148,12 @@ class Node extends BlockComponent {
         e.preventDefault();
         activateNoRecord(SHARED.search.search(false, state));
         return;
-      
-      case 'searchNext': 
+
+      case 'searchNext':
         e.preventDefault();
         activateNoRecord(SHARED.search.search(true, state));
         return;
-      
+
       case 'collapseAll':
         e.preventDefault();
         dispatch({type: 'COLLAPSE_ALL'});
@@ -184,14 +172,14 @@ class Node extends BlockComponent {
         }
         return;
 
-      // if we're on a root that cannot be collapsed, beep. 
+      // if we're on a root that cannot be collapsed, beep.
       // otherwise collapse all nodes in this root, and select the root
       case 'collapseCurrentRoot':
         e.preventDefault();
         if(!node.parent && (isCollapsed || !expandable)) {
           playSound(BEEP);
         } else {
-          let root = getRoot(node); 
+          let root = getRoot(node);
           let descendants = [...root.descendants()];
           descendants.forEach(d => collapse(d.id));
           activate(root);
@@ -215,11 +203,11 @@ class Node extends BlockComponent {
         }
         return;
 
-      // if we're on a root that cannot be collapsed, beep. 
+      // if we're on a root that cannot be collapsed, beep.
       // otherwise collapse all nodes in this root, and select the root
       case 'expandCurrentRoot':
         e.preventDefault();
-        let root = getRoot(node); 
+        let root = getRoot(node);
         let descendants = [...root.descendants()];
         descendants.forEach(d => uncollapse(d.id));
         activate(root);
@@ -490,8 +478,6 @@ class Node extends BlockComponent {
                       target={new ReplaceNodeTarget(node)}
                       value={this.state.value}
                       onChange={this.handleChange}
-                      onMouseOver={this.handleMouseOver}
-                      onDragEnter={this.handleDragEnter}
                       contentEditableProps={props} />
       );
     } else {
@@ -516,8 +502,6 @@ class Node extends BlockComponent {
           onMouseDown   = {this.handleMouseDown}
           onClick       = {this.handleClick}
           onDoubleClick = {this.handleDoubleClick}
-          onMouseOver   = {this.handleMouseOver}
-          onDragEnter   = {this.handleDragEnter}
           onKeyDown     = {this.handleKeyDown}>
           {children}
           {comment && comment.reactElement()}

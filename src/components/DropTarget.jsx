@@ -11,7 +11,6 @@ import BlockComponent from './BlockComponent';
 import uuidv4 from 'uuid/v4';
 import {drop, InsertTarget} from '../actions';
 
-
 // Provided by `Node`
 export const NodeContext = React.createContext({
   node: null
@@ -27,7 +26,7 @@ export const DropTargetContext = React.createContext({
 export function findAdjacentDropTargetId(child, onLeft) {
   let prevDropTargetId = null;
   let targetId = `block-node-${child.id}`;
-    
+
   function findDT(elem) {
     if (!elem.children) {
       return null;
@@ -36,7 +35,7 @@ export function findAdjacentDropTargetId(child, onLeft) {
     let children = [...elem.children];
     // If we want the drop-target to the right, iterate in reverse
     if (!onLeft) { children.reverse(); }
-      
+
     for (let sibling of children) {
       if (sibling.id && sibling.id.startsWith("block-drop-target-")) {
         // We've hit a drop-target. Remember its id, in case it's adjacent to the node.
@@ -59,7 +58,6 @@ export function findAdjacentDropTargetId(child, onLeft) {
   if (!child.parent) return null;
   return findDT(child.parent.element);
 }
-
 
 // NOTE(Justin) It sure would be nice to generate the id inside of DropTarget.
 // But AFAIK that's not feasible, because the `id` needs to be accessible
@@ -92,7 +90,6 @@ export class DropTarget extends Component {
     );
   }
 }
-
 
 // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
 // check to see whether an adjacent DropTarget is being edited, or, for when the
@@ -137,13 +134,13 @@ class ActualDropTarget extends BlockComponent {
       mouseOver: false,
     };
   }
-  
+
   getLocation() {
     let prevNodeId = null;
     let targetId = `block-drop-target-${this.props.id}`;
     let ast = this.props.ast;
     let dropTargetWasFirst = false;
-    
+
     function findLoc(elem) {
       if (elem == null || elem.children == null) { // if it's a new element (insertion)
         return null;
@@ -186,15 +183,24 @@ class ActualDropTarget extends BlockComponent {
     this.props.setEditable(true);
   }
 
-  handleMouseOver = e => {
+  handleMouseEnterRelated = e => {
+    e.preventDefault();
     e.stopPropagation();
-    console.log('DS26GTE handleMouseOver (D) CALLED!', e.target);
+    console.log('DS26GTE handle', e.type, '(D) CALLED!');
     this.setState({mouseOver: true});
   }
 
-  handleDragEnter = e => {
+  handleMouseLeaveRelated = e => {
+    e.preventDefault();
     e.stopPropagation();
-    console.log('DS26GTE handleDragEnter (D) CALLED!');
+    console.log('DS26GTE handle', e.type, '(D) CALLED!');
+    this.setState({mouseOver: false});
+  }
+
+  handleMouseDragRelated = e => {
+    //e.preventDefault();
+    //e.stopPropagation();
+    console.log('DS26GTE handle', e.type, '(D) CALLED!');
   }
 
   handleChange = (value) => {
@@ -218,8 +224,13 @@ class ActualDropTarget extends BlockComponent {
         <NodeEditable target={target}
                       value={this.state.value}
                       onChange={this.handleChange}
-                      onMouseOver={this.handleMouseOver}
-                      onDragEnter={this.handleDragEnter}
+                      onMouseEnter={this.handleMouseEnterRelated}
+                      onDragEnter={this.handleMouseEnterRelated}
+                      onMouseLeave={this.handleMouseLeaveRelated}
+                      onDragLeave={this.handleMouseLeaveRelated}
+                      onMouseOver={this.handleMouseDragRelated}
+                      onDragOver={this.handleMouseDragRelated}
+                      onDrop={this.handleMouseDragRelated}
                       isInsertion={true}
                       contentEditableProps={props}
                       extraClasses={['blocks-node', 'blocks-white-space']}
@@ -235,8 +246,13 @@ class ActualDropTarget extends BlockComponent {
       <span
         id={`block-drop-target-${this.props.id}`}
         className={classNames(classes)}
-        onMouseOver={this.handleMouseOver}
-        onDragEnter={this.handleDragEnter}
+        onMouseEnter={this.handleMouseEnterRelated}
+        onDragEnter={this.handleMouseEnterRelated}
+        onMouseLeave={this.handleMouseLeaveRelated}
+        onDragLeave={this.handleMouseLeaveRelated}
+        onMouseOver={this.handleMouseDragRelated}
+        onDragOver={this.handleMouseDragRelated}
+        onDrop={this.handleMouseDragRelated}
         onClick = {this.handleClick} />
     );
   }

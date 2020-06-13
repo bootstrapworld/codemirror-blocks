@@ -38,6 +38,7 @@ describe('Drag and drop', function() {
       this.retrieve();
     });
 
+    /*
     it('should override nodes', function() {
       // dragstart,drop
       console.log('################ 1');
@@ -52,21 +53,23 @@ describe('Drag and drop', function() {
       console.log('DS26GTE done dragstart/drop\n');
       console.log('%%%%%%%%%%%%%%%% 1');
     });
+    */
 
     it('should set the right css class on dragenter', function() {
 
       //original
       //which was commented and wouldn't have worked without a defn of dragenter anyway:
-      //
-      //this.dropTargetEls[3].dispatchEvent(dragenter());
-      //expect(this.dropTargetEls[3].classList).toContain('blocks-over-target');
+      /*
+        this.dropTargetEls[3].dispatchEvent(dragenter());
+      expect(this.dropTargetEls[3].classList).toContain('blocks-over-target');
+      */
 
       console.log('################ 2');
       console.log('DS26GTE doing dragstart/dragenter');
 
       //ds26gte try, after suitable defns in simulate.js
 
-      dragstart(this.firstArg);
+      dragstart(this.firstArg); // is this necessary?
 
       let elt = this.dropTargetEls[3];
       expect(elt.classList).toContain('blocks-drop-target');
@@ -79,13 +82,28 @@ describe('Drag and drop', function() {
 
     });
 
-      /*
     it('should set the right css class on dragleave', function() {
+      // original
+      /*
       this.dropTargetEls[3].dispatchEvent(dragenter());
       this.dropTargetEls[3].dispatchEvent(dragleave());
       expect(this.dropTargetEls[3].classList).not.toContain('blocks-over-target');
+      */
+
+      console.log('################ 3');
+      console.log('DS26GTE doing dragenter/dragleave');
+
+        dragstart(this.firstArg); // is this necessary?
+
+      let elt = this.dropTargetEls[3];
+
+      dragenter(elt);
+      dragleave(elt);
+      expect(this.dropTargetEls[3].classList).not.toContain('blocks-over-target');
+
+      console.log('DS26GTE done dragenter/dragleave');
+      console.log('%%%%%%%%%%%%%%%% 3');
     });
-    */
 
       /*
     it('should do nothing when dragging over a non-drop target', function() {

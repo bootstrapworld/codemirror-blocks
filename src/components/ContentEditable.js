@@ -37,16 +37,6 @@ export default class ContentEditable extends Component {
     this.props.onChange(this.elem.textContent);
   }
 
-  handleMouseOver = e => {
-    e.stopPropagation();
-    console.log('DS26GTE handleMouseOver (CE) CALLED!');
-  }
-
-  handleDragEnter = e => {
-    e.stopPropagation();
-    console.log('DS26GTE handleDragEnter (CE) CALLED!');
-  }
-
   handleKeyDown = e => {
     if (e.keyCode === 13 && !e.shiftKey) { // ENTER
       e.preventDefault();
@@ -88,8 +78,6 @@ export default class ContentEditable extends Component {
         contentEditable={true}
         onInput={this.handleChange}
         onKeyDown={this.handleKeyDown}
-        onMouseOver = {this.handleMouseOver}
-        onDragEnter = {this.handleDragEnter}
         onPaste={this.handlePaste} />
     );
   }

@@ -48,18 +48,16 @@ export function dragover(node=document.activeElement) {
 }
 
 export function dragenter(node=document.activeElement) {
+  toElement(node).dispatchEvent(createBubbledEvent('mouseenter'));
   toElement(node).dispatchEvent(createBubbledEvent('dragenter'));
-  toElement(node).dispatchEvent(createBubbledEvent('mouseover'));
-}
-
-export function mouseover(node=document.activeElement) {
-  console.log('doing mouseover');
   toElement(node).dispatchEvent(createBubbledEvent('mouseover'));
 }
 
 export function dragleave(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('dragleave'));
+  toElement(node).dispatchEvent(createBubbledEvent('mouseleave'));
 }
+
 // TODO: document.activeElement isn't always a good default to dispatch to.
 // What does the _browser_ dispatch to?
 export function keyDown(key, props={}, node=document.activeElement) {

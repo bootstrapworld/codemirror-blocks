@@ -7,7 +7,6 @@ import classNames from 'classnames';
 import {insert, activate, Target} from '../actions';
 import {say} from '../utils';
 
-
 class NodeEditable extends Component {
   static defaultProps = {
     children: null,
@@ -65,16 +64,6 @@ class NodeEditable extends Component {
       };
       insert(value, target, onSuccess, onError);
     });
-  }
-
-  handleMouseOver = e => {
-    e.stopPropagation();
-    console.log('DS26GTE handleMouseOver (NE) CALLED!');
-  }
-
-  handleDragEnter = e => {
-    e.stopPropagation();
-    console.log('DS26GTE handleDragEnter (NE) CALLED!');
   }
 
   handleKeyDown = e => {
@@ -161,8 +150,6 @@ class NodeEditable extends Component {
         onChange   = {onChange}
         onBlur     = {this.handleBlur}
         onKeyDown  = {this.handleKeyDown}
-        onMouseOver = {this.handleMouseOver}
-        onDragEnter = {this.handleDragEnter}
         // trap mousedown, clicks and doubleclicks, to prevent focus change, or
         // parent nodes from toggling collapsed state
         onMouseDown= {this.suppressEvent}
