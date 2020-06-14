@@ -1,7 +1,7 @@
 import React from 'react';
 import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining} from './utils';
 import * as P from 'pretty-fast-pretty-printer';
-import uuidv4 from 'uuid/v4';
+import {v4 as uuidv4} from 'uuid';
 import hashObject from 'object-hash';
 import { node } from 'prop-types';
 
