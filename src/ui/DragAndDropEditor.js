@@ -13,8 +13,24 @@ export default
 @DropNodeTarget(function(monitor) {
   const roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
   const {x:left, y:top} = monitor.getClientOffset();
-  const droppedOn = document.elementFromPoint(left, top);
-  const isDroppedOnWhitespace = !roots.some(r => r.replacedWith.contains(droppedOn));
+  console.log('DS26GTE DnDEd left=', left, 'top=', top);
+
+  //const droppedOn = left && top && document.elementFromPoint(left, top);
+  //const isDroppedOnWhitespace = !roots.some(r => r.replacedWith.contains(droppedOn));
+
+  // DS26GTE: sidestep errors if left or top are falsy
+
+  let droppedOn = false;
+
+  if (left && top) {
+    droppedOn = document.elementFromPoint(left, top);
+  }
+
+  let isDroppedOnWhitespace = false;
+
+  if (droppedOn) {
+    isDroppedOnWhitespace = !roots.some(r => r.replacedWith.contains(droppedOn));
+  }
 
   if (isDroppedOnWhitespace) {
     const loc = SHARED.cm.coordsChar({left, top});
