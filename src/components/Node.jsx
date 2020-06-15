@@ -91,6 +91,12 @@ class Node extends BlockComponent {
     }
   }
 
+  handleMouseDragRelated = e => {
+    e.preventDefault();
+    //e.stopPropagation();
+    console.log('DS26GTE handle', e.type, '(N) CALLED!');
+  }
+
   handleKeyDown = e => {
     e.stopPropagation();
     if(this.props.inToolbar) return;
@@ -478,6 +484,7 @@ class Node extends BlockComponent {
                       target={new ReplaceNodeTarget(node)}
                       value={this.state.value}
                       onChange={this.handleChange}
+                      onDrop={this.handleMouseDragRelated}
                       contentEditableProps={props} />
       );
     } else {
@@ -502,6 +509,7 @@ class Node extends BlockComponent {
           onMouseDown   = {this.handleMouseDown}
           onClick       = {this.handleClick}
           onDoubleClick = {this.handleDoubleClick}
+          onDrop        = {this.handleMouseDragRelated}
           onKeyDown     = {this.handleKeyDown}>
           {children}
           {comment && comment.reactElement()}

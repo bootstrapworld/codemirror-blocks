@@ -36,26 +36,68 @@ function createBubbledMouseEvent(type, props = {}) {
   return event;
 }
 
-export function drop(node=document.activeElement) {
+export function dropObsolete(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('drop'));
 }
-export function dragstart(node=document.activeElement) {
+
+export function drop(dataTransfer) {
+  console.log('DS26GTE: doing drop', dataTransfer);
+  let ans = createBubbledEvent('drop');
+  console.log('ans=', ans);
+  return ans;
+}
+
+export function dragstartObsolete(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('dragstart'));
+}
+export function dragstart() {
+  return createBubbledEvent('dragstart');
 }
 
 export function dragover(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('dragover'));
 }
 
-export function dragenter(node=document.activeElement) {
+export function dragenterObsolete(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('mouseenter'));
   toElement(node).dispatchEvent(createBubbledEvent('dragenter'));
   toElement(node).dispatchEvent(createBubbledEvent('mouseover'));
 }
 
-export function dragleave(node=document.activeElement) {
+export function mouseenter() {
+  return createBubbledEvent('mouseenter');
+}
+
+export function dragenter() {
+  return createBubbledEvent('dragenter');
+}
+
+export function mouseover() {
+  return createBubbledEvent('mouseover');
+}
+
+export function dragenterSeq(node=document.activeElement) {
+  toElement(node).dispatchEvent(mouseenter());
+  toElement(node).dispatchEvent(dragenter());
+  toElement(node).dispatchEvent(mouseover());
+}
+
+export function dragleaveObsolete(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('dragleave'));
   toElement(node).dispatchEvent(createBubbledEvent('mouseleave'));
+}
+
+export function dragleave() {
+  return createBubbledEvent('dragleave');
+}
+
+export function mouseleave() {
+  return createBubbledEvent('mouseleave');
+}
+
+export function dragleaveSeq(node=document.activeElement) {
+  toElement(node).dispatchEvent(dragleave());
+  toElement(node).dispatchEvent(mouseleave());
 }
 
 // TODO: document.activeElement isn't always a good default to dispatch to.

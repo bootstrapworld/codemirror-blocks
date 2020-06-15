@@ -71,6 +71,11 @@ export default class Toolbar extends Component {
     }
   }
 
+  handleBlurPrimitive() {
+    // DS26GTE: this is just so onBlur has a non-null value
+    console.log('DS26GTE vacuous handleBlurPrimitive');
+  }
+
   handleKeyDown = event => {
     switch(SHARED.keyName(event)) {
     case 'Esc':
