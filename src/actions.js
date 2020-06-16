@@ -149,7 +149,10 @@ export function activate(id, options) {
     const {ast, focusId, collapsedList} = state;
     if (id === null) { id = focusId; }
     // FIXME DS26GTE: sometimes focusId is also null
-    const node = id && ast.getNodeById(id);
+    let node = null;
+    if (id) {
+      node = ast.getNodeById(id);
+    }
 
     // Don't activate a toolbar node. (Screenreaders will still announce it)
     if (!node) { return; }
