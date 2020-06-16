@@ -95,6 +95,10 @@ class Node extends BlockComponent {
     e.preventDefault();
     //e.stopPropagation();
     console.log('DS26GTE handle', e.type, '(N) CALLED!');
+    if (e.type === 'dragstart') {
+      let dt = new DataTransfer();
+      dt.setData('text/plain', e.target.innerText);
+    }
   }
 
   handleKeyDown = e => {
@@ -484,6 +488,8 @@ class Node extends BlockComponent {
                       target={new ReplaceNodeTarget(node)}
                       value={this.state.value}
                       onChange={this.handleChange}
+                      onDragStart={this.handleMouseDragRelated}
+                      onDragEnd={this.handleMouseDragRelated}
                       onDrop={this.handleMouseDragRelated}
                       contentEditableProps={props} />
       );
@@ -509,6 +515,8 @@ class Node extends BlockComponent {
           onMouseDown   = {this.handleMouseDown}
           onClick       = {this.handleClick}
           onDoubleClick = {this.handleDoubleClick}
+          onDragStart   = {this.handleMouseDragRelated}
+          onDragEnd     = {this.handleMouseDragRelated}
           onDrop        = {this.handleMouseDragRelated}
           onKeyDown     = {this.handleKeyDown}>
           {children}

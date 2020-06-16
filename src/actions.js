@@ -150,7 +150,7 @@ export function activate(id, options) {
     if (id === null) { id = focusId; }
     // FIXME DS26GTE: sometimes focusId is also null
     let node = null;
-    if (id) {
+    if (ast && id) {
       node = ast.getNodeById(id);
     }
 

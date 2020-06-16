@@ -14,7 +14,13 @@ export function removeEventListeners() {
 }
 
 export function cleanupAfterTest(rootId, store) {
-  document.body.removeChild(document.getElementById('root'));
+  let rootNode = document.getElementById('root');
+  if (rootNode) {
+  document.body.removeChild(rootNode);
+  } else {
+    console.log('doing cleanupAfterTest', 'MISSING ROOT');
+  }
+
   store.dispatch({type: "RESET_STORE_FOR_TESTING"});
   const textareas = document.getElementsByTagName("textarea");
   while (textareas[0]) {

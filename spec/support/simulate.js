@@ -41,7 +41,7 @@ export function dropObsolete(node=document.activeElement) {
 }
 
 export function drop(dataTransfer) {
-  //console.log('DS26GTE: doing drop', dataTransfer);
+  console.log('DS26GTE: doing drop', dataTransfer);
   let ans = createBubbledEvent('drop');
   //console.log('ans=', ans);
   return ans;
@@ -50,8 +50,12 @@ export function drop(dataTransfer) {
 export function dragstartObsolete(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('dragstart'));
 }
+
 export function dragstart() {
-  return createBubbledEvent('dragstart');
+  let ans = createBubbledEvent('dragstart');
+  console.log('ans=', ans);
+  console.log('ans.dataTransfer=', ans.dataTransfer);
+  return ans;
 }
 
 export function dragover(node=document.activeElement) {
@@ -98,6 +102,10 @@ export function mouseleave() {
 export function dragleaveSeq(node=document.activeElement) {
   toElement(node).dispatchEvent(dragleave());
   toElement(node).dispatchEvent(mouseleave());
+}
+
+export function dragend() {
+  return createBubbledEvent('dragend');
 }
 
 // TODO: document.activeElement isn't always a good default to dispatch to.
