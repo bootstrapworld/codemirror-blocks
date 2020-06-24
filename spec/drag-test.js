@@ -42,182 +42,72 @@ describe('Drag and drop', function() {
     });
 
     it('should override nodes 1', function() {
-      // dragstart,drop
-      console.log('################ 1');
-      console.log('DS26GTE doing dragstart/drop');
-
       expect(this.secondArg.element.innerText).toBe('2');
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
-      //console.log('dt=', dragEvent.dataTransfer);
       this.secondArg.element.dispatchEvent(drop(dragEvent.dataTransfer));
       this.retrieve();
-      //console.log('se’=', this.secondArg.element.classList);
       expect(this.secondArg.element.innerText).toBe('3');
-
-      console.log('DS26GTE done dragstart/drop\n');
-      console.log('%%%%%%%%%%%%%%%% 1');
     });
 
     it('should set the right css class on dragenter 2', function() {
-
-      //original
-      //which was commented and wouldn't have worked without a defn of dragenter anyway:
-        //this.dropTargetEls[3].dispatchEvent(dragenter());
-      //expect(this.dropTargetEls[3].classList).toContain('blocks-over-target');
-
-      console.log('################ 2');
-      //console.log('DS26GTE doing dragstart/dragenter');
-
-      //ds26gte try, after suitable defns in simulate.js
-
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
-
       let elt = this.dropTargetEls[3];
       expect(elt.classList).toContain('blocks-drop-target');
-
       dragenterSeq(elt);
       expect(elt.classList).toContain('blocks-over-target');
-
-      console.log('DS26GTE done dragstart/dragenter');
-      console.log('%%%%%%%%%%%%%%%% 2');
-
     });
 
    
     it('should set the right css class on dragenter 2’', function() {
-
-      //original
-      //which was commented and wouldn't have worked without a defn of dragenter anyway:
-        //this.dropTargetEls[3].dispatchEvent(dragenter());
-      //expect(this.dropTargetEls[3].classList).toContain('blocks-over-target');
-
-      console.log('################ 2’');
-      //console.log('DS26GTE doing dragstart/dragenter');
-
       //ds26gte try, after suitable defns in simulate.js
-
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
-
       let elt = this.secondArg;
-      //console.log('se=', this.secondArg.element.classList);
-      //expect(elt.classList).toContain('blocks-drop-target');
-
       dragenterSeq(elt);
-      //console.log('se=', this.secondArg.element.classList);
-      //expect(elt.classList).toContain('blocks-over-target');
-
-      //console.log('DS26GTE done dragstart/dragenter');
-      console.log('%%%%%%%%%%%%%%%% 2’');
-
     });
 
     it('should set the right css class on dragleave 3', function() {
-      // original
-      //this.dropTargetEls[3].dispatchEvent(dragenter());
-      //this.dropTargetEls[3].dispatchEvent(dragleave());
-      //expect(this.dropTargetEls[3].classList).not.toContain('blocks-over-target');
-
-      console.log('################ 3');
-      //console.log('DS26GTE doing dragenter/dragleave');
-
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
-
       let elt = this.dropTargetEls[3];
-
       dragenter(elt);
       dragleave(elt);
       expect(elt.classList).not.toContain('blocks-over-target');
-
-      //console.log('DS26GTE done dragenter/dragleave');
-      console.log('%%%%%%%%%%%%%%%% 3');
     });
 
     it('should do nothing when dragging over a non-drop target 4', function() {
-      //this.blocks.getAst().rootNodes[0].element.dispatchEvent(dragenter());
-      //expect(this.blocks.getAst().rootNodes[0].element.classList).not.toContain('blocks-over-target');
-
-      console.log('################ 4');
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
-
-      //console.log('se=', this.secondArg.element.classList);
-
       let nonDT = this.cmb.getAst().rootNodes[0].element;
-      //console.log('before nonDT.cl=')
-      //console.log(nonDT.classList);
-      //console.log('before nonDT.it=');
-      //console.log(nonDT.innerText);
       dragenterSeq(nonDT);
-      //console.log('after nonDT.cl=')
-      //console.log(nonDT.classList);
-      //console.log('after nonDT.it=');
-      //console.log(nonDT.innerText);
-      //console.log('se’=', this.secondArg.element.classList);
       expect(this.secondArg.element.classList).not.toContain('blocks-over-target');
-
-      console.log('%%%%%%%%%%%%%%%% 4');
-
     });
 
     it('should do nothing when dropping onto a non-drop target 5', function() {
-      //let dragEvent = dragstart();
-      //this.firstArg.element.dispatchEvent(dragEvent);
-      //var initialValue = this.cm.getValue();
-      //this.blocks.getAst().rootNodes[0].element.dispatchEvent(drop(dragEvent.dataTransfer));
-      //expect(this.cm.getValue()).toBe(initialValue);
-
-      console.log('################ 5');
-
-      //console.log('DS26GTE This test currently fails!');
-
-
       let initialValue = this.cmb.getValue();
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
-
       let nonDT = this.cmb.getAst().rootNodes[0].element;
-
       nonDT.dispatchEvent(drop(dragEvent.dataTransfer));
       expect(this.cmb.getValue()).toBe(initialValue);
-
-      console.log('%%%%%%%%%%%%%%%% 5');
-
     });
 
-    // These two tests are leftover from when we used to have dropTargets on either side
-    // of the operator. We should probably investigate whether it makes sense to bring them
-    // back, but for now these tests are invalid.
-    // Confirming that they both pass if we bring back that behavior
-
     it('should update the text on drop to a later point in the file 6', function() {
-      console.log('################ 6');
-      //expect(this.dropTargetEls[4].classList).toContain('blocks-drop-target');
-      //// drag the first arg to the drop target
-      //let dragEvent = dragstart();
-      //this.firstArg.element.dispatchEvent(dragEvent);
-      //this.dropTargetEls[4].dispatchEvent(drop(dragEvent.dataTransfer));
-      //expect(this.cm.getValue().replace(/\s+/, ' ')).toBe('(+ 2 1 3)');
       expect(this.dropTargetEls[3].classList).toContain('blocks-drop-target');
       // drag the first arg to the drop target
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       this.dropTargetEls[3].dispatchEvent(drop(dragEvent.dataTransfer));
       expect(this.cmb.getValue().replace(/\s+/, ' ')).toBe('(+ 2 3 1)');
-      console.log('%%%%%%%%%%%%%%%% 6');
     });
     
     it('should update the text on drop to an earlier point in the file 7', function() {
-      console.log('################ 7');
       let dragEvent = dragstart();
       this.secondArg.element.dispatchEvent(dragEvent);
       this.dropTargetEls[0].dispatchEvent(drop(dragEvent.dataTransfer));
-      console.log(this.cmb.getValue());
       expect(this.cmb.getValue().replace('  ', ' ')).toBe('(+ 2 1 3)');
-      console.log('%%%%%%%%%%%%%%%% 7');
     });
 
     /*
@@ -238,12 +128,10 @@ describe('Drag and drop', function() {
     */
     
     it('should replace a literal that you drag onto 9', function() {
-      console.log('################ 9');
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       this.secondArg.element.dispatchEvent(drop(dragEvent.dataTransfer));
       expect(this.cmb.getValue().replace(/\s+/, ' ')).toBe('(+ 1 3)');
-      console.log('%%%%%%%%%%%%%%%% 9');
     });
     
     // these two tests seem to fail because dragend is not called.

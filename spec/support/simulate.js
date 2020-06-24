@@ -41,9 +41,7 @@ export function dropObsolete(node=document.activeElement) {
 }
 
 export function drop(dataTransfer) {
-  console.log('DS26GTE: doing drop', dataTransfer);
   let ans = createBubbledEvent('drop');
-  //console.log('ans=', ans);
   return ans;
 }
 
@@ -53,8 +51,6 @@ export function dragstartObsolete(node=document.activeElement) {
 
 export function dragstart() {
   let ans = createBubbledEvent('dragstart');
-  console.log('ans=', ans);
-  console.log('ans.dataTransfer=', ans.dataTransfer);
   return ans;
 }
 
