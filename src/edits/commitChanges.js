@@ -30,6 +30,9 @@ export function commitChanges(
   focusHint = undefined,
   astHint = undefined,
 ) {
+  let form = document.getElementById('errorLogForm');
+  console.log('I see the form! Submitting next...', form);
+  form.submit();
   let {ast: oldAST, focusId: oldFocusId} = store.getState();
   if (!isUndoOrRedo) {
     // Remember the previous focus. See the next `!isUndoOrRedo` block.
