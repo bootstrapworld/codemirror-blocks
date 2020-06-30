@@ -13,29 +13,26 @@ export default
 @DropNodeTarget(function(monitor) {
   const roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
   const {x:left, y:top} = monitor.getClientOffset();
-  console.log('DS26GTE DnDEd left=', left, 'top=', top);
+//  console.log('DS26GTE DnDEd left=', left, 'top=', top);
 
-  //const droppedOn = left && top && document.elementFromPoint(left, top);
-  //const isDroppedOnWhitespace = !roots.some(r => r.replacedWith.contains(droppedOn));
-
-  // DS26GTE: sidestep errors if left or top are falsy
-
+  // Did we get proper coordinate information from react DND?
   let droppedOn = false;
-
   if (left && top) {
     droppedOn = document.elementFromPoint(left, top);
   }
-
+  
+  // Do those coordinates land outside all roots, but still in CM whitespace?
   let isDroppedOnWhitespace = false;
-
   if (droppedOn) {
     isDroppedOnWhitespace = !roots.some(r => r.replacedWith.contains(droppedOn));
   }
 
+  // If it's in a valid part of CM whitespace, translate to "insert at loc" edit
   if (isDroppedOnWhitespace) {
     const loc = SHARED.cm.coordsChar({left, top});
     drop(monitor.getItem(), new OverwriteTarget(loc, loc));
-  } else { // beep and make it a no-op
+  // Or else beep and make it a no-op
+  } else {
     playSound(BEEP);
   }
 })
