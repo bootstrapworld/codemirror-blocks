@@ -57,8 +57,11 @@ class WrappedCodeMirror extends React.Component {
           onDrop={this.handleDrop}
           onDragOver={this.handleDragOver}
           {...this.props} />
-          //invisible form for error logging
-          // NOTE(Emmanuel) we should re-evaluate this when dealing with pages that have multiple block editors
+          {/* 
+            Invisible form for error logging
+            NOTE(Emmanuel) we should re-evaluate this when dealing 
+            with pages that have multiple block editors 
+          */ }
           <iframe name="hidden_iframe" id="hidden_iframe" style={{display:'none'}}></iframe>
           <form method="post"
                 action="https://docs.google.com/forms/d/e/1FAIpQLScK5CxR-vUC76XBAXsYZYqNqB15YiSpRc61d30DXFUkBVaO0g/formResponse"
