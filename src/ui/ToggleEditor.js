@@ -39,7 +39,8 @@ export default class ToggleEditor extends React.Component {
     }),
     options: PropTypes.object,
     api: PropTypes.object,
-    appElement: PropTypes.instanceOf(Element).isRequired
+    appElement: PropTypes.instanceOf(Element).isRequired,
+    debuggingLog: PropTypes.object,
   }
 
   constructor(props) {
@@ -59,6 +60,11 @@ export default class ToggleEditor extends React.Component {
     this.options = merge(defaultOptions, props.options);
     this.hasMounted = false;
     SHARED.recordedMarks = new Map();
+  }
+
+  loadLoggedActions = (jsonLog) => {
+    console.log('log is', jsonLog);
+    this.setState({debuggingLog: jsonLog});
   }
 
   buildAPI(ed) {
@@ -98,6 +104,8 @@ export default class ToggleEditor extends React.Component {
       'setOption': (option, value) => ed.setOption(option, value),
       'setValue': (value) => ed.setValue(value),
       'swapDoc': (doc) => ed.swapDoc(doc),
+      // testing/debugging
+      'loadLoggedActions' : (jsonStr) => this.loadLoggedActions(jsonStr),
     };
   }
 

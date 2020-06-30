@@ -196,6 +196,7 @@ class BlockEditor extends Component {
   }
 
   // NOTE: if there's a focused node, this handler will not be activated
+  // This handler deals with key events sent from CodeMirror itself
   handleKeyDown = (ed, e) => {
     const {dispatch} = this.props;
 
