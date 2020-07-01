@@ -43,6 +43,10 @@ export default class ToggleEditor extends React.Component {
     debuggingLog: PropTypes.object,
   }
 
+  static defaultProps = {
+    debuggingLog: {}
+  }
+
   constructor(props) {
     super(props);
 
@@ -65,6 +69,7 @@ export default class ToggleEditor extends React.Component {
   loadLoggedActions = (jsonLog) => {
     console.log('log is', jsonLog);
     this.setState({debuggingLog: jsonLog});
+    this.props.api.setValue(jsonLog.startingSource);
   }
 
   buildAPI(ed) {
@@ -205,7 +210,9 @@ export default class ToggleEditor extends React.Component {
         api={this.props.api}
         appElement={this.props.appElement}
         language={this.language.id}
-        options={this.options} />
+        options={this.options}
+        debugHistory={this.props.debuggingLog.history}
+     />
     );
   }
 }
