@@ -268,3 +268,15 @@ export function minimizeChange({from, to, text, removed, origin=undefined}) {
   // Return the result.
   return origin ? {from, to, text, removed, origin} : {from, to, text, removed};
 }
+
+export function logResults(startCode, endCode, history, exception) {
+  try {
+    document.getElementById('start_code').value = startCode;
+    document.getElementById('end_code').value = endCode;
+    document.getElementById('history').value = JSON.stringify(history);
+    document.getElementById('exception').value = exception;
+    document.getElementById('errorLogForm').submit();
+  } catch (e) {
+    console.log('LOGGING FAILED.', e, history);
+  }
+}

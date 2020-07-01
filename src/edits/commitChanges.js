@@ -1,6 +1,6 @@
 import {store} from '../store';
 import SHARED from '../shared';
-import {poscmp, adjustForChange, minimizeChange} from '../utils';
+import {poscmp, adjustForChange, minimizeChange, logResults} from '../utils';
 import {activate} from '../actions';
 import patch from './patchAst';
 
@@ -30,30 +30,31 @@ export function commitChanges(
   focusHint = undefined,
   astHint = undefined,
 ) {
-  let form = document.getElementById('errorLogForm');
-  console.log('I see the form! Submitting next...', form);
-  form.submit();
-  let {ast: oldAST, focusId: oldFocusId} = store.getState();
-  if (!isUndoOrRedo) {
-    // Remember the previous focus. See the next `!isUndoOrRedo` block.
-    let oldFocus = oldAST.getNodeById(oldFocusId);
-    var oldFocusNId = oldFocus ? oldFocus.nid : null;
+  try{
+    let {ast: oldAST, focusId: oldFocusId} = store.getState();
+    if (!isUndoOrRedo) {
+      // Remember the previous focus. See the next `!isUndoOrRedo` block.
+      let oldFocus = oldAST.getNodeById(oldFocusId);
+      var oldFocusNId = oldFocus ? oldFocus.nid : null;
+    }
+    // If we haven't already parsed the AST during speculateChanges, parse it now.
+    let newAST = astHint || SHARED.parser.parse(SHARED.cm.getValue());
+    // Patch the tree and set the state
+    newAST = patch(oldAST, newAST);
+    store.dispatch({type: 'SET_AST', ast: newAST});
+    // Set the focus.
+    let focusId = setFocus(changes, focusHint, newAST);
+    if (!isUndoOrRedo) {
+      // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
+      // this is what populates our undo stack.
+      let newFocus = newAST.getNodeById(focusId);
+      let newFocusNId = newFocus ? newFocus.nid : null;
+      store.dispatch({type: 'DO', focus: {oldFocusNId, newFocusNId}});
+    }
+    return {newAST, focusId};    
+  } catch(e){
+    logResults(undefined, undefined, window.reducerActivities, e);
   }
-  // If we haven't already parsed the AST during speculateChanges, parse it now.
-  let newAST = astHint || SHARED.parser.parse(SHARED.cm.getValue());
-  // Patch the tree and set the state
-  newAST = patch(oldAST, newAST);
-  store.dispatch({type: 'SET_AST', ast: newAST});
-  // Set the focus.
-  let focusId = setFocus(changes, focusHint, newAST);
-  if (!isUndoOrRedo) {
-    // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
-    // this is what populates our undo stack.
-    let newFocus = newAST.getNodeById(focusId);
-    let newFocusNId = newFocus ? newFocus.nid : null;
-    store.dispatch({type: 'DO', focus: {oldFocusNId, newFocusNId}});
-  }
-  return {newAST, focusId};
 }
 
 // Use the focus hint to determine focus, unless:

@@ -1,9 +1,3 @@
-//var log4js = require('log4js');
-//var logger = log4js.getLogger();
-
-// logger.level = 'ALL';
-
-
 function loggerDebug(res) { // in lieu of logger.debug
   if (!window.reducerActivities) {
     window.reducerActivities = [];

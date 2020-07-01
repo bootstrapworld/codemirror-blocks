@@ -1,4 +1,4 @@
-import {warn, poscmp, srcRangeIncludes, changeEnd} from '../utils';
+import {warn, poscmp, srcRangeIncludes, changeEnd, logResults} from '../utils';
 import {prettyPrintingWidth} from '../ast';
 import SHARED from '../shared';
 import {commitChanges} from './commitChanges';
@@ -41,18 +41,6 @@ export function edit_replace(text, node) {
     return new ReplaceChildEdit(text, node, node.parent);
   } else {
     return new ReplaceRootEdit(text, node);
-  }
-}
-
-function logResults(startCode, endCode, history, exception) {
-  try {
-    document.getElementById('start_code').value = startCode;
-    document.getElementById('end_code').value = endCode;
-    document.getElementById('history').value = history;
-    document.getElementById('exception').value = exception;
-    document.getElementById('errorLogForm').submit();
-  } catch (e) {
-    console.log('LOGGING FAILED.');
   }
 }
 
