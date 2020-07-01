@@ -44,6 +44,18 @@ export function edit_replace(text, node) {
   }
 }
 
+function logResults(startCode, endCode, history, exception) {
+  try {
+    document.getElementById('start_code').value = startCode;
+    document.getElementById('end_code').value = endCode;
+    document.getElementById('history').value = history;
+    document.getElementById('exception').value = exception;
+    document.getElementById('errorLogForm').submit();
+  } catch (e) {
+    console.log('LOGGING FAILED.');
+  }
+}
+
 // performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
 //
 // Attempt to commit a set of changes to Code Mirror. For more details, see the
@@ -100,6 +112,7 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
   // Validate the text edits.
   let result = speculateChanges(changeArray);
   if (result.successful) {
+    try {
     // Perform the text edits, and update the ast.
     SHARED.cm.operation(() => {
       for (let c of changeArray) {
@@ -108,6 +121,9 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
     });
     let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST);
     onSuccess({newAST, focusId});
+    } catch(e) {
+      logResults(undefined, undefined, window.reducerActivities, e);
+    }
   } else {
     onError(result.exception);
   }
