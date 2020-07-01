@@ -92,7 +92,7 @@ class Node extends BlockComponent {
   }
 
   handleMouseDragRelated = e => {
-    e.preventDefault();
+    //e.preventDefault();
     //e.stopPropagation();
     console.log('DS26GTE handle', e.type, '(N) CALLED!');
     if (e.type === 'dragstart') {
