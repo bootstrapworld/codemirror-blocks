@@ -276,10 +276,8 @@ export function minimizeChange({from, to, text, removed, origin=undefined}) {
   return origin ? {from, to, text, removed, origin} : {from, to, text, removed};
 }
 
-export function logResults(startCode, endCode, history, exception) {
+export function logResults(history, exception) {
   try {
-    document.getElementById('start_code').value = startCode;
-    document.getElementById('end_code').value = endCode;
     document.getElementById('history').value = JSON.stringify(history);
     document.getElementById('exception').value = exception;
     document.getElementById('errorLogForm').submit();

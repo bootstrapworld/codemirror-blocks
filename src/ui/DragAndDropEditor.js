@@ -64,13 +64,11 @@ class WrappedCodeMirror extends React.Component {
           */ }
           <iframe name="hidden_iframe" id="hidden_iframe" style={{display:'none'}}></iframe>
           <form method="post"
-                action="https://docs.google.com/forms/d/e/1FAIpQLScK5CxR-vUC76XBAXsYZYqNqB15YiSpRc61d30DXFUkBVaO0g/formResponse"
+                action="https://docs.google.com/forms/d/e/1FAIpQLScJMw-00Kl3bxqp9NhCjijn0I8okCtVeX3VrwT7M1uTsYqBkw/formResponse"
                 name="theForm" 
                 id="errorLogForm" 
                 target="hidden_iframe" 
                 style={{display:'none'}}>
-                <textarea name="entry.525957299"  id="start_code" defaultValue="default_code"/>
-                <textarea name="entry.1523208531" id="end_code"   defaultValue="default_code_at_error"/>
                 <textarea name="entry.1568521986" id="history"    defaultValue="default_history"/>
                 <textarea name="entry.785063835"  id="exception"  defaultValue="default_exception"/>
                 <input type="button" value="Submit" className="submit"/>

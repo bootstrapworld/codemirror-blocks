@@ -53,7 +53,7 @@ export function commitChanges(
     }
     return {newAST, focusId};    
   } catch(e){
-    logResults(undefined, undefined, window.reducerActivities, e);
+    logResults(window.reducerActivities, e);
   }
 }
 

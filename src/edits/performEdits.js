@@ -110,7 +110,7 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
     let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST);
     onSuccess({newAST, focusId});
     } catch(e) {
-      logResults(undefined, undefined, window.reducerActivities, e);
+      logResults(window.reducerActivities, e);
     }
   } else {
     onError(result.exception);
