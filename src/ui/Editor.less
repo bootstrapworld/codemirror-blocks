@@ -4,6 +4,7 @@
   position: absolute;
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   user-select: none;
   -webkit-user-select: none;
   .glyphicon { font-family: 'Glyphicons Halflings'; }
@@ -24,7 +25,7 @@
 
   > .codemirror-pane {
     padding: 0px 0px;
-    width: 100%;
+    width: calc(~"100% - 200px");
   }
 
   > .Toolbar {
@@ -34,6 +35,7 @@
   /* in text mode, the toolbar should have a width of 0 */
   &.text {
     > .toolbar-pane { border: none; width: 0px; min-width: 0px; }
+    > .codemirror-pane { width: 100%; }
   }
   
   .blocks-toggle-btn {

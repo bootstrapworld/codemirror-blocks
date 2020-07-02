@@ -109,8 +109,6 @@ export default class ToggleEditor extends React.Component {
       'setOption': (option, value) => ed.setOption(option, value),
       'setValue': (value) => ed.setValue(value),
       'swapDoc': (doc) => ed.swapDoc(doc),
-      // testing/debugging
-      'loadLoggedActions' : (jsonStr) => this.loadLoggedActions(jsonStr),
     };
   }
 

@@ -26,7 +26,7 @@ export const reducer = (
   action) => {
     //console.log('DS26GTE reducers.js/reducer CALLED');
     //console.log('DS26GTE reducer action=');
-    //console.log(action);
+    console.log(action);
     let result = null;
     //console.log('DS26GTE reducer action.type=', action.type);
   switch (action.type) {

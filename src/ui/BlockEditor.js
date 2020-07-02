@@ -421,6 +421,7 @@ class BlockEditor extends Component {
       // testing methods
       'getQuarantine': () => withState(({quarantine}) => quarantine),
       'setQuarantine': (q) => this.props.setQuarantine(q),
+      'executeAction' : (action) => this.props.dispatch(action),
     };
   }
 
