@@ -8,7 +8,7 @@ import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {isErrorFree} from '../store';
 import BlockComponent from './BlockComponent';
-import {v4 as uuidv4} from 'uuid';
+import {gensym} from '../utils';
 import {drop, InsertTarget} from '../actions';
 
 // Provided by `Node`
@@ -73,7 +73,7 @@ export class DropTarget extends Component {
   constructor(props) {
     super(props);
     this.isDropTarget = true;
-    this.id = uuidv4(); // generate a unique ID
+    this.id = gensym(); // generate a unique ID
   }
 
   render() {

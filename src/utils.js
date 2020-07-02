@@ -4,6 +4,13 @@ import {store} from './store';
 
 const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
 
+// make sure we never assign the same ID to two nodes in ANY active
+// program at ANY point in time.
+export var nodeCounter = 0;
+export function gensym() {
+  return (nodeCounter++).toString(16);
+}
+
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {
   return  a.line - b.line || a.ch - b.ch;

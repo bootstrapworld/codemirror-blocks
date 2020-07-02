@@ -1,7 +1,6 @@
 import React from 'react';
-import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining} from './utils';
+import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining, gensym} from './utils';
 import * as P from 'pretty-fast-pretty-printer';
-import {v4 as uuidv4} from 'uuid';
 import hashObject from 'object-hash';
 import { node } from 'prop-types';
 
@@ -95,7 +94,8 @@ export class AST {
         this.validateNode(node);
         if (node.id === undefined) {
           // May be defined, if this piece of AST came from the previous AST.
-          node.id = uuidv4();
+          node.id = gensym();
+          //console.log('new symbol is:', gensym());
         }
         node.parent = parent;
         node.level = level;
