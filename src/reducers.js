@@ -1,8 +1,17 @@
-function loggerDebug(res) { // in lieu of logger.debug
+function loggerDebug(action) { // in lieu of logger.debug
   if (!window.reducerActivities) {
     window.reducerActivities = [];
   }
-  window.reducerActivities.push(res);
+  // Shallow-clone the action, removing the AST.
+  // Then replace the AST with the source code.
+  // We'll reconstruct it when replaying the log.
+  let activity = {...action, ast: false};
+  if(action.ast) {
+    activity.ast = action.ast.toString();
+  } else {
+    delete activity.ast;
+  }
+  window.reducerActivities.push(activity);
 }
 
 const initialState = {
@@ -97,6 +106,7 @@ export const reducer = (
     console.log('DS26GTE unprocessed action type=', action.type);
     result =  state;
   }
-  loggerDebug(result);
+  loggerDebug(action);
+  console.log('result is ', result);
   return result;
 };

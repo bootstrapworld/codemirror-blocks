@@ -421,7 +421,11 @@ class BlockEditor extends Component {
       // testing methods
       'getQuarantine': () => withState(({quarantine}) => quarantine),
       'setQuarantine': (q) => this.props.setQuarantine(q),
-      'executeAction' : (action) => this.props.dispatch(action),
+      'executeAction' : (action) => {
+        if(action.ast) { action.ast = SHARED.parser.parse(action.ast); }
+        console.log('action loaded from log:\n', action);
+        this.props.dispatch(action)
+      },
     };
   }
 
