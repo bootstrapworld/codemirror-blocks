@@ -13,7 +13,6 @@ cache:
     - yarn               # cache the yarn bundle to save time on Travis
     - /home/travis/.rvm/ # cache the RVM to save time on Travis
     - "$HOME/.npm"
-    - vendors
 branches:
   only:
     - master
