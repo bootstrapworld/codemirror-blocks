@@ -18,6 +18,7 @@ if (!envConfig.isCI) {
   frameworks.unshift('parallel');
   plugins.unshift('karma-parallel');
 }
+
 // Configure reporters:
 // if we're doing coverage, add the coverage reporter
 // if we're on Travis, add the coveralls reporter, too
