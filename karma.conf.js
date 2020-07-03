@@ -2,17 +2,21 @@
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
 var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
-var reporters = ['jasmine-diff', 'dots'];
+var reporters = ['dots'];
 
+webpackConfig.devtool = 'inline-source-map';
 
+/*
 if (envConfig.runCoverage) {
   reporters.push('coverage');
-
+  
   if (envConfig.isCI) {
-    reporters.push('coverage-istanbul');
     reporters.push('coveralls');
   }
-}
+}*/
+reporters.push('coverage');
+reporters.push('coveralls');
+
 console.log('reporters are', reporters);
 module.exports = function(config) {
   config.set({
@@ -24,8 +28,20 @@ module.exports = function(config) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['parallel', 'jasmine', 'karma-typescript'],
 
+    plugins: [
+            'karma-parallel',
+            'karma-sourcemap-loader',
+            'karma-jasmine',
+            'karma-coverage',
+            'karma-chrome-launcher',
+            'karma-webpack',
+            'karma-typescript',
+            'karma-parallel',
+            'karma-coveralls',
+        ],
+
     parallelOptions: {
-      executors: envConfig.isCI ? 1 : undefined, // undefined: defaults to cpu-count - 1
+      executors: 1,//envConfig.isCI ? 1 : undefined, // undefined: defaults to cpu-count - 1
       shardStrategy: 'round-robin'
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
@@ -63,7 +79,7 @@ module.exports = function(config) {
     },
     client: {
       // should we log console output in our test console?
-      captureConsole: false,
+      captureConsole: true,
       jasmine: {
         timeoutInterval: 30000
       }
