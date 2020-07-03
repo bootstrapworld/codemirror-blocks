@@ -2,47 +2,59 @@
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
 var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
-var reporters = ['dots'];
-
 webpackConfig.devtool = 'inline-source-map';
 
-/*
+// Configure frameworks and plugins:
+// If we're not on Travis, add parallelism
+// available frameworks: https://npmjs.org/browse/keyword/karma-adapter
+var frameworks = ['jasmine', 'karma-typescript'];
+var plugins = [
+              'karma-sourcemap-loader',
+              'karma-jasmine',
+              'karma-coverage',
+              'karma-chrome-launcher',
+              'karma-webpack',
+              'karma-typescript',
+              'karma-coveralls'];
+if (!envConfig.isCI) {
+  frameworks.unshift('parallel');
+  plugins.unshift('karma-parallel');
+}
+// Configure reporters:
+// if we're doing coverage, add the coverage reporter
+// if we're on Travis, add the coveralls reporter, too
+var reporters = ['dots'];
 if (envConfig.runCoverage) {
   reporters.push('coverage');
-  
   if (envConfig.isCI) {
     reporters.push('coveralls');
   }
-}*/
-reporters.push('coverage');
-reporters.push('coveralls');
+}
+
 
 console.log('reporters are', reporters);
+console.log('frameworks are', frameworks);
+console.log('plugins are', plugins);
 module.exports = function(config) {
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
-    // frameworks to use
-    // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['parallel', 'jasmine', 'karma-typescript'],
-
-    plugins: [
-            'karma-parallel',
-            'karma-sourcemap-loader',
-            'karma-jasmine',
-            'karma-coverage',
-            'karma-chrome-launcher',
-            'karma-webpack',
-            'karma-typescript',
-            'karma-parallel',
-            'karma-coveralls',
-        ],
+    frameworks: frameworks,
+    plugins: plugins,
+    reporters: reporters,
+    coverageReporter: {
+      dir: '.coverage',
+      reporters: [
+        { type: 'html' },
+        { type: 'lcovonly' }
+      ]
+    },
 
     parallelOptions: {
-      executors: 1,//envConfig.isCI ? 1 : undefined, // undefined: defaults to cpu-count - 1
-      shardStrategy: 'round-robin'
+      executors: envConfig.isCI ? 1 : undefined, // undefined: defaults to cpu-count - 1
+      shardStrategy: 'round-robin',
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
       // customShardStrategy: function(config) {
@@ -79,20 +91,10 @@ module.exports = function(config) {
     },
     client: {
       // should we log console output in our test console?
-      captureConsole: true,
+      captureConsole: false,
       jasmine: {
         timeoutInterval: 30000
       }
-    },
-    reporters: ["dots"],
-
-    reporters: reporters,
-    coverageReporter: {
-      dir: '.coverage',
-      reporters: [
-        { type: 'html' },
-        { type: 'lcovonly' }
-      ]
     },
 
     jasmineDiffReporter: {
