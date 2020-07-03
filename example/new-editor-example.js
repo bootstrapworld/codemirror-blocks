@@ -19,6 +19,13 @@ const nextButton     = document.getElementById('nextButton');
 
 let history, lastAction, currentAction = 0;
 
+loadLogButton.onclick = (e) => {
+   if(!editor.getBlockMode()){
+      alert('Block Mode must be enabled to read a log from the block editor');
+      e.preventDefault();
+   }
+}
+
 // When a file is loaded, read it
 loadLogButton.onchange = (e) => { 
    	let file = e.target.files[0];
@@ -31,6 +38,7 @@ loadLogButton.onchange = (e) => {
          history = log.history;
    		history.forEach(entry => {
             let LI = document.createElement("LI");
+            LI.className = "logEntry";
             LI.innerHTML = JSON.stringify(entry);
             document.getElementById("entries").appendChild(LI);
          });

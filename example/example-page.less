@@ -26,3 +26,14 @@
 
 #loadFromLog, #debuggingLog, #nextButton{ display:inline-block; vertical-align: top; }
 #nextButton{ display: none; }
+
+.logEntry {
+    overflow: scroll;
+    white-space: nowrap;
+    width: 800px;
+    text-overflow: ellipsis;
+}
+.logEntry:hover{
+	font-style: italic;
+	white-space: normal;
+}
