@@ -2,30 +2,55 @@
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
 var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
-var reporters = ['jasmine-diff', 'dots'];
 
-/*
+// Configure frameworks and plugins:
+// available frameworks: https://npmjs.org/browse/keyword/karma-adapter
+var frameworks = ['jasmine'];
+var plugins = [
+  'karma-sourcemap-loader',
+  'karma-jasmine',
+  'karma-chrome-launcher',
+  'karma-webpack',
+  'karma-coveralls'
+];
+// If we're not on Travis, add parallelism
+if (!envConfig.isCI) {
+  frameworks.unshift('parallel');
+  plugins.unshift('karma-parallel');
+}
+
+// Configure reporters:
+// if we're doing coverage, add the coverage reporter
+// if we're on Travis, add the coveralls reporter, too
+var reporters = ['dots'];
 if (envConfig.runCoverage) {
   reporters.push('coverage');
-
+  plugins.unshift( 'karma-coverage')
   if (envConfig.isCI) {
     reporters.push('coveralls');
   }
 }
-*/
+
 module.exports = function(config) {
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
-    // frameworks to use
-    // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['parallel', 'jasmine', 'karma-typescript'],
+    frameworks: frameworks,
+    plugins: plugins,
+    reporters: reporters,
+    coverageReporter: {
+      dir: '.coverage',
+      reporters: [
+        { type: 'html' },
+        { type: 'lcovonly' }
+      ]
+    },
 
     parallelOptions: {
       executors: envConfig.isCI ? 1 : undefined, // undefined: defaults to cpu-count - 1
-      shardStrategy: 'round-robin'
+      shardStrategy: 'round-robin',
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
       // customShardStrategy: function(config) {
@@ -67,17 +92,7 @@ module.exports = function(config) {
         timeoutInterval: 30000
       }
     },
-    reporters: ["dots"],
-/*
-    reporters: reporters,
-    coverageReporter: {
-      dir: '.coverage',
-      reporters: [
-        { type: 'html' },
-        { type: 'lcovonly' }
-      ]
-    },
-*/
+
     jasmineDiffReporter: {
       pretty: true,
     },
