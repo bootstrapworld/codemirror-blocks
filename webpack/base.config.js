@@ -1,5 +1,9 @@
 var path = require("path");
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
+var envConfig = require('../env-config.js');
+
+console.log(envConfig.isCI? "@@@@@@@@@@@@@@development" : "@@@@@@@@@@@@@production")
+
 
 module.exports = function(config) {
   config = config || {};
@@ -32,6 +36,7 @@ module.exports = function(config) {
       path: path.resolve(__dirname, '..', "build"),
       filename: "[name].js"
     },
+    mode: envConfig.isCI? "development" : "production",
     module: {
       rules: rules.concat([{
         test: /\.(ts|tsx)$/,
