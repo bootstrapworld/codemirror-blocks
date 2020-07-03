@@ -36,17 +36,9 @@ function createBubbledMouseEvent(type, props = {}) {
   return event;
 }
 
-export function dropObsolete(node=document.activeElement) {
-  toElement(node).dispatchEvent(createBubbledEvent('drop'));
-}
-
 export function drop(dataTransfer) {
   let ans = createBubbledEvent('drop');
   return ans;
-}
-
-export function dragstartObsolete(node=document.activeElement) {
-  toElement(node).dispatchEvent(createBubbledEvent('dragstart'));
 }
 
 export function dragstart() {
@@ -77,14 +69,9 @@ export function mouseover() {
 }
 
 export function dragenterSeq(node=document.activeElement) {
-  toElement(node).dispatchEvent(mouseenter());
+  //toElement(node).dispatchEvent(mouseenter());
   toElement(node).dispatchEvent(dragenter());
   toElement(node).dispatchEvent(mouseover());
-}
-
-export function dragleaveObsolete(node=document.activeElement) {
-  toElement(node).dispatchEvent(createBubbledEvent('dragleave'));
-  toElement(node).dispatchEvent(createBubbledEvent('mouseleave'));
 }
 
 export function dragleave() {
@@ -93,11 +80,6 @@ export function dragleave() {
 
 export function mouseleave() {
   return createBubbledEvent('mouseleave');
-}
-
-export function dragleaveSeq(node=document.activeElement) {
-  toElement(node).dispatchEvent(dragleave());
-  toElement(node).dispatchEvent(mouseleave());
 }
 
 export function dragend() {

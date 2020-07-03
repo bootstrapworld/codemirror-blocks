@@ -10,7 +10,6 @@ import {
   dragleave,
   dragend,
   dragenterSeq,
-  dragleaveSeq,
 } from './support/simulate';
 
 // be sure to call with `apply` or `call`

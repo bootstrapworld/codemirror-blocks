@@ -6,7 +6,7 @@ const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
 
 // make sure we never assign the same ID to two nodes in ANY active
 // program at ANY point in time.
-export var nodeCounter = 0;
+var nodeCounter = 0;
 export function gensym() {
   return (nodeCounter++).toString(16);
 }
