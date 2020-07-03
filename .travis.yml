@@ -10,7 +10,7 @@ addons:
   chrome: stable
 cache:
   directories:
-    - yarn
+    - yarn               # cache the yarn bundle to save time on Travis
     - /home/travis/.rvm/ # cache the RVM to save time on Travis
     - node_modules
     - vendors
