@@ -12,6 +12,7 @@ cache:
   directories:
     - node_modules
     - vendors
+    - /home/travis/.rvm/ # cache the RVM to save time on Travis
 branches:
   only:
     - master

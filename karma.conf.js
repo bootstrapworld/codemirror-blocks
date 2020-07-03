@@ -9,13 +9,14 @@ webpackConfig.devtool = 'inline-source-map';
 // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
 var frameworks = ['jasmine', 'karma-typescript'];
 var plugins = [
-              'karma-sourcemap-loader',
-              'karma-jasmine',
-              'karma-coverage',
-              'karma-chrome-launcher',
-              'karma-webpack',
-              'karma-typescript',
-              'karma-coveralls'];
+  'karma-sourcemap-loader',
+  'karma-jasmine',
+  'karma-coverage',
+  'karma-chrome-launcher',
+  'karma-webpack',
+  'karma-typescript',
+  'karma-coveralls'
+];
 if (!envConfig.isCI) {
   frameworks.unshift('parallel');
   plugins.unshift('karma-parallel');
