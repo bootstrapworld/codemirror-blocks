@@ -2,21 +2,18 @@
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
 var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
-webpackConfig.devtool = 'inline-source-map';
 
 // Configure frameworks and plugins:
-// If we're not on Travis, add parallelism
 // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-var frameworks = ['jasmine', 'karma-typescript'];
+var frameworks = ['jasmine'];
 var plugins = [
   'karma-sourcemap-loader',
   'karma-jasmine',
-  'karma-coverage',
   'karma-chrome-launcher',
   'karma-webpack',
-  'karma-typescript',
   'karma-coveralls'
 ];
+// If we're not on Travis, add parallelism
 if (!envConfig.isCI) {
   frameworks.unshift('parallel');
   plugins.unshift('karma-parallel');
@@ -27,15 +24,12 @@ if (!envConfig.isCI) {
 var reporters = ['dots'];
 if (envConfig.runCoverage) {
   reporters.push('coverage');
+  plugins.unshift( 'karma-coverage')
   if (envConfig.isCI) {
     reporters.push('coveralls');
   }
 }
 
-
-console.log('reporters are', reporters);
-console.log('frameworks are', frameworks);
-console.log('plugins are', plugins);
 module.exports = function(config) {
   config.set({
 
