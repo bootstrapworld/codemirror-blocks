@@ -4,7 +4,7 @@ var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
 var reporters = ['jasmine-diff', 'dots'];
 
-/*
+
 if (envConfig.runCoverage) {
   reporters.push('coverage');
 
@@ -12,7 +12,7 @@ if (envConfig.runCoverage) {
     reporters.push('coveralls');
   }
 }
-*/
+console.log('reporters are', reporters);
 module.exports = function(config) {
   config.set({
 
@@ -68,7 +68,7 @@ module.exports = function(config) {
       }
     },
     reporters: ["dots"],
-/*
+
     reporters: reporters,
     coverageReporter: {
       dir: '.coverage',
@@ -77,7 +77,7 @@ module.exports = function(config) {
         { type: 'lcovonly' }
       ]
     },
-*/
+
     jasmineDiffReporter: {
       pretty: true,
     },
