@@ -12,7 +12,7 @@ cache:
   directories:
     - yarn               # cache the yarn bundle to save time on Travis
     - /home/travis/.rvm/ # cache the RVM to save time on Travis
-    - node_modules
+    - "$HOME/.npm"
     - vendors
 branches:
   only:
