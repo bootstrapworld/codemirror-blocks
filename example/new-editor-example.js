@@ -53,6 +53,7 @@ nextButton.onclick = () => {
       nextButton.onclick = null;
       nextButton.disabled = true;
    }
+   editor.focus();
 }
 
 // for debugging purposes
