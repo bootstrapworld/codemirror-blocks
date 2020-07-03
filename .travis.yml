@@ -9,11 +9,12 @@ env:
 addons:
   chrome: stable
 cache:
+  yarn: true
   directories:
-    - yarn               # cache the yarn bundle to save time on Travis
+#    - yarn               # cache the yarn bundle to save time on Travis
     - /home/travis/.rvm/ # cache the RVM to save time on Travis
-    - "$HOME/.npm"
-    - vendors
+#    - "$HOME/.npm"
+#    - vendors
 branches:
   only:
     - master
