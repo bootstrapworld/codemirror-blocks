@@ -15,9 +15,25 @@ const editor = new CodeMirrorBlocks(container, {collapseAll: false, value: examp
 
 // grab the load-from-log button
 const loadLogButton  = document.getElementById('loadFromLog');
+const downloadLogButton  = document.getElementById('downloadLog');
 const nextButton     = document.getElementById('nextButton');
 
 let history, lastAction, currentAction = 0;
+
+
+downloadLogButton.onclick = () => {
+   let json = {history: window.reducerActivities, exception: "DUMMY"};
+
+   var element = document.createElement('a');
+   element.setAttribute('href', 'data:text/plain;charset=utf-8,' 
+      + encodeURIComponent(JSON.stringify(json)));
+   element.setAttribute('download', "CMB Log.txt");
+
+   element.style.display = 'none';
+   document.body.appendChild(element);
+   element.click();
+   document.body.removeChild(element);
+}
 
 // When a file is loaded, read it
 loadLogButton.onchange = (e) => { 
