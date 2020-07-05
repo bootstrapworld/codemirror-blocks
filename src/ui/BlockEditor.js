@@ -16,7 +16,7 @@ import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import merge from '../merge';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say} from '../utils';
+import {poscmp, say, resetNodeCounter} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 
@@ -129,6 +129,7 @@ class BlockEditor extends Component {
     onMount:PropTypes.func.isRequired,
     hasQuarantine: PropTypes.bool.isRequired,
     api: PropTypes.object,
+    passedAST: PropTypes.object,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -367,7 +368,7 @@ class BlockEditor extends Component {
     ed.on('changes', this.handleChanges);
 
     SHARED.cm = ed;
-    const ast = this.props.parser.parse(ed.getValue());
+    var ast = this.props.passedAST;
     this.props.setAST(ast);
     if (this.props.options.collapseAll) {
       this.props.dispatch({type: 'COLLAPSE_ALL'});
@@ -401,6 +402,25 @@ class BlockEditor extends Component {
     merge(this.props.api, this.buildAPI(ed));
   }
 
+  executeAction(action) {
+    // convert code to AST
+    if(action.code) { 
+      SHARED.cm.setValue(action.code);
+      action.ast = this.props.ast;
+      delete action.code;
+    }
+    // convert nid to node id, and use activate to generate the action
+    if(action.type == "SET_FOCUS") {
+      action.focusId = this.props.ast.getNodeByNId(action.nid).id;
+      this.props.activate(action.focusId, {allowMove: true});
+      delete action.nid;
+      return;
+    }
+    // ignore set announcer
+    if(action.type == "SET_ANNOUNCER"){ return; } 
+    this.props.dispatch(action)
+  }
+
   buildAPI(ed) {
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
     return {
@@ -421,19 +441,8 @@ class BlockEditor extends Component {
       // testing methods
       'getQuarantine': () => withState(({quarantine}) => quarantine),
       'setQuarantine': (q) => this.props.setQuarantine(q),
-      'executeAction' : (action) => {
-        if(action.ast) { 
-          console.log('reconstructing AST from logged source');
-          SHARED.cm.setValue(action.ast);
-          action.ast = this.props.ast;
-          return;
-        }
-        if(action.type == "SET_ANNOUNCER"){
-          console.log('ignoring logged SET_ANNOUNCER')
-          return;
-        } 
-        this.props.dispatch(action)
-      },
+      'resetNodeCounter': () => resetNodeCounter(),
+      'executeAction' : (action) => this.executeAction(action),
     };
   }
 

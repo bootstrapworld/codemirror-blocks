@@ -1,15 +1,18 @@
-function loggerDebug(action) { // in lieu of logger.debug
+function loggerDebug(action, ast) { // in lieu of logger.debug
   if (!window.reducerActivities) {
     window.reducerActivities = [];
   }
   // Shallow-clone the action, removing the AST.
   // Then replace the AST with the source code.
   // We'll reconstruct it when replaying the log.
+  // Replace focusId with nid
   let activity = {...action, ast: false};
   if(action.ast) {
-    activity.ast = action.ast.toString();
-  } else {
-    delete activity.ast;
+    activity.ast = ast.toString();
+  }
+  if(action.focusId) {
+    //activity.nid = ast.getNodeById(action.focusId).nid; 
+    delete activity.focusId;
   }
   window.reducerActivities.push(activity);
 }
@@ -106,7 +109,7 @@ export const reducer = (
     console.log('DS26GTE unprocessed action type=', action.type);
     result =  state;
   }
-  loggerDebug(action);
-  console.log('result is ', result);
+
+  loggerDebug(action, result.ast);
   return result;
 };

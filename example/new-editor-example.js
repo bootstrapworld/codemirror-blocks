@@ -4,9 +4,9 @@ import './example-page.less';
 import bigExampleCode from './ast-test.rkt';
 
 
-const smallExampleCode = `(+ 1 2) ;comment\n(+ 3 4)`;
+const smallExampleCode = `42`;
 
-const useBigCode = true;
+const useBigCode = false;
 const exampleCode = useBigCode ? bigExampleCode : smallExampleCode;
 
 // grab the DOM Node to host the editor, and use it to instantiate
@@ -19,13 +19,6 @@ const nextButton     = document.getElementById('nextButton');
 
 let history, lastAction, currentAction = 0;
 
-loadLogButton.onclick = (e) => {
-   if(!editor.getBlockMode()){
-      alert('Block Mode must be enabled to read a log from the block editor');
-      e.preventDefault();
-   }
-}
-
 // When a file is loaded, read it
 loadLogButton.onchange = (e) => { 
    	let file = e.target.files[0];
@@ -34,6 +27,9 @@ loadLogButton.onchange = (e) => {
    	// parse the string, draw the actions, and set up counters
       // and UI for replaying them
    	reader.onload = readEvent => {
+         editor.setValue('');
+         editor.setBlockMode(true);
+         editor.resetNodeCounter();
    		let log = JSON.parse(readEvent.target.result.toString());
          history = log.history;
    		history.forEach(entry => {
@@ -50,7 +46,9 @@ loadLogButton.onchange = (e) => {
 
 // Highlight the active entry and pass it to the editor
 // Once we've gone through all of them, change the UI
-nextButton.onclick = () => {
+nextButton.onclick = (e) => {
+   e.preventDefault();
+   e.stopPropagation();
    let entries = [...document.getElementById("entries").children];
    entries.forEach(c => c.style.background = "none");
    entries[currentAction].style.background = "lightblue";
@@ -61,7 +59,8 @@ nextButton.onclick = () => {
       nextButton.onclick = null;
       nextButton.disabled = true;
    }
-   editor.focus();
+   //nextButton.blur();
+   //editor.focus();
 }
 
 // for debugging purposes

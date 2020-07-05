@@ -8,8 +8,11 @@ const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
 // program at ANY point in time.
 export var nodeCounter = 0;
 export function gensym() {
+  console.log('counter is ', nodeCounter);
   return (nodeCounter++).toString(16);
 }
+export function resetNodeCounter() { nodeCounter = 0; }
+
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {

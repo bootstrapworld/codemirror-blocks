@@ -29,7 +29,7 @@ export class AST {
   id: number;
   hash: any;
 
-  constructor(rootNodes) {
+  constructor(rootNodes, annotate = true) {
     // the `rootNodes` attribute simply contains a list of the top level nodes
     // that were parsed, in srcLoc order
     this.rootNodes = rootNodes;
@@ -41,7 +41,7 @@ export class AST {
     // the other nodeMaps make it easy to determine node order
     this.nodeIdMap = new Map();
     this.nodeNIdMap = new Map();
-    this.annotateNodes();
+    if(annotate) this.annotateNodes();
     this.id = -1; // just for the sake of having an id, though unused
     this.hash = hashObject(this.rootNodes.map(node => node.hash));
   }
@@ -83,6 +83,7 @@ export class AST {
   // walk through the siblings, assigning aria-* attributes
   // and populating various maps for tree navigation
   annotateNodes() {
+  console.log('annotating');
     this.nodeIdMap.clear();
     this.nodeNIdMap.clear();
 
