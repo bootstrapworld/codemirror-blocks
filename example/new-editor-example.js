@@ -19,13 +19,6 @@ const nextButton     = document.getElementById('nextButton');
 
 let history, lastAction, currentAction = 0;
 
-loadLogButton.onclick = (e) => {
-   if(!editor.getBlockMode()){
-      alert('Block Mode must be enabled to read a log from the block editor');
-      e.preventDefault();
-   }
-}
-
 // When a file is loaded, read it
 loadLogButton.onchange = (e) => { 
    	let file = e.target.files[0];
@@ -34,7 +27,18 @@ loadLogButton.onchange = (e) => {
    	// parse the string, draw the actions, and set up counters
       // and UI for replaying them
    	reader.onload = readEvent => {
-   		let log = JSON.parse(readEvent.target.result.toString());
+         let log;
+         try {
+            log = JSON.parse(readEvent.target.result.toString());
+            if(!(log.exception && log.history)) throw "Bad Log";
+         } catch {
+            console.log(readEvent.target.result.toString());
+            alert("Malformed log file!\nContents printed to console");
+            return;
+         }
+         editor.setValue('');
+         editor.setBlockMode(true);
+         editor.resetNodeCounter();
          history = log.history;
    		history.forEach(entry => {
             let LI = document.createElement("LI");
@@ -50,7 +54,9 @@ loadLogButton.onchange = (e) => {
 
 // Highlight the active entry and pass it to the editor
 // Once we've gone through all of them, change the UI
-nextButton.onclick = () => {
+nextButton.onclick = (e) => {
+   e.preventDefault();
+   e.stopPropagation();
    let entries = [...document.getElementById("entries").children];
    entries.forEach(c => c.style.background = "none");
    entries[currentAction].style.background = "lightblue";
@@ -58,7 +64,6 @@ nextButton.onclick = () => {
    currentAction++;
    if(currentAction == lastAction){ 
       nextButton.value = "Done";
-      nextButton.onclick = null;
       nextButton.disabled = true;
    }
    editor.focus();

@@ -10,6 +10,8 @@ var nodeCounter = 0;
 export function gensym() {
   return (nodeCounter++).toString(16);
 }
+export function resetNodeCounter() { nodeCounter = 0; }
+
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {

@@ -128,7 +128,7 @@ export default class ToggleEditor extends React.Component {
   // save any non-block, non-bookmark markers, and the NId they cover
   recordMarks(oldAST, postPPcode) {
     SHARED.recordedMarks.clear();
-    let newAST = SHARED.parser.parse(postPPcode);
+    let newAST = this.ast;
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach(m => {
         let {from: oldFrom, to: oldTo} = m.find(), opts = {};
@@ -147,16 +147,17 @@ export default class ToggleEditor extends React.Component {
   handleToggle = blockMode => {
     this.setState((state, props) => {
       try {
-        let ast = SHARED.parser.parse(SHARED.cm.getValue());
-        let code = ast.toString(); // pretty-print
+        let oldCode = SHARED.cm.getValue();
+        let oldAst = SHARED.parser.parse(oldCode, false); // parse the code, but don't annotate
+        let code = oldAst.toString();                     // pretty-print
+        this.ast = SHARED.parser.parse(code);             // parse the pretty-printed (PP) code
+        SHARED.cm.setValue(code);                         // update CM with the PP code
         this.props.api.blockMode = blockMode;
         // record mark information
-        this.recordMarks(ast, code);
+        this.recordMarks(oldAst, code);
         if (blockMode) {
-          SHARED.cm.setValue(code);
           return {blockMode: true};
         } else {
-          SHARED.cm.setValue(code);
           return {blockMode: false};
         }
       } catch (err) {
@@ -198,6 +199,8 @@ export default class ToggleEditor extends React.Component {
   }
 
   renderBlocks() {
+        console.log('this.ast is set to', this.ast);
+
     let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
     return (
       <UpgradedBlockEditor
@@ -209,6 +212,7 @@ export default class ToggleEditor extends React.Component {
         appElement={this.props.appElement}
         language={this.language.id}
         options={this.options}
+        passedAST={this.ast}
         debugHistory={this.props.debuggingLog.history}
      />
     );
