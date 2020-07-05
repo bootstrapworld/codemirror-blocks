@@ -111,6 +111,8 @@ module.exports = function(config) {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
 
+    exclude: ['actions.js'],
+
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
     //browsers: [ envConfig.isCI ? 'ChromeTravisCI' : envConfig.devBrowser ],
@@ -121,6 +123,8 @@ module.exports = function(config) {
         flags: ['--no-sandbox', '--no-proxy-server', '--remote-debugging-port=9222']
       }
     },
+
+    exclude: ["/**/*ast*.ts"],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits

@@ -330,7 +330,7 @@ class BlockEditor extends Component {
         // passed the `handleBeforeChange` function, so they must be valid edits.
         // (There's almost certainly just one edit here; I (Justin) am not
         // convinced this will always work if there is more than one edit here.)
-        // Since the edit(s) is valid, commit it.
+        // Since the edit(s) is valid, commit it without calling speculateChanges.
         if (changes[0].origin === "undo") {
           for (let c of changes) c.origin = "cmb:undo";
           const undoFocusStack = getState().undoFocusStack;
@@ -404,7 +404,7 @@ class BlockEditor extends Component {
 
   executeAction(action) {
     // convert code to AST
-    if(action.code) { 
+    if(action.type == "SET_AST") { 
       SHARED.cm.setValue(action.code);
       action.ast = this.props.ast;
       delete action.code;

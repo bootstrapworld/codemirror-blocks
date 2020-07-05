@@ -7,11 +7,12 @@ function loggerDebug(action, ast) { // in lieu of logger.debug
   // We'll reconstruct it when replaying the log.
   // Replace focusId with nid
   let activity = {...action, ast: false};
-  if(action.ast) {
-    activity.ast = ast.toString();
+  if(action.type == "SET_AST") {
+    activity.code = ast.toString();
+    delete activity.ast;
   }
-  if(action.focusId) {
-    //activity.nid = ast.getNodeById(action.focusId).nid; 
+  if(action.type == "SET_FOCUS") {
+    activity.nid = ast.getNodeById(action.focusId).nid; 
     delete activity.focusId;
   }
   window.reducerActivities.push(activity);
@@ -110,6 +111,6 @@ export const reducer = (
     result =  state;
   }
 
-  loggerDebug(action, result.ast);
+  //loggerDebug(action, result.ast);
   return result;
 };
