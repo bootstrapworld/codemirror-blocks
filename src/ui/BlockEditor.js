@@ -315,9 +315,13 @@ class BlockEditor extends Component {
     let knownOrigin = (origin) =>
       origin && (origin.startsWith("cmb:") || origin=="undo" || origin=="redo");
     if (!knownOrigin(change.origin)) {
-      // We did not produce this change. It may not be valid.
-      // Check to see if it's valid, and if not cancel the change.
-      if (!speculateChanges([change])) {
+      // We did not produce this change, so check to see if it's valid.
+      let {successful, newAST} = speculateChanges([change]);
+      // It is! Let's save all the hard work we did to build the new AST
+      if (successful) {
+        this.newAST = newAST;
+      // It's not! Cancel the change
+      } else {
         change.cancel();
       }
     }
@@ -336,17 +340,17 @@ class BlockEditor extends Component {
           const undoFocusStack = getState().undoFocusStack;
           const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
-          commitChanges(changes, true, focusHint);
+          commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'UNDO'});
         } else if (changes[0].origin === "redo") {
           for (let c of changes) c.origin = "cmb:redo";
           const redoFocusStack = getState().redoFocusStack;
           const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
-          commitChanges(changes, true, focusHint);
+          commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'REDO'});
         } else {
-          commitChanges(changes, false, -1);
+          commitChanges(changes, false, -1, this.newAST);
         }
       }
     });
