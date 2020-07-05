@@ -49,6 +49,6 @@ module.exports = function(env, argv) {
       inline: true,
       progress: true,
       contentBase: path.join(__dirname, '..', 'example')
-    }
+    },
   });
 }

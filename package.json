@@ -88,7 +88,7 @@
     "test-watch": "karma start",
     "start": "webpack-dev-server --mode development --config webpack/example.config.js",
     "heroku-server": "node heroku-server.js",
-    "build": "webpack --mode production",
+    "build": "webpack --config webpack.config.js",
     "build-debug": "webpack --mode development",
     "build-watch": "webpack --watch --mode development",
     "lint": "eslint src spec --ext .js || true",

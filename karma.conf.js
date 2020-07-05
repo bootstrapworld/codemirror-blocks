@@ -49,7 +49,7 @@ module.exports = function(config) {
     },
 
     parallelOptions: {
-      executors: envConfig.isCI ? 1 : undefined, // undefined: defaults to cpu-count - 1
+      executors: envConfig.isCI ? 2 : undefined, // undefined: defaults to cpu-count - 1
       shardStrategy: 'round-robin',
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
@@ -128,7 +128,7 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultanous
-    concurrency: Infinity,
+    concurrency: 4,
     captureTimeout: 60000,
     browserDisconnectTolerance: 3,
     browserDisconnectTimeout: 10000,
