@@ -18,8 +18,8 @@ export function speculateChanges(changeArr) {
   }
   let newText = tmpCM.getValue();
   try {
-    let newAST = SHARED.parser.parse(newText);
-    return {successful: true, newAST};
+    let newAST = SHARED.parser.parse(newText, false);
+    return {successful: true, newAST: newAST};
   } catch (exception) {
     return {successful: false, exception};
   }
