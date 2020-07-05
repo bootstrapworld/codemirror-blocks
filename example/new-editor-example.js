@@ -4,9 +4,9 @@ import './example-page.less';
 import bigExampleCode from './ast-test.rkt';
 
 
-const smallExampleCode = `42`;
+const smallExampleCode = `(+ 1 2) ;comment\n(+ 3 4)`;
 
-const useBigCode = false;
+const useBigCode = true;
 const exampleCode = useBigCode ? bigExampleCode : smallExampleCode;
 
 // grab the DOM Node to host the editor, and use it to instantiate
@@ -27,10 +27,18 @@ loadLogButton.onchange = (e) => {
    	// parse the string, draw the actions, and set up counters
       // and UI for replaying them
    	reader.onload = readEvent => {
+         let log;
+         try {
+            log = JSON.parse(readEvent.target.result.toString());
+            if(!(log.exception && log.history)) throw "Bad Log";
+         } catch {
+            console.log(readEvent.target.result.toString());
+            alert("Malformed log file!\nContents printed to console");
+            return;
+         }
          editor.setValue('');
          editor.setBlockMode(true);
          editor.resetNodeCounter();
-   		let log = JSON.parse(readEvent.target.result.toString());
          history = log.history;
    		history.forEach(entry => {
             let LI = document.createElement("LI");
@@ -56,11 +64,9 @@ nextButton.onclick = (e) => {
    currentAction++;
    if(currentAction == lastAction){ 
       nextButton.value = "Done";
-      nextButton.onclick = null;
       nextButton.disabled = true;
    }
-   //nextButton.blur();
-   //editor.focus();
+   editor.focus();
 }
 
 // for debugging purposes
