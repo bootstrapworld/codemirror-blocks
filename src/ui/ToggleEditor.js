@@ -150,8 +150,8 @@ export default class ToggleEditor extends React.Component {
         let oldCode = SHARED.cm.getValue();
         let oldAst = SHARED.parser.parse(oldCode, false); // parse the code, but don't annotate
         let code = oldAst.toString();                     // pretty-print
-        this.ast = SHARED.parser.parse(code);             // parse the pretty-printed code
-        SHARED.cm.setValue(code);
+        this.ast = SHARED.parser.parse(code);             // parse the pretty-printed (PP) code
+        SHARED.cm.setValue(code);                         // update CM with the PP code
         this.props.api.blockMode = blockMode;
         // record mark information
         this.recordMarks(oldAst, code);
