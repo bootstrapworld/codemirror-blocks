@@ -6,12 +6,15 @@ envConfig.mode = 'development';
 var mode = envConfig.nodeEnv = 'development';
 
 var rules = baseConfig.module.rules.concat();
+
+// don't run coverage reports on node_modules or /src/languages
+// (the languages are tested in separate modules)
 if (envConfig.runCoverage) {
   rules.push({
-    test: /\.js/,
-    use: 'istanbul-instrumenter-loader',
+    test: /\.js$/,
+    use: {loader: 'istanbul-instrumenter-loader'},
     include: path.resolve(__dirname, '..', 'src'),
-    exclude: /node_modules/
+    exclude: /node_modules|src\/languages|/
   });
 }
 

@@ -40,12 +40,28 @@ module.exports = function(config) {
     frameworks: frameworks,
     plugins: plugins,
     reporters: reporters,
+    coverageIstanbulReporter: {
+      reports: [ 'text-summary' ],
+      fixWebpackSourcePaths: true
+    },
     coverageReporter: {
       dir: '.coverage',
       reporters: [
         { type: 'html' },
         { type: 'lcovonly' }
-      ]
+      ],
+      check: {
+        global: {
+          statements: 0,
+          branches: 0,
+          functions: 0,
+          lines: 0,
+          excludes: [
+            'src/languages/**/*.js',
+            'src/searchers/**/*.js'
+          ]
+        },
+      }
     },
 
     parallelOptions: {
@@ -75,6 +91,8 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       "spec/index.js": ["webpack", "sourcemap"],
+      'src/**/*.ts': ['coverage'],
+      'src/!(languages)/**/*.js': ['coverage']
     },
 
     karmaTypescriptConfig: {
@@ -132,7 +150,7 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultanous
-    concurrency: 4,
+    concurrency: Infinity,
     captureTimeout: 60000,
     browserDisconnectTolerance: 3,
     browserDisconnectTimeout: 10000,
