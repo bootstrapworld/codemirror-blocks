@@ -1,5 +1,5 @@
 function loggerDebug(action, ast) { // in lieu of logger.debug
-  //console.log('doing loggerDebug', action.type);
+  //console.log('doing loggerDebug', action.type, !!ast);
   if (!window.reducerActivities) {
     window.reducerActivities = [];
   }
@@ -13,8 +13,10 @@ function loggerDebug(action, ast) { // in lieu of logger.debug
     delete activity.ast;
   }
   if(action.type == "SET_FOCUS") {
-    activity.nid = ast.getNodeById(action.focusId).nid; 
-    delete activity.focusId;
+    if (ast) {
+      activity.nid = ast.getNodeById(action.focusId).nid; 
+      delete activity.focusId;
+    }
   }
   window.reducerActivities.push(activity);
 }
