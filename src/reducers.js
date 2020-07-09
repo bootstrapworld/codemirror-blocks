@@ -1,4 +1,5 @@
 function loggerDebug(action, ast) { // in lieu of logger.debug
+  //console.log('doing loggerDebug', action.type);
   if (!window.reducerActivities) {
     window.reducerActivities = [];
   }
@@ -111,6 +112,6 @@ export const reducer = (
     result =  state;
   }
 
-  //loggerDebug(action, result.ast);
+  loggerDebug(action, result.ast);
   return result;
 };

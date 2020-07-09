@@ -186,21 +186,21 @@ class ActualDropTarget extends BlockComponent {
   handleMouseEnterRelated = e => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('DS26GTE handle', e.type, '(D) CALLED!');
+    //console.log('DS26GTE handle', e.type, '(D) CALLED!');
     this.setState({mouseOver: true});
   }
 
   handleMouseLeaveRelated = e => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('DS26GTE handle', e.type, '(D) CALLED!');
+    //console.log('DS26GTE handle', e.type, '(D) CALLED!');
     this.setState({mouseOver: false});
   }
 
   handleMouseDragRelated = e => {
     //e.preventDefault();
     //e.stopPropagation();
-    console.log('DS26GTE handle', e.type, '(D) CALLED!');
+    //console.log('DS26GTE handle', e.type, '(D) CALLED!');
   }
 
   handleChange = (value) => {
