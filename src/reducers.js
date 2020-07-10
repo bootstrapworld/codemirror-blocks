@@ -112,6 +112,6 @@ export const reducer = (
     result =  state;
   }
 
-  loggerDebug(action, result.ast);
+  //loggerDebug(action, result.ast);
   return result;
 };
