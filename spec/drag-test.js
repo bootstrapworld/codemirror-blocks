@@ -41,12 +41,19 @@ describe('Drag and drop', function() {
     });
 
     it('should override nodes 1', function() {
+      // dragstart,drop
+      console.log('################ 1');
+      console.log('DS26GTE doing dragstart/drop');
+
       expect(this.secondArg.element.innerText).toBe('2');
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       this.secondArg.element.dispatchEvent(drop(dragEvent.dataTransfer));
       this.retrieve();
       expect(this.secondArg.element.innerText).toBe('3');
+
+      console.log('DS26GTE done dragstart/drop\n');
+      console.log('%%%%%%%%%%%%%%%% 1');
     });
 
     it('should set the right css class on dragenter 2', function() {

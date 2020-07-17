@@ -102,6 +102,7 @@ export class AST {
         node["aria-setsize"]  = nodes.length;
         node["aria-posinset"] = i + 1;
         node.nid = nid++;
+        console.log('annotateNodes*', nid);
         if (lastNode) {
           node.prev = lastNode;
           lastNode.next = node;

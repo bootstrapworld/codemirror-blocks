@@ -407,6 +407,7 @@ class BlockEditor extends Component {
   }
 
   executeAction(action) {
+    console.log('doing executeAction', action.type);
     // convert code to AST
     if(action.type == "SET_AST") { 
       SHARED.cm.setValue(action.code);

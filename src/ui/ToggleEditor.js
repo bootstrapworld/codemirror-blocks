@@ -67,6 +67,7 @@ export default class ToggleEditor extends React.Component {
   }
 
   loadLoggedActions = (jsonLog) => {
+    console.log('DS26GTE doing loadLoggedActions');
     console.log('log is', jsonLog);
     this.setState({debuggingLog: jsonLog});
     this.props.api.setValue(jsonLog.startingSource);
@@ -138,6 +139,7 @@ export default class ToggleEditor extends React.Component {
           `{line:${oldTo.line}, ch:${oldTo.ch}}], since that range does not correspond to a node boundary`);
           return;
         }
+        console.log('doing recordMarks*', node.nid);
         let {from, to} = newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
         opts.css = m.css; opts.title = m.title; opts.className = m.className;
         SHARED.recordedMarks.set(node.nid, {from: from, to: to, options: opts});
@@ -199,7 +201,8 @@ export default class ToggleEditor extends React.Component {
   }
 
   renderBlocks() {
-        console.log('this.ast is set to', this.ast);
+    //console.log('DS26GTE doing renderBlocks');
+        //console.log('this.ast is set to', this.ast);
 
     let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
     return (
