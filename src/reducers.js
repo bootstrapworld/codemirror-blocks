@@ -13,7 +13,7 @@ function loggerDebug(action, ast) { // in lieu of logger.debug
     delete activity.ast;
   }
   if(action.type == "SET_FOCUS") {
-    console.log('doing loggerDebug SET_FOCUS');
+    //console.log('doing loggerDebug SET_FOCUS');
     if (ast) {
       activity.nid = ast.getNodeById(action.focusId).nid; 
       console.log('doing loggerDebug SET_FOCUS with nid=', activity.nid);
@@ -46,7 +46,7 @@ export const reducer = (
     //console.log('DS26GTE reducer action=');
     //console.log(action);
     let result = null;
-    //console.log('DS26GTE reducer action.type=', action.type);
+    console.log('DS26GTE reducer action.type=', action.type);
   switch (action.type) {
   case 'SET_FOCUS':
     result = {...state, focusId: action.focusId};
