@@ -78,6 +78,7 @@ describe('Drag and drop', function() {
       console.log('%%%%%%%%%%%%%%%% 3');
     });
 
+    /*
     it('should set the right css class on dragleave 3', function() {
       console.log('################ 4');
       let dragEvent = dragstart();
@@ -129,6 +130,7 @@ describe('Drag and drop', function() {
       expect(this.cmb.getValue().replace('  ', ' ')).toBe('(+ 2 1 3)');
       console.log('%%%%%%%%%%%%%%%% 8');
     });
+    */
 
     /*
     it('should move an item to the top level when dragged outside a node 8', function() {
