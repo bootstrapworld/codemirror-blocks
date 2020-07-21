@@ -57,63 +57,77 @@ describe('Drag and drop', function() {
     });
 
     it('should set the right css class on dragenter 2', function() {
+      console.log('################ 2');
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       let elt = this.dropTargetEls[3];
       expect(elt.classList).toContain('blocks-drop-target');
       dragenterSeq(elt);
       expect(elt.classList).toContain('blocks-over-target');
+      console.log('%%%%%%%%%%%%%%%% 2');
     });
 
    
     it('should set the right css class on dragenter 2’', function() {
+      console.log('################ 3');
       //ds26gte try, after suitable defns in simulate.js
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       let elt = this.secondArg;
       dragenterSeq(elt);
+      console.log('%%%%%%%%%%%%%%%% 3');
     });
 
     it('should set the right css class on dragleave 3', function() {
+      console.log('################ 4');
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       let elt = this.dropTargetEls[3];
       dragenter(elt);
       dragleave(elt);
       expect(elt.classList).not.toContain('blocks-over-target');
+      console.log('%%%%%%%%%%%%%%%% 4');
     });
 
     it('should do nothing when dragging over a non-drop target 4', function() {
+      console.log('################ 5');
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       let nonDT = this.cmb.getAst().rootNodes[0].element;
       dragenterSeq(nonDT);
       expect(this.secondArg.element.classList).not.toContain('blocks-over-target');
+      console.log('%%%%%%%%%%%%%%%% 5');
     });
 
     it('should do nothing when dropping onto a non-drop target 5', function() {
+      console.log('################ 6');
       let initialValue = this.cmb.getValue();
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       let nonDT = this.cmb.getAst().rootNodes[0].element;
       nonDT.dispatchEvent(drop(dragEvent.dataTransfer));
       expect(this.cmb.getValue()).toBe(initialValue);
+      console.log('%%%%%%%%%%%%%%%% 6');
     });
 
     it('should update the text on drop to a later point in the file 6', function() {
+      console.log('################ 7');
       expect(this.dropTargetEls[3].classList).toContain('blocks-drop-target');
       // drag the first arg to the drop target
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       this.dropTargetEls[3].dispatchEvent(drop(dragEvent.dataTransfer));
       expect(this.cmb.getValue().replace(/\s+/, ' ')).toBe('(+ 2 3 1)');
+      console.log('%%%%%%%%%%%%%%%% 7');
     });
     
     it('should update the text on drop to an earlier point in the file 7', function() {
+      console.log('################ 8');
       let dragEvent = dragstart();
       this.secondArg.element.dispatchEvent(dragEvent);
       this.dropTargetEls[0].dispatchEvent(drop(dragEvent.dataTransfer));
       expect(this.cmb.getValue().replace('  ', ' ')).toBe('(+ 2 1 3)');
+      console.log('%%%%%%%%%%%%%%%% 8');
     });
 
     /*
@@ -134,10 +148,12 @@ describe('Drag and drop', function() {
     */
     
     it('should replace a literal that you drag onto 9', function() {
+      console.log('################ 9');
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       this.secondArg.element.dispatchEvent(drop(dragEvent.dataTransfer));
       expect(this.cmb.getValue().replace(/\s+/, ' ')).toBe('(+ 1 3)');
+      console.log('%%%%%%%%%%%%%%%% 9');
     });
     
     // these two tests seem to fail because dragend is not called.
