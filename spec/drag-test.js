@@ -40,6 +40,7 @@ describe('Drag and drop', function() {
       this.retrieve();
     });
 
+      /*
     it('should override nodes 1', function() {
       // dragstart,drop
       console.log('################ 1');
@@ -77,6 +78,7 @@ describe('Drag and drop', function() {
       dragenterSeq(elt);
       console.log('%%%%%%%%%%%%%%%% 3');
     });
+    */
 
     /*
     it('should set the right css class on dragleave 3', function() {
