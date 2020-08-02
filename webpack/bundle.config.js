@@ -2,6 +2,7 @@ var _ = require('lodash');
 var path = require('path');
 var webpack = require('webpack');
 var baseConfig = require('./base.config.js');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 // this is the config for a single js file that can be included with a script tag
 var configs = [
@@ -15,7 +16,16 @@ var configs = [
       library: "CodeMirrorBlocks",
       libraryTarget: 'umd',
     },
-    plugins: [new webpack.ProvidePlugin({ codemirror: "codemirror" })],
+    plugins: [
+      new webpack.ProvidePlugin({ codemirror: "codemirror" }),
+      new BundleAnalyzerPlugin({
+        analyzerMode: 'static', 
+        openAnalyzer: !('TRAVIS' in process.env && 'CI' in process.env),
+        reportFilename: "bundle-sizes.html",
+        generateStatsFile: true,
+        openAnalyzer: false,
+      }),
+    ],
     externals: {
       'codemirror': 'codemirror',
       'codemirror/addon/search/search' : 'codemirror/addon/search/search',
