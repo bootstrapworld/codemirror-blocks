@@ -39,6 +39,20 @@ var configs = [
       'codemirror/addon/search/search' : 'codemirror/addon/search/search',
       'codemirror/addon/search/searchcursor' : 'codemirror/addon/search/searchcursor'
     },
+    optimization: {
+      minimize: true,
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          commons: {
+            name: 'commons',
+            chunks: 'all',
+            minChunks: 2,
+            enforce: true
+          }
+        }
+      }
+    }
   })
 ];
 

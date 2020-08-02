@@ -33,6 +33,7 @@ module.exports = function(env, argv) {
     optimization: {
       minimize: argv['mode'] == 'production',
       splitChunks: {
+        chunks: 'all',
         cacheGroups: {
           commons: {
             name: 'commons',
