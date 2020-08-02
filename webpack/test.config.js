@@ -21,7 +21,7 @@ envConfig.travis = ('TRAVIS' in process.env && 'CI' in process.env);
 module.exports = _.extend({}, baseConfig, {
   resolve: {
     alias: {
-      'codemirror-blocks': path.resolve(__dirname, '..', 'src')
+      'codemirror-blocks': path.resolve(__dirname, '..', 'src'),
     },
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
   },

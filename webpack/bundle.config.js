@@ -7,6 +7,14 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 // this is the config for a single js file that can be included with a script tag
 var configs = [
   _.extend({}, baseConfig(), {
+    resolve : {
+      alias: { 
+        "react": "preact/compat",
+        "react-dom/test-utils": "preact/test-utils",
+        "react-dom": "preact/compat",
+      },
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    }, 
     entry: {
       "CodeMirrorBlocks": ['./src/CodeMirrorBlocks.js']
     },

@@ -28,7 +28,9 @@ module.exports = function(config) {
     rules.push({test: /\.less$/, use:["style-loader","css-loader","less-loader"]});
   }
   return {
-    resolve : {extensions: ['.ts', '.tsx', '.js', '.jsx'] }, // Order matters!
+    resolve : {
+      extensions: ['.ts', '.tsx', '.js', '.jsx'], // Order matters!
+    }, 
     output: {
       path: path.resolve(__dirname, '..', "build"),
       filename: "[name].js"
