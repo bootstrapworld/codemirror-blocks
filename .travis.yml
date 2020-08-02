@@ -21,6 +21,7 @@ services:
 before_install:
   - export CHROME_BIN=google-chrome-stable
   - google-chrome-stable --disable-gpu http://localhost &
+  - rvm reload
   - rvm install 2.2.7
   - gem install public_suffix -v 2.0.5
   - gem install ruby_dep -v 1.3.1
