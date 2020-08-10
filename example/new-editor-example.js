@@ -2,12 +2,12 @@ import wescheme from '../src/languages/wescheme';
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import './example-page.less';
 import bigExampleCode from './ast-test.rkt';
-
-
+import hugeExampleCode from './huge-code.rkt';
 const smallExampleCode = `(+ 1 2) ;comment\n(+ 3 4)`;
 
-const useBigCode = true;
-const exampleCode = useBigCode ? bigExampleCode : smallExampleCode;
+//const exampleCode = smallExampleCode;
+//const exampleCode = bigExampleCode;
+const exampleCode = hugeExampleCode;
 
 // grab the DOM Node to host the editor, and use it to instantiate
 const container = document.getElementById('cmb-editor');
