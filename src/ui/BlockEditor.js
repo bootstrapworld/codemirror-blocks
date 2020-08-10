@@ -38,16 +38,18 @@ class ToplevelBlock extends BlockComponent {
   // we need to trigger a render if the node was moved or resized at the
   // top-level, in order to re-mark the node and put the DOM in the new marker
   shouldComponentUpdate(nextProps, nextState) {
-    return poscmp(this.props.node.from, nextProps.node.from) !== 0 // moved
-      ||   poscmp(this.props.node.to,   nextProps.node.to  ) !== 0 // resized
-      ||   super.shouldComponentUpdate(nextProps, nextState)       // changed
-      ||   !document.contains(this.mark.replacedWith);             // removed from DOM
+    let hashChanged = this.props.node.hash !== nextProps.node.hash;
+    if(hashChanged) {
+      console.log('ToplevelBlock is being updated:', nextProps.node);
+    }
+    return hashChanged;
   }
 
   componentWillUnmount() { this.mark.clear(); }
 
   render() {
     const {node} = this.props;
+    console.log('rendering node', node);
     const {from, to} = node.srcRange(); // includes the node's comment, if any
     // if any prior block markers are in this range, clear them
     SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
