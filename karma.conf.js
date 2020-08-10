@@ -49,7 +49,7 @@ module.exports = function(config) {
     },
 
     parallelOptions: {
-      executors: envConfig.isCI ? 2 : undefined, // undefined: defaults to cpu-count - 1
+      executors: envConfig.isCI ? 4 : undefined, // undefined: defaults to cpu-count - 1
       shardStrategy: 'round-robin',
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
