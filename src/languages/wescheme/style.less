@@ -29,6 +29,10 @@
     }
     .blocks-literal-string {
       white-space: pre;
+      display: inline-block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
       color: @literal-string-color;
     }
     .blocks-literal-char {
