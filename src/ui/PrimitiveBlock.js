@@ -13,6 +13,11 @@ export default class PrimitiveBlock extends Component {
     primitive: null,
   }
 
+  // Only update if there's actually a primitive
+  shouldComponentUpdate(props, state) {
+    return props.primitive !== null;
+  }
+  
   render() {
     if (!this.props.primitive) {
       return <div/>;
