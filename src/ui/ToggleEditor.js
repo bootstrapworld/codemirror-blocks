@@ -67,7 +67,7 @@ export default class ToggleEditor extends React.Component {
   }
 
   loadLoggedActions = (jsonLog) => {
-    console.log('log is', jsonLog);
+    //console.log('log is', jsonLog);
     this.setState({debuggingLog: jsonLog});
     this.props.api.setValue(jsonLog.startingSource);
   }
