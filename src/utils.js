@@ -99,7 +99,7 @@ export function isControl(e) {
 
 export function say(text, delay=200) {
   // if (this.muteAnnouncements) return; // TODO(Oak): how to mute?
-  //console.log('say:', text);
+  console.log('say:', text);
   const announcement = document.createTextNode(text + ', ');
   const announcer = store.getState().announcer;
   setTimeout(() => { if (announcer != null) announcer.appendChild(announcement); }, delay);
