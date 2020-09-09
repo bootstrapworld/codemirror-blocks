@@ -33,7 +33,7 @@ But if you're here, our guess is that you have a language in mind (Python, Rust,
 
         npm install --save codemirror-blocks
 
-Then add folders `src/languages/YourFavLang` and `spec/languages/YourFavLang`.
+   Then add folders `src/languages/YourFavLang` and `spec/languages/YourFavLang`.
 
 
 2. Provide a Parser
