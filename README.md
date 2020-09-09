@@ -1,4 +1,5 @@
 
+
 [![dependencies Status](https://david-dm.org/bootstrapworld/codemirror-blocks/status.svg)](https://david-dm.org/bootstrapworld/codemirror-blocks)
 [![devDependencies Status](https://david-dm.org/bootstrapworld/codemirror-blocks/dev-status.svg)](https://david-dm.org/bootstrapworld/codemirror-blocks?type=dev)
 [![Build Status](https://travis-ci.org/bootstrapworld/codemirror-blocks.svg?branch=master)](https://travis-ci.org/bootstrapworld/codemirror-blocks)
@@ -41,14 +42,22 @@ Then add folders for your parser (`src/languages/YourFavLang`) and test cases (`
 ### Provide a Parser
 Write a parser for your language that produces an Abstract Syntax Tree composed of [CMB's node types](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodes.jsx).
 
-CMB's AST nodes all have constructors that take arguments specifying the `from` and `to` position of the node (in CodeMirror's `{line, ch}` format), the fields that define the node, and an `options` object.
+CMB's AST nodes all have constructors that take arguments specifying (1) the `from` and `to` position of the node (in CodeMirror's `{line, ch}` format), (2) the fields that define the node, and (3) an `options` object.
 
-The `options` object is used for a number of CMB-internal purposes, but there are two (which are entirely language-dependant) that your parser will need to set. First, you'll want to provide a string for `options[aria-label]`, which contains a short, descriptive string for how that node should be vocalized by a screenreader. Your parser will also be responsible for associating block- and line-comments with the node they describe. For example:
+The `options` object is used for a number of CMB-internal purposes, but there are two (language-dependant) fields that your parser will need to set. First, you'll want to set `options[aria-label]` to a short, descriptive string for how that node should be vocalized by a screenreader (e.g. - "v: a value definition"). Your parser will also be responsible for associating block- and line-comments with the node they describe. For example:
 
-        var cmnt = new Comment(cmntFrom, cmtTo, cmtText);
-        return new IfExpression(
-            from, to, predicate, consequence, alternative,
-            {'aria-label': "if-then-else expression, 'comment': cmnt});
+        if (node instanceof structures.defVar) {
+           var name = parseNode(node.name);
+           var expr = parseNode(node.expr);
+           var cmnt = new Comment(cmntFrom, cmtTo, cmtText);
+           return new VariableDefinition(
+              from,
+              to,
+              name,
+              expr,
+              {'aria-label': node.name.val+': a value definition', 'comment' : comment}
+           );
+        }
 
 #### _Defining your own AST Nodes_
 You can also provide your own AST nodes, by extending the built-in `AST.ASTNode` class. [Here is one example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/ast.js) of a language defining custom AST nodes. 
@@ -70,9 +79,12 @@ Obviously, if you've added new AST node types, you'll have to provide the stylin
 
 ### Write Your Tests
 
-In `spec/languages/YourFavLang`, add some unit tests for your parser! You may find it useful to check out [this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/spec/languages/wescheme/WeschemeParser-test.js).
+In `spec/languages/YourFavLang`, add some unit tests for your parser! Make sure you test all the fields, but _especially_ the `aria-label` and `longDescription()` return values. 
+
+You may find it useful to check out [this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/spec/languages/wescheme/WeschemeParser-test.js).
 
 ## Hacking on CMB Itself
+But maybe you're not here to make an accessible block editor for a new language. Maybe you want to hack on the CMB library itself, and help close some of our [open issues](https://github.com/bootstrapworld/codemirror-blocks/issues)!
 
 To get your dev environment up and running, follow these steps. Note that to run tests, you will need either Chrome or Chromium and point the variable `CHROME_BIN` to the binary
 like this:
