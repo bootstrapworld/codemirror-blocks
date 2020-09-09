@@ -30,10 +30,13 @@ With code that looks like this:
 But if you're here, our guess is that you have a language in mind (Python, Rust, YourFavLang, etc.) and you want to allow people to hack in that language even if they need blocks, or rely on screenreaders. So...
 
 ## Making your own language module
-### Create a new repository (`YourFavLang-blocks`), and include CMB:
+
+### Create a new repository
+Make a repo  (e.g. - `YourFavLang-blocks`), and include CMB as a dependency:
+
         npm install --save codemirror-blocks
         
-Then add folders `src/languages/YourFavLang` and `spec/languages/YourFavLang`.
+Then add folders for your parser (`src/languages/YourFavLang`) and test cases (`spec/languages/YourFavLang`).
 
 ### Provide a Parser
 Write a parser for your language that produces an Abstract Syntax Tree composed of [CMB's node types](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodes.jsx).
@@ -48,17 +51,17 @@ The `options` object is used for a number of CMB-internal purposes, but there ar
             {'aria-label': "if-then-else expression, 'comment': cmnt});
 
 #### _Defining your own AST Nodes_
-You can also provide your own AST nodes, by extending the built-in `AST.ASTNode` class. Your subclass must contain:
+You can also provide your own AST nodes, by extending the built-in `AST.ASTNode` class. [Here is one example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/ast.js) of a language defining custom AST nodes. 
+
+Your subclassed Node must contain:
 1.  `constructor` -  consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`. 
 2. `spec` - a static field, which defines specifications for all fields of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodeSpec.js.)
 3. `longDescription()` - a method that dynamically computes a detailed description of the node (optionally referring to its children, for example), and produces a string that will be read aloud to the user.
 4. `pretty()` - a method that describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer).
 5. `render()` - a method that produces the node (usually in JSX) that will be rendered by React.
 
-[Here is an example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/ast.js) of a language defining custom AST nodes.
-
 ### Tell CMB about the Language
-Create an index.js [see this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/index.js) file that hooks up your language to the CMB library
+Create an index.js [see this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/index.js) file that hooks up your language to the CMB library.
 
 ### Style Your Blocks
 CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS.
