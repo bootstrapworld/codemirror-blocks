@@ -29,46 +29,47 @@ With code that looks like this:
 But if you're here, our guess is that you have a language in mind (Python, Rust, YourFavLang, etc.) and you want to allow people to hack in that language even if they need blocks, or rely on screenreaders. So...
 
 ## Making your own language module
-1. Create a new repository (`YourFavLang-blocks`), and include CMB:
+### Create a new repository (`YourFavLang-blocks`), and include CMB:
 
         npm install --save codemirror-blocks
 
     Then add folders `src/languages/YourFavLang` and `spec/languages/YourFavLang`.
 
 
-2. Provide a Parser
+### Provide a Parser
 
-    Provide a parser for your language, which produces an `AST` composed of [CMB's node types](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodes.jsx).
+    Write a parser for your language that produces an Abstract Syntax Tree composed of [CMB's node types](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodes.jsx).
 
     CMB's AST nodes all have constructors that take arguments specifying the `from` and `to` position of the node (in CodeMirror's `{line, ch}` format), the fields that define the node, and an `options` object.
 
-    The `options` object is used for a number of CMB-internal purposes, but there are two that your parser will need to set. First, you'll want to provide a string for `options[aria-label]`, which lays out how that node should be vocalized by a screenreader. Your parser will also be responsible for associating block- and line-comments with the node they describe. For example:
+    The `options` object is used for a number of CMB-internal purposes, but there are two (which are entirely language-dependant) that your parser will need to set. First, you'll want to provide a string for `options[aria-label]`, which contains a short, descriptive string for how that node should be vocalized by a screenreader. Your parser will also be responsible for associating block- and line-comments with the node they describe. For example:
 
         var cmnt = new Comment(cmntFrom, cmtTo, cmtText);
         return new IfExpression(
             from, to, predicate, consequence, alternative,
             {'aria-label': "if-then-else expression, 'comment': cmnt});
 
+#### Defining your own AST Nodes
     You can also provide your own AST nodes, by extending the built-in `AST.ASTNode` class. Your subclass must contain:
-    - a constructor which consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`. 
-    - a static `spec` field, which defines specifications for all fields of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodeSpec.js.)
-    - a `longDescription()` method, which dynamically computes a detailed description of the node (optionally referring to it's children, for example), and produces a string that will be read aloud to the user.
-    - a `pretty()` method, which describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer).
-    - a `render()` method, which produces the node (usually in JSX) that will be rendered by React.
+    1. a constructor which consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`. 
+    2. a static `spec` field, which defines specifications for all fields of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodeSpec.js.)
+    3. a `longDescription()` method, which dynamically computes a detailed description of the node (optionally referring to it's children, for example), and produces a string that will be read aloud to the user.
+    4. a `pretty()` method, which describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer).
+    5. a `render()` method, which produces the node (usually in JSX) that will be rendered by React.
 
     [Here is an example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/ast.js) of a language defining custom AST nodes.
 
-3. Tell CMB about the Language
+### Tell CMB about the Language
 
     Create an index.js [see this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/index.js) file that hooks up your language to the CMB library
 
-3. Style Your Blocks
+### Style Your Blocks
 
     CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS.
 
     Obviously, if you've added new AST node types, you'll have to provide the styling yourself!
 
-4. Write Your Tests
+### Write Your Tests
 
     In `spec/languages/YourFavLang`, add some unit tests for your parser! You may find it useful to check out [this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/spec/languages/wescheme/WeschemeParser-test.js).
 
