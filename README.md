@@ -8,31 +8,48 @@
 A library for making functional languages editable using visual blocks inside of codemirror
 
 ## Usage
+CodeMirror-Blocks ("CMB") is not a block editor. It's a _toolkit for building block editors_. In other words, it is *NOT* intended to be used in your IDE. ;-) 
 
-1. Install this library with npm:
+CMB intended to be _included in language-specific modules_. CMB provides the blockification and a11y features, and the language module provides the parser and (optionally) the vocalization and appearance for each construct in the language.
+
+The following language modules are available now:
+- https://github.com/bootstrapworld/wescheme-blocks
+- https://github.com/bootstrapworld/pyret-blocks
+
+If you happen to use one of those languages, you're good to go! Export the language module using the normal `npm run build` mechanism, then include it in your favorite CodeMirror-enabled project. You can now use the `new CodeMirrorBlocks` constructor to replace an existing CodeMirror instance with blocks. In other words, you'd replace code that looks like this:
+
+        // make a new CM instance inside the container elt, passing in CM ops
+        this.editor = CodeMirror(container, {/* CodeMirror options  */}});
+
+With code that looks like this:
+
+        // make a new CMB instance inside the container elt, passing in CMB ops
+        this.editor = CodeMirrorBlocks(container, {/* CodeMirrorBlocks options  */});
+
+But if you're here, our guess is that you have a language in mind (Python, Rust, YourFavLang, etc.) and you want to allow people to hack in that language even if they need blocks, or rely on screenreaders. So...
+
+## Making your own language module
+1. Create a new repository (`YourFavLang-blocks`), and include CMB:
 
         npm install --save codemirror-blocks
 
-2. Install the peer dependencies:
+Then add folders `src/languages/YourFavLang` and `spec/languages/YourFavLang`.
 
-        npm install --save babel-polyfill codemirror
 
-3. Make sure `babel-polyfill` is required at the top of your entry point:
+2. Provide a Parser
+Provide a parser for your language, which produces an `AST` composed of [CMB's node types](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodes.jsx). You can also extend them to provide your own AST nodes. These nodes contain information about what fields are required, which fields contain fixed or variable length entries, and _how each AST node must be vocalized_.
 
-        require('babel-polyfill')
 
-4. Hook it up:
+Finally, create an index.js [see this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/index.js) file that hooks up your language to the CMB library
 
-        import CodeMirror from 'codemirror'
-        import CodeMirrorBlocks from 'codemirror-blocks'
-        import MyParser from './MyParser.js' //See example/parser.js for an example
+3. Style Your Blocks
+CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS.
 
-        // feel free to include the example css, or roll your own!
-        require('codemirror-blocks/example/example.css')
+Obviously, if you've added new AST node types, you'll have to provide the styling yourself!
 
-        let cm = CodeMirror.fromTextArea(document.getElementById('mytextarea'))
-        let blocks = new CodeMirrorBlocks(cm, /* options */ {}, new MyParser())
-        blocks.setBlockMode(true)
+4. Write Your Tests
+- In `spec/languages/YourFavLang`, add some unit tests for your parser! You may find it useful to check out [this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/spec/languages/wescheme/WeschemeParser-test.js).
+
 
 ## Development
 
