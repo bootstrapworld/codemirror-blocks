@@ -11,7 +11,7 @@ A library for making functional languages editable using visual blocks inside of
 ## Usage
 CodeMirror-Blocks ("CMB") is not a block editor. It's a _toolkit for building block editors_. In other words, it is *NOT* intended to be used in your IDE. ;-) 
 
-CMB intended to be _included in language-specific modules_. CMB provides the blockification and a11y features, and the language module provides the parser and (optionally) the vocalization and appearance for each construct in the language.
+CMB intended to be _included in language-specific modules_. CMB provides the blockification and a11y features, and the language module provides the parser and (optionally) the vocalization and appearance for each construct in the language. The language module is what you use in your IDE.
 
 The following language modules are available now:
 - https://github.com/bootstrapworld/wescheme-blocks
