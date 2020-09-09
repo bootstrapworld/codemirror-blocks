@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "classnames": "^2.2.6",
+    "core-js": "^3.6.5",
     "object-hash": "^2.0.3",
     "preact": "^10.4.6",
     "preact-test-utils": "^0.1.4",
