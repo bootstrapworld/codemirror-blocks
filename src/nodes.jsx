@@ -8,7 +8,7 @@ import * as Spec from './nodeSpec';
 
 
 
-// Display a Scheme-style comment.
+// Displays a comment according to specific rules.
 //
 // - `doc` is what's being commented.
 // - `comment` is the comment itself. If it is falsy, there is no comment.
@@ -17,7 +17,7 @@ import * as Spec from './nodeSpec';
 //   the same line). Line comments will stay as line comments _as long as they
 //   fit on the line_. If they don't, they'll be converted into a comment on the
 //   previous line.
-function withSchemeComment(doc, comment, container) {
+function withComment(doc, comment, container) {
   if (comment) {
     if (container && container.to.line == comment.from.line) {
       // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
@@ -47,7 +47,7 @@ export class Unknown extends ASTNode {
   }
 
   pretty() {
-    return withSchemeComment(
+    return withComment(
       P.standardSexpr(this.elts[0], this.elts.slice(1)),
       this.options.comment,
       this);
@@ -90,7 +90,7 @@ export class FunctionApp extends ASTNode {
   }
 
   pretty() {
-    return withSchemeComment(
+    return withComment(
       P.standardSexpr(this.func, this.args),
       this.options.comment,
       this);
@@ -128,7 +128,7 @@ export class IdentifierList extends ASTNode {
   }
 
   pretty() {
-    return withSchemeComment(
+    return withComment(
       P.sepBy(this.ids, " "),
       this.options.comment,
       this);
@@ -162,7 +162,7 @@ export class StructDefinition extends ASTNode {
   }
 
   pretty() {
-    return withSchemeComment(
+    return withComment(
       P.lambdaLikeSexpr("define-struct", this.name, P.horz("(", this.fields, ")")),
       this.options.comment,
       this);
@@ -201,7 +201,7 @@ export class VariableDefinition extends ASTNode {
   }
 
   pretty() {
-    return withSchemeComment(
+    return withComment(
       P.lambdaLikeSexpr("define", this.name, this.body),
       this.options.comment,
       this);
@@ -283,7 +283,7 @@ export class FunctionDefinition extends ASTNode {
   }
 
   pretty() {
-    return withSchemeComment(
+    return withComment(
       P.lambdaLikeSexpr(
         "define",
         P.standardSexpr(this.name, this.params),
@@ -403,7 +403,7 @@ export class IfExpression extends ASTNode {
   }
 
   pretty() {
-    return withSchemeComment(
+    return withComment(
       P.standardSexpr("if", [this.testExpr, this.thenExpr, this.elseExpr]),
       this.options.comment,
       this);
@@ -456,7 +456,7 @@ export class Literal extends ASTNode {
   }
 
   pretty() {
-    return withSchemeComment(P.txt(this.value), this.options.comment, this);
+    return withComment(P.txt(this.value), this.options.comment, this);
   }
 
   render(props) {
