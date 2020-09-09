@@ -1,5 +1,5 @@
 var path = require("path");
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 var envConfig = require('../env-config.js');
 
 module.exports = function(config) {
@@ -19,10 +19,10 @@ module.exports = function(config) {
     {test:/\.css$/, use: ["style-loader", "css-loader"] },
   ];
   if (config.extractCSS) {
-    plugins.push(new ExtractTextPlugin("[name].css"));
+    plugins.push(new MiniCssExtractPlugin({ filename: '[name].[chunkhash].css' }),);
     rules.push({
       test: /\.less$/,
-      use: ExtractTextPlugin.extract({fallback:"style-loader", use:["css-loader", "less-loader"]})
+      use: [MiniCssExtractPlugin.loader, "css-loader", "less-loader"]
     });
   } else {
     rules.push({test: /\.less$/, use:["style-loader","css-loader","less-loader"]});
