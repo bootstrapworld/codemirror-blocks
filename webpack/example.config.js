@@ -32,17 +32,7 @@ module.exports = function(env, argv) {
     ]),
     optimization: {
       minimize: argv['mode'] == 'production',
-      splitChunks: {
-        chunks: 'all',
-        cacheGroups: {
-          commons: {
-            name: 'commons',
-            chunks: 'all',
-            minChunks: 2,
-            enforce: true
-          }
-        }
-      }
+      splitChunks: false,
     },
     devServer: {
       hot: true,

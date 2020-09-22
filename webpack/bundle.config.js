@@ -21,8 +21,8 @@ var configs = [
     output: {
       path: path.resolve(__dirname, '..', "dist"),
       filename: "[name].js",
-      library: "CodeMirrorBlocks",
-      libraryTarget: 'umd',
+      library: "",
+      libraryTarget: 'commonjs',
     },
     plugins: [
       new webpack.ProvidePlugin({ codemirror: "codemirror" }),
@@ -41,17 +41,7 @@ var configs = [
     },
     optimization: {
       minimize: true,
-      splitChunks: {
-        chunks: 'all',
-        cacheGroups: {
-          commons: {
-            name: 'commons',
-            chunks: 'all',
-            minChunks: 2,
-            enforce: true
-          }
-        }
-      }
+      splitChunks: false,
     }
   })
 ];
