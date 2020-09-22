@@ -29,7 +29,7 @@ var configs = [
     externals: {
       'codemirror': 'codemirror',
       'codemirror/addon/search/search' : 'codemirror/addon/search/search',
-      'codemirror/addon/search/searchcursor' : 'codemirror/addon/search/searchcursor'
+      'codemirror/addon/search/searchcursor' : 'codemirror/addon/search/searchcursor',
     },
   })
 ];
