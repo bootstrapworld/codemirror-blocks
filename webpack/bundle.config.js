@@ -14,7 +14,7 @@ var configs = [
       path: path.resolve(__dirname, '..', "dist"),
       filename: "[name].js",
       library: "CodeMirrorBlocks",
-      libraryTarget: 'umd',
+      libraryTarget: 'commonjs',
     },
     plugins: [
       new webpack.ProvidePlugin({ codemirror: "codemirror" }),
