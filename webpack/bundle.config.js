@@ -13,11 +13,10 @@ var configs = [
     output: {
       path: path.resolve(__dirname, '..', "dist"),
       filename: "[name].js",
-      library: "CodeMirrorBlocks",
+      library: "",
       libraryTarget: 'commonjs',
     },
     plugins: [
-      new webpack.ProvidePlugin({ codemirror: "codemirror" }),
       new BundleAnalyzerPlugin({
         analyzerMode: 'static', 
         openAnalyzer: !('TRAVIS' in process.env && 'CI' in process.env),
@@ -28,9 +27,13 @@ var configs = [
     ],
     externals: {
       'codemirror': 'codemirror',
-      'codemirror/addon/search/search' : 'codemirror/addon/search/search',
-      'codemirror/addon/search/searchcursor' : 'codemirror/addon/search/searchcursor',
+      'codemirror/addon/search/search' : 'codemirror',
+      'codemirror/addon/search/searchcursor' : 'codemirror',
     },
+    optimization: {
+      minimize: true,
+      splitChunks: false,
+    }
   })
 ];
 
