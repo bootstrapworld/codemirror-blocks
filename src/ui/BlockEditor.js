@@ -53,6 +53,7 @@ class ToplevelBlock extends BlockComponent {
     SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
     this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
     this.mark.BLOCK_NODE_ID = node.id;
+    node.mark = this.mark;
     return ReactDOM.createPortal(node.reactElement(), this.container);
   }
 }
@@ -589,7 +590,7 @@ class BlockEditor extends Component {
   renderPortals = () => {
     let portals;
     if (SHARED.cm && this.props.ast) {
-      // Render all the portals and add TextMarkers -- thunk this so CM only recalculates once
+      // Render all the top-level nodes
       portals = this.props.ast.rootNodes.map(r => <ToplevelBlock key={r.id} node={r} />);
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
     }
