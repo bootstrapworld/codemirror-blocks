@@ -25,7 +25,6 @@ var configs = [
       libraryTarget: 'commonjs',
     },
     plugins: [
-      new webpack.ProvidePlugin({ codemirror: "codemirror" }),
       new BundleAnalyzerPlugin({
         analyzerMode: 'static', 
         openAnalyzer: !('TRAVIS' in process.env && 'CI' in process.env),
@@ -37,7 +36,7 @@ var configs = [
     externals: {
       'codemirror': 'codemirror',
       'codemirror/addon/search/search' : 'codemirror/addon/search/search',
-      'codemirror/addon/search/searchcursor' : 'codemirror/addon/search/searchcursor'
+      'codemirror/addon/search/searchcursor' : 'codemirror/addon/search/searchcursor',
     },
     optimization: {
       minimize: true,
