@@ -35,9 +35,6 @@ class ToplevelBlock extends BlockComponent {
     node: PropTypes.object.isRequired,
   }
 
-  // by default, let's render a placeholder
-  state = { renderPlaceholder: true };
-
   // we need to trigger a render if the node was moved or resized at the
   // top-level, in order to re-mark the node and put the DOM in the new marker
   shouldComponentUpdate(nextProps, nextState) {
@@ -49,26 +46,15 @@ class ToplevelBlock extends BlockComponent {
 
   componentWillUnmount() { this.mark.clear(); }
 
-  // once the placeholder has mounted, wait 250ms and render
-  componentDidMount() {
-    window.requestAnimationFrame( () => 
-      setTimeout(() => this.setState({ renderPlaceholder: false }), 50)
-    ); 
-  }
-
   render() {
     const {node} = this.props;
-
-    // set elt to a cheap placeholder, OR render the entire rootNode
-    const elt = this.state.renderPlaceholder? (<div/>) : node.reactElement();
-
-    // if any prior block markers are in this range, clear them
     const {from, to} = node.srcRange(); // includes the node's comment, if any
+    // if any prior block markers are in this range, clear them
     SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
     this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
     this.mark.BLOCK_NODE_ID = node.id;
     node.mark = this.mark;
-    return ReactDOM.createPortal(elt, this.container);
+    return ReactDOM.createPortal(node.reactElement(), this.container);
   }
 }
 
