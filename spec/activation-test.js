@@ -9,10 +9,11 @@ const DELAY = 250;
 let setup = function () { activationSetup.call(this, wescheme); };
 
 describe("when dealing with node activation,", function () {
-  beforeEach(function () {
+  beforeEach(async function () {
     setup.call(this);
 
     this.cmb.setValue('11\n54');
+    await wait(DELAY); // wait for rootNodes to incrementally render
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];
@@ -129,10 +130,11 @@ describe("when dealing with node activation,", function () {
 });
 
 describe('cut/copy/paste', function () {
-  beforeEach(function () {
+  beforeEach(async function () {
     setup.call(this);
 
     this.cmb.setValue('11\n54');
+    await wait(DELAY); // wait for rootNodes to incrementally render
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];
@@ -170,10 +172,11 @@ describe('cut/copy/paste', function () {
 });
 
 describe('tree navigation', function () {
-  beforeEach(function () {
+  beforeEach(async function () {
     setup.call(this);
 
     this.cmb.setValue('(+ 1 2 3) 99 (* 7 (* 1 2))');
+    await wait(DELAY); // wait for rootNodes to incrementally render
     let ast = this.cmb.getAst();
     this.firstRoot  = ast.rootNodes[0];
     this.secondRoot = ast.rootNodes[1];
@@ -341,10 +344,11 @@ describe('tree navigation', function () {
 });
 
 describe("when dealing with node selection, ", function () {
-  beforeEach(function () {
+  beforeEach(async function () {
     setup.call(this);
 
     this.cmb.setValue('11\n54\n(+ 1 2)');
+    await wait(DELAY); // wait for rootNodes to incrementally render
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];

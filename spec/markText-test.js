@@ -22,7 +22,7 @@ describe('The CodeMirrorBlocks Class', function () {
 
     beforeEach(async function () {
       this.editor.setValue('11\n12\n(+ 3 4 5)');
-      await wait(DELAY); // give the editor a chance to re-render
+      await wait(DELAY); // wait for rootNodes to incrementally render
       this.editor.getAllMarks().forEach(m => m.clear());
       this.ast = this.editor.getAst();
       this.literal1 = this.ast.rootNodes[0];

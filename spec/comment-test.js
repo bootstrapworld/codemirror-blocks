@@ -27,7 +27,7 @@ describe('When editing and moving commented nodes', function() {
 1; comment1
 #| comment2 |#
 2`);
-      await wait(DELAY);
+      await wait(DELAY); // wait for rootNodes to incrementally render
       this.expr0 = this.cmb.getAst().rootNodes[0];
       this.expr1 = this.cmb.getAst().rootNodes[1];
       this.expr2 = this.cmb.getAst().rootNodes[2];
