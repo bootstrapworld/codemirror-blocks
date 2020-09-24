@@ -23,8 +23,8 @@ describe("trying to create a simple regression test", function () {
     this.cmb.setValue('(collapse me)\n(+ 1 2)');
     await wait(DELAY);
     this.retrieve = function() {
-        this.firstRoot = this.cmb.getAst().rootNodes[0];
-        this.lastDropTarget = document.querySelectorAll('.blocks-drop-target')[4];
+      this.firstRoot = this.cmb.getAst().rootNodes[0];
+      this.lastDropTarget = document.querySelectorAll('.blocks-drop-target')[4];
     };
     this.retrieve();
   });

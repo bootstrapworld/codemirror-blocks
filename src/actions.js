@@ -108,7 +108,7 @@ export function drop(src, target, onSuccess, onError) {
   }
 
   let edits = [];
-  let droppedHash, draggedHash;
+  let droppedHash;
 
   // Assuming it did not come from the toolbar...
   // (1) Delete the text of the dragged node, (2) and save the id and hash
