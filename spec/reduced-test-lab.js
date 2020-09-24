@@ -31,7 +31,7 @@ describe("trying to create a simple regression test", function () {
 
   afterEach(function () { teardown(); });
 
-  it('drag a collapsed root to be the last child of the next root', async function () {
+  it('save collapsed state when dragging root to be the last child of the next root', async function () {
     mouseDown(this.firstRoot); // click the root
     keyDown("ArrowLeft", {}, this.firstRoot); // collapse it
     expect(this.firstRoot.element.getAttribute('aria-expanded')).toBe('false');
