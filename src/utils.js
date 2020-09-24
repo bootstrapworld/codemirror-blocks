@@ -278,7 +278,9 @@ export function minimizeChange({from, to, text, removed, origin=undefined}) {
   return origin ? {from, to, text, removed, origin} : {from, to, text, removed};
 }
 
+// display the actual exception, and try to log it
 export function logResults(history, exception) {
+  console.log(exception, history);
   try {
     document.getElementById('history').value = JSON.stringify(history);
     document.getElementById('exception').value = exception;
