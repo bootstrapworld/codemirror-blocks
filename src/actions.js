@@ -98,7 +98,7 @@ export function paste(target, onSuccess, onError) {
 export function drop(src, target, onSuccess, onError) {
   checkTarget(target);
   const {id: srcId, content: srcContent} = src;
-  const {ast} = store.getState();
+  let {ast, collapsedList} = store.getState(); // get the AST, and which nodes are collapsed
   const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
   const content = srcNode ? srcNode.toString() : srcContent;
   
@@ -106,15 +106,30 @@ export function drop(src, target, onSuccess, onError) {
   if (srcNode && srcRangeIncludes(srcNode.srcRange(), target.srcRange())) {
     return;
   }
+
   let edits = [];
-  // Delete the dragged node, unless it came from the toolbar.
+  let droppedHash, draggedHash;
+
+  // Assuming it did not come from the toolbar...
+  // (1) Delete the text of the dragged node, (2) and save the id and hash
   if (srcNode !== null) {
     edits.push(edit_delete(srcNode));
+    droppedHash = ast.nodeIdMap.get(srcNode.id).hash;
   }
+  
   // Insert or replace at the drop location, depending on what we dropped it on.
   edits.push(target.toEdit(content));
   // Perform the edits.
   performEdits('cmb:drop-node', ast, edits, onSuccess, onError);
+
+  // Assuming it did not come from the toolbar, and the srcNode was collapsed...
+  // Find the matching node in the new tree and collapse it
+  if((srcNode !== null) && collapsedList.find(id => id == srcNode.id)) {
+    let {ast} = store.getState();
+    const newNode = [...ast.nodeIdMap.values()].find(n => n.hash == droppedHash);
+    store.dispatch({type: 'COLLAPSE', id: newNode.id});
+    store.dispatch({type: 'UNCOLLAPSE', id: srcNode.id});
+  }
 }
 
 // Drag from `src` (which should be a d&d monitor thing) to the trash can, which
