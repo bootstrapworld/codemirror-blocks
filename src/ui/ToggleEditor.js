@@ -147,8 +147,9 @@ export default class ToggleEditor extends React.Component {
     this.setState((state, props) => {
       try {
         let oldCode = SHARED.cm.getValue();
+        const WS = oldCode.match(/\s+$/);                 // match ending whitespace
         let oldAst = SHARED.parser.parse(oldCode, false); // parse the code, but don't annotate
-        let code = oldAst.toString();                     // pretty-print
+        let code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
         this.ast = SHARED.parser.parse(code);             // parse the pretty-printed (PP) code
         SHARED.cm.setValue(code);                         // update CM with the PP code
         this.props.api.blockMode = blockMode;
