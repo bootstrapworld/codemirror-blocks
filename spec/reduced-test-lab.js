@@ -20,14 +20,12 @@ describe("trying to create a simple regression test", function () {
   beforeEach(async function () {
     setup.call(this);
 
-    this.cmb.setValue('(print moo)\n(+ 1 2)');
+    this.cmb.setValue('(collapse me)\n(+ 1 2)');
+    await wait(DELAY);
     this.retrieve = function() {
         this.firstRoot = this.cmb.getAst().rootNodes[0];
-        this.secondRoot = this.cmb.getAst().rootNodes[1];
-        this.dropTargetEls = document.querySelectorAll('.blocks-drop-target');
-        this.lastDropTarget = this.dropTargetEls[4];
+        this.lastDropTarget = document.querySelectorAll('.blocks-drop-target')[4];
     };
-    await wait(DELAY);
     this.retrieve();
   });
 
@@ -45,7 +43,7 @@ describe("trying to create a simple regression test", function () {
     this.retrieve();
     this.newFirstRoot = this.cmb.getAst().rootNodes[0];
     this.newLastChild = this.newFirstRoot.args[2];
-    expect(this.cmb.getValue()).toBe('\n(+ 1 2 (print moo))');
+    expect(this.cmb.getValue()).toBe('\n(+ 1 2 (collapse me))');
     expect(this.newFirstRoot.element.getAttribute('aria-expanded')).toBe('true');
     expect(this.newLastChild.element.getAttribute('aria-expanded')).toBe('false');
   });
