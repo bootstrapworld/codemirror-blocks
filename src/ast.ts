@@ -122,7 +122,7 @@ export class AST {
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames =
           ["id", "parent", "level", "nid", "prev", "next", "hash",
-           "aria-setsize", "aria-posinset"];
+           "aria-setsize", "aria-posinset", "mark"];
     if (!node.__alreadyValidated) {
       for (let p in node) {
         if (newFieldNames.includes(p)) {
