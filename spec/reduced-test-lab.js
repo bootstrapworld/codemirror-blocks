@@ -20,20 +20,18 @@ describe("trying to create a simple regression test", function () {
   beforeEach(async function () {
     setup.call(this);
 
-    this.cmb.setValue('(print moo)\n(+ 1 2)');
-    this.retrieve = function() {
-        this.firstRoot = this.cmb.getAst().rootNodes[0];
-        this.secondRoot = this.cmb.getAst().rootNodes[1];
-        this.dropTargetEls = document.querySelectorAll('.blocks-drop-target');
-        this.lastDropTarget = this.dropTargetEls[4];
-    };
+    this.cmb.setValue('(collapse me)\n(+ 1 2)');
     await wait(DELAY);
+    this.retrieve = function() {
+      this.firstRoot = this.cmb.getAst().rootNodes[0];
+      this.lastDropTarget = document.querySelectorAll('.blocks-drop-target')[4];
+    };
     this.retrieve();
   });
 
   afterEach(function () { teardown(); });
 
-  it('drag a collapsed root to be the last child of the next root', async function () {
+  it('save collapsed state when dragging root to be the last child of the next root', async function () {
     mouseDown(this.firstRoot); // click the root
     keyDown("ArrowLeft", {}, this.firstRoot); // collapse it
     expect(this.firstRoot.element.getAttribute('aria-expanded')).toBe('false');
@@ -45,7 +43,7 @@ describe("trying to create a simple regression test", function () {
     this.retrieve();
     this.newFirstRoot = this.cmb.getAst().rootNodes[0];
     this.newLastChild = this.newFirstRoot.args[2];
-    expect(this.cmb.getValue()).toBe('\n(+ 1 2 (print moo))');
+    expect(this.cmb.getValue()).toBe('\n(+ 1 2 (collapse me))');
     expect(this.newFirstRoot.element.getAttribute('aria-expanded')).toBe('true');
     expect(this.newLastChild.element.getAttribute('aria-expanded')).toBe('false');
   });

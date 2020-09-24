@@ -51,6 +51,7 @@ export const reducer = (
     break;
   case 'SET_AST':
     result = {...state, ast: action.ast, collapsedList: state.collapsedList.filter(action.ast.getNodeById)};
+    console.log('AST nodeIdMap is', result.ast.nodeIdMap);
     break;
   case 'SET_SELECTIONS':
     result = {...state, selections: action.selections};
