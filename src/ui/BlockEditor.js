@@ -197,122 +197,6 @@ class BlockEditor extends Component {
     api: {}
   }
 
-  // NOTE: if there's a focused node, this handler will not be activated
-  // This handler deals with key events sent from CodeMirror itself
-  handleTopLevelKeyDown = (ed, e) => {
-    const {dispatch} = this.props;
-
-    const activateNoRecord = node => {
-      if(!node){ playSound(BEEP); } // nothing to activate
-      else { dispatch(activate(node.id, {record: false, allowMove: true})); }
-    };
-
-    dispatch((_, getState) => {
-      const state = getState();
-      const {ast, focusId} = state;
-      const message = SHARED.keyMap[SHARED.keyName(e)];
-      switch (message) {
-      case 'nextNode': {
-        e.preventDefault();
-        const nextNode = ast.getNodeAfterCur(this.props.cur);
-        if (nextNode) {
-          this.props.activate(nextNode.id, {allowMove: true});
-        } else {
-          playSound(BEEP);
-        }
-        return;
-      }
-
-      case 'prevNode': {
-        e.preventDefault();
-        console.log(this.props);
-        const prevNode = ast.getNodeBeforeCur(this.props.cur);
-        if (prevNode) {
-          this.props.activate(prevNode.id, {allowMove: true});
-        } else {
-          playSound(BEEP);
-        }
-        return;
-      }
-
-      case 'firstNode':
-        // NOTE(Emmanuel): shouldn't this go to the first node?
-        e.preventDefault();
-        this.props.setCursor(null, {line: 0, ch: 0});
-        return;
-
-      case 'lastVisibleNode': {
-        // NOTE(Emmanuel): shouldn't this go to the last visible node?
-        e.preventDefault();
-        const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
-        this.props.setCursor(null, {line: idx, ch: text.length});
-        return;
-      }
-      case 'changeFocus':
-        // NOTE(Emmanuel): this is dead code, unless we can trap tab events
-        e.preventDefault();
-        if (focusId === null) {
-          if (ast.rootNodes.length > 0) {
-            dispatch(activate(ast.getFirstRootNode(), {allowMove: true}));
-            // NOTE(Oak): can also find the closest node based on current cursor
-          }
-        } else {
-          dispatch(activate(null, {allowMove: true}));
-        }
-        return;
-
-      case 'activateSearchDialog':
-        e.preventDefault();
-        SHARED.search.onSearch(
-          state, 
-          () => {}, 
-          () => activateNoRecord(SHARED.search.search(true, state))
-        );
-        return;
-
-      case 'searchPrevious':
-        e.preventDefault();
-        activateNoRecord(SHARED.search.search(false, state));
-        return;
-
-      case 'searchNext':
-        e.preventDefault();
-        activateNoRecord(SHARED.search.search(true, state));
-        return;
-
-      case 'undo':
-        e.preventDefault();
-        SHARED.cm.undo();
-        return;
-
-      case 'redo':
-        e.preventDefault();
-        SHARED.cm.redo();
-        return;
-
-      }
-    });
-  }
-
-  handleTopLevelKeyPress = (ed, e) => {
-    const text = e.key;
-    // let CM handle kbd shortcuts or whitespace insertion
-    if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
-    e.preventDefault();
-    const start = SHARED.cm.getCursor(true);
-    const end = SHARED.cm.getCursor(false);
-    this.props.setQuarantine(start, end, text);
-  }
-
-  handleTopLevelPaste = (ed, e) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    const start = SHARED.cm.getCursor(true);
-    const end = SHARED.cm.getCursor(false);
-    this.props.setQuarantine(start, end, text);
-  }
-
-
   // Anything that didn't come from cmb itself must be speculatively
   // checked. NOTE: this only checks the *first change* in a changeset!
   handleBeforeChange = (cm, change) => {
@@ -526,6 +410,128 @@ class BlockEditor extends Component {
     setTimeout(() => this.mouseUsed = false, 200);
   }
 
+  // NOTE: if there's a focused node, this handler will not be activated
+  // This handler deals with key events sent from CodeMirror itself
+  handleTopLevelKeyDown = (ed, e) => {
+    const {dispatch} = this.props;
+
+    const activateNoRecord = node => {
+      if(!node){ playSound(BEEP); } // nothing to activate
+      else { dispatch(activate(node.id, {record: false, allowMove: true})); }
+    };
+
+    dispatch((_, getState) => {
+      const state = getState();
+      const {ast, focusId} = state;
+      const message = SHARED.keyMap[SHARED.keyName(e)];
+      switch (message) {
+      case 'nextNode': {
+        e.preventDefault();
+        const nextNode = ast.getNodeAfterCur(this.props.cur);
+        if (nextNode) {
+          this.props.activate(nextNode.id, {allowMove: true});
+        } else {
+          playSound(BEEP);
+        }
+        return;
+      }
+
+      case 'prevNode': {
+        e.preventDefault();
+        console.log(this.props);
+        const prevNode = ast.getNodeBeforeCur(this.props.cur);
+        if (prevNode) {
+          this.props.activate(prevNode.id, {allowMove: true});
+        } else {
+          playSound(BEEP);
+        }
+        return;
+      }
+
+      case 'firstNode':
+        // NOTE(Emmanuel): shouldn't this go to the first node?
+        e.preventDefault();
+        this.props.setCursor(null, {line: 0, ch: 0});
+        return;
+
+      case 'lastVisibleNode': {
+        // NOTE(Emmanuel): shouldn't this go to the last visible node?
+        e.preventDefault();
+        const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
+        this.props.setCursor(null, {line: idx, ch: text.length});
+        return;
+      }
+      case 'changeFocus':
+        // NOTE(Emmanuel): this is dead code, unless we can trap tab events
+        e.preventDefault();
+        if (focusId === null) {
+          if (ast.rootNodes.length > 0) {
+            dispatch(activate(ast.getFirstRootNode(), {allowMove: true}));
+            // NOTE(Oak): can also find the closest node based on current cursor
+          }
+        } else {
+          dispatch(activate(null, {allowMove: true}));
+        }
+        return;
+
+      case 'activateSearchDialog':
+        e.preventDefault();
+        SHARED.search.onSearch(
+          state, 
+          () => {}, 
+          () => activateNoRecord(SHARED.search.search(true, state))
+        );
+        return;
+
+      case 'searchPrevious':
+        e.preventDefault();
+        activateNoRecord(SHARED.search.search(false, state));
+        return;
+
+      case 'searchNext':
+        e.preventDefault();
+        activateNoRecord(SHARED.search.search(true, state));
+        return;
+
+      case 'undo':
+        e.preventDefault();
+        SHARED.cm.undo();
+        return;
+
+      case 'redo':
+        e.preventDefault();
+        SHARED.cm.redo();
+        return;
+
+      }
+    });
+  }
+
+  handleTopLevelKeyPress = (ed, e) => {
+    const text = e.key;
+    // let CM handle kbd shortcuts or whitespace insertion
+    if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
+    e.preventDefault();
+    const start = SHARED.cm.getCursor(true);
+    const end = SHARED.cm.getCursor(false);
+    this.props.setQuarantine(start, end, text);
+  }
+
+  handleTopLevelPaste = (ed, e) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    const start = SHARED.cm.getCursor(true);
+    const end = SHARED.cm.getCursor(false);
+    this.props.setQuarantine(start, end, text);
+  }
+  
+  // this change was introduced during the switch from onCursor to onCursorActivity
+  // if there are selections, pass null. otherwise pass the cursor
+  handleTopLevelCursorActivity = (ed, _) => {
+    let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
+    this.props.setCursor(ed, cur);
+  }
+
   componentWillUnmount() {
     SHARED.buffer.remove();
   }
@@ -562,13 +568,6 @@ class BlockEditor extends Component {
         if(!quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
       });
     }, 0));
-  }
-
-  // this change was introduced during the switch from onCursor to onCursorActivity
-  // if there are selections, pass null. otherwise pass the cursor
-  handleTopLevelCursorActivity = (ed, _) => {
-    let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
-    this.props.setCursor(ed, cur);
   }
 
   render() {
