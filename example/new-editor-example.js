@@ -5,8 +5,8 @@ import bigExampleCode from './ast-test.rkt';
 import hugeExampleCode from './huge-code.rkt';
 const smallExampleCode = `(collapse me)\n(+ 1 2)`;
 
-const exampleCode = smallExampleCode;
-//const exampleCode = bigExampleCode;
+//const exampleCode = smallExampleCode;
+const exampleCode = bigExampleCode;
 //const exampleCode = hugeExampleCode;
 
 // grab the DOM Node to host the editor, and use it to instantiate
