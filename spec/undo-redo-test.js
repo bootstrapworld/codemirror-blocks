@@ -40,7 +40,7 @@ describe("when testing undo/redo,", function () {
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     insertText("C");                                  // 3) insert C at the end
-    await wait(DELAY);
+    await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     this.retrieve()
     keyDown("Z", { ctrlKey: true });                  // undo (3), leaving \nB\n\n
