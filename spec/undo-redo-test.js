@@ -34,31 +34,37 @@ describe("when testing undo/redo,", function () {
     await wait(DELAY*2);
     keyDown("X", { ctrlKey: true }, this.firstRoot);  // 1) cut the first root
     await wait(DELAY*2);
+    console.log('@@After change 1, code is: ', this.cmb.getValue());
     expect(this.cmb.getValue()).toEqual('\nB\n');
     this.cmb.setCursor({line: 2, ch: 0});
     keyDown("Enter");                                 // 2) insert another empty line
     await wait(DELAY*2);
+    console.log('@@After change 2, code is: ', this.cmb.getValue());
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     insertText("C");                                  // 3) insert C at the end
     await wait(DELAY*2);
+    console.log('@@After change 3, code is: ', this.cmb.getValue());
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     this.retrieve()
     keyDown("Z", { ctrlKey: true });                  // undo (3), leaving \nB\n\n
     await wait(DELAY*2);
+    console.log('@@After undoing change 3, code is: ', this.cmb.getValue());
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     keyDown("Z", { ctrlKey: true });                  // undo (2), leaving \nB\n
     await wait(DELAY*2);
+    console.log('@@After undoing change 2, code is: ', this.cmb.getValue());
     expect(this.cmb.getValue()).toEqual('\nB\n');
     keyDown("Z", { ctrlKey: true });                  // undo (1), leaving A\nB\n
     await wait(DELAY*2);
-    expect(this.cmb.getValue()).toEqual('A\nB\n');    // redo (1), leaving \nB\n
-    keyDown("Y", { ctrlKey: true });
+    console.log('@@After undoing change 1, code is: ', this.cmb.getValue());
+    expect(this.cmb.getValue()).toEqual('A\nB\n');    
+    keyDown("Y", { ctrlKey: true });                  // redo (1), leaving \nB\n
     await wait(DELAY*2);
-    expect(this.cmb.getValue()).toEqual('\nB\n');     // redo (2), leaving \nB\n\n
-    keyDown("Y", { ctrlKey: true });
+    expect(this.cmb.getValue()).toEqual('\nB\n');
+    keyDown("Y", { ctrlKey: true });                  // redo (2), leaving \nB\n\n
     await wait(DELAY*2);
-    expect(this.cmb.getValue()).toEqual('\nB\n\n');   // redo (3), leaving \nB\n\nC
-    keyDown("Y", { ctrlKey: true });
+    expect(this.cmb.getValue()).toEqual('\nB\n\n');
+    keyDown("Y", { ctrlKey: true });                  // redo (3), leaving \nB\n\nC
     await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');  
   });
