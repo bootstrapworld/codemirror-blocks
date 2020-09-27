@@ -38,11 +38,11 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.getValue()).toEqual('\nB\n');
     this.cmb.setCursor({line: 2, ch: 0});
     keyDown("Enter");                                 // 2) insert another empty line
-    await wait(DELAY*2);
+    await wait(DELAY*5);
     console.log('@@After change 2, code is: ', JSON.stringify(this.cmb.getValue()));
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     insertText("C");                                  // 3) insert C at the end
-    await wait(DELAY*5);
+    await wait(DELAY*2);
     console.log('@@After change 3, code is: ', JSON.stringify(this.cmb.getValue()));
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     this.retrieve()
