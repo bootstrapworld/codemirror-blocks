@@ -199,7 +199,7 @@ class BlockEditor extends Component {
 
   // NOTE: if there's a focused node, this handler will not be activated
   // This handler deals with key events sent from CodeMirror itself
-  handleKeyDown = (ed, e) => {
+  handleTopLevelKeyDown = (ed, e) => {
     const {dispatch} = this.props;
 
     const activateNoRecord = node => {
@@ -294,7 +294,7 @@ class BlockEditor extends Component {
     });
   }
 
-  handleKeyPress = (ed, e) => {
+  handleTopLevelKeyPress = (ed, e) => {
     const text = e.key;
     // let CM handle kbd shortcuts or whitespace insertion
     if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
@@ -304,7 +304,7 @@ class BlockEditor extends Component {
     this.props.setQuarantine(start, end, text);
   }
 
-  handlePaste = (ed, e) => {
+  handleTopLevelPaste = (ed, e) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
     const start = SHARED.cm.getCursor(true);
@@ -505,7 +505,7 @@ class BlockEditor extends Component {
     ed.off('changes', this.handleChanges);
   }
 
-  handleFocus = _ => {
+  handleTopLevelFocus = (ed, _) => {
     const {dispatch} = this.props;
     dispatch((_, getState) => {
       const {cur} = getState();
@@ -513,11 +513,15 @@ class BlockEditor extends Component {
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
         setTimeout(() => this.props.activate(null, {allowMove: true}), 0);
         this.mouseUsed = false;
+      } else if(this.mouseUsed && (cur === null)) {
+        // if it was a click, get the cursor from CM
+        setTimeout(() => this.props.setCursor(ed, ed.getCursor()));
+        this.mouseUsed = false;
       }
     });
   }
 
-  handleMouseDown = () => {
+  handleTopLevelMouseDown = () => {
     this.mouseUsed = true;
     setTimeout(() => this.mouseUsed = false, 200);
   }
@@ -562,7 +566,7 @@ class BlockEditor extends Component {
 
   // this change was introduced during the switch from onCursor to onCursorActivity
   // if there are selections, pass null. otherwise pass the cursor
-  handleCursor = (ed, _) => {
+  handleTopLevelCursorActivity = (ed, _) => {
     let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
     this.props.setCursor(ed, cur);
   }
@@ -580,12 +584,12 @@ class BlockEditor extends Component {
           className={classNames(classes)}
           value={this.props.value}
           onBeforeChange={this.props.onBeforeChange}
-          onKeyPress={this.handleKeyPress}
-          onKeyDown={this.handleKeyDown}
-          onMouseDown={this.handleMouseDown}
-          onFocus={this.handleFocus}
-          onPaste={this.handlePaste}
-          onCursorActivity={this.handleCursor}
+          onKeyPress={this.handleTopLevelKeyPress}
+          onKeyDown={this.handleTopLevelKeyDown}
+          onMouseDown={this.handleTopLevelMouseDown}
+          onFocus={this.handleTopLevelFocus}
+          onPaste={this.handleTopLevelPaste}
+          onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}
       </React.Fragment>
