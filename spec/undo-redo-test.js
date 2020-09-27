@@ -26,6 +26,7 @@ describe("when testing undo/redo,", function () {
   // https://github.com/bootstrapworld/codemirror-blocks/issues/315
   it('make sure block and non-block edits can be properly undone', async function () {
     this.cmb.setValue(`A\nB\n`);
+    this.cmb.clearHistory();
     await wait(DELAY);
     this.retrieve = () => this.firstRoot = this.cmb.getAst().rootNodes[0];
     this.retrieve();
