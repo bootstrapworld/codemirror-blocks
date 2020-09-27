@@ -31,13 +31,13 @@ describe("when testing undo/redo,", function () {
     this.retrieve();
     mouseDown(this.firstRoot);
     keyDown(" ", {}, this.firstRoot);
-    await wait(DELAY);
+    await wait(DELAY*2);
     keyDown("X", { ctrlKey: true }, this.firstRoot);  // 1) cut the first root
-    await wait(DELAY);
+    await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     this.cmb.setCursor({line: 2, ch: 0});
     keyDown("Enter");                                 // 2) insert another empty line
-    await wait(DELAY);
+    await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     insertText("C");                                  // 3) insert C at the end
     await wait(DELAY*2);
