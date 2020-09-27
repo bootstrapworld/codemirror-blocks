@@ -16,7 +16,7 @@ const { PrimitiveGroup } = require('./parsers/primitives');
 // to render. Produces an object-representation of CMB, allowing for
 // integration with external (non-react) code
 export default class CodeMirrorBlocks {
-  constructor(container, options = {}, language) {
+  constructor(container, options = {}, language, cmOptions = {}) {
     let api = {};
     let initialCode = options.value;
     ReactDOM.render(
@@ -26,6 +26,7 @@ export default class CodeMirrorBlocks {
         api={api}
         appElement={container}
         options={options}
+        cmOptions={cmOptions}
       />,
       container
     );

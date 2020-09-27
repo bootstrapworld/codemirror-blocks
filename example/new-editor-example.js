@@ -3,7 +3,7 @@ import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import './example-page.less';
 import bigExampleCode from './ast-test.rkt';
 import hugeExampleCode from './huge-code.rkt';
-const smallExampleCode = `(+ 1 2) ;comment\n(+ 3 4)`;
+const smallExampleCode = `(collapse me)\n(+ 1 2)`;
 
 //const exampleCode = smallExampleCode;
 const exampleCode = bigExampleCode;

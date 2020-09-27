@@ -95,7 +95,7 @@ export class AST {
         if (node.id === undefined) {
           // May be defined, if this piece of AST came from the previous AST.
           node.id = gensym();
-          //console.log('new symbol is:', gensym());
+          //console.log('new symbol is:', node.id);
         }
         node.parent = parent;
         node.level = level;
@@ -122,7 +122,7 @@ export class AST {
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames =
           ["id", "parent", "level", "nid", "prev", "next", "hash",
-           "aria-setsize", "aria-posinset"];
+           "aria-setsize", "aria-posinset", "mark"];
     if (!node.__alreadyValidated) {
       for (let p in node) {
         if (newFieldNames.includes(p)) {

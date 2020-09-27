@@ -145,6 +145,10 @@ class ActualDropTarget extends BlockComponent {
       if (elem == null || elem.children == null) { // if it's a new element (insertion)
         return null;
       }
+      // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
+      if (elem.id && elem.id.startsWith("block-node-")) {
+        prevNodeId = elem.id.substring(11); // skip "block-node-"
+      }
       for (let sibling of elem.children) {
         if (sibling.id && sibling.id.startsWith("block-node-")) {
           // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
