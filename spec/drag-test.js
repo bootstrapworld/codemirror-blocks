@@ -196,4 +196,36 @@ describe('Drag and drop', function() {
       expect(this.newLastChild.element.getAttribute('aria-expanded')).toBe('false');
     });
   });
+
+
+  describe("corner cases", function () {
+    beforeEach(async function () {
+      setup.call(this);
+
+      this.cmb.setValue(';comment\n(a)\n(c)\n(define-struct e ())\ng');
+      await wait(DELAY);
+      this.retrieve = function() {
+        this.source = this.cmb.getAst().rootNodes[0];
+        this.target1 = document.querySelectorAll('.blocks-drop-target')[1];
+        this.target2 = document.querySelectorAll('.blocks-drop-target')[2];
+      };
+      this.retrieve();
+    });
+
+    afterEach(function () { teardown(); });
+
+    it('regression test for unstable block IDs', async function () {
+      let dragEvent = dragstart();
+      this.source.element.dispatchEvent(dragEvent); // drag to the last droptarget
+      this.target1.dispatchEvent(drop(dragEvent.dataTransfer));
+      await wait(DELAY);
+    });
+
+    it('regression test for empty identifierLists returning a null location', async function () {
+      let dragEvent = dragstart();
+      this.source.element.dispatchEvent(dragEvent); // drag to the last droptarget
+      this.target2.dispatchEvent(drop(dragEvent.dataTransfer));
+      await wait(DELAY);
+    });
+  });
 });

@@ -107,6 +107,7 @@ const mapDispatchToProps2 = (dispatch, {id}) => ({
 @connect(mapStateToProps2, mapDispatchToProps2)
 @DropNodeTarget(function(monitor) {
   const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
+  console.log('@@@target made', target)
   return drop(monitor.getItem(), target);
 })
 class ActualDropTarget extends BlockComponent {
@@ -143,7 +144,11 @@ class ActualDropTarget extends BlockComponent {
 
     function findLoc(elem) {
       if (elem == null || elem.children == null) { // if it's a new element (insertion)
+        console.log('a new element');
         return null;
+      }
+      if (elem.id && elem.id.startsWith("block-node-")) {
+        prevNodeId = elem.id.substring(11); // skip "block-node-"
       }
       for (let sibling of elem.children) {
         if (sibling.id && sibling.id.startsWith("block-node-")) {
