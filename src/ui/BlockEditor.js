@@ -325,6 +325,7 @@ class BlockEditor extends Component {
       'markText':   (from, to, opts) => this.markText(from, to, opts),
       'runMode': (_src, _lang, _container) => () => {}, // no-op since not an editing command
       'setCursor': (pos) => this.props.setCursor(ed, pos),
+      'changeGeneration': (closeEvent) => SHARED.cm.changeGeneration(closeEvent),
       // block methods
       'getAst':
         () => withState((state) => state.ast),
