@@ -44,22 +44,22 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     this.retrieve()
     keyDown("Z", { ctrlKey: true });                  // undo (3), leaving \nB\n\n
-    await wait(DELAY);
+    await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     keyDown("Z", { ctrlKey: true });                  // undo (2), leaving \nB\n
-    await wait(DELAY);
+    await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     keyDown("Z", { ctrlKey: true });                  // undo (1), leaving A\nB\n
-    await wait(DELAY);
+    await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('A\nB\n');    // redo (1), leaving \nB\n
     keyDown("Y", { ctrlKey: true });
-    await wait(DELAY);
+    await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('\nB\n');     // redo (2), leaving \nB\n\n
     keyDown("Y", { ctrlKey: true });
-    await wait(DELAY);
+    await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');   // redo (3), leaving \nB\n\nC
     keyDown("Y", { ctrlKey: true });
-    await wait(DELAY);
+    await wait(DELAY*2);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');  
   });
 });
