@@ -46,7 +46,13 @@ const fixture = `
 export function activationSetup(language) {
   document.body.insertAdjacentHTML('afterbegin', fixture);
   const container = document.getElementById('cmb-editor');
-  this.cmb = new CodeMirrorBlocks(container, { collapseAll: false, value: "" }, language);
+  const cmOptions = {historyEventDelay: 200} // since our test harness is faster than people
+  this.cmb = new CodeMirrorBlocks(
+    container, 
+    { collapseAll: false, value: "" }, 
+    language, 
+    cmOptions
+  );
   this.cmb.setBlockMode(true);
 
   this.activeNode = () => this.cmb.getFocusedNode();

@@ -225,6 +225,7 @@ class BlockEditor extends Component {
 
       case 'prevNode': {
         e.preventDefault();
+        console.log(this.props);
         const prevNode = ast.getNodeBeforeCur(this.props.cur);
         if (prevNode) {
           this.props.activate(prevNode.id, {allowMove: true});
@@ -312,30 +313,30 @@ class BlockEditor extends Component {
   }
 
 
+  // Anything that didn't come from cmb itself must be speculatively
+  // checked. NOTE: this only checks the *first change* in a changeset!
   handleBeforeChange = (cm, change) => {
-    let knownOrigin = (origin) =>
-      origin && (origin.startsWith("cmb:") || origin=="undo" || origin=="redo");
-    if (!knownOrigin(change.origin)) {
-      // We did not produce this change, so check to see if it's valid.
+    let notFromCMB = (origin) => origin && origin.startsWith("cmb:");
+    if (!notFromCMB(change.origin)) {
       let {successful, newAST} = speculateChanges([change]);
-      // It is! Let's save all the hard work we did to build the new AST
-      if (successful) {
-        this.newAST = newAST;
-      // It's not! Cancel the change
-      } else {
-        change.cancel();
-      }
+      // Successful! Let's save all the hard work we did to build the new AST
+      if (successful) { this.newAST = newAST; }
+      // Error! Cancel the change
+      else { change.cancel(); }
     }
   }
 
   handleChanges = (cm, changes) => {
     this.props.dispatch((dispatch, getState) => {
       if (!changes.every(c => c.origin && c.origin.startsWith("cmb:"))) {
-        // These changes did not originate from us. However, they've all gone
+        // These changes did not originate from us. However, they've all
         // passed the `handleBeforeChange` function, so they must be valid edits.
         // (There's almost certainly just one edit here; I (Justin) am not
         // convinced this will always work if there is more than one edit here.)
         // Since the edit(s) is valid, commit it without calling speculateChanges.
+
+        // Turn undo and redo into cmb actions, update the focusStack, and
+        // provide a focusHint
         if (changes[0].origin === "undo") {
           for (let c of changes) c.origin = "cmb:undo";
           const undoFocusStack = getState().undoFocusStack;
@@ -351,6 +352,10 @@ class BlockEditor extends Component {
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'REDO'});
         } else {
+          // This (valid) changeset is coming from outside of the editor, but we
+          // don't know anything else about it. Apply the change, set the focusHint
+          // to the top of the tree (-1), and provide an astHint so we don't need
+          // to reparse and rebuild the tree
           commitChanges(changes, false, -1, this.newAST);
         }
       }

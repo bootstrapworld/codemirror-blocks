@@ -43,7 +43,8 @@ export default class ToggleEditor extends React.Component {
   }
 
   static defaultProps = {
-    debuggingLog: {}
+    debuggingLog: {},
+    cmOptions: {},
   }
 
   constructor(props) {
@@ -199,8 +200,6 @@ export default class ToggleEditor extends React.Component {
   }
 
   renderBlocks() {
-        console.log('this.ast is set to', this.ast);
-
     let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
     return (
       <UpgradedBlockEditor
