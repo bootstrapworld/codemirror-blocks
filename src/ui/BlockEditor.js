@@ -37,7 +37,7 @@ class ToplevelBlock extends BlockComponent {
   }
 
   // by default, let's render a placeholder
-  state = { renderPlaceholder: false };
+  state = { renderPlaceholder: this.props.incrementalRendering };
 
   // we need to trigger a render if the node was moved or resized at the
   // top-level, in order to re-mark the node and put the DOM in the new marker
