@@ -55,7 +55,7 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
     mouseDown(this.roots[1]);                         // focus on the 2nd root (C)
     this.retrieve()
-    keyDown("Z", { ctrlKey: true });                  // undo (3), leaving \nB\n\n
+    keyDown("Z", { ctrlKey: true }, this.roots[1]);   // undo (3), leaving \nB\n\n
     await wait(DELAY*2);
     console.log('@@After undoing change 3, code is: ', JSON.stringify(this.cmb.getValue()));
     console.log('@changeGeneration # ',this.cmb.changeGeneration(true));
