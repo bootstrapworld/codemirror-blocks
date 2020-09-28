@@ -3,7 +3,7 @@ import 'codemirror/addon/search/searchcursor.js';
 import { wait, teardown, activationSetup } from './support/test-utils';
 import { mouseDown, keyDown, insertText } from './support/simulate';
 
-const DELAY = 250;
+const DELAY = 500;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -11,7 +11,7 @@ let setup = function () { activationSetup.call(this, wescheme); };
 describe("when dealing with node activation,", function () {
   beforeEach(function () {
     setup.call(this);
-
+    await wait(DELAY);
     this.cmb.setValue('11\n54');
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
