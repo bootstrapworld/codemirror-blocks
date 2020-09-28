@@ -31,7 +31,7 @@ describe("when testing undo/redo,", function () {
     this.retrieve = () => this.roots = this.cmb.getAst().rootNodes;
     this.retrieve();
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 0});
-    mouseDown(this.roots[0]);
+    mouseDown(this.roots[0]);                        // focus on the 2nd root (A)
     keyDown(" ", {}, this.roots[0]);
     await wait(DELAY);
     keyDown("X", { ctrlKey: true }, this.roots[0]);  // 1) cut the first root
