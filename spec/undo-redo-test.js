@@ -19,6 +19,7 @@ let setup = function () { activationSetup.call(this, wescheme); };
 describe("when testing undo/redo,", function () {
   beforeEach(async function () {
     setup.call(this);
+    await wait(DELAY);
   });
 
   afterEach(function () { teardown(); });
