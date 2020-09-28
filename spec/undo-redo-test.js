@@ -26,49 +26,49 @@ describe("when testing undo/redo,", function () {
 
   // https://github.com/bootstrapworld/codemirror-blocks/issues/315
   it('make sure block and non-block edits can be properly undone', async function () {
-    function currentFirstRoot() => this.cmb.getAst().rootNodes[0];
+    function currentFirstRoot(){ this.cmb.getAst().rootNodes[0]; }
 
     this.cmb.setValue(`A\nB\n`);
     this.cmb.clearHistory();
     await wait(DELAY);
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 0});
-    mouseDown(currentFirstRoot());                        // focus on the 2nd root (A)
+    mouseDown(currentFirstRoot());                          // focus on the 1st root
     keyDown(" ", {}, currentFirstRoot());
     await wait(DELAY);
-    keyDown("X", { ctrlKey: true }, currentFirstRoot());  // 1) cut the first root
+    keyDown("X", { ctrlKey: true }, currentFirstRoot());    // change (1): cut first root
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 0});
     this.cmb.setCursor({line: 2, ch: 0});
-    keyDown("Enter");                                 // 2) insert another empty line
+    keyDown("Enter");                                       // change (2): insert empty line
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 0});
-    insertText("C");                                  // 3) insert C at the end
+    insertText("C");                                        // change (3): insert C at the end
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
-    keyDown("Z", { ctrlKey: true }, currentFirstRoot());   // undo (3), leaving \nB\n\n
+    keyDown("Z", { ctrlKey: true }, currentFirstRoot());    // undo (3), leaving \nB\n\n
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
-    keyDown("Z", { ctrlKey: true }, currentFirstRoot());   // undo (2), leaving \nB\n\n
+    keyDown("Z", { ctrlKey: true }, currentFirstRoot());    // undo (2), leaving \nB\n\n
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
-    keyDown("Z", { ctrlKey: true }, currentFirstRoot());   // undo (1), leaving A\nB\n
+    keyDown("Z", { ctrlKey: true }, currentFirstRoot());    // undo (1), leaving A\nB\n
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('A\nB\n');    
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 3});
-    keyDown("Y", { ctrlKey: true }, currentFirstRoot());   // redo (1), leaving \nB\n
+    keyDown("Y", { ctrlKey: true }, currentFirstRoot());    // redo (1), leaving \nB\n
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
-    keyDown("Y", { ctrlKey: true }, currentFirstRoot());   // redo (2), leaving \nB\n\n
+    keyDown("Y", { ctrlKey: true }, currentFirstRoot());    // redo (2), leaving \nB\n\n
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
-    keyDown("Y", { ctrlKey: true }, currentFirstRoot());   // redo (3), leaving \nB\n\nC
+    keyDown("Y", { ctrlKey: true }, currentFirstRoot());    // redo (3), leaving \nB\n\nC
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
