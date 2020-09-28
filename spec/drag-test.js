@@ -14,6 +14,8 @@ import {
   keyDown
 } from './support/simulate';
 
+const DELAY = 250;
+
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
 
