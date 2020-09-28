@@ -494,7 +494,6 @@ class BlockEditor extends Component {
         return;
 
       case 'undo':
-      console.log('@@CALLING CM.UNDO FROM BLOCKEDITOR');
         e.preventDefault();
         SHARED.cm.undo();
         return;
