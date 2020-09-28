@@ -30,8 +30,9 @@ describe('Drag and drop', function() {
   });
 
   describe('when drag existing node and drop on existing node,', function() {
-    beforeEach(function() {
+    beforeEach(async function() {
       this.cmb.setValue('(+ 1 2 3)');
+      await wait(DELAY);
       this.retrieve = function() {
         this.funcSymbol = this.cmb.getAst().rootNodes[0].func;
         this.firstArg = this.cmb.getAst().rootNodes[0].args[0];
@@ -64,7 +65,6 @@ describe('Drag and drop', function() {
 
    
     it('should set the right css class on dragenter 2’', function() {
-      //ds26gte try, after suitable defns in simulate.js
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       let elt = this.secondArg;
@@ -201,7 +201,6 @@ describe('Drag and drop', function() {
   describe("corner cases", function () {
     beforeEach(async function () {
       setup.call(this);
-
       this.cmb.setValue(';comment\n(a)\n(c)\n(define-struct e ())\ng');
       await wait(DELAY);
       this.retrieve = function() {

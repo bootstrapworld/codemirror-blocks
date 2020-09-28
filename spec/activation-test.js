@@ -3,7 +3,7 @@ import 'codemirror/addon/search/searchcursor.js';
 import { wait, teardown, activationSetup } from './support/test-utils';
 import { mouseDown, keyDown, insertText } from './support/simulate';
 
-const DELAY = 500;
+const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
