@@ -29,7 +29,6 @@ class ToplevelBlock extends BlockComponent {
     super(props);
     this.container = document.createElement('span');
     this.container.classList.add('react-container');
-    console.log(this.props.incrementalRendering);
   }
 
   static propTypes = {
@@ -53,8 +52,9 @@ class ToplevelBlock extends BlockComponent {
   // once the placeholder has mounted, wait 250ms and render
   componentDidMount() {
     if(!this.props.incrementalRendering) return; // bail if incremental is off
-    window.requestAnimationFrame( () => 
-      setTimeout(() => this.setState({ renderPlaceholder: false }), 50)); 
+    window.requestAnimationFrame( () => {
+      setTimeout(() => this.setState({ renderPlaceholder: false }), 50);
+    }); 
   }
 
   render() {
