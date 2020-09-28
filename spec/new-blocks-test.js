@@ -11,7 +11,7 @@ import {
 } from './support/simulate';
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 500;
+const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
