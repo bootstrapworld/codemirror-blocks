@@ -47,8 +47,8 @@ describe("when testing undo/redo,", function () {
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
-    mouseDown(this.roots[1]);                         // focus on the 2nd root (C)
     this.retrieve()
+    mouseDown(this.roots[1]);                         // focus on the 2nd root (C)
     keyDown("Z", { ctrlKey: true }, this.roots[1]);   // undo (3), leaving \nB\n\n
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
