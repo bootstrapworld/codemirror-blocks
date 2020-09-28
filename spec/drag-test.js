@@ -14,13 +14,11 @@ import {
   keyDown
 } from './support/simulate';
 
-const DELAY = 250;
-
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
 
 describe('Drag and drop', function() {
-  beforeEach(async function() {
+  beforeEach(function() {
     setup.call(this);
     this.cmb.setBlockMode(true);
   });
@@ -30,9 +28,8 @@ describe('Drag and drop', function() {
   });
 
   describe('when drag existing node and drop on existing node,', function() {
-    beforeEach(async function() {
+    beforeEach(function() {
       this.cmb.setValue('(+ 1 2 3)');
-      await wait(DELAY);
       this.retrieve = function() {
         this.funcSymbol = this.cmb.getAst().rootNodes[0].func;
         this.firstArg = this.cmb.getAst().rootNodes[0].args[0];

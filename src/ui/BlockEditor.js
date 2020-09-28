@@ -52,7 +52,7 @@ class ToplevelBlock extends BlockComponent {
   // once the placeholder has mounted, wait 250ms and render
   componentDidMount() {
     window.requestAnimationFrame( () => 
-      setTimeout(() => this.setState({ renderPlaceholder: false }), 25)
+      setTimeout(() => this.setState({ renderPlaceholder: false }), 50)
     ); 
   }
 

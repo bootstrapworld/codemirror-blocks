@@ -58,7 +58,7 @@ describe('The CodeMirrorBlocks Class', function() {
   describe('events,', function() {
     beforeEach(async function() {
       this.blocks.setValue('11');
-      await wait(DELAY); // wait for rootNodes to incrementally render
+      await wait(DELAY);
       this.blocks.setBlockMode(true);
       // this.ast = this.blocks.getAst();
       this.literal = this.blocks.getAst().rootNodes[0];
@@ -68,24 +68,24 @@ describe('The CodeMirrorBlocks Class', function() {
 
       beforeEach(async function() {
         this.blocks.setValue('42 11');
-        await wait(DELAY); // wait for rootNodes to incrementally render
+        await wait(DELAY);
       });
 
-      it('typing at the end of a line', async function() {
+      it('typing at the end of a line', function() {
         this.blocks.setCursor({line: 0, ch: 5});
         keyDown("9");
         insertText("9");
         expect(this.blocks.getValue()).toEqual('42 119');
       });
 
-      it('typing at the beginning of a line', async function() {
+      it('typing at the beginning of a line', function() {
         this.blocks.setCursor({line: 0, ch: 0});
         keyDown("9", {}, this.blocks.getInputField());
         insertText("9");
         expect(this.blocks.getValue()).toEqual('942 11');
       });
 
-      it('typing between two blocks on a line', async function() {
+      it('typing between two blocks on a line', function() {
         this.blocks.setCursor({line: 0, ch: 3});
         keyDown("9", {}, this.blocks.getInputField());
         insertText("9");
@@ -179,7 +179,7 @@ describe('The CodeMirrorBlocks Class', function() {
     describe('when dealing with whitespace,', function() {
       beforeEach(async function() {
         this.blocks.setValue('(+ 1 2) (+)');
-        await wait(DELAY); // wait for rootNodes to incrementally render;
+        await wait(DELAY);
         this.ast = this.blocks.getAst();
         this.firstRoot = this.ast.rootNodes[0];
         this.firstArg = this.ast.rootNodes[0].args[0];
@@ -234,7 +234,7 @@ describe('The CodeMirrorBlocks Class', function() {
       describe('in corner-cases with no arguments,', function() {
         beforeEach(async function() {
           this.blocks.setValue('(f)');
-          await wait(DELAY); // wait for rootNodes to incrementally render
+          await wait(DELAY);
           this.ast = this.blocks.getAst();
           this.firstRoot = this.ast.rootNodes[0];
           this.func = this.ast.rootNodes[0].func;

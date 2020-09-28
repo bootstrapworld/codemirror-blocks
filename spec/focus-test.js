@@ -9,7 +9,7 @@ import {wait, teardown, activationSetup} from './support/test-utils';
 
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 250;
+const DELAY = 750;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -27,7 +27,7 @@ describe('The CodeMirrorBlocks Class', function() {
   describe('focusing,', function() {
     beforeEach(async function() {
       this.cm.setValue('(+ 1 2 3)');
-      await wait(DELAY); // wait for rootNodes to incrementally render
+      await wait(DELAY);
       this.expression = this.blocks.getAst().rootNodes[0];
       this.func = this.expression.func;
       this.literal1 = this.expression.args[0];
