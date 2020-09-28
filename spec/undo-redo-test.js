@@ -11,7 +11,7 @@ import {
   dragenterSeq,
 } from './support/simulate';
 
-const DELAY = 250;
+const DELAY = 500;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
