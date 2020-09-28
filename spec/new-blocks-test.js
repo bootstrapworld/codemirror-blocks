@@ -11,7 +11,7 @@ import {
 } from './support/simulate';
 
 // ms delay to let the DOM catch up before testing
-const DELAY = 500;
+const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -35,7 +35,10 @@ describe('The CodeMirrorBlocks Class', function() {
       `;
       document.body.insertAdjacentHTML('afterbegin', fixture);
       const container = document.getElementById('cmb-editor-temp');
-      const tempBlocks = new CodeMirrorBlocks(container, {value: ""}, wescheme);
+      const tempBlocks = new CodeMirrorBlocks(
+        container, 
+        {value: "", incrementalRendering: false }, 
+        wescheme);
       tempBlocks.setBlockMode(true);
       const ast = tempBlocks.getAst();
       expect(tempBlocks.getBlockMode()).toBe(true); //broken
@@ -48,13 +51,16 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.getBlockMode()).toBe(false);
     });
   });
-
+/*
   // Should we make the language prop accessible externally so we can run this?
-  // it('should optionally take a language object', function() {
-  //   const b = new CodeMirrorBlocks(document.getElementById('root'), {value: ""}, example);
-  //   expect(b.language.id).toBe('example');
-  // });
-
+  it('should optionally take a language object', function() {
+     const b = new CodeMirrorBlocks(
+      document.getElementById('root'), 
+      {value: "", incrementalRendering: false }, 
+      example);
+     expect(b.language.id).toBe('example');
+  });
+*/
   describe('events,', function() {
     beforeEach(async function() {
       this.blocks.setValue('11');

@@ -49,7 +49,7 @@ export function activationSetup(language) {
   const cmOptions = {historyEventDelay: 100} // since our test harness is faster than people
   this.cmb = new CodeMirrorBlocks(
     container, 
-    { collapseAll: false, value: "" }, 
+    { collapseAll: false, value: "", incrementalRendering: false }, 
     language, 
     cmOptions
   );

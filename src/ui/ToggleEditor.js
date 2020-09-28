@@ -56,6 +56,7 @@ export default class ToggleEditor extends React.Component {
 
     let defaultOptions = {
       parser: this.parser,
+      incrementalRendering: true,
       renderOptions: props.language.getRenderOptions
         ? props.language.getRenderOptions()
         : {},
@@ -79,6 +80,7 @@ export default class ToggleEditor extends React.Component {
       'setBlockMode': this.handleToggle,
       // CM methods
       'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
+      'changeGeneration': (closeEvent) => SHARED.cm.changeGeneration(closeEvent),
       'charCoords': (pos, mode) => ed.charCoords(pos, mode),
       'clearHistory': () => ed.clearHistory(),
       'clearGutter': () => ed.clearGutter(),
@@ -96,6 +98,7 @@ export default class ToggleEditor extends React.Component {
       'getTextArea': () => ed.getTextArea(), // errors if not created from text area?
       'getValue': (sep) => ed.getValue(sep),
       'getWrapperElement': () => ed.getWrapperElement(),
+      'historySize': () => ed.historySize(),
       'normalizeKeyMap': (keymap) => ed.normalizeKeyMap(keymap),
       'off': (type, func) => ed.off(type, func),
       'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
