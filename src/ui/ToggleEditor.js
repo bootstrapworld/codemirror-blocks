@@ -56,6 +56,7 @@ export default class ToggleEditor extends React.Component {
 
     let defaultOptions = {
       parser: this.parser,
+      incrementalRendering: true,
       renderOptions: props.language.getRenderOptions
         ? props.language.getRenderOptions()
         : {},

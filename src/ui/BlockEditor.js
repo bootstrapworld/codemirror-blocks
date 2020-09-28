@@ -29,6 +29,7 @@ class ToplevelBlock extends BlockComponent {
     super(props);
     this.container = document.createElement('span');
     this.container.classList.add('react-container');
+    console.log(this.props.incrementalRendering);
   }
 
   static propTypes = {
@@ -36,7 +37,7 @@ class ToplevelBlock extends BlockComponent {
   }
 
   // by default, let's render a placeholder
-  state = { renderPlaceholder: true };
+  state = { renderPlaceholder: false };
 
   // we need to trigger a render if the node was moved or resized at the
   // top-level, in order to re-mark the node and put the DOM in the new marker
@@ -51,9 +52,9 @@ class ToplevelBlock extends BlockComponent {
 
   // once the placeholder has mounted, wait 250ms and render
   componentDidMount() {
+    if(!this.props.incrementalRendering) return; // bail if incremental is off
     window.requestAnimationFrame( () => 
-      setTimeout(() => this.setState({ renderPlaceholder: false }), 50)
-    ); 
+      setTimeout(() => this.setState({ renderPlaceholder: false }), 50)); 
   }
 
   render() {
@@ -61,7 +62,7 @@ class ToplevelBlock extends BlockComponent {
 
     // set elt to a cheap placeholder, OR render the entire rootNode
     const elt = this.state.renderPlaceholder? (<div/>) : node.reactElement();
-
+    
     // if any prior block markers are in this range, clear them
     const {from, to} = node.srcRange(); // includes the node's comment, if any
     SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
@@ -610,10 +611,13 @@ class BlockEditor extends Component {
   }
 
   renderPortals = () => {
+    const incrementalRendering = this.props.options.incrementalRendering;
     let portals;
     if (SHARED.cm && this.props.ast) {
       // Render all the top-level nodes
-      portals = this.props.ast.rootNodes.map(r => <ToplevelBlock key={r.id} node={r} />);
+      portals = this.props.ast.rootNodes.map(r => 
+        <ToplevelBlock key={r.id} node={r} incrementalRendering={incrementalRendering}/>
+      );
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
     }
     return portals;
