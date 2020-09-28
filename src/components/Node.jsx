@@ -60,6 +60,16 @@ class Node extends BlockComponent {
     this.props.node.isEditable = () => this.state.editable;
   }
 
+  // if its a top level node (ie - it has a CM mark on the node) AND
+  // its isCollapsed property has changed, call mark.changed() to
+  // tell CodeMirror that the widget's height may have changed
+  componentDidUpdate(prevProps) {
+    if(this.props.node.mark && 
+        (prevProps.isCollapsed ^ this.props.isCollapsed)) {
+      this.props.node.mark.changed();
+    }
+  }
+
   handleChange = (value) => {
     this.setState({value});
   }

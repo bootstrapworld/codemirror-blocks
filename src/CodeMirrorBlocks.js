@@ -10,15 +10,13 @@ const Nodes = require('./nodes');
 const NodeSpec = require('./nodeSpec');
 const Languages = require('./languages');
 const Pretty = require('pretty-fast-pretty-printer');
-// const { teardown } = require('../spec/support/test-utils');
 const { PrimitiveGroup } = require('./parsers/primitives');
-// const { click, doubleClick, blur, keyDown, keyPress, insertText } = require('../spec/support/simulate');
 
 // Consumes a DOM node to host the editor, a language object and the code
 // to render. Produces an object-representation of CMB, allowing for
 // integration with external (non-react) code
 export default class CodeMirrorBlocks {
-  constructor(container, options = {}, language) {
+  constructor(container, options = {}, language, cmOptions = {}) {
     let api = {};
     let initialCode = options.value;
     ReactDOM.render(
@@ -28,6 +26,7 @@ export default class CodeMirrorBlocks {
         api={api}
         appElement={container}
         options={options}
+        cmOptions={cmOptions}
       />,
       container
     );
@@ -58,14 +57,3 @@ module.exports.NodeSpec = NodeSpec;
 module.exports.Languages = Languages;
 module.exports.Pretty = Pretty;
 module.exports.PrimitiveGroup = PrimitiveGroup;
-/*
-module.exports.testing = {
-  TeardownAfterTest : teardown,
-  click : click,
-  doubleClick : doubleClick,
-  blur : blur,
-  keyDown : keyDown, 
-  keyPress : keyPress,
-  insertText : insertText
-};
-*/

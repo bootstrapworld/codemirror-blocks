@@ -77,12 +77,19 @@ export class FakeAstInsertion {
 
   // Find the inserted child. If more than one was inserted at once, find the
   // _last_.
+  // Since nodeIds are not stable across edits, findChild may fail if the
+  // parent node has been changed. In that case, return false to trigger 
+  // the fallback focusHint handler.
   findChild(newAST) {
-    const newParent = newAST.getNodeById(this.parent.id);
-    if (!newParent) return null;
-    const indexFromEnd = this.parent[this.spec.fieldName].length - this.index;
-    const newIndex = newParent[this.spec.fieldName].length - indexFromEnd - 1;
-    return newParent[this.spec.fieldName][newIndex];
+    try {
+      const newParent = newAST.getNodeById(this.parent.id);
+      if (!newParent) return null;
+      const indexFromEnd = this.parent[this.spec.fieldName].length - this.index;
+      const newIndex = newParent[this.spec.fieldName].length - indexFromEnd - 1;
+      return newParent[this.spec.fieldName][newIndex];
+    } catch (e) {
+      return false;
+    }
   }
 }
 

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "classnames": "^2.2.6",
+    "core-js": "^3.6.5",
     "object-hash": "^2.0.3",
     "pretty-fast-pretty-printer": "^0.9.7",
     "prop-types": "^15.7.2",

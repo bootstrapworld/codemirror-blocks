@@ -110,7 +110,7 @@ export const reducer = (
     result =  initialState;
     break;
   default:
-    console.log('DS26GTE unprocessed action type=', action.type);
+    console.log('unprocessed action type=', action.type);
     result =  state;
   }
 

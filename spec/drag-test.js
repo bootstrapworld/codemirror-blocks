@@ -10,7 +10,11 @@ import {
   dragleave,
   dragend,
   dragenterSeq,
+  mouseDown,
+  keyDown
 } from './support/simulate';
+
+const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -26,8 +30,9 @@ describe('Drag and drop', function() {
   });
 
   describe('when drag existing node and drop on existing node,', function() {
-    beforeEach(function() {
+    beforeEach(async function() {
       this.cmb.setValue('(+ 1 2 3)');
+      await wait(DELAY);
       this.retrieve = function() {
         this.funcSymbol = this.cmb.getAst().rootNodes[0].func;
         this.firstArg = this.cmb.getAst().rootNodes[0].args[0];
@@ -60,7 +65,6 @@ describe('Drag and drop', function() {
 
    
     it('should set the right css class on dragenter 2’', function() {
-      //ds26gte try, after suitable defns in simulate.js
       let dragEvent = dragstart();
       this.firstArg.element.dispatchEvent(dragEvent);
       let elt = this.secondArg;
@@ -167,5 +171,60 @@ describe('Drag and drop', function() {
       console.log('%%%%%%%%%%%%%%%% 11');
     });
     */
+    it('save collapsed state when dragging root to be the last child of the next root', async function () {
+      this.cmb.setValue('(collapse me)\n(+ 1 2)');
+      await wait(DELAY);
+      this.retrieve = function() {
+          this.firstRoot = this.cmb.getAst().rootNodes[0];
+          this.lastDropTarget = document.querySelectorAll('.blocks-drop-target')[4];
+      };
+      this.retrieve();
+
+      mouseDown(this.firstRoot); // click the root
+      keyDown("ArrowLeft", {}, this.firstRoot); // collapse it
+      expect(this.firstRoot.element.getAttribute('aria-expanded')).toBe('false');
+      expect(this.firstRoot.nid).toBe(0);
+      let dragEvent = dragstart();
+      this.firstRoot.element.dispatchEvent(dragEvent); // drag to the last droptarget
+      this.lastDropTarget.dispatchEvent(drop(dragEvent.dataTransfer));
+      await wait(DELAY);
+      this.retrieve();
+      this.newFirstRoot = this.cmb.getAst().rootNodes[0];
+      this.newLastChild = this.newFirstRoot.args[2];
+      expect(this.cmb.getValue()).toBe('\n(+ 1 2 (collapse me))');
+      expect(this.newFirstRoot.element.getAttribute('aria-expanded')).toBe('true');
+      expect(this.newLastChild.element.getAttribute('aria-expanded')).toBe('false');
+    });
+  });
+
+
+  describe("corner cases", function () {
+    beforeEach(async function () {
+      setup.call(this);
+      this.cmb.setValue(';comment\n(a)\n(c)\n(define-struct e ())\ng');
+      await wait(DELAY);
+      this.retrieve = function() {
+        this.source = this.cmb.getAst().rootNodes[0];
+        this.target1 = document.querySelectorAll('.blocks-drop-target')[1];
+        this.target2 = document.querySelectorAll('.blocks-drop-target')[2];
+      };
+      this.retrieve();
+    });
+
+    afterEach(function () { teardown(); });
+
+    it('regression test for unstable block IDs', async function () {
+      let dragEvent = dragstart();
+      this.source.element.dispatchEvent(dragEvent); // drag to the last droptarget
+      this.target1.dispatchEvent(drop(dragEvent.dataTransfer));
+      await wait(DELAY);
+    });
+
+    it('regression test for empty identifierLists returning a null location', async function () {
+      let dragEvent = dragstart();
+      this.source.element.dispatchEvent(dragEvent); // drag to the last droptarget
+      this.target2.dispatchEvent(drop(dragEvent.dataTransfer));
+      await wait(DELAY);
+    });
   });
 });

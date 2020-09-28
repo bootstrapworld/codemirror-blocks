@@ -30,6 +30,8 @@ With code that looks like this:
 
 But if you're here, our guess is that you have a language in mind (Python, Rust, YourFavLang, etc.) and you want to allow people to hack in that language even if they need blocks, or rely on screenreaders. So...
 
+*NOTE: your IDE will need to load CodeMirror as an external dependency.* We assume it already does (otherwise, why would you be here?), so you'll need to provide it yourself.
+
 ## Making your own language module
 
 ### Create a new repository

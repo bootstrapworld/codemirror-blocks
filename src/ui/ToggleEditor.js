@@ -1,4 +1,3 @@
-import '@babel/polyfill';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
@@ -44,7 +43,8 @@ export default class ToggleEditor extends React.Component {
   }
 
   static defaultProps = {
-    debuggingLog: {}
+    debuggingLog: {},
+    cmOptions: {},
   }
 
   constructor(props) {
@@ -56,6 +56,7 @@ export default class ToggleEditor extends React.Component {
 
     let defaultOptions = {
       parser: this.parser,
+      incrementalRendering: true,
       renderOptions: props.language.getRenderOptions
         ? props.language.getRenderOptions()
         : {},
@@ -79,6 +80,7 @@ export default class ToggleEditor extends React.Component {
       'setBlockMode': this.handleToggle,
       // CM methods
       'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
+      'changeGeneration': (closeEvent) => SHARED.cm.changeGeneration(closeEvent),
       'charCoords': (pos, mode) => ed.charCoords(pos, mode),
       'clearHistory': () => ed.clearHistory(),
       'clearGutter': () => ed.clearGutter(),
@@ -96,6 +98,7 @@ export default class ToggleEditor extends React.Component {
       'getTextArea': () => ed.getTextArea(), // errors if not created from text area?
       'getValue': (sep) => ed.getValue(sep),
       'getWrapperElement': () => ed.getWrapperElement(),
+      'historySize': () => ed.historySize(),
       'normalizeKeyMap': (keymap) => ed.normalizeKeyMap(keymap),
       'off': (type, func) => ed.off(type, func),
       'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
@@ -148,8 +151,9 @@ export default class ToggleEditor extends React.Component {
     this.setState((state, props) => {
       try {
         let oldCode = SHARED.cm.getValue();
+        const WS = oldCode.match(/\s+$/);                 // match ending whitespace
         let oldAst = SHARED.parser.parse(oldCode, false); // parse the code, but don't annotate
-        let code = oldAst.toString();                     // pretty-print
+        let code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
         this.ast = SHARED.parser.parse(code);             // parse the pretty-printed (PP) code
         SHARED.cm.setValue(code);                         // update CM with the PP code
         this.props.api.blockMode = blockMode;
@@ -199,8 +203,6 @@ export default class ToggleEditor extends React.Component {
   }
 
   renderBlocks() {
-        console.log('this.ast is set to', this.ast);
-
     let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
     return (
       <UpgradedBlockEditor

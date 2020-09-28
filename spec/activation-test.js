@@ -9,10 +9,10 @@ const DELAY = 250;
 let setup = function () { activationSetup.call(this, wescheme); };
 
 describe("when dealing with node activation,", function () {
-  beforeEach(function () {
+  beforeEach(async function () {
     setup.call(this);
-
     this.cmb.setValue('11\n54');
+    await wait(DELAY);
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];

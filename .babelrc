@@ -19,14 +19,14 @@
       {
         "targets": {
           "browsers": [
-            "Firefox >= 50",
-            "Safari >= 10",
-            "Chrome >= 60",
-            "Edge >= 13"
+            "Firefox >= 76",
+            "Safari >= 13",
+            "Chrome >= 85",
+            "Edge >= 85"
           ],
         },
         useBuiltIns: "entry",
-        corejs : { version : "2" },
+        corejs : { version : "3" },
       }
     ],
     "@babel/preset-react"

@@ -10,3 +10,4 @@ site-build
 vendors
 doc/*.html
 .DS_Store
+compilation-stats.json
