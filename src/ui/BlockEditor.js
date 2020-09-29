@@ -237,6 +237,7 @@ class BlockEditor extends Component {
         // Turn undo and redo into cmb actions, update the focusStack, and
         // provide a focusHint
         if (changes[0].origin === "undo") {
+          console.log('@@@@@@@@UNDO CALLED', changes);
           for (let c of changes) c.origin = "cmb:undo";
           const undoFocusStack = getState().undoFocusStack;
           const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
