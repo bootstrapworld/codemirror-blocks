@@ -11,7 +11,7 @@ import {
   dragenterSeq,
 } from './support/simulate';
 
-const DELAY = 250;
+const DELAY = 500;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -30,7 +30,7 @@ describe("when testing undo/redo,", function () {
 
     this.cmb.setValue(`A\nB\n`);
     this.cmb.clearHistory();
-    await wait(DELAY*5);
+    await wait(DELAY);
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 0});
     mouseDown(currentFirstRoot());                          // focus on the 1st root
     keyDown(" ", {}, currentFirstRoot());
