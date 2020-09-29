@@ -48,7 +48,7 @@ describe("when testing undo/redo,", function () {
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
-    keyDown("Z", { ctrlKey: true });    // undo (3), leaving \nB\n\n
+    keyDown("Z", { ctrlKey: true }, currentFirstRoot());    // undo (3), leaving \nB\n\n
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
