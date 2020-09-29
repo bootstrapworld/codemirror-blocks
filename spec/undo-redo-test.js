@@ -30,7 +30,7 @@ describe("when testing undo/redo,", function () {
 
     this.cmb.setValue(`A\nB\n`);
     this.cmb.clearHistory();
-    await wait(DELAY);
+    await wait(DELAY*5);
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 0});
     mouseDown(currentFirstRoot());                          // focus on the 1st root
     keyDown(" ", {}, currentFirstRoot());
