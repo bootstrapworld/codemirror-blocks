@@ -15,7 +15,7 @@ const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
-
+/*
 describe("when testing undo/redo,", function () {
   beforeEach(async function () {
     setup.call(this);
@@ -74,3 +74,4 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
   });
 });
+*/
