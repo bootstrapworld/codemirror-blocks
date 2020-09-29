@@ -1,5 +1,4 @@
-import ReactTestUtils from 'react-dom/test-utils';
-let Simulate = ReactTestUtils.Simulate;
+import { fireEvent } from "@testing-library/react";
 
 // These exported functions simulate browser events for testing.
 // They use React's test utilities whenever possible.
@@ -12,16 +11,16 @@ let Simulate = ReactTestUtils.Simulate;
 // - `props` sets other properties on the event (whatever you like).
 
 export function click(node) {
-  Simulate.click(toElement(node));
+  fireEvent.click(toElement(node));
 }
 export function mouseDown(node) {
-  Simulate.mouseDown(toElement(node));
+  fireEvent.mouseDown(toElement(node));
 }
 export function doubleClick(node) {
-  Simulate.doubleClick(toElement(node));
+  fireEvent.doubleClick(toElement(node));
 }
 export function blur(node=document.activeElement) {
-  Simulate.blur(toElement(node));
+  fireEvent.blur(toElement(node));
 }
 
 function createBubbledEvent(type, props = {}) {
@@ -96,14 +95,14 @@ export function keyDown(key, props={}, node=document.activeElement) {
     Object.assign(event, props);
     node.dispatchEvent(event);
   } else {
-    Simulate.keyDown(toElement(node), makeKeyEvent(key, props));
+    fireEvent.keyDown(toElement(node), makeKeyEvent(key, props));
   }
 }
 export function keyPress(key, props={}, node=document.activeElement) {
-  Simulate.keyPress(toElement(node), makeKeyEvent(key, props));
+  fireEvent.keyPress(toElement(node), makeKeyEvent(key, props));
 }
 export function insertText(text) {
-  // TODO: can this be done via Simulate?
+  // TODO: can this be done via fireEvent?
   document.execCommand('insertText', false, text);
 }
 
