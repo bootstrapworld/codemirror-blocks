@@ -87,7 +87,7 @@ module.exports = function(config) {
     },
     client: {
       // should we log console output in our test console?
-      captureConsole: true,
+      captureConsole: false,
       jasmine: {
         timeoutInterval: 30000
       }
