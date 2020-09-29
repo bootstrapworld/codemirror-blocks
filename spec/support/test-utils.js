@@ -31,8 +31,8 @@ export function cleanupAfterTest(rootId, store) {
 }
 
 export function teardown() {
-  cleanupAfterTest('root', store);
   cleanup();
+  cleanupAfterTest('root', store);
 }
 
 const fixture = `
