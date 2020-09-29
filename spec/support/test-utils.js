@@ -14,25 +14,20 @@ export function removeEventListeners() {
   oldElem.parentNode.replaceChild(newElem, oldElem);
 }
 
-export function cleanupAfterTest(rootId, store) {
-  let rootNode = document.getElementById('root');
-  if (rootNode) {
-  document.body.removeChild(rootNode);
-  } else {
-    console.log('doing cleanupAfterTest', 'MISSING ROOT');
+export function teardown() {
+  cleanup();
+  const rootNode = document.getElementById('root');
+  if (rootNode) { document.body.removeChild(rootNode); } 
+  else {
+    console.log('cleanupAfterTest() failed to find `root`.',
+      ' Did your test case use `activationSetup`?');
   }
-
   store.dispatch({type: "RESET_STORE_FOR_TESTING"});
   const textareas = document.getElementsByTagName("textarea");
   while (textareas[0]) {
     const current = textareas[0];
     current.parentNode.removeChild(current);
   }
-}
-
-export function teardown() {
-  cleanup();
-  cleanupAfterTest('root', store);
 }
 
 const fixture = `
@@ -67,7 +62,7 @@ export function activationSetup(language) {
  * Setup, be sure to use with `apply` (`cmSetup.apply(this, [pyret])`)
  * or `call` (`cmSetup.call(this, pyret)`)
  * so that `this` is scoped correctly!
- */
+
 export function cmSetup(language) {
   document.body.insertAdjacentHTML('afterbegin', fixture);
   const container = document.getElementById('cmb-editor');
@@ -77,3 +72,4 @@ export function cmSetup(language) {
   this.blocks = this.cmb;
   this.cmb.setBlockMode(true);
 }
+*/
