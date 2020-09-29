@@ -402,7 +402,6 @@ class Node extends BlockComponent {
         return;
 
       case 'undo':
-        console.log('@@@@@@@@@@@@@@@@@@UNDO FROM NODE');
         e.preventDefault();
         SHARED.cm.undo();
         return;
