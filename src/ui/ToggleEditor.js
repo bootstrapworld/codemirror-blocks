@@ -74,45 +74,27 @@ export default class ToggleEditor extends React.Component {
   }
 
   buildAPI(ed) {
-    return {
-      // CMB methods
+    const passthroughs = ['addLineClass', 'changeGeneration', 'charCoords', 'clearHistory', 
+      'clearGutter', 'defineOption', 'Doc', 'eachLine', 'extendSelection', 'extendSelections', 
+      'extendSelectionsBy', 'findMarks', 'findMarksMarksAt', 'firstLine', 'getAllMarks', 
+      'focus', 'getCursor', 'getDoc', 'getExtending', 'getGutterElement', 'getInputField', 
+      'getLine', 'getLineHandle', 'getOption', 'getRange', 'getSelection', 'getSelections', 
+      'getScrollerElement', 'getScrollInfo', 'getTextArea', 'getValue', 'getWrapperElement', 
+      'hasFocus', 'historySize', 'isClean', 'lastLine', 'lineCount', 'listSelections', 
+      'markClean', 'markText', 'normalizeKeyMap', 'off', 'on', 'operation', 'Pos', 
+      'posFromIndex', 'refresh', 'removeLineClass', 'replaceRange', 'replaceSelections', 
+      'setCursor', 'setExtending', 'setOption', 'setSelection', 'setSelections', 'setValue', 
+      'scrollIntoView', 'somethingSelected', 'swapDoc'];
+    const api = {
+      // custom CMB methods
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
-      // CM methods
-      'addLineClass': (line, where, _class) => ed.addLineClass(line, where, _class),
-      'changeGeneration': (closeEvent) => SHARED.cm.changeGeneration(closeEvent),
-      'charCoords': (pos, mode) => ed.charCoords(pos, mode),
-      'clearHistory': () => ed.clearHistory(),
-      'clearGutter': () => ed.clearGutter(),
-      'defineOption': (name, _default, updateFunc) => ed.defineOption(name, _default, updateFunc),
-      'Doc': (text, mode, firstLineNumber, lineSeparator) => ed.Doc(text, mode, firstLineNumber, lineSeparator),
-      'eachLine': (f) => ed.eachLine(f),
-      'focus': () => ed.focus(),
-      'getCursor': (start) => ed.getCursor(start),
-      'getDoc': () => ed.getDoc(),
-      'getGutterElement': () => ed.getGutterElement(),
-      'getInputField': () => ed.getInputField(),
-      'getOption': (option) => ed.getOption(option),
-      'getScrollerElement': () => ed.getScrollerElement(),
-      'getScrollInfo': () => ed.getScrollInfo(),
-      'getTextArea': () => ed.getTextArea(), // errors if not created from text area?
-      'getValue': (sep) => ed.getValue(sep),
-      'getWrapperElement': () => ed.getWrapperElement(),
-      'historySize': () => ed.historySize(),
-      'normalizeKeyMap': (keymap) => ed.normalizeKeyMap(keymap),
-      'off': (type, func) => ed.off(type, func),
-      'on': (type, func) => ed.on(type, func), // another on(obj, type, func) version...
-      'operation': (fun) => ed.operation(fun),
-      'Pos': (line, ch, sticky) => ed.Pos(line, ch, sticky),
-      'posFromIndex': (index) => ed.posFromIndex(index),
-      'refresh': () => ed.refresh(),
-      'removeLineClass': (line, where, _class) => ed.removeLineClass(line, where, _class),
-      'replaceRange': (str, from, to, origin) => ed.replaceRange(str, from, to, origin),
-      'scrollIntoView': (what, margin) => ed.scrollIntoView(what, margin),
-      'setOption': (option, value) => ed.setOption(option, value),
-      'setValue': (value) => ed.setValue(value),
-      'swapDoc': (doc) => ed.swapDoc(doc),
+      'getCM': () => ed,
     };
+    // any CodeMirror function that we can call directly should be passed-through
+    // TextEditor and BlockEditor can add their own, or modify these
+    passthroughs.forEach(f => api[f] = function(){ return ed[f](...arguments); });
+    return api;
   }
 
   handleEditorMounted = (ed) => {
