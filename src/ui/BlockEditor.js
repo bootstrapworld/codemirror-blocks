@@ -145,6 +145,7 @@ class BlockEditor extends Component {
     onMount:PropTypes.func.isRequired,
     hasQuarantine: PropTypes.bool.isRequired,
     api: PropTypes.object,
+    undoAnnouncementHistory: PropTypes.object,
     passedAST: PropTypes.object,
 
     // this is actually required, but it's buggy
@@ -159,6 +160,7 @@ class BlockEditor extends Component {
     this.mouseUsed = false;
     SHARED.keyMap = this.props.keyMap;
     SHARED.keyName = CodeMirror.keyName;
+    SHARED.undoAnnouncementHistory = this.props.undoAnnouncementHistory;
   }
 
   static defaultProps = {
@@ -209,7 +211,8 @@ class BlockEditor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
-    api: {}
+    api: {},
+    undoAnnouncementHistory: {undo: [], redo: []}
   }
 
   // Anything that didn't come from cmb itself must be speculatively
@@ -236,19 +239,20 @@ class BlockEditor extends Component {
 
         // Turn undo and redo into cmb actions, update the focusStack, and
         // provide a focusHint
-        if (changes[0].origin === "undo") {
+        var undoOrRedo = changes[0].origin;
+        if (undoOrRedo === "undo") {
           for (let c of changes) c.origin = "cmb:undo";
           const undoFocusStack = getState().undoFocusStack;
           const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
-          commitChanges(changes, true, focusHint, this.newAST);
+          commitChanges(changes, undoOrRedo, focusHint, this.newAST);
           dispatch({type: 'UNDO'});
-        } else if (changes[0].origin === "redo") {
+        } else if (undoOrRedo === "redo") {
           for (let c of changes) c.origin = "cmb:redo";
           const redoFocusStack = getState().redoFocusStack;
           const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
-          commitChanges(changes, true, focusHint, this.newAST);
+          commitChanges(changes, undoOrRedo, focusHint, this.newAST);
           dispatch({type: 'REDO'});
         } else {
           // This (valid) changeset is coming from outside of the editor, but we

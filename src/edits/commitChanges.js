@@ -1,9 +1,9 @@
 import {store} from '../store';
 import SHARED from '../shared';
-import {poscmp, adjustForChange, minimizeChange, logResults} from '../utils';
+import {poscmp, adjustForChange, minimizeChange, logResults, say} from '../utils';
 import {activate} from '../actions';
 import patch from './patchAst';
-
+import {playSound, BEEP} from '../sound';
 
 // commitChanges :
 //   Changes, bool, FocusHint|undefined, AST|undefined
@@ -50,8 +50,34 @@ export function commitChanges(
       let newFocus = newAST.getNodeById(focusId);
       let newFocusNId = newFocus ? newFocus.nid : null;
       store.dispatch({type: 'DO', focus: {oldFocusNId, newFocusNId}});
+      SHARED.undoAnnouncementHistory.undo.shift(
+        "undoable action");
+      SHARED.undoAnnouncementHistory.redo = [];
+      say("an undoable action");
+    } else {
+      if (isUndoOrRedo === "undo") {
+        if (SHARED.undoAnnouncementHistory.undo.length > 0) {
+          SHARED.undoAnnouncementHistory.redo.unshift(
+            SHARED.undoAnnouncementHistory.undo.shift());
+          say("undo");
+        } else {
+          say("nothing to undo");
+          playSound(BEEP);
+        }
+      } else if (isUndoOrRedo === "redo") {
+        if (SHARED.undoAnnouncementHistory.redo.length > 0) {
+          SHARED.undoAnnouncementHistory.undo.unshift(
+            SHARED.undoAnnouncementHistory.redo.shift());
+          say("redo");
+        } else {
+          say("nothing to redo");
+          playSound(BEEP);
+        }
+      } else {
+        playSound(BEEP);
+      }
     }
-    return {newAST, focusId};    
+    return {newAST, focusId};
   } catch(e){
     logResults(window.reducerActivities, e);
   }
@@ -104,7 +130,7 @@ function computeFocusNodeFromChanges(changes, newAST) {
   } else {
     startLocs.sort(poscmp);                                // sort the deleted ranges
     let focusNode = newAST.getNodeBeforeCur(startLocs[0]); // grab the node before the first
-    // Case B: If the node exists, use the Id. 
+    // Case B: If the node exists, use the Id.
     // Case C: If not, use the first node...unless...
     // Case D: the tree is empty, so return null
     return focusNode || newAST.getFirstRootNode() || null;
