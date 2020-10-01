@@ -50,7 +50,7 @@ export function commitChanges(
       let newFocus = newAST.getNodeById(focusId);
       let newFocusNId = newFocus ? newFocus.nid : null;
       store.dispatch({type: 'DO', focus: {oldFocusNId, newFocusNId}});
-      SHARED.undoAnnouncementHistory.undo.shift(
+      SHARED.undoAnnouncementHistory.undo.unshift(
         "undoable action");
       SHARED.undoAnnouncementHistory.redo = [];
       say("an undoable action");

@@ -145,7 +145,6 @@ class BlockEditor extends Component {
     onMount:PropTypes.func.isRequired,
     hasQuarantine: PropTypes.bool.isRequired,
     api: PropTypes.object,
-    undoAnnouncementHistory: PropTypes.object,
     passedAST: PropTypes.object,
 
     // this is actually required, but it's buggy
@@ -158,9 +157,10 @@ class BlockEditor extends Component {
   constructor(props) {
     super(props);
     this.mouseUsed = false;
+    this.undoAnnouncementHistory = {undo: [], redo: []};
     SHARED.keyMap = this.props.keyMap;
     SHARED.keyName = CodeMirror.keyName;
-    SHARED.undoAnnouncementHistory = this.props.undoAnnouncementHistory;
+    SHARED.undoAnnouncementHistory = this.undoAnnouncementHistory;
   }
 
   static defaultProps = {
@@ -211,8 +211,7 @@ class BlockEditor extends Component {
       onSearch: () => {},
       setCursor: () => {},
     },
-    api: {},
-    undoAnnouncementHistory: {undo: [], redo: []}
+    api: {}
   }
 
   // Anything that didn't come from cmb itself must be speculatively
