@@ -14,7 +14,6 @@ import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
-import merge from '../merge';
 import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, say, resetNodeCounter} from '../utils';
 import BlockComponent from '../components/BlockComponent';
@@ -308,7 +307,7 @@ class BlockEditor extends Component {
     this.props.onMount(ed);
 
     // export methods to the object interface
-    merge(this.props.api, this.buildAPI(ed));
+    Object.assign(this.props.api, this.buildAPI(ed));
   }
 
   executeAction(action) {
@@ -514,6 +513,7 @@ class BlockEditor extends Component {
         return;
 
       case 'redo':
+        console.log('redo');
         e.preventDefault();
         SHARED.cm.redo();
         return;
