@@ -30,6 +30,7 @@ const initialState = {
   markedMap: new Map(),
   undoFocusStack: [],
   redoFocusStack: [],
+  undoAnnouncementHistory: {undo: [], redo: []},
   errorId: '',
   cur: null,
   quarantine: null,
@@ -45,6 +46,10 @@ export const reducer = (
     console.log(action);
     let result = null;
     //console.log('DS26GTE reducer action.type=', action.type);
+    if (action.type !== 'UNDO' && action.type !== 'REDO') {
+      state.undoAnnouncementHistory.undo.push("undoable action");
+      state.undoAnnouncementHistory.redo = [];
+    }
   switch (action.type) {
   case 'SET_FOCUS':
     result = {...state, focusId: action.focusId};
@@ -100,10 +105,22 @@ export const reducer = (
     break;
   case 'UNDO':
     state.redoFocusStack.push(state.undoFocusStack.pop());
+      if (state.undoAnnouncementHistory.undo.length > 0) {
+        state.undoAnnouncementHistory.redo.push(
+          state.undoAnnouncementHistory.undo.pop());
+      } else {
+        console.log('nothing to undo');
+      }
     result = {...state};
     break;
   case 'REDO':
     state.undoFocusStack.push(state.redoFocusStack.pop());
+      if (state.undoAnnouncementHistory.redo.length > 0) {
+        state.undoAnnouncementHistory.undo.push(
+          state.undoAnnouncementHistory.redo.pop());
+      } else {
+        console.log('nothing to redo');
+      }
     result = {...state};
     break;
   case 'RESET_STORE_FOR_TESTING':

@@ -157,10 +157,8 @@ class BlockEditor extends Component {
   constructor(props) {
     super(props);
     this.mouseUsed = false;
-    this.undoAnnouncementHistory = {undo: [], redo: []};
     SHARED.keyMap = this.props.keyMap;
     SHARED.keyName = CodeMirror.keyName;
-    SHARED.undoAnnouncementHistory = this.undoAnnouncementHistory;
   }
 
   static defaultProps = {
@@ -238,20 +236,19 @@ class BlockEditor extends Component {
 
         // Turn undo and redo into cmb actions, update the focusStack, and
         // provide a focusHint
-        var undoOrRedo = changes[0].origin;
-        if (undoOrRedo === "undo") {
+        if (changes[0].origin === "undo") {
           for (let c of changes) c.origin = "cmb:undo";
           const undoFocusStack = getState().undoFocusStack;
           const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
-          commitChanges(changes, undoOrRedo, focusHint, this.newAST);
+          commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'UNDO'});
-        } else if (undoOrRedo === "redo") {
+        } else if (changes[0].origin === "redo") {
           for (let c of changes) c.origin = "cmb:redo";
           const redoFocusStack = getState().redoFocusStack;
           const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
-          commitChanges(changes, undoOrRedo, focusHint, this.newAST);
+          commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'REDO'});
         } else {
           // This (valid) changeset is coming from outside of the editor, but we
