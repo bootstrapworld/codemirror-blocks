@@ -95,16 +95,21 @@ export default class ToggleEditor extends React.Component {
   }
 
   buildAPI(ed) {
+    const base = {};
+    // any CodeMirror function that we can call directly should be passed-through
+    // TextEditor and BlockEditor can add their own, or override them
+    codeMirrorAPI.forEach(f => base[f] = function(){ return ed[f](...arguments); });
+
     const api = {
       // custom CMB methods
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
       'getCM': () => ed,
-    };
-    // any CodeMirror function that we can call directly should be passed-through
-    // TextEditor and BlockEditor can add their own, or override them
-    codeMirrorAPI.forEach(f => api[f] = function(){ return ed[f](...arguments); });
-    return api;
+      'on' : () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
+      'off': () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
+      'runMode': () => { throw "runMode is not supported in CodeMirror-blocks"; },
+    };    
+    return Object.assign(base, api);
   }
 
   handleEditorMounted = (ed) => {

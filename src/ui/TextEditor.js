@@ -46,7 +46,7 @@ class TextEditor extends Component {
   // override default CM methods, or add our own
   buildAPI(ed) {
     return {
-      // this is where we export methods
+
     };
   }
 

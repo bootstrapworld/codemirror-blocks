@@ -15,10 +15,15 @@ import {speculateChanges} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter} from '../utils';
+import {poscmp, say, resetNodeCounter, srcRangeIncludes} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
-
+// CodeMirror APIs that we need to override and disallow
+const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending', 
+  'getExtending', 'findPosH', 'findPosV', 'setOption', 'getOption', 
+  'addOverlay', 'removeOverlay', 'undoSelection', 'redoSelection', 
+  'charCoords', 'coordsChar', 'startOperation', 'endOperation', 
+  'addKeymap', 'removeKeymap', 'on', 'off'];
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
@@ -331,14 +336,22 @@ class BlockEditor extends Component {
 
   buildAPI(ed) {
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
-    return {
+    const cm = SHARED.cm;
+    const api = {
       // cm methods
       'findMarks':  (from, to) => this.findMarks(from, to),
       'findMarksAt':(pos) => this.findMarksAt(pos),
       'getAllMarks':() => this.getAllMarks(),
       'markText':   (from, to, opts) => this.markText(from, to, opts),
-      'runMode': (_src, _lang, _container) => () => {}, // no-op since not an editing command
       'setCursor': (pos) => this.props.setCursor(ed, pos),
+      // true if CM has a selection OR a block is selected
+      'somethingSelected': 
+        () => withState(({selections}) => cm.somethingSelected() || !selections.length),
+      // true if CM has focus OR a block is active
+      'hasFocus': 
+        () => cm.hasFocus() || Boolean(document.activeElement.id.match(/block-node/)),
+      'getSelection': (sep) => this.getSelections(sep).join(sep),
+      'getSelections': (sep) => this.getSelections(sep),
       // block methods
       'getAst':
         () => withState((state) => state.ast),
@@ -352,6 +365,10 @@ class BlockEditor extends Component {
       'resetNodeCounter': () => resetNodeCounter(),
       'executeAction' : (action) => this.executeAction(action),
     };
+    // show which APIs are unsupported
+    unsupportedAPIs.forEach(f => 
+      api[f] = () => {throw "This CM API is not supported in the block editor"});
+    return api;
   }
 
   markText(from, to, options) {
@@ -384,6 +401,25 @@ class BlockEditor extends Component {
   // clear all non-block marks
   _clearMarks() {
     this.getAllMarks().map(m => m.clear());
+  }
+  // disallow widget option
+  setBookmark(pos, options) {
+    if(options.widget) {
+     throw new Error(`setBookmark: option 'widget' is not supported in block mode`);
+    }
+    return SHARED.cm.setBookmark(pos, options);
+  }
+  getSelections(sep) {
+    let cmSelections = SHARED.cm.listSelections().map(s => 
+      ({from: s.anchor, to: s.head}));
+    let blockSelections = this.props.dispatch((_, getState) => {
+      let {selections, ast} = getState();
+      return selections.map(ast.getNodeById).map(n=>({from:n.from, to:n.to}));
+    });
+    // if a block range is not included in any cmSelection, add it it
+    let selections = cmSelections.concat(blockSelections.filter(b => 
+      cmSelections.every(c => !srcRangeIncludes(c, b))));
+    return selections.map(s => SHARED.cm.getRange(s.from, s.to, sep));
   }
 
   renderMarks() {
