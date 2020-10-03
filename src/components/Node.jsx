@@ -2,7 +2,7 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {partition, poscmp, getRoot, sayActionForNodes,
+import {partition, getRoot, sayActionForNodes,
         isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
 import {drop, delete_, copy, paste, activate, setCursor,
         InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
@@ -244,14 +244,8 @@ class Node extends BlockComponent {
         // announce removal
         } else {
           const {from: addedFrom, to: addedTo} = node;
-          const isContained = id => {
-            const {from, to} = ast.getNodeById(id);
-            return poscmp(addedFrom, from) <= 0 && poscmp(to, addedTo) <= 0;
-          };
-          const doesContain = id => {
-            const {from, to} = ast.getNodeById(id);
-            return poscmp(from, addedFrom) <= 0 && poscmp(addedTo, to) <= 0;
-          };
+          const isContained = id => ast.isAncestor(node.id, id);
+          const doesContain = id => ast.isAncestor(id, node.id);
           const [removed, newSelections] = partition(selections, isContained);
           for (const r of removed) {
             // announce removal
