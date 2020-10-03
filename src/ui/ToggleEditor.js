@@ -108,7 +108,7 @@ export default class ToggleEditor extends React.Component {
       'on' : () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
       'off': () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
       'runMode': () => { throw "runMode is not supported in CodeMirror-blocks"; },
-    };    
+    };
     return Object.assign(base, api);
   }
 

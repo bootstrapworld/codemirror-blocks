@@ -15,7 +15,7 @@ import {speculateChanges} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, srcRangeIncludes} from '../utils';
+import {poscmp, say, resetNodeCounter, srcRangeIncludes, partition} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 // CodeMirror APIs that we need to override and disallow
@@ -350,8 +350,21 @@ class BlockEditor extends Component {
       // true if CM has focus OR a block is active
       'hasFocus': 
         () => cm.hasFocus() || Boolean(document.activeElement.id.match(/block-node/)),
-      'getSelection': (sep) => this.getSelections(sep).join(sep),
       'getSelections': (sep) => this.getSelections(sep),
+      'getSelection': (sep) => this.getSelections(sep).join(sep),
+      'setSelections': (ranges, primary, opts) => this.setSelections(ranges, primary, opts),
+      'setSelection': (anchor, head, opts) => 
+        this.setSelections([{anchor: anchor, head: head}], primary, opts),
+      'addSelection': (anchor, head) => 
+        this.setSelections([{anchor: anchor, head: head}], null, null, false),
+      'getCursor': () => withState(({focusId, ast}) =>
+        Boolean(document.activeElement.id.match(/block-node/))?
+          ast.getNodeById(focusId).from : SHARED.cm.getCursor()),
+      'setCursor': (cur) => withState(({ast}) => {
+        SHARED.cm.setCursor(cur);
+        const node = ast.getNodeContaining(cur);
+        if(node) this.props.activate(node.id, {record: false, allowMove: true});
+      }),
       // block methods
       'getAst':
         () => withState((state) => state.ast),
@@ -420,6 +433,40 @@ class BlockEditor extends Component {
     let selections = cmSelections.concat(blockSelections.filter(b => 
       cmSelections.every(c => !srcRangeIncludes(c, b))));
     return selections.map(s => SHARED.cm.getRange(s.from, s.to, sep));
+  }
+  setSelections(ranges, primary, options, replace=true) {
+    const dispatch = this.props.dispatch;
+    const {ast, selections} = dispatch((_, getState) => getState());
+    const validSelections = ranges.map(({anchor, head}) => {
+      const c1 = poscmp(anchor, head)? anchor : head;
+      const c2 = poscmp(anchor, head)? head : anchor;
+      const node = ast.getNodeAt(c1, c2);
+      if(node) { return node.id; } // if it's a perfect match, return the nodeId
+
+      const N1 = ast.getNodeContaining(c1); // get node containing c1
+      const N2 = ast.getNodeContaining(c2); // get node containing c2
+      // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
+      const c1IsTopLevel = !N1 || (!N1.parent && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
+      const c2IsTopLevel = !N2 || (!N2.parent && (!poscmp(c1, N2.from) || !poscmp(c1, N2.to)));
+      // If the range partially covers a node, throw an error
+      if(!node && (c1IsTopLevel ^ c2IsTopLevel)) {
+        throw new RangeError(`The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
+          ch:${c2.ch}} partially covers a node, which is not allowed`);
+      }
+      // Otherwise return the range
+      return {anchor, head};
+    });
+    let [cmRanges, nodes] = partition(validSelections, s => typeof(s) == 'object');
+    if(replace) SHARED.cm.setSelections(cmRanges, primary, options);
+    else SHARED.cm.addSelection(cmRanges[0].anchor, cmRanges[0].head);
+    
+    // if we're not replacing, merge the new list with the old (being sensitive for ancestors)
+    if(!replace) {
+      nodes = nodes.filter(a => 
+        !selections.includes(a) || !selections.some(b => ast.isAncestor(b, a)));
+      nodes = nodes.concat(selections.filter(a => !nodes.some(b => ast.isAncestor(b, a))));
+    }
+    dispatch({ type: 'SET_SELECTIONS', selections: nodes });
   }
 
   renderMarks() {
