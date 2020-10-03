@@ -25,6 +25,13 @@ const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
   'charCoords', 'coordsChar', 'startOperation', 'endOperation', 
   'addKeymap', 'removeKeymap', 'on', 'off'];
 
+class BlockError extends Error {
+  constructor(message, edit) {
+    super(message);
+    this.edit = edit;
+  }
+}
+
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
 
@@ -225,7 +232,10 @@ class BlockEditor extends Component {
       // Successful! Let's save all the hard work we did to build the new AST
       if (successful) { this.newAST = newAST; }
       // Error! Cancel the change
-      else { change.cancel(); }
+      else { 
+        change.cancel();
+        throw new BlockError("An invalid change was rejected", change);
+      }
     }
   }
 
@@ -387,12 +397,12 @@ class BlockEditor extends Component {
   markText(from, to, options) {
     let node = this.props.ast.getNodeAt(from, to);
     if(!node) {
-      throw new Error('Could not create TextMarker: there is no AST node at [',from, to,']');
+      throw new BlockError('Could not create TextMarker: there is no AST node at [',from, to,']');
     }
     let supportedOptions = ['css','className','title'];
     for (let opt in options) {
       if (!supportedOptions.includes(opt))
-        throw new Error(`markText: option "${opt}" is not supported in block mode`);
+        throw new BlockError(`markText: option "${opt}" is not supported in block mode`);
     }
     let mark = SHARED.cm.markText(from, to, options); // keep CM in sync
     mark._clear = mark.clear;
@@ -418,7 +428,7 @@ class BlockEditor extends Component {
   // disallow widget option
   setBookmark(pos, options) {
     if(options.widget) {
-     throw new Error(`setBookmark: option 'widget' is not supported in block mode`);
+     throw new BlockError(`setBookmark: option 'widget' is not supported in block mode`);
     }
     return SHARED.cm.setBookmark(pos, options);
   }
@@ -450,7 +460,7 @@ class BlockEditor extends Component {
       const c2IsTopLevel = !N2 || (!N2.parent && (!poscmp(c1, N2.from) || !poscmp(c1, N2.to)));
       // If the range partially covers a node, throw an error
       if(!node && (c1IsTopLevel ^ c2IsTopLevel)) {
-        throw new RangeError(`The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
+        throw new BlockError(`The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
           ch:${c2.ch}} partially covers a node, which is not allowed`);
       }
       // Otherwise return the range
