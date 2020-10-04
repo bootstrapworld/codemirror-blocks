@@ -24,3 +24,9 @@ export function speculateChanges(changeArr) {
     return {successful: false, exception};
   }
 }
+
+export function getTempCM() {
+  tmpCM.setValue(SHARED.cm.getValue());
+  tmpCM.setCursor(SHARED.cm.getCursor());
+  return tmpCM;
+}

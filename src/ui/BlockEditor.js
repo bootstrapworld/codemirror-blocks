@@ -11,7 +11,7 @@ import SHARED from '../shared';
 import NodeEditable from '../components/NodeEditable';
 import {activate, setCursor, insert, OverwriteTarget} from '../actions';
 import {commitChanges} from '../edits/commitChanges';
-import {speculateChanges} from '../edits/speculateChanges';
+import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
@@ -348,41 +348,61 @@ class BlockEditor extends Component {
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
     const cm = SHARED.cm;
     const api = {
-      // cm methods
+      /*****************************************************************
+      * CM APIs WE WANT TO OVERRIDE
+      */
       'findMarks':  (from, to) => this.findMarks(from, to),
-      'findMarksAt':(pos) => this.findMarksAt(pos),
-      'getAllMarks':() => this.getAllMarks(),
-      'markText':   (from, to, opts) => this.markText(from, to, opts),
+      'findMarksAt': (pos) => this.findMarksAt(pos),
+      'getAllMarks': () => this.getAllMarks(),
+      'markText': (from, to, opts) => this.markText(from, to, opts),
       'setCursor': (pos) => this.props.setCursor(ed, pos),
-      // true if CM has a selection OR a block is selected
-      'somethingSelected': 
-        () => withState(({selections}) => cm.somethingSelected() || !selections.length),
-      // true if CM has focus OR a block is active
-      'hasFocus': 
-        () => cm.hasFocus() || Boolean(document.activeElement.id.match(/block-node/)),
-      'getSelections': (sep) => this.getSelections(sep),
-      'getSelection': (sep) => this.getSelections(sep).join(sep),
+      // Something is selected if CM has a selection OR a block is selected
+      'somethingSelected': () => withState(({selections}) => 
+        cm.somethingSelected() || !selections.length),
+      // CMB has focus if CM has focus OR a block is active
+      'hasFocus': () => 
+        cm.hasFocus() || Boolean(document.activeElement.id.match(/block-node/)),
+      'extendSelection': (from, to, opts) => this.extendSelections([from], opts, to),
+      'extendSelections': (heads, opts) => this.extendSelections(heads, opts),
+      'extendSelectionsBy': (f, opts) => 
+        this.extendSelections(this.listSelections().map(f), opts),
+      'getSelections': (sep) => 
+        this.listSelections().map(s => SHARED.cm.getRange(s.anchor, s.head, sep)),
+      'getSelection': (sep) => 
+        this.listSelections().map(s => SHARED.cm.getRange(s.anchor, s.head, sep)).join(sep),
+      'listSelections' : () => this.listSelections(),
       'setSelections': (ranges, primary, opts) => this.setSelections(ranges, primary, opts),
       'setSelection': (anchor, head, opts) => 
         this.setSelections([{anchor: anchor, head: head}], primary, opts),
       'addSelection': (anchor, head) => 
         this.setSelections([{anchor: anchor, head: head}], null, null, false),
+      'replaceSelections': (rStrings, select) => this.replaceSelections(rStrings, select),
+      'replaceSelection': (rString, select) => 
+        this.replaceSelections(Array(this.listSelections().length).fill(rString), select),
+      // If a node is active, return the start. Otherwise return the cursor as-is
       'getCursor': () => withState(({focusId, ast}) =>
         Boolean(document.activeElement.id.match(/block-node/))?
           ast.getNodeById(focusId).from : SHARED.cm.getCursor()),
+      // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
       'setCursor': (cur) => withState(({ast}) => {
         SHARED.cm.setCursor(cur);
         const node = ast.getNodeContaining(cur);
         if(node) this.props.activate(node.id, {record: false, allowMove: true});
       }),
-      // block methods
+
+      /*****************************************************************
+      * APIs THAT ARE UNIQUE TO CODEMIRROR-BLOCKS
+      */
       'getAst':
         () => withState((state) => state.ast),
       'getFocusedNode':
         () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : null),
       'getSelectedNodes':
         () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
-      // testing methods
+
+      /*****************************************************************
+      * APIs FOR TESTING
+      */
       'getQuarantine': () => withState(({quarantine}) => quarantine),
       'setQuarantine': (q) => this.props.setQuarantine(q),
       'resetNodeCounter': () => resetNodeCounter(),
@@ -432,51 +452,76 @@ class BlockEditor extends Component {
     }
     return SHARED.cm.setBookmark(pos, options);
   }
-  getSelections(sep) {
-    let cmSelections = SHARED.cm.listSelections().map(s => 
-      ({from: s.anchor, to: s.head}));
-    let blockSelections = this.props.dispatch((_, getState) => {
-      let {selections, ast} = getState();
-      return selections.map(ast.getNodeById).map(n=>({from:n.from, to:n.to}));
+  listSelections() {
+    const dispatch = this.props.dispatch;
+    const {selections, ast} = dispatch((_, getState) => getState());
+    let tmpCM = getTempCM();
+    // write all the ranges for all selected nodes
+    selections.forEach(id => {
+      const node = ast.getNodeById(id);
+      tmpCM.addSelection(node.from, node.to)
     });
-    // if a block range is not included in any cmSelection, add it it
-    let selections = cmSelections.concat(blockSelections.filter(b => 
-      cmSelections.every(c => !srcRangeIncludes(c, b))));
-    return selections.map(s => SHARED.cm.getRange(s.from, s.to, sep));
+    // write all the existing selection ranges
+    console.log(SHARED.cm.listSelections());
+    SHARED.cm.listSelections().map(s => tmpCM.addSelection(s.anchor, s.head));
+    // return all the selections
+    return tmpCM.listSelections();
+  }
+  getSelections(sep) {
+    return this.listSelections().map(s => SHARED.cm.getRange(s.from, s.to, sep));
   }
   setSelections(ranges, primary, options, replace=true) {
     const dispatch = this.props.dispatch;
-    const {ast, selections} = dispatch((_, getState) => getState());
-    const validSelections = ranges.map(({anchor, head}) => {
+    const {ast} = dispatch((_, getState) => getState());
+    let tmpCM = getTempCM();
+    tmpCM.setSelections(ranges, primary, options);
+    const textRanges = [], nodes = [];
+    // process the selection ranges into an array of ranges and nodes
+    tmpCM.listSelections().forEach(({anchor, head}) => {
       const c1 = poscmp(anchor, head)? anchor : head;
       const c2 = poscmp(anchor, head)? head : anchor;
       const node = ast.getNodeAt(c1, c2);
-      if(node) { return node.id; } // if it's a perfect match, return the nodeId
+      if(node) { nodes.push(node.id); return; } // if it's a perfect match, save the nodeId
 
+      // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
       const N1 = ast.getNodeContaining(c1); // get node containing c1
       const N2 = ast.getNodeContaining(c2); // get node containing c2
-      // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
       const c1IsTopLevel = !N1 || (!N1.parent && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
       const c2IsTopLevel = !N2 || (!N2.parent && (!poscmp(c1, N2.from) || !poscmp(c1, N2.to)));
-      // If the range partially covers a node, throw an error
-      if(!node && (c1IsTopLevel ^ c2IsTopLevel)) {
-        throw new BlockError(`The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
-          ch:${c2.ch}} partially covers a node, which is not allowed`);
+      
+      // If they're both top-level, it's a text range
+      if(c1IsTopLevel && c2IsTopLevel) { 
+        textRanges.push({anchor: anchor, head: head});
+        return; 
       }
-      // Otherwise return the range
-      return {anchor, head};
+
+      // Otherwise, the range is neither toplevel OR falls neatly on a node boundary
+      throw new BlockError(`The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
+        ch:${c2.ch}} partially covers a node, which is not allowed`);
     });
-    let [cmRanges, nodes] = partition(validSelections, s => typeof(s) == 'object');
-    if(replace) SHARED.cm.setSelections(cmRanges, primary, options);
-    else SHARED.cm.addSelection(cmRanges[0].anchor, cmRanges[0].head);
-    
-    // if we're not replacing, merge the new list with the old (being sensitive for ancestors)
-    if(!replace) {
-      nodes = nodes.filter(a => 
-        !selections.includes(a) || !selections.some(b => ast.isAncestor(b, a)));
-      nodes = nodes.concat(selections.filter(a => !nodes.some(b => ast.isAncestor(b, a))));
+    if(textRanges.length) {
+      if(replace) SHARED.cm.setSelections(textRanges, primary, options);
+      else SHARED.cm.addSelection(textRanges[0].anchor, cmRanges[0].head);
     }
     dispatch({ type: 'SET_SELECTIONS', selections: nodes });
+  }
+  extendSelections(heads, opts, to=false) {
+    let tmpCM = getTempCM();
+    tmpCM.setSelections(this.listSelections());
+    if(to) { tmpCM.extendSelections(heads, opts); }
+    else { tmpCM.extendSelection(head[0], to, opts); }
+    // if one of the ranges is invalid, setSelections will raise an error
+    this.setSelections(tmpCM.listSelections(), null, opts);
+  }
+  replaceSelections(replacements, select=false) {
+    let tmpCM = getTempCM();
+    tmpCM.setSelections(this.listSelections());
+    tmpCM.replaceSelections(replacements, select);
+    SHARED.cm.setValue(tmpCM.getValue());
+    // if one of the ranges is invalid, setSelections will raise an error
+    if(select == "around") { this.setSelections(tmpCM.listSelections()); }
+    if(select == "start") { SHARED.cm.setCursor(tmpCM.listSelections().pop().head); }
+    else { SHARED.cm.setCursor(tmpCM.listSelections().pop().anchor); }
   }
 
   renderMarks() {
