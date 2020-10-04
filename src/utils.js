@@ -162,7 +162,7 @@ export function getLastVisibleNode(state) {
 export function withDefaults(obj, def) {
   return {...def, ...obj};
 }
-
+/*
 export function getBeginCursor(cm) {
   return CodeMirror.Pos(cm, 0);
 }
@@ -173,7 +173,7 @@ export function getEndCursor(cm) {
     cm.getLine(cm.lastLine()).length
   );
 }
-
+*/
 export function posWithinNode(pos, node) {
   return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
     ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);
@@ -210,7 +210,7 @@ export const dummyPos = {line: -1, ch: 0};
 export function isDummyPos(pos) {
   return pos.line === -1 && pos.ch === 0;
 }
-
+/*
 // Announce, for testing purposes, that something important is about to update
 // (like the DOM). Make sure to call `ready` after.
 export function notReady(element) {
@@ -241,7 +241,7 @@ export function waitUntilReady() {
     }
   });
 }
-
+*/
 // Compute the position of the end of a change (its 'to' property refers to the pre-change end).
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
 export function changeEnd({from, to, text}) {
