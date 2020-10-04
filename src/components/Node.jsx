@@ -295,7 +295,7 @@ class Node extends BlockComponent {
           return;
         }
         const nodesToDelete = selections.map(ast.getNodeById);
-        sayActionForNodes(nodesToDelete, "deleted");
+        sayActionForNodes(nodesToDelete, "deleted", "undoable");
         delete_(nodesToDelete);
         return;
 
@@ -323,7 +323,7 @@ class Node extends BlockComponent {
         // if no nodes are selected, do it on focused node's id instead
         const nodeIds = selections.length == 0 ? [node.id] : selections;
         const nodesToCopy = nodeIds.map(ast.getNodeById);
-        sayActionForNodes(nodesToCopy, "copied");
+        sayActionForNodes(nodesToCopy, "copied", "undoable");
         copy(nodesToCopy);
         return;
 
@@ -356,7 +356,8 @@ class Node extends BlockComponent {
           return;
         }
         const nodesToCut = selections.map(ast.getNodeById);
-        sayActionForNodes(nodesToCut, "cut");
+          // maybe not needed as constituent copy and delete_ are also undoable
+        sayActionForNodes(nodesToCut, "cut", "undoable");
         copy(nodesToCut);
         delete_(nodesToCut);
         return;

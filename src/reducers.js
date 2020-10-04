@@ -47,7 +47,7 @@ export const reducer = (
     let result = null;
     //console.log('DS26GTE reducer action.type=', action.type);
     if (action.type !== 'UNDO' && action.type !== 'REDO') {
-      state.undoAnnouncementHistory.undo.push("undoable action");
+      //state.undoAnnouncementHistory.undo.push("undoable action");
       state.undoAnnouncementHistory.redo = [];
     }
   switch (action.type) {
