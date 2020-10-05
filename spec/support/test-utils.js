@@ -1,5 +1,6 @@
 import CodeMirrorBlocks from '../../src/CodeMirrorBlocks';
 import { store } from '../../src/store';
+import { cleanup } from "@testing-library/react";
 
 export async function wait(ms) {
   return new Promise(resolve => {
@@ -31,6 +32,7 @@ export function cleanupAfterTest(rootId, store) {
 
 export function teardown() {
   cleanupAfterTest('root', store);
+  cleanup();
 }
 
 const fixture = `

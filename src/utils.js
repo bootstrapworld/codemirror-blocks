@@ -97,14 +97,24 @@ export function isControl(e) {
   return ISMAC ? e.metaKey : e.ctrlKey;
 }
 
-export function say(text, delay=200) {
-  // if (this.muteAnnouncements) return; // TODO(Oak): how to mute?
-  console.log('say:', text);
+store.muteAnnouncements = false;
+store.queuedAnnouncement = false;
+
+// Note: screenreaders will automatically speak items with aria-labels!
+// This handles _everything_else_. 
+export function say(text, delay=200, allowOverride=false) {
   const announcement = document.createTextNode(text + ', ');
   const announcer = store.getState().announcer;
   store.getState().undoableAnnouncement = text;
-  setTimeout(() => { if (announcer != null) announcer.appendChild(announcement); }, delay);
-  setTimeout(() => { if (announcer != null) announcer.removeChild(announcement); }, delay + 10);
+  if (store.muteAnnouncements || !announcer) return; // if nothing to do, bail
+  clearTimeout(store.queuedAnnouncement);            // clear anything overrideable
+  if(allowOverride) {                                // enqueue overrideable announcements
+    store.queuedAnnouncement = setTimeout(() => say('Use enter to edit', 0), delay);
+  } else {                                           // otherwise write it to the DOM,
+    console.log('say:', text);                       // then erase it 10ms later
+    setTimeout(() => announcer.appendChild(announcement), delay);
+    setTimeout(() => announcer.removeChild(announcement), delay + 10);
+  }
 }
 
 

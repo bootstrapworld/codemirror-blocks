@@ -154,8 +154,6 @@ export function setCursor(cur) {
   };
 }
 
-store.queuedAnnouncement = null;
-
 // Activate the node with the given `id`.
 export function activate(id, options) {
   return (dispatch, getState) => {
@@ -177,10 +175,11 @@ export function activate(id, options) {
     if (node.id === focusId) {
       setTimeout(() => { if(node.element) node.element.focus(); }, 10);
     }
+
+    clearTimeout(store.queuedAnnouncement);  // clear any overrideable announcements
     // FIXME(Oak): if possible, let's not hard code like this
     if (['blank', 'literal'].includes(node.type) && !collapsedList.includes(node.id)) {
-      if(store.queuedAnnouncement) { clearTimeout(store.queuedAnnouncement); } 
-      store.queuedAnnouncement = setTimeout(() => say('Use enter to edit'), 1250 );
+      say('Use enter to edit', 1250, true); // wait 1.25s, and allow to be overridden
     }
     // FIXME(Oak): here's a problem. When we double click, the click event will
     // be fired as well. That is, it tries to activate a node and then edit

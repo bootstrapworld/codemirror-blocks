@@ -1,24 +1,31 @@
-import React from 'react';
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 
-const ToggleButton = props => {
-  // call setBlockMode on the opposite of the current mode
-  const handleToggle = () => {
-    props.setBlockMode(!props.blockMode);
+
+export default class ToggleButton extends Component {
+  static propTypes = {
+    setBlockMode: PropTypes.func.isRequired,
+    blockMode: PropTypes.bool.isRequired
   }
 
-  const glyphClass = props.blockMode
+  // call setBlockMode on the opposite of the current mode
+  handleToggle = () => {
+    this.props.setBlockMode(!this.props.blockMode);
+  }
+
+  render() {
+    const glyphClass = this.props.blockMode
       ? 'glyphicon glyphicon-pencil'
       : 'glyphicon glyphicon-align-left';
-  const modeName = props.blockMode ? "text" : "blocks";
-  const buttonAria = "Switch to " + modeName + " mode";
-  return (
-    <button className="blocks-toggle-btn btn btn-default btn-sm"
-            aria-label={buttonAria}
-            onClick={handleToggle}
-            tabIndex="0">
-      <span className={glyphClass}></span>
-    </button>
-  );
-};
-
-export default ToggleButton
+    const modeName = this.props.blockMode ? "text" : "blocks";
+    const buttonAria = "Switch to " + modeName + " mode";
+    return (
+      <button className="blocks-toggle-btn btn btn-default btn-sm"
+              aria-label={buttonAria}
+              onClick={this.handleToggle}
+              tabIndex="0">
+        <span className={glyphClass}></span>
+      </button>
+    );
+  }
+}
