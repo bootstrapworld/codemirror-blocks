@@ -97,25 +97,22 @@ export function isControl(e) {
   return ISMAC ? e.metaKey : e.ctrlKey;
 }
 
-export function say(text, delay=200, undoable) {
+export function say(text, delay=200) {
   // if (this.muteAnnouncements) return; // TODO(Oak): how to mute?
   console.log('say:', text);
   const announcement = document.createTextNode(text + ', ');
   const announcer = store.getState().announcer;
-  if (undoable) {
-    store.getState().undoAnnouncementHistory.undo.push(text);
-  }
+  store.getState().undoableAnnouncement = text;
   setTimeout(() => { if (announcer != null) announcer.appendChild(announcement); }, delay);
   setTimeout(() => { if (announcer != null) announcer.removeChild(announcement); }, delay + 10);
 }
 
 
-export function sayActionForNodes(nodes, action, undoable) {
+export function sayActionForNodes(nodes, action) {
   nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
   say(action + " " +
     nodes.map((node) => node.options['aria-label'])
-      .join(" and "),
-  undefined, undoable);
+      .join(" and "));
 }
 
 export function skipCollapsed(node, next, state) {
