@@ -5,6 +5,10 @@ import {UnControlled as CodeMirror} from 'react-codemirror2';
 import SHARED from '../shared';
 import {say} from '../utils';
 
+// CodeMirror APIs that we need to disallow
+const unsupportedAPIs = ['startOperation', 'endOperation', 'operation',
+  'on', 'off'];
+
 class TextEditor extends Component {
   static propTypes = {
     cmOptions: PropTypes.object,
@@ -45,9 +49,11 @@ class TextEditor extends Component {
 
   // override default CM methods, or add our own
   buildAPI(ed) {
-    return {
-
-    };
+    const api = {};
+        // show which APIs are unsupported
+    unsupportedAPIs.forEach(f => 
+      api[f] = () => {throw "This CM API is not supported in the block editor"});
+    return api;
   }
 
   componentDidMount() {
