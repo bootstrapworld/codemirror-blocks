@@ -10,7 +10,7 @@ var baseConfig = require('./base.config.js')();
 module.exports = function(env, argv) {
 
   return _.extend({}, baseConfig, {
-    devtool: 'cheap-module-source-map',
+    devtool: 'nosources-source-map',
     entry: {
       "new-editor-example": './example/new-editor-example.js',
     },
@@ -38,6 +38,7 @@ module.exports = function(env, argv) {
       hot: true,
       inline: true,
       progress: true,
+      headers: { 'Access-Control-Allow-Origin': '*' },
       contentBase: path.join(__dirname, '..', 'example')
     },
   });
