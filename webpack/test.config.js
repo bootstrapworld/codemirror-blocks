@@ -30,7 +30,7 @@ module.exports = _.extend({}, baseConfig, {
     rules: rules
   }),
   mode: 'development',
-  output: { filename: '[name].js' },
+  output: { filename: '[name].js', crossOriginLoading: 'anonymous' },
   // Work around webpack 4 compatibility issues:
   // https://github.com/webpack-contrib/karma-webpack/issues/322
   optimization: {
