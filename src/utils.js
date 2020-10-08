@@ -105,7 +105,6 @@ store.queuedAnnouncement = false;
 export function say(text, delay=200, allowOverride=false) {
   const announcement = document.createTextNode(text + ', ');
   const announcer = store.getState().announcer;
-  store.getState().undoableAnnouncement = text;
   if (store.muteAnnouncements || !announcer) return; // if nothing to do, bail
   clearTimeout(store.queuedAnnouncement);            // clear anything overrideable
   if(allowOverride) {                                // enqueue overrideable announcements

@@ -196,6 +196,7 @@ class BlockEditor extends Component {
       'Ctrl-Z'    : 'undo',
       'Cmd-Z'     : 'undo',
       'Ctrl-Y'    : 'redo',
+      'Ctrl-R'    : 'redo',
       'Cmd-Shift-Z':'redo',
       'Cmd-C'     : 'copy',
       'Ctrl-C'    : 'copy',

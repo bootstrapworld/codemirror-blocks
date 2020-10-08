@@ -6,7 +6,6 @@ import {speculateChanges} from './speculateChanges';
 import {FakeAstInsertion, FakeAstReplacement, cloneNode} from './fakeAstEdits';
 import {store} from '../store';
 
-
 // edit_insert : String, ASTNode, String, Pos -> Edit
 //
 // Construct an edit to insert `text` in the list `parent.field` at the given `pos`.
@@ -107,6 +106,9 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
         SHARED.cm.replaceRange(c.text, c.from, c.to, c.origin);
       }
     });
+    store.getState().undoableAnnouncement =
+      edits.map((edit) => edit.toString())
+      .join(" and ");
     let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST);
     onSuccess({newAST, focusId});
     } catch(e) {
@@ -116,7 +118,6 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
     onError(result.exception);
   }
 }
-
 
 class Edit {
   constructor(from, to) {

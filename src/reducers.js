@@ -31,7 +31,6 @@ const initialState = {
   undoFocusStack: [],
   redoFocusStack: [],
   undoableAnnouncement: null,
-  undoAnnouncementHistory: {undo: [], redo: []},
   errorId: '',
   cur: null,
   quarantine: null,
@@ -98,30 +97,16 @@ export const reducer = (
     result = {...state};
     break;
   case 'DO':
-    state.undoAnnouncementHistory.undo.push(state.undoableAnnouncement);
-    state.undoAnnouncementHistory.redo = [];
+    //console.log('PUSHED undoable action: ', state.undoableAnnouncement);
+    action.focus.undoableAction = state.undoableAnnouncement;
     result = {...state, undoFocusStack: [...state.undoFocusStack, action.focus], redoFocusStack: []};
     break;
   case 'UNDO':
     state.redoFocusStack.push(state.undoFocusStack.pop());
-      if (state.undoAnnouncementHistory.undo.length > 0) {
-        // shouldn't need this test
-        state.undoAnnouncementHistory.redo.push(
-          state.undoAnnouncementHistory.undo.pop());
-      } else {
-        console.log('nothing to undo');
-      }
     result = {...state};
     break;
   case 'REDO':
     state.undoFocusStack.push(state.redoFocusStack.pop());
-      if (state.undoAnnouncementHistory.redo.length > 0) {
-        // shouldn't need this test
-        state.undoAnnouncementHistory.undo.push(
-          state.undoAnnouncementHistory.redo.pop());
-      } else {
-        console.log('nothing to redo');
-      }
     result = {...state};
     break;
   case 'RESET_STORE_FOR_TESTING':
