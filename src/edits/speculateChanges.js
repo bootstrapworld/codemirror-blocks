@@ -26,7 +26,7 @@ export function speculateChanges(changeArr) {
 }
 
 export function getTempCM() {
-  tmpCM.setValue(SHARED.cm.getValue());
+  const tmpCM = CodeMirror(tmpDiv, {value: SHARED.cm.getValue()});
   tmpCM.setCursor(SHARED.cm.getCursor());
   return tmpCM;
 }

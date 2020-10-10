@@ -208,7 +208,7 @@ class BlockEditor extends Component {
       'Ctrl-Z'    : 'undo',
       'Cmd-Z'     : 'undo',
       'Ctrl-Y'    : 'redo',
-      'Cmd-Shift-Z':'redo',
+      'Shift-Cmd-Z':'redo',
       'Cmd-C'     : 'copy',
       'Ctrl-C'    : 'copy',
       'Cmd-V'     : 'paste',
@@ -395,7 +395,7 @@ class BlockEditor extends Component {
       // As long as widget isn't defined, we're good to go
       'setBookmark': (pos, opts) => {
         if(opts.widget) {
-          throw BlockError("setBookmark() with a widget is not supported in Block Mode");
+          throw new BlockError("setBookmark() with a widget is not supported in Block Mode");
         }
         SHARED.cm.setBookmark(pos, opts);
       },
