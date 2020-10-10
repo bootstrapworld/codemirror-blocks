@@ -478,7 +478,7 @@ class BlockEditor extends Component {
     // write all the ranges for all selected nodes
     selections.forEach(id => {
       const node = ast.getNodeById(id);
-      tmpCM.addSelection(node.from, node.to)
+      tmpCM.addSelection(node.from, node.to);
     });
     // write all the existing selection ranges
     SHARED.cm.listSelections().map(s => tmpCM.addSelection(s.anchor, s.head));
@@ -514,7 +514,7 @@ class BlockEditor extends Component {
     let tmpCM = getTempCM();
     tmpCM.setSelections(this.listSelections());
     if(to) { tmpCM.extendSelections(heads, opts); }
-    else { tmpCM.extendSelection(head[0], to, opts); }
+    else { tmpCM.extendSelection(heads[0], to, opts); }
     // if one of the ranges is invalid, setSelections will raise an error
     this.setSelections(tmpCM.listSelections(), null, opts);
   }
