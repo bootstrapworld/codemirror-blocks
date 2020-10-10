@@ -52,7 +52,7 @@ class TextEditor extends Component {
     const api = {};
         // show which APIs are unsupported
     unsupportedAPIs.forEach(f => 
-      api[f] = () => {throw "This CM API is not supported in the block editor"});
+      api[f] = () => {throw "This CM API is not supported in the block editor";});
     return api;
   }
 
