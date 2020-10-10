@@ -326,17 +326,19 @@ describe("when testing CM apis,", function () {
     const selections = this.cmb.listSelections().map(s => {
       return {anchor: simpleCursor(s.anchor), head: simpleCursor(s.head)};
     });
-    expect(selections).toEqual(
-      [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
-      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
+    expect(selections).toEqual([
+      {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}
+    ]);
     this.cmb.setBlockMode(true);
     await wait(DELAY);
     // blockmode API test
     this.cmb.setSelections([{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
       {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
-    expect(this.cmb.listSelections().map(s=>Object.assign({},s))).toEqual(
-      [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
-      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
+    expect(this.cmb.listSelections().map(s=>Object.assign({},s))).toEqual([
+      {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}
+    ]);
   });
 
   it('replaceRange', async function () {

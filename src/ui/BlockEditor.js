@@ -495,7 +495,7 @@ class BlockEditor extends Component {
     tmpCM.setSelections(ranges, primary, options);
     const textRanges = [], nodes = [];
     try { validateRanges(ranges, ast); }
-    catch(e) { throw e; return; }
+    catch(e) { throw e; }
     // process the selection ranges into an array of ranges and nodes
     tmpCM.listSelections().forEach(({anchor, head}) => {
       const c1 = minpos(anchor, head);

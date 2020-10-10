@@ -47,9 +47,9 @@ module.exports = _.extend({}, baseConfig, {
   },
   plugins: [
     new htmlWebpackInjectAttributesPlugin({
-        inject: "true",
-        crossorigin: true,
-        test: {}
+      inject: "true",
+      crossorigin: true,
+      test: {}
     })  // Object, key should be string, value can be string or function
   ]
 });
