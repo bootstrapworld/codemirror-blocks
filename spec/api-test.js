@@ -191,7 +191,7 @@ describe("when testing CM apis,", function () {
     const firstRoot = this.currentFirstRoot().element;
     expect(firstRoot.getAttribute('aria-selected')).toBe("true");
   });
-/*
+  /*
   it('extendSelection', async function () {
     // textmode API test
     this.cmb.setBlockMode(true);
@@ -212,7 +212,7 @@ describe("when testing CM apis,", function () {
     await wait(DELAY);
     // blockmode API test
   });
-*/
+  */
   it('getCursor should work as-is for Text', async function () {
     await wait(DELAY);
     this.cmb.setSelection({line: 0, ch: 0}, {line: 0, ch: 7});
@@ -327,16 +327,16 @@ describe("when testing CM apis,", function () {
       return {anchor: simpleCursor(s.anchor), head: simpleCursor(s.head)};
     });
     expect(selections).toEqual(
-        [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
-        {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
+      [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
     this.cmb.setBlockMode(true);
     await wait(DELAY);
     // blockmode API test
     this.cmb.setSelections([{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
       {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
     expect(this.cmb.listSelections().map(s=>Object.assign({},s))).toEqual(
-        [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
-        {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
+      [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
   });
 
   it('replaceRange', async function () {

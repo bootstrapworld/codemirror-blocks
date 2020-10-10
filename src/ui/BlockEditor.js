@@ -15,8 +15,7 @@ import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, srcRangeIncludes,
- partition, minpos, maxpos, validateRanges} from '../utils';
+import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 // CodeMirror APIs that we need to disallow
@@ -420,7 +419,7 @@ class BlockEditor extends Component {
     };
     // show which APIs are unsupported
     unsupportedAPIs.forEach(f => 
-      api[f] = () => {throw `The CM API '${f}' is not supported in the block editor`});
+      api[f] = () => {throw `The CM API '${f}' is not supported in the block editor`;});
     return api;
   }
 
@@ -458,7 +457,7 @@ class BlockEditor extends Component {
   // disallow widget option
   setBookmark(pos, options) {
     if(options.widget) {
-     throw new BlockError(`setBookmark: option 'widget' is not supported in block mode`);
+      throw new BlockError(`setBookmark: option 'widget' is not supported in block mode`);
     }
     return SHARED.cm.setBookmark(pos, options);
   }

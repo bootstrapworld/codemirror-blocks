@@ -46,10 +46,10 @@ module.exports = _.extend({}, baseConfig, {
     contentBase: path.join(__dirname, '..', 'example')
   },
   plugins: [
-          new htmlWebpackInjectAttributesPlugin({
-              inject: "true",
-              crossorigin: true,
-              test: {}
-          })  // Object, key should be string, value can be string or function
-      ]
+    new htmlWebpackInjectAttributesPlugin({
+        inject: "true",
+        crossorigin: true,
+        test: {}
+    })  // Object, key should be string, value can be string or function
+  ]
 });
