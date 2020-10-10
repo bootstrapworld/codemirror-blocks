@@ -50,7 +50,7 @@ class TextEditor extends Component {
   // override default CM methods, or add our own
   buildAPI(ed) {
     const api = {};
-        // show which APIs are unsupported
+    // show which APIs are unsupported
     unsupportedAPIs.forEach(f => 
       api[f] = () => {throw "This CM API is not supported in the block editor";});
     return api;
