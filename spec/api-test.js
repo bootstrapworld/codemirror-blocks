@@ -1,7 +1,7 @@
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
 import { wait, teardown, activationSetup } from './support/test-utils';
-import { mouseDown, click, keyDown, insertText } from './support/simulate';
+import { mouseDown, click, keyDown } from './support/simulate';
 
 const DELAY = 250;
 
@@ -240,7 +240,7 @@ describe("when testing CM apis,", function () {
 
   it('getSelection should work as-is for text', async function () {
     this.cmb.setValue(`(+ 1 2)\ny`);
-    this.cmb.setSelection({line: 0, ch: 0}, {line: 1, ch: 1})
+    this.cmb.setSelection({line: 0, ch: 0}, {line: 1, ch: 1});
     expect(this.cmb.getSelection("MOO")).toBe("(+ 1 2)MOOy");
   });
 
@@ -273,7 +273,7 @@ describe("when testing CM apis,", function () {
 
   it('getSelections should work as-is for text', async function () {
     this.cmb.setValue(`x\ny`);
-    this.cmb.setSelection({line: 0, ch: 0}, {line: 1, ch: 1})
+    this.cmb.setSelection({line: 0, ch: 0}, {line: 1, ch: 1});
     // textmode API test
     expect(this.cmb.getSelections("MOO")).toEqual(["xMOOy"]);
   });
@@ -324,19 +324,19 @@ describe("when testing CM apis,", function () {
     this.cmb.setSelections([{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
       {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
     const selections = this.cmb.listSelections().map(s => {
-      return {anchor: simpleCursor(s.anchor), head: simpleCursor(s.head)}
+      return {anchor: simpleCursor(s.anchor), head: simpleCursor(s.head)};
     });
     expect(selections).toEqual(
-      [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
-      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
+        [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+        {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
     this.cmb.setBlockMode(true);
     await wait(DELAY);
     // blockmode API test
     this.cmb.setSelections([{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
       {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
     expect(this.cmb.listSelections().map(s=>Object.assign({},s))).toEqual(
-      [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
-      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
+        [{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+        {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
   });
 
   it('replaceRange', async function () {
