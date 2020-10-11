@@ -1,23 +1,24 @@
-import React from 'react';
+import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
 import {ASTNode} from '../ast';
 import {DropTarget} from './DropTarget';
+import {span} from '../types';
 
-const Args = props => {
-  let {children} = props;
-  const elems = [];
-  elems.push(<DropTarget key={'drop-0'} field={props.field}/>);
-  children.forEach((child, index) => {
-    elems.push(child.reactElement({key : 'node' + index}));
-    elems.push(<DropTarget key={'drop-' + (index+1)} field={props.field}/>);
-  });
-  return elems;
-};
+export default class Args extends Component {
+  static propTypes = {
+    field: PropTypes.string.isRequired,
+    children: PropTypes.arrayOf(PropTypes.instanceOf(ASTNode)).isRequired,
+  }
 
-Args.propTypes = {
-  field: PropTypes.string.isRequired,
-  children: PropTypes.arrayOf(PropTypes.instanceOf(ASTNode)).isRequired,
-};
-
-export default Args
+  render() {
+    let {children} = this.props;
+    const elems = [];
+    elems.push(<DropTarget key={'drop-0'} field={this.props.field}/>);
+    children.forEach((child, index) => {
+      elems.push(child.reactElement({key : 'node' + index}));
+      elems.push(<DropTarget key={'drop-' + (index+1)} field={this.props.field}/>);
+    });
+    return elems;
+  }
+}

@@ -2,9 +2,12 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {UnControlled as CodeMirror} from 'react-codemirror2';
-import merge from '../merge';
 import SHARED from '../shared';
 import {say} from '../utils';
+
+// CodeMirror APIs that we need to disallow
+const unsupportedAPIs = ['startOperation', 'endOperation', 'operation',
+  'on', 'off'];
 
 class TextEditor extends Component {
   static propTypes = {
@@ -41,18 +44,16 @@ class TextEditor extends Component {
     this.props.onMount(ed);
 
     // export methods to the object interface
-    merge(this.props.api, this.buildAPI(ed));
+    Object.assign(this.props.api, this.buildAPI(ed));
   }
 
+  // override default CM methods, or add our own
   buildAPI(ed) {
-    return {
-      'findMarks': (from, to) => ed.findMarks(from, to),
-      'findMarksAt': (pos) => ed.findMarksAt(pos),
-      'getAllMarks': () => ed.getAllMarks(),
-      'markText': (from, to, opts) => ed.markText(from, to, opts),
-      'runMode': (src, lang, container) => ed.runMode(src, lang, container),
-      'setCursor': (pos) => ed.setCursor(pos),
-    };
+    const api = {};
+    // show which APIs are unsupported
+    unsupportedAPIs.forEach(f => 
+      api[f] = () => {throw "This CM API is not supported in the block editor";});
+    return api;
   }
 
   componentDidMount() {

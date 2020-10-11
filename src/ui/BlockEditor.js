@@ -11,15 +11,27 @@ import SHARED from '../shared';
 import NodeEditable from '../components/NodeEditable';
 import {activate, setCursor, insert, OverwriteTarget} from '../actions';
 import {commitChanges} from '../edits/commitChanges';
-import {speculateChanges} from '../edits/speculateChanges';
+import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
-import merge from '../merge';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter} from '../utils';
+import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
+// CodeMirror APIs that we need to disallow
+const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending', 
+  'getExtending', 'findPosH', 'findPosV', 'setOption', 'getOption', 
+  'addOverlay', 'removeOverlay', 'undoSelection', 'redoSelection', 
+  'charCoords', 'coordsChar', 'cursorCoords', 'startOperation',
+  'endOperation', 'operation', 'addKeyMap', 'removeKeyMap', 'on', 'off',
+  'extendSelection', 'extendSelections', 'extendSelectionsBy'];
 
+class BlockError extends Error {
+  constructor(message, edit) {
+    super(message);
+    this.edit = edit;
+  }
+}
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
@@ -196,7 +208,7 @@ class BlockEditor extends Component {
       'Ctrl-Z'    : 'undo',
       'Cmd-Z'     : 'undo',
       'Ctrl-Y'    : 'redo',
-      'Cmd-Shift-Z':'redo',
+      'Shift-Cmd-Z':'redo',
       'Cmd-C'     : 'copy',
       'Ctrl-C'    : 'copy',
       'Cmd-V'     : 'paste',
@@ -221,7 +233,10 @@ class BlockEditor extends Component {
       // Successful! Let's save all the hard work we did to build the new AST
       if (successful) { this.newAST = newAST; }
       // Error! Cancel the change
-      else { change.cancel(); }
+      else { 
+        change.cancel();
+        throw new BlockError("An invalid change was rejected", change);
+      }
     }
   }
 
@@ -308,7 +323,7 @@ class BlockEditor extends Component {
     this.props.onMount(ed);
 
     // export methods to the object interface
-    merge(this.props.api, this.buildAPI(ed));
+    Object.assign(this.props.api, this.buildAPI(ed));
   }
 
   executeAction(action) {
@@ -332,38 +347,91 @@ class BlockEditor extends Component {
 
   buildAPI(ed) {
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
-    return {
-      // cm methods
+    const cm = SHARED.cm;
+    const api = {
+      /*****************************************************************
+      * CM APIs WE WANT TO OVERRIDE
+      */
       'findMarks':  (from, to) => this.findMarks(from, to),
-      'findMarksAt':(pos) => this.findMarksAt(pos),
-      'getAllMarks':() => this.getAllMarks(),
-      'markText':   (from, to, opts) => this.markText(from, to, opts),
-      'runMode': (_src, _lang, _container) => () => {}, // no-op since not an editing command
-      'setCursor': (pos) => this.props.setCursor(ed, pos),
-      // block methods
+      'findMarksAt': (pos) => this.findMarksAt(pos),
+      'getAllMarks': () => this.getAllMarks(),
+      'markText': (from, to, opts) => this.markText(from, to, opts),
+      // Something is selected if CM has a selection OR a block is selected
+      'somethingSelected': () => withState(({selections}) => 
+        Boolean(SHARED.cm.somethingSelected() || selections.length)),
+      // CMB has focus if CM has focus OR a block is active
+      'hasFocus': () => 
+        cm.hasFocus() || Boolean(document.activeElement.id.match(/block-node/)),
+      'extendSelection': (from, to, opts) => this.extendSelections([from], opts, to),
+      'extendSelections': (heads, opts) => this.extendSelections(heads, opts),
+      'extendSelectionsBy': (f, opts) => 
+        this.extendSelections(this.listSelections().map(f), opts),
+      'getSelections': (sep) => 
+        this.listSelections().map(s => SHARED.cm.getRange(s.anchor, s.head, sep)),
+      'getSelection': (sep) => 
+        this.listSelections().map(s => SHARED.cm.getRange(s.anchor, s.head, sep)).join(sep),
+      'listSelections' : () => this.listSelections(),
+      'replaceRange': (text, from, to, origin) => withState(({ast}) => {
+        validateRanges([{anchor:from, head:to}], ast);
+        SHARED.cm.replaceRange(text, from, to, origin);
+      }),
+      'setSelections': (ranges, primary, opts) => this.setSelections(ranges, primary, opts),
+      'setSelection': (anchor, head=anchor, opts) => 
+        this.setSelections([{anchor: anchor, head: head}], null, opts),
+      'addSelection': (anchor, head) => 
+        this.setSelections([{anchor: anchor, head: head}], null, null, false),
+      'replaceSelections': (rStrings, select) => this.replaceSelections(rStrings, select),
+      'replaceSelection': (rString, select) => 
+        this.replaceSelections(Array(this.listSelections().length).fill(rString), select),
+      // If a node is active, return the start. Otherwise return the cursor as-is
+      'getCursor': (where) => this.getCursor(where),
+      // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
+      'setCursor': (cur) => withState(({ast}) => {
+        const node = ast.getNodeContaining(cur);
+        if(node) this.props.activate(node.id, {record: false, allowMove: true});
+        this.props.setCursor(ed, cur);
+      }),
+      // As long as widget isn't defined, we're good to go
+      'setBookmark': (pos, opts) => {
+        if(opts.widget) {
+          throw new BlockError("setBookmark() with a widget is not supported in Block Mode");
+        }
+        SHARED.cm.setBookmark(pos, opts);
+      },
+
+      /*****************************************************************
+      * APIs THAT ARE UNIQUE TO CODEMIRROR-BLOCKS
+      */
       'getAst':
         () => withState((state) => state.ast),
       'getFocusedNode':
         () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : null),
       'getSelectedNodes':
         () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
-      // testing methods
+
+      /*****************************************************************
+      * APIs FOR TESTING
+      */
       'getQuarantine': () => withState(({quarantine}) => quarantine),
       'setQuarantine': (q) => this.props.setQuarantine(q),
       'resetNodeCounter': () => resetNodeCounter(),
       'executeAction' : (action) => this.executeAction(action),
     };
+    // show which APIs are unsupported
+    unsupportedAPIs.forEach(f => 
+      api[f] = () => {throw `The CM API '${f}' is not supported in the block editor`;});
+    return api;
   }
 
   markText(from, to, options) {
     let node = this.props.ast.getNodeAt(from, to);
     if(!node) {
-      throw new Error('Could not create TextMarker: there is no AST node at [',from, to,']');
+      throw new BlockError('Could not create TextMarker: there is no AST node at [',from, to,']');
     }
     let supportedOptions = ['css','className','title'];
     for (let opt in options) {
       if (!supportedOptions.includes(opt))
-        throw new Error(`markText: option "${opt}" is not supported in block mode`);
+        throw new BlockError(`markText: option "${opt}" is not supported in block mode`);
     }
     let mark = SHARED.cm.markText(from, to, options); // keep CM in sync
     mark._clear = mark.clear;
@@ -385,6 +453,80 @@ class BlockEditor extends Component {
   // clear all non-block marks
   _clearMarks() {
     this.getAllMarks().map(m => m.clear());
+  }
+  // disallow widget option
+  setBookmark(pos, options) {
+    if(options.widget) {
+      throw new BlockError(`setBookmark: option 'widget' is not supported in block mode`);
+    }
+    return SHARED.cm.setBookmark(pos, options);
+  }
+  getCursor(where="from") {
+    const dispatch = this.props.dispatch;
+    const {focusId, ast} = dispatch((_, getState) => getState());
+    if(focusId && document.activeElement.id.match(/block-node/)) {
+      const node = ast.getNodeById(focusId);
+      if(where == "from") return node.from;
+      if(where == "to") return node.to;
+      else throw new BlockError(`getCursor() with ${where} is not supported on a focused block`);
+    } else { return SHARED.cm.getCursor(where); }
+  }
+  listSelections() {
+    const dispatch = this.props.dispatch;
+    const {selections, ast} = dispatch((_, getState) => getState());
+    let tmpCM = getTempCM();
+    // write all the ranges for all selected nodes
+    selections.forEach(id => {
+      const node = ast.getNodeById(id);
+      tmpCM.addSelection(node.from, node.to);
+    });
+    // write all the existing selection ranges
+    SHARED.cm.listSelections().map(s => tmpCM.addSelection(s.anchor, s.head));
+    // return all the selections
+    return tmpCM.listSelections();
+  }
+  getSelections(sep) {
+    return this.listSelections().map(s => SHARED.cm.getRange(s.from, s.to, sep));
+  }
+  setSelections(ranges, primary, options, replace=true) {
+    const dispatch = this.props.dispatch;
+    const {ast} = dispatch((_, getState) => getState());
+    let tmpCM = getTempCM();
+    tmpCM.setSelections(ranges, primary, options);
+    const textRanges = [], nodes = [];
+    try { validateRanges(ranges, ast); }
+    catch(e) { throw e; }
+    // process the selection ranges into an array of ranges and nodes
+    tmpCM.listSelections().forEach(({anchor, head}) => {
+      const c1 = minpos(anchor, head);
+      const c2 = maxpos(anchor, head);
+      const node = ast.getNodeAt(c1, c2);
+      if(node) { nodes.push(node.id); }
+      else textRanges.push({anchor: anchor, head: head});
+    });
+    if(textRanges.length) {
+      if(replace) SHARED.cm.setSelections(textRanges, primary, options);
+      else SHARED.cm.addSelection(textRanges[0].anchor, textRanges[0].head);
+    }
+    dispatch({ type: 'SET_SELECTIONS', selections: nodes });
+  }
+  extendSelections(heads, opts, to=false) {
+    let tmpCM = getTempCM();
+    tmpCM.setSelections(this.listSelections());
+    if(to) { tmpCM.extendSelections(heads, opts); }
+    else { tmpCM.extendSelection(heads[0], to, opts); }
+    // if one of the ranges is invalid, setSelections will raise an error
+    this.setSelections(tmpCM.listSelections(), null, opts);
+  }
+  replaceSelections(replacements, select=false) {
+    let tmpCM = getTempCM();
+    tmpCM.setSelections(this.listSelections());
+    tmpCM.replaceSelections(replacements, select);
+    SHARED.cm.setValue(tmpCM.getValue());
+    // if one of the ranges is invalid, setSelections will raise an error
+    if(select == "around") { this.setSelections(tmpCM.listSelections()); }
+    if(select == "start") { this.props.setCursor(tmpCM.listSelections().pop().head); }
+    else { this.props.setCursor(tmpCM.listSelections().pop().anchor); }
   }
 
   renderMarks() {
@@ -453,7 +595,6 @@ class BlockEditor extends Component {
 
       case 'prevNode': {
         e.preventDefault();
-        console.log(this.props);
         const prevNode = ast.getNodeBeforeCur(this.props.cur);
         if (prevNode) {
           this.props.activate(prevNode.id, {allowMove: true});

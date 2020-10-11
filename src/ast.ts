@@ -141,8 +141,7 @@ export class AST {
     if (!node.from || !node.to
         || typeof node.from.line !== "number" || typeof node.from.ch !== "number"
         || typeof node.to.line !== "number" || typeof node.to.ch !== "number") {
-      throw new Error(`ASTNode.from and .to are required and must have the form {line: number, to: number}
-(they are source locations). This rule was broken by ${node.type}.`);
+      throw new Error(`ASTNode.from and .to are required and must have the form {line: number, to: number} (they are source locations). This rule was broken by ${node.type}.`);
     }
     if (typeof node.pretty !== "function") {
       throw new Error(`ASTNode ${node.type} needs to have a pretty() method, but does not.`);
