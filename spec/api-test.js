@@ -418,11 +418,11 @@ describe("when testing CM apis,", function () {
     this.cmb.setSelection({line: 0, ch: 0});
     expect(this.cmb.listSelections().length).toBe(1);
     expect(this.cmb.listSelections().map(r => ({
-        anchor: simpleCursor(r.anchor),
-        head: simpleCursor(r.head)
+      anchor: simpleCursor(r.anchor),
+      head: simpleCursor(r.head)
     }))).toEqual([{
-        anchor: {line: 0, ch: 0},
-        head: {line: 0, ch: 0},
+      anchor: {line: 0, ch: 0},
+      head: {line: 0, ch: 0},
     }]);
   });
 
