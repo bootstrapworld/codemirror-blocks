@@ -47,8 +47,8 @@ describe("when dealing with node activation,", function () {
   });
 
   it('should activate the first node when down is pressed', async function () {
-    await wait(DELAY);
-    this.cmb.setCursor({line:0,ch:0}); // set cursor to just before first literal
+    mouseDown(this.literal1.element);
+    keyDown("[", {ctrlKey: true}, this.literal1.element); // set cursor to the left
     await wait(DELAY);
     keyDown("ArrowDown");
     await wait(DELAY);

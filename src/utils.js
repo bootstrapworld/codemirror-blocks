@@ -162,7 +162,7 @@ export function getLastVisibleNode(state) {
 export function withDefaults(obj, def) {
   return {...def, ...obj};
 }
-
+/*
 export function getBeginCursor(cm) {
   return CodeMirror.Pos(cm, 0);
 }
@@ -173,7 +173,7 @@ export function getEndCursor(cm) {
     cm.getLine(cm.lastLine()).length
   );
 }
-
+*/
 export function posWithinNode(pos, node) {
   return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
     ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);
@@ -210,7 +210,7 @@ export const dummyPos = {line: -1, ch: 0};
 export function isDummyPos(pos) {
   return pos.line === -1 && pos.ch === 0;
 }
-
+/*
 // Announce, for testing purposes, that something important is about to update
 // (like the DOM). Make sure to call `ready` after.
 export function notReady(element) {
@@ -241,7 +241,7 @@ export function waitUntilReady() {
     }
   });
 }
-
+*/
 // Compute the position of the end of a change (its 'to' property refers to the pre-change end).
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
 export function changeEnd({from, to, text}) {
@@ -298,4 +298,25 @@ export function logResults(history, exception) {
   } catch (e) {
     console.log('LOGGING FAILED.', e, history);
   }
+}
+
+export function validateRanges(ranges, ast) {
+  ranges.forEach(({anchor, head}) => {
+    const c1 = minpos(anchor, head);
+    const c2 = maxpos(anchor, head);
+    if(ast.getNodeAt(c1, c2)) return;  // if there's a node, it's a valid range
+    // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
+    const N1 = ast.getNodeContaining(c1); // get node containing c1
+    const N2 = ast.getNodeContaining(c2); // get node containing c2
+    const c1IsTopLevel = !N1 || (!N1.parent && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
+    const c2IsTopLevel = !N2 || (!N2.parent && (!poscmp(c2, N2.from) || !poscmp(c2, N2.to)));
+
+    // If they're both top-level, it's a valid text range
+    if(c1IsTopLevel && c2IsTopLevel) return;
+
+    // Otherwise, the range is neither toplevel OR falls neatly on a node boundary
+    throw new Error(`The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
+      ch:${c2.ch}} partially covers a node, which is not allowed`);
+  });
+  return true;
 }
