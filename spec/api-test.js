@@ -442,9 +442,9 @@ describe("when testing CM apis,", function () {
     await wait(DELAY);
     // blockmode API test
     expect(() => this.cmb.setSelections([
-        {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 3}}, 
-        {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]))
-        .toThrow();
+      {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 3}}, 
+      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]))
+      .toThrow();
     this.cmb.setSelections([{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
       {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
     expect(this.cmb.listSelections().map(s=>Object.assign({},s))).toEqual([
@@ -455,7 +455,7 @@ describe("when testing CM apis,", function () {
 
   it('somethingSelected should work for selected blocks and text ranges', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY)
+    await wait(DELAY);
     const firstRoot = this.currentFirstRoot();
     expect(this.cmb.somethingSelected()).toBe(false);
     mouseDown(firstRoot);
