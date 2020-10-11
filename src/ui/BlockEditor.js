@@ -23,7 +23,8 @@ const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
   'getExtending', 'findPosH', 'findPosV', 'setOption', 'getOption', 
   'addOverlay', 'removeOverlay', 'undoSelection', 'redoSelection', 
   'charCoords', 'coordsChar', 'cursorCoords', 'startOperation',
-  'endOperation', 'operation', 'addKeyMap', 'removeKeyMap', 'on', 'off'];
+  'endOperation', 'operation', 'addKeyMap', 'removeKeyMap', 'on', 'off',
+  'extendSelection', 'extendSelections', 'extendSelectionsBy'];
 
 class BlockError extends Error {
   constructor(message, edit) {
@@ -355,7 +356,6 @@ class BlockEditor extends Component {
       'findMarksAt': (pos) => this.findMarksAt(pos),
       'getAllMarks': () => this.getAllMarks(),
       'markText': (from, to, opts) => this.markText(from, to, opts),
-      'setCursor': (pos) => this.props.setCursor(ed, pos),
       // Something is selected if CM has a selection OR a block is selected
       'somethingSelected': () => withState(({selections}) => 
         Boolean(SHARED.cm.somethingSelected() || selections.length)),
@@ -376,7 +376,7 @@ class BlockEditor extends Component {
         SHARED.cm.replaceRange(text, from, to, origin);
       }),
       'setSelections': (ranges, primary, opts) => this.setSelections(ranges, primary, opts),
-      'setSelection': (anchor, head, opts) => 
+      'setSelection': (anchor, head=anchor, opts) => 
         this.setSelections([{anchor: anchor, head: head}], null, opts),
       'addSelection': (anchor, head) => 
         this.setSelections([{anchor: anchor, head: head}], null, null, false),
@@ -387,9 +387,9 @@ class BlockEditor extends Component {
       'getCursor': (where) => this.getCursor(where),
       // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
       'setCursor': (cur) => withState(({ast}) => {
-        SHARED.cm.setCursor(cur);
         const node = ast.getNodeContaining(cur);
         if(node) this.props.activate(node.id, {record: false, allowMove: true});
+        this.props.setCursor(ed, cur)
       }),
       // As long as widget isn't defined, we're good to go
       'setBookmark': (pos, opts) => {
@@ -525,8 +525,8 @@ class BlockEditor extends Component {
     SHARED.cm.setValue(tmpCM.getValue());
     // if one of the ranges is invalid, setSelections will raise an error
     if(select == "around") { this.setSelections(tmpCM.listSelections()); }
-    if(select == "start") { SHARED.cm.setCursor(tmpCM.listSelections().pop().head); }
-    else { SHARED.cm.setCursor(tmpCM.listSelections().pop().anchor); }
+    if(select == "start") { this.props.setCursor(tmpCM.listSelections().pop().head); }
+    else { this.props.setCursor(tmpCM.listSelections().pop().anchor); }
   }
 
   renderMarks() {

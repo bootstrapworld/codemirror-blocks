@@ -18,6 +18,7 @@ describe("when testing CM apis,", function () {
     this.cmb.setBlockMode(false);
     this.cmb.setValue(`(+ 1 2)\ny`);
     await wait(DELAY);
+    this.currentFocusNId = () => this.cmb.getFocusedNode().nid;
     this.roots = () => this.cmb.getAst().rootNodes;
     this.currentFirstRoot = () => this.roots()[0];
     this.currentSecondRoot = () => this.roots()[1];
@@ -49,6 +50,9 @@ describe("when testing CM apis,", function () {
     expect(()=>this.cmb.startOperation(()=>true)).toThrow();
     expect(()=>this.cmb.toggleOverwrite(true)).toThrow();
     expect(()=>this.cmb.undoSelection(true)).toThrow();
+    expect(()=>this.cmb.extendSelection(true)).toThrow();
+    expect(()=>this.cmb.extendSelections(true)).toThrow();
+    expect(()=>this.cmb.extendSelectionsBy(true)).toThrow();
   });
 
   it('those unsupported in the TextEditor should throw errors', async function () {
@@ -191,28 +195,7 @@ describe("when testing CM apis,", function () {
     const firstRoot = this.currentFirstRoot().element;
     expect(firstRoot.getAttribute('aria-selected')).toBe("true");
   });
-  /*
-  it('extendSelection', async function () {
-    // textmode API test
-    this.cmb.setBlockMode(true);
-    await wait(DELAY);
-    // blockmode API test
-  });
 
-  it('extendSelections', async function () {
-    // textmode API test
-    this.cmb.setBlockMode(true);
-    await wait(DELAY);
-    // blockmode API test
-  });
-
-  it('extendSelectionsBy', async function () {
-    // textmode API test
-    this.cmb.setBlockMode(true);
-    await wait(DELAY);
-    // blockmode API test
-  });
-  */
   it('getCursor should work as-is for Text', async function () {
     await wait(DELAY);
     this.cmb.setSelection({line: 0, ch: 0}, {line: 0, ch: 7});
@@ -404,39 +387,96 @@ describe("when testing CM apis,", function () {
     expect(this.cmb.setBookmark({line:0,ch:2}, {widget: domNode})).not.toBe(null);
   });
 
-  it('setCursor', async function () {
+  it('setCursor should work as-is for text, or activate the containing block', async function () {
     this.cmb.setBlockMode(true);
     await wait(DELAY);
+    this.cmb.setCursor({line:1,ch:1});
+    expect(simpleCursor(this.cmb.getCursor())).toEqual({line:1,ch:1});
+    expect(this.currentFocusNId()).toBe(0);
+    this.cmb.setCursor({line:0,ch:1});
+    expect(this.currentFocusNId()).toBe(0);
+    // activating the first block should return a cursor at its end
+    expect(simpleCursor(this.cmb.getCursor())).toEqual({line:0,ch:7});
   });
 
   it('setSelection', async function () {
-    this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    this.cmb.setValue(`(+ 1 2)\n\n(- 3 4)`);
+        // textmode API test
+        this.cmb.setSelection({line: 0, ch: 0}, {line: 0, ch: 7});
+        const selections = this.cmb.listSelections().map(s => {
+          return {anchor: simpleCursor(s.anchor), head: simpleCursor(s.head)};
+        });
+        expect(selections).toEqual([
+          {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}
+        ]);
+        this.cmb.setBlockMode(true);
+        await wait(DELAY);
+        // blockmode API test
+        expect(() => this.cmb.setSelection(
+          {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 3}})
+        ).toThrow();
+        this.cmb.setSelection({line: 0, ch: 0});
+        expect(this.cmb.listSelections().length).toBe(1);
+        expect(this.cmb.listSelections().map(r => ({
+            anchor: simpleCursor(r.anchor),
+            head: simpleCursor(r.head)
+        }))).toEqual([{
+            anchor: {line: 0, ch: 0},
+            head: {line: 0, ch: 0},
+        }]);
   });
 
   it('setSelections', async function () {
+    this.cmb.setValue(`(+ 1 2)\n\n(- 3 4)`);
+    // textmode API test
+    this.cmb.setSelections([{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
+    const selections = this.cmb.listSelections().map(s => {
+      return {anchor: simpleCursor(s.anchor), head: simpleCursor(s.head)};
+    });
+    expect(selections).toEqual([
+      {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}
+    ]);
     this.cmb.setBlockMode(true);
     await wait(DELAY);
+    // blockmode API test
+    expect(() => this.cmb.setSelections([
+        {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 3}}, 
+        {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]))
+        .toThrow();
+    this.cmb.setSelections([{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
+    expect(this.cmb.listSelections().map(s=>Object.assign({},s))).toEqual([
+      {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
+      {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}
+    ]);
   });
 
-  /*it('somethingSelected', async function () {
+  it('somethingSelected should work for selected blocks and text ranges', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await wait(DELAY)
+    const firstRoot = this.currentFirstRoot();
     expect(this.cmb.somethingSelected()).toBe(false);
-    mouseDown(this.currentFirstRoot());
+    mouseDown(firstRoot);
     await wait(DELAY);
-    keyDown(" ", {}, this.currentFirstRoot());
+    expect(this.cmb.getSelectedNodes().length).toBe(0);
+    keyDown(" ", {}, firstRoot);
     await wait(DELAY);
     expect(this.cmb.getSelectedNodes().length).toBe(1);
     expect(this.cmb.somethingSelected()).toBe(true);
-    click(this.currentFirstRoot());
-    await wait(DELAY);
-    keyDown(" ", {}, this.currentFirstRoot());
+    this.cmb.setSelection({line:0,ch:0}, {line:0,ch:0});
     await wait(DELAY);
     expect(this.cmb.getSelectedNodes().length).toBe(0);
     expect(this.cmb.somethingSelected()).toBe(false);
     this.cmb.addSelection({line:0,ch:0},{line:0,ch:7});
     expect(this.cmb.somethingSelected()).toBe(true);
+    this.cmb.setSelection({line:0,ch:0}, {line:0,ch:0});
+    await wait(DELAY);
+    expect(this.cmb.getSelectedNodes().length).toBe(0);
+    expect(this.cmb.somethingSelected()).toBe(false);
+    this.cmb.addSelection({line:0,ch:0},{line:1,ch:1});
+    expect(this.cmb.somethingSelected()).toBe(true);
   });
-*/
+
 });

@@ -88,7 +88,7 @@
     "prepublishOnly": "npm run build",
     "test": "./node_modules/karma/bin/karma start karma.conf.js --single-run --sourcemaps=false",
     "prepare": "npm run build",
-    "test-watch": "karma start",
+    "test-watch": "karma start karma.conf.js",
     "start": "webpack-dev-server --mode development --config webpack/example.config.js",
     "heroku-server": "node heroku-server.js",
     "build": "webpack --config webpack.config.js --mode production",
