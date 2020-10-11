@@ -401,29 +401,29 @@ describe("when testing CM apis,", function () {
 
   it('setSelection', async function () {
     this.cmb.setValue(`(+ 1 2)\n\n(- 3 4)`);
-        // textmode API test
-        this.cmb.setSelection({line: 0, ch: 0}, {line: 0, ch: 7});
-        const selections = this.cmb.listSelections().map(s => {
-          return {anchor: simpleCursor(s.anchor), head: simpleCursor(s.head)};
-        });
-        expect(selections).toEqual([
-          {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}
-        ]);
-        this.cmb.setBlockMode(true);
-        await wait(DELAY);
-        // blockmode API test
-        expect(() => this.cmb.setSelection(
-          {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 3}})
-        ).toThrow();
-        this.cmb.setSelection({line: 0, ch: 0});
-        expect(this.cmb.listSelections().length).toBe(1);
-        expect(this.cmb.listSelections().map(r => ({
-            anchor: simpleCursor(r.anchor),
-            head: simpleCursor(r.head)
-        }))).toEqual([{
-            anchor: {line: 0, ch: 0},
-            head: {line: 0, ch: 0},
-        }]);
+    // textmode API test
+    this.cmb.setSelection({line: 0, ch: 0}, {line: 0, ch: 7});
+    const selections = this.cmb.listSelections().map(s => {
+      return {anchor: simpleCursor(s.anchor), head: simpleCursor(s.head)};
+    });
+    expect(selections).toEqual([
+      {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}
+    ]);
+    this.cmb.setBlockMode(true);
+    await wait(DELAY);
+    // blockmode API test
+    expect(() => this.cmb.setSelection(
+      {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 3}})
+    ).toThrow();
+    this.cmb.setSelection({line: 0, ch: 0});
+    expect(this.cmb.listSelections().length).toBe(1);
+    expect(this.cmb.listSelections().map(r => ({
+        anchor: simpleCursor(r.anchor),
+        head: simpleCursor(r.head)
+    }))).toEqual([{
+        anchor: {line: 0, ch: 0},
+        head: {line: 0, ch: 0},
+    }]);
   });
 
   it('setSelections', async function () {
