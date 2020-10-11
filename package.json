@@ -81,7 +81,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "peerDependencies": {
-    "codemirror": "^5.58.1",
+    "codemirror": "^5.58.1"
   },
   "optionalDependencies": {
     "wescheme-js": "https://github.com/bootstrapworld/wescheme-js"
