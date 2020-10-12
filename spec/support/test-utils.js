@@ -43,7 +43,7 @@ const fixture = `
 export function activationSetup(language) {
   document.body.insertAdjacentHTML('afterbegin', fixture);
   const container = document.getElementById('cmb-editor');
-  const cmOptions = {historyEventDelay: 100} // since our test harness is faster than people
+  const cmOptions = {historyEventDelay: 50} // since our test harness is faster than people
   this.cmb = new CodeMirrorBlocks(
     container, 
     { collapseAll: false, value: "", incrementalRendering: false }, 

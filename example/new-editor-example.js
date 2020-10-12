@@ -3,7 +3,7 @@ import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import './example-page.less';
 import bigExampleCode from './ast-test.rkt';
 import hugeExampleCode from './huge-code.rkt';
-const smallExampleCode = `(+ 1 (* 3 4))\n(+ 1 2)`;
+const smallExampleCode = `A\nB\n`;
 
 const exampleCode = smallExampleCode;
 //const exampleCode = bigExampleCode;
