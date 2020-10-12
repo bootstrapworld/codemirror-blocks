@@ -492,19 +492,28 @@ class BlockEditor extends Component {
   setSelections(ranges, primary, options, replace=true) {
     const dispatch = this.props.dispatch;
     const {ast} = dispatch((_, getState) => getState());
+    console.log(1);
     let tmpCM = getTempCM();
     tmpCM.setSelections(ranges, primary, options);
     const textRanges = [], nodes = [];
+    console.log(2);
     try { validateRanges(ranges, ast); }
     catch(e) { throw e; }
+    console.log(3);
     // process the selection ranges into an array of ranges and nodes
     tmpCM.listSelections().forEach(({anchor, head}) => {
       const c1 = minpos(anchor, head);
       const c2 = maxpos(anchor, head);
       const node = ast.getNodeAt(c1, c2);
-      if(node) { nodes.push(node.id); }
-      else textRanges.push({anchor: anchor, head: head});
+      if(node) { 
+        nodes.push(node.id); 
+        textRanges.push({anchor: node.from, head: node.to});
+      } else {
+        textRanges.push({anchor: anchor, head: head});
+      }
     });
+    console.log(4);
+    console.log(textRanges);
     if(textRanges.length) {
       if(replace) SHARED.cm.setSelections(textRanges, primary, options);
       else SHARED.cm.addSelection(textRanges[0].anchor, textRanges[0].head);
