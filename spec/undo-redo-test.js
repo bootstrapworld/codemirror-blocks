@@ -44,7 +44,7 @@ describe("when testing undo/redo,", function () {
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 0});
-    insertText("C");                                        // change (3): insert C at the end
+    this.cmb.replaceRange("C", {line:3,ch:0},{line:3,ch:0});// change (3): insert C at the end
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
