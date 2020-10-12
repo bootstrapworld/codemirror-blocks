@@ -46,7 +46,6 @@ export default (Editor, searchModes) => {
 
     handleSearch = (forward, cmbState) => {
       if(this.state.searchEngine == null) {
-        if(store.queuedAnnouncement) { clearTimeout(store.queuedAnnouncement); } 
         say("No search setting have been selected.");
         return;
       }

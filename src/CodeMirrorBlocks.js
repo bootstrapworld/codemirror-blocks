@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ToggleEditor from './ui/ToggleEditor';
-import merge from './merge';
 const Args = require('./components/Args');
 const DropTarget = require('./components/DropTarget');
 const Node = require('./components/Node');
@@ -30,7 +29,7 @@ export default class CodeMirrorBlocks {
       />,
       container
     );
-    merge(api, this.buildAPI());
+    Object.assign(api, this.buildAPI());
     return api;
   }
 
