@@ -1,3 +1,5 @@
+import {say} from './utils';
+
 function loggerDebug(action, ast) { // in lieu of logger.debug
   //console.log('doing loggerDebug', action.type, !!ast);
   if (!window.reducerActivities) {
@@ -102,11 +104,15 @@ export const reducer = (
     result = {...state, undoFocusStack: [...state.undoFocusStack, action.focus], redoFocusStack: []};
     break;
   case 'UNDO':
-    state.redoFocusStack.push(state.undoFocusStack.pop());
+    let undid = state.undoFocusStack.pop();
+    say('undid: ' + undid.undoableAction, 200, false, state.announcer);
+    state.redoFocusStack.push(undid);
     result = {...state};
     break;
   case 'REDO':
-    state.undoFocusStack.push(state.redoFocusStack.pop());
+    let redid = state.redoFocusStack.pop();
+    say('redid: ' + redid.undoableAction, 200, false, state.announcer);
+    state.undoFocusStack.push(redid);
     result = {...state};
     break;
   case 'RESET_STORE_FOR_TESTING':
