@@ -228,6 +228,7 @@ class BlockEditor extends Component {
   handleChanges = (cm, changes) => {
     this.props.dispatch((dispatch, getState) => {
       if (!changes.every(c => c.origin && c.origin.startsWith("cmb:"))) {
+        //console.log('doing BlockEditor handleChanges fn');
         // These changes did not originate from us. However, they've all
         // passed the `handleBeforeChange` function, so they must be valid edits.
         // (There's almost certainly just one edit here; I (Justin) am not
@@ -255,6 +256,14 @@ class BlockEditor extends Component {
           // don't know anything else about it. Apply the change, set the focusHint
           // to the top of the tree (-1), and provide an astHint so we don't need
           // to reparse and rebuild the tree
+          let annt = '';
+          for (let i = changes.length - 1; i >= 0; i--) {
+            annt = annt + changes[i].origin;
+            if (i !== 0) annt = ' and ' + annt;
+          }
+          if (annt === '') annt = 'change';
+          getState().undoableAnnouncement = annt;
+          //console.log('calling from BlockEditor handleChanges fn: commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
       }

@@ -99,19 +99,20 @@ export const reducer = (
     result = {...state};
     break;
   case 'DO':
-    //console.log('PUSHED undoable action: ', state.undoableAnnouncement);
+    console.log('PUSHED undoable action: ', state.undoableAnnouncement);
     action.focus.undoableAction = state.undoableAnnouncement;
+    state.undoableAnnouncement = null; //needed? doesn't hurt
     result = {...state, undoFocusStack: [...state.undoFocusStack, action.focus], redoFocusStack: []};
     break;
   case 'UNDO':
     let undid = state.undoFocusStack.pop();
-    say('undid: ' + undid.undoableAction, 200, false, state.announcer);
+    say('UNDID: ' + undid.undoableAction, 200, false, state);
     state.redoFocusStack.push(undid);
     result = {...state};
     break;
   case 'REDO':
     let redid = state.redoFocusStack.pop();
-    say('redid: ' + redid.undoableAction, 200, false, state.announcer);
+    say('REDID: ' + redid.undoableAction, 200, false, state);
     state.undoFocusStack.push(redid);
     result = {...state};
     break;
