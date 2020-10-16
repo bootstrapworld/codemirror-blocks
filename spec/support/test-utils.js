@@ -14,25 +14,20 @@ export function removeEventListeners() {
   oldElem.parentNode.replaceChild(newElem, oldElem);
 }
 
-export function cleanupAfterTest(rootId, store) {
-  let rootNode = document.getElementById('root');
-  if (rootNode) {
-  document.body.removeChild(rootNode);
-  } else {
-    console.log('doing cleanupAfterTest', 'MISSING ROOT');
+export function teardown() {
+  cleanup();
+  const rootNode = document.getElementById('root');
+  if (rootNode) { document.body.removeChild(rootNode); } 
+  else {
+    console.log('cleanupAfterTest() failed to find `root`.',
+      ' Did your test case use `activationSetup`?');
   }
-
   store.dispatch({type: "RESET_STORE_FOR_TESTING"});
   const textareas = document.getElementsByTagName("textarea");
   while (textareas[0]) {
     const current = textareas[0];
     current.parentNode.removeChild(current);
   }
-}
-
-export function teardown() {
-  cleanupAfterTest('root', store);
-  cleanup();
 }
 
 const fixture = `
@@ -48,7 +43,7 @@ const fixture = `
 export function activationSetup(language) {
   document.body.insertAdjacentHTML('afterbegin', fixture);
   const container = document.getElementById('cmb-editor');
-  const cmOptions = {historyEventDelay: 100} // since our test harness is faster than people
+  const cmOptions = {historyEventDelay: 50}; // since our test harness is faster than people
   this.cmb = new CodeMirrorBlocks(
     container, 
     { collapseAll: false, value: "", incrementalRendering: false }, 
@@ -61,19 +56,4 @@ export function activationSetup(language) {
   this.activeAriaId = () =>
     this.cmb.getScrollerElement().getAttribute('aria-activedescendent');
   this.selectedNodes = () => this.cmb.getSelectedNodes();
-}
-
-/**
- * Setup, be sure to use with `apply` (`cmSetup.apply(this, [pyret])`)
- * or `call` (`cmSetup.call(this, pyret)`)
- * so that `this` is scoped correctly!
- */
-export function cmSetup(language) {
-  document.body.insertAdjacentHTML('afterbegin', fixture);
-  const container = document.getElementById('cmb-editor');
-  this.cmb = new CodeMirrorBlocks(container, { collapseAll: false, value: "" }, language);
-  this.editor = this.cmb;
-  this.cm = this.editor;
-  this.blocks = this.cmb;
-  this.cmb.setBlockMode(true);
 }

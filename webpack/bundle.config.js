@@ -1,12 +1,11 @@
-var _ = require('lodash');
-var path = require('path');
-var webpack = require('webpack');
-var baseConfig = require('./base.config.js');
+const path = require('path');
+const webpack = require('webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const baseConfig = require('./base.config.js');
 
 // this is the config for a single js file that can be included with a script tag
 var configs = [
-  _.extend({}, baseConfig(), {
+  Object.assign({}, baseConfig(), {
     resolve : {
       alias: { 
         "react": "preact/compat",
@@ -16,12 +15,12 @@ var configs = [
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
     }, 
     entry: {
-      "CodeMirrorBlocks": ['./src/CodeMirrorBlocks.js']
+      "CodeMirrorBlocks": './src/CodeMirrorBlocks.js'
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
       filename: "[name].js",
-      library: "",
+      //library: "",
       libraryTarget: 'commonjs',
     },
     plugins: [
@@ -40,14 +39,13 @@ var configs = [
     },
     optimization: {
       minimize: true,
-      splitChunks: false,
     }
   })
 ];
 
 configs = configs.concat(
   configs.map(function(config) {
-    return _.merge({}, config, {
+    return Object.assign({}, config, {
       output: {
         filename: "[name]-min.js"
       }
@@ -56,7 +54,7 @@ configs = configs.concat(
 );
 
 configs.push(
-  _.extend({}, baseConfig({extractCSS:true}), {
+  Object.assign({}, baseConfig({extractCSS:true}), {
     entry: {
       "blocks": './src/less/blocks.less'
     },
