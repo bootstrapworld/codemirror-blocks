@@ -30,8 +30,7 @@ const initialState = {
   focusId: null,
   collapsedList: [],
   markedMap: new Map(),
-  undoFocusStack: [],
-  redoFocusStack: [],
+  focusStack: {undo: [], redo: []},
   undoableAnnouncement: null,
   errorId: '',
   cur: null,
@@ -102,18 +101,18 @@ export const reducer = (
     console.log('PUSHED undoable action: ', state.undoableAnnouncement);
     action.focus.undoableAction = state.undoableAnnouncement;
     state.undoableAnnouncement = null; //needed? doesn't hurt
-    result = {...state, undoFocusStack: [...state.undoFocusStack, action.focus], redoFocusStack: []};
+    result = {...state, focusStack: {undo: [...state.focusStack.undo, action.focus], redo: []}};
     break;
   case 'UNDO':
-    let undid = state.undoFocusStack.pop();
+    let undid = state.focusStack.undo.pop();
     say('UNDID: ' + undid.undoableAction, 200, false, state);
-    state.redoFocusStack.push(undid);
+    state.focusStack.redo.push(undid);
     result = {...state};
     break;
   case 'REDO':
-    let redid = state.redoFocusStack.pop();
+    let redid = state.focusStack.redo.pop();
     say('REDID: ' + redid.undoableAction, 200, false, state);
-    state.undoFocusStack.push(redid);
+    state.focusStack.undo.push(redid);
     result = {...state};
     break;
   case 'RESET_STORE_FOR_TESTING':

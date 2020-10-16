@@ -239,14 +239,14 @@ class BlockEditor extends Component {
         // provide a focusHint
         if (changes[0].origin === "undo") {
           for (let c of changes) c.origin = "cmb:undo";
-          const undoFocusStack = getState().undoFocusStack;
+          const undoFocusStack = getState().focusStack.undo;
           const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'UNDO'});
         } else if (changes[0].origin === "redo") {
           for (let c of changes) c.origin = "cmb:redo";
-          const redoFocusStack = getState().redoFocusStack;
+          const redoFocusStack = getState().focusStack.redo;
           const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
