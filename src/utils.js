@@ -114,6 +114,7 @@ export function say(text, delay=200, allowOverride=false, state=false) {
     store.queuedAnnouncement = setTimeout(() => say('Use enter to edit', 0), delay);
   } else {                                           // otherwise write it to the DOM,
     console.log('say:', text);                       // then erase it 10ms later
+    state.undoableAnnouncement = text;
     setTimeout(() => announcer.appendChild(announcement), delay);
     setTimeout(() => announcer.removeChild(announcement), delay + 10);
   }
@@ -121,6 +122,7 @@ export function say(text, delay=200, allowOverride=false, state=false) {
 
 
 export function sayActionForNodes(nodes, action) {
+  //console.log('doing sayActionForNodes', action);
   nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
   say(action + " " +
     nodes.map((node) => node.options['aria-label'])

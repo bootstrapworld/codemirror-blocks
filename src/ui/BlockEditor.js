@@ -262,7 +262,7 @@ class BlockEditor extends Component {
             if (i !== 0) annt = ' and ' + annt;
           }
           if (annt === '') annt = 'change';
-          getState().undoableAnnouncement = annt;
+          //getState().undoableAnnouncement = annt;
           //console.log('calling from BlockEditor handleChanges fn: commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
