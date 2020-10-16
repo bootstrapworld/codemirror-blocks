@@ -1,10 +1,9 @@
-var path = require("path");
-var baseConfig = require('./base.config.js')();
-var envConfig = require('../env-config.js');
-envConfig.mode = 'development';
-var mode = envConfig.nodeEnv = 'development';
+const path = require("path");
+const baseConfig = require('./base.config.js')();
+const envConfig = require('../env-config.js');
+const webpack = require('webpack');
 
-var rules = baseConfig.module.rules.concat();
+const rules = baseConfig.module.rules.concat();
 if (envConfig.runCoverage) {
   rules.push({
     test: /\.js/,
@@ -13,6 +12,14 @@ if (envConfig.runCoverage) {
     exclude: /node_modules/
   });
 }
+
+const mode = envConfig.nodeEnv = 'development';
+// For webpack5 (at least for now), we have to manually define this
+// the 'mode' setting on the line above seems to be ignored
+const plugins = baseConfig.plugins.concat();
+plugins.push(new webpack.DefinePlugin({
+  'process.env': { NODE_ENV: JSON.stringify('development') }
+}));
 
 envConfig.travis = ('TRAVIS' in process.env && 'CI' in process.env);
 
@@ -30,4 +37,11 @@ module.exports = Object.assign({}, baseConfig, {
   }),
   mode: 'development',
   output: { filename: '[name].js' },
+  // Work around webpack 4 compatibility issues:
+  // https://github.com/webpack-contrib/karma-webpack/issues/322
+  optimization: {
+    splitChunks: false,
+    runtimeChunk: false,
+  },
+  plugins: plugins,
 });
