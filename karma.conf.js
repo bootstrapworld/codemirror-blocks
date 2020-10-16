@@ -13,6 +13,7 @@ var plugins = [
   'karma-webpack',
   'karma-coveralls'
 ];
+
 // If we're not on Travis, add parallelism
 if (!envConfig.isCI) {
   frameworks.unshift('parallel');
@@ -63,13 +64,7 @@ module.exports = function(config) {
     },
 
     // list of files / patterns to load in the browser
-    files: [
-      'spec/index.js',
-    ],
-
-    // list of files to exclude
-    exclude: [
-    ],
+    files: ['spec/index.js'],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
@@ -97,7 +92,6 @@ module.exports = function(config) {
       pretty: true,
     },
 
-
     // web server port
     port: 9876,
 
@@ -111,7 +105,8 @@ module.exports = function(config) {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
 
-    exclude: ['actions.js'],
+    // delete??
+    //exclude: ['actions.js'],
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher

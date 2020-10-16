@@ -60,7 +60,7 @@
     "karma-parallel": "^0.3.1",
     "karma-sourcemap-loader": "^0.3.8",
     "karma-typescript": "^5.2.0",
-    "karma-webpack": "^4.0.2",
+    "karma-webpack": "^5.0.0-alpha.3.0",
     "less": "^3.12.2",
     "less-loader": "^7.0.1",
     "mini-css-extract-plugin": "^1.0.0",
@@ -78,7 +78,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "peerDependencies": {
-    "codemirror": "^5.55.0"
+    "codemirror": "^5.58.1"
   },
   "optionalDependencies": {
     "wescheme-js": "https://github.com/bootstrapworld/wescheme-js"

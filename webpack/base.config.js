@@ -57,7 +57,10 @@ module.exports = function(config) {
             path.resolve(__dirname, '..', 'node_modules', 'wescheme-js', 'src', 'runtime', 'js-numbers.js')
           ],
           enforce: "pre",
-          use: "babel-loader?cacheDirectory=true"
+          use: {
+            loader: "babel-loader",
+            options: {cacheDirectory: true},
+          }
         },
         {
           test: /\.css$/,
