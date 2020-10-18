@@ -90,8 +90,12 @@ class NodeEditable extends Component {
   }
 
   componentDidMount() {
+    console.log('doing NodeEditable componentDidMount')
     const text = this.props.value !== null ? this.props.value : this.cachedValue;
-    say(`${this.props.isInsertion ? 'inserting' : 'editing'} ${text}. Use Enter to save, and Alt-Q to cancel`);
+    const annt = (this.props.isInsertion ? 'inserting' : 'editing');
+    say(annt + ` ${text}.  Use Enter to save, and Alt-Q to cancel`,
+      false, false, false,
+      annt + ' expression');
     this.props.clearSelections();
   }
 
