@@ -412,7 +412,11 @@ class BlockEditor extends Component {
     };
     // show which APIs are unsupported
     unsupportedAPIs.forEach(f => 
-      api[f] = () => {throw `The CM API '${f}' is not supported in the block editor`;});
+      api[f] = () => {
+        throw BlockError(
+        `The CM API '${f}' is not supported in the block editor`,
+        'API Error');
+      });
     return api;
   }
 
@@ -496,7 +500,7 @@ class BlockEditor extends Component {
     tmpCM.setSelections(ranges, primary, options);
     const textRanges = [], nodes = [];
     try { validateRanges(ranges, ast); }
-    catch(e) { throw e; }
+    catch(e) { throw BlockError(e, "API Error"); }
     // process the selection ranges into an array of ranges and nodes
     tmpCM.listSelections().forEach(({anchor, head}) => {
       const c1 = minpos(anchor, head);

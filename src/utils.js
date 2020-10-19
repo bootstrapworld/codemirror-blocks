@@ -315,8 +315,8 @@ export function validateRanges(ranges, ast) {
     if(c1IsTopLevel && c2IsTopLevel) return;
 
     // Otherwise, the range is neither toplevel OR falls neatly on a node boundary
-    throw new Error(`The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
-      ch:${c2.ch}} partially covers a node, which is not allowed`);
+    throw new `The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
+      ch:${c2.ch}} partially covers a node, which is not allowed`;
   });
   return true;
 }
