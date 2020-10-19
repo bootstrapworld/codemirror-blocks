@@ -320,3 +320,12 @@ export function validateRanges(ranges, ast) {
   });
   return true;
 }
+
+
+export class BlockError extends Error {
+  constructor(message, type, data) {
+    super(message);
+    this.type = type;
+    this.data = data;
+  }
+}

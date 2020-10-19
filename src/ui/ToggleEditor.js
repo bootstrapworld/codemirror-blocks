@@ -11,7 +11,9 @@ import attachSearch from './Search';
 import Toolbar from './Toolbar';
 import ToggleButton from './ToggleButton';
 import TrashCan from './TrashCan';
+import BlockError from '../utils';
 import SHARED from '../shared';
+import './ToggleEditor.less';
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
@@ -46,6 +48,7 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
 export default class ToggleEditor extends React.Component {
   state = {
     blockMode: false,
+    error: false
   }
 
   static propTypes = {
@@ -162,12 +165,14 @@ export default class ToggleEditor extends React.Component {
           return {blockMode: false};
         }
       } catch (err) {
-        // TODO(Justin): properly deal with parse errors
-        let _msg = SHARED.parser.getExceptionMessage(err);
-        throw err;
+        const _err = SHARED.parser.getExceptionMessage(err);
+        this.setState({ error: "Parse Error:\n" + _err });
       }
     });
   };
+
+  // clear the error message, triggering a redraw
+  closeError = () => this.setState({error: false});
 
   render(_props) { // eslint-disable-line no-unused-vars
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
@@ -181,9 +186,19 @@ export default class ToggleEditor extends React.Component {
                    blockMode={this.state.blockMode} />
         </div>
         <div className="col-xs-9 codemirror-pane">
-          {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+        { this.state.error? this.renderError(this.state.error) : ""}
+        { this.state.blockMode? this.renderBlocks() : this.renderCode() }
         </div>
       </div>
+    );
+  }
+
+  renderError(msg) {
+    return (
+    <div className="EditorError">
+      {msg}
+      <span className="closeError" onClick={this.closeError}>OK</span>
+    </div>
     );
   }
 

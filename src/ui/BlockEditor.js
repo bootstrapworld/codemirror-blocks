@@ -15,7 +15,7 @@ import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges} from '../utils';
+import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 // CodeMirror APIs that we need to disallow
@@ -25,13 +25,6 @@ const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
   'charCoords', 'coordsChar', 'cursorCoords', 'startOperation',
   'endOperation', 'operation', 'addKeyMap', 'removeKeyMap', 'on', 'off',
   'extendSelection', 'extendSelections', 'extendSelectionsBy'];
-
-class BlockError extends Error {
-  constructor(message, edit) {
-    super(message);
-    this.edit = edit;
-  }
-}
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
@@ -235,7 +228,7 @@ class BlockEditor extends Component {
       // Error! Cancel the change
       else { 
         change.cancel();
-        throw new BlockError("An invalid change was rejected", change);
+        throw new BlockError("An invalid change was rejected", "Invalid Edit", change);
       }
     }
   }
@@ -394,7 +387,7 @@ class BlockEditor extends Component {
       // As long as widget isn't defined, we're good to go
       'setBookmark': (pos, opts) => {
         if(opts.widget) {
-          throw new BlockError("setBookmark() with a widget is not supported in Block Mode");
+          throw new BlockError("setBookmark() with a widget is not supported in Block Mode", "API Error");
         }
         SHARED.cm.setBookmark(pos, opts);
       },
@@ -426,12 +419,16 @@ class BlockEditor extends Component {
   markText(from, to, options) {
     let node = this.props.ast.getNodeAt(from, to);
     if(!node) {
-      throw new BlockError('Could not create TextMarker: there is no AST node at [',from, to,']');
+      throw new BlockError(
+        'Could not create TextMarker: there is no AST node at [',from, to,']',
+        'API Error');
     }
     let supportedOptions = ['css','className','title'];
     for (let opt in options) {
       if (!supportedOptions.includes(opt))
-        throw new BlockError(`markText: option "${opt}" is not supported in block mode`);
+        throw new BlockError(
+          `markText: option "${opt}" is not supported in block mode`,
+          `API Error`);
     }
     let mark = SHARED.cm.markText(from, to, options); // keep CM in sync
     mark._clear = mark.clear;
@@ -457,7 +454,9 @@ class BlockEditor extends Component {
   // disallow widget option
   setBookmark(pos, options) {
     if(options.widget) {
-      throw new BlockError(`setBookmark: option 'widget' is not supported in block mode`);
+      throw new BlockError(
+        `setBookmark: option 'widget' is not supported in block mode`,
+        `API Error`);
     }
     return SHARED.cm.setBookmark(pos, options);
   }
@@ -468,7 +467,9 @@ class BlockEditor extends Component {
       const node = ast.getNodeById(focusId);
       if(where == "from") return node.from;
       if(where == "to") return node.to;
-      else throw new BlockError(`getCursor() with ${where} is not supported on a focused block`);
+      else throw new BlockError(
+        `getCursor() with ${where} is not supported on a focused block`,
+        `API Error`);
     } else { return SHARED.cm.getCursor(where); }
   }
   listSelections() {
