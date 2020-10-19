@@ -27,6 +27,7 @@
         },
         useBuiltIns: "entry",
         corejs : { version : "3" },
+        modules: "commonjs",
       }
     ],
     "@babel/preset-react"
