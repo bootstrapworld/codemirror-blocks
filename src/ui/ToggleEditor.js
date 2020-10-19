@@ -158,14 +158,17 @@ export default class ToggleEditor extends React.Component {
         SHARED.cm.setValue(code);                         // update CM with the PP code
         this.props.api.blockMode = blockMode;
         // record mark information
+        // TODO(Emmanuel): this is going to have to save ALL state (selection, cursor, etc)
         this.recordMarks(oldAst, code);
-        if (blockMode) {
-          return {blockMode: true};
-        } else {
-          return {blockMode: false};
-        }
+        // set the blockMode state
+        return blockMode? {blockMode: true} : {blockMode: false};
       } catch (err) {
-        const _err = SHARED.parser.getExceptionMessage(err);
+        let _err;
+        try {
+          _err = SHARED.parser.getExceptionMessage(err);
+        } catch {
+          _err = "The parser failed, and the error could not be retrieved";
+        }
         this.setState({ error: "Could not convert to Blocks\n" + _err });
       }
     });
