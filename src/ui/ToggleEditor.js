@@ -11,7 +11,6 @@ import attachSearch from './Search';
 import Toolbar from './Toolbar';
 import ToggleButton from './ToggleButton';
 import TrashCan from './TrashCan';
-import BlockError from '../utils';
 import SHARED from '../shared';
 import './ToggleEditor.less';
 

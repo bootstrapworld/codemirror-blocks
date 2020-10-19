@@ -414,8 +414,8 @@ class BlockEditor extends Component {
     unsupportedAPIs.forEach(f => 
       api[f] = () => {
         throw BlockError(
-        `The CM API '${f}' is not supported in the block editor`,
-        'API Error');
+          `The CM API '${f}' is not supported in the block editor`,
+          'API Error');
       });
     return api;
   }
