@@ -165,9 +165,13 @@ export default class ToggleEditor extends React.Component {
           return {blockMode: false};
         }
       } catch (err) {
-        // TODO(Justin): properly deal with parse errors
-        let _msg = SHARED.parser.getExceptionMessage(err);
-        throw err;
+        let _err;
+        try {
+          _err = SHARED.parser.getExceptionMessage(err);
+        } catch {
+          _err = "The parser failed, and the error could not be retrieved";
+        }
+        return { error: "Could not convert to Blocks\n" + _err };
       }
     });
   };
