@@ -47,6 +47,7 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
 export default class ToggleEditor extends React.Component {
   state = {
     blockMode: false,
+    error: false,
   }
 
   static propTypes = {
@@ -156,6 +157,7 @@ export default class ToggleEditor extends React.Component {
         SHARED.cm.setValue(code);                         // update CM with the PP code
         this.props.api.blockMode = blockMode;
         // record mark information
+        // TODO(Emmanuel): this is going to have to save ALL state (selection, cursor, etc)
         this.recordMarks(oldAst, code);
         if (blockMode) {
           return {blockMode: true};
@@ -185,8 +187,18 @@ export default class ToggleEditor extends React.Component {
                    blockMode={this.state.blockMode} />
         </div>
         <div className="col-xs-9 codemirror-pane">
+          {this.state.error ? this.renderError(this.state.error) : ""}
           {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
         </div>
+      </div>
+    );
+  }
+
+  renderError(msg) {
+    return (
+      <div className="EditorError">
+        {msg}
+        <span className="closeError" onClick={this.closeError}>OK</span>
       </div>
     );
   }
@@ -200,15 +212,6 @@ export default class ToggleEditor extends React.Component {
         initialCode={code}
         onMount={this.handleEditorMounted}
         api={this.props.api} />
-    );
-  }
-
-  renderError(msg) {
-    return (
-      <div className="EditorError">
-        {msg}
-        <span className="closeError" onClick={this.closeError}>OK</span>
-      </div>
     );
   }
 
