@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 // other, enough so that we don't need to re-render a node if that's all that
 // changed.
 function vaguelyEqual(x, y) {
-  const ignoreProps = ["location", "children", "ast", "hash"];
+  const ignoreProps = ["location"]; // if it's just moved, don't update
   function ignoreProp(object, prop) {
     // There _shouldn't_ be any relevant differences between functions in `props`.
     // We hope, we hope.
@@ -44,7 +44,6 @@ export default class BlockComponent extends Component {
         !vaguelyEqual(newProps, oldProps) ||
         !vaguelyEqual(state, this.state)
     );
-    
     return shouldUpdate;
   }
 }
