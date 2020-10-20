@@ -12,17 +12,8 @@ export default class PrimitiveBlock extends Component {
   static defaultProps = {
     primitive: null,
   }
-
-  // Only update if there's actually a primitive
-  shouldComponentUpdate(props, state) {
-    return props.primitive !== null;
-  }
   
   render() {
-    if (!this.props.primitive) {
-      return <div/>;
-    }
-
     const astNode = this.props.primitive.getASTNode();
     const elem = astNode ? astNode.reactElement({inToolbar: true}) : this.props.primitive.name;
     return (
