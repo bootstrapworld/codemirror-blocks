@@ -165,7 +165,7 @@ export default class ToggleEditor extends React.Component {
           return {blockMode: false};
         }
       } catch (err) {
-        let txt;
+        let _err;
         try {
           _err = SHARED.parser.getExceptionMessage(err);
         } catch(e) {
