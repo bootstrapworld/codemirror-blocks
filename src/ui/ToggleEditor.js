@@ -12,6 +12,7 @@ import Toolbar from './Toolbar';
 import ToggleButton from './ToggleButton';
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
+import './ToggleEditor.less';
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
