@@ -170,6 +170,9 @@ export default class ToggleEditor extends React.Component {
     });
   };
 
+  // clear the error message, triggering a redraw
+  closeError() { this.setState({error: false}); }
+
   render(_props) { // eslint-disable-line no-unused-vars
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
@@ -197,6 +200,15 @@ export default class ToggleEditor extends React.Component {
         initialCode={code}
         onMount={this.handleEditorMounted}
         api={this.props.api} />
+    );
+  }
+
+  renderError(msg) {
+    return (
+      <div className="EditorError">
+        {msg}
+        <span className="closeError" onClick={this.closeError}>OK</span>
+      </div>
     );
   }
 
