@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 // other, enough so that we don't need to re-render a node if that's all that
 // changed.
 function vaguelyEqual(x, y) {
-  const ignoreProps = ["location","children"]; // if it's just moved, don't update
+  const ignoreProps = ["location"]; // if it's just moved, don't update
   function ignoreProp(object, prop) {
     // There _shouldn't_ be any relevant differences between functions in `props`.
     // We hope, we hope.
