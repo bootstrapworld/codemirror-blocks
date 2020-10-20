@@ -160,7 +160,11 @@ export default class ToggleEditor extends React.Component {
         // TODO(Emmanuel): this is going to have to save ALL state (selection, cursor, etc)
         this.recordMarks(oldAst, code);
         // set the blockMode state
-        return blockMode? {blockMode: true} : {blockMode: false};
+        if (blockMode) {
+          return {blockMode: true};
+        } else {
+          return {blockMode: false};
+        }
       } catch (err) {
         let _err;
         try {
