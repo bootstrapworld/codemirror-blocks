@@ -297,18 +297,18 @@ class Node extends BlockComponent {
       case 'insertRight':
         e.preventDefault();
         if (e.ctrlKey) { // strictly want ctrlKey
-          if (!this.setRight()) {
-            setCursor(node.to);
-          }
+          const dropTargetId = findAdjacentDropTargetId(this.props.node, false);
+          if (dropTargetId) { this.props.setEditable(dropTargetId, true); }
+          else { setCursor(node.to); }
         }
         return;
 
       // insert-left
       case 'insertLeft':
         e.preventDefault();
-        if (!this.setLeft()) {
-          setCursor(node.from);
-        }
+        const dropTargetId = findAdjacentDropTargetId(this.props.node, true);
+        if (dropTargetId) { this.props.setEditable(dropTargetId, true); }
+        else { setCursor(node.from); }
         return;
 
       // copy
@@ -416,7 +416,7 @@ class Node extends BlockComponent {
   };
 
   handleDisableEditable = () => this.setState({editable: false});
-
+/*
   setLeft() {
     const dropTargetId = findAdjacentDropTargetId(this.props.node, true);
     if (dropTargetId) {
@@ -436,7 +436,7 @@ class Node extends BlockComponent {
       return false;
     }
   }
-
+*/
   isLocked() {
     if (SHARED.options && SHARED.options.renderOptions) {
       const lockedList = SHARED.options.renderOptions.lockNodesOfType;

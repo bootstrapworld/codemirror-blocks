@@ -389,7 +389,7 @@ class BlockEditor extends Component {
       'setCursor': (cur) => withState(({ast}) => {
         const node = ast.getNodeContaining(cur);
         if(node) this.props.activate(node.id, {record: false, allowMove: true});
-        this.props.setCursor(ed, cur);
+        else this.props.setCursor(ed, cur);
       }),
       // As long as widget isn't defined, we're good to go
       'setBookmark': (pos, opts) => {

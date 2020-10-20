@@ -46,7 +46,7 @@ describe("when dealing with node activation,", function () {
     expect(this.cmb.getValue()).toBe('11\n54');
   });
 
-  it('should activate the first node when down is pressed', async function () {
+  fit('should activate the first node when down is pressed', async function () {
     mouseDown(this.literal1.element);
     keyDown("[", {ctrlKey: true}, this.literal1.element); // set cursor to the left
     await wait(DELAY);
