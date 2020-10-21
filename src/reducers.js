@@ -1,4 +1,5 @@
-import {say} from './utils';
+import {topmostUndoable} from './utils';
+import SHARED from './shared'
 
 function loggerDebug(action, ast) { // in lieu of logger.debug
   //console.log('doing loggerDebug', action.type, !!ast);
@@ -99,19 +100,18 @@ export const reducer = (
     break;
   case 'DO':
     console.log('PUSHED undoable action: ', state.undoableAnnouncement);
-    action.focus.undoableAction = state.undoableAnnouncement;
+    let tU = topmostUndoable(SHARED.cm.doc.history.done);
+    tU.undoableAction = state.undoableAnnouncement;
     state.undoableAnnouncement = null; //needed? doesn't hurt
     result = {...state, focusStack: {undo: [...state.focusStack.undo, action.focus], redo: []}};
     break;
   case 'UNDO':
     let undid = state.focusStack.undo.pop();
-    say('UNDID: ' + undid.undoableAction, 200, false, state);
     state.focusStack.redo.push(undid);
     result = {...state};
     break;
   case 'REDO':
     let redid = state.focusStack.redo.pop();
-    say('REDID: ' + redid.undoableAction, 200, false, state);
     state.focusStack.undo.push(redid);
     result = {...state};
     break;

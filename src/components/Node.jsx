@@ -3,7 +3,7 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
-        isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
+        isControl, say, skipCollapsed, getLastVisibleNode, topmostUndoable} from '../utils';
 import {drop, delete_, copy, paste, activate, setCursor,
         InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
@@ -144,6 +144,7 @@ class Node extends BlockComponent {
 
       const keyname = SHARED.keyName(e);
       const message = SHARED.keyMap[keyname];
+      let tU;
       switch (message) {
       case 'prevNode':
         e.preventDefault();
@@ -402,11 +403,15 @@ class Node extends BlockComponent {
         return;
 
       case 'undo':
+        tU = topmostUndoable(SHARED.cm.doc.history.done);
+        say('UNDID: ' + tU.undoableAction);
         e.preventDefault();
         SHARED.cm.undo();
         return;
 
       case 'redo':
+        tU = topmostUndoable(SHARED.cm.doc.history.undone);
+        say('REDID: ' + tU.undoableAction);
         e.preventDefault();
         SHARED.cm.redo();
         return;

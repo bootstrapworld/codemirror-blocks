@@ -16,7 +16,7 @@ import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import merge from '../merge';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter} from '../utils';
+import {poscmp, say, resetNodeCounter, topmostUndoable} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 
@@ -262,8 +262,8 @@ class BlockEditor extends Component {
             if (i !== 0) annt = ' and ' + annt;
           }
           if (annt === '') annt = 'change';
-          //getState().undoableAnnouncement = annt;
-          //console.log('calling from BlockEditor handleChanges fn: commitChanges', changes)
+          getState().undoableAnnouncement = annt;
+          //console.log('BlockEditor.js calling commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
       }
@@ -448,6 +448,7 @@ class BlockEditor extends Component {
       const state = getState();
       const {ast, focusId} = state;
       const message = SHARED.keyMap[SHARED.keyName(e)];
+      let tU;
       switch (message) {
       case 'nextNode': {
         e.preventDefault();
@@ -518,11 +519,21 @@ class BlockEditor extends Component {
         return;
 
       case 'undo':
+        //console.log('### BlockEditor.js undo')
+        //console.log('### BEFORE undo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+        tU = topmostUndoable(SHARED.cm.doc.history.done);
+        say('UNDID: ' + tU.undoableAction);
+        console.log('###%%% undoing', tU.undoableAction);
         e.preventDefault();
         SHARED.cm.undo();
         return;
 
       case 'redo':
+        //console.log('### BlockEditor.js redo')
+        //console.log('### BEFORE redo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+        tU = topmostUndoable(SHARED.cm.doc.history.undone);
+        say('REDID: ' + tU.undoableAction);
+        console.log('###%%% redoing', tU.undoableAction);
         e.preventDefault();
         SHARED.cm.redo();
         return;

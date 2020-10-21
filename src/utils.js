@@ -304,3 +304,11 @@ export function logResults(history, exception) {
     console.log('LOGGING FAILED.', e, history);
   }
 }
+
+export function topmostUndoable(arr) {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (!arr[i].ranges) {
+      return arr[i];
+    }
+  }
+}
