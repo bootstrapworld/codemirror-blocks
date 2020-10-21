@@ -144,6 +144,7 @@ export function dropOntoTrashCan(src) {
 
 // Set the cursor position.
 export function setCursor(cur) {
+  console.log('actions::setCursor - called with', cur);
   return (dispatch, _getState) => {
     if (SHARED.cm && cur) {
       SHARED.cm.focus();

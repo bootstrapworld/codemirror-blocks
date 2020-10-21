@@ -296,19 +296,18 @@ class Node extends BlockComponent {
       // insert-right
       case 'insertRight':
         e.preventDefault();
-        if (e.ctrlKey) { // strictly want ctrlKey
-          const dropTargetId = findAdjacentDropTargetId(this.props.node, false);
-          if (dropTargetId) { this.props.setEditable(dropTargetId, true); }
-          else { setCursor(node.to); }
-        }
+        const rightTargetId = findAdjacentDropTargetId(this.props.node, false);
+        if (rightTargetId) { this.props.setEditable(rightTargetId, true); }
+        else { setCursor(node.to); }
         return;
 
       // insert-left
       case 'insertLeft':
         e.preventDefault();
-        const dropTargetId = findAdjacentDropTargetId(this.props.node, true);
-        if (dropTargetId) { this.props.setEditable(dropTargetId, true); }
+        let leftTargetId = findAdjacentDropTargetId(this.props.node, true);
+        if (leftTargetId) { this.props.setEditable(leftTargetId, true); }
         else { setCursor(node.from); }
+        console.log('Node.jsx::insertLeft - calling setCursor with', node.from);
         return;
 
       // copy
