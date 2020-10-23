@@ -12,6 +12,7 @@ import Toolbar from './Toolbar';
 import ToggleButton from './ToggleButton';
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
+import './ToggleEditor.less';
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
@@ -46,6 +47,7 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
 export default class ToggleEditor extends React.Component {
   state = {
     blockMode: false,
+    error: false
   }
 
   static propTypes = {
@@ -155,19 +157,24 @@ export default class ToggleEditor extends React.Component {
         SHARED.cm.setValue(code);                         // update CM with the PP code
         this.props.api.blockMode = blockMode;
         // record mark information
+        // TODO(Emmanuel): this is going to have to save ALL state (selection, cursor, etc)
         this.recordMarks(oldAst, code);
-        if (blockMode) {
-          return {blockMode: true};
-        } else {
-          return {blockMode: false};
-        }
+        // Parsing and state-saving was successful! Set the blockMode state and return
+        return {blockMode: blockMode};
       } catch (err) {
-        // TODO(Justin): properly deal with parse errors
-        let _msg = SHARED.parser.getExceptionMessage(err);
-        throw err;
+        let _err;
+        try {
+          _err = SHARED.parser.getExceptionMessage(err);
+        } catch(e) {
+          _err = "The parser failed, and the error could not be retrieved";
+        }
+        return { error: "Could not convert to Blocks\n" + _err };
       }
     });
   };
+
+  // clear the error message, triggering a redraw
+  closeError() { this.setState({error: false}); }
 
   render(_props) { // eslint-disable-line no-unused-vars
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
@@ -181,8 +188,18 @@ export default class ToggleEditor extends React.Component {
                    blockMode={this.state.blockMode} />
         </div>
         <div className="col-xs-9 codemirror-pane">
-          {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+        { this.state.error? this.renderError(this.state.error) : ""}
+        { this.state.blockMode? this.renderBlocks() : this.renderCode() }
         </div>
+      </div>
+    );
+  }
+
+  renderError(msg) {
+    return (
+      <div className="EditorError">
+        {msg}
+        <span className="closeError" onClick={this.closeError}>OK</span>
       </div>
     );
   }

@@ -7,7 +7,6 @@ const baseConfig = require('./base.config.js')();
 module.exports = function(env, argv) {
 
   return Object.assign({}, baseConfig, {
-    devtool: 'nosources-source-map',
     entry: {
       "new-editor-example": './example/new-editor-example.js',
     },
