@@ -56,18 +56,15 @@ export default class Toolbar extends Component {
     this.selectPrimitive(i === null ? null : primitives[i - 1]);
   }
 
-  // HACK: clear the selectedPrimitive state, then set it again
-  // to trigger a second refresh
   handleFocusPrimitive(selectedPrimitive) {
-    this.setState({selectedPrimitive: null});
-    setTimeout(() => this.setState({selectedPrimitive}), 0);
+    this.setState({selectedPrimitive: selectedPrimitive});
   }
 
   selectPrimitive(selectedPrimitive) {
-    if (selectedPrimitive && selectedPrimitive.element) {
-      selectedPrimitive.element.focus(); // will set state
+    if (selectedPrimitive && selectedPrimitive.element) {      
+      selectedPrimitive.element.focus(); // will trigger handleFocusPrimitive
     } else {
-      this.setState({selectedPrimitive});
+      this.setState({selectedPrimitive: selectedPrimitive});
     }
   }
 
@@ -104,12 +101,8 @@ export default class Toolbar extends Component {
   }
 
   getSelectedPrimitiveIndex(primitives) {
-    for (let i = 0; i < primitives.length; i++) {
-      if (primitives[i] === this.state.selectedPrimitive) {
-        return i;
-      }
-    }
-    return null;
+    const idx = primitives.findIndex(p => p === this.state.selectedPrimitive);
+    return (idx == -1)? null : idx;
   }
 
   render() {
@@ -148,7 +141,12 @@ export default class Toolbar extends Component {
         </div>
         <div className={classNames('selected-primitive', `blocks-language-${this.props.languageId}`)}>
           <div className="block-header">Block</div>
-          <PrimitiveBlock primitive={selected}/>
+          {selected? 
+            (<PrimitiveBlock 
+                primitive={selected} 
+                id={primitives.findIndex(p => p.name === selected.name)} 
+            />) 
+            : ""}
         </div>
       </div>
     );
