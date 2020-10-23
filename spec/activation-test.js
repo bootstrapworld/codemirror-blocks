@@ -46,9 +46,11 @@ describe("when dealing with node activation,", function () {
     expect(this.cmb.getValue()).toBe('11\n54');
   });
 
-  fit('should activate the first node when down is pressed', async function () {
-    mouseDown(this.literal1.element);
-    keyDown("[", {ctrlKey: true}, this.literal1.element); // set cursor to the left
+  it('should activate the first node when down is pressed', async function () {
+    //mouseDown(this.literal1.element);
+    //keyDown("[", {ctrlKey: true}, this.literal1.element); // set cursor to the left
+    this.cmb.setCursor({line: 0, ch: 0});
+    this.cmb.focus();
     await wait(DELAY);
     keyDown("ArrowDown");
     await wait(DELAY);

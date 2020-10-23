@@ -149,7 +149,7 @@ export function setCursor(cur) {
     if (SHARED.cm && cur) {
       SHARED.cm.focus();
       SHARED.search.setCursor(cur);
-      SHARED.cm.setCursor(cur);
+      //SHARED.cm.setCursor(cur);
     }
     dispatch({type: 'SET_CURSOR', cur});
   };

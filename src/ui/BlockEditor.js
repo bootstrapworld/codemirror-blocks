@@ -387,8 +387,10 @@ class BlockEditor extends Component {
       'getCursor': (where) => this.getCursor(where),
       // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
       'setCursor': (cur) => withState(({ast}) => {
+        console.log('BlockEditor::SetCursor called with', cur);
         const node = ast.getNodeContaining(cur);
-        if(node) this.props.activate(node.id, {record: false, allowMove: true});
+        if(node && !(poscmp(cur, node.from) + poscmp(cur, node.to))) 
+          this.props.activate(node.id, {record: false, allowMove: true});
         else this.props.setCursor(ed, cur);
       }),
       // As long as widget isn't defined, we're good to go
@@ -684,8 +686,10 @@ class BlockEditor extends Component {
   // this change was introduced during the switch from onCursor to onCursorActivity
   // if there are selections, pass null. otherwise pass the cursor
   handleTopLevelCursorActivity = (ed, _) => {
-    let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
-    this.props.setCursor(ed, cur);
+    console.log('BlockEditor::handleTopLevelCursorActivity', ed.getSelection().length, 'cursor is', ed.getCursor());
+    console.log(ed.getSelection().length, ed.getCursor());
+    const cur = (ed.getSelection().length > 0)? null : ed.getCursor();
+    this.props.setCursor(null, cur);
   }
 
   componentWillUnmount() {
