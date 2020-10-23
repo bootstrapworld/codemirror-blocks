@@ -35,6 +35,7 @@ module.exports = function(config) {
       path: path.resolve(__dirname, '..', "build"),
       filename: "[name].js"
     },
+    devtool: 'cheap-module-source-map',
     mode: envConfig.isCI? "development" : "production",
     module: {
       rules: rules.concat([{

@@ -10,7 +10,7 @@ var baseConfig = require('./base.config.js')();
 module.exports = function(env, argv) {
 
   return _.extend({}, baseConfig, {
-    devtool: 'nosources-source-map',
+    devtool: 'cheap-module-source-map',
     entry: {
       "new-editor-example": './example/new-editor-example.js',
     },
