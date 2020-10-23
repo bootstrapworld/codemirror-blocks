@@ -1,5 +1,5 @@
 /*eslint indent: "off"*/
-
+import {BlockError} from '../../utils';
 import {AST} from '../../ast';
 import {
   Blank,
@@ -928,14 +928,17 @@ class WeschemeParser {
     return new AST(rootNodes, annotate);
   }
 
-  getExceptionMessage(e){
-    // TODO: Using JSON.parse is not safe. Sometimes it could result in a parsing error.
-    console.error(e);
-    let msg = JSON.parse(e)['dom-message'][2].slice(2);
-    let txt = (msg.every((element) => typeof element==="string"))? msg
-            : (msg[0] instanceof Array)? msg[0][2].substring(msg[0][2].indexOf("read: ")+6)
-            : "Check your quotation marks, or any other symbols you've used";
-    return symbolAria(txt);
+  getExceptionMessage(e) {
+    // try to extract the actual error text from the parse error
+    try {
+      let msg = JSON.parse(e)['dom-message'][2].slice(2);
+      let txt = (msg.every((element) => typeof element==="string"))? msg
+              : (msg[0] instanceof Array)? msg[0][2].substring(msg[0][2].indexOf("read: ")+6)
+              : "Check your quotation marks, or any other symbols you've used";
+      return new BlockError("Your program could not be parsed", symbolAria(txt));
+    } catch(clearlyNotAWeSchemeError) {
+      return new BlockError("Parser Failure", "Failure", e); // return the original error
+    }
   }
 }
 
