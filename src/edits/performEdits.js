@@ -108,11 +108,11 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
       }
     });
       /*
-    store.getState().undoableAnnouncement =
+    store.getState().announcementMade =
       edits.map((edit) => edit.toAnnouncement())
       .join(" and ");
       */
-    //console.log('doing performEdits fn undoableAnnouncement update')
+    //console.log('doing performEdits fn announcementMade update')
     let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST);
     onSuccess({newAST, focusId});
     } catch(e) {

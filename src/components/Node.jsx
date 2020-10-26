@@ -403,15 +403,25 @@ class Node extends BlockComponent {
         return;
 
       case 'undo':
+        //console.log('### Node.jsx undo')
+        //console.log('### BEFORE undo? SHARED.cm.historySize()=', SHARED.cm.historySize());
         tU = topmostUndoable(SHARED.cm.doc.history.done);
-        say('UNDID: ' + tU.undoableAction);
+        if (tU) {
+          say('UNDID: ' + tU.undoableAction, false, false, false, tU.undoableAction);
+        }
+        //console.log('###%%% undoing', tU.undoableAction);
         e.preventDefault();
         SHARED.cm.undo();
         return;
 
       case 'redo':
+        //console.log('### Node.jsx redo')
+        //console.log('### BEFORE redo? SHARED.cm.historySize()=', SHARED.cm.historySize());
         tU = topmostUndoable(SHARED.cm.doc.history.undone);
-        say('REDID: ' + tU.undoableAction);
+        if (tU) {
+          say('REDID: ' + tU.undoableAction, false, false, false, tU.undoableAction);
+        }
+        //console.log('###%%% redoing', tU.undoableAction);
         e.preventDefault();
         SHARED.cm.redo();
         return;

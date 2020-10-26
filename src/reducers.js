@@ -32,7 +32,7 @@ const initialState = {
   collapsedList: [],
   markedMap: new Map(),
   focusStack: {undo: [], redo: []},
-  undoableAnnouncement: null,
+  announcementMade: null,
   errorId: '',
   cur: null,
   quarantine: null,
@@ -47,6 +47,7 @@ export const reducer = (
     //console.log('DS26GTE reducer action=');
     console.log(action);
     let result = null;
+    let tU;
     //console.log('DS26GTE reducer action.type=', action.type);
   switch (action.type) {
   case 'SET_FOCUS':
@@ -98,23 +99,32 @@ export const reducer = (
     state.markedMap.delete(action.id);
     result = {...state};
     break;
+
   case 'DO':
-    console.log('PUSHED undoable action: ', state.undoableAnnouncement);
-    let tU = topmostUndoable(SHARED.cm.doc.history.done);
-    tU.undoableAction = state.undoableAnnouncement;
-    state.undoableAnnouncement = null; //needed? doesn't hurt
+    //console.log('### PUSHED undoable action: ', state.announcementMade);
+    //console.log('### AFTER do? SHARED.cm.historySize()=', SHARED.cm.historySize())
+    tU = topmostUndoable(SHARED.cm.doc.history.done);
+    tU.undoableAction = state.announcementMade;
+    state.announcementMade = null; //needed? doesn't hurt
     result = {...state, focusStack: {undo: [...state.focusStack.undo, action.focus], redo: []}};
     break;
   case 'UNDO':
+    //console.log('### AFTER undo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+    tU = topmostUndoable(SHARED.cm.doc.history.undone);
+    tU.undoableAction = state.announcementMade;
     let undid = state.focusStack.undo.pop();
     state.focusStack.redo.push(undid);
     result = {...state};
     break;
   case 'REDO':
+    //console.log('### AFTER redo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+    tU = topmostUndoable(SHARED.cm.doc.history.done);
+    tU.undoableAction = state.announcementMade;
     let redid = state.focusStack.redo.pop();
     state.focusStack.undo.push(redid);
     result = {...state};
     break;
+
   case 'RESET_STORE_FOR_TESTING':
     result =  initialState;
     break;

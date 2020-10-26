@@ -262,7 +262,7 @@ class BlockEditor extends Component {
             if (i !== 0) annt = ' and ' + annt;
           }
           if (annt === '') annt = 'change';
-          getState().undoableAnnouncement = annt;
+          getState().announcementMade = annt;
           //console.log('BlockEditor.js calling commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
@@ -522,8 +522,10 @@ class BlockEditor extends Component {
         //console.log('### BlockEditor.js undo')
         //console.log('### BEFORE undo? SHARED.cm.historySize()=', SHARED.cm.historySize());
         tU = topmostUndoable(SHARED.cm.doc.history.done);
-        say('UNDID: ' + tU.undoableAction);
-        console.log('###%%% undoing', tU.undoableAction);
+        if (tU) {
+          say('UNDID: ' + tU.undoableAction, false,false,false, tU.undoableAction);
+        }
+        //console.log('###%%% undoing', tU.undoableAction);
         e.preventDefault();
         SHARED.cm.undo();
         return;
@@ -532,8 +534,10 @@ class BlockEditor extends Component {
         //console.log('### BlockEditor.js redo')
         //console.log('### BEFORE redo? SHARED.cm.historySize()=', SHARED.cm.historySize());
         tU = topmostUndoable(SHARED.cm.doc.history.undone);
-        say('REDID: ' + tU.undoableAction);
-        console.log('###%%% redoing', tU.undoableAction);
+        if (tU) {
+          say('REDID: ' + tU.undoableAction, false,false,false, tU.undoableAction);
+        }
+        //console.log('###%%% redoing', tU.undoableAction);
         e.preventDefault();
         SHARED.cm.redo();
         return;
