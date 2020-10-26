@@ -408,6 +408,7 @@ class Node extends BlockComponent {
         tU = topmostUndoable(SHARED.cm.doc.history.done);
         if (tU) {
           say('UNDID: ' + tU.undoableAction, false, false, false, tU.undoableAction);
+          state.actionFocus = tU.actionFocus;
         }
         //console.log('###%%% undoing', tU.undoableAction);
         e.preventDefault();
@@ -420,6 +421,7 @@ class Node extends BlockComponent {
         tU = topmostUndoable(SHARED.cm.doc.history.undone);
         if (tU) {
           say('REDID: ' + tU.undoableAction, false, false, false, tU.undoableAction);
+          state.actionFocus = tU.actionFocus;
         }
         //console.log('###%%% redoing', tU.undoableAction);
         e.preventDefault();

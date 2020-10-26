@@ -238,16 +238,20 @@ class BlockEditor extends Component {
         // Turn undo and redo into cmb actions, update the focusStack, and
         // provide a focusHint
         if (changes[0].origin === "undo") {
+          //console.log('BlockEditor ### undo')
           for (let c of changes) c.origin = "cmb:undo";
-          const undoFocusStack = getState().focusStack.undo;
-          const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
+          //const undoFocusStack = getState().focusStack.undo;
+          //const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
+          const {oldFocusNId, _newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'UNDO'});
         } else if (changes[0].origin === "redo") {
+          //console.log('BlockEditor ### undo')
           for (let c of changes) c.origin = "cmb:redo";
-          const redoFocusStack = getState().focusStack.redo;
-          const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
+          //const redoFocusStack = getState().focusStack.redo;
+          //const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
+          const {_oldFocusNId, newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'REDO'});
@@ -524,6 +528,7 @@ class BlockEditor extends Component {
         tU = topmostUndoable(SHARED.cm.doc.history.done);
         if (tU) {
           say('UNDID: ' + tU.undoableAction, false,false,false, tU.undoableAction);
+          state.actionFocus = tU.actionFocus;
         }
         //console.log('###%%% undoing', tU.undoableAction);
         e.preventDefault();
@@ -536,6 +541,7 @@ class BlockEditor extends Component {
         tU = topmostUndoable(SHARED.cm.doc.history.undone);
         if (tU) {
           say('REDID: ' + tU.undoableAction, false,false,false, tU.undoableAction);
+          state.actionFocus = tU.actionFocus;
         }
         //console.log('###%%% redoing', tU.undoableAction);
         e.preventDefault();

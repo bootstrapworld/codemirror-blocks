@@ -17,7 +17,7 @@ function loggerDebug(action, ast) { // in lieu of logger.debug
   }
   if(action.type == "SET_FOCUS") {
     if (ast) {
-      activity.nid = ast.getNodeById(action.focusId).nid; 
+      activity.nid = ast.getNodeById(action.focusId).nid;
       delete activity.focusId;
     }
   }
@@ -31,14 +31,14 @@ const initialState = {
   focusId: null,
   collapsedList: [],
   markedMap: new Map(),
-  focusStack: {undo: [], redo: []},
+  //focusStack: {undo: [], redo: []},
   announcementMade: null,
+  actionFocus: false,
   errorId: '',
   cur: null,
   quarantine: null,
   announcer: null,
 };
-
 
 export const reducer = (
   state = initialState,
@@ -106,22 +106,31 @@ export const reducer = (
     tU = topmostUndoable(SHARED.cm.doc.history.done);
     tU.undoableAction = state.announcementMade;
     state.announcementMade = null; //needed? doesn't hurt
-    result = {...state, focusStack: {undo: [...state.focusStack.undo, action.focus], redo: []}};
+    //console.log('### DO action.focus =', action.focus)
+    tU.actionFocus = action.focus;
+    //result = {...state, focusStack: {undo: [...state.focusStack.undo, action.focus], redo: []}};
+    result = {...state};
     break;
   case 'UNDO':
     //console.log('### AFTER undo? SHARED.cm.historySize()=', SHARED.cm.historySize());
     tU = topmostUndoable(SHARED.cm.doc.history.undone);
     tU.undoableAction = state.announcementMade;
-    let undid = state.focusStack.undo.pop();
-    state.focusStack.redo.push(undid);
+    tU.actionFocus = state.actionFocus;
+    //console.log('### UNDO actionFocus =', state.actionFocus)
+    state.actionFocus = null;
+    //let undid = state.focusStack.undo.pop();
+    //state.focusStack.redo.push(undid);
     result = {...state};
     break;
   case 'REDO':
     //console.log('### AFTER redo? SHARED.cm.historySize()=', SHARED.cm.historySize());
     tU = topmostUndoable(SHARED.cm.doc.history.done);
     tU.undoableAction = state.announcementMade;
-    let redid = state.focusStack.redo.pop();
-    state.focusStack.undo.push(redid);
+    tU.actionFocus = state.actionFocus;
+    //console.log('### REDO actionFocus =', state.actionFocus)
+    state.actionFocus = null;
+    //let redid = state.focusStack.redo.pop();
+    //state.focusStack.undo.push(redid);
     result = {...state};
     break;
 
