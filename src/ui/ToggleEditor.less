@@ -1,23 +1,25 @@
 .Editor {
 
-  .EditorError {
+  .Dialog {
     position:     absolute;
-    z-index:      99;
+    z-index:      999;
     background:   black;
-    opacity:      0.75;
-    width:        75%;
+    opacity:      0.85;
+    width:        100%;
+    height:       100%;
+    overflow:     scroll;
     left:         50%;
     top:          50%;
     border-radius:50px;
     border:       3px white double;
     text-align:   center;
-    font-size:    18px;
+    font-size:    14px;
     color:        white;
     padding:      20px;
     white-space:  pre;
     transform: translateX(-50%) translateY(-50%);
 
-    .closeError {
+    .closeDialog {
       width:        150px;
       background:   black;
       border:       3px white double;
@@ -27,6 +29,17 @@
       display:      block;
       margin:       auto;
       margin-top:   100px;
+      clear:        both;
+    }
+
+    .shortcutGroup {
+      width: 300px;
+      text-align: center;
+      float: left;
+      padding: 20px;
+      td:first-child, th:first-child { text-align: left; width: 50%; }
+      td:last-child, th:last-child { text-align: right; width: 50%; }
     }
   }
+
 }
