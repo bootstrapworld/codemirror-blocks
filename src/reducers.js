@@ -31,8 +31,7 @@ const initialState = {
   focusId: null,
   collapsedList: [],
   markedMap: new Map(),
-  //focusStack: {undo: [], redo: []},
-  announcementMade: null,
+  undoableAction: null,
   actionFocus: false,
   errorId: '',
   cur: null,
@@ -43,12 +42,9 @@ const initialState = {
 export const reducer = (
   state = initialState,
   action) => {
-    //console.log('DS26GTE reducers.js/reducer CALLED');
-    //console.log('DS26GTE reducer action=');
     console.log(action);
     let result = null;
     let tU;
-    //console.log('DS26GTE reducer action.type=', action.type);
   switch (action.type) {
   case 'SET_FOCUS':
     result = {...state, focusId: action.focusId};
@@ -101,33 +97,27 @@ export const reducer = (
     break;
 
   case 'DO':
-    //console.log('### PUSHED undoable action: ', state.announcementMade);
-    //console.log('### AFTER do? SHARED.cm.historySize()=', SHARED.cm.historySize())
-    tU = topmostUndoable(SHARED.cm.doc.history.done);
-    tU.undoableAction = state.announcementMade;
-    state.announcementMade = null; //needed? doesn't hurt
-    //console.log('### DO action.focus =', action.focus)
-    tU.actionFocus = action.focus;
-    //result = {...state, focusStack: {undo: [...state.focusStack.undo, action.focus], redo: []}};
     result = {...state};
     break;
   case 'UNDO':
-    //console.log('### AFTER undo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+    //console.log('### AFTER undo SHARED.cm.historySize()=', SHARED.cm.historySize());
     tU = topmostUndoable(SHARED.cm.doc.history.undone);
-    tU.undoableAction = state.announcementMade;
+    tU.undoableAction = state.undoableAction;
     tU.actionFocus = state.actionFocus;
     //console.log('### UNDO actionFocus =', state.actionFocus)
+    state.undoableAction = null;
     state.actionFocus = null;
     //let undid = state.focusStack.undo.pop();
     //state.focusStack.redo.push(undid);
     result = {...state};
     break;
   case 'REDO':
-    //console.log('### AFTER redo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+    //console.log('### AFTER redo SHARED.cm.historySize()=', SHARED.cm.historySize());
     tU = topmostUndoable(SHARED.cm.doc.history.done);
-    tU.undoableAction = state.announcementMade;
+    tU.undoableAction = state.undoableAction;
     tU.actionFocus = state.actionFocus;
     //console.log('### REDO actionFocus =', state.actionFocus)
+    state.undoableAction = null;
     state.actionFocus = null;
     //let redid = state.focusStack.redo.pop();
     //state.focusStack.undo.push(redid);

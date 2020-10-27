@@ -50,8 +50,8 @@ export function edit_replace(text, node) {
 // except that this one takes higher-level `Edit` operations, constructed by the
 // functions: `edit_insert`, `edit_delete`, and `edit_replace`. Focus is
 // determined by the focus of the _last_ edit in `edits`.
-export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{}) {
-  //console.log('doing performEdits', edits)
+export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{}, annt) {
+  //console.log('doing performEdits')
   // Ensure that all of the edits are valid.
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {
@@ -107,13 +107,7 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
         SHARED.cm.replaceRange(c.text, c.from, c.to, c.origin);
       }
     });
-      /*
-    store.getState().announcementMade =
-      edits.map((edit) => edit.toAnnouncement())
-      .join(" and ");
-      */
-    //console.log('doing performEdits fn announcementMade update')
-    let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST);
+    let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST, annt);
     onSuccess({newAST, focusId});
     } catch(e) {
       logResults(window.reducerActivities, e);
@@ -140,10 +134,6 @@ class Edit {
 
   toString() {
     return `${this.from.line}:${this.from.ch}-${this.to.line}:${this.to.ch}`;
-  }
-
-  toAnnouncement() {
-    return "default";
   }
 }
 
@@ -179,10 +169,6 @@ class OverwriteEdit extends Edit {
   toString() {
     return `Overwrite ${super.toString()}`;
   }
-
-  toAnnouncement() {
-    return "overwrite";
-  }
 }
 
 class InsertChildEdit extends Edit {
@@ -209,10 +195,6 @@ class InsertChildEdit extends Edit {
 
   toString() {
     return `InsertChild ${super.toString()}`;
-  }
-
-  toAnnouncement() {
-    return "insert child";
   }
 }
 
@@ -248,10 +230,6 @@ class DeleteRootEdit extends Edit {
   toString() {
     return `DeleteRoot ${super.toString()}`;
   }
-
-  toAnnouncement() {
-    return "delete root";
-  }
 }
 
 class DeleteChildEdit extends Edit {
@@ -285,10 +263,6 @@ class DeleteChildEdit extends Edit {
   toString() {
     return `DeleteChild ${super.toString()}`;
   }
-
-  toAnnouncement() {
-    return "delete child";
-  }
 }
 
 class ReplaceRootEdit extends Edit {
@@ -319,10 +293,6 @@ class ReplaceRootEdit extends Edit {
   toString() {
     return `ReplaceRoot ${super.toString()}="${this.text}"`;
   }
-
-  toAnnouncement() {
-    return "replace root";
-  }
 }
 
 class ReplaceChildEdit extends Edit {
@@ -352,10 +322,6 @@ class ReplaceChildEdit extends Edit {
 
   toString() {
     return `ReplaceChild ${super.toString()}="${this.text}"`;
-  }
-
-  toAnnouncement() {
-    return "replace child";
   }
 }
 

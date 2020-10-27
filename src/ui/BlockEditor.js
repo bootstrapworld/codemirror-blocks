@@ -238,7 +238,8 @@ class BlockEditor extends Component {
         // Turn undo and redo into cmb actions, update the focusStack, and
         // provide a focusHint
         if (changes[0].origin === "undo") {
-          //console.log('BlockEditor ### undo')
+          //console.log('%%% BlockEditor.js undo')
+          //console.log('%%% BlockEditor.js undo SHARED.cm.historySize()=', SHARED.cm.historySize());
           for (let c of changes) c.origin = "cmb:undo";
           //const undoFocusStack = getState().focusStack.undo;
           //const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
@@ -247,7 +248,8 @@ class BlockEditor extends Component {
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'UNDO'});
         } else if (changes[0].origin === "redo") {
-          //console.log('BlockEditor ### undo')
+          //console.log('%%% BlockEditor.js redo')
+          //console.log('%%% BlockEditor.js redo SHARED.cm.historySize()=', SHARED.cm.historySize());
           for (let c of changes) c.origin = "cmb:redo";
           //const redoFocusStack = getState().focusStack.redo;
           //const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
@@ -266,7 +268,7 @@ class BlockEditor extends Component {
             if (i !== 0) annt = ' and ' + annt;
           }
           if (annt === '') annt = 'change';
-          getState().announcementMade = annt;
+          getState().undoableAction = annt; //?
           //console.log('BlockEditor.js calling commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
@@ -524,10 +526,11 @@ class BlockEditor extends Component {
 
       case 'undo':
         //console.log('### BlockEditor.js undo')
-        //console.log('### BEFORE undo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+        //console.log('### BEFORE undo SHARED.cm.historySize()=', SHARED.cm.historySize());
         tU = topmostUndoable(SHARED.cm.doc.history.done);
         if (tU) {
-          say('UNDID: ' + tU.undoableAction, false,false,false, tU.undoableAction);
+          say('UNDID: ' + tU.undoableAction);
+          state.undoableAction = tU.undoableAction;
           state.actionFocus = tU.actionFocus;
         }
         //console.log('###%%% undoing', tU.undoableAction);
@@ -537,10 +540,11 @@ class BlockEditor extends Component {
 
       case 'redo':
         //console.log('### BlockEditor.js redo')
-        //console.log('### BEFORE redo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+        //console.log('### BEFORE redo SHARED.cm.historySize()=', SHARED.cm.historySize());
         tU = topmostUndoable(SHARED.cm.doc.history.undone);
         if (tU) {
-          say('REDID: ' + tU.undoableAction, false,false,false, tU.undoableAction);
+          say('REDID: ' + tU.undoableAction);
+          state.undoableAction = tU.undoableAction;
           state.actionFocus = tU.actionFocus;
         }
         //console.log('###%%% redoing', tU.undoableAction);

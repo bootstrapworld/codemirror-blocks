@@ -290,14 +290,15 @@ class Node extends BlockComponent {
 
       // delete seleted nodes
       case 'delete':
+        //console.log('### Node.jsx delete')
         e.preventDefault();
         if (selections.length === 0) {
           say('Nothing selected');
           return;
         }
         const nodesToDelete = selections.map(ast.getNodeById);
-        sayActionForNodes(nodesToDelete, "deleted");
-        delete_(nodesToDelete);
+        //sayActionForNodes(nodesToDelete, "deleted");
+        delete_(nodesToDelete, "deleted");
         return;
 
       // insert-right
@@ -320,12 +321,13 @@ class Node extends BlockComponent {
 
       // copy
       case 'copy':
+        //console.log('### Node.jsx copy')
         e.preventDefault();
         // if no nodes are selected, do it on focused node's id instead
         const nodeIds = selections.length == 0 ? [node.id] : selections;
         const nodesToCopy = nodeIds.map(ast.getNodeById);
-        sayActionForNodes(nodesToCopy, "copied");
-        copy(nodesToCopy);
+        //sayActionForNodes(nodesToCopy, "copied");
+        copy(nodesToCopy, "copied");
         return;
 
       // paste
@@ -351,15 +353,16 @@ class Node extends BlockComponent {
 
       // cut
       case 'cut':
+        //console.log('### Node.jsx cut')
         e.preventDefault();
         if (selections.length === 0) {
           say('Nothing selected');
           return;
         }
         const nodesToCut = selections.map(ast.getNodeById);
-        sayActionForNodes(nodesToCut, "cut");
+        //sayActionForNodes(nodesToCut, "cut");
         copy(nodesToCut);
-        delete_(nodesToCut);
+        delete_(nodesToCut, "cut");
         return;
 
       // go to the very first node in the AST
@@ -404,10 +407,11 @@ class Node extends BlockComponent {
 
       case 'undo':
         //console.log('### Node.jsx undo')
-        //console.log('### BEFORE undo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+        //console.log('### BEFORE undo SHARED.cm.historySize()=', SHARED.cm.historySize());
         tU = topmostUndoable(SHARED.cm.doc.history.done);
         if (tU) {
-          say('UNDID: ' + tU.undoableAction, false, false, false, tU.undoableAction);
+          say('UNDID: ' + tU.undoableAction);
+          state.undoableAction = tU.undoableAction;
           state.actionFocus = tU.actionFocus;
         }
         //console.log('###%%% undoing', tU.undoableAction);
@@ -417,10 +421,11 @@ class Node extends BlockComponent {
 
       case 'redo':
         //console.log('### Node.jsx redo')
-        //console.log('### BEFORE redo? SHARED.cm.historySize()=', SHARED.cm.historySize());
+        //console.log('### BEFORE redo SHARED.cm.historySize()=', SHARED.cm.historySize());
         tU = topmostUndoable(SHARED.cm.doc.history.undone);
         if (tU) {
-          say('REDID: ' + tU.undoableAction, false, false, false, tU.undoableAction);
+          say('REDID: ' + tU.undoableAction);
+          state.undoableAction = tU.undoableAction;
           state.actionFocus = tU.actionFocus;
         }
         //console.log('###%%% redoing', tU.undoableAction);

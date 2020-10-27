@@ -102,7 +102,7 @@ store.queuedAnnouncement = false;
 
 // Note: screenreaders will automatically speak items with aria-labels!
 // This handles _everything_else_. 
-export function say(text, delay=200, allowOverride=false, state=false, altText=false) {
+export function say(text, delay=200, allowOverride=false, state=false) {
   const announcement = document.createTextNode(text + ', ');
   if (!state) {
     state = store.getState();
@@ -114,7 +114,6 @@ export function say(text, delay=200, allowOverride=false, state=false, altText=f
     store.queuedAnnouncement = setTimeout(() => say('Use enter to edit', 0), delay);
   } else {                                           // otherwise write it to the DOM,
     console.log('say:', text);                       // then erase it 10ms later
-    state.announcementMade = (altText ? altText : text);
     setTimeout(() => announcer.appendChild(announcement), delay);
     setTimeout(() => announcer.removeChild(announcement), delay + 10);
   }
@@ -124,9 +123,17 @@ export function say(text, delay=200, allowOverride=false, state=false, altText=f
 export function sayActionForNodes(nodes, action) {
   //console.log('doing sayActionForNodes', action);
   nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
-  say(action + " " +
+  let annt = (action + " " +
     nodes.map((node) => node.options['aria-label'])
       .join(" and "));
+  say(annt);
+}
+
+export function createAnnouncement(nodes, action) {
+  let annt = (action + " " +
+    nodes.map((node) => node.options['aria-label'])
+      .join(" and "));
+  return annt;
 }
 
 export function skipCollapsed(node, next, state) {
