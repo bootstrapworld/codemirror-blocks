@@ -17,7 +17,7 @@ import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
-import { keyMap } from '../keymap';
+import { keyMap, renderKeyMap } from '../keymap';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending', 
@@ -152,6 +152,8 @@ class BlockEditor extends Component {
     hasQuarantine: PropTypes.bool.isRequired,
     api: PropTypes.object,
     passedAST: PropTypes.object,
+    showDialog: PropTypes.func.isRequired,
+    closeDialog: PropTypes.func.isRequired,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -165,10 +167,6 @@ class BlockEditor extends Component {
     this.mouseUsed = false;
     SHARED.keyMap = this.props.keyMap;
     SHARED.keyName = CodeMirror.keyName;
-  }
-
-  state = {
-    showHelp: false
   }
 
   static defaultProps = {
@@ -555,7 +553,7 @@ class BlockEditor extends Component {
       switch (message) {
 
       case 'help' : {
-        this.setState({showHelp: true});
+        this.props.showDialog(renderKeyMap(this.props.keyMap));
       }
       case 'nextNode': {
         e.preventDefault();
@@ -663,8 +661,6 @@ class BlockEditor extends Component {
     this.props.setCursor(ed, cur);
   }
 
-  closeDialog() { this.setState({showHelp: false}); }
-
   componentWillUnmount() {
     SHARED.buffer.remove();
   }
@@ -724,7 +720,6 @@ class BlockEditor extends Component {
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}
-        { this.state.showHelp? this.renderHelp() : ""}
       </React.Fragment>
     );
   }
@@ -740,88 +735,6 @@ class BlockEditor extends Component {
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
     }
     return portals;
-  }
-
-  renderHelp() {
-    const keyMap = this.props.keyMap;
-    const reverseMap = {};
-    Object.keys(keyMap).forEach(key => {
-      if(reverseMap[keyMap[key]]){
-        reverseMap[keyMap[key]] = reverseMap[keyMap[key]] + " or " + key;
-        console.log(reverseMap[keyMap[key]]);
-      } else {
-        reverseMap[keyMap[key]] = key;
-      }
-    });
-    return (
-      <div className="Dialog">
-        <h1>Blocks Shortcuts</h1>
-            <span style={{display: 'block'}}>(Note: on MacOS, <kbd>Cmd</kbd> replaces <kbd>Ctrl</kbd>.)</span>
-            <span className="screenreader">
-              Screenreader users: Make sure to either increase your screenreader's verbosity, or character over the shortcut column in the tables below. Some shortcuts use punctuation keys that may not always be spoken.
-            </span>
-            <div className="shortcutGroup" tabIndex="-1">
-              <h2>Navigation</h2>
-              <table className="shortcuts">
-                <thead><tr><th>Command</th><th>Shortcut</th></tr></thead> 
-                <tbody>         
-                <tr><td>Previous Block</td><td><kbd>{reverseMap['prevNode']}</kbd></td></tr>
-                <tr><td>Next Block</td><td><kbd>{reverseMap['nextNode']}</kbd></td></tr>
-                <tr><td>Collapse Block</td><td><kbd>{reverseMap['collapseOrSelectParent']}</kbd></td></tr>
-                <tr><td>Expand Block</td><td><kbd>{reverseMap['expandOrSelectFirstChild']}</kbd></td></tr>
-                <tr><td>Collapse Root</td><td><kbd>{reverseMap['collapseCurrentRoot']}</kbd></td></tr>
-                <tr><td>Expand Root</td><td><kbd>{reverseMap['expandCurrentRoot']}</kbd></td></tr>
-                <tr><td>Collapse All</td><td><kbd>{reverseMap['collapseAll']}</kbd></td></tr>
-                <tr><td>Expand All</td><td><kbd>{reverseMap['expandAll']}</kbd></td></tr>
-                <tr><td>First Visible Block</td><td><kbd>{reverseMap['firstNode']}</kbd></td></tr>
-                <tr><td>Last Visible Block</td><td><kbd>{reverseMap['lastVisibleNode']}</kbd></td></tr>
-                <tr><td>Read Ancestors</td><td><kbd aria-label="backslash">{reverseMap['readAncestors']}</kbd></td></tr>
-                <tr><td>Read Block and Children</td><td><kbd aria-label="shift-backslash">{reverseMap['readChildren']}</kbd></td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="shortcutGroup" tabIndex="-1">
-              <h2>Editing</h2>
-              <table className="shortcuts">
-                <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
-                <tbody>
-                <tr><td>Edit a Literal</td><td><kbd>{reverseMap['edit']}</kbd></td></tr>
-                <tr><td>Edit any Block</td><td><kbd>{reverseMap['edit']}</kbd></td></tr>
-                <tr><td>Cancel</td><td><kbd>{reverseMap['cancel']}</kbd></td></tr>
-                <tr><td>Insert Before</td><td><kbd>{reverseMap['insertLeft']}</kbd></td></tr>
-                <tr><td>Insert After</td><td><kbd>{reverseMap['insertRight']}</kbd></td></tr>
-                <tr><td>Delete Selected Blocks</td><td><kbd>{reverseMap['delete']}</kbd></td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="shortcutGroup" tabIndex="-1">
-              <h2>Search</h2>
-              <table className="shortcuts">
-                <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
-                <tbody>
-                <tr><td>Enter Search Mode</td><td><kbd>{reverseMap['activateSearchDialog']}</kbd></td></tr>
-                <tr><td>Exit Search Mode</td><td><kbd>ESC</kbd> or <kbd>Shift-ESC</kbd></td></tr>
-                <tr><td>Find next</td><td><kbd>{reverseMap['searchNext']}</kbd></td></tr>
-                <tr><td>Find previous</td><td><kbd>{reverseMap['searchPrevious']}</kbd></td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="shortcutGroup" tabIndex="-1">
-              <h2>Selection and Clipboard</h2>
-              <table className="shortcuts">
-                <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
-                <tbody>
-                <tr><td>Toggle selection</td><td><kbd>{reverseMap['toggleSelection']}</kbd></td></tr>
-                <tr><td>Cut </td><td><kbd>{reverseMap['cut']}</kbd></td></tr>
-                <tr><td>Copy</td><td><kbd>{reverseMap['copy']}</kbd></td></tr>
-                <tr><td>Paste after active node</td><td><kbd>{reverseMap['paste']}</kbd></td></tr>
-                <tr><td>Paste before active node</td><td><kbd>{reverseMap['pasteBefore']}</kbd></td></tr>
-                </tbody>
-              </table>
-            </div>
-        <span className="closeDialog" onClick={() => this.closeDialog()}>Close</span>
-      </div>
-    );
   }
 }
 
