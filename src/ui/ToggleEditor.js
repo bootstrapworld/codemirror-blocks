@@ -184,7 +184,7 @@ export default class ToggleEditor extends React.Component {
           <p></p>
           {_err.toString()}
           </>
-          );
+        );
       }
     });
   };
