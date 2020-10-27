@@ -181,8 +181,8 @@ export default class ToggleEditor extends React.Component {
         return this.showDialog(
           <>
           <span className="dialogTitle">Could not convert to Blocks</span>
-            <p></p>
-            {_err.toString()}
+          <p></p>
+          {_err.toString()}
           </>
           );
       }

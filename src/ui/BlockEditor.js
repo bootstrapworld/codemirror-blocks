@@ -552,10 +552,11 @@ class BlockEditor extends Component {
       const message = SHARED.keyMap[SHARED.keyName(e)];
       switch (message) {
 
-      case 'help' : {
+      case 'help' :
         this.props.showDialog(renderKeyMap(this.props.keyMap));
-      }
-      case 'nextNode': {
+        return;
+
+      case 'nextNode': 
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
         if (nextNode) {
@@ -564,9 +565,8 @@ class BlockEditor extends Component {
           playSound(BEEP);
         }
         return;
-      }
 
-      case 'prevNode': {
+      case 'prevNode':
         e.preventDefault();
         const prevNode = ast.getNodeBeforeCur(this.props.cur);
         if (prevNode) {
@@ -575,7 +575,6 @@ class BlockEditor extends Component {
           playSound(BEEP);
         }
         return;
-      }
 
       case 'firstNode':
         // NOTE(Emmanuel): shouldn't this go to the first node?
@@ -583,13 +582,13 @@ class BlockEditor extends Component {
         this.props.setCursor(null, {line: 0, ch: 0});
         return;
 
-      case 'lastVisibleNode': {
+      case 'lastVisibleNode': 
         // NOTE(Emmanuel): shouldn't this go to the last visible node?
         e.preventDefault();
         const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
         this.props.setCursor(null, {line: idx, ch: text.length});
         return;
-      }
+
       case 'changeFocus':
         // NOTE(Emmanuel): this is dead code, unless we can trap tab events
         e.preventDefault();
@@ -631,7 +630,6 @@ class BlockEditor extends Component {
         e.preventDefault();
         SHARED.cm.redo();
         return;
-
       }
     });
   }

@@ -7,56 +7,56 @@ const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAge
 const mac = ios || /Mac/.test(platform);
 
 export const keyMap = {
-      'Down'      : 'nextNode',
-      'Up'        : 'prevNode',
-      'Home'      : 'firstNode',
-      'End'       : 'lastVisibleNode',
-      'Left'      : 'collapseOrSelectParent',
-      'Right'     : 'expandOrSelectFirstChild',
-      'Shift-Left': 'collapseAll',
-      'Shift-Right':'expandAll',
-      'Shift-Alt-Left': 'collapseCurrentRoot',
-      'Shift-Alt-Right':'expandCurrentRoot',
-      'Enter'     : 'edit',
-      'Ctrl-Enter': 'edit',
-      'Space'     : 'toggleSelection',
-      'Esc'       : 'cancel',
-      'Ctrl-Esc'  : 'cancel',
-      'Delete'    : 'delete',
-      'Backspace' : 'delete',
-      'Ctrl-['    : 'insertLeft',
-      'Ctrl-]'    : 'insertRight',
-      'Shift-,'   : 'jumpToRoot',
-      '\\'        : 'readAncestors',
-      'Shift-\\'  : 'readChildren',
-      'PageUp'    : 'searchPrevious',
-      'PageDown'  : 'searchNext',
-      'F3'        : 'activateSearchDialog',
-      'Tab'       : 'changeFocus',
-}
+  'Down'      : 'nextNode',
+  'Up'        : 'prevNode',
+  'Home'      : 'firstNode',
+  'End'       : 'lastVisibleNode',
+  'Left'      : 'collapseOrSelectParent',
+  'Right'     : 'expandOrSelectFirstChild',
+  'Shift-Left': 'collapseAll',
+  'Shift-Right':'expandAll',
+  'Shift-Alt-Left': 'collapseCurrentRoot',
+  'Shift-Alt-Right':'expandCurrentRoot',
+  'Enter'     : 'edit',
+  'Ctrl-Enter': 'edit',
+  'Space'     : 'toggleSelection',
+  'Esc'       : 'cancel',
+  'Ctrl-Esc'  : 'cancel',
+  'Delete'    : 'delete',
+  'Backspace' : 'delete',
+  'Ctrl-['    : 'insertLeft',
+  'Ctrl-]'    : 'insertRight',
+  'Shift-,'   : 'jumpToRoot',
+  '\\'        : 'readAncestors',
+  'Shift-\\'  : 'readChildren',
+  'PageUp'    : 'searchPrevious',
+  'PageDown'  : 'searchNext',
+  'F3'        : 'activateSearchDialog',
+  'Tab'       : 'changeFocus',
+};
 
 const macKeyMap = {
-      'Cmd-F'     : 'activateSearchDialog',
-      'Cmd-Z'     : 'undo',
-      'Shift-Cmd-Z': 'redo',
-      'Cmd-Y'     : 'redo',
-      'Cmd-C'     : 'copy',
-      'Cmd-V'     : 'paste',
-      'Shift-Cmd-V': 'pasteBefore',
-      'Cmd-X'     : 'cut',
-      'Shift-Ctrl-/': 'help',
-}
+  'Cmd-F'     : 'activateSearchDialog',
+  'Cmd-Z'     : 'undo',
+  'Shift-Cmd-Z': 'redo',
+  'Cmd-Y'     : 'redo',
+  'Cmd-C'     : 'copy',
+  'Cmd-V'     : 'paste',
+  'Shift-Cmd-V': 'pasteBefore',
+  'Cmd-X'     : 'cut',
+  'Shift-Ctrl-/': 'help',
+};
 
 const pcKeyMap = {
-      'Ctrl-F'    : 'activateSearchDialog',
-      'Ctrl-Z'    : 'undo',
-      'Shift-Ctrl-Z':'redo',
-      'Ctrl-C'    : 'copy',
-      'Ctrl-V'    : 'paste',
-      'Shift-Ctrl-V'    : 'pasteBefore',
-      'Ctrl-X'    : 'cut',
-      'Shift-Ctrl-/': 'help',
-}
+  'Ctrl-F'    : 'activateSearchDialog',
+  'Ctrl-Z'    : 'undo',
+  'Shift-Ctrl-Z':'redo',
+  'Ctrl-C'    : 'copy',
+  'Ctrl-V'    : 'paste',
+  'Shift-Ctrl-V'    : 'pasteBefore',
+  'Ctrl-X'    : 'cut',
+  'Shift-Ctrl-/': 'help',
+};
 
 Object.assign(keyMap, mac? macKeyMap : pcKeyMap);
 
@@ -75,7 +75,7 @@ export function renderKeyMap(keyMap) {
       <h1>Blocks Shortcuts</h1>
       <span style={{display: 'block'}}>(Note: on MacOS, <kbd>Cmd</kbd> replaces <kbd>Ctrl</kbd>.)</span>
       <span className="screenreader">
-        Screenreader users: Make sure to either increase your screenreader's verbosity, or character over the shortcut column in the tables below. Some shortcuts use punctuation keys that may not always be spoken.
+        Screenreader users: Make sure to either increase the verbosity of your screenreader, or character over the shortcut column in the tables below. Some shortcuts use punctuation keys that may not always be spoken.
       </span>
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Navigation</h2>
