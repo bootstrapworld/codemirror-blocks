@@ -20,8 +20,6 @@ export const keyMap = {
   'Enter'     : 'edit',
   'Ctrl-Enter': 'edit',
   'Space'     : 'toggleSelection',
-  'Esc'       : 'cancel',
-  'Ctrl-Esc'  : 'cancel',
   'Esc'       : 'clearSelection',
   'Ctrl-Esc'  : 'clearSelection',
   'Alt-Q'     : 'clearSelection',
