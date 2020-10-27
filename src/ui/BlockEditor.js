@@ -552,83 +552,83 @@ class BlockEditor extends Component {
       const message = SHARED.keyMap[SHARED.keyName(e)];
       switch (message) {
         case 'help' : {
-          this.props.showDialog(renderKeyMap(this.props.keyMap));
-          return;
+        this.props.showDialog(renderKeyMap(this.props.keyMap));
+        return;
         }
         case 'nextNode': {
-          e.preventDefault();
-          const nextNode = ast.getNodeAfterCur(this.props.cur);
-          if (nextNode) {
-            this.props.activate(nextNode.id, {allowMove: true});
-          } else {
-            playSound(BEEP);
-          }
-          return;
+        e.preventDefault();
+        const nextNode = ast.getNodeAfterCur(this.props.cur);
+        if (nextNode) {
+          this.props.activate(nextNode.id, {allowMove: true});
+        } else {
+          playSound(BEEP);
+        }
+        return;
         }
         case 'prevNode': {
-          e.preventDefault();
-          const prevNode = ast.getNodeBeforeCur(this.props.cur);
-          if (prevNode) {
-            this.props.activate(prevNode.id, {allowMove: true});
-          } else {
-            playSound(BEEP);
-          }
-          return;
+        e.preventDefault();
+        const prevNode = ast.getNodeBeforeCur(this.props.cur);
+        if (prevNode) {
+          this.props.activate(prevNode.id, {allowMove: true});
+        } else {
+          playSound(BEEP);
+        }
+        return;
         }
         case 'firstNode': {
-          // NOTE(Emmanuel): shouldn't this go to the first node?
-          e.preventDefault();
-          this.props.setCursor(null, {line: 0, ch: 0});
-          return;
+        // NOTE(Emmanuel): shouldn't this go to the first node?
+        e.preventDefault();
+        this.props.setCursor(null, {line: 0, ch: 0});
+        return;
         }
         case 'lastVisibleNode': {
-          // NOTE(Emmanuel): shouldn't this go to the last visible node?
-          e.preventDefault();
-          const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
-          this.props.setCursor(null, {line: idx, ch: text.length});
-          return;
+        // NOTE(Emmanuel): shouldn't this go to the last visible node?
+        e.preventDefault();
+        const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
+        this.props.setCursor(null, {line: idx, ch: text.length});
+        return;
         }
         case 'changeFocus': {
-          // NOTE(Emmanuel): this is dead code, unless we can trap tab events
-          e.preventDefault();
-          if (focusId === null) {
-            if (ast.rootNodes.length > 0) {
-              dispatch(activate(ast.getFirstRootNode(), {allowMove: true}));
-              // NOTE(Oak): can also find the closest node based on current cursor
-            }
-          } else {
-            dispatch(activate(null, {allowMove: true}));
+        // NOTE(Emmanuel): this is dead code, unless we can trap tab events
+        e.preventDefault();
+        if (focusId === null) {
+          if (ast.rootNodes.length > 0) {
+            dispatch(activate(ast.getFirstRootNode(), {allowMove: true}));
+            // NOTE(Oak): can also find the closest node based on current cursor
           }
-          return;
+        } else {
+          dispatch(activate(null, {allowMove: true}));
+        }
+        return;
         }
         case 'activateSearchDialog': {
-          e.preventDefault();
-          SHARED.search.onSearch(
-            state, 
-            () => {}, 
-            () => activateNoRecord(SHARED.search.search(true, state))
-          );
-          return;
+        e.preventDefault();
+        SHARED.search.onSearch(
+          state, 
+          () => {}, 
+          () => activateNoRecord(SHARED.search.search(true, state))
+        );
+        return;
         }
         case 'searchPrevious': {
-          e.preventDefault();
-          activateNoRecord(SHARED.search.search(false, state));
-          return;
+        e.preventDefault();
+        activateNoRecord(SHARED.search.search(false, state));
+        return;
         }
         case 'searchNext': {
-          e.preventDefault();
-          activateNoRecord(SHARED.search.search(true, state));
-          return;
+        e.preventDefault();
+        activateNoRecord(SHARED.search.search(true, state));
+        return;
         }
         case 'undo': {
-          e.preventDefault();
-          SHARED.cm.undo();
-          return;
+        e.preventDefault();
+        SHARED.cm.undo();
+        return;
         }
         case 'redo': {
-          e.preventDefault();
-          SHARED.cm.redo();
-          return;
+        e.preventDefault();
+        SHARED.cm.redo();
+        return;
         }
       }
     });
