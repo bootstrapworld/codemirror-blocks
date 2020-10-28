@@ -404,7 +404,6 @@ class Node extends BlockComponent {
         e.preventDefault();
         SHARED.cm.redo();
         return;
-
       }
     });
   }

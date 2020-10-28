@@ -47,7 +47,7 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
 export default class ToggleEditor extends React.Component {
   state = {
     blockMode: false,
-    error: false
+    dialog: false
   }
 
   static propTypes = {
@@ -88,6 +88,11 @@ export default class ToggleEditor extends React.Component {
     this.options = Object.assign(defaultOptions, props.options);
     this.hasMounted = false;
     SHARED.recordedMarks = new Map();
+
+    // make sure 'this' always refers to ToggleEditor
+    // see https://reactjs.org/docs/handling-events.html
+    this.showDialog = this.showDialog.bind(this);
+    this.closeDialog = this.closeDialog.bind(this);
   }
 
   loadLoggedActions = (jsonLog) => {
@@ -146,6 +151,9 @@ export default class ToggleEditor extends React.Component {
       });
   }
 
+  showDialog(contents) { this.setState((state, props)=>({dialog: contents}));  }
+  closeDialog()        { this.setState((state, props)=>({dialog: false}));     }
+
   handleToggle = blockMode => {
     this.setState((state, props) => {
       try {
@@ -162,23 +170,27 @@ export default class ToggleEditor extends React.Component {
         // Parsing and state-saving was successful! Set the blockMode state and return
         return {blockMode: blockMode};
       } catch (err) {
-        let _err;
         try {
-          _err = SHARED.parser.getExceptionMessage(err);
+          err = SHARED.parser.getExceptionMessage(err);
         } catch(e) {
-          _err = "The parser failed, and the error could not be retrieved";
+          err = "The parser failed, and the error could not be retrieved";
         }
-        return { error: "Could not convert to Blocks\n" + _err };
+        return {dialog: (
+          <>
+          <span className="dialogTitle">Could not convert to Blocks</span>
+          <p></p>
+          {err.toString()}
+          </>
+        )};
       }
     });
-  };
-
-  // clear the error message, triggering a redraw
-  closeError() { this.setState({error: false}); }
+  }
 
   render(_props) { // eslint-disable-line no-unused-vars
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
+      <>
+      { this.state.dialog? this.renderDialog() : ""}
       <div className={classes}>
         <ToggleButton setBlockMode={this.handleToggle} blockMode={this.state.blockMode} />
         {this.state.blockMode ? <TrashCan/> : null}
@@ -188,18 +200,18 @@ export default class ToggleEditor extends React.Component {
                    blockMode={this.state.blockMode} />
         </div>
         <div className="col-xs-9 codemirror-pane">
-        { this.state.error? this.renderError(this.state.error) : ""}
         { this.state.blockMode? this.renderBlocks() : this.renderCode() }
         </div>
       </div>
+      </>
     );
   }
 
-  renderError(msg) {
+  renderDialog() {
     return (
-      <div className="EditorError">
-        {msg}
-        <span className="closeError" onClick={this.closeError}>OK</span>
+      <div className="Dialog">
+        {this.state.dialog}
+        <span className="closeDialog" onClick={() => this.closeDialog()}>OK</span>
       </div>
     );
   }
@@ -229,6 +241,8 @@ export default class ToggleEditor extends React.Component {
         language={this.language.id}
         options={this.options}
         passedAST={this.ast}
+        showDialog={this.showDialog}
+        closeDialog={this.closeDialog}
         debugHistory={this.props.debuggingLog.history}
      />
     );
