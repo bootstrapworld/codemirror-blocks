@@ -1,5 +1,5 @@
 import {topmostUndoable} from './utils';
-import SHARED from './shared'
+//import SHARED from './shared'; //used only in debug statements
 
 function loggerDebug(action, ast) { // in lieu of logger.debug
   //console.log('doing loggerDebug', action.type, !!ast);

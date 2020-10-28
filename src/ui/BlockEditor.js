@@ -454,7 +454,6 @@ class BlockEditor extends Component {
       const state = getState();
       const {ast, focusId} = state;
       const message = SHARED.keyMap[SHARED.keyName(e)];
-      let tU;
       switch (message) {
       case 'nextNode': {
         e.preventDefault();

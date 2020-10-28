@@ -144,7 +144,6 @@ class Node extends BlockComponent {
 
       const keyname = SHARED.keyName(e);
       const message = SHARED.keyMap[keyname];
-      let tU;
       switch (message) {
       case 'prevNode':
         e.preventDefault();
