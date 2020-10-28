@@ -66,7 +66,6 @@ export function renderKeyMap(keyMap) {
   Object.keys(keyMap).forEach(key => {
     if(reverseMap[keyMap[key]]){
       reverseMap[keyMap[key]] = reverseMap[keyMap[key]] + " or " + key;
-      console.log(reverseMap[keyMap[key]]);
     } else {
       reverseMap[keyMap[key]] = key;
     }

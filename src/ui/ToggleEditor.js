@@ -151,10 +151,8 @@ export default class ToggleEditor extends React.Component {
       });
   }
 
-  showDialog(contents) {
-    console.log(this);
-    this.setState({dialog: contents});
-  }
+  showDialog(contents) { this.setState({dialog: contents});  }
+  closeDialog()        { this.setState({dialog: false});     }
 
   handleToggle = blockMode => {
     this.setState((state, props) => {
@@ -172,31 +170,27 @@ export default class ToggleEditor extends React.Component {
         // Parsing and state-saving was successful! Set the blockMode state and return
         return {blockMode: blockMode};
       } catch (err) {
-        let _err;
         try {
-          _err = SHARED.parser.getExceptionMessage(err);
+          err = SHARED.parser.getExceptionMessage(err);
         } catch(e) {
-          _err = "The parser failed, and the error could not be retrieved";
+          err = "The parser failed, and the error could not be retrieved";
         }
-        return this.showDialog(
+        return {dialog: (
           <>
           <span className="dialogTitle">Could not convert to Blocks</span>
           <p></p>
-          {_err.toString()}
+          {err.toString()}
           </>
-        );
+        )};
       }
     });
-  };
-
-  // clear the dialog state, triggering a redraw
-  closeDialog() { 
-    this.setState({dialog: false}); 
   }
 
   render(_props) { // eslint-disable-line no-unused-vars
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
+      <>
+      { this.state.dialog? this.renderDialog() : ""}
       <div className={classes}>
         <ToggleButton setBlockMode={this.handleToggle} blockMode={this.state.blockMode} />
         {this.state.blockMode ? <TrashCan/> : null}
@@ -206,10 +200,10 @@ export default class ToggleEditor extends React.Component {
                    blockMode={this.state.blockMode} />
         </div>
         <div className="col-xs-9 codemirror-pane">
-        { this.state.dialog? this.renderDialog() : ""}
         { this.state.blockMode? this.renderBlocks() : this.renderCode() }
         </div>
       </div>
+      </>
     );
   }
 
