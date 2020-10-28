@@ -3,7 +3,7 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {partition, poscmp, getRoot, sayActionForNodes,
-        isControl, say, skipCollapsed, getLastVisibleNode, topmostUndoable} from '../utils';
+        isControl, say, skipCollapsed, getLastVisibleNode, preambleUndoRedo} from '../utils';
 import {drop, delete_, copy, paste, activate, setCursor,
         InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
@@ -408,13 +408,7 @@ class Node extends BlockComponent {
       case 'undo':
         //console.log('### Node.jsx undo')
         //console.log('### BEFORE undo SHARED.cm.historySize()=', SHARED.cm.historySize());
-        tU = topmostUndoable(SHARED.cm.doc.history.done);
-        if (tU) {
-          say('UNDID: ' + tU.undoableAction);
-          state.undoableAction = tU.undoableAction;
-          state.actionFocus = tU.actionFocus;
-        }
-        //console.log('###%%% undoing', tU.undoableAction);
+        preambleUndoRedo('undo');
         e.preventDefault();
         SHARED.cm.undo();
         return;
@@ -422,13 +416,7 @@ class Node extends BlockComponent {
       case 'redo':
         //console.log('### Node.jsx redo')
         //console.log('### BEFORE redo SHARED.cm.historySize()=', SHARED.cm.historySize());
-        tU = topmostUndoable(SHARED.cm.doc.history.undone);
-        if (tU) {
-          say('REDID: ' + tU.undoableAction);
-          state.undoableAction = tU.undoableAction;
-          state.actionFocus = tU.actionFocus;
-        }
-        //console.log('###%%% redoing', tU.undoableAction);
+        preambleUndoRedo('redo');
         e.preventDefault();
         SHARED.cm.redo();
         return;

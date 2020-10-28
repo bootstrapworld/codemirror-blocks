@@ -53,7 +53,7 @@ export function commitChanges(
       // this is what populates our undo stack.
       let newFocus = newAST.getNodeById(focusId);
       let newFocusNId = newFocus ? newFocus.nid : null;
-      let tU = topmostUndoable(SHARED.cm.doc.history.done);
+      let tU = topmostUndoable('undo');
       tU.undoableAction = annt;
       tU.actionFocus = {oldFocusNId, newFocusNId};
       //console.log('###%%% PUSHED undoable action: ', tU.undoableAction);

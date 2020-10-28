@@ -6,7 +6,6 @@ import SHARED from '../shared';
 import classNames from 'classnames';
 import {insert, activate, Target} from '../actions';
 import {say} from '../utils';
-import {store} from '../store';
 
 class NodeEditable extends Component {
   static defaultProps = {

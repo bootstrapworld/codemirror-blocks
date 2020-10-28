@@ -12,7 +12,6 @@ export function gensym() {
 }
 export function resetNodeCounter() { store.nodeCounter = 0; }
 
-
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {
   return  a.line - b.line || a.ch - b.ch;
@@ -76,7 +75,6 @@ export function partition(arr, f) {
   return [matched, notMatched];
 }
 
-
 // // from https://davidwalsh.name/javascript-debounce-function
 // export function debounce(func, wait, immediate) {
 //   var timeout;
@@ -101,12 +99,10 @@ store.muteAnnouncements = false;
 store.queuedAnnouncement = false;
 
 // Note: screenreaders will automatically speak items with aria-labels!
-// This handles _everything_else_. 
-export function say(text, delay=200, allowOverride=false, state=false) {
+// This handles _everything_else_.
+export function say(text, delay=200, allowOverride=false) {
   const announcement = document.createTextNode(text + ', ');
-  if (!state) {
-    state = store.getState();
-  }
+  let state = store.getState();
   const announcer = state.announcer;
   if (store.muteAnnouncements || !announcer) return; // if nothing to do, bail
   clearTimeout(store.queuedAnnouncement);            // clear anything overrideable
@@ -118,7 +114,6 @@ export function say(text, delay=200, allowOverride=false, state=false) {
     setTimeout(() => announcer.removeChild(announcement), delay + 10);
   }
 }
-
 
 export function sayActionForNodes(nodes, action) {
   //console.log('doing sayActionForNodes', action);
@@ -312,10 +307,25 @@ export function logResults(history, exception) {
   }
 }
 
-export function topmostUndoable(arr) {
+export function topmostUndoable(which, state) {
+  if (!state) state = store.getState();
+  let arr = (which === 'undo' ?
+    SHARED.cm.doc.history.done : SHARED.cm.doc.history.undone);
   for (let i = arr.length - 1; i >= 0; i--) {
     if (!arr[i].ranges) {
       return arr[i];
     }
   }
 }
+
+export function preambleUndoRedo(which) {
+  let state = store.getState();
+  let tU = topmostUndoable(which);
+  if (tU) {
+    //console.log('###%%%', (which === 'undo' ? 'undoing' : 'redoing'), tU.undoableAction);
+    say((which === 'undo' ? 'UNDID' : 'REDID') + ': ' + tU.undoableAction);
+    state.undoableAction = tU.undoableAction;
+    state.actionFocus = tU.actionFocus;
+  }
+}
+

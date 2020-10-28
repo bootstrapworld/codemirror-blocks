@@ -97,11 +97,12 @@ export const reducer = (
     break;
 
   case 'DO':
+    //console.log('### DO SHARED.cm.historySize()=', SHARED.cm.historySize());
     result = {...state};
     break;
   case 'UNDO':
     //console.log('### AFTER undo SHARED.cm.historySize()=', SHARED.cm.historySize());
-    tU = topmostUndoable(SHARED.cm.doc.history.undone);
+    tU = topmostUndoable('redo', state);
     tU.undoableAction = state.undoableAction;
     tU.actionFocus = state.actionFocus;
     //console.log('### UNDO actionFocus =', state.actionFocus)
@@ -113,7 +114,7 @@ export const reducer = (
     break;
   case 'REDO':
     //console.log('### AFTER redo SHARED.cm.historySize()=', SHARED.cm.historySize());
-    tU = topmostUndoable(SHARED.cm.doc.history.done);
+    tU = topmostUndoable('undo', state);
     tU.undoableAction = state.undoableAction;
     tU.actionFocus = state.actionFocus;
     //console.log('### REDO actionFocus =', state.actionFocus)

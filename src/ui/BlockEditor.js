@@ -16,7 +16,7 @@ import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import merge from '../merge';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, topmostUndoable} from '../utils';
+import {poscmp, say, resetNodeCounter, preambleUndoRedo} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 
 
@@ -527,13 +527,7 @@ class BlockEditor extends Component {
       case 'undo':
         //console.log('### BlockEditor.js undo')
         //console.log('### BEFORE undo SHARED.cm.historySize()=', SHARED.cm.historySize());
-        tU = topmostUndoable(SHARED.cm.doc.history.done);
-        if (tU) {
-          say('UNDID: ' + tU.undoableAction);
-          state.undoableAction = tU.undoableAction;
-          state.actionFocus = tU.actionFocus;
-        }
-        //console.log('###%%% undoing', tU.undoableAction);
+        preambleUndoRedo('undo');
         e.preventDefault();
         SHARED.cm.undo();
         return;
@@ -541,13 +535,7 @@ class BlockEditor extends Component {
       case 'redo':
         //console.log('### BlockEditor.js redo')
         //console.log('### BEFORE redo SHARED.cm.historySize()=', SHARED.cm.historySize());
-        tU = topmostUndoable(SHARED.cm.doc.history.undone);
-        if (tU) {
-          say('REDID: ' + tU.undoableAction);
-          state.undoableAction = tU.undoableAction;
-          state.actionFocus = tU.actionFocus;
-        }
-        //console.log('###%%% redoing', tU.undoableAction);
+        preambleUndoRedo('redo');
         e.preventDefault();
         SHARED.cm.redo();
         return;
