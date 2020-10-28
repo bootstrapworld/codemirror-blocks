@@ -17,6 +17,7 @@ import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
+import { keyMap, renderKeyMap } from '../keymap';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending', 
@@ -151,6 +152,8 @@ class BlockEditor extends Component {
     hasQuarantine: PropTypes.bool.isRequired,
     api: PropTypes.object,
     passedAST: PropTypes.object,
+    showDialog: PropTypes.func.isRequired,
+    closeDialog: PropTypes.func.isRequired,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -169,46 +172,7 @@ class BlockEditor extends Component {
   static defaultProps = {
     options: {},
     cmOptions: {},
-    keyMap : {
-      'Down'      : 'nextNode',
-      'Up'        : 'prevNode',
-      'Home'      : 'firstNode',
-      'End'       : 'lastVisibleNode',
-      'Left'      : 'collapseOrSelectParent',
-      'Right'     : 'expandOrSelectFirstChild',
-      'Shift-Left': 'collapseAll',
-      'Shift-Right':'expandAll',
-      'Shift-Alt-Left': 'collapseCurrentRoot',
-      'Shift-Alt-Right':'expandCurrentRoot',
-      'Enter'     : 'edit',
-      'Cmd-Enter' : 'edit',
-      'Ctrl-Enter': 'edit',
-      'Space'     : 'toggleSelection',
-      'Esc'       : 'clearSelection',
-      'Alt-Q'     : 'clearSelection',
-      'Delete'    : 'delete',
-      'Backspace' : 'delete',
-      'Ctrl-['    : 'insertLeft',
-      'Ctrl-]'    : 'insertRight',
-      'Shift-,'   : 'jumpToRoot',
-      '\\'        : 'readAncestors',
-      'Shift-\\'  : 'readChildren',
-      'PageUp'    : 'searchPrevious',
-      'PageDown'  : 'searchNext',
-      'F3'        : 'activateSearchDialog',
-      'Ctrl-F'    : 'activateSearchDialog',
-      'Tab'       : 'changeFocus',
-      'Ctrl-Z'    : 'undo',
-      'Cmd-Z'     : 'undo',
-      'Ctrl-Y'    : 'redo',
-      'Shift-Cmd-Z':'redo',
-      'Cmd-C'     : 'copy',
-      'Ctrl-C'    : 'copy',
-      'Cmd-V'     : 'paste',
-      'Ctrl-V'    : 'paste',
-      'Cmd-X'     : 'cut',
-      'Ctrl-X'    : 'cut'
-    },
+    keyMap : keyMap,
     search: {
       search: () => null,
       onSearch: () => {},
@@ -587,6 +551,10 @@ class BlockEditor extends Component {
       const {ast, focusId} = state;
       const message = SHARED.keyMap[SHARED.keyName(e)];
       switch (message) {
+      case 'help' : {
+        this.props.showDialog(renderKeyMap(this.props.keyMap));
+        return;
+      }
       case 'nextNode': {
         e.preventDefault();
         const nextNode = ast.getNodeAfterCur(this.props.cur);
@@ -597,7 +565,6 @@ class BlockEditor extends Component {
         }
         return;
       }
-
       case 'prevNode': {
         e.preventDefault();
         const prevNode = ast.getNodeBeforeCur(this.props.cur);
@@ -608,13 +575,12 @@ class BlockEditor extends Component {
         }
         return;
       }
-
-      case 'firstNode':
+      case 'firstNode': {
         // NOTE(Emmanuel): shouldn't this go to the first node?
         e.preventDefault();
         this.props.setCursor(null, {line: 0, ch: 0});
         return;
-
+      }
       case 'lastVisibleNode': {
         // NOTE(Emmanuel): shouldn't this go to the last visible node?
         e.preventDefault();
@@ -622,7 +588,7 @@ class BlockEditor extends Component {
         this.props.setCursor(null, {line: idx, ch: text.length});
         return;
       }
-      case 'changeFocus':
+      case 'changeFocus': {
         // NOTE(Emmanuel): this is dead code, unless we can trap tab events
         e.preventDefault();
         if (focusId === null) {
@@ -634,8 +600,8 @@ class BlockEditor extends Component {
           dispatch(activate(null, {allowMove: true}));
         }
         return;
-
-      case 'activateSearchDialog':
+      }
+      case 'activateSearchDialog': {
         e.preventDefault();
         SHARED.search.onSearch(
           state, 
@@ -643,27 +609,27 @@ class BlockEditor extends Component {
           () => activateNoRecord(SHARED.search.search(true, state))
         );
         return;
-
-      case 'searchPrevious':
+      }
+      case 'searchPrevious': {
         e.preventDefault();
         activateNoRecord(SHARED.search.search(false, state));
         return;
-
-      case 'searchNext':
+      }
+      case 'searchNext': {
         e.preventDefault();
         activateNoRecord(SHARED.search.search(true, state));
         return;
-
-      case 'undo':
+      }
+      case 'undo': {
         e.preventDefault();
         SHARED.cm.undo();
         return;
-
-      case 'redo':
+      }
+      case 'redo': {
         e.preventDefault();
         SHARED.cm.redo();
         return;
-
+      }
       }
     });
   }
