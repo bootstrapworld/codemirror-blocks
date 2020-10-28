@@ -146,6 +146,9 @@ export default class ToggleEditor extends React.Component {
       });
   }
 
+  showDialog(contents) { this.setState((state, props)=>({dialog: contents}));  }
+  closeDialog()        { this.setState((state, props)=>({dialog: false}));     }
+
   handleToggle = blockMode => {
     this.setState((state, props) => {
       try {
