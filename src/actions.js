@@ -41,25 +41,21 @@ import {performEdits, edit_insert, edit_delete, edit_replace,
 
 // Insert `text` at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export function insert(text, target, onSuccess, onError) {
+export function insert(text, target, onSuccess, onError, annt) {
   //console.log('****** doing actions insert', 'text=', text)
   checkTarget(target);
   const {ast} = store.getState();
   const edits = [target.toEdit(text)];
-  performEdits('cmb:insert', ast, edits, onSuccess, onError, 'inserted ' + text);
+  performEdits('cmb:insert', ast, edits, onSuccess, onError, annt);
 }
 
 // Delete the given nodes.
-//export function delete_(nodes, onSuccess, onError) { // 'delete' is a reserved word
-//  onSuccess, onError args not used??
-
 export function delete_(nodes, editWord) { // 'delete' is a reserved word
   //console.log('****** doing actions delete_', editWord)
   if (nodes.length === 0) return;
   const {ast} = store.getState();
   nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
   const edits = nodes.map(node => edit_delete(node));
-  //performEdits('cmb:delete-node', ast, edits, onSuccess, onError);
   let annt = false;
   if (editWord) {
     annt = createAnnouncement(nodes, editWord);
