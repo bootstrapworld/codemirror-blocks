@@ -241,8 +241,6 @@ class BlockEditor extends Component {
           //console.log('%%% BlockEditor.js undo')
           //console.log('%%% BlockEditor.js undo SHARED.cm.historySize()=', SHARED.cm.historySize());
           for (let c of changes) c.origin = "cmb:undo";
-          //const undoFocusStack = getState().focusStack.undo;
-          //const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
           const {oldFocusNId, _newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
@@ -251,8 +249,6 @@ class BlockEditor extends Component {
           //console.log('%%% BlockEditor.js redo')
           //console.log('%%% BlockEditor.js redo SHARED.cm.historySize()=', SHARED.cm.historySize());
           for (let c of changes) c.origin = "cmb:redo";
-          //const redoFocusStack = getState().focusStack.redo;
-          //const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
           const {_oldFocusNId, newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
@@ -526,17 +522,17 @@ class BlockEditor extends Component {
       case 'undo':
         //console.log('### BlockEditor.js undo')
         //console.log('### BEFORE undo SHARED.cm.historySize()=', SHARED.cm.historySize());
-        preambleUndoRedo('undo');
+        //preambleUndoRedo('undo');
         e.preventDefault();
-        SHARED.cm.undo();
+        //SHARED.cm.undo();
         return;
 
       case 'redo':
         //console.log('### BlockEditor.js redo')
         //console.log('### BEFORE redo SHARED.cm.historySize()=', SHARED.cm.historySize());
-        preambleUndoRedo('redo');
+        //preambleUndoRedo('redo');
         e.preventDefault();
-        SHARED.cm.redo();
+        //SHARED.cm.redo();
         return;
 
       }

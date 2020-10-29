@@ -108,8 +108,6 @@ export const reducer = (
     //console.log('### UNDO actionFocus =', state.actionFocus)
     state.undoableAction = null;
     state.actionFocus = null;
-    //let undid = state.focusStack.undo.pop();
-    //state.focusStack.redo.push(undid);
     result = {...state};
     break;
   case 'REDO':
@@ -120,8 +118,6 @@ export const reducer = (
     //console.log('### REDO actionFocus =', state.actionFocus)
     state.undoableAction = null;
     state.actionFocus = null;
-    //let redid = state.focusStack.redo.pop();
-    //state.focusStack.undo.push(redid);
     result = {...state};
     break;
 

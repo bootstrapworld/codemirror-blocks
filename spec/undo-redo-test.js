@@ -49,16 +49,11 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
     keyDown("Z", { ctrlKey: true });    // undo (3), leaving \nB\n\n
-    // actually, above does 2 undo's, perhaps because
-    // insertText() doesn't play nice.
-    // Therefore, skipping an explicit undo below (comment)
     await wait(DELAY);
-    /*
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
     keyDown("Z", { ctrlKey: true }, currentFirstRoot());    // undo (2), leaving \nB\n\n
     await wait(DELAY);
-    */
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
     keyDown("Z", { ctrlKey: true }, currentFirstRoot());    // undo (1), leaving A\nB\n
@@ -71,16 +66,12 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
     keyDown("Y", { ctrlKey: true }, currentFirstRoot());    // redo (2), leaving \nB\n\n
     await wait(DELAY);
-    //expect(this.cmb.getValue()).toEqual('\nB\n\n');
-    expect(this.cmb.getValue()).toEqual('\nB\n');
-    //expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
-    expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
+    expect(this.cmb.getValue()).toEqual('\nB\n\n');
+    expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
     keyDown("Y", { ctrlKey: true }, currentFirstRoot());    // redo (3), leaving \nB\n\nC
     await wait(DELAY);
-    //expect(this.cmb.getValue()).toEqual('\nB\n\nC');
-    expect(this.cmb.getValue()).toEqual('\nB\n');
-    //expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
-    expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
+    expect(this.cmb.getValue()).toEqual('\nB\n\nC');
+    expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
   });
 });
 
