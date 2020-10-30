@@ -278,7 +278,7 @@ export const commandMap = {
   paste : function (cm, e) {
     if(!this) { return CodeMirror.Pass; }
     const node = this.node;
-    if (selections.includes(this.node.id)) {
+    if (this.selections.includes(this.node.id)) {
       paste(new ReplaceNodeTarget(this.node));
     } else if (this.props.node.parent) {
       // We're inside the AST somewhere. Try to paste to the left/right.

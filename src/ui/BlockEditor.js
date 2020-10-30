@@ -9,8 +9,7 @@ import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
 import NodeEditable from '../components/NodeEditable';
-import {drop, delete_, copy, paste, activate, setCursor,
-        InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
+import {activate, setCursor, OverwriteTarget} from '../actions';
 import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {pos} from '../types';
@@ -18,7 +17,7 @@ import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, 
   BlockError, skipCollapsed} from '../utils';
 import BlockComponent from '../components/BlockComponent';
-import { keyMap, commandMap, renderKeyMap } from '../keymap';
+import { keyMap, commandMap } from '../keymap';
 import {playSound, BEEP} from '../sound';
 
 // CodeMirror APIs that we need to disallow
