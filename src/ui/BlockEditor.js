@@ -680,10 +680,7 @@ class BlockEditor extends Component {
     if (SHARED.cm && this.props.ast) {
       // Render all the top-level nodes
       portals = this.props.ast.rootNodes.map(r => 
-        <ToplevelBlock 
-          key={r.id} 
-          node={r} 
-          incrementalRendering={incrementalRendering}
+        <ToplevelBlock key={r.id} node={r} incrementalRendering={incrementalRendering}
         />
       );
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);

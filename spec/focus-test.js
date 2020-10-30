@@ -43,8 +43,6 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown("Delete");
       await wait(DELAY);
       expect(this.cm.getValue()).toBe('(+ 1 2)');
-      this.cm.focus();
-      await wait(DELAY);
       expect(this.blocks.getFocusedNode().id).toBe(this.literal2.id);
     });
 
@@ -56,8 +54,6 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown("Delete");
       await wait(DELAY);
       expect(this.cm.getValue()).toBe('(+ 2 3)');
-      this.cm.focus();
-      await wait(DELAY);
       expect(this.blocks.getFocusedNode().id).toBe(this.func.id);
     });
 
@@ -67,8 +63,6 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(document.activeElement).toBe(this.literal2.element);
       keyDown(" ");
       keyDown("Delete");
-      await wait(DELAY);
-      this.cm.focus();
       await wait(DELAY);
       expect(document.activeElement).toBe(this.literal1.element);
       expect(this.cm.getValue()).toBe('(+ 1 3)');
@@ -86,8 +80,6 @@ describe('The CodeMirrorBlocks Class', function() {
       keyDown("Delete");
       await wait(DELAY);
       expect(this.cm.getValue()).toBe('(+ 1)');
-      this.cm.focus();
-      await wait(DELAY);
       expect(this.blocks.getFocusedNode().id).toBe(this.literal1.id);
     });
     

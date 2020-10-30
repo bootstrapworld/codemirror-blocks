@@ -2,10 +2,9 @@ import React from 'react';
 import {playSound, BEEP} from './sound';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
-        ReplaceNodeTarget, OverwriteTarget} from './actions';
+  ReplaceNodeTarget, OverwriteTarget} from './actions';
 import {partition, getRoot, sayActionForNodes, 
-        say, getLastVisibleNode} from './utils';
-import {store} from './store';
+  say, getLastVisibleNode} from './utils';
 
 const userAgent = navigator.userAgent;
 const platform = navigator.platform;
