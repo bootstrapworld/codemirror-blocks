@@ -25,7 +25,7 @@ const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
-/*
+
 describe("when testing undo/redo,", function () {
   beforeEach(async function () {
     setup.call(this);
@@ -71,7 +71,7 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.getValue()).toEqual('A\nB\n');    
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 3});
     if(mac) {                                               // redo (1), leaving \nB\n
-      keyDown("Z", { cmdKey: true, shiftKey:true }, currentFirstRoot());
+      keyDown("Z", { metaKey: true, shiftKey: true }, currentFirstRoot());
     } else {
       keyDown("Y", { ctrlKey: true }, currentFirstRoot());
     }
@@ -79,7 +79,7 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
     if(mac) {                                               // redo (2), leaving \nB\n\n
-      keyDown("Z", { cmdKey: true, shiftKey:true }, currentFirstRoot());
+      keyDown("Z", { metaKey: true, shiftKey:true }, currentFirstRoot());
     } else {
       keyDown("Y", { ctrlKey: true }, currentFirstRoot());
     }
@@ -87,7 +87,7 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
     if(mac) {                                               // redo (3), leaving \nB\n\nC
-      keyDown("Z", { cmdKey: true, shiftKey:true }, currentFirstRoot());
+      keyDown("Z", { metaKey: true, shiftKey:true }, currentFirstRoot());
     } else {
       keyDown("Y", { ctrlKey: true }, currentFirstRoot());
     }
@@ -96,4 +96,3 @@ describe("when testing undo/redo,", function () {
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
   });
 });
-*/
