@@ -51,6 +51,7 @@ const macKeyMap = {
 const pcKeyMap = {
   'Ctrl-F'    : 'activateSearchDialog',
   'Ctrl-Z'    : 'undo',
+  'Ctrl-Y'    : 'redo',
   'Shift-Ctrl-Z':'redo',
   'Ctrl-C'    : 'copy',
   'Ctrl-V'    : 'paste',
