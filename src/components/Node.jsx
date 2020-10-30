@@ -199,9 +199,8 @@ class Node extends BlockComponent {
       const {
         connectDragSource, isDragging,
         connectDropTarget, isOver,
-        connectDragPreview,
+        connectDragPreview, onKeyDown
       } = this.props;
-      const onKeyDown = this.props.onKeyDown;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
       if(textMarker && textMarker.options.className) classes.push(textMarker.options.className);
       let result = (

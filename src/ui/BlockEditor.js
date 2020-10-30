@@ -370,8 +370,10 @@ class BlockEditor extends Component {
       /*****************************************************************
       * APIs THAT ARE UNIQUE TO CODEMIRROR-BLOCKS
       */
-      'getAst': () => this.getAst(),
-      'getFocusedNode': () => this.getFocusedNode(),
+      'getAst':
+        () => withState((state) => state.ast),
+      'getFocusedNode':
+        () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : null),
       'getSelectedNodes':
         () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
 
@@ -391,20 +393,7 @@ class BlockEditor extends Component {
           'API Error');
       });
     return api;
-  }
-
-  getAst() { 
-    return this.props.dispatch((_, getState) => getState().ast);
-  }
-
-  getFocusedNode() {
-    return this.props.dispatch((_, getState) => {
-      const {ast, focusId} = getState();
-      const activeClasses = [...document.activeElement.classList];
-      const activeNode    = activeClasses.includes('blocks-node');
-      return (focusId && activeNode) ? ast.getNodeById(focusId) : null;
-    });
-  }    
+  } 
 
   markText(from, to, options) {
     let node = this.props.ast.getNodeAt(from, to);
