@@ -5,6 +5,7 @@ import {delete_, copy, paste, InsertTarget,
         ReplaceNodeTarget, OverwriteTarget} from './actions';
 import {partition, getRoot, sayActionForNodes, 
         say, getLastVisibleNode} from './utils';
+import {store} from './store';
 
 const userAgent = navigator.userAgent;
 const platform = navigator.platform;

@@ -19,6 +19,8 @@ import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges,
 import BlockComponent from '../components/BlockComponent';
 import { keyMap, commandMap } from '../keymap';
 import {playSound, BEEP} from '../sound';
+import {store} from '../store';
+
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending', 
@@ -71,7 +73,7 @@ class ToplevelBlock extends BlockComponent {
     // TODO(Emmanuel): find a more elegant way of making onKeyDown 
     // available everywhere. Maybe a redux pattern?
     const elt = this.state.renderPlaceholder? (<div/>)
-      : node.reactElement({onKeyDown: onKeyDown});
+      : node.reactElement();
     
     // if any prior block markers are in this range, clear them
     const {from, to} = node.srcRange(); // includes the node's comment, if any
@@ -177,6 +179,9 @@ class BlockEditor extends Component {
     Object.keys(this.props.keyMap).forEach(k => {
       this.keyMap[k] = commandMap[this.props.keyMap[k]];
     });
+
+    // stick the keyDown handler in the store
+    store.onKeyDown = this.handleTopLevelKeyDown;
   }
 
   static defaultProps = {
@@ -613,6 +618,7 @@ class BlockEditor extends Component {
   }
 
   handleTopLevelKeyDown = (e, env = this) => {
+    console.log('keydiwn called!');
     env.props.dispatch((_, getState) => {
       // TODO(Emmanuel): Simplify what gets passed in the environment,
       // to rid the command code of avoid endless "this.props" vs "this"
@@ -678,7 +684,6 @@ class BlockEditor extends Component {
           key={r.id} 
           node={r} 
           incrementalRendering={incrementalRendering}
-          onKeyDown={this.handleTopLevelKeyDown}
         />
       );
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);

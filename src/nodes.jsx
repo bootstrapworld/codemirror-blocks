@@ -54,7 +54,7 @@ export class Unknown extends ASTNode {
   }
 
   render(props) {
-    const firstElt = this.elts[0].reactElement({onKeyDown: props.onKeyDown});
+    const firstElt = this.elts[0].reactElement();
     const restElts = this.elts.slice(1);
     return (
       <Node node={this} {...props}>
@@ -97,7 +97,7 @@ export class FunctionApp extends ASTNode {
   }
 
   render(props) {
-    const func = this.func.reactElement({onKeyDown: props.onKeyDown});
+    const func = this.func.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -169,8 +169,8 @@ export class StructDefinition extends ASTNode {
   }
 
   render(props) {
-    const name = this.name.reactElement({onKeyDown: props.onKeyDown});
-    const fields = this.fields.reactElement({onKeyDown: props.onKeyDown});
+    const name = this.name.reactElement();
+    const fields = this.fields.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -208,8 +208,8 @@ export class VariableDefinition extends ASTNode {
   }
 
   render(props) {
-    const body = this.body.reactElement({onKeyDown: props.onKeyDown});
-    const name = this.name.reactElement({onKeyDown: props.onKeyDown});
+    const body = this.body.reactElement();
+    const name = this.name.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -247,8 +247,8 @@ export class LambdaExpression extends ASTNode {
   }
 
   render(props) {
-    const args = this.args.reactElement({onKeyDown: props.onKeyDown});
-    const body = this.body.reactElement({onKeyDown: props.onKeyDown});
+    const args = this.args.reactElement();
+    const body = this.body.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -293,9 +293,9 @@ export class FunctionDefinition extends ASTNode {
   }
 
   render(props) {
-    let params = this.params.reactElement({onKeyDown: props.onKeyDown});
-    let body = this.body.reactElement({onKeyDown: props.onKeyDown});
-    let name = this.name.reactElement({onKeyDown: props.onKeyDown});
+    let params = this.params.reactElement();
+    let body = this.body.reactElement();
+    let name = this.name.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -330,7 +330,7 @@ export class CondClause extends ASTNode {
   }
 
   render(props) {
-    const testExpr = this.testExpr.reactElement({onKeyDown: props.onKeyDown});
+    const testExpr = this.testExpr.reactElement();
     return (
       <Node node={this} {...props}>
         <div className="blocks-cond-row">
@@ -341,7 +341,7 @@ export class CondClause extends ASTNode {
             {this.thenExprs.map((thenExpr, index) => (
               <span key={index}>
                 <DropTarget field="thenExprs"/>
-                {thenExpr.reactElement({onKeyDown: props.onKeyDown})}
+                {thenExpr.reactElement()}
               </span>))}
             <DropTarget field="thenExprs"/>
           </div>
@@ -410,9 +410,9 @@ export class IfExpression extends ASTNode {
   }
 
   render(props) {
-    const testExpr = this.testExpr.reactElement({onKeyDown: props.onKeyDown});
-    const thenExpr = this.thenExpr.reactElement({onKeyDown: props.onKeyDown});
-    const elseExpr = this.elseExpr.reactElement({onKeyDown: props.onKeyDown});
+    const testExpr = this.testExpr.reactElement();
+    const thenExpr = this.thenExpr.reactElement();
+    const elseExpr = this.elseExpr.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">if</span>

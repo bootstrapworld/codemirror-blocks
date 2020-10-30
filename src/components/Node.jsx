@@ -43,7 +43,6 @@ class Node extends BlockComponent {
     connectDropTarget: PropTypes.func.isRequired,
     isOver: PropTypes.bool.isRequired,
     inToolbar: PropTypes.bool,
-    onKeyDown: PropTypes.func.isRequired,
 
     normallyEditable: PropTypes.bool,
 
@@ -199,7 +198,7 @@ class Node extends BlockComponent {
       const {
         connectDragSource, isDragging,
         connectDropTarget, isOver,
-        connectDragPreview, onKeyDown
+        connectDragPreview
       } = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
       if(textMarker && textMarker.options.className) classes.push(textMarker.options.className);
@@ -220,10 +219,10 @@ class Node extends BlockComponent {
           onDragStart   = {this.handleMouseDragRelated}
           onDragEnd     = {this.handleMouseDragRelated}
           onDrop        = {this.handleMouseDragRelated}
-          onKeyDown     = {e => onKeyDown(e, this)}
+          onKeyDown     = {e => store.onKeyDown(e, this)}
           >
           {children}
-          {comment && comment.reactElement({onKeyDown: onKeyDown})}
+          {comment && comment.reactElement()}
         </span>
       );
       if (this.props.normallyEditable) {
