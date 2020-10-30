@@ -54,13 +54,13 @@ export class Unknown extends ASTNode {
   }
 
   render(props) {
-    const firstElt = this.elts[0].reactElement();
+    const firstElt = this.elts[0].reactElement({onKeyDown: props.onKeyDown});
     const restElts = this.elts.slice(1);
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
-        <Args field="elts">{restElts}</Args>
+        <Args field="elts" {...props}>{restElts}</Args>
         </span>
       </Node>
     );
@@ -97,14 +97,14 @@ export class FunctionApp extends ASTNode {
   }
 
   render(props) {
-    const func = this.func.reactElement();
+    const func = this.func.reactElement({onKeyDown: props.onKeyDown});
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
           {func}
         </span>
         <span className="blocks-args">
-          <Args field="args">{this.args}</Args>
+          <Args field="args" {...props}>{this.args}</Args>
         </span>
     </Node>
     );
@@ -138,7 +138,7 @@ export class IdentifierList extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-args">
-          <Args field="ids">{this.ids}</Args>
+          <Args field="ids" {...props}>{this.ids}</Args>
         </span>
       </Node>
     );
@@ -169,8 +169,8 @@ export class StructDefinition extends ASTNode {
   }
 
   render(props) {
-    const name = this.name.reactElement();
-    const fields = this.fields.reactElement();
+    const name = this.name.reactElement({onKeyDown: props.onKeyDown});
+    const fields = this.fields.reactElement({onKeyDown: props.onKeyDown});
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -208,8 +208,8 @@ export class VariableDefinition extends ASTNode {
   }
 
   render(props) {
-    const body = this.body.reactElement();
-    const name = this.name.reactElement();
+    const body = this.body.reactElement({onKeyDown: props.onKeyDown});
+    const name = this.name.reactElement({onKeyDown: props.onKeyDown});
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -247,8 +247,8 @@ export class LambdaExpression extends ASTNode {
   }
 
   render(props) {
-    const args = this.args.reactElement();
-    const body = this.body.reactElement();
+    const args = this.args.reactElement({onKeyDown: props.onKeyDown});
+    const body = this.body.reactElement({onKeyDown: props.onKeyDown});
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -293,9 +293,9 @@ export class FunctionDefinition extends ASTNode {
   }
 
   render(props) {
-    let params = this.params.reactElement();
-    let body = this.body.reactElement();
-    let name = this.name.reactElement();
+    let params = this.params.reactElement({onKeyDown: props.onKeyDown});
+    let body = this.body.reactElement({onKeyDown: props.onKeyDown});
+    let name = this.name.reactElement({onKeyDown: props.onKeyDown});
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
@@ -330,7 +330,7 @@ export class CondClause extends ASTNode {
   }
 
   render(props) {
-    const testExpr = this.testExpr.reactElement();
+    const testExpr = this.testExpr.reactElement({onKeyDown: props.onKeyDown});
     return (
       <Node node={this} {...props}>
         <div className="blocks-cond-row">
@@ -341,7 +341,7 @@ export class CondClause extends ASTNode {
             {this.thenExprs.map((thenExpr, index) => (
               <span key={index}>
                 <DropTarget field="thenExprs"/>
-                {thenExpr.reactElement()}
+                {thenExpr.reactElement({onKeyDown: props.onKeyDown})}
               </span>))}
             <DropTarget field="thenExprs"/>
           </div>
@@ -410,9 +410,9 @@ export class IfExpression extends ASTNode {
   }
 
   render(props) {
-    const testExpr = this.testExpr.reactElement();
-    const thenExpr = this.thenExpr.reactElement();
-    const elseExpr = this.elseExpr.reactElement();
+    const testExpr = this.testExpr.reactElement({onKeyDown: props.onKeyDown});
+    const thenExpr = this.thenExpr.reactElement({onKeyDown: props.onKeyDown});
+    const elseExpr = this.elseExpr.reactElement({onKeyDown: props.onKeyDown});
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">if</span>
@@ -494,7 +494,7 @@ export class Comment extends ASTNode {
     return P.concat("#| ", wrapped, " |#");
   }
 
-  render(_props) { // eslint-disable-line no-unused-vars
+  render(props) { // eslint-disable-line no-unused-vars
     return (<span className="blocks-comment" id={this.id} aria-hidden="true">
       <span className="screenreader-only">Has comment,</span> <span>{this.comment.toString()}</span>
     </span>);
@@ -558,7 +558,7 @@ export class Sequence extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>
         <div className="blocks-sequence-exprs">
-          <Args field="exprs">{this.exprs}</Args>
+          <Args field="exprs" {...props}>{this.exprs}</Args>
         </div>
       </Node>
     );

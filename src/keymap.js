@@ -1,4 +1,10 @@
 import React from 'react';
+import {playSound, BEEP} from './sound';
+import SHARED from './shared';
+import {delete_, copy, paste, InsertTarget,
+        ReplaceNodeTarget, OverwriteTarget} from './actions';
+import {partition, getRoot, sayActionForNodes, 
+        say, getLastVisibleNode} from './utils';
 
 const userAgent = navigator.userAgent;
 const platform = navigator.platform;
@@ -18,13 +24,12 @@ export const keyMap = {
   'Shift-Alt-Left': 'collapseCurrentRoot',
   'Shift-Alt-Right':'expandCurrentRoot',
   'Enter'     : 'edit',
-  'Ctrl-Enter': 'edit',
   'Space'     : 'toggleSelection',
   'Esc'       : 'clearSelection',
   'Ctrl-Esc'  : 'clearSelection',
   'Alt-Q'     : 'clearSelection',
-  'Delete'    : 'delete',
-  'Backspace' : 'delete',
+  'Delete'    : 'deleteNodes',
+  'Backspace' : 'deleteNodes',
   'Ctrl-['    : 'insertLeft',
   'Ctrl-]'    : 'insertRight',
   'Shift-,'   : 'jumpToRoot',
@@ -33,10 +38,10 @@ export const keyMap = {
   'PageUp'    : 'searchPrevious',
   'PageDown'  : 'searchNext',
   'F3'        : 'activateSearchDialog',
-  'Tab'       : 'changeFocus',
 };
 
 const macKeyMap = {
+  'Cmd-Enter': 'editAnything',
   'Cmd-F'     : 'activateSearchDialog',
   'Cmd-Z'     : 'undo',
   'Shift-Cmd-Z': 'redo',
@@ -49,6 +54,7 @@ const macKeyMap = {
 };
 
 const pcKeyMap = {
+  'Ctrl-Enter': 'editAnything',
   'Ctrl-F'    : 'activateSearchDialog',
   'Ctrl-Z'    : 'undo',
   'Shift-Ctrl-Z':'redo',
@@ -59,7 +65,299 @@ const pcKeyMap = {
   'Shift-Ctrl-/': 'help',
 };
 
+// Add platform-specific keys
 Object.assign(keyMap, mac? macKeyMap : pcKeyMap);
+// see https://codemirror.net/doc/manual.html#keymaps
+CodeMirror.normalizeKeyMap(keyMap);
+
+export const commandMap = {
+  prevNode : function (cm) {
+    console.log('prevNode', 'THIS is', this);
+    if(this) {
+      this.activate(this.fastSkip(node => node.prev));
+    } else {
+      const prevNode = this.getAst().getNodeBeforeCur(this.props.cur);
+      if (prevNode) {
+        this.activate(prevNode.id, {allowMove: true});
+      } else {
+        playSound(BEEP);
+      }
+    }
+  },
+
+  nextNode : function (cm) {
+    console.log('nextNode', 'THIS is', this);
+    if(this) {
+      this.activate(this.fastSkip(node => node.next));
+    } else {
+      const nextNode = this.getAst().getNodeAfterCur(this.props.cur);
+      if (nextNode) {
+        this.activate(nextNode.id, {allowMove: true});
+      } else {
+        playSound(BEEP);
+      }
+    }
+  },
+
+  firstNode : function (cm) {
+    console.log('firstNode', 'THIS is', this);
+    if(this) {
+      console.log('activating', this.ast.getFirstRootNode());
+      this.activate(this.ast.getFirstRootNode(), {allowMove: true});
+    } else {
+      return CodeMirror.Pass;
+    }
+  },
+
+  lastVisibleNode : function (cm) {
+    console.log('lastVisibleNode', 'THIS is', this);
+    if(this) {
+      this.activate(getLastVisibleNode(this.state));
+    } else {
+      const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
+      this.props.setCursor(null, {line: idx, ch: text.length});
+    }
+  },
+
+  jumpToRoot : function (cm) {
+    console.log('jumpToRoot', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    this.activate(getRoot(this.node));
+  },
+
+  readAncestors : function (cm) {
+    console.log('readAncestors', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    const parents = [this.node.options['aria-label']];
+    let next = this.node.parent;
+    while (next) {
+      parents.push(next.options['aria-label'] + ", at level " + next.level);
+      next = next.parent;
+    }
+    if (parents.length > 1) say(parents.join(", inside "));
+    else playSound(BEEP);
+  },
+
+  readChildren : function (cm) {
+    console.log('readChildren', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    say(this.node.describe(this.node.level));
+  },
+
+  collapseAll : function (cm) {
+    console.log('collapseAll', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    this.props.dispatch({type: 'COLLAPSE_ALL'});
+    this.activate(getRoot(this.node));
+  },
+
+  collapseOrSelectParent : function(cm) {
+    console.log('collapseOrSelectParent', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    if (this.props.expandable && !this.props.isCollapsed && !this.isLocked()) {
+      this.props.collapse(this.props.node.id);
+    } else if (this.props.node.parent) {
+      this.activate(this.props.node.parent);
+    } else {
+      playSound(BEEP);
+    }
+  },
+
+  collapseCurrentRoot : function (cm) {
+    console.log('collapseCurrentRoot', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    if(!this.node.parent && (this.props.isCollapsed || !this.props.expandable)) {
+      playSound(BEEP);
+    } else {
+      let root = getRoot(this.node);
+      let descendants = [...root.descendants()];
+      descendants.forEach(d => this.props.collapse(d.id));
+      this.activate(root);
+    }
+  },
+
+  expandAll : function (cm) {
+    console.log('expandAll', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    this.props.dispatch({type: 'UNCOLLAPSE_ALL'});
+  },
+
+  expandOrSelectFirstChild : function (cm) {
+    console.log('expandOrSelectFirstChild', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    const node = this.node;
+    if (this.props.expandable && this.props.isCollapsed && !this.isLocked()) {
+      this.props.uncollapse(node.id);
+    } else if (node.next && node.next.parent === node) {
+      activate(node.next);
+    } else {
+      playSound(BEEP);
+    }
+  },
+
+  expandCurrentRoot : function (cm) {
+    console.log('expandCurrentRoot', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    let root = getRoot(this.node);
+    let descendants = [...root.descendants()];
+    descendants.forEach(d => this.props.uncollapse(d.id));
+    this.activate(root);
+  },
+
+  toggleSelection : function (cm) {
+    console.log('toggleSelection', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    const node = this.node;
+    if (this.selections.includes(this.node.id)) {
+      this.props.dispatch({
+        type: 'SET_SELECTIONS',
+        selections: this.selections.filter(s => s !== node.id)
+      });
+      // TODO(Emmanuel): announce removal
+    } else {
+      const {from: addedFrom, to: addedTo} = node;
+      const isContained = id => this.ast.isAncestor(node.id, id);
+      const doesContain = id => this.ast.isAncestor(id, node.id);
+      const [removed, newSelections] = partition(this.selections, isContained);
+      for (const r of removed) {
+        // TODO(Emmanuel): announce removal
+      }
+      if (newSelections.some(doesContain)) {
+        // TODO(Emmanuel): announce failure
+      } else {
+        // announce addition
+        newSelections.push(this.node.id);
+        this.props.dispatch({
+          type: 'SET_SELECTIONS',
+          selections: newSelections
+        });
+      }
+    }
+  },
+
+  edit : function (cm, e) {
+    console.log('edit', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    if (this.props.normallyEditable) {
+      this.handleMakeEditable(e);
+    } else if (this.props.expandable && !this.isLocked()) {
+      (this.props.isCollapsed ? this.props.uncollapse : this.props.collapse)(this.node.id);
+    } else {
+      playSound(BEEP);
+    }
+  },
+
+  editAnything : function (cm, e) {
+    console.log('editAnything', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    this.handleMakeEditable(e);
+  },
+
+  clearSelection : function (cm) {
+    console.log('clearSelection', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    this.props.dispatch({type: 'SET_SELECTIONS', selections: []});
+  },
+
+  deleteNodes : function (cm) {
+    console.log('deleteNodes', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    if (this.selections.length === 0) {
+      say('Nothing selected');
+      return;
+    }
+    const nodesToDelete = this.selections.map(this.ast.getNodeById);
+    sayActionForNodes(nodesToDelete, "deleted");
+    delete_(nodesToDelete);
+  },
+
+  insertRight : function (cm) {
+    console.log('insertRight', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    if (!this.setRight()) {
+      this.props.setCursor(this.node.to);
+    }
+  },
+
+  insertLeft : function (cm) {
+    console.log('insertLeft', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    if (!this.setLeft()) {
+      this.props.setCursor(this.node.from);
+    }
+  },
+
+  copy : function (cm) {
+    console.log('copy', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    // if no nodes are selected, do it on focused node's id instead
+    const nodeIds = this.selections.length == 0 ? [this.node.id] : this.selections;
+    const nodesToCopy = nodeIds.map(this.ast.getNodeById);
+    sayActionForNodes(nodesToCopy, "copied");
+    copy(nodesToCopy);
+  },
+
+  // TODO(Emmanuel): clean up this.node vs this.props.node
+  paste : function (cm, e) {
+    console.log('paste', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    const node = this.node;
+    if (selections.includes(this.node.id)) {
+      paste(new ReplaceNodeTarget(this.node));
+    } else if (this.props.node.parent) {
+      // We're inside the AST somewhere. Try to paste to the left/right.
+      const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
+      const target = new InsertTarget(this.context.node, this.context.field, pos);
+      if (target) {
+        paste(target);
+      } else {
+        let direction = e.shiftKey ? "before" : "after";
+        say(`Cannot paste ${direction} this node.`);
+      }
+    } else {
+      // We're at a root node. Insert to the left or right, at the top level.
+      const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
+      paste(new OverwriteTarget(pos, pos));
+    }
+  },
+
+  cut : function (cm) {
+    console.log('cut', 'THIS is', this);
+    if(!this) { return CodeMirror.Pass; }
+    if (this.selections.length === 0) {
+      say('Nothing selected');
+      return;
+    }
+    const nodesToCut = this.selections.map(this.ast.getNodeById);
+    sayActionForNodes(nodesToCut, "cut");
+    copy(nodesToCut);
+    delete_(nodesToCut);
+  },
+
+  activateSearchDialog : function (cm) {
+    console.log('activateSearchDialog', 'THIS is', this);
+    SHARED.search.onSearch(
+      this.state,
+      () => { this.props.activate },
+      () => this.activateNoRecord(SHARED.search.search(true, this.state))
+    );
+  },
+
+  searchPrevious : function (cm) {
+    console.log('searchPrevious', 'THIS is', this);
+    this.activateNoRecord(SHARED.search.search(false, this.state));
+  },
+
+  searchNext : function (cm) {
+    console.log('searchNext', 'THIS is', this);
+    this.activateNoRecord(SHARED.search.search(true, this.state));
+  },
+
+  help : function (cm) {
+    console.log('help', 'THIS is', this);
+    this.showDialog(renderKeyMap(this.keyMap));
+  }
+}
 
 export function renderKeyMap(keyMap) {
   const reverseMap = {};

@@ -31,8 +31,8 @@ export class LetLikeExpr extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.form}</span>
-        {this.bindings.reactElement()}
-        {this.expr.reactElement()}
+        {this.bindings.reactElement({onKeyDown: onKeyDown})}
+        {this.expr.reactElement({onKeyDown: onKeyDown})}
       </Node>
     );
   }
@@ -64,8 +64,8 @@ export class WhenUnless extends ASTNode {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.form}</span>
-        {this.predicate.reactElement()}
-        {this.exprs.reactElement()}
+        {this.predicate.reactElement({onKeyDown: onKeyDown})}
+        {this.exprs.reactElement({onKeyDown: onKeyDown})}
       </Node>
     );
   }
