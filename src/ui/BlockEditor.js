@@ -15,7 +15,7 @@ import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, BlockError, preambleUndoRedo} from '../utils';
+import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 import { keyMap, renderKeyMap } from '../keymap';
 
