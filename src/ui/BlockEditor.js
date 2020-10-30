@@ -15,7 +15,7 @@ import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, BlockError} from '../utils';
+import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, BlockError, preambleUndoRedo} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 import { keyMap, renderKeyMap } from '../keymap';
 
@@ -200,6 +200,7 @@ class BlockEditor extends Component {
   handleChanges = (cm, changes) => {
     this.props.dispatch((dispatch, getState) => {
       if (!changes.every(c => c.origin && c.origin.startsWith("cmb:"))) {
+        //console.log('doing BlockEditor handleChanges fn');
         // These changes did not originate from us. However, they've all
         // passed the `handleBeforeChange` function, so they must be valid edits.
         // (There's almost certainly just one edit here; I (Justin) am not
@@ -209,16 +210,18 @@ class BlockEditor extends Component {
         // Turn undo and redo into cmb actions, update the focusStack, and
         // provide a focusHint
         if (changes[0].origin === "undo") {
+          //console.log('%%% BlockEditor.js undo')
+          //console.log('%%% BlockEditor.js undo SHARED.cm.historySize()=', SHARED.cm.historySize());
           for (let c of changes) c.origin = "cmb:undo";
-          const undoFocusStack = getState().undoFocusStack;
-          const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
+          const {oldFocusNId, _newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'UNDO'});
         } else if (changes[0].origin === "redo") {
+          //console.log('%%% BlockEditor.js redo')
+          //console.log('%%% BlockEditor.js redo SHARED.cm.historySize()=', SHARED.cm.historySize());
           for (let c of changes) c.origin = "cmb:redo";
-          const redoFocusStack = getState().redoFocusStack;
-          const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
+          const {_oldFocusNId, newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'REDO'});
@@ -227,6 +230,14 @@ class BlockEditor extends Component {
           // don't know anything else about it. Apply the change, set the focusHint
           // to the top of the tree (-1), and provide an astHint so we don't need
           // to reparse and rebuild the tree
+          let annt = '';
+          for (let i = changes.length - 1; i >= 0; i--) {
+            annt = annt + changes[i].origin;
+            if (i !== 0) annt = ' and ' + annt;
+          }
+          if (annt === '') annt = 'change';
+          getState().undoableAction = annt; //?
+          //console.log('BlockEditor.js calling commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
       }
@@ -621,13 +632,19 @@ class BlockEditor extends Component {
         return;
       }
       case 'undo': {
+        //console.log('### BlockEditor.js undo')
+        //console.log('### BEFORE undo SHARED.cm.historySize()=', SHARED.cm.historySize());
+        //preambleUndoRedo('undo');
         e.preventDefault();
-        SHARED.cm.undo();
+        //SHARED.cm.undo();
         return;
       }
       case 'redo': {
+        //console.log('### BlockEditor.js redo')
+        //console.log('### BEFORE redo SHARED.cm.historySize()=', SHARED.cm.historySize());
+        //preambleUndoRedo('redo');
         e.preventDefault();
-        SHARED.cm.redo();
+        //SHARED.cm.redo();
         return;
       }
       }

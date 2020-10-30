@@ -3,7 +3,7 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {partition, getRoot, sayActionForNodes,
-        isControl, say, skipCollapsed, getLastVisibleNode} from '../utils';
+        isControl, say, skipCollapsed, getLastVisibleNode, preambleUndoRedo} from '../utils';
 import {drop, delete_, copy, paste, activate, setCursor,
         InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
@@ -283,14 +283,15 @@ class Node extends BlockComponent {
 
       // delete seleted nodes
       case 'delete':
+        //console.log('### Node.jsx delete')
         e.preventDefault();
         if (selections.length === 0) {
           say('Nothing selected');
           return;
         }
         const nodesToDelete = selections.map(ast.getNodeById);
-        sayActionForNodes(nodesToDelete, "deleted");
-        delete_(nodesToDelete);
+        //sayActionForNodes(nodesToDelete, "deleted");
+        delete_(nodesToDelete, "deleted");
         return;
 
       // insert-right
@@ -313,12 +314,13 @@ class Node extends BlockComponent {
 
       // copy
       case 'copy':
+        //console.log('### Node.jsx copy')
         e.preventDefault();
         // if no nodes are selected, do it on focused node's id instead
         const nodeIds = selections.length == 0 ? [node.id] : selections;
         const nodesToCopy = nodeIds.map(ast.getNodeById);
-        sayActionForNodes(nodesToCopy, "copied");
-        copy(nodesToCopy);
+        //sayActionForNodes(nodesToCopy, "copied");
+        copy(nodesToCopy, "copied");
         return;
 
       // paste
@@ -344,15 +346,16 @@ class Node extends BlockComponent {
 
       // cut
       case 'cut':
+        //console.log('### Node.jsx cut')
         e.preventDefault();
         if (selections.length === 0) {
           say('Nothing selected');
           return;
         }
         const nodesToCut = selections.map(ast.getNodeById);
-        sayActionForNodes(nodesToCut, "cut");
+        //sayActionForNodes(nodesToCut, "cut");
         copy(nodesToCut);
-        delete_(nodesToCut);
+        delete_(nodesToCut, "cut");
         return;
 
       // go to the very first node in the AST
@@ -396,11 +399,17 @@ class Node extends BlockComponent {
         return;
 
       case 'undo':
+        //console.log('### Node.jsx undo')
+        //console.log('### BEFORE undo SHARED.cm.historySize()=', SHARED.cm.historySize());
+        preambleUndoRedo('undo');
         e.preventDefault();
         SHARED.cm.undo();
         return;
 
       case 'redo':
+        //console.log('### Node.jsx redo')
+        //console.log('### BEFORE redo SHARED.cm.historySize()=', SHARED.cm.historySize());
+        preambleUndoRedo('redo');
         e.preventDefault();
         SHARED.cm.redo();
         return;
