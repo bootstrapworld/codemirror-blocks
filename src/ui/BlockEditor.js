@@ -67,13 +67,10 @@ class ToplevelBlock extends BlockComponent {
   }
 
   render() {
-    const {node, onKeyDown} = this.props;
+    const {node} = this.props;
 
     // set elt to a cheap placeholder, OR render the entire rootNode
-    // TODO(Emmanuel): find a more elegant way of making onKeyDown 
-    // available everywhere. Maybe a redux pattern?
-    const elt = this.state.renderPlaceholder? (<div/>)
-      : node.reactElement();
+    const elt = this.state.renderPlaceholder? (<div/>) : node.reactElement();
     
     // if any prior block markers are in this range, clear them
     const {from, to} = node.srcRange(); // includes the node's comment, if any
@@ -588,9 +585,6 @@ class BlockEditor extends Component {
     SHARED.options = options;
     SHARED.search = search;
 
-    // Set keyMap on the codemirror instance
-    SHARED.cm.addKeyMap(this.keyMap);
-
     const clipboardBuffer = document.createElement('textarea');
     clipboardBuffer.ariaHidden = true;
     clipboardBuffer.tabIndex = -1;
@@ -666,7 +660,7 @@ class BlockEditor extends Component {
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
-          //onKeyDown={this.handleTopLevelKeyDown}
+          onKeyDown={this.handleTopLevelKeyDown}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}
@@ -680,8 +674,7 @@ class BlockEditor extends Component {
     if (SHARED.cm && this.props.ast) {
       // Render all the top-level nodes
       portals = this.props.ast.rootNodes.map(r => 
-        <ToplevelBlock key={r.id} node={r} incrementalRendering={incrementalRendering}
-        />
+        <ToplevelBlock key={r.id} node={r} incrementalRendering={incrementalRendering} />
       );
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
     }

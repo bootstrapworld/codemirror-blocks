@@ -72,51 +72,34 @@ CodeMirror.normalizeKeyMap(keyMap);
 
 export const commandMap = {
   prevNode : function (cm) {
-    if(this) {
-      this.activate(this.fastSkip(node => node.prev));
-    } else {
-      const prevNode = this.getAst().getNodeBeforeCur(this.props.cur);
-      if (prevNode) {
-        this.activate(prevNode.id, {allowMove: true});
-      } else {
-        playSound(BEEP);
-      }
-    }
+    if(this) return this.activate(this.fastSkip(node => node.prev));
+    const prevNode = this.getAst().getNodeBeforeCur(this.props.cur);
+    if (prevNode) { this.activate(prevNode.id, {allowMove: true}); }
+    else { playSound(BEEP); }
   },
 
   nextNode : function (cm) {
-    if(this) {
-      this.activate(this.fastSkip(node => node.next));
-    } else {
-      const nextNode = this.getAst().getNodeAfterCur(this.props.cur);
-      if (nextNode) {
-        this.activate(nextNode.id, {allowMove: true});
-      } else {
-        playSound(BEEP);
-      }
-    }
+    if(this) return this.activate(this.fastSkip(node => node.next));
+    const nextNode = this.getAst().getNodeAfterCur(this.props.cur);
+    if (nextNode) { this.activate(nextNode.id, {allowMove: true}); }
+    else { playSound(BEEP); }
   },
 
   firstNode : function (cm) {
-    if(this) {
-      this.activate(this.ast.getFirstRootNode(), {allowMove: true});
-    } else {
-      return CodeMirror.Pass;
-    }
+    const root = this.ast.getFirstRootNode();
+    if(this) { this.activate(root, {allowMove: true}); }
+    else { return CodeMirror.Pass; }
   },
 
   lastVisibleNode : function (cm) {
-    if(this) {
-      this.activate(getLastVisibleNode(this.state));
-    } else {
-      const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
-      this.props.setCursor(null, {line: idx, ch: text.length});
-    }
+    if(this) return this.activate(getLastVisibleNode(this.state));
+    const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
+    this.props.setCursor(null, {line: idx, ch: text.length});
   },
 
   jumpToRoot : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
-    this.activate(getRoot(this.node));
+    if(this) { return this.activate(getRoot(this.node)); }
+    else     { return CodeMirror.Pass; }
   },
 
   readAncestors : function (cm) {
@@ -127,13 +110,13 @@ export const commandMap = {
       parents.push(next.options['aria-label'] + ", at level " + next.level);
       next = next.parent;
     }
-    if (parents.length > 1) say(parents.join(", inside "));
-    else playSound(BEEP);
+    if (parents.length > 1) { say(parents.join(", inside ")); }
+    else { playSound(BEEP); }
   },
 
   readChildren : function (cm) {
     if(!this) { return CodeMirror.Pass; }
-    say(this.node.describe(this.node.level));
+    else      { say(this.node.describe(this.node.level)); }
   },
 
   collapseAll : function (cm) {
@@ -166,8 +149,8 @@ export const commandMap = {
   },
 
   expandAll : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
-    this.props.dispatch({type: 'UNCOLLAPSE_ALL'});
+    if(this) { return this.props.dispatch({type: 'UNCOLLAPSE_ALL'}); }
+    else     { return CodeMirror.Pass; }
   },
 
   expandOrSelectFirstChild : function (cm) {
@@ -232,8 +215,8 @@ export const commandMap = {
   },
 
   editAnything : function (cm, e) {
-    if(!this) { return CodeMirror.Pass; }
-    this.handleMakeEditable(e);
+    if(this) { return this.handleMakeEditable(e); }
+    else     { return CodeMirror.Pass; }
   },
 
   clearSelection : function (cm) {
@@ -243,10 +226,7 @@ export const commandMap = {
 
   deleteNodes : function (cm) {
     if(!this) { return CodeMirror.Pass; }
-    if (this.selections.length === 0) {
-      say('Nothing selected');
-      return;
-    }
+    if(!this.selections.length == 0) { return say('Nothing selected'); }
     const nodesToDelete = this.selections.map(this.ast.getNodeById);
     sayActionForNodes(nodesToDelete, "deleted");
     delete_(nodesToDelete);
@@ -254,16 +234,21 @@ export const commandMap = {
 
   insertRight : function (cm) {
     if(!this) { return CodeMirror.Pass; }
-    if (!this.setRight()) {
-      this.props.setCursor(this.node.to);
-    }
+    if(!this.setRight()) { this.props.setCursor(this.node.to); }
   },
 
   insertLeft : function (cm) {
     if(!this) { return CodeMirror.Pass; }
-    if (!this.setLeft()) {
-      this.props.setCursor(this.node.from);
-    }
+    if(!this.setLeft()) { this.props.setCursor(this.node.from); }
+  },
+
+  cut : function (cm) {
+    if(!this) { return CodeMirror.Pass; }
+    if (this.selections.length == 0) { return say('Nothing selected'); }
+    const nodesToCut = this.selections.map(this.ast.getNodeById);
+    sayActionForNodes(nodesToCut, "cut");
+    copy(nodesToCut);
+    delete_(nodesToCut);
   },
 
   copy : function (cm) {
@@ -284,29 +269,13 @@ export const commandMap = {
       // We're inside the AST somewhere. Try to paste to the left/right.
       const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
       const target = new InsertTarget(this.context.node, this.context.field, pos);
-      if (target) {
-        paste(target);
-      } else {
-        let direction = e.shiftKey ? "before" : "after";
-        say(`Cannot paste ${direction} this node.`);
-      }
+      if (target) { paste(target); }
+      else { say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); }
     } else {
       // We're at a root node. Insert to the left or right, at the top level.
       const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
       paste(new OverwriteTarget(pos, pos));
     }
-  },
-
-  cut : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
-    if (this.selections.length === 0) {
-      say('Nothing selected');
-      return;
-    }
-    const nodesToCut = this.selections.map(this.ast.getNodeById);
-    sayActionForNodes(nodesToCut, "cut");
-    copy(nodesToCut);
-    delete_(nodesToCut);
   },
   // TODO(Emmanuel): fix search
   activateSearchDialog : function (cm) {
@@ -322,7 +291,6 @@ export const commandMap = {
   },
   // TODO(Emmanuel): fix search
   searchNext : function (cm) {
-    console.log('searchNext', 'THIS is', this);
     this.activateNoRecord(SHARED.search.search(true, this.state));
   },
 
@@ -334,11 +302,8 @@ export const commandMap = {
 export function renderKeyMap(keyMap) {
   const reverseMap = {};
   Object.keys(keyMap).forEach(key => {
-    if(reverseMap[keyMap[key]]){
-      reverseMap[keyMap[key]] = reverseMap[keyMap[key]] + " or " + key;
-    } else {
-      reverseMap[keyMap[key]] = key;
-    }
+    if(!reverseMap[keyMap[key]]) { reverseMap[keyMap[key]] = key; }
+    else reverseMap[keyMap[key]] = reverseMap[keyMap[key]] + " or " + key;
   });
   return (
     <>
@@ -350,59 +315,59 @@ export function renderKeyMap(keyMap) {
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Navigation</h2>
         <table className="shortcuts">
-          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead> 
+          <thead><tr><th>Command</th>     <th>Shortcut</th></tr></thead> 
           <tbody>         
-          <tr><td>Previous Block</td><td><kbd>{reverseMap['prevNode']}</kbd></td></tr>
-          <tr><td>Next Block</td><td><kbd>{reverseMap['nextNode']}</kbd></td></tr>
-          <tr><td>Collapse Block</td><td><kbd>{reverseMap['collapseOrSelectParent']}</kbd></td></tr>
-          <tr><td>Expand Block</td><td><kbd>{reverseMap['expandOrSelectFirstChild']}</kbd></td></tr>
-          <tr><td>Collapse Root</td><td><kbd>{reverseMap['collapseCurrentRoot']}</kbd></td></tr>
-          <tr><td>Expand Root</td><td><kbd>{reverseMap['expandCurrentRoot']}</kbd></td></tr>
-          <tr><td>Collapse All</td><td><kbd>{reverseMap['collapseAll']}</kbd></td></tr>
-          <tr><td>Expand All</td><td><kbd>{reverseMap['expandAll']}</kbd></td></tr>
+          <tr><td>Previous Block</td>     <td><kbd>{reverseMap['prevNode']}</kbd></td></tr>
+          <tr><td>Next Block</td>         <td><kbd>{reverseMap['nextNode']}</kbd></td></tr>
+          <tr><td>Collapse Block</td>     <td><kbd>{reverseMap['collapseOrSelectParent']}</kbd></td></tr>
+          <tr><td>Expand Block</td>       <td><kbd>{reverseMap['expandOrSelectFirstChild']}</kbd></td></tr>
+          <tr><td>Collapse Root</td>      <td><kbd>{reverseMap['collapseCurrentRoot']}</kbd></td></tr>
+          <tr><td>Expand Root</td>        <td><kbd>{reverseMap['expandCurrentRoot']}</kbd></td></tr>
+          <tr><td>Collapse All</td>       <td><kbd>{reverseMap['collapseAll']}</kbd></td></tr>
+          <tr><td>Expand All</td>         <td><kbd>{reverseMap['expandAll']}</kbd></td></tr>
           <tr><td>First Visible Block</td><td><kbd>{reverseMap['firstNode']}</kbd></td></tr>
-          <tr><td>Last Visible Block</td><td><kbd>{reverseMap['lastVisibleNode']}</kbd></td></tr>
-          <tr><td>Read Ancestors</td><td><kbd aria-label="backslash">{reverseMap['readAncestors']}</kbd></td></tr>
-          <tr><td>Read Block and Children</td><td><kbd aria-label="shift-backslash">{reverseMap['readChildren']}</kbd></td></tr>
+          <tr><td>Last Visible Block</td> <td><kbd>{reverseMap['lastVisibleNode']}</kbd></td></tr>
+          <tr><td>Read Ancestors</td>     <td><kbd>{reverseMap['readAncestors']}</kbd></td></tr>
+          <tr><td>Read Block and Children</td><td><kbd>{reverseMap['readChildren']}</kbd></td></tr>
           </tbody>
         </table>
       </div>
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Editing</h2>
         <table className="shortcuts">
-          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
+          <thead><tr><th>Command</th>     <th>Shortcut</th></tr></thead>
           <tbody>
-          <tr><td>Edit a Literal</td><td><kbd>{reverseMap['edit']}</kbd></td></tr>
-          <tr><td>Edit any Block</td><td><kbd>{reverseMap['edit']}</kbd></td></tr>
-          <tr><td>Cancel</td><td><kbd>{reverseMap['cancel']}</kbd></td></tr>
-          <tr><td>Insert Before</td><td><kbd>{reverseMap['insertLeft']}</kbd></td></tr>
-          <tr><td>Insert After</td><td><kbd>{reverseMap['insertRight']}</kbd></td></tr>
-          <tr><td>Delete Selected Blocks</td><td><kbd>{reverseMap['delete']}</kbd></td></tr>
+          <tr><td>Edit a Literal</td>     <td><kbd>{reverseMap['edit']}</kbd></td></tr>
+          <tr><td>Edit any Block</td>     <td><kbd>{reverseMap['editAnything']}</kbd></td></tr>
+          <tr><td>Cancel</td>             <td><kbd>{reverseMap['cancel']}</kbd></td></tr>
+          <tr><td>Insert Before</td>      <td><kbd>{reverseMap['insertLeft']}</kbd></td></tr>
+          <tr><td>Insert After</td>       <td><kbd>{reverseMap['insertRight']}</kbd></td></tr>
           </tbody>
         </table>
       </div>
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Search</h2>
         <table className="shortcuts">
-          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
+          <thead><tr><th>Command</th>     <th>Shortcut</th></tr></thead>
           <tbody>
-          <tr><td>Enter Search Mode</td><td><kbd>{reverseMap['activateSearchDialog']}</kbd></td></tr>
-          <tr><td>Exit Search Mode</td><td><kbd>ESC</kbd> or <kbd>Shift-ESC</kbd></td></tr>
-          <tr><td>Find next</td><td><kbd>{reverseMap['searchNext']}</kbd></td></tr>
-          <tr><td>Find previous</td><td><kbd>{reverseMap['searchPrevious']}</kbd></td></tr>
+          <tr><td>Enter Search Mode</td>  <td><kbd>{reverseMap['activateSearchDialog']}</kbd></td></tr>
+          <tr><td>Exit Search Mode</td>   <td><kbd>{reverseMap['cancel']}</kbd></td></tr>
+          <tr><td>Find Next</td>          <td><kbd>{reverseMap['searchNext']}</kbd></td></tr>
+          <tr><td>Find Previous</td>      <td><kbd>{reverseMap['searchPrevious']}</kbd></td></tr>
           </tbody>
         </table>
       </div>
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Selection and Clipboard</h2>
         <table className="shortcuts">
-          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
+          <thead><tr><th>Command</th>     <th>Shortcut</th></tr></thead>
           <tbody>
-          <tr><td>Toggle selection</td><td><kbd>{reverseMap['toggleSelection']}</kbd></td></tr>
-          <tr><td>Cut </td><td><kbd>{reverseMap['cut']}</kbd></td></tr>
-          <tr><td>Copy</td><td><kbd>{reverseMap['copy']}</kbd></td></tr>
-          <tr><td>Paste after active node</td><td><kbd>{reverseMap['paste']}</kbd></td></tr>
-          <tr><td>Paste before active node</td><td><kbd>{reverseMap['pasteBefore']}</kbd></td></tr>
+          <tr><td>Toggle Selection</td>   <td><kbd>{reverseMap['toggleSelection']}</kbd></td></tr>
+          <tr><td>Cut </td>               <td><kbd>{reverseMap['cut']}</kbd></td></tr>
+          <tr><td>Copy</td>               <td><kbd>{reverseMap['copy']}</kbd></td></tr>
+          <tr><td>Paste After Block</td>  <td><kbd>{reverseMap['paste']}</kbd></td></tr>
+          <tr><td>Paste Before Block</td> <td><kbd>{reverseMap['pasteBefore']}</kbd></td></tr>
+          <tr><td>Delete Selection</td>   <td><kbd>{reverseMap['delete']}</kbd></td></tr>
           </tbody>
         </table>
       </div>
