@@ -1,6 +1,6 @@
 import {store} from '../store';
 import SHARED from '../shared';
-import {poscmp, adjustForChange, minimizeChange, logResults} from '../utils';
+import {poscmp, adjustForChange, minimizeChange, logResults, topmostUndoable} from '../utils';
 import {activate} from '../actions';
 import patch from './patchAst';
 
@@ -29,9 +29,13 @@ export function commitChanges(
   isUndoOrRedo = false,
   focusHint = undefined,
   astHint = undefined,
+  annt
 ) {
+  //console.log('doing commitChanges', isUndoOrRedo)
+  //console.log('### AT commitChanges SHARED.cm.historySize()=', SHARED.cm.historySize());
   try{
-    let {ast: oldAST, focusId: oldFocusId} = store.getState();
+    let state = store.getState();
+    let {ast: oldAST, focusId: oldFocusId} = state;
     if (!isUndoOrRedo) {
       // Remember the previous focus. See the next `!isUndoOrRedo` block.
       let oldFocus = oldAST.getNodeById(oldFocusId);
@@ -49,7 +53,14 @@ export function commitChanges(
       // this is what populates our undo stack.
       let newFocus = newAST.getNodeById(focusId);
       let newFocusNId = newFocus ? newFocus.nid : null;
-      store.dispatch({type: 'DO', focus: {oldFocusNId, newFocusNId}});
+      let tU = topmostUndoable('undo');
+      tU.undoableAction = annt;
+      tU.actionFocus = {oldFocusNId, newFocusNId};
+      //console.log('###%%% PUSHED undoable action: ', tU.undoableAction);
+      //console.log('###%%% WHILE pE SHARED.cm.historySize()=', SHARED.cm.historySize());
+      //console.log('###%%% pE actionFocus=', tU.actionFocus);
+      //store.dispatch({type: 'DO', focus: {oldFocusNId, newFocusNId}});
+      store.dispatch({type: 'DO'});
     }
     return {newAST, focusId};    
   } catch(e){

@@ -5,7 +5,7 @@ import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget, activate,
   ReplaceNodeTarget, OverwriteTarget} from './actions';
 import {partition, getRoot, sayActionForNodes, skipCollapsed,
-  say, getLastVisibleNode} from './utils';
+  say, getLastVisibleNode, preambleUndoRedo} from './utils';
 
 const userAgent = navigator.userAgent;
 const platform = navigator.platform;
@@ -58,6 +58,7 @@ const pcKeyMap = {
   'Ctrl-Enter': 'editAnything',
   'Ctrl-F'    : 'activateSearchDialog',
   'Ctrl-Z'    : 'undo',
+  'Ctrl-Y'    : 'redo',
   'Shift-Ctrl-Z':'redo',
   'Ctrl-C'    : 'copy',
   'Ctrl-V'    : 'paste',
@@ -294,11 +295,15 @@ export const commandMap = {
     this.activateNoRecord(SHARED.search.search(true, this.state));
   },
 
-  undo : function(cm) {
+  undo : function(cm, e) {
+    preambleUndoRedo('undo');
+    e.preventDefault();
     SHARED.cm.undo();
   },
 
-  redo : function(cm) {
+  redo : function(cm, e) {
+    preambleUndoRedo('redo');
+    e.preventDefault();
     SHARED.cm.redo();
   },
 
@@ -326,7 +331,6 @@ export function keyDown(cm, e, env, keyMap) {
     };
   });
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
-  console.log('keyname', CodeMirror.keyName(e), 'command', keyMap[CodeMirror.keyName(e)]);
   if(handler) { // if one exists, we'll handle all events in-house
     e.stopPropagation();
     handler = handler.bind(env);

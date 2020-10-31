@@ -45,6 +45,7 @@ class NodeEditable extends Component {
       }
 
       const value = this.props.value;
+      let annt = `${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`;
       const onSuccess = ({firstNewId}) => {
         if (firstNewId !== null) {
           dispatch(activate(firstNewId, {allowMove: true}));
@@ -54,7 +55,7 @@ class NodeEditable extends Component {
         onChange(null);
         onDisableEditable(false);
         setErrorId('');
-        say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
+        say(annt);
       };
       const onError = e => {
         const errorText = SHARED.parser.getExceptionMessage(e);
@@ -63,7 +64,7 @@ class NodeEditable extends Component {
         setErrorId(target.node ? target.node.id : 'editing');
         this.setSelection(false);
       };
-      insert(value, target, onSuccess, onError);
+      insert(value, target, onSuccess, onError, annt);
     });
   }
 
@@ -91,8 +92,10 @@ class NodeEditable extends Component {
   }
 
   componentDidMount() {
+    console.log('doing NodeEditable componentDidMount')
     const text = this.props.value !== null ? this.props.value : this.cachedValue;
-    say(`${this.props.isInsertion ? 'inserting' : 'editing'} ${text}. Use Enter to save, and Alt-Q to cancel`);
+    const annt = (this.props.isInsertion ? 'inserting' : 'editing') + ` ${text}`;
+    say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
     this.props.clearSelections();
   }
 

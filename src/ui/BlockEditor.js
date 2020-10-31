@@ -214,15 +214,13 @@ class BlockEditor extends Component {
         // provide a focusHint
         if (changes[0].origin === "undo") {
           for (let c of changes) c.origin = "cmb:undo";
-          const undoFocusStack = getState().undoFocusStack;
-          const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
+          const {oldFocusNId, _newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'UNDO'});
         } else if (changes[0].origin === "redo") {
           for (let c of changes) c.origin = "cmb:redo";
-          const redoFocusStack = getState().redoFocusStack;
-          const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
+          const {_oldFocusNId, newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'REDO'});
@@ -231,6 +229,14 @@ class BlockEditor extends Component {
           // don't know anything else about it. Apply the change, set the focusHint
           // to the top of the tree (-1), and provide an astHint so we don't need
           // to reparse and rebuild the tree
+          let annt = '';
+          for (let i = changes.length - 1; i >= 0; i--) {
+            annt = annt + changes[i].origin;
+            if (i !== 0) annt = ' and ' + annt;
+          }
+          if (annt === '') annt = 'change';
+          getState().undoableAction = annt; //?
+          //console.log('BlockEditor.js calling commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
       }
@@ -539,6 +545,7 @@ class BlockEditor extends Component {
     this.mouseUsed = true;
     setTimeout(() => this.mouseUsed = false, 200);
   }
+
 
   handleTopLevelKeyPress = (ed, e) => {
     const text = e.key;

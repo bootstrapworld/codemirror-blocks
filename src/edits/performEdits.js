@@ -6,7 +6,6 @@ import {speculateChanges} from './speculateChanges';
 import {FakeAstInsertion, FakeAstReplacement, cloneNode} from './fakeAstEdits';
 import {store} from '../store';
 
-
 // edit_insert : String, ASTNode, String, Pos -> Edit
 //
 // Construct an edit to insert `text` in the list `parent.field` at the given `pos`.
@@ -51,7 +50,8 @@ export function edit_replace(text, node) {
 // except that this one takes higher-level `Edit` operations, constructed by the
 // functions: `edit_insert`, `edit_delete`, and `edit_replace`. Focus is
 // determined by the focus of the _last_ edit in `edits`.
-export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{}) {
+export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{}, annt) {
+  //console.log('doing performEdits', annt)
   // Ensure that all of the edits are valid.
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {
@@ -107,7 +107,7 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
         SHARED.cm.replaceRange(c.text, c.from, c.to, c.origin);
       }
     });
-    let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST);
+    let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST, annt);
     onSuccess({newAST, focusId});
     } catch(e) {
       logResults(window.reducerActivities, e);
@@ -116,7 +116,6 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
     onError(result.exception);
   }
 }
-
 
 class Edit {
   constructor(from, to) {
