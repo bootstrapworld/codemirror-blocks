@@ -45,7 +45,7 @@ describe("when testing undo/redo,", function () {
     mouseDown(currentFirstRoot());                          // focus on the 1st root
     keyDown(" ", {}, currentFirstRoot());
     await wait(DELAY);
-    keyDown("X", mac? cmd : ctrl, currentFirstRoot());    // change (1): cut first root
+    keyDown("X", mac? cmd : ctrl, currentFirstRoot());      // change (1): cut first root
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 0});
@@ -62,11 +62,11 @@ describe("when testing undo/redo,", function () {
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
-    keyDown("Z", mac? cmd : ctrl, currentFirstRoot());    // undo (2), leaving \nB\n\n
+    keyDown("Z", mac? cmd : ctrl, currentFirstRoot());      // undo (2), leaving \nB\n\n
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
-    keyDown("Z", mac? cmd : ctrl, currentFirstRoot());    // undo (1), leaving A\nB\n
+    keyDown("Z", mac? cmd : ctrl, currentFirstRoot());      // undo (1), leaving A\nB\n
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('A\nB\n');    
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 3});

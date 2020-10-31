@@ -75,14 +75,14 @@ CodeMirror.normalizeKeyMap(keyMap);
 export const commandMap = {
   prevNode : function (cm) {
     if(this.node) return this.activate(this.fastSkip(node => node.prev));
-    const prevNode = this.ast.getNodeBeforeCur(this.props.cur);
+    const prevNode = this.ast.getNodeBeforeCur(this.cur);
     if (prevNode) { this.activate(prevNode, {allowMove: true}); }
     else { playSound(BEEP); }
   },
 
   nextNode : function (cm) {
     if(this.node) return this.activate(this.fastSkip(node => node.next));
-    const nextNode = this.ast.getNodeAfterCur(this.props.cur);
+    const nextNode = this.ast.getNodeAfterCur(this.cur);
     if (nextNode) { this.activate(nextNode, {allowMove: true}); }
     else { playSound(BEEP); }
   },
@@ -122,14 +122,14 @@ export const commandMap = {
 
   collapseAll : function (cm) {
     if(!this.node) { return CodeMirror.Pass; }
-    this.props.dispatch({type: 'COLLAPSE_ALL'});
+    this.dispatch({type: 'COLLAPSE_ALL'});
     this.activate(getRoot(this.node));
   },
 
   collapseOrSelectParent : function(cm) {
     if(!this.node) { return CodeMirror.Pass; }
-    if (this.props.expandable && !this.props.isCollapsed && !this.isLocked()) {
-      this.props.collapse(this.props.node.id);
+    if (this.expandable && !this.isCollapsed && !this.isLocked()) {
+      this.collapse(this.props.node.id);
     } else if (this.props.node.parent) {
       this.activate(this.props.node.parent);
     } else {
@@ -139,26 +139,26 @@ export const commandMap = {
 
   collapseCurrentRoot : function (cm) {
     if(!this.node) { return CodeMirror.Pass; }
-    if(!this.node.parent && (this.props.isCollapsed || !this.props.expandable)) {
+    if(!this.node.parent && (this.isCollapsed || !this.expandable)) {
       playSound(BEEP);
     } else {
       let root = getRoot(this.node);
       let descendants = [...root.descendants()];
-      descendants.forEach(d => this.props.collapse(d.id));
+      descendants.forEach(d => this.collapse(d.id));
       this.activate(root);
     }
   },
 
   expandAll : function (cm) {
     if(!this.node) { return CodeMirror.Pass; }
-    else { return this.props.dispatch({type: 'UNCOLLAPSE_ALL'}); }
+    else { return this.dispatch({type: 'UNCOLLAPSE_ALL'}); }
   },
 
   expandOrSelectFirstChild : function (cm) {
     if(!this.node) { return CodeMirror.Pass; }
     const node = this.node;
-    if (this.props.expandable && this.props.isCollapsed && !this.isLocked()) {
-      this.props.uncollapse(node.id);
+    if (this.expandable && this.isCollapsed && !this.isLocked()) {
+      this.uncollapse(node.id);
     } else if (node.next && node.next.parent === node) {
       this.activate(node.next);
     } else {
@@ -169,7 +169,7 @@ export const commandMap = {
   expandCurrentRoot : function (cm) {
     if(!this.node) { return CodeMirror.Pass; }
     let root = getRoot(this.node);
-    [...root.descendants()].forEach(d => this.props.uncollapse(d.id));
+    [...root.descendants()].forEach(d => this.uncollapse(d.id));
     this.activate(root);
   },
 
@@ -178,7 +178,7 @@ export const commandMap = {
     e.preventDefault();
     const node = this.node;
     if (this.selections.includes(this.node.id)) {
-      this.props.dispatch({
+      this.dispatch({
         type: 'SET_SELECTIONS',
         selections: this.selections.filter(s => s !== node.id)
       });
@@ -196,7 +196,7 @@ export const commandMap = {
       } else {
         // announce addition
         newSelections.push(this.node.id);
-        this.props.dispatch({
+        this.dispatch({
           type: 'SET_SELECTIONS',
           selections: newSelections
         });
@@ -206,10 +206,10 @@ export const commandMap = {
 
   edit : function (cm, e) {
     if(!this.node) { return CodeMirror.Pass; }
-    if (this.props.normallyEditable) {
+    if (this.normallyEditable) {
       this.handleMakeEditable(e);
-    } else if (this.props.expandable && !this.isLocked()) {
-      (this.props.isCollapsed ? this.props.uncollapse : this.props.collapse)(this.node.id);
+    } else if (this.expandable && !this.isLocked()) {
+      (this.isCollapsed ? this.uncollapse : this.collapse)(this.node.id);
     } else {
       playSound(BEEP);
     }
@@ -222,7 +222,7 @@ export const commandMap = {
 
   clearSelection : function (cm) {
     if(!this.node) { return CodeMirror.Pass; }
-    this.props.dispatch({type: 'SET_SELECTIONS', selections: []});
+    this.dispatch({type: 'SET_SELECTIONS', selections: []});
   },
 
   deleteNodes : function (cm) {
@@ -235,12 +235,12 @@ export const commandMap = {
 
   insertRight : function (cm) {
     if(!this.node) { return CodeMirror.Pass; }
-    if(!this.setRight()) { this.props.setCursor(this.node.to); }
+    if(!this.setRight()) { this.setCursor(this.node.to); }
   },
 
   insertLeft : function (cm) {
     if(!this.node) { return CodeMirror.Pass; }
-    if(!this.setLeft()) { this.props.setCursor(this.node.from); }
+    if(!this.setLeft()) { this.setCursor(this.node.from); }
   },
 
   cut : function (cm) {
@@ -314,12 +314,11 @@ export const commandMap = {
 
 export function keyDown(cm, e, env, keyMap) {
   env.props.dispatch((_, getState) => {
-    // TODO(Emmanuel): Simplify what gets passed in the environment,
-    // to rid the command code of avoid endless "this.props" vs "this"
+    // set up the environment
     const state = getState();
     const {ast, selections} = state;
-    Object.assign(env, {ast, selections, state, node: env.props.node});
-
+    Object.assign(env, env.props, {ast, selections, state});
+    // add convenience methods
     env.fastSkip = next => skipCollapsed(env.node, next, state);
     env.activate = (n, options={allowMove: true, record: true}) => {
       if (n === null) { playSound(BEEP); }
@@ -330,8 +329,9 @@ export function keyDown(cm, e, env, keyMap) {
       else { env.props.dispatch(activate(env.node.id, {record: false, allowMove: true})); }
     };
   });
+  // if a key handler exists, stopPropagation and execute
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
-  if(handler) { // if one exists, we'll handle all events in-house
+  if(handler) {
     e.stopPropagation();
     handler = handler.bind(env);
     return handler(cm, e);
