@@ -17,6 +17,9 @@ const platform = navigator.platform;
 const edge = /Edge\/(\d+)/.exec(userAgent);
 const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
 const mac = ios || /Mac/.test(platform);
+// set key options appropriately for the platform
+const cmd = { metaKey: true };
+const ctrl = { ctrlKey: true };
 
 const DELAY = 250;
 

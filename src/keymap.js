@@ -1,4 +1,5 @@
 import React from 'react';
+import CodeMirror from 'codemirror';
 import {playSound, BEEP} from './sound';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget, activate,
@@ -72,38 +73,37 @@ CodeMirror.normalizeKeyMap(keyMap);
 
 export const commandMap = {
   prevNode : function (cm) {
-    if(this) return this.activate(this.fastSkip(node => node.prev));
-    const prevNode = this.getAst().getNodeBeforeCur(this.props.cur);
-    if (prevNode) { this.activate(prevNode.id, {allowMove: true}); }
+    if(this.node) return this.activate(this.fastSkip(node => node.prev));
+    const prevNode = this.ast.getNodeBeforeCur(this.props.cur);
+    if (prevNode) { this.activate(prevNode, {allowMove: true}); }
     else { playSound(BEEP); }
   },
 
   nextNode : function (cm) {
-    if(this) return this.activate(this.fastSkip(node => node.next));
-    const nextNode = this.getAst().getNodeAfterCur(this.props.cur);
-    if (nextNode) { this.activate(nextNode.id, {allowMove: true}); }
+    if(this.node) return this.activate(this.fastSkip(node => node.next));
+    const nextNode = this.ast.getNodeAfterCur(this.props.cur);
+    if (nextNode) { this.activate(nextNode, {allowMove: true}); }
     else { playSound(BEEP); }
   },
 
   firstNode : function (cm) {
+    if(!this.node) { return CodeMirror.Pass; }
     const root = this.ast.getFirstRootNode();
-    if(this) { this.activate(root, {allowMove: true}); }
-    else { return CodeMirror.Pass; }
+    this.activate(root, {allowMove: true});
   },
 
   lastVisibleNode : function (cm) {
-    if(this) return this.activate(getLastVisibleNode(this.state));
-    const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
-    this.props.setCursor(null, {line: idx, ch: text.length});
+    if(!this.node) { return CodeMirror.Pass; }
+    else { this.activate(getLastVisibleNode(this.state)); }
   },
 
   jumpToRoot : function (cm) {
-    if(this) { return this.activate(getRoot(this.node)); }
-    else     { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
+    else { this.activate(getRoot(this.node)); }
   },
 
   readAncestors : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     const parents = [this.node.options['aria-label']];
     let next = this.node.parent;
     while (next) {
@@ -115,18 +115,18 @@ export const commandMap = {
   },
 
   readChildren : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
-    else      { say(this.node.describe(this.node.level)); }
+    if(!this.node) { return CodeMirror.Pass; }
+    else { say(this.node.describe(this.node.level)); }
   },
 
   collapseAll : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     this.props.dispatch({type: 'COLLAPSE_ALL'});
     this.activate(getRoot(this.node));
   },
 
   collapseOrSelectParent : function(cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     if (this.props.expandable && !this.props.isCollapsed && !this.isLocked()) {
       this.props.collapse(this.props.node.id);
     } else if (this.props.node.parent) {
@@ -137,7 +137,7 @@ export const commandMap = {
   },
 
   collapseCurrentRoot : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     if(!this.node.parent && (this.props.isCollapsed || !this.props.expandable)) {
       playSound(BEEP);
     } else {
@@ -149,12 +149,12 @@ export const commandMap = {
   },
 
   expandAll : function (cm) {
-    if(this) { return this.props.dispatch({type: 'UNCOLLAPSE_ALL'}); }
-    else     { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
+    else { return this.props.dispatch({type: 'UNCOLLAPSE_ALL'}); }
   },
 
   expandOrSelectFirstChild : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     const node = this.node;
     if (this.props.expandable && this.props.isCollapsed && !this.isLocked()) {
       this.props.uncollapse(node.id);
@@ -166,15 +166,15 @@ export const commandMap = {
   },
 
   expandCurrentRoot : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     let root = getRoot(this.node);
-    let descendants = [...root.descendants()];
-    descendants.forEach(d => this.props.uncollapse(d.id));
+    [...root.descendants()].forEach(d => this.props.uncollapse(d.id));
     this.activate(root);
   },
 
-  toggleSelection : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+  toggleSelection : function (cm, e) {
+    if(!this.node) { return CodeMirror.Pass; }
+    e.preventDefault();
     const node = this.node;
     if (this.selections.includes(this.node.id)) {
       this.props.dispatch({
@@ -204,7 +204,7 @@ export const commandMap = {
   },
 
   edit : function (cm, e) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     if (this.props.normallyEditable) {
       this.handleMakeEditable(e);
     } else if (this.props.expandable && !this.isLocked()) {
@@ -215,36 +215,36 @@ export const commandMap = {
   },
 
   editAnything : function (cm, e) {
-    if(this) { return this.handleMakeEditable(e); }
-    else     { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
+    else { return this.handleMakeEditable(e); }
   },
 
   clearSelection : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     this.props.dispatch({type: 'SET_SELECTIONS', selections: []});
   },
 
   deleteNodes : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
-    if(this.selections.length == 0) { return say('Nothing selected'); }
+    if(!this.node) { return CodeMirror.Pass; }
+    if(!this.selections.length) { return say('Nothing selected'); }
     const nodesToDelete = this.selections.map(this.ast.getNodeById);
     sayActionForNodes(nodesToDelete, "deleted");
     delete_(nodesToDelete);
   },
 
   insertRight : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     if(!this.setRight()) { this.props.setCursor(this.node.to); }
   },
 
   insertLeft : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     if(!this.setLeft()) { this.props.setCursor(this.node.from); }
   },
 
   cut : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
-    if (this.selections.length == 0) { return say('Nothing selected'); }
+    if(!this.node) { return CodeMirror.Pass; }
+    if(!this.selections.length) { return say('Nothing selected'); }
     const nodesToCut = this.selections.map(this.ast.getNodeById);
     sayActionForNodes(nodesToCut, "cut");
     copy(nodesToCut);
@@ -252,16 +252,16 @@ export const commandMap = {
   },
 
   copy : function (cm) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     // if no nodes are selected, do it on focused node's id instead
-    const nodeIds = this.selections.length == 0 ? [this.node.id] : this.selections;
+    const nodeIds = !this.selections.length? [this.node.id] : this.selections;
     const nodesToCopy = nodeIds.map(this.ast.getNodeById);
     sayActionForNodes(nodesToCopy, "copied");
     copy(nodesToCopy);
   },
 
   paste : function (cm, e) {
-    if(!this) { return CodeMirror.Pass; }
+    if(!this.node) { return CodeMirror.Pass; }
     const node = this.node;
     if (this.selections.includes(this.node.id)) {
       paste(new ReplaceNodeTarget(this.node));
@@ -294,13 +294,20 @@ export const commandMap = {
     this.activateNoRecord(SHARED.search.search(true, this.state));
   },
 
+  undo : function(cm) {
+    SHARED.cm.undo();
+  },
+
+  redo : function(cm) {
+    SHARED.cm.redo();
+  },
+
   help : function (cm) {
     this.showDialog(renderKeyMap(this.keyMap));
   }
 }
 
-export function keyDown(e, env) {
-  console.log('keymap::keyDown called with', env, e);
+export function keyDown(cm, e, env, keyMap) {
   env.props.dispatch((_, getState) => {
     // TODO(Emmanuel): Simplify what gets passed in the environment,
     // to rid the command code of avoid endless "this.props" vs "this"
@@ -308,23 +315,22 @@ export function keyDown(e, env) {
     const {ast, selections} = state;
     Object.assign(env, {ast, selections, state, node: env.props.node});
 
-    env.fastSkip = next => skipCollapsed(env.props.node, next, state);
+    env.fastSkip = next => skipCollapsed(env.node, next, state);
     env.activate = (n, options={allowMove: true, record: true}) => {
       if (n === null) { playSound(BEEP); }
-      env.props.activate((n === null)? env.node.id : n.id, options);
+      env.props.activate((n === undefined)? env.node.id : n.id, options);
     };
     env.activateNoRecord = node => {
       if(!node){ playSound(BEEP); } // nothing to activate
       else { env.props.dispatch(activate(env.node.id, {record: false, allowMove: true})); }
     };
   });
-  console.log('after dispatch, env = ', env);
-  var handler = commandMap[env.keyMap[CodeMirror.keyName(e)]];
+  var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
+  console.log('keyname', CodeMirror.keyName(e), 'command', keyMap[CodeMirror.keyName(e)]);
   if(handler) { // if one exists, we'll handle all events in-house
     e.stopPropagation();
-    e.preventDefault();
     handler = handler.bind(env);
-    handler(SHARED.cm, e);
+    return handler(cm, e);
   }
 }
 

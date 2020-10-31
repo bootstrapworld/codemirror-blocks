@@ -550,11 +550,12 @@ class BlockEditor extends Component {
     this.props.setQuarantine(start, end, text);
   }
 
-  handleKeyDown = (e, env = this) => {
-    console.log('BlockEditor::handleKeyDown called!');
-    env.keyMap = this.props.keyMap;
+  // called from both CM *and* Node components
+  // each is responsible for passing 'this' as the environment
+  // store showDialog in the environment, and pass the keyMap
+  handleKeyDown = (cm, e, env) => {
     env.showDialog = this.props.showDialog;
-    keyDown(e, env);
+    return keyDown(cm, e, env, this.props.keyMap);
   }
 
   handleTopLevelPaste = (ed, e) => {
@@ -627,7 +628,7 @@ class BlockEditor extends Component {
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
-          onKeyDown={this.handleTopLevelKeyDown}
+          onKeyDown={(cm, e) => this.handleKeyDown(cm, e, this)}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}
