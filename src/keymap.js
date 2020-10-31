@@ -1,9 +1,9 @@
 import React from 'react';
 import {playSound, BEEP} from './sound';
 import SHARED from './shared';
-import {delete_, copy, paste, InsertTarget,
+import {delete_, copy, paste, InsertTarget, activate,
   ReplaceNodeTarget, OverwriteTarget} from './actions';
-import {partition, getRoot, sayActionForNodes, 
+import {partition, getRoot, sayActionForNodes, skipCollapsed,
   say, getLastVisibleNode} from './utils';
 
 const userAgent = navigator.userAgent;
@@ -159,7 +159,7 @@ export const commandMap = {
     if (this.props.expandable && this.props.isCollapsed && !this.isLocked()) {
       this.props.uncollapse(node.id);
     } else if (node.next && node.next.parent === node) {
-      activate(node.next);
+      this.activate(node.next);
     } else {
       playSound(BEEP);
     }
@@ -226,7 +226,7 @@ export const commandMap = {
 
   deleteNodes : function (cm) {
     if(!this) { return CodeMirror.Pass; }
-    if(!this.selections.length == 0) { return say('Nothing selected'); }
+    if(this.selections.length == 0) { return say('Nothing selected'); }
     const nodesToDelete = this.selections.map(this.ast.getNodeById);
     sayActionForNodes(nodesToDelete, "deleted");
     delete_(nodesToDelete);
@@ -296,6 +296,35 @@ export const commandMap = {
 
   help : function (cm) {
     this.showDialog(renderKeyMap(this.keyMap));
+  }
+}
+
+export function keyDown(e, env) {
+  console.log('keymap::keyDown called with', env, e);
+  env.props.dispatch((_, getState) => {
+    // TODO(Emmanuel): Simplify what gets passed in the environment,
+    // to rid the command code of avoid endless "this.props" vs "this"
+    const state = getState();
+    const {ast, selections} = state;
+    Object.assign(env, {ast, selections, state, node: env.props.node});
+
+    env.fastSkip = next => skipCollapsed(env.props.node, next, state);
+    env.activate = (n, options={allowMove: true, record: true}) => {
+      if (n === null) { playSound(BEEP); }
+      env.props.activate((n === null)? env.node.id : n.id, options);
+    };
+    env.activateNoRecord = node => {
+      if(!node){ playSound(BEEP); } // nothing to activate
+      else { env.props.dispatch(activate(env.node.id, {record: false, allowMove: true})); }
+    };
+  });
+  console.log('after dispatch, env = ', env);
+  var handler = commandMap[env.keyMap[CodeMirror.keyName(e)]];
+  if(handler) { // if one exists, we'll handle all events in-house
+    e.stopPropagation();
+    e.preventDefault();
+    handler = handler.bind(env);
+    handler(SHARED.cm, e);
   }
 }
 

@@ -6,6 +6,7 @@ import SHARED from '../shared';
 import classNames from 'classnames';
 import {insert, activate, Target} from '../actions';
 import {say} from '../utils';
+import CodeMirror from 'codemirror';
 
 class NodeEditable extends Component {
   static defaultProps = {
@@ -67,7 +68,7 @@ class NodeEditable extends Component {
   }
 
   handleKeyDown = e => {
-    switch (SHARED.keyName(e)) {
+    switch (CodeMirror.keyName(e)) {
     case 'Enter': {
       this.ignoreBlur = true;
       this.saveEdit(e);

@@ -17,7 +17,7 @@ import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, 
   BlockError, skipCollapsed} from '../utils';
 import BlockComponent from '../components/BlockComponent';
-import { keyMap, commandMap } from '../keymap';
+import { keyMap, keyDown } from '../keymap';
 import {playSound, BEEP} from '../sound';
 import {store} from '../store';
 
@@ -168,17 +168,9 @@ class BlockEditor extends Component {
   constructor(props) {
     super(props);
     this.mouseUsed = false;
-    SHARED.keyMap = this.props.keyMap;
-    SHARED.keyName = CodeMirror.keyName;
-
-    // Map keynames to commands, based on the passed keyMap
-    this.keyMap = {};
-    Object.keys(this.props.keyMap).forEach(k => {
-      this.keyMap[k] = commandMap[this.props.keyMap[k]];
-    });
 
     // stick the keyDown handler in the store
-    store.onKeyDown = this.handleTopLevelKeyDown;
+    store.onKeyDown = this.handleKeyDown;
   }
 
   static defaultProps = {
@@ -558,6 +550,13 @@ class BlockEditor extends Component {
     this.props.setQuarantine(start, end, text);
   }
 
+  handleKeyDown = (e, env = this) => {
+    console.log('BlockEditor::handleKeyDown called!');
+    env.keyMap = this.props.keyMap;
+    env.showDialog = this.props.showDialog;
+    keyDown(e, env);
+  }
+
   handleTopLevelPaste = (ed, e) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
@@ -609,38 +608,6 @@ class BlockEditor extends Component {
         if(!quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
       });
     }, 0));
-  }
-
-  handleTopLevelKeyDown = (e, env = this) => {
-    console.log('keydiwn called!');
-    env.props.dispatch((_, getState) => {
-      // TODO(Emmanuel): Simplify what gets passed in the environment,
-      // to rid the command code of avoid endless "this.props" vs "this"
-      const state = getState();
-      const {ast, selections} = state;
-      Object.assign(env, {ast, selections, state, 
-        keyMap: this.props.keyMap, showDialog: this.props.showDialog,
-        node: ast.getNodeById(env.props.node.id)
-      });
-
-      env.fastSkip = next => skipCollapsed(env.node, next, state);
-      env.activate = (n, options={allowMove: true, record: true}) => {
-        if (n === null) { playSound(BEEP); }
-        env.props.activate((n === null)? env.node.id : n.id, options);
-      };
-      env.activateNoRecord = node => {
-        if(!node){ playSound(BEEP); } // nothing to activate
-        else { env.props.dispatch(activate(env.node.id, {record: false, allowMove: true})); }
-      };
-    });
-    console.log('after dispatch, env = ', env);
-    var keyHandler = this.keyMap[SHARED.keyName(e)];
-    if(keyHandler) { // if one exists, we'll handle all events in-house
-      e.stopPropagation();
-      e.preventDefault();
-      keyHandler = keyHandler.bind(env);
-      keyHandler(SHARED.cm, e);
-    }
   }
 
   render() {
