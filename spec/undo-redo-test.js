@@ -2,14 +2,6 @@ import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
 import { wait, teardown, activationSetup } from './support/test-utils';
 import { mouseDown, keyDown, insertText } from './support/simulate';
-import {
-  dragstart,
-  drop,
-  dragenter,
-  dragleave,
-  dragend,
-  dragenterSeq,
-} from './support/simulate';
 
 // figure out what platform we're running on
 const userAgent = navigator.userAgent;

@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
-import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import classNames from 'classnames';
@@ -14,11 +13,10 @@ import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, 
-  BlockError, skipCollapsed} from '../utils';
+import {poscmp, say, resetNodeCounter, minpos, maxpos, 
+  validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 import { keyMap, keyDown } from '../keymap';
-import {playSound, BEEP} from '../sound';
 import {store} from '../store';
 
 
@@ -309,7 +307,7 @@ class BlockEditor extends Component {
     }
     // ignore set announcer
     if(action.type == "SET_ANNOUNCER"){ return; } 
-    this.props.dispatch(action)
+    this.props.dispatch(action);
   }
 
   buildAPI(ed) {

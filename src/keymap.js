@@ -73,37 +73,37 @@ Object.assign(keyMap, mac? macKeyMap : pcKeyMap);
 CodeMirror.normalizeKeyMap(keyMap);
 
 export const commandMap = {
-  prevNode : function (cm) {
+  prevNode : function (_) {
     if(this.node) return this.activate(this.fastSkip(node => node.prev));
     const prevNode = this.ast.getNodeBeforeCur(this.cur);
     if (prevNode) { this.activate(prevNode, {allowMove: true}); }
     else { playSound(BEEP); }
   },
 
-  nextNode : function (cm) {
+  nextNode : function (_) {
     if(this.node) return this.activate(this.fastSkip(node => node.next));
     const nextNode = this.ast.getNodeAfterCur(this.cur);
     if (nextNode) { this.activate(nextNode, {allowMove: true}); }
     else { playSound(BEEP); }
   },
 
-  firstNode : function (cm) {
+  firstNode : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     const root = this.ast.getFirstRootNode();
     this.activate(root, {allowMove: true});
   },
 
-  lastVisibleNode : function (cm) {
+  lastVisibleNode : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     else { this.activate(getLastVisibleNode(this.state)); }
   },
 
-  jumpToRoot : function (cm) {
+  jumpToRoot : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     else { this.activate(getRoot(this.node)); }
   },
 
-  readAncestors : function (cm) {
+  readAncestors : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     const parents = [this.node.options['aria-label']];
     let next = this.node.parent;
@@ -115,18 +115,18 @@ export const commandMap = {
     else { playSound(BEEP); }
   },
 
-  readChildren : function (cm) {
+  readChildren : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     else { say(this.node.describe(this.node.level)); }
   },
 
-  collapseAll : function (cm) {
+  collapseAll : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     this.dispatch({type: 'COLLAPSE_ALL'});
     this.activate(getRoot(this.node));
   },
 
-  collapseOrSelectParent : function(cm) {
+  collapseOrSelectParent : function(_) {
     if(!this.node) { return CodeMirror.Pass; }
     if (this.expandable && !this.isCollapsed && !this.isLocked()) {
       this.collapse(this.props.node.id);
@@ -137,7 +137,7 @@ export const commandMap = {
     }
   },
 
-  collapseCurrentRoot : function (cm) {
+  collapseCurrentRoot : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.node.parent && (this.isCollapsed || !this.expandable)) {
       playSound(BEEP);
@@ -149,12 +149,12 @@ export const commandMap = {
     }
   },
 
-  expandAll : function (cm) {
+  expandAll : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     else { return this.dispatch({type: 'UNCOLLAPSE_ALL'}); }
   },
 
-  expandOrSelectFirstChild : function (cm) {
+  expandOrSelectFirstChild : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     const node = this.node;
     if (this.expandable && this.isCollapsed && !this.isLocked()) {
@@ -166,14 +166,14 @@ export const commandMap = {
     }
   },
 
-  expandCurrentRoot : function (cm) {
+  expandCurrentRoot : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     let root = getRoot(this.node);
     [...root.descendants()].forEach(d => this.uncollapse(d.id));
     this.activate(root);
   },
 
-  toggleSelection : function (cm, e) {
+  toggleSelection : function (_, e) {
     if(!this.node) { return CodeMirror.Pass; }
     e.preventDefault();
     const node = this.node;
@@ -204,7 +204,7 @@ export const commandMap = {
     }
   },
 
-  edit : function (cm, e) {
+  edit : function (_, e) {
     if(!this.node) { return CodeMirror.Pass; }
     if (this.normallyEditable) {
       this.handleMakeEditable(e);
@@ -215,17 +215,17 @@ export const commandMap = {
     }
   },
 
-  editAnything : function (cm, e) {
+  editAnything : function (_, e) {
     if(!this.node) { return CodeMirror.Pass; }
     else { return this.handleMakeEditable(e); }
   },
 
-  clearSelection : function (cm) {
+  clearSelection : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     this.dispatch({type: 'SET_SELECTIONS', selections: []});
   },
 
-  deleteNodes : function (cm) {
+  deleteNodes : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.selections.length) { return say('Nothing selected'); }
     const nodesToDelete = this.selections.map(this.ast.getNodeById);
@@ -233,17 +233,17 @@ export const commandMap = {
     delete_(nodesToDelete);
   },
 
-  insertRight : function (cm) {
+  insertRight : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.setRight()) { this.setCursor(this.node.to); }
   },
 
-  insertLeft : function (cm) {
+  insertLeft : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.setLeft()) { this.setCursor(this.node.from); }
   },
 
-  cut : function (cm) {
+  cut : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.selections.length) { return say('Nothing selected'); }
     const nodesToCut = this.selections.map(this.ast.getNodeById);
@@ -252,7 +252,7 @@ export const commandMap = {
     delete_(nodesToCut);
   },
 
-  copy : function (cm) {
+  copy : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     // if no nodes are selected, do it on focused node's id instead
     const nodeIds = !this.selections.length? [this.node.id] : this.selections;
@@ -261,7 +261,7 @@ export const commandMap = {
     copy(nodesToCopy);
   },
 
-  paste : function (cm, e) {
+  paste : function (_, e) {
     if(!this.node) { return CodeMirror.Pass; }
     const node = this.node;
     if (this.selections.includes(this.node.id)) {
@@ -279,7 +279,7 @@ export const commandMap = {
     }
   },
   // TODO(Emmanuel): fix search
-  activateSearchDialog : function (cm) {
+  activateSearchDialog : function (_) {
     SHARED.search.onSearch(
       this.state,
       () => { this.props.activate },
@@ -287,30 +287,30 @@ export const commandMap = {
     );
   },
   // TODO(Emmanuel): fix search
-  searchPrevious : function (cm) {
+  searchPrevious : function (_) {
     this.activateNoRecord(SHARED.search.search(false, this.state));
   },
   // TODO(Emmanuel): fix search
-  searchNext : function (cm) {
+  searchNext : function (_) {
     this.activateNoRecord(SHARED.search.search(true, this.state));
   },
 
   undo : function(cm, e) {
     preambleUndoRedo('undo');
     e.preventDefault();
-    SHARED.cm.undo();
+    cm.undo();
   },
 
   redo : function(cm, e) {
     preambleUndoRedo('redo');
     e.preventDefault();
-    SHARED.cm.redo();
+    cm.redo();
   },
 
-  help : function (cm) {
+  help : function (_) {
     this.showDialog(renderKeyMap(this.keyMap));
   }
-}
+};
 
 export function keyDown(cm, e, env, keyMap) {
   env.props.dispatch((_, getState) => {

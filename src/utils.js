@@ -1,4 +1,3 @@
-import CodeMirror from 'codemirror';
 import SHARED from './shared';
 import {store} from './store';
 
