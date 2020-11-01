@@ -2,7 +2,7 @@ import React from 'react';
 import CodeMirror from 'codemirror';
 import {playSound, BEEP} from './sound';
 import SHARED from './shared';
-import {delete_, copy, paste, InsertTarget, activate,
+import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget} from './actions';
 import {partition, getRoot, sayActionForNodes, skipCollapsed,
   say, getLastVisibleNode, preambleUndoRedo} from './utils';
@@ -13,7 +13,7 @@ const edge = /Edge\/(\d+)/.exec(userAgent);
 const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
 const mac = ios || /Mac/.test(platform);
 
-export const keyMap = {
+export const defaultKeyMap = {
   'Down'      : 'nextNode',
   'Up'        : 'prevNode',
   'Home'      : 'firstNode',
@@ -68,9 +68,9 @@ const pcKeyMap = {
 };
 
 // Add platform-specific keys
-Object.assign(keyMap, mac? macKeyMap : pcKeyMap);
+Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
-CodeMirror.normalizeKeyMap(keyMap);
+CodeMirror.normalizeKeyMap(defaultKeyMap);
 
 export const commandMap = {
   prevNode : function (_) {
@@ -129,9 +129,9 @@ export const commandMap = {
   collapseOrSelectParent : function(_) {
     if(!this.node) { return CodeMirror.Pass; }
     if (this.expandable && !this.isCollapsed && !this.isLocked()) {
-      this.collapse(this.props.node.id);
-    } else if (this.props.node.parent) {
-      this.activate(this.props.node.parent);
+      this.collapse(this.node.id);
+    } else if (this.node.parent) {
+      this.activate(this.node.parent);
     } else {
       playSound(BEEP);
     }
@@ -266,7 +266,7 @@ export const commandMap = {
     const node = this.node;
     if (this.selections.includes(this.node.id)) {
       paste(new ReplaceNodeTarget(this.node));
-    } else if (this.props.node.parent) {
+    } else if (this.node.parent) {
       // We're inside the AST somewhere. Try to paste to the left/right.
       const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
       const target = new InsertTarget(this.context.node, this.context.field, pos);
@@ -282,7 +282,7 @@ export const commandMap = {
   activateSearchDialog : function (_) {
     SHARED.search.onSearch(
       this.state,
-      () => { this.props.activate },
+      () => { this.activate },
       () => this.activateNoRecord(SHARED.search.search(true, this.state))
     );
   },
@@ -296,15 +296,19 @@ export const commandMap = {
   },
 
   undo : function(cm, e) {
-    preambleUndoRedo('undo');
     e.preventDefault();
-    cm.undo();
+    if(this.node) { 
+      preambleUndoRedo('undo');
+      cm.undo(); 
+    }
   },
 
   redo : function(cm, e) {
-    preambleUndoRedo('redo');
     e.preventDefault();
-    cm.redo();
+    if(this.node) {
+      preambleUndoRedo('redo');
+      cm.redo(); 
+    }
   },
 
   help : function (_) {
@@ -312,7 +316,7 @@ export const commandMap = {
   }
 };
 
-export function keyDown(cm, e, env, keyMap) {
+export function keyDown(e, env, keyMap) {
   env.props.dispatch((_, getState) => {
     // set up the environment
     const state = getState();
@@ -334,7 +338,7 @@ export function keyDown(cm, e, env, keyMap) {
   if(handler) {
     e.stopPropagation();
     handler = handler.bind(env);
-    return handler(cm, e);
+    return handler(SHARED.cm, e);
   }
 }
 

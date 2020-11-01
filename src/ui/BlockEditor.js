@@ -16,7 +16,7 @@ import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, say, resetNodeCounter, minpos, maxpos, 
   validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
-import { keyMap, keyDown } from '../keymap';
+import { defaultKeyMap, keyDown } from '../keymap';
 import {store} from '../store';
 
 
@@ -174,7 +174,7 @@ class BlockEditor extends Component {
   static defaultProps = {
     options: {},
     cmOptions: {},
-    keyMap : keyMap,
+    keyMap : defaultKeyMap,
     search: {
       search: () => null,
       onSearch: () => {},
@@ -558,9 +558,9 @@ class BlockEditor extends Component {
   // called from both CM *and* Node components
   // each is responsible for passing 'this' as the environment
   // store showDialog in the environment, and pass the keyMap
-  handleKeyDown = (cm, e, env) => {
+  handleKeyDown = (e, env) => {
     env.showDialog = this.props.showDialog;
-    return keyDown(cm, e, env, this.props.keyMap);
+    return keyDown(e, env, this.props.keyMap);
   }
 
   handleTopLevelPaste = (ed, e) => {
@@ -633,7 +633,7 @@ class BlockEditor extends Component {
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
-          onKeyDown={(cm, e) => this.handleKeyDown(cm, e, this)}
+          onKeyDown={(_, e) => this.handleKeyDown(e, this)}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}

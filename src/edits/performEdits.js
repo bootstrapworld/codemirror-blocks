@@ -51,7 +51,6 @@ export function edit_replace(text, node) {
 // functions: `edit_insert`, `edit_delete`, and `edit_replace`. Focus is
 // determined by the focus of the _last_ edit in `edits`.
 export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{}, annt) {
-  //console.log('doing performEdits', annt)
   // Ensure that all of the edits are valid.
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {

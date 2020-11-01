@@ -219,7 +219,7 @@ class Node extends BlockComponent {
           onDragStart   = {this.handleMouseDragRelated}
           onDragEnd     = {this.handleMouseDragRelated}
           onDrop        = {this.handleMouseDragRelated}
-          onKeyDown     = {e => store.onKeyDown(SHARED.cm, e, this)}
+          onKeyDown     = {e => store.onKeyDown(e, this)}
           >
           {children}
           {comment && comment.reactElement()}

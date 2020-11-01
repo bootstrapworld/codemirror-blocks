@@ -2,7 +2,6 @@ import {topmostUndoable} from './utils';
 //import SHARED from './shared'; //used only in debug statements
 
 function loggerDebug(action, ast) { // in lieu of logger.debug
-  //console.log('doing loggerDebug', action.type, !!ast);
   if (!window.reducerActivities) {
     window.reducerActivities = [];
   }
@@ -97,25 +96,20 @@ export const reducer = (
     break;
 
   case 'DO':
-    //console.log('### DO SHARED.cm.historySize()=', SHARED.cm.historySize());
     result = {...state};
     break;
   case 'UNDO':
-    //console.log('### AFTER undo SHARED.cm.historySize()=', SHARED.cm.historySize());
     tU = topmostUndoable('redo', state);
     tU.undoableAction = state.undoableAction;
     tU.actionFocus = state.actionFocus;
-    //console.log('### UNDO actionFocus =', state.actionFocus)
     state.undoableAction = null;
     state.actionFocus = null;
     result = {...state};
     break;
   case 'REDO':
-    //console.log('### AFTER redo SHARED.cm.historySize()=', SHARED.cm.historySize());
     tU = topmostUndoable('undo', state);
     tU.undoableAction = state.undoableAction;
     tU.actionFocus = state.actionFocus;
-    //console.log('### REDO actionFocus =', state.actionFocus)
     state.undoableAction = null;
     state.actionFocus = null;
     result = {...state};

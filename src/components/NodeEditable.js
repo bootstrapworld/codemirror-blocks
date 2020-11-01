@@ -92,7 +92,6 @@ class NodeEditable extends Component {
   }
 
   componentDidMount() {
-    console.log('doing NodeEditable componentDidMount')
     const text = this.props.value !== null ? this.props.value : this.cachedValue;
     const annt = (this.props.isInsertion ? 'inserting' : 'editing') + ` ${text}`;
     say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
@@ -126,8 +125,6 @@ class NodeEditable extends Component {
   }
 
   render() {
-    //console.log('DS2GTE calling NodeEditable/render');
-    //console.log(this.props);
     const {
       contentEditableProps,
       extraClasses,

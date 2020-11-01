@@ -31,8 +31,6 @@ export function commitChanges(
   astHint = undefined,
   annt
 ) {
-  //console.log('doing commitChanges', isUndoOrRedo)
-  //console.log('### AT commitChanges SHARED.cm.historySize()=', SHARED.cm.historySize());
   try{
     let state = store.getState();
     let {ast: oldAST, focusId: oldFocusId} = state;
@@ -56,10 +54,6 @@ export function commitChanges(
       let tU = topmostUndoable('undo');
       tU.undoableAction = annt;
       tU.actionFocus = {oldFocusNId, newFocusNId};
-      //console.log('###%%% PUSHED undoable action: ', tU.undoableAction);
-      //console.log('###%%% WHILE pE SHARED.cm.historySize()=', SHARED.cm.historySize());
-      //console.log('###%%% pE actionFocus=', tU.actionFocus);
-      //store.dispatch({type: 'DO', focus: {oldFocusNId, newFocusNId}});
       store.dispatch({type: 'DO'});
     }
     return {newAST, focusId};    
