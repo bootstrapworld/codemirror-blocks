@@ -75,6 +75,8 @@ export default {
       firstTime: PropTypes.bool
     }
 
+    displayName = 'Search by String'
+
     constructor(props) {
       super(props);
       this.inputRef = React.createRef();

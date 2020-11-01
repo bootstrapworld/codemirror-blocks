@@ -1,10 +1,5 @@
 import wescheme from '../src/languages/wescheme';
-import {
-  click,
-  mouseDown,
-  keyDown,
-  insertText
-} from './support/simulate';
+import {mouseDown, keyDown, insertText} from './support/simulate';
 import {wait, teardown, activationSetup} from './support/test-utils';
 
 

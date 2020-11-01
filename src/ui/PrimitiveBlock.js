@@ -7,6 +7,7 @@ import './PrimitiveBlock.less';
 export default class PrimitiveBlock extends Component {
   static propTypes = {
     primitive: PropTypes.instanceOf(Primitive),
+    id: PropTypes.string,
   }
 
   static defaultProps = {

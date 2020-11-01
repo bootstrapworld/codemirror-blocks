@@ -16,12 +16,14 @@ function vaguelyEqual(x, y) {
     return true;
   }
   for (let prop in x) {
-    if (x.hasOwnProperty(prop) && !ignoreProp(x, prop) && x[prop] !== y[prop]) {
+    if (Object.prototype.hasOwnProperty.call(x,prop)
+     && !ignoreProp(x, prop) && x[prop] !== y[prop]) {
       return false;
     }
   }
   for (let prop in y) {
-    if (y.hasOwnProperty(prop) && !ignoreProp(y, prop) && y[prop] !== x[prop]) {
+    if (Object.prototype.hasOwnProperty.call(y,prop) 
+      && !ignoreProp(y, prop) && y[prop] !== x[prop]) {
       return false;
     }
   }

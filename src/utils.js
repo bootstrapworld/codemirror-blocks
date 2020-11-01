@@ -1,4 +1,3 @@
-import CodeMirror from 'codemirror';
 import SHARED from './shared';
 import {store} from './store';
 
@@ -11,7 +10,6 @@ export function gensym() {
   return (store.nodeCounter++).toString(16);
 }
 export function resetNodeCounter() { store.nodeCounter = 0; }
-
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {
@@ -76,7 +74,6 @@ export function partition(arr, f) {
   return [matched, notMatched];
 }
 
-
 // // from https://davidwalsh.name/javascript-debounce-function
 // export function debounce(func, wait, immediate) {
 //   var timeout;
@@ -101,10 +98,11 @@ store.muteAnnouncements = false;
 store.queuedAnnouncement = false;
 
 // Note: screenreaders will automatically speak items with aria-labels!
-// This handles _everything_else_. 
+// This handles _everything_else_.
 export function say(text, delay=200, allowOverride=false) {
   const announcement = document.createTextNode(text + ', ');
-  const announcer = store.getState().announcer;
+  let state = store.getState();
+  const announcer = state.announcer;
   if (store.muteAnnouncements || !announcer) return; // if nothing to do, bail
   clearTimeout(store.queuedAnnouncement);            // clear anything overrideable
   if(allowOverride) {                                // enqueue overrideable announcements
@@ -116,12 +114,20 @@ export function say(text, delay=200, allowOverride=false) {
   }
 }
 
-
 export function sayActionForNodes(nodes, action) {
+  //console.log('doing sayActionForNodes', action);
   nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
-  say(action + " " +
+  let annt = (action + " " +
     nodes.map((node) => node.options['aria-label'])
       .join(" and "));
+  say(annt);
+}
+
+export function createAnnouncement(nodes, action) {
+  let annt = (action + " " +
+    nodes.map((node) => node.options['aria-label'])
+      .join(" and "));
+  return annt;
 }
 
 export function skipCollapsed(node, next, state) {
@@ -327,5 +333,26 @@ export class BlockError extends Error {
     super(message);
     this.type = type;
     this.data = data;
+  }
+}
+
+export function topmostUndoable(which, state) {
+  if (!state) state = store.getState();
+  let arr = (which === 'undo' ?
+    SHARED.cm.doc.history.done : SHARED.cm.doc.history.undone);
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (!arr[i].ranges) {
+      return arr[i];
+    }
+  }
+}
+
+export function preambleUndoRedo(which) {
+  let state = store.getState();
+  let tU = topmostUndoable(which);
+  if (tU) {
+    say((which === 'undo' ? 'UNDID' : 'REDID') + ': ' + tU.undoableAction);
+    state.undoableAction = tU.undoableAction;
+    state.actionFocus = tU.actionFocus;
   }
 }

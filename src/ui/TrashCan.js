@@ -4,11 +4,9 @@ import {DropNodeTarget} from '../dnd';
 import {dropOntoTrashCan} from '../actions';
 require('./TrashCan.less');
 
-
-@DropNodeTarget(function(monitor) {
+export default @DropNodeTarget(function(monitor) {
   return dropOntoTrashCan(monitor.getItem());
-})
-export default class TrashCan extends Component {
+}) class TrashCan extends Component {
   static propTypes = {
     connectDropTarget: PropTypes.func.isRequired, // from dnd.js
   }
