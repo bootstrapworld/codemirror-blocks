@@ -42,7 +42,6 @@ import {performEdits, edit_insert, edit_delete, edit_replace,
 // Insert `text` at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function insert(text, target, onSuccess, onError, annt) {
-  //console.log('****** doing actions insert', 'text=', text)
   checkTarget(target);
   const {ast} = store.getState();
   const edits = [target.toEdit(text)];
@@ -51,7 +50,6 @@ export function insert(text, target, onSuccess, onError, annt) {
 
 // Delete the given nodes.
 export function delete_(nodes, editWord) { // 'delete' is a reserved word
-  //console.log('****** doing actions delete_', editWord)
   if (nodes.length === 0) return;
   const {ast} = store.getState();
   nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
@@ -67,7 +65,6 @@ export function delete_(nodes, editWord) { // 'delete' is a reserved word
 
 // Copy the given nodes onto the clipboard.
 export function copy(nodes, editWord) {
-  //console.log('****** doing actions copy', editWord)
   if (nodes.length === 0) return;
   const {ast, focusId} = store.getState();
   // Pretty-print each copied node. Join them with spaces, or newlines for
@@ -94,7 +91,6 @@ export function copy(nodes, editWord) {
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function paste(target, onSuccess, onError) {
-  //console.log('****** doing actions paste')
   checkTarget(target);
   pasteFromClipboard(text => {
     const {ast} = store.getState();
@@ -107,7 +103,6 @@ export function paste(target, onSuccess, onError) {
 // Drag from `src` (which should be a d&d monitor thing) to `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function drop(src, target, onSuccess, onError) {
-  //console.log('****** doing actions drop')
   checkTarget(target);
   const {id: srcId, content: srcContent} = src;
   let {ast, collapsedList} = store.getState(); // get the AST, and which nodes are collapsed
@@ -147,7 +142,6 @@ export function drop(src, target, onSuccess, onError) {
 // Drag from `src` (which should be a d&d monitor thing) to the trash can, which
 // just deletes the block.
 export function dropOntoTrashCan(src) {
-  //console.log('****** doing actions dropOntoTrashCan')
   const {ast} = store.getState();
   const srcNode = src.id ? ast.getNodeById(src.id) : null; // null if dragged from toolbar
   if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
@@ -158,7 +152,6 @@ export function dropOntoTrashCan(src) {
 // Set the cursor position.
 export function setCursor(cur) {
   return (dispatch, _getState) => {
-    //console.log('****** doing setCursor/return')
     if (SHARED.cm && cur) {
       SHARED.cm.focus();
       SHARED.search.setCursor(cur);
@@ -171,7 +164,6 @@ export function setCursor(cur) {
 // Activate the node with the given `id`.
 export function activate(id, options) {
   return (dispatch, getState) => {
-    //console.log('******* doing activate/return')
     options = withDefaults(options, {allowMove: true, record: true});
     const state = getState();
     const {ast, focusId, collapsedList} = state;
@@ -244,14 +236,12 @@ function checkTarget(target) {
 }
 
 function copyToClipboard(text) {
-  //console.log('****** doing copyToClipboard')
   SHARED.buffer.value = text;
   SHARED.buffer.select();
   document.execCommand('copy');
 }
 
 function pasteFromClipboard(done) {
-  //console.log('****** doing pasteFromClipboard')
   SHARED.buffer.value = '';
   SHARED.buffer.focus();
   setTimeout(() => {

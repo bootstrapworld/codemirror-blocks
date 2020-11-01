@@ -67,8 +67,6 @@ export default class ContentEditable extends Component {
   }
 
   render () {
-    //console.log('DS2GTE calling ContentEditable/render');
-    //console.log(this.props);
     const {value, itDidMount, ...props} = this.props;
     return (
       <span

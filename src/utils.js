@@ -1,4 +1,3 @@
-import CodeMirror from 'codemirror';
 import SHARED from './shared';
 import {store} from './store';
 
@@ -352,7 +351,6 @@ export function preambleUndoRedo(which) {
   let state = store.getState();
   let tU = topmostUndoable(which);
   if (tU) {
-    //console.log('###%%%', (which === 'undo' ? 'undoing' : 'redoing'), tU.undoableAction);
     say((which === 'undo' ? 'UNDID' : 'REDID') + ': ' + tU.undoableAction);
     state.undoableAction = tU.undoableAction;
     state.actionFocus = tU.actionFocus;

@@ -6,6 +6,7 @@ import SHARED from '../shared';
 import classNames from 'classnames';
 import {insert, activate, Target} from '../actions';
 import {say} from '../utils';
+import CodeMirror from 'codemirror';
 
 class NodeEditable extends Component {
   static defaultProps = {
@@ -68,7 +69,7 @@ class NodeEditable extends Component {
   }
 
   handleKeyDown = e => {
-    switch (SHARED.keyName(e)) {
+    switch (CodeMirror.keyName(e)) {
     case 'Enter': {
       this.ignoreBlur = true;
       this.saveEdit(e);
@@ -91,7 +92,6 @@ class NodeEditable extends Component {
   }
 
   componentDidMount() {
-    console.log('doing NodeEditable componentDidMount')
     const text = this.props.value !== null ? this.props.value : this.cachedValue;
     const annt = (this.props.isInsertion ? 'inserting' : 'editing') + ` ${text}`;
     say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
@@ -125,8 +125,6 @@ class NodeEditable extends Component {
   }
 
   render() {
-    //console.log('DS2GTE calling NodeEditable/render');
-    //console.log(this.props);
     const {
       contentEditableProps,
       extraClasses,

@@ -494,7 +494,7 @@ export class Comment extends ASTNode {
     return P.concat("#| ", wrapped, " |#");
   }
 
-  render(_props) { // eslint-disable-line no-unused-vars
+  render(props) { // eslint-disable-line no-unused-vars
     return (<span className="blocks-comment" id={this.id} aria-hidden="true">
       <span className="screenreader-only">Has comment,</span> <span>{this.comment.toString()}</span>
     </span>);
