@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
-import CodeMirror from 'codemirror';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import classNames from 'classnames';
@@ -9,14 +8,16 @@ import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
 import NodeEditable from '../components/NodeEditable';
-import {activate, setCursor, insert, OverwriteTarget} from '../actions';
+import {activate, setCursor, OverwriteTarget} from '../actions';
 import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges, getTempCM} from '../edits/speculateChanges';
-import {playSound, BEEP} from '../sound';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, minpos, maxpos, validateRanges, BlockError} from '../utils';
+import {poscmp, say, resetNodeCounter, minpos, maxpos, 
+  validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
+import { defaultKeyMap, keyDown } from '../keymap';
+import {store} from '../store';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending', 
@@ -79,6 +80,12 @@ class ToplevelBlock extends BlockComponent {
 }
 
 class ToplevelBlockEditableCore extends Component {
+
+  static propTypes = {
+    quarantine: PropTypes.object,
+    onDisableEditable: PropTypes.func.isRequired,
+    onChange: PropTypes.func.isRequired,
+  }
 
   constructor(props) {
     super(props);
@@ -145,6 +152,7 @@ class BlockEditor extends Component {
       onSearch: PropTypes.func.isRequired,
       search: PropTypes.func.isRequired,
       setCursor: PropTypes.func.isRequired,
+      setCM: PropTypes.func.isRequired,
     }),
     onBeforeChange: PropTypes.func,
     onMount:PropTypes.func.isRequired,
@@ -162,53 +170,15 @@ class BlockEditor extends Component {
   constructor(props) {
     super(props);
     this.mouseUsed = false;
-    SHARED.keyMap = this.props.keyMap;
-    SHARED.keyName = CodeMirror.keyName;
+
+    // stick the keyDown handler in the store
+    store.onKeyDown = this.handleKeyDown;
   }
 
   static defaultProps = {
     options: {},
     cmOptions: {},
-    keyMap : {
-      'Down'      : 'nextNode',
-      'Up'        : 'prevNode',
-      'Home'      : 'firstNode',
-      'End'       : 'lastVisibleNode',
-      'Left'      : 'collapseOrSelectParent',
-      'Right'     : 'expandOrSelectFirstChild',
-      'Shift-Left': 'collapseAll',
-      'Shift-Right':'expandAll',
-      'Shift-Alt-Left': 'collapseCurrentRoot',
-      'Shift-Alt-Right':'expandCurrentRoot',
-      'Enter'     : 'edit',
-      'Cmd-Enter' : 'edit',
-      'Ctrl-Enter': 'edit',
-      'Space'     : 'toggleSelection',
-      'Esc'       : 'clearSelection',
-      'Alt-Q'     : 'clearSelection',
-      'Delete'    : 'delete',
-      'Backspace' : 'delete',
-      'Ctrl-['    : 'insertLeft',
-      'Ctrl-]'    : 'insertRight',
-      'Shift-,'   : 'jumpToRoot',
-      '\\'        : 'readAncestors',
-      'Shift-\\'  : 'readChildren',
-      'PageUp'    : 'searchPrevious',
-      'PageDown'  : 'searchNext',
-      'F3'        : 'activateSearchDialog',
-      'Ctrl-F'    : 'activateSearchDialog',
-      'Tab'       : 'changeFocus',
-      'Ctrl-Z'    : 'undo',
-      'Cmd-Z'     : 'undo',
-      'Ctrl-Y'    : 'redo',
-      'Shift-Cmd-Z':'redo',
-      'Cmd-C'     : 'copy',
-      'Ctrl-C'    : 'copy',
-      'Cmd-V'     : 'paste',
-      'Ctrl-V'    : 'paste',
-      'Cmd-X'     : 'cut',
-      'Ctrl-X'    : 'cut'
-    },
+    keyMap : defaultKeyMap,
     search: {
       search: () => null,
       onSearch: () => {},
@@ -246,15 +216,13 @@ class BlockEditor extends Component {
         // provide a focusHint
         if (changes[0].origin === "undo") {
           for (let c of changes) c.origin = "cmb:undo";
-          const undoFocusStack = getState().undoFocusStack;
-          const {oldFocusNId, _newFocusNId} = undoFocusStack[undoFocusStack.length - 1];
+          const {oldFocusNId, _newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'UNDO'});
         } else if (changes[0].origin === "redo") {
           for (let c of changes) c.origin = "cmb:redo";
-          const redoFocusStack = getState().redoFocusStack;
-          const {_oldFocusNId, newFocusNId} = redoFocusStack[redoFocusStack.length - 1];
+          const {_oldFocusNId, newFocusNId} = getState().actionFocus;
           const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
           commitChanges(changes, true, focusHint, this.newAST);
           dispatch({type: 'REDO'});
@@ -263,6 +231,14 @@ class BlockEditor extends Component {
           // don't know anything else about it. Apply the change, set the focusHint
           // to the top of the tree (-1), and provide an astHint so we don't need
           // to reparse and rebuild the tree
+          let annt = '';
+          for (let i = changes.length - 1; i >= 0; i--) {
+            annt = annt + changes[i].origin;
+            if (i !== 0) annt = ' and ' + annt;
+          }
+          if (annt === '') annt = 'change';
+          getState().undoableAction = annt; //?
+          //console.log('BlockEditor.js calling commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
       }
@@ -335,7 +311,7 @@ class BlockEditor extends Component {
     }
     // ignore set announcer
     if(action.type == "SET_ANNOUNCER"){ return; } 
-    this.props.dispatch(action)
+    this.props.dispatch(action);
   }
 
   buildAPI(ed) {
@@ -418,7 +394,7 @@ class BlockEditor extends Component {
           'API Error');
       });
     return api;
-  }
+  } 
 
   markText(from, to, options) {
     let node = this.props.ast.getNodeAt(from, to);
@@ -572,102 +548,6 @@ class BlockEditor extends Component {
     setTimeout(() => this.mouseUsed = false, 200);
   }
 
-  // NOTE: if there's a focused node, this handler will not be activated
-  // This handler deals with key events sent from CodeMirror itself
-  handleTopLevelKeyDown = (ed, e) => {
-    const {dispatch} = this.props;
-
-    const activateNoRecord = node => {
-      if(!node){ playSound(BEEP); } // nothing to activate
-      else { dispatch(activate(node.id, {record: false, allowMove: true})); }
-    };
-
-    dispatch((_, getState) => {
-      const state = getState();
-      const {ast, focusId} = state;
-      const message = SHARED.keyMap[SHARED.keyName(e)];
-      switch (message) {
-      case 'nextNode': {
-        e.preventDefault();
-        const nextNode = ast.getNodeAfterCur(this.props.cur);
-        if (nextNode) {
-          this.props.activate(nextNode.id, {allowMove: true});
-        } else {
-          playSound(BEEP);
-        }
-        return;
-      }
-
-      case 'prevNode': {
-        e.preventDefault();
-        const prevNode = ast.getNodeBeforeCur(this.props.cur);
-        if (prevNode) {
-          this.props.activate(prevNode.id, {allowMove: true});
-        } else {
-          playSound(BEEP);
-        }
-        return;
-      }
-
-      case 'firstNode':
-        // NOTE(Emmanuel): shouldn't this go to the first node?
-        e.preventDefault();
-        this.props.setCursor(null, {line: 0, ch: 0});
-        return;
-
-      case 'lastVisibleNode': {
-        // NOTE(Emmanuel): shouldn't this go to the last visible node?
-        e.preventDefault();
-        const idx = SHARED.cm.lastLine(), text = SHARED.cm.getLine(idx);
-        this.props.setCursor(null, {line: idx, ch: text.length});
-        return;
-      }
-      case 'changeFocus':
-        // NOTE(Emmanuel): this is dead code, unless we can trap tab events
-        e.preventDefault();
-        if (focusId === null) {
-          if (ast.rootNodes.length > 0) {
-            dispatch(activate(ast.getFirstRootNode(), {allowMove: true}));
-            // NOTE(Oak): can also find the closest node based on current cursor
-          }
-        } else {
-          dispatch(activate(null, {allowMove: true}));
-        }
-        return;
-
-      case 'activateSearchDialog':
-        e.preventDefault();
-        SHARED.search.onSearch(
-          state, 
-          () => {}, 
-          () => activateNoRecord(SHARED.search.search(true, state))
-        );
-        return;
-
-      case 'searchPrevious':
-        e.preventDefault();
-        activateNoRecord(SHARED.search.search(false, state));
-        return;
-
-      case 'searchNext':
-        e.preventDefault();
-        activateNoRecord(SHARED.search.search(true, state));
-        return;
-
-      case 'undo':
-        e.preventDefault();
-        SHARED.cm.undo();
-        return;
-
-      case 'redo':
-        e.preventDefault();
-        SHARED.cm.redo();
-        return;
-
-      }
-    });
-  }
-
   handleTopLevelKeyPress = (ed, e) => {
     const text = e.key;
     // let CM handle kbd shortcuts or whitespace insertion
@@ -676,6 +556,14 @@ class BlockEditor extends Component {
     const start = SHARED.cm.getCursor(true);
     const end = SHARED.cm.getCursor(false);
     this.props.setQuarantine(start, end, text);
+  }
+
+  // called from both CM *and* Node components
+  // each is responsible for passing 'this' as the environment
+  // store showDialog in the environment, and pass the keyMap
+  handleKeyDown = (e, env) => {
+    env.showDialog = this.props.showDialog;
+    return keyDown(e, env, this.props.keyMap);
   }
 
   handleTopLevelPaste = (ed, e) => {
@@ -738,21 +626,21 @@ class BlockEditor extends Component {
       classes.push(`blocks-language-${this.props.language}`);
     }
     return (
-      <React.Fragment>
+      <>
         <DragAndDropEditor
           options={this.props.cmOptions}
           className={classNames(classes)}
           value={this.props.value}
           onBeforeChange={this.props.onBeforeChange}
           onKeyPress={this.handleTopLevelKeyPress}
-          onKeyDown={this.handleTopLevelKeyDown}
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
+          onKeyDown={(_, e) => this.handleKeyDown(e, this)}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount} />
         {this.renderPortals()}
-      </React.Fragment>
+      </>
     );
   }
 
@@ -762,7 +650,7 @@ class BlockEditor extends Component {
     if (SHARED.cm && this.props.ast) {
       // Render all the top-level nodes
       portals = this.props.ast.rootNodes.map(r => 
-        <ToplevelBlock key={r.id} node={r} incrementalRendering={incrementalRendering}/>
+        <ToplevelBlock key={r.id} node={r} incrementalRendering={incrementalRendering} />
       );
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
     }

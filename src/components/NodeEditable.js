@@ -6,6 +6,7 @@ import SHARED from '../shared';
 import classNames from 'classnames';
 import {insert, activate, Target} from '../actions';
 import {say} from '../utils';
+import CodeMirror from 'codemirror';
 
 class NodeEditable extends Component {
   static defaultProps = {
@@ -17,6 +18,15 @@ class NodeEditable extends Component {
     children: PropTypes.node,
     isInsertion: PropTypes.bool.isRequired,
     value: PropTypes.string,
+    dispatch: PropTypes.func,
+    setErrorId: PropTypes.func,
+    onChange: PropTypes.func,
+    onDisableEditable: PropTypes.func,
+    clearSelections: PropTypes.func,
+    focusSelf: PropTypes.func,
+    isErrored: PropTypes.bool,
+    contentEditableProps: PropTypes.object,
+    extraClasses: PropTypes.array,
   }
 
   constructor(props) {
@@ -44,6 +54,7 @@ class NodeEditable extends Component {
       }
 
       const value = this.props.value;
+      let annt = `${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`;
       const onSuccess = ({firstNewId}) => {
         if (firstNewId !== null) {
           dispatch(activate(firstNewId, {allowMove: true}));
@@ -53,7 +64,7 @@ class NodeEditable extends Component {
         onChange(null);
         onDisableEditable(false);
         setErrorId('');
-        say(`${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`);
+        say(annt);
       };
       const onError = e => {
         const errorText = SHARED.parser.getExceptionMessage(e);
@@ -62,12 +73,12 @@ class NodeEditable extends Component {
         setErrorId(target.node ? target.node.id : 'editing');
         this.setSelection(false);
       };
-      insert(value, target, onSuccess, onError);
+      insert(value, target, onSuccess, onError, annt);
     });
   }
 
   handleKeyDown = e => {
-    switch (SHARED.keyName(e)) {
+    switch (CodeMirror.keyName(e)) {
     case 'Enter': {
       this.ignoreBlur = true;
       this.saveEdit(e);
@@ -91,7 +102,8 @@ class NodeEditable extends Component {
 
   componentDidMount() {
     const text = this.props.value !== null ? this.props.value : this.cachedValue;
-    say(`${this.props.isInsertion ? 'inserting' : 'editing'} ${text}. Use Enter to save, and Alt-Q to cancel`);
+    const annt = (this.props.isInsertion ? 'inserting' : 'editing') + ` ${text}`;
+    say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
     this.props.clearSelections();
   }
 
@@ -122,8 +134,6 @@ class NodeEditable extends Component {
   }
 
   render() {
-    //console.log('DS2GTE calling NodeEditable/render');
-    //console.log(this.props);
     const {
       contentEditableProps,
       extraClasses,

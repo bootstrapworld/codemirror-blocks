@@ -48,7 +48,7 @@ class TextEditor extends Component {
   }
 
   // override default CM methods, or add our own
-  buildAPI(ed) {
+  buildAPI() {
     const api = {};
     // show which APIs are unsupported
     unsupportedAPIs.forEach(f => 

@@ -27,8 +27,8 @@ module.exports = function(env, argv) {
       new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/)
     ]),
     optimization: {
-      minimize: argv['mode'] == 'production',
-      splitChunks: false,
+      minimize: false,
+      splitChunks: false
     },
     devServer: {
       hot: true,

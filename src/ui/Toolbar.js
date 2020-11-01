@@ -4,8 +4,8 @@ import classNames from 'classnames';
 import PrimitiveList from './PrimitiveList';
 import PrimitiveBlock from './PrimitiveBlock';
 import {PrimitiveGroup} from '../parsers/primitives';
+import CodeMirror from 'codemirror';
 import './Toolbar.less';
-import SHARED from '../shared';
 
 export default class Toolbar extends Component {
   constructor(props) {
@@ -68,13 +68,11 @@ export default class Toolbar extends Component {
     }
   }
 
-  handleBlurPrimitive() {
-    // DS26GTE: this is just so onBlur has a non-null value
-    console.log('DS26GTE vacuous handleBlurPrimitive');
-  }
+  // NOTE(DS26GTE): this is just so onBlur has a non-null value
+  handleBlurPrimitive() {}
 
   handleKeyDown = event => {
-    switch(SHARED.keyName(event)) {
+    switch(CodeMirror.keyName(event)) {
     case 'Esc':
       event.target.blur();
       return;

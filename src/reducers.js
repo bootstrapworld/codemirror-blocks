@@ -1,5 +1,7 @@
+import {topmostUndoable} from './utils';
+//import SHARED from './shared'; //used only in debug statements
+
 function loggerDebug(action, ast) { // in lieu of logger.debug
-  //console.log('doing loggerDebug', action.type, !!ast);
   if (!window.reducerActivities) {
     window.reducerActivities = [];
   }
@@ -14,7 +16,7 @@ function loggerDebug(action, ast) { // in lieu of logger.debug
   }
   if(action.type == "SET_FOCUS") {
     if (ast) {
-      activity.nid = ast.getNodeById(action.focusId).nid; 
+      activity.nid = ast.getNodeById(action.focusId).nid;
       delete activity.focusId;
     }
   }
@@ -28,23 +30,20 @@ const initialState = {
   focusId: null,
   collapsedList: [],
   markedMap: new Map(),
-  undoFocusStack: [],
-  redoFocusStack: [],
+  undoableAction: null,
+  actionFocus: false,
   errorId: '',
   cur: null,
   quarantine: null,
   announcer: null,
 };
 
-
 export const reducer = (
   state = initialState,
   action) => {
-    //console.log('DS26GTE reducers.js/reducer CALLED');
-    //console.log('DS26GTE reducer action=');
-    console.log(action);
-    let result = null;
-    //console.log('DS26GTE reducer action.type=', action.type);
+  console.log(action);
+  let result = null;
+  let tU;
   switch (action.type) {
   case 'SET_FOCUS':
     result = {...state, focusId: action.focusId};
@@ -95,17 +94,27 @@ export const reducer = (
     state.markedMap.delete(action.id);
     result = {...state};
     break;
+
   case 'DO':
-    result = {...state, undoFocusStack: [...state.undoFocusStack, action.focus], redoFocusStack: []};
+    result = {...state};
     break;
   case 'UNDO':
-    state.redoFocusStack.push(state.undoFocusStack.pop());
+    tU = topmostUndoable('redo', state);
+    tU.undoableAction = state.undoableAction;
+    tU.actionFocus = state.actionFocus;
+    state.undoableAction = null;
+    state.actionFocus = null;
     result = {...state};
     break;
   case 'REDO':
-    state.undoFocusStack.push(state.redoFocusStack.pop());
+    tU = topmostUndoable('undo', state);
+    tU.undoableAction = state.undoableAction;
+    tU.actionFocus = state.actionFocus;
+    state.undoableAction = null;
+    state.actionFocus = null;
     result = {...state};
     break;
+
   case 'RESET_STORE_FOR_TESTING':
     result =  initialState;
     break;

@@ -1,4 +1,4 @@
-import {withDefaults, say, poscmp, srcRangeIncludes, warn} from './utils';
+import {withDefaults, say, poscmp, srcRangeIncludes, warn, createAnnouncement} from './utils';
 import SHARED from './shared';
 import {store} from './store';
 import {performEdits, edit_insert, edit_delete, edit_replace,
@@ -41,31 +41,38 @@ import {performEdits, edit_insert, edit_delete, edit_replace,
 
 // Insert `text` at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export function insert(text, target, onSuccess, onError) {
+export function insert(text, target, onSuccess, onError, annt) {
   checkTarget(target);
   const {ast} = store.getState();
   const edits = [target.toEdit(text)];
-  performEdits('cmb:insert', ast, edits, onSuccess, onError);
+  performEdits('cmb:insert', ast, edits, onSuccess, onError, annt);
 }
 
 // Delete the given nodes.
-export function delete_(nodes, onSuccess, onError) { // 'delete' is a reserved word
+export function delete_(nodes, editWord) { // 'delete' is a reserved word
   if (nodes.length === 0) return;
   const {ast} = store.getState();
   nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
   const edits = nodes.map(node => edit_delete(node));
-  performEdits('cmb:delete-node', ast, edits, onSuccess, onError);
+  let annt = false;
+  if (editWord) {
+    annt = createAnnouncement(nodes, editWord);
+    say(annt);
+  }
+  performEdits('cmb:delete-node', ast, edits, undefined, undefined, annt);
   store.dispatch({type: 'SET_SELECTIONS', selections: []});
 }
 
 // Copy the given nodes onto the clipboard.
-export function copy(nodes) {
+export function copy(nodes, editWord) {
   if (nodes.length === 0) return;
   const {ast, focusId} = store.getState();
   // Pretty-print each copied node. Join them with spaces, or newlines for
   // commented nodes (to prevent a comment from attaching itself to a
   // different node after pasting).
   nodes.sort((a, b) => poscmp(a.from, b.from));
+  let annt = createAnnouncement(nodes, editWord);
+  say(annt);
   let text = "";
   let postfix = "";
   for (let node of nodes) {

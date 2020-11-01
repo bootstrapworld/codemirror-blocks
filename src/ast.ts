@@ -95,7 +95,6 @@ export class AST {
         if (node.id === undefined) {
           // May be defined, if this piece of AST came from the previous AST.
           node.id = gensym();
-          //console.log('new symbol is:', node.id);
         }
         node.parent = parent;
         node.level = level;

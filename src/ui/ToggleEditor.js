@@ -1,7 +1,6 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
-import {connect} from 'react-redux';
+import CodeMirror from 'codemirror';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
 import CMBContext from '../components/Context';
@@ -42,9 +41,7 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
   'indexFromPos', 'focus', 'phrase', 'getInputField', 'getWrapperElement', 
   'getScrollerElement', 'getGutterElement'];
 
-
-@CMBContext
-export default class ToggleEditor extends React.Component {
+export default @CMBContext class ToggleEditor extends React.Component {
   state = {
     blockMode: false,
     error: false
@@ -128,7 +125,7 @@ export default class ToggleEditor extends React.Component {
   }
 
   // save any non-block, non-bookmark markers, and the NId they cover
-  recordMarks(oldAST, postPPcode) {
+  recordMarks(oldAST) {
     SHARED.recordedMarks.clear();
     let newAST = this.ast;
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
@@ -146,8 +143,11 @@ export default class ToggleEditor extends React.Component {
       });
   }
 
+  showDialog(contents) { this.setState( () =>({dialog: contents}));  }
+  closeDialog()        { this.setState( () =>({dialog: false}));     }
+
   handleToggle = blockMode => {
-    this.setState((state, props) => {
+    this.setState( () => {
       try {
         let oldCode = SHARED.cm.getValue();
         const WS = oldCode.match(/\s+$/);                 // match ending whitespace
@@ -162,13 +162,19 @@ export default class ToggleEditor extends React.Component {
         // Parsing and state-saving was successful! Set the blockMode state and return
         return {blockMode: blockMode};
       } catch (err) {
-        let _err;
+        let error;
         try {
-          _err = SHARED.parser.getExceptionMessage(err);
+          error = SHARED.parser.getExceptionMessage(err);
         } catch(e) {
-          _err = "The parser failed, and the error could not be retrieved";
+          error = "The parser failed, and the error could not be retrieved";
         }
-        return { error: "Could not convert to Blocks\n" + _err };
+        return {dialog: (
+          <>
+          <span className="dialogTitle">Could not convert to Blocks</span>
+          <p></p>
+          {error.toString()}
+          </>
+        )};
       }
     });
   };
@@ -195,11 +201,14 @@ export default class ToggleEditor extends React.Component {
     );
   }
 
-  renderError(msg) {
+  renderDialog() {
+    const dialogKeyDown = e => {
+      if(CodeMirror.keyName(e) == "Esc") this.closeDialog();
+    };
     return (
-      <div className="EditorError">
-        {msg}
-        <span className="closeError" onClick={this.closeError}>OK</span>
+      <div id="Dialog" onKeyDown={dialogKeyDown} tabIndex="0">
+        {this.state.dialog}
+        <span className="closeDialog" onClick={() => this.closeDialog()}>OK</span>
       </div>
     );
   }

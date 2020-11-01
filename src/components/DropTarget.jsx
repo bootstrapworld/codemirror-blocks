@@ -77,8 +77,6 @@ export class DropTarget extends Component {
   }
 
   render() {
-    //console.log('DS26GTE calling DropTarget/render');
-    //console.log(this.props);
     const value = {
       field: this.props.field,
       node: this.context.node,
@@ -190,21 +188,17 @@ class ActualDropTarget extends BlockComponent {
   handleMouseEnterRelated = e => {
     e.preventDefault();
     e.stopPropagation();
-    //console.log('DS26GTE handle', e.type, '(D) CALLED!');
     this.setState({mouseOver: true});
   }
 
   handleMouseLeaveRelated = e => {
     e.preventDefault();
     e.stopPropagation();
-    //console.log('DS26GTE handle', e.type, '(D) CALLED!');
     this.setState({mouseOver: false});
   }
 
-  handleMouseDragRelated = e => {
-    //e.preventDefault();
-    //e.stopPropagation();
-    //console.log('DS26GTE handle', e.type, '(D) CALLED!');
+  handleMouseDragRelated = _ => {
+    //NOTE(ds26gte): dummy handler
   }
 
   handleChange = (value) => {
@@ -212,8 +206,6 @@ class ActualDropTarget extends BlockComponent {
   }
 
   render() {
-    //console.log('DS26GTE calling ActualDropTarget/render');
-    //console.log(this.props);
     const props = {
       tabIndex          : "-1",
       role              : 'textbox',
