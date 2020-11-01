@@ -20,6 +20,8 @@ export default {
       onChange: PropTypes.func.isRequired,
     }
 
+    displayName = 'Search by Block'
+
     handleChange = e => {
       this.props.onChange({
         ...this.props.setting,

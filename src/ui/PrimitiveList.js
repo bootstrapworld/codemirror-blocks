@@ -20,6 +20,8 @@ class Primitive extends Component {
     onBlur: PropTypes.func.isRequired,
     onKeyDown: PropTypes.func.isRequired,
     searchString: PropTypes.string,
+    connectDragPreview: PropTypes.func.isRequired,
+    connectDragSource: PropTypes.func.isRequired,
   }
 
   handleKeyDown = e => {
@@ -68,6 +70,7 @@ export class PrimitiveGroup extends Component {
     onBlur: PropTypes.func.isRequired,
     onKeyDown: PropTypes.func.isRequired,
     selected: PropTypes.string, // to start, no primitive is selected
+    group: PropTypes.object,
   }
 
   state = {

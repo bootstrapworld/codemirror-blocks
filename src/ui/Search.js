@@ -1,9 +1,9 @@
 import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 import Modal from 'react-modal';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
 import {say} from '../utils';
-import {store} from '../store';
 
 export default (Editor, searchModes) => {
   const settings = searchModes.reduce((acc, searchMode, i) => {
@@ -12,6 +12,11 @@ export default (Editor, searchModes) => {
   }, {});
 
   return class extends Component {
+
+    static propTypes = {
+      appElement: PropTypes.object.isRequired
+    }
+
     state = {
       showSearchDialog: false,
       searchEngine: null,
@@ -21,7 +26,9 @@ export default (Editor, searchModes) => {
       firstTime: true
     }
 
-    componentDidMount(){
+    displayName = 'Search Component'
+
+    componentDidMount() {
       Modal.setAppElement(this.props.appElement);
     }
 
@@ -51,12 +58,12 @@ export default (Editor, searchModes) => {
       }
       var searchFrom = this.state.cursor, result;
       // keep searching until we find an unfocused node, or we run out of results
-      while(result = searchModes[this.state.searchEngine].search(
+      while((result = searchModes[this.state.searchEngine].search(
         searchFrom,
         this.state.settings[this.state.searchEngine],
         this.cm,
         cmbState,
-        forward)) {
+        forward))) {
         if(result && result.node.id !== cmbState.focusId) break;
         searchFrom = result.cursor;
       }

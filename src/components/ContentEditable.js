@@ -67,7 +67,7 @@ export default class ContentEditable extends Component {
   }
 
   render () {
-    const {value, itDidMount, ...props} = this.props;
+    const {value, ...props} = this.props;
     return (
       <span
         {...props}

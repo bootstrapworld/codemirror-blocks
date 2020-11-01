@@ -1,5 +1,6 @@
 import {UnControlled as CodeMirror} from 'react-codemirror2';
-import React  from 'react';
+import React, {Component}  from 'react';
+import PropTypes from 'prop-types';
 import {DropNodeTarget} from '../dnd';
 import {drop, OverwriteTarget} from '../actions';
 import {connect} from 'react-redux';
@@ -13,7 +14,6 @@ export default
 @DropNodeTarget(function(monitor) {
   const roots = SHARED.cm.getAllMarks().filter(m => m.BLOCK_NODE_ID);
   const {x:left, y:top} = monitor.getClientOffset();
-//  console.log('DS26GTE DnDEd left=', left, 'top=', top);
 
   // Did we get proper coordinate information from react DND?
   let droppedOn = false;
@@ -37,7 +37,11 @@ export default
   }
 })
 
-class WrappedCodeMirror extends React.Component {
+class WrappedCodeMirror extends Component {
+
+  static propTypes = {
+    connectDropTarget: PropTypes.func.isRequired,
+  }
 
   handleDragOver = (ed, e) => {
     if (!e.target.classList.contains('CodeMirror-line')) {

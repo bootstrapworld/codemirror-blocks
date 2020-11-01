@@ -100,14 +100,14 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
   let result = speculateChanges(changeArray);
   if (result.successful) {
     try {
-    // Perform the text edits, and update the ast.
-    SHARED.cm.operation(() => {
-      for (let c of changeArray) {
-        SHARED.cm.replaceRange(c.text, c.from, c.to, c.origin);
-      }
-    });
-    let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST, annt);
-    onSuccess({newAST, focusId});
+      // Perform the text edits, and update the ast.
+      SHARED.cm.operation(() => {
+        for (let c of changeArray) {
+          SHARED.cm.replaceRange(c.text, c.from, c.to, c.origin);
+        }
+      });
+      let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST, annt);
+      onSuccess({newAST, focusId});
     } catch(e) {
       logResults(window.reducerActivities, e);
     }

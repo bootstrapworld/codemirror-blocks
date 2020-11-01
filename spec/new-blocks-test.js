@@ -51,7 +51,7 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.getBlockMode()).toBe(false);
     });
   });
-/*
+  /*
   // Should we make the language prop accessible externally so we can run this?
   it('should optionally take a language object', function() {
      const b = new CodeMirrorBlocks(
@@ -60,7 +60,7 @@ describe('The CodeMirrorBlocks Class', function() {
       example);
      expect(b.language.id).toBe('example');
   });
-*/
+  */
   describe('events,', function() {
     beforeEach(async function() {
       this.blocks.setValue('11');

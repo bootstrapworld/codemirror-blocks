@@ -73,14 +73,16 @@ Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
 export const commandMap = {
-  prevNode : function (_) {
+  prevNode : function (_, e) {
+    e.preventDefault();
     if(this.node) return this.activate(this.fastSkip(node => node.prev));
     const prevNode = this.ast.getNodeBeforeCur(this.cur);
     if (prevNode) { this.activate(prevNode, {allowMove: true}); }
     else { playSound(BEEP); }
   },
 
-  nextNode : function (_) {
+  nextNode : function (_, e) {
+    e.preventDefault();
     if(this.node) return this.activate(this.fastSkip(node => node.next));
     const nextNode = this.ast.getNodeAfterCur(this.cur);
     if (nextNode) { this.activate(nextNode, {allowMove: true}); }
@@ -184,7 +186,6 @@ export const commandMap = {
       });
       // TODO(Emmanuel): announce removal
     } else {
-      const {from: addedFrom, to: addedTo} = node;
       const isContained = id => this.ast.isAncestor(node.id, id);
       const doesContain = id => this.ast.isAncestor(id, node.id);
       const [removed, newSelections] = partition(this.selections, isContained);
@@ -194,7 +195,7 @@ export const commandMap = {
       if (newSelections.some(doesContain)) {
         // TODO(Emmanuel): announce failure
       } else {
-        // announce addition
+        // TODO(Emmanuel): announce addition
         newSelections.push(this.node.id);
         this.dispatch({
           type: 'SET_SELECTIONS',

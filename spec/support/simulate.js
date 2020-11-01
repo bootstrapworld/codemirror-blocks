@@ -29,13 +29,14 @@ function createBubbledEvent(type, props = {}) {
   return event;
 }
 
+/* UNUSED 
 function createBubbledMouseEvent(type, props = {}) {
   const event = new MouseEvent(type, { bubbles: true });
   Object.assign(event, props);
   return event;
 }
-
-export function drop(dataTransfer) {
+*/
+export function drop() {
   let ans = createBubbledEvent('drop');
   return ans;
 }

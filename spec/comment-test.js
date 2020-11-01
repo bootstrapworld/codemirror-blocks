@@ -1,10 +1,6 @@
 import wescheme from '../src/languages/wescheme';
-import {
-  click,
-  keyDown,
-  insertText,
-} from './support/simulate';
 import { wait, teardown, activationSetup } from './support/test-utils';
+//import { click, keyDown, insertText } from './support/simulate';
 
 
 // ms delay to let the DOM catch up before testing

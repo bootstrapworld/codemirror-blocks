@@ -1,47 +1,22 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import Editor from 'codemirror-blocks/ui/Editor';
-import 'codemirror-blocks/languages/example';
-
-import {
-  click,
-  keydown,
-  pureevent,
-  setNativeValue,
-} from '../support/events';
-
-import {
-  PGUP,
-  PGDN,
-  F3,
-} from 'codemirror-blocks/keycode';
-
-import {wait, removeEventListeners} from '../support/test-utils';
+import example from 'codemirror-blocks/languages/example';
+import {click, keydown, pureevent, setNativeValue} from '../support/events';
+import {wait, teardown, activationSetup} from './support/test-utils';
+import {PGUP, PGDN, F3} from 'codemirror-blocks/keycode';
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 500;
 
-describe('Search component', function() {
-  beforeEach(async function() {
-    removeEventListeners();
-    const fixture = `<div id="root"></div>`;
-    document.body.insertAdjacentHTML('afterbegin', fixture);
+// be sure to call with `apply` or `call`
+let setup = function () { activationSetup.call(this, example); };
 
-    this.root = document.getElementById("root");
-    this.editor = ReactDOM.render(
-      <Editor language="example" cmOptions={{value: ''}} />,
-      this.root
-    );
-    // rendering is async
-    await wait(DELAY);
-    this.blocks = this.editor.getCodeMirrorBlocks();
-    this.blocks.setBlockMode(true);
+describe('Search component', function() {
+  beforeEach(function() {
+    setup.call(this);
+    this.cmb.setBlockMode(true);
   });
 
-  afterEach(async function() {
-    ReactDOM.unmountComponentAtNode(document.getElementById("root"));
-    await wait(DELAY);
-    document.body.removeChild(document.getElementById('root'));
+  afterEach(function() {
+    teardown();
   });
 
   describe('Basic search', function() {

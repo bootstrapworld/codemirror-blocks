@@ -82,6 +82,12 @@ class ToplevelBlock extends BlockComponent {
 
 class ToplevelBlockEditableCore extends Component {
 
+  static propTypes = {
+    quarantine: PropTypes.object,
+    onDisableEditable: PropTypes.func.isRequired,
+    onChange: PropTypes.func.isRequired,
+  }
+
   constructor(props) {
     super(props);
     const [start, end] = this.props.quarantine;
@@ -147,6 +153,7 @@ class BlockEditor extends Component {
       onSearch: PropTypes.func.isRequired,
       search: PropTypes.func.isRequired,
       setCursor: PropTypes.func.isRequired,
+      setCM: PropTypes.func.isRequired,
     }),
     onBeforeChange: PropTypes.func,
     onMount:PropTypes.func.isRequired,
