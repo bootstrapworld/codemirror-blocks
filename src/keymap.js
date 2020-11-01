@@ -3,7 +3,7 @@ import CodeMirror from 'codemirror';
 import {playSound, BEEP} from './sound';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
-  ReplaceNodeTarget, OverwriteTarget} from './actions';
+  ReplaceNodeTarget, OverwriteTarget, activate} from './actions';
 import {partition, getRoot, sayActionForNodes, skipCollapsed,
   say, getLastVisibleNode, preambleUndoRedo} from './utils';
 
@@ -278,36 +278,38 @@ export const commandMap = {
       paste(new OverwriteTarget(pos, pos));
     }
   },
-  // TODO(Emmanuel): fix search
+
   activateSearchDialog : function (_) {
     SHARED.search.onSearch(
       this.state,
-      () => { this.activate },
+      () => {},
       () => this.activateNoRecord(SHARED.search.search(true, this.state))
     );
   },
-  // TODO(Emmanuel): fix search
-  searchPrevious : function (_) {
+
+  searchPrevious : function (_, e) {
+    e.preventDefault();
     this.activateNoRecord(SHARED.search.search(false, this.state));
   },
-  // TODO(Emmanuel): fix search
-  searchNext : function (_) {
+
+  searchNext : function (_, e) {
+    e.preventDefault();
     this.activateNoRecord(SHARED.search.search(true, this.state));
   },
 
-  undo : function(cm, e) {
+  undo : function(_, e) {
     e.preventDefault();
     if(this.node) { 
       preambleUndoRedo('undo');
-      cm.undo(); 
+      SHARED.cm.undo(); 
     }
   },
 
-  redo : function(cm, e) {
+  redo : function(_, e) {
     e.preventDefault();
     if(this.node) {
       preambleUndoRedo('redo');
-      cm.redo(); 
+      SHARED.cm.redo(); 
     }
   },
 
@@ -316,27 +318,30 @@ export const commandMap = {
   }
 };
 
+// Recieves the key event, an environment (BlockEditor or Node), and the
+// editor's keyMap. If there is a handler for that event, flatten the 
+// environment and add some utility methods, then set the key handler's 
+// "this" object to be that environment and call it.
 export function keyDown(e, env, keyMap) {
-  env.props.dispatch((_, getState) => {
-    // set up the environment
-    const state = getState();
-    const {ast, selections} = state;
-    Object.assign(env, env.props, {ast, selections, state});
-    // add convenience methods
-    env.fastSkip = next => skipCollapsed(env.node, next, state);
-    env.activate = (n, options={allowMove: true, record: true}) => {
-      if (n === null) { playSound(BEEP); }
-      env.props.activate((n === undefined)? env.node.id : n.id, options);
-    };
-    env.activateNoRecord = node => {
-      if(!node){ playSound(BEEP); } // nothing to activate
-      else { env.props.dispatch(activate(env.node.id, {record: false, allowMove: true})); }
-    };
-  });
-  // if a key handler exists, stopPropagation and execute
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
   if(handler) {
     e.stopPropagation();
+    env.props.dispatch((_, getState) => {
+      // set up the environment
+      const state = getState();
+      const {ast, selections} = state;
+      Object.assign(env, env.props, {ast, selections, state});
+      // add convenience methods
+      env.fastSkip = next => skipCollapsed(env.node, next, state);
+      env.activate = (n, options={allowMove: true, record: true}) => {
+        if (n === null) { playSound(BEEP); }
+        env.props.activate((n === undefined)? env.node.id : n.id, options);
+      };
+      env.activateNoRecord = node => {
+        if(!node) { return playSound(BEEP); } // nothing to activate
+        env.dispatch(activate(node.id, {record: false, allowMove: true}));
+      };
+    });
     handler = handler.bind(env);
     return handler(SHARED.cm, e);
   }
@@ -358,19 +363,19 @@ export function renderKeyMap(keyMap) {
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Navigation</h2>
         <table className="shortcuts">
-          <thead><tr><th>Command</th>     <th>Shortcut</th></tr></thead> 
+          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead> 
           <tbody>         
-          <tr><td>Previous Block</td>     <td><kbd>{reverseMap['prevNode']}</kbd></td></tr>
-          <tr><td>Next Block</td>         <td><kbd>{reverseMap['nextNode']}</kbd></td></tr>
-          <tr><td>Collapse Block</td>     <td><kbd>{reverseMap['collapseOrSelectParent']}</kbd></td></tr>
-          <tr><td>Expand Block</td>       <td><kbd>{reverseMap['expandOrSelectFirstChild']}</kbd></td></tr>
-          <tr><td>Collapse Root</td>      <td><kbd>{reverseMap['collapseCurrentRoot']}</kbd></td></tr>
-          <tr><td>Expand Root</td>        <td><kbd>{reverseMap['expandCurrentRoot']}</kbd></td></tr>
-          <tr><td>Collapse All</td>       <td><kbd>{reverseMap['collapseAll']}</kbd></td></tr>
-          <tr><td>Expand All</td>         <td><kbd>{reverseMap['expandAll']}</kbd></td></tr>
+          <tr><td>Previous Block</td><td><kbd>{reverseMap['prevNode']}</kbd></td></tr>
+          <tr><td>Next Block</td><td><kbd>{reverseMap['nextNode']}</kbd></td></tr>
+          <tr><td>Collapse Block</td><td><kbd>{reverseMap['collapseOrSelectParent']}</kbd></td></tr>
+          <tr><td>Expand Block</td><td><kbd>{reverseMap['expandOrSelectFirstChild']}</kbd></td></tr>
+          <tr><td>Collapse Root</td><td><kbd>{reverseMap['collapseCurrentRoot']}</kbd></td></tr>
+          <tr><td>Expand Root</td><td><kbd>{reverseMap['expandCurrentRoot']}</kbd></td></tr>
+          <tr><td>Collapse All</td><td><kbd>{reverseMap['collapseAll']}</kbd></td></tr>
+          <tr><td>Expand All</td><td><kbd>{reverseMap['expandAll']}</kbd></td></tr>
           <tr><td>First Visible Block</td><td><kbd>{reverseMap['firstNode']}</kbd></td></tr>
-          <tr><td>Last Visible Block</td> <td><kbd>{reverseMap['lastVisibleNode']}</kbd></td></tr>
-          <tr><td>Read Ancestors</td>     <td><kbd>{reverseMap['readAncestors']}</kbd></td></tr>
+          <tr><td>Last Visible Block</td><td><kbd>{reverseMap['lastVisibleNode']}</kbd></td></tr>
+          <tr><td>Read Ancestors</td><td><kbd>{reverseMap['readAncestors']}</kbd></td></tr>
           <tr><td>Read Block and Children</td><td><kbd>{reverseMap['readChildren']}</kbd></td></tr>
           </tbody>
         </table>
@@ -378,39 +383,39 @@ export function renderKeyMap(keyMap) {
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Editing</h2>
         <table className="shortcuts">
-          <thead><tr><th>Command</th>     <th>Shortcut</th></tr></thead>
+          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
           <tbody>
-          <tr><td>Edit a Literal</td>     <td><kbd>{reverseMap['edit']}</kbd></td></tr>
-          <tr><td>Edit any Block</td>     <td><kbd>{reverseMap['editAnything']}</kbd></td></tr>
-          <tr><td>Cancel</td>             <td><kbd>{reverseMap['cancel']}</kbd></td></tr>
-          <tr><td>Insert Before</td>      <td><kbd>{reverseMap['insertLeft']}</kbd></td></tr>
-          <tr><td>Insert After</td>       <td><kbd>{reverseMap['insertRight']}</kbd></td></tr>
+          <tr><td>Edit a Literal</td><td><kbd>{reverseMap['edit']}</kbd></td></tr>
+          <tr><td>Edit any Block</td><td><kbd>{reverseMap['editAnything']}</kbd></td></tr>
+          <tr><td>Cancel</td><td><kbd>{reverseMap['cancel']}</kbd></td></tr>
+          <tr><td>Insert Before</td><td><kbd>{reverseMap['insertLeft']}</kbd></td></tr>
+          <tr><td>Insert After</td><td><kbd>{reverseMap['insertRight']}</kbd></td></tr>
           </tbody>
         </table>
       </div>
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Search</h2>
         <table className="shortcuts">
-          <thead><tr><th>Command</th>     <th>Shortcut</th></tr></thead>
+          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
           <tbody>
-          <tr><td>Enter Search Mode</td>  <td><kbd>{reverseMap['activateSearchDialog']}</kbd></td></tr>
-          <tr><td>Exit Search Mode</td>   <td><kbd>{reverseMap['cancel']}</kbd></td></tr>
-          <tr><td>Find Next</td>          <td><kbd>{reverseMap['searchNext']}</kbd></td></tr>
-          <tr><td>Find Previous</td>      <td><kbd>{reverseMap['searchPrevious']}</kbd></td></tr>
+          <tr><td>Enter Search Mode</td><td><kbd>{reverseMap['activateSearchDialog']}</kbd></td></tr>
+          <tr><td>Exit Search Mode</td><td><kbd>{reverseMap['cancel']}</kbd></td></tr>
+          <tr><td>Find Next</td><td><kbd>{reverseMap['searchNext']}</kbd></td></tr>
+          <tr><td>Find Previous</td><td><kbd>{reverseMap['searchPrevious']}</kbd></td></tr>
           </tbody>
         </table>
       </div>
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Selection and Clipboard</h2>
         <table className="shortcuts">
-          <thead><tr><th>Command</th>     <th>Shortcut</th></tr></thead>
+          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
           <tbody>
-          <tr><td>Toggle Selection</td>   <td><kbd>{reverseMap['toggleSelection']}</kbd></td></tr>
-          <tr><td>Cut </td>               <td><kbd>{reverseMap['cut']}</kbd></td></tr>
-          <tr><td>Copy</td>               <td><kbd>{reverseMap['copy']}</kbd></td></tr>
-          <tr><td>Paste After Block</td>  <td><kbd>{reverseMap['paste']}</kbd></td></tr>
-          <tr><td>Paste Before Block</td> <td><kbd>{reverseMap['pasteBefore']}</kbd></td></tr>
-          <tr><td>Delete Selection</td>   <td><kbd>{reverseMap['delete']}</kbd></td></tr>
+          <tr><td>Toggle Selection</td><td><kbd>{reverseMap['toggleSelection']}</kbd></td></tr>
+          <tr><td>Cut </td><td><kbd>{reverseMap['cut']}</kbd></td></tr>
+          <tr><td>Copy</td><td><kbd>{reverseMap['copy']}</kbd></td></tr>
+          <tr><td>Paste After Block</td><td><kbd>{reverseMap['paste']}</kbd></td></tr>
+          <tr><td>Paste Before Block</td><td><kbd>{reverseMap['pasteBefore']}</kbd></td></tr>
+          <tr><td>Delete Selection</td><td><kbd>{reverseMap['delete']}</kbd></td></tr>
           </tbody>
         </table>
       </div>

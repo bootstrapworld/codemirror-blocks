@@ -208,8 +208,11 @@ export default class ToggleEditor extends React.Component {
   }
 
   renderDialog() {
+    const dialogKeyDown = e => {
+      if(CodeMirror.keyName(e) == "Esc") this.closeDialog();
+    }
     return (
-      <div className="Dialog">
+      <div id="Dialog" onKeyDown={dialogKeyDown} tabIndex="0">
         {this.state.dialog}
         <span className="closeDialog" onClick={() => this.closeDialog()}>OK</span>
       </div>
