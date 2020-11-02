@@ -83,7 +83,7 @@ class ToplevelBlock extends BlockComponent {
 class ToplevelBlockEditableCore extends Component {
 
   static propTypes = {
-    quarantine: PropTypes.object,
+    quarantine: PropTypes.array.isRequired,
     onDisableEditable: PropTypes.func.isRequired,
     onChange: PropTypes.func.isRequired,
   }
