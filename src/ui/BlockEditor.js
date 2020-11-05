@@ -674,7 +674,10 @@ const mapDispatchToProps = dispatch => ({
   setCursor: (_, cur) => dispatch(setCursor(cur)),
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
-  activate: (id, options) => dispatch(activate(id, options)),
+  activate: function(id, options) {
+    //console.log('### BlockEditor calling activate I', id);
+    if (id) dispatch(activate(id, options));
+  },
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);
