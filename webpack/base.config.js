@@ -71,5 +71,5 @@ module.exports = function(config) {
     ])
     },
     plugins: plugins,
-  }
+  };
 };

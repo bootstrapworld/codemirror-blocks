@@ -13,7 +13,6 @@ if (envConfig.runCoverage) {
   });
 }
 
-const mode = envConfig.nodeEnv = 'development';
 // For webpack5 (at least for now), we have to manually define this
 // the 'mode' setting on the line above seems to be ignored
 const plugins = baseConfig.plugins.concat();
