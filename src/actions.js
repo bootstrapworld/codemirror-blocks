@@ -71,8 +71,11 @@ export function copy(nodes, editWord) {
   // commented nodes (to prevent a comment from attaching itself to a
   // different node after pasting).
   nodes.sort((a, b) => poscmp(a.from, b.from));
-  let annt = createAnnouncement(nodes, editWord);
-  say(annt);
+  let annt = false;
+  if (editWord) {
+    annt = createAnnouncement(nodes, editWord);
+    say(annt);
+  }
   let text = "";
   let postfix = "";
   for (let node of nodes) {

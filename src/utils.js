@@ -114,16 +114,8 @@ export function say(text, delay=200, allowOverride=false) {
   }
 }
 
-export function sayActionForNodes(nodes, action) {
-  //console.log('doing sayActionForNodes', action);
-  nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
-  let annt = (action + " " +
-    nodes.map((node) => node.options['aria-label'])
-      .join(" and "));
-  say(annt);
-}
-
 export function createAnnouncement(nodes, action) {
+  nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
   let annt = (action + " " +
     nodes.map((node) => node.options['aria-label'])
       .join(" and "));

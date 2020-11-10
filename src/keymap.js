@@ -4,7 +4,7 @@ import {playSound, BEEP} from './sound';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget, activate} from './actions';
-import {partition, getRoot, sayActionForNodes, skipCollapsed,
+import {partition, getRoot, createAnnouncement, skipCollapsed,
   say, getLastVisibleNode, preambleUndoRedo} from './utils';
 
 const userAgent = navigator.userAgent;
@@ -230,8 +230,7 @@ export const commandMap = {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.selections.length) { return say('Nothing selected'); }
     const nodesToDelete = this.selections.map(this.ast.getNodeById);
-    sayActionForNodes(nodesToDelete, "deleted");
-    delete_(nodesToDelete);
+    delete_(nodesToDelete, "deleted");
   },
 
   insertRight : function (_) {
@@ -248,8 +247,7 @@ export const commandMap = {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.selections.length) { return say('Nothing selected'); }
     const nodesToCut = this.selections.map(this.ast.getNodeById);
-    sayActionForNodes(nodesToCut, "cut");
-    copy(nodesToCut);
+    copy(nodesToCut, "cut");
     delete_(nodesToCut);
   },
 
@@ -258,8 +256,7 @@ export const commandMap = {
     // if no nodes are selected, do it on focused node's id instead
     const nodeIds = !this.selections.length? [this.node.id] : this.selections;
     const nodesToCopy = nodeIds.map(this.ast.getNodeById);
-    sayActionForNodes(nodesToCopy, "copied");
-    copy(nodesToCopy);
+    copy(nodesToCopy, "copied");
   },
 
   paste : function (_, e) {
