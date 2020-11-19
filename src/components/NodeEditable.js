@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {insert, activate, Target} from '../actions';
+import {insert, activateByNid, Target} from '../actions';
 import {say} from '../utils';
 import CodeMirror from 'codemirror';
 
@@ -45,11 +45,12 @@ class NodeEditable extends Component {
     e.stopPropagation();
     const {target, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
     dispatch((dispatch, getState) => {
-      const {focusId} = getState();
+      const {focusId, ast} = getState();
 
       if (this.props.value === null || this.props.value === this.cachedValue) {
         this.props.onDisableEditable(false);
-        dispatch(activate(focusId, true));
+        const nid = ast.getNodeById(focusId).nid;
+        dispatch(activateByNid(nid, true));
         return;
       }
 
@@ -57,9 +58,11 @@ class NodeEditable extends Component {
       let annt = `${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`;
       const onSuccess = ({firstNewId}) => {
         if (firstNewId !== null) {
-          dispatch(activate(firstNewId, {allowMove: true}));
+          const {ast} = getState()
+          const firstNewNid = ast.getNodeById(focusId).nid;
+          dispatch(activateByNid(firstNewNid, {allowMove: true}));
         } else {
-          dispatch(activate(null, {allowMove: false}));
+          dispatch(activateByNid(null, {allowMove: false}));
         }
         onChange(null);
         onDisableEditable(false);
@@ -180,7 +183,7 @@ const mapStateToProps = ({cm, errorId}, {target}) => {
 const mapDispatchToProps = dispatch => ({
   dispatch,
   setErrorId: errorId => dispatch({type: 'SET_ERROR_ID', errorId}),
-  focusSelf: () => dispatch(activate(null, {allowMove: false})),
+  focusSelf: () => dispatch(activateByNid(null, {allowMove: false})),
   clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []}),
 });
 

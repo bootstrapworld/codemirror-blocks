@@ -3,7 +3,7 @@ import CodeMirror from 'codemirror';
 import {playSound, BEEP} from './sound';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
-  ReplaceNodeTarget, OverwriteTarget, activate} from './actions';
+  ReplaceNodeTarget, OverwriteTarget, activateByNid} from './actions';
 import {partition, getRoot, createAnnouncement, skipCollapsed,
   say, getLastVisibleNode, preambleUndoRedo} from './utils';
 
@@ -75,34 +75,33 @@ CodeMirror.normalizeKeyMap(defaultKeyMap);
 export const commandMap = {
   prevNode : function (_, e) {
     e.preventDefault();
-    if(this.node) return this.activate(this.fastSkip(node => node.prev));
+    if(this.node) return this.activateByNid(this.fastSkip(node => node.prev).nid);
     const prevNode = this.ast.getNodeBeforeCur(this.cur);
-    if (prevNode) { this.activate(prevNode, {allowMove: true}); }
+    if (prevNode) { this.activateByNid(prevNode.nid, {allowMove: true}); }
     else { playSound(BEEP); }
   },
 
   nextNode : function (_, e) {
     e.preventDefault();
-    if(this.node) return this.activate(this.fastSkip(node => node.next));
+    if(this.node) return this.activateByNid(this.fastSkip(node => node.next).nid);
     const nextNode = this.ast.getNodeAfterCur(this.cur);
-    if (nextNode) { this.activate(nextNode, {allowMove: true}); }
+    if (nextNode) { this.activateByNid(nextNode.nid, {allowMove: true}); }
     else { playSound(BEEP); }
   },
 
   firstNode : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
-    const root = this.ast.getFirstRootNode();
-    this.activate(root, {allowMove: true});
+    this.activateByNid(0, {allowMove: true});
   },
 
   lastVisibleNode : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
-    else { this.activate(getLastVisibleNode(this.state)); }
+    else { this.activateByNid(getLastVisibleNode(this.state).nid); }
   },
 
   jumpToRoot : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
-    else { this.activate(getRoot(this.node)); }
+    else { this.activateByNid(getRoot(this.node).nid); }
   },
 
   readAncestors : function (_) {
@@ -125,7 +124,7 @@ export const commandMap = {
   collapseAll : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     this.dispatch({type: 'COLLAPSE_ALL'});
-    this.activate(getRoot(this.node));
+    this.activateByNid(getRoot(this.node).nid);
   },
 
   collapseOrSelectParent : function(_) {
@@ -133,7 +132,7 @@ export const commandMap = {
     if (this.expandable && !this.isCollapsed && !this.isLocked()) {
       this.collapse(this.node.id);
     } else if (this.node.parent) {
-      this.activate(this.node.parent);
+      this.activateByNid(this.node.parent.nid);
     } else {
       playSound(BEEP);
     }
@@ -147,7 +146,7 @@ export const commandMap = {
       let root = getRoot(this.node);
       let descendants = [...root.descendants()];
       descendants.forEach(d => this.collapse(d.id));
-      this.activate(root);
+      this.activateByNid(root.nid);
     }
   },
 
@@ -162,7 +161,7 @@ export const commandMap = {
     if (this.expandable && this.isCollapsed && !this.isLocked()) {
       this.uncollapse(node.id);
     } else if (node.next && node.next.parent === node) {
-      this.activate(node.next);
+      this.activateByNid(node.next.nid);
     } else {
       playSound(BEEP);
     }
@@ -172,7 +171,7 @@ export const commandMap = {
     if(!this.node) { return CodeMirror.Pass; }
     let root = getRoot(this.node);
     [...root.descendants()].forEach(d => this.uncollapse(d.id));
-    this.activate(root);
+    this.activateByNid(root.nid);
   },
 
   toggleSelection : function (_, e) {
@@ -333,11 +332,11 @@ export function keyDown(e, env, keyMap) {
       env.fastSkip = next => skipCollapsed(env.node, next, state);
       env.activate = (n, options={allowMove: true, record: true}) => {
         if (n === null) { playSound(BEEP); }
-        env.props.activate((n === undefined)? env.node.id : n.id, options);
+        env.props.activateByNid((n === undefined)? env.node.nid : n.nid, options);
       };
       env.activateNoRecord = node => {
         if(!node) { return playSound(BEEP); } // nothing to activate
-        env.dispatch(activate(node.id, {record: false, allowMove: true}));
+        env.dispatch(activateByNid(node.nid, {record: false, allowMove: true}));
       };
     });
     handler = handler.bind(env);

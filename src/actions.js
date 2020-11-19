@@ -85,7 +85,7 @@ export function copy(nodes, editWord) {
   }
   copyToClipboard(text);
   // Copy steals focus. Force it back to the node's DOM element
-  // without announcing via activate() or activate().
+  // without announcing via activateByNid().
   if (focusId) {
     ast.getNodeById(focusId).element.focus();
   }
@@ -165,16 +165,18 @@ export function setCursor(cur) {
 }
 
 // Activate the node with the given `id`.
-export function activate(id, options) {
+export function activateByNid(nid, options) {
+  console.log('activateByNid called with', nid);
   return (dispatch, getState) => {
     options = withDefaults(options, {allowMove: true, record: true});
     const state = getState();
     const {ast, focusId, collapsedList} = state;
-    if (id === null) { id = focusId; }
+    // NOTE(Emmanuel): is the following line obsolete?
+    if (nid === null) { nid = focusId; }
     // FIXME DS26GTE: sometimes focusId is also null
     let node = null;
-    if (ast && id) {
-      node = ast.getNodeById(id);
+    if (ast && nid) {
+      node = ast.getNodeByNId(nid);
     }
 
     // Don't activate a toolbar node. (Screenreaders will still announce it)
@@ -182,7 +184,7 @@ export function activate(id, options) {
 
     // check for element on focus, since tests or node editing may happen so fast 
     // that the element isn't there yet
-    if (node.id === focusId) {
+    if (node.nid === focusId) {
       setTimeout(() => { if(node.element) node.element.focus(); }, 10);
     }
 
