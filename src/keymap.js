@@ -75,17 +75,54 @@ CodeMirror.normalizeKeyMap(defaultKeyMap);
 export const commandMap = {
   prevNode : function (_, e) {
     e.preventDefault();
-    if(this.node) return this.activateByNid(this.fastSkip(node => node.prev).nid);
+    if(this.node) {
+      let x = this.node;
+      console.log('$$$ prevNode II x=', x);
+      console.log('$$$ prevNode II x.id=', x.id);
+      console.log('$$$ prevNode II x.nid=', 'x.nid=', x.nid);
+      //id is correct, but nid isn't!
+      let correctedNode = this.ast.getNodeByNId(this.ast.getNodeById(x.id).nid);
+      this.node = correctedNode;
+      let y = this.fastSkip(node => node.prev);
+      console.log('$$$ prevNode II y', y);
+      console.log('$$$ prevNode II y.id=', y.id);
+      console.log('$$$ prevNode II y.nid=', y.nid);
+      return this.activateByNid(y.nid);
+    }
     const prevNode = this.ast.getNodeBeforeCur(this.cur);
-    if (prevNode) { this.activateByNid(prevNode.nid, {allowMove: true}); }
+    console.log('$$$$ prevNode=', prevNode);
+    if (prevNode) {
+      console.log('$$$ prevNode III', prevNode);
+      this.activateByNid(prevNode.nid, {allowMove: true});
+    }
     else { playSound(BEEP); }
   },
 
   nextNode : function (_, e) {
     e.preventDefault();
-    if(this.node) return this.activateByNid(this.fastSkip(node => node.next).nid);
+    if(this.node) {
+      let x = this.node;
+      console.log('$$$ nextNode II prevailing ast=', this.ast);
+      console.log('$$$ nextNode II x=', x);
+      console.log('$$$ nextNode II x.id=', x.id);
+      console.log('$$$ nextNode II x.nid=', 'x.nid=', x.nid);
+      //id is correct, but nid isn't!
+      let correctedNode = this.ast.getNodeByNId(this.ast.getNodeById(x.id).nid);
+      this.node = correctedNode;
+      let y = this.fastSkip(node => node.next);
+      if (y) {
+      console.log('$$$ nextNode II y=', y);
+      console.log('$$$ nextNode II y.id=', y.id);
+      console.log('$$$ nextNode II y.nid=', 'y.nid=', y.nid);
+      return this.activateByNid(y.nid);
+      }
+    }
     const nextNode = this.ast.getNodeAfterCur(this.cur);
-    if (nextNode) { this.activateByNid(nextNode.nid, {allowMove: true}); }
+    console.log('$$$$ nextNode=', nextNode);
+    if (nextNode) {
+      console.log('$$$ nextNode III', nextNode);
+      this.activateByNid(nextNode.nid, {allowMove: true});
+    }
     else { playSound(BEEP); }
   },
 
@@ -296,9 +333,9 @@ export const commandMap = {
 
   undo : function(_, e) {
     e.preventDefault();
-    if(this.node) { 
+    if(this.node) {
       preambleUndoRedo('undo');
-      SHARED.cm.undo(); 
+      SHARED.cm.undo();
     }
   },
 
@@ -306,7 +343,7 @@ export const commandMap = {
     e.preventDefault();
     if(this.node) {
       preambleUndoRedo('redo');
-      SHARED.cm.redo(); 
+      SHARED.cm.redo();
     }
   },
 
@@ -316,10 +353,11 @@ export const commandMap = {
 };
 
 // Recieves the key event, an environment (BlockEditor or Node), and the
-// editor's keyMap. If there is a handler for that event, flatten the 
-// environment and add some utility methods, then set the key handler's 
+// editor's keyMap. If there is a handler for that event, flatten the
+// environment and add some utility methods, then set the key handler's
 // "this" object to be that environment and call it.
 export function keyDown(e, env, keyMap) {
+  console.log('*** doing keyDown');
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
   if(handler) {
     e.stopPropagation();
@@ -329,7 +367,9 @@ export function keyDown(e, env, keyMap) {
       const {ast, selections} = state;
       Object.assign(env, env.props, {ast, selections, state});
       // add convenience methods
-      env.fastSkip = next => skipCollapsed(env.node, next, state);
+      env.fastSkip = function (next) {
+        return skipCollapsed(env.node, next, state);
+      };
       env.activate = (n, options={allowMove: true, record: true}) => {
         if (n === null) { playSound(BEEP); }
         env.props.activateByNid((n === undefined)? env.node.nid : n.nid, options);
@@ -360,8 +400,8 @@ export function renderKeyMap(keyMap) {
       <div className="shortcutGroup" tabIndex="-1">
         <h2>Navigation</h2>
         <table className="shortcuts">
-          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead> 
-          <tbody>         
+          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
+          <tbody>
           <tr><td>Previous Block</td><td><kbd>{reverseMap['prevNode']}</kbd></td></tr>
           <tr><td>Next Block</td><td><kbd>{reverseMap['nextNode']}</kbd></td></tr>
           <tr><td>Collapse Block</td><td><kbd>{reverseMap['collapseOrSelectParent']}</kbd></td></tr>
