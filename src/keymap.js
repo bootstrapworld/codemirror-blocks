@@ -81,8 +81,8 @@ export const commandMap = {
       console.log('$$$ prevNode II x.id=', x.id);
       console.log('$$$ prevNode II x.nid=', 'x.nid=', x.nid);
       //id is correct, but nid isn't!
-      let correctedNode = this.ast.getNodeByNId(this.ast.getNodeById(x.id).nid);
-      this.node = correctedNode;
+//      let correctedNode = this.ast.getNodeByNId(this.ast.getNodeById(x.id).nid);
+//      this.node = correctedNode;
       let y = this.fastSkip(node => node.prev);
       console.log('$$$ prevNode II y', y);
       console.log('$$$ prevNode II y.id=', y.id);
@@ -107,8 +107,8 @@ export const commandMap = {
       console.log('$$$ nextNode II x.id=', x.id);
       console.log('$$$ nextNode II x.nid=', 'x.nid=', x.nid);
       //id is correct, but nid isn't!
-      let correctedNode = this.ast.getNodeByNId(this.ast.getNodeById(x.id).nid);
-      this.node = correctedNode;
+//      let correctedNode = this.ast.getNodeByNId(this.ast.getNodeById(x.id).nid);
+//      this.node = correctedNode;
       let y = this.fastSkip(node => node.next);
       if (y) {
       console.log('$$$ nextNode II y=', y);
@@ -365,6 +365,10 @@ export function keyDown(e, env, keyMap) {
       // set up the environment
       const state = getState();
       const {ast, selections} = state;
+      // necessary because this can be called from a stale node
+      if(env.node) {
+        env.node = ast.getNodeByNId(ast.getNodeById(env.node.id).nid)
+      }
       Object.assign(env, env.props, {ast, selections, state});
       // add convenience methods
       env.fastSkip = function (next) {
