@@ -76,23 +76,11 @@ export const commandMap = {
   prevNode : function (_, e) {
     e.preventDefault();
     if(this.node) {
-      let x = this.node;
-      console.log('$$$ prevNode II x=', x);
-      console.log('$$$ prevNode II x.id=', x.id);
-      console.log('$$$ prevNode II x.nid=', 'x.nid=', x.nid);
-      //id is correct, but nid isn't!
-//      let correctedNode = this.ast.getNodeByNId(this.ast.getNodeById(x.id).nid);
-//      this.node = correctedNode;
       let y = this.fastSkip(node => node.prev);
-      console.log('$$$ prevNode II y', y);
-      console.log('$$$ prevNode II y.id=', y.id);
-      console.log('$$$ prevNode II y.nid=', y.nid);
       return this.activateByNid(y.nid);
     }
     const prevNode = this.ast.getNodeBeforeCur(this.cur);
-    console.log('$$$$ prevNode=', prevNode);
     if (prevNode) {
-      console.log('$$$ prevNode III', prevNode);
       this.activateByNid(prevNode.nid, {allowMove: true});
     }
     else { playSound(BEEP); }
@@ -102,25 +90,15 @@ export const commandMap = {
     e.preventDefault();
     if(this.node) {
       let x = this.node;
-      console.log('$$$ nextNode II prevailing ast=', this.ast);
-      console.log('$$$ nextNode II x=', x);
-      console.log('$$$ nextNode II x.id=', x.id);
-      console.log('$$$ nextNode II x.nid=', 'x.nid=', x.nid);
-      //id is correct, but nid isn't!
-//      let correctedNode = this.ast.getNodeByNId(this.ast.getNodeById(x.id).nid);
-//      this.node = correctedNode;
       let y = this.fastSkip(node => node.next);
       if (y) {
-      console.log('$$$ nextNode II y=', y);
-      console.log('$$$ nextNode II y.id=', y.id);
-      console.log('$$$ nextNode II y.nid=', 'y.nid=', y.nid);
-      return this.activateByNid(y.nid);
+        return this.activateByNid(y.nid);
+      } else {
+        return this.activateByNid(x.nid);
       }
     }
     const nextNode = this.ast.getNodeAfterCur(this.cur);
-    console.log('$$$$ nextNode=', nextNode);
     if (nextNode) {
-      console.log('$$$ nextNode III', nextNode);
       this.activateByNid(nextNode.nid, {allowMove: true});
     }
     else { playSound(BEEP); }
@@ -357,7 +335,7 @@ export const commandMap = {
 // environment and add some utility methods, then set the key handler's
 // "this" object to be that environment and call it.
 export function keyDown(e, env, keyMap) {
-  console.log('*** doing keyDown');
+  //console.log('*** doing keyDown');
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
   if(handler) {
     e.stopPropagation();
@@ -365,10 +343,6 @@ export function keyDown(e, env, keyMap) {
       // set up the environment
       const state = getState();
       const {ast, selections} = state;
-      // necessary because this can be called from a stale node
-      if(env.node) {
-        env.node = ast.getNodeByNId(ast.getNodeById(env.node.id).nid)
-      }
       Object.assign(env, env.props, {ast, selections, state});
       // add convenience methods
       env.fastSkip = function (next) {
@@ -382,6 +356,10 @@ export function keyDown(e, env, keyMap) {
         if(!node) { return playSound(BEEP); } // nothing to activate
         env.dispatch(activateByNid(node.nid, {record: false, allowMove: true}));
       };
+      if(env.node) {
+        // necessary because this can be called from a stale node
+        env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid)
+      }
     });
     handler = handler.bind(env);
     return handler(SHARED.cm, e);
