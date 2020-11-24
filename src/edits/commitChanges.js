@@ -1,7 +1,7 @@
 import {store} from '../store';
 import SHARED from '../shared';
 import {poscmp, adjustForChange, minimizeChange, logResults, topmostUndoable} from '../utils';
-import {activate} from '../actions';
+import {activateByNid} from '../actions';
 import patch from './patchAst';
 
 
@@ -74,11 +74,13 @@ function setFocus(changes, focusHint, newAST) {
   if (focusNode === "fallback") {
     focusNode = computeFocusNodeFromChanges(changes, newAST);
   }
-  let focusId = focusNode ? focusNode.id : null;
+  let focusNId = focusNode ? focusNode.nid : null;
   while (focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
-    if (collapsedList.includes(focusNode.id)) focusId = focusNode.id;
+    if (collapsedList.includes(focusNode.id)) focusNId = focusNode.nid;
   }
-  store.dispatch(activate(focusId));
+  // get the nid and activate
+  store.dispatch(activateByNid(focusNId));
+  let focusId = focusNode ? focusNode.id : null;
   return focusId;
 }
 

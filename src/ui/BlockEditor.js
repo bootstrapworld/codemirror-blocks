@@ -8,7 +8,7 @@ import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
 import NodeEditable from '../components/NodeEditable';
-import {activate, setCursor, OverwriteTarget} from '../actions';
+import {activateByNid, setCursor, OverwriteTarget} from '../actions';
 import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {pos} from '../types';
@@ -148,7 +148,7 @@ class BlockEditor extends Component {
     setQuarantine: PropTypes.func.isRequired,
     setAnnouncer: PropTypes.func.isRequired,
     clearFocus: PropTypes.func.isRequired,
-    activate: PropTypes.func.isRequired,
+    activateByNid: PropTypes.func.isRequired,
     search: PropTypes.shape({
       onSearch: PropTypes.func.isRequired,
       search: PropTypes.func.isRequired,
@@ -307,8 +307,9 @@ class BlockEditor extends Component {
     }
     // convert nid to node id, and use activate to generate the action
     if(action.type == "SET_FOCUS") {
+      // NOTE(Emmanuel): the following line is probably dead code
       action.focusId = this.props.ast.getNodeByNId(action.nid).id;
-      this.props.activate(action.focusId, {allowMove: true});
+      this.props.activateByNid(action.nid, {allowMove: true});
       delete action.nid;
       return;
     }
@@ -360,7 +361,7 @@ class BlockEditor extends Component {
       // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
       'setCursor': (cur) => withState(({ast}) => {
         const node = ast.getNodeContaining(cur);
-        if(node) this.props.activate(node.id, {record: false, allowMove: true});
+        if(node) this.props.activateByNid(node.nid, {record: false, allowMove: true});
         this.props.setCursor(ed, cur);
       }),
       // As long as widget isn't defined, we're good to go
@@ -536,7 +537,7 @@ class BlockEditor extends Component {
       const {cur} = getState();
       if (!this.mouseUsed && (cur === null)) {
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-        setTimeout(() => this.props.activate(null, {allowMove: true}), 0);
+        setTimeout(() => this.props.activateByNid(null, {allowMove: true}), 0);
         this.mouseUsed = false;
       } else if(this.mouseUsed && (cur === null)) {
         // if it was a click, get the cursor from CM
@@ -674,7 +675,10 @@ const mapDispatchToProps = dispatch => ({
   setCursor: (_, cur) => dispatch(setCursor(cur)),
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
-  activate: (id, options) => dispatch(activate(id, options)),
+  activateByNid: function(nid, options) {
+    //console.log('### BlockEditor calling activate I', id);
+    if (nid) dispatch(activateByNid(nid, options));
+  },
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);

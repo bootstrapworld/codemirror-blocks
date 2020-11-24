@@ -2,9 +2,9 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {partition, getRoot, sayActionForNodes,
+import {partition, getRoot,
         isControl, say, skipCollapsed, getLastVisibleNode, preambleUndoRedo} from '../utils';
-import {drop, delete_, copy, paste, activate, setCursor,
+import {drop, delete_, copy, paste, activateByNid, setCursor,
         InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
@@ -50,7 +50,7 @@ class Node extends BlockComponent {
     expandable: PropTypes.bool,
     textMarker: PropTypes.object,
 
-    activate: PropTypes.func.isRequired,
+    activateByNid: PropTypes.func.isRequired,
   }
 
   state = {editable: false, value: null}
@@ -77,7 +77,7 @@ class Node extends BlockComponent {
   handleMouseDown = e => {
     if(!this.props.inToolbar) e.stopPropagation(); // prevent ancestors to steal focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
-    this.props.activate(this.props.node.id, {allowMove: false});
+    this.props.activateByNid(this.props.node.nid, {allowMove: false});
   }
 
   handleClick = e => {
@@ -253,7 +253,7 @@ const mapDispatchToProps = dispatch => ({
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   setCursor: cur => dispatch(setCursor(cur)),
-  activate: (id, options) => dispatch(activate(id, options)),
+  activateByNid: (nid, options) => dispatch(activateByNid(nid, options)),
   setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
 });
 
