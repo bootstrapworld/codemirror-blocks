@@ -170,21 +170,36 @@ export function activateByNid(nid, options) {
   return (dispatch, getState) => {
     options = withDefaults(options, {allowMove: true, record: true});
     const state = getState();
-    const {ast, focusId, collapsedList} = state;
+    const {ast, focusId: focusIdFromState, collapsedList} = state;
+    let focusId = focusIdFromState;
     // NOTE(Emmanuel): is the following line obsolete?
-    if (nid === null) { nid = focusId; }
-    // FIXME DS26GTE: sometimes focusId is also null
-    let node = null;
-    if (ast && nid) {
-      node = ast.getNodeByNId(nid);
+    console.log('actions:175 nid=', nid, 'focusId=', focusId);
+    if (nid === null && focusId) {
+      console.log('actions:177');
+      let xx = ast.getNodeById(focusId);
+      if (xx) {
+        nid = xx.nid;
+        console.log('actions:181 nid=', nid);
+      }
     }
+    let node = null;
+    if (ast && nid !== false && nid !== null) {
+      node = ast.getNodeByNId(nid);
+      console.log('actions:187 node.nid=', node.nid, 'node.id=', node.id);
+      focusId = node.id;
+    }
+    if (!focusId) {
+      //if focusId is null, copy from node
+      focusId = node.id;
+    }
+    let focusNId = ast.getNodeById(focusId).nid;
 
     // Don't activate a toolbar node. (Screenreaders will still announce it)
     if (!node) { return; }
 
     // check for element on focus, since tests or node editing may happen so fast 
     // that the element isn't there yet
-    if (node.nid === focusId) {
+    if (node.nid === focusNId) {
       setTimeout(() => { if(node.element) node.element.focus(); }, 10);
     }
 

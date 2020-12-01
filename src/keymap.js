@@ -77,31 +77,42 @@ export const commandMap = {
     e.preventDefault();
     if(this.node) {
       let y = this.fastSkip(node => node.prev);
-      return this.activateByNid(y.nid);
+      if (y) {
+        return this.activateByNid(y.nid);
+      }
     }
-    const prevNode = this.ast.getNodeBeforeCur(this.cur);
+    console.log('keymap:84, cur?=', !!this.cur);
+    const prevNode = this.cur && this.ast.getNodeBeforeCur(this.cur);
     if (prevNode) {
-      this.activateByNid(prevNode.nid, {allowMove: true});
+      return this.activateByNid(prevNode.nid, {allowMove: true});
     }
     else { playSound(BEEP); }
   },
 
   nextNode : function (_, e) {
     e.preventDefault();
+    console.log('keymap:93')
     if(this.node) {
       let x = this.node;
+      console.log('keymap:95 xnid=', x.nid)
       let y = this.fastSkip(node => node.next);
+      console.log('keymap:97')
       if (y) {
+        console.log('keymap:99 ynid=', y.nid)
         return this.activateByNid(y.nid);
-      } else {
-        return this.activateByNid(x.nid);
       }
     }
-    const nextNode = this.ast.getNodeAfterCur(this.cur);
+    console.log('keymap:103, cur?=', !!this.cur)
+    const nextNode = this.cur && this.ast.getNodeAfterCur(this.cur);
+    console.log('keymap:105')
     if (nextNode) {
-      this.activateByNid(nextNode.nid, {allowMove: true});
+      console.log('keymap:107')
+      return this.activateByNid(nextNode.nid, {allowMove: true});
     }
-    else { playSound(BEEP); }
+    else {
+      console.log('keymap:111')
+      playSound(BEEP);
+    }
   },
 
   firstNode : function (_) {
