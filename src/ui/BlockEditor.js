@@ -676,8 +676,8 @@ const mapDispatchToProps = dispatch => ({
   clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
   activateByNid: function(nid, options) {
-    //console.log('### BlockEditor calling activate I', id);
-    if (nid) dispatch(activateByNid(nid, options));
+    console.log('### BlockEditor calling activateByNid I', nid);
+    if (nid !== null) dispatch(activateByNid(nid, options));
   },
 });
 

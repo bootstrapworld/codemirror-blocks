@@ -172,6 +172,7 @@ export function activateByNid(nid, options) {
     const state = getState();
     const {ast, focusId: focusIdFromState, collapsedList} = state;
     let focusId = focusIdFromState;
+    console.log('actions:175, focusIdFromState=', focusId);
     // NOTE(Emmanuel): is the following line obsolete?
     console.log('actions:175 nid=', nid, 'focusId=', focusId);
     if (nid === null && focusId) {

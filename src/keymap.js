@@ -75,6 +75,7 @@ CodeMirror.normalizeKeyMap(defaultKeyMap);
 export const commandMap = {
   prevNode : function (_, e) {
     e.preventDefault();
+    console.log('keymap:78 doing prevNode')
     if(this.node) {
       let y = this.fastSkip(node => node.prev);
       if (y) {
@@ -84,38 +85,48 @@ export const commandMap = {
     console.log('keymap:84, cur?=', !!this.cur);
     const prevNode = this.cur && this.ast.getNodeBeforeCur(this.cur);
     if (prevNode) {
-      return this.activateByNid(prevNode.nid, {allowMove: true});
+      console.log('keymap:88 prevnode.nid=', prevNode.nid);
+      let prevNodeNid = prevNode.nid;
+      if (prevNodeNid !== 0 || true) {
+        console.log('keymap:91 calling activateByNid on', prevNodeNid);
+        let z = this.activateByNid(prevNode.nid, {allowMove: true});
+        console.log('keymap:93');
+        return z;
+      }
+    } else {
+      console.log('keymap:92');
+      playSound(BEEP);
     }
-    else { playSound(BEEP); }
   },
 
   nextNode : function (_, e) {
     e.preventDefault();
-    console.log('keymap:93')
+    console.log('keymap:95 doing nextNode')
     if(this.node) {
       let x = this.node;
-      console.log('keymap:95 xnid=', x.nid)
+      console.log('keymap:98 xnid=', x.nid)
       let y = this.fastSkip(node => node.next);
-      console.log('keymap:97')
+      console.log('keymap:100')
       if (y) {
-        console.log('keymap:99 ynid=', y.nid)
+        console.log('keymap:102 ynid=', y.nid)
         return this.activateByNid(y.nid);
       }
     }
-    console.log('keymap:103, cur?=', !!this.cur)
+    console.log('keymap:106, cur?=', !!this.cur)
     const nextNode = this.cur && this.ast.getNodeAfterCur(this.cur);
-    console.log('keymap:105')
+    console.log('keymap:108')
     if (nextNode) {
-      console.log('keymap:107')
+      console.log('keymap:110 nextnode.nid=', nextNode.nid);
       return this.activateByNid(nextNode.nid, {allowMove: true});
     }
     else {
-      console.log('keymap:111')
+      console.log('keymap:114')
       playSound(BEEP);
     }
   },
 
   firstNode : function (_) {
+    console.log('keymap:120 getting firstNode');
     if(!this.node) { return CodeMirror.Pass; }
     this.activateByNid(0, {allowMove: true});
   },
@@ -346,7 +357,7 @@ export const commandMap = {
 // environment and add some utility methods, then set the key handler's
 // "this" object to be that environment and call it.
 export function keyDown(e, env, keyMap) {
-  //console.log('*** doing keyDown');
+  console.log('*** doing keyDown');
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
   if(handler) {
     e.stopPropagation();
