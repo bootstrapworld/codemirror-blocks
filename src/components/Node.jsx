@@ -81,6 +81,7 @@ class Node extends BlockComponent {
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
     const {ast} = store.getState();
     const currentNode = ast.getNodeById(this.props.node.id);  
+    //console.log('XXX Node:84 calling activateByNid');
     this.props.activateByNid(currentNode.nid, {allowMove: false});
   }
 

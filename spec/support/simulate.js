@@ -104,6 +104,7 @@ export function keyPress(key, props={}, node=document.activeElement) {
 }
 export function insertText(text) {
   // TODO: can this be done via fireEvent?
+    //console.log('XXX simulate:107 doing insertText', text);
   document.execCommand('insertText', false, text);
 }
 

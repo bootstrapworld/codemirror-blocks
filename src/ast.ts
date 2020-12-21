@@ -83,6 +83,7 @@ export class AST {
   // walk through the siblings, assigning aria-* attributes
   // and populating various maps for tree navigation
   annotateNodes() {
+    //console.log('XXX ast:86 doing annotateNodes');
     this.nodeIdMap.clear();
     this.nodeNIdMap.clear();
 
