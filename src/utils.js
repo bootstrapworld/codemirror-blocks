@@ -13,6 +13,8 @@ export function resetNodeCounter() { store.nodeCounter = 0; }
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {
+  if (!a) { console.log('utils:16, hitting null a'); }
+  if (!b) { console.log('utils:16, hitting null b'); }
   return  a.line - b.line || a.ch - b.ch;
 }
 

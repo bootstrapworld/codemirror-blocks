@@ -166,25 +166,48 @@ export function setCursor(cur) {
 
 // Activate the node with the given `id`.
 export function activateByNid(nid, options) {
-  console.log('activateByNid called with', nid);
+  //console.log('XXX actions:169 activateByNid called with', nid);
   return (dispatch, getState) => {
     options = withDefaults(options, {allowMove: true, record: true});
     const state = getState();
-    const {ast, focusId, collapsedList} = state;
+    const {ast, focusId: focusIdFromState, collapsedList} = state;
+    let focusId = focusIdFromState;
+    console.log('actions:175, focusIdFromState=', focusId);
     // NOTE(Emmanuel): is the following line obsolete?
-    if (nid === null) { nid = focusId; }
-    // FIXME DS26GTE: sometimes focusId is also null
-    let node = null;
-    if (ast && nid) {
-      node = ast.getNodeByNId(nid);
+    //console.log('XXX actions:177 nid=', nid, 'fid=', focusId);
+    if (nid === null && focusId !== undefined) {
+      //console.log('XXX actions:179');
+      let xx = ast.getNodeById(focusId);
+      //console.log('XXX actions:181 fid=', focusId, 'xx=', xx);
+      if (xx) {
+        nid = xx.nid;
+        //console.log('XXX actions:184 nid=', nid);
+      }
     }
+    let node = null;
+    if (ast && nid !== false && nid !== null) {
+      node = ast.getNodeByNId(nid);
+      //console.log('XXX actions:190 node?=', !!node);
+      //console.log('XXX actions:191 xnid=', node.nid, 'xid=', node.id);
+      focusId = node && node.id;
+    }
+    if (!focusId) {
+      //console.log('XXX actions:195');
+      //if focusId is null, copy from node
+      focusId = node && node.id;
+    }
+    let focusNode2 = ast.getNodeById(focusId);
+    let focusNId = focusNode2 && focusNode2.nid;
+    //console.log('XXX actions.js:199, fid=', focusId, 'fnid=', focusNId);
 
     // Don't activate a toolbar node. (Screenreaders will still announce it)
     if (!node) { return; }
 
     // check for element on focus, since tests or node editing may happen so fast 
     // that the element isn't there yet
-    if (node.nid === focusId) {
+    //console.log('XXX actions.js:206, fid=', focusId, 'fNId=', focusNId, 'xid=', node.id,  'xnid=', node.nid);
+    if (node.nid === focusNId) {
+      //console.log('XXX actions.js:208, they are eq');
       setTimeout(() => { if(node.element) node.element.focus(); }, 10);
     }
 
@@ -206,11 +229,14 @@ export function activateByNid(nid, options) {
     // when double click because we can set focusId on the to-be-focused node
 
     setTimeout(() => {
+      //console.log('XXX actions:232 trying SET_FOCUS with fid=', focusId, 'fNId=', focusNId, 'xid=', node.id, 'xnid=', node.nid);
       dispatch({type: 'SET_FOCUS', focusId: node.id});
       
+      //console.log('XXX actions:235');
       if (options.record) {
         SHARED.search.setCursor(node.from);
       }
+      //console.log('XXX actions:239');
       if (node.element) {
         const scroller = SHARED.cm.getScrollerElement();
         const wrapper = SHARED.cm.getWrapperElement();
@@ -229,6 +255,7 @@ export function activateByNid(nid, options) {
         scroller.setAttribute('aria-activedescendent', node.element.id);
         node.element.focus();
       }
+      //console.log('XXX actions:258');
       
     }, 25);
   };

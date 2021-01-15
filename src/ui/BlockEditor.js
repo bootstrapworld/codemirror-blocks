@@ -13,17 +13,16 @@ import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, minpos, maxpos, 
+import {poscmp, say, resetNodeCounter, minpos, maxpos,
   validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 import { defaultKeyMap, keyDown } from '../keymap';
 import {store} from '../store';
 
-
 // CodeMirror APIs that we need to disallow
-const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending', 
-  'getExtending', 'findPosH', 'findPosV', 'setOption', 'getOption', 
-  'addOverlay', 'removeOverlay', 'undoSelection', 'redoSelection', 
+const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
+  'getExtending', 'findPosH', 'findPosV', 'setOption', 'getOption',
+  'addOverlay', 'removeOverlay', 'undoSelection', 'redoSelection',
   'charCoords', 'coordsChar', 'cursorCoords', 'startOperation',
   'endOperation', 'operation', 'addKeyMap', 'removeKeyMap', 'on', 'off',
   'extendSelection', 'extendSelections', 'extendSelectionsBy'];
@@ -61,7 +60,7 @@ class ToplevelBlock extends BlockComponent {
     if(!this.props.incrementalRendering) return; // bail if incremental is off
     window.requestAnimationFrame( () => {
       setTimeout(() => this.setState({ renderPlaceholder: false }), 50);
-    }); 
+    });
   }
 
   render() {
@@ -69,7 +68,7 @@ class ToplevelBlock extends BlockComponent {
 
     // set elt to a cheap placeholder, OR render the entire rootNode
     const elt = this.state.renderPlaceholder? (<div/>) : node.reactElement();
-    
+
     // if any prior block markers are in this range, clear them
     const {from, to} = node.srcRange(); // includes the node's comment, if any
     SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
@@ -199,7 +198,7 @@ class BlockEditor extends Component {
       // Successful! Let's save all the hard work we did to build the new AST
       if (successful) { this.newAST = newAST; }
       // Error! Cancel the change
-      else { 
+      else {
         change.cancel();
         throw new BlockError("An invalid change was rejected", "Invalid Edit", change);
       }
@@ -300,7 +299,7 @@ class BlockEditor extends Component {
 
   executeAction(action) {
     // convert code to AST
-    if(action.type == "SET_AST") { 
+    if(action.type == "SET_AST") {
       SHARED.cm.setValue(action.code);
       action.ast = this.props.ast;
       delete action.code;
@@ -309,12 +308,13 @@ class BlockEditor extends Component {
     if(action.type == "SET_FOCUS") {
       // NOTE(Emmanuel): the following line is probably dead code
       action.focusId = this.props.ast.getNodeByNId(action.nid).id;
+      //console.log('XXX BlockEditor:311 calling activateByNid');
       this.props.activateByNid(action.nid, {allowMove: true});
       delete action.nid;
       return;
     }
     // ignore set announcer
-    if(action.type == "SET_ANNOUNCER"){ return; } 
+    if(action.type == "SET_ANNOUNCER"){ return; }
     this.props.dispatch(action);
   }
 
@@ -330,18 +330,18 @@ class BlockEditor extends Component {
       'getAllMarks': () => this.getAllMarks(),
       'markText': (from, to, opts) => this.markText(from, to, opts),
       // Something is selected if CM has a selection OR a block is selected
-      'somethingSelected': () => withState(({selections}) => 
+      'somethingSelected': () => withState(({selections}) =>
         Boolean(SHARED.cm.somethingSelected() || selections.length)),
       // CMB has focus if CM has focus OR a block is active
-      'hasFocus': () => 
+      'hasFocus': () =>
         cm.hasFocus() || Boolean(document.activeElement.id.match(/block-node/)),
       'extendSelection': (from, to, opts) => this.extendSelections([from], opts, to),
       'extendSelections': (heads, opts) => this.extendSelections(heads, opts),
-      'extendSelectionsBy': (f, opts) => 
+      'extendSelectionsBy': (f, opts) =>
         this.extendSelections(this.listSelections().map(f), opts),
-      'getSelections': (sep) => 
+      'getSelections': (sep) =>
         this.listSelections().map(s => SHARED.cm.getRange(s.anchor, s.head, sep)),
-      'getSelection': (sep) => 
+      'getSelection': (sep) =>
         this.listSelections().map(s => SHARED.cm.getRange(s.anchor, s.head, sep)).join(sep),
       'listSelections' : () => this.listSelections(),
       'replaceRange': (text, from, to, origin) => withState(({ast}) => {
@@ -349,19 +349,22 @@ class BlockEditor extends Component {
         SHARED.cm.replaceRange(text, from, to, origin);
       }),
       'setSelections': (ranges, primary, opts) => this.setSelections(ranges, primary, opts),
-      'setSelection': (anchor, head=anchor, opts) => 
+      'setSelection': (anchor, head=anchor, opts) =>
         this.setSelections([{anchor: anchor, head: head}], null, opts),
-      'addSelection': (anchor, head) => 
+      'addSelection': (anchor, head) =>
         this.setSelections([{anchor: anchor, head: head}], null, null, false),
       'replaceSelections': (rStrings, select) => this.replaceSelections(rStrings, select),
-      'replaceSelection': (rString, select) => 
+      'replaceSelection': (rString, select) =>
         this.replaceSelections(Array(this.listSelections().length).fill(rString), select),
       // If a node is active, return the start. Otherwise return the cursor as-is
       'getCursor': (where) => this.getCursor(where),
       // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
       'setCursor': (cur) => withState(({ast}) => {
         const node = ast.getNodeContaining(cur);
-        if(node) this.props.activateByNid(node.nid, {record: false, allowMove: true});
+        if(node) {
+          //console.log('XXX BlockEditor:365 calling activateByNid');
+          this.props.activateByNid(node.nid, {record: false, allowMove: true});
+        }
         this.props.setCursor(ed, cur);
       }),
       // As long as widget isn't defined, we're good to go
@@ -378,7 +381,12 @@ class BlockEditor extends Component {
       'getAst':
         () => withState((state) => state.ast),
       'getFocusedNode':
-        () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : null),
+        () => withState(({focusId, ast}) => {
+          // was returning null instead of undefined, but
+          // activation-test.js expects latter
+          let x = focusId ? ast.getNodeById(focusId) : undefined;
+          return x;
+        }),
       'getSelectedNodes':
         () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
 
@@ -391,14 +399,14 @@ class BlockEditor extends Component {
       'executeAction' : (action) => this.executeAction(action),
     };
     // show which APIs are unsupported
-    unsupportedAPIs.forEach(f => 
+    unsupportedAPIs.forEach(f =>
       api[f] = () => {
         throw BlockError(
           `The CM API '${f}' is not supported in the block editor`,
           'API Error');
       });
     return api;
-  } 
+  }
 
   markText(from, to, options) {
     let node = this.props.ast.getNodeAt(from, to);
@@ -552,7 +560,6 @@ class BlockEditor extends Component {
     setTimeout(() => this.mouseUsed = false, 200);
   }
 
-
   handleTopLevelKeyPress = (ed, e) => {
     const text = e.key;
     // let CM handle kbd shortcuts or whitespace insertion
@@ -578,7 +585,7 @@ class BlockEditor extends Component {
     const end = SHARED.cm.getCursor(false);
     this.props.setQuarantine(start, end, text);
   }
-  
+
   // this change was introduced during the switch from onCursor to onCursorActivity
   // if there are selections, pass null. otherwise pass the cursor
   handleTopLevelCursorActivity = (ed, _) => {
@@ -654,7 +661,7 @@ class BlockEditor extends Component {
     let portals;
     if (SHARED.cm && this.props.ast) {
       // Render all the top-level nodes
-      portals = this.props.ast.rootNodes.map(r => 
+      portals = this.props.ast.rootNodes.map(r =>
         <ToplevelBlock key={r.id} node={r} incrementalRendering={incrementalRendering} />
       );
       if (this.props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
@@ -673,11 +680,14 @@ const mapDispatchToProps = dispatch => ({
   setAST: ast => dispatch({type: 'SET_AST', ast}),
   setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
   setCursor: (_, cur) => dispatch(setCursor(cur)),
-  clearFocus: () => dispatch({type: 'SET_FOCUS', focusId: null}),
+  clearFocus: () => {
+    //console.log('BlockEditor:684 calling SET_FOCUS with focusId null');
+    return dispatch({type: 'SET_FOCUS', focusId: null});
+  },
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
   activateByNid: function(nid, options) {
-    //console.log('### BlockEditor calling activate I', id);
-    if (nid) dispatch(activateByNid(nid, options));
+    //console.log('XXX BlockEditor:689 calling activateByNid I', nid);
+    if (nid !== null) return dispatch(activateByNid(nid, options));
   },
 });
 

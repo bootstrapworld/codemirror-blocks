@@ -75,48 +75,78 @@ CodeMirror.normalizeKeyMap(defaultKeyMap);
 export const commandMap = {
   prevNode : function (_, e) {
     e.preventDefault();
+    //console.log('XXX keymap:78 doing prevNode')
     if(this.node) {
       let y = this.fastSkip(node => node.prev);
-      return this.activateByNid(y.nid);
+      if (y) {
+        //console.log('XXX keymap:82 calling activateByNid');
+        return this.activateByNid(y.nid);
+      }
     }
-    const prevNode = this.ast.getNodeBeforeCur(this.cur);
+    //console.log('XXX keymap:86, cur?=', !!this.cur);
+    const prevNode = this.cur && this.ast.getNodeBeforeCur(this.cur);
     if (prevNode) {
-      this.activateByNid(prevNode.nid, {allowMove: true});
+      //console.log('XXX keymap:89 prevnode.nid=', prevNode.nid);
+      let prevNodeNid = prevNode.nid;
+      if (prevNodeNid !== 0 || true) {
+        //console.log('XXX keymap:92 calling activateByNid on', prevNodeNid);
+        let z = this.activateByNid(prevNode.nid, {allowMove: true});
+        //console.log('XXX keymap:94');
+        return z;
+      }
+    } else {
+      //console.log('XXX keymap:98');
+      playSound(BEEP);
     }
-    else { playSound(BEEP); }
   },
 
   nextNode : function (_, e) {
     e.preventDefault();
+    //console.log('XXX keymap:105 doing nextNode')
     if(this.node) {
       let x = this.node;
+      //console.log('XXX keymap:108 xnid=', x.nid)
       let y = this.fastSkip(node => node.next);
+      //console.log('XXX keymap:110')
       if (y) {
+        //console.log('XXX keymap:112 ynid=', y.nid)
         return this.activateByNid(y.nid);
-      } else {
-        return this.activateByNid(x.nid);
       }
     }
-    const nextNode = this.ast.getNodeAfterCur(this.cur);
+    //console.log('XXX keymap:116, cur?=', !!this.cur)
+    const nextNode = this.cur && this.ast.getNodeAfterCur(this.cur);
+    //console.log('XXX keymap:118')
     if (nextNode) {
-      this.activateByNid(nextNode.nid, {allowMove: true});
+      //console.log('XXX keymap:120 nextnode.nid=', nextNode.nid);
+      return this.activateByNid(nextNode.nid, {allowMove: true});
     }
-    else { playSound(BEEP); }
+    else {
+      //console.log('XXX keymap:124')
+      playSound(BEEP);
+    }
   },
 
   firstNode : function (_) {
+    //console.log('XXX keymap:130 getting firstNode');
     if(!this.node) { return CodeMirror.Pass; }
+    //console.log('XXX keymap:132 calling activateByNid');
     this.activateByNid(0, {allowMove: true});
   },
 
   lastVisibleNode : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
-    else { this.activateByNid(getLastVisibleNode(this.state).nid); }
+    else {
+      //console.log('XXX keymap:139, calling activateByNid');
+      this.activateByNid(getLastVisibleNode(this.state).nid);
+    }
   },
 
   jumpToRoot : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
-    else { this.activateByNid(getRoot(this.node).nid); }
+    else {
+      //console.log('XXX keymap:147, calling activateByNid');
+      this.activateByNid(getRoot(this.node).nid);
+    }
   },
 
   readAncestors : function (_) {
@@ -139,6 +169,7 @@ export const commandMap = {
   collapseAll : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     this.dispatch({type: 'COLLAPSE_ALL'});
+    //console.log('XXX keymap:172, calling activateByNid');
     this.activateByNid(getRoot(this.node).nid);
   },
 
@@ -147,6 +178,7 @@ export const commandMap = {
     if (this.expandable && !this.isCollapsed && !this.isLocked()) {
       this.collapse(this.node.id);
     } else if (this.node.parent) {
+      //console.log('XXX keymap:181, calling activateByNid');
       this.activateByNid(this.node.parent.nid);
     } else {
       playSound(BEEP);
@@ -161,6 +193,7 @@ export const commandMap = {
       let root = getRoot(this.node);
       let descendants = [...root.descendants()];
       descendants.forEach(d => this.collapse(d.id));
+      //console.log('XXX keymap:196, calling activateByNid');
       this.activateByNid(root.nid);
     }
   },
@@ -176,6 +209,7 @@ export const commandMap = {
     if (this.expandable && this.isCollapsed && !this.isLocked()) {
       this.uncollapse(node.id);
     } else if (node.next && node.next.parent === node) {
+      //console.log('XXX keymap:212, calling activateByNid');
       this.activateByNid(node.next.nid);
     } else {
       playSound(BEEP);
@@ -186,6 +220,7 @@ export const commandMap = {
     if(!this.node) { return CodeMirror.Pass; }
     let root = getRoot(this.node);
     [...root.descendants()].forEach(d => this.uncollapse(d.id));
+    //console.log('XXX keymap:223 calling activateByNid');
     this.activateByNid(root.nid);
   },
 
@@ -335,7 +370,7 @@ export const commandMap = {
 // environment and add some utility methods, then set the key handler's
 // "this" object to be that environment and call it.
 export function keyDown(e, env, keyMap) {
-  //console.log('*** doing keyDown');
+  //console.log('XXX keymap:373 doing keyDown');
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
   if(handler) {
     e.stopPropagation();
@@ -350,10 +385,12 @@ export function keyDown(e, env, keyMap) {
       };
       env.activate = (n, options={allowMove: true, record: true}) => {
         if (n === null) { playSound(BEEP); }
+        //console.log('XXX keymap:388 calling activateByNid');
         env.props.activateByNid((n === undefined)? env.node.nid : n.nid, options);
       };
       env.activateNoRecord = node => {
         if(!node) { return playSound(BEEP); } // nothing to activate
+        //console.log('XXX keymap:393 calling activateByNid');
         env.dispatch(activateByNid(node.nid, {record: false, allowMove: true}));
       };
       if(env.node) {

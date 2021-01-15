@@ -83,6 +83,7 @@ export class AST {
   // walk through the siblings, assigning aria-* attributes
   // and populating various maps for tree navigation
   annotateNodes() {
+    //console.log('XXX ast:86 doing annotateNodes');
     this.nodeIdMap.clear();
     this.nodeNIdMap.clear();
 
@@ -208,10 +209,18 @@ export class AST {
    */
   getNodeAfterCur = cur => {
     function loop(nodes, parentFallback) {
+      console.log('ast:211, cur?=', !!cur);
       let n = nodes.find(n => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
-      if(!n) { return parentFallback; }               // return null if there's no node after the cursor
-      if(poscmp(n.from, cur) >= 0) { return n; }      // if the node *starts* after the cursor too, we're done
+      console.log('ast:213');
+      if(!n) {
+        console.log('ast:214');
+        return parentFallback; }               // return null if there's no node after the cursor
+      if(poscmp(n.from, cur) >= 0) {
+        console.log('ast:218');
+        return n; }      // if the node *starts* after the cursor too, we're done
+      console.log('ast:220');
       let children = [...n.children()];               // if *contains* cur, drill down into the children
+      console.log('ast:222');
       return (children.length == 0)? n : loop(children, n);
     }
     return loop(this.rootNodes, null);
