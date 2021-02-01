@@ -545,7 +545,7 @@ class BlockEditor extends Component {
       const {cur} = getState();
       if (!this.mouseUsed && (cur === null)) {
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-        setTimeout(() => this.props.activateByNid(null, {allowMove: true}), 0);
+        setTimeout(() => this.props.activateByNid(0, {allowMove: true}), 0);
         this.mouseUsed = false;
       } else if(this.mouseUsed && (cur === null)) {
         // if it was a click, get the cursor from CM
