@@ -282,14 +282,15 @@ export const commandMap = {
     delete_(nodesToDelete, "deleted");
   },
 
+  // use the srcRange() to insert before/after the node *and*
+  // any associated comments
   insertRight : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
-    if(!this.setRight()) { this.setCursor(this.node.to); }
+    if(!this.setRight()) { this.setCursor(this.node.srcRange().to); }
   },
-
   insertLeft : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
-    if(!this.setLeft()) { this.setCursor(this.node.from); }
+    if(!this.setLeft()) { this.setCursor(this.node.srcRange().from); }
   },
 
   cut : function (_) {
