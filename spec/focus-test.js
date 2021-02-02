@@ -30,12 +30,6 @@ describe('The CodeMirrorBlocks Class', function() {
       this.literal3 = this.expression.args[2];
     });
 
-    fit('tabbing to the editor for the first time should activate node 0', async function() {
-      keyDown("Tab");
-      await wait(DELAY);
-      expect(this.blocks.getFocusedNode().nid).toBe(0);
-    });
-
     it('deleting the last node should shift focus to the next-to-last', async function() {
       mouseDown(this.literal3);
       await wait(DELAY);
