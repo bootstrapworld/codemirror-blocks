@@ -37,13 +37,13 @@ export function findAdjacentDropTargetId(child, onLeft) {
     if (!onLeft) { children.reverse(); }
 
     for (let sibling of children) {
-      if (sibling.id && sibling.id.startsWith("block-drop-target-")) {
+      if (sibling.id?.startsWith("block-drop-target-")) {
         // We've hit a drop-target. Remember its id, in case it's adjacent to the node.
         prevDropTargetId = sibling.id.substring(18); // skip "block-drop-target-"
       } else if (sibling.id == targetId) {
         // We've found this node! Return the id of the adjacent drop target.
         return prevDropTargetId;
-      } else if (sibling.id && sibling.id.startsWith("block-node-")) {
+      } else if (sibling.id?.startsWith("block-node-")) {
         // It's a different node. Skip it.
       } else if (sibling.children) {
         // We're... somewhere else. If it has children, traverse them to look for the node.
@@ -144,11 +144,11 @@ class ActualDropTarget extends BlockComponent {
         return null;
       }
       // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
-      if (elem.id && elem.id.startsWith("block-node-")) {
+      if (elem.id?.startsWith("block-node-")) {
         prevNodeId = elem.id.substring(11); // skip "block-node-"
       }
       for (let sibling of elem.children) {
-        if (sibling.id && sibling.id.startsWith("block-node-")) {
+        if (sibling.id?.startsWith("block-node-")) {
           // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
           prevNodeId = sibling.id.substring(11); // skip "block-node-"
           if (dropTargetWasFirst) {
@@ -164,7 +164,7 @@ class ActualDropTarget extends BlockComponent {
             // Edge case: nothing is before the drop target.
             dropTargetWasFirst = true;
           }
-        } else if (sibling.id && sibling.id.startsWith("block-drop-target")) {
+        } else if (sibling.id?.startsWith("block-drop-target")) {
           // It's a different drop target. Skip it.
         } else if (sibling.children) {
           // We're... somewhere else. If it has children, traverse them to look for the drop target.

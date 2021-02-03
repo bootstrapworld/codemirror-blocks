@@ -61,7 +61,7 @@ export default class Toolbar extends Component {
   }
 
   selectPrimitive(selectedPrimitive) {
-    if (selectedPrimitive && selectedPrimitive.element) {      
+    if (selectedPrimitive?.element) {      
       selectedPrimitive.element.focus(); // will trigger handleFocusPrimitive
     } else {
       this.setState({selectedPrimitive: selectedPrimitive});

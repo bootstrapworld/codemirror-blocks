@@ -208,7 +208,7 @@ export const commandMap = {
     const node = this.node;
     if (this.expandable && this.isCollapsed && !this.isLocked()) {
       this.uncollapse(node.id);
-    } else if (node.next && node.next.parent === node) {
+    } else if (node.next?.parent === node) {
       //console.log('XXX keymap:212, calling activateByNid');
       this.activateByNid(node.next.nid);
     } else {

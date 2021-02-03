@@ -38,7 +38,7 @@ export default function unify(oldTree, newTree) {
 
     let partiallySuccess = false;
     const newLeftover = [...newTree.children()].filter(newNode => {
-      if (index[newNode.hash] && index[newNode.hash].length > 0) {
+      if (index[newNode.hash]?.length > 0) {
         const oldNode = index[newNode.hash].pop();
         copyAllIds(oldNode, newNode);
         partiallySuccess = true;

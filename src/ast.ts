@@ -209,18 +209,18 @@ export class AST {
    */
   getNodeAfterCur = cur => {
     function loop(nodes, parentFallback) {
-      console.log('ast:211, cur?=', !!cur);
+      //console.log('ast:211, cur?=', !!cur);
       let n = nodes.find(n => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
-      console.log('ast:213');
+      //console.log('ast:213');
       if(!n) {
-        console.log('ast:214');
+        //console.log('ast:214');
         return parentFallback; }               // return null if there's no node after the cursor
       if(poscmp(n.from, cur) >= 0) {
-        console.log('ast:218');
+        //console.log('ast:218');
         return n; }      // if the node *starts* after the cursor too, we're done
-      console.log('ast:220');
+      //console.log('ast:220');
       let children = [...n.children()];               // if *contains* cur, drill down into the children
-      console.log('ast:222');
+      //console.log('ast:222');
       return (children.length == 0)? n : loop(children, n);
     }
     return loop(this.rootNodes, null);
@@ -300,9 +300,8 @@ export class AST {
   followsComment(pos) {
     // TODO: efficiency
     for (const node of this.nodeIdMap.values()) {
-      if (node.options.comment
-          && node.options.comment.to.line == pos.line
-          && node.options.comment.to.ch <= pos.ch) {
+      if (node.options.comment?.to.line == pos.line
+          && node.options.comment?.to.ch <= pos.ch) {
         return true;
       } else if (node.options.comment
                  && node.to.line == pos.line
@@ -321,9 +320,8 @@ export class AST {
   precedesComment(pos) {
     // TODO: efficiency
     for (const node of this.nodeIdMap.values()) {
-      if (node.options.comment
-          && node.options.comment.from.line == pos.line
-          && pos.ch <= node.options.comment.from.ch) {
+      if (node.options.comment?.from.line == pos.line
+          && pos.ch <= node.options.comment?.from.ch) {
         return true;
       } else if (node.options.comment
                  && node.from.line == pos.line

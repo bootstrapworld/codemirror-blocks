@@ -142,7 +142,7 @@ class Node extends BlockComponent {
   }
 
   isLocked() {
-    if (SHARED.options && SHARED.options.renderOptions) {
+    if (SHARED.options?.renderOptions) {
       const lockedList = SHARED.options.renderOptions.lockNodesOfType;
       return lockedList.includes(this.props.node.type);
     }
@@ -206,7 +206,7 @@ class Node extends BlockComponent {
         connectDragPreview
       } = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
-      if(textMarker && textMarker.options.className) classes.push(textMarker.options.className);
+      if(textMarker?.options.className) classes.push(textMarker.options.className);
       let result = (
         <span
           {...props}
