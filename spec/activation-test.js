@@ -224,7 +224,6 @@ describe('tree navigation', function () {
     keyDown("ArrowLeft", {}, this.firstRoot); // collapse that root
     mouseDown(this.thirdRoot.args[1].args[0]);
     await wait(DELAY);
-    expect(this.activeNode().id).toBe(this.thirdRoot.args[1].args[0].id);
     expect(this.activeNode()).toBe(this.thirdRoot.args[1].args[0]);
 
     keyDown("ArrowDown");
@@ -303,7 +302,7 @@ describe('tree navigation', function () {
     keyDown("<", { shiftKey: true }, this.thirdRoot.args[1].args[1]);
     await wait(DELAY);
     expect(this.thirdRoot.element.getAttribute("aria-expanded")).toBe("true");
-    expect(this.activeNode().id).toBe(this.thirdRoot.id);
+    expect(this.activeNode()).toBe(this.thirdRoot);
   });
 
   it('right-arrow should expand a block, or shift focus to 1st child', async function () {
