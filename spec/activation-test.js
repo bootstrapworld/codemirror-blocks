@@ -200,7 +200,7 @@ describe('tree navigation', function () {
 
   it('up-arrow should navigate to the previous visible node, but not beyond the tree', async function () {
     mouseDown(this.firstRoot);
-    keyDown("ArrowLeft", {}, this.firstRoot);
+    keyDown("ArrowLeft", {}, this.firstRoot); // collapse that root
     mouseDown(this.secondRoot);
     await wait(DELAY);
     expect(this.activeNode()).toBe(this.secondRoot);
@@ -219,7 +219,7 @@ describe('tree navigation', function () {
 
   it('down-arrow should navigate to the next sibling, but not beyond the tree', async function () {
     mouseDown(this.firstRoot);
-    keyDown("ArrowLeft", {}, this.firstRoot);
+    keyDown("ArrowLeft", {}, this.firstRoot); // collapse that root
     mouseDown(this.thirdRoot.args[1].args[0]);
     await wait(DELAY);
     expect(this.activeNode()).toBe(this.thirdRoot.args[1].args[0]);
@@ -237,14 +237,14 @@ describe('tree navigation', function () {
 
   it('left-arrow should collapse a block, if it can be', async function () {
     mouseDown(this.firstRoot);
-    keyDown("ArrowLeft", {}, this.firstRoot);
+    keyDown("ArrowLeft", {}, this.firstRoot); // collapse that root
     mouseDown(this.firstRoot);
-    keyDown("ArrowLeft", {}, this.firstRoot);
+    keyDown("ArrowLeft", {}, this.firstRoot); // collapse that root *again*
     await wait(DELAY);
     expect(this.firstRoot.element.getAttribute("aria-expanded")).toBe("false");
 
     mouseDown(this.secondRoot);
-    keyDown("ArrowLeft", {}, this.secondRoot);
+    keyDown("ArrowLeft", {}, this.secondRoot); // collapse that root
     await wait(DELAY);
     expect(this.secondRoot.element.getAttribute("aria-expanded")).toBe(null);
   });
