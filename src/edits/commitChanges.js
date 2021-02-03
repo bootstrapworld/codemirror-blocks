@@ -45,8 +45,8 @@ export function commitChanges(
     // Patch the tree and set the state
     newAST = patch(oldAST, newAST);
     store.dispatch({type: 'SET_AST', ast: newAST});
-    // Set the focus.
-    let focusId = setFocus(changes, focusHint, newAST);
+    // Try to set the focus using hinting data. If that fails, use the first root
+    let focusId = setFocus(changes, focusHint, newAST) || newAST.getFirstRootNode()?.id;
     //console.log('XXX commitChanges:50 setFocus retd focusId=', focusId);
     if (!isUndoOrRedo) {
       // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
@@ -54,7 +54,7 @@ export function commitChanges(
         //console.log('commitChanges:54 focusId=', focusId);
       let newFocus = null;
       if (focusId) {  newFocus = newAST.getNodeById(focusId); }
-      let newFocusNId = newFocus ? newFocus.nid : null;
+      let newFocusNId = newFocus?.nid;
       //console.log('XXX commitChanges:58 oldFocusNId=', oldFocusNId);
       //console.log('XXX commitChanges:59 newFocusNId=', newFocusNId);
       //console.log('XXX commitChanges:60 annt=', annt);

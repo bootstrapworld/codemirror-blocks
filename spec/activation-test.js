@@ -26,6 +26,7 @@ describe("when dealing with node activation,", function () {
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];
+    await wait(DELAY);
   });
 
   afterEach(function () { teardown(); });
@@ -180,7 +181,7 @@ describe('cut/copy/paste', function () {
 });
 
 describe('tree navigation', function () {
-  beforeEach(function () {
+  beforeEach(async function () {
     setup.call(this);
 
     this.cmb.setValue('(+ 1 2 3) 99 (* 7 (* 1 2))');
@@ -194,6 +195,7 @@ describe('tree navigation', function () {
     this.thirdArg   = ast.rootNodes[0].args[2];
     this.nestedExpr = ast.rootNodes[2].args[1];
     this.lastNode   = this.thirdRoot.args[1].args[1];
+    await wait(DELAY);
   });
 
   afterEach(function () { teardown(); });
@@ -222,6 +224,7 @@ describe('tree navigation', function () {
     keyDown("ArrowLeft", {}, this.firstRoot); // collapse that root
     mouseDown(this.thirdRoot.args[1].args[0]);
     await wait(DELAY);
+    expect(this.activeNode().id).toBe(this.thirdRoot.args[1].args[0].id);
     expect(this.activeNode()).toBe(this.thirdRoot.args[1].args[0]);
 
     keyDown("ArrowDown");
@@ -300,7 +303,7 @@ describe('tree navigation', function () {
     keyDown("<", { shiftKey: true }, this.thirdRoot.args[1].args[1]);
     await wait(DELAY);
     expect(this.thirdRoot.element.getAttribute("aria-expanded")).toBe("true");
-    expect(this.activeNode()).toBe(this.thirdRoot);
+    expect(this.activeNode().id).toBe(this.thirdRoot.id);
   });
 
   it('right-arrow should expand a block, or shift focus to 1st child', async function () {
@@ -351,7 +354,7 @@ describe('tree navigation', function () {
 });
 
 describe("when dealing with node selection, ", function () {
-  beforeEach(function () {
+  beforeEach(async function () {
     setup.call(this);
 
     this.cmb.setValue('11\n54\n(+ 1 2)');
@@ -359,6 +362,7 @@ describe("when dealing with node selection, ", function () {
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];
     this.expr = ast.rootNodes[2];
+    await wait(DELAY);
   });
 
   afterEach(function () { teardown(); });
