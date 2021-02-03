@@ -30,9 +30,7 @@ class Primitive extends Component {
       e.preventDefault();
       copyNodes([this.props.primitive]);
       say("copied " + this.props.primitive.toString());
-      if (this.props.primitive.element) {
-        this.props.primitive.element.focus(); // restore focus
-      }
+      this.props.primitive.element?.focus(); // restore focus
       return;
     default:
       this.props.onKeyDown(e);
