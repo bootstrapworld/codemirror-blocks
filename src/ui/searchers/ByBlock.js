@@ -1,5 +1,5 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import {skipWhile, getNodeContainingBiased} from '../../utils';
 
 function getAllNodeTypes(ast) {

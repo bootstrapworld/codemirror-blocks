@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import {connect} from 'react-redux';
 import {UnControlled as CodeMirror} from 'react-codemirror2';
 import SHARED from '../shared';

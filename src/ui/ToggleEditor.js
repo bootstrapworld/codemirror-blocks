@@ -1,5 +1,5 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import CodeMirror from 'codemirror';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
