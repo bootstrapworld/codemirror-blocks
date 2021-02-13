@@ -8,10 +8,16 @@ module.exports = function(config) {
   var rules = [
     {
       test:/.woff$|.woff2.png$|.jpg$|.jpeg$|.gif$|.svg$|.wav$/, 
-      use: { loader: "url-loader", options: { limit: 10000 } }
+      use: [{ loader: "url-loader", options: { limit: 10000, esModule: false } }]
     },
-    {test:/.ttf$|.eot$/, use: "file-loader"},
-    {test:/\.css$/, use: [{loader:"style-loader"},{loader:"css-loader"}] },
+    {
+      test:/.ttf$|.eot$/, 
+      use: [{loader: "file-loader"}]
+    },
+    {
+      test:/\.css$/, 
+      use: [{loader:"style-loader"},{loader:"css-loader"}] 
+    },
   ];
   if (config.extractCSS) {
     plugins.push(new MiniCssExtractPlugin({ filename: '[name].[chunkhash].css' }),);
