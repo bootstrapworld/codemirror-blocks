@@ -19,7 +19,7 @@ module.exports = function(env, argv) {
     plugins: baseConfig.plugins.concat([
       new webpack.HotModuleReplacementPlugin(),
       new HtmlWebpackPlugin({
-        filename: 'new-editor.html',
+        filename: 'editor.html',
         template: 'example/new-editor.html',
         inject: 'body',
         chunks: ['commons','new-editor-example'],
