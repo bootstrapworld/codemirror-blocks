@@ -21,7 +21,7 @@ import {store} from '../store';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
-  'getExtending', 'findPosH', 'findPosV', 'setOption', 'getOption',
+  'getExtending', 'findPosH', 'findPosV', 'setOption',
   'addOverlay', 'removeOverlay', 'undoSelection', 'redoSelection',
   'charCoords', 'coordsChar', 'cursorCoords', 'startOperation',
   'endOperation', 'operation', 'addKeyMap', 'removeKeyMap', 'on', 'off',
@@ -179,7 +179,6 @@ class BlockEditor extends Component {
 
   static defaultProps = {
     options: {},
-    cmOptions: {},
     keyMap : defaultKeyMap,
     search: {
       search: () => null,
@@ -575,6 +574,8 @@ class BlockEditor extends Component {
   // store showDialog in the environment, and pass the keyMap
   handleKeyDown = (e, env) => {
     env.showDialog = this.props.showDialog;
+    env.toggleButtonRef = this.props.toggleButtonRef;
+    env.toolbarRef = this.props.toolbarRef;
     return keyDown(e, env, this.props.keyMap);
   }
 

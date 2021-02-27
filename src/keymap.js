@@ -39,6 +39,7 @@ export const defaultKeyMap = {
   'PageUp'    : 'searchPrevious',
   'PageDown'  : 'searchNext',
   'F3'        : 'activateSearchDialog',
+  'Shift-Tab' : 'prevFocus',
 };
 
 const macKeyMap = {
@@ -73,6 +74,11 @@ Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
 export const commandMap = {
+  prevFocus : function (_, e) {
+    console.log(this);
+    this.toggleButtonRef.current.focus();
+  },
+
   prevNode : function (_, e) {
     e.preventDefault();
     //console.log('XXX keymap:78 doing prevNode')

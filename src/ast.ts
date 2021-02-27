@@ -320,8 +320,8 @@ export class AST {
   precedesComment(pos) {
     // TODO: efficiency
     for (const node of this.nodeIdMap.values()) {
-      if (node.options.comment?.from.line == pos.line
-          && pos.ch <= node.options.comment?.from.ch) {
+      if (node.options.comment?.from?.line == pos.line
+          && pos.ch <= node.options.comment?.from?.ch) {
         return true;
       } else if (node.options.comment
                  && node.from.line == pos.line

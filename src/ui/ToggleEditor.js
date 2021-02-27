@@ -18,6 +18,7 @@ const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 const defaultCmOptions = {
   lineNumbers: true,
   viewportMargin: 10,
+  extraKeys: {"Shift-Tab": false},
 };
 
 // This is the complete list of methods exposed by the CodeMirror object
@@ -73,6 +74,9 @@ export default @CMBContext class ToggleEditor extends React.Component {
     this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
     this.language = props.language;
     this.parser = this.language.getParser();
+
+    this.toggleButtonRef = React.createRef();
+    this.toolbarRef = React.createRef();
 
     let defaultOptions = {
       parser: this.parser,
@@ -190,12 +194,17 @@ export default @CMBContext class ToggleEditor extends React.Component {
       <>
       { this.state.dialog? this.renderDialog() : ""}
       <div className={classes}>
-        <ToggleButton setBlockMode={this.handleToggle} blockMode={this.state.blockMode} />
+        <ToggleButton 
+          setBlockMode={this.handleToggle} 
+          blockMode={this.state.blockMode} 
+          ref={this.toggleButtonRef} />
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
-          <Toolbar primitives={this.parser.primitives}
-                   languageId={this.language.id}
-                   blockMode={this.state.blockMode} />
+          <Toolbar 
+            primitives={this.parser.primitives}
+            languageId={this.language.id}
+            blockMode={this.state.blockMode} 
+            ref={this.toolbarRef} />
         </div>
         <div className="col-xs-9 codemirror-pane">
         { this.state.blockMode? this.renderBlocks() : this.renderCode() }
@@ -244,6 +253,8 @@ export default @CMBContext class ToggleEditor extends React.Component {
         passedAST={this.ast}
         showDialog={this.showDialog}
         closeDialog={this.closeDialog}
+        toolbarRef={this.toolbarRef}
+        toggleButtonRef={this.toggleButtonRef}
         debugHistory={this.props.debuggingLog.history}
      />
     );
