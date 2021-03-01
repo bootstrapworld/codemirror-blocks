@@ -39,7 +39,6 @@ describe("when testing CM apis,", function () {
     expect(()=>this.cmb.findPosH(true)).toThrow();
     expect(()=>this.cmb.findPosV(true)).toThrow();
     expect(()=>this.cmb.getExtending(true)).toThrow();
-    expect(()=>this.cmb.getOption(true)).toThrow();
     expect(()=>this.cmb.indentLine(true)).toThrow();
     expect(()=>this.cmb.off(true)).toThrow();
     expect(()=>this.cmb.on(true)).toThrow();

@@ -1,7 +1,10 @@
-const beepSound = require('./beep.wav');
+import beepSound from './beep.wav';
 export const BEEP = new Audio(beepSound);
 BEEP.crossorigin = "anonymous";
-export const WRAP = BEEP; // eventually use a different sound for this
+
+import wrapSound from './wrap.mp3';
+export const WRAP = new Audio(wrapSound);
+WRAP.crossorigin = "anonymous";
 
 export function playSound(sound) {
   sound.pause();

@@ -162,9 +162,9 @@ export function getLastVisibleNode(state) {
 export function withDefaults(obj, def) {
   return {...def, ...obj};
 }
-/*
+
 export function getBeginCursor(cm) {
-  return CodeMirror.Pos(cm, 0);
+  return CodeMirror.Pos(0, 0);
 }
 
 export function getEndCursor(cm) {
@@ -173,7 +173,7 @@ export function getEndCursor(cm) {
     cm.getLine(cm.lastLine()).length
   );
 }
-*/
+
 export function posWithinNode(pos, node) {
   return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
     ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);

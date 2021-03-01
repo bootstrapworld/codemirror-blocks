@@ -14,7 +14,6 @@ import SHARED from '../shared';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
-import {playSound, BEEP} from '../sound';
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated

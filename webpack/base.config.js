@@ -7,11 +7,11 @@ module.exports = function(config) {
   var plugins = [];
   var rules = [
     {
-      test:/.woff$|.woff2.png$|.jpg$|.jpeg$|.gif$|.svg$|.wav$/, 
+      test:/.woff$|.woff2.png$|.jpg$|.jpeg$|.gif$|.svg$/, 
       use: [{ loader: "url-loader", options: { limit: 10000, esModule: false } }]
     },
     {
-      test:/.ttf$|.eot$/, 
+      test:/.ttf$|.eot$|.wav$|.mp3$/, 
       use: [{loader: "file-loader"}]
     },
     {
