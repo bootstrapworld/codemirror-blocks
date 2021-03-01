@@ -300,8 +300,8 @@ export class AST {
   followsComment(pos) {
     // TODO: efficiency
     for (const node of this.nodeIdMap.values()) {
-      if (node.options.comment?.to.line == pos.line
-          && node.options.comment?.to.ch <= pos.ch) {
+      if (node.options.comment?.to?.line == pos.line
+          && node.options.comment?.to?.ch <= pos.ch) {
         return true;
       } else if (node.options.comment
                  && node.to.line == pos.line
