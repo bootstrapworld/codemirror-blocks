@@ -356,26 +356,32 @@ export function preambleUndoRedo(which) {
 */
 import beepSound from './ui/beep.wav';
 export const BEEP = new Audio(beepSound);
-BEEP.crossorigin = "anonymous";
 
 import wrapSound from './ui/wrap.mp3';
 export const WRAP = new Audio(wrapSound);
-WRAP.crossorigin = "anonymous";
+
+// for each sound resource, set crossorigin value to "anonymous"
+// and set up state for interruptable playback 
+// (see https://stackoverflow.com/a/40370077/12026982)
+[BEEP, WRAP].forEach(sound => {
+  sound.crossorigin = "anonymous";
+  sound.isPlaying = false;
+  sound.onplaying = function(){ this.isPlaying = true;  };
+  sound.onpause   = function(){ this.isPlaying = false; };
+});
 
 export function playSound(sound) {
   sound.pause();
   console.log("BEEP!");
+  if (!(sound.paused && !sound.isPlaying)) return;
   if (sound.readyState > 0) sound.currentTime = 0;
-  // Resolves race condition. See https://stackoverflow.com/questions/36803176
-  setTimeout(() =>  {
-    var playPromise = sound.play();
-    // Promise handling from: https://goo.gl/xX8pDD
-    // In browsers that don’t yet support this functionality,
-    // playPromise won’t be defined.
-    if (playPromise !== undefined) {
-      playPromise
-        .then(  () => {}) // Automatic playback started!
-        .catch( () => {});// Automatic playback failed.
-    }
-  }, 50);
+  // Promise handling from: https://goo.gl/xX8pDD
+  // In browsers that don’t yet support this functionality,
+  // playPromise won’t be defined.
+  var playPromise = sound.play();
+  if (playPromise !== undefined) {
+    playPromise
+      .then(  () => {}) // Automatic playback started!
+      .catch( () => {});// Automatic playback failed.
+  }
 }
