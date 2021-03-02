@@ -74,8 +74,8 @@ CodeMirror.normalizeKeyMap(defaultKeyMap);
 
 export const commandMap = {
   prevFocus : function (_, e) {
-    console.log(this);
-    this.toggleButtonRef.current.focus();
+    this.toolbarRef.current.primitiveSearch.focus();
+    e.preventDefault();
   },
 
   prevNode : function (_, e) {

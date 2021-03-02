@@ -541,7 +541,7 @@ class BlockEditor extends Component {
   handleTopLevelFocus = (ed, _) => {
     const {dispatch} = this.props;
     dispatch((_, getState) => {
-      const {cur} = getState();
+      const {cur, focusId} = getState();
       if (!this.mouseUsed && (cur === null)) {
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
         setTimeout(() => this.props.activateByNid(null, {allowMove: true}), 0);

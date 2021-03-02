@@ -196,8 +196,7 @@ export default @CMBContext class ToggleEditor extends React.Component {
       <div className={classes}>
         <ToggleButton 
           setBlockMode={this.handleToggle} 
-          blockMode={this.state.blockMode} 
-          ref={this.toggleButtonRef} />
+          blockMode={this.state.blockMode} />
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
           <Toolbar 

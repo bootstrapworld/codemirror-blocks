@@ -119,6 +119,7 @@ export default class Toolbar extends Component {
             className="form-control"
             value={this.state.search}
             onKeyDown={this.handleKeyDown}
+            ref={(elt) => { this.primitiveSearch = elt; }} 
             onChange={this.changeSearch} />
           {this.state.search ?
             <button 
