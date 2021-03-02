@@ -80,7 +80,7 @@
     "codemirror": "^5.59.1"
   },
   "optionalDependencies": {
-    "wescheme-js": "https://github.com/bootstrapworld/wescheme-js"
+    "wescheme-js": "https://github.com/bootstrapworld/wescheme-js.git"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
