@@ -263,6 +263,7 @@ export const commandMap = {
     if(!this.node) { return CodeMirror.Pass; }
     if (this.normallyEditable) {
       this.handleMakeEditable(e);
+      e.preventDefault();
     } else if (this.expandable && !this.isLocked()) {
       (this.isCollapsed ? this.uncollapse : this.collapse)(this.node.id);
     } else {
