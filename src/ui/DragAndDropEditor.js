@@ -5,7 +5,7 @@ import {DropNodeTarget} from '../dnd';
 import {drop, OverwriteTarget} from '../actions';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
-import {playSound, BEEP} from '../sound';
+import {playSound, BEEP} from '../utils';
 
 export default
 

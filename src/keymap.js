@@ -1,11 +1,10 @@
 import React from 'react';
 import CodeMirror from 'codemirror';
-import {playSound, BEEP} from './sound';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget, activateByNid} from './actions';
 import {partition, getRoot, createAnnouncement, skipCollapsed,
-  say, getLastVisibleNode, preambleUndoRedo} from './utils';
+  say, getLastVisibleNode, preambleUndoRedo, playSound, BEEP} from './utils';
 
 const userAgent = navigator.userAgent;
 const platform = navigator.platform;

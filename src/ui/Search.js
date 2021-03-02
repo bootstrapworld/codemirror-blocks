@@ -3,8 +3,7 @@ import PropTypes from 'prop-types/prop-types';
 import Modal from 'react-modal';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
-import {say, getBeginCursor, getEndCursor} from '../utils';
-import {playSound, WRAP} from '../sound';
+import {say, getBeginCursor, getEndCursor, playSound, WRAP} from '../utils';
 
 export default (Editor, searchModes) => {
   const settings = searchModes.reduce((acc, searchMode, i) => {
