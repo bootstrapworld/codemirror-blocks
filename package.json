@@ -4,7 +4,7 @@
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "dist/CodeMirrorBlocks.js",
   "engines": {
-    "node": ">=6.x", 
+    "node": ">=6.x",
     "npm": ">=3.x"
   },
   "dependencies": {
@@ -80,7 +80,7 @@
     "codemirror": "^5.59.1"
   },
   "optionalDependencies": {
-    "wescheme-js": "https://github.com/bootstrapworld/wescheme-js.git"
+    "wescheme-js": "0.0.5"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
