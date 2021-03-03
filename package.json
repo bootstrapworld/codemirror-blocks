@@ -79,6 +79,9 @@
   "peerDependencies": {
     "codemirror": "^5.59.1"
   },
+  "optionalDependencies": {
+    "wescheme-js": "https://github.com/bootstrapworld/wescheme-js.git"
+  },
   "scripts": {
     "prepublishOnly": "npm run build",
     "test": "./node_modules/karma/bin/karma start karma.conf.js --single-run",
