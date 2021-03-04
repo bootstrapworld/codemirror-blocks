@@ -40,8 +40,8 @@ describe("when testing CM apis,", function () {
     expect(()=>this.cmb.findPosV(true)).toThrow();
     expect(()=>this.cmb.getExtending(true)).toThrow();
     expect(()=>this.cmb.indentLine(true)).toThrow();
-    expect(()=>this.cmb.off(true)).toThrow();
-    expect(()=>this.cmb.on(true)).toThrow();
+    //expect(()=>this.cmb.off(true)).toThrow();
+    //expect(()=>this.cmb.on(true)).toThrow();
     expect(()=>this.cmb.redoSelection()).toThrow();
     expect(()=>this.cmb.removeKeyMap(true)).toThrow();
     expect(()=>this.cmb.removeOverlay(true)).toThrow();
