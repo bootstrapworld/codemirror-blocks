@@ -24,7 +24,8 @@ const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
   'getExtending', 'findPosH', 'findPosV', 'setOption',
   'addOverlay', 'removeOverlay', 'undoSelection', 'redoSelection',
   'charCoords', 'coordsChar', 'cursorCoords', 'startOperation',
-  'endOperation', 'operation', 'addKeyMap', 'removeKeyMap', 'on', 'off',
+  'endOperation', 'operation', 'addKeyMap', 'removeKeyMap', 
+  //'on', 'off',
   'extendSelection', 'extendSelections', 'extendSelectionsBy'];
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it

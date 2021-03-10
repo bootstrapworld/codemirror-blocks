@@ -354,7 +354,7 @@ export function preambleUndoRedo(which) {
 /****************************************************************
 * SOUND HANDLING
 */
-import beepSound from './ui/beep.wav';
+import beepSound from './ui/beep.mp3';
 export const BEEP = new Audio(beepSound);
 
 import wrapSound from './ui/wrap.mp3';

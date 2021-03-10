@@ -43,7 +43,7 @@ configs = configs.concat(
     });
   })
 );
-
+/*
 configs.push(
   Object.assign({}, baseConfig({extractCSS:true}), {
     entry: {
@@ -51,8 +51,9 @@ configs.push(
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
-      filename: "[name].css"
+      filename: "[name][chunkname].css"
     },
   })
 );
+*/
 module.exports = configs;
