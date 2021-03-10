@@ -51,7 +51,7 @@ configs.push(
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
-      filename: "[name].css"
+      filename: "[name][chunkname].css"
     },
   })
 );
