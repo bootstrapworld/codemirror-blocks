@@ -14,20 +14,19 @@ module.exports = function(config) {
       test:/.ttf$|.eot$/, 
       use: [{loader: "file-loader"}]
     },
-    {
-      test:/\.css$/, 
-      use: [{loader:"style-loader"},{loader:"css-loader"}] 
-    },
   ];
   if (config.extractCSS) {
-    plugins.push(new MiniCssExtractPlugin({ filename: '[name].[chunkhash].css' }),);
+    plugins.push(new MiniCssExtractPlugin({ 
+      filename: '[name].css',
+      chunkFilename: '[name].css'
+    }));
     rules.push({
-      test: /\.less$/,
+      test: /\.less$|.css$/,
       use: [MiniCssExtractPlugin.loader, "css-loader", "less-loader"]
     });
   } else {
     rules.push({
-      test: /\.less$/, 
+      test: /\.less$|.css$/,
       use:[{loader:"style-loader"},{loader:"css-loader"},{loader:"less-loader"}]
     });
   }
