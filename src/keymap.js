@@ -3,8 +3,8 @@ import CodeMirror from 'codemirror';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget, activateByNid} from './actions';
-import {partition, getRoot, createAnnouncement, skipCollapsed,
-  say, getLastVisibleNode, preambleUndoRedo, playSound, BEEP} from './utils';
+import {partition, getRoot, skipCollapsed, say,
+  getLastVisibleNode, preambleUndoRedo, playSound, BEEP} from './utils';
 
 const userAgent = navigator.userAgent;
 const platform = navigator.platform;

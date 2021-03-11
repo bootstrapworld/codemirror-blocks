@@ -67,11 +67,7 @@ export function partition(arr, f) {
   const matched = [];
   const notMatched = [];
   for (const e of arr) {
-    if (f(e)) {
-      matched.push(e);
-    } else {
-      notMatched.push(e);
-    }
+    (f(e)? matched : notMatched).push(e);
   }
   return [matched, notMatched];
 }
@@ -91,10 +87,6 @@ export function partition(arr, f) {
 //     if (callNow) func.apply(context, args);
 //   };
 // }
-
-export function isControl(e) {
-  return ISMAC ? e.metaKey : e.ctrlKey;
-}
 
 store.muteAnnouncements = false;
 store.queuedAnnouncement = false;

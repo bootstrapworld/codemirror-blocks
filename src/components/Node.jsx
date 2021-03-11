@@ -2,8 +2,6 @@ import React  from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types/prop-types';
 import {ASTNode} from '../ast';
-import {partition, getRoot,
-        isControl, say, skipCollapsed, getLastVisibleNode, preambleUndoRedo} from '../utils';
 import {drop, delete_, copy, paste, activateByNid, setCursor,
         InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
