@@ -518,20 +518,8 @@ class BlockEditor extends Component {
     SHARED.cm.setValue(tmpCM.getValue());
     // if one of the ranges is invalid, setSelections will raise an error
     if(select == "around") { this.setSelections(tmpCM.listSelections()); }
-    if(select == "start") { this.props.setCursor(tmpCM.listSelections().pop().head); }
+    if(select == "start")  { this.props.setCursor(tmpCM.listSelections().pop().head); }
     else { this.props.setCursor(tmpCM.listSelections().pop().anchor); }
-  }
-
-  renderMarks() {
-    SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
-      .forEach(m => m.clear());
-    this.props.dispatch((_, getState) => {
-      const {markedMap} = getState();
-      markedMap.forEach(v => {
-        let {from, to} = v.find();
-        SHARED.cm.markText(from, to, v.options);
-      });
-    });
   }
 
   handleEditorWillUnmount = ed => {
@@ -566,7 +554,7 @@ class BlockEditor extends Component {
     if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
     e.preventDefault();
     const start = SHARED.cm.getCursor(true);
-    const end = SHARED.cm.getCursor(false);
+    const end   = SHARED.cm.getCursor(false);
     this.props.setQuarantine(start, end, text);
   }
 
@@ -575,7 +563,6 @@ class BlockEditor extends Component {
   // store showDialog in the environment, and pass the keyMap
   handleKeyDown = (e, env) => {
     env.showDialog = this.props.showDialog;
-    env.toggleButtonRef = this.props.toggleButtonRef;
     env.toolbarRef = this.props.toolbarRef;
     return keyDown(e, env, this.props.keyMap);
   }
@@ -604,16 +591,15 @@ class BlockEditor extends Component {
 
     // TODO: pass these with a React Context or something sensible like that.
     SHARED.parser = parser;
-    SHARED.options = options;
+    SHARED.options= options;
     SHARED.search = search;
-
+    // create a hidden buffer, for use with copy/cut/paste
     const clipboardBuffer = document.createElement('textarea');
-    clipboardBuffer.ariaHidden = true;
-    clipboardBuffer.tabIndex = -1;
+    clipboardBuffer.ariaHidden    = true;
+    clipboardBuffer.tabIndex      = -1;
+    clipboardBuffer.style.opacity =  0;
+    clipboardBuffer.style.height  = '1px';
     SHARED.buffer = clipboardBuffer;
-    // don't make it transparent so that we can debug easily for now
-    // SHARED.buffer.style.opacity = 0;
-    // SHARED.buffer.style.height = '1px';
     document.body.appendChild(SHARED.buffer);
     this.afterDOMUpdate();
   }
@@ -634,7 +620,6 @@ class BlockEditor extends Component {
   }
 
   render() {
-    this.startTime = Date.now();
     const classes = [];
     if (this.props.language) {
       classes.push(`blocks-language-${this.props.language}`);
@@ -683,7 +668,7 @@ const mapDispatchToProps = dispatch => ({
   setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
   setCursor: (_, cur) => dispatch(setCursor(cur)),
   clearFocus: () => {
-    //console.log('BlockEditor:684 calling SET_FOCUS with focusId null');
+    //console.log('BlockEditor:671 calling SET_FOCUS with focusId null');
     return dispatch({type: 'SET_FOCUS', focusId: null});
   },
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
