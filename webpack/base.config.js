@@ -32,8 +32,14 @@ module.exports = function(config) {
   }
   return {
     resolve : {
-      extensions: ['.ts', '.tsx', '.js', '.jsx'], // Order matters!
+      alias: { 
+        "react": "preact/compat",
+        "react-dom/test-utils": "preact/test-utils",
+        "react-dom": "preact/compat",
+      },
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
     }, 
+
     output: {
       path: path.resolve(__dirname, '..', "build"),
       filename: "[name].js"

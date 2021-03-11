@@ -5,14 +5,6 @@ const baseConfig = require('./base.config.js');
 // this is the config for a single js file that can be included with a script tag
 var configs = [
   Object.assign({}, baseConfig(), {
-    resolve : {
-      alias: { 
-        "react": "preact/compat",
-        "react-dom/test-utils": "preact/test-utils",
-        "react-dom": "preact/compat",
-      },
-      extensions: ['.ts', '.tsx', '.js', '.jsx'],
-    }, 
     entry: {
       "CodeMirrorBlocks": './src/CodeMirrorBlocks.js'
     },
