@@ -1,13 +1,13 @@
 import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import {connect} from 'react-redux';
 import {UnControlled as CodeMirror} from 'react-codemirror2';
 import SHARED from '../shared';
 import {say} from '../utils';
 
 // CodeMirror APIs that we need to disallow
-const unsupportedAPIs = ['startOperation', 'endOperation', 'operation',
-  'on', 'off'];
+// NOTE(Emmanuel): we should probably block 'on' and 'off'...
+const unsupportedAPIs = ['startOperation', 'endOperation', 'operation'];
 
 class TextEditor extends Component {
   static propTypes = {
@@ -51,8 +51,11 @@ class TextEditor extends Component {
   buildAPI() {
     const api = {};
     // show which APIs are unsupported
-    unsupportedAPIs.forEach(f => 
-      api[f] = () => {throw "This CM API is not supported in the block editor";});
+     // show which APIs are unsupported
+    unsupportedAPIs.forEach(f =>
+      api[f] = () => {
+        throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
+      });
     return api;
   }
 

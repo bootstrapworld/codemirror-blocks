@@ -52,6 +52,7 @@ export function edit_replace(text, node) {
 // determined by the focus of the _last_ edit in `edits`.
 export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{}, annt) {
   // Ensure that all of the edits are valid.
+    //console.log('XXX performEdits:55 doing performEdits');
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {
       throw new Error(`performEdits - invalid edit ${edit}: all edits must be instances of Edit.`);
@@ -106,6 +107,7 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
           SHARED.cm.replaceRange(c.text, c.from, c.to, c.origin);
         }
       });
+      //console.log('XXX performEdits:110 calling commitChanges');
       let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST, annt);
       onSuccess({newAST, focusId});
     } catch(e) {

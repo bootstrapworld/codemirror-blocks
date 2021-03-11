@@ -7,21 +7,26 @@ module.exports = function(config) {
   var plugins = [];
   var rules = [
     {
-      test:/.woff$|.woff2.png$|.jpg$|.jpeg$|.gif$|.svg$|.wav$/, 
-      use: { loader: "url-loader", options: { limit: 10000 } }
+      test:/.woff$|.woff2.png$|.jpg$|.jpeg$|.gif$|.svg$|.wav$|.mp3$/, 
+      use: [{ loader: "url-loader", options: { limit: 10000, esModule: false } }]
     },
-    {test:/.ttf$|.eot$/, use: "file-loader"},
-    {test:/\.css$/, use: [{loader:"style-loader"},{loader:"css-loader"}] },
+    {
+      test:/.ttf$|.eot$/, 
+      use: [{loader: "file-loader"}]
+    },
   ];
   if (config.extractCSS) {
-    plugins.push(new MiniCssExtractPlugin({ filename: '[name].[chunkhash].css' }),);
+    plugins.push(new MiniCssExtractPlugin({ 
+      filename: '[name].css',
+      chunkFilename: '[name].css'
+    }));
     rules.push({
-      test: /\.less$/,
+      test: /\.less$|.css$/,
       use: [MiniCssExtractPlugin.loader, "css-loader", "less-loader"]
     });
   } else {
     rules.push({
-      test: /\.less$/, 
+      test: /\.less$|.css$/,
       use:[{loader:"style-loader"},{loader:"css-loader"},{loader:"less-loader"}]
     });
   }

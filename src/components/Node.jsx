@@ -1,10 +1,10 @@
 import React  from 'react';
 import {connect} from 'react-redux';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import {ASTNode} from '../ast';
-import {partition, getRoot, sayActionForNodes,
+import {partition, getRoot,
         isControl, say, skipCollapsed, getLastVisibleNode, preambleUndoRedo} from '../utils';
-import {drop, delete_, copy, paste, activate, setCursor,
+import {drop, delete_, copy, paste, activateByNid, setCursor,
         InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
@@ -14,7 +14,6 @@ import SHARED from '../shared';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
-import {playSound, BEEP} from '../sound';
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -50,7 +49,7 @@ class Node extends BlockComponent {
     expandable: PropTypes.bool,
     textMarker: PropTypes.object,
 
-    activate: PropTypes.func.isRequired,
+    activateByNid: PropTypes.func.isRequired,
   }
 
   state = {editable: false, value: null}
@@ -74,10 +73,15 @@ class Node extends BlockComponent {
     this.setState({value});
   }
 
+  // nid can be stale!! Always obtain a fresh copy of the node
+  // from getState() before calling activateByNid
   handleMouseDown = e => {
     if(!this.props.inToolbar) e.stopPropagation(); // prevent ancestors to steal focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
-    this.props.activate(this.props.node.id, {allowMove: false});
+    const {ast} = store.getState();
+    const currentNode = ast.getNodeById(this.props.node.id);  
+    //console.log('XXX Node:84 calling activateByNid');
+    this.props.activateByNid(currentNode.nid, {allowMove: false});
   }
 
   handleClick = e => {
@@ -137,7 +141,7 @@ class Node extends BlockComponent {
   }
 
   isLocked() {
-    if (SHARED.options && SHARED.options.renderOptions) {
+    if (SHARED.options?.renderOptions) {
       const lockedList = SHARED.options.renderOptions.lockNodesOfType;
       return lockedList.includes(this.props.node.type);
     }
@@ -201,7 +205,7 @@ class Node extends BlockComponent {
         connectDragPreview
       } = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
-      if(textMarker && textMarker.options.className) classes.push(textMarker.options.className);
+      if(textMarker?.options.className) classes.push(textMarker.options.className);
       let result = (
         <span
           {...props}
@@ -253,7 +257,7 @@ const mapDispatchToProps = dispatch => ({
   collapse: id => dispatch({type: 'COLLAPSE', id}),
   uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
   setCursor: cur => dispatch(setCursor(cur)),
-  activate: (id, options) => dispatch(activate(id, options)),
+  activateByNid: (nid, options) => dispatch(activateByNid(nid, options)),
   setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
 });
 

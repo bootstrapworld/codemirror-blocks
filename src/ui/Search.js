@@ -1,9 +1,9 @@
 import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import Modal from 'react-modal';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
-import {say} from '../utils';
+import {say, getBeginCursor, getEndCursor, playSound, WRAP} from '../utils';
 
 export default (Editor, searchModes) => {
   const settings = searchModes.reduce((acc, searchMode, i) => {
@@ -51,12 +51,13 @@ export default (Editor, searchModes) => {
       this.callback();
     }
 
-    handleSearch = (forward, cmbState) => {
+    handleSearch = (forward, cmbState, overrideCur) => {
+      console.log(overrideCur);
       if(this.state.searchEngine == null) {
         say("No search setting have been selected.");
         return;
       }
-      var searchFrom = this.state.cursor, result;
+      var searchFrom = overrideCur || this.state.cursor, result;
       // keep searching until we find an unfocused node, or we run out of results
       while((result = searchModes[this.state.searchEngine].search(
         searchFrom,
@@ -72,7 +73,10 @@ export default (Editor, searchModes) => {
         this.setState({cursor});
         return node;
       } else {
-        return null;
+        if(overrideCur) return null; // if there's no wrapped match, give up
+        playSound(WRAP);
+        const wrappedStart = (forward? getBeginCursor : getEndCursor)(this.cm);
+        return this.handleSearch(forward, cmbState, wrappedStart)
       }
     }
 

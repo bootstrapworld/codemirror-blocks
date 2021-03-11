@@ -1,7 +1,7 @@
 import {store} from '../store';
 import SHARED from '../shared';
 import {poscmp, adjustForChange, minimizeChange, logResults, topmostUndoable} from '../utils';
-import {activate} from '../actions';
+import {activateByNid} from '../actions';
 import patch from './patchAst';
 
 
@@ -31,6 +31,7 @@ export function commitChanges(
   astHint = undefined,
   annt
 ) {
+  //console.log('XXX commitChanges:34 doing commitChanges');
   try{
     let state = store.getState();
     let {ast: oldAST, focusId: oldFocusId} = state;
@@ -44,17 +45,23 @@ export function commitChanges(
     // Patch the tree and set the state
     newAST = patch(oldAST, newAST);
     store.dispatch({type: 'SET_AST', ast: newAST});
-    // Set the focus.
-    let focusId = setFocus(changes, focusHint, newAST);
+    // Try to set the focus using hinting data. If that fails, use the first root
+    let focusId = setFocus(changes, focusHint, newAST) || newAST.getFirstRootNode()?.id;
+    //console.log('XXX commitChanges:50 setFocus retd focusId=', focusId);
     if (!isUndoOrRedo) {
       // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
       // this is what populates our undo stack.
-      let newFocus = newAST.getNodeById(focusId);
-      let newFocusNId = newFocus ? newFocus.nid : null;
+        //console.log('commitChanges:54 focusId=', focusId);
+      let newFocus = null;
+      if (focusId) {  newFocus = newAST.getNodeById(focusId); }
+      let newFocusNId = newFocus?.nid;
+      //console.log('XXX commitChanges:58 oldFocusNId=', oldFocusNId);
+      //console.log('XXX commitChanges:59 newFocusNId=', newFocusNId);
+      //console.log('XXX commitChanges:60 annt=', annt);
       let tU = topmostUndoable('undo');
       tU.undoableAction = annt;
       tU.actionFocus = {oldFocusNId, newFocusNId};
-      store.dispatch({type: 'DO'});
+      store.dispatch({type: 'DO', focusId: focusId});
     }
     return {newAST, focusId};    
   } catch(e){
@@ -68,17 +75,29 @@ export function commitChanges(
 // In those cases, use `computeFocusNodeFromChanges` instead.
 // Note: a focusHint of -1 means "let CodeMirror set the focus"
 function setFocus(changes, focusHint, newAST) {
+  //console.log('XXX commitChanges:78 doing setFocus');
   if(focusHint == -1) return;
   let {collapsedList} = store.getState();
   let focusNode = focusHint ? focusHint(newAST) : "fallback";
   if (focusNode === "fallback") {
     focusNode = computeFocusNodeFromChanges(changes, newAST);
   }
-  let focusId = focusNode ? focusNode.id : null;
+  let focusNId = focusNode ? focusNode.nid : null;
   while (focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
-    if (collapsedList.includes(focusNode.id)) focusId = focusNode.id;
+    if (collapsedList.includes(focusNode.id)) focusNId = focusNode.nid;
   }
-  store.dispatch(activate(focusId));
+  // get the nid and activate
+  //console.log('XXX commitChanges:90 focusNId=', focusNId, 'focusId=', focusNode.id);
+  if (focusNId !== null) {
+    //console.log('XXX commitChanges:92 calling dispatch of activateByNid', focusNId);
+    store.dispatch(activateByNid(focusNId));
+  }
+
+  let focusNode2 = newAST.getNodeByNId(focusNId);
+  let focusId = focusNode2 && focusNode2.id;
+
+  // let focusId = focusNode ? focusNode.id : null; // this is wrong
+  //console.log('XXX commitChanges:100 focusId=', focusId);
   return focusId;
 }
 

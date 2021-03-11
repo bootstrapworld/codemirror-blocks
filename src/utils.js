@@ -13,6 +13,8 @@ export function resetNodeCounter() { store.nodeCounter = 0; }
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {
+  if (!a) { console.log('utils:16, hitting null a'); }
+  if (!b) { console.log('utils:16, hitting null b'); }
   return  a.line - b.line || a.ch - b.ch;
 }
 
@@ -114,16 +116,8 @@ export function say(text, delay=200, allowOverride=false) {
   }
 }
 
-export function sayActionForNodes(nodes, action) {
-  //console.log('doing sayActionForNodes', action);
-  nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
-  let annt = (action + " " +
-    nodes.map((node) => node.options['aria-label'])
-      .join(" and "));
-  say(annt);
-}
-
 export function createAnnouncement(nodes, action) {
+  nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
   let annt = (action + " " +
     nodes.map((node) => node.options['aria-label'])
       .join(" and "));
@@ -168,9 +162,9 @@ export function getLastVisibleNode(state) {
 export function withDefaults(obj, def) {
   return {...def, ...obj};
 }
-/*
+
 export function getBeginCursor(cm) {
-  return CodeMirror.Pos(cm, 0);
+  return CodeMirror.Pos(0, 0);
 }
 
 export function getEndCursor(cm) {
@@ -179,7 +173,7 @@ export function getEndCursor(cm) {
     cm.getLine(cm.lastLine()).length
   );
 }
-*/
+
 export function posWithinNode(pos, node) {
   return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
     ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);
@@ -354,5 +348,40 @@ export function preambleUndoRedo(which) {
     say((which === 'undo' ? 'UNDID' : 'REDID') + ': ' + tU.undoableAction);
     state.undoableAction = tU.undoableAction;
     state.actionFocus = tU.actionFocus;
+  }
+}
+
+/****************************************************************
+* SOUND HANDLING
+*/
+import beepSound from './ui/beep.mp3';
+export const BEEP = new Audio(beepSound);
+
+import wrapSound from './ui/wrap.mp3';
+export const WRAP = new Audio(wrapSound);
+
+// for each sound resource, set crossorigin value to "anonymous"
+// and set up state for interruptable playback 
+// (see https://stackoverflow.com/a/40370077/12026982)
+[BEEP, WRAP].forEach(sound => {
+  sound.crossorigin = "anonymous";
+  sound.isPlaying = false;
+  sound.onplaying = function(){ this.isPlaying = true;  };
+  sound.onpause   = function(){ this.isPlaying = false; };
+});
+
+export function playSound(sound) {
+  sound.pause();
+  console.log("BEEP!");
+  if (!(sound.paused && !sound.isPlaying)) return;
+  if (sound.readyState > 0) sound.currentTime = 0;
+  // Promise handling from: https://goo.gl/xX8pDD
+  // In browsers that don’t yet support this functionality,
+  // playPromise won’t be defined.
+  var playPromise = sound.play();
+  if (playPromise !== undefined) {
+    playPromise
+      .then(  () => {}) // Automatic playback started!
+      .catch( () => {});// Automatic playback failed.
   }
 }

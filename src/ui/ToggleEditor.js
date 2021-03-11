@@ -1,5 +1,5 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import CodeMirror from 'codemirror';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
@@ -18,6 +18,7 @@ const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 const defaultCmOptions = {
   lineNumbers: true,
   viewportMargin: 10,
+  extraKeys: {"Shift-Tab": false},
 };
 
 // This is the complete list of methods exposed by the CodeMirror object
@@ -74,6 +75,9 @@ export default @CMBContext class ToggleEditor extends React.Component {
     this.language = props.language;
     this.parser = this.language.getParser();
 
+    this.toggleButtonRef = React.createRef();
+    this.toolbarRef = React.createRef();
+
     let defaultOptions = {
       parser: this.parser,
       incrementalRendering: true,
@@ -104,8 +108,8 @@ export default @CMBContext class ToggleEditor extends React.Component {
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
       'getCM': () => ed,
-      'on' : () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
-      'off': () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
+//      'on' : () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
+//      'off': () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
       'runMode': () => { throw "runMode is not supported in CodeMirror-blocks"; },
     };
     return Object.assign(base, api);
@@ -186,12 +190,16 @@ export default @CMBContext class ToggleEditor extends React.Component {
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
       <div className={classes}>
-        <ToggleButton setBlockMode={this.handleToggle} blockMode={this.state.blockMode} />
+        <ToggleButton 
+          setBlockMode={this.handleToggle} 
+          blockMode={this.state.blockMode} />
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
-          <Toolbar primitives={this.parser.primitives}
-                   languageId={this.language.id}
-                   blockMode={this.state.blockMode} />
+          <Toolbar 
+            primitives={this.parser.primitives}
+            languageId={this.language.id}
+            blockMode={this.state.blockMode} 
+            ref={this.toolbarRef} />
         </div>
         <div className="col-xs-9 codemirror-pane">
         { this.state.error? this.renderError(this.state.error) : ""}
@@ -238,6 +246,10 @@ export default @CMBContext class ToggleEditor extends React.Component {
         language={this.language.id}
         options={this.options}
         passedAST={this.ast}
+        showDialog={this.showDialog}
+        closeDialog={this.closeDialog}
+        toolbarRef={this.toolbarRef}
+        toggleButtonRef={this.toggleButtonRef}
         debugHistory={this.props.debuggingLog.history}
      />
     );

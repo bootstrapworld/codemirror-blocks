@@ -46,6 +46,7 @@ export const reducer = (
   let tU;
   switch (action.type) {
   case 'SET_FOCUS':
+      //console.log('XXX reducers:49 SET_FOCUS to', action.focusId);
     result = {...state, focusId: action.focusId};
     break;
   case 'SET_AST':
@@ -96,7 +97,13 @@ export const reducer = (
     break;
 
   case 'DO':
-    result = {...state};
+      //console.log('XXX reducers:100 state.focusId=', state.focusId, 'action.focusId=', action.focusId);
+      if (state.focusId !== action.focusId) {
+        //console.log('XXX reducers:102 updating focusId in state');
+        result = {...state, focusId: action.focusId};
+      } else {
+        result = {...state};
+      }
     break;
   case 'UNDO':
     tU = topmostUndoable('redo', state);

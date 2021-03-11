@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import shallowequal from 'shallowequal';
 
 /**
@@ -67,7 +67,7 @@ export default class ContentEditable extends Component {
   }
 
   render () {
-    const {value, ...props} = this.props;
+    const {value, itDidMount, ...props} = this.props;
     return (
       <span
         {...props}

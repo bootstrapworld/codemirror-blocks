@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import classNames from 'classnames';
 import PrimitiveList from './PrimitiveList';
 import PrimitiveBlock from './PrimitiveBlock';
@@ -61,7 +61,7 @@ export default class Toolbar extends Component {
   }
 
   selectPrimitive(selectedPrimitive) {
-    if (selectedPrimitive && selectedPrimitive.element) {      
+    if (selectedPrimitive?.element) {      
       selectedPrimitive.element.focus(); // will trigger handleFocusPrimitive
     } else {
       this.setState({selectedPrimitive: selectedPrimitive});
@@ -119,6 +119,7 @@ export default class Toolbar extends Component {
             className="form-control"
             value={this.state.search}
             onKeyDown={this.handleKeyDown}
+            ref={(elt) => { this.primitiveSearch = elt; }} 
             onChange={this.changeSearch} />
           {this.state.search ?
             <button 

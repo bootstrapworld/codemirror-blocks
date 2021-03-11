@@ -71,8 +71,11 @@ export function copy(nodes, editWord) {
   // commented nodes (to prevent a comment from attaching itself to a
   // different node after pasting).
   nodes.sort((a, b) => poscmp(a.from, b.from));
-  let annt = createAnnouncement(nodes, editWord);
-  say(annt);
+  let annt = false;
+  if (editWord) {
+    annt = createAnnouncement(nodes, editWord);
+    say(annt);
+  }
   let text = "";
   let postfix = "";
   for (let node of nodes) {
@@ -82,7 +85,7 @@ export function copy(nodes, editWord) {
   }
   copyToClipboard(text);
   // Copy steals focus. Force it back to the node's DOM element
-  // without announcing via activate() or activate().
+  // without announcing via activateByNid().
   if (focusId) {
     ast.getNodeById(focusId).element.focus();
   }
@@ -161,31 +164,37 @@ export function setCursor(cur) {
   };
 }
 
-// Activate the node with the given `id`.
-export function activate(id, options) {
+// Activate the node with the given `nid`.
+export function activateByNid(nid, options) {
+  //console.log('XXX actions:169 activateByNid called with', nid);
   return (dispatch, getState) => {
     options = withDefaults(options, {allowMove: true, record: true});
-    const state = getState();
-    const {ast, focusId, collapsedList} = state;
-    if (id === null) { id = focusId; }
-    // FIXME DS26GTE: sometimes focusId is also null
-    let node = null;
-    if (ast && id) {
-      node = ast.getNodeById(id);
-    }
+    let {ast, focusId, collapsedList} = getState();
+    
+    // If nid is null, try to get it from the focusId
+    if (nid === null) { nid = ast?.getNodeById(focusId)?.nid; }
 
-    // Don't activate a toolbar node. (Screenreaders will still announce it)
-    if (!node) { return; }
+    // Get the currently-focused node *based strictly on focusId*
+    // And the new node from the nid
+    const currentNode = ast?.getNodeById(focusId);
+    const newNode = ast?.getNodeByNId(nid);
 
-    // check for element on focus, since tests or node editing may happen so fast 
-    // that the element isn't there yet
-    if (node.id === focusId) {
-      setTimeout(() => { if(node.element) node.element.focus(); }, 10);
+    // If there is no valid node found in the AST, bail. 
+    // (This could also mean a node was selected in the toolbar! 
+    // It's ok to do nothing: screenreaders will still announce it - 
+    // we just don't want to activate them.)
+    if (!newNode) { return; }
+
+    // If there's a previously-focused node, see if the ids match
+    // If so, we need to manually initiate a new focus event
+    if (newNode.nid === currentNode?.nid) {
+      //console.log('XXX actions.js:191, they are eq');
+      setTimeout(() => { if(newNode.element) newNode.element.focus(); }, 10);
     }
 
     clearTimeout(store.queuedAnnouncement);  // clear any overrideable announcements
     // FIXME(Oak): if possible, let's not hard code like this
-    if (['blank', 'literal'].includes(node.type) && !collapsedList.includes(node.id)) {
+    if (['blank', 'literal'].includes(newNode.type) && !collapsedList.includes(newNode.id)) {
       say('Use enter to edit', 1250, true); // wait 1.25s, and allow to be overridden
     }
     // FIXME(Oak): here's a problem. When we double click, the click event will
@@ -201,18 +210,22 @@ export function activate(id, options) {
     // when double click because we can set focusId on the to-be-focused node
 
     setTimeout(() => {
-      dispatch({type: 'SET_FOCUS', focusId: node.id});
+      //console.log('XXX actions:213 trying SET_FOCUS with fid=', focusId, 'fNId=', focusNId, 'xid=', node.id, 'xnid=', node.nid);
+      dispatch({type: 'SET_FOCUS', focusId: newNode.id});
       
+      //console.log('XXX actions:216');
       if (options.record) {
-        SHARED.search.setCursor(node.from);
+        SHARED.search.setCursor(newNode.from);
       }
-      if (node.element) {
+      //console.log('XXX actions:220');
+      if (newNode.element) {
         const scroller = SHARED.cm.getScrollerElement();
         const wrapper = SHARED.cm.getWrapperElement();
 
         if (options.allowMove) {
-          SHARED.cm.scrollIntoView(node.from);
-          let {top, bottom, left, right} = node.element.getBoundingClientRect(); // get the *actual* bounding rect
+          SHARED.cm.scrollIntoView(newNode.from);
+          // get the *actual* bounding rect
+          let {top, bottom, left, right} = newNode.element.getBoundingClientRect();
           let offset = wrapper.getBoundingClientRect();
           let scroll = SHARED.cm.getScrollInfo();
           top    = top    + scroll.top  - offset.top;
@@ -221,10 +234,10 @@ export function activate(id, options) {
           right  = right  + scroll.left - offset.left;
           SHARED.cm.scrollIntoView({top, bottom, left, right});
         }
-        scroller.setAttribute('aria-activedescendent', node.element.id);
-        node.element.focus();
+        scroller.setAttribute('aria-activedescendent', newNode.element.id);
+        newNode.element.focus();
       }
-      
+      //console.log('XXX actions:240');
     }, 25);
   };
 }

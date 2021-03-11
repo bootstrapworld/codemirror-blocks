@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import classNames from 'classnames';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
 import {Primitive as LanguagePrimitive} from '../parsers/primitives';
 import {DragPrimitiveSource} from '../dnd';
@@ -30,9 +30,7 @@ class Primitive extends Component {
       e.preventDefault();
       copyNodes([this.props.primitive]);
       say("copied " + this.props.primitive.toString());
-      if (this.props.primitive.element) {
-        this.props.primitive.element.focus(); // restore focus
-      }
+      this.props.primitive.element?.focus(); // restore focus
       return;
     default:
       this.props.onKeyDown(e);

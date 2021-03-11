@@ -1,5 +1,4 @@
 const path = require('path');
-const webpack = require('webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const baseConfig = require('./base.config.js');
 
@@ -52,7 +51,7 @@ configs = configs.concat(
     });
   })
 );
-
+/*
 configs.push(
   Object.assign({}, baseConfig({extractCSS:true}), {
     entry: {
@@ -60,8 +59,9 @@ configs.push(
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
-      filename: "[name].css"
+      filename: "[name][chunkname].css"
     },
   })
 );
+*/
 module.exports = configs;

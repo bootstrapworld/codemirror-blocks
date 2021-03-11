@@ -1,10 +1,10 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types/prop-types';
 import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';
-import {insert, activate, Target} from '../actions';
+import {insert, activateByNid, Target} from '../actions';
 import {say} from '../utils';
 import CodeMirror from 'codemirror';
 
@@ -45,21 +45,35 @@ class NodeEditable extends Component {
     e.stopPropagation();
     const {target, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
     dispatch((dispatch, getState) => {
-      const {focusId} = getState();
+      const {focusId, ast} = getState();
+
+      //console.log('XXX NodeEditable:50 focusId from state=', focusId);
 
       if (this.props.value === null || this.props.value === this.cachedValue) {
+        //console.log('XXX NodeEditable:53');
         this.props.onDisableEditable(false);
-        dispatch(activate(focusId, true));
+        const focusNode = ast.getNodeById(focusId);
+        //const nid = ast.getNodeById(focusId).nid;
+        const nid = focusNode && focusNode.nid;
+        //console.log('XXX NodeEditable:58 nid=', nid);
+        dispatch(activateByNid(nid, true));
+        //console.log('XXX NodeEditable:60');
         return;
       }
 
       const value = this.props.value;
       let annt = `${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`;
       const onSuccess = ({firstNewId}) => {
-        if (firstNewId !== null) {
-          dispatch(activate(firstNewId, {allowMove: true}));
+        //console.log('XXX NodeEditable:67, onSuccess of focusId=', focusId, 'nid=', firstNewId);
+        if (firstNewId !== null && firstNewId !== undefined) {
+          //console.log('XXX NodeEditable:69');
+          const {ast} = getState()
+          const firstNewNid = ast.getNodeById(focusId).nid;
+          //console.log('XXX NodeEditable:72 aBNid of focusId=', focusId, 'nid=', firstNewNid);
+          dispatch(activateByNid(firstNewNid, {allowMove: true}));
         } else {
-          dispatch(activate(null, {allowMove: false}));
+          //console.log('XXX NodeEditable:75 aBNid of null')
+          dispatch(activateByNid(null, {allowMove: false}));
         }
         onChange(null);
         onDisableEditable(false);
@@ -180,7 +194,7 @@ const mapStateToProps = ({cm, errorId}, {target}) => {
 const mapDispatchToProps = dispatch => ({
   dispatch,
   setErrorId: errorId => dispatch({type: 'SET_ERROR_ID', errorId}),
-  focusSelf: () => dispatch(activate(null, {allowMove: false})),
+  focusSelf: () => dispatch(activateByNid(null, {allowMove: false})),
   clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []}),
 });
 

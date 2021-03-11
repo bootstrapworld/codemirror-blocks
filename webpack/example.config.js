@@ -8,7 +8,7 @@ module.exports = function(env, argv) {
 
   return Object.assign({}, baseConfig, {
     entry: {
-      "new-editor-example": './example/new-editor-example.js',
+      "editor-example": './example/editor-example.js',
     },
     module: Object.assign({}, baseConfig.module, {
       rules: baseConfig.module.rules.concat([
@@ -19,10 +19,10 @@ module.exports = function(env, argv) {
     plugins: baseConfig.plugins.concat([
       new webpack.HotModuleReplacementPlugin(),
       new HtmlWebpackPlugin({
-        filename: 'new-editor.html',
-        template: 'example/new-editor.html',
+        filename: 'editor.html',
+        template: 'example/editor.html',
         inject: 'body',
-        chunks: ['commons','new-editor-example'],
+        chunks: ['commons','editor-example'],
       }),
       new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/)
     ]),
