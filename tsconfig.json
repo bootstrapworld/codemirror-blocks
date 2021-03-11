@@ -5,6 +5,7 @@
         // "removeComments": true,
         // "preserveConstEnums": true,
         // "sourceMap": true,
+        "esModuleInterop": true, // needed for fast-object-stringify
         "target": "es6",
         "jsx": "react",
         "moduleResolution": "node",

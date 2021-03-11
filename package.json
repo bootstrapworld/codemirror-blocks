@@ -10,7 +10,7 @@
   "dependencies": {
     "classnames": "^2.2.6",
     "core-js": "^3.9.1",
-    "object-hash": "^2.1.1",
+    "fast-json-stable-stringify": "^2.1.0",
     "pretty-fast-pretty-printer": "^0.9.7",
     "prop-types": "^15.7.2",
     "react": "^17.0.1",
