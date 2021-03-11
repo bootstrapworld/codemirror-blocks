@@ -75,7 +75,6 @@ export default @CMBContext class ToggleEditor extends React.Component {
     this.language = props.language;
     this.parser = this.language.getParser();
 
-    this.toggleButtonRef = React.createRef();
     this.toolbarRef = React.createRef();
 
     let defaultOptions = {
@@ -249,7 +248,6 @@ export default @CMBContext class ToggleEditor extends React.Component {
         showDialog={this.showDialog}
         closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
-        toggleButtonRef={this.toggleButtonRef}
         debugHistory={this.props.debuggingLog.history}
      />
     );

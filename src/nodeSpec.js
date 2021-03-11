@@ -1,5 +1,5 @@
 import {ASTNode} from './ast';
-import hashObject from 'object-hash';
+import hashObject from 'fast-json-stable-stringify';
 
 
 // A NodeSpec declares the types of the fields of an ASTNode.

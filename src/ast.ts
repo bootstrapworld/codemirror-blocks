@@ -1,7 +1,7 @@
 import React from 'react';
 import {poscmp, minpos, maxpos, posWithinNode, nodeCommentContaining, gensym} from './utils';
 import * as P from 'pretty-fast-pretty-printer';
-import hashObject from 'object-hash';
+import hashObject from 'fast-json-stable-stringify';
 import { node } from 'prop-types';
 
 
