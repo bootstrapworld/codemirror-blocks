@@ -83,9 +83,8 @@
     "wescheme-js": "^0.0.4"
   },
   "scripts": {
-    "prepublishOnly": "npm run build",
-    "test": "./node_modules/karma/bin/karma start karma.conf.js --single-run",
     "prepare": "npm run build",
+    "test": "karma start karma.conf.js --single-run",
     "test-watch": "karma start karma.conf.js",
     "start": "webpack serve --mode development --config webpack/example.config.js",
     "heroku-server": "node heroku-server.js",
