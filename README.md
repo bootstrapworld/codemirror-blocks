@@ -10,15 +10,15 @@
 A library for making functional languages editable using visual blocks inside of codemirror
 
 ## Usage
-CodeMirror-Blocks ("CMB") is not a block editor. It's a _toolkit for building block editors_. In other words, it is *NOT* intended to be used in your IDE. ;-) 
+**CodeMirror-Blocks ("CMB") is not a block editor.** It's a _toolkit for building block editors_. In other words, it is *NOT* intended to be used in your IDE. ;-) 
 
-CMB intended to be _included in language-specific modules_. CMB provides the blockification and a11y features, and the language module provides the parser and (optionally) the vocalization and appearance for each construct in the language. The language module is what you use in your IDE.
+CMB should instead be _included in language-specific modules_, so your Python editor would include a CMB-enabled Python module. CMB provides the blockification and a11y features, and the language module provides the parser and (optionally) the vocalization and appearance for each construct in the language. The language module is what you use in your IDE.
 
 The following language modules are available now:
 - https://github.com/bootstrapworld/wescheme-blocks
 - https://github.com/bootstrapworld/pyret-blocks
 
-If you happen to use one of those languages, you're good to go! Export the language module using the normal `npm run build` mechanism, then include it in your favorite CodeMirror-enabled project. You can now use the `new CodeMirrorBlocks` constructor to replace an existing CodeMirror instance with blocks. In other words, you'd replace code that looks like this:
+If you happen to use one of those languages, you're good to go! Export the language module using the normal `npm run build` mechanism, then include it in your favorite CodeMirror-enabled project. You can now use the `CodeMirrorBlocks` constructor to replace an existing CodeMirror instance with blocks. In other words, you'd replace code that looks like this:
 
         // make a new CM instance inside the container elt, passing in CM ops
         this.editor = CodeMirror(container, {/* CodeMirror options  */}});
@@ -28,11 +28,11 @@ With code that looks like this:
         // make a new CMB instance inside the container elt, passing in CMB ops
         this.editor = CodeMirrorBlocks(container, {/* CodeMirrorBlocks options  */});
 
-But if you're here, our guess is that you have a language in mind (Python, Rust, YourFavLang, etc.) and you want to allow people to hack in that language even if they need blocks, or rely on screenreaders. So...
-
-*NOTE: your IDE will need to load CodeMirror as an external dependency.* We assume it already does (otherwise, why would you be here?), so you'll need to provide it yourself.
+But if you're here, our guess is that you have a language in mind (Python, Rust, YourFavLang, etc.) and you want to allow people to hack in that language even if they need blocks, or rely on screenreaders. So how does one make a language module?
 
 ## Making your own language module
+
+*NOTE: your IDE will need to load CodeMirror as an external dependency.* We assume it already does (otherwise, why would you be here?), so you'll need to provide it yourself.
 
 ### Create a new repository
 Make a repo  (e.g. - `YourFavLang-blocks`), and include CMB as a dependency:
@@ -65,11 +65,11 @@ The `options` object is used for a number of CMB-internal purposes, but there ar
 You can also provide your own AST nodes, by extending the built-in `AST.ASTNode` class. [Here is one example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/ast.js) of a language defining custom AST nodes. 
 
 Your subclassed Node must contain:
-1.  `constructor` -  consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`. 
+1. `constructor` -  consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`. 
 2. `spec` - a static field, which defines specifications for all fields of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodeSpec.js.)
 3. `longDescription()` - a method that dynamically computes a detailed description of the node (optionally referring to its children, for example), and produces a string that will be read aloud to the user.
 4. `pretty()` - a method that describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer).
-5. `render()` - a method that produces the node (usually in JSX) that will be rendered by React.
+5. `render()` - a method that produces the node (usually in JSX) to be rendered.
 
 ### Tell CMB about the Language
 Create an index.js [see this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/index.js) file that hooks up your language to the CMB library.
@@ -77,7 +77,7 @@ Create an index.js [see this example](https://github.com/bootstrapworld/wescheme
 ### Style Your Blocks
 CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS.
 
-Obviously, if you've added new AST node types, you'll have to provide the styling yourself!
+Obviously, if you've added new AST node types, you'll have to provide the styling for those yourself!
 
 ### Write Your Tests
 
