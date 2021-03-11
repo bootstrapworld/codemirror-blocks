@@ -377,8 +377,8 @@ export const commandMap = {
 // environment and add some utility methods, then set the key handler's
 // "this" object to be that environment and call it.
 export function keyDown(e, env, keyMap) {
-  //console.log('XXX keymap:373 doing keyDown');
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
+  //console.log('@@@@@@ keymap:381 doing keyDown. KeyName is', CodeMirror.keyName(e), 'Handler is ', handler);
   if(handler) {
     e.stopPropagation();
     env.props.dispatch((_, getState) => {

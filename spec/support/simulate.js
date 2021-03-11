@@ -113,6 +113,7 @@ export function insertText(text) {
 // Given a key name (like "Enter"), fill out the props properties that a key
 // event should have (like `.keyCode=13`).
 function makeKeyEvent(key, props) {
+  console.log(key, props);
   let keyCode = getKeyCode(key);
   let eventProps = {
     which: keyCode, // deprecated
