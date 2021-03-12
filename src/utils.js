@@ -1,7 +1,22 @@
 import SHARED from './shared';
 import {store} from './store';
+import objToStableString from 'fast-json-stable-stringify';
 
-const ISMAC   = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i);
+// Use reliable object->string library to generate a 
+// pseudohash, then hash the string so we don't have giant 
+// "hashes" eating memory (see https://stackoverflow.com/a/7616484/12026982 
+// and https://anchortagdev.com/consistent-object-hashing-using-stable-stringification/ )
+export function hashObject(obj) {
+  const str = objToStableString(obj);
+  var hash = 0, i, chr;
+  if (str.length === 0) return hash;
+  for (i = 0; i < str.length; i++) {
+    chr   = str.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+};
 
 // make sure we never assign the same ID to two nodes in ANY active
 // program at ANY point in time.
