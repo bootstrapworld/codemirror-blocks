@@ -163,9 +163,8 @@ export default @CMBContext class ToggleEditor extends React.Component {
           oldCode.match(/\s+$/);                        // match ending whitespace
           oldAst = SHARED.parser.parse(oldCode, false); // parse the code, annotate = false
         } catch (err) {
-          try {        throw SHARED.parser.getExceptionMessage(err);
-          } catch(e) { throw "The parser failed, and the error could not be retrieved";
-          }
+          try   { throw SHARED.parser.getExceptionMessage(err); }
+          catch { throw "The parser failed, and the error could not be retrieved"; }
         }
         try {
           code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace

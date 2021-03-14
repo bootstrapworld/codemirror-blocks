@@ -19,10 +19,9 @@ import * as Spec from './nodeSpec';
 //   previous line.
 function withComment(doc, comment, container) {
   if (comment) {
+    // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
     if (container && container.to.line == comment.from.line) {
-      // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
-      return P.ifFlat(P.horz(doc, " ", comment),
-                      P.vert(comment, doc));
+      return P.ifFlat(P.horz(doc, " ", comment), P.vert(comment, doc));
     } else {
       return P.vert(comment, doc);
     }

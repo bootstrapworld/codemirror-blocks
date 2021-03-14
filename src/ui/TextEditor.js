@@ -60,11 +60,7 @@ class TextEditor extends Component {
   }
 
   componentDidMount() {
-    const {
-      parser
-    } = this.props;
-
-    SHARED.parser = parser;
+    SHARED.parser = this.props.parser;
   }
 
   render() {

@@ -148,9 +148,8 @@ export function skipCollapsed(node, next, state) {
 
 export function getRoot(node) {
   let next = node;
-  while (next && next.parent) {
-    next = next.parent;
-  }
+  // keep going until there's no next parent
+  while (next && next.parent) { next = next.parent; }
   return next;
 }
 
