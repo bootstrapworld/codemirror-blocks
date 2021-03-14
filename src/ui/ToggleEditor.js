@@ -156,33 +156,36 @@ export default @CMBContext class ToggleEditor extends React.Component {
 
   handleToggle = blockMode => {
     this.setState( () => {
+      let oldAst, WS, code;
       try {
-        let oldCode = SHARED.cm.getValue();
-        const WS = oldCode.match(/\s+$/);                 // match ending whitespace
-        let oldAst = SHARED.parser.parse(oldCode, false); // parse the code, but don't annotate
-        let code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
-        this.ast = SHARED.parser.parse(code);             // parse the pretty-printed (PP) code
-        SHARED.cm.setValue(code);                         // update CM with the PP code
-        this.props.api.blockMode = blockMode;
-        // record mark information
-        // TODO(Emmanuel): this is going to have to save ALL state (selection, cursor, etc)
-        this.recordMarks(oldAst, code);
-        // Parsing and state-saving was successful! Set the blockMode state and return
-        return {blockMode: blockMode};
-      } catch (err) {
-        let error;
         try {
-          error = SHARED.parser.getExceptionMessage(err);
-        } catch(e) {
-          error = "The parser failed, and the error could not be retrieved";
+          let oldCode = SHARED.cm.getValue();
+          oldCode.match(/\s+$/);                        // match ending whitespace
+          oldAst = SHARED.parser.parse(oldCode, false); // parse the code, annotate = false
+        } catch (err) {
+          try {        throw SHARED.parser.getExceptionMessage(err);
+          } catch(e) { throw "The parser failed, and the error could not be retrieved";
+          }
         }
+        try {
+          code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
+          this.ast = SHARED.parser.parse(code);         // parse the pretty-printed (PP) code
+        } catch (e) {
+          throw `An error occured in the language module 
+          (the pretty-printer probably produced invalid code)`;
+        }
+        SHARED.cm.setValue(code);                       // update CM with the PP code
+        this.props.api.blockMode = blockMode;
+        this.recordMarks(oldAst, code);                 // Save necessary state (not just marks!)
+        return {blockMode: blockMode};                  // Success! Set the blockMode state
+      } catch (e) {                                     // Failure! Set the dialog state
         return {dialog: (
-          <>
-          <span className="dialogTitle">Could not convert to Blocks</span>
-          <p></p>
-          {error.toString()}
-          </>
-        )};
+            <>
+            <span className="dialogTitle">Could not convert to Blocks</span>
+            <p></p>
+            {e.toString()}
+            </>
+          )};
       }
     });
   }
