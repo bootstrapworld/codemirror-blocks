@@ -1,4 +1,4 @@
-import React from 'react';
+import {Component} from 'react';
 import PropTypes from 'prop-types/prop-types';
 import {skipWhile, getNodeContainingBiased} from '../../utils';
 
@@ -13,7 +13,7 @@ function getAllNodeTypes(ast) {
 export default {
   label: 'Search by block',
   setting: {blockType: ''},
-  component: class extends React.Component {
+  component: class extends Component {
     static propTypes = {
       cmbState: PropTypes.object,
       setting: PropTypes.object.isRequired,

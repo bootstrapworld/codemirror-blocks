@@ -1,4 +1,4 @@
-import React from 'react';
+import {Component, createRef} from 'react';
 import PropTypes from 'prop-types/prop-types';
 import {skipCollapsed, poscmp, skipWhile, getNodeContainingBiased } from '../../utils';
 
@@ -24,7 +24,7 @@ function getQueryFromSettings(state) {
   }
 }
 
-class SearchOption extends React.Component {
+class SearchOption extends Component {
   static propTypes = {
     onChange: PropTypes.func.isRequired,
     setting: PropTypes.object.isRequired,
@@ -68,7 +68,7 @@ export default {
     isExactMatch: false,
     isIgnoreCase: false
   },
-  component: class extends React.Component {
+  component: class extends Component {
     static propTypes = {
       setting: PropTypes.object.isRequired,
       onChange: PropTypes.func.isRequired,
@@ -79,7 +79,7 @@ export default {
 
     constructor(props) {
       super(props);
-      this.inputRef = React.createRef();
+      this.inputRef = createRef();
     }
 
     componentDidMount() {
@@ -96,7 +96,7 @@ export default {
     render() {
       const {setting} = this.props;
       return (
-        <React.Fragment>
+        <>
           <div className="form-group">
             <input type="text" className="form-control search-input"
                    name="searchString"
@@ -114,7 +114,7 @@ export default {
             <SearchOption setting={setting} onChange={this.handleChange}
                           name="isRegex" value="Regex" />
           </div>
-        </React.Fragment>
+        </>
       );
     }
   },

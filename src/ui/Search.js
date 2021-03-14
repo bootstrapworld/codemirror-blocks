@@ -120,7 +120,7 @@ export default (Editor, searchModes) => {
         </TabPanel>
       ));
       return (
-        <React.Fragment>
+        <>
           <Editor {...this.props} search={this.search} />
 
           <Modal isOpen={this.state.showSearchDialog}
@@ -163,7 +163,7 @@ export default (Editor, searchModes) => {
               </div>
             </div>
           </Modal>
-        </React.Fragment>
+        </>
       );
     }
   };

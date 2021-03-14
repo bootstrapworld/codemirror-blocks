@@ -1,5 +1,4 @@
-import React from 'react';
-import {Component} from 'react';
+import React, {Component, createContext} from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types/prop-types';
 import NodeEditable from './NodeEditable';
@@ -12,12 +11,12 @@ import {gensym} from '../utils';
 import {drop, InsertTarget} from '../actions';
 
 // Provided by `Node`
-export const NodeContext = React.createContext({
+export const NodeContext = createContext({
   node: null
 });
 
 // Provided by `DropTargetContainer`
-export const DropTargetContext = React.createContext({
+export const DropTargetContext = createContext({
   node: null,
   field: null,
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Component, createRef} from 'react';
 import PropTypes from 'prop-types/prop-types';
 import CodeMirror from 'codemirror';
 import BlockEditor from './BlockEditor';
@@ -42,7 +42,7 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
   'indexFromPos', 'focus', 'phrase', 'getInputField', 'getWrapperElement', 
   'getScrollerElement', 'getGutterElement'];
 
-export default @CMBContext class ToggleEditor extends React.Component {
+export default @CMBContext class ToggleEditor extends Component {
   state = {
     blockMode: false,
     error: false
@@ -75,7 +75,7 @@ export default @CMBContext class ToggleEditor extends React.Component {
     this.language = props.language;
     this.parser = this.language.getParser();
 
-    this.toolbarRef = React.createRef();
+    this.toolbarRef = createRef();
 
     let defaultOptions = {
       parser: this.parser,
