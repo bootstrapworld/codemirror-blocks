@@ -9,7 +9,7 @@ if (envConfig.runCoverage) {
     test: /\.js/,
     use: 'istanbul-instrumenter-loader',
     include: path.resolve(__dirname, '..', 'src'),
-    exclude: /node_modules/
+    exclude: [ /(src\/languages|node_modules)/]
   });
 }
 
