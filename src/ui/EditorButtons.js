@@ -14,18 +14,16 @@ export class ToggleButton extends Component {
   }
 
   render() {
-    const glyphClass = this.props.blockMode
-      ? 'glyphicon glyphicon-pencil'
-      : 'glyphicon glyphicon-align-left';
-    const modeName = this.props.blockMode ? "text" : "blocks";
+    const modeName   = this.props.blockMode ? "text" : "blocks";
     const buttonAria = "Switch to " + modeName + " mode";
+    const buttonIcon = this.props.blockMode? "✏️" : "🧱";
     return (
       <button className="blocks-toggle-btn btn btn-default btn-sm"
               aria-label={buttonAria}
               title={buttonAria}
               onClick={this.handleToggle}
               tabIndex="0">
-        <span className={glyphClass}></span>
+        <span>{buttonIcon}</span>
       </button>
     );
   }
@@ -40,14 +38,13 @@ export class BugButton extends Component {
   }
 
   render() {
-    const glyphClass = 'glyphicon glyphicon-warning-sign';
     return (
       <button className="bug-btn btn btn-default btn-sm"
               aria-label="Report a bug"
               title="Report a bug"
               onClick={this.handleBugReport}
               tabIndex="0">
-        <span className={glyphClass}></span>
+        <span>&#128030;</span>
       </button>
     );
   }
