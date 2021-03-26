@@ -74,8 +74,8 @@ CodeMirror.normalizeKeyMap(defaultKeyMap);
 
 export const commandMap = {
   prevFocus : function (_, e) {
-    this.toolbarRef.current.primitiveSearch.focus();
     e.preventDefault();
+    this.toolbarRef.current.primitiveSearch.focus();
   },
 
   prevNode : function (_, e) {
@@ -85,11 +85,8 @@ export const commandMap = {
       if (prev) { return this.activateByNid(prev.nid); }
     }
     const prevNode = this.cur && this.ast.getNodeBeforeCur(this.cur);
-    if (prevNode) {
-      return this.activateByNid(prevNode.nid, {allowMove: true});
-    } else {
-      playSound(BEEP);
-    }
+    return prevNode? this.activateByNid(prevNode.nid, {allowMove: true})
+      : playSound(BEEP);
   },
 
   nextNode : function (_, e) {
@@ -99,11 +96,8 @@ export const commandMap = {
       if (next) { return this.activateByNid(next.nid); }
     }
     const nextNode = this.cur && this.ast.getNodeAfterCur(this.cur);
-    if (nextNode) {
-      return this.activateByNid(nextNode.nid, {allowMove: true});
-    } else {
-      playSound(BEEP);
-    }
+    return nextNode? this.activateByNid(nextNode.nid, {allowMove: true})
+      : playSound(BEEP);
   },
 
   firstNode : function (_) {

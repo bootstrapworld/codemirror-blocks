@@ -133,6 +133,12 @@ class Edit {
     warn('performEdits', `Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`);
   }
 
+  // The default behavior for most edits
+  focusHint(newAST) {
+    return !this.node.prev? newAST.getFirstRootNode()
+      : newAST.getNodeById(this.node.prev.id) || "fallback";
+  }
+
   toString() {
     return `${this.from.line}:${this.from.ch}-${this.to.line}:${this.to.ch}`;
   }
@@ -144,9 +150,7 @@ class OverwriteEdit extends Edit {
     this.text = text;
   }
 
-  isTextEdit() {
-    return true;
-  }
+  isTextEdit() { return true; }
 
   toChangeObject(ast) {
     let text = addWhitespace(ast, this.from, this.to, this.text);
@@ -181,9 +185,7 @@ class InsertChildEdit extends Edit {
     this.fakeAstInsertion = new FakeAstInsertion(this.parent, field, pos);
   }
 
-  isTextEdit() {
-    return false;
-  }
+  isTextEdit() { return false; }
 
   makeAstEdit(clonedAncestor) {
     let clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
@@ -207,9 +209,7 @@ class DeleteRootEdit extends Edit {
     this.node = node;
   }
 
-  isTextEdit() {
-    return true;
-  }
+  isTextEdit() { return true; }
 
   toChangeObject(_ast) {
     const {from, to} = removeWhitespace(this.from, this.to);
@@ -218,14 +218,6 @@ class DeleteRootEdit extends Edit {
       from,
       to
     };
-  }
-
-  focusHint(newAST) {
-    if (this.node.prev) {
-      return newAST.getNodeById(this.node.prev.id) || "fallback";
-    } else {
-      return newAST.getFirstRootNode();
-    }
   }
 
   toString() {
@@ -244,21 +236,11 @@ class DeleteChildEdit extends Edit {
     this.fakeAstReplacement = new FakeAstReplacement(parent, node);
   }
 
-  isTextEdit() {
-    return false;
-  }
+  isTextEdit() { return false; }
 
   makeAstEdit(clonedAncestor) {
     const clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstReplacement.deleteChild(clonedParent);
-  }
-
-  focusHint(newAST) {
-    if (this.node.prev) {
-      return newAST.getNodeById(this.node.prev.id) || "fallback";
-    } else {
-      return newAST.getFirstRootNode();
-    }
   }
 
   toString() {
@@ -275,9 +257,7 @@ class ReplaceRootEdit extends Edit {
     this.node = node;
   }
 
-  isTextEdit() {
-    return true;
-  }
+  isTextEdit() { return true; }
 
   toChangeObject(_ast) {
     return {
@@ -308,9 +288,7 @@ class ReplaceChildEdit extends Edit {
     this.fakeAstReplacement = new FakeAstReplacement(parent, node);
   }
 
-  isTextEdit() {
-    return false;
-  }
+  isTextEdit() { return false; }
 
   makeAstEdit(clonedAncestor) {
     let clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
