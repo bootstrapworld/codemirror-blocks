@@ -15,7 +15,7 @@ function loggerDebug(action, ast) { // in lieu of logger.debug
     delete activity.ast;
   }
   if(action.type == "SET_FOCUS") {
-    if (ast) {
+    if (ast && ast.getNodeById(action.focusId)) {
       activity.nid = ast.getNodeById(action.focusId).nid;
       delete activity.focusId;
     }
@@ -130,6 +130,6 @@ export const reducer = (
     result =  state;
   }
 
-  //loggerDebug(action, result.ast);
+  loggerDebug(action, result.ast);
   return result;
 };

@@ -8,7 +8,7 @@ import ByString from './searchers/ByString';
 import ByBlock from './searchers/ByBlock';
 import attachSearch from './Search';
 import Toolbar from './Toolbar';
-import ToggleButton from './ToggleButton';
+import {ToggleButton, BugButton} from './EditorButtons';
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import './ToggleEditor.less';
@@ -195,6 +195,7 @@ export default @CMBContext class ToggleEditor extends Component {
       <>
       { this.state.dialog? this.renderDialog() : ""}
       <div className={classes}>
+        {this.state.blockMode ? <BugButton/> : null}
         <ToggleButton 
           setBlockMode={this.handleToggle} 
           blockMode={this.state.blockMode} />
