@@ -22,6 +22,7 @@ export class ToggleButton extends Component {
     return (
       <button className="blocks-toggle-btn btn btn-default btn-sm"
               aria-label={buttonAria}
+              title={buttonAria}
               onClick={this.handleToggle}
               tabIndex="0">
         <span className={glyphClass}></span>
@@ -42,7 +43,8 @@ export class BugButton extends Component {
     const glyphClass = 'glyphicon glyphicon-warning-sign';
     return (
       <button className="bug-btn btn btn-default btn-sm"
-              aria-label="Report a bug" 
+              aria-label="Report a bug"
+              title="Report a bug"
               onClick={this.handleBugReport}
               tabIndex="0">
         <span className={glyphClass}></span>
