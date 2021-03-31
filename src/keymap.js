@@ -309,18 +309,14 @@ export const commandMap = {
 
   undo : function(_, e) {
     e.preventDefault();
-    if(this.node) {
-      preambleUndoRedo('undo');
-      SHARED.cm.undo();
-    }
+    preambleUndoRedo('undo');
+    SHARED.cm.undo();
   },
 
   redo : function(_, e) {
     e.preventDefault();
-    if(this.node) {
-      preambleUndoRedo('redo');
-      SHARED.cm.redo();
-    }
+    preambleUndoRedo('redo');
+    SHARED.cm.redo();
   },
 
   help : function (_) {

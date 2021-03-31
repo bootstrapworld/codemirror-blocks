@@ -424,7 +424,9 @@ class BlockEditor extends Component {
     }
     let mark = SHARED.cm.markText(from, to, options); // keep CM in sync
     mark._clear = mark.clear;
-    mark.clear = () => { mark._clear(); this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); };
+    mark.ID = node.id;
+    console.log(mark);
+    mark.clear = () => { console.log('clearing'); mark._clear(); this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); };
     mark.find = () => { let {from, to} = this.props.ast.getNodeById(node.id); return {from, to}; };
     mark.options = options;
     this.props.dispatch({type: 'ADD_MARK', id: node.id, mark: mark});
