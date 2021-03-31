@@ -88,6 +88,7 @@ export default @CMBContext class ToggleEditor extends Component {
     this.options = Object.assign(defaultOptions, props.options);
     this.hasMounted = false;
     SHARED.recordedMarks = new Map();
+    this.eventHandlers = {}; // blank event-handler record
 
     // make sure 'this' always refers to ToggleEditor
     // see https://reactjs.org/docs/handling-events.html
@@ -112,16 +113,29 @@ export default @CMBContext class ToggleEditor extends Component {
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
       'getCM': () => ed,
-//      'on' : () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
-//      'off': () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
+      'on' : (type, fn) => { 
+        if(!this.eventHandlers[type]) { this.eventHandlers[type] = [fn]; }
+        else { this.eventHandlers[type].push(fn); }
+        SHARED.cm.on(type, fn);
+      },
+      'off' : (type, fn) => { 
+        if(this.eventHandlers[type]) {
+          this.eventHandlers[type] = this.eventHandlers[type].filter(h => h !== fn);
+        }
+        SHARED.cm.off(type, fn);
+      },
       'runMode': () => { throw "runMode is not supported in CodeMirror-blocks"; },
     };
     return Object.assign(base, api);
   }
 
+  // After a mode switch, rebuild the API and re-assign events
   handleEditorMounted = (ed) => {
     Object.assign(this.props.api, this.buildAPI(ed));
-    this.props.api.display = ed.display;
+    Object.keys(this.eventHandlers).forEach(type => {
+      this.eventHandlers[type].forEach(h => ed.on(type, h));
+    });
+    //this.props.api.display = ed.display;
   }
 
   componentDidMount() {
@@ -133,7 +147,7 @@ export default @CMBContext class ToggleEditor extends Component {
   }
 
   // save any non-block, non-bookmark markers, and the NId they cover
-  recordMarks(oldAST) {
+  copyMarks(oldAST) {
     SHARED.recordedMarks.clear();
     let newAST = this.ast;
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
@@ -175,7 +189,7 @@ export default @CMBContext class ToggleEditor extends Component {
         }
         SHARED.cm.setValue(code);                       // update CM with the PP code
         this.props.api.blockMode = blockMode;
-        this.recordMarks(oldAst, code);                 // Save necessary state (not just marks!)
+        this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
         return {blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
         return {dialog: (
@@ -235,7 +249,9 @@ export default @CMBContext class ToggleEditor extends Component {
         parser={this.parser}
         initialCode={code}
         onMount={this.handleEditorMounted}
-        api={this.props.api} />
+        api={this.props.api} 
+        events={this.eventHandlers}
+      />
     );
   }
 
@@ -256,6 +272,7 @@ export default @CMBContext class ToggleEditor extends Component {
         closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
         debugHistory={this.props.debuggingLog.history}
+        events={this.eventHandlers}
      />
     );
   }

@@ -162,6 +162,7 @@ class BlockEditor extends Component {
     passedAST: PropTypes.object,
     showDialog: PropTypes.func.isRequired,
     closeDialog: PropTypes.func.isRequired,
+    events: PropTypes.object.isRequired,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -290,7 +291,7 @@ class BlockEditor extends Component {
         this.markText(node.from, node.to, m.options);
       });
     }, 0));
-
+    console.log('editor mounted! about to call cleanup function')
     this.props.onMount(ed);
 
     // export methods to the object interface

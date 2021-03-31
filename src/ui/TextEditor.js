@@ -18,6 +18,11 @@ class TextEditor extends Component {
     onMount:PropTypes.func.isRequired,
     setAnnouncer: PropTypes.func.isRequired,
     api: PropTypes.object,
+    events: PropTypes.object.isRequired,
+  }
+
+  static defaultProps = {
+    events: {}
   }
 
   handleEditorDidMount = ed => {
