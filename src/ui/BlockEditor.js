@@ -285,13 +285,12 @@ class BlockEditor extends Component {
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
     window.requestAnimationFrame( () => setTimeout(() => {
-      this.markMap = new Map();
+      console.log(SHARED.recordedMarks);
       SHARED.recordedMarks.forEach((m, k) => {
         let node = this.props.ast.getNodeByNId(k);
         this.markText(node.from, node.to, m.options);
       });
     }, 0));
-    console.log('editor mounted! about to call cleanup function')
     this.props.onMount(ed);
 
     // export methods to the object interface

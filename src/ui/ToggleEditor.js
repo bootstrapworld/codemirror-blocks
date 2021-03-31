@@ -138,13 +138,7 @@ export default @CMBContext class ToggleEditor extends Component {
     //this.props.api.display = ed.display;
   }
 
-  componentDidMount() {
-    this.hasMounted = true;
-  }
-
-  componentDidUpdate() {
-    setTimeout(this.reconstituteMarks, 250);
-  }
+  componentDidMount() { this.hasMounted = true; }
 
   // save any non-block, non-bookmark markers, and the NId they cover
   copyMarks(oldAST) {
@@ -175,7 +169,7 @@ export default @CMBContext class ToggleEditor extends Component {
         try {
           let oldCode = SHARED.cm.getValue();
           oldCode.match(/\s+$/);                        // match ending whitespace
-          oldAst = SHARED.parser.parse(oldCode, false); // parse the code, annotate = false
+          oldAst = SHARED.parser.parse(oldCode);        // parse the code (WITH annotations)
         } catch (err) {
           try   { throw SHARED.parser.getExceptionMessage(err); }
           catch(e){ throw "The parser failed, and the error could not be retrieved"; }
@@ -187,9 +181,9 @@ export default @CMBContext class ToggleEditor extends Component {
           throw `An error occured in the language module 
           (the pretty-printer probably produced invalid code)`;
         }
+        this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
         SHARED.cm.setValue(code);                       // update CM with the PP code
         this.props.api.blockMode = blockMode;
-        this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
         return {blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
         return {dialog: (
