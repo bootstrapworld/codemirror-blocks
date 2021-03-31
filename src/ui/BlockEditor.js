@@ -162,7 +162,6 @@ class BlockEditor extends Component {
     passedAST: PropTypes.object,
     showDialog: PropTypes.func.isRequired,
     closeDialog: PropTypes.func.isRequired,
-    events: PropTypes.object.isRequired,
 
     // this is actually required, but it's buggy
     // see https://github.com/facebook/react/issues/3163
@@ -263,7 +262,6 @@ class BlockEditor extends Component {
     ed.on('beforeChange', this.handleBeforeChange);
     ed.on('changes', this.handleChanges);
 
-    SHARED.cm = ed;
     var ast = this.props.passedAST;
     this.props.setAST(ast);
     if (this.props.options.collapseAll) {
@@ -282,19 +280,9 @@ class BlockEditor extends Component {
     wrapper.setAttribute('aria-setsize', ast.rootNodes.length);
     this.props.search.setCM(ed);
 
-    // once the DOM has loaded, reconstitute any marks and render them
-    // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-    window.requestAnimationFrame( () => setTimeout(() => {
-      console.log(SHARED.recordedMarks);
-      SHARED.recordedMarks.forEach((m, k) => {
-        let node = this.props.ast.getNodeByNId(k);
-        this.markText(node.from, node.to, m.options);
-      });
-    }, 0));
-    this.props.onMount(ed);
-
-    // export methods to the object interface
-    Object.assign(this.props.api, this.buildAPI(ed));
+    // pass the block-mode CM editor, API, and current AST
+    SHARED.cm = ed;
+    this.props.onMount(ed, this.buildAPI(ed), ast);
   }
 
   executeAction(action) {

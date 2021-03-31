@@ -130,12 +130,19 @@ export default @CMBContext class ToggleEditor extends Component {
   }
 
   // After a mode switch, rebuild the API and re-assign events
-  handleEditorMounted = (ed) => {
-    Object.assign(this.props.api, this.buildAPI(ed));
+  handleEditorMounted = (ed, api, ast) => {
+    Object.assign(this.props.api, this.buildAPI(ed), api);
     Object.keys(this.eventHandlers).forEach(type => {
       this.eventHandlers[type].forEach(h => ed.on(type, h));
     });
-    //this.props.api.display = ed.display;
+    // once the DOM has loaded, reconstitute any marks and render them
+    // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
+    window.requestAnimationFrame( () => setTimeout(() => {
+      SHARED.recordedMarks.forEach((m, k) => {
+        let node = ast.getNodeByNId(k);
+        this.props.api.markText(node.from, node.to, m.options);
+      });
+    }, 0));
   }
 
   componentDidMount() { this.hasMounted = true; }
@@ -143,7 +150,7 @@ export default @CMBContext class ToggleEditor extends Component {
   // save any non-block, non-bookmark markers, and the NId they cover
   copyMarks(oldAST) {
     SHARED.recordedMarks.clear();
-    let newAST = this.ast;
+    const newAST = this.ast;
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach(m => {
         let {from: oldFrom, to: oldTo} = m.find(), opts = {};
@@ -153,7 +160,7 @@ export default @CMBContext class ToggleEditor extends Component {
           `{line:${oldTo.line}, ch:${oldTo.ch}}], since that range does not correspond to a node boundary`);
           return;
         }
-        let {from, to} = newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
+        const {from, to} = newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
         opts.css = m.css; opts.title = m.title; opts.className = m.className;
         SHARED.recordedMarks.set(node.nid, {from: from, to: to, options: opts});
       });
@@ -244,7 +251,7 @@ export default @CMBContext class ToggleEditor extends Component {
         initialCode={code}
         onMount={this.handleEditorMounted}
         api={this.props.api} 
-        events={this.eventHandlers}
+        passedAST={this.ast}
       />
     );
   }
@@ -266,7 +273,6 @@ export default @CMBContext class ToggleEditor extends Component {
         closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
         debugHistory={this.props.debuggingLog.history}
-        events={this.eventHandlers}
      />
     );
   }

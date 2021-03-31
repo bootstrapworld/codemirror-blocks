@@ -1,6 +1,3 @@
-; This is a comment. It just stays where it is.
-
-; We can have literals of various types
 42   ; this is a number
 "hello"   ; this is a string
 #\m    ; this is a character
