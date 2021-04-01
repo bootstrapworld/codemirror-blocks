@@ -139,11 +139,7 @@ class Node extends BlockComponent {
   }
 
   isLocked() {
-    if (SHARED.options?.renderOptions) {
-      const lockedList = SHARED.options.renderOptions.lockNodesOfType;
-      return lockedList.includes(this.props.node.type);
-    }
-    return false;
+    return this.props.node.isLockedP;
   }
 
   render() {

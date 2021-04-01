@@ -10,10 +10,4 @@ export default addLanguage(
     getParser() {
       return new WeschemeParser();
     },
-    getRenderOptions() {
-      return {
-        // TODO: perhaps also ['functionDefinition', 'variableDefinition', 'structDefinition']?
-        lockNodesOfType: ['comment']
-      };
-    },
   });

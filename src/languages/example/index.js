@@ -10,7 +10,4 @@ export default addLanguage(
     getParser() {
       return new ExampleParser();
     },
-    getRenderOptions() {
-      return {};
-    },
   });
