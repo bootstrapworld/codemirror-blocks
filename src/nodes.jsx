@@ -476,6 +476,7 @@ export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
     super(from, to, 'comment', options);
     this.comment = comment;
+    this.isLockedP = true;
   }
 
   static spec = Spec.nodeSpec([

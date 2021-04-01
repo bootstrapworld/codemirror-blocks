@@ -118,7 +118,7 @@ export class AST {
 
   validateNode(node) {
     const astFieldNames =
-          ["from", "to", "type", "options", "spec", "__alreadyValidated", "element"];
+          ["from", "to", "type", "options", "spec", "isLockedP", "__alreadyValidated", "element"];
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames =
           ["id", "parent", "level", "nid", "prev", "next", "hash",
@@ -345,6 +345,7 @@ export class ASTNode {
   hash: any;
   public static spec: any;
   spec: any;
+  isLockedP: any;
   constructor(from, to, type, options) {
 
     // The `from` and `to` attributes are objects containing the start and end
@@ -377,6 +378,8 @@ export class ASTNode {
 
     // Make the spec more easily available.
     this.spec = (this.constructor as any).spec;
+
+    this.isLockedP = false;
   }
 
   describe(level) {

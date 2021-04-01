@@ -13,7 +13,4 @@ export default addLanguage(
         parse: parseString,
       };
     },
-    getRenderOptions() {
-      return {};
-    },
   });
