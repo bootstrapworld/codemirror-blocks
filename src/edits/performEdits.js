@@ -278,6 +278,9 @@ class ReplaceRootEdit extends Edit {
 
 class ReplaceChildEdit extends Edit {
   constructor(text, node, parent) {
+    // if the text is the empty string, return a Deletion instead
+    if(text === "") return new DeleteChildEdit(node, parent);
+
     node = getNode(node);
     parent = getNode(parent);
     let range = node.srcRange();

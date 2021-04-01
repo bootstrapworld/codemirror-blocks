@@ -2,6 +2,7 @@ import * as P from 'pretty-fast-pretty-printer';
 import {warn, poscmp} from '../utils';
 import {Required, Optional, List, Value} from '../nodeSpec';
 import {ASTNode} from '../ast';
+import {playSound, BEEP} from '../utils';
 
 
 // Say that you have the source code `[1, 3]`, representing a list, and you
@@ -135,6 +136,7 @@ export class FakeAstReplacement {
     } else if (this.spec instanceof Optional) {
       clonedParent[this.spec.fieldName] = null;
     } else {
+      playSound(BEEP);
       clonedParent[this.spec.fieldName] = new FakeBlankNode(this.child.from, this.child.to);
     }
   }
