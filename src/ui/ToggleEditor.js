@@ -8,7 +8,7 @@ import ByString from './searchers/ByString';
 import ByBlock from './searchers/ByBlock';
 import attachSearch from './Search';
 import Toolbar from './Toolbar';
-import ToggleButton from './ToggleButton';
+import {ToggleButton, BugButton} from './EditorButtons';
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import './ToggleEditor.less';
@@ -88,6 +88,12 @@ export default @CMBContext class ToggleEditor extends Component {
     this.options = Object.assign(defaultOptions, props.options);
     this.hasMounted = false;
     SHARED.recordedMarks = new Map();
+    this.eventHandlers = {}; // blank event-handler record
+
+    // make sure 'this' always refers to ToggleEditor
+    // see https://reactjs.org/docs/handling-events.html
+    this.showDialog = this.showDialog.bind(this);
+    this.closeDialog = this.closeDialog.bind(this);
   }
 
   loadLoggedActions = (jsonLog) => {
@@ -107,40 +113,56 @@ export default @CMBContext class ToggleEditor extends Component {
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
       'getCM': () => ed,
-//      'on' : () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
-//      'off': () => { throw "Custom event handlers are not supported in CodeMirror-blocks"; },
+      'on' : (type, fn) => { 
+        if(!this.eventHandlers[type]) { this.eventHandlers[type] = [fn]; }
+        else { this.eventHandlers[type].push(fn); }
+        SHARED.cm.on(type, fn);
+      },
+      'off' : (type, fn) => { 
+        this.eventHandlers[type]?.filter(h => h !== fn);
+        SHARED.cm.off(type, fn);
+      },
       'runMode': () => { throw "runMode is not supported in CodeMirror-blocks"; },
+      // Expose a scheduler for after react's render cycle is over
+      // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
+      'afterDOMUpdate' : (f) => {
+        window.requestAnimationFrame(() => setTimeout(f, 0));
+      }
     };
     return Object.assign(base, api);
   }
 
-  handleEditorMounted = (ed) => {
-    Object.assign(this.props.api, this.buildAPI(ed));
-    this.props.api.display = ed.display;
+  // After a mode switch, rebuild the API and re-assign events
+  handleEditorMounted = (ed, api, ast) => {
+    Object.assign(this.props.api, this.buildAPI(ed), api);
+    Object.keys(this.eventHandlers).forEach(type => {
+      this.eventHandlers[type].forEach(h => ed.on(type, h));
+    });
+    // once the DOM has loaded, reconstitute any marks and render them
+    // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
+    window.requestAnimationFrame( () => setTimeout(() => {
+      SHARED.recordedMarks.forEach((m, k) => {
+        let node = ast.getNodeByNId(k);
+        this.props.api.markText(node.from, node.to, m.options);
+      });
+    }, 0));
   }
 
-  componentDidMount() {
-    this.hasMounted = true;
-  }
-
-  componentDidUpdate() {
-    setTimeout(this.reconstituteMarks, 250);
-  }
+  componentDidMount() { this.hasMounted = true; }
 
   // save any non-block, non-bookmark markers, and the NId they cover
-  recordMarks(oldAST) {
+  copyMarks(oldAST) {
     SHARED.recordedMarks.clear();
-    let newAST = this.ast;
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach(m => {
         let {from: oldFrom, to: oldTo} = m.find(), opts = {};
-        let node = oldAST.getNodeAt(oldFrom, oldTo);    // find the node corresponding to the mark
+        let node = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
         if(!node) { // bail on non-node markers
           console.error(`Removed TextMarker at [{line:${oldFrom.line}, ch:${oldFrom.ch}},` +
           `{line:${oldTo.line}, ch:${oldTo.ch}}], since that range does not correspond to a node boundary`);
           return;
         }
-        let {from, to} = newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
+        const {from, to} = this.newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
         opts.css = m.css; opts.title = m.title; opts.className = m.className;
         SHARED.recordedMarks.set(node.nid, {from: from, to: to, options: opts});
       });
@@ -151,33 +173,35 @@ export default @CMBContext class ToggleEditor extends Component {
 
   handleToggle = blockMode => {
     this.setState( () => {
+      let oldAst, WS, code;
       try {
-        let oldCode = SHARED.cm.getValue();
-        const WS = oldCode.match(/\s+$/);                 // match ending whitespace
-        let oldAst = SHARED.parser.parse(oldCode, false); // parse the code, but don't annotate
-        let code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
-        this.ast = SHARED.parser.parse(code);             // parse the pretty-printed (PP) code
-        SHARED.cm.setValue(code);                         // update CM with the PP code
-        this.props.api.blockMode = blockMode;
-        // record mark information
-        // TODO(Emmanuel): this is going to have to save ALL state (selection, cursor, etc)
-        this.recordMarks(oldAst, code);
-        // Parsing and state-saving was successful! Set the blockMode state and return
-        return {blockMode: blockMode};
-      } catch (err) {
-        let error;
         try {
-          error = SHARED.parser.getExceptionMessage(err);
-        } catch(e) {
-          error = "The parser failed, and the error could not be retrieved";
+          let oldCode = SHARED.cm.getValue();
+          oldCode.match(/\s+$/);                        // match ending whitespace
+          oldAst = SHARED.parser.parse(oldCode);        // parse the code (WITH annotations)
+        } catch (err) {
+          try   { throw SHARED.parser.getExceptionMessage(err); }
+          catch(e){ throw "The parser failed, and the error could not be retrieved"; }
         }
+        try {
+          code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
+          this.ast = SHARED.parser.parse(code);         // parse the pretty-printed (PP) code
+        } catch (e) {
+          throw `An error occured in the language module 
+          (the pretty-printer probably produced invalid code)`;
+        }
+        this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
+        SHARED.cm.setValue(code);                       // update CM with the PP code
+        this.props.api.blockMode = blockMode;
+        return {blockMode: blockMode};                  // Success! Set the blockMode state
+      } catch (e) {                                     // Failure! Set the dialog state
         return {dialog: (
-          <>
-          <span className="dialogTitle">Could not convert to Blocks</span>
-          <p></p>
-          {error.toString()}
-          </>
-        )};
+            <>
+            <span className="dialogTitle">Could not convert to Blocks</span>
+            <p></p>
+            {e.toString()}
+            </>
+          )};
       }
     });
   };
@@ -189,6 +213,7 @@ export default @CMBContext class ToggleEditor extends Component {
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
       <div className={classes}>
+        {this.state.blockMode ? <BugButton/> : null}
         <ToggleButton 
           setBlockMode={this.handleToggle} 
           blockMode={this.state.blockMode} />
@@ -228,7 +253,9 @@ export default @CMBContext class ToggleEditor extends Component {
         parser={this.parser}
         initialCode={code}
         onMount={this.handleEditorMounted}
-        api={this.props.api} />
+        api={this.props.api} 
+        passedAST={this.ast}
+      />
     );
   }
 

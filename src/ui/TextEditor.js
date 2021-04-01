@@ -18,6 +18,7 @@ class TextEditor extends Component {
     onMount:PropTypes.func.isRequired,
     setAnnouncer: PropTypes.func.isRequired,
     api: PropTypes.object,
+    passedAST: PropTypes.object,
   }
 
   handleEditorDidMount = ed => {
@@ -34,24 +35,15 @@ class TextEditor extends Component {
     this.props.setAnnouncer(announcements);
     say("Text Mode Enabled", 500);
     
+    // pass the text-mode CM editor, API, and current AST
     SHARED.cm = ed;
-
-    // reconstitute any marks and render them
-    setTimeout( () => {
-      SHARED.recordedMarks.forEach(m => SHARED.cm.markText(m.from, m.to, m.options));
-    }, 250);
-
-    this.props.onMount(ed);
-
-    // export methods to the object interface
-    Object.assign(this.props.api, this.buildAPI(ed));
+    this.props.onMount(ed, this.buildAPI(ed), this.props.passedAST);
   }
 
   // override default CM methods, or add our own
   buildAPI() {
     const api = {};
     // show which APIs are unsupported
-     // show which APIs are unsupported
     unsupportedAPIs.forEach(f =>
       api[f] = () => {
         throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
@@ -60,11 +52,7 @@ class TextEditor extends Component {
   }
 
   componentDidMount() {
-    const {
-      parser
-    } = this.props;
-
-    SHARED.parser = parser;
+    SHARED.parser = this.props.parser;
   }
 
   render() {

@@ -73,8 +73,9 @@ class WrappedCodeMirror extends Component {
                 id="errorLogForm" 
                 target="hidden_iframe" 
                 style={{display:'none'}}>
-                <textarea name="entry.1568521986" id="history"    defaultValue="default_history"/>
-                <textarea name="entry.785063835"  id="exception"  defaultValue="default_exception"/>
+                <textarea name="entry.1311696515" id="description" defaultValue="Auto-Generated Crash Log"/>
+                <textarea name="entry.1568521986" id="history"     defaultValue="default_history"/>
+                <textarea name="entry.785063835"  id="exception"   defaultValue="default_exception"/>
                 <input type="button" value="Submit" className="submit"/>
           </form>
       </div>

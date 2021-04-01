@@ -148,9 +148,8 @@ export function skipCollapsed(node, next, state) {
 
 export function getRoot(node) {
   let next = node;
-  while (next && next.parent) {
-    next = next.parent;
-  }
+  // keep going until there's no next parent
+  while (next && next.parent) { next = next.parent; }
   return next;
 }
 
@@ -296,9 +295,10 @@ export function minimizeChange({from, to, text, removed, origin=undefined}) {
 }
 
 // display the actual exception, and try to log it
-export function logResults(history, exception) {
+export function logResults(history, exception, description="Crash Log") {
   console.log(exception, history);
   try {
+    document.getElementById('description').value = description;
     document.getElementById('history').value = JSON.stringify(history);
     document.getElementById('exception').value = exception;
     document.getElementById('errorLogForm').submit();
