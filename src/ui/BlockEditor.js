@@ -313,9 +313,9 @@ class BlockEditor extends Component {
       /*****************************************************************
       * CM APIs WE WANT TO OVERRIDE
       */
-      'findMarks':  (from, to) => this.findMarks(from, to),
-      'findMarksAt': (pos) => this.findMarksAt(pos),
-      'getAllMarks': () => this.getAllMarks(),
+      'findMarks':  (from, to) => SHARED.cm.findMarks(from, to).filter(m => !m.BLOCK_NODE_ID),
+      'findMarksAt': (pos) => SHARED.cm.findMarksAt(pos).filter(m => !m.BLOCK_NODE_ID),
+      'getAllMarks': () => SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID),
       'markText': (from, to, opts) => this.markText(from, to, opts),
       // Something is selected if CM has a selection OR a block is selected
       'somethingSelected': () => withState(({selections}) =>
@@ -368,13 +368,8 @@ class BlockEditor extends Component {
       */
       'getAst':
         () => withState((state) => state.ast),
-      'getFocusedNode':
-        () => withState(({focusId, ast}) => {
-          // was returning null instead of undefined, but
-          // activation-test.js expects latter
-          let x = focusId ? ast.getNodeById(focusId) : undefined;
-          return x;
-        }),
+      'getFocusedNode': // activation-test.js expects undefined
+        () => withState(({focusId, ast}) => focusId ? ast.getNodeById(focusId) : undefined),
       'getSelectedNodes':
         () => withState(({selections, ast}) => selections.map(id => ast.getNodeById(id))),
 
@@ -420,19 +415,6 @@ class BlockEditor extends Component {
     this.props.dispatch({type: 'ADD_MARK', id: node.id, mark: mark});
     return mark;
   }
-  findMarks(from, to) {
-    return SHARED.cm.findMarks(from, to).filter(m => !m.BLOCK_NODE_ID);
-  }
-  findMarksAt(pos) {
-    return SHARED.cm.findMarksAt(pos).filter(m => !m.BLOCK_NODE_ID);
-  }
-  getAllMarks() {
-    return SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID);
-  }
-  // clear all non-block marks
-  _clearMarks() {
-    this.getAllMarks().map(m => m.clear());
-  }
   // disallow widget option
   setBookmark(pos, options) {
     if(options.widget) {
@@ -467,9 +449,6 @@ class BlockEditor extends Component {
     SHARED.cm.listSelections().map(s => tmpCM.addSelection(s.anchor, s.head));
     // return all the selections
     return tmpCM.listSelections();
-  }
-  getSelections(sep) {
-    return this.listSelections().map(s => SHARED.cm.getRange(s.from, s.to, sep));
   }
   setSelections(ranges, primary, options, replace=true) {
     const dispatch = this.props.dispatch;
@@ -591,22 +570,16 @@ class BlockEditor extends Component {
     clipboardBuffer.style.height  = '1px';
     SHARED.buffer = clipboardBuffer;
     document.body.appendChild(SHARED.buffer);
-    this.afterDOMUpdate();
+    this.props.api.afterDOMUpdate(this.refreshCM());
   }
 
-  componentDidUpdate() { this.afterDOMUpdate(); }
+  componentDidUpdate() { this.props.api.afterDOMUpdate(this.refreshCM()); }
 
-  // NOTE(Emmanuel): use requestAnimationFrame to make sure that cm.refresh() is called
-  // after the DOM has completely finished updating.
-  // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-  afterDOMUpdate() {
-    window.requestAnimationFrame(() => setTimeout( () => {
-      const {dispatch} = this.props;
-      dispatch((_, getState) => {
-        const {quarantine} = getState();
-        if(!quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
-      });
-    }, 0));
+  // Make sure the react renderer is finished before refreshing
+  refreshCM() {
+    this.props.dispatch((_, getState) => {
+      if(!getState().quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
+    });
   }
 
   render() {

@@ -119,12 +119,15 @@ export default @CMBContext class ToggleEditor extends Component {
         SHARED.cm.on(type, fn);
       },
       'off' : (type, fn) => { 
-        if(this.eventHandlers[type]) {
-          this.eventHandlers[type] = this.eventHandlers[type].filter(h => h !== fn);
-        }
+        this.eventHandlers[type]?.filter(h => h !== fn);
         SHARED.cm.off(type, fn);
       },
       'runMode': () => { throw "runMode is not supported in CodeMirror-blocks"; },
+      // Expose a scheduler for after react's render cycle is over
+      // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
+      'afterDOMUpdate' : (f) => {
+        window.requestAnimationFrame(() => setTimeout(f, 0));
+      }
     };
     return Object.assign(base, api);
   }
@@ -150,17 +153,16 @@ export default @CMBContext class ToggleEditor extends Component {
   // save any non-block, non-bookmark markers, and the NId they cover
   copyMarks(oldAST) {
     SHARED.recordedMarks.clear();
-    const newAST = this.ast;
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach(m => {
         let {from: oldFrom, to: oldTo} = m.find(), opts = {};
-        let node = oldAST.getNodeAt(oldFrom, oldTo);    // find the node corresponding to the mark
+        let node = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
         if(!node) { // bail on non-node markers
           console.error(`Removed TextMarker at [{line:${oldFrom.line}, ch:${oldFrom.ch}},` +
           `{line:${oldTo.line}, ch:${oldTo.ch}}], since that range does not correspond to a node boundary`);
           return;
         }
-        const {from, to} = newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
+        const {from, to} = this.newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
         opts.css = m.css; opts.title = m.title; opts.className = m.className;
         SHARED.recordedMarks.set(node.nid, {from: from, to: to, options: opts});
       });
