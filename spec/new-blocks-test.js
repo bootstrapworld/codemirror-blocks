@@ -66,7 +66,6 @@ describe('The CodeMirrorBlocks Class', function() {
       this.blocks.setValue('11');
       await wait(DELAY);
       this.blocks.setBlockMode(true);
-      // this.ast = this.blocks.getAst();
       this.literal = this.blocks.getAst().rootNodes[0];
     });
 
@@ -127,8 +126,21 @@ describe('The CodeMirrorBlocks Class', function() {
       expect(this.blocks.getValue()).toEqual('9');
       // expect(this.blocks.hasInvalidEdit).toBe(false);
     });*/
-    
-    it('should return the node being edited on esc', async function() {
+  
+    it('should not allow required blanks to be deleted', async function() {
+      this.blocks.setValue('()');
+      await wait(DELAY);
+      this.blocks.getValue('(...)'); // blank should be inserted by parser, as '...'
+      const blank = this.blocks.getAst().rootNodes[0].func;
+      click(blank.element);
+      await wait(DELAY);
+      expect(blank.isEditable()).toBe(true);
+      keyDown("Delete");
+      await wait(DELAY);
+      this.blocks.getValue('(...)'); // deleting the blank should be a no-op
+    });
+
+    it('should return the node being edited on ESC', async function() {
       click(this.literal);
       await wait(DELAY);
       const quarantine = document.activeElement;

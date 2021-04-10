@@ -55,7 +55,6 @@ export default @CMBContext class ToggleEditor extends Component {
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
       getParser: PropTypes.func.isRequired,
-      getRenderOptions: PropTypes.func
     }),
     options: PropTypes.object,
     api: PropTypes.object,
@@ -80,9 +79,6 @@ export default @CMBContext class ToggleEditor extends Component {
     let defaultOptions = {
       parser: this.parser,
       incrementalRendering: true,
-      renderOptions: props.language.getRenderOptions
-        ? props.language.getRenderOptions()
-        : {},
       collapseAll: true
     };
     this.options = Object.assign(defaultOptions, props.options);
