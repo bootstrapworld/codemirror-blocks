@@ -13,58 +13,62 @@ const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAge
 const mac = ios || /Mac/.test(platform);
 
 export const defaultKeyMap = {
-  'Down'      : 'nextNode',
-  'Up'        : 'prevNode',
-  'Home'      : 'firstNode',
-  'End'       : 'lastVisibleNode',
-  'Left'      : 'collapseOrSelectParent',
-  'Right'     : 'expandOrSelectFirstChild',
-  'Shift-Left': 'collapseAll',
-  'Shift-Right':'expandAll',
-  'Shift-Alt-Left': 'collapseCurrentRoot',
-  'Shift-Alt-Right':'expandCurrentRoot',
-  'Enter'     : 'edit',
-  'Space'     : 'toggleSelection',
-  'Esc'       : 'clearSelection',
-  'Ctrl-Esc'  : 'clearSelection',
-  'Alt-Q'     : 'clearSelection',
-  'Delete'    : 'deleteNodes',
-  'Backspace' : 'deleteNodes',
-  'Ctrl-['    : 'insertLeft',
-  'Ctrl-]'    : 'insertRight',
-  'Shift-,'   : 'jumpToRoot',
-  '\\'        : 'readAncestors',
-  'Shift-\\'  : 'readChildren',
-  'PageUp'    : 'searchPrevious',
-  'PageDown'  : 'searchNext',
-  'F3'        : 'activateSearchDialog',
-  'Shift-Tab' : 'prevFocus',
+  // NAVIGATION
+  'Down'      : 'Next Block',
+  'Up'        : 'Previous Block',
+  'Home'      : 'First Block',
+  'End'       : 'Last Visible Block',
+  'Left'      : 'Collapse or Select Parent',
+  'Right'     : 'Expand or Select 1st Child',
+  'Shift-Left': 'Collapse All',
+  'Shift-Right':'Expand All',
+  'Shift-Alt-Left': 'Collapse Current Root',
+  'Shift-Alt-Right':'Expand Current Root',
+  'Shift-,'   : 'Jump to Root',
+  '\\'        : 'Read Ancestors',
+  'Shift-\\'  : 'Read Children',
+  'Shift-Tab' : 'Shift Focus',
+
+  // EDITING
+  'Enter'     : 'Edit',
+  'Ctrl-['    : 'Insert Left',
+  'Ctrl-]'    : 'Insert Right',
+
+  // SEARCH, SELECTION & CLIPBOARD
+  'Space'     : 'Toggle Selection',
+  'Esc'       : 'Clear Selection',
+  'Ctrl-Esc'  : 'Clear Selection',
+  'Alt-Q'     : 'Clear Selection',
+  'Delete'    : 'Delete Nodes',
+  'Backspace' : 'Delete Nodes',
+  'PageUp'    : 'Search Previous',
+  'PageDown'  : 'Search Next',
+  'F3'        : 'Activate Search Dialog',
+  'Ctrl-F'    : 'Activate Search Dialog',
 };
 
 const macKeyMap = {
-  'Cmd-Enter': 'editAnything',
-  'Cmd-F'     : 'activateSearchDialog',
-  'Cmd-Z'     : 'undo',
-  'Shift-Cmd-Z': 'redo',
-  'Cmd-Y'     : 'redo',
-  'Cmd-C'     : 'copy',
-  'Cmd-V'     : 'paste',
-  'Shift-Cmd-V': 'pasteBefore',
-  'Cmd-X'     : 'cut',
-  'Shift-Ctrl-/': 'help',
+  'Cmd-Enter'  : 'Edit Anything',
+  'Cmd-F'      : 'Activate Search Dialog',
+  'Cmd-Z'      : 'Undo',
+  'Shift-Cmd-Z': 'Redo',
+  'Cmd-Y'      : 'Redo',
+  'Cmd-C'      : 'Copy',
+  'Cmd-V'      : 'Paste',
+  'Shift-Cmd-V': 'Paste Before',
+  'Cmd-X'      : 'Cut',
+  'Shift-Ctrl-/':'Help',
 };
 
 const pcKeyMap = {
-  'Ctrl-Enter': 'editAnything',
-  'Ctrl-F'    : 'activateSearchDialog',
-  'Ctrl-Z'    : 'undo',
-  'Ctrl-Y'    : 'redo',
-  'Shift-Ctrl-Z':'redo',
-  'Ctrl-C'    : 'copy',
-  'Ctrl-V'    : 'paste',
-  'Shift-Ctrl-V'    : 'pasteBefore',
-  'Ctrl-X'    : 'cut',
-  'Shift-Ctrl-/': 'help',
+  'Ctrl-Z'     : 'Undo',
+  'Ctrl-Y'     : 'Redo',
+  'Shift-Ctrl-Z':'Redo',
+  'Ctrl-C'     : 'Copy',
+  'Ctrl-V'     : 'Paste',
+  'Shift-Ctrl-V':'Paste Before',
+  'Ctrl-X'     : 'Cut',
+  'Shift-Ctrl-/':'Help',
 };
 
 // Add platform-specific keys
@@ -72,13 +76,31 @@ Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
+const pasteHandler = function (_, e) {
+    if(!this.node) { return CodeMirror.Pass; }
+    const node = this.node;
+    if (this.selections.includes(this.node.id)) {
+      paste(new ReplaceNodeTarget(this.node));
+    } else if (this.node.parent) {
+      // We're inside the AST somewhere. Try to paste to the left/right.
+      const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
+      const target = new InsertTarget(this.context.node, this.context.field, pos);
+      if (target) { paste(target); }
+      else { say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); }
+    } else {
+      // We're at a root node. Insert to the left or right, at the top level.
+      const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
+      paste(new OverwriteTarget(pos, pos));
+    }
+  }
+
 export const commandMap = {
   prevFocus : function (_, e) {
     e.preventDefault();
     this.toolbarRef.current.primitiveSearch.focus();
   },
-
-  prevNode : function (_, e) {
+  // NAVIGATION
+  'Previous Block' : function (_, e) {
     e.preventDefault();
     if(this.node) {
       let prev = this.fastSkip(node => node.prev);
@@ -89,7 +111,7 @@ export const commandMap = {
       : playSound(BEEP);
   },
 
-  nextNode : function (_, e) {
+  'Next Block' : function (_, e) {
     e.preventDefault();
     if(this.node) {
       let next = this.fastSkip(node => node.next);
@@ -100,45 +122,17 @@ export const commandMap = {
       : playSound(BEEP);
   },
 
-  firstNode : function (_) {
+  'First Block' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     this.activateByNid(0, {allowMove: true});
   },
 
-  lastVisibleNode : function (_) {
+  'Last Visible Block' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     else { this.activateByNid(getLastVisibleNode(this.state).nid); }
   },
 
-  jumpToRoot : function (_) {
-    if(!this.node) { return CodeMirror.Pass; }
-    else { this.activateByNid(getRoot(this.node).nid); }
-  },
-
-  readAncestors : function (_) {
-    if(!this.node) { return CodeMirror.Pass; }
-    const parents = [this.node.options['aria-label']];
-    let next = this.node.parent;
-    while (next) {
-      parents.push(next.options['aria-label'] + ", at level " + next.level);
-      next = next.parent;
-    }
-    if (parents.length > 1) { say(parents.join(", inside ")); }
-    else { playSound(BEEP); }
-  },
-
-  readChildren : function (_) {
-    if(!this.node) { return CodeMirror.Pass; }
-    else { say(this.node.describe(this.node.level)); }
-  },
-
-  collapseAll : function (_) {
-    if(!this.node) { return CodeMirror.Pass; }
-    this.dispatch({type: 'COLLAPSE_ALL'});
-    this.activateByNid(getRoot(this.node).nid);
-  },
-
-  collapseOrSelectParent : function(_) {
+  'Collapse or Select Parent' : function(_) {
     if(!this.node) { return CodeMirror.Pass; }
     if (this.expandable && !this.isCollapsed && !this.isLocked()) {
       this.collapse(this.node.id);
@@ -149,24 +143,7 @@ export const commandMap = {
     }
   },
 
-  collapseCurrentRoot : function (_) {
-    if(!this.node) { return CodeMirror.Pass; }
-    if(!this.node.parent && (this.isCollapsed || !this.expandable)) {
-      playSound(BEEP);
-    } else {
-      let root = getRoot(this.node);
-      let descendants = [...root.descendants()];
-      descendants.forEach(d => this.collapse(d.id));
-      this.activateByNid(root.nid);
-    }
-  },
-
-  expandAll : function (_) {
-    if(!this.node) { return CodeMirror.Pass; }
-    else { return this.dispatch({type: 'UNCOLLAPSE_ALL'}); }
-  },
-
-  expandOrSelectFirstChild : function (_) {
+  'Expand or Select 1st Child' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     const node = this.node;
     if (this.expandable && this.isCollapsed && !this.isLocked()) {
@@ -178,14 +155,60 @@ export const commandMap = {
     }
   },
 
-  expandCurrentRoot : function (_) {
+  'Collapse All' : function (_) {
+    if(!this.node) { return CodeMirror.Pass; }
+    this.dispatch({type: 'COLLAPSE_ALL'});
+    this.activateByNid(getRoot(this.node).nid);
+  },
+
+  'Expand All' : function (_) {
+    if(!this.node) { return CodeMirror.Pass; }
+    else { return this.dispatch({type: 'UNCOLLAPSE_ALL'}); }
+  },
+
+  'Collapse Current Root' : function (_) {
+    if(!this.node) { return CodeMirror.Pass; }
+    if(!this.node.parent && (this.isCollapsed || !this.expandable)) {
+      playSound(BEEP);
+    } else {
+      let root = getRoot(this.node);
+      let descendants = [...root.descendants()];
+      descendants.forEach(d => this.collapse(d.id));
+      this.activateByNid(root.nid);
+    }
+  },
+
+  'Expand Current Root' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     let root = getRoot(this.node);
     [...root.descendants()].forEach(d => this.uncollapse(d.id));
     this.activateByNid(root.nid);
   },
 
-  toggleSelection : function (_, e) {
+  'Jump to Root' : function (_) {
+    if(!this.node) { return CodeMirror.Pass; }
+    else { this.activateByNid(getRoot(this.node).nid); }
+  },
+
+  'Read Ancestors' : function (_) {
+    if(!this.node) { return CodeMirror.Pass; }
+    const parents = [this.node.options['aria-label']];
+    let next = this.node.parent;
+    while (next) {
+      parents.push(next.options['aria-label'] + ", at level " + next.level);
+      next = next.parent;
+    }
+    if (parents.length > 1) { say(parents.join(", inside ")); }
+    else { playSound(BEEP); }
+  },
+
+  'Read Children' : function (_) {
+    if(!this.node) { return CodeMirror.Pass; }
+    else { say(this.node.describe(this.node.level)); }
+  },
+
+  // SEARCH, SELECTION & CLIPBOARD
+  'Toggle Selection' : function (_, e) {
     if(!this.node) { return CodeMirror.Pass; }
     e.preventDefault();
     const node = this.node;
@@ -215,7 +238,7 @@ export const commandMap = {
     }
   },
 
-  edit : function (_, e) {
+  'Edit' : function (_, e) {
     if(!this.node) { return CodeMirror.Pass; }
     if (this.normallyEditable) {
       this.handleMakeEditable(e);
@@ -227,17 +250,17 @@ export const commandMap = {
     }
   },
 
-  editAnything : function (_, e) {
+  'Edit Anything' : function (_, e) {
     if(!this.node) { return CodeMirror.Pass; }
     else { return this.handleMakeEditable(e); }
   },
 
-  clearSelection : function (_) {
+  'Clear Selection' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     this.dispatch({type: 'SET_SELECTIONS', selections: []});
   },
 
-  deleteNodes : function (_) {
+  'Delete Nodes' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.selections.length) { return say('Nothing selected'); }
     const nodesToDelete = this.selections.map(this.ast.getNodeById);
@@ -246,16 +269,16 @@ export const commandMap = {
 
   // use the srcRange() to insert before/after the node *and*
   // any associated comments
-  insertRight : function (_) {
+  'Insert Right' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.setRight()) { this.setCursor(this.node.srcRange().to); }
   },
-  insertLeft : function (_) {
+  'Insert Left' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.setLeft()) { this.setCursor(this.node.srcRange().from); }
   },
 
-  cut : function (_) {
+  'Cut' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     if(!this.selections.length) { return say('Nothing selected'); }
     const nodesToCut = this.selections.map(this.ast.getNodeById);
@@ -263,7 +286,7 @@ export const commandMap = {
     delete_(nodesToCut);
   },
 
-  copy : function (_) {
+  'Copy' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     // if no nodes are selected, do it on focused node's id instead
     const nodeIds = !this.selections.length? [this.node.id] : this.selections;
@@ -271,25 +294,10 @@ export const commandMap = {
     copy(nodesToCopy, "copied");
   },
 
-  paste : function (_, e) {
-    if(!this.node) { return CodeMirror.Pass; }
-    const node = this.node;
-    if (this.selections.includes(this.node.id)) {
-      paste(new ReplaceNodeTarget(this.node));
-    } else if (this.node.parent) {
-      // We're inside the AST somewhere. Try to paste to the left/right.
-      const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
-      const target = new InsertTarget(this.context.node, this.context.field, pos);
-      if (target) { paste(target); }
-      else { say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); }
-    } else {
-      // We're at a root node. Insert to the left or right, at the top level.
-      const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
-      paste(new OverwriteTarget(pos, pos));
-    }
-  },
+  'Paste' : pasteHandler,
+  'Paste Before' : pasteHandler,
 
-  activateSearchDialog : function (_) {
+  'Activate Search Dialog' : function (_) {
     SHARED.search.onSearch(
       this.state,
       () => {},
@@ -297,29 +305,29 @@ export const commandMap = {
     );
   },
 
-  searchPrevious : function (_, e) {
+  'Search Previous' : function (_, e) {
     e.preventDefault();
     this.activateNoRecord(SHARED.search.search(false, this.state));
   },
 
-  searchNext : function (_, e) {
+  'Search Next' : function (_, e) {
     e.preventDefault();
     this.activateNoRecord(SHARED.search.search(true, this.state));
   },
 
-  undo : function(_, e) {
+  'Undo' : function(_, e) {
     e.preventDefault();
     preambleUndoRedo('undo');
     SHARED.cm.undo();
   },
 
-  redo : function(_, e) {
+  'Redo' : function(_, e) {
     e.preventDefault();
     preambleUndoRedo('redo');
     SHARED.cm.redo();
   },
 
-  help : function (_) {
+  'Help' : function (_) {
     this.showDialog(renderKeyMap(this.keyMap));
   }
 };
@@ -362,75 +370,28 @@ export function keyDown(e, env, keyMap) {
 export function renderKeyMap(keyMap) {
   const reverseMap = {};
   Object.keys(keyMap).forEach(key => {
-    if(!reverseMap[keyMap[key]]) { reverseMap[keyMap[key]] = key; }
-    else reverseMap[keyMap[key]] = reverseMap[keyMap[key]] + " or " + key;
+    if(!reverseMap[keyMap[key]]) { reverseMap[keyMap[key]] = [key]; }
+    else reverseMap[keyMap[key]].push(key);
   });
+  window.reverseMap = reverseMap;
   return (
     <>
       <h1>Blocks Shortcuts</h1>
-      <span style={{display: 'block'}}>(Note: on MacOS, <kbd>Cmd</kbd> replaces <kbd>Ctrl</kbd>.)</span>
       <span className="screenreader">
-        Screenreader users: Make sure to either increase the verbosity of your screenreader, or character over the shortcut column in the tables below. Some shortcuts use punctuation keys that may not always be spoken.
+        Screenreader users: Make sure to either increase the verbosity of your screenreader, 
+        or character over the shortcut column in the tables below. Some shortcuts use 
+        punctuation keys that may not always be spoken.
       </span>
-      <div className="shortcutGroup" tabIndex="-1">
-        <h2>Navigation</h2>
-        <table className="shortcuts">
-          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
-          <tbody>
-          <tr><td>Previous Block</td><td><kbd>{reverseMap['prevNode']}</kbd></td></tr>
-          <tr><td>Next Block</td><td><kbd>{reverseMap['nextNode']}</kbd></td></tr>
-          <tr><td>Collapse Block</td><td><kbd>{reverseMap['collapseOrSelectParent']}</kbd></td></tr>
-          <tr><td>Expand Block</td><td><kbd>{reverseMap['expandOrSelectFirstChild']}</kbd></td></tr>
-          <tr><td>Collapse Root</td><td><kbd>{reverseMap['collapseCurrentRoot']}</kbd></td></tr>
-          <tr><td>Expand Root</td><td><kbd>{reverseMap['expandCurrentRoot']}</kbd></td></tr>
-          <tr><td>Collapse All</td><td><kbd>{reverseMap['collapseAll']}</kbd></td></tr>
-          <tr><td>Expand All</td><td><kbd>{reverseMap['expandAll']}</kbd></td></tr>
-          <tr><td>First Visible Block</td><td><kbd>{reverseMap['firstNode']}</kbd></td></tr>
-          <tr><td>Last Visible Block</td><td><kbd>{reverseMap['lastVisibleNode']}</kbd></td></tr>
-          <tr><td>Read Ancestors</td><td><kbd>{reverseMap['readAncestors']}</kbd></td></tr>
-          <tr><td>Read Block and Children</td><td><kbd>{reverseMap['readChildren']}</kbd></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div className="shortcutGroup" tabIndex="-1">
-        <h2>Editing</h2>
-        <table className="shortcuts">
-          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
-          <tbody>
-          <tr><td>Edit a Literal</td><td><kbd>{reverseMap['edit']}</kbd></td></tr>
-          <tr><td>Edit any Block</td><td><kbd>{reverseMap['editAnything']}</kbd></td></tr>
-          <tr><td>Cancel</td><td><kbd>{reverseMap['cancel']}</kbd></td></tr>
-          <tr><td>Insert Before</td><td><kbd>{reverseMap['insertLeft']}</kbd></td></tr>
-          <tr><td>Insert After</td><td><kbd>{reverseMap['insertRight']}</kbd></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div className="shortcutGroup" tabIndex="-1">
-        <h2>Search</h2>
-        <table className="shortcuts">
-          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
-          <tbody>
-          <tr><td>Enter Search Mode</td><td><kbd>{reverseMap['activateSearchDialog']}</kbd></td></tr>
-          <tr><td>Exit Search Mode</td><td><kbd>{reverseMap['cancel']}</kbd></td></tr>
-          <tr><td>Find Next</td><td><kbd>{reverseMap['searchNext']}</kbd></td></tr>
-          <tr><td>Find Previous</td><td><kbd>{reverseMap['searchPrevious']}</kbd></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div className="shortcutGroup" tabIndex="-1">
-        <h2>Selection and Clipboard</h2>
-        <table className="shortcuts">
-          <thead><tr><th>Command</th><th>Shortcut</th></tr></thead>
-          <tbody>
-          <tr><td>Toggle Selection</td><td><kbd>{reverseMap['toggleSelection']}</kbd></td></tr>
-          <tr><td>Cut </td><td><kbd>{reverseMap['cut']}</kbd></td></tr>
-          <tr><td>Copy</td><td><kbd>{reverseMap['copy']}</kbd></td></tr>
-          <tr><td>Paste After Block</td><td><kbd>{reverseMap['paste']}</kbd></td></tr>
-          <tr><td>Paste Before Block</td><td><kbd>{reverseMap['pasteBefore']}</kbd></td></tr>
-          <tr><td>Delete Selection</td><td><kbd>{reverseMap['delete']}</kbd></td></tr>
-          </tbody>
-        </table>
-      </div>
+
+      <table className="shortcuts">
+        <tbody>
+        {
+          Object.entries(reverseMap).map(
+            kv => (<tr><td>{kv[0]}</td><td>{kv[1].map(key => (<kbd>{key}</kbd>))}</td></tr>)
+          )
+        }
+        </tbody>
+      </table>
     </>
   );
 }
