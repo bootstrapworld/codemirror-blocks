@@ -82,7 +82,7 @@ export function performEdits(origin, ast, edits, onSuccess=()=>{}, onError=()=>{
       changeArray.push(edit.toChangeObject(ast));
     }
   }
-  console.log(origin, "edits:", edits, "changeArray:", changeArray); // temporary logging
+  //console.log(origin, "edits:", edits, "changeArray:", changeArray); // temporary logging
   /* More detailed logging:
   console.log(`${origin} - edits:`);
   for (let edit of edits) {

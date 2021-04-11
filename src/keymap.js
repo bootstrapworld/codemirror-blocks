@@ -5,6 +5,7 @@ import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget, activateByNid} from './actions';
 import {partition, getRoot, skipCollapsed, say,
   getLastVisibleNode, preambleUndoRedo, playSound, BEEP} from './utils';
+import {findAdjacentDropTargetId as getDTid} from './components/DropTarget';
 
 const userAgent = navigator.userAgent;
 const platform = navigator.platform;
@@ -78,19 +79,22 @@ CodeMirror.normalizeKeyMap(defaultKeyMap);
 
 const pasteHandler = function (_, e) {
     if(!this.node) { return CodeMirror.Pass; }
-    const node = this.node;
-    if (this.selections.includes(this.node.id)) {
-      paste(new ReplaceNodeTarget(this.node));
-    } else if (this.node.parent) {
-      // We're inside the AST somewhere. Try to paste to the left/right.
-      const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
-      const target = new InsertTarget(this.context.node, this.context.field, pos);
-      if (target) { paste(target); }
-      else { say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); }
-    } else {
-      // We're at a root node. Insert to the left or right, at the top level.
-      const pos = e.shiftKey ? node.srcRange().from : node.srcRange().to;
-      paste(new OverwriteTarget(pos, pos));
+    const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
+    const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
+    // Case 1: Overwriting selected nodes
+    if (this.selections.includes(this.node.id)) { paste(new ReplaceNodeTarget(this.node)); }
+    // Case 2: Inserting to the left or right of the root
+    else if (!this.node.parent) { paste(new OverwriteTarget(pos, pos)); }
+    // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
+    else {
+      const DTnode = document.getElementById('block-drop-target-' + getDTid(this.node, before));
+      if (DTnode?.dataset?.field) {
+        // We're somewhere valid in the AST. Initiate paste on the target field!
+        paste(new InsertTarget(this.node.parent, DTnode.dataset.field, pos));
+      } else { 
+        playSound(BEEP);
+        say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); 
+      }
     }
   }
 

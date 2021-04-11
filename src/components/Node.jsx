@@ -120,23 +120,15 @@ class Node extends BlockComponent {
 
   setLeft() {
     const dropTargetId = findAdjacentDropTargetId(this.props.node, true);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
-      return true;
-    } else {
-      return false;
-    }
+    if (dropTargetId) { this.props.setEditable(dropTargetId, true); }
+    return !!dropTargetId;
   }
 
   setRight() {
     const dropTargetId = findAdjacentDropTargetId(this.props.node, false);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
-      return true;
-    } else {
-      return false;
-    }
-  }
+    if (dropTargetId) { this.props.setEditable(dropTargetId, true); }
+    return !!dropTargetId;
+   }
 
   isLocked() {
     return this.props.node.isLockedP;
