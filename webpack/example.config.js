@@ -18,6 +18,9 @@ module.exports = function(env, argv) {
     }),
     plugins: baseConfig.plugins.concat([
       new webpack.HotModuleReplacementPlugin(),
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+      }),
       new HtmlWebpackPlugin({
         filename: 'editor.html',
         template: 'example/editor.html',

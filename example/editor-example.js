@@ -3,6 +3,8 @@ import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import './example-page.less';
 import bigExampleCode from './ast-test.rkt';
 import hugeExampleCode from './huge-code.rkt';
+import * as simulate from '../spec/support/simulate';
+
 const smallExampleCode = `
 (comment free)
 1; comment1
@@ -91,4 +93,5 @@ nextButton.onclick = (e) => {
 
 // for debugging purposes
 window.editor = editor
+window.simulate = simulate;
 console.log(editor);
