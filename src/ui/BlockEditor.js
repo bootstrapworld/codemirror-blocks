@@ -239,7 +239,6 @@ class BlockEditor extends Component {
           }
           if (annt === '') annt = 'change';
           getState().undoableAction = annt; //?
-          //console.log('BlockEditor.js calling commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
       }
@@ -279,7 +278,6 @@ class BlockEditor extends Component {
     if(action.type == "SET_FOCUS") {
       // NOTE(Emmanuel): the following line is probably dead code
       action.focusId = this.props.ast.getNodeByNId(action.nid).id;
-      //console.log('XXX BlockEditor:311 calling activateByNid');
       this.props.activateByNid(action.nid, {allowMove: true});
       delete action.nid;
       return;
@@ -333,7 +331,6 @@ class BlockEditor extends Component {
       'setCursor': (cur) => withState(({ast}) => {
         const node = ast.getNodeContaining(cur);
         if(node) {
-          //console.log('XXX BlockEditor:365 calling activateByNid');
           this.props.activateByNid(node.nid, {record: false, allowMove: true});
         }
         this.props.setCursor(ed, cur);
@@ -391,8 +388,7 @@ class BlockEditor extends Component {
     let mark = SHARED.cm.markText(from, to, options); // keep CM in sync
     mark._clear = mark.clear;
     mark.ID = node.id;
-    console.log(mark);
-    mark.clear = () => { console.log('clearing'); mark._clear(); this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); };
+    mark.clear = () => { mark._clear(); this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); };
     mark.find = () => { let {from, to} = this.props.ast.getNodeById(node.id); return {from, to}; };
     mark.options = options;
     this.props.dispatch({type: 'ADD_MARK', id: node.id, mark: mark});
@@ -516,7 +512,6 @@ class BlockEditor extends Component {
   handleKeyDown = (e, env) => {
     env.showDialog = this.props.showDialog;
     env.toolbarRef = this.props.toolbarRef;
-    console.log(env);
     return keyDown(e, env, this.props.keyMap);
   }
 
@@ -614,7 +609,6 @@ const mapDispatchToProps = dispatch => ({
   setAST: ast => dispatch({type: 'SET_AST', ast}),
   setCursor: (_, cur) => dispatch(setCursor(cur)),
   clearFocus: () => {
-    //console.log('BlockEditor:671 calling SET_FOCUS with focusId null');
     return dispatch({type: 'SET_FOCUS', focusId: null});
   },
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
