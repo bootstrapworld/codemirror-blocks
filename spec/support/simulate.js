@@ -1,4 +1,5 @@
 import { fireEvent } from "@testing-library/react";
+import userEvent from '@testing-library/user-event';
 
 // These exported functions simulate browser events for testing.
 // They use React's test utilities whenever possible.
@@ -21,6 +22,20 @@ export function doubleClick(node) {
 }
 export function blur(node=document.activeElement) {
   fireEvent.blur(toElement(node));
+}
+export function paste(pastedString, node=document.activeElement) {
+  
+  var dT = null;
+  try{ dT = new DataTransfer();} catch(e){}
+  var pasteEvent = new ClipboardEvent('paste', {clipboardData: dT});
+  pasteEvent.clipboardData.setData('text/plain', pastedString);
+  //pasteEvent.stopPropagation();
+  node.dispatchEvent(pasteEvent);
+  
+  //userEvent.paste(toElement(node), pastedString);
+}
+export function cut(node=document.activeElement) {
+  fireEvent.cut(toElement(node));
 }
 
 function createBubbledEvent(type, props = {}) {
