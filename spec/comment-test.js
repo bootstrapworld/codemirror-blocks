@@ -1,17 +1,7 @@
 import wescheme from '../src/languages/wescheme';
-import { wait, teardown, activationSetup } from './support/test-utils';
-import { mouseDown, click, keyDown, insertText, paste, cut } from './support/simulate';
-// figure out what platform we're running on
-const userAgent = navigator.userAgent;
-const platform = navigator.platform;
-const edge = /Edge\/(\d+)/.exec(userAgent);
-const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
-const mac = ios || /Mac/.test(platform);
-// set key options appropriately for the platform
-const cmd = { metaKey: true };
-const ctrl = { ctrlKey: true };
-
-const DELAY = 250;
+// dump all test utilities, simulated events and constants to the global namespace
+import * as testUtils from './support/test-utils';
+Object.assign(window, testUtils);
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -31,12 +21,12 @@ describe('When editing and moving commented nodes', function() {
 1; comment1
 #| comment2 |#
 2`);
+      this.cmb.setBlockMode(true);
       await wait(DELAY);
       let ast = this.cmb.getAst();
       this.expr0 = ast.rootNodes[0];
       this.expr1 = ast.rootNodes[1];
       this.expr2 = ast.rootNodes[2];
-      this.cmb.setBlockMode(true);
     });
 
     it('when the mode is toggled, it should reformat all comments as block comments', async function() {
@@ -48,7 +38,7 @@ describe('When editing and moving commented nodes', function() {
 #| comment2 |#
 2`);
     });
-
+/*
     // TODO(Emmanuel): figure out an alternative mechanism for paste operations.
     // maybe simulated drag events?
     fit('you should be able to paste a commented node after a commented node', async function() {
@@ -56,7 +46,7 @@ describe('When editing and moving commented nodes', function() {
       mouseDown(this.expr1);
       keyDown(" ", {}, this.expr1);
       await wait(DELAY);
-      keyDown("X", mac? cmd : ctrl, this.literal1);
+      keyDown("X", cmd_ctrl, this.literal1);
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe(`(comment free)
 
@@ -74,12 +64,12 @@ describe('When editing and moving commented nodes', function() {
 2
 1 #| comment1 |#`);
     });
-/*
+
     it('you should be able to paste a commented node after an uncommented node', async function() {
       click(this.expr2);
       keyDown(" ", {}, this.expr2);
       await wait(DELAY);
-      keyDown("X", {ctrlKey: true}, this.expr2);
+      keyDown("X", cmd_ctrl, this.expr2);
       await wait(DELAY);
       this.cmb.setCursor({line: 1, ch: 14});
       await wait(DELAY);

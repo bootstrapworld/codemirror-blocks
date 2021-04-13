@@ -1,17 +1,8 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
-import {wait, teardown, activationSetup} from './support/test-utils';
-
-import {
-  click,
-  mouseDown,
-  blur,
-  keyDown,
-  insertText,
-} from './support/simulate';
-
-// ms delay to let the DOM catch up before testing
-const DELAY = 250;
+// dump all test utilities, simulated events and constants to the global namespace
+import * as testUtils from './support/test-utils';
+Object.assign(window, testUtils);
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };

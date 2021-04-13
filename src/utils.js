@@ -2,6 +2,27 @@ import SHARED from './shared';
 import {store} from './store';
 import objToStableString from 'fast-json-stable-stringify';
 
+/**************************************************************
+* Compute which platform we're on
+*/
+const userAgent = navigator.userAgent;
+const platform = navigator.platform;
+const edge = /Edge\/(\d+)/.exec(userAgent);
+const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
+export const mac = ios || /Mac/.test(platform);
+
+/**************************************************************
+* Utility functions used in one or more files
+*/
+
+// make sure we never assign the same ID to two nodes in ANY active
+// program at ANY point in time.
+store.nodeCounter = 0;
+export function gensym() {
+  return (store.nodeCounter++).toString(16);
+}
+export function resetNodeCounter() { store.nodeCounter = 0; }
+
 // Use reliable object->string library to generate a pseudohash,
 // then hash the string so we don't have giant "hashes" eating memory
 // (see https://stackoverflow.com/a/7616484/12026982 and
@@ -17,14 +38,6 @@ export function hashObject(obj) {
   }
   return hash;
 };
-
-// make sure we never assign the same ID to two nodes in ANY active
-// program at ANY point in time.
-store.nodeCounter = 0;
-export function gensym() {
-  return (store.nodeCounter++).toString(16);
-}
-export function resetNodeCounter() { store.nodeCounter = 0; }
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {

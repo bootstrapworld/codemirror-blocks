@@ -1,9 +1,7 @@
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
-import { wait, teardown, activationSetup } from './support/test-utils';
-import { mouseDown, keyDown, dragstart, drop } from './support/simulate';
-
-const DELAY = 250;
+import * as testUtils from './support/test-utils';
+Object.assign(window, testUtils);
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };

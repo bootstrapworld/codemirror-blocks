@@ -1,7 +1,9 @@
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
 /* eslint-disable */ //temporary
-import {wait, teardown, activationSetup} from './support/test-utils';
+// dump all test utilities, simulated events and constants to the global namespace
+import * as testUtils from './support/test-utils';
+Object.assign(window, testUtils);
 
 import {
   dragstart,
@@ -13,8 +15,6 @@ import {
   mouseDown,
   keyDown
 } from './support/simulate';
-
-const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
