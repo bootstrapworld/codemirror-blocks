@@ -13,7 +13,7 @@ import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, say, resetNodeCounter, minpos, maxpos,
+import {poscmp, resetNodeCounter, minpos, maxpos,
   validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 import { defaultKeyMap, keyDown } from '../keymap';
@@ -146,7 +146,6 @@ class BlockEditor extends Component {
     setAST: PropTypes.func.isRequired,
     setCursor: PropTypes.func.isRequired,
     setQuarantine: PropTypes.func.isRequired,
-    setAnnouncer: PropTypes.func.isRequired,
     clearFocus: PropTypes.func.isRequired,
     activateByNid: PropTypes.func.isRequired,
     search: PropTypes.shape({
@@ -246,41 +245,25 @@ class BlockEditor extends Component {
   }
 
   handleEditorDidMount = ed => {
-    const wrapper = ed.getWrapperElement();
-    wrapper.setAttribute('role', 'tree');
-    wrapper.setAttribute('aria-label', 'Block Editor');
-
-    const scroller = ed.getScrollerElement();
-    scroller.setAttribute('role', 'presentation');
-
-    const announcements = document.createElement('span');
-    announcements.setAttribute('role', 'log');
-    announcements.setAttribute('aria-live', 'assertive');
-    wrapper.appendChild(announcements);
+    const {passedAST:ast, setAST, search, options, onMount} = this.props;
     ed.on('beforeChange', this.handleBeforeChange);
     ed.on('changes', this.handleChanges);
 
-    var ast = this.props.passedAST;
-    this.props.setAST(ast);
-    if (this.props.options.collapseAll) {
-      this.props.dispatch({type: 'COLLAPSE_ALL'});
-    }
-    this.props.setAnnouncer(announcements);
-    say("Block Mode Enabled", 500);
+    // set AST and searchg properties and collapse preferences
+    setAST(ast); search.setCM(ed);
+    if (options.collapseAll) { this.props.dispatch({type: 'COLLAPSE_ALL'}); }
 
-    // if we have nodes, default to the first one. Note that does NOT
-    // activate a node; only when the editor is focused, the focused node will be
-    // active
+    // When the editor receives focus, select the first root (if it exists)
     if (ast.rootNodes.length > 0) {
       this.props.dispatch({type: 'SET_FOCUS', focusId: ast.rootNodes[0].id});
     }
-    // a tree element should know how many roots it has
+    // Set extra aria attributes
+    const wrapper = ed.getWrapperElement();
+    wrapper.setAttribute('role', 'tree');
     wrapper.setAttribute('aria-setsize', ast.rootNodes.length);
-    this.props.search.setCM(ed);
 
     // pass the block-mode CM editor, API, and current AST
-    SHARED.cm = ed;
-    this.props.onMount(ed, this.buildAPI(ed), ast);
+    onMount(ed, this.buildAPI(ed), ast);
   }
 
   executeAction(action) {
@@ -626,7 +609,6 @@ const mapStateToProps = ({ast, cur, quarantine}) => ({
 const mapDispatchToProps = dispatch => ({
   dispatch,
   setAST: ast => dispatch({type: 'SET_AST', ast}),
-  setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
   setCursor: (_, cur) => dispatch(setCursor(cur)),
   clearFocus: () => {
     //console.log('BlockEditor:671 calling SET_FOCUS with focusId null');

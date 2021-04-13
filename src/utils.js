@@ -2,10 +2,10 @@ import SHARED from './shared';
 import {store} from './store';
 import objToStableString from 'fast-json-stable-stringify';
 
-// Use reliable object->string library to generate a 
-// pseudohash, then hash the string so we don't have giant 
-// "hashes" eating memory (see https://stackoverflow.com/a/7616484/12026982 
-// and https://anchortagdev.com/consistent-object-hashing-using-stable-stringification/ )
+// Use reliable object->string library to generate a pseudohash,
+// then hash the string so we don't have giant "hashes" eating memory
+// (see https://stackoverflow.com/a/7616484/12026982 and
+// https://anchortagdev.com/consistent-object-hashing-using-stable-stringification/ )
 export function hashObject(obj) {
   const str = objToStableString(obj);
   var hash = 0, i, chr;
@@ -110,16 +110,15 @@ store.queuedAnnouncement = false;
 // This handles _everything_else_.
 export function say(text, delay=200, allowOverride=false) {
   const announcement = document.createTextNode(text + ', ');
-  let state = store.getState();
-  const announcer = state.announcer;
+  const announcer = SHARED.announcer;
   if (store.muteAnnouncements || !announcer) return; // if nothing to do, bail
   clearTimeout(store.queuedAnnouncement);            // clear anything overrideable
   if(allowOverride) {                                // enqueue overrideable announcements
     store.queuedAnnouncement = setTimeout(() => say('Use enter to edit', 0), delay);
   } else {                                           // otherwise write it to the DOM,
+    announcer.childNodes.forEach( c => c.remove() ); // remove the children
     console.log('say:', text);                       // then erase it 10ms later
     setTimeout(() => announcer.appendChild(announcement), delay);
-    setTimeout(() => announcer.removeChild(announcement), delay + 10);
   }
 }
 

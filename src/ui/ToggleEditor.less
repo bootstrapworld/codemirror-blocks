@@ -14,7 +14,6 @@
   font-size:    14px;
   color:        white;
   padding:      20px; 
-  white-space:  pre;
   transform: translateX(-50%) translateY(-50%);
 
   .EditorError {
@@ -33,17 +32,21 @@
     padding:      20px;
     white-space:  pre;
     transform: translateX(-50%) translateY(-50%);
-
-    .closeError {
-      width:        150px;
-      background:   black;
-      border:       3px white double;
-      text-align:   center;
-      font-size:    18px;
-      color:        white;
-      display:      block;
-      margin:       auto;
-      margin-top:   100px;
+  }
+  .shortcuts {
+    width: 100%;
+    min-width: 450px;
+    text-align: center;
+    float: left;
+    padding: 20px;
+    table {width: 100%;}
+    td:first-child, th:first-child { text-align: left; width: 50%; }
+    td:last-child, th:last-child { text-align: right; width: 50%; }
+    kbd+kbd {margin-left: 10px; }
+    tr:hover { 
+      background: white; color: black; 
+      kbd {background-color: lightgray; color: black;}
     }
   }
+  .screenreader { visibility: hidden; display: block; width: 1px; height: 1px; }
 }

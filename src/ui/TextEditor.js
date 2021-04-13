@@ -22,21 +22,7 @@ class TextEditor extends Component {
   }
 
   handleEditorDidMount = ed => {
-    const wrapper = ed.getWrapperElement();
-    wrapper.setAttribute('aria-label', 'Text Editor');
-
-    const scroller = ed.getScrollerElement();
-    scroller.setAttribute('role', 'presentation');
-
-    const announcements = document.createElement('span');
-    announcements.setAttribute('role', 'log');
-    announcements.setAttribute('aria-live', 'assertive');
-    wrapper.appendChild(announcements);
-    this.props.setAnnouncer(announcements);
-    say("Text Mode Enabled", 500);
-    
     // pass the text-mode CM editor, API, and current AST
-    SHARED.cm = ed;
     this.props.onMount(ed, this.buildAPI(ed), this.props.passedAST);
   }
 

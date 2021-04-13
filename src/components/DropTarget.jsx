@@ -248,7 +248,9 @@ class ActualDropTarget extends BlockComponent {
         onMouseOver={this.handleMouseDragRelated}
         onDragOver={this.handleMouseDragRelated}
         onDrop={this.handleMouseDragRelated}
-        onClick = {this.handleClick} />
+        onClick = {this.handleClick} 
+        data-field = {this.context.field}
+       />
     );
   }
 }
