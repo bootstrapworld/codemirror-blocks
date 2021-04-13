@@ -38,6 +38,7 @@ export function findAdjacentDropTargetId(child, onLeft) {
     for (let sibling of children) {
       if (sibling.id?.startsWith("block-drop-target-")) {
         // We've hit a drop-target. Remember its id, in case it's adjacent to the node.
+        console.log(sibling);
         prevDropTargetId = sibling.id.substring(18); // skip "block-drop-target-"
       } else if (sibling.id == targetId) {
         // We've found this node! Return the id of the adjacent drop target.

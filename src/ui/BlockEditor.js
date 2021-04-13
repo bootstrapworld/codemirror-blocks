@@ -516,6 +516,7 @@ class BlockEditor extends Component {
   handleKeyDown = (e, env) => {
     env.showDialog = this.props.showDialog;
     env.toolbarRef = this.props.toolbarRef;
+    console.log(env);
     return keyDown(e, env, this.props.keyMap);
   }
 
