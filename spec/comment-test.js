@@ -48,7 +48,7 @@ describe('When editing and moving commented nodes', function() {
 #| comment2 |#
 2`);
     });
-/*
+
     // TODO(Emmanuel): figure out an alternative mechanism for paste operations.
     // maybe simulated drag events?
     fit('you should be able to paste a commented node after a commented node', async function() {
@@ -74,7 +74,7 @@ describe('When editing and moving commented nodes', function() {
 2
 1 #| comment1 |#`);
     });
-
+/*
     it('you should be able to paste a commented node after an uncommented node', async function() {
       click(this.expr2);
       keyDown(" ", {}, this.expr2);
