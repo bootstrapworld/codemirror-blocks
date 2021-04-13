@@ -8,8 +8,9 @@ import ByString from './searchers/ByString';
 import ByBlock from './searchers/ByBlock';
 import attachSearch from './Search';
 import Toolbar from './Toolbar';
-import {ToggleButton, BugButton} from './EditorButtons';
-import TrashCan from './TrashCan';
+import { ToggleButton, BugButton } from './EditorButtons';
+import { say } from '../utils';
+ import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import './ToggleEditor.less';
 
@@ -45,7 +46,7 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
 export default @CMBContext class ToggleEditor extends Component {
   state = {
     blockMode: false,
-    dialog: false
+    dialog: false,
   }
 
   static propTypes = {
@@ -73,8 +74,13 @@ export default @CMBContext class ToggleEditor extends Component {
     this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
     this.language = props.language;
     this.parser = this.language.getParser();
-
     this.toolbarRef = createRef();
+
+    // construct announcer DOM node
+    const announcements = document.createElement('div');
+    announcements.setAttribute('aria-live', 'assertive');
+    announcements.setAttribute('aria-atomic', 'true');
+    SHARED.announcer = announcements;
 
     let defaultOptions = {
       parser: this.parser,
@@ -88,7 +94,7 @@ export default @CMBContext class ToggleEditor extends Component {
 
     // make sure 'this' always refers to ToggleEditor
     // see https://reactjs.org/docs/handling-events.html
-    this.showDialog = this.showDialog.bind(this);
+    this.showDialog  = this.showDialog.bind(this);
     this.closeDialog = this.closeDialog.bind(this);
   }
 
@@ -130,10 +136,17 @@ export default @CMBContext class ToggleEditor extends Component {
 
   // After a mode switch, rebuild the API and re-assign events
   handleEditorMounted = (ed, api, ast) => {
+    // set CM aria attributes, and add announcer
+    const mode = this.state.blockMode ? 'Block' : 'Text';
+    ed.getScrollerElement().setAttribute('role', 'presentation');
+    ed.getWrapperElement().setAttribute('aria-label', mode+' Editor');
+    ed.getWrapperElement().appendChild(SHARED.announcer);
+    // Rebuild the API and assign re-events
     Object.assign(this.props.api, this.buildAPI(ed), api);
     Object.keys(this.eventHandlers).forEach(type => {
       this.eventHandlers[type].forEach(h => ed.on(type, h));
     });
+    
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
     window.requestAnimationFrame( () => setTimeout(() => {
@@ -142,6 +155,9 @@ export default @CMBContext class ToggleEditor extends Component {
         this.props.api.markText(node.from, node.to, m.options);
       });
     }, 0));
+    // save the editor, and announce completed mode switch
+    SHARED.cm = ed;
+    say(mode + " Mode Enabled", 500);
   }
 
   componentDidMount() { this.hasMounted = true; }
