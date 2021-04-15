@@ -24,14 +24,11 @@ export function blur(node=document.activeElement) {
   fireEvent.blur(toElement(node));
 }
 export function paste(pastedString, node=document.activeElement) {
-  
   var dT = null;
   try{ dT = new DataTransfer();} catch(e){}
   var pasteEvent = new ClipboardEvent('paste', {clipboardData: dT});
   pasteEvent.clipboardData.setData('text/plain', pastedString);
-  //pasteEvent.stopPropagation();
-  node.dispatchEvent(pasteEvent);
-  
+  toElement(node).dispatchEvent(pasteEvent);
   //userEvent.paste(toElement(node), pastedString);
 }
 export function cut(node=document.activeElement) {

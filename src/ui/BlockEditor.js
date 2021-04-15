@@ -357,7 +357,7 @@ class BlockEditor extends Component {
       * APIs FOR TESTING
       */
       'getQuarantine': () => withState(({quarantine}) => quarantine),
-      'setQuarantine': (q) => this.props.setQuarantine(q),
+      'setQuarantine': (start, end, txt) => this.props.setQuarantine(start, end, txt),
       'resetNodeCounter': () => resetNodeCounter(),
       'executeAction' : (action) => this.executeAction(action),
     };

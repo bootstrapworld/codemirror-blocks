@@ -41,7 +41,7 @@ const initialState = {
 export const reducer = (
   state = initialState,
   action) => {
-  console.log(action);
+  //console.log(action);
   let result = null;
   let tU;
   switch (action.type) {

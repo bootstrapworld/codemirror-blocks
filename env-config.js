@@ -1,5 +1,5 @@
 var envConfig = {};
-envConfig.localDebug = true;
+envConfig.localDebug = false;
 envConfig.isCI = process.env.CONTINUOUS_INTEGRATION === 'true' || envConfig.localDebug;
 envConfig.runCoverage = process.env.COVERAGE === 'true' || envConfig.isCI;
 envConfig.devBrowser = process.env.PHANTOM ? 'PhantomJS' : 'Chrome';

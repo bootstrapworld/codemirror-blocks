@@ -34,13 +34,7 @@ module.exports = Object.assign({}, baseConfig, {
   module: Object.assign({}, baseConfig.module, {
     rules: rules
   }),
+  watch: true,
   mode: 'development',
-  output: { filename: '[name].js' },
-  // Work around webpack 4 compatibility issues:
-  // https://github.com/webpack-contrib/karma-webpack/issues/322
-  optimization: {
-    splitChunks: false,
-    runtimeChunk: false,
-  },
   plugins: plugins,
 });

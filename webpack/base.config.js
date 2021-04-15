@@ -36,7 +36,7 @@ module.exports = function(config) {
     },
     output: {
       path: path.resolve(__dirname, '..', "build"),
-      filename: "[name].js"
+      //filename: "[name].js" // commented out for karma to work, and seems unecessary!
     },
     devtool: 'cheap-module-source-map',
     mode: envConfig.isCI? "development" : "production",
@@ -49,7 +49,10 @@ module.exports = function(config) {
             path.resolve(__dirname, '..', 'src'),
             path.resolve(__dirname, '..', 'spec')
           ],
-          use: "ts-loader",
+          use: [{
+            loader: "ts-loader",
+            options: { transpileOnly: true},
+          }],
         },
         {
           test: /\.(js|jsx)$/,

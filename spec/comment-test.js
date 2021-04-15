@@ -39,9 +39,7 @@ describe('When editing and moving commented nodes', function() {
 2`);
     });
 /*
-    // TODO(Emmanuel): figure out an alternative mechanism for paste operations.
-    // maybe simulated drag events?
-    fit('you should be able to paste a commented node after a commented node', async function() {
+    it('you should be able to insert a commented node after a commented node', async function() {
       await wait(DELAY);
       mouseDown(this.expr1);
       keyDown(" ", {}, this.expr1);
@@ -52,11 +50,9 @@ describe('When editing and moving commented nodes', function() {
 
 #| comment2 |#
 2`);
-      this.cmb.setCursor({line: 10, ch: 0}); // click way down below the code
+      this.cmb.setQuarantine([{line: 3, ch: 1}, {line: 3, ch: 1}, "1 #| comment1 |#"]);
       await wait(DELAY);
-      const {line, ch} = this.cmb.getCursor();
-      expect({line, ch}).toEqual({line: 3, ch: 1}); // cursor should be at the end
-      paste('1 #| comment1 |#');
+      keyDown("Enter");
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe(`(comment free)
 
@@ -65,26 +61,20 @@ describe('When editing and moving commented nodes', function() {
 1 #| comment1 |#`);
     });
 
-    it('you should be able to paste a commented node after an uncommented node', async function() {
-      click(this.expr2);
+    it('you should be able to insert a commented node after an uncommented node', async function() {
+      mouseDown(this.expr2);
       keyDown(" ", {}, this.expr2);
       await wait(DELAY);
       keyDown("X", cmd_ctrl, this.expr2);
       await wait(DELAY);
-      this.cmb.setCursor({line: 1, ch: 14});
-      await wait(DELAY);
-      keyDown("V", { ctrlKey: true }, this.literal1);
+      this.cmb.setQuarantine([{line: 0, ch: 14}, {line: 0, ch: 14}, "1 #| comment1 |#"])
       await wait(DELAY);
       keyDown("Enter");
       await wait(DELAY);
-      expect(this.cmb.getValue()).toBe(`
-(comment free) 
-#| comment2 |#
-2
-1; comment1
+      expect(this.cmb.getValue()).toBe(`(comment free) 1 #| comment1 |#
+1 #| comment1 |#
 `);
-
     });
-    */
+*/    
   });
 });

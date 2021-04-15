@@ -1,11 +1,11 @@
 // Karma configuration
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
-var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
+var webpackConfig = require('./webpack/test.config.js');
 
 // Configure frameworks and plugins:
 // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-var frameworks = ['jasmine'];
+var frameworks = ['jasmine', 'webpack'];
 var plugins = [
   'karma-sourcemap-loader',
   'karma-jasmine',
@@ -105,12 +105,8 @@ module.exports = function(config) {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
 
-    // delete??
-    //exclude: ['actions.js'],
-
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    //browsers: [ envConfig.isCI ? 'ChromeTravisCI' : envConfig.devBrowser ],
     browsers: ['ChromeHeadless'],
     customLaunchers: {
       ChromeTravisCI: {
@@ -127,7 +123,7 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultanous
-    concurrency: 4,
+    concurrency: envConfig.isCI ? 4 : Infinity,
     captureTimeout: 60000,
     browserDisconnectTolerance: 3,
     browserDisconnectTimeout: 10000,
