@@ -1,8 +1,13 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
-// dump all test utilities, simulated events and constants to the global namespace
-import * as testUtils from './support/test-utils';
-Object.assign(window, testUtils);
+
+/*eslint no-unused-vars: "off"*/
+import {
+  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
+  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
+  dragend, dragleave, keyDown, keyPress, insertText
+} from '../spec/support/test-utils';
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
