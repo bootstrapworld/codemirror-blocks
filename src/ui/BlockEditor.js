@@ -154,6 +154,7 @@ class BlockEditor extends Component {
       setCursor: PropTypes.func.isRequired,
       setCM: PropTypes.func.isRequired,
     }),
+    toolbarRef: PropTypes.object,
     onBeforeChange: PropTypes.func,
     onMount:PropTypes.func.isRequired,
     hasQuarantine: PropTypes.bool.isRequired,

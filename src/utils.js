@@ -1,6 +1,7 @@
 import SHARED from './shared';
 import {store} from './store';
 import objToStableString from 'fast-json-stable-stringify';
+import CodeMirror from 'codemirror';
 
 /**************************************************************
 * Compute which platform we're on
@@ -37,7 +38,7 @@ export function hashObject(obj) {
     hash |= 0; // Convert to 32bit integer
   }
   return hash;
-};
+}
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {
@@ -181,7 +182,7 @@ export function withDefaults(obj, def) {
   return {...def, ...obj};
 }
 
-export function getBeginCursor(cm) {
+export function getBeginCursor() {
   return CodeMirror.Pos(0, 0);
 }
 

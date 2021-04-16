@@ -1,4 +1,4 @@
-import {Component, createRef} from 'react';
+import React, {Component, createRef} from 'react';
 import PropTypes from 'prop-types/prop-types';
 import {skipCollapsed, poscmp, skipWhile, getNodeContainingBiased } from '../../utils';
 

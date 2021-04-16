@@ -3,7 +3,7 @@ import CodeMirror from 'codemirror';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget, activateByNid} from './actions';
-import {partition, getRoot, skipCollapsed, say, mac,
+import {partition, getRoot, skipCollapsed, say, mac, assert,
   getLastVisibleNode, preambleUndoRedo, playSound, BEEP} from './utils';
 import {findAdjacentDropTargetId as getDTid} from './components/DropTarget';
 
@@ -71,25 +71,24 @@ Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
-const pasteHandler = function (_, e) {
-    if(!this.node) { return CodeMirror.Pass; }
-    const node = this.node;
-    const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
-    const pos = before ? node.srcRange().from : node.srcRange().to;
-    if (this.selections.includes(node.id)) {
-      paste(new ReplaceNodeTarget(node));
-    } else if (node.parent) {
-      let dropTarget = document.getElementById(findAdjacentDropTargetId(node, before));
-      console.log(node, this.context, dropTarget)
-      // We're inside the AST somewhere. Try to paste to the left/right.
-      const target = new InsertTarget(this.node.parent, this.context.field, pos);
-      if (target) { paste(target); }
-      else { say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); }
-    } else {
-      // We're at a root node. Insert to the left or right, at the top level.
-      paste(new OverwriteTarget(pos, pos));
-    }
+function pasteHandler(_, e) {
+  if(!this.node) { return CodeMirror.Pass; }
+  const node = this.node;
+  const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
+  const pos = before ? node.srcRange().from : node.srcRange().to;
+  if (this.selections.includes(node.id)) {
+    paste(new ReplaceNodeTarget(node));
+  } else if (node.parent) {
+    let dropTarget = document.getElementById(getDTid(node, before));
+    // We're inside the AST somewhere. Try to paste to the left/right.
+    const target = new InsertTarget(this.node.parent, dropTarget, pos);
+    if (target) { paste(target); }
+    else { say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); }
+  } else {
+    // We're at a root node. Insert to the left or right, at the top level.
+    paste(new OverwriteTarget(pos, pos));
   }
+}
 
 export const commandMap = {
   prevFocus : function (_, e) {
@@ -219,10 +218,10 @@ export const commandMap = {
       const isContained = id => this.ast.isAncestor(node.id, id);
       const doesContain = id => this.ast.isAncestor(id, node.id);
       const [removed, newSelections] = partition(this.selections, isContained);
-      for (const r of removed) {
-        // TODO(Emmanuel): announce removal
-      }
+      assert(removed.length == 0); 
       if (newSelections.some(doesContain)) {
+        playSound(BEEP);
+        say('This node is already has a selected ancestor');
         // TODO(Emmanuel): announce failure
       } else {
         // TODO(Emmanuel): announce addition
@@ -356,7 +355,7 @@ export function keyDown(e, env, keyMap) {
       };
       // If there's a node, make sure it's fresh
       if(env.node) {
-        env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid)
+        env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid);
       }
     });
     handler = handler.bind(env);
@@ -383,8 +382,10 @@ export function renderKeyMap(keyMap) {
       <table className="shortcuts">
         <tbody>
         {
-          Object.entries(reverseMap).map(
-            kv => (<tr><td>{kv[0]}</td><td>{kv[1].map(key => (<kbd>{key}</kbd>))}</td></tr>)
+          Object.entries(reverseMap).map(  // for each command, make a row...
+            (kv, i) =>                     // for each row, list the kbd shortcuts
+              (<tr key={i}><td>{kv[0]}</td><td>{kv[1].map((shortcut, j) => 
+                (<kbd key={j}>{shortcut}</kbd>))}</td></tr>)
           )
         }
         </tbody>

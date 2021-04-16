@@ -10,7 +10,7 @@ import attachSearch from './Search';
 import Toolbar from './Toolbar';
 import { ToggleButton, BugButton } from './EditorButtons';
 import { say } from '../utils';
- import TrashCan from './TrashCan';
+import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import './ToggleEditor.less';
 
@@ -208,12 +208,12 @@ export default @CMBContext class ToggleEditor extends Component {
         return {blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
         return {dialog: (
-            <>
-            <span className="dialogTitle">Could not convert to Blocks</span>
-            <p></p>
-            {e.toString()}
-            </>
-          )};
+          <>
+          <span className="dialogTitle">Could not convert to Blocks</span>
+          <p></p>
+          {e.toString()}
+          </>
+        )};
       }
     });
   }

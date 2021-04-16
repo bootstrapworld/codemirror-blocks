@@ -3,6 +3,9 @@ import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import './example-page.less';
 import bigExampleCode from './ast-test.rkt';
 import hugeExampleCode from './huge-code.rkt';
+
+// HACK: expose ALL test utilities, events, etc
+// so they can be used from the browser console
 import * as t from '../spec/support/test-utils';
 Object.assign(window, t);
 

@@ -67,7 +67,7 @@ class NodeEditable extends Component {
         //console.log('XXX NodeEditable:67, onSuccess of focusId=', focusId, 'nid=', firstNewId);
         if (firstNewId !== null && firstNewId !== undefined) {
           //console.log('XXX NodeEditable:69');
-          const {ast} = getState()
+          const {ast} = getState();
           const firstNewNid = ast.getNodeById(focusId).nid;
           //console.log('XXX NodeEditable:72 aBNid of focusId=', focusId, 'nid=', firstNewNid);
           dispatch(activateByNid(firstNewNid, {allowMove: true}));

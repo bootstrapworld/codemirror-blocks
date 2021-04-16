@@ -51,7 +51,7 @@ export function commitChanges(
     if (!isUndoOrRedo) {
       // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
       // this is what populates our undo stack.
-        //console.log('commitChanges:54 focusId=', focusId);
+      //console.log('commitChanges:54 focusId=', focusId);
       let newFocus = null;
       if (focusId) {  newFocus = newAST.getNodeById(focusId); }
       let newFocusNId = newFocus?.nid;
