@@ -43,7 +43,7 @@ describe('When editing and moving commented nodes', function() {
 #| comment2 |#
 2`);
     });
-    /*
+    
     it('you should be able to insert a commented node after a commented node', async function() {
       await wait(DELAY);
       mouseDown(this.expr1);
@@ -55,7 +55,7 @@ describe('When editing and moving commented nodes', function() {
 
 #| comment2 |#
 2`);
-      this.cmb.setQuarantine([{line: 3, ch: 1}, {line: 3, ch: 1}, "1 #| comment1 |#"]);
+      this.cmb.setQuarantine({line: 3, ch: 1}, {line: 3, ch: 1}, "1 #| comment1 |#");
       await wait(DELAY);
       keyDown("Enter");
       await wait(DELAY);
@@ -66,13 +66,13 @@ describe('When editing and moving commented nodes', function() {
 1 #| comment1 |#`);
     });
 
-    it('you should be able to insert a commented node after an uncommented node', async function() {
+    fit('you should be able to insert a commented node after an uncommented node', async function() {
       mouseDown(this.expr2);
       keyDown(" ", {}, this.expr2);
       await wait(DELAY);
       keyDown("X", cmd_ctrl, this.expr2);
       await wait(DELAY);
-      this.cmb.setQuarantine([{line: 0, ch: 14}, {line: 0, ch: 14}, "1 #| comment1 |#"])
+      this.cmb.setQuarantine({line: 0, ch: 14}, {line: 0, ch: 14}, "1 #| comment1 |#")
       await wait(DELAY);
       keyDown("Enter");
       await wait(DELAY);
@@ -80,6 +80,6 @@ describe('When editing and moving commented nodes', function() {
 1 #| comment1 |#
 `);
     });
-    */    
+     
   });
 });
