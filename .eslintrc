@@ -1,5 +1,5 @@
 {
-  "parser": "babel-eslint",
+  "parser": "@babel/eslint-parser",
   "rules": {
     "comma-dangle": 0,
     "indent": ["warn", 2, {
@@ -45,7 +45,7 @@
   ],
   "settings": {
     "react" : {
-      "version" : "16.9.0"
+      "version" : "17.0.2"
     }
   }
 }
