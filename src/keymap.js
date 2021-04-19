@@ -71,7 +71,7 @@ Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
-const pasteHandler = function (_, e) {
+function pasteHandler(_, e) {
   if(!this.node) { return CodeMirror.Pass; }
   const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
   const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
@@ -220,11 +220,12 @@ export const commandMap = {
       const isContained = id => this.ast.isAncestor(node.id, id);
       const doesContain = id => this.ast.isAncestor(id, node.id);
       const [removed, newSelections] = partition(this.selections, isContained);
-      assert(removed.length == 0); 
+      for (const r of removed) {
+        // TODO(Emmanuel): announce removal
+      }
       if (newSelections.some(doesContain)) {
         playSound(BEEP);
         say('This node is already has a selected ancestor');
-        // TODO(Emmanuel): announce failure
       } else {
         // TODO(Emmanuel): announce addition
         newSelections.push(this.node.id);
