@@ -14,8 +14,8 @@ var plugins = [
   'karma-coveralls'
 ];
 
-// If we're not on Travis, add parallelism
-if (!envConfig.isCI) {
+// If we're not on Travis or trying to debug, add parallelism
+if (!(envConfig.isCI || envConfig.localDebug)) {
   frameworks.unshift('parallel');
   plugins.unshift('karma-parallel');
 }
@@ -50,7 +50,8 @@ module.exports = function(config) {
     },
 
     parallelOptions: {
-      executors: envConfig.isCI ? 1 : undefined, // undefined: defaults to cpu-count - 1
+      // undefined: defaults to cpu-count - 1
+      executors: (envConfig.isCI || envConfig.localDebug) ? 1 : undefined, 
       shardStrategy: 'round-robin',
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
@@ -70,6 +71,7 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       "spec/index.js": ["webpack", "sourcemap"],
+      "src/*.js": ["webpack", "sourcemap"],
     },
 
     karmaTypescriptConfig: {
@@ -103,7 +105,9 @@ module.exports = function(config) {
     logLevel: config.LOG_WARN,
 
     // enable / disable watching file and executing tests whenever any file changes
+    // wait half a second before re-running
     autoWatch: true,
+    autoWatchBatchDelay: 500,
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
@@ -123,7 +127,7 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultanous
-    concurrency: envConfig.isCI ? 4 : Infinity,
+    concurrency: (envConfig.isCI || envConfig.localDebug) ? 4 : Infinity,
     captureTimeout: 60000,
     browserDisconnectTolerance: 3,
     browserDisconnectTimeout: 10000,

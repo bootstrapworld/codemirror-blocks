@@ -34,7 +34,6 @@ module.exports = Object.assign({}, baseConfig, {
   module: Object.assign({}, baseConfig.module, {
     rules: rules
   }),
-  watch: true,
   mode: 'development',
   plugins: plugins,
 });

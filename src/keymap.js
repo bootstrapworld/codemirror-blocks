@@ -3,7 +3,7 @@ import CodeMirror from 'codemirror';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget, activateByNid} from './actions';
-import {partition, getRoot, skipCollapsed, say, mac, assert,
+import {partition, getRoot, skipCollapsed, say, mac,
   getLastVisibleNode, preambleUndoRedo, playSound, BEEP} from './utils';
 import {findAdjacentDropTargetId as getDTid} from './components/DropTarget';
 

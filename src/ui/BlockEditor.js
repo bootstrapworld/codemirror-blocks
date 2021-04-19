@@ -60,7 +60,7 @@ class ToplevelBlock extends BlockComponent {
   componentDidMount() {
     if(!this.props.incrementalRendering) return; // bail if incremental is off
     window.requestAnimationFrame( () => {
-      setTimeout(() => this.setState({ renderPlaceholder: false }), 50);
+      setTimeout(() => this.setState({ renderPlaceholder: false }), 250);
     });
   }
 
@@ -69,10 +69,9 @@ class ToplevelBlock extends BlockComponent {
 
     // set elt to a cheap placeholder, OR render the entire rootNode
     const elt = this.state.renderPlaceholder? (<div/>) : node.reactElement();
-
     // if any prior block markers are in this range, clear them
     const {from, to} = node.srcRange(); // includes the node's comment, if any
-    SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
+    SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m=>m.clear());
     this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
     this.mark.BLOCK_NODE_ID = node.id;
     node.mark = this.mark;
