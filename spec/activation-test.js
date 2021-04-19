@@ -1,19 +1,13 @@
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
-import { wait, teardown, activationSetup } from './support/test-utils';
-import { mouseDown, keyDown, insertText } from './support/simulate';
 
-// figure out what platform we're running on
-const userAgent = navigator.userAgent;
-const platform = navigator.platform;
-const edge = /Edge\/(\d+)/.exec(userAgent);
-const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
-const mac = ios || /Mac/.test(platform);
-// set key options appropriately for the platform
-const cmd = { metaKey: true };
-const ctrl = { ctrlKey: true };
-
-const DELAY = 250;
+/*eslint no-unused-vars: "off"*/
+import {
+  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
+  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
+  dragend, dragleave, keyDown, keyPress, insertText
+} from '../spec/support/test-utils';
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -156,7 +150,7 @@ describe('cut/copy/paste', function () {
     keyDown(" ", {}, this.literal1);
     await wait(DELAY);
 
-    keyDown("X", mac? cmd : ctrl, this.literal1);
+    keyDown("X", cmd_ctrl, this.literal1);
     await wait(DELAY);
     expect(this.cmb.getValue()).toBe('\n54');
     expect(this.activeNode().id).toBe(this.literal2.id);
@@ -172,7 +166,7 @@ describe('cut/copy/paste', function () {
     await wait(DELAY);
     expect(this.selectedNodes().length).toBe(2);
 
-    keyDown("X", mac? cmd : ctrl, this.literal2);
+    keyDown("X", cmd_ctrl, this.literal2);
     await wait(DELAY);
     expect(this.selectedNodes().length).toBe(0);
     expect(this.cmb.getValue()).toBe('\n');

@@ -1,10 +1,12 @@
 import wescheme from '../src/languages/wescheme';
-import { wait, teardown, activationSetup } from './support/test-utils';
-//import { click, keyDown, insertText } from './support/simulate';
 
-
-// ms delay to let the DOM catch up before testing
-const DELAY = 500;
+/*eslint no-unused-vars: "off"*/
+import {
+  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
+  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
+  dragend, dragleave, keyDown, keyPress, insertText
+} from '../spec/support/test-utils';
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -18,74 +20,52 @@ describe('When editing and moving commented nodes', function() {
 
   describe('cut and paste', function() {
     beforeEach(async function() {
+      await wait(DELAY);
       this.cmb.setValue(`
 (comment free)
 1; comment1
 #| comment2 |#
 2`);
+      this.cmb.setBlockMode(true);
       await wait(DELAY);
-      this.expr0 = this.cmb.getAst().rootNodes[0];
-      this.expr1 = this.cmb.getAst().rootNodes[1];
-      this.expr2 = this.cmb.getAst().rootNodes[2];
+      let ast = this.cmb.getAst();
+      this.expr0 = ast.rootNodes[0];
+      this.expr1 = ast.rootNodes[1];
+      this.expr2 = ast.rootNodes[2];
     });
 
     it('when the mode is toggled, it should reformat all comments as block comments', async function() {
       this.cmb.setBlockMode(false);
       await wait(DELAY);
-      // Why the lack of newline?
+      // the opening whitespace should be removed!
       expect(this.cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
 #| comment2 |#
 2`);
     });
-    /*
-    // TODO(Emmanuel): figure out an alternative mechanism for paste operations.
-    // maybe simulated drag events?
-    it('you should be able to paste a commented node after a commented node', async function() {
-      click(this.expr1);
-      keyDown(" ", {}, this.expr1);
-      await wait(DELAY);
-      keyDown("X", {ctrlKey: true}, this.expr1);
-      await wait(DELAY);
-      expect(this.cmb.getValue()).toBe(`
-(comment free)
-#| comment2 |#
-2`);
-      this.cmb.setCursor({line: 4, ch: 1});
-      await wait(DELAY);
-      keyDown("V", { ctrlKey: true }, this.literal1);
+    /*    
+    it('you should be able to insert a commented node after a commented node', async function() {
+      this.cmb.setQuarantine({line: 3, ch: 1}, {line: 3, ch: 1}, "1 #| comment1 |#");
       await wait(DELAY);
       keyDown("Enter");
       await wait(DELAY);
-      // It would be nice to eliminate the extra newline about the 1.
-      // It's there due to an abundance of caution, but isn't needed.
-      expect(this.cmb.getValue()).toBe(`
-(comment free)
+      expect(this.cmb.getValue()).toBe(`(comment free)
+1 #| comment1 |#
 #| comment2 |#
 2
 1 #| comment1 |#`);
     });
 
-    it('you should be able to paste a commented node after an uncommented node', async function() {
-      click(this.expr2);
-      keyDown(" ", {}, this.expr2);
-      await wait(DELAY);
-      keyDown("X", {ctrlKey: true}, this.expr2);
-      await wait(DELAY);
-      this.cmb.setCursor({line: 1, ch: 14});
-      await wait(DELAY);
-      keyDown("V", { ctrlKey: true }, this.literal1);
+    it('you should be able to insert a commented node after an uncommented node', async function() {
+      this.cmb.setQuarantine({line: 0, ch: 14}, {line: 0, ch: 14}, "1 #| comment1 |#");
       await wait(DELAY);
       keyDown("Enter");
       await wait(DELAY);
-      expect(this.cmb.getValue()).toBe(`
-(comment free) 
+      expect(this.cmb.getValue()).toBe(`(comment free) 1 #| comment1 |#
+1 #| comment1 |#
 #| comment2 |#
-2
-1; comment1
-`);
-
+2`);
     });
-    */
+    */     
   });
 });

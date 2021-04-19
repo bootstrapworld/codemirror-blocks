@@ -18,6 +18,9 @@ module.exports = function(env, argv) {
     }),
     plugins: baseConfig.plugins.concat([
       new webpack.HotModuleReplacementPlugin(),
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+      }),
       new HtmlWebpackPlugin({
         filename: 'editor.html',
         template: 'example/editor.html',
@@ -26,10 +29,6 @@ module.exports = function(env, argv) {
       }),
       new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/)
     ]),
-    optimization: {
-      minimize: false,
-      splitChunks: false
-    },
     devServer: {
       hot: true,
       inline: true,

@@ -1,20 +1,13 @@
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
-/* eslint-disable */ //temporary
-import {wait, teardown, activationSetup} from './support/test-utils';
 
+/*eslint no-unused-vars: "off"*/
 import {
-  dragstart,
-  drop,
-  dragenter,
-  dragleave,
-  dragend,
-  dragenterSeq,
-  mouseDown,
-  keyDown
-} from './support/simulate';
-
-const DELAY = 250;
+  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
+  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
+  dragend, dragleave, keyDown, keyPress, insertText
+} from '../spec/support/test-utils';
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -175,8 +168,8 @@ describe('Drag and drop', function() {
       this.cmb.setValue('(collapse me)\n(+ 1 2)');
       await wait(DELAY);
       this.retrieve = function() {
-          this.firstRoot = this.cmb.getAst().rootNodes[0];
-          this.lastDropTarget = document.querySelectorAll('.blocks-drop-target')[4];
+        this.firstRoot = this.cmb.getAst().rootNodes[0];
+        this.lastDropTarget = document.querySelectorAll('.blocks-drop-target')[4];
       };
       this.retrieve();
 

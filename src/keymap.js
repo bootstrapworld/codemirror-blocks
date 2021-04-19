@@ -3,15 +3,9 @@ import CodeMirror from 'codemirror';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget, activateByNid} from './actions';
-import {partition, getRoot, skipCollapsed, say,
+import {partition, getRoot, skipCollapsed, say, mac,
   getLastVisibleNode, preambleUndoRedo, playSound, BEEP} from './utils';
 import {findAdjacentDropTargetId as getDTid} from './components/DropTarget';
-
-const userAgent = navigator.userAgent;
-const platform = navigator.platform;
-const edge = /Edge\/(\d+)/.exec(userAgent);
-const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
-const mac = ios || /Mac/.test(platform);
 
 export const defaultKeyMap = {
   // NAVIGATION
@@ -77,26 +71,26 @@ Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
-const pasteHandler = function (_, e) {
-    if(!this.node) { return CodeMirror.Pass; }
-    const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
-    const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
-    // Case 1: Overwriting selected nodes
-    if (this.selections.includes(this.node.id)) { paste(new ReplaceNodeTarget(this.node)); }
-    // Case 2: Inserting to the left or right of the root
-    else if (!this.node.parent) { paste(new OverwriteTarget(pos, pos)); }
-    // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
-    else {
-      const DTnode = document.getElementById('block-drop-target-' + getDTid(this.node, before));
-      if (DTnode?.dataset?.field) {
-        // We're somewhere valid in the AST. Initiate paste on the target field!
-        paste(new InsertTarget(this.node.parent, DTnode.dataset.field, pos));
-      } else { 
-        playSound(BEEP);
-        say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); 
-      }
+function pasteHandler(_, e) {
+  if(!this.node) { return CodeMirror.Pass; }
+  const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
+  const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
+  // Case 1: Overwriting selected nodes
+  if (this.selections.includes(this.node.id)) { paste(new ReplaceNodeTarget(this.node)); }
+  // Case 2: Inserting to the left or right of the root
+  else if (!this.node.parent) { paste(new OverwriteTarget(pos, pos)); }
+  // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
+  else {
+    const DTnode = document.getElementById('block-drop-target-' + getDTid(this.node, before));
+    if (DTnode?.dataset?.field) {
+      // We're somewhere valid in the AST. Initiate paste on the target field!
+      paste(new InsertTarget(this.node.parent, DTnode.dataset.field, pos));
+    } else { 
+      playSound(BEEP);
+      say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); 
     }
   }
+}
 
 export const commandMap = {
   prevFocus : function (_, e) {
@@ -230,7 +224,8 @@ export const commandMap = {
         // TODO(Emmanuel): announce removal
       }
       if (newSelections.some(doesContain)) {
-        // TODO(Emmanuel): announce failure
+        playSound(BEEP);
+        say('This node is already has a selected ancestor');
       } else {
         // TODO(Emmanuel): announce addition
         newSelections.push(this.node.id);
@@ -363,7 +358,7 @@ export function keyDown(e, env, keyMap) {
       };
       // If there's a node, make sure it's fresh
       if(env.node) {
-        env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid)
+        env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid);
       }
     });
     handler = handler.bind(env);
@@ -390,8 +385,10 @@ export function renderKeyMap(keyMap) {
       <table className="shortcuts">
         <tbody>
         {
-          Object.entries(reverseMap).map(
-            kv => (<tr><td>{kv[0]}</td><td>{kv[1].map(key => (<kbd>{key}</kbd>))}</td></tr>)
+          Object.entries(reverseMap).map(  // for each command, make a row...
+            (kv, i) =>                     // for each row, list the kbd shortcuts
+              (<tr key={i}><td>{kv[0]}</td><td>{kv[1].map((shortcut, j) => 
+                (<kbd key={j}>{shortcut}</kbd>))}</td></tr>)
           )
         }
         </tbody>

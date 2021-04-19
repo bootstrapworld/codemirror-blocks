@@ -1,6 +1,28 @@
 import SHARED from './shared';
 import {store} from './store';
 import objToStableString from 'fast-json-stable-stringify';
+import CodeMirror from 'codemirror';
+
+/**************************************************************
+* Compute which platform we're on
+*/
+const userAgent = navigator.userAgent;
+const platform = navigator.platform;
+const edge = /Edge\/(\d+)/.exec(userAgent);
+const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
+export const mac = ios || /Mac/.test(platform);
+
+/**************************************************************
+* Utility functions used in one or more files
+*/
+
+// make sure we never assign the same ID to two nodes in ANY active
+// program at ANY point in time.
+store.nodeCounter = 0;
+export function gensym() {
+  return (store.nodeCounter++).toString(16);
+}
+export function resetNodeCounter() { store.nodeCounter = 0; }
 
 // Use reliable object->string library to generate a pseudohash,
 // then hash the string so we don't have giant "hashes" eating memory
@@ -16,20 +38,12 @@ export function hashObject(obj) {
     hash |= 0; // Convert to 32bit integer
   }
   return hash;
-};
-
-// make sure we never assign the same ID to two nodes in ANY active
-// program at ANY point in time.
-store.nodeCounter = 0;
-export function gensym() {
-  return (store.nodeCounter++).toString(16);
 }
-export function resetNodeCounter() { store.nodeCounter = 0; }
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a, b) {
-  if (!a) { console.log('utils:16, hitting null a'); }
-  if (!b) { console.log('utils:16, hitting null b'); }
+  if (!a) { console.log('utils:44, hitting null a'); }
+  if (!b) { console.log('utils:44, hitting null b'); }
   return  a.line - b.line || a.ch - b.ch;
 }
 
@@ -168,7 +182,7 @@ export function withDefaults(obj, def) {
   return {...def, ...obj};
 }
 
-export function getBeginCursor(cm) {
+export function getBeginCursor() {
   return CodeMirror.Pos(0, 0);
 }
 

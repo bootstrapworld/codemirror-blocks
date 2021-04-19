@@ -1,17 +1,13 @@
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import wescheme from '../src/languages/wescheme';
-import {wait, teardown, activationSetup} from './support/test-utils';
 
+/*eslint no-unused-vars: "off"*/
 import {
-  click,
-  mouseDown,
-  blur,
-  keyDown,
-  insertText,
-} from './support/simulate';
-
-// ms delay to let the DOM catch up before testing
-const DELAY = 250;
+  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
+  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
+  dragend, dragleave, keyDown, keyPress, insertText
+} from '../spec/support/test-utils';
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };

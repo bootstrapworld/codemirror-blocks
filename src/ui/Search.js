@@ -76,7 +76,7 @@ export default (Editor, searchModes) => {
         if(overrideCur) return null; // if there's no wrapped match, give up
         playSound(WRAP);
         const wrappedStart = (forward? getBeginCursor : getEndCursor)(this.cm);
-        return this.handleSearch(forward, cmbState, wrappedStart)
+        return this.handleSearch(forward, cmbState, wrappedStart);
       }
     }
 

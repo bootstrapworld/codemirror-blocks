@@ -10,7 +10,7 @@ import attachSearch from './Search';
 import Toolbar from './Toolbar';
 import { ToggleButton, BugButton } from './EditorButtons';
 import { say } from '../utils';
- import TrashCan from './TrashCan';
+import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import './ToggleEditor.less';
 
@@ -160,7 +160,10 @@ export default @CMBContext class ToggleEditor extends Component {
     say(mode + " Mode Enabled", 500);
   }
 
-  componentDidMount() { this.hasMounted = true; }
+  componentDidMount() { 
+    this.hasMounted = true;
+    this.currentCode = SHARED.cm.getValue();
+  }
 
   // save any non-block, non-bookmark markers, and the NId they cover
   copyMarks(oldAST) {
@@ -203,17 +206,17 @@ export default @CMBContext class ToggleEditor extends Component {
           (the pretty-printer probably produced invalid code)`;
         }
         this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
-        SHARED.cm.setValue(code);                       // update CM with the PP code
+        this.currentCode = code;                  // update CM with the PP code
         this.props.api.blockMode = blockMode;
         return {blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
         return {dialog: (
-            <>
-            <span className="dialogTitle">Could not convert to Blocks</span>
-            <p></p>
-            {e.toString()}
-            </>
-          )};
+          <>
+          <span className="dialogTitle">Could not convert to Blocks</span>
+          <p></p>
+          {e.toString()}
+          </>
+        )};
       }
     });
   }
@@ -257,7 +260,7 @@ export default @CMBContext class ToggleEditor extends Component {
   }
 
   renderCode() {
-    let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
+    let code = this.hasMounted ? this.currentCode : this.props.initialCode;
     return (
       <TextEditor
         cmOptions={this.cmOptions}
@@ -271,7 +274,7 @@ export default @CMBContext class ToggleEditor extends Component {
   }
 
   renderBlocks() {
-    let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
+    let code = this.hasMounted ? this.currentCode : this.props.initialCode;
     return (
       <UpgradedBlockEditor
         cmOptions={this.cmOptions}
