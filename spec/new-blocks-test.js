@@ -15,8 +15,7 @@ let setup = function () { activationSetup.call(this, wescheme); };
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(function() {
     setup.call(this);
-    this.blocks = this.cmb;
-    this.blocks.setBlockMode(true);
+    this.cmb.setBlockMode(true);
   });
 
   afterEach(function () { teardown(); });
@@ -43,8 +42,8 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it("should set block mode to false", function() {
-      this.blocks.setBlockMode(false);
-      expect(this.blocks.getBlockMode()).toBe(false);
+      this.cmb.setBlockMode(false);
+      expect(this.cmb.getBlockMode()).toBe(false);
     });
   });
   /*
@@ -57,43 +56,48 @@ describe('The CodeMirrorBlocks Class', function() {
      expect(b.language.id).toBe('example');
   });
   */
-  describe('events,', function() {
+
+  fdescribe("when dealing with top-level input,", function() {
+
     beforeEach(async function() {
-      this.blocks.setValue('11');
+      this.cmb.setValue('42 11');
+      this.cmb.setBlockMode(true);
       await wait(DELAY);
-      this.blocks.setBlockMode(true);
-      this.literal = this.blocks.getAst().rootNodes[0];
     });
 
-    describe("when dealing with top-level input,", function() {
+    it('typing at the end of a line', async function() {
+      this.cmb.setQuarantine({line: 0, ch: 0, xRel: 400}, {line: 0, ch: 2, xRel: 400}, "9");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
+      expect(this.cmb.getValue()).toEqual('42\n9\n11');
+    });
 
-      beforeEach(async function() {
-        this.blocks.setValue('42 11');
-        await wait(DELAY);
-      });
+    fit('typing at the beginning of a line', async function() {
+      this.cmb.setQuarantine({line: 0, ch: 0, xRel: 0}, {line: 0, ch: 0, xRel: 0}, "9");
+      await wait(DELAY);
+      keyDown("Enter");
+      await wait(DELAY);
+      expect(this.cmb.getValue()).toEqual('9\n42\n11');
+    });
 
-      it('typing at the end of a line', function() {
-        this.blocks.setCursor({line: 0, ch: 5});
-        keyDown("9");
-        insertText("9");
-        expect(this.blocks.getValue()).toEqual('42 119');
-      });
+    it('typing between two blocks on a line', async function() {
+      this.cmb.setCursor({line: 0, ch: 3});
+      keyDown("9", {}, this.cmb.getInputField());
+      insertText("9");
+      await wait(DELAY);
+      expect(this.cmb.getValue()).toEqual('429\n11');
+    });
 
-      it('typing at the beginning of a line', function() {
-        this.blocks.setCursor({line: 0, ch: 0});
-        keyDown("9", {}, this.blocks.getInputField());
-        insertText("9");
-        expect(this.blocks.getValue()).toEqual('942 11');
-      });
+    // TODO: figure out how to fire a paste event
+  });
 
-      it('typing between two blocks on a line', function() {
-        this.blocks.setCursor({line: 0, ch: 3});
-        keyDown("9", {}, this.blocks.getInputField());
-        insertText("9");
-        expect(this.blocks.getValue()).toEqual('42 911');
-      });
-
-      // TODO: figure out how to fire a paste event
+  describe('events,', function() {
+    beforeEach(async function() {
+      this.cmb.setValue('11');
+      await wait(DELAY);
+      this.cmb.setBlockMode(true);
+      this.literal = this.cmb.getAst().rootNodes[0];
     });
     
     /*it('should begin editing a node on  click', async function() { /////
@@ -114,26 +118,26 @@ describe('The CodeMirrorBlocks Class', function() {
       let range = selection.getRangeAt(0);
       range.deleteContents();
       range.insertNode(document.createTextNode('9'));
-      expect(this.blocks.getValue()).toEqual('11');
+      expect(this.cmb.getValue()).toEqual('11');
       quarantine.dispatchEvent(blur());
       await wait(DELAY);
       // not sure of the updated React way to do this
       // expect(this.trackSaveEdit).toHaveBeenCalledWith(quarantine);
-      expect(this.blocks.getValue()).toEqual('9');
-      // expect(this.blocks.hasInvalidEdit).toBe(false);
+      expect(this.cmb.getValue()).toEqual('9');
+      // expect(this.cmb.hasInvalidEdit).toBe(false);
     });*/
   
     it('should not allow required blanks to be deleted', async function() {
-      this.blocks.setValue('()');
+      this.cmb.setValue('()');
       await wait(DELAY);
-      this.blocks.getValue('(...)'); // blank should be inserted by parser, as '...'
-      const blank = this.blocks.getAst().rootNodes[0].func;
+      this.cmb.getValue('(...)'); // blank should be inserted by parser, as '...'
+      const blank = this.cmb.getAst().rootNodes[0].func;
       click(blank.element);
       await wait(DELAY);
       expect(blank.isEditable()).toBe(true);
       keyDown("Delete");
       await wait(DELAY);
-      this.blocks.getValue('(...)'); // deleting the blank should be a no-op
+      this.cmb.getValue('(...)'); // deleting the blank should be a no-op
     });
 
     it('should return the node being edited on ESC', async function() {
@@ -141,7 +145,7 @@ describe('The CodeMirrorBlocks Class', function() {
       await wait(DELAY);
       const quarantine = document.activeElement;
       keyDown("Escape", {}, quarantine);
-      expect(this.blocks.getValue()).toEqual('11');
+      expect(this.cmb.getValue()).toEqual('11');
     });
     
     /*
@@ -162,13 +166,13 @@ describe('The CodeMirrorBlocks Class', function() {
       await wait(DELAY);
       let quarantine = document.activeElement;
       spyOn(quarantine, 'blur');
-      click(this.blocks.getWrapperElement());
+      click(this.cmb.getWrapperElement());
       expect(quarantine.blur).toHaveBeenCalled();
     });
   */
     describe('when "saving" bad inputs,', function() {
       beforeEach(async function() {
-        spyOn(this.blocks, 'replaceRange');
+        spyOn(this.cmb, 'replaceRange');
         click(this.literal.element);
         await wait(DELAY);
         let quarantine = document.activeElement;
@@ -183,18 +187,18 @@ describe('The CodeMirrorBlocks Class', function() {
 
       /*it('should not save anything & set all error state', function() {
         let quarantine = document.activeElement;//this.trackSetQuarantine.calls.mostRecent().returnValue;
-        expect(this.blocks.replaceRange).not.toHaveBeenCalled();
+        expect(this.cmb.replaceRange).not.toHaveBeenCalled();
         expect(quarantine.classList).toContain('blocks-error');
         expect(quarantine.title).toBe('Error: parse error');
-        expect(this.blocks.hasInvalidEdit).toBe(quarantine);
+        expect(this.cmb.hasInvalidEdit).toBe(quarantine);
       });*/
     });
 
     describe('when dealing with whitespace,', function() {
       beforeEach(async function() {
-        this.blocks.setValue('(+ 1 2) (+)');
+        this.cmb.setValue('(+ 1 2) (+)');
         await wait(DELAY);
-        this.ast = this.blocks.getAst();
+        this.ast = this.cmb.getAst();
         this.firstRoot = this.ast.rootNodes[0];
         this.firstArg = this.ast.rootNodes[0].args[0];
         this.whiteSpaceEl = this.firstArg.element.nextElementSibling;
@@ -205,7 +209,7 @@ describe('The CodeMirrorBlocks Class', function() {
       it('Ctrl-[ should jump to the left of a top-level node', function() {
         mouseDown(this.firstRoot.element);
         keyDown("[", {ctrlKey: true}, this.firstRoot.element);
-        let cursor = this.blocks.getCursor();
+        let cursor = this.cmb.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(0);
       });
@@ -213,7 +217,7 @@ describe('The CodeMirrorBlocks Class', function() {
       it('Ctrl-] should jump to the right of a top-level node', function() {
         mouseDown(this.firstRoot.element);
         keyDown("]", {ctrlKey: true}, this.firstRoot.element);
-        let cursor = this.blocks.getCursor();
+        let cursor = this.cmb.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(7);
       });
@@ -222,34 +226,34 @@ describe('The CodeMirrorBlocks Class', function() {
         mouseDown(this.firstArg.element);
         keyDown("[", {ctrlKey: true});
         await wait(DELAY);
-        //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+        //expect(this.cmb.setQuarantine).toHaveBeenCalled();
       });
       
       it('Ctrl-] should activate a quarantine to the right', async function() {
         mouseDown(this.firstArg.element);
         keyDown("]", {ctrlKey: true}, this.firstArg.element);
         await wait(DELAY);
-        //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+        //expect(this.cmb.setQuarantine).toHaveBeenCalled();
       });
       
       it('Ctrl-] should activate a quarantine in the first arg position', async function() {
         mouseDown(this.blank.func.element);
         keyDown("]", {ctrlKey: true}, this.blank.func.element);
         await wait(DELAY);
-        //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+        //expect(this.cmb.setQuarantine).toHaveBeenCalled();
       });
       
       it('should activate a quarantine on dblclick', async function() {
         click(this.whiteSpaceEl);
         await wait(DELAY);
-        //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+        //expect(this.cmb.setQuarantine).toHaveBeenCalled();
       });
       
       describe('in corner-cases with no arguments,', function() {
         beforeEach(async function() {
-          this.blocks.setValue('(f)');
+          this.cmb.setValue('(f)');
           await wait(DELAY);
-          this.ast = this.blocks.getAst();
+          this.ast = this.cmb.getAst();
           this.firstRoot = this.ast.rootNodes[0];
           this.func = this.ast.rootNodes[0].func;
           this.argWS = this.firstRoot.element.getElementsByClassName('blocks-args')[0].firstChild;
@@ -258,7 +262,7 @@ describe('The CodeMirrorBlocks Class', function() {
         it('should allow editing the argument whitespace', async function() { /* left off here*/
           click(this.argWS);
           await wait(DELAY);
-          //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+          //expect(this.cmb.setQuarantine).toHaveBeenCalled();
         }); 
       });
 
@@ -280,8 +284,8 @@ describe('The CodeMirrorBlocks Class', function() {
         //   expect(quarantine.textContent).toBe('4253'); // confirms text=4253 inside saveEdit, blocks.js line 495
         //   expect(this.trackCommitChange).toHaveBeenCalled();
         //   expect(this.trackReplaceRange).toHaveBeenCalledWith(' 4253', Object({ ch: 4, line: 0 }), Object({ ch: 4, line: 0 }));
-        //   expect(this.blocks.getValue()).toBe('(+ 1 4253 2) (+)');
-        //   expect(this.blocks.hasInvalidEdit).toBe(false);
+        //   expect(this.cmb.getValue()).toBe('(+ 1 4253 2) (+)');
+        //   expect(this.cmb.hasInvalidEdit).toBe(false);
         // });
 
         // not sure how to handle trackChange
@@ -308,10 +312,10 @@ describe('The CodeMirrorBlocks Class', function() {
           // it('should not save anything & set all error state', async function() {
           //   expect(this.trackSaveEdit).toHaveBeenCalledWith(this.quarantine);
           //   expect(this.quarantine.textContent).toBe('"moo');
-          //   expect(this.blocks.replaceRange).not.toHaveBeenCalled();
+          //   expect(this.cmb.replaceRange).not.toHaveBeenCalled();
           //   expect(this.quarantine.classList).toContain('blocks-error');
           //   expect(this.quarantine.title).toBe('Error: parse error');
-          //   expect(this.blocks.hasInvalidEdit).toBe(true);
+          //   expect(this.cmb.hasInvalidEdit).toBe(true);
           // });
           
         });

@@ -153,7 +153,12 @@ class OverwriteEdit extends Edit {
   isTextEdit() { return true; }
 
   toChangeObject(ast) {
-    let text = addWhitespace(ast, this.from, this.to, this.text);
+    let {text, from, to} = this;
+    // if this root starts or ends on the same line as another, insert a newline
+    const nodeBefore = ast.rootNodes.find(r => (r.to.line == from.line) && (r.to.ch <= from.ch));
+    const nodeAfter  = ast.rootNodes.find(r => (r.from.line == to.line) && (to.ch <= r.from.ch));
+    if(nodeBefore) { text = "\n" + text; }
+    if(nodeAfter)  { text = text + "\n"; }
     this.changeObject = {
       text: text.split("\n"),
       from: this.from,
@@ -379,26 +384,6 @@ function removeWhitespace(from, to) {
   } else {
     return {from: from, to: to};
   }
-}
-
-// Pad `text` with spaces as needed, when a block will be inserted.
-export function addWhitespace(ast, from, to, text) {
-  // We may need to insert a newline to make sure that comments don't end up
-  // getting associated with the wrong node, and we may need to insert a space
-  // to ensure that different tokens don't end up getting glommed together.
-  let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
-  let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
-  if (ast.followsComment(from) && prevChar != "") {
-    text = "\n" + text;
-  } else if (!(prevChar == "" || prevChar == " ")) {
-    text = " " + text;
-  }
-  if (ast.precedesComment(to) && nextChar != "") {
-    text = text + "\n";
-  } else if (!(nextChar == "" || nextChar == " ")) {
-    text = text + " ";
-  }
-  return text;
 }
 
 function getNode(node) {
