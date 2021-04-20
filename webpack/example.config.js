@@ -29,6 +29,9 @@ module.exports = function(env, argv) {
       }),
       new webpack.IgnorePlugin(/analyzer|compiler|modules\.js/, /node_modules/)
     ]),
+    optimization: {
+      runtimeChunk: true,
+    },
     devServer: {
       hot: true,
       inline: true,
