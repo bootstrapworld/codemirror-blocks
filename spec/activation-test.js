@@ -431,10 +431,10 @@ describe("when dealing with node selection, ", function () {
     expect(this.literal2.element.getAttribute("aria-selected")).toBe('false');
     expect(this.expr.element.getAttribute("aria-selected")).toBe('true');
     expect(this.activeNode()).toBe(this.expr);
-    expect(this.selectedNodes().length).toBe(2);
+    expect(this.selectedNodes().length).toBe(5);
   });
 
-  it('selecting a parent, then child should just select the parent ', async function () {
+  it('selecting a parent, then deselecting a child should deselect the parent ', async function () {
     mouseDown(this.expr);
     keyDown(" ", {}, this.expr);
     await wait(DELAY);
@@ -442,14 +442,16 @@ describe("when dealing with node selection, ", function () {
     await wait(DELAY);
     keyDown(" ", {}, this.expr.func);
     await wait(DELAY);
-    expect(this.expr.element.getAttribute("aria-selected")).toBe('true');
+    expect(this.expr.element.getAttribute("aria-selected")).toBe('false');
     expect(this.expr.func.element.getAttribute("aria-selected")).toBe('false');
+    expect(this.expr.args[0].element.getAttribute("aria-selected")).toBe('true');
+    expect(this.expr.args[1].element.getAttribute("aria-selected")).toBe('true');
     expect(this.activeNode()).toBe(this.expr.func);
-    expect(this.selectedNodes().length).toBe(1);
-    expect(this.selectedNodes()[0]).toBe(this.expr);
+    expect(this.selectedNodes().length).toBe(2);
+    expect(this.selectedNodes()[0]).toBe(this.expr.args[0]);
   });
 
-  it('selecting a child, then parent should just select the parent ', async function () {
+  it('selecting a child, then parent should select all children as well ', async function () {
     mouseDown(this.expr.func);
     keyDown(" ", {}, this.expr.func);
     await wait(DELAY);
@@ -458,9 +460,9 @@ describe("when dealing with node selection, ", function () {
     keyDown(" ", {}, this.expr);
     await wait(DELAY);
     expect(this.expr.element.getAttribute("aria-selected")).toBe('true');
-    expect(this.expr.func.element.getAttribute("aria-selected")).toBe('false');
+    expect(this.expr.func.element.getAttribute("aria-selected")).toBe('true');
     expect(this.activeNode()).toBe(this.expr);
-    expect(this.selectedNodes().length).toBe(1);
+    expect(this.selectedNodes().length).toBe(4);
     expect(this.selectedNodes()[0]).toBe(this.expr);
   });
 });

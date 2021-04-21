@@ -210,16 +210,28 @@ export const commandMap = {
     if(!this.node) { return CodeMirror.Pass; }
     e.preventDefault();
     const node = this.node;
+    const descendantIds = node => [...node.descendants()].map(d => d.id);
+    const ancestorIds = node => {
+      let ancestors = [], next = this.node.parent;
+      while (next) { ancestors.push(next.id); next = next.parent; }
+      return ancestors;
+    }
+
+    // if the node is already selected, remove it, its descendants
+    // and any ancestor
     if (this.selections.includes(this.node.id)) {
+      const prunedSelection = this.selections
+        .filter(s => !descendantIds(node).includes(s))
+        .filter(s => !ancestorIds(node).includes(s));
       this.dispatch({
         type: 'SET_SELECTIONS',
-        selections: this.selections.filter(s => s !== node.id)
+        selections: prunedSelection
       });
       // TODO(Emmanuel): announce removal
     } else {
       const isContained = id => this.ast.isAncestor(node.id, id);
       const doesContain = id => this.ast.isAncestor(id, node.id);
-      const [removed, newSelections] = partition(this.selections, isContained);
+      let [removed, newSelections] = partition(this.selections, isContained);
       for (const r of removed) {
         // TODO(Emmanuel): announce removal
       }
@@ -228,7 +240,7 @@ export const commandMap = {
         say('This node is already has a selected ancestor');
       } else {
         // TODO(Emmanuel): announce addition
-        newSelections.push(this.node.id);
+        newSelections = newSelections.concat(descendantIds(node));
         this.dispatch({
           type: 'SET_SELECTIONS',
           selections: newSelections
