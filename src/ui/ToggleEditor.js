@@ -252,9 +252,14 @@ export default @CMBContext class ToggleEditor extends Component {
       if(CodeMirror.keyName(e) == "Esc") this.closeDialog();
     };
     return (
-      <div id="Dialog" onKeyDown={dialogKeyDown} tabIndex="0">
+      <div id="Dialog" 
+        onKeyDown={dialogKeyDown} 
+        role="dialog"
+        aria-modal="true"
+        ref="dialog"
+        >
         {this.state.dialog}
-        <span className="closeDialog" onClick={() => this.closeDialog()}>OK</span>
+        <button className="closeDialog" onClick={() => this.closeDialog()}>OK</button>
       </div>
     );
   }

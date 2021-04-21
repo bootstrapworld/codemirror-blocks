@@ -123,7 +123,7 @@ store.queuedAnnouncement = false;
 // Note: screenreaders will automatically speak items with aria-labels!
 // This handles _everything_else_.
 export function say(text, delay=200, allowOverride=false) {
-  const announcement = document.createTextNode(text + ', ');
+  const announcement = document.createTextNode(text);
   const announcer = SHARED.announcer;
   if (store.muteAnnouncements || !announcer) return; // if nothing to do, bail
   clearTimeout(store.queuedAnnouncement);            // clear anything overrideable

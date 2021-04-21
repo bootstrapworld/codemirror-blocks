@@ -13,8 +13,8 @@ export const defaultKeyMap = {
   'Up'        : 'Previous Block',
   'Home'      : 'First Block',
   'End'       : 'Last Visible Block',
-  'Left'      : 'Collapse or Select Parent',
-  'Right'     : 'Expand or Select 1st Child',
+  'Left'      : 'Collapse or Focus Parent',
+  'Right'     : 'Expand or Focus 1st Child',
   'Shift-Left': 'Collapse All',
   'Shift-Right':'Expand All',
   'Shift-Alt-Left': 'Collapse Current Root',
@@ -130,7 +130,7 @@ export const commandMap = {
     else { this.activateByNid(getLastVisibleNode(this.state).nid); }
   },
 
-  'Collapse or Select Parent' : function(_) {
+  'Collapse or Focus Parent' : function(_) {
     if(!this.node) { return CodeMirror.Pass; }
     if (this.expandable && !this.isCollapsed && !this.isLocked()) {
       this.collapse(this.node.id);
@@ -141,7 +141,7 @@ export const commandMap = {
     }
   },
 
-  'Expand or Select 1st Child' : function (_) {
+  'Expand or Focus 1st Child' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     const node = this.node;
     if (this.expandable && this.isCollapsed && !this.isLocked()) {
@@ -327,7 +327,7 @@ export const commandMap = {
   },
 
   'Help' : function (_) {
-    this.showDialog(renderKeyMap(this.keyMap));
+    this.showDialog(renderKeyMap(defaultKeyMap));
   }
 };
 
@@ -375,7 +375,7 @@ export function renderKeyMap(keyMap) {
   window.reverseMap = reverseMap;
   return (
     <>
-      <h1>Blocks Shortcuts</h1>
+      <h1 tabIndex="-1">Blocks Shortcuts</h1>
       <span className="screenreader">
         Screenreader users: Make sure to either increase the verbosity of your screenreader, 
         or character over the shortcut column in the tables below. Some shortcuts use 
