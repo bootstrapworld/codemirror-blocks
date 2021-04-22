@@ -66,6 +66,28 @@ const pcKeyMap = {
   'Shift-Ctrl-/':'Help',
 };
 
+const punctuation = {
+  ','    : 'Comma', 
+  '.'    : 'Period',
+  '\''   : 'Backslash', 
+  '/'    : 'Forward Slash',
+  'Esc'  : 'Escape',
+  'Ctrl' : 'Control',
+  'Cmd'  : 'Command',
+  'Alt'  : 'Option',
+  '['    : 'Left Bracket',
+  ']'    : 'Right Bracket',
+};
+
+// given an array of keys, produce a spoken string that
+// verbalizes punctuation and key names
+function prounounce(keys) {
+  const match = new RegExp('Esc|Ctrl|Cmd|Alt|[.,/#!$%^&*;:{}=_`~()]', 'gi');
+  let ws = keys.map(k => k.replace(match, m=>punctuation[m]));
+  return ws.length < 3? ws.join(" or ")
+    : ws.slice(0, ws.length - 1).concat(`or ${ws.slice(-1)}`).join(', ');
+}
+
 // Add platform-specific keys
 Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
@@ -212,10 +234,10 @@ export const commandMap = {
     const node = this.node;
     const descendantIds = node => [...node.descendants()].map(d => d.id);
     const ancestorIds = node => {
-      let ancestors = [], next = this.node.parent;
+      let ancestors = [], next = node.parent;
       while (next) { ancestors.push(next.id); next = next.parent; }
       return ancestors;
-    }
+    };
 
     // if the node is already selected, remove it, its descendants
     // and any ancestor
@@ -339,7 +361,7 @@ export const commandMap = {
   },
 
   'Help' : function (_) {
-    this.showDialog(renderKeyMap(defaultKeyMap));
+    this.showDialog({title:"Keyboard Shortcuts", content: renderKeyMap(defaultKeyMap)});
   }
 };
 
@@ -384,27 +406,21 @@ export function renderKeyMap(keyMap) {
     if(!reverseMap[keyMap[key]]) { reverseMap[keyMap[key]] = [key]; }
     else reverseMap[keyMap[key]].push(key);
   });
-  window.reverseMap = reverseMap;
   return (
-    <>
-      <h1 tabIndex="-1">Blocks Shortcuts</h1>
-      <span className="screenreader">
-        Screenreader users: Make sure to either increase the verbosity of your screenreader, 
-        or character over the shortcut column in the tables below. Some shortcuts use 
-        punctuation keys that may not always be spoken.
-      </span>
-
-      <table className="shortcuts">
-        <tbody>
-        {
-          Object.entries(reverseMap).map(  // for each command, make a row...
-            (kv, i) =>                     // for each row, list the kbd shortcuts
-              (<tr key={i}><td>{kv[0]}</td><td>{kv[1].map((shortcut, j) => 
-                (<kbd key={j}>{shortcut}</kbd>))}</td></tr>)
-          )
-        }
-        </tbody>
-      </table>
-    </>
+    <table className="shortcuts">
+    <tbody>
+    {
+      Object.entries(reverseMap).map(  // for each command, make a row...
+        (kv, i) =>                     // for each row, list the kbd shortcuts
+          (<tr key={i}>
+          <td>{kv[0]}</td>
+          <td>
+            {kv[1].map((k, j) => (<kbd aria-hidden="true" key={j}>{k}</kbd>))}
+            <span className="screenreader">{prounounce(kv[1])}</span>
+          </td></tr>)
+      )
+    }
+    </tbody>
+    </table>
   );
 }

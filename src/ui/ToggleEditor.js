@@ -1,6 +1,6 @@
 import React, {Component, createRef} from 'react';
 import PropTypes from 'prop-types/prop-types';
-import CodeMirror from 'codemirror';
+import Dialog from 'react-modal';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
 import CMBContext from '../components/Context';
@@ -138,9 +138,11 @@ export default @CMBContext class ToggleEditor extends Component {
   handleEditorMounted = (ed, api, ast) => {
     // set CM aria attributes, and add announcer
     const mode = this.state.blockMode ? 'Block' : 'Text';
+    const wrapper = ed.getWrapperElement();
+    //Modal.setAppElement(this.props.appElement);
     ed.getScrollerElement().setAttribute('role', 'presentation');
-    ed.getWrapperElement().setAttribute('aria-label', mode+' Editor');
-    ed.getWrapperElement().appendChild(SHARED.announcer);
+    wrapper.setAttribute('aria-label', mode+' Editor');
+    wrapper.appendChild(SHARED.announcer);
     // Rebuild the API and assign re-events
     Object.assign(this.props.api, this.buildAPI(ed), api);
     Object.keys(this.eventHandlers).forEach(type => {
@@ -210,13 +212,7 @@ export default @CMBContext class ToggleEditor extends Component {
         this.props.api.blockMode = blockMode;
         return {blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
-        return {dialog: (
-          <>
-          <span className="dialogTitle">Could not convert to Blocks</span>
-          <p></p>
-          {e.toString()}
-          </>
-        )};
+        return {dialog: { title: "Could not convert to Blocks", content: e.toString() }};
       }
     });
   }
@@ -225,7 +221,6 @@ export default @CMBContext class ToggleEditor extends Component {
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
       <>
-      { this.state.dialog? this.renderDialog() : ""}
       <div className={classes}>
         {this.state.blockMode ? <BugButton/> : null}
         <ToggleButton 
@@ -243,24 +238,26 @@ export default @CMBContext class ToggleEditor extends Component {
         { this.state.blockMode? this.renderBlocks() : this.renderCode() }
         </div>
       </div>
-      </>
-    );
-  }
 
-  renderDialog() {
-    const dialogKeyDown = e => {
-      if(CodeMirror.keyName(e) == "Esc") this.closeDialog();
-    };
-    return (
-      <div id="Dialog" 
-        onKeyDown={dialogKeyDown} 
-        role="dialog"
-        aria-modal="true"
-        ref="dialog"
-        >
-        {this.state.dialog}
-        <button className="closeDialog" onClick={() => this.closeDialog()}>OK</button>
-      </div>
+      <Dialog 
+        appElement={this.props.appElement}
+        isOpen={!!this.state.dialog}
+        contentLabel={this.state.dialog?.title}
+        className={"wrapper-modal"}
+        onRequestClose={this.closeDialog}
+        shouldCloseOnEsc={true}
+        shouldReturnFocusAfterClose={true}
+        shouldFocusAfterRender={true}
+        shouldCloseOnOverlayClick={true}
+        aria={ {labelledby: "heading"} }
+        close={this.closeDialog}>
+        <div tabIndex="-1" className="react-modal" id="Dialog" role="dialog">
+          <h2 id="heading">{this.state.dialog.title}</h2>
+          {this.state.dialog.content}
+          <button className="closeDialog" onClick={() => this.closeDialog()}>OK</button>
+        </div>
+      </Dialog>
+      </>
     );
   }
 

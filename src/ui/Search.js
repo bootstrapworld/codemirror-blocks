@@ -52,7 +52,6 @@ export default (Editor, searchModes) => {
     }
 
     handleSearch = (forward, cmbState, overrideCur) => {
-      console.log(overrideCur);
       if(this.state.searchEngine == null) {
         say("No search settings have been selected");
         return;
