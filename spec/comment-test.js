@@ -18,7 +18,7 @@ describe('When editing and moving commented nodes', function() {
 
   afterEach(function () { teardown(); });
 
-  describe('cut and paste', function() {
+  describe('inserting comments', function() {
     beforeEach(async function() {
       await wait(DELAY);
       this.cmb.setValue(`
@@ -43,7 +43,7 @@ describe('When editing and moving commented nodes', function() {
 #| comment2 |#
 2`);
     });
-/*        
+        
     it('you should be able to insert a commented node after a commented node', async function() {
       this.cmb.setQuarantine({line: 3, ch: 1}, {line: 3, ch: 1}, "1 #| comment1 |#");
       await wait(DELAY);
@@ -67,6 +67,6 @@ describe('When editing and moving commented nodes', function() {
 #| comment2 |#
 2`);
     });
-*/       
+       
   });
 });

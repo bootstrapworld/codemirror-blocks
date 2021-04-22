@@ -51,12 +51,13 @@ class ToplevelBlock extends BlockComponent {
     return poscmp(this.props.node.from, nextProps.node.from) !== 0 // moved
       ||   poscmp(this.props.node.to,   nextProps.node.to  ) !== 0 // resized
       ||   super.shouldComponentUpdate(nextProps, nextState)       // changed
-      ||   !document.contains(this.mark.replacedWith);             // removed from DOM
+      ||   !document.contains(this.mark?.replacedWith) // root removed from DOM
+      ||   !document.contains(this.mark?.widget);// quarantine removed from DOM
   }
 
   // When unmounting, clean up the TextMarker and any lingering timeouts
   componentWillUnmount() { 
-    this.mark.clear(); 
+    this.mark?.clear(); 
     clearTimeout(this.renderTimeout); 
   }
 
@@ -74,12 +75,17 @@ class ToplevelBlock extends BlockComponent {
 
     // set elt to a cheap placeholder, OR render the entire rootNode
     const elt = this.state.renderPlaceholder? (<div/>) : node.reactElement();
+
+    // AFTER THE REACT RENDER CYCLE IS OVER:
     // if any prior block markers are in this range, clear them
-    const {from, to} = node.srcRange(); // includes the node's comment, if any
-    SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m=>m.clear());
-    this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
-    this.mark.BLOCK_NODE_ID = node.id;
-    node.mark = this.mark;
+    // make a new block marker, and fill it with the portal
+    window.requestAnimationFrame( () => {
+      const {from, to} = node.srcRange(); // includes the node's comment, if any
+      SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m=>m.clear());
+      this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
+      this.mark.BLOCK_NODE_ID = node.id;
+      node.mark = this.mark;
+    });
     return ReactDOM.createPortal(elt, this.container);
   }
 }
@@ -97,17 +103,9 @@ class ToplevelBlockEditableCore extends Component {
     const [start, end] = this.props.quarantine;
     this.container = document.createElement('span');
     this.container.classList.add('react-container');
-    // CM treats 0-width ranges differently than other ranges, so check
-    if(poscmp(start, end) === 0) {
-      this.marker = SHARED.cm.setBookmark(start, {widget: this.container});
-    } else {
-      this.marker = SHARED.cm.markText(start, end, {replacedWith: this.container});
-    }
   }
 
-  componentWillUnmount() {
-    this.marker.clear();
-  }
+  componentWillUnmount() { this.marker?.clear(); }
 
   render() {
     const {onDisableEditable, onChange, quarantine} = this.props;
@@ -119,6 +117,18 @@ class ToplevelBlockEditableCore extends Component {
       'aria-posinset'   : '1',
       'aria-level'      : '1',
     };
+
+    // AFTER THE REACT RENDER CYCLE IS OVER:
+    // make a new block marker, and fill it with the portal
+    window.requestAnimationFrame( () => {
+      // CM treats 0-width ranges differently than other ranges, so check
+      if(poscmp(start, end) === 0) {
+        this.marker = SHARED.cm.setBookmark(start, {widget: this.container});
+      } else {
+        this.marker = SHARED.cm.markText(start, end, {replacedWith: this.container});
+      }
+    });
+
     return ReactDOM.createPortal(
       <NodeEditable target={new OverwriteTarget(start, end)}
                     value={value}
