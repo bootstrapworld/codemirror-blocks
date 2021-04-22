@@ -54,13 +54,18 @@ class ToplevelBlock extends BlockComponent {
       ||   !document.contains(this.mark.replacedWith);             // removed from DOM
   }
 
-  componentWillUnmount() { this.mark.clear(); }
+  // When unmounting, clean up the TextMarker and any lingering timeouts
+  componentWillUnmount() { 
+    this.mark.clear(); 
+    clearTimeout(this.renderTimeout); 
+  }
 
   // once the placeholder has mounted, wait 250ms and render
   componentDidMount() {
     if(!this.props.incrementalRendering) return; // bail if incremental is off
     window.requestAnimationFrame( () => {
-      setTimeout(() => this.setState({ renderPlaceholder: false }), 250);
+      this.renderTimeout = setTimeout(() => 
+        this.setState({ renderPlaceholder: false }), 250);
     });
   }
 
