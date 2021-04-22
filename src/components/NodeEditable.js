@@ -37,6 +37,7 @@ class NodeEditable extends Component {
       dispatch((_, getState) => {
         const {ast} = getState();
         const {target} = this.props;
+        console.log(target.getText(ast));
         this.cachedValue = target.getText(ast);
       });
     }
@@ -47,10 +48,9 @@ class NodeEditable extends Component {
     const {target, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
     dispatch((dispatch, getState) => {
       const {focusId, ast} = getState();
-
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
-      if (this.props.value === this.cachedValue) {
+      if (this.props.value === this.cachedValue || !this.props.value) {
         this.props.onDisableEditable(false);
         const focusNode = ast.getNodeById(focusId);
         const nid = focusNode && focusNode.nid;
