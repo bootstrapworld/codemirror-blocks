@@ -55,7 +55,7 @@ describe('When editing and moving commented nodes', function() {
 2
 1 #| comment1 |#`);
     });
-*/
+
     it('you should be able to insert a commented node after an uncommented node', async function() {
       this.cmb.setQuarantine({line: 0, ch: 14}, {line: 0, ch: 14}, "1 #| comment1 |#");
       await wait(DELAY);
@@ -67,6 +67,6 @@ describe('When editing and moving commented nodes', function() {
 #| comment2 |#
 2`);
     });
-       
+*/       
   });
 });
