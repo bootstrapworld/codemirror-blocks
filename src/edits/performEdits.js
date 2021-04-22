@@ -153,7 +153,8 @@ class OverwriteEdit extends Edit {
   isTextEdit() { return true; }
 
   toChangeObject(ast) {
-    let {text, from, to} = this;
+    let {from, to, text} = this;
+    console.log(this, from, to, text);
     // if this root starts or ends on the same line as another, insert a newline
     const nodeBefore = ast.rootNodes.find(r => (r.to.line == from.line) && (r.to.ch <= from.ch));
     const nodeAfter  = ast.rootNodes.find(r => (r.from.line == to.line) && (to.ch <= r.from.ch));
