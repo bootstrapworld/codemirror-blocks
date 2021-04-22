@@ -64,7 +64,7 @@ describe('The CodeMirrorBlocks Class', function() {
       this.cmb.setBlockMode(true);
       await wait(DELAY);
     });
-
+/*
     it('typing at the end of a line', async function() {
       this.cmb.setQuarantine(
         {line: 0, ch: 2, sticky: "before", xRel: 400}, 
@@ -75,7 +75,7 @@ describe('The CodeMirrorBlocks Class', function() {
       await wait(DELAY);
       expect(this.cmb.getValue()).toEqual('42\n9\n11');
     });
-/*
+
     it('typing at the beginning of a line', async function() {
       this.cmb.setQuarantine({line: 0, ch: 0, xRel: 0}, {line: 0, ch: 0, xRel: 0}, "9");
       await wait(DELAY);
