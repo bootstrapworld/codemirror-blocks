@@ -52,7 +52,8 @@ describe('When editing and moving commented nodes', function() {
 1 #| comment1 |#
 #| comment2 |#
 2
-1 #| comment1 |#`);
+1 #| comment1 |#
+`);
     });
 
     it('you should be able to insert a commented node after an uncommented node', async function() {
