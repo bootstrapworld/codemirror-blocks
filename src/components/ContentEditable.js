@@ -18,10 +18,10 @@ function getInnerHTML(txt) {
 
 export default class ContentEditable extends Component {
   static defaultProps = {
-    onChange: () => {},
-    onKeyDown: () => {},
+    onChange:   () => {},
+    onKeyDown:  () => {},
     itDidMount: () => {},
-    value: '',
+    value:      '',
   }
 
   static propTypes = {

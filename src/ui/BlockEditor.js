@@ -51,8 +51,7 @@ class ToplevelBlock extends BlockComponent {
     return poscmp(this.props.node.from, nextProps.node.from) !== 0 // moved
       ||   poscmp(this.props.node.to,   nextProps.node.to  ) !== 0 // resized
       ||   super.shouldComponentUpdate(nextProps, nextState)       // changed
-      ||   !document.contains(this.mark?.replacedWith) // root removed from DOM
-      ||   !document.contains(this.mark?.widget);// quarantine removed from DOM
+      ||   !document.contains(this.mark?.replacedWith);            // removed from DOM
   }
 
   // When unmounting, clean up the TextMarker and any lingering timeouts
@@ -118,9 +117,9 @@ class ToplevelBlockEditableCore extends Component {
       'aria-level'      : '1',
     };
 
-    // AFTER THE REACT RENDER CYCLE IS OVER:
-    // make a new block marker, and fill it with the portal
-    window.requestAnimationFrame( () => {
+    // IF NO MARKER IS DEFINED, WAIT UNTIL THE REACT RENDER 
+    // CYCLE IS OVER and make a new block marker
+    if(!this.marker) window.requestAnimationFrame( () => {
       // CM treats 0-width ranges differently than other ranges, so check
       if(poscmp(start, end) === 0) {
         this.marker = SHARED.cm.setBookmark(start, {widget: this.container});

@@ -20,7 +20,6 @@ describe('When editing and moving commented nodes', function() {
 
   describe('inserting comments', function() {
     beforeEach(async function() {
-      await wait(DELAY);
       this.cmb.setValue(`
 (comment free)
 1; comment1
@@ -47,7 +46,7 @@ describe('When editing and moving commented nodes', function() {
     it('you should be able to insert a commented node after a commented node', async function() {
       this.cmb.setQuarantine({line: 3, ch: 1}, {line: 3, ch: 1}, "1 #| comment1 |#");
       await wait(DELAY);
-      keyDown("Enter");
+      keyDown("Enter", {}, document.getElementsByClassName('quarantine')[0]);
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
@@ -65,7 +64,8 @@ describe('When editing and moving commented nodes', function() {
 1 #| comment1 |#
 1 #| comment1 |#
 #| comment2 |#
-2`);
+2
+`);
     });
        
   });
