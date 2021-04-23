@@ -10,12 +10,6 @@ module.exports = function(env, argv) {
     entry: {
       "editor-example": './example/editor-example.js',
     },
-    module: Object.assign({}, baseConfig.module, {
-      rules: baseConfig.module.rules.concat([
-        { test: /\.rkt$/, use: 'raw-loader' },
-        { test: /\.arr$/, use: 'raw-loader' }
-      ])
-    }),
     plugins: baseConfig.plugins.concat([
       new webpack.HotModuleReplacementPlugin(),
       new webpack.ProvidePlugin({

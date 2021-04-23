@@ -1,12 +1,13 @@
 const path = require('path');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const baseConfig = require('./base.config.js');
 
 // this is the config for a single js file that can be included with a script tag
 var configs = [
   Object.assign({}, baseConfig(), {
     entry: {
-      "CodeMirrorBlocks": './src/CodeMirrorBlocks.js'
+      "CodeMirrorBlocks": './src/CodeMirrorBlocks.js',
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
