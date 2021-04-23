@@ -74,7 +74,7 @@ const punctuation = {
   'Esc'  : 'Escape',
   'Ctrl' : 'Control',
   'Cmd'  : 'Command',
-  'Alt'  : 'Option',
+  'Alt'  : (mac? 'Option' : 'Alt'),
   '['    : 'Left Bracket',
   ']'    : 'Right Bracket',
 };
