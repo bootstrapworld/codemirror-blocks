@@ -161,7 +161,6 @@ class Node extends BlockComponent {
       'aria-setsize'    : node["aria-setsize"],
       'aria-posinset'   : node["aria-posinset"],
       'aria-level'      : node.level,
-      'aria-multiselectable' : "true"
     };
 
     const classes = [

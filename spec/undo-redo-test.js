@@ -1,19 +1,14 @@
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
-import { wait, teardown, activationSetup } from './support/test-utils';
-import { mouseDown, keyDown, insertText } from './support/simulate';
 
-// figure out what platform we're running on
-const userAgent = navigator.userAgent;
-const platform = navigator.platform;
-const edge = /Edge\/(\d+)/.exec(userAgent);
-const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
-const mac = ios || /Mac/.test(platform);
-// set key options appropriately for the platform
-const cmd = { metaKey: true };
-const ctrl = { ctrlKey: true };
+/*eslint no-unused-vars: "off"*/
+import {
+  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
+  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
+  dragend, dragleave, keyDown, keyPress, insertText
+} from '../spec/support/test-utils';
 
-const DELAY = 250;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -22,14 +17,14 @@ describe("when testing undo/redo,", function () {
   beforeEach(async function () {
     setup.call(this);
     this.currentFirstRoot = () => this.cmb.getAst().rootNodes[0];
-    this.undo = (node) => keyDown("Z", mac? cmd : ctrl, node);
+    this.undo = (node) => keyDown("Z", cmd_ctrl, node);
     this.redo = (node) => {
-        if(mac) {
-          keyDown("Z", { metaKey: true, shiftKey: true }, node);
-        } else {
-          keyDown("Y", { ctrlKey: true }, node);
-        }
-    }
+      if(mac) {
+        keyDown("Z", { metaKey: true, shiftKey: true }, node);
+      } else {
+        keyDown("Y", { ctrlKey: true }, node);
+      }
+    };
     await wait(DELAY);
   });
 
@@ -45,7 +40,7 @@ describe("when testing undo/redo,", function () {
     mouseDown(this.currentFirstRoot());                          // focus on the 1st root
     keyDown(" ", {}, this.currentFirstRoot());
     await wait(DELAY);
-    keyDown("X", mac? cmd : ctrl, this.currentFirstRoot());      // change (1): cut first root
+    keyDown("X", cmd_ctrl, this.currentFirstRoot());      // change (1): cut first root
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 0});
@@ -94,7 +89,7 @@ describe("when testing undo/redo,", function () {
     mouseDown(this.currentFirstRoot());                          // focus on the 1st root
     keyDown(" ", {}, this.currentFirstRoot());
     await wait(DELAY);
-    keyDown("X", mac? cmd : ctrl, this.currentFirstRoot());      // change (1): cut first root
+    keyDown("X", cmd_ctrl, this.currentFirstRoot());      // change (1): cut first root
     await wait(DELAY);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 0});

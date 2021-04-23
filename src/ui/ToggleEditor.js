@@ -1,6 +1,6 @@
 import React, {Component, createRef} from 'react';
 import PropTypes from 'prop-types/prop-types';
-import CodeMirror from 'codemirror';
+import Dialog from 'react-modal';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
 import CMBContext from '../components/Context';
@@ -10,7 +10,7 @@ import attachSearch from './Search';
 import Toolbar from './Toolbar';
 import { ToggleButton, BugButton } from './EditorButtons';
 import { say } from '../utils';
- import TrashCan from './TrashCan';
+import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import './ToggleEditor.less';
 
@@ -138,9 +138,11 @@ export default @CMBContext class ToggleEditor extends Component {
   handleEditorMounted = (ed, api, ast) => {
     // set CM aria attributes, and add announcer
     const mode = this.state.blockMode ? 'Block' : 'Text';
+    const wrapper = ed.getWrapperElement();
+    //Modal.setAppElement(this.props.appElement);
     ed.getScrollerElement().setAttribute('role', 'presentation');
-    ed.getWrapperElement().setAttribute('aria-label', mode+' Editor');
-    ed.getWrapperElement().appendChild(SHARED.announcer);
+    wrapper.setAttribute('aria-label', mode+' Editor');
+    wrapper.appendChild(SHARED.announcer);
     // Rebuild the API and assign re-events
     Object.assign(this.props.api, this.buildAPI(ed), api);
     Object.keys(this.eventHandlers).forEach(type => {
@@ -160,7 +162,10 @@ export default @CMBContext class ToggleEditor extends Component {
     say(mode + " Mode Enabled", 500);
   }
 
-  componentDidMount() { this.hasMounted = true; }
+  componentDidMount() { 
+    this.hasMounted = true;
+    this.currentCode = SHARED.cm.getValue();
+  }
 
   // save any non-block, non-bookmark markers, and the NId they cover
   copyMarks(oldAST) {
@@ -203,17 +208,11 @@ export default @CMBContext class ToggleEditor extends Component {
           (the pretty-printer probably produced invalid code)`;
         }
         this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
-        SHARED.cm.setValue(code);                       // update CM with the PP code
+        this.currentCode = code;                  // update CM with the PP code
         this.props.api.blockMode = blockMode;
         return {blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
-        return {dialog: (
-            <>
-            <span className="dialogTitle">Could not convert to Blocks</span>
-            <p></p>
-            {e.toString()}
-            </>
-          )};
+        return {dialog: { title: "Could not convert to Blocks", content: e.toString() }};
       }
     });
   };
@@ -224,6 +223,7 @@ export default @CMBContext class ToggleEditor extends Component {
   render(_props) { // eslint-disable-line no-unused-vars
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
+      <>
       <div className={classes}>
         {this.state.blockMode ? <BugButton/> : null}
         <ToggleButton 
@@ -242,23 +242,30 @@ export default @CMBContext class ToggleEditor extends Component {
         { this.state.blockMode? this.renderBlocks() : this.renderCode() }
         </div>
       </div>
-    );
-  }
-
-  renderDialog() {
-    const dialogKeyDown = e => {
-      if(CodeMirror.keyName(e) == "Esc") this.closeDialog();
-    };
-    return (
-      <div id="Dialog" onKeyDown={dialogKeyDown} tabIndex="0">
-        {this.state.dialog}
-        <span className="closeDialog" onClick={() => this.closeDialog()}>OK</span>
-      </div>
+      <Dialog 
+        appElement={this.props.appElement}
+        isOpen={!!this.state.dialog}
+        contentLabel={this.state.dialog?.title}
+        className={"wrapper-modal"}
+        onRequestClose={this.closeDialog}
+        shouldCloseOnEsc={true}
+        shouldReturnFocusAfterClose={true}
+        shouldFocusAfterRender={true}
+        shouldCloseOnOverlayClick={true}
+        aria={ {labelledby: "heading"} }
+        close={this.closeDialog}>
+        <div tabIndex="-1" className="react-modal" id="Dialog" role="dialog">
+          <h2 id="heading">{this.state.dialog.title}</h2>
+          {this.state.dialog.content}
+          <button className="closeDialog" onClick={() => this.closeDialog()}>OK</button>
+        </div>
+      </Dialog>
+      </>
     );
   }
 
   renderCode() {
-    let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
+    let code = this.hasMounted ? this.currentCode : this.props.initialCode;
     return (
       <TextEditor
         cmOptions={this.cmOptions}
@@ -272,7 +279,7 @@ export default @CMBContext class ToggleEditor extends Component {
   }
 
   renderBlocks() {
-    let code = this.hasMounted ? SHARED.cm.getValue() : this.props.initialCode;
+    let code = this.hasMounted ? this.currentCode : this.props.initialCode;
     return (
       <UpgradedBlockEditor
         cmOptions={this.cmOptions}

@@ -2,6 +2,21 @@ import CodeMirrorBlocks from '../../src/CodeMirrorBlocks';
 import { store } from '../../src/store';
 import { cleanup } from "@testing-library/react";
 
+// figure out what platform we're running on
+const userAgent = navigator.userAgent;
+const platform = navigator.platform;
+const edge = /Edge\/(\d+)/.exec(userAgent);
+const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
+
+// pass along all the simulated events
+export * from './simulate';
+
+// pass along useful constants
+export const mac = ios || /Mac/.test(platform);
+export const cmd_ctrl = mac? { metaKey: true } : { ctrlKey: true };
+export const DELAY = 250;
+
+// pass along useful testing functions
 export async function wait(ms) {
   return new Promise(resolve => {
     setTimeout(resolve, ms);

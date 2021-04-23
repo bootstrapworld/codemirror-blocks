@@ -60,7 +60,7 @@ class ToplevelBlock extends BlockComponent {
   componentDidMount() {
     if(!this.props.incrementalRendering) return; // bail if incremental is off
     window.requestAnimationFrame( () => {
-      setTimeout(() => this.setState({ renderPlaceholder: false }), 50);
+      setTimeout(() => this.setState({ renderPlaceholder: false }), 250);
     });
   }
 
@@ -69,10 +69,9 @@ class ToplevelBlock extends BlockComponent {
 
     // set elt to a cheap placeholder, OR render the entire rootNode
     const elt = this.state.renderPlaceholder? (<div/>) : node.reactElement();
-
     // if any prior block markers are in this range, clear them
     const {from, to} = node.srcRange(); // includes the node's comment, if any
-    SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m => m.clear());
+    SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m=>m.clear());
     this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
     this.mark.BLOCK_NODE_ID = node.id;
     node.mark = this.mark;
@@ -154,6 +153,7 @@ class BlockEditor extends Component {
       setCursor: PropTypes.func.isRequired,
       setCM: PropTypes.func.isRequired,
     }),
+    toolbarRef: PropTypes.object,
     onBeforeChange: PropTypes.func,
     onMount:PropTypes.func.isRequired,
     hasQuarantine: PropTypes.bool.isRequired,
@@ -237,7 +237,6 @@ class BlockEditor extends Component {
           }
           if (annt === '') annt = 'change';
           getState().undoableAction = annt; //?
-          //console.log('BlockEditor.js calling commitChanges', changes)
           commitChanges(changes, false, -1, this.newAST);
         }
       }
@@ -260,7 +259,7 @@ class BlockEditor extends Component {
     // Set extra aria attributes
     const wrapper = ed.getWrapperElement();
     wrapper.setAttribute('role', 'tree');
-    wrapper.setAttribute('aria-setsize', ast.rootNodes.length);
+    wrapper.setAttribute('aria-multiselectable', 'true');
 
     // pass the block-mode CM editor, API, and current AST
     onMount(ed, this.buildAPI(ed), ast);
@@ -277,7 +276,6 @@ class BlockEditor extends Component {
     if(action.type == "SET_FOCUS") {
       // NOTE(Emmanuel): the following line is probably dead code
       action.focusId = this.props.ast.getNodeByNId(action.nid).id;
-      //console.log('XXX BlockEditor:311 calling activateByNid');
       this.props.activateByNid(action.nid, {allowMove: true});
       delete action.nid;
       return;
@@ -331,7 +329,6 @@ class BlockEditor extends Component {
       'setCursor': (cur) => withState(({ast}) => {
         const node = ast.getNodeContaining(cur);
         if(node) {
-          //console.log('XXX BlockEditor:365 calling activateByNid');
           this.props.activateByNid(node.nid, {record: false, allowMove: true});
         }
         this.props.setCursor(ed, cur);
@@ -358,7 +355,7 @@ class BlockEditor extends Component {
       * APIs FOR TESTING
       */
       'getQuarantine': () => withState(({quarantine}) => quarantine),
-      'setQuarantine': (q) => this.props.setQuarantine(q),
+      'setQuarantine': (start, end, txt) => this.props.setQuarantine(start, end, txt),
       'resetNodeCounter': () => resetNodeCounter(),
       'executeAction' : (action) => this.executeAction(action),
     };
@@ -389,8 +386,7 @@ class BlockEditor extends Component {
     let mark = SHARED.cm.markText(from, to, options); // keep CM in sync
     mark._clear = mark.clear;
     mark.ID = node.id;
-    console.log(mark);
-    mark.clear = () => { console.log('clearing'); mark._clear(); this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); };
+    mark.clear = () => { mark._clear(); this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); };
     mark.find = () => { let {from, to} = this.props.ast.getNodeById(node.id); return {from, to}; };
     mark.options = options;
     this.props.dispatch({type: 'ADD_MARK', id: node.id, mark: mark});
@@ -611,7 +607,6 @@ const mapDispatchToProps = dispatch => ({
   setAST: ast => dispatch({type: 'SET_AST', ast}),
   setCursor: (_, cur) => dispatch(setCursor(cur)),
   clearFocus: () => {
-    //console.log('BlockEditor:671 calling SET_FOCUS with focusId null');
     return dispatch({type: 'SET_FOCUS', focusId: null});
   },
   setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),

@@ -3,15 +3,9 @@ import CodeMirror from 'codemirror';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget, activateByNid} from './actions';
-import {partition, getRoot, skipCollapsed, say,
+import {partition, getRoot, skipCollapsed, say, mac,
   getLastVisibleNode, preambleUndoRedo, playSound, BEEP} from './utils';
 import {findAdjacentDropTargetId as getDTid} from './components/DropTarget';
-
-const userAgent = navigator.userAgent;
-const platform = navigator.platform;
-const edge = /Edge\/(\d+)/.exec(userAgent);
-const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
-const mac = ios || /Mac/.test(platform);
 
 export const defaultKeyMap = {
   // NAVIGATION
@@ -19,8 +13,8 @@ export const defaultKeyMap = {
   'Up'        : 'Previous Block',
   'Home'      : 'First Block',
   'End'       : 'Last Visible Block',
-  'Left'      : 'Collapse or Select Parent',
-  'Right'     : 'Expand or Select 1st Child',
+  'Left'      : 'Collapse or Focus Parent',
+  'Right'     : 'Expand or Focus 1st Child',
   'Shift-Left': 'Collapse All',
   'Shift-Right':'Expand All',
   'Shift-Alt-Left': 'Collapse Current Root',
@@ -72,31 +66,53 @@ const pcKeyMap = {
   'Shift-Ctrl-/':'Help',
 };
 
+const punctuation = {
+  ','    : 'Comma', 
+  '.'    : 'Period',
+  '\''   : 'Backslash', 
+  '/'    : 'Forward Slash',
+  'Esc'  : 'Escape',
+  'Ctrl' : 'Control',
+  'Cmd'  : 'Command',
+  'Alt'  : (mac? 'Option' : 'Alt'),
+  '['    : 'Left Bracket',
+  ']'    : 'Right Bracket',
+};
+
+// given an array of keys, produce a spoken string that
+// verbalizes punctuation and key names
+function prounounce(keys) {
+  const match = new RegExp('Esc|Ctrl|Cmd|Alt|[.,/#!$%^&*;:{}=_`~()]', 'gi');
+  let ws = keys.map(k => k.replace(match, m=>punctuation[m]));
+  return ws.length < 3? ws.join(" or ")
+    : ws.slice(0, ws.length - 1).concat(`or ${ws.slice(-1)}`).join(', ');
+}
+
 // Add platform-specific keys
 Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
-const pasteHandler = function (_, e) {
-    if(!this.node) { return CodeMirror.Pass; }
-    const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
-    const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
-    // Case 1: Overwriting selected nodes
-    if (this.selections.includes(this.node.id)) { paste(new ReplaceNodeTarget(this.node)); }
-    // Case 2: Inserting to the left or right of the root
-    else if (!this.node.parent) { paste(new OverwriteTarget(pos, pos)); }
-    // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
-    else {
-      const DTnode = document.getElementById('block-drop-target-' + getDTid(this.node, before));
-      if (DTnode?.dataset?.field) {
-        // We're somewhere valid in the AST. Initiate paste on the target field!
-        paste(new InsertTarget(this.node.parent, DTnode.dataset.field, pos));
-      } else { 
-        playSound(BEEP);
-        say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); 
-      }
+function pasteHandler(_, e) {
+  if(!this.node) { return CodeMirror.Pass; }
+  const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
+  const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
+  // Case 1: Overwriting selected nodes
+  if (this.selections.includes(this.node.id)) { paste(new ReplaceNodeTarget(this.node)); }
+  // Case 2: Inserting to the left or right of the root
+  else if (!this.node.parent) { paste(new OverwriteTarget(pos, pos)); }
+  // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
+  else {
+    const DTnode = document.getElementById('block-drop-target-' + getDTid(this.node, before));
+    if (DTnode?.dataset?.field) {
+      // We're somewhere valid in the AST. Initiate paste on the target field!
+      paste(new InsertTarget(this.node.parent, DTnode.dataset.field, pos));
+    } else { 
+      playSound(BEEP);
+      say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); 
     }
   }
+}
 
 export const commandMap = {
   prevFocus : function (_, e) {
@@ -136,7 +152,7 @@ export const commandMap = {
     else { this.activateByNid(getLastVisibleNode(this.state).nid); }
   },
 
-  'Collapse or Select Parent' : function(_) {
+  'Collapse or Focus Parent' : function(_) {
     if(!this.node) { return CodeMirror.Pass; }
     if (this.expandable && !this.isCollapsed && !this.isLocked()) {
       this.collapse(this.node.id);
@@ -147,7 +163,7 @@ export const commandMap = {
     }
   },
 
-  'Expand or Select 1st Child' : function (_) {
+  'Expand or Focus 1st Child' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     const node = this.node;
     if (this.expandable && this.isCollapsed && !this.isLocked()) {
@@ -216,24 +232,37 @@ export const commandMap = {
     if(!this.node) { return CodeMirror.Pass; }
     e.preventDefault();
     const node = this.node;
+    const descendantIds = node => [...node.descendants()].map(d => d.id);
+    const ancestorIds = node => {
+      let ancestors = [], next = node.parent;
+      while (next) { ancestors.push(next.id); next = next.parent; }
+      return ancestors;
+    };
+
+    // if the node is already selected, remove it, its descendants
+    // and any ancestor
     if (this.selections.includes(this.node.id)) {
+      const prunedSelection = this.selections
+        .filter(s => !descendantIds(node).includes(s))
+        .filter(s => !ancestorIds(node).includes(s));
       this.dispatch({
         type: 'SET_SELECTIONS',
-        selections: this.selections.filter(s => s !== node.id)
+        selections: prunedSelection
       });
       // TODO(Emmanuel): announce removal
     } else {
       const isContained = id => this.ast.isAncestor(node.id, id);
       const doesContain = id => this.ast.isAncestor(id, node.id);
-      const [removed, newSelections] = partition(this.selections, isContained);
+      let [removed, newSelections] = partition(this.selections, isContained);
       for (const r of removed) {
         // TODO(Emmanuel): announce removal
       }
       if (newSelections.some(doesContain)) {
-        // TODO(Emmanuel): announce failure
+        playSound(BEEP);
+        say('This node is already has a selected ancestor');
       } else {
         // TODO(Emmanuel): announce addition
-        newSelections.push(this.node.id);
+        newSelections = newSelections.concat(descendantIds(node));
         this.dispatch({
           type: 'SET_SELECTIONS',
           selections: newSelections
@@ -332,7 +361,7 @@ export const commandMap = {
   },
 
   'Help' : function (_) {
-    this.showDialog(renderKeyMap(this.keyMap));
+    this.showDialog({title:"Keyboard Shortcuts", content: renderKeyMap(defaultKeyMap)});
   }
 };
 
@@ -363,7 +392,7 @@ export function keyDown(e, env, keyMap) {
       };
       // If there's a node, make sure it's fresh
       if(env.node) {
-        env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid)
+        env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid);
       }
     });
     handler = handler.bind(env);
@@ -377,25 +406,21 @@ export function renderKeyMap(keyMap) {
     if(!reverseMap[keyMap[key]]) { reverseMap[keyMap[key]] = [key]; }
     else reverseMap[keyMap[key]].push(key);
   });
-  window.reverseMap = reverseMap;
   return (
-    <>
-      <h1>Blocks Shortcuts</h1>
-      <span className="screenreader">
-        Screenreader users: Make sure to either increase the verbosity of your screenreader, 
-        or character over the shortcut column in the tables below. Some shortcuts use 
-        punctuation keys that may not always be spoken.
-      </span>
-
-      <table className="shortcuts">
-        <tbody>
-        {
-          Object.entries(reverseMap).map(
-            kv => (<tr><td>{kv[0]}</td><td>{kv[1].map(key => (<kbd>{key}</kbd>))}</td></tr>)
-          )
-        }
-        </tbody>
-      </table>
-    </>
+    <table className="shortcuts">
+    <tbody>
+    {
+      Object.entries(reverseMap).map(  // for each command, make a row...
+        (kv, i) =>                     // for each row, list the kbd shortcuts
+          (<tr key={i}>
+          <td>{kv[0]}</td>
+          <td>
+            {kv[1].map((k, j) => (<kbd aria-hidden="true" key={j}>{k}</kbd>))}
+            <span className="screenreader">{prounounce(kv[1])}</span>
+          </td></tr>)
+      )
+    }
+    </tbody>
+    </table>
   );
 }

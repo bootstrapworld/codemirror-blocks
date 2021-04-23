@@ -1,11 +1,11 @@
 // Karma configuration
 // Generated on Mon Nov 30 2015 13:06:12 GMT-0800 (PST)
-var webpackConfig = require('./webpack/test.config.js');
 var envConfig = require('./env-config.js');
+var webpackConfig = require('./webpack/test.config.js');
 
 // Configure frameworks and plugins:
 // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-var frameworks = ['jasmine'];
+var frameworks = ['jasmine', 'webpack'];
 var plugins = [
   'karma-sourcemap-loader',
   'karma-jasmine',
@@ -14,8 +14,8 @@ var plugins = [
   'karma-coveralls'
 ];
 
-// If we're not on Travis, add parallelism
-if (!envConfig.isCI) {
+// If we're not on Travis or trying to debug, add parallelism
+if (!(envConfig.isCI || envConfig.localDebug)) {
   frameworks.unshift('parallel');
   plugins.unshift('karma-parallel');
 }
@@ -50,7 +50,8 @@ module.exports = function(config) {
     },
 
     parallelOptions: {
-      executors: envConfig.isCI ? 1 : undefined, // undefined: defaults to cpu-count - 1
+      // undefined: defaults to cpu-count - 1
+      executors: (envConfig.isCI || envConfig.localDebug) ? 1 : undefined, 
       shardStrategy: 'round-robin',
       // shardStrategy: 'description-length'
       // shardStrategy: 'custom'
@@ -70,6 +71,7 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       "spec/index.js": ["webpack", "sourcemap"],
+      "src/*.js": ["webpack", "sourcemap"],
     },
 
     karmaTypescriptConfig: {
@@ -82,7 +84,7 @@ module.exports = function(config) {
     },
     client: {
       // should we log console output in our test console?
-      captureConsole: false,
+      captureConsole: false || envConfig.localDebug,
       jasmine: {
         timeoutInterval: 30000
       }
@@ -103,14 +105,12 @@ module.exports = function(config) {
     logLevel: config.LOG_WARN,
 
     // enable / disable watching file and executing tests whenever any file changes
+    // wait half a second before re-running
     autoWatch: true,
-
-    // delete??
-    //exclude: ['actions.js'],
+    autoWatchBatchDelay: 500,
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    //browsers: [ envConfig.isCI ? 'ChromeTravisCI' : envConfig.devBrowser ],
     browsers: ['ChromeHeadless'],
     customLaunchers: {
       ChromeTravisCI: {
@@ -127,7 +127,7 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultanous
-    concurrency: 4,
+    concurrency: (envConfig.isCI || envConfig.localDebug) ? 4 : Infinity,
     captureTimeout: 60000,
     browserDisconnectTolerance: 3,
     browserDisconnectTimeout: 10000,

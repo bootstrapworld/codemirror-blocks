@@ -1,4 +1,5 @@
 import { fireEvent } from "@testing-library/react";
+//import userEvent from '@testing-library/user-event';
 
 // These exported functions simulate browser events for testing.
 // They use React's test utilities whenever possible.
@@ -22,6 +23,17 @@ export function doubleClick(node) {
 export function blur(node=document.activeElement) {
   fireEvent.blur(toElement(node));
 }
+export function paste(pastedString, node=document.activeElement) {
+  var dT = null;
+  try { dT = new DataTransfer();} catch(e) { console.log('ERR in paste()'); }
+  var pasteEvent = new ClipboardEvent('paste', {clipboardData: dT});
+  pasteEvent.clipboardData.setData('text/plain', pastedString);
+  toElement(node).dispatchEvent(pasteEvent);
+  //userEvent.paste(toElement(node), pastedString);
+}
+export function cut(node=document.activeElement) {
+  fireEvent.cut(toElement(node));
+}
 
 function createBubbledEvent(type, props = {}) {
   const event = new Event(type, { bubbles: true });
@@ -29,13 +41,6 @@ function createBubbledEvent(type, props = {}) {
   return event;
 }
 
-/* UNUSED 
-function createBubbledMouseEvent(type, props = {}) {
-  const event = new MouseEvent(type, { bubbles: true });
-  Object.assign(event, props);
-  return event;
-}
-*/
 export function drop() {
   let ans = createBubbledEvent('drop');
   return ans;
@@ -48,12 +53,6 @@ export function dragstart() {
 
 export function dragover(node=document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('dragover'));
-}
-
-export function dragenterObsolete(node=document.activeElement) {
-  toElement(node).dispatchEvent(createBubbledEvent('mouseenter'));
-  toElement(node).dispatchEvent(createBubbledEvent('dragenter'));
-  toElement(node).dispatchEvent(createBubbledEvent('mouseover'));
 }
 
 export function mouseenter() {
@@ -104,7 +103,6 @@ export function keyPress(key, props={}, node=document.activeElement) {
 }
 export function insertText(text) {
   // TODO: can this be done via fireEvent?
-    //console.log('XXX simulate:107 doing insertText', text);
   document.execCommand('insertText', false, text);
 }
 

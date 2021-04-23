@@ -1,9 +1,13 @@
 import wescheme from '../src/languages/wescheme';
 import 'codemirror/addon/search/searchcursor.js';
-import { wait, teardown, activationSetup } from './support/test-utils';
-import { mouseDown, click, keyDown } from './support/simulate';
 
-const DELAY = 250;
+/*eslint no-unused-vars: "off"*/
+import {
+  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
+  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
+  dragend, dragleave, keyDown, keyPress, insertText
+} from '../spec/support/test-utils';
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -246,7 +250,7 @@ describe("when testing CM apis,", function () {
     keyDown(" ", {}, this.currentFirstRoot());
     await wait(DELAY);
     const selectedNodes = this.cmb.getSelectedNodes();
-    expect(selectedNodes.length).toBe(1);
+    expect(selectedNodes.length).toBe(4);
     expect(this.cmb.getSelection("MOO")).toBe("(+ 1 2)MOO");
     await wait(DELAY);
     expect(this.currentFirstRoot().element.getAttribute("aria-selected"))
@@ -277,7 +281,7 @@ describe("when testing CM apis,", function () {
     keyDown(" ", {}, this.currentFirstRoot());
     await wait(DELAY);
     const selectedNodes = this.cmb.getSelectedNodes();
-    expect(selectedNodes.length).toBe(1);
+    expect(selectedNodes.length).toBe(4);
     const selections = this.cmb.getSelections("MOO");
     expect(selections.length).toBe(2);
     expect(selections).toEqual(["(+ 1 2)",""]);
@@ -348,18 +352,18 @@ describe("when testing CM apis,", function () {
     expect(this.cmb.getValue()).toBe("(+Maya\ny");
   });
 
-  it('replaceSelections shoud work as-expected in blockmode', async function () {
+  it('replaceSelections should work as-expected in blockmode', async function () {
     this.cmb.setValue('(+ 1 2)\nx\n(+ 3 4)');
     this.cmb.setBlockMode(true);
     await wait(DELAY);
     // blockmode API test
     keyDown(" ", {}, this.currentFirstRoot());
     await wait(DELAY);
-    expect(this.cmb.getSelectedNodes().length).toBe(1);
+    expect(this.cmb.getSelectedNodes().length).toBe(4);
     mouseDown(this.currentThirdRoot());
     keyDown(" ", {}, this.currentThirdRoot());
     await wait(DELAY);
-    expect(this.cmb.getSelectedNodes().length).toBe(2);
+    expect(this.cmb.getSelectedNodes().length).toBe(8);
     this.cmb.replaceSelections(["Maya", "Schanzer"]);
     expect(this.cmb.getValue()).toBe("Maya\nx\nSchanzer");
   });
@@ -462,7 +466,7 @@ describe("when testing CM apis,", function () {
     expect(this.cmb.getSelectedNodes().length).toBe(0);
     keyDown(" ", {}, firstRoot);
     await wait(DELAY);
-    expect(this.cmb.getSelectedNodes().length).toBe(1);
+    expect(this.cmb.getSelectedNodes().length).toBe(4);
     expect(this.cmb.somethingSelected()).toBe(true);
     this.cmb.setSelection({line:0,ch:0}, {line:0,ch:0});
     await wait(DELAY);

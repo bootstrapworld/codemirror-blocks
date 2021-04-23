@@ -3,7 +3,6 @@ import PropTypes from 'prop-types/prop-types';
 import {connect} from 'react-redux';
 import {UnControlled as CodeMirror} from 'react-codemirror2';
 import SHARED from '../shared';
-import {say} from '../utils';
 
 // CodeMirror APIs that we need to disallow
 // NOTE(Emmanuel): we should probably block 'on' and 'off'...

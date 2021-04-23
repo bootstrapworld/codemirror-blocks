@@ -57,6 +57,7 @@ export default class ContentEditable extends Component {
     this.elem.focus();
   }
 
+  /*eslint no-unused-vars: "off"*/
   shouldComponentUpdate(props) {
     const {value: newValue, 'aria-label': newAriaLabel, ...newProps} = props;
     const {value: oldValue, 'aria-label': oldAriaLabel, ...oldProps} = this.props;

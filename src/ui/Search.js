@@ -52,9 +52,8 @@ export default (Editor, searchModes) => {
     }
 
     handleSearch = (forward, cmbState, overrideCur) => {
-      console.log(overrideCur);
       if(this.state.searchEngine == null) {
-        say("No search setting have been selected.");
+        say("No search settings have been selected");
         return;
       }
       var searchFrom = overrideCur || this.state.cursor, result;
@@ -76,7 +75,7 @@ export default (Editor, searchModes) => {
         if(overrideCur) return null; // if there's no wrapped match, give up
         playSound(WRAP);
         const wrappedStart = (forward? getBeginCursor : getEndCursor)(this.cm);
-        return this.handleSearch(forward, cmbState, wrappedStart)
+        return this.handleSearch(forward, cmbState, wrappedStart);
       }
     }
 

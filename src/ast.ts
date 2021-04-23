@@ -123,13 +123,11 @@ export class AST {
     const newFieldNames =
           ["id", "parent", "level", "nid", "prev", "next", "hash",
            "aria-setsize", "aria-posinset", "mark"];
-    if (!node.__alreadyValidated) {
-      for (let p in node) {
-        if (newFieldNames.includes(p)) {
-          throw new Error(`The property ${p} is used by ASTNode, and should not be overridden in subclasses.`);
-        }
-      }
+    const invalidProp = newFieldNames.find(field => field in node)
+    if (!node.__alreadyValidated && invalidProp) {
+      throw new Error(`The property ${invalidProp} is used by ASTNode, and should not be overridden in subclasses.`);
     }
+
     node.__alreadyValidated = true;
     // Check that the node declares all of the required fields and methods.
     if (typeof node.type !== "string") {
@@ -138,9 +136,9 @@ export class AST {
     if (typeof node.options !== "object") {
       throw new Error(`ASTNode.options is optional, but if provided it must be an object. This rule was broken by ${node.type}.`);
     }
-    if (!node.from || !node.to
-        || typeof node.from.line !== "number" || typeof node.from.ch !== "number"
-        || typeof node.to.line !== "number" || typeof node.to.ch !== "number") {
+    // Check that the Pos objects are correctly-formatted
+    if([node.from?.line, node.from?.ch, node.to?.line, node.to?.ch]
+        .some(v => typeof v !== "number")) {
       throw new Error(`ASTNode.from and .to are required and must have the form {line: number, to: number} (they are source locations). This rule was broken by ${node.type}.`);
     }
     if (typeof node.pretty !== "function") {
@@ -156,15 +154,10 @@ export class AST {
     node.spec.validate(node);
     // Check that the node doesn't contain any extraneous data.
     // (If it does, its hash is probably wrong. All data should be declared in the spec.)
-    let speccedFieldNames = node.spec.fieldNames();
-    for (let field in node) {
-      if (node.hasOwnProperty(field)) {
-        if (!newFieldNames.includes(field)
-            && !speccedFieldNames.includes(field)
-            && !astFieldNames.includes(field)) {
-          throw new Error(`An ASTNode ${node.type} contains a field called '${field}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`);
-        }
-      }
+    const expectedFieldNames = node.spec.fieldNames().concat(newFieldNames, astFieldNames);
+    const undeclaredField = Object.getOwnPropertyNames(node).find(p => !expectedFieldNames.includes(p));
+    if(undeclaredField) {
+      throw new Error(`An ASTNode ${node.type} contains a field called '${field}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`);
     }
   }
 

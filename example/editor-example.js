@@ -5,8 +5,13 @@ import bigExampleCode from './ast-test.rkt';
 import hugeExampleCode from './huge-code.rkt';
 const smallExampleCode = `(+ 1 2)\ny`;
 
-const exampleCode = smallExampleCode;
-//const exampleCode = bigExampleCode;
+// HACK: expose ALL test utilities, events, etc
+// so they can be used from the browser console
+import * as t from '../spec/support/test-utils';
+Object.assign(window, t);
+
+//const exampleCode = smallExampleCode;
+const exampleCode = bigExampleCode;
 //const exampleCode = hugeExampleCode;
 
 // grab the DOM Node to host the editor, and use it to instantiate
@@ -86,5 +91,5 @@ nextButton.onclick = (e) => {
 }
 
 // for debugging purposes
-window.editor = editor
-console.log(editor);
+window.editor = editor;
+window.cmb = editor;
