@@ -35,6 +35,8 @@ export default class BlockComponent extends Component {
     node: PropTypes.object
   }
 
+  // update if one of the nodes is null, the hash has changed, the props or state
+  // have changed, or if the aria properties have changed
   shouldComponentUpdate(props, state) {
     // NOTE: don't care about the node since the patching algorithm will deal
     // with the update already
@@ -42,9 +44,12 @@ export default class BlockComponent extends Component {
     const {node: oldValue, ...oldProps} = this.props;
 
     const shouldUpdate = (
-      (newValue && oldValue && newValue.hash !== oldValue.hash) ||
-        !vaguelyEqual(newProps, oldProps) ||
-        !vaguelyEqual(state, this.state)
+      !(newValue && oldValue) ||
+      (newValue.hash !== oldValue.hash) ||
+      !vaguelyEqual(newProps, oldProps) ||
+      !vaguelyEqual(state, this.state) ||
+      (newValue['aria-setsize']  !== oldValue['aria-setsize']) ||
+      (newValue['aria-posinset'] !== oldValue['aria-posinset'])
     );
     
     return shouldUpdate;
