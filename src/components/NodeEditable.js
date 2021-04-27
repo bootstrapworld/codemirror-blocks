@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';

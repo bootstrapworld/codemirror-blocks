@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import classNames from 'classnames';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';

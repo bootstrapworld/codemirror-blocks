@@ -1,6 +1,6 @@
 import {UnControlled as CodeMirror} from 'react-codemirror2';
 import React, {Component}  from 'react';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 import {DropNodeTarget} from '../dnd';
 import {drop, OverwriteTarget} from '../actions';
 import {connect} from 'react-redux';

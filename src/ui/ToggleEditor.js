@@ -1,5 +1,5 @@
 import React, {Component, createRef} from 'react';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 import Dialog from 'react-modal';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';

@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 
 // Check to see whether two `prop` or `state` objects are roughly equal to each
 // other, enough so that we don't need to re-render a node if that's all that
