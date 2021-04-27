@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 import {logResults} from '../utils';
 
 export class ToggleButton extends Component {
