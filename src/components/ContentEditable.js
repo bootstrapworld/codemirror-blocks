@@ -33,8 +33,13 @@ export default class ContentEditable extends Component {
     'aria-label': PropTypes.string,
   }
 
+  constructor(props) {
+    super(props);
+    this.eltRef = React.createRef();
+  }
+
   handleChange = _ => {
-    this.props.onChange(this.elem.textContent);
+    this.props.onChange(this.eltRef.current.textContent);
   }
 
   handleKeyDown = e => {
@@ -52,9 +57,8 @@ export default class ContentEditable extends Component {
   }
 
   componentDidMount() {
-    this.props.itDidMount(this.elem);
-    this.elem.spellcheck = false;
-    this.elem.focus();
+    this.props.itDidMount(this.eltRef.current);
+    this.eltRef.current.focus();
   }
 
   /*eslint no-unused-vars: "off"*/
@@ -62,7 +66,7 @@ export default class ContentEditable extends Component {
     const {value: newValue, 'aria-label': newAriaLabel, ...newProps} = props;
     const {value: oldValue, 'aria-label': oldAriaLabel, ...oldProps} = this.props;
     return (
-      (getInnerHTML(newValue) !== this.elem.innerHTML) ||
+      (getInnerHTML(newValue) !== this.eltRef.current.textContent) ||
        !shallowequal(newProps, oldProps)
     );
   }
@@ -72,7 +76,7 @@ export default class ContentEditable extends Component {
     return (
       <span
         {...props}
-        ref={elem => this.elem = elem}
+        ref={this.eltRef}
         dangerouslySetInnerHTML={{__html: getInnerHTML(value)}}
         contentEditable={true}
         onInput={this.handleChange}

@@ -126,7 +126,7 @@ class NodeEditable extends Component {
   }
 
   setSelection = isCollapsed => {
-    setTimeout(() => {
+    window.requestAnimationFrame(() => setTimeout(() => {
       if(!document.body.contains(this.element)) {
         console.error("The quarantine element has not been added to the document!");
       }
@@ -135,7 +135,8 @@ class NodeEditable extends Component {
       if (isCollapsed) range.collapse(false);
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
-    }, 20);
+      this.element.focus();
+    }, 50));
   }
 
   contentEditableDidMount = el => {
