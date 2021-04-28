@@ -75,7 +75,7 @@ class NodeEditable extends Component {
         say(annt);
       };
       const onError = e => {
-        const errorText = SHARED.parser.getExceptionMessage(e);
+        const errorText = SHARED.getExceptionMessage(e);
         console.log(errorText);
         this.ignoreBlur = false;
         setErrorId(target.node ? target.node.id : 'editing');

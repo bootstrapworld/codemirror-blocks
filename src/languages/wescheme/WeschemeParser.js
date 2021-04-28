@@ -350,7 +350,7 @@ class WeschemeParser {
     );
   }
 
-  get primitives() {
+  primitives() {
     return PrimitiveGroup.fromConfig('wescheme', PRIMITIVES_CONFIG);
   }
 

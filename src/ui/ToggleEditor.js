@@ -55,7 +55,7 @@ export default @CMBContext class ToggleEditor extends Component {
     language: PropTypes.shape({
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
-      getParser: PropTypes.func.isRequired,
+      parse: PropTypes.func.isRequired,
     }),
     options: PropTypes.object,
     api: PropTypes.object,
@@ -73,7 +73,7 @@ export default @CMBContext class ToggleEditor extends Component {
 
     this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
     this.language = props.language;
-    this.parser = this.language.getParser();
+    this.parse = this.language.parse;
     this.toolbarRef = createRef();
 
     // construct announcer DOM node
@@ -83,7 +83,7 @@ export default @CMBContext class ToggleEditor extends Component {
     SHARED.announcer = announcements;
 
     let defaultOptions = {
-      parser: this.parser,
+      parse: this.parse,
       incrementalRendering: true,
       collapseAll: true
     };
@@ -195,14 +195,14 @@ export default @CMBContext class ToggleEditor extends Component {
         try {
           let oldCode = SHARED.cm.getValue();
           oldCode.match(/\s+$/);                        // match ending whitespace
-          oldAst = SHARED.parser.parse(oldCode);        // parse the code (WITH annotations)
+          oldAst = SHARED.parse(oldCode);        // parse the code (WITH annotations)
         } catch (err) {
-          try   { throw SHARED.parser.getExceptionMessage(err); }
+          try   { throw SHARED.getExceptionMessage(err); }
           catch(e){ throw "The parser failed, and the error could not be retrieved"; }
         }
         try {
           code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
-          this.ast = SHARED.parser.parse(code);         // parse the pretty-printed (PP) code
+          this.ast = SHARED.parse(code);         // parse the pretty-printed (PP) code
         } catch (e) {
           throw `An error occured in the language module 
           (the pretty-printer probably produced invalid code)`;
@@ -229,7 +229,7 @@ export default @CMBContext class ToggleEditor extends Component {
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
           <Toolbar 
-            primitives={this.parser.primitives}
+            primitives={this.primitives}
             languageId={this.language.id}
             blockMode={this.state.blockMode} 
             ref={this.toolbarRef} />
@@ -266,7 +266,7 @@ export default @CMBContext class ToggleEditor extends Component {
     return (
       <TextEditor
         cmOptions={this.cmOptions}
-        parser={this.parser}
+        parse={this.parse}
         initialCode={code}
         onMount={this.handleEditorMounted}
         api={this.props.api} 
@@ -280,7 +280,7 @@ export default @CMBContext class ToggleEditor extends Component {
     return (
       <UpgradedBlockEditor
         cmOptions={this.cmOptions}
-        parser={this.parser}
+        parse={this.parse}
         value={code}
         onMount={this.handleEditorMounted}
         api={this.props.api}

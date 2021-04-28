@@ -3,11 +3,11 @@ import {addLanguage, removeLanguage} from 'codemirror-blocks/languages';
 
 describe('The primitives module', function() {
   beforeEach(function() {
-    this.parser = {parse(){}};
+    this.parse = function(){},
     addLanguage({
       id:'my-lang',
       name:'My Lang',
-      getParser: () => this.parser,
+      parse: this.parse,
     });
   });
   afterEach(function() {
@@ -64,14 +64,16 @@ describe('The primitives module', function() {
 
       it("should delegate to the parsers getASTNodeForPrimitive method if available", function() {
         expect(this.primitive.getASTNode()).toBeUndefined();
-        this.parser.getASTNodeForPrimitive = () => 'foo';
-        expect(this.primitive.getASTNode()).toBe('foo');
+        // this can no longer be set dynamically
+        //this.getASTNodeForPrimitive = () => 'foo';
+        //expect(this.primitive.getASTNode()).toBe('foo');
       });
 
       it("should delegate to the parsers getLiteralNodeForPrimitive method if available", function() {
         expect(this.primitive.getLiteralNode()).toBeUndefined();
-        this.parser.getLiteralNodeForPrimitive = () => 'foo';
-        expect(this.primitive.getLiteralNode()).toBe('foo');
+        // this can no longer be set dynamically
+        //this.getLiteralNodeForPrimitive = () => 'foo';
+        //expect(this.primitive.getLiteralNode()).toBe('foo');
       });
     });
 

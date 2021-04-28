@@ -141,7 +141,7 @@ class BlockEditor extends Component {
     cmOptions: PropTypes.object,
     keyMap: PropTypes.object,
     language: PropTypes.string.isRequired,
-    parser: PropTypes.object.isRequired,
+    parse: PropTypes.func.isRequired,
     setAST: PropTypes.func.isRequired,
     setCursor: PropTypes.func.isRequired,
     setQuarantine: PropTypes.func.isRequired,
@@ -535,10 +535,10 @@ class BlockEditor extends Component {
   }
 
   componentDidMount() {
-    const { parser, options, search } = this.props;
+    const { parse, options, search } = this.props;
 
     // TODO: pass these with a React Context or something sensible like that.
-    SHARED.parser = parser;
+    SHARED.parse = parse;
     SHARED.options= options;
     SHARED.search = search;
     // create a hidden buffer, for use with copy/cut/paste

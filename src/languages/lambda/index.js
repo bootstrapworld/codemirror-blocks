@@ -8,9 +8,12 @@ export default addLanguage(
     name: 'Lambda',
     description: 'A simple language taken from lisperator.net',
     example: "1+1*2",
+    parse: parseString,
+    /*
     getParser() {
       return {
         parse: parseString,
       };
     },
+    */
   });
