@@ -99,7 +99,6 @@ class ToplevelBlockEditableCore extends Component {
 
   constructor(props) {
     super(props);
-    const [start, end] = this.props.quarantine;
     this.container = document.createElement('span');
     this.container.classList.add('react-container');
   }
