@@ -14,6 +14,14 @@ module.exports = function(config) {
       test:/.ttf$|.eot$/, 
       use: [{loader: "file-loader"}]
     },
+    { 
+      test: /\.rkt$/, 
+      use: [{loader: 'raw-loader' }]
+    },
+    { 
+      test: /\.arr$/, 
+      use: [{loader: 'raw-loader' }]
+    },
   ];
   if (config.extractCSS) {
     plugins.push(new MiniCssExtractPlugin({ 
@@ -22,7 +30,11 @@ module.exports = function(config) {
     }));
     rules.push({
       test: /\.less$|.css$/,
-      use: [MiniCssExtractPlugin.loader, "css-loader", "less-loader"]
+      use: [
+        {loader: MiniCssExtractPlugin.loader}, 
+        {loader: "css-loader"}, 
+        {loader: "less-loader"}
+        ]
     });
   } else {
     rules.push({

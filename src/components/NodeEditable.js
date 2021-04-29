@@ -37,7 +37,6 @@ class NodeEditable extends Component {
       dispatch((_, getState) => {
         const {ast} = getState();
         const {target} = this.props;
-        console.log(target.getText(ast));
         this.cachedValue = target.getText(ast);
       });
     }
@@ -127,16 +126,14 @@ class NodeEditable extends Component {
   }
 
   setSelection = isCollapsed => {
-    setTimeout(() => {
-      if(!document.body.contains(this.element)) {
-        console.error("The quarantine element has not been added to the document!");
-      }
+    window.requestAnimationFrame(() => setTimeout(() => {
       const range = document.createRange();
       range.selectNodeContents(this.element);
       if (isCollapsed) range.collapse(false);
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
-    }, 20);
+      this.element.focus();
+    }, 0));
   }
 
   contentEditableDidMount = el => {
