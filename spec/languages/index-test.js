@@ -21,12 +21,8 @@ describe('addLanguage function,', function() {
     expect(() => addLanguage({id:'bar', name:'Bar Language'}))
       .toThrowError('language definition for bar is missing a \'parse\' function.');
   });
-  /*
-  it('should throw an error if the getParser function does not return a proper obj', function() {
-    expect(() => addLanguage({id:'bar', name:'Bar Language', parse(){}}))
-      .toThrowError(
-        'getParser() function for language bar must return an object with a \'parse\' function.'
-      );
+  it('not an error if no getExceptionMessage function provided', function() {
+    expect(() => addLanguage({id:'bar', name:'Bar Language', parse() {}}))
+      .not.toThrow();
   });
-  */
 });

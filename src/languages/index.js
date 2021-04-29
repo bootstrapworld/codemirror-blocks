@@ -14,17 +14,12 @@ export function addLanguage(languageDefinition) {
   if (!languageDefinition.parse) {
     throw new Error(`language definition for ${id} is missing a 'parse' function.`);
   }
-  /*
-  if (!languageDefinition.getParser) {
-    throw new Error(`language definition for ${id} is missing a 'getParser' function.`);
+
+  if (!languageDefinition.getExceptionMessage) {
+    languageDefinition.getExceptionMessage = function(e) {
+      return e || "Parser error";
+    }
   }
-  let parser = languageDefinition.getParser();
-  if (!(parser && typeof parser.parse == 'function')) {
-    throw new Error(
-      `getParser() function for language ${id} must return an object with a 'parse' function.`
-    );
-  }
-  */
 
   LANGUAGES[id] = languageDefinition;
   return languageDefinition;

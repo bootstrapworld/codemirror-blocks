@@ -11,9 +11,4 @@ export default addLanguage(
     description: 'An example language that illustrates how to add support for new languages',
     parse: parser.parse,
     getExceptionMessage: parser.getExceptionMessage,
-    /*
-    getParser() {
-      return new ExampleParser();
-    },
-    */
   });
