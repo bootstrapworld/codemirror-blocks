@@ -127,16 +127,13 @@ class NodeEditable extends Component {
 
   setSelection = isCollapsed => {
     window.requestAnimationFrame(() => setTimeout(() => {
-      if(!document.body.contains(this.element)) {
-        console.error("The quarantine element has not been added to the document!");
-      }
       const range = document.createRange();
       range.selectNodeContents(this.element);
       if (isCollapsed) range.collapse(false);
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
       this.element.focus();
-    }, 50));
+    }, 0));
   }
 
   contentEditableDidMount = el => {

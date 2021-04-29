@@ -58,7 +58,6 @@ export default class ContentEditable extends Component {
 
   componentDidMount() {
     this.props.itDidMount(this.eltRef.current);
-    this.eltRef.current.focus();
   }
 
   /*eslint no-unused-vars: "off"*/

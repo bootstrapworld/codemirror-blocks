@@ -383,23 +383,6 @@ export class ASTNode {
     }
   }
 
-  // Every node must, on construction, set its own `.hash` field. Its hash must
-  // be determined by its type, its (ordered) children, and any other content it
-  // contains, but _not_ on its `srcloc` or `id`. Subtrees with identical values
-  // must have the same hash.
-  //
-  // `computeHash()` computes a hash for a node in the common case where the
-  // _only_ content of a node is `this.type` and `this.children()`. However,
-  // some nodes have other content. For example, a Binop node could have an `op`
-  // field that's a string like "+" or "*". In this case, `computeHash()` will
-  // not include `op` in the hash because `op` is not a child (only ASTNodes are
-  // children). Thus you would need to compute `.hash` yourself. For other
-  // examples of node types that cannot rely on `.computeHash()`, see Literal and
-  // Comment.
-  computeHash() {
-    return this.hash = hashObject([this.type, [...this.children()].map(c => c.hash)]);
-  }
-
   shortDescription(_level) {
     return this.options["aria-label"];
   }

@@ -57,7 +57,7 @@ class NodeSpec {
 
   hash(node) {
     let hashes = new HashIterator(node, this);
-    return hashObject([node.type, [...hashes]]);
+    return hashObject([node.type, [...hashes], node.options.comment?.comment]);
   }
 
   children(node) {

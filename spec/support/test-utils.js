@@ -14,7 +14,7 @@ export * from './simulate';
 // pass along useful constants
 export const mac = ios || /Mac/.test(platform);
 export const cmd_ctrl = mac? { metaKey: true } : { ctrlKey: true };
-export const DELAY = 250;
+export let DELAY = 250;
 
 // pass along useful testing functions
 export async function wait(ms) {

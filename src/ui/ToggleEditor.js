@@ -197,6 +197,7 @@ export default @CMBContext class ToggleEditor extends Component {
           oldCode.match(/\s+$/);                        // match ending whitespace
           oldAst = SHARED.parser.parse(oldCode);        // parse the code (WITH annotations)
         } catch (err) {
+          console.log(err);
           try   { throw SHARED.parser.getExceptionMessage(err); }
           catch(e){ throw "The parser failed, and the error could not be retrieved"; }
         }
