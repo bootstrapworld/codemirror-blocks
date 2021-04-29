@@ -30,6 +30,8 @@ module.exports = function(env, argv) {
       hot: true,
       inline: true,
       progress: true,
+      host: '0.0.0.0',//your ip address
+      disableHostCheck: true,
       headers: { 'Access-Control-Allow-Origin': '*' },
       contentBase: path.join(__dirname, '..', 'example')
     },

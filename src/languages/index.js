@@ -11,6 +11,10 @@ export function addLanguage(languageDefinition) {
   if (!languageDefinition.name) {
     throw new Error(`language definition for ${id} is missing a 'name' attribute.`);
   }
+  if (!languageDefinition.parse) {
+    throw new Error(`language definition for ${id} is missing a 'parse' function.`);
+  }
+  /*
   if (!languageDefinition.getParser) {
     throw new Error(`language definition for ${id} is missing a 'getParser' function.`);
   }
@@ -20,6 +24,7 @@ export function addLanguage(languageDefinition) {
       `getParser() function for language ${id} must return an object with a 'parse' function.`
     );
   }
+  */
 
   LANGUAGES[id] = languageDefinition;
   return languageDefinition;

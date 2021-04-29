@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 import ContentEditable from './ContentEditable';
 import SHARED from '../shared';
 import classNames from 'classnames';
@@ -74,7 +74,7 @@ class NodeEditable extends Component {
         say(annt);
       };
       const onError = e => {
-        const errorText = SHARED.parser.getExceptionMessage(e);
+        const errorText = SHARED.getExceptionMessage(e);
         console.log(errorText);
         this.ignoreBlur = false;
         setErrorId(target.node ? target.node.id : 'editing');

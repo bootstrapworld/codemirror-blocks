@@ -1,6 +1,6 @@
 import React, {Component, createContext} from 'react';
 import {connect} from 'react-redux';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 import NodeEditable from './NodeEditable';
 import SHARED from '../shared';
 import {DropNodeTarget} from '../dnd';
@@ -80,6 +80,17 @@ export class DropTarget extends Component {
       field: this.props.field,
       node: this.context.node,
     };
+
+    // ensure that the field property is set
+    if (!value.field) {
+      console.error(`
+A dropTarget must be created with a prop 'field'. 
+Check the render() function for the ${value.node.type} 
+Component, and make sure all DropTargets have a 
+field declared. The node was:`, value.node
+        );
+    }
+
     return (
       <DropTargetContext.Provider value={value}>
         <ActualDropTarget id={this.id} />
@@ -213,6 +224,7 @@ class ActualDropTarget extends BlockComponent {
       'aria-level'      : '1',
       id                : `block-drop-target-${this.props.id}`,
     };
+
     if (this.props.isEditable) {
       const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
       return (

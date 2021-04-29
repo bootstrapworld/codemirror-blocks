@@ -1,6 +1,6 @@
 import React  from 'react';
 import {connect} from 'react-redux';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {drop, delete_, copy, paste, activateByNid, setCursor,
         InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';

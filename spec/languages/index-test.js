@@ -3,7 +3,7 @@ import {addLanguage, removeLanguage} from 'codemirror-blocks/languages';
 describe('addLanguage function,', function() {
   beforeEach(function() {
     removeLanguage('foo');
-    addLanguage({id:'foo', name:'foo', getParser() {return {parse(){}};}});
+    addLanguage({id:'foo', name:'foo', parse() {}});
   });
   afterEach(function() {
     removeLanguage('foo');
@@ -17,14 +17,16 @@ describe('addLanguage function,', function() {
     expect(() => addLanguage({id:'bar'}))
       .toThrowError('language definition for bar is missing a \'name\' attribute.');
   });
-  it('should throw an error if the language is missing a getParser function', function() {
+  it('should throw an error if the language is missing a parse function', function() {
     expect(() => addLanguage({id:'bar', name:'Bar Language'}))
-      .toThrowError('language definition for bar is missing a \'getParser\' function.');
+      .toThrowError('language definition for bar is missing a \'parse\' function.');
   });
+  /*
   it('should throw an error if the getParser function does not return a proper obj', function() {
-    expect(() => addLanguage({id:'bar', name:'Bar Language', getParser(){}}))
+    expect(() => addLanguage({id:'bar', name:'Bar Language', parse(){}}))
       .toThrowError(
         'getParser() function for language bar must return an object with a \'parse\' function.'
       );
   });
+  */
 });

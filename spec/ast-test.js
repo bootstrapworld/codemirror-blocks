@@ -1,6 +1,8 @@
 import {AST} from 'codemirror-blocks/ast';
 import {Literal, Sequence, FunctionApp, Comment} from 'codemirror-blocks/nodes';
 
+console.log('Doing ast-test.js')
+
 describe("The Literal Class", function() {
   it("should be constructed with a value and data type", function() {
     const from = {line: 0, ch: 0};

@@ -16,7 +16,10 @@ const exampleCode = bigExampleCode;
 
 // grab the DOM Node to host the editor, and use it to instantiate
 const container = document.getElementById('cmb-editor');
-const editor = new CodeMirrorBlocks(container, {collapseAll: false, value: exampleCode}, wescheme);
+const editor = new CodeMirrorBlocks(container, {
+   collapseAll: false, 
+   value: exampleCode
+}, wescheme);
 
 // grab the load-from-log button
 const loadLogButton  = document.getElementById('loadFromLog');

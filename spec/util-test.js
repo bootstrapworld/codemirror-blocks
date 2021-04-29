@@ -1,5 +1,7 @@
 import {minimizeChange} from '../src/utils';
 
+console.log('Doing util-test.js')
+
 describe("The src/utils helper functions", function() {
   describe("the minimizeChange function", function() {
     it("should handle empty text OK", function() {

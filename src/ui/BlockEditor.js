@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import classNames from 'classnames';
-import PropTypes from 'prop-types/prop-types';
+import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect} from 'react-redux';
 import SHARED from '../shared';
@@ -154,7 +154,7 @@ class BlockEditor extends Component {
     cmOptions: PropTypes.object,
     keyMap: PropTypes.object,
     language: PropTypes.string.isRequired,
-    parser: PropTypes.object.isRequired,
+    parse: PropTypes.func.isRequired,
     setAST: PropTypes.func.isRequired,
     setCursor: PropTypes.func.isRequired,
     setQuarantine: PropTypes.func.isRequired,
@@ -548,10 +548,10 @@ class BlockEditor extends Component {
   }
 
   componentDidMount() {
-    const { parser, options, search } = this.props;
+    const { parse, options, search } = this.props;
 
     // TODO: pass these with a React Context or something sensible like that.
-    SHARED.parser = parser;
+    SHARED.parse = parse;
     SHARED.options= options;
     SHARED.search = search;
     // create a hidden buffer, for use with copy/cut/paste
