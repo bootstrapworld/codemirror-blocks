@@ -4,6 +4,8 @@ export class Primitive {
   constructor(languageId, name, {argumentTypes, returnType}={}) {
     this.languageId = languageId;
     this.parse = languageId ? getLanguage(languageId).parse : null;
+    this.primitives = languageId ? getLanguage(languageId).primitives : null;
+    this.primitivesFn = languageId ? getLanguage(languageId).PrimitivesFn : null;
     this.getASTNodeForPrimitive = languageId ? getLanguage(languageId).getASTNodeForPrimitive : null;
     this.getLiteralNodeForPrimitive = languageId ? getLanguage(languageId).getLiteralNodeForPrimitive : null;
     this.name = name;

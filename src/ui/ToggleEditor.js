@@ -229,7 +229,7 @@ export default @CMBContext class ToggleEditor extends Component {
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
           <Toolbar 
-            primitives={this.primitives}
+            primitives={this.language.primitivesFn()}
             languageId={this.language.id}
             blockMode={this.state.blockMode} 
             ref={this.toolbarRef} />
