@@ -28,6 +28,7 @@ export const defaultKeyMap = {
   'Enter'     : 'Edit',
   'Ctrl-['    : 'Insert Left',
   'Ctrl-]'    : 'Insert Right',
+  'Shift-Ctrl-]': 'Edit Comment',
 
   // SEARCH, SELECTION & CLIPBOARD
   'Space'     : 'Toggle Selection',
@@ -358,6 +359,17 @@ export const commandMap = {
     e.preventDefault();
     preambleUndoRedo('redo');
     SHARED.cm.redo();
+  },
+
+  'Edit Comment' : function(_, e) {
+    if(!this.node) { return CodeMirror.Pass; }
+    console.log('editing comment for ', this.node);
+    if(this.node.options.comment) {
+      const {from, to, comment: text} = this.node.options.comment;
+      console.log('a comment exists! editing...', this.node.options.comment);
+    } else {
+      console.log('no comment exists! inserting...', this);
+    }
   },
 
   'Help' : function (_) {

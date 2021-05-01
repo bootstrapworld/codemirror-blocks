@@ -476,7 +476,6 @@ export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
     super(from, to, 'comment', options);
     this.comment = comment;
-    this.isLockedP = true;
   }
 
   static spec = Spec.nodeSpec([
@@ -495,9 +494,19 @@ export class Comment extends ASTNode {
   }
 
   render(props) { // eslint-disable-line no-unused-vars
-    return (<span className="blocks-comment" id={this.id} aria-hidden="true">
-      <span className="screenreader-only">Has comment,</span> <span>{this.comment.toString()}</span>
-    </span>);
+    return (
+      <Node node={this} 
+            id={this.id} 
+            normallyEditable={true}
+            expandable={false}
+            {...props}>
+        <span
+            aria-hidden="true" 
+            ref={(el) => this.element = el} >
+          <span className="screenreader-only">Has comment,</span> <span>{this.comment.toString()}</span>
+        </span>
+      </Node>
+    );
   }
 }
 

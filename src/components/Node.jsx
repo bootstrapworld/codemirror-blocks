@@ -191,6 +191,8 @@ class Node extends BlockComponent {
       } = this.props;
       classes.push({'blocks-over-target': isOver, 'blocks-node': true});
       if(textMarker?.options.className) classes.push(textMarker.options.className);
+
+
       let result = (
         <span
           {...props}
@@ -211,7 +213,7 @@ class Node extends BlockComponent {
           onKeyDown     = {e => store.onKeyDown(e, this)}
           >
           {children}
-          {comment && comment.reactElement()}
+          {comment? comment.reactElement({key: comment.id}) : null}
         </span>
       );
       if (this.props.normallyEditable) {
