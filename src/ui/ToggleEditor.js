@@ -194,25 +194,26 @@ export default @CMBContext class ToggleEditor extends Component {
       try {
         try {
           let oldCode = SHARED.cm.getValue();
-          oldCode.match(/\s+$/);                        // match ending whitespace
-          oldAst = SHARED.parse(oldCode);        // parse the code (WITH annotations)
+          oldCode.match(/\s+$/);                       // match ending whitespace
+          oldAst = SHARED.parse(oldCode);              // parse the code (WITH annotations)
         } catch (err) {
-          console.log(err);
+          console.error(err);
           try   { throw SHARED.getExceptionMessage(err); }
           catch(e){ throw "The parser failed, and the error could not be retrieved"; }
         }
         try {
           code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
-          this.ast = SHARED.parse(code);         // parse the pretty-printed (PP) code
+          this.ast = SHARED.parse(code);                // parse the pretty-printed (PP) code
         } catch (e) {
           throw `An error occured in the language module 
           (the pretty-printer probably produced invalid code)`;
         }
         this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
-        this.currentCode = code;                  // update CM with the PP code
+        this.currentCode = code;                        // update CM with the PP code
         this.props.api.blockMode = blockMode;
         return {blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
+        console.error(e);
         return {dialog: { title: "Could not convert to Blocks", content: e.toString() }};
       }
     });
