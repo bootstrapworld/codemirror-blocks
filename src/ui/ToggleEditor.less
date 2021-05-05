@@ -1,4 +1,4 @@
-#Dialog {
+#DialogContents {
   position:     absolute;
   z-index:      999;
   background:   black;
@@ -50,5 +50,12 @@
       kbd {background-color: lightgray; color: black;}
     }
   }
-  .screenreader { visibility: hidden; display: block; width: 1px; height: 1px; }
+  .screenreader { 
+    position:absolute;
+    left:-10000px;
+    top:auto;
+    width:1px;
+    height:1px;
+    overflow:hidden; 
+  }
 }

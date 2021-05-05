@@ -244,7 +244,6 @@ export default @CMBContext class ToggleEditor extends Component {
       <Dialog 
         appElement={this.props.appElement}
         isOpen={!!this.state.dialog}
-        contentLabel={this.state.dialog?.title}
         className={"wrapper-modal"}
         onRequestClose={this.closeDialog}
         shouldCloseOnEsc={true}
@@ -253,8 +252,8 @@ export default @CMBContext class ToggleEditor extends Component {
         shouldCloseOnOverlayClick={true}
         aria={ {labelledby: "heading"} }
         close={this.closeDialog}>
-        <div tabIndex="-1" className="react-modal" id="Dialog" role="dialog">
-          <h2 id="heading">{this.state.dialog.title}</h2>
+        <div tabIndex="-1" className="react-modal" id="DialogContents">
+          <h1 tabIndex="-1" id="heading">{this.state.dialog.title}</h1>
           {this.state.dialog.content}
           <button className="closeDialog" onClick={() => this.closeDialog()}>OK</button>
         </div>
