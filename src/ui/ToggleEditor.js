@@ -1,9 +1,9 @@
 import React, {Component, createRef} from 'react';
 import PropTypes from 'prop-types';
-import Dialog from 'react-modal';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
 import CMBContext from '../components/Context';
+import Dialog from '../components/Dialog';
 import ByString from './searchers/ByString';
 import ByBlock from './searchers/ByBlock';
 import attachSearch from './Search';
@@ -244,20 +244,8 @@ export default @CMBContext class ToggleEditor extends Component {
       <Dialog 
         appElement={this.props.appElement}
         isOpen={!!this.state.dialog}
-        className={"wrapper-modal"}
-        onRequestClose={this.closeDialog}
-        shouldCloseOnEsc={true}
-        shouldReturnFocusAfterClose={true}
-        shouldFocusAfterRender={true}
-        shouldCloseOnOverlayClick={true}
-        aria={ {labelledby: "heading"} }
-        close={this.closeDialog}>
-        <div tabIndex="-1" className="react-modal" id="DialogContents">
-          <h1 tabIndex="-1" id="heading">{this.state.dialog.title}</h1>
-          {this.state.dialog.content}
-          <button className="closeDialog" onClick={() => this.closeDialog()}>OK</button>
-        </div>
-      </Dialog>
+        body={this.state.dialog}
+        closeFn={this.closeDialog}/>
       </>
     );
   }

@@ -31,8 +31,18 @@
     color:        white;
     display:      block;
     margin:       auto;
-    margin-top:   100px;
+    margin-top:   50px;
     clear:        both;
+  }
+
+  kbd+kbd {margin-left: 10px; }
+
+  .react-tabs__tab--selected {
+    background: black;
+    border-color: #aaa;
+    color: white;
+    border-radius: 5px 5px 0 0;
+    box-shadow: 0px -2px 4px #aaaa;
   }
 
   .shortcuts {
@@ -44,18 +54,9 @@
     table {width: 100%;}
     td:first-child, th:first-child { text-align: left; width: 50%; }
     td:last-child, th:last-child { text-align: right; width: 50%; }
-    kbd+kbd {margin-left: 10px; }
     tr:hover { 
       background: white; color: black; 
       kbd {background-color: lightgray; color: black;}
     }
-  }
-  .screenreader { 
-    position:absolute;
-    left:-10000px;
-    top:auto;
-    width:1px;
-    height:1px;
-    overflow:hidden; 
   }
 }
