@@ -10,7 +10,7 @@ import {
 
 console.log('Doing comment-test.js');
 
-const QUARANTINE_DELAY = 1000;
+const QUARANTINE_DELAY = 2000;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };

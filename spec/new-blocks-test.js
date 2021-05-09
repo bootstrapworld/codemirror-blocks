@@ -8,7 +8,7 @@ import {
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
   dragend, dragleave, keyDown, keyPress, insertText
 } from '../spec/support/test-utils';
-const QUARANTINE_DELAY = 1000;
+const QUARANTINE_DELAY = 2000;
 
 console.log('Doing new-blocks-test.js');
 
