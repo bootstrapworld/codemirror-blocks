@@ -351,7 +351,7 @@ class WeschemeParser {
   }
 
   get primitives() {
-    return primitivesFn();
+    return this.primitivesFn();
   }
 
   primitivesFn() {

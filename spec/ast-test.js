@@ -1,7 +1,7 @@
 import {AST} from 'codemirror-blocks/ast';
 import {Literal, Sequence, FunctionApp, Comment} from 'codemirror-blocks/nodes';
 
-console.log('Doing ast-test.js')
+console.log('Doing ast-test.js');
 
 describe("The Literal Class", function() {
   it("should be constructed with a value and data type", function() {
@@ -215,7 +215,7 @@ describe("The AST Class", function() {
     expect(ast1.rootNodes[0].hash).toBe(ast2.rootNodes[0].hash);
   });
 
-    it("idential subtrees with different comments should have different hashes", function() {
+  it("idential subtrees with different comments should have different hashes", function() {
     const nodes1 = [
       new Literal({line: 0, ch: 0}, {line: 0, ch: 2}, 11, 'Number', {
         comment: new Comment({line: 0, ch: 4}, {line: 0, ch: 7}, 'moo')

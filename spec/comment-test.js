@@ -8,7 +8,7 @@ import {
   dragend, dragleave, keyDown, keyPress, insertText
 } from '../spec/support/test-utils';
 
-console.log('Doing comment-test.js')
+console.log('Doing comment-test.js');
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
