@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import Modal from 'react-modal';
+import Dialog from '../components/Dialog';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
 import {say, getBeginCursor, getEndCursor, playSound, WRAP} from '../utils';
@@ -27,10 +27,6 @@ export default (Editor, searchModes) => {
     }
 
     displayName = 'Search Component'
-
-    componentDidMount() {
-      Modal.setAppElement(this.props.appElement);
-    }
 
     handleChangeSetting = i => setting => {
       this.setState({
@@ -118,50 +114,37 @@ export default (Editor, searchModes) => {
                       cmbState={this.state.cmbState} />
         </TabPanel>
       ));
+
+      const content = (
+        <>
+          <i>What should <kbd>PgUp</kbd> and <kbd>PgDown</kbd> search for?</i>
+            <Tabs onSelect={this.handleTab} defaultFocus={true}>
+              <TabList>{tabs}</TabList>
+              {tabPanels}
+            </Tabs>
+          <div className="modal-footer">
+            <small className="form-text text-muted">
+              <div>
+                <kbd>&larr;</kbd>
+                <kbd>&rarr;</kbd> to change modes;
+                &nbsp;
+                <kbd>&crarr;</kbd>
+                <kbd>esc</kbd> to close and find next;
+              </div>
+            </small>
+          </div>
+        </>);
+
       return (
         <>
           <Editor {...this.props} search={this.search} />
 
-          <Modal isOpen={this.state.showSearchDialog}
-                 className="wrapper-modal">
-            <div tabIndex="-1" className="react-modal" onKeyUp={this.handleKeyModal}
-                 role="dialog" aria-label="Search Settings">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <button type="button" className="close" data-dismiss="modal"
-                          aria-labelledby="searchTitle"
-                          aria-describedby="searchTitle searchDescription"
-                          onClick={this.handleCloseModal}>
-                    &times;
-                  </button>
-                  <h5 id="searchTitle" className="modal-title" arial-level="1">
-                    Search Settings
-                  </h5>
-                  <span id="searchDescription">
-                    <i>What should <kbd>PgUp</kbd> and <kbd>PgDown</kbd> search for?</i>
-                  </span>
-                </div>
-                <div className="modal-body">
-                  <Tabs
-                        onSelect={this.handleTab}
-                        defaultFocus={true}>
-                    <TabList>{tabs}</TabList>
-                    {tabPanels}
-                  </Tabs>
-                </div>
-                <div className="modal-footer">
-                  <small className="form-text text-muted">
-                    <div>
-                      <kbd>&larr;</kbd>
-                      <kbd>&rarr;</kbd> to change modes;
-                      <kbd>&crarr;</kbd>
-                      <kbd>esc</kbd> to close and find next;
-                    </div>
-                  </small>
-                </div>
-              </div>
-            </div>
-          </Modal>
+          <Dialog isOpen={this.state.showSearchDialog}
+                  closeFn={this.handleCloseModal}
+                  appElement={this.props.appElement}
+                  keyUp={this.handleKeyModal}
+                  body={ {title: "Search Settings", content: content} }>
+          </Dialog>
         </>
       );
     }
