@@ -12,7 +12,6 @@ import { ToggleButton, BugButton } from './EditorButtons';
 import { say } from '../utils';
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
-import './ToggleEditor.less';
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 

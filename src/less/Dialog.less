@@ -37,6 +37,7 @@
 
   kbd+kbd {margin-left: 10px; }
 
+  .react-tabs { margin-top: 20px; }
   .react-tabs__tab--selected {
     background: black;
     border-color: #aaa;
@@ -44,6 +45,9 @@
     border-radius: 5px 5px 0 0;
     box-shadow: 0px -2px 4px #aaaa;
   }
+
+  .search-options label { margin: 5px; font-weight: normal; }
+  .search-options input { margin-right: 5px; margin-bottom: 20px; }
 
   .shortcuts {
     width: 100%;
@@ -59,4 +63,15 @@
       kbd {background-color: lightgray; color: black;}
     }
   }
+}
+
+.ReactModal__Overlay { z-index: 1000; }
+
+.wrapper-modal {
+    position: relative;
+    width: 50%;
+    left: 50%;
+    top: 50%;
+    padding: 0;
+    transform: translate(-50%, -50%);
 }
