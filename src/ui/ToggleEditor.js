@@ -73,6 +73,10 @@ export default @CMBContext class ToggleEditor extends Component {
     this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
     this.language = props.language;
     this.parse = this.language.parse;
+    this.getExceptionMessage = this.language.getExceptionMessage;
+    this.getASTNodeForPrimitive = this.language.getASTNodeForPrimitive;
+    this.getLiteralNodeForPrimitive = this.language.getLiteralNodeForPrimitive;
+    this.primitivesFn = this.language.primitivesFn;
     this.toolbarRef = createRef();
 
     // construct announcer DOM node
@@ -255,6 +259,10 @@ export default @CMBContext class ToggleEditor extends Component {
       <TextEditor
         cmOptions={this.cmOptions}
         parse={this.parse}
+        getExceptionMessage={this.getExceptionMessage}
+        getASTNodeForPrimitive={this.getASTNodeForPrimitive}
+        getLiteralNodeForPrimitive={this.getLiteralNodeForPrimitive}
+        primitivesFn={this.primitivesFn}
         initialCode={code}
         onMount={this.handleEditorMounted}
         api={this.props.api} 
