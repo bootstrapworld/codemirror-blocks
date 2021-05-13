@@ -20,13 +20,20 @@ Here is an example of how to add a language to CodeMirror-Blocks:
     
     require('./style.less');
     
+    let parser = new WeschemeParser();
+
     export default CodeMirrorBlocks.languages.addLanguage(
       {
         id: 'wescheme',
         name: 'WeScheme',
         description: 'The WeScheme language',
-        getParser() {
-          return new WeschemeParser();
+        parse: parser.parse,
+        getExceptionMessage: parser.getExceptionMessage,
+        getASTNodeForPrimitive: parser.getASTNodeForPrimitive,
+        getLiteralNodeForPrimitive: parser.getLiteralNodeForPrimitive,
+        primitives: [],
+        primitivesFn() {
+          let x = parser.primitivesFn(); this.primitives = x; return x;
         },
         getRenderOptions() {
           return {
@@ -35,19 +42,27 @@ Here is an example of how to add a language to CodeMirror-Blocks:
         },
       });
 
-The call to `addLanguage` takes the following arguments:
+The call to `addLanguage` takes an object containing the following fields:
 
 * `id` is a short alphanumeric identifier to be used internally.
   [TODO: how exactly is this used, e.g. might it show up in error messages?]
 * `name` is a human-facing name for the language.
   [TODO: when is this actually shown?]
 * `description` [TODO: should say where this is used, or remove it if it's not]
-* `getParser()` is a function of no arguments that returns a parser
-  for your language. This parser must have a function `parse(text:
-  String) -> AST`, described in the next section.
+* `parse()` is a parser for your language. It has the signature
+  `parse(text: String) -> AST`, described in the next section.
 * `getRenderOptions` Right now, the only render option is `lockNodesOfType`,
   which lists the names of nodes that should be "locked", and made opaque to
   novice users.
+
+Some other methods `getExceptionMessage()`,
+`getASTNodeForPrimitive()`, `getLiteralNodeForPrimitive()`,
+`primitivesFn()` may also be supplied, although `addLanguage()`
+will use defaults if not.
+
+For convenience, we supply `parse()` and any other methods as
+via an object-constructer such as `WeSchemeParser()`
+above.
 
 You can see that this file is also importing a
 [`lesscss`](http://lesscss.org/) style file. Follow
@@ -56,7 +71,7 @@ You can see that this file is also importing a
 
 ## Defining the Parser
 
-Your parser must have a `parse()` function. Its argument is the source code for
+The `parse()` argument is the source code for
 a program, represented as a string with newlines separates by `\n`.
 
 The `parse()` function must produce an `AST` by calling `new AST(rootNodes)`,

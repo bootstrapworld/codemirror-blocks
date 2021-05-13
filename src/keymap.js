@@ -212,10 +212,10 @@ export const commandMap = {
 
   'Read Ancestors' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
-    const parents = [this.node.options['aria-label']];
+    const parents = [this.node.shortDescription()];
     let next = this.node.parent;
     while (next) {
-      parents.push(next.options['aria-label'] + ", at level " + next.level);
+      parents.push(next.shortDescription() + ", at level " + next.level);
       next = next.parent;
     }
     if (parents.length > 1) { say(parents.join(", inside ")); }
