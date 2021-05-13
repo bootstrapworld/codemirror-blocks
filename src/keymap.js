@@ -416,7 +416,7 @@ export function renderKeyMap(keyMap) {
           <td>{kv[0]}</td>
           <td>
             {kv[1].map((k, j) => (<kbd aria-hidden="true" key={j}>{k}</kbd>))}
-            <span className="screenreader">{prounounce(kv[1])}</span>
+            <span className="screenreader-only">{prounounce(kv[1])}</span>
           </td></tr>)
       )
     }
