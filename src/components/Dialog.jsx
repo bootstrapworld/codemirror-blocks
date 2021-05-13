@@ -34,7 +34,7 @@ export default class Dialog extends Component {
     return (
       <Modal 
         isOpen={isOpen}
-        className={"wrapper-modal"}
+        className={"madeUpClassToCancelDefaultStyles"}
         onRequestClose={closeFn}
         close={closeFn}
         shouldCloseOnEsc={true}
