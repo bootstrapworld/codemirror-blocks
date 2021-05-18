@@ -12,7 +12,7 @@
     "classnames": "^2.3.1",
     "core-js": "^3.12.1",
     "fast-json-stable-stringify": "^2.1.0",
-    "preact": "^10.4.6",
+    "preact": "^10.5.13",
     "preact-test-utils": "^0.1.4",
     "pretty-fast-pretty-printer": "^0.9.7",
     "prop-types": "^15.7.2",
