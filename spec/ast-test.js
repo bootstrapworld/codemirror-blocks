@@ -1,5 +1,7 @@
 import {AST} from 'codemirror-blocks/ast';
-import {Literal, Sequence, FunctionApp} from 'codemirror-blocks/nodes';
+import {Literal, Sequence, FunctionApp, Comment} from 'codemirror-blocks/nodes';
+
+console.log('Doing ast-test.js');
 
 describe("The Literal Class", function() {
   it("should be constructed with a value and data type", function() {
@@ -182,4 +184,67 @@ describe("The AST Class", function() {
     expect(ast.nodeIdMap.get(nodes[1].args[0].id)).toBe(nodes[1].args[0]);
     expect(ast.nodeIdMap.get(nodes[1].args[1].id)).toBe(nodes[1].args[1]);
   });
+
+  it("idential subtrees should have the same hash", function() {
+    const nodes1 = [
+      new Literal({line: 0, ch: 0}, {line: 0, ch: 2}, 11),
+      new FunctionApp(
+        {line: 1, ch: 0},
+        {line: 1, ch: 9},
+        new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol'),
+        [
+          new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 11),
+          new Literal({line: 1, ch: 6}, {line: 1, ch: 8}, 22)
+        ]
+      )
+    ];
+    const nodes2 = [
+      new Literal({line: 1, ch: 0}, {line: 1, ch: 2}, 11),
+      new FunctionApp(
+        {line: 2, ch: 0},
+        {line: 2, ch: 9},
+        new Literal({line: 2, ch: 1}, {line: 2, ch: 2}, '+', 'symbol'),
+        [
+          new Literal({line: 2, ch: 3}, {line: 2, ch: 5}, 11),
+          new Literal({line: 2, ch: 6}, {line: 2, ch: 8}, 22)
+        ]
+      )
+    ];    
+    const ast1 = new AST(nodes1);
+    const ast2 = new AST(nodes2);
+    expect(ast1.rootNodes[0].hash).toBe(ast2.rootNodes[0].hash);
+  });
+
+  it("idential subtrees with different comments should have different hashes", function() {
+    const nodes1 = [
+      new Literal({line: 0, ch: 0}, {line: 0, ch: 2}, 11, 'Number', {
+        comment: new Comment({line: 0, ch: 4}, {line: 0, ch: 7}, 'moo')
+      }),
+      new FunctionApp(
+        {line: 1, ch: 0},
+        {line: 1, ch: 9},
+        new Literal({line: 1, ch: 1}, {line: 1, ch: 2}, '+', 'symbol'),
+        [
+          new Literal({line: 1, ch: 3}, {line: 1, ch: 5}, 11),
+          new Literal({line: 1, ch: 6}, {line: 1, ch: 8}, 22)
+        ]
+      )
+    ];
+    const nodes2 = [
+      new Literal({line: 1, ch: 0}, {line: 1, ch: 2}, 11),
+      new FunctionApp(
+        {line: 2, ch: 0},
+        {line: 2, ch: 9},
+        new Literal({line: 2, ch: 1}, {line: 2, ch: 2}, '+', 'symbol'),
+        [
+          new Literal({line: 2, ch: 3}, {line: 2, ch: 5}, 11),
+          new Literal({line: 2, ch: 6}, {line: 2, ch: 8}, 22)
+        ]
+      )
+    ];    
+    const ast1 = new AST(nodes1);
+    const ast2 = new AST(nodes2);
+    expect(ast1.rootNodes[0].hash).not.toBe(ast2.rootNodes[0].hash);
+  });
+
 });

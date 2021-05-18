@@ -109,7 +109,7 @@ function parseNode(node, i) {
     let name  = parseNode(b.first);
     let val   = parseNode(b.second);
     return new VariableDefinition(loc.from, loc.to, name, val,
-      {'aria-label': symbolAria(b.first.val)+' bound to '+val.options['aria-label'] ,'comment' : comment});
+      {'aria-label': symbolAria(b.first.val)+' bound to '+val.shortDescription() ,'comment' : comment});
   }
 
   let {from, to} = locationFromNode(node);
@@ -251,9 +251,9 @@ function parseNode(node, i) {
     let predicate = parseNode(node.predicate);
     let consequence = parseNode(node.consequence);
     let alternative = parseNode(node.alternative);
-    let predLabel = predicate.options['aria-label'];
-    let conLabel = consequence.options['aria-label'];
-    let altLabel = alternative.options['aria-label'];
+    let predLabel = predicate.shortDescription();
+    let conLabel = consequence.shortDescription();
+    let altLabel = alternative.shortDescription();
     predicate.options['aria-label'] = "if, "+predLabel;
     consequence.options['aria-label'] = "then, "+conLabel;
     alternative.options['aria-label'] = "else, "+altLabel;
@@ -351,6 +351,10 @@ class WeschemeParser {
   }
 
   get primitives() {
+    return this.primitivesFn();
+  }
+
+  primitivesFn() {
     return PrimitiveGroup.fromConfig('wescheme', PRIMITIVES_CONFIG);
   }
 

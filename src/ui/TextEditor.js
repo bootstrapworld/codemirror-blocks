@@ -11,7 +11,11 @@ const unsupportedAPIs = ['startOperation', 'endOperation', 'operation'];
 class TextEditor extends Component {
   static propTypes = {
     cmOptions: PropTypes.object,
-    parser: PropTypes.object.isRequired,
+    parse: PropTypes.func.isRequired,
+    getExceptionMessage: PropTypes.func,
+    getASTNodeForPrimitive: PropTypes.func,
+    getLiteralNodeForPrimitive: PropTypes.func,
+    primitivesFn: PropTypes.func,
     initialCode: PropTypes.string.isRequired,
     onBeforeChange: PropTypes.func,
     onMount:PropTypes.func.isRequired,
@@ -37,7 +41,7 @@ class TextEditor extends Component {
   }
 
   componentDidMount() {
-    SHARED.parser = this.props.parser;
+    SHARED.parse = this.props.parse;
   }
 
   render() {

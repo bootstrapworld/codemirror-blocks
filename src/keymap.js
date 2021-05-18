@@ -212,10 +212,10 @@ export const commandMap = {
 
   'Read Ancestors' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
-    const parents = [this.node.options['aria-label']];
+    const parents = [this.node.shortDescription()];
     let next = this.node.parent;
     while (next) {
-      parents.push(next.options['aria-label'] + ", at level " + next.level);
+      parents.push(next.shortDescription() + ", at level " + next.level);
       next = next.parent;
     }
     if (parents.length > 1) { say(parents.join(", inside ")); }
@@ -416,7 +416,7 @@ export function renderKeyMap(keyMap) {
           <td>{kv[0]}</td>
           <td>
             {kv[1].map((k, j) => (<kbd aria-hidden="true" key={j}>{k}</kbd>))}
-            <span className="screenreader">{prounounce(kv[1])}</span>
+            <span className="screenreader-only">{prounounce(kv[1])}</span>
           </td></tr>)
       )
     }

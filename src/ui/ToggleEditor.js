@@ -1,9 +1,9 @@
 import React, {Component, createRef} from 'react';
 import PropTypes from 'prop-types';
-import Dialog from 'react-modal';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
 import CMBContext from '../components/Context';
+import Dialog from '../components/Dialog';
 import ByString from './searchers/ByString';
 import ByBlock from './searchers/ByBlock';
 import attachSearch from './Search';
@@ -12,7 +12,6 @@ import { ToggleButton, BugButton } from './EditorButtons';
 import { say } from '../utils';
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
-import './ToggleEditor.less';
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
@@ -55,7 +54,7 @@ export default @CMBContext class ToggleEditor extends Component {
     language: PropTypes.shape({
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
-      getParser: PropTypes.func.isRequired,
+      parse: PropTypes.func.isRequired,
     }),
     options: PropTypes.object,
     api: PropTypes.object,
@@ -73,7 +72,11 @@ export default @CMBContext class ToggleEditor extends Component {
 
     this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
     this.language = props.language;
-    this.parser = this.language.getParser();
+    this.parse = this.language.parse;
+    this.getExceptionMessage = this.language.getExceptionMessage;
+    this.getASTNodeForPrimitive = this.language.getASTNodeForPrimitive;
+    this.getLiteralNodeForPrimitive = this.language.getLiteralNodeForPrimitive;
+    this.primitivesFn = this.language.primitivesFn;
     this.toolbarRef = createRef();
 
     // construct announcer DOM node
@@ -83,7 +86,7 @@ export default @CMBContext class ToggleEditor extends Component {
     SHARED.announcer = announcements;
 
     let defaultOptions = {
-      parser: this.parser,
+      parse: this.parse,
       incrementalRendering: true,
       collapseAll: true
     };
@@ -194,24 +197,26 @@ export default @CMBContext class ToggleEditor extends Component {
       try {
         try {
           let oldCode = SHARED.cm.getValue();
-          oldCode.match(/\s+$/);                        // match ending whitespace
-          oldAst = SHARED.parser.parse(oldCode);        // parse the code (WITH annotations)
+          oldCode.match(/\s+$/);                       // match ending whitespace
+          oldAst = SHARED.parse(oldCode);              // parse the code (WITH annotations)
         } catch (err) {
-          try   { throw SHARED.parser.getExceptionMessage(err); }
+          console.error(err);
+          try   { throw SHARED.getExceptionMessage(err); }
           catch(e){ throw "The parser failed, and the error could not be retrieved"; }
         }
         try {
           code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
-          this.ast = SHARED.parser.parse(code);         // parse the pretty-printed (PP) code
+          this.ast = SHARED.parse(code);                // parse the pretty-printed (PP) code
         } catch (e) {
           throw `An error occured in the language module 
           (the pretty-printer probably produced invalid code)`;
         }
         this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
-        this.currentCode = code;                  // update CM with the PP code
+        this.currentCode = code;                        // update CM with the PP code
         this.props.api.blockMode = blockMode;
         return {blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
+        console.error(e);
         return {dialog: { title: "Could not convert to Blocks", content: e.toString() }};
       }
     });
@@ -232,7 +237,7 @@ export default @CMBContext class ToggleEditor extends Component {
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
           <Toolbar 
-            primitives={this.parser.primitives}
+            primitives={this.language.primitivesFn()}
             languageId={this.language.id}
             blockMode={this.state.blockMode} 
             ref={this.toolbarRef} />
@@ -245,21 +250,8 @@ export default @CMBContext class ToggleEditor extends Component {
       <Dialog 
         appElement={this.props.appElement}
         isOpen={!!this.state.dialog}
-        contentLabel={this.state.dialog?.title}
-        className={"wrapper-modal"}
-        onRequestClose={this.closeDialog}
-        shouldCloseOnEsc={true}
-        shouldReturnFocusAfterClose={true}
-        shouldFocusAfterRender={true}
-        shouldCloseOnOverlayClick={true}
-        aria={ {labelledby: "heading"} }
-        close={this.closeDialog}>
-        <div tabIndex="-1" className="react-modal" id="Dialog" role="dialog">
-          <h2 id="heading">{this.state.dialog.title}</h2>
-          {this.state.dialog.content}
-          <button className="closeDialog" onClick={() => this.closeDialog()}>OK</button>
-        </div>
-      </Dialog>
+        body={this.state.dialog}
+        closeFn={this.closeDialog}/>
       </>
     );
   }
@@ -269,7 +261,11 @@ export default @CMBContext class ToggleEditor extends Component {
     return (
       <TextEditor
         cmOptions={this.cmOptions}
-        parser={this.parser}
+        parse={this.parse}
+        getExceptionMessage={this.getExceptionMessage}
+        getASTNodeForPrimitive={this.getASTNodeForPrimitive}
+        getLiteralNodeForPrimitive={this.getLiteralNodeForPrimitive}
+        primitivesFn={this.primitivesFn}
         initialCode={code}
         onMount={this.handleEditorMounted}
         api={this.props.api} 
@@ -283,7 +279,7 @@ export default @CMBContext class ToggleEditor extends Component {
     return (
       <UpgradedBlockEditor
         cmOptions={this.cmOptions}
-        parser={this.parser}
+        parse={this.parse}
         value={code}
         onMount={this.handleEditorMounted}
         api={this.props.api}

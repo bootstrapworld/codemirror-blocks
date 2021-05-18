@@ -51,16 +51,21 @@ class ToplevelBlock extends BlockComponent {
     return poscmp(this.props.node.from, nextProps.node.from) !== 0 // moved
       ||   poscmp(this.props.node.to,   nextProps.node.to  ) !== 0 // resized
       ||   super.shouldComponentUpdate(nextProps, nextState)       // changed
-      ||   !document.contains(this.mark.replacedWith);             // removed from DOM
+      ||   !document.contains(this.mark?.replacedWith);            // removed from DOM
   }
 
-  componentWillUnmount() { this.mark.clear(); }
+  // When unmounting, clean up the TextMarker and any lingering timeouts
+  componentWillUnmount() { 
+    this.mark?.clear(); 
+    clearTimeout(this.renderTimeout); 
+  }
 
   // once the placeholder has mounted, wait 250ms and render
   componentDidMount() {
     if(!this.props.incrementalRendering) return; // bail if incremental is off
     window.requestAnimationFrame( () => {
-      setTimeout(() => this.setState({ renderPlaceholder: false }), 250);
+      this.renderTimeout = setTimeout(() => 
+        this.setState({ renderPlaceholder: false }), 250);
     });
   }
 
@@ -69,12 +74,17 @@ class ToplevelBlock extends BlockComponent {
 
     // set elt to a cheap placeholder, OR render the entire rootNode
     const elt = this.state.renderPlaceholder? (<div/>) : node.reactElement();
+
+    // AFTER THE REACT RENDER CYCLE IS OVER:
     // if any prior block markers are in this range, clear them
-    const {from, to} = node.srcRange(); // includes the node's comment, if any
-    SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m=>m.clear());
-    this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
-    this.mark.BLOCK_NODE_ID = node.id;
-    node.mark = this.mark;
+    // make a new block marker, and fill it with the portal
+    window.requestAnimationFrame( () => {
+      const {from, to} = node.srcRange(); // includes the node's comment, if any
+      SHARED.cm.findMarks(from, to).filter(m=>m.BLOCK_NODE_ID).forEach(m=>m.clear());
+      this.mark = SHARED.cm.markText(from, to, {replacedWith: this.container});
+      this.mark.BLOCK_NODE_ID = node.id;
+      node.mark = this.mark;
+    });
     return ReactDOM.createPortal(elt, this.container);
   }
 }
@@ -89,20 +99,11 @@ class ToplevelBlockEditableCore extends Component {
 
   constructor(props) {
     super(props);
-    const [start, end] = this.props.quarantine;
     this.container = document.createElement('span');
     this.container.classList.add('react-container');
-    // CM treats 0-width ranges differently than other ranges, so check
-    if(poscmp(start, end) === 0) {
-      this.marker = SHARED.cm.setBookmark(start, {widget: this.container});
-    } else {
-      this.marker = SHARED.cm.markText(start, end, {replacedWith: this.container});
-    }
   }
 
-  componentWillUnmount() {
-    this.marker.clear();
-  }
+  componentWillUnmount() { this.marker?.clear(); }
 
   render() {
     const {onDisableEditable, onChange, quarantine} = this.props;
@@ -114,6 +115,18 @@ class ToplevelBlockEditableCore extends Component {
       'aria-posinset'   : '1',
       'aria-level'      : '1',
     };
+
+    // IF NO MARKER IS DEFINED, WAIT UNTIL THE REACT RENDER 
+    // CYCLE IS OVER and make a new block marker
+    if(!this.marker) window.requestAnimationFrame( () => {
+      // CM treats 0-width ranges differently than other ranges, so check
+      if(poscmp(start, end) === 0) {
+        this.marker = SHARED.cm.setBookmark(start, {widget: this.container});
+      } else {
+        this.marker = SHARED.cm.markText(start, end, {replacedWith: this.container});
+      }
+    });
+
     return ReactDOM.createPortal(
       <NodeEditable target={new OverwriteTarget(start, end)}
                     value={value}
@@ -141,7 +154,7 @@ class BlockEditor extends Component {
     cmOptions: PropTypes.object,
     keyMap: PropTypes.object,
     language: PropTypes.string.isRequired,
-    parser: PropTypes.object.isRequired,
+    parse: PropTypes.func.isRequired,
     setAST: PropTypes.func.isRequired,
     setCursor: PropTypes.func.isRequired,
     setQuarantine: PropTypes.func.isRequired,
@@ -173,6 +186,10 @@ class BlockEditor extends Component {
 
     // stick the keyDown handler in the store
     store.onKeyDown = this.handleKeyDown;
+
+    // NOTE(Emmanuel): we shouldn't have to dispatch this in the constructor
+    // just for tests to pass! Figure out how to reset the store manually
+    props.dispatch({type: "RESET_STORE_FOR_TESTING"});
   }
 
   static defaultProps = {
@@ -533,10 +550,10 @@ class BlockEditor extends Component {
   }
 
   componentDidMount() {
-    const { parser, options, search } = this.props;
+    const { parse, options, search } = this.props;
 
     // TODO: pass these with a React Context or something sensible like that.
-    SHARED.parser = parser;
+    SHARED.parse = parse;
     SHARED.options= options;
     SHARED.search = search;
     // create a hidden buffer, for use with copy/cut/paste

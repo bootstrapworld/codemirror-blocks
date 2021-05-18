@@ -3,7 +3,11 @@ import {getLanguage} from '../languages';
 export class Primitive {
   constructor(languageId, name, {argumentTypes, returnType}={}) {
     this.languageId = languageId;
-    this.parser = languageId ? getLanguage(languageId).getParser() : null;
+    this.parse = languageId ? getLanguage(languageId).parse : null;
+    this.primitives = languageId ? getLanguage(languageId).primitives : null;
+    this.primitivesFn = languageId ? getLanguage(languageId).PrimitivesFn : null;
+    this.getASTNodeForPrimitive = languageId ? getLanguage(languageId).getASTNodeForPrimitive : null;
+    this.getLiteralNodeForPrimitive = languageId ? getLanguage(languageId).getLiteralNodeForPrimitive : null;
     this.name = name;
     this.argumentTypes = argumentTypes || [];
     this.returnType = returnType;
@@ -14,14 +18,14 @@ export class Primitive {
   }
 
   getASTNode() {
-    if (this.parser && this.parser.getASTNodeForPrimitive) {
-      return this.parser.getASTNodeForPrimitive(this);
+    if (this.getASTNodeForPrimitive) {
+      return this.getASTNodeForPrimitive(this);
     }
   }
 
   getLiteralNode() {
-    if (this.parser && this.parser.getLiteralNodeForPrimitive) {
-      return this.parser.getLiteralNodeForPrimitive(this);
+    if (this.getLiteralNodeForPrimitive) {
+      return this.getLiteralNodeForPrimitive(this);
     }
   }
 
