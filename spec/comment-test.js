@@ -8,7 +8,9 @@ import {
   dragend, dragleave, keyDown, keyPress, insertText
 } from '../spec/support/test-utils';
 
-console.log('Doing comment-test.js')
+console.log('Doing comment-test.js');
+
+const QUARANTINE_DELAY = 2000;
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -47,8 +49,8 @@ describe('When editing and moving commented nodes', function() {
 
     it('you should be able to insert a commented node after a commented node', async function() {
       this.cmb.setQuarantine({line: 3, ch: 1}, {line: 3, ch: 1}, "1 #| comment1 |#");
-      await wait(DELAY);
-      keyDown("Enter", {}, document.getElementsByClassName('quarantine')[0]);
+      await wait(QUARANTINE_DELAY);
+      click(this.expr0);
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
@@ -59,8 +61,8 @@ describe('When editing and moving commented nodes', function() {
 
     it('you should be able to insert a commented node after an uncommented node', async function() {
       this.cmb.setQuarantine({line: 0, ch: 14}, {line: 0, ch: 14}, "1 #| comment1 |#");
-      await wait(DELAY);
-      keyDown("Enter");
+      await wait(QUARANTINE_DELAY);
+      click(this.expr0);
       await wait(DELAY);
       expect(this.cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#

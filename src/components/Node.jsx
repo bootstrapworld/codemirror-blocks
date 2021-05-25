@@ -154,7 +154,7 @@ class Node extends BlockComponent {
       id                : `block-node-${node.id}`,
       tabIndex          : "-1",
       'aria-selected'   : isSelected,
-      'aria-label'      : node.options['aria-label']+',' ,
+      'aria-label'      : node.shortDescription()+',' ,
       'aria-labelledby' : `block-node-${node.id} ${comment ? comment.id : ''}`,
       'aria-disabled'   : locked ? "true" : undefined,
       'aria-expanded'   : (expandable && !locked) ? !isCollapsed : undefined,

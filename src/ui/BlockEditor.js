@@ -188,6 +188,10 @@ class BlockEditor extends Component {
 
     // stick the keyDown handler in the store
     store.onKeyDown = this.handleKeyDown;
+
+    // NOTE(Emmanuel): we shouldn't have to dispatch this in the constructor
+    // just for tests to pass! Figure out how to reset the store manually
+    props.dispatch({type: "RESET_STORE_FOR_TESTING"});
   }
 
   static defaultProps = {

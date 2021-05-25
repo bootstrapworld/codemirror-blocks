@@ -139,7 +139,7 @@ export function say(text, delay=200, allowOverride=false) {
 export function createAnnouncement(nodes, action) {
   nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
   let annt = (action + " " +
-    nodes.map((node) => node.options['aria-label'])
+    nodes.map((node) => node.shortDescription())
       .join(" and "));
   return annt;
 }

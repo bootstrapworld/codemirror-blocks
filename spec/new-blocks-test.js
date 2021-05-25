@@ -8,8 +8,9 @@ import {
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
   dragend, dragleave, keyDown, keyPress, insertText
 } from '../spec/support/test-utils';
+const QUARANTINE_DELAY = 2000;
 
-console.log('Doing new-blocks-test.js')
+console.log('Doing new-blocks-test.js');
 
 // be sure to call with `apply` or `call`
 let setup = function () { activationSetup.call(this, wescheme); };
@@ -81,15 +82,15 @@ describe('The CodeMirrorBlocks Class', function() {
           {line: 0, ch: 2, sticky: "before", xRel: 400}, 
           {line: 0, ch: 2, sticky: "before", xRel: 400}, 
           "9");
-        await wait(DELAY);
-        keyDown("Enter");
+        await wait(QUARANTINE_DELAY);
+        click(this.literal);
         await wait(DELAY);
         expect(this.cmb.getValue()).toEqual('42\n9\n11');
       });
       it('typing at the beginning of a line', async function() {
         this.cmb.setQuarantine({line: 0, ch: 0, xRel: 0}, {line: 0, ch: 0, xRel: 0}, "9");
-        await wait(DELAY);
-        keyDown("Enter");
+        await wait(QUARANTINE_DELAY);
+        click(this.literal);
         await wait(DELAY);
         expect(this.cmb.getValue()).toEqual('9\n42\n11');
       });

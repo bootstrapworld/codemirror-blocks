@@ -64,12 +64,12 @@ The `options` object is used for a number of CMB-internal purposes, but there ar
 #### _Defining your own AST Nodes_
 You can also provide your own AST nodes, by extending the built-in `AST.ASTNode` class. [Here is one example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/ast.js) of a language defining custom AST nodes. 
 
-Your subclassed Node must contain:
-1. `constructor` -  consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`. 
-2. `spec` - a static field, which defines specifications for all fields of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodeSpec.js.)
+Your subclassed Node _**must**_ contain:
+1. `constructor` -  Consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`. 
+2. `spec` - A static field, which defines specifications for all fields of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodeSpec.js). Note: failing to properly list all the fields of the node can leave the editor in an unstable state, and result in unspecified behavior.
 3. `longDescription()` - a method that dynamically computes a detailed description of the node (optionally referring to its children, for example), and produces a string that will be read aloud to the user.
-4. `pretty()` - a method that describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer).
-5. `render()` - a method that produces the node (usually in JSX) to be rendered.
+4. `pretty()` - A method that describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer).
+5. `render()` - A method that produces the node (usually in JSX) to be rendered. Note: all DropTargets in a node's `render()` method must declare a `field` property, corresponding to one of the fields of the node that are defined in `spec`. This tells CMB what part of the node is modified when the DropTarget is edited.
 
 ### Tell CMB about the Language
 Create an index.js [see this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/index.js) file that hooks up your language to the CMB library.

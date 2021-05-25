@@ -1,6 +1,6 @@
 import {minimizeChange} from '../src/utils';
 
-console.log('Doing util-test.js')
+console.log('Doing util-test.js');
 
 describe("The src/utils helper functions", function() {
   describe("the minimizeChange function", function() {

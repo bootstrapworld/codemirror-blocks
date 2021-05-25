@@ -1,5 +1,4 @@
 import CodeMirrorBlocks from '../../src/CodeMirrorBlocks';
-import { store } from '../../src/store';
 import { cleanup } from "@testing-library/react";
 
 // figure out what platform we're running on
@@ -14,7 +13,7 @@ export * from './simulate';
 // pass along useful constants
 export const mac = ios || /Mac/.test(platform);
 export const cmd_ctrl = mac? { metaKey: true } : { ctrlKey: true };
-export let DELAY = 250;
+export const DELAY = 250;
 
 // pass along useful testing functions
 export async function wait(ms) {
@@ -37,7 +36,6 @@ export function teardown() {
     console.log('cleanupAfterTest() failed to find `root`.',
       ' Did your test case use `activationSetup`?');
   }
-  store.dispatch({type: "RESET_STORE_FOR_TESTING"});
   const textareas = document.getElementsByTagName("textarea");
   while (textareas[0]) {
     const current = textareas[0];

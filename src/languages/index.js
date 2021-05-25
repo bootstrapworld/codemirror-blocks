@@ -18,7 +18,7 @@ export function addLanguage(languageDefinition) {
   if (!languageDefinition.getExceptionMessage) {
     languageDefinition.getExceptionMessage = function(e) {
       return e || "Parser error";
-    }
+    };
   }
 
   LANGUAGES[id] = languageDefinition;

@@ -10,10 +10,12 @@ import shallowequal from 'shallowequal';
  * to pass in onKeyDown and intercept the enter key
  */
 
+// use a plaintext INPUT elt to avoid characters being
+// converted to html entities ()
 function getInnerHTML(txt) {
-  const el = document.createElement('div');
-  el.textContent = txt;
-  return el.innerHTML;
+  const el = document.createElement('input');
+  el.value = txt;
+  return el.value;
 }
 
 export default class ContentEditable extends Component {
@@ -39,6 +41,7 @@ export default class ContentEditable extends Component {
   }
 
   handleChange = _ => {
+    console.log('change happened');
     this.props.onChange(this.eltRef.current.textContent);
   }
 
@@ -77,7 +80,8 @@ export default class ContentEditable extends Component {
         {...props}
         ref={this.eltRef}
         dangerouslySetInnerHTML={{__html: getInnerHTML(value)}}
-        contentEditable={true}
+        contentEditable={"plaintext-only"}
+        spellCheck={false}
         onInput={this.handleChange}
         onKeyDown={this.handleKeyDown}
         onPaste={this.handlePaste} />

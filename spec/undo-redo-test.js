@@ -9,7 +9,7 @@ import {
   dragend, dragleave, keyDown, keyPress, insertText
 } from '../spec/support/test-utils';
 
-console.log('Doing undo-redo-test.js')
+console.log('Doing undo-redo-test.js');
 
 
 // be sure to call with `apply` or `call`

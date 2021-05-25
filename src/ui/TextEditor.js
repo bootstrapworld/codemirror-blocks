@@ -12,6 +12,10 @@ class TextEditor extends Component {
   static propTypes = {
     cmOptions: PropTypes.object,
     parse: PropTypes.func.isRequired,
+    getExceptionMessage: PropTypes.func,
+    getASTNodeForPrimitive: PropTypes.func,
+    getLiteralNodeForPrimitive: PropTypes.func,
+    primitivesFn: PropTypes.func,
     initialCode: PropTypes.string.isRequired,
     onBeforeChange: PropTypes.func,
     onMount:PropTypes.func.isRequired,
