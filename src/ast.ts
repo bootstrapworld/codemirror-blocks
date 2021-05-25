@@ -106,6 +106,13 @@ export class AST {
           node.prev = lastNode;
           lastNode.next = node;
         }
+        if (node.options.comment) {
+          node.options.comment.parent = node;
+          node.options.comment.level = level;
+          node.options.comment["aria-setsize"]  = 1;
+          node.options.comment["aria-posinset"] = 1;
+          this.nodeIdMap.set(`${node.id}-comment`, node.options.comment);  
+        }
         this.nodeIdMap.set(node.id, node);
         this.nodeNIdMap.set(node.nid, node);
         lastNode = node;

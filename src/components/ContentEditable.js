@@ -41,7 +41,6 @@ export default class ContentEditable extends Component {
   }
 
   handleChange = _ => {
-    console.log('change happened');
     this.props.onChange(this.eltRef.current.textContent);
   }
 

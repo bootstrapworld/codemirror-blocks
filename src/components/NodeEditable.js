@@ -30,6 +30,7 @@ class NodeEditable extends Component {
   }
 
   constructor(props) {
+    console.log(props);
     super(props);
     const {value, dispatch} = this.props;
     this.cachedValue = "";
@@ -43,6 +44,7 @@ class NodeEditable extends Component {
   }
 
   saveEdit = e => {
+    console.log('NodeEditable::saveEdit');
     e.stopPropagation();
     const {target, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
     dispatch((dispatch, getState) => {
@@ -88,6 +90,7 @@ class NodeEditable extends Component {
     switch (CodeMirror.keyName(e)) {
     case 'Enter': {
       this.ignoreBlur = true;
+      console.log('NodeEditable::handleKeyDown with Enter');
       this.saveEdit(e);
       return;
     }
@@ -121,6 +124,7 @@ class NodeEditable extends Component {
    */
 
   handleBlur = e => {
+    console.log('NodeEditable::handleBlur');
     if (this.ignoreBlur) return;
     this.saveEdit(e);
   }

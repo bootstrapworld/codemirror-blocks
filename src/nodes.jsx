@@ -475,11 +475,11 @@ export class Literal extends ASTNode {
 export class Comment extends ASTNode {
   constructor(from, to, comment, options={}) {
     super(from, to, 'comment', options);
-    this.comment = comment;
+    this.value = comment;
   }
 
   static spec = Spec.nodeSpec([
-    Spec.value('comment')
+    Spec.value('value')
   ])
 
   describe(_level) {
@@ -487,7 +487,7 @@ export class Comment extends ASTNode {
   }
 
   pretty() {
-    let words = this.comment.trim().split(/\s+/);
+    let words = this.value.trim().split(/\s+/);
     let wrapped = P.wrap(words);
     // Normalize all comments to block comments
     return P.concat("#| ", wrapped, " |#");
@@ -503,7 +503,7 @@ export class Comment extends ASTNode {
         <span
             aria-hidden="true" 
             ref={(el) => this.element = el} >
-          <span className="screenreader-only">Has comment,</span> <span>{this.comment.toString()}</span>
+          <span className="screenreader-only">Has comment,</span> <span>{this.value.toString()}</span>
         </span>
       </Node>
     );

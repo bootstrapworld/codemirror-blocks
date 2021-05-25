@@ -289,6 +289,16 @@ export const commandMap = {
     else { return this.handleMakeEditable(e); }
   },
 
+  'Edit Comment' : function(_, e) {
+      if(!this.node) { return CodeMirror.Pass; }
+      if(this.node.options.comment) {
+        console.log('a comment exists! editing...', this.node.options.comment);
+      } else {
+        console.log('no comment exists! inserting...', this);
+      }
+      this.handleEditComment();
+  },
+
   'Clear Selection' : function (_) {
     if(!this.node) { return CodeMirror.Pass; }
     this.dispatch({type: 'SET_SELECTIONS', selections: []});
@@ -359,17 +369,6 @@ export const commandMap = {
     e.preventDefault();
     preambleUndoRedo('redo');
     SHARED.cm.redo();
-  },
-
-  'Edit Comment' : function(_, e) {
-    if(!this.node) { return CodeMirror.Pass; }
-    console.log('editing comment for ', this.node);
-    if(this.node.options.comment) {
-      const {from, to, comment: text} = this.node.options.comment;
-      console.log('a comment exists! editing...', this.node.options.comment);
-    } else {
-      console.log('no comment exists! inserting...', this);
-    }
   },
 
   'Help' : function (_) {

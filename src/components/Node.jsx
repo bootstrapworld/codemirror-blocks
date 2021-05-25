@@ -50,7 +50,7 @@ class Node extends BlockComponent {
     activateByNid: PropTypes.func.isRequired,
   }
 
-  state = {editable: false, value: null}
+  state = {editable: false, value: null, commentEditable: false}
 
   componentDidMount() {
     // For testing
@@ -116,6 +116,12 @@ class Node extends BlockComponent {
     SHARED.cm.refresh(); // is this needed?
   };
 
+
+  handleEditComment = () => {
+    console.log('editComment called');
+    this.setState({commentEditable: true});
+  }
+
   handleDisableEditable = () => this.setState({editable: false});
 
   setLeft() {
@@ -147,7 +153,6 @@ class Node extends BlockComponent {
     } = this.props;
 
     let comment = node.options.comment;
-    if(comment) comment.id = `block-node-${node.id}-comment`;
     const locked = this.isLocked();
 
     const props = {
@@ -163,10 +168,7 @@ class Node extends BlockComponent {
       'aria-level'      : node.level,
     };
 
-    const classes = [
-      {'blocks-locked': locked},
-      `blocks-${node.type}`
-    ];
+    const classes = [{'blocks-locked': locked}, `blocks-${node.type}`];
 
     if (this.state.editable) {
       // TODO: combine passingProps and contentEditableProps
@@ -213,7 +215,7 @@ class Node extends BlockComponent {
           onKeyDown     = {e => store.onKeyDown(e, this)}
           >
           {children}
-          {comment? comment.reactElement({key: comment.id}) : null}
+          {comment? this.renderComment(comment, passingProps, node) : null}
         </span>
       );
       if (this.props.normallyEditable) {
@@ -222,6 +224,33 @@ class Node extends BlockComponent {
       result = connectDragPreview(connectDragSource(result), {offsetX: 1, offsetY: 1});
       result = (<NodeContext.Provider value={{node: this.props.node}}>{result}</NodeContext.Provider>);
       return result;
+    }
+  }
+
+  renderComment(comment, passingProps, node) {
+    console.log(comment)
+    const props = {
+      id                : comment.id,
+      tabIndex          : "-1",
+      'aria-setsize'    : 1,
+      'aria-posinset'   : 1,
+      'aria-level'      : node.level,
+    };
+
+    if (!this.state.commentEditable) {
+      return comment.reactElement({key: comment.id});
+    } else {
+      return (
+        <NodeEditable {...passingProps}
+                      onDisableEditable={this.handleDisableEditable}
+                      extraClasses={[`blocks-${comment.type}`]}
+                      isInsertion={false}
+                      target={new ReplaceNodeTarget(comment)}
+                      value={comment.value}
+                      onChange={this.handleChange}
+                      contentEditableProps={props} 
+        />
+      );      
     }
   }
 }
