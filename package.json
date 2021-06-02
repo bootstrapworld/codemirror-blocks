@@ -90,7 +90,7 @@
     "build": "webpack --config webpack/bundle.config.js --mode production",
     "build-debug": "webpack --mode development",
     "build-watch": "webpack --watch --mode development",
-    "lint": "eslint src spec example --ext .js || true",
+    "lint": "eslint . --ext .js || true",
     "site": "jekyll serve --baseurl \"\"",
     "upgrade-interactive": "npm-check --update"
   },
