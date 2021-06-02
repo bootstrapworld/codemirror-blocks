@@ -26,7 +26,7 @@ if (!(envConfig.isCI || envConfig.localDebug)) {
 var reporters = ['dots'];
 if (envConfig.runCoverage) {
   reporters.push('coverage');
-  plugins.unshift( 'karma-coverage')
+  plugins.unshift( 'karma-coverage');
   if (envConfig.isCI) {
     reporters.push('coveralls');
   }

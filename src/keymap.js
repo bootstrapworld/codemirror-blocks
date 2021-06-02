@@ -108,8 +108,8 @@ function pasteHandler(_, e) {
       // We're somewhere valid in the AST. Initiate paste on the target field!
       paste(new InsertTarget(this.node.parent, DTnode.dataset.field, pos));
     } else { 
-      playSound(BEEP)
-      say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`)
+      playSound(BEEP);
+      say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`);
     }
   }
 }

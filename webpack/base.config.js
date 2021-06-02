@@ -34,7 +34,7 @@ module.exports = function(config) {
         {loader: MiniCssExtractPlugin.loader}, 
         {loader: "css-loader"}, 
         {loader: "less-loader"}
-        ]
+      ]
     });
   } else {
     rules.push({
@@ -88,7 +88,7 @@ module.exports = function(config) {
           include: [path.resolve(__dirname, '..', 'spec')],
           use: [{loader: 'style-loader'}, {loader: 'css-loader'}]
         }
-    ])
+      ])
     },
     plugins: plugins,
   };

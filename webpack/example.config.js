@@ -36,4 +36,4 @@ module.exports = function(env, argv) {
       contentBase: path.join(__dirname, '..', 'example')
     },
   });
-}
+};
