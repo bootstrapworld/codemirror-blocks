@@ -1,9 +1,9 @@
 import wescheme from '../src/languages/wescheme';
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import './example-page.less';
-import bigExampleCode from './ast-test.rkt';
-import hugeExampleCode from './huge-code.rkt';
-const smallExampleCode = `(collapse me)\n(+ 1 2)`;
+import bigExampleCode from './ast-test.rkt'; // eslint-disable-line no-unused-vars
+import hugeExampleCode from './huge-code.rkt'; // eslint-disable-line no-unused-vars
+const smallExampleCode = `(collapse me)\n(+ 1 2)`; // eslint-disable-line no-unused-vars
 
 // HACK: expose ALL test utilities, events, etc
 // so they can be used from the browser console

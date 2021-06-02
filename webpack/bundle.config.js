@@ -16,8 +16,7 @@ var configs = [
     },
     plugins: [
       new BundleAnalyzerPlugin({
-        analyzerMode: 'static', 
-        openAnalyzer: !('TRAVIS' in process.env && 'CI' in process.env),
+        analyzerMode: 'static',
         reportFilename: "bundle-sizes.html",
         generateStatsFile: true,
         openAnalyzer: false,
