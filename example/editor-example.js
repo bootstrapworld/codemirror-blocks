@@ -32,9 +32,9 @@ let history, lastAction, currentAction = 0
 downloadLogButton.onclick = () => {
   let json = {history: window.reducerActivities, exception: "DUMMY"}
 
-  var element = document.createElement('a');
+  var element = document.createElement('a')
   element.setAttribute('href', 'data:text/plain;charset=utf-8,' 
-      + encodeURIComponent(JSON.stringify(json)));
+      + encodeURIComponent(JSON.stringify(json)))
   element.setAttribute('download', "CMB Log.txt");
 
   element.style.display = 'none';
