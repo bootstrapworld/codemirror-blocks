@@ -5,7 +5,6 @@ lib
 docs
 npm-debug.log
 dist
-site-build
 .sass-cache
 vendors
 doc/*.html
