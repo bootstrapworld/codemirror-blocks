@@ -1,9 +1,9 @@
 import wescheme from '../src/languages/wescheme';
 import CodeMirrorBlocks from '../src/CodeMirrorBlocks';
 import './example-page.less';
-import bigExampleCode from './ast-test.rkt';
-import hugeExampleCode from './huge-code.rkt';
-const smallExampleCode = `(collapse me)\n(+ 1 2)`;
+import bigExampleCode from './ast-test.rkt'; // eslint-disable-line no-unused-vars
+import hugeExampleCode from './huge-code.rkt'; // eslint-disable-line no-unused-vars
+const smallExampleCode = `(collapse me)\n(+ 1 2)`; // eslint-disable-line no-unused-vars
 
 // HACK: expose ALL test utilities, events, etc
 // so they can be used from the browser console
@@ -15,26 +15,26 @@ const exampleCode = bigExampleCode;
 //const exampleCode = hugeExampleCode;
 
 // grab the DOM Node to host the editor, and use it to instantiate
-const container = document.getElementById('cmb-editor')
+const container = document.getElementById('cmb-editor');
 const editor = new CodeMirrorBlocks(container, {
   collapseAll: false, 
   value: exampleCode
-}, wescheme)
+}, wescheme);
 
 // grab the load-from-log button
 const loadLogButton  = document.getElementById('loadFromLog');
 const downloadLogButton  = document.getElementById('downloadLog');
 const nextButton     = document.getElementById('nextButton');
 
-let history, lastAction, currentAction = 0
+let history, lastAction, currentAction = 0;
 
 
 downloadLogButton.onclick = () => {
-  let json = {history: window.reducerActivities, exception: "DUMMY"}
+  let json = {history: window.reducerActivities, exception: "DUMMY"};
 
-  var element = document.createElement('a')
+  var element = document.createElement('a');
   element.setAttribute('href', 'data:text/plain;charset=utf-8,' 
-      + encodeURIComponent(JSON.stringify(json)))
+      + encodeURIComponent(JSON.stringify(json)));
   element.setAttribute('download', "CMB Log.txt");
 
   element.style.display = 'none';
