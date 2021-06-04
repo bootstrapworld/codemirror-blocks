@@ -91,7 +91,6 @@
     "build-debug": "webpack --mode development",
     "build-watch": "webpack --watch --mode development",
     "lint": "eslint . --ext .js || true",
-    "site": "jekyll serve --baseurl \"\"",
     "upgrade-interactive": "npm-check --update"
   },
   "author": "The Bootstrap Team",

@@ -1,7 +1,6 @@
 doc/
 example/
 node_modules/
-site/
 spec/
 webpack/
 src/
