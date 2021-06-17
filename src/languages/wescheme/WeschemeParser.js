@@ -13,11 +13,10 @@ import {
   CondClause,
   Comment,
   VariableDefinition,
-  Sequence,
   FunctionApp,
   Unknown
 } from '../../nodes';
-import {LetLikeExpr, WhenUnless} from './ast';
+import {LetLikeExpr, WhenUnless, Sequence} from './ast';
 import {PrimitiveGroup} from '../../parsers/primitives';
 import PRIMITIVES_CONFIG from './primitives-config';
 

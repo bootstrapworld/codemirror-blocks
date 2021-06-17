@@ -550,7 +550,7 @@ export class Sequence extends ASTNode {
   }
 
   pretty() {
-    return P.standardSexpr(this.name, this.exprs);
+    return P.vert(this.name, ...this.exprs);
   }
 
   render(props) {
