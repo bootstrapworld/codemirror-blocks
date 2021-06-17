@@ -37,8 +37,3 @@ notifications:
     on_success: change
     on_failure: always
     on_start: never
-after_success:
-- |
-    if [ "$TRAVIS_PULL_REQUEST" = false ]; then
-      ./deploy-ghpages.sh
-    fi
