@@ -208,9 +208,11 @@ export default @CMBContext class ToggleEditor extends Component {
           code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
           this.ast = SHARED.parse(code);                // parse the pretty-printed (PP) code
         } catch (e) {
-          console.error('COULD NOT PARSE PRETTY-PRINTED CODE:\n', code);
-          throw `An error occured in the language module 
-          (the pretty-printer probably produced invalid code)`;
+          console.error('COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n', oldAst);
+          console.error('PRETTY-PRINTED CODE WAS', oldAst.toString());
+          throw `An error occured in the language module: 
+          the pretty-printer probably produced invalid code.
+          See the JS console for more detailed reporting.`;
         }
         this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
         this.currentCode = code;                        // update CM with the PP code
