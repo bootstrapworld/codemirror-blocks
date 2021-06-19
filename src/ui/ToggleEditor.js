@@ -208,6 +208,7 @@ export default @CMBContext class ToggleEditor extends Component {
           code = oldAst.toString() + (WS? WS[0] : "");  // pretty-print and restore whitespace
           this.ast = SHARED.parse(code);                // parse the pretty-printed (PP) code
         } catch (e) {
+          console.error('COULD NOT PARSE PRETTY-PRINTED CODE:\n', code);
           throw `An error occured in the language module 
           (the pretty-printer probably produced invalid code)`;
         }
@@ -242,6 +243,10 @@ export default @CMBContext class ToggleEditor extends Component {
         <div className="col-xs-9 codemirror-pane">
         { this.state.blockMode? this.renderBlocks() : this.renderCode() }
         </div>
+      </div>
+
+      <div role="application" aria-roledescription="Stand by">
+        <a id="SR_fix_for_slow_dom" href="#" aria-roledescription=":" aria-label=""></a>
       </div>
 
       <Dialog 

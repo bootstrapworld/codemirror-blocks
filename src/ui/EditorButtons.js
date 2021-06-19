@@ -19,11 +19,10 @@ export class ToggleButton extends Component {
     const buttonIcon = this.props.blockMode? "✏️" : "🧱";
     return (
       <button className="blocks-toggle-btn btn btn-default btn-sm"
-              aria-label={buttonAria}
-              title={buttonAria}
               onClick={this.handleToggle}
               tabIndex="0">
-        <span>{buttonIcon}</span>
+        <span aria-hidden="true">{buttonIcon}</span>
+        <span className="btn-title">{buttonAria}</span>
       </button>
     );
   }
@@ -40,11 +39,10 @@ export class BugButton extends Component {
   render() {
     return (
       <button className="bug-btn btn btn-default btn-sm"
-              aria-label="Report a bug"
-              title="Report a bug"
               onClick={this.handleBugReport}
               tabIndex="0">
-        <span>&#128030;</span>
+        <span aria-hidden="true">&#128030;</span>
+        <span className="btn-title">Report a Bug</span>
       </button>
     );
   }

@@ -185,10 +185,18 @@ export function activateByNid(nid, options) {
     // we just don't want to activate them.)
     if (!newNode) { return; }
 
+    // If the element has been ellided by CM, it won't be in the DOM. This
+    // can lead to situations where CM ellides the *currently-focused* elt,
+    // which confuses the screenreader. In these situations, we focus on
+    // a dummy element that just says "stand by" (see ToggleEditor.js).
+    // When the new node is available, focus will shift automatically.
+    if(!document.contains(newNode.element)) {
+      document.getElementById('SR_fix_for_slow_dom').focus();
+    }
+
     // If there's a previously-focused node, see if the ids match
     // If so, we need to manually initiate a new focus event
     if (newNode.nid === currentNode?.nid) {
-      //console.log('XXX actions.js:191, they are eq');
       setTimeout(() => { if(newNode.element) newNode.element.focus(); }, 10);
     }
 
@@ -210,17 +218,14 @@ export function activateByNid(nid, options) {
     // when double click because we can set focusId on the to-be-focused node
 
     setTimeout(() => {
-      //console.log('XXX actions:213 trying SET_FOCUS with fid=', focusId, 'fNId=', focusNId, 'xid=', node.id, 'xnid=', node.nid);
       dispatch({type: 'SET_FOCUS', focusId: newNode.id});
       
-      //console.log('XXX actions:216');
       if (options.record) {
         SHARED.search.setCursor(newNode.from);
       }
-      //console.log('XXX actions:220');
       if (newNode.element) {
         const scroller = SHARED.cm.getScrollerElement();
-        const wrapper = SHARED.cm.getWrapperElement();
+        const wrapper  = SHARED.cm.getWrapperElement();
 
         if (options.allowMove) {
           SHARED.cm.scrollIntoView(newNode.from);
@@ -237,7 +242,6 @@ export function activateByNid(nid, options) {
         scroller.setAttribute('aria-activedescendent', newNode.element.id);
         newNode.element.focus();
       }
-      //console.log('XXX actions:240');
     }, 25);
   };
 }

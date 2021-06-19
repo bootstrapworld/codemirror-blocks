@@ -279,6 +279,7 @@ class BlockEditor extends Component {
     const wrapper = ed.getWrapperElement();
     wrapper.setAttribute('role', 'tree');
     wrapper.setAttribute('aria-multiselectable', 'true');
+    wrapper.setAttribute('tabIndex', -1);
 
     // pass the block-mode CM editor, API, and current AST
     onMount(ed, this.buildAPI(ed), ast);
