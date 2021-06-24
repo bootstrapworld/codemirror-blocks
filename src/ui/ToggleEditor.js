@@ -42,7 +42,8 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
   'indexFromPos', 'focus', 'phrase', 'getInputField', 'getWrapperElement', 
   'getScrollerElement', 'getGutterElement'];
 
-export default @CMBContext class ToggleEditor extends Component {
+@CMBContext
+class ToggleEditor extends Component {
   state = {
     blockMode: false,
     dialog: false,
@@ -299,3 +300,5 @@ export default @CMBContext class ToggleEditor extends Component {
     );
   }
 }
+
+export default ToggleEditor;

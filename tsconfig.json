@@ -1,15 +1,19 @@
 {
-    "compilerOptions": {
-        // "module": "commonjs",
-        // "noImplicitAny": true,
-        // "removeComments": true,
-        // "preserveConstEnums": true,
-        // "sourceMap": true,
-        "esModuleInterop": true, // needed for fast-object-stringify
-        "target": "es6",
-        "jsx": "react",
-        "moduleResolution": "node",
-        "sourceMap": true,
-        "allowSyntheticDefaultImports": true
-    }
+  "include": ["src/**/*"],
+  "compilerOptions": {
+    "esModuleInterop": true, // needed for fast-object-stringify
+    "target": "es6",
+    "jsx": "react",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    // Ensure that .d.ts files are created by tsc, but not .js files
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "allowJs": true,
+    // Ensure that Babel can safely transpile files in the TypeScript project
+    "isolatedModules": true,
+    "outDir": "lib"
+  }
 }

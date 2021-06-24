@@ -8,7 +8,9 @@
     "npm": ">=3.x"
   },
   "dependencies": {
+    "@babel/cli": "^7.14.3",
     "@babel/eslint-parser": "^7.14.5",
+    "@babel/preset-typescript": "^7.13.0",
     "classnames": "^2.3.1",
     "core-js": "^3.14.0",
     "fast-json-stable-stringify": "^2.1.0",
@@ -82,13 +84,15 @@
     "wescheme-js": "^0.0.4"
   },
   "scripts": {
-    "prepare": "npm run build",
+    "prepare": "npm run build && npm run build-lib && npx tsc",
     "test": "karma start karma.conf.js --single-run",
     "test-watch": "karma start karma.conf.js",
     "start": "webpack serve --mode development --config webpack/example.config.js",
     "build": "webpack --config webpack/bundle.config.js --mode production",
     "build-debug": "webpack --mode development",
     "build-watch": "webpack --watch --mode development",
+    "build-lib": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\"",
+    "build-lib-watch": "npm run build-lib -- --watch & npx tsc --watch",
     "lint": "eslint . --ext .js || true",
     "upgrade-interactive": "npm-check --update"
   },
