@@ -12,6 +12,7 @@ import { ToggleButton, BugButton } from './EditorButtons';
 import { say } from '../utils';
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
+import type { AST } from '../ast';
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
@@ -42,7 +43,39 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
   'indexFromPos', 'focus', 'phrase', 'getInputField', 'getWrapperElement', 
   'getScrollerElement', 'getGutterElement'];
 
-export default @CMBContext class ToggleEditor extends Component {
+export type ToggleEditorProps = {
+  initialCode?: string,
+  cmOptions?: {},
+  language?: {
+    id?: string,
+    name?: string,
+    parse?: () => void,
+    getExceptionMessage?: () => void,
+    getASTNodeForPrimitive?: () => void,
+    getLiteralNodeForPrimitive?: () => void,
+    primitivesFn?: () => void,
+  },
+  options?: {},
+  api?: {
+    setValue?: (startingSource: unknown) => void,
+    markText?: (from: unknown, to: unknown, options: unknown) => void,
+    blockMode?: boolean,
+  },
+  appElement: Element,
+  debuggingLog?: {
+    history?: unknown,
+  },
+}
+
+type ToggleEditorState = {
+  blockMode: boolean,
+  // TODO(pcardune): dialog should probably not be a boolean.
+  // I think we are using "false" in place of "null" unnecessarily.
+  dialog: boolean | {title: string, content: string},
+  debuggingLog?: ToggleEditorProps['debuggingLog'],
+}
+
+class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state = {
     blockMode: false,
     dialog: false,
@@ -57,9 +90,15 @@ export default @CMBContext class ToggleEditor extends Component {
       parse: PropTypes.func.isRequired,
     }),
     options: PropTypes.object,
-    api: PropTypes.object,
+    api: PropTypes.shape({
+      setValue: PropTypes.func,
+      markText: PropTypes.func,
+      blockMode: PropTypes.bool,
+    }),
     appElement: PropTypes.instanceOf(Element).isRequired,
-    debuggingLog: PropTypes.object,
+    debuggingLog: PropTypes.shape({
+      history: PropTypes.any,
+    }),
   }
 
   static defaultProps = {
@@ -67,7 +106,31 @@ export default @CMBContext class ToggleEditor extends Component {
     cmOptions: {},
   }
 
-  constructor(props) {
+  // TODO(pcardune): None of these should be here. Denormalizing
+  // props is a very bad thing to do.
+  cmOptions: ToggleEditorProps['cmOptions'] & typeof defaultCmOptions;
+  language: ToggleEditorProps['language'];
+  parse: ToggleEditorProps['language']['parse'];
+  getExceptionMessage: ToggleEditorProps['language']['getExceptionMessage'];
+  getASTNodeForPrimitive: ToggleEditorProps['language']['getASTNodeForPrimitive'];
+  getLiteralNodeForPrimitive: ToggleEditorProps['language']['getLiteralNodeForPrimitive'];
+  primitivesFn: ToggleEditorProps['language']['primitivesFn'];
+  options: ToggleEditorProps['options'];
+
+  // TODO(pcardune): remove this field, as we should be able to rely entirely
+  // on lifecycle methods without having to keep track of which life cycle
+  // methods have been called.
+  hasMounted: boolean;
+
+  currentCode: unknown;
+
+  eventHandlers: {};
+
+  toolbarRef: React.RefObject<Toolbar>;
+  ast: unknown;
+  newAST: AST;
+
+  constructor(props: ToggleEditorProps) {
     super(props);
 
     this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
@@ -90,7 +153,7 @@ export default @CMBContext class ToggleEditor extends Component {
       incrementalRendering: true,
       collapseAll: true
     };
-    this.options = Object.assign(defaultOptions, props.options);
+    this.options = {...defaultOptions, ...props.options};
     this.hasMounted = false;
     SHARED.recordedMarks = new Map();
     this.eventHandlers = {}; // blank event-handler record
@@ -175,7 +238,7 @@ export default @CMBContext class ToggleEditor extends Component {
     SHARED.recordedMarks.clear();
     SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach(m => {
-        let {from: oldFrom, to: oldTo} = m.find(), opts = {};
+        let {from: oldFrom, to: oldTo} = m.find();
         let node = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
         if(!node) { // bail on non-node markers
           console.error(`Removed TextMarker at [{line:${oldFrom.line}, ch:${oldFrom.ch}},` +
@@ -183,8 +246,18 @@ export default @CMBContext class ToggleEditor extends Component {
           return;
         }
         const {from, to} = this.newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
-        opts.css = m.css; opts.title = m.title; opts.className = m.className;
-        SHARED.recordedMarks.set(node.nid, {from: from, to: to, options: opts});
+        SHARED.recordedMarks.set(
+          node.nid,
+          {
+            from: from,
+            to: to,
+            options: {
+              css: m.css,
+              title: m.title,
+              className: m.className,
+            }
+          }
+        );
       });
   }
 
@@ -192,7 +265,7 @@ export default @CMBContext class ToggleEditor extends Component {
   closeDialog()        { this.setState( () =>({dialog: false}));     }
 
   handleToggle = blockMode => {
-    this.setState( () => {
+    this.setState( (state) => {
       let oldAst, WS, code;
       try {
         try {
@@ -214,18 +287,18 @@ export default @CMBContext class ToggleEditor extends Component {
           the pretty-printer probably produced invalid code.
           See the JS console for more detailed reporting.`;
         }
-        this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
+        this.copyMarks(oldAst);                   // Preserve old TextMarkers
         this.currentCode = code;                        // update CM with the PP code
         this.props.api.blockMode = blockMode;
-        return {blockMode: blockMode};                  // Success! Set the blockMode state
+        return {...state, blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
         console.error(e);
-        return {dialog: { title: "Could not convert to Blocks", content: e.toString() }};
+        return {...state, dialog: { title: "Could not convert to Blocks", content: e.toString() }};
       }
     });
   }
 
-  render(_props) { // eslint-disable-line no-unused-vars
+  render() {
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
       <>
@@ -235,7 +308,7 @@ export default @CMBContext class ToggleEditor extends Component {
           setBlockMode={this.handleToggle} 
           blockMode={this.state.blockMode} />
         {this.state.blockMode ? <TrashCan/> : null}
-        <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
+        <div className={"col-xs-3 toolbar-pane"} tabIndex={-1} aria-hidden={!this.state.blockMode}>
           <Toolbar 
             primitives={this.language.primitivesFn()}
             languageId={this.language.id}
@@ -299,3 +372,5 @@ export default @CMBContext class ToggleEditor extends Component {
     );
   }
 }
+
+export default CMBContext<ToggleEditorProps>(ToggleEditor);
