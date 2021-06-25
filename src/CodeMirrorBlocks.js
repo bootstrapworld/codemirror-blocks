@@ -45,6 +45,7 @@ export default class CodeMirrorBlocks {
     />, myTextArea);
   }
 }
+export {Languages, Nodes, AST};
 
 module.exports.CodeMirrorBlocks = CodeMirrorBlocks;
 module.exports.Args = Args.default;
