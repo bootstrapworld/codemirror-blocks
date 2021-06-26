@@ -37,28 +37,23 @@ export type Language = {
 // Consumes a DOM node to host the editor, a language object and the code
 // to render. Produces an object-representation of CMB, allowing for
 // integration with external (non-react) code
-export default class CodeMirrorBlocks {
-  constructor(container: Element, options: Options = {}, language: Language, cmOptions: CodeMirror.EditorConfiguration = {}) {
-    let api: API = {} as any;
-    let initialCode = options.value;
-    ReactDOM.render(
-      <ToggleEditor
-        language={language}
-        initialCode={(initialCode == null) ? "" : initialCode}
-        api={api}
-        appElement={container}
-        options={options}
-        cmOptions={cmOptions}
-      />,
-      container
-    );
-    // TODO(pcardune): What the heck is even going on here?
-    // constructors shouldn't return things that are not instances
-    // of the class they are constructing. We should not have to
-    // cast the return value to any for typescript to be happy.
-    return api as any;
-  }
+export default function CodeMirrorBlocks(container: Element, options: Options = {}, language: Language, cmOptions: CodeMirror.EditorConfiguration = {}) {
+  let api: API = {} as any;
+  let initialCode = options.value;
+  ReactDOM.render(
+    <ToggleEditor
+      language={language}
+      initialCode={(initialCode == null) ? "" : initialCode}
+      api={api}
+      appElement={container}
+      options={options}
+      cmOptions={cmOptions}
+    />,
+    container
+  );
+  return api;
 }
+
 export {
   CodeMirrorBlocks,
   Args,
