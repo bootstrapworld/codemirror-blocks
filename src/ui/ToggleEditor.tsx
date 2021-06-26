@@ -1,5 +1,4 @@
 import React, {Component, createRef} from 'react';
-import PropTypes from 'prop-types';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
 import CMBContext from '../components/Context';
@@ -13,6 +12,53 @@ import { say } from '../utils';
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import type { AST } from '../ast';
+import type { Language, Options } from '../CodeMirrorBlocks';
+
+/**
+ * Additional declarations of codemirror apis that are not in @types/codemirror... yet.
+ * TODO(pcardune): open a pull request on this file to add these changes:
+ * https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/codemirror/index.d.ts
+ */
+declare module 'codemirror' {
+  interface DocOrEditor {
+    /**
+     * Adds a new selection to the existing set of selections, and makes it the primary selection.
+     */
+    addSelection(anchor: Position, head?: Position): void;
+
+    /**
+     * An equivalent of extendSelection that acts on all selections at once.
+     */
+    extendSelections(heads: Position[]): void;
+
+    /**
+     * Applies the given function to all existing selections, and calls extendSelections on the result.
+     */
+    extendSelectionsBy(f: (range: Position) => Position): void;
+
+    /**
+     * Get the value of the 'extending' flag.
+     */
+    getExtending(): boolean;
+
+    /**
+     * Undo one edit or selection change.
+     */
+    undoSelection(): void;
+
+    /**
+     * Redo one undone edit or selection change.
+     */
+    redoSelection(): void;
+  }
+
+  interface Editor {
+    /**
+     * Allow the given string to be translated with the phrases option.
+     */
+    phrase(text: string): string;
+  }
+}
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
@@ -41,26 +87,28 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
   'getViewport', 'refresh', 'operation', 'startOperation', 'endOperation', 'indentLine', 
   'toggleOverwrite', 'isReadOnly', 'lineSeparator', 'execCommand', 'posFromIndex', 
   'indexFromPos', 'focus', 'phrase', 'getInputField', 'getWrapperElement', 
-  'getScrollerElement', 'getGutterElement'];
+  'getScrollerElement', 'getGutterElement'] as const;
+
+type CodeMirrorAPI = Pick<CodeMirror.Editor, typeof codeMirrorAPI[number]>;
+
+type ToggleEditorAPI = {
+  getBlockMode(): boolean;
+  setBlockMode(blockMode: boolean): void;
+  getCM(): CodeMirror.Editor;
+  on: CodeMirror.Editor['on'];
+  off: CodeMirror.Editor['off'];
+  runMode(): never;
+  afterDOMUpdate(f: () => void): void;
+};
+
+export type API = ToggleEditorAPI & CodeMirrorAPI;
 
 export type ToggleEditorProps = {
   initialCode?: string,
-  cmOptions?: {},
-  language?: {
-    id?: string,
-    name?: string,
-    parse?: () => void,
-    getExceptionMessage?: () => void,
-    getASTNodeForPrimitive?: () => void,
-    getLiteralNodeForPrimitive?: () => void,
-    primitivesFn?: () => void,
-  },
-  options?: {},
-  api?: {
-    setValue?: (startingSource: unknown) => void,
-    markText?: (from: unknown, to: unknown, options: unknown) => void,
-    blockMode?: boolean,
-  },
+  cmOptions?: CodeMirror.EditorConfiguration,
+  language?: Language,
+  options?: Options,
+  api?: API,
   appElement: Element,
   debuggingLog?: {
     history?: unknown,
@@ -81,26 +129,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     dialog: false,
   }
 
-  static propTypes = {
-    initialCode: PropTypes.string,
-    cmOptions: PropTypes.object,
-    language: PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      parse: PropTypes.func.isRequired,
-    }),
-    options: PropTypes.object,
-    api: PropTypes.shape({
-      setValue: PropTypes.func,
-      markText: PropTypes.func,
-      blockMode: PropTypes.bool,
-    }),
-    appElement: PropTypes.instanceOf(Element).isRequired,
-    debuggingLog: PropTypes.shape({
-      history: PropTypes.any,
-    }),
-  }
-
   static defaultProps = {
     debuggingLog: {},
     cmOptions: {},
@@ -108,14 +136,14 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   // TODO(pcardune): None of these should be here. Denormalizing
   // props is a very bad thing to do.
-  cmOptions: ToggleEditorProps['cmOptions'] & typeof defaultCmOptions;
-  language: ToggleEditorProps['language'];
-  parse: ToggleEditorProps['language']['parse'];
-  getExceptionMessage: ToggleEditorProps['language']['getExceptionMessage'];
-  getASTNodeForPrimitive: ToggleEditorProps['language']['getASTNodeForPrimitive'];
-  getLiteralNodeForPrimitive: ToggleEditorProps['language']['getLiteralNodeForPrimitive'];
-  primitivesFn: ToggleEditorProps['language']['primitivesFn'];
-  options: ToggleEditorProps['options'];
+  cmOptions: CodeMirror.EditorConfiguration;
+  language: Language;
+  parse: Language['parse'];
+  getExceptionMessage: Language['getExceptionMessage'];
+  getASTNodeForPrimitive: Language['getASTNodeForPrimitive'];
+  getLiteralNodeForPrimitive: Language['getLiteralNodeForPrimitive'];
+  primitivesFn: Language['primitivesFn'];
+  options: Options;
 
   // TODO(pcardune): remove this field, as we should be able to rely entirely
   // on lifecycle methods without having to keep track of which life cycle
@@ -127,7 +155,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   eventHandlers: {};
 
   toolbarRef: React.RefObject<Toolbar>;
-  ast: unknown;
+  ast: AST;
   newAST: AST;
 
   constructor(props: ToggleEditorProps) {
@@ -170,13 +198,15 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     this.props.api.setValue(jsonLog.startingSource);
   }
 
-  buildAPI(ed) {
-    const base = {};
-    // any CodeMirror function that we can call directly should be passed-through
+  buildAPI(ed: CodeMirror.Editor): API {
+    const base: CodeMirrorAPI = {} as any;
+    // any CodeMirror function that we can call directly should be passed-through.
     // TextEditor and BlockEditor can add their own, or override them
-    codeMirrorAPI.forEach(f => base[f] = function(){ return ed[f](...arguments); });
+    codeMirrorAPI.forEach(funcName => {
+      base[funcName] = ed[funcName].bind(ed);
+    });
 
-    const api = {
+    const api: ToggleEditorAPI = {
       // custom CMB methods
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
@@ -289,7 +319,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         }
         this.copyMarks(oldAst);                   // Preserve old TextMarkers
         this.currentCode = code;                        // update CM with the PP code
-        this.props.api.blockMode = blockMode;
+        // TODO(pcardune): this should not exist. calling code should just use
+        // getBlockMode() instead, which will pull from the state object.
+        (this.props.api as any).blockMode = blockMode;
         return {...state, blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
         console.error(e);
