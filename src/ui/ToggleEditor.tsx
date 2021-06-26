@@ -13,6 +13,7 @@ import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import type { AST } from '../ast';
 import type { Language, Options } from '../CodeMirrorBlocks';
+import CodeMirror, { MarkerRange } from 'codemirror';
 
 /**
  * Additional declarations of codemirror apis that are not in @types/codemirror... yet.
@@ -57,6 +58,27 @@ declare module 'codemirror' {
      * Allow the given string to be translated with the phrases option.
      */
     phrase(text: string): string;
+  }
+}
+
+/**
+ * Extensions to the codemirror API that are internal to CMB or
+ * not documented in the codemirror docs.
+ */
+declare module 'codemirror' {
+  interface TextMarker {
+    /**
+     * Specifies the type of text marker, either one made with markText,
+     * or one made with setBookmark. Ones made with setBookmark have
+     * type == "bookmark". This property is not documented in the codemirror
+     * docs.
+     */
+    type: string;
+
+    /**
+     * Stores the ast node id associated with this text marker.
+     */
+    BLOCK_NODE_ID?: string;
   }
 }
 
@@ -106,7 +128,7 @@ export type API = ToggleEditorAPI & CodeMirrorAPI;
 export type ToggleEditorProps = {
   initialCode?: string,
   cmOptions?: CodeMirror.EditorConfiguration,
-  language?: Language,
+  language: Language,
   options?: Options,
   api?: API,
   appElement: Element,
@@ -152,11 +174,11 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   currentCode: unknown;
 
-  eventHandlers: {};
+  eventHandlers: Record<string, Function[]>;
 
   toolbarRef: React.RefObject<Toolbar>;
-  ast: AST;
-  newAST: AST;
+  ast?: AST;
+  newAST?: AST;
 
   constructor(props: ToggleEditorProps) {
     super(props);
@@ -195,11 +217,11 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   loadLoggedActions = (jsonLog) => {
     console.log('log is', jsonLog);
     this.setState({debuggingLog: jsonLog});
-    this.props.api.setValue(jsonLog.startingSource);
+    this.props.api?.setValue(jsonLog.startingSource);
   }
 
   buildAPI(ed: CodeMirror.Editor): API {
-    const base: CodeMirrorAPI = {} as any;
+    const base: any = {};
     // any CodeMirror function that we can call directly should be passed-through.
     // TextEditor and BlockEditor can add their own, or override them
     codeMirrorAPI.forEach(funcName => {
@@ -211,12 +233,14 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
       'getCM': () => ed,
-      'on' : (type, fn) => { 
+      'on' : (...args: Parameters<CodeMirror.Editor['on']>) => {
+        const [type, fn] = args;
         if(!this.eventHandlers[type]) { this.eventHandlers[type] = [fn]; }
         else { this.eventHandlers[type].push(fn); }
         SHARED.cm.on(type, fn);
       },
-      'off' : (type, fn) => { 
+      'off' : (...args: Parameters<CodeMirror.Editor['on']>) => { 
+        const [type, fn] = args;
         this.eventHandlers[type]?.filter(h => h !== fn);
         SHARED.cm.off(type, fn);
       },
@@ -231,7 +255,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }
 
   // After a mode switch, rebuild the API and re-assign events
-  handleEditorMounted = (ed, api, ast) => {
+  handleEditorMounted = (ed: CodeMirror.Editor, api: API, ast: AST) => {
     // set CM aria attributes, and add announcer
     const mode = this.state.blockMode ? 'Block' : 'Text';
     const wrapper = ed.getWrapperElement();
@@ -242,15 +266,17 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     // Rebuild the API and assign re-events
     Object.assign(this.props.api, this.buildAPI(ed), api);
     Object.keys(this.eventHandlers).forEach(type => {
-      this.eventHandlers[type].forEach(h => ed.on(type, h));
+      this.eventHandlers[type].forEach(h => ed.on(type as any, h));
     });
     
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
     window.requestAnimationFrame( () => setTimeout(() => {
-      SHARED.recordedMarks.forEach((m, k) => {
+      SHARED.recordedMarks.forEach((m: {options: CodeMirror.TextMarkerOptions}, k: number) => {
         let node = ast.getNodeByNId(k);
-        this.props.api.markText(node.from, node.to, m.options);
+        if (node) {
+          this.props.api?.markText(node.from, node.to, m.options);
+        }
       });
     }, 0));
     // save the editor, and announce completed mode switch
@@ -264,20 +290,32 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }
 
   // save any non-block, non-bookmark markers, and the NId they cover
-  copyMarks(oldAST) {
+  copyMarks(oldAST: AST) {
     SHARED.recordedMarks.clear();
-    SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
-      .forEach(m => {
-        let {from: oldFrom, to: oldTo} = m.find();
-        let node = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
-        if(!node) { // bail on non-node markers
+    (SHARED.cm as CodeMirror.Editor).getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
+      .forEach((m: CodeMirror.TextMarker<MarkerRange>) => {
+        if (m.type == "bookmark") {
+          return;
+        }
+        const marker = m.find();
+        if (!marker) {
+          // marker is no longer in the document, bail
+          return;
+        }
+        let {from: oldFrom, to: oldTo} = marker;
+        const oldNode = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
+        if(!oldNode) { // bail on non-node markers
           console.error(`Removed TextMarker at [{line:${oldFrom.line}, ch:${oldFrom.ch}},` +
           `{line:${oldTo.line}, ch:${oldTo.ch}}], since that range does not correspond to a node boundary`);
           return;
         }
-        const {from, to} = this.newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
+        const newNode = this.newAST?.getNodeByNId(oldNode.nid); // use the NID to look node up srcLoc post-PP
+        if (!newNode) {
+          throw new Error("Could not find node "+oldNode.nid+" in new AST");
+        }
+        const {from, to} = newNode;
         SHARED.recordedMarks.set(
-          node.nid,
+          oldNode.nid,
           {
             from: from,
             to: to,
@@ -291,10 +329,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       });
   }
 
-  showDialog(contents) { this.setState( () =>({dialog: contents}));  }
+  showDialog(contents: {title: string, content: string}) { this.setState( () =>({dialog: contents}));  }
   closeDialog()        { this.setState( () =>({dialog: false}));     }
 
-  handleToggle = blockMode => {
+  handleToggle = (blockMode: boolean) => {
     this.setState( (state) => {
       let oldAst, WS, code;
       try {
@@ -342,7 +380,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex={-1} aria-hidden={!this.state.blockMode}>
           <Toolbar 
-            primitives={this.language.primitivesFn()}
+            primitives={this.language.primitivesFn ? this.language.primitivesFn() : []}
             languageId={this.language.id}
             blockMode={this.state.blockMode} 
             ref={this.toolbarRef} />
@@ -399,7 +437,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         showDialog={this.showDialog}
         closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
-        debugHistory={this.props.debuggingLog.history}
+        debugHistory={this.props.debuggingLog?.history}
      />
     );
   }
