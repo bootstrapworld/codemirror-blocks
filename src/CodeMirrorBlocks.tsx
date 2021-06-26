@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ToggleEditor from './ui/ToggleEditor';
-import type {ToggleEditorProps} from './ui/ToggleEditor';
 import Args from './components/Args';
 import {DropTarget} from './components/DropTarget';
 import Node from './components/Node';
@@ -11,11 +10,7 @@ import * as NodeSpec from './nodeSpec';
 import * as Languages from './languages';
 import Pretty from 'pretty-fast-pretty-printer';
 import { PrimitiveGroup } from './parsers/primitives';
-import type {API as ToggleEditorAPI} from './ui/ToggleEditor';
-
-export type API = ToggleEditorAPI & {
-  fromTextArea: (textArea: Element) => void;
-};
+import type {API} from './ui/ToggleEditor';
 
 /**
  * Options for CodeMirrorBlocks
@@ -36,7 +31,7 @@ export type Language = {
   getExceptionMessage?: () => void;
   getASTNodeForPrimitive?: () => void;
   getLiteralNodeForPrimitive?: () => void;
-  primitivesFn?: () => void;
+  primitivesFn?: () => unknown[];
 };
 
 // Consumes a DOM node to host the editor, a language object and the code
@@ -44,7 +39,7 @@ export type Language = {
 // integration with external (non-react) code
 export default class CodeMirrorBlocks {
   constructor(container: Element, options: Options = {}, language: Language, cmOptions: CodeMirror.EditorConfiguration = {}) {
-    let api: ToggleEditorAPI = {} as any;
+    let api: API = {} as any;
     let initialCode = options.value;
     ReactDOM.render(
       <ToggleEditor
@@ -57,25 +52,11 @@ export default class CodeMirrorBlocks {
       />,
       container
     );
-    Object.assign(api, this.buildAPI());
     // TODO(pcardune): What the heck is even going on here?
     // constructors shouldn't return things that are not instances
     // of the class they are constructing. We should not have to
     // cast the return value to any for typescript to be happy.
     return api as any;
-  }
-
-  buildAPI = () => {
-    return {
-      'fromTextArea': this.fromTextArea,
-    };
-  }
-
-  fromTextArea = myTextArea => {
-    myTextArea.parentNode.replaceChild(<ToggleEditor
-      appElement={myTextArea}
-      initialCode={myTextArea.value}
-    />, myTextArea);
   }
 }
 export {
