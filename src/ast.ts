@@ -157,7 +157,7 @@ export class AST {
     const expectedFieldNames = node.spec.fieldNames().concat(newFieldNames, astFieldNames);
     const undeclaredField = Object.getOwnPropertyNames(node).find(p => !expectedFieldNames.includes(p));
     if(undeclaredField) {
-      throw new Error(`An ASTNode ${node.type} contains a field called '${field}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`);
+      throw new Error(`An ASTNode ${node.type} contains a field called '${undeclaredField}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`);
     }
   }
 

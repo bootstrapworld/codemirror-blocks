@@ -6,7 +6,7 @@ const baseConfig = require('./base.config.js');
 var configs = [
   Object.assign({}, baseConfig(), {
     entry: {
-      "CodeMirrorBlocks": './src/CodeMirrorBlocks.js'
+      "CodeMirrorBlocks": './src/CodeMirrorBlocks.tsx'
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
