@@ -2,7 +2,7 @@ import {poscmp, minpos, maxpos, posWithinNode,
   nodeCommentContaining, gensym, hashObject} from './utils';
 import * as P from 'pretty-fast-pretty-printer';
 import type CodeMirror from 'codemirror';
-import type React from 'react';
+import type { Comment } from './nodes';
 
 
 export function enumerateList(lst: ASTNode[], level: number) {
@@ -342,12 +342,7 @@ export type Pos = {
 }
 
 export type NodeOptions = {
-  comment?: {
-    id: string;
-    from: Pos;
-    to: Pos;
-    reactElement: () => React.ReactElement;
-  };
+  comment?: Comment;
   "aria-label"?: string;
 }
 
