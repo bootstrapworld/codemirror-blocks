@@ -1,6 +1,7 @@
 import {poscmp, minpos, maxpos, posWithinNode, 
   nodeCommentContaining, gensym, hashObject} from './utils';
 import * as P from 'pretty-fast-pretty-printer';
+import type CodeMirror from 'codemirror';
 
 
 export function enumerateList(lst: ASTNode[], level: number) {
@@ -374,6 +375,12 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
    * validated by {@link AST.validateNode}
    */
   __alreadyValidated: boolean = false;
+
+  /**
+   * @internal
+   * 
+   */
+  mark: CodeMirror.TextMarker;
 
   constructor(from: Pos, to: Pos, type: string, options: Opt) {
 

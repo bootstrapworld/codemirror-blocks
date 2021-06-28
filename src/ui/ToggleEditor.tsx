@@ -76,6 +76,13 @@ declare module 'codemirror' {
     type: string;
 
     /**
+     * Sepcified the options that were used when the marker was created.
+     * This property is not documented in the codemirror docs but apparently
+     * works.
+     */
+    options: TextMarkerOptions;
+
+    /**
      * Stores the ast node id associated with this text marker.
      */
     BLOCK_NODE_ID?: string;

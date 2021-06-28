@@ -5,7 +5,7 @@ import 'codemirror/addon/search/searchcursor';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import './Editor.less';
-import {connect} from 'react-redux';
+import {connect, ConnectedProps} from 'react-redux';
 import SHARED from '../shared';
 import NodeEditable from '../components/NodeEditable';
 import {activateByNid, setCursor, OverwriteTarget} from '../actions';
@@ -19,7 +19,11 @@ import BlockComponent from '../components/BlockComponent';
 import { defaultKeyMap, keyDown } from '../keymap';
 import {store} from '../store';
 import { ASTNode } from '../ast';
+import type { AST } from '../ast';
 import CodeMirror from 'codemirror';
+import type { Options, API } from '../CodeMirrorBlocks';
+import type { Dispatch } from 'redux';
+import Toolbar from './Toolbar';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
@@ -43,8 +47,9 @@ type ToplevelBlockState = {
 }
 
 class ToplevelBlock extends BlockComponent<ToplevelBlockProps, ToplevelBlockState> {
-  container: Element;
+  container: HTMLElement;
   mark?: CodeMirror.TextMarker;
+  renderTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(props: ToplevelBlockProps) {
     super(props);
@@ -60,13 +65,13 @@ class ToplevelBlock extends BlockComponent<ToplevelBlockProps, ToplevelBlockStat
     return poscmp(this.props.node.from, nextProps.node.from) !== 0 // moved
       ||   poscmp(this.props.node.to,   nextProps.node.to  ) !== 0 // resized
       ||   super.shouldComponentUpdate(nextProps, nextState)       // changed
-      ||   !document.contains(this.mark?.replacedWith);            // removed from DOM
+      ||   !document.contains(this.mark?.replacedWith || null);            // removed from DOM
   }
 
   // When unmounting, clean up the TextMarker and any lingering timeouts
   componentWillUnmount() { 
     this.mark?.clear(); 
-    clearTimeout(this.renderTimeout); 
+    this.renderTimeout && clearTimeout(this.renderTimeout);
   }
 
   // once the placeholder has mounted, wait 250ms and render
@@ -82,7 +87,7 @@ class ToplevelBlock extends BlockComponent<ToplevelBlockProps, ToplevelBlockStat
     const {node} = this.props;
 
     // set elt to a cheap placeholder, OR render the entire rootNode
-    const elt = this.state.renderPlaceholder? (<div/>) : node.reactElement();
+    const elt = this.state.renderPlaceholder? (<div />) : node.reactElement();
 
     // AFTER THE REACT RENDER CYCLE IS OVER:
     // if any prior block markers are in this range, clear them
@@ -98,13 +103,28 @@ class ToplevelBlock extends BlockComponent<ToplevelBlockProps, ToplevelBlockStat
   }
 }
 
-class ToplevelBlockEditableCore extends Component {
+const mapStateToProps2 = ({quarantine}) => ({quarantine});
+const mapDispatchToProps2 = (dispatch: Dispatch) => ({
+  onDisableEditable: () => dispatch({type: 'DISABLE_QUARANTINE'}),
+  onChange: text => dispatch({type: 'CHANGE_QUARANTINE', text}),
+});
+const toplevelBlockEditableConnector = connect(mapStateToProps2, mapDispatchToProps2);
+
+type Quarantine = [CodeMirror.Position, CodeMirror.Position, unknown];
+
+type ToplevelBlockEditableCoreProps = ConnectedProps<typeof toplevelBlockEditableConnector> & {
+  quarantine: Quarantine;
+}
+class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps> {
 
   static propTypes = {
     quarantine: PropTypes.array.isRequired,
     onDisableEditable: PropTypes.func.isRequired,
     onChange: PropTypes.func.isRequired,
   }
+  
+  container: HTMLElement;
+  marker?: CodeMirror.TextMarker;
 
   constructor(props) {
     super(props);
@@ -149,47 +169,91 @@ class ToplevelBlockEditableCore extends Component {
   }
 }
 
-const mapStateToProps2 = ({quarantine}) => ({quarantine});
-const mapDispatchToProps2 = dispatch => ({
-  onDisableEditable: () => dispatch({type: 'DISABLE_QUARANTINE'}),
-  onChange: text => dispatch({type: 'CHANGE_QUARANTINE', text}),
+const ToplevelBlockEditable = toplevelBlockEditableConnector(ToplevelBlockEditableCore);
+
+
+const mapStateToProps = ({ast, cur, quarantine}) => ({
+  ast,
+  cur,
+  hasQuarantine: !!quarantine
 });
-const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(ToplevelBlockEditableCore);
+const mapDispatchToProps = (dispatch) => ({
+  dispatch,
+  setAST: (ast: AST) => dispatch({type: 'SET_AST', ast}),
+  setCursor: (_, cur?) => dispatch(setCursor(cur)),
+  clearFocus: () => {
+    return dispatch({type: 'SET_FOCUS', focusId: null});
+  },
+  setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
+  activateByNid: (nid, options) => dispatch(activateByNid(nid, options))
+});
 
-class BlockEditor extends Component {
-  static propTypes = {
-    value: PropTypes.string.isRequired,
-    options: PropTypes.object,
-    cmOptions: PropTypes.object,
-    keyMap: PropTypes.object,
-    language: PropTypes.string.isRequired,
-    parse: PropTypes.func.isRequired,
-    setAST: PropTypes.func.isRequired,
-    setCursor: PropTypes.func.isRequired,
-    setQuarantine: PropTypes.func.isRequired,
-    clearFocus: PropTypes.func.isRequired,
-    activateByNid: PropTypes.func.isRequired,
-    search: PropTypes.shape({
-      onSearch: PropTypes.func.isRequired,
-      search: PropTypes.func.isRequired,
-      setCursor: PropTypes.func.isRequired,
-      setCM: PropTypes.func.isRequired,
-    }),
-    toolbarRef: PropTypes.object,
-    onBeforeChange: PropTypes.func,
-    onMount:PropTypes.func.isRequired,
-    hasQuarantine: PropTypes.bool.isRequired,
-    api: PropTypes.object,
-    passedAST: PropTypes.object,
-    showDialog: PropTypes.func.isRequired,
-    closeDialog: PropTypes.func.isRequired,
+const blockEditorConnector = connect(mapStateToProps, mapDispatchToProps);
+type $TSFixMe = any;
 
-    // this is actually required, but it's buggy
-    // see https://github.com/facebook/react/issues/3163
-    ast: PropTypes.object,
-    dispatch: PropTypes.func.isRequired,
-    cur: pos
-  }
+type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
+  value: string;
+  options?: Options;
+  cmOptions?: CodeMirror.EditorConfiguration;
+  keyMap?: $TSFixMe;
+  /**
+   * id of the language being used
+   */
+  language: string;
+  parse: Function;
+  search?: {
+    onSearch: Function;
+    search: Function;
+    setCursor: Function;
+    setCM: Function;
+  };
+  toolbarRef?: React.RefObject<Toolbar>;
+  onBeforeChange: Function;
+  onMount: Function;
+  api?: API;
+  passedAST?: AST;
+  showDialog: Function;
+  ast: AST;
+}
+
+class BlockEditor extends Component<BlockEditorProps> {
+  // static propTypes = {
+  //   value: PropTypes.string.isRequired,
+  //   options: PropTypes.object,
+  //   cmOptions: PropTypes.object,
+  //   keyMap: PropTypes.object,
+  //   language: PropTypes.string.isRequired,
+  //   parse: PropTypes.func.isRequired,
+  //   setAST: PropTypes.func.isRequired,
+  //   setCursor: PropTypes.func.isRequired,
+  //   setQuarantine: PropTypes.func.isRequired,
+  //   clearFocus: PropTypes.func.isRequired,
+  //   activateByNid: PropTypes.func.isRequired,
+  //   search: PropTypes.shape({
+  //     onSearch: PropTypes.func.isRequired,
+  //     search: PropTypes.func.isRequired,
+  //     setCursor: PropTypes.func.isRequired,
+  //     setCM: PropTypes.func.isRequired,
+  //   }),
+  //   toolbarRef: PropTypes.object,
+  //   onBeforeChange: PropTypes.func,
+  //   onMount:PropTypes.func.isRequired,
+  //   hasQuarantine: PropTypes.bool.isRequired,
+  //   api: PropTypes.object,
+  //   passedAST: PropTypes.object,
+  //   showDialog: PropTypes.func.isRequired,
+  //   closeDialog: PropTypes.func.isRequired,
+
+  //   // this is actually required, but it's buggy
+  //   // see https://github.com/facebook/react/issues/3163
+  //   ast: PropTypes.object,
+  //   dispatch: PropTypes.func.isRequired,
+  //   cur: pos
+  // }
+
+  mouseUsed: boolean;
+  newAST: AST;
+  parse: BlockEditorProps['parse'];
 
   constructor(props) {
     super(props);
@@ -204,14 +268,13 @@ class BlockEditor extends Component {
   }
 
   static defaultProps = {
-    options: {},
     keyMap : defaultKeyMap,
     search: {
       search: () => null,
       onSearch: () => {},
       setCursor: () => {},
+      setCM: () => {},
     },
-    api: {}
   }
 
   // Anything that didn't come from cmb itself must be speculatively
@@ -398,7 +461,7 @@ class BlockEditor extends Component {
     return api;
   }
 
-  markText(from, to, options) {
+  markText(from: CodeMirror.Position, to: CodeMirror.Position, options: CodeMirror.TextMarkerOptions) {
     let node = this.props.ast.getNodeAt(from, to);
     if(!node) {
       throw new BlockError(
@@ -413,9 +476,12 @@ class BlockEditor extends Component {
           `API Error`);
     }
     let mark = SHARED.cm.markText(from, to, options); // keep CM in sync
-    mark._clear = mark.clear;
-    mark.ID = node.id;
-    mark.clear = () => { mark._clear(); this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); };
+    const _clear = mark.clear.bind(mark);
+    // TODO(pcardune): verify that the line below really isn't necessary.
+    // The ID property doesn't appear to be used anywhere. Maybe it was
+    // meant to be BLOCK_NODE_ID????
+    // mark.ID = node.id;
+    mark.clear = () => { _clear(); this.props.dispatch({type: 'CLEAR_MARK', id: node.id}); };
     mark.find = () => { let {from, to} = this.props.ast.getNodeById(node.id); return {from, to}; };
     mark.options = options;
     this.props.dispatch({type: 'ADD_MARK', id: node.id, mark: mark});
@@ -456,7 +522,12 @@ class BlockEditor extends Component {
     // return all the selections
     return tmpCM.listSelections();
   }
-  setSelections(ranges, primary, options, replace=true) {
+  setSelections(
+    ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
+    primary?: number,
+    options?: { bias?: number; origin?: string; scroll?: boolean },
+    replace=true
+  ) {
     const dispatch = this.props.dispatch;
     const {ast} = dispatch((_, getState) => getState());
     let tmpCM = getTempCM();
@@ -486,8 +557,8 @@ class BlockEditor extends Component {
     // if one of the ranges is invalid, setSelections will raise an error
     this.setSelections(tmpCM.listSelections(), null, opts);
   }
-  replaceSelections(replacements, select=false) {
-    let tmpCM = getTempCM();
+  replaceSelections(replacements: string[], select?: "around" | "start") {
+    let tmpCM: CodeMirror.Editor = getTempCM();
     tmpCM.setSelections(this.listSelections());
     tmpCM.replaceSelections(replacements, select);
     SHARED.cm.setValue(tmpCM.getValue());
@@ -528,8 +599,8 @@ class BlockEditor extends Component {
     // let CM handle kbd shortcuts or whitespace insertion
     if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
     e.preventDefault();
-    const start = SHARED.cm.getCursor(true);
-    const end   = SHARED.cm.getCursor(false);
+    const start = SHARED.cm.getCursor(true as $TSFixMe);
+    const end   = SHARED.cm.getCursor(false as $TSFixMe);
     this.props.setQuarantine(start, end, text);
   }
 
@@ -545,8 +616,8 @@ class BlockEditor extends Component {
   handleTopLevelPaste = (ed, e) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
-    const start = SHARED.cm.getCursor(true);
-    const end = SHARED.cm.getCursor(false);
+    const start = SHARED.cm.getCursor(true as $TSFixMe);
+    const end = SHARED.cm.getCursor(false as $TSFixMe);
     this.props.setQuarantine(start, end, text);
   }
 
@@ -570,16 +641,16 @@ class BlockEditor extends Component {
     SHARED.search = search;
     // create a hidden buffer, for use with copy/cut/paste
     const clipboardBuffer = document.createElement('textarea');
-    clipboardBuffer.ariaHidden    = true;
+    (clipboardBuffer as $TSFixMe).ariaHidden    = true;
     clipboardBuffer.tabIndex      = -1;
-    clipboardBuffer.style.opacity =  0;
+    clipboardBuffer.style.opacity =  '0';
     clipboardBuffer.style.height  = '1px';
     SHARED.buffer = clipboardBuffer;
     document.body.appendChild(SHARED.buffer);
-    this.props.api.afterDOMUpdate(this.refreshCM());
+    this.props.api.afterDOMUpdate(this.refreshCM() as $TSFixMe);
   }
 
-  componentDidUpdate() { this.props.api.afterDOMUpdate(this.refreshCM()); }
+  componentDidUpdate() { this.props.api.afterDOMUpdate(this.refreshCM() as $TSFixMe); }
 
   // Make sure the react renderer is finished before refreshing
   refreshCM() {
@@ -626,20 +697,4 @@ class BlockEditor extends Component {
   }
 }
 
-const mapStateToProps = ({ast, cur, quarantine}) => ({
-  ast,
-  cur,
-  hasQuarantine: !!quarantine
-});
-const mapDispatchToProps = dispatch => ({
-  dispatch,
-  setAST: ast => dispatch({type: 'SET_AST', ast}),
-  setCursor: (_, cur) => dispatch(setCursor(cur)),
-  clearFocus: () => {
-    return dispatch({type: 'SET_FOCUS', focusId: null});
-  },
-  setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
-  activateByNid: (nid, options) => dispatch(activateByNid(nid, options))
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(BlockEditor);
+export default blockEditorConnector(BlockEditor);

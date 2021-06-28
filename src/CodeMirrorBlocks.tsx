@@ -13,6 +13,7 @@ import Pretty from 'pretty-fast-pretty-printer';
 import { PrimitiveGroup } from './parsers/primitives';
 import type {Primitive} from './parsers/primitives';
 import type {API} from './ui/ToggleEditor';
+export type {API} from './ui/ToggleEditor';
 
 /**
  * Options for CodeMirrorBlocks
@@ -82,7 +83,7 @@ export type Language = {
  * @returns An object-representation of CMB, allowing for
  *  integration with external (non-react) code
  */
-function CodeMirrorBlocks(container: Element, options: Options = {}, language: Language, cmOptions: CodeMirror.EditorConfiguration = {}) {
+function CodeMirrorBlocks(container: Element, options: Options = {}, language: Language, cmOptions: CodeMirror.EditorConfiguration = {}): API {
   let api: API = {} as any;
   let initialCode = options.value;
   ReactDOM.render(
