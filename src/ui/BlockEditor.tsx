@@ -21,7 +21,7 @@ import { ASTNode } from '../ast';
 import type { AST } from '../ast';
 import CodeMirror from 'codemirror';
 import type { Options, API } from '../CodeMirrorBlocks';
-import type { Dispatch } from 'redux';
+import type { AppDispatch } from '../store';
 import Toolbar from './Toolbar';
 import type { Quarantine } from '../reducers';
 
@@ -104,7 +104,7 @@ class ToplevelBlock extends BlockComponent<ToplevelBlockProps, ToplevelBlockStat
 }
 
 const mapStateToProps2 = ({quarantine}) => ({quarantine});
-const mapDispatchToProps2 = (dispatch: Dispatch) => ({
+const mapDispatchToProps2 = (dispatch: AppDispatch) => ({
   onDisableEditable: () => dispatch({type: 'DISABLE_QUARANTINE'}),
   onChange: text => dispatch({type: 'CHANGE_QUARANTINE', text}),
 });
@@ -175,7 +175,7 @@ const mapStateToProps = ({ast, cur, quarantine}) => ({
   cur,
   hasQuarantine: !!quarantine
 });
-const mapDispatchToProps = (dispatch) => ({
+const mapDispatchToProps = (dispatch: AppDispatch) => ({
   dispatch,
   setAST: (ast: AST) => dispatch({type: 'SET_AST', ast}),
   setCursor: (_, cur?) => dispatch(setCursor(cur)),
@@ -253,7 +253,7 @@ class BlockEditor extends Component<BlockEditorProps> {
   newAST: AST;
   parse: BlockEditorProps['parse'];
 
-  constructor(props) {
+  constructor(props: BlockEditorProps) {
     super(props);
     this.mouseUsed = false;
 
@@ -304,16 +304,22 @@ class BlockEditor extends Component<BlockEditorProps> {
         // provide a focusHint
         if (changes[0].origin === "undo") {
           for (let c of changes) c.origin = "cmb:undo";
-          const {oldFocusNId, _newFocusNId} = getState().actionFocus;
-          const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
-          commitChanges(changes, true, focusHint, this.newAST);
-          dispatch({type: 'UNDO'});
+          const {actionFocus} = getState();
+          if (actionFocus) {
+            const {oldFocusNId} = actionFocus;
+            const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
+            commitChanges(changes, true, focusHint, this.newAST);
+            dispatch({type: 'UNDO'});  
+          }
         } else if (changes[0].origin === "redo") {
           for (let c of changes) c.origin = "cmb:redo";
-          const {_oldFocusNId, newFocusNId} = getState().actionFocus;
-          const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
-          commitChanges(changes, true, focusHint, this.newAST);
-          dispatch({type: 'REDO'});
+          const {actionFocus} = getState();
+          if (actionFocus) {
+            const {newFocusNId} = actionFocus;
+            const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
+            commitChanges(changes, true, focusHint, this.newAST);
+            dispatch({type: 'REDO'});
+          }
         } else {
           // This (valid) changeset is coming from outside of the editor, but we
           // don't know anything else about it. Apply the change, set the focusHint

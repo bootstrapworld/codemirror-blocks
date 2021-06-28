@@ -51,7 +51,7 @@ function loggerDebug(action: AppAction, ast: AST) { // in lieu of logger.debug
 export type Quarantine = [CodeMirror.Position, CodeMirror.Position, string];
 
 export type RootState = {
-  selections: [];
+  selections: string[];
   editable: {};
   ast: AST | null;
   focusId: string | null;
@@ -68,7 +68,7 @@ export type RootState = {
 export type AppAction =
   | Action<"SET_FOCUS"> & {focusId: string}
   | Action<"SET_AST"> & {ast: AST}
-  | Action<"SET_SELECTIONS"> & {selections: []}
+  | Action<"SET_SELECTIONS"> & {selections: string[]}
   | Action<"SET_EDITABLE"> & {id: string, bool: boolean}
   | Action<"SET_ERROR_ID"> & {errorId: string}
   | Action<"COLLAPSE"> & {id: string}

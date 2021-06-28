@@ -1,5 +1,5 @@
 import {createStore, applyMiddleware, Store} from 'redux';
-import thunk from 'redux-thunk';
+import thunk, { ThunkDispatch } from 'redux-thunk';
 import {reducer} from './reducers';
 import type { RootState, AppAction } from './reducers';
 
@@ -12,7 +12,11 @@ type AppStore =
   {onKeyDown?: Function};
 
 export const store: AppStore = createStore(reducer, undefined, applyMiddleware(thunk));
-export type AppDispatch = typeof store.dispatch;
+/**
+ * A dispatch function that supports calling dispatch with both
+ * AppActions and thunks.
+ */
+export type AppDispatch = ThunkDispatch<RootState, unknown, AppAction>;
 
 /**
  * isErrorFree: (-> Boolean)
