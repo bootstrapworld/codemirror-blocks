@@ -69,6 +69,11 @@ export type Language = {
    * in the search bar.
    */
   primitivesFn?: () => Primitive[];
+
+  /**
+   * @deprecated
+   */
+  primitives: Primitive[];
 };
 
 
