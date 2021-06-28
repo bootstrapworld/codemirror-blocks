@@ -18,6 +18,8 @@ import {poscmp, resetNodeCounter, minpos, maxpos,
 import BlockComponent from '../components/BlockComponent';
 import { defaultKeyMap, keyDown } from '../keymap';
 import {store} from '../store';
+import { ASTNode } from '../ast';
+import CodeMirror from 'codemirror';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
@@ -31,23 +33,30 @@ const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
 
-class ToplevelBlock extends BlockComponent {
-  constructor(props) {
+type ToplevelBlockProps = {
+  incrementalRendering: boolean;
+  node: ASTNode;
+}
+
+type ToplevelBlockState = {
+  renderPlaceholder: boolean;
+}
+
+class ToplevelBlock extends BlockComponent<ToplevelBlockProps, ToplevelBlockState> {
+  container: Element;
+  mark?: CodeMirror.TextMarker;
+
+  constructor(props: ToplevelBlockProps) {
     super(props);
     this.container = document.createElement('span');
     this.container.classList.add('react-container');
+    // by default, let's render a placeholder
+    this.state = { renderPlaceholder: props.incrementalRendering };
   }
-
-  static propTypes = {
-    node: PropTypes.object.isRequired,
-  }
-
-  // by default, let's render a placeholder
-  state = { renderPlaceholder: this.props.incrementalRendering };
 
   // we need to trigger a render if the node was moved or resized at the
   // top-level, in order to re-mark the node and put the DOM in the new marker
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps: ToplevelBlockProps, nextState: ToplevelBlockState) {
     return poscmp(this.props.node.from, nextProps.node.from) !== 0 // moved
       ||   poscmp(this.props.node.to,   nextProps.node.to  ) !== 0 // resized
       ||   super.shouldComponentUpdate(nextProps, nextState)       // changed
