@@ -354,7 +354,7 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
   type: string;
   options: Opt;
   id!: string;
-  level: number = 0;
+  level: number;
   hash: any;
   public static spec: any;
   spec: any;
@@ -362,7 +362,7 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
   parent?: ASTNode;
   prev?: ASTNode;
   next?: ASTNode;
-  nid: number = 0;
+  nid: number;
   "aria-setsize": number;
   "aria-posinset": number;
 
