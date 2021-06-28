@@ -1,7 +1,26 @@
+import CodeMirror from 'codemirror';
+import type { Action } from 'redux';
+import { AST } from './ast';
 import {topmostUndoable} from './utils';
 //import SHARED from './shared'; //used only in debug statements
 
-function loggerDebug(action, ast) { // in lieu of logger.debug
+declare global {
+  interface Window {
+    reducerActivities?: Activity[];
+  }  
+}
+
+/**
+ * An Activity is a shallow-clone of a reducer action, except that
+ * all instances of the AST are replaced with the source code, and
+ * focusIds get replaced with node ids.
+ */
+ type Activity =
+ | Exclude<AppAction, {ast: AST}>
+ | Action<"SET_AST"> & {code: string}
+ | Action<"SET_FOCUS"> & {nid: number};
+
+function loggerDebug(action: AppAction, ast: AST) { // in lieu of logger.debug
   if (!window.reducerActivities) {
     window.reducerActivities = [];
   }
@@ -9,21 +28,67 @@ function loggerDebug(action, ast) { // in lieu of logger.debug
   // Then replace the AST with the source code.
   // We'll reconstruct it when replaying the log.
   // Replace focusId with nid
-  let activity = {...action, ast: false};
-  if(action.type == "SET_AST") {
-    activity.code = ast.toString();
-    delete activity.ast;
+  let activity: Activity;
+  switch (action.type) {
+    case "SET_AST":
+      activity = {type: action.type, code: ast.toString()};
+      break;
+    case "SET_FOCUS":
+      if (ast && ast.getNodeById(action.focusId)) {
+        activity = {
+          type: action.type,
+          nid: ast.getNodeById(action.focusId).nid,
+        };
+      }
+      break;
+    default:
+      activity = {...action};
   }
-  if(action.type == "SET_FOCUS") {
-    if (ast && ast.getNodeById(action.focusId)) {
-      activity.nid = ast.getNodeById(action.focusId).nid;
-      delete activity.focusId;
-    }
-  }
+
   window.reducerActivities.push(activity);
 }
 
-const initialState = {
+export type Quarantine = [CodeMirror.Position, CodeMirror.Position, string];
+
+export type RootState = {
+  selections: [];
+  editable: {};
+  ast: AST | null;
+  focusId: string | null;
+  collapsedList: string[];
+  markedMap: Map<string, CodeMirror.TextMarker>;
+  undoableAction: string | null;
+  actionFocus: {oldFocusNId: number, newFocusNId: number} | false;
+  errorId: string;
+  cur: CodeMirror.Position | null;
+  quarantine: Quarantine | null;
+  announcer: HTMLElement;
+};
+
+export type AppAction =
+  | Action<"SET_FOCUS"> & {focusId: string}
+  | Action<"SET_AST"> & {ast: AST}
+  | Action<"SET_SELECTIONS"> & {selections: []}
+  | Action<"SET_EDITABLE"> & {id: string, bool: boolean}
+  | Action<"SET_ERROR_ID"> & {errorId: string}
+  | Action<"COLLAPSE"> & {id: string}
+  | Action<"UNCOLLAPSE"> & {id: string}
+  | Action<"COLLAPSE_ALL">
+  | Action<"UNCOLLAPSE_ALL">
+  | Action<"SET_CURSOR"> & {cur: CodeMirror.Position}
+  | Action<"DISABLE_QUARANTINE">
+  | Action<"CHANGE_QUARANTINE"> & {text: string}
+  | Action<"SET_QUARANTINE"> & {start: CodeMirror.Position, end: CodeMirror.Position, text: string}
+  | Action<"SET_ANNOUNCER"> & {announcer: HTMLElement}
+  | Action<"ADD_MARK"> & {id: string, mark: CodeMirror.TextMarker}
+  | Action<"CLEAR_MARK"> & {id: string}
+  | Action<"DO"> & {focusId: string}
+  | Action<"UNDO">
+  | Action<"REDO">
+  | Action<"RESET_STORE_FOR_TESTING">;
+
+
+const initialState: RootState = {
   selections: [],
   editable: {},
   ast: null,
@@ -40,7 +105,7 @@ const initialState = {
 
 export const reducer = (
   state = initialState,
-  action) => {
+  action: AppAction) => {
   console.log(action);
   let result = null;
   let tU;
@@ -125,7 +190,7 @@ export const reducer = (
     result =  initialState;
     break;
   default:
-    console.log('unprocessed action type=', action.type);
+    console.log('unprocessed action type=', (action as Action<any>).type);
     result =  state;
   }
 

@@ -11,7 +11,6 @@ import NodeEditable from '../components/NodeEditable';
 import {activateByNid, setCursor, OverwriteTarget} from '../actions';
 import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges, getTempCM} from '../edits/speculateChanges';
-import {pos} from '../types';
 import DragAndDropEditor from './DragAndDropEditor';
 import {poscmp, resetNodeCounter, minpos, maxpos,
   validateRanges, BlockError} from '../utils';
@@ -24,6 +23,7 @@ import CodeMirror from 'codemirror';
 import type { Options, API } from '../CodeMirrorBlocks';
 import type { Dispatch } from 'redux';
 import Toolbar from './Toolbar';
+import type { Quarantine } from '../reducers';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
@@ -109,8 +109,6 @@ const mapDispatchToProps2 = (dispatch: Dispatch) => ({
   onChange: text => dispatch({type: 'CHANGE_QUARANTINE', text}),
 });
 const toplevelBlockEditableConnector = connect(mapStateToProps2, mapDispatchToProps2);
-
-type Quarantine = [CodeMirror.Position, CodeMirror.Position, unknown];
 
 type ToplevelBlockEditableCoreProps = ConnectedProps<typeof toplevelBlockEditableConnector> & {
   quarantine: Quarantine;
