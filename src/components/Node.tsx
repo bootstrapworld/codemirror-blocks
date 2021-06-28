@@ -13,6 +13,7 @@ import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
 import CodeMirror from 'codemirror';
+import { GetProps } from 'react-dnd';
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -20,7 +21,7 @@ import CodeMirror from 'codemirror';
 
 type NodeState = {editable: boolean, value: string | null};
 
-class Node extends BlockComponent<NodeProps, NodeState> {
+class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
   static contextType = DropTargetContext;
 
   static defaultProps = {
@@ -227,23 +228,22 @@ const mapDispatchToProps = (dispatch: AppDispatch) => ({
 
 const connector = connect(mapStateToProps, mapDispatchToProps);
 
-type NodeProps = ConnectedProps<typeof connector> & {
+type EnhancedNodeProps = ConnectedProps<typeof connector> & {
   node: ASTNode;
+  inToolbar?: boolean;
+  normallyEditable?: boolean;
+  expandable: boolean;
 
+  // These all come from the dnd enhancers and don't need
+  // to be supplied by users of the default export
   connectDragSource: Function;
   isDragging: boolean;
   connectDropTarget: Function;
   connectDragPreview: Function;
   isOver: boolean;
-  inToolbar?: boolean;
-
-  normallyEditable?: boolean;
-
-  expandable: boolean;
-
 }
 
-export default connector(
+const ConnectedNode = connector(
   DragNodeSource(
     DropNodeTarget(function(monitor) {
       const node = store.getState().ast.getNodeById(this.props.node.id);
@@ -251,3 +251,7 @@ export default connector(
     })(Node)
   )
 );
+
+export type NodeProps = GetProps<typeof ConnectedNode>;
+
+export default ConnectedNode;

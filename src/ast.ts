@@ -341,7 +341,7 @@ export type Pos = {
   ch: number;
 }
 
-type NodeOptions = {
+export type NodeOptions = {
   comment?: {
     id: string;
     from: Pos;
