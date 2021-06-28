@@ -2,6 +2,7 @@ import {poscmp, minpos, maxpos, posWithinNode,
   nodeCommentContaining, gensym, hashObject} from './utils';
 import * as P from 'pretty-fast-pretty-printer';
 import type CodeMirror from 'codemirror';
+import type React from 'react';
 
 
 export function enumerateList(lst: ASTNode[], level: number) {
@@ -342,9 +343,10 @@ export type Pos = {
 
 type NodeOptions = {
   comment?: {
-    id: string,
-    from: Pos,
-    to: Pos
+    id: string;
+    from: Pos;
+    to: Pos;
+    reactElement: () => React.ReactElement;
   };
   "aria-label"?: string;
 }
@@ -368,6 +370,18 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
   nid: number = 0;
   "aria-setsize": number;
   "aria-posinset": number;
+
+  /**
+   * @internal
+   * Stores the html element that this ast node was rendered into.
+   */
+  element: HTMLElement;
+
+  /**
+   * @internal
+   * Used for unit testing only
+   */
+  isEditable: () => boolean;
 
   /**
    * @internal
@@ -426,7 +440,7 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
     }
   }
 
-  shortDescription(level: number): string {
+  shortDescription(level?: number): string {
     return this.options["aria-label"] || "";
   }
 
