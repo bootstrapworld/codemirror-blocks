@@ -36,7 +36,7 @@ export function value(fieldName: string) {
   return new Value(fieldName);
 }
 
-class NodeSpec {
+export class NodeSpec {
   childSpecs: ChildSpec[];
   constructor(childSpecs: ChildSpec[]) {
     if (!(childSpecs instanceof Array)) {
