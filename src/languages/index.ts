@@ -1,6 +1,8 @@
-export const LANGUAGES = {};
+import type { Language } from "../CodeMirrorBlocks";
 
-export function addLanguage(languageDefinition) {
+export const LANGUAGES: Record<string, Language> = {};
+
+export function addLanguage(languageDefinition: Language) {
   var id = languageDefinition.id;
   if (!id) {
     throw new Error(`language definition missing an 'id' attribute`);
@@ -25,14 +27,14 @@ export function addLanguage(languageDefinition) {
   return languageDefinition;
 }
 
-export function getLanguage(languageId) {
+export function getLanguage(languageId: string) {
   if (!LANGUAGES[languageId]) {
     console.warn('Trying to get language', languageId, 'but it hasn\'t been added yet');
   }
   return LANGUAGES[languageId];
 }
 
-export function removeLanguage(languageId) {
+export function removeLanguage(languageId: string) {
   delete LANGUAGES[languageId];
 }
 

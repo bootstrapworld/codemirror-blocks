@@ -1,16 +1,27 @@
 import {getLanguage} from '../languages';
+import type {Language} from '../CodeMirrorBlocks';
 
 export class Primitive {
-  constructor(languageId, name, {argumentTypes, returnType}={}) {
+  languageId: string;
+  name: string;
+  parse: Language['parse'];
+  primitivesFn: Language['primitivesFn'];
+  primitives: Language['primitives'];
+  getASTNodeForPrimitive: Language['getASTNodeForPrimitive'];
+  getLiteralNodeForPrimitive: Language['getLiteralNodeForPrimitive'];
+  argumentTypes: string[];
+  returnType: string;
+
+  constructor(languageId: string, name: string, config: {argumentTypes?: string[], returnType?: string} = {}) {
     this.languageId = languageId;
     this.parse = languageId ? getLanguage(languageId).parse : null;
     this.primitives = languageId ? getLanguage(languageId).primitives : null;
-    this.primitivesFn = languageId ? getLanguage(languageId).PrimitivesFn : null;
+    this.primitivesFn = languageId ? getLanguage(languageId).primitivesFn : null;
     this.getASTNodeForPrimitive = languageId ? getLanguage(languageId).getASTNodeForPrimitive : null;
     this.getLiteralNodeForPrimitive = languageId ? getLanguage(languageId).getLiteralNodeForPrimitive : null;
     this.name = name;
-    this.argumentTypes = argumentTypes || [];
-    this.returnType = returnType;
+    this.argumentTypes = config.argumentTypes || [];
+    this.returnType = config.returnType;
   }
 
   toString() {
@@ -29,7 +40,7 @@ export class Primitive {
     }
   }
 
-  static fromConfig(languageId, config) {
+  static fromConfig(languageId: string, config: PrimitiveConfig) {
     return new Primitive(
       languageId,
       config.name,
@@ -41,14 +52,29 @@ export class Primitive {
   }
 }
 
+type PrimitiveConfig = {
+  name: string;
+  argumentTypes: string[];
+  returnType: string;
+  primitives: undefined;
+}
+
+type PrimitiveGroupConfig = {
+  name: string;
+  primitives: (string|PrimitiveGroupConfig|PrimitiveConfig)[];
+}
+
 export class PrimitiveGroup {
-  constructor(languageId, name, primitives) {
+  languageId: string;
+  name: string;
+  primitives: (Primitive|PrimitiveGroup)[]
+  constructor(languageId: string, name: string, primitives: (Primitive|PrimitiveGroup)[]) {
     this.languageId = languageId;
     this.name = name;
     this.primitives = primitives;
   }
 
-  filter(search) {
+  filter(search: string) {
     if (!search) {
       return this;
     }
@@ -69,7 +95,7 @@ export class PrimitiveGroup {
     return new PrimitiveGroup(this.languageId, this.name, result);
   }
 
-  static fromConfig(languageId, config) {
+  static fromConfig(languageId: string, config: PrimitiveGroupConfig) {
     var {name, primitives} = config;
     if (!name) {
       throw new Error('No name specified for primitive group');
@@ -78,7 +104,7 @@ export class PrimitiveGroup {
       console.warn(`primitive group "${name}" doesn't have any primitives`);
       primitives = [];
     }
-    const items = [];
+    const items: (Primitive|PrimitiveGroup)[] = [];
     for (let item of primitives) {
       if (typeof item == 'string') {
         items.push(new Primitive(languageId, item));
@@ -87,7 +113,7 @@ export class PrimitiveGroup {
           // it's a group
           items.push(PrimitiveGroup.fromConfig(languageId, item));
         } else {
-          items.push(Primitive.fromConfig(languageId, item));
+          items.push(Primitive.fromConfig(languageId, item as PrimitiveConfig));
         }
       } else {
         throw new Error(`Unable to understand config object of type ${typeof item}`);

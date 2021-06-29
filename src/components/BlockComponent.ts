@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import PropTypes from 'prop-types';
+import type { ASTNode } from '../ast';
 
 // Check to see whether two `prop` or `state` objects are roughly equal to each
 // other, enough so that we don't need to re-render a node if that's all that
@@ -30,14 +31,11 @@ function vaguelyEqual(x, y) {
   return true;
 }
 
-export default class BlockComponent extends Component {
-  static propTypes = {
-    node: PropTypes.object
-  }
+export default class BlockComponent<Props extends {node: ASTNode}, State> extends Component<Props, State> {
 
   // update if one of the nodes is null, the hash has changed, the props or state
   // have changed, or if the aria properties have changed
-  shouldComponentUpdate(props, state) {
+  shouldComponentUpdate(props: Props, state: State) {
     // NOTE: don't care about the node since the patching algorithm will deal
     // with the update already
     const {node: newValue, ...newProps} = props;
