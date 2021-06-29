@@ -6,10 +6,14 @@ const webpack = require('webpack');
 const rules = baseConfig.module.rules.concat();
 if (envConfig.runCoverage) {
   rules.push({
-    test: /\.js/,
-    use: 'istanbul-instrumenter-loader',
+    test: /(\.js|\.ts)/,
+    loader: 'istanbul-instrumenter-loader',
     include: path.resolve(__dirname, '..', 'src'),
-    exclude: [ /(src\/languages|node_modules)/]
+    exclude: [ /(src\/languages|node_modules)/],
+    enforce: 'post',
+    options: {
+      esModules: true
+    }
   });
 }
 
