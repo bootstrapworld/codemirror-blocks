@@ -80,7 +80,7 @@ declare module 'codemirror' {
      * This property is not documented in the codemirror docs but apparently
      * works.
      */
-    options: TextMarkerOptions;
+    options: CodeMirror.TextMarkerOptions;
 
     /**
      * Stores the ast node id associated with this text marker.

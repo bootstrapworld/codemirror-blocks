@@ -5,6 +5,8 @@
         "jsx": "react",
         "moduleResolution": "node",
         "sourceMap": true,
-        "allowSyntheticDefaultImports": true
+        "allowSyntheticDefaultImports": true,
+        // Don't typecheck stuff internal to node_modules
+        "skipLibCheck": true,
     }
 }

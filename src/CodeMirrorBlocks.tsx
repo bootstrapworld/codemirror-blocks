@@ -2,14 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ToggleEditor from './ui/ToggleEditor';
 import Args from './components/Args';
-import {DropTarget} from './components/DropTarget';
+import * as DropTarget from './components/DropTarget';
 import Node from './components/Node';
-import type {AST, ASTNode} from './ast';
+import * as AST from './ast';
 import * as Nodes from './nodes';
 import type {Literal} from './nodes';
 import * as NodeSpec from './nodeSpec';
 import * as Languages from './languages';
-import Pretty from 'pretty-fast-pretty-printer';
+import * as Pretty from 'pretty-fast-pretty-printer';
 import { PrimitiveGroup } from './parsers/primitives';
 import type {Primitive} from './parsers/primitives';
 import type {API} from './ui/ToggleEditor';
@@ -46,7 +46,7 @@ export type Language = {
    * @param code source code for the program
    * @returns The ast that codemirror-blocks will render
    */
-  parse(code: string): AST;
+  parse(code: string): AST.AST;
 
   /**
    * A function for generating a human readable error message
@@ -57,7 +57,7 @@ export type Language = {
   /**
    * A function for generating ASTNodes from Primitives
    */
-  getASTNodeForPrimitive?: (primitive: Primitive) => ASTNode;
+  getASTNodeForPrimitive?: (primitive: Primitive) => AST.ASTNode;
 
   /**
    * A function for generating a Literal ast node from a Primitive
