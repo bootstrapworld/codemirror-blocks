@@ -1,5 +1,5 @@
-import React  from 'react';
-import {connect} from 'react-redux';
+import React, { HTMLAttributes }  from 'react';
+import {connect, ConnectedProps} from 'react-redux';
 import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
 import {drop, delete_, copy, paste, activateByNid, setCursor,
@@ -7,47 +7,27 @@ import {drop, delete_, copy, paste, activateByNid, setCursor,
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
 import {NodeContext, DropTargetContext, findAdjacentDropTargetId} from './DropTarget';
-import {isErrorFree} from '../store';
+import {AppDispatch, isErrorFree} from '../store';
 import SHARED from '../shared';
 import {DragNodeSource, DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {store} from '../store';
+import CodeMirror from 'codemirror';
+import { GetProps } from 'react-dnd';
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
 
-@DragNodeSource
-@DropNodeTarget(function(monitor) {
-  const node = store.getState().ast.getNodeById(this.props.node.id);
-  return drop(monitor.getItem(), new ReplaceNodeTarget(node));
-})
-class Node extends BlockComponent {
+type NodeState = {editable: boolean, value: string | null};
+
+class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
   static contextType = DropTargetContext;
 
   static defaultProps = {
     children: null,
     normallyEditable: false,
     expandable: true,
-  }
-
-  static propTypes = {
-    node: PropTypes.instanceOf(ASTNode).isRequired,
-    children: PropTypes.node,
-
-    connectDragSource: PropTypes.func.isRequired,
-    isDragging: PropTypes.bool.isRequired,
-    connectDropTarget: PropTypes.func.isRequired,
-    isOver: PropTypes.bool.isRequired,
-    inToolbar: PropTypes.bool,
-
-    normallyEditable: PropTypes.bool,
-
-    isSelected: PropTypes.bool.isRequired,
-    expandable: PropTypes.bool,
-    textMarker: PropTypes.object,
-
-    activateByNid: PropTypes.func.isRequired,
   }
 
   state = {editable: false, value: null}
@@ -150,9 +130,9 @@ class Node extends BlockComponent {
     if(comment) comment.id = `block-node-${node.id}-comment`;
     const locked = this.isLocked();
 
-    const props = {
+    const props: HTMLAttributes<HTMLSpanElement> = {
       id                : `block-node-${node.id}`,
-      tabIndex          : "-1",
+      tabIndex          : -1,
       'aria-selected'   : isSelected,
       'aria-label'      : node.shortDescription()+',' ,
       'aria-labelledby' : `block-node-${node.id} ${comment ? comment.id : ''}`,
@@ -163,7 +143,7 @@ class Node extends BlockComponent {
       'aria-level'      : node.level,
     };
 
-    const classes = [
+    const classes: Parameters<typeof classNames> = [
       {'blocks-locked': locked},
       `blocks-${node.type}`
     ];
@@ -200,7 +180,7 @@ class Node extends BlockComponent {
           style={{
             opacity: isDragging ? 0.5 : 1,
             cssText : textMarker? textMarker.options.css : null,
-          }}
+          } as any}
           title         = {textMarker? textMarker.options.title : null}
           onMouseDown   = {this.handleMouseDown}
           onClick       = {this.handleClick}
@@ -237,13 +217,41 @@ const mapStateToProps = (
   };
 };
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch: AppDispatch) => ({
   dispatch,
-  collapse: id => dispatch({type: 'COLLAPSE', id}),
-  uncollapse: id => dispatch({type: 'UNCOLLAPSE', id}),
-  setCursor: cur => dispatch(setCursor(cur)),
-  activateByNid: (nid, options) => dispatch(activateByNid(nid, options)),
-  setEditable: (id, bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
+  collapse: (id: string) => dispatch({type: 'COLLAPSE', id}),
+  uncollapse: (id: string) => dispatch({type: 'UNCOLLAPSE', id}),
+  setCursor: (cur: CodeMirror.Position) => dispatch(setCursor(cur)),
+  activateByNid: (nid: number, options: {allowMove?: boolean, record?: boolean}) => dispatch(activateByNid(nid, options)),
+  setEditable: (id: string, bool: boolean) => dispatch({type: 'SET_EDITABLE', id, bool}),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Node);
+const connector = connect(mapStateToProps, mapDispatchToProps);
+
+type EnhancedNodeProps = ConnectedProps<typeof connector> & {
+  node: ASTNode;
+  inToolbar?: boolean;
+  normallyEditable?: boolean;
+  expandable: boolean;
+
+  // These all come from the dnd enhancers and don't need
+  // to be supplied by users of the default export
+  connectDragSource: Function;
+  isDragging: boolean;
+  connectDropTarget: Function;
+  connectDragPreview: Function;
+  isOver: boolean;
+}
+
+const ConnectedNode = connector(
+  DragNodeSource(
+    DropNodeTarget(function(monitor) {
+      const node = store.getState().ast.getNodeById(this.props.node.id);
+      return drop(monitor.getItem(), new ReplaceNodeTarget(node));
+    })(Node)
+  )
+);
+
+export type NodeProps = GetProps<typeof ConnectedNode>;
+
+export default ConnectedNode;

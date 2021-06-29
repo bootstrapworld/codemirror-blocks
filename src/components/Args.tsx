@@ -5,11 +5,12 @@ import {ASTNode} from '../ast';
 import {DropTarget} from './DropTarget';
 import {span} from '../types';
 
-export default class Args extends Component {
-  static propTypes = {
-    field: PropTypes.string.isRequired,
-    children: PropTypes.arrayOf(PropTypes.instanceOf(ASTNode)).isRequired,
-  }
+export type ArgsProps = {
+  field: string;
+  children: ASTNode[];
+}
+
+export default class Args extends Component<ArgsProps> {
 
   render() {
     let {children} = this.props;

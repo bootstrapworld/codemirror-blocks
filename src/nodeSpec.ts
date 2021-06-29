@@ -12,32 +12,33 @@ import { hashObject } from './utils';
 // - value: an ordinary value that does not contain an ASTNode.
 
 // nodeSpec :: Array<ChildSpec> -> NodeSpec
-export function nodeSpec(childSpecs) {
+export function nodeSpec(childSpecs: ChildSpec[]) {
   return new NodeSpec(childSpecs);
 }
 
 // required :: String -> ChildSpec
-export function required(fieldName) {
+export function required(fieldName: string) {
   return new Required(fieldName);
 }
 
 // optional :: String -> ChildSpec
-export function optional(fieldName) {
+export function optional(fieldName: string) {
   return new Optional(fieldName);
 }
 
 // list :: String -> ChildSpec
-export function list(fieldName) {
+export function list(fieldName: string) {
   return new List(fieldName);
 }
 
 // value :: any -> ChildSpec
-export function value(fieldName) {
+export function value(fieldName: string) {
   return new Value(fieldName);
 }
 
 class NodeSpec {
-  constructor(childSpecs) {
+  childSpecs: ChildSpec[];
+  constructor(childSpecs: ChildSpec[]) {
     if (!(childSpecs instanceof Array)) {
       throw new Error("NodeSpec: expected to receive an array of required/optional/list specs.");
     }
@@ -49,18 +50,18 @@ class NodeSpec {
     this.childSpecs = childSpecs;
   }
 
-  validate(node) {
+  validate(node: ASTNode) {
     for (const childSpec of this.childSpecs) {
       childSpec.validate(node);
     }
   }
 
-  hash(node) {
+  hash(node: ASTNode) {
     let hashes = new HashIterator(node, this);
     return hashObject([node.type, [...hashes], node.options.comment?.comment]);
   }
 
-  children(node) {
+  children(node: ASTNode) {
     return new ChildrenIterator(node, this);
   }
 
@@ -70,7 +71,9 @@ class NodeSpec {
 }
 
 class ChildrenIterator {
-  constructor(parent, nodeSpec) {
+  nodeSpec: NodeSpec;
+  parent: ASTNode;
+  constructor(parent: ASTNode, nodeSpec: NodeSpec) {
     this.parent = parent;
     this.nodeSpec = nodeSpec;
   }
@@ -91,7 +94,9 @@ class ChildrenIterator {
 }
 
 class HashIterator {
-  constructor(parent, nodeSpec) {
+  nodeSpec: NodeSpec;
+  parent: ASTNode;
+  constructor(parent: ASTNode, nodeSpec: NodeSpec) {
     this.parent = parent;
     this.nodeSpec = nodeSpec;
   }
@@ -106,20 +111,23 @@ class HashIterator {
           yield elem.hash;
         }
       } else {
-        yield (field == null)? hashObject(null) : field.hash;
+        yield field == null ? hashObject(null) : field.hash;
       }
     }
   }
 }
 
-class ChildSpec {}
+abstract class ChildSpec {
+  fieldName: string;
 
-export class Required extends ChildSpec {
-  constructor(fieldName) {
-    super();
+  constructor(fieldName: string) {
     this.fieldName = fieldName;
   }
 
+  abstract validate(parent): void;
+}
+
+export class Required extends ChildSpec {
   validate(parent) {
     if (!(parent[this.fieldName] instanceof ASTNode)) {
       throw new Error(`Expected the required field '${this.fieldName}' of '${parent.type}' to contain an ASTNode.`);
@@ -128,11 +136,6 @@ export class Required extends ChildSpec {
 }
 
 export class Optional extends ChildSpec {
-  constructor(fieldName) {
-    super();
-    this.fieldName = fieldName;
-  }
-
   validate(parent) {
     let child = parent[this.fieldName];
     if (child !== null && !(child instanceof ASTNode)) {
@@ -142,11 +145,6 @@ export class Optional extends ChildSpec {
 }
 
 export class List extends ChildSpec {
-  constructor(fieldName) {
-    super();
-    this.fieldName = fieldName;
-  }
-
   validate(parent) {
     let array = parent[this.fieldName];
     let valid = true;
@@ -164,11 +162,6 @@ export class List extends ChildSpec {
 }
 
 export class Value extends ChildSpec {
-  constructor(fieldName) {
-    super();
-    this.fieldName = fieldName;
-  }
-
   validate(_parent) {
     // Any value is valid, even `undefined`, so there's nothing to check.
   }

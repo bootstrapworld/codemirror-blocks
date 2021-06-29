@@ -1,7 +1,7 @@
 import * as P from 'pretty-fast-pretty-printer';
 import React from 'react';
-import {ASTNode, enumerateList, pluralize} from './ast';
-import Node from './components/Node';
+import {ASTNode, enumerateList, NodeOptions, pluralize, Pos} from './ast';
+import Node, { NodeProps } from './components/Node';
 import Args from './components/Args';
 import { DropTarget } from './components/DropTarget';
 import * as Spec from './nodeSpec';
@@ -31,7 +31,9 @@ function withComment(doc, comment, container) {
 }
 
 export class Unknown extends ASTNode {
-  constructor(from, to, elts, options={}) {
+  elts: ASTNode[];
+
+  constructor(from: Pos, to: Pos, elts: ASTNode[], options: NodeOptions = {}) {
     super(from, to, 'unknown', options);
     this.elts = elts;
   }
@@ -40,7 +42,7 @@ export class Unknown extends ASTNode {
     Spec.list('elts')
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     return `an unknown expression with ${pluralize("children", this.elts)} `+ 
       this.elts.map((e, i, elts)  => (elts.length>1? (i+1) + ": " : "")+ e.describe(level)).join(", ");
   }
@@ -52,7 +54,7 @@ export class Unknown extends ASTNode {
       this);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     const firstElt = this.elts[0].reactElement();
     const restElts = this.elts.slice(1);
     return (
@@ -67,7 +69,10 @@ export class Unknown extends ASTNode {
 }
 
 export class FunctionApp extends ASTNode {
-  constructor(from, to, func, args, options={}) {
+  func: ASTNode;
+  args: ASTNode[];
+  
+  constructor(from: Pos, to: Pos, func: ASTNode, args: ASTNode[], options:NodeOptions={}) {
     super(from, to, 'functionApp', options);
     this.func = func;
     this.args = args;
@@ -78,7 +83,7 @@ export class FunctionApp extends ASTNode {
     Spec.list('args')
   ])
 
-  longDescription(level) {
+  override longDescription(level: number) {
     // if it's the top level, enumerate the args
     if((this.level  - level) == 0) {
       return `applying the function ${this.func.describe(level)} to ${pluralize("argument", this.args)} `+
@@ -95,7 +100,7 @@ export class FunctionApp extends ASTNode {
       this);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     const func = this.func.reactElement();
     return (
       <Node node={this} {...props}>
@@ -111,7 +116,10 @@ export class FunctionApp extends ASTNode {
 }
 
 export class IdentifierList extends ASTNode {
-  constructor(from, to, kind, ids, options={}) {
+  kind: string;
+  ids: ASTNode[];
+
+  constructor(from: Pos, to: Pos, kind: string, ids: ASTNode[], options: NodeOptions={}) {
     super(from, to, 'identifierList', options);
     this.kind = kind;
     this.ids = ids;
@@ -133,7 +141,7 @@ export class IdentifierList extends ASTNode {
       this);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     return (
       <Node node={this} {...props}>
         <span className="blocks-args">
@@ -145,7 +153,9 @@ export class IdentifierList extends ASTNode {
 }
 
 export class StructDefinition extends ASTNode {
-  constructor(from, to, name, fields, options={}) {
+  name: ASTNode;
+  fields: ASTNode;
+  constructor(from: Pos, to: Pos, name: ASTNode, fields: ASTNode, options: NodeOptions={}) {
     super(from, to, 'structDefinition', options);
     this.name = name;
     this.fields = fields;
@@ -167,7 +177,7 @@ export class StructDefinition extends ASTNode {
       this);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     const name = this.name.reactElement();
     const fields = this.fields.reactElement();
     return (
@@ -183,7 +193,10 @@ export class StructDefinition extends ASTNode {
 }
 
 export class VariableDefinition extends ASTNode {
-  constructor(from, to, name, body, options={}) {
+  name: ASTNode;
+  body: ASTNode;
+
+  constructor(from: Pos, to: Pos, name: ASTNode, body: ASTNode, options={}) {
     super(from, to, 'variableDefinition', options);
     this.name = name;
     this.body = body;
@@ -206,7 +219,7 @@ export class VariableDefinition extends ASTNode {
       this);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     const body = this.body.reactElement();
     const name = this.name.reactElement();
     return (
@@ -224,7 +237,9 @@ export class VariableDefinition extends ASTNode {
 }
 
 export class LambdaExpression extends ASTNode {
-  constructor(from, to, args, body, options={}) {
+  body: ASTNode;
+  args: IdentifierList;
+  constructor(from: Pos, to: Pos, args: IdentifierList, body: ASTNode, options={}) {
     super(from, to, 'lambdaExpression', options);
     this.args = args;
     this.body = body;
@@ -245,7 +260,7 @@ export class LambdaExpression extends ASTNode {
     return P.lambdaLikeSexpr("lambda(", P.horz("(", this.args, ")"), this.body);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     const args = this.args.reactElement();
     const body = this.body.reactElement();
     return (
@@ -262,7 +277,10 @@ export class LambdaExpression extends ASTNode {
 }
 
 export class FunctionDefinition extends ASTNode {
-  constructor(from, to, name, params, body, options={}) {
+  name: ASTNode;
+  params: ASTNode;
+  body: ASTNode;
+  constructor(from: Pos, to: Pos, name: ASTNode, params: ASTNode, body: ASTNode, options={}) {
     super(from, to, 'functionDefinition', options);
     this.name = name;
     this.params = params;
@@ -291,7 +309,7 @@ export class FunctionDefinition extends ASTNode {
       this);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     let params = this.params.reactElement();
     let body = this.body.reactElement();
     let name = this.name.reactElement();
@@ -309,7 +327,9 @@ export class FunctionDefinition extends ASTNode {
 }
 
 export class CondClause extends ASTNode {
-  constructor(from, to, testExpr, thenExprs, options={}) {
+  testExpr: ASTNode;
+  thenExprs: ASTNode[];
+  constructor(from: Pos, to: Pos, testExpr: ASTNode, thenExprs: ASTNode[], options={}) {
     super(from, to, 'condClause', options);
     this.testExpr = testExpr;
     this.thenExprs = thenExprs;
@@ -328,7 +348,7 @@ export class CondClause extends ASTNode {
     return P.horz("[", P.sepBy([this.testExpr].concat(this.thenExprs), " "), "]");
   }
 
-  render(props) {
+  render(props: NodeProps) {
     const testExpr = this.testExpr.reactElement();
     return (
       <Node node={this} {...props}>
@@ -351,7 +371,8 @@ export class CondClause extends ASTNode {
 }
 
 export class CondExpression extends ASTNode {
-  constructor(from, to, clauses, options={}) {
+  clauses: ASTNode[];
+  constructor(from: Pos, to: Pos, clauses: ASTNode[], options={}) {
     super(from, to, 'condExpression', options);
     this.clauses = clauses;
   }
@@ -360,7 +381,7 @@ export class CondExpression extends ASTNode {
     Spec.list('clauses')
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     return `a conditional expression with ${pluralize("condition", this.clauses)}: 
             ${this.clauses.map(c => c.describe(level))}`;
   }
@@ -369,7 +390,7 @@ export class CondExpression extends ASTNode {
     return P.beginLikeSexpr("cond", this.clauses);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     const clauses = this.clauses.map((clause, index) => clause.reactElement({key: index}));
     return (
       <Node node={this} {...props}>
@@ -383,7 +404,10 @@ export class CondExpression extends ASTNode {
 }
 
 export class IfExpression extends ASTNode {
-  constructor(from, to, testExpr, thenExpr, elseExpr, options={}) {
+  testExpr: ASTNode;
+  thenExpr: ASTNode;
+  elseExpr: ASTNode;
+  constructor(from: Pos, to: Pos, testExpr: ASTNode, thenExpr: ASTNode, elseExpr: ASTNode, options={}) {
     super(from, to, 'ifExpression', options);
     this.testExpr = testExpr;
     this.thenExpr = thenExpr;
@@ -408,7 +432,7 @@ export class IfExpression extends ASTNode {
       this);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     const testExpr = this.testExpr.reactElement();
     const thenExpr = this.thenExpr.reactElement();
     const elseExpr = this.elseExpr.reactElement();
@@ -439,7 +463,9 @@ export class IfExpression extends ASTNode {
 }
 
 export class Literal extends ASTNode {
-  constructor(from, to, value, dataType='unknown', options={}) {
+  value: any;
+  dataType: any;
+  constructor(from: Pos, to: Pos, value: any, dataType:any='unknown', options={}) {
     super(from, to, 'literal', options);
     this.value = value;
     this.dataType = dataType;
@@ -458,7 +484,7 @@ export class Literal extends ASTNode {
     return withComment(P.txt(this.value), this.options.comment, this);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     return (
       <Node node={this}
             normallyEditable={true}
@@ -473,7 +499,8 @@ export class Literal extends ASTNode {
 }
 
 export class Comment extends ASTNode {
-  constructor(from, to, comment, options={}) {
+  comment: string;
+  constructor(from: Pos, to: Pos, comment: string, options={}) {
     super(from, to, 'comment', options);
     this.comment = comment;
     this.isLockedP = true;
@@ -494,7 +521,7 @@ export class Comment extends ASTNode {
     return P.concat("#| ", wrapped, " |#");
   }
 
-  render(props) { // eslint-disable-line no-unused-vars
+  render(props: NodeProps) { // eslint-disable-line no-unused-vars
     return (<span className="blocks-comment" id={this.id} aria-hidden="true">
       <span className="screenreader-only">Has comment,</span> <span>{this.comment.toString()}</span>
     </span>);
@@ -502,7 +529,9 @@ export class Comment extends ASTNode {
 }
 
 export class Blank extends ASTNode {
-  constructor(from, to, value, dataType='blank', options={}) {
+  value: any;
+  dataType: any;
+  constructor(from: Pos, to: Pos, value: any, dataType: any = 'blank', options={}) {
     super(from, to, 'blank', options);
     this.value = value || "...";
     this.dataType = dataType;
@@ -521,7 +550,7 @@ export class Blank extends ASTNode {
     return P.txt(this.value);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     return (
       <Node node={this}
             normallyEditable={true}
@@ -534,7 +563,9 @@ export class Blank extends ASTNode {
 }
 
 export class Sequence extends ASTNode {
-  constructor(from, to, exprs, name, options={}) {
+  exprs: ASTNode[];
+  name: string;
+  constructor(from: Pos, to: Pos, exprs: ASTNode[], name: string, options={}) {
     super(from, to, 'sequence', options);
     this.exprs = exprs;
     this.name = name;
@@ -553,7 +584,7 @@ export class Sequence extends ASTNode {
     return P.vert(this.name, ...this.exprs);
   }
 
-  render(props) {
+  render(props: NodeProps) {
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">{this.name}</span>

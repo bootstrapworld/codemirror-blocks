@@ -1,14 +1,15 @@
 import React, {Component, createContext} from 'react';
-import {connect} from 'react-redux';
+import {connect, ConnectedProps} from 'react-redux';
 import PropTypes from 'prop-types';
 import NodeEditable from './NodeEditable';
 import SHARED from '../shared';
 import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
-import {isErrorFree} from '../store';
+import {AppDispatch, isErrorFree} from '../store';
 import BlockComponent from './BlockComponent';
 import {gensym} from '../utils';
 import {drop, InsertTarget} from '../actions';
+import { AST, ASTNode } from '../ast';
 
 // Provided by `Node`
 export const NodeContext = createContext({
@@ -62,12 +63,15 @@ export function findAdjacentDropTargetId(child, onLeft) {
 // But AFAIK that's not feasible, because the `id` needs to be accessible
 // inside `mapStateToProps`, and it's only accessible if it's a `prop`.
 // Hence this extraneous class.
-export class DropTarget extends Component {
+export class DropTarget extends Component<{field: string}> {
   static contextType = NodeContext;
 
   static propTypes = {
     field: PropTypes.string.isRequired,
   }
+
+  isDropTarget: boolean;
+  id: string;
 
   constructor(props) {
     super(props);
@@ -93,7 +97,7 @@ field declared. The node was:`, value.node
 
     return (
       <DropTargetContext.Provider value={value}>
-        <ActualDropTarget id={this.id} />
+        <ActualDropTargetEnhanced id={this.id} />
       </DropTargetContext.Provider>
     );
   }
@@ -103,37 +107,40 @@ field declared. The node was:`, value.node
 // check to see whether an adjacent DropTarget is being edited, or, for when the
 // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
 // as editable.
-const mapStateToProps2 = ({ast, editable}, {id}) => ({
+const mapStateToProps2 = ({ast, editable}:{ast: AST, editable: {}}, {id}:{id: string}) => ({
   ast,
   isEditable: editable[id] || false,
 });
-const mapDispatchToProps2 = (dispatch, {id}) => ({
+const mapDispatchToProps2 = (dispatch: AppDispatch, {id}) => ({
   dispatch,
-  setEditable: (bool) => dispatch({type: 'SET_EDITABLE', id, bool}),
+  setEditable: (bool: boolean) => dispatch({type: 'SET_EDITABLE', id, bool}),
 });
 
-@connect(mapStateToProps2, mapDispatchToProps2)
-@DropNodeTarget(function(monitor) {
-  const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
-  return drop(monitor.getItem(), target);
-})
-class ActualDropTarget extends BlockComponent {
+const connector = connect(mapStateToProps2, mapDispatchToProps2);
+
+type ActualDropTargetProps = ConnectedProps<typeof connector> & {
+  // Every DropTarget has a globally unique `id` which can be used to look up
+  // its corresponding DOM element.
+  id: string;
+  // fulfilled by DropNodeTarget
+  connectDropTarget: Function;
+  isOver: boolean;
+};
+
+type ActualDropTargetState = {value: string, mouseOver: boolean};
+
+// TODO(pcardune): verify that this does not need to extend BlockComponent.
+// BlockComponent requires a node in the props, just so it can have a custom
+// shouldComponentUpdate method that compares node hash values. But we were
+// never passing in a node to this component, in which case shouldComponentUpdate
+// would always return true.
+class ActualDropTarget extends Component<ActualDropTargetProps, ActualDropTargetState> {
 
   static contextType = DropTargetContext;
 
-  static propTypes = {
-    // fulfilled by @connect
-    isEditable: PropTypes.bool.isRequired,
-    setEditable: PropTypes.func.isRequired,
-    // Every DropTarget has a globally unique `id` which can be used to look up
-    // its corresponding DOM element.
-    id: PropTypes.string.isRequired,
-    // fulfilled by DropNodeTarget
-    connectDropTarget: PropTypes.func.isRequired,
-    isOver: PropTypes.bool.isRequired,
-  }
+  isDropTarget: boolean;
 
-  constructor(props) {
+  constructor(props: ActualDropTargetProps) {
     super(props);
     this.isDropTarget = true;
 
@@ -266,3 +273,10 @@ class ActualDropTarget extends BlockComponent {
     );
   }
 }
+
+const ActualDropTargetEnhanced = connector(
+  DropNodeTarget(function(monitor) {
+    const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
+    return drop(monitor.getItem(), target);
+  })(ActualDropTarget)
+)
