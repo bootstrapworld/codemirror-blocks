@@ -1,5 +1,4 @@
 import React, {Component, createRef} from 'react';
-import PropTypes from 'prop-types';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
 import CMBContext from '../components/Context';
@@ -12,6 +11,76 @@ import { ToggleButton, BugButton } from './EditorButtons';
 import { say } from '../utils';
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
+import type { AST } from '../ast';
+import type { Language, Options } from '../CodeMirrorBlocks';
+import CodeMirror, { MarkerRange } from 'codemirror';
+
+/**
+ * Additional declarations of codemirror apis that are not in @types/codemirror... yet.
+ * TODO(pcardune): open a pull request on this file to add these changes:
+ * https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/codemirror/index.d.ts
+ */
+declare module 'codemirror' {
+  interface DocOrEditor {
+    /**
+     * Adds a new selection to the existing set of selections, and makes it the primary selection.
+     */
+    addSelection(anchor: CodeMirror.Position, head?: CodeMirror.Position): void;
+
+    /**
+     * An equivalent of extendSelection that acts on all selections at once.
+     */
+    extendSelections(heads: CodeMirror.Position[]): void;
+
+    /**
+     * Applies the given function to all existing selections, and calls extendSelections on the result.
+     */
+    extendSelectionsBy(f: (range: CodeMirror.Position) => CodeMirror.Position): void;
+
+    /**
+     * Get the value of the 'extending' flag.
+     */
+    getExtending(): boolean;
+
+    /**
+     * Undo one edit or selection change.
+     */
+    undoSelection(): void;
+
+    /**
+     * Redo one undone edit or selection change.
+     */
+    redoSelection(): void;
+  }
+
+  interface Editor {
+    /**
+     * Allow the given string to be translated with the phrases option.
+     */
+    phrase(text: string): string;
+  }
+}
+
+/**
+ * Extensions to the codemirror API that are internal to CMB or
+ * not documented in the codemirror docs.
+ */
+declare module 'codemirror' {
+  interface TextMarker {
+    /**
+     * Specifies the type of text marker, either one made with markText,
+     * or one made with setBookmark. Ones made with setBookmark have
+     * type == "bookmark". This property is not documented in the codemirror
+     * docs.
+     */
+    type: string;
+
+    /**
+     * Stores the ast node id associated with this text marker.
+     */
+    BLOCK_NODE_ID?: string;
+  }
+}
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
@@ -40,27 +109,46 @@ const codeMirrorAPI = ['getValue', 'setValue', 'getRange', 'replaceRange', 'getL
   'getViewport', 'refresh', 'operation', 'startOperation', 'endOperation', 'indentLine', 
   'toggleOverwrite', 'isReadOnly', 'lineSeparator', 'execCommand', 'posFromIndex', 
   'indexFromPos', 'focus', 'phrase', 'getInputField', 'getWrapperElement', 
-  'getScrollerElement', 'getGutterElement'];
+  'getScrollerElement', 'getGutterElement'] as const;
 
-@CMBContext
-class ToggleEditor extends Component {
+type CodeMirrorAPI = Pick<CodeMirror.Editor, typeof codeMirrorAPI[number]>;
+
+type ToggleEditorAPI = {
+  getBlockMode(): boolean;
+  setBlockMode(blockMode: boolean): void;
+  getCM(): CodeMirror.Editor;
+  on: CodeMirror.Editor['on'];
+  off: CodeMirror.Editor['off'];
+  runMode(): never;
+  afterDOMUpdate(f: () => void): void;
+};
+
+export type API = ToggleEditorAPI & CodeMirrorAPI;
+
+export type ToggleEditorProps = {
+  initialCode?: string,
+  cmOptions?: CodeMirror.EditorConfiguration,
+  language: Language,
+  options?: Options,
+  api?: API,
+  appElement: Element,
+  debuggingLog?: {
+    history?: unknown,
+  },
+}
+
+type ToggleEditorState = {
+  blockMode: boolean,
+  // TODO(pcardune): dialog should probably not be a boolean.
+  // I think we are using "false" in place of "null" unnecessarily.
+  dialog: boolean | {title: string, content: string},
+  debuggingLog?: ToggleEditorProps['debuggingLog'],
+}
+
+class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state = {
     blockMode: false,
     dialog: false,
-  }
-
-  static propTypes = {
-    initialCode: PropTypes.string,
-    cmOptions: PropTypes.object,
-    language: PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      parse: PropTypes.func.isRequired,
-    }),
-    options: PropTypes.object,
-    api: PropTypes.object,
-    appElement: PropTypes.instanceOf(Element).isRequired,
-    debuggingLog: PropTypes.object,
   }
 
   static defaultProps = {
@@ -68,7 +156,31 @@ class ToggleEditor extends Component {
     cmOptions: {},
   }
 
-  constructor(props) {
+  // TODO(pcardune): None of these should be here. Denormalizing
+  // props is a very bad thing to do.
+  cmOptions: CodeMirror.EditorConfiguration;
+  language: Language;
+  parse: Language['parse'];
+  getExceptionMessage: Language['getExceptionMessage'];
+  getASTNodeForPrimitive: Language['getASTNodeForPrimitive'];
+  getLiteralNodeForPrimitive: Language['getLiteralNodeForPrimitive'];
+  primitivesFn: Language['primitivesFn'];
+  options: Options;
+
+  // TODO(pcardune): remove this field, as we should be able to rely entirely
+  // on lifecycle methods without having to keep track of which life cycle
+  // methods have been called.
+  hasMounted: boolean;
+
+  currentCode: unknown;
+
+  eventHandlers: Record<string, Function[]>;
+
+  toolbarRef: React.RefObject<Toolbar>;
+  ast?: AST;
+  newAST?: AST;
+
+  constructor(props: ToggleEditorProps) {
     super(props);
 
     this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
@@ -91,7 +203,7 @@ class ToggleEditor extends Component {
       incrementalRendering: true,
       collapseAll: true
     };
-    this.options = Object.assign(defaultOptions, props.options);
+    this.options = {...defaultOptions, ...props.options};
     this.hasMounted = false;
     SHARED.recordedMarks = new Map();
     this.eventHandlers = {}; // blank event-handler record
@@ -105,26 +217,30 @@ class ToggleEditor extends Component {
   loadLoggedActions = (jsonLog) => {
     console.log('log is', jsonLog);
     this.setState({debuggingLog: jsonLog});
-    this.props.api.setValue(jsonLog.startingSource);
+    this.props.api?.setValue(jsonLog.startingSource);
   }
 
-  buildAPI(ed) {
-    const base = {};
-    // any CodeMirror function that we can call directly should be passed-through
+  buildAPI(ed: CodeMirror.Editor): API {
+    const base: any = {};
+    // any CodeMirror function that we can call directly should be passed-through.
     // TextEditor and BlockEditor can add their own, or override them
-    codeMirrorAPI.forEach(f => base[f] = function(){ return ed[f](...arguments); });
+    codeMirrorAPI.forEach(funcName => {
+      base[funcName] = ed[funcName].bind(ed);
+    });
 
-    const api = {
+    const api: ToggleEditorAPI = {
       // custom CMB methods
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
       'getCM': () => ed,
-      'on' : (type, fn) => { 
+      'on' : (...args: Parameters<CodeMirror.Editor['on']>) => {
+        const [type, fn] = args;
         if(!this.eventHandlers[type]) { this.eventHandlers[type] = [fn]; }
         else { this.eventHandlers[type].push(fn); }
         SHARED.cm.on(type, fn);
       },
-      'off' : (type, fn) => { 
+      'off' : (...args: Parameters<CodeMirror.Editor['on']>) => { 
+        const [type, fn] = args;
         this.eventHandlers[type]?.filter(h => h !== fn);
         SHARED.cm.off(type, fn);
       },
@@ -139,7 +255,7 @@ class ToggleEditor extends Component {
   }
 
   // After a mode switch, rebuild the API and re-assign events
-  handleEditorMounted = (ed, api, ast) => {
+  handleEditorMounted = (ed: CodeMirror.Editor, api: API, ast: AST) => {
     // set CM aria attributes, and add announcer
     const mode = this.state.blockMode ? 'Block' : 'Text';
     const wrapper = ed.getWrapperElement();
@@ -150,15 +266,17 @@ class ToggleEditor extends Component {
     // Rebuild the API and assign re-events
     Object.assign(this.props.api, this.buildAPI(ed), api);
     Object.keys(this.eventHandlers).forEach(type => {
-      this.eventHandlers[type].forEach(h => ed.on(type, h));
+      this.eventHandlers[type].forEach(h => ed.on(type as any, h));
     });
     
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
     window.requestAnimationFrame( () => setTimeout(() => {
-      SHARED.recordedMarks.forEach((m, k) => {
+      SHARED.recordedMarks.forEach((m: {options: CodeMirror.TextMarkerOptions}, k: number) => {
         let node = ast.getNodeByNId(k);
-        this.props.api.markText(node.from, node.to, m.options);
+        if (node) {
+          this.props.api?.markText(node.from, node.to, m.options);
+        }
       });
     }, 0));
     // save the editor, and announce completed mode switch
@@ -172,28 +290,50 @@ class ToggleEditor extends Component {
   }
 
   // save any non-block, non-bookmark markers, and the NId they cover
-  copyMarks(oldAST) {
+  copyMarks(oldAST: AST) {
     SHARED.recordedMarks.clear();
-    SHARED.cm.getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
-      .forEach(m => {
-        let {from: oldFrom, to: oldTo} = m.find(), opts = {};
-        let node = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
-        if(!node) { // bail on non-node markers
+    (SHARED.cm as CodeMirror.Editor).getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
+      .forEach((m: CodeMirror.TextMarker<MarkerRange>) => {
+        if (m.type == "bookmark") {
+          return;
+        }
+        const marker = m.find();
+        if (!marker) {
+          // marker is no longer in the document, bail
+          return;
+        }
+        let {from: oldFrom, to: oldTo} = marker;
+        const oldNode = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
+        if(!oldNode) { // bail on non-node markers
           console.error(`Removed TextMarker at [{line:${oldFrom.line}, ch:${oldFrom.ch}},` +
           `{line:${oldTo.line}, ch:${oldTo.ch}}], since that range does not correspond to a node boundary`);
           return;
         }
-        const {from, to} = this.newAST.getNodeByNId(node.nid); // use the NID to look node up srcLoc post-PP
-        opts.css = m.css; opts.title = m.title; opts.className = m.className;
-        SHARED.recordedMarks.set(node.nid, {from: from, to: to, options: opts});
+        const newNode = this.newAST?.getNodeByNId(oldNode.nid); // use the NID to look node up srcLoc post-PP
+        if (!newNode) {
+          throw new Error("Could not find node "+oldNode.nid+" in new AST");
+        }
+        const {from, to} = newNode;
+        SHARED.recordedMarks.set(
+          oldNode.nid,
+          {
+            from: from,
+            to: to,
+            options: {
+              css: m.css,
+              title: m.title,
+              className: m.className,
+            }
+          }
+        );
       });
   }
 
-  showDialog(contents) { this.setState( () =>({dialog: contents}));  }
+  showDialog(contents: {title: string, content: string}) { this.setState( () =>({dialog: contents}));  }
   closeDialog()        { this.setState( () =>({dialog: false}));     }
 
-  handleToggle = blockMode => {
-    this.setState( () => {
+  handleToggle = (blockMode: boolean) => {
+    this.setState( (state) => {
       let oldAst, WS, code;
       try {
         try {
@@ -215,18 +355,20 @@ class ToggleEditor extends Component {
           the pretty-printer probably produced invalid code.
           See the JS console for more detailed reporting.`;
         }
-        this.copyMarks(oldAst, code);                   // Preserve old TextMarkers
+        this.copyMarks(oldAst);                   // Preserve old TextMarkers
         this.currentCode = code;                        // update CM with the PP code
-        this.props.api.blockMode = blockMode;
-        return {blockMode: blockMode};                  // Success! Set the blockMode state
+        // TODO(pcardune): this should not exist. calling code should just use
+        // getBlockMode() instead, which will pull from the state object.
+        (this.props.api as any).blockMode = blockMode;
+        return {...state, blockMode: blockMode};                  // Success! Set the blockMode state
       } catch (e) {                                     // Failure! Set the dialog state
         console.error(e);
-        return {dialog: { title: "Could not convert to Blocks", content: e.toString() }};
+        return {...state, dialog: { title: "Could not convert to Blocks", content: e.toString() }};
       }
     });
   }
 
-  render(_props) { // eslint-disable-line no-unused-vars
+  render() {
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
     return (
       <>
@@ -236,9 +378,9 @@ class ToggleEditor extends Component {
           setBlockMode={this.handleToggle} 
           blockMode={this.state.blockMode} />
         {this.state.blockMode ? <TrashCan/> : null}
-        <div className={"col-xs-3 toolbar-pane"} tabIndex="-1" aria-hidden={!this.state.blockMode}>
+        <div className={"col-xs-3 toolbar-pane"} tabIndex={-1} aria-hidden={!this.state.blockMode}>
           <Toolbar 
-            primitives={this.language.primitivesFn()}
+            primitives={this.language.primitivesFn ? this.language.primitivesFn() : []}
             languageId={this.language.id}
             blockMode={this.state.blockMode} 
             ref={this.toolbarRef} />
@@ -295,10 +437,10 @@ class ToggleEditor extends Component {
         showDialog={this.showDialog}
         closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
-        debugHistory={this.props.debuggingLog.history}
+        debugHistory={this.props.debuggingLog?.history}
      />
     );
   }
 }
 
-export default ToggleEditor;
+export default CMBContext<ToggleEditorProps>(ToggleEditor);
