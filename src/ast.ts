@@ -118,12 +118,12 @@ export class AST {
 
   validateNode(node: ASTNode) {
     const astFieldNames =
-          ["from", "to", "type", "options", "spec", "isLockedP", "__alreadyValidated", "element"];
+          ["from", "to", "type", "options", "spec", "isLockedP", "__alreadyValidated", "element", "isEditable"];
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames =
           ["id", "parent", "level", "nid", "prev", "next", "hash",
            "aria-setsize", "aria-posinset", "mark"];
-    const invalidProp = newFieldNames.find(field => field in node)
+    const invalidProp = newFieldNames.find(field => field in node && node[field] !== undefined)
     if (!node.__alreadyValidated && invalidProp) {
       throw new Error(`The property ${invalidProp} is used by ASTNode, and should not be overridden in subclasses.`);
     }
