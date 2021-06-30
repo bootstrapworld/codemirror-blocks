@@ -7,21 +7,20 @@ import 'karma-parallel';
 export {};
 import { getBaseConfig } from './webpack';
 
-type EnvConfig = {
-  isCI: boolean;
-  localDebug: boolean;
-  runCoverage: boolean;
-};
-
-function getWebpackTestConfig(envConfig: EnvConfig): webpack.Configuration {
+function getWebpackTestConfig(basePath: string, runCoverage: boolean): webpack.Configuration {
   const baseConfig = getBaseConfig();
   const coverageRules: webpack.Configuration['module']['rules'] = [];
-  if (envConfig.runCoverage) {
+  if (runCoverage) {
     coverageRules.push({
-      test: /\.js/,
-      use: 'istanbul-instrumenter-loader',
-      include: path.resolve(__dirname, '..', 'src'),
-      exclude: [/(src\/languages|node_modules)/],
+      test: /(\.js|\.ts)/,
+      use: {
+        loader: 'istanbul-instrumenter-loader',
+        options: {
+          esModules: true
+        }
+      },
+      include: path.resolve(basePath, 'src'),
+      enforce: 'post',
     });
   }
 
@@ -45,7 +44,29 @@ function getWebpackTestConfig(envConfig: EnvConfig): webpack.Configuration {
   };
 }
 
-export function getConfigFunc(basePath: string, envConfig: EnvConfig) {
+/**
+ * Creates a karma config object for use with the karma test runner.
+ * Just call this function inside your projects karma.conf.js file like
+ * shown in the example below.
+ * 
+ * @example
+ * ```typescript
+ * // karma.conf.js
+ * import {getKarmaConfig} from 'codemirror-blocks/toolkit';
+ * module.exports = getKarmaConfig(__dirname);
+ * ```
+ * @param basePath This should always be the absolute path to the root
+ * directory where your karma.conf.js file lives
+ * @returns 
+ */
+export function getKarmaConfig(basePath: string) {
+  const envConfig = {
+    isCI: process.env.CONTINUOUS_INTEGRATION === 'true',
+    runCoverage: process.env.COVERAGE === 'true',
+    localDebug: process.env.DEBUG === 'true',
+  };
+
+
   // Configure frameworks and plugins:
   // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
   const frameworks = ['jasmine', 'webpack'];
@@ -91,15 +112,6 @@ export function getConfigFunc(basePath: string, envConfig: EnvConfig) {
         // undefined: defaults to cpu-count - 1
         executors: envConfig.isCI || envConfig.localDebug ? 1 : undefined,
         shardStrategy: 'round-robin',
-        // shardStrategy: 'description-length'
-        // shardStrategy: 'custom'
-        // customShardStrategy: function(config) {
-        //   config.executors // number, the executors set above
-        //   config.shardIndex // number, the specific index for the shard currently running
-        //   config.description // string, the name of the top-level describe string. Useful
-        //     for determining how to shard the current specs
-        //   return config.
-        // }
       },
 
       // list of files / patterns to load in the browser
@@ -108,20 +120,13 @@ export function getConfigFunc(basePath: string, envConfig: EnvConfig) {
         'spec/**/*-test.ts'
       ],
 
-      exclude: ['/**/*ast*.ts'],
-
       // preprocess matching files before serving them to the browser
       // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
       preprocessors: {
-        '**/*.ts': ['webpack', 'sourcemap'],
+        'spec/*.ts': ['webpack', 'sourcemap'],
         'spec/index.js': ['webpack', 'sourcemap'],
         'src/*.js': ['webpack', 'sourcemap'],
       },
-
-
-      // karmaTypescriptConfig: {
-      //   tsconfig: './tsconfig.json',
-      // },
 
       client: {
         // should we log console output in our test console?
@@ -177,7 +182,7 @@ export function getConfigFunc(basePath: string, envConfig: EnvConfig) {
       ...karmaConfig,
 
       // options for karma-webpack
-      webpack: getWebpackTestConfig(envConfig),
+      webpack: getWebpackTestConfig(basePath, envConfig.runCoverage),
       webpackMiddleware: {
         noInfo: true,
       },
