@@ -14,9 +14,6 @@ jobs:
           node-version: 14
       - run: npm ci
 
-
-      # Install and build, then test
-      - run: npm install
-      - run: npm run build
+      # Run headless test
       - run: sudo apt-get install xvfb
       - run: xvfb-run --auto-servernum npm test
