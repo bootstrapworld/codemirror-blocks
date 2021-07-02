@@ -15,8 +15,8 @@ jobs:
       - run: npm ci
 
       # Install Ruby and Gems
-      - name: Install Ruby
-        uses: ruby/setup-ruby
+      - name: Setup Ruby, JRuby and TruffleRuby
+        uses: ruby/setup-ruby@v1.75.0
         with:
           ruby-version: 2.2.7
           bundler-cache: true
