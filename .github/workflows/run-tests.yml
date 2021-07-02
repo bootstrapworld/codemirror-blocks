@@ -7,7 +7,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: sudo apt-get install xvfb
-      - run: xvfb-run --auto-servernum npm test
       - run: export CHROME_BIN=google-chrome-stable
       - run: google-chrome-stable --disable-gpu http://localhost &
 
