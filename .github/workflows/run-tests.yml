@@ -16,7 +16,8 @@ jobs:
 
       # Install Ruby and Gems
       - name: Install Ruby
-        uses: ruby/setup-ruby
+        uses: actions/setup-node@v2
+        uses: ruby/setup-ruby@1
         with:
           ruby-version: 2.2.7
           bundler-cache: true
