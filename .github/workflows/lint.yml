@@ -1,9 +1,6 @@
 name: Lint
 
-on: 
-  push:
-    branches-ignore:
-      - 'learning-github-actions'
+on: push
 
 jobs:
   run-linters:
