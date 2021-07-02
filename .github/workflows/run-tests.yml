@@ -18,6 +18,7 @@ jobs:
       - name: Setup Ruby, JRuby and TruffleRuby
         uses: ruby/setup-ruby@v1.75.0
         with:
+          ruby-version: 3.0.1
           bundler-cache: true
       - run: gem install public_suffix -v 2.0.5
       - run: gem install ruby_dep -v 1.3.1
