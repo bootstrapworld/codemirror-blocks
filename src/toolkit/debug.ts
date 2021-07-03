@@ -1,3 +1,4 @@
+import "codemirror/lib/codemirror.css";
 import '../../example/example-page.less';
 import type { Language } from '../CodeMirrorBlocks';
 import CodeMirrorBlocks from '../CodeMirrorBlocks';

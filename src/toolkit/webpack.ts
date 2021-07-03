@@ -109,7 +109,7 @@ export function getWebpackBundleConfig(config: {
  * Creates a webpack configuration suitable for use with the `webpack serve`
  * command. See [the webpack documentation](https://webpack.js.org/configuration/entry-context/)
  * for details about the entry and context config options.
- * 
+ *
  * @param config.entry entry file to load.
  * @param config.context path to the directory containing the entry files.
  * @returns a webpack configuration object.
@@ -131,7 +131,7 @@ export function getWebpackDevServerConfig(config: {
     plugins: [
       ...baseConfig.plugins,
       new HtmlWebpackPlugin({
-        template: path.resolve(siteDir, 'index.html'),
+        title: 'CMB Dev Page',
       }),
     ],
     devtool: 'cheap-module-source-map',
