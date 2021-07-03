@@ -191,12 +191,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     super(props);
 
     this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
-    this.language = props.language;
-    this.parse = this.language.parse;
-    this.getExceptionMessage = this.language.getExceptionMessage;
-    this.getASTNodeForPrimitive = this.language.getASTNodeForPrimitive;
-    this.getLiteralNodeForPrimitive = this.language.getLiteralNodeForPrimitive;
-    this.primitivesFn = this.language.primitivesFn;
     this.toolbarRef = createRef();
 
     // construct announcer DOM node
@@ -206,7 +200,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     SHARED.announcer = announcements;
 
     let defaultOptions = {
-      parse: this.parse,
+      parse: this.props.language.parse,
       incrementalRendering: true,
       collapseAll: true
     };
@@ -362,7 +356,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           the pretty-printer probably produced invalid code.
           See the JS console for more detailed reporting.`;
         }
-        this.copyMarks(oldAst);                   // Preserve old TextMarkers
+        this.copyMarks(oldAst);                         // Preserve old TextMarkers
         this.currentCode = code;                        // update CM with the PP code
         // TODO(pcardune): this should not exist. calling code should just use
         // getBlockMode() instead, which will pull from the state object.
@@ -387,8 +381,8 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex={-1} aria-hidden={!this.state.blockMode}>
           <Toolbar 
-            primitives={this.language.primitivesFn ? this.language.primitivesFn() : []}
-            languageId={this.language.id}
+            primitives={this.props.language.primitivesFn ? this.props.language.primitivesFn() : []}
+            languageId={this.props.language.id}
             blockMode={this.state.blockMode} 
             ref={this.toolbarRef} />
         </div>
@@ -415,12 +409,8 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     return (
       <TextEditor
         cmOptions={this.cmOptions}
-        parse={this.parse}
-        getExceptionMessage={this.getExceptionMessage}
-        getASTNodeForPrimitive={this.getASTNodeForPrimitive}
-        getLiteralNodeForPrimitive={this.getLiteralNodeForPrimitive}
-        primitivesFn={this.primitivesFn}
-        initialCode={code}
+        parse={this.props.language.parse}
+        value={code}
         onMount={this.handleEditorMounted}
         api={this.props.api} 
         passedAST={this.ast}
@@ -433,14 +423,15 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     return (
       <UpgradedBlockEditor
         cmOptions={this.cmOptions}
-        parse={this.parse}
+        parse={this.props.language.parse}
         value={code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
-        appElement={this.props.appElement}
-        language={this.language.id}
-        options={this.options}
         passedAST={this.ast}
+
+        appElement={this.props.appElement}
+        languageId={this.props.language.id}
+        options={this.options}
         showDialog={this.showDialog}
         closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
