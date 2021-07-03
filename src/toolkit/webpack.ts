@@ -120,7 +120,7 @@ export function getWebpackDevServerConfig(config: {
 }): WebpackConfiguration & {
   devServer?: WebpackDevServerConfiguration;
 } {
-  const siteDir = path.join(__dirname, 'dev-server', 'site');
+  const siteDir = config.context;
   const baseConfig = getBaseConfig();
   return {
     ...baseConfig,
