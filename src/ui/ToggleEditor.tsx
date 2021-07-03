@@ -21,6 +21,11 @@ import CodeMirror, { MarkerRange } from 'codemirror';
  * https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/codemirror/index.d.ts
  */
 declare module 'codemirror' {
+  interface SelectionOptions {
+    bias?: number;
+    origin?: string;
+    scroll?: boolean
+  }
   interface DocOrEditor {
     /**
      * Adds a new selection to the existing set of selections, and makes it the primary selection.
@@ -30,7 +35,7 @@ declare module 'codemirror' {
     /**
      * An equivalent of extendSelection that acts on all selections at once.
      */
-    extendSelections(heads: CodeMirror.Position[]): void;
+    extendSelections(heads: CodeMirror.Position[], options?:SelectionOptions): void;
 
     /**
      * Applies the given function to all existing selections, and calls extendSelections on the result.
@@ -130,7 +135,8 @@ type ToggleEditorAPI = {
   afterDOMUpdate(f: () => void): void;
 };
 
-export type API = ToggleEditorAPI & CodeMirrorAPI;
+import type {BuiltAPI as BlockEditorAPIExtensions} from './BlockEditor';
+export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 export type ToggleEditorProps = {
   initialCode?: string,
