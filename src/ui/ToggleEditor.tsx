@@ -146,6 +146,7 @@ export type ToggleEditorProps = {
 
 type ToggleEditorState = {
   blockMode: boolean,
+  code: string,
   // TODO(pcardune): dialog should probably not be a boolean.
   // I think we are using "false" in place of "null" unnecessarily.
   dialog: boolean | {title: string, content: string},
@@ -161,25 +162,13 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   static defaultProps = {
     debuggingLog: {},
     cmOptions: {},
+    code: String,
   }
 
   // TODO(pcardune): None of these should be here. Denormalizing
   // props is a very bad thing to do.
   cmOptions: CodeMirror.EditorConfiguration;
-  language: Language;
-  parse: Language['parse'];
-  getExceptionMessage: Language['getExceptionMessage'];
-  getASTNodeForPrimitive: Language['getASTNodeForPrimitive'];
-  getLiteralNodeForPrimitive: Language['getLiteralNodeForPrimitive'];
-  primitivesFn: Language['primitivesFn'];
   options: Options;
-
-  // TODO(pcardune): remove this field, as we should be able to rely entirely
-  // on lifecycle methods without having to keep track of which life cycle
-  // methods have been called.
-  hasMounted: boolean;
-
-  currentCode: unknown;
 
   eventHandlers: Record<string, Function[]>;
 
@@ -205,7 +194,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       collapseAll: true
     };
     this.options = {...defaultOptions, ...props.options};
-    this.hasMounted = false;
     SHARED.recordedMarks = new Map();
     this.eventHandlers = {}; // blank event-handler record
 
@@ -213,6 +201,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     // see https://reactjs.org/docs/handling-events.html
     this.showDialog  = this.showDialog.bind(this);
     this.closeDialog = this.closeDialog.bind(this);
+    this.state.code = props.initialCode;
   }
 
   loadLoggedActions = (jsonLog) => {
@@ -285,11 +274,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     say(mode + " Mode Enabled", 500);
   }
 
-  componentDidMount() { 
-    this.hasMounted = true;
-    this.currentCode = SHARED.cm.getValue();
-  }
-
   // save any non-block, non-bookmark markers, and the NId they cover
   copyMarks(oldAST: AST) {
     SHARED.recordedMarks.clear();
@@ -357,7 +341,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           See the JS console for more detailed reporting.`;
         }
         this.copyMarks(oldAst);                         // Preserve old TextMarkers
-        this.currentCode = code;                        // update CM with the PP code
+        this.state.code = code;                         // update CM with the PP code
         // TODO(pcardune): this should not exist. calling code should just use
         // getBlockMode() instead, which will pull from the state object.
         (this.props.api as any).blockMode = blockMode;
@@ -405,12 +389,11 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }
 
   renderCode() {
-    let code = this.hasMounted ? this.currentCode : this.props.initialCode;
     return (
       <TextEditor
         cmOptions={this.cmOptions}
         parse={this.props.language.parse}
-        value={code}
+        value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api} 
         passedAST={this.ast}
@@ -419,12 +402,11 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }
 
   renderBlocks() {
-    let code = this.hasMounted ? this.currentCode : this.props.initialCode;
     return (
       <UpgradedBlockEditor
         cmOptions={this.cmOptions}
         parse={this.props.language.parse}
-        value={code}
+        value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
         passedAST={this.ast}
