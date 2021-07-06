@@ -341,11 +341,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           See the JS console for more detailed reporting.`;
         }
         this.copyMarks(oldAst);                         // Preserve old TextMarkers
-        this.state.code = code;                         // update CM with the PP code
         // TODO(pcardune): this should not exist. calling code should just use
         // getBlockMode() instead, which will pull from the state object.
-        (this.props.api as any).blockMode = blockMode;
-        return {...state, blockMode: blockMode};                  // Success! Set the blockMode state
+        //(this.props.api as any).blockMode = blockMode;
+        return {...state, blockMode: blockMode, code: code}; // Success! Set the state
       } catch (e) {                                     // Failure! Set the dialog state
         console.error(e);
         return {...state, dialog: { title: "Could not convert to Blocks", content: e.toString() }};
