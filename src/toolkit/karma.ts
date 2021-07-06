@@ -51,14 +51,16 @@ function getWebpackTestConfig(basePath: string, runCoverage: boolean): webpack.C
  * @example
  * ```typescript
  * // karma.conf.js
- * import {getKarmaConfig} from 'codemirror-blocks/toolkit';
- * module.exports = getKarmaConfig(__dirname);
+ * const {getKarmaConfig} = require('codemirror-blocks/lib/toolkit/karma');
+ * module.exports = (config) => {
+ *   config.set(getKarmaConfig(config, __dirname));
+ * };
  * ```
  * @param basePath This should always be the absolute path to the root
  * directory where your karma.conf.js file lives
  * @returns 
  */
-export function getKarmaConfig(basePath: string) {
+export function getKarmaConfig(config: Config, basePath: string) {
   const envConfig = {
     isCI: process.env.CONTINUOUS_INTEGRATION === 'true',
     runCoverage: process.env.COVERAGE === 'true',
@@ -94,102 +96,99 @@ export function getKarmaConfig(basePath: string) {
     }
   }
 
-  return (config: Config) => {
-    const karmaConfig: ConfigOptions = {
-      // base path that will be used to resolve all patterns (eg. files, exclude)
-      basePath: basePath,
+  const karmaConfig: ConfigOptions = {
+    // base path that will be used to resolve all patterns (eg. files, exclude)
+    basePath: basePath,
 
-      frameworks: frameworks,
-      plugins: plugins,
-      reporters: reporters,
-      coverageReporter: {
-        dir: '.coverage',
-        reporters: [{ type: 'html' }, { type: 'lcovonly' }],
+    frameworks: frameworks,
+    plugins: plugins,
+    reporters: reporters,
+    coverageReporter: {
+      dir: '.coverage',
+      reporters: [{ type: 'html' }, { type: 'lcovonly' }],
+    },
+
+    parallelOptions: {
+      // undefined: defaults to cpu-count - 1
+      executors: envConfig.isCI || envConfig.localDebug ? 1 : undefined,
+      shardStrategy: 'round-robin',
+    },
+
+    // list of files / patterns to load in the browser
+    files: ['spec/**/*-test.js', 'spec/**/*-test.ts'],
+
+    // preprocess matching files before serving them to the browser
+    // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
+    preprocessors: {
+      'spec/**/*.js': ['webpack', 'sourcemap'],
+      'spec/**/*.ts': ['webpack', 'sourcemap'],
+      'src/**/*.js': ['webpack', 'sourcemap'],
+      'src/**/*.ts': ['webpack', 'sourcemap'],
+    },
+
+    client: {
+      // should we log console output in our test console?
+      captureConsole: false || envConfig.localDebug,
+      jasmine: {
+        timeoutInterval: 30000,
       },
+    },
 
-      parallelOptions: {
-        // undefined: defaults to cpu-count - 1
-        executors: envConfig.isCI || envConfig.localDebug ? 1 : undefined,
-        shardStrategy: 'round-robin',
+    // web server port
+    port: 9876,
+
+    // enable / disable colors in the output (reporters and logs)
+    colors: true,
+
+    // level of logging
+    // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
+    logLevel: config.LOG_WARN,
+
+    // enable / disable watching file and executing tests whenever any file changes
+    // wait half a second before re-running
+    autoWatch: true,
+    autoWatchBatchDelay: 500,
+
+    // start these browsers
+    // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
+    browsers: ['ChromeHeadless'],
+    customLaunchers: {
+      ChromeTravisCI: {
+        base: 'Chrome',
+        flags: [
+          '--no-sandbox',
+          '--no-proxy-server',
+          '--remote-debugging-port=9222',
+        ],
       },
+    },
 
-      // list of files / patterns to load in the browser
-      files: [
-        'spec/**/*-test.js',
-        'spec/**/*-test.ts'
-      ],
+    // Continuous Integration mode
+    // if true, Karma captures browsers, runs the tests and exits
+    singleRun: envConfig.isCI,
 
-      // preprocess matching files before serving them to the browser
-      // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-      preprocessors: {
-        'spec/*.ts': ['webpack', 'sourcemap'],
-        'spec/index.js': ['webpack', 'sourcemap'],
-        'src/*.js': ['webpack', 'sourcemap'],
-      },
-
-      client: {
-        // should we log console output in our test console?
-        captureConsole: false || envConfig.localDebug,
-        jasmine: {
-          timeoutInterval: 30000,
-        },
-      },
-
-      // web server port
-      port: 9876,
-
-      // enable / disable colors in the output (reporters and logs)
-      colors: true,
-
-      // level of logging
-      // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
-      logLevel: config.LOG_WARN,
-
-      // enable / disable watching file and executing tests whenever any file changes
-      // wait half a second before re-running
-      autoWatch: true,
-      autoWatchBatchDelay: 500,
-
-      // start these browsers
-      // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-      browsers: ['ChromeHeadless'],
-      customLaunchers: {
-        ChromeTravisCI: {
-          base: 'Chrome',
-          flags: [
-            '--no-sandbox',
-            '--no-proxy-server',
-            '--remote-debugging-port=9222',
-          ],
-        },
-      },
-
-      // Continuous Integration mode
-      // if true, Karma captures browsers, runs the tests and exits
-      singleRun: envConfig.isCI,
-
-      // Concurrency level
-      // how many browser should be started simultanous
-      concurrency: envConfig.isCI || envConfig.localDebug ? 4 : Infinity,
-      captureTimeout: 60000,
-      browserDisconnectTolerance: 3,
-      browserDisconnectTimeout: 10000,
-      browserNoActivityTimeout: 60000, // 60 seconds
-    };
-
-    config.set({
-      ...karmaConfig,
-
-      // options for karma-webpack
-      webpack: getWebpackTestConfig(basePath, envConfig.runCoverage),
-      webpackMiddleware: {
-        noInfo: true,
-      },
-
-      // options for karma-jasmine-diff-reporter
-      jasmineDiffReporter: {
-        pretty: true,
-      },
-    } as any);
+    // Concurrency level
+    // how many browser should be started simultanous
+    concurrency: envConfig.isCI || envConfig.localDebug ? 4 : Infinity,
+    captureTimeout: 60000,
+    browserDisconnectTolerance: 3,
+    browserDisconnectTimeout: 10000,
+    browserNoActivityTimeout: 60000, // 60 seconds
   };
+
+  return {
+    ...karmaConfig,
+
+    // options for karma-webpack
+    webpack: getWebpackTestConfig(basePath, envConfig.runCoverage),
+    webpackMiddleware: {
+      noInfo: true,
+    },
+
+    // options for karma-jasmine-diff-reporter
+    jasmineDiffReporter: {
+      pretty: true,
+    },
+  }
+
 }
