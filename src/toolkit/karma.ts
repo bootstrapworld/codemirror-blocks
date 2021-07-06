@@ -4,7 +4,6 @@ import type { Config, ConfigOptions } from 'karma';
 import 'karma-jasmine';
 import 'karma-coverage';
 import 'karma-parallel';
-export {};
 import { getBaseConfig } from './webpack';
 
 function getWebpackTestConfig(basePath: string, runCoverage: boolean): webpack.Configuration {
