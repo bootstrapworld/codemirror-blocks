@@ -157,6 +157,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state = {
     blockMode: false,
     dialog: false,
+    code: "",
   }
 
   static defaultProps = {
