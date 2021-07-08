@@ -3,7 +3,14 @@ import Node from '../../components/Node';
 import * as P from 'pretty-fast-pretty-printer';
 import * as Spec from '../../nodeSpec';
 import {ASTNode, pluralize} from '../../ast';
+import {Sequence as CMBSequence} from '../../nodes';
 
+/* Override the built-in pretty printer for Sequences,
+ * so that they print as s-expressions
+ */
+export class Sequence extends CMBSequence {
+  pretty() { return P.standardSexpr(this.name, this.exprs); }
+}
 
 export class LetLikeExpr extends ASTNode {
   constructor(from, to, form, bindings, expr, options={}) {

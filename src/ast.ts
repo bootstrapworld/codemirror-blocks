@@ -1,17 +1,17 @@
-import React from 'react';
 import {poscmp, minpos, maxpos, posWithinNode, 
   nodeCommentContaining, gensym, hashObject} from './utils';
 import * as P from 'pretty-fast-pretty-printer';
-import { node } from 'prop-types';
+import type CodeMirror from 'codemirror';
+import type { Comment } from './nodes';
 
 
-export function enumerateList(lst, level) {
-  lst = lst.map(l => l.describe(level)).slice(0);
-  var last = lst.pop();
-  return (lst.length == 0)? last : lst.join(', ') + " and "+last;
+export function enumerateList(lst: ASTNode[], level: number) {
+  const described = lst.map(l => l.describe(level)).slice(0);
+  const last = described.pop();
+  return (described.length == 0)? last : described.join(', ') + " and "+last;
 }
 
-export function pluralize(noun, set) {
+export function pluralize(noun: string, set: any[]) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
@@ -24,12 +24,12 @@ export const prettyPrintingWidth = 80;
 export class AST {
   rootNodes: ASTNode[];
   reverseRootNodes: ASTNode[];
-  nodeIdMap: Map<any, any>;
-  nodeNIdMap: Map<any, any>;
+  nodeIdMap: Map<string, ASTNode>;
+  nodeNIdMap: Map<number, ASTNode>;
   id: number;
   hash: any;
 
-  constructor(rootNodes, annotate = true) {
+  constructor(rootNodes: ASTNode[], annotate = true) {
     // the `rootNodes` attribute simply contains a list of the top level nodes
     // that were parsed, in srcLoc order
     this.rootNodes = rootNodes;
@@ -47,8 +47,8 @@ export class AST {
   }
 
   toString() {
-    let lines = [];
-    let prevNode = null;
+    let lines: string[] = [];
+    let prevNode: ASTNode | null = null;
     for (let node of this.rootNodes) {
       let numBlankLines = prevNode
           ? Math.max(0, node.srcRange().from.line - prevNode.srcRange().to.line - 1)
@@ -87,10 +87,10 @@ export class AST {
     this.nodeIdMap.clear();
     this.nodeNIdMap.clear();
 
-    let lastNode = null;
+    let lastNode: ASTNode | null = null;
     let nid = 0;
 
-    const loop = (nodes, parent, level) => {
+    const loop = (nodes: ASTNode[], parent: ASTNode | undefined, level: number) => {
       nodes.forEach((node, i) => {
         this.validateNode(node);
         if (node.id === undefined) {
@@ -120,10 +120,10 @@ export class AST {
         node.hash = node.spec.hash(node); // Relies on child hashes; must be bottom-up
       });
     };
-    loop(this.rootNodes, null, 1);
+    loop(this.rootNodes, undefined, 1);
   }
 
-  validateNode(node) {
+  validateNode(node: ASTNode) {
     const astFieldNames =
           ["from", "to", "type", "options", "spec", "isLockedP", "__alreadyValidated", "element"];
     // Check that the node doesn't define any of the fields we're going to add to it.
@@ -164,21 +164,26 @@ export class AST {
     const expectedFieldNames = node.spec.fieldNames().concat(newFieldNames, astFieldNames);
     const undeclaredField = Object.getOwnPropertyNames(node).find(p => !expectedFieldNames.includes(p));
     if(undeclaredField) {
-      throw new Error(`An ASTNode ${node.type} contains a field called '${field}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`);
+      throw new Error(`An ASTNode ${node.type} contains a field called '${undeclaredField}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`);
     }
   }
 
-  getNodeById = id => this.nodeIdMap.get(id)
-  getNodeByNId = nid => this.nodeNIdMap.get(nid)
+  getNodeById = (id: string) => this.nodeIdMap.get(id)
+  getNodeByNId = (nid: number) => this.nodeNIdMap.get(nid)
 
   /**
    * Returns whether `u` is a strict ancestor of `v`
+   * 
+   * TODO(pcardune): make it clear what happens when uid or vid can't be found.
+   * throw an exception?
    */
-  isAncestor = (uid, vid) => {
+  isAncestor = (uid: string, vid: string) => {
     let v = this.getNodeById(vid);
     const u = this.getNodeById(uid);
-    v = v.parent;
-    while (v && v.level > u.level) {
+    if (v) {
+      v = v.parent;
+    }
+    while (v && u && v.level > u.level) {
       v = v.parent;
     }
     return u === v;
@@ -189,14 +194,14 @@ export class AST {
    *
    * Returns the next node or null
    */
-  getNodeAfter = selection => selection.next || null;
+  getNodeAfter = (selection: ASTNode) => selection.next || null;
 
   /**
    * getNodeBefore : ASTNode -> ASTNode
    *
    * Returns the previous node or null
    */
-  getNodeBefore = selection => selection.prev || null;
+  getNodeBefore = (selection: ASTNode) => selection.prev || null;
 
   // NOTE: If we have x|y where | indicates the cursor, the position of the cursor
   // is the same as the position of y's `from`. Hence, going forward requires ">= 0"
@@ -207,8 +212,8 @@ export class AST {
    *
    * Returns the next node or null
    */
-  getNodeAfterCur = cur => {
-    function loop(nodes, parentFallback) {
+  getNodeAfterCur = (cur: ASTNode) => {
+    function loop(nodes: ASTNode[], parentFallback: ASTNode | null): ASTNode | null {
       //console.log('ast:211, cur?=', !!cur);
       let n = nodes.find(n => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
       //console.log('ast:213');
@@ -231,8 +236,8 @@ export class AST {
    *
    * Returns the previous node or null
    */
-  getNodeBeforeCur = cur => {
-    function loop(nodes, parentFallback) {
+  getNodeBeforeCur = (cur: ASTNode) => {
+    function loop(nodes: ASTNode[], parentFallback: ASTNode | null): ASTNode | null {
       // find the last node that begins before cur
       let n = nodes.slice(0).reverse().find(n => poscmp(n.from, cur) < 0);
       if(!n) { return parentFallback; }               // return null if there's no node before the cursor
@@ -252,7 +257,7 @@ export class AST {
   }
 
   // return the node containing the cursor, or false
-  getNodeContaining(cursor, nodes = this.rootNodes) {
+  getNodeContaining(cursor: Pos, nodes = this.rootNodes): ASTNode | undefined {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
     return n && ([...n.children()].length === 0 ? n :
                  this.getNodeContaining(cursor, [...n.children()]) || n);
@@ -260,7 +265,7 @@ export class AST {
 
   // return a node that whose from/to match two cursor locations, or whose
   // srcRange matches those locations. If none exists, return undefined
-  getNodeAt(from, to) {
+  getNodeAt(from: Pos, to: Pos) {
     let n = [...this.nodeIdMap.values()].find(n => {
       let {from: srcFrom, to: srcTo} = n.srcRange();
       // happens when node is an ABlank
@@ -273,7 +278,7 @@ export class AST {
   }
 
   // return the parent or false
-  getNodeParent = node => {
+  getNodeParent = (node: ASTNode) => {
     return node.parent || false;
   }
 
@@ -284,7 +289,12 @@ export class AST {
    * Calls searchFn over and over until testFn returns false
    * If inclusive is false, searchFn is applied right away.
    */
-  getNextMatchingNode(searchFn, testFn, start, inclusive=false) {
+  getNextMatchingNode(
+    searchFn: (node: ASTNode) => ASTNode | undefined,
+    testFn: (node: ASTNode) => boolean,
+    start: ASTNode,
+    inclusive: boolean = false
+  ) {
     let node = inclusive ? start : searchFn(start);
     while (node && testFn(node)) {
       node = searchFn(node);
@@ -297,7 +307,7 @@ export class AST {
    *
    * Is there a comment or a commented node to the left of this position, on the same line?
    */
-  followsComment(pos) {
+  followsComment(pos: Pos) {
     // TODO: efficiency
     for (const node of this.nodeIdMap.values()) {
       if (node.options.comment?.to?.line == pos.line
@@ -317,7 +327,7 @@ export class AST {
    *
    * Is there a comment or a commented node to the right of this position, on the same line?
    */
-  precedesComment(pos) {
+  precedesComment(pos: Pos) {
     // TODO: efficiency
     for (const node of this.nodeIdMap.values()) {
       if (node.options.comment?.from?.line == pos.line
@@ -333,20 +343,62 @@ export class AST {
   }
 }
 
+export type Pos = {
+  line: number;
+  ch: number;
+}
+
+export type NodeOptions = {
+  comment?: Comment;
+  "aria-label"?: string;
+}
+
 // Every node in the AST inherits from the `ASTNode` class, which is used to
 // house some common attributes.
-export class ASTNode {
-  from: any;
-  to: any;
-  type: any;
-  options: any;
-  id: string;
-  level: any;
+export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}> {
+  from: Pos;
+  to: Pos;
+  type: string;
+  options: Opt;
+  id!: string;
+  level: number;
   hash: any;
   public static spec: any;
   spec: any;
   isLockedP: any;
-  constructor(from, to, type, options) {
+  parent?: ASTNode;
+  prev?: ASTNode;
+  next?: ASTNode;
+  nid: number;
+  "aria-setsize": number;
+  "aria-posinset": number;
+
+  /**
+   * @internal
+   * Stores the html element that this ast node was rendered into.
+   */
+  element: HTMLElement;
+
+  /**
+   * @internal
+   * Used for unit testing only
+   */
+  isEditable: () => boolean;
+
+  /**
+   * @internal
+   * Used to keep track of which nodes have had their properties
+   * validated by {@link AST.validateNode}
+   */
+  __alreadyValidated: boolean = false;
+
+  /**
+   * @internal
+   * 
+   */
+  mark: CodeMirror.TextMarker;
+
+  constructor(from: Pos, to: Pos, type: string, options: Opt) {
 
     // The `from` and `to` attributes are objects containing the start and end
     // positions of this node within the source document. They are in the format
@@ -382,7 +434,7 @@ export class ASTNode {
     this.isLockedP = false;
   }
 
-  describe(level) {
+  describe(level: number) {
     if ((this.level - level) >= descDepth) {
       return this.shortDescription(level);
     } else {
@@ -390,11 +442,11 @@ export class ASTNode {
     }
   }
 
-  shortDescription(_level) {
-    return this.options["aria-label"];
+  shortDescription(level?: number): string {
+    return this.options["aria-label"] || "";
   }
 
-  longDescription(_level) {
+  longDescription(level: number): string {
     throw "ASTNodes must implement `.longDescription()`";
   }
 
@@ -411,7 +463,7 @@ export class ASTNode {
   }
 
   // Produces an iterator over all descendants of this node, including itself.
-  descendants() {
+  descendants(): Iterable<ASTNode> {
     return new DescendantsIterator(this);
   }
 
@@ -430,12 +482,14 @@ export class ASTNode {
   }
 
   // Create a React _element_ (an instantiated component) for this node.
-  reactElement(props?) {
+  reactElement(props?: Props) {
     return renderASTNode({node:this, ...props});
   }
+
+  abstract render(props: Props): void;
 }
 
-function renderASTNode(props) {
+function renderASTNode(props: {node: ASTNode}) {
   let node = props.node;
   if (typeof node.render === 'function') {
     return node.render.bind(node)(props);
@@ -446,7 +500,7 @@ function renderASTNode(props) {
 
 class DescendantsIterator {
   node: ASTNode;
-  constructor(node) {
+  constructor(node: ASTNode) {
     this.node = node;
   }
 

@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const baseConfig = require('./base.config.js')();
 
 // this is the config for generating the files needed to run the examples.
-module.exports = function(env, argv) {
+module.exports = function(_env, _argv) {
 
   return Object.assign({}, baseConfig, {
     entry: {
@@ -36,4 +36,4 @@ module.exports = function(env, argv) {
       contentBase: path.join(__dirname, '..', 'example')
     },
   });
-}
+};
