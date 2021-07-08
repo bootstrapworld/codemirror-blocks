@@ -81,8 +81,9 @@ export function getWebpackBundleConfig(config: {
       filename: '[name]-min.js',
       clean: true,
       library: {
-        name: 'CodemirrorBlocks',
+        name: 'CodeMirrorBlocks',
         type: 'umd',
+        export: 'default',
       },
     },
     plugins: [
