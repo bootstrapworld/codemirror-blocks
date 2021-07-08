@@ -238,7 +238,11 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     // any CodeMirror function that we can call directly should be passed-through.
     // TextEditor and BlockEditor can add their own, or override them
     codeMirrorAPI.forEach(funcName => {
-      base[funcName] = ed[funcName].bind(ed);
+      // Some functions that we want to proxy (like phrase) are not on the codemirror
+      // editor object when this code executes, so we have to do the lookup inside the
+      // wrapper function. Hopefully by the time the wrapper function is called,
+      // the function it proxies to has been added to the editor instance.
+      base[funcName] = (...args) => (ed as any)[funcName](...args);
     });
 
     const api: ToggleEditorAPI = {
