@@ -15,7 +15,7 @@ var plugins = [
 ];
 
 // If we're not on Travis or trying to debug, add parallelism
-if (!(envConfig.isCI || envConfig.localDebug)) {
+if (!envConfig.localDebug) {
   frameworks.unshift('parallel');
   plugins.unshift('karma-parallel');
 }
@@ -26,7 +26,7 @@ if (!(envConfig.isCI || envConfig.localDebug)) {
 var reporters = ['dots'];
 if (envConfig.runCoverage) {
   reporters.push('coverage');
-  plugins.unshift( 'karma-coverage')
+  plugins.unshift( 'karma-coverage');
   if (envConfig.isCI) {
     reporters.push('coveralls');
   }

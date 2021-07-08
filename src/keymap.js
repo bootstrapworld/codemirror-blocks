@@ -109,7 +109,7 @@ function pasteHandler(_, e) {
       paste(new InsertTarget(this.node.parent, DTnode.dataset.field, pos));
     } else { 
       playSound(BEEP);
-      say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`); 
+      say(`Cannot paste ${(e.shiftKey ? "before" : "after")} this node.`);
     }
   }
 }
@@ -254,7 +254,7 @@ export const commandMap = {
       const isContained = id => this.ast.isAncestor(node.id, id);
       const doesContain = id => this.ast.isAncestor(id, node.id);
       let [removed, newSelections] = partition(this.selections, isContained);
-      for (const r of removed) {
+      for (const _r of removed) {
         // TODO(Emmanuel): announce removal
       }
       if (newSelections.some(doesContain)) {

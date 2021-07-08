@@ -13,11 +13,10 @@ import {
   CondClause,
   Comment,
   VariableDefinition,
-  Sequence,
   FunctionApp,
   Unknown
 } from '../../nodes';
-import {LetLikeExpr, WhenUnless} from './ast';
+import {LetLikeExpr, WhenUnless, Sequence} from './ast';
 import {PrimitiveGroup} from '../../parsers/primitives';
 import PRIMITIVES_CONFIG from './primitives-config';
 
@@ -292,7 +291,16 @@ function parseNode(node, i) {
   } else if (node instanceof structures.comment) {
     return new Comment(from, to, node.txt);
   } else if (node instanceof structures.beginExpr) {
-    return new Sequence(from, to, node.exprs.map(parseNode), "begin",
+    return new Sequence(
+      from, to, 
+      new Literal(
+        {line:from.line, ch:from.ch+1},
+        {line:from.line, ch:from.ch+6},
+        "begin",
+        "symbol",
+        {'aria-label': 'begin'}
+      ),
+      node.exprs.map(parseNode), 
       {'aria-label': `sequence containing ${pluralize('expression', node.exprs)}`});
   } else if (node instanceof structures.letExpr
     || node instanceof structures.letStarExpr

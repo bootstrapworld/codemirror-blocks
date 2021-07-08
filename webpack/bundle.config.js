@@ -6,7 +6,7 @@ const baseConfig = require('./base.config.js');
 var configs = [
   Object.assign({}, baseConfig(), {
     entry: {
-      "CodeMirrorBlocks": './src/CodeMirrorBlocks.js'
+      "CodeMirrorBlocks": './src/CodeMirrorBlocks.tsx'
     },
     output: {
       path: path.resolve(__dirname, '..', "dist"),
@@ -16,8 +16,7 @@ var configs = [
     },
     plugins: [
       new BundleAnalyzerPlugin({
-        analyzerMode: 'static', 
-        openAnalyzer: !('TRAVIS' in process.env && 'CI' in process.env),
+        analyzerMode: 'static',
         reportFilename: "bundle-sizes.html",
         generateStatsFile: true,
         openAnalyzer: false,
