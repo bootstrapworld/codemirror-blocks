@@ -80,7 +80,7 @@ export function getKarmaConfig(config: Config, basePath: string) {
   ];
 
   // If we're not on Travis or trying to debug, add parallelism
-  if (!(envConfig.isCI || envConfig.localDebug)) {
+  if (!envConfig.localDebug) {
     frameworks.unshift('parallel');
     plugins.unshift(require('karma-parallel'));
   }

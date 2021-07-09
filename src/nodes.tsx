@@ -61,7 +61,7 @@ export class Unknown extends ASTNode {
       <Node node={this} {...props}>
         <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
-        <Args field="elts">{restElts}</Args>
+          <Args field="elts">{restElts}</Args>
         </span>
       </Node>
     );
@@ -101,11 +101,10 @@ export class FunctionApp extends ASTNode {
   }
 
   render(props: NodeProps) {
-    const func = this.func.reactElement();
     return (
       <Node node={this} {...props}>
         <span className="blocks-operator">
-          {func}
+          {this.func.reactElement()}
         </span>
         <span className="blocks-args">
           <Args field="args">{this.args}</Args>
@@ -563,17 +562,17 @@ export class Blank extends ASTNode {
 }
 
 export class Sequence extends ASTNode {
+  name: ASTNode;
   exprs: ASTNode[];
-  name: string;
-  constructor(from: Pos, to: Pos, exprs: ASTNode[], name: string, options={}) {
+  constructor(from: Pos, to: Pos, exprs: ASTNode[], name: ASTNode, options={}) {
     super(from, to, 'sequence', options);
-    this.exprs = exprs;
     this.name = name;
+    this.exprs = exprs;
   }
 
   static spec = Spec.nodeSpec([
+    Spec.optional('name'),
     Spec.list('exprs'),
-    Spec.value('name')
   ])
 
   longDescription(level) {
@@ -587,10 +586,12 @@ export class Sequence extends ASTNode {
   render(props: NodeProps) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{this.name}</span>
-        <div className="blocks-sequence-exprs">
+        <span className="blocks-operator">
+          {this.name.reactElement()}
+        </span>
+        <span className="blocks-sequence-exprs">
           <Args field="exprs">{this.exprs}</Args>
-        </div>
+        </span>
       </Node>
     );
   }

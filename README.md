@@ -2,7 +2,7 @@
 
 [![dependencies Status](https://david-dm.org/bootstrapworld/codemirror-blocks/status.svg)](https://david-dm.org/bootstrapworld/codemirror-blocks)
 [![devDependencies Status](https://david-dm.org/bootstrapworld/codemirror-blocks/dev-status.svg)](https://david-dm.org/bootstrapworld/codemirror-blocks?type=dev)
-[![Build Status](https://travis-ci.com/bootstrapworld/codemirror-blocks.svg?branch=master)](https://travis-ci.com/bootstrapworld/codemirror-blocks)
+[![Build Status](https://github.com/bootstrapworld/codemirror-blocks/actions/workflows/run-tests.yml/badge.svg)](https://github.com/bootstrapworld/codemirror-blocks/actions)
 [![Coverage Status](https://coveralls.io/repos/bootstrapworld/codemirror-blocks/badge.svg?branch=master&service=github)](https://coveralls.io/github/bootstrapworld/codemirror-blocks?branch=master)
 [![Code Climate](https://codeclimate.com/github/bootstrapworld/codemirror-blocks/badges/gpa.svg)](https://codeclimate.com/github/bootstrapworld/codemirror-blocks)
 
