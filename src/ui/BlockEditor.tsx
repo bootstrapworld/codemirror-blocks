@@ -197,7 +197,7 @@ type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
   /**
    * id of the language being used
    */
-  language: string;
+  languageId: string;
   parse: Function;
   search?: {
     onSearch: Function;
@@ -220,7 +220,7 @@ class BlockEditor extends Component<BlockEditorProps> {
   //   options: PropTypes.object,
   //   cmOptions: PropTypes.object,
   //   keyMap: PropTypes.object,
-  //   language: PropTypes.string.isRequired,
+  //   languageId: PropTypes.string.isRequired,
   //   parse: PropTypes.func.isRequired,
   //   setAST: PropTypes.func.isRequired,
   //   setCursor: PropTypes.func.isRequired,
@@ -665,8 +665,8 @@ class BlockEditor extends Component<BlockEditorProps> {
 
   render() {
     const classes = [];
-    if (this.props.language) {
-      classes.push(`blocks-language-${this.props.language}`);
+    if (this.props.languageId) {
+      classes.push(`blocks-language-${this.props.languageId}`);
     }
     return (
       <>

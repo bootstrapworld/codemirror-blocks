@@ -152,7 +152,8 @@ export const commandMap = {
     else { this.activateByNid(getLastVisibleNode(this.state).nid); }
   },
 
-  'Collapse or Focus Parent' : function(_) {
+  'Collapse or Focus Parent' : function(_, e) {
+    e.preventDefault();
     if(!this.node) { return CodeMirror.Pass; }
     if (this.expandable && !this.isCollapsed && !this.isLocked()) {
       this.collapse(this.node.id);
@@ -163,9 +164,10 @@ export const commandMap = {
     }
   },
 
-  'Expand or Focus 1st Child' : function (_) {
+  'Expand or Focus 1st Child' : function (_, e) {
     if(!this.node) { return CodeMirror.Pass; }
     const node = this.node;
+    e.preventDefault();
     if (this.expandable && this.isCollapsed && !this.isLocked()) {
       this.uncollapse(node.id);
     } else if (node.next?.parent === node) {
