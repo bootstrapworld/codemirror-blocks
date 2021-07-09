@@ -146,6 +146,7 @@ export type ToggleEditorProps = {
 
 type ToggleEditorState = {
   blockMode: boolean,
+  code: string,
   // TODO(pcardune): dialog should probably not be a boolean.
   // I think we are using "false" in place of "null" unnecessarily.
   dialog: boolean | {title: string, content: string},
@@ -156,30 +157,19 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state = {
     blockMode: false,
     dialog: false,
+    code: "",
   }
 
   static defaultProps = {
     debuggingLog: {},
     cmOptions: {},
+    code: String,
   }
 
   // TODO(pcardune): None of these should be here. Denormalizing
   // props is a very bad thing to do.
   cmOptions: CodeMirror.EditorConfiguration;
-  language: Language;
-  parse: Language['parse'];
-  getExceptionMessage: Language['getExceptionMessage'];
-  getASTNodeForPrimitive: Language['getASTNodeForPrimitive'];
-  getLiteralNodeForPrimitive: Language['getLiteralNodeForPrimitive'];
-  primitivesFn: Language['primitivesFn'];
   options: Options;
-
-  // TODO(pcardune): remove this field, as we should be able to rely entirely
-  // on lifecycle methods without having to keep track of which life cycle
-  // methods have been called.
-  hasMounted: boolean;
-
-  currentCode: unknown;
 
   eventHandlers: Record<string, Function[]>;
 
@@ -190,13 +180,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   constructor(props: ToggleEditorProps) {
     super(props);
 
-    this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
-    this.language = props.language;
-    this.parse = this.language.parse;
-    this.getExceptionMessage = this.language.getExceptionMessage;
-    this.getASTNodeForPrimitive = this.language.getASTNodeForPrimitive;
-    this.getLiteralNodeForPrimitive = this.language.getLiteralNodeForPrimitive;
-    this.primitivesFn = this.language.primitivesFn;
     this.toolbarRef = createRef();
 
     // construct announcer DOM node
@@ -205,20 +188,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     announcements.setAttribute('aria-atomic', 'true');
     SHARED.announcer = announcements;
 
-    let defaultOptions = {
-      parse: this.parse,
-      incrementalRendering: true,
-      collapseAll: true
-    };
-    this.options = {...defaultOptions, ...props.options};
-    this.hasMounted = false;
     SHARED.recordedMarks = new Map();
     this.eventHandlers = {}; // blank event-handler record
 
-    // make sure 'this' always refers to ToggleEditor
-    // see https://reactjs.org/docs/handling-events.html
-    this.showDialog  = this.showDialog.bind(this);
-    this.closeDialog = this.closeDialog.bind(this);
+    this.state.code = props.initialCode;
   }
 
   loadLoggedActions = (jsonLog) => {
@@ -291,11 +264,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     say(mode + " Mode Enabled", 500);
   }
 
-  componentDidMount() { 
-    this.hasMounted = true;
-    this.currentCode = SHARED.cm.getValue();
-  }
-
   // save any non-block, non-bookmark markers, and the NId they cover
   copyMarks(oldAST: AST) {
     SHARED.recordedMarks.clear();
@@ -336,8 +304,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       });
   }
 
-  showDialog(contents: {title: string, content: string}) { this.setState( () =>({dialog: contents}));  }
-  closeDialog()        { this.setState( () =>({dialog: false}));     }
+  showDialog = (contents: {title: string, content: string}) =>
+    this.setState( () =>({dialog: contents}));  
+  closeDialog = () => this.setState( () =>({dialog: false}));
 
   handleToggle = (blockMode: boolean) => {
     this.setState( (state) => {
@@ -362,12 +331,8 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           the pretty-printer probably produced invalid code.
           See the JS console for more detailed reporting.`;
         }
-        this.copyMarks(oldAst);                   // Preserve old TextMarkers
-        this.currentCode = code;                        // update CM with the PP code
-        // TODO(pcardune): this should not exist. calling code should just use
-        // getBlockMode() instead, which will pull from the state object.
-        (this.props.api as any).blockMode = blockMode;
-        return {...state, blockMode: blockMode};                  // Success! Set the blockMode state
+        this.copyMarks(oldAst);                         // Preserve old TextMarkers
+        return {...state, blockMode: blockMode, code: code}; // Success! Set the state
       } catch (e) {                                     // Failure! Set the dialog state
         console.error(e);
         return {...state, dialog: { title: "Could not convert to Blocks", content: e.toString() }};
@@ -390,8 +355,8 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex={-1} aria-hidden={!this.state.blockMode}>
           <Toolbar 
-            primitives={this.language.primitivesFn ? this.language.primitivesFn() : []}
-            languageId={this.language.id}
+            primitives={this.props.language.primitivesFn ? this.props.language.primitivesFn() : []}
+            languageId={this.props.language.id}
             blockMode={this.state.blockMode} 
             ref={this.toolbarRef} />
         </div>
@@ -415,16 +380,11 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }
 
   renderCode() {
-    let code = this.hasMounted ? this.currentCode : this.props.initialCode;
     return (
       <TextEditor
-        cmOptions={this.cmOptions}
-        parse={this.parse}
-        getExceptionMessage={this.getExceptionMessage}
-        getASTNodeForPrimitive={this.getASTNodeForPrimitive}
-        getLiteralNodeForPrimitive={this.getLiteralNodeForPrimitive}
-        primitivesFn={this.primitivesFn}
-        initialCode={code}
+        cmOptions={{...defaultCmOptions, ...this.props.cmOptions}}
+        parse={this.props.language.parse}
+        value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api} 
         passedAST={this.ast}
@@ -433,18 +393,23 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }
 
   renderBlocks() {
-    let code = this.hasMounted ? this.currentCode : this.props.initialCode;
+    let defaultOptions = {
+      parse: this.props.language.parse,
+      incrementalRendering: true,
+      collapseAll: true
+    };
     return (
       <UpgradedBlockEditor
-        cmOptions={this.cmOptions}
-        parse={this.parse}
-        value={code}
+        cmOptions={{...defaultCmOptions, ...this.props.cmOptions}}
+        parse={this.props.language.parse}
+        value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
-        appElement={this.props.appElement}
-        language={this.language.id}
-        options={this.options}
         passedAST={this.ast}
+        // the props below are unique to the BlockEditor
+        appElement={this.props.appElement}
+        languageId={this.props.language.id}
+        options={{...defaultOptions, ...this.props.options}}
         showDialog={this.showDialog}
         closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
