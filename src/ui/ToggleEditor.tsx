@@ -180,7 +180,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   constructor(props: ToggleEditorProps) {
     super(props);
 
-    this.cmOptions = Object.assign(defaultCmOptions, props.cmOptions);
     this.toolbarRef = createRef();
 
     // construct announcer DOM node
@@ -189,19 +188,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     announcements.setAttribute('aria-atomic', 'true');
     SHARED.announcer = announcements;
 
-    let defaultOptions = {
-      parse: this.props.language.parse,
-      incrementalRendering: true,
-      collapseAll: true
-    };
-    this.options = {...defaultOptions, ...props.options};
     SHARED.recordedMarks = new Map();
     this.eventHandlers = {}; // blank event-handler record
 
-    // make sure 'this' always refers to ToggleEditor
-    // see https://reactjs.org/docs/handling-events.html
-    this.showDialog  = this.showDialog.bind(this);
-    this.closeDialog = this.closeDialog.bind(this);
     this.state.code = props.initialCode;
   }
 
@@ -315,8 +304,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       });
   }
 
-  showDialog(contents: {title: string, content: string}) { this.setState( () =>({dialog: contents}));  }
-  closeDialog()        { this.setState( () =>({dialog: false}));     }
+  showDialog = (contents: {title: string, content: string}) =>
+    this.setState( () =>({dialog: contents}));  
+  closeDialog = () => this.setState( () =>({dialog: false}));
 
   handleToggle = (blockMode: boolean) => {
     this.setState( (state) => {
@@ -388,7 +378,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   renderCode() {
     return (
       <TextEditor
-        cmOptions={this.cmOptions}
+        cmOptions={{...defaultCmOptions, ...this.props.cmOptions}}
         parse={this.props.language.parse}
         value={this.state.code}
         onMount={this.handleEditorMounted}
@@ -399,18 +389,23 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }
 
   renderBlocks() {
+    let defaultOptions = {
+      parse: this.props.language.parse,
+      incrementalRendering: true,
+      collapseAll: true
+    };
     return (
       <UpgradedBlockEditor
-        cmOptions={this.cmOptions}
+        cmOptions={{...defaultCmOptions, ...this.props.cmOptions}}
         parse={this.props.language.parse}
         value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
         passedAST={this.ast}
-
+        // the props below are unique to the BlockEditor
         appElement={this.props.appElement}
         languageId={this.props.language.id}
-        options={this.options}
+        options={{...defaultOptions, ...this.props.options}}
         showDialog={this.showDialog}
         closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
