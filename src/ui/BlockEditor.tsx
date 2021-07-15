@@ -362,7 +362,14 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   executeAction(action) {
-    // convert code to AST
+    // ignore certain logged actions that are already
+    // handled by the BlockEditor constructor
+    const ignoreActions = ["SET_ANNOUNCER", "RESET_STORE_FOR_TESTING"];
+    if(ignoreActions.includes(action.type)){ return; }
+
+    // SET_AST actions have been serialized to printed code
+    // set the value of the editor to that code, reconstruct
+    // the action to use the resulting AST, and delete code
     if(action.type == "SET_AST") {
       SHARED.cm.setValue(action.code);
       action.ast = this.props.ast;
@@ -376,8 +383,6 @@ class BlockEditor extends Component<BlockEditorProps> {
       delete action.nid;
       return;
     }
-    // ignore set announcer
-    if(action.type == "SET_ANNOUNCER"){ return; }
     this.props.dispatch(action);
   }
 
