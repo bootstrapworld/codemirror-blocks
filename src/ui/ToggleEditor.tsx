@@ -169,11 +169,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   static defaultProps = {
     debuggingLog: {},
     cmOptions: {},
-    code: String,
+    code: "",
   }
 
-  // TODO(pcardune): None of these should be here. Denormalizing
-  // props is a very bad thing to do.
   cmOptions: CodeMirror.EditorConfiguration;
   options: Options;
 
