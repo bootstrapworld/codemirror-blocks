@@ -19,11 +19,11 @@ import { defaultKeyMap, keyDown } from '../keymap';
 import {store} from '../store';
 import { ASTNode } from '../ast';
 import type { AST } from '../ast';
-import CodeMirror from 'codemirror';
+import CodeMirror, { SelectionOptions } from 'codemirror';
 import type { Options, API } from '../CodeMirrorBlocks';
 import type { AppDispatch } from '../store';
 import Toolbar from './Toolbar';
-import type { Quarantine } from '../reducers';
+import type { AppAction, Quarantine, RootState } from '../reducers';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
@@ -32,7 +32,41 @@ const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
   'charCoords', 'coordsChar', 'cursorCoords', 'startOperation',
   'endOperation', 'operation', 'addKeyMap', 'removeKeyMap', 
   //'on', 'off',
-  'extendSelection', 'extendSelections', 'extendSelectionsBy'];
+  //'extendSelection',
+  //'extendSelections',
+  //'extendSelectionsBy'
+] as const;
+
+type CodeMirrorAPI = Omit<CodeMirror.Editor, typeof unsupportedAPIs[number]>;
+
+type BlockEditorAPI = {
+
+  getAst(): RootState['ast'];
+  getFocusedNode(): ASTNode | undefined;
+  getSelectedNodes(): ASTNode[];
+
+  /**
+   * @internal
+   */
+  getQuarantine(): Quarantine;
+
+  /**
+   * @internal
+   */
+  setQuarantine(start: Quarantine[0], end: Quarantine[1], txt: Quarantine[2]): void;
+
+  /**
+   * @internal
+   */
+  resetNodeCounter():void;
+
+  /**
+   * @internal
+   */
+  executeAction(action: AppAction):void;
+}
+
+export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
 
 // TODO(Oak): this should really be a new file, but for convenience we will put it
 // here for now
@@ -386,10 +420,10 @@ class BlockEditor extends Component<BlockEditorProps> {
     this.props.dispatch(action);
   }
 
-  buildAPI(ed) {
+  buildAPI(ed): BuiltAPI {
     let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
     const cm = SHARED.cm;
-    const api = {
+    const api: BuiltAPI = {
       /*****************************************************************
       * CM APIs WE WANT TO OVERRIDE
       */
@@ -403,13 +437,13 @@ class BlockEditor extends Component<BlockEditorProps> {
       // CMB has focus if CM has focus OR a block is active
       'hasFocus': () =>
         cm.hasFocus() || Boolean(document.activeElement.id.match(/block-node/)),
-      'extendSelection': (from, to, opts) => this.extendSelections([from], opts, to),
+      'extendSelection': (from: CodeMirror.Position, to: CodeMirror.Position, opts?: SelectionOptions) => this.extendSelections([from], opts, to),
       'extendSelections': (heads, opts) => this.extendSelections(heads, opts),
-      'extendSelectionsBy': (f, opts) =>
+      'extendSelectionsBy': (f:(range)=>CodeMirror.Position, opts?: SelectionOptions) =>
         this.extendSelections(this.listSelections().map(f), opts),
-      'getSelections': (sep) =>
+      'getSelections': (sep?: string) =>
         this.listSelections().map(s => SHARED.cm.getRange(s.anchor, s.head, sep)),
-      'getSelection': (sep) =>
+      'getSelection': (sep?: string) =>
         this.listSelections().map(s => SHARED.cm.getRange(s.anchor, s.head, sep)).join(sep),
       'listSelections' : () => this.listSelections(),
       'replaceRange': (text, from, to, origin) => withState(({ast}) => {
@@ -421,8 +455,8 @@ class BlockEditor extends Component<BlockEditorProps> {
         this.setSelections([{anchor: anchor, head: head}], null, opts),
       'addSelection': (anchor, head) =>
         this.setSelections([{anchor: anchor, head: head}], null, null, false),
-      'replaceSelections': (rStrings, select) => this.replaceSelections(rStrings, select),
-      'replaceSelection': (rString, select) =>
+      'replaceSelections': (rStrings, select?: "around" | "start") => this.replaceSelections(rStrings, select),
+      'replaceSelection': (rString, select?: "around" | "start") =>
         this.replaceSelections(Array(this.listSelections().length).fill(rString), select),
       // If a node is active, return the start. Otherwise return the cursor as-is
       'getCursor': (where) => this.getCursor(where),
@@ -439,7 +473,7 @@ class BlockEditor extends Component<BlockEditorProps> {
         if(opts.widget) {
           throw new BlockError("setBookmark() with a widget is not supported in Block Mode", "API Error");
         }
-        SHARED.cm.setBookmark(pos, opts);
+        return SHARED.cm.setBookmark(pos, opts);
       },
 
       /*****************************************************************
@@ -558,7 +592,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
     dispatch({ type: 'SET_SELECTIONS', selections: nodes });
   }
-  extendSelections(heads, opts, to=false) {
+  extendSelections(heads: CodeMirror.Position[], opts: SelectionOptions, to:false|CodeMirror.Position=false) {
     let tmpCM = getTempCM();
     tmpCM.setSelections(this.listSelections());
     if(to) { tmpCM.extendSelections(heads, opts); }

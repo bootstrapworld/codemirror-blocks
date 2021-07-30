@@ -21,21 +21,26 @@ import CodeMirror, { MarkerRange } from 'codemirror';
  * https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/codemirror/index.d.ts
  */
 declare module 'codemirror' {
+  interface SelectionOptions {
+    bias?: number;
+    origin?: string;
+    scroll?: boolean
+  }
   interface DocOrEditor {
     /**
      * Adds a new selection to the existing set of selections, and makes it the primary selection.
      */
-    addSelection(anchor: Position, head?: Position): void;
+    addSelection(anchor: CodeMirror.Position, head?: CodeMirror.Position): void;
 
     /**
      * An equivalent of extendSelection that acts on all selections at once.
      */
-    extendSelections(heads: Position[]): void;
+    extendSelections(heads: CodeMirror.Position[], options?:SelectionOptions): void;
 
     /**
      * Applies the given function to all existing selections, and calls extendSelections on the result.
      */
-    extendSelectionsBy(f: (range: Position) => Position): void;
+    extendSelectionsBy(f: (range: CodeMirror.Position) => CodeMirror.Position): void;
 
     /**
      * Get the value of the 'extending' flag.
@@ -130,7 +135,8 @@ type ToggleEditorAPI = {
   afterDOMUpdate(f: () => void): void;
 };
 
-export type API = ToggleEditorAPI & CodeMirrorAPI;
+import type {BuiltAPI as BlockEditorAPIExtensions} from './BlockEditor';
+export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 export type ToggleEditorProps = {
   initialCode?: string,
@@ -203,7 +209,11 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     // any CodeMirror function that we can call directly should be passed-through.
     // TextEditor and BlockEditor can add their own, or override them
     codeMirrorAPI.forEach(funcName => {
-      base[funcName] = ed[funcName].bind(ed);
+      // Some functions that we want to proxy (like phrase) are not on the codemirror
+      // editor object when this code executes, so we have to do the lookup inside the
+      // wrapper function. Hopefully by the time the wrapper function is called,
+      // the function it proxies to has been added to the editor instance.
+      base[funcName] = (...args) => (ed as any)[funcName](...args);
     });
 
     const api: ToggleEditorAPI = {

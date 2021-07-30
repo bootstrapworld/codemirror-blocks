@@ -4,7 +4,7 @@ import {DropNodeTarget} from '../dnd';
 import {dropOntoTrashCan} from '../actions';
 require('./TrashCan.less');
 
-export default @DropNodeTarget(function(monitor) {
+@DropNodeTarget(function(monitor) {
   return dropOntoTrashCan(monitor.getItem());
 }) class TrashCan extends Component {
   static propTypes = {
@@ -42,3 +42,5 @@ export default @DropNodeTarget(function(monitor) {
     );
   }
 }
+
+export default TrashCan;
