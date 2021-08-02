@@ -592,7 +592,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
     dispatch({ type: 'SET_SELECTIONS', selections: nodes });
   }
-  extendSelections(heads: CodeMirror.Position[], opts: SelectionOptions, to:false|CodeMirror.Position=false) {
+  extendSelections(heads: CodeMirror.Position[], opts: SelectionOptions, to?:CodeMirror.Position) {
     let tmpCM = getTempCM();
     tmpCM.setSelections(this.listSelections());
     if(to) { tmpCM.extendSelections(heads, opts); }

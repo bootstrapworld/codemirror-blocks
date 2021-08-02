@@ -34,6 +34,14 @@ declare module 'codemirror' {
     addSelection(anchor: CodeMirror.Position, head?: CodeMirror.Position): void;
 
     /**
+     * Similar to setSelection , but will, if shift is held or the extending flag is set,
+     * move the head of the selection while leaving the anchor at its current place.
+     * pos2 is optional , and can be passed to ensure a region (for example a word or paragraph) will end up selected
+     * (in addition to whatever lies between that region and the current anchor).
+     */
+    extendSelection(from: CodeMirror.Position, to?: CodeMirror.Position, options?:SelectionOptions): void;
+
+    /**
      * An equivalent of extendSelection that acts on all selections at once.
      */
     extendSelections(heads: CodeMirror.Position[], options?:SelectionOptions): void;
