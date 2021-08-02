@@ -6,7 +6,7 @@ import {
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
   dragend, dragleave, keyDown, keyPress, insertText
-} from '../spec/support/test-utils';
+} from '../src/toolkit/test-utils';
 
 console.log('Doing comment-test.js');
 

@@ -6,7 +6,7 @@ import {createDebuggingInterface} from '../lib/toolkit/debug';
 
 // HACK: expose ALL test utilities, events, etc
 // so they can be used from the browser console
-import * as t from '../spec/support/test-utils';
+import * as t from '../lib/toolkit/test-utils';
 Object.assign(window, t);
 
 //const exampleCode = smallExampleCode;
