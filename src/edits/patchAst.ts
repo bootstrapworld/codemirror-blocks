@@ -1,7 +1,8 @@
+import type { AST, ASTNode } from '../ast';
 import {assert} from '../utils';
 
 // defaultdict with empty list
-function addIndex(container, k, v) {
+function addIndex<V>(container:{[key:string]:V[]}, k:string, v:V) {
   if (container[k]) {
     container[k].push(v);
   } else {
@@ -9,7 +10,7 @@ function addIndex(container, k, v) {
   }
 }
 
-function copyAllIds(oldTree, newTree) {
+function copyAllIds(oldTree: ASTNode, newTree: ASTNode) {
   const oldIter = oldTree.descendants()[Symbol.iterator]();
   const newIter = newTree.descendants()[Symbol.iterator]();
   let oldPtr = oldIter.next();
@@ -23,10 +24,10 @@ function copyAllIds(oldTree, newTree) {
   }
 }
 
-export default function unify(oldTree, newTree) {
-  function loop(oldTree, newTree) {
+export default function unify(oldTree: AST, newTree: AST) {
+  function loop(oldTree: ASTNode|AST, newTree: ASTNode|AST) {
     newTree.id = oldTree.id;
-    const index = {};
+    const index:{[key:string]: ASTNode[]} = {};
     for (const oldNode of oldTree.children()) {
       addIndex(index, oldNode.hash, oldNode);
     }
