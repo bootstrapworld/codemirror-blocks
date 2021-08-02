@@ -1,4 +1,4 @@
-import CodeMirrorBlocks from '../../src/CodeMirrorBlocks';
+import CodeMirrorBlocks, { Language } from '../CodeMirrorBlocks';
 import { cleanup } from "@testing-library/react";
 
 // figure out what platform we're running on
@@ -8,7 +8,7 @@ const edge = /Edge\/(\d+)/.exec(userAgent);
 const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
 
 // pass along all the simulated events
-export * from './simulate';
+export * from '../../src/toolkit/simulate';
 
 // pass along useful constants
 export const mac = ios || /Mac/.test(platform);
@@ -16,7 +16,7 @@ export const cmd_ctrl = mac? { metaKey: true } : { ctrlKey: true };
 export const DELAY = 250;
 
 // pass along useful testing functions
-export async function wait(ms) {
+export async function wait(ms: number) {
   return new Promise(resolve => {
     setTimeout(resolve, ms);
   });
@@ -53,11 +53,11 @@ const fixture = `
  * or `call` (`activationSetup.call(this, pyret)`)
  * so that `this` is scoped correctly!
  */
-export function activationSetup(language) {
+export function activationSetup(language: Language): void {
   document.body.insertAdjacentHTML('afterbegin', fixture);
   const container = document.getElementById('cmb-editor');
   const cmOptions = {historyEventDelay: 50}; // since our test harness is faster than people
-  this.cmb = new CodeMirrorBlocks(
+  this.cmb = CodeMirrorBlocks(
     container, 
     { collapseAll: false, value: "", incrementalRendering: false }, 
     language, 

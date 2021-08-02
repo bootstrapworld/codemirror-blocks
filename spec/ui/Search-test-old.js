@@ -1,6 +1,6 @@
 import example from 'codemirror-blocks/languages/example';
 import {click, keydown, pureevent, setNativeValue} from '../support/events';
-import {wait, teardown, activationSetup} from './support/test-utils';
+import {wait, teardown, activationSetup} from '../src/toolkit/test-utils';
 import {PGUP, PGDN, F3} from 'codemirror-blocks/keycode';
 
 // ms delay to let the DOM catch up before testing
