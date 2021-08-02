@@ -497,7 +497,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     // show which APIs are unsupported
     unsupportedAPIs.forEach(f =>
       api[f] = () => {
-        throw BlockError(
+        throw new BlockError(
           `The CM API '${f}' is not supported in the block editor`,
           'API Error');
       });
@@ -508,7 +508,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     let node = this.props.ast.getNodeAt(from, to);
     if(!node) {
       throw new BlockError(
-        'Could not create TextMarker: there is no AST node at [',from, to,']',
+        `Could not create TextMarker: there is no AST node at [${from}, ${to},]`,
         'API Error');
     }
     let supportedOptions = ['css','className','title'];
@@ -577,7 +577,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     tmpCM.setSelections(ranges, primary, options);
     const textRanges = [], nodes = [];
     try { validateRanges(ranges, ast); }
-    catch(e) { throw BlockError(e, "API Error"); }
+    catch(e) { throw new BlockError(e, "API Error"); }
     // process the selection ranges into an array of ranges and nodes
     tmpCM.listSelections().forEach(({anchor, head}) => {
       const c1 = minpos(anchor, head);

@@ -14,6 +14,7 @@ import SHARED from '../shared';
 import type { AST } from '../ast';
 import type { Language, Options } from '../CodeMirrorBlocks';
 import CodeMirror, { MarkerRange } from 'codemirror';
+import type { ActionFocus } from '../reducers';
 
 /**
  * Additional declarations of codemirror apis that are not in @types/codemirror... yet.
@@ -56,6 +57,7 @@ declare module 'codemirror' {
      * Redo one undone edit or selection change.
      */
     redoSelection(): void;
+
   }
 
   interface Editor {
@@ -71,6 +73,37 @@ declare module 'codemirror' {
  * not documented in the codemirror docs.
  */
 declare module 'codemirror' {
+  interface DocOrEditor {
+    /**
+     * Get a (JSON - serializeable) representation of the undo history.
+     * 
+     * @types/codemirror-blocks uses any as the return type. The codemirror docs
+     * do not say anything about the return type, but through our own testing,
+     * it appears to be the following.
+     */
+    getHistory(): {done: HistoryItem[], undone: HistoryItem[]};
+  }
+
+  /**
+   * The codemirror documentation does not specify the interface of objects
+   * used to track edit history. But we monkey patch those objects anyway
+   * to keep track of additional information.
+   */
+  interface HistoryItem {
+    /**
+     * This is set by codemirror on certain history items but not on others.
+     * We only monkey patch the history items that *do not* contain this property.
+     */
+    ranges?: CodeMirror.Range[],
+
+    /**
+     * The below are custom additions we make to certain history items.
+     * These are applied in the reducer.
+     */
+    undoableAction?: string,
+    actionFocus?: ActionFocus,
+  }
+
   interface TextMarker {
     /**
      * Specifies the type of text marker, either one made with markText,
