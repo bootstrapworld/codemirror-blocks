@@ -2,6 +2,11 @@ import SHARED from './shared';
 import {store} from './store';
 import objToStableString from 'fast-json-stable-stringify';
 import CodeMirror from 'codemirror';
+import type { Editor, EditorChange } from 'codemirror';
+import type { RootState } from './reducers';
+import type { AST, ASTNode, Pos, Range } from './ast';
+
+type $TSFixMe = any;
 
 /**************************************************************
 * Compute which platform we're on
@@ -28,7 +33,7 @@ export function resetNodeCounter() { store.nodeCounter = 0; }
 // then hash the string so we don't have giant "hashes" eating memory
 // (see https://stackoverflow.com/a/7616484/12026982 and
 // https://anchortagdev.com/consistent-object-hashing-using-stable-stringification/ )
-export function hashObject(obj) {
+export function hashObject(obj: Object) {
   const str = objToStableString(obj);
   var hash = 0, i, chr;
   if (str.length === 0) return hash;
@@ -41,17 +46,17 @@ export function hashObject(obj) {
 }
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
-export function poscmp(a, b) {
+export function poscmp(a: Pos, b: Pos): number {
   if (!a) { console.log('utils:44, hitting null a'); }
   if (!b) { console.log('utils:44, hitting null b'); }
   return  a.line - b.line || a.ch - b.ch;
 }
 
-export function minpos(a, b) {
+export function minpos(a: Pos, b: Pos): Pos {
   return poscmp(a, b) <= 0 ? a : b;
 }
 
-export function maxpos(a, b) {
+export function maxpos(a: Pos, b: Pos): Pos {
   return poscmp(a, b) >= 0 ? a : b;
 }
 
@@ -61,7 +66,7 @@ export function maxpos(a, b) {
 // -> boolean
 //
 // Returns true iff innerRange is contained within outerRange.
-export function srcRangeIncludes(outerRange, innerRange) {
+export function srcRangeIncludes(outerRange: Range, innerRange: Range) {
   return poscmp(outerRange.from, innerRange.from) <= 0
     && poscmp(innerRange.to, outerRange.to) <= 0;
 }
@@ -70,11 +75,11 @@ export function srcRangeIncludes(outerRange, innerRange) {
 //
 // Returns true iff `pos` is inside of `range`.
 // (Being on the boundary counts as inside.)
-export function srcRangeContains(range, pos) {
+export function srcRangeContains(range: Range, pos: Pos) {
   return poscmp(range.from, pos) <= 0 && poscmp(pos, range.to);
 }
 
-export function skipWhile(skipper, start, next) {
+export function skipWhile<T>(skipper: (i:T)=>boolean, start: T, next: (i:T)=>T) {
   let now = start;
   while (skipper(now)) {
     now = next(now);
@@ -82,19 +87,19 @@ export function skipWhile(skipper, start, next) {
   return now;
 }
 
-export function assert(x) {
+export function assert(x: boolean) {
   if (!x) {
     throw new Error("assertion fails");
   }
 }
 
-export function warn(origin, message) {
+export function warn(origin: string, message: string) {
   console.warn(`CodeMirrorBlocks - ${origin} - ${message}`);
 }
 
-export function partition(arr, f) {
-  const matched = [];
-  const notMatched = [];
+export function partition<T>(arr: T[], f:(i:T)=>boolean) {
+  const matched:T[] = [];
+  const notMatched:T[] = [];
   for (const e of arr) {
     (f(e)? matched : notMatched).push(e);
   }
@@ -118,11 +123,11 @@ export function partition(arr, f) {
 // }
 
 store.muteAnnouncements = false;
-store.queuedAnnouncement = false;
+store.queuedAnnouncement = undefined;
 
 // Note: screenreaders will automatically speak items with aria-labels!
 // This handles _everything_else_.
-export function say(text, delay=200, allowOverride=false) {
+export function say(text: string, delay=200, allowOverride=false) {
   const announcement = document.createTextNode(text);
   const announcer = SHARED.announcer;
   if (store.muteAnnouncements || !announcer) return; // if nothing to do, bail
@@ -136,7 +141,7 @@ export function say(text, delay=200, allowOverride=false) {
   }
 }
 
-export function createAnnouncement(nodes, action) {
+export function createAnnouncement(nodes: ASTNode[], action: string) {
   nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
   let annt = (action + " " +
     nodes.map((node) => node.shortDescription())
@@ -144,7 +149,7 @@ export function createAnnouncement(nodes, action) {
   return annt;
 }
 
-export function skipCollapsed(node, next, state) {
+export function skipCollapsed(node: ASTNode, next: (node: ASTNode)=>ASTNode, state: RootState) {
   const {collapsedList, ast} = state;
   const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
@@ -159,14 +164,14 @@ export function skipCollapsed(node, next, state) {
   );
 }
 
-export function getRoot(node) {
+export function getRoot(node: ASTNode) {
   let next = node;
   // keep going until there's no next parent
   while (next && next.parent) { next = next.parent; }
   return next;
 }
 
-export function getLastVisibleNode(state) {
+export function getLastVisibleNode(state: RootState) {
   const {collapsedList, ast} = state;
   const collapsedNodeList = collapsedList.map(ast.getNodeById);
   const lastNode = ast.getNodeBeforeCur(ast.reverseRootNodes[0].to);
@@ -178,36 +183,32 @@ export function getLastVisibleNode(state) {
   );
 }
 
-export function withDefaults(obj, def) {
-  return {...def, ...obj};
-}
-
 export function getBeginCursor() {
   return CodeMirror.Pos(0, 0);
 }
 
-export function getEndCursor(cm) {
+export function getEndCursor(cm: Editor) {
   return CodeMirror.Pos(
     cm.lastLine(),
     cm.getLine(cm.lastLine()).length
   );
 }
 
-export function posWithinNode(pos, node) {
+export function posWithinNode(pos: Pos, node: ASTNode) {
   return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) >  0)
     ||   (poscmp(node.from, pos) <  0) && (poscmp(node.to, pos) >= 0);
 }
 
-function posWithinNodeBiased(pos, node) {
+function posWithinNodeBiased(pos: Pos, node: ASTNode) {
   return (poscmp(node.from, pos) <= 0) && (poscmp(node.to, pos) > 0);
 }
 
-export function nodeCommentContaining(pos, node) {
+export function nodeCommentContaining(pos: Pos, node: ASTNode) {
   return node.options.comment && posWithinNode(pos, node.options.comment);
 }
 
-export function getNodeContainingBiased(cursor, ast) {
-  function iter(nodes) {
+export function getNodeContainingBiased(cursor: Pos, ast: AST) {
+  function iter(nodes: ASTNode[]): ASTNode | null {
     const node = nodes.find(node => posWithinNodeBiased(cursor, node) || nodeCommentContaining(cursor, node));
     if (node) {
       const children = [...node.children()];
@@ -226,7 +227,7 @@ export function getNodeContainingBiased(cursor, ast) {
 
 export const dummyPos = {line: -1, ch: 0};
 
-export function isDummyPos(pos) {
+export function isDummyPos(pos: Pos) {
   return pos.line === -1 && pos.ch === 0;
 }
 /*
@@ -263,7 +264,7 @@ export function waitUntilReady() {
 */
 // Compute the position of the end of a change (its 'to' property refers to the pre-change end).
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
-export function changeEnd({from, to, text}) {
+export function changeEnd({from, to, text}:EditorChange) {
   if (!text) return to;
   let lastLine = text[text.length - 1];
   return {
@@ -274,7 +275,7 @@ export function changeEnd({from, to, text}) {
 
 // Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
-export function adjustForChange(pos, change, from) {
+export function adjustForChange(pos: Pos, change: EditorChange, from: Pos) {
   if (poscmp(pos, change.from) < 0)           return pos;
   if (poscmp(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
   if (poscmp(pos, change.to) <= 0)            return changeEnd(change);
@@ -285,7 +286,7 @@ export function adjustForChange(pos, change, from) {
 
 // Minimize a CodeMirror-style change object, by excluding any shared prefix
 // between the old and new text. Mutates part of the change object.
-export function minimizeChange({from, to, text, removed, origin=undefined}) {
+export function minimizeChange({from, to, text, removed, origin=undefined}:EditorChange) {
   if (!removed) removed = SHARED.cm.getRange(from, to).split("\n");
   // Remove shared lines
   while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
@@ -296,7 +297,7 @@ export function minimizeChange({from, to, text, removed, origin=undefined}) {
   }
   // Remove shared chars
   let n = 0;
-  for (let i in text[0]) {
+  for (let i = 0; i < text[0].length; i++) {
     if (text[0][i] !== removed[0][i]) break;
     n = (+i) + 1;
   }
@@ -308,19 +309,19 @@ export function minimizeChange({from, to, text, removed, origin=undefined}) {
 }
 
 // display the actual exception, and try to log it
-export function logResults(history, exception, description="Crash Log") {
+export function logResults(history: any, exception: any, description="Crash Log") {
   console.log(exception, history);
   try {
-    document.getElementById('description').value = description;
-    document.getElementById('history').value = JSON.stringify(history);
-    document.getElementById('exception').value = exception;
-    document.getElementById('errorLogForm').submit();
+    (document.getElementById('description') as HTMLTextAreaElement).value = description;
+    (document.getElementById('history') as HTMLTextAreaElement).value = JSON.stringify(history);
+    (document.getElementById('exception') as HTMLTextAreaElement).value = exception;
+    (document.getElementById('errorLogForm') as HTMLFormElement).submit();
   } catch (e) {
     console.log('LOGGING FAILED.', e, history);
   }
 }
 
-export function validateRanges(ranges, ast) {
+export function validateRanges(ranges: {anchor: Pos, head: Pos}[], ast: AST) {
   ranges.forEach(({anchor, head}) => {
     const c1 = minpos(anchor, head);
     const c2 = maxpos(anchor, head);
@@ -335,7 +336,7 @@ export function validateRanges(ranges, ast) {
     if(c1IsTopLevel && c2IsTopLevel) return;
 
     // Otherwise, the range is neither toplevel OR falls neatly on a node boundary
-    throw new `The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
+    throw `The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
       ch:${c2.ch}} partially covers a node, which is not allowed`;
   });
   return true;
@@ -343,17 +344,19 @@ export function validateRanges(ranges, ast) {
 
 
 export class BlockError extends Error {
-  constructor(message, type, data) {
+  type: string;
+  data: $TSFixMe;
+  constructor(message: string, type: string, data?: $TSFixMe) {
     super(message);
     this.type = type;
     this.data = data;
   }
 }
 
-export function topmostUndoable(which, state) {
+export function topmostUndoable(which: 'undo'|'redo', state?: RootState) {
   if (!state) state = store.getState();
   let arr = (which === 'undo' ?
-    SHARED.cm.doc.history.done : SHARED.cm.doc.history.undone);
+    SHARED.cm.getDoc().getHistory().done : SHARED.cm.getDoc().getHistory().undone);
   for (let i = arr.length - 1; i >= 0; i--) {
     if (!arr[i].ranges) {
       return arr[i];
@@ -361,7 +364,7 @@ export function topmostUndoable(which, state) {
   }
 }
 
-export function preambleUndoRedo(which) {
+export function preambleUndoRedo(which: 'undo'|'redo') {
   let state = store.getState();
   let tU = topmostUndoable(which);
   if (tU) {
@@ -374,23 +377,28 @@ export function preambleUndoRedo(which) {
 /****************************************************************
 * SOUND HANDLING
 */
-import beepSound from './ui/beep.mp3';
-export const BEEP = new Audio(beepSound);
-
-import wrapSound from './ui/wrap.mp3';
-export const WRAP = new Audio(wrapSound);
-
 // for each sound resource, set crossorigin value to "anonymous"
 // and set up state for interruptable playback 
 // (see https://stackoverflow.com/a/40370077/12026982)
-[BEEP, WRAP].forEach(sound => {
-  sound.crossorigin = "anonymous";
-  sound.isPlaying = false;
-  sound.onplaying = function(){ this.isPlaying = true;  };
-  sound.onpause   = function(){ this.isPlaying = false; };
-});
+class CustomAudio extends Audio {
+  isPlaying: boolean;
 
-export function playSound(sound) {
+  constructor(src: string) {
+    super(src);
+    this.crossOrigin = "anonymous";
+    this.isPlaying = false;
+    this.onplaying = () => { this.isPlaying = true; }
+    this.onpause = () => { this.isPlaying = false; }
+  }
+}
+
+import beepSound from './ui/beep.mp3';
+export const BEEP = new CustomAudio(beepSound);
+import wrapSound from './ui/wrap.mp3';
+export const WRAP = new CustomAudio(wrapSound);
+
+
+export function playSound(sound: CustomAudio) {
   sound.pause();
   console.log("BEEP!");
   if (!(sound.paused && !sound.isPlaying)) return;

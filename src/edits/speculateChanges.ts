@@ -1,5 +1,6 @@
 import CodeMirror from 'codemirror';
 import SHARED from '../shared';
+import type { EditorChange } from 'codemirror';
 
 
 // TODO: For efficiency, we don't really need a full CodeMirror instance here:
@@ -11,7 +12,7 @@ const tmpCM = CodeMirror(tmpDiv, {value: ""});
 //
 // - {successful: true, newAST}
 // - {successful: false, exception}
-export function speculateChanges(changeArr) {
+export function speculateChanges(changeArr: EditorChange[]) {
   tmpCM.setValue(SHARED.cm.getValue());
   for (let c of changeArr) {
     tmpCM.replaceRange(c.text, c.from, c.to, c.origin);
