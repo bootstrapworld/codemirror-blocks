@@ -1,5 +1,7 @@
 import CodeMirrorBlocks, { Language } from '../CodeMirrorBlocks';
 import { cleanup } from "@testing-library/react";
+// pass along all the simulated events
+export * from './simulate';
 
 // figure out what platform we're running on
 const userAgent = navigator.userAgent;
@@ -7,8 +9,6 @@ const platform = navigator.platform;
 const edge = /Edge\/(\d+)/.exec(userAgent);
 const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
 
-// pass along all the simulated events
-export * from '../../src/toolkit/simulate';
 
 // pass along useful constants
 export const mac = ios || /Mac/.test(platform);
