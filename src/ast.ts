@@ -3,6 +3,7 @@ import {poscmp, minpos, maxpos, posWithinNode,
 import * as P from 'pretty-fast-pretty-printer';
 import type CodeMirror from 'codemirror';
 import type { Comment } from './nodes';
+import type { NodeSpec } from './nodeSpec'
 
 /**
  * @internal
@@ -428,8 +429,8 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
    * nodeSpec, which specifies node requirements (see nodeSpec.ts)
    * NOTE(pcardune): can we import the NodeSpec type here?
    */
-  public static spec: any;
-  spec: any;
+  public static spec: NodeSpec;
+  spec: NodeSpec;
 
   /**
    * @internal
