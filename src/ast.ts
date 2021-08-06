@@ -4,22 +4,45 @@ import * as P from 'pretty-fast-pretty-printer';
 import type CodeMirror from 'codemirror';
 import type { Comment } from './nodes';
 
+/**
+ * @internal
+ * given a list of ASTNodes and a depth level, generate
+ * a description of the collection suitable for screenreaders
+ */
 export function enumerateList(lst: ASTNode[], level: number) {
   const described = lst.map(l => l.describe(level)).slice(0);
   const last = described.pop();
   return (described.length == 0)? last : described.join(', ') + " and "+last;
 }
 
+/**
+ * @internal
+ * given a noun and an array, generate a (possibly-plural)
+ * version of that noun
+ */
 export function pluralize(noun: string, set: any[]) {
   return set.length+' '+noun+(set.length != 1? 's' : '');
 }
 
+/**
+ * @internal
+ * The AST depth at which to switch from a short description to a long one
+ */
 const descDepth = 1;
 
+/**
+ * @internal
+ * The pretty-printer is used to canonicalize the programs so that
+ * switching from text to blocks and back is 1-to-1. This printing
+ * algorithm needs to know how wide a line can be, so we set that 
+ * internally here
+ */
 export const prettyPrintingWidth = 80;
 
-// This is the root of the *Abstract Syntax Tree*.  parse implementations are
-// required to spit out an `AST` instance.
+/**
+ * This is the the *Abstract Syntax Tree*. Parser implementations
+ * are required to spit out an `AST` instance.
+ */
 export class AST {
   rootNodes: ASTNode[];
   reverseRootNodes: ASTNode[];
@@ -36,15 +59,24 @@ export class AST {
     // the `reverseRootNodes` attribute is a shallow, reversed copy of the rootNodes
     this.reverseRootNodes = rootNodes.slice().reverse();
 
-    // the `nodeIdMap` attribute can be used to look up nodes by their id.
-    // the other nodeMaps make it easy to determine node order
-    this.nodeIdMap = new Map();
+    // *Unique* ID for every newly-parsed node. No ID is ever re-used.
+    this.nodeIdMap  = new Map();
+    // Index of each node (in-order walk). NIds always start at 0
     this.nodeNIdMap = new Map();
+
+    // When an AST is to be used by CMB, it must be annotated.
+    // This step is computationally intensive, and in certain instances
+    // unecessary
     if(annotate) this.annotateNodes();
+
     this.id = -1; // just for the sake of having an id, though unused
     this.hash = hashObject(this.rootNodes.map(node => node.hash));
   }
 
+  /**
+   * toString : -> String
+   * Pretty-print each rootNode on its own line, prepending whitespace
+   */
   toString() {
     let lines: string[] = [];
     let prevNode: ASTNode | null = null;
@@ -58,6 +90,10 @@ export class AST {
     return lines.join("\n");
   }
 
+  /**
+   * children : -> ASTNode[]
+   * Print out all the immediate "children" of the AST (root nodes)
+   */
   children() {
     const that = this;
     return {
@@ -67,6 +103,10 @@ export class AST {
     };
   }
 
+  /**
+   * descendants : -> ASTNode[]
+   * Print out ALL the descendents (all generations) of each root node
+   */
   descendants() {
     const that = this;
     return {
@@ -78,23 +118,23 @@ export class AST {
     };
   }
 
-  // annotateNodes : ASTNodes ASTNode -> Void
-  // walk through the siblings, assigning aria-* attributes
-  // and populating various maps for tree navigation
+  /**
+   * annotateNodes : ASTNodes ASTNode -> Void
+   * walk through the siblings, assigning aria-* attributes
+   * and populating various maps for tree navigation
+   */
   annotateNodes() {
-    //console.log('XXX ast:86 doing annotateNodes');
     this.nodeIdMap.clear();
     this.nodeNIdMap.clear();
 
     let lastNode: ASTNode | null = null;
     let nid = 0;
 
-    const loop = (nodes: ASTNode[], parent: ASTNode | undefined, level: number) => {
+    const processChildren = (nodes: ASTNode[], parent: ASTNode | undefined, level: number) => {
       nodes.forEach((node, i) => {
         this.validateNode(node);
-        if (node.id === undefined) {
-          // May be defined, if this piece of AST came from the previous AST.
-          node.id = gensym();
+        // Undefined if this DID NOT come from a patched AST.
+        if (node.id === undefined) { node.id = gensym();
         }
         node.parent = parent;
         node.level = level;
@@ -108,13 +148,17 @@ export class AST {
         this.nodeIdMap.set(node.id, node);
         this.nodeNIdMap.set(node.nid, node);
         lastNode = node;
-        loop([...node.children()], node, level + 1);
+        processChildren([...node.children()], node, level + 1);
         node.hash = node.spec.hash(node); // Relies on child hashes; must be bottom-up
       });
     };
-    loop(this.rootNodes, undefined, 1);
+    processChildren(this.rootNodes, undefined, 1);
   }
 
+  /**
+   * validateNode : ASTNode -> Void
+   * Raise an exception if a Node has is invalid
+   */
   validateNode(node: ASTNode) {
     const astFieldNames =
           ["from", "to", "type", "options", "spec", "isLockedP", "__alreadyValidated", "element", "isEditable"];
@@ -160,37 +204,36 @@ export class AST {
     }
   }
 
+  /**
+   * getNodeById : id -> ASTNode
+   * getNodeByNId : nid -> ASTNode
+   * getter methods for the nodeMaps populated from annotateNodes()
+   */
   getNodeById = (id: string) => this.nodeIdMap.get(id)
   getNodeByNId = (nid: number) => this.nodeNIdMap.get(nid)
 
   /**
    * Returns whether `u` is a strict ancestor of `v`
-   * 
-   * TODO(pcardune): make it clear what happens when uid or vid can't be found.
-   * throw an exception?
+   * throws an exception if either isn't found
    */
   isAncestor = (uid: string, vid: string) => {
     let v = this.getNodeById(vid);
     const u = this.getNodeById(uid);
-    if (v) {
-      v = v.parent;
-    }
-    while (v && u && v.level > u.level) {
-      v = v.parent;
-    }
+    if(!u) throw new Error(`The nodeId ${uid} was not found`);
+    if(!v) throw new Error(`The nodeId ${vid} was not found`);
+    if (v) { v = v.parent; }
+    while (v && u && v.level > u.level) { v = v.parent; }
     return u === v;
   }
 
   /**
    * getNodeAfter : ASTNode -> ASTNode
-   *
    * Returns the next node or null
    */
   getNodeAfter = (selection: ASTNode) => selection.next || null;
 
   /**
    * getNodeBefore : ASTNode -> ASTNode
-   *
    * Returns the previous node or null
    */
   getNodeBefore = (selection: ASTNode) => selection.prev || null;
@@ -201,23 +244,15 @@ export class AST {
 
   /**
    * getNodeAfterCur : Cur -> ASTNode
-   *
    * Returns the next node or null
    */
   getNodeAfterCur = (cur: Pos) => {
     function loop(nodes: ASTNode[], parentFallback: ASTNode | null): ASTNode | null {
-      //console.log('ast:211, cur?=', !!cur);
       let n = nodes.find(n => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
-      //console.log('ast:213');
-      if(!n) {
-        //console.log('ast:214');
-        return parentFallback; }               // return null if there's no node after the cursor
+      if(!n) { return parentFallback; }               // return null if there's no node after the cursor
       if(poscmp(n.from, cur) >= 0) {
-        //console.log('ast:218');
-        return n; }      // if the node *starts* after the cursor too, we're done
-      //console.log('ast:220');
+        return n; }                                   // if the node *starts* after the cursor too, we're done
       let children = [...n.children()];               // if *contains* cur, drill down into the children
-      //console.log('ast:222');
       return (children.length == 0)? n : loop(children, n);
     }
     return loop(this.rootNodes, null);
@@ -225,7 +260,6 @@ export class AST {
 
   /**
    * getNodeBeforeCur : Cur -> ASTNode
-   *
    * Returns the previous node or null
    */
   getNodeBeforeCur = (cur: Pos) => {
@@ -241,22 +275,27 @@ export class AST {
 
   /**
    * getFirstRootNode : -> ASTNode
-   *
    * Return the first (in source code order) root node, or `null` if there are none.
    */
   getFirstRootNode() {
     return this.rootNodes.length > 0 ? this.rootNodes[0] : null;
   }
 
-  // return the node containing the cursor, or false
+  /**
+   * getNodeContaining : CMCursor, ASTNodes[] -> ASTNode
+   * Find the node that most tightly-encloses a given cursor
+   */
   getNodeContaining(cursor: Pos, nodes = this.rootNodes): ASTNode | undefined {
     let n = nodes.find(node => posWithinNode(cursor, node) || nodeCommentContaining(cursor, node));
     return n && ([...n.children()].length === 0 ? n :
                  this.getNodeContaining(cursor, [...n.children()]) || n);
   }
 
-  // return a node that whose from/to match two cursor locations, or whose
-  // srcRange matches those locations. If none exists, return undefined
+  /**
+   * getNodeAt : CMCursor, CMCursor -> ASTNode
+   * return a node that whose from/to match two cursor locations, or whose
+   * srcRange matches those locations. If none exists, return undefined
+   */
   getNodeAt(from: Pos, to: Pos) {
     let n = [...this.nodeIdMap.values()].find(n => {
       let {from: srcFrom, to: srcTo} = n.srcRange();
@@ -269,14 +308,16 @@ export class AST {
     return n || false;
   }
 
-  // return the parent or false
+  /**
+   * getNodeParent : ASTNode -> ASTNode | Boolean
+   * return the parent or false
+   */
   getNodeParent = (node: ASTNode) => {
     return node.parent || false;
   }
 
   /**
    * getNextMatchingNode : (ASTNode->ASTNode?) (ASTNode->Bool) ASTNode [Bool] -> ASTNode?
-   *
    * Consumes a search function, a test function, and a starting ASTNode.
    * Calls searchFn over and over until testFn returns false
    * If inclusive is false, searchFn is applied right away.
@@ -296,7 +337,6 @@ export class AST {
 
   /**
    * followsComment : {line, ch} -> bool
-   *
    * Is there a comment or a commented node to the left of this position, on the same line?
    */
   followsComment(pos: Pos) {
@@ -316,7 +356,6 @@ export class AST {
 
   /**
    * precedesComment : {line, ch} -> bool
-   *
    * Is there a comment or a commented node to the right of this position, on the same line?
    */
   precedesComment(pos: Pos) {
@@ -350,25 +389,53 @@ export type NodeOptions = {
   "aria-label"?: string;
 }
 
-// Every node in the AST inherits from the `ASTNode` class, which is used to
-// house some common attributes.
+/**
+ * Every node in the AST must inherit from the `ASTNode` class, which is used
+ * to house some common attributes.
+ */
 export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}> {
+  /**
+   * @internal
+   * Every node must have a Starting and Ending position, represented as 
+   * {line, ch} objects, a human-readable string representing the type 
+   * of the node (useful for debugging), a unique id, NId, depth 
+   * in the tree, hash for quick comparisons, and aria properties for 
+   * set size and position in set (for screenreaders)
+   */
   from: Pos;
   to: Pos;
   type: string;
-  options: Opt;
   id!: string;
+  nid: number;
   level: number;
   hash: any;
-  public static spec: any;
-  spec: any;
-  isLockedP: any;
+  "aria-setsize": number;
+  "aria-posinset": number;
+
+  /**
+   * @internal
+   * Optional pointers to the node's parent and prev/next siblings
+   * the options object always contains the aria-label, but can also
+   * include other values
+   */
   parent?: ASTNode;
   prev?: ASTNode;
   next?: ASTNode;
-  nid: number;
-  "aria-setsize": number;
-  "aria-posinset": number;
+  options: Opt;
+
+  /**
+   * @internal
+   * nodeSpec, which specifies node requirements (see nodeSpec.ts)
+   * NOTE(pcardune): can we import the NodeSpec type here?
+   */
+  public static spec: any;
+  spec: any;
+
+  /**
+   * @internal
+   * A predicate, which prevents the node from being edited
+   */
+  isLockedP: boolean;
 
   /**
    * @internal
@@ -391,34 +458,16 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
 
   /**
    * @internal
-   * 
+   * the CM TextMarker which contains the element representing the node
+   * (only relevant for rootNodes)
    */
   mark: CodeMirror.TextMarker;
 
   constructor(from: Pos, to: Pos, type: string, options: Opt) {
-
-    // The `from` and `to` attributes are objects containing the start and end
-    // positions of this node within the source document. They are in the format
-    // of `{line: <line>, ch: <column>}`.
     this.from = from;
     this.to = to;
-
-    // Every node has a `type` attribute, which is simply a human readable
-    // string sepcifying what type of node it is. This helps with debugging and
-    // with writing renderers.
     this.type = type;
-
-    // Every node also has an `options` attribute, which is just an open ended
-    // object that you can put whatever you want in it. This is useful if you'd
-    // like to persist information from your parse about a particular node, all
-    // the way through to the renderer. For example, when parsing wescheme code,
-    // human readable aria labels are generated by the parse, stored in the
-    // options object, and then rendered in the renderers.
     this.options = options;
-
-    // Every node also has a globally unique `id` which can be used to look up
-    // its corresponding DOM element, or to look it up in `AST.nodeIdMap`.
-    // It is set in AST.annotateNodes().
     
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
@@ -431,6 +480,7 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
     this.isLockedP = false;
   }
 
+  // based on the depth level, choose short v. long descriptions
   describe(level: number) {
     if ((this.level - level) >= descDepth) {
       return this.shortDescription(level);
@@ -438,18 +488,24 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
       return this.longDescription(level);
     }
   }
-
+  // the short description is literally the ARIA label
   shortDescription(level?: number): string {
     return this.options["aria-label"] || "";
   }
 
+  // the long description is node-specific, detailed, and must be
+  // implemented by the ASTNode itself
   longDescription(level: number): string {
-    throw "ASTNodes must implement `.longDescription()`";
+    throw new Error("ASTNodes must implement `.longDescription()`");
   }
 
+  // Pretty-print the node and its children, based on the pp-width
   toString() {
     return this.pretty().display(prettyPrintingWidth).join("\n");
   }
+
+  // Pretty-printing is node-specific, and must be implemented by
+  // the ASTNode itself
   pretty(): P.Doc {
     throw new Error("Method not implemented.");
   }
