@@ -7,7 +7,7 @@ import {
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
   dragend, dragleave, keyDown, keyPress, insertText
-} from '../spec/support/test-utils';
+} from '../src/toolkit/test-utils';
 const QUARANTINE_DELAY = 2000;
 
 console.log('Doing new-blocks-test.js');

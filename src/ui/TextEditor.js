@@ -20,12 +20,19 @@ class TextEditor extends Component {
     passedAST: PropTypes.object,
   }
 
-  handleEditorDidMount = ed => {
-    // pass the text-mode CM editor, API, and current AST
+  /**
+   * @internal
+   * When the editor mounts, build the API
+   */
+    handleEditorDidMount = ed => {
     this.props.onMount(ed, this.buildAPI(ed), this.props.passedAST);
   }
 
-  // override default CM methods, or add our own
+  /**
+   * @internal
+   * Build the API for a text editor, restricting APIs that are
+   * incompatible with our toggleable block editor
+   */
   buildAPI() {
     const api = {};
     // show which APIs are unsupported

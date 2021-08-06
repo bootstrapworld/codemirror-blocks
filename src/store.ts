@@ -5,11 +5,22 @@ import type { RootState, AppAction } from './reducers';
 
 type AppStore =
   Store<RootState, AppAction> &
-  // TODO(pcardune): this onKeyDown property gets set by
-  // BlockEditor and used by the Node component for no apparent
-  // reason. It's effectively a global variable and should be
-  // stored somewhere else.
-  {onKeyDown?: Function};
+  // TODO(pcardune): these additional properties are tacked onto the store
+  // in random places, but shouldn't be.
+  {
+    // TODO(pcardune): this onKeyDown property gets set by
+    // BlockEditor and used by the Node component for no apparent
+    // reason. It's effectively a global variable and should be
+    // stored somewhere else.
+    onKeyDown?: Function,
+
+    // set in utils.ts and used for assigning unique ids to ast nodes.
+    nodeCounter?: number,
+
+    // used in say() function of util.ts
+    muteAnnouncements?: boolean,
+    queuedAnnouncement?: ReturnType<typeof setTimeout>,
+  };
 
 export const store: AppStore = createStore(reducer, undefined, applyMiddleware(thunk));
 /**

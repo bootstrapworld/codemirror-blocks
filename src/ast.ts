@@ -4,7 +4,6 @@ import * as P from 'pretty-fast-pretty-printer';
 import type CodeMirror from 'codemirror';
 import type { Comment } from './nodes';
 
-
 export function enumerateList(lst: ASTNode[], level: number) {
   const described = lst.map(l => l.describe(level)).slice(0);
   const last = described.pop();
@@ -125,12 +124,12 @@ export class AST {
 
   validateNode(node: ASTNode) {
     const astFieldNames =
-          ["from", "to", "type", "options", "spec", "isLockedP", "__alreadyValidated", "element"];
+          ["from", "to", "type", "options", "spec", "isLockedP", "__alreadyValidated", "element", "isEditable"];
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames =
           ["id", "parent", "level", "nid", "prev", "next", "hash",
            "aria-setsize", "aria-posinset", "mark"];
-    const invalidProp = newFieldNames.find(field => field in node)
+    const invalidProp = newFieldNames.find(field => field in node && node[field] !== undefined)
     if (!node.__alreadyValidated && invalidProp) {
       throw new Error(`The property ${invalidProp} is used by ASTNode, and should not be overridden in subclasses.`);
     }
@@ -212,7 +211,7 @@ export class AST {
    *
    * Returns the next node or null
    */
-  getNodeAfterCur = (cur: ASTNode) => {
+  getNodeAfterCur = (cur: Pos) => {
     function loop(nodes: ASTNode[], parentFallback: ASTNode | null): ASTNode | null {
       //console.log('ast:211, cur?=', !!cur);
       let n = nodes.find(n => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
@@ -236,7 +235,7 @@ export class AST {
    *
    * Returns the previous node or null
    */
-  getNodeBeforeCur = (cur: ASTNode) => {
+  getNodeBeforeCur = (cur: Pos) => {
     function loop(nodes: ASTNode[], parentFallback: ASTNode | null): ASTNode | null {
       // find the last node that begins before cur
       let n = nodes.slice(0).reverse().find(n => poscmp(n.from, cur) < 0);
@@ -346,6 +345,11 @@ export class AST {
 export type Pos = {
   line: number;
   ch: number;
+}
+
+export type Range = {
+  from: Pos,
+  to: Pos,
 }
 
 export type NodeOptions = {

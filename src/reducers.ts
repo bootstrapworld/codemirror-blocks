@@ -50,6 +50,8 @@ function loggerDebug(action: AppAction, ast: AST) { // in lieu of logger.debug
 
 export type Quarantine = [CodeMirror.Position, CodeMirror.Position, string];
 
+export type ActionFocus = {oldFocusNId: number, newFocusNId: number}
+
 export type RootState = {
   selections: string[];
   editable: {};
@@ -58,7 +60,7 @@ export type RootState = {
   collapsedList: string[];
   markedMap: Map<string, CodeMirror.TextMarker>;
   undoableAction: string | null;
-  actionFocus: {oldFocusNId: number, newFocusNId: number} | false;
+  actionFocus: ActionFocus | false;
   errorId: string;
   cur: CodeMirror.Position | null;
   quarantine: Quarantine | null;

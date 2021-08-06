@@ -6,7 +6,6 @@ export class Primitive {
   name: string;
   parse: Language['parse'];
   primitivesFn: Language['primitivesFn'];
-  primitives: Language['primitives'];
   getASTNodeForPrimitive: Language['getASTNodeForPrimitive'];
   getLiteralNodeForPrimitive: Language['getLiteralNodeForPrimitive'];
   argumentTypes: string[];
@@ -15,7 +14,6 @@ export class Primitive {
   constructor(languageId: string, name: string, config: {argumentTypes?: string[], returnType?: string} = {}) {
     this.languageId = languageId;
     this.parse = languageId ? getLanguage(languageId).parse : null;
-    this.primitives = languageId ? getLanguage(languageId).primitives : null;
     this.primitivesFn = languageId ? getLanguage(languageId).primitivesFn : null;
     this.getASTNodeForPrimitive = languageId ? getLanguage(languageId).getASTNodeForPrimitive : null;
     this.getLiteralNodeForPrimitive = languageId ? getLanguage(languageId).getLiteralNodeForPrimitive : null;
