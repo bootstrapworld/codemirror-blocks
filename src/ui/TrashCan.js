@@ -32,7 +32,6 @@ require('./TrashCan.less');
     return this.props.connectDropTarget(
       <div className={classNames}
            aria-hidden={true}
-           onClick={this.handleToggle}
            onDragEnter={this.handleDragEnter}
            onDragLeave={this.handleDragLeave}
            onDrop={this.handleDragLeave}

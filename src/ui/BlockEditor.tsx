@@ -337,8 +337,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    */
   handleChanges = (cm, changes) => {
     this.props.dispatch((dispatch, getState) => {
-      let notFromCMB = (origin) => origin && origin.startsWith("cmb:");
-      if (!notFromCMB(change.origin)) {
+      if (!changes.every(c => c.origin?.startsWith("cmb:"))) {
         // These changes did not originate from us. However, they've all
         // passed the `handleBeforeChange` function, so they must be valid edits.
         // (There's almost certainly just one edit here; I (Justin) am not

@@ -250,6 +250,16 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   /**
    * @internal
+   * Expose a scheduler for after react's render cycle is over. Some
+   * internal functions use it, and testing infrastructure may use it as well
+   * see stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
+   */
+  afterDOMUpdate = f => {
+    window.requestAnimationFrame(() => setTimeout(f, 0));
+  }
+
+  /**
+   * @internal
    * Populate a base object with mode-agnostic methods we wish to expose
    */
   buildAPI(ed: CodeMirror.Editor): API {
@@ -268,6 +278,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       // custom CMB methods
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
+      'afterDOMUpdate' : this.afterDOMUpdate,
       'getCM': () => ed,
       'on' : (...args: Parameters<CodeMirror.Editor['on']>) => {
         const [type, fn] = args;
@@ -281,11 +292,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         SHARED.cm.off(type, fn);
       },
       'runMode': () => { throw "runMode is not supported in CodeMirror-blocks"; },
-      // Expose a scheduler for after react's render cycle is over
-      // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-      'afterDOMUpdate' : (f) => {
-        window.requestAnimationFrame(() => setTimeout(f, 0));
-      }    };
+    };
     return Object.assign(base, api);
   }
 
