@@ -249,43 +249,6 @@ type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
 }
 
 class BlockEditor extends Component<BlockEditorProps> {
-  // NOTE(@pcardune): are these lines all unecessary now
-  // that we have the TypeScript annotations?
-
-  // static propTypes = {
-  //   value: PropTypes.string.isRequired,
-  //   options: PropTypes.object,
-  //   cmOptions: PropTypes.object,
-  //   keyMap: PropTypes.object,
-  //   languageId: PropTypes.string.isRequired,
-  //   parse: PropTypes.func.isRequired,
-  //   setAST: PropTypes.func.isRequired,
-  //   setCursor: PropTypes.func.isRequired,
-  //   setQuarantine: PropTypes.func.isRequired,
-  //   clearFocus: PropTypes.func.isRequired,
-  //   activateByNid: PropTypes.func.isRequired,
-  //   search: PropTypes.shape({
-  //     onSearch: PropTypes.func.isRequired,
-  //     search: PropTypes.func.isRequired,
-  //     setCursor: PropTypes.func.isRequired,
-  //     setCM: PropTypes.func.isRequired,
-  //   }),
-  //   toolbarRef: PropTypes.object,
-  //   onBeforeChange: PropTypes.func,
-  //   onMount:PropTypes.func.isRequired,
-  //   hasQuarantine: PropTypes.bool.isRequired,
-  //   api: PropTypes.object,
-  //   passedAST: PropTypes.object,
-  //   showDialog: PropTypes.func.isRequired,
-  //   closeDialog: PropTypes.func.isRequired,
-
-  //   // this is actually required, but it's buggy
-  //   // see https://github.com/facebook/react/issues/3163
-  //   ast: PropTypes.object,
-  //   dispatch: PropTypes.func.isRequired,
-  //   cur: pos
-  // }
-
   mouseUsed: boolean;
   newAST: AST;
   parse: BlockEditorProps['parse'];
