@@ -42,6 +42,11 @@ export type Language = {
   name: string;
 
   /**
+   * Optional description of the language
+   */
+  description?: string;
+
+  /**
    * A function for generating an AST from source code
    * @param code source code for the program
    * @returns The ast that codemirror-blocks will render
@@ -68,12 +73,7 @@ export type Language = {
    * Returns a list of language primitives that will be displayed
    * in the search bar.
    */
-  primitivesFn?: () => Primitive[];
-
-  /**
-   * @deprecated
-   */
-  primitives: Primitive[];
+  primitivesFn?: () => PrimitiveGroup;
 };
 
 

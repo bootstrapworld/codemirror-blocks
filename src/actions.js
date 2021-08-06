@@ -1,4 +1,4 @@
-import {withDefaults, say, poscmp, srcRangeIncludes, warn, createAnnouncement} from './utils';
+import {say, poscmp, srcRangeIncludes, warn, createAnnouncement} from './utils';
 import SHARED from './shared';
 import {store} from './store';
 import {performEdits, edit_insert, edit_delete, edit_replace,
@@ -168,7 +168,7 @@ export function setCursor(cur) {
 export function activateByNid(nid, options) {
   //console.log('XXX actions:169 activateByNid called with', nid);
   return (dispatch, getState) => {
-    options = withDefaults(options, {allowMove: true, record: true});
+    options = {...options, allowMove: true, record: true};
     let {ast, focusId, collapsedList} = getState();
     
     // If nid is null, try to get it from the focusId

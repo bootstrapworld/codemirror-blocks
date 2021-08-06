@@ -14,6 +14,7 @@ import SHARED from '../shared';
 import type { AST } from '../ast';
 import type { Language, Options } from '../CodeMirrorBlocks';
 import CodeMirror, { MarkerRange } from 'codemirror';
+import type { ActionFocus } from '../reducers';
 
 /**
  * Additional declarations of codemirror apis that are not in @types/codemirror... yet.
@@ -21,21 +22,34 @@ import CodeMirror, { MarkerRange } from 'codemirror';
  * https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/codemirror/index.d.ts
  */
 declare module 'codemirror' {
+  interface SelectionOptions {
+    bias?: number;
+    origin?: string;
+    scroll?: boolean
+  }
   interface DocOrEditor {
     /**
      * Adds a new selection to the existing set of selections, and makes it the primary selection.
      */
-    addSelection(anchor: Position, head?: Position): void;
+    addSelection(anchor: CodeMirror.Position, head?: CodeMirror.Position): void;
+
+    /**
+     * Similar to setSelection , but will, if shift is held or the extending flag is set,
+     * move the head of the selection while leaving the anchor at its current place.
+     * pos2 is optional , and can be passed to ensure a region (for example a word or paragraph) will end up selected
+     * (in addition to whatever lies between that region and the current anchor).
+     */
+    extendSelection(from: CodeMirror.Position, to?: CodeMirror.Position, options?:SelectionOptions): void;
 
     /**
      * An equivalent of extendSelection that acts on all selections at once.
      */
-    extendSelections(heads: Position[]): void;
+    extendSelections(heads: CodeMirror.Position[], options?:SelectionOptions): void;
 
     /**
      * Applies the given function to all existing selections, and calls extendSelections on the result.
      */
-    extendSelectionsBy(f: (range: Position) => Position): void;
+    extendSelectionsBy(f: (range: CodeMirror.Position) => CodeMirror.Position): void;
 
     /**
      * Get the value of the 'extending' flag.
@@ -51,6 +65,7 @@ declare module 'codemirror' {
      * Redo one undone edit or selection change.
      */
     redoSelection(): void;
+
   }
 
   interface Editor {
@@ -66,6 +81,37 @@ declare module 'codemirror' {
  * not documented in the codemirror docs.
  */
 declare module 'codemirror' {
+  interface DocOrEditor {
+    /**
+     * Get a (JSON - serializeable) representation of the undo history.
+     * 
+     * @types/codemirror-blocks uses any as the return type. The codemirror docs
+     * do not say anything about the return type, but through our own testing,
+     * it appears to be the following.
+     */
+    getHistory(): {done: HistoryItem[], undone: HistoryItem[]};
+  }
+
+  /**
+   * The codemirror documentation does not specify the interface of objects
+   * used to track edit history. But we monkey patch those objects anyway
+   * to keep track of additional information.
+   */
+  interface HistoryItem {
+    /**
+     * This is set by codemirror on certain history items but not on others.
+     * We only monkey patch the history items that *do not* contain this property.
+     */
+    ranges?: CodeMirror.Range[],
+
+    /**
+     * The below are custom additions we make to certain history items.
+     * These are applied in the reducer.
+     */
+    undoableAction?: string,
+    actionFocus?: ActionFocus,
+  }
+
   interface TextMarker {
     /**
      * Specifies the type of text marker, either one made with markText,
@@ -76,7 +122,7 @@ declare module 'codemirror' {
     type: string;
 
     /**
-     * Sepcified the options that were used when the marker was created.
+     * Specified the options that were used when the marker was created.
      * This property is not documented in the codemirror docs but apparently
      * works.
      */
@@ -130,7 +176,8 @@ type ToggleEditorAPI = {
   afterDOMUpdate(f: () => void): void;
 };
 
-export type API = ToggleEditorAPI & CodeMirrorAPI;
+import type {BuiltAPI as BlockEditorAPIExtensions} from './BlockEditor';
+export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 export type ToggleEditorProps = {
   initialCode?: string,
@@ -163,16 +210,12 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   static defaultProps = {
     debuggingLog: {},
     cmOptions: {},
-    code: String,
+    code: "",
   }
 
-  // TODO(pcardune): None of these should be here. Denormalizing
-  // props is a very bad thing to do.
   cmOptions: CodeMirror.EditorConfiguration;
   options: Options;
-
   eventHandlers: Record<string, Function[]>;
-
   toolbarRef: React.RefObject<Toolbar>;
   ast?: AST;
   newAST?: AST;
@@ -194,24 +237,48 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     this.state.code = props.initialCode;
   }
 
+  /**
+   * @internal
+   * Imports a json log of interactions and sets appropriate state
+   * used for debugging and isolating cases
+   */
   loadLoggedActions = (jsonLog) => {
     console.log('log is', jsonLog);
     this.setState({debuggingLog: jsonLog});
     this.props.api?.setValue(jsonLog.startingSource);
   }
 
+  /**
+   * @internal
+   * Expose a scheduler for after react's render cycle is over. Some
+   * internal functions use it, and testing infrastructure may use it as well
+   * see stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
+   */
+  afterDOMUpdate = f => {
+    window.requestAnimationFrame(() => setTimeout(f, 0));
+  }
+
+  /**
+   * @internal
+   * Populate a base object with mode-agnostic methods we wish to expose
+   */
   buildAPI(ed: CodeMirror.Editor): API {
     const base: any = {};
     // any CodeMirror function that we can call directly should be passed-through.
     // TextEditor and BlockEditor can add their own, or override them
     codeMirrorAPI.forEach(funcName => {
-      base[funcName] = ed[funcName].bind(ed);
+      // Some functions that we want to proxy (like phrase) are not on the codemirror
+      // editor object when this code executes, so we have to do the lookup inside the
+      // wrapper function. Hopefully by the time the wrapper function is called,
+      // the function it proxies to has been added to the editor instance.
+      base[funcName] = (...args) => (ed as any)[funcName](...args);
     });
 
     const api: ToggleEditorAPI = {
       // custom CMB methods
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
+      'afterDOMUpdate' : this.afterDOMUpdate,
       'getCM': () => ed,
       'on' : (...args: Parameters<CodeMirror.Editor['on']>) => {
         const [type, fn] = args;
@@ -225,21 +292,21 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         SHARED.cm.off(type, fn);
       },
       'runMode': () => { throw "runMode is not supported in CodeMirror-blocks"; },
-      // Expose a scheduler for after react's render cycle is over
-      // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-      'afterDOMUpdate' : (f) => {
-        window.requestAnimationFrame(() => setTimeout(f, 0));
-      }
     };
     return Object.assign(base, api);
   }
 
-  // After a mode switch, rebuild the API and re-assign events
+  /**
+   * @internal
+   * This is an internal function that is passed down into mode-
+   * specific components. After a mode switch, (1) rebuild the 
+   * API with mode-specific versions, (2) re-assign event handlers,
+   * and (3) re-render any TextMarkers.
+   */
   handleEditorMounted = (ed: CodeMirror.Editor, api: API, ast: AST) => {
     // set CM aria attributes, and add announcer
     const mode = this.state.blockMode ? 'Block' : 'Text';
     const wrapper = ed.getWrapperElement();
-    //Modal.setAppElement(this.props.appElement);
     ed.getScrollerElement().setAttribute('role', 'presentation');
     wrapper.setAttribute('aria-label', mode+' Editor');
     wrapper.appendChild(SHARED.announcer);
@@ -264,19 +331,20 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     say(mode + " Mode Enabled", 500);
   }
 
-  // save any non-block, non-bookmark markers, and the NId they cover
-  copyMarks(oldAST: AST) {
+  /**
+   * @internal
+   * Record all TextMarkers that are (a) not bookmarks and (b) still 
+   * in the document. This record is used to reconstitute them after
+   * the editor mounts.
+   */
+  recordMarks(oldAST: AST) {
     SHARED.recordedMarks.clear();
     (SHARED.cm as CodeMirror.Editor).getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach((m: CodeMirror.TextMarker<MarkerRange>) => {
-        if (m.type == "bookmark") {
-          return;
-        }
+        if (m.type == "bookmark") { return; }
         const marker = m.find();
-        if (!marker) {
-          // marker is no longer in the document, bail
-          return;
-        }
+        // marker is no longer in the document, bail
+        if (!marker) { return; }
         let {from: oldFrom, to: oldTo} = marker;
         const oldNode = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
         if(!oldNode) { // bail on non-node markers
@@ -304,10 +372,23 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       });
   }
 
+
+  /**
+   * @internal
+   * Dialog showing/hiding methods deal with ToggleEditor state.
+   * We pass them to mode-specific components, to allow those
+   * components to show/hide dialogs
+   */
   showDialog = (contents: {title: string, content: string}) =>
     this.setState( () =>({dialog: contents}));  
   closeDialog = () => this.setState( () =>({dialog: false}));
 
+  /**
+   * @internal
+   * When the mode is toggled, (1) parse the value of the editor, 
+   * (2) pretty-print and re-parse to canonicalize the text, 
+   * (3) record TextMarkers and update editor state
+   */
   handleToggle = (blockMode: boolean) => {
     this.setState( (state) => {
       let oldAst, WS, code;
@@ -331,7 +412,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           the pretty-printer probably produced invalid code.
           See the JS console for more detailed reporting.`;
         }
-        this.copyMarks(oldAst);                         // Preserve old TextMarkers
+        this.recordMarks(oldAst);                         // Preserve old TextMarkers
         return {...state, blockMode: blockMode, code: code}; // Success! Set the state
       } catch (e) {                                     // Failure! Set the dialog state
         console.error(e);
@@ -339,9 +420,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       }
     });
   };
-
-  // clear the error message, triggering a redraw
-  closeError() { this.setState({error: false}); }
 
   render() {
     const classes = 'Editor ' + (this.state.blockMode ? 'blocks' : 'text');
@@ -361,7 +439,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
             ref={this.toolbarRef} />
         </div>
         <div className="col-xs-9 codemirror-pane">
-        { this.state.error? this.renderError(this.state.error) : ""}
         { this.state.blockMode? this.renderBlocks() : this.renderCode() }
         </div>
       </div>

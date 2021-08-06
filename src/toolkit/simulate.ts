@@ -1,5 +1,5 @@
 import { fireEvent } from "@testing-library/react";
-//import userEvent from '@testing-library/user-event';
+import { ASTNode } from "../ast";
 
 // These exported functions simulate browser events for testing.
 // They use React's test utilities whenever possible.
@@ -11,19 +11,21 @@ import { fireEvent } from "@testing-library/react";
 //   (You can also just look at the table in the source code below.)
 // - `props` sets other properties on the event (whatever you like).
 
-export function click(node) {
+type ElementLike = Element | ASTNode
+
+export function click(node: ElementLike) {
   fireEvent.click(toElement(node));
 }
-export function mouseDown(node) {
+export function mouseDown(node: ElementLike) {
   fireEvent.mouseDown(toElement(node));
 }
-export function doubleClick(node) {
+export function doubleClick(node: ElementLike) {
   fireEvent.doubleClick(toElement(node));
 }
-export function blur(node=document.activeElement) {
+export function blur(node: ElementLike = document.activeElement) {
   fireEvent.blur(toElement(node));
 }
-export function paste(pastedString, node=document.activeElement) {
+export function paste(pastedString: string, node: ElementLike = document.activeElement) {
   var dT = null;
   try { dT = new DataTransfer();} catch(e) { console.log('ERR in paste()'); }
   var pasteEvent = new ClipboardEvent('paste', {clipboardData: dT});
@@ -31,11 +33,11 @@ export function paste(pastedString, node=document.activeElement) {
   toElement(node).dispatchEvent(pasteEvent);
   //userEvent.paste(toElement(node), pastedString);
 }
-export function cut(node=document.activeElement) {
+export function cut(node: ElementLike = document.activeElement) {
   fireEvent.cut(toElement(node));
 }
 
-function createBubbledEvent(type, props = {}) {
+function createBubbledEvent(type: string, props = {}) {
   const event = new Event(type, { bubbles: true });
   Object.assign(event, props);
   return event;
@@ -51,7 +53,7 @@ export function dragstart() {
   return ans;
 }
 
-export function dragover(node=document.activeElement) {
+export function dragover(node: ElementLike = document.activeElement) {
   toElement(node).dispatchEvent(createBubbledEvent('dragover'));
 }
 
@@ -67,7 +69,7 @@ export function mouseover() {
   return createBubbledEvent('mouseover');
 }
 
-export function dragenterSeq(node=document.activeElement) {
+export function dragenterSeq(node:ElementLike=document.activeElement) {
   //toElement(node).dispatchEvent(mouseenter());
   toElement(node).dispatchEvent(dragenter());
   toElement(node).dispatchEvent(mouseover());
@@ -85,23 +87,32 @@ export function dragend() {
   return createBubbledEvent('dragend');
 }
 
+class CustomKeydownEvent extends CustomEvent<any> {
+  which: number;
+  keyCode: number;
+  constructor(key: string) {
+    super('keydown', { bubbles: true });
+    this.which = this.keyCode = getKeyCode(key);
+  }
+}
+
 // TODO: document.activeElement isn't always a good default to dispatch to.
 // What does the _browser_ dispatch to?
-export function keyDown(key, props={}, node=document.activeElement) {
+export function keyDown(key: string, props={}, node:ElementLike=document.activeElement) {
+  node = toElement(node);
   // NOTE(Emmanuel): if it's a textarea, use native browser events
   if(node.nodeName == 'TEXTAREA') {
-    let event = new CustomEvent('keydown', {bubbles: true});
-    event.which = event.keyCode = getKeyCode(key);
+    let event = new CustomKeydownEvent(key);
     Object.assign(event, props);
     node.dispatchEvent(event);
   } else {
-    fireEvent.keyDown(toElement(node), makeKeyEvent(key, props));
+    fireEvent.keyDown(node, makeKeyEvent(key, props));
   }
 }
-export function keyPress(key, props={}, node=document.activeElement) {
+export function keyPress(key: string, props={}, node=document.activeElement) {
   fireEvent.keyPress(toElement(node), makeKeyEvent(key, props));
 }
-export function insertText(text) {
+export function insertText(text: string) {
   // TODO: can this be done via fireEvent?
   document.execCommand('insertText', false, text);
 }
@@ -110,22 +121,21 @@ export function insertText(text) {
 
 // Given a key name (like "Enter"), fill out the props properties that a key
 // event should have (like `.keyCode=13`).
-function makeKeyEvent(key, props) {
-  console.log(key, props);
+function makeKeyEvent<T extends {}>(key: string, props: T) {
   let keyCode = getKeyCode(key);
   let eventProps = {
     which: keyCode, // deprecated
     keyCode: keyCode, // deprecated
-    key: key // Good!
+    key: key, // Good!
+    ...props
   };
-  Object.assign(eventProps, props);
   return eventProps;
 }
 
 // Convert a `.key` value to its corresponding keycode. The official table can
 // be found here:
 // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
-function getKeyCode(key) {
+function getKeyCode(key: string): number {
   // The key code for an (uppercase) letter is that letter's ascii value.
   if (key.match(/^[A-Z]$/)) {
     return key.charCodeAt(0);
@@ -163,7 +173,7 @@ function getKeyCode(key) {
 
 // Return either `node` or `node.element`, whichever is an instance of a DOM
 // element. If neither is, throw an error.
-function toElement(node) {
+function toElement(node: ElementLike): Element {
   if (node instanceof Element) {
     return node;
   }

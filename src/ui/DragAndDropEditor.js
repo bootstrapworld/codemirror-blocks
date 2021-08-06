@@ -7,8 +7,6 @@ import {connect} from 'react-redux';
 import SHARED from '../shared';
 import {playSound, BEEP} from '../utils';
 
-export default
-
 @connect(null, dispatch => ({dispatch}))
 
 @DropNodeTarget(function(monitor) {
@@ -82,3 +80,5 @@ class WrappedCodeMirror extends Component {
     );
   }
 }
+
+export default WrappedCodeMirror;
