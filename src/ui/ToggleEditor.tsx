@@ -122,7 +122,7 @@ declare module 'codemirror' {
     type: string;
 
     /**
-     * Sepcified the options that were used when the marker was created.
+     * Specified the options that were used when the marker was created.
      * This property is not documented in the codemirror docs but apparently
      * works.
      */
@@ -215,9 +215,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   cmOptions: CodeMirror.EditorConfiguration;
   options: Options;
-
   eventHandlers: Record<string, Function[]>;
-
   toolbarRef: React.RefObject<Toolbar>;
   ast?: AST;
   newAST?: AST;
@@ -239,12 +237,21 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     this.state.code = props.initialCode;
   }
 
+  /**
+   * @internal
+   * Imports a json log of interactions and sets appropriate state
+   * used for debugging and isolating cases
+   */
   loadLoggedActions = (jsonLog) => {
     console.log('log is', jsonLog);
     this.setState({debuggingLog: jsonLog});
     this.props.api?.setValue(jsonLog.startingSource);
   }
 
+  /**
+   * @internal
+   * Populate a base object with mode-agnostic methods we wish to expose
+   */
   buildAPI(ed: CodeMirror.Editor): API {
     const base: any = {};
     // any CodeMirror function that we can call directly should be passed-through.
@@ -278,17 +285,21 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
       'afterDOMUpdate' : (f) => {
         window.requestAnimationFrame(() => setTimeout(f, 0));
-      }
-    };
+      }    };
     return Object.assign(base, api);
   }
 
-  // After a mode switch, rebuild the API and re-assign events
+  /**
+   * @internal
+   * This is an internal function that is passed down into mode-
+   * specific components. After a mode switch, (1) rebuild the 
+   * API with mode-specific versions, (2) re-assign event handlers,
+   * and (3) re-render any TextMarkers.
+   */
   handleEditorMounted = (ed: CodeMirror.Editor, api: API, ast: AST) => {
     // set CM aria attributes, and add announcer
     const mode = this.state.blockMode ? 'Block' : 'Text';
     const wrapper = ed.getWrapperElement();
-    //Modal.setAppElement(this.props.appElement);
     ed.getScrollerElement().setAttribute('role', 'presentation');
     wrapper.setAttribute('aria-label', mode+' Editor');
     wrapper.appendChild(SHARED.announcer);
@@ -313,19 +324,20 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     say(mode + " Mode Enabled", 500);
   }
 
-  // save any non-block, non-bookmark markers, and the NId they cover
-  copyMarks(oldAST: AST) {
+  /**
+   * @internal
+   * Record all TextMarkers that are (a) not bookmarks and (b) still 
+   * in the document. This record is used to reconstitute them after
+   * the editor mounts.
+   */
+  recordMarks(oldAST: AST) {
     SHARED.recordedMarks.clear();
     (SHARED.cm as CodeMirror.Editor).getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach((m: CodeMirror.TextMarker<MarkerRange>) => {
-        if (m.type == "bookmark") {
-          return;
-        }
+        if (m.type == "bookmark") { return; }
         const marker = m.find();
-        if (!marker) {
-          // marker is no longer in the document, bail
-          return;
-        }
+        // marker is no longer in the document, bail
+        if (!marker) { return; }
         let {from: oldFrom, to: oldTo} = marker;
         const oldNode = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
         if(!oldNode) { // bail on non-node markers
@@ -353,10 +365,23 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       });
   }
 
+
+  /**
+   * @internal
+   * Dialog showing/hiding methods deal with ToggleEditor state.
+   * We pass them to mode-specific components, to allow those
+   * components to show/hide dialogs
+   */
   showDialog = (contents: {title: string, content: string}) =>
     this.setState( () =>({dialog: contents}));  
   closeDialog = () => this.setState( () =>({dialog: false}));
 
+  /**
+   * @internal
+   * When the mode is toggled, (1) parse the value of the editor, 
+   * (2) pretty-print and re-parse to canonicalize the text, 
+   * (3) record TextMarkers and update editor state
+   */
   handleToggle = (blockMode: boolean) => {
     this.setState( (state) => {
       let oldAst, WS, code;
@@ -380,7 +405,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           the pretty-printer probably produced invalid code.
           See the JS console for more detailed reporting.`;
         }
-        this.copyMarks(oldAst);                         // Preserve old TextMarkers
+        this.recordMarks(oldAst);                         // Preserve old TextMarkers
         return {...state, blockMode: blockMode, code: code}; // Success! Set the state
       } catch (e) {                                     // Failure! Set the dialog state
         console.error(e);
