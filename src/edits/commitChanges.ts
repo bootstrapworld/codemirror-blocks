@@ -44,7 +44,7 @@ export function commitChanges(
       var oldFocusNId = oldFocus ? oldFocus.nid : null;
     }
     // If we haven't already parsed the AST during speculateChanges, parse it now.
-    let newAST = astHint || SHARED.parse(SHARED.cm.getValue());
+    let newAST: AST = astHint || SHARED.parse(SHARED.cm.getValue());
     // Patch the tree and set the state
     newAST = patch(oldAST, newAST);
     store.dispatch({type: 'SET_AST', ast: newAST});

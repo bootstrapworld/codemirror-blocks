@@ -208,7 +208,7 @@ class FakeBlankNode extends ASTNode {
 /**
  * An ASTNode that is a clone of another ASTNode.
  */
-class ClonedASTNode extends ASTNode {
+export class ClonedASTNode extends ASTNode {
 
   // Make a copy of a node, to perform fake edits on (so that the fake edits don't
   // show up in the real AST). This copy will be deep over the ASTNodes, but
