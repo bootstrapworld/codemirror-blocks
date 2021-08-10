@@ -223,7 +223,7 @@ const mapDispatchToProps = (dispatch: AppDispatch) => ({
 const blockEditorConnector = connect(mapStateToProps, mapDispatchToProps);
 type $TSFixMe = any;
 
-type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
+export type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
   value: string;
   options?: Options;
   cmOptions?: CodeMirror.EditorConfiguration;

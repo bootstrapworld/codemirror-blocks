@@ -228,7 +228,7 @@ const mapDispatchToProps = (dispatch: AppDispatch) => ({
 
 const connector = connect(mapStateToProps, mapDispatchToProps);
 
-type EnhancedNodeProps = ConnectedProps<typeof connector> & {
+export type EnhancedNodeProps = ConnectedProps<typeof connector> & {
   node: ASTNode;
   inToolbar?: boolean;
   normallyEditable?: boolean;

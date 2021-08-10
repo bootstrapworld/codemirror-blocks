@@ -7,7 +7,6 @@ import { AST, ASTNode, Pos } from '../ast';
 import type { EditorChange } from 'codemirror';
 
 type FocusHint = (ast:AST) => ASTNode | null | "fallback";
-type Changes = EditorChange[];
 // commitChanges :
 //   Changes, bool, FocusHint|undefined, AST|undefined
 //   -> {newAST, focusId}

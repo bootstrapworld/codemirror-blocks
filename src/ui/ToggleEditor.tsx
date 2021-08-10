@@ -81,6 +81,17 @@ declare module 'codemirror' {
  * not documented in the codemirror docs.
  */
 declare module 'codemirror' {
+  
+  /**
+   * Get a human readable name for a given keyboard event key.
+   * 
+   * @deprecated This appears in src/edit/legacy.js of the codemirror source, so
+   * presumably that means it's deprecated. See
+   * https://github.com/codemirror/CodeMirror/blob/49a7fc497c85e5b51801b3f439f4bb126e3f226b/src/edit/legacy.js#L47
+   * @param event the keyboard event from which to calculate a human readable name
+   */
+  function keyName(event: KeyboardEvent):string;
+
   interface DocOrEditor {
     /**
      * Get a (JSON - serializeable) representation of the undo history.
