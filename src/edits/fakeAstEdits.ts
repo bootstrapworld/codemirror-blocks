@@ -2,6 +2,7 @@ import * as P from 'pretty-fast-pretty-printer';
 import {warn, poscmp} from '../utils';
 import {Required, Optional, List, Value} from '../nodeSpec';
 import {ASTNode} from '../ast';
+import type {AST, Pos} from '../ast';
 import {playSound, BEEP} from '../utils';
 
 
@@ -38,7 +39,11 @@ import {playSound, BEEP} from '../utils';
 // Knows how to perform a fake insertion operation, and how to find the inserted
 // child after the AST is re-parsed.
 export class FakeAstInsertion {
-  constructor(parent, fieldName, pos) {
+  parent: ASTNode;
+  pos: Pos;
+  spec: List;
+  index: number;
+  constructor(parent: ASTNode, fieldName: string, pos: Pos) {
     this.parent = parent;
     this.pos = pos;
     // Find the spec that matches the supplied field name.
@@ -71,7 +76,7 @@ export class FakeAstInsertion {
     return;
   }
 
-  insertChild(clonedParent, text) {
+  insertChild(clonedParent: ASTNode, text: string) {
     const newChildNode = new FakeInsertNode(this.pos, this.pos, text);
     clonedParent[this.spec.fieldName].splice(this.index, 0, newChildNode);
   }
@@ -81,7 +86,7 @@ export class FakeAstInsertion {
   // Since nodeIds are not stable across edits, findChild may fail if the
   // parent node has been changed. In that case, return false to trigger 
   // the fallback focusHint handler.
-  findChild(newAST) {
+  findChild(newAST: AST) {
     try {
       const newParent = newAST.getNodeById(this.parent.id);
       if (!newParent) return null;
@@ -97,17 +102,23 @@ export class FakeAstInsertion {
 // Knows how to perform a fake replacement or deletion operation, and how to
 // find the replaced child.
 export class FakeAstReplacement {
-  constructor(parent, child) {
+  parent: ASTNode;
+  child: ASTNode;
+  spec: Required | Optional | List;
+  index?: string;
+  constructor(parent: ASTNode, child: ASTNode) {
     this.parent = parent;
     this.child = child;
     for (const spec of parent.spec.childSpecs) {
-      const field = parent[spec.fieldName];
-      if (spec instanceof Required && field.id === child.id) {
-        this.spec = spec;
-        return;
-      } else if (spec instanceof Optional && field && field.id === child.id) {
-        this.spec = spec;
-        return;
+      const field: ASTNode | ASTNode[] = parent[spec.fieldName];
+      if (!(field instanceof Array)) {
+        if (spec instanceof Required && field.id === child.id) {
+          this.spec = spec;
+          return;
+        } else if (spec instanceof Optional && field && field.id === child.id) {
+          this.spec = spec;
+          return;
+        } 
       } else if (spec instanceof List) {
         for (const i in field) {
           if (field[i].id === child.id) {
@@ -121,7 +132,7 @@ export class FakeAstReplacement {
     warn('new ReplacementPoint', "Failed to find child to be replaced/deleted.");
   }
 
-  replaceChild(clonedParent, text) {
+  replaceChild(clonedParent: ClonedASTNode, text: string) {
     const newChildNode = new FakeInsertNode(this.child.from, this.child.to, text);
     if (this.index) {
       clonedParent[this.spec.fieldName][this.index] = newChildNode;
@@ -130,7 +141,7 @@ export class FakeAstReplacement {
     }
   }
 
-  deleteChild(clonedParent) {
+  deleteChild(clonedParent: ClonedASTNode) {
     if (this.index) {
       clonedParent[this.spec.fieldName].splice(this.index, 1); // Remove the i'th element.
     } else if (this.spec instanceof Optional) {
@@ -142,7 +153,7 @@ export class FakeAstReplacement {
   }
 
   // Call only if you used `replaceChild`, not `deleteChild`.
-  findChild(newAST) {
+  findChild(newAST: AST) {
     const newParent = newAST.getNodeById(this.parent.id);
     if (!newParent) return null;
     if (this.index) {
@@ -155,12 +166,13 @@ export class FakeAstReplacement {
 
 // A fake ASTNode that just prints itself with the given text.
 class FakeInsertNode extends ASTNode {
-  constructor(from, to, text, options={}) {
+  text: string;
+  constructor(from: Pos, to: Pos, text: string, options={}) {
     super(from, to, 'fakeInsertNode', options);
     this.text = text;
   }
 
-  toDescription(_level) {
+  toDescription(_level: number) {
     return "";
   }
 
@@ -169,18 +181,18 @@ class FakeInsertNode extends ASTNode {
     return P.vertArray(lines.map(P.txt));
   }
 
-  render(_props) {
+  render(_props:{}) {
     warn('fakeAstEdits', "FakeInsertNode didn't expect to be rendered!");
   }
 }
 
 // A fake ASTNode that just prints itself like a Blank.
 class FakeBlankNode extends ASTNode {
-  constructor(from, to, options={}) {
+  constructor(from: Pos, to: Pos, options={}) {
     super(from, to, 'fakeBlankNode', options);
   }
 
-  toDescription(_level) {
+  toDescription(_level: number) {
     return "";
   }
 
@@ -188,33 +200,48 @@ class FakeBlankNode extends ASTNode {
     return P.txt("...");
   }
 
-  render(_props) {
+  render(_props:{}) {
     warn('fakeAstEdits', "FakeBlankNode didn't expect to be rendered!");
+  }
+}
+
+/**
+ * An ASTNode that is a clone of another ASTNode.
+ */
+class ClonedASTNode extends ASTNode {
+
+  // Make a copy of a node, to perform fake edits on (so that the fake edits don't
+  // show up in the real AST). This copy will be deep over the ASTNodes, but
+  // shallow over the non-ASTNode values they contain.
+  constructor(oldNode: ASTNode) {
+    super(oldNode.from, oldNode.to, oldNode.type, oldNode.options);
+    for (const spec of oldNode.spec.childSpecs) {
+      if (spec instanceof Required || spec instanceof Optional) {
+        if (oldNode[spec.fieldName]) {
+          this[spec.fieldName] = cloneNode(oldNode[spec.fieldName]);
+        } else {
+          this[spec.fieldName] = null;
+        }
+      } else if (spec instanceof Value) {
+        this[spec.fieldName] = oldNode[spec.fieldName];
+      } else if (spec instanceof List) {
+        this[spec.fieldName] = oldNode[spec.fieldName].map(cloneNode);
+      }
+    }
+    this.type = oldNode.type;
+    this.id = oldNode.id;
+    this.hash = oldNode.hash;
+    this.spec = oldNode.spec;
+    this.pretty = oldNode.pretty;
+  }
+  render(_props:{}) {
+    warn('fakeAstEdits', "ClonedASTNode didn't expect to be rendered!");
   }
 }
 
 // Make a copy of a node, to perform fake edits on (so that the fake edits don't
 // show up in the real AST). This copy will be deep over the ASTNodes, but
 // shallow over the non-ASTNode values they contain.
-export function cloneNode(oldNode) {
-  let newNode = new ASTNode(oldNode.from, oldNode.to, oldNode.type, oldNode.options);
-  for (const spec of oldNode.spec.childSpecs) {
-    if (spec instanceof Required || spec instanceof Optional) {
-      if (oldNode[spec.fieldName]) {
-        newNode[spec.fieldName] = cloneNode(oldNode[spec.fieldName]);
-      } else {
-        newNode[spec.fieldName] = null;
-      }
-    } else if (spec instanceof Value) {
-      newNode[spec.fieldName] = oldNode[spec.fieldName];
-    } else if (spec instanceof List) {
-      newNode[spec.fieldName] = oldNode[spec.fieldName].map(cloneNode);
-    }
-  }
-  newNode.type = oldNode.type;
-  newNode.id = oldNode.id;
-  newNode.hash = oldNode.hash;
-  newNode.spec = oldNode.spec;
-  newNode.pretty = oldNode.pretty;
-  return newNode;
+export function cloneNode(oldNode: ASTNode): ClonedASTNode {
+  return new ClonedASTNode(oldNode);
 }
