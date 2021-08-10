@@ -3,8 +3,11 @@ import SHARED from '../shared';
 import {poscmp, adjustForChange, minimizeChange, logResults, topmostUndoable} from '../utils';
 import {activateByNid} from '../actions';
 import patch from './patchAst';
+import { AST, ASTNode, Pos } from '../ast';
+import type { EditorChange } from 'codemirror';
 
-
+type FocusHint = (ast:AST) => ASTNode | null | "fallback";
+type Changes = EditorChange[];
 // commitChanges :
 //   Changes, bool, FocusHint|undefined, AST|undefined
 //   -> {newAST, focusId}
@@ -25,11 +28,11 @@ import patch from './patchAst';
 // - astHint is the AST you get from parsing the result of these changes (which
 //   you may know from a call to `speculateChanges()`).
 export function commitChanges(
-  changes,
-  isUndoOrRedo = false,
-  focusHint = undefined,
-  astHint = undefined,
-  annt
+  changes:EditorChange[],
+  isUndoOrRedo:boolean = false,
+  focusHint:FocusHint|-1 = undefined,
+  astHint:AST = undefined,
+  annt?: string
 ) {
   //console.log('XXX commitChanges:34 doing commitChanges');
   try{
@@ -74,7 +77,7 @@ export function commitChanges(
 // 2. There is a focus hint, but when you call it it returns "fallback".
 // In those cases, use `computeFocusNodeFromChanges` instead.
 // Note: a focusHint of -1 means "let CodeMirror set the focus"
-function setFocus(changes, focusHint, newAST) {
+function setFocus(changes: EditorChange[], focusHint: FocusHint|-1, newAST: AST) {
   //console.log('XXX commitChanges:78 doing setFocus');
   if(focusHint == -1) return;
   let {collapsedList} = store.getState();
@@ -110,8 +113,8 @@ function setFocus(changes, focusHint, newAST) {
 // NOTE(Justin): This is a set of _heuristics_ that are likely but not
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
-function computeFocusNodeFromChanges(changes, newAST) {
-  let insertion = false;
+function computeFocusNodeFromChanges(changes: EditorChange[], newAST: AST) {
+  let insertion = false as EditorChange|false;
   let startLocs = changes.map(c => {
     c = minimizeChange(c);
     c.from = adjustForChange(c.from, c, true);

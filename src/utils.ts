@@ -275,7 +275,7 @@ export function changeEnd({from, to, text}:EditorChange) {
 
 // Adjust a Pos to refer to the post-change position, or the end of the change if the change covers it.
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
-export function adjustForChange(pos: Pos, change: EditorChange, from: Pos) {
+export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
   if (poscmp(pos, change.from) < 0)           return pos;
   if (poscmp(pos, change.from) == 0 && from)  return pos; // if node.from==change.from, no change
   if (poscmp(pos, change.to) <= 0)            return changeEnd(change);
