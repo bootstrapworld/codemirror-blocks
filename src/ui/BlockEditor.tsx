@@ -19,11 +19,12 @@ import { defaultKeyMap, keyDown } from '../keymap';
 import {store} from '../store';
 import { ASTNode } from '../ast';
 import type { AST } from '../ast';
-import CodeMirror, { SelectionOptions } from 'codemirror';
+import CodeMirror, { Editor, SelectionOptions } from 'codemirror';
 import type { Options, API } from '../CodeMirrorBlocks';
 import type { AppDispatch } from '../store';
 import Toolbar from './Toolbar';
 import type { AppAction, Quarantine, RootState } from '../reducers';
+import type { IUnControlledCodeMirror } from 'react-codemirror2';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
@@ -240,7 +241,7 @@ export type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
     setCM: Function;
   };
   toolbarRef?: React.RefObject<Toolbar>;
-  onBeforeChange: Function;
+  onBeforeChange: IUnControlledCodeMirror['onBeforeChange'];
   onMount: Function;
   api?: API;
   passedAST?: AST;
@@ -697,7 +698,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * @internal
    * When the CM instance receives a paste event...start a quarantine
    */
-  handleTopLevelPaste = (ed, e) => {
+  handleTopLevelPaste = (ed: Editor, e: ClipboardEvent) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
     const start = SHARED.cm.getCursor(true as $TSFixMe);
@@ -710,7 +711,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * When the CM instance receives cursor activity...
    * If there are selections, pass null. Otherwise pass the cursor.
    */  
-  handleTopLevelCursorActivity = (ed, _) => {
+  handleTopLevelCursorActivity = (ed: Editor) => {
     let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
     this.props.setCursor(ed, cur);
   }
