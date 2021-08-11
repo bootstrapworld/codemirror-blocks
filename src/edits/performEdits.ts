@@ -48,6 +48,9 @@ export function edit_replace(text:string, node:ASTNode): Edit {
   }
 }
 
+export type OnSuccess = (r:{newAST:AST, focusId:string}) => void;
+export type OnError = (e:any) => void;
+
 // performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
 //
 // Attempt to commit a set of changes to Code Mirror. For more details, see the
@@ -59,9 +62,9 @@ export function performEdits(
   origin: string,
   ast: AST,
   edits: Edit[],
-  onSuccess=(r:{newAST:AST, focusId:string})=>{},
-  onError=(e:any)=>{},
-  annt: string
+  onSuccess: OnSuccess=(r:{newAST:AST, focusId:string})=>{},
+  onError: OnError=(e:any)=>{},
+  annt?: string|false
 ) {
   // Ensure that all of the edits are valid.
   //console.log('XXX performEdits:55 doing performEdits');
@@ -132,7 +135,7 @@ export function performEdits(
   }
 }
 
-abstract class Edit {
+export abstract class Edit {
   from: Pos;
   to: Pos;
   node?: ASTNode;

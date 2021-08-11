@@ -1,11 +1,17 @@
 import {createStore, applyMiddleware, Store} from 'redux';
-import thunk, { ThunkDispatch } from 'redux-thunk';
+import thunk, { ThunkDispatch, ThunkMiddleware } from 'redux-thunk';
 import {reducer} from './reducers';
 import type { RootState, AppAction } from './reducers';
 import { InputEnv } from './keymap';
 
+const reduxStore = createStore(
+  reducer,
+  undefined,
+  applyMiddleware(thunk as ThunkMiddleware<RootState, AppAction>)
+);
+
 export type AppStore =
-  Store<RootState, AppAction> &
+  typeof reduxStore &
   // TODO(pcardune): these additional properties are tacked onto the store
   // in random places, but shouldn't be.
   {
@@ -23,7 +29,8 @@ export type AppStore =
     queuedAnnouncement?: ReturnType<typeof setTimeout>,
   };
 
-export const store: AppStore = createStore(reducer, undefined, applyMiddleware(thunk));
+export const store: AppStore = reduxStore
+
 /**
  * A dispatch function that supports calling dispatch with both
  * AppActions and thunks.

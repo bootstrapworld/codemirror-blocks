@@ -31,7 +31,7 @@ export function commitChanges(
   isUndoOrRedo:boolean = false,
   focusHint:FocusHint|-1 = undefined,
   astHint:AST = undefined,
-  annt?: string
+  annt?: string|false
 ) {
   //console.log('XXX commitChanges:34 doing commitChanges');
   try{
@@ -61,7 +61,7 @@ export function commitChanges(
       //console.log('XXX commitChanges:59 newFocusNId=', newFocusNId);
       //console.log('XXX commitChanges:60 annt=', annt);
       let tU = topmostUndoable('undo');
-      tU.undoableAction = annt;
+      tU.undoableAction = annt || undefined;
       tU.actionFocus = {oldFocusNId, newFocusNId};
       store.dispatch({type: 'DO', focusId: focusId});
     }
