@@ -28,27 +28,27 @@ import type { BlockEditorProps } from './ui/BlockEditor';
  * This should be refactored to something that's is less
  * abusive to the properties of the Node component.
  */
-type InputEnv = {
+export type InputEnv = {
   // added by BlockEditor before calling keyDown()
-  showDialog: BlockEditorProps['showDialog'],
-  toolbarRef: BlockEditorProps['toolbarRef'],
+  showDialog?: BlockEditorProps['showDialog'],
+  toolbarRef?: BlockEditorProps['toolbarRef'],
 
   // defined by Node react component
-  isLocked():boolean;
-  handleMakeEditable: (e?:Event) => void;
-  setRight():boolean;
-  setLeft():boolean;
+  isLocked?():boolean;
+  handleMakeEditable?: (e?:React.KeyboardEvent) => void;
+  setRight?():boolean;
+  setLeft?():boolean;
 
   // These somehow come from somewhere. Either a BlockEditor or a Node
   // elements presumably.
-  cur: CodeMirror.Position;
+  cur?: CodeMirror.Position;
+  dispatch?: AppDispatch,
+  ast?: AST;
   props:{
     dispatch: AppDispatch,
     activateByNid: (nid: number, options?:{allowMove: boolean, record?: boolean})=>void,
-  } & EnhancedNodeProps,
+  } & Partial<EnhancedNodeProps>,
   node?: ASTNode,
-  dispatch: AppDispatch,
-  ast: AST;
 
   // these get tacked on by the keyDown function
   fastSkip?: (next: (node: ASTNode)=>ASTNode) => ASTNode,
@@ -146,7 +146,7 @@ Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
-function pasteHandler(this: Env, _:Editor, e:KeyboardEvent) {
+function pasteHandler(this: Env, _:Editor, e:React.KeyboardEvent) {
   if(!this.node) { return CodeMirror.Pass; }
   const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
   const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
@@ -167,7 +167,7 @@ function pasteHandler(this: Env, _:Editor, e:KeyboardEvent) {
   }
 }
 
-export const commandMap:{[index: string]: (this: Env, cm: Editor, e:Event) => void} = {
+export const commandMap:{[index: string]: (this: Env, cm: Editor, e:React.KeyboardEvent) => void} = {
   prevFocus : function (_, e) {
     e.preventDefault();
     this.toolbarRef.current.primitiveSearch.focus();
@@ -409,7 +409,7 @@ export const commandMap:{[index: string]: (this: Env, cm: Editor, e:Event) => vo
     SHARED.cm.undo();
   },
 
-  'Redo' : function(_, e:Event) {
+  'Redo' : function(_, e) {
     e.preventDefault();
     preambleUndoRedo('redo');
     SHARED.cm.redo();
@@ -424,7 +424,7 @@ export const commandMap:{[index: string]: (this: Env, cm: Editor, e:Event) => vo
 // editor's keyMap. If there is a handler for that event, flatten the
 // environment and add some utility methods, then set the key handler's
 // "this" object to be that environment and call it.
-export function keyDown(e: KeyboardEvent, env: InputEnv, keyMap:{[index:string]:string}) {
+export function keyDown(e: React.KeyboardEvent, env: InputEnv, keyMap:{[index:string]:string}) {
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
   if(handler) {
     e.stopPropagation();
@@ -450,7 +450,7 @@ export function keyDown(e: KeyboardEvent, env: InputEnv, keyMap:{[index:string]:
         env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid);
       }
     });
-    return handler.bind(env)(SHARED.cm, e);
+    return handler.bind(env as Env)(SHARED.cm, e);
   }
 }
 

@@ -16,7 +16,7 @@ import {poscmp, resetNodeCounter, minpos, maxpos,
   validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 import { defaultKeyMap, keyDown } from '../keymap';
-import {store} from '../store';
+import {AppStore, store} from '../store';
 import { ASTNode } from '../ast';
 import type { AST } from '../ast';
 import CodeMirror, { Editor, SelectionOptions } from 'codemirror';
@@ -228,7 +228,7 @@ export type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
   value: string;
   options?: Options;
   cmOptions?: CodeMirror.EditorConfiguration;
-  keyMap?: $TSFixMe;
+  keyMap?: {[index: string]: string};
   /**
    * id of the language being used
    */
@@ -688,7 +688,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * NOTE: This is called from both CM *and* Node components. Each is responsible
    * for passing 'this' as the environment. Be sure to add showDialog and toolbarRef!
    */
-  handleKeyDown = (e, env) => {
+  handleKeyDown:AppStore['onKeyDown'] = (e, env) => {
     env.showDialog = this.props.showDialog;
     env.toolbarRef = this.props.toolbarRef;
     return keyDown(e, env, this.props.keyMap);

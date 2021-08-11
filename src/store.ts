@@ -2,8 +2,9 @@ import {createStore, applyMiddleware, Store} from 'redux';
 import thunk, { ThunkDispatch } from 'redux-thunk';
 import {reducer} from './reducers';
 import type { RootState, AppAction } from './reducers';
+import { InputEnv } from './keymap';
 
-type AppStore =
+export type AppStore =
   Store<RootState, AppAction> &
   // TODO(pcardune): these additional properties are tacked onto the store
   // in random places, but shouldn't be.
@@ -12,7 +13,7 @@ type AppStore =
     // BlockEditor and used by the Node component for no apparent
     // reason. It's effectively a global variable and should be
     // stored somewhere else.
-    onKeyDown?: Function,
+    onKeyDown?: (e:React.KeyboardEvent, env: InputEnv)=>void,
 
     // set in utils.ts and used for assigning unique ids to ast nodes.
     nodeCounter?: number,

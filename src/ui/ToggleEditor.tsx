@@ -13,7 +13,7 @@ import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import type { AST } from '../ast';
 import type { Language, Options } from '../CodeMirrorBlocks';
-import CodeMirror, { MarkerRange } from 'codemirror';
+import CodeMirror, { MarkerRange, Position, TextMarker } from 'codemirror';
 import type { ActionFocus } from '../reducers';
 
 /**
@@ -90,7 +90,7 @@ declare module 'codemirror' {
    * https://github.com/codemirror/CodeMirror/blob/49a7fc497c85e5b51801b3f439f4bb126e3f226b/src/edit/legacy.js#L47
    * @param event the keyboard event from which to calculate a human readable name
    */
-  function keyName(event: KeyboardEvent):string;
+  function keyName(event: React.KeyboardEvent):string;
 
   interface DocOrEditor {
     /**
@@ -186,6 +186,10 @@ type ToggleEditorAPI = {
   runMode(): never;
   afterDOMUpdate(f: () => void): void;
 };
+
+function isTextMarkerRange(marker: TextMarker<MarkerRange|Position>): marker is TextMarker<MarkerRange> {
+  return marker.type != "bookmark";
+}    
 
 import type {BuiltAPI as BlockEditorAPIExtensions} from './BlockEditor';
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
@@ -351,8 +355,8 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   recordMarks(oldAST: AST) {
     SHARED.recordedMarks.clear();
     (SHARED.cm as CodeMirror.Editor).getAllMarks().filter(m => !m.BLOCK_NODE_ID && m.type !== "bookmark")
-      .forEach((m: CodeMirror.TextMarker<MarkerRange>) => {
-        if (m.type == "bookmark") { return; }
+      .forEach((m: CodeMirror.TextMarker<MarkerRange|Position>) => {
+        if (!isTextMarkerRange(m)) { return ; }
         const marker = m.find();
         // marker is no longer in the document, bail
         if (!marker) { return; }
