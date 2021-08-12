@@ -1,8 +1,13 @@
 import {say, poscmp, srcRangeIncludes, warn, createAnnouncement} from './utils';
 import SHARED from './shared';
-import {store} from './store';
+import {AppDispatch, store} from './store';
 import {performEdits, edit_insert, edit_delete, edit_replace,
-  edit_overwrite} from './edits/performEdits';
+  edit_overwrite,
+  Edit,
+  OnSuccess,
+  OnError} from './edits/performEdits';
+import { AST, ASTNode, Pos } from './ast';
+import { RootState } from './reducers';
 
 
 // All editing actions are defined here.
@@ -41,7 +46,7 @@ import {performEdits, edit_insert, edit_delete, edit_replace,
 
 // Insert `text` at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export function insert(text, target, onSuccess, onError, annt) {
+export function insert(text: string, target: Target, onSuccess?: OnSuccess, onError?: OnError, annt?: string) {
   checkTarget(target);
   const {ast} = store.getState();
   const edits = [target.toEdit(text)];
@@ -49,12 +54,12 @@ export function insert(text, target, onSuccess, onError, annt) {
 }
 
 // Delete the given nodes.
-export function delete_(nodes, editWord) { // 'delete' is a reserved word
+export function delete_(nodes: ASTNode[], editWord?: string) { // 'delete' is a reserved word
   if (nodes.length === 0) return;
   const {ast} = store.getState();
   nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
   const edits = nodes.map(node => edit_delete(node));
-  let annt = false;
+  let annt: string|false = false;
   if (editWord) {
     annt = createAnnouncement(nodes, editWord);
     say(annt);
@@ -64,14 +69,14 @@ export function delete_(nodes, editWord) { // 'delete' is a reserved word
 }
 
 // Copy the given nodes onto the clipboard.
-export function copy(nodes, editWord) {
+export function copy(nodes: ASTNode[], editWord?: string) {
   if (nodes.length === 0) return;
   const {ast, focusId} = store.getState();
   // Pretty-print each copied node. Join them with spaces, or newlines for
   // commented nodes (to prevent a comment from attaching itself to a
   // different node after pasting).
   nodes.sort((a, b) => poscmp(a.from, b.from));
-  let annt = false;
+  let annt: string|false = false;
   if (editWord) {
     annt = createAnnouncement(nodes, editWord);
     say(annt);
@@ -93,7 +98,7 @@ export function copy(nodes, editWord) {
 
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export function paste(target, onSuccess, onError) {
+export function paste(target: Target, onSuccess?: OnSuccess, onError?: OnError) {
   checkTarget(target);
   pasteFromClipboard(text => {
     const {ast} = store.getState();
@@ -105,7 +110,7 @@ export function paste(target, onSuccess, onError) {
 
 // Drag from `src` (which should be a d&d monitor thing) to `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export function drop(src, target, onSuccess, onError) {
+export function drop(src: {id: string, content: string}, target: Target, onSuccess?: OnSuccess, onError?: OnError) {
   checkTarget(target);
   const {id: srcId, content: srcContent} = src;
   let {ast, collapsedList} = store.getState(); // get the AST, and which nodes are collapsed
@@ -144,7 +149,7 @@ export function drop(src, target, onSuccess, onError) {
 
 // Drag from `src` (which should be a d&d monitor thing) to the trash can, which
 // just deletes the block.
-export function dropOntoTrashCan(src) {
+export function dropOntoTrashCan(src:{id:string}) {
   const {ast} = store.getState();
   const srcNode = src.id ? ast.getNodeById(src.id) : null; // null if dragged from toolbar
   if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
@@ -153,8 +158,8 @@ export function dropOntoTrashCan(src) {
 }
 
 // Set the cursor position.
-export function setCursor(cur) {
-  return (dispatch, _getState) => {
+export function setCursor(cur: Pos) {
+  return (dispatch: AppDispatch) => {
     if (SHARED.cm && cur) {
       SHARED.cm.focus();
       SHARED.search.setCursor(cur);
@@ -165,9 +170,9 @@ export function setCursor(cur) {
 }
 
 // Activate the node with the given `nid`.
-export function activateByNid(nid, options) {
+export function activateByNid(nid:number|null, options?) {
   //console.log('XXX actions:169 activateByNid called with', nid);
-  return (dispatch, getState) => {
+  return (dispatch: AppDispatch, getState:()=>RootState) => {
     options = {...options, allowMove: true, record: true};
     let {ast, focusId, collapsedList} = getState();
     
@@ -246,19 +251,19 @@ export function activateByNid(nid, options) {
   };
 }
 
-function checkTarget(target) {
+function checkTarget(target: Target) {
   if (!(target instanceof Target)) {
     warn('actions', `Expected target ${target} to be an instance of the Target class.`);
   }
 }
 
-function copyToClipboard(text) {
+function copyToClipboard(text: string) {
   SHARED.buffer.value = text;
   SHARED.buffer.select();
   document.execCommand('copy');
 }
 
-function pasteFromClipboard(done) {
+function pasteFromClipboard(done:(value:string)=>void) {
   SHARED.buffer.value = '';
   SHARED.buffer.focus();
   setTimeout(() => {
@@ -267,8 +272,10 @@ function pasteFromClipboard(done) {
 }
 
 // The class of all targets.
-export class Target {
-  constructor(from, to) {
+export abstract class Target {
+  from: Pos;
+  to: Pos;
+  constructor(from: Pos, to: Pos) {
     this.from = from;
     this.to = to;
   }
@@ -276,11 +283,16 @@ export class Target {
   srcRange() {
     return {from: this.from, to: this.to};
   }
+
+  abstract toEdit(test: string): Edit;
 }
 
 // Insert at a location inside the AST.
 export class InsertTarget extends Target {
-  constructor(parentNode, fieldName, pos) {
+  parent: ASTNode;
+  field: string;
+  pos: Pos;
+  constructor(parentNode: ASTNode, fieldName: string, pos: Pos) {
     super(pos, pos);
     this.parent = parentNode;
     this.field = fieldName;
@@ -291,25 +303,26 @@ export class InsertTarget extends Target {
     return "";
   }
 
-  toEdit(text) {
+  toEdit(text: string) {
     return edit_insert(text, this.parent, this.field, this.pos);
   }
 }
 
 // Target an ASTNode. This will replace the node.
 export class ReplaceNodeTarget extends Target {
-  constructor(node) {
+  node: ASTNode;
+  constructor(node: ASTNode) {
     const range = node.srcRange();
     super(range.from, range.to);
     this.node = node;
   }
 
-  getText(ast) {
+  getText(ast: AST) {
     const {from, to} = ast.getNodeById(this.node.id);
     return SHARED.cm.getRange(from, to);
   }
 
-  toEdit(text) {
+  toEdit(text: string) {
     return edit_replace(text, this.node);
   }
 }
@@ -317,7 +330,7 @@ export class ReplaceNodeTarget extends Target {
 // Target a source range at the top level. This really has to be at the top
 // level: neither `from` nor `to` can be inside any root node.
 export class OverwriteTarget extends Target {
-  constructor(from, to) {
+  constructor(from: Pos, to: Pos) {
     super(from, to);
   }
 
@@ -325,7 +338,7 @@ export class OverwriteTarget extends Target {
     return SHARED.cm.getRange(this.from, this.to);
   }
 
-  toEdit(text) {
+  toEdit(text: string) {
     return edit_overwrite(text, this.from, this.to);
   }
 }

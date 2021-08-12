@@ -18,7 +18,16 @@ function getInnerHTML(txt) {
   return el.value;
 }
 
-export default class ContentEditable extends Component {
+type Props = {
+  onChange: (e: string|React.FormEvent) => void,
+  onKeyDown: (e: React.KeyboardEvent) => void,
+  itDidMount: Function,
+  value: string,
+  id: string,
+  'aria-label': string,
+};
+
+export default class ContentEditable extends Component<Props> {
   static defaultProps = {
     onChange:   () => {},
     onKeyDown:  () => {},
@@ -35,7 +44,9 @@ export default class ContentEditable extends Component {
     'aria-label': PropTypes.string,
   }
 
-  constructor(props) {
+  eltRef: React.RefObject<HTMLSpanElement>;
+
+  constructor(props: Props) {
     super(props);
     this.eltRef = React.createRef();
   }
@@ -45,7 +56,7 @@ export default class ContentEditable extends Component {
     this.props.onChange(this.eltRef.current.textContent);
   }
 
-  handleKeyDown = e => {
+  handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.keyCode === 13 && !e.shiftKey) { // ENTER
       e.preventDefault();
     }
@@ -53,7 +64,7 @@ export default class ContentEditable extends Component {
     this.props.onKeyDown(e);
   }
 
-  handlePaste = ev => {
+  handlePaste = (ev: React.ClipboardEvent) => {
     ev.preventDefault();
     const text = ev.clipboardData.getData('text');
     document.execCommand('insertText', false, text);
@@ -64,7 +75,7 @@ export default class ContentEditable extends Component {
   }
 
   /*eslint no-unused-vars: "off"*/
-  shouldComponentUpdate(props) {
+  shouldComponentUpdate(props: Props) {
     const {value: newValue, 'aria-label': newAriaLabel, ...newProps} = props;
     const {value: oldValue, 'aria-label': oldAriaLabel, ...oldProps} = this.props;
     return (
@@ -80,7 +91,7 @@ export default class ContentEditable extends Component {
         {...props}
         ref={this.eltRef}
         dangerouslySetInnerHTML={{__html: getInnerHTML(value)}}
-        contentEditable={"plaintext-only"}
+        contentEditable={"plaintext-only" as any}
         spellCheck={false}
         onInput={this.handleChange}
         onKeyDown={this.handleKeyDown}
