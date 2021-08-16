@@ -16,14 +16,15 @@ import {poscmp, resetNodeCounter, minpos, maxpos,
   validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 import { defaultKeyMap, keyDown } from '../keymap';
-import {store} from '../store';
+import {AppStore, store} from '../store';
 import { ASTNode } from '../ast';
 import type { AST } from '../ast';
-import CodeMirror, { SelectionOptions } from 'codemirror';
+import CodeMirror, { Editor, SelectionOptions } from 'codemirror';
 import type { Options, API } from '../CodeMirrorBlocks';
 import type { AppDispatch } from '../store';
 import Toolbar from './Toolbar';
 import type { AppAction, Quarantine, RootState } from '../reducers';
+import type { IUnControlledCodeMirror } from 'react-codemirror2';
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = ['indentLine', 'toggleOverwrite', 'setExtending',
@@ -223,11 +224,11 @@ const mapDispatchToProps = (dispatch: AppDispatch) => ({
 const blockEditorConnector = connect(mapStateToProps, mapDispatchToProps);
 type $TSFixMe = any;
 
-type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
+export type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
   value: string;
   options?: Options;
   cmOptions?: CodeMirror.EditorConfiguration;
-  keyMap?: $TSFixMe;
+  keyMap?: {[index: string]: string};
   /**
    * id of the language being used
    */
@@ -240,7 +241,7 @@ type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
     setCM: Function;
   };
   toolbarRef?: React.RefObject<Toolbar>;
-  onBeforeChange: Function;
+  onBeforeChange: IUnControlledCodeMirror['onBeforeChange'];
   onMount: Function;
   api?: API;
   passedAST?: AST;
@@ -249,43 +250,6 @@ type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
 }
 
 class BlockEditor extends Component<BlockEditorProps> {
-  // NOTE(@pcardune): are these lines all unecessary now
-  // that we have the TypeScript annotations?
-
-  // static propTypes = {
-  //   value: PropTypes.string.isRequired,
-  //   options: PropTypes.object,
-  //   cmOptions: PropTypes.object,
-  //   keyMap: PropTypes.object,
-  //   languageId: PropTypes.string.isRequired,
-  //   parse: PropTypes.func.isRequired,
-  //   setAST: PropTypes.func.isRequired,
-  //   setCursor: PropTypes.func.isRequired,
-  //   setQuarantine: PropTypes.func.isRequired,
-  //   clearFocus: PropTypes.func.isRequired,
-  //   activateByNid: PropTypes.func.isRequired,
-  //   search: PropTypes.shape({
-  //     onSearch: PropTypes.func.isRequired,
-  //     search: PropTypes.func.isRequired,
-  //     setCursor: PropTypes.func.isRequired,
-  //     setCM: PropTypes.func.isRequired,
-  //   }),
-  //   toolbarRef: PropTypes.object,
-  //   onBeforeChange: PropTypes.func,
-  //   onMount:PropTypes.func.isRequired,
-  //   hasQuarantine: PropTypes.bool.isRequired,
-  //   api: PropTypes.object,
-  //   passedAST: PropTypes.object,
-  //   showDialog: PropTypes.func.isRequired,
-  //   closeDialog: PropTypes.func.isRequired,
-
-  //   // this is actually required, but it's buggy
-  //   // see https://github.com/facebook/react/issues/3163
-  //   ast: PropTypes.object,
-  //   dispatch: PropTypes.func.isRequired,
-  //   cur: pos
-  // }
-
   mouseUsed: boolean;
   newAST: AST;
   parse: BlockEditorProps['parse'];
@@ -724,7 +688,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * NOTE: This is called from both CM *and* Node components. Each is responsible
    * for passing 'this' as the environment. Be sure to add showDialog and toolbarRef!
    */
-  handleKeyDown = (e, env) => {
+  handleKeyDown:AppStore['onKeyDown'] = (e, env) => {
     env.showDialog = this.props.showDialog;
     env.toolbarRef = this.props.toolbarRef;
     return keyDown(e, env, this.props.keyMap);
@@ -734,7 +698,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * @internal
    * When the CM instance receives a paste event...start a quarantine
    */
-  handleTopLevelPaste = (ed, e) => {
+  handleTopLevelPaste = (ed: Editor, e: ClipboardEvent) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
     const start = SHARED.cm.getCursor(true as $TSFixMe);
@@ -747,7 +711,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * When the CM instance receives cursor activity...
    * If there are selections, pass null. Otherwise pass the cursor.
    */  
-  handleTopLevelCursorActivity = (ed, _) => {
+  handleTopLevelCursorActivity = (ed: Editor) => {
     let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
     this.props.setCursor(ed, cur);
   }

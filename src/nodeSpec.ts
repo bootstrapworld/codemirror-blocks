@@ -61,7 +61,7 @@ export class NodeSpec {
     return hashObject([node.type, [...hashes], node.options.comment?.comment]);
   }
 
-  children(node: ASTNode) {
+  children(node: ASTNode): Iterable<ASTNode> {
     return new ChildrenIterator(node, this);
   }
 

@@ -1,11 +1,64 @@
 import React from 'react';
-import CodeMirror from 'codemirror';
+import CodeMirror, { Editor } from 'codemirror';
 import SHARED from './shared';
 import {delete_, copy, paste, InsertTarget,
   ReplaceNodeTarget, OverwriteTarget, activateByNid} from './actions';
 import {partition, getRoot, skipCollapsed, say, mac,
   getLastVisibleNode, preambleUndoRedo, playSound, BEEP} from './utils';
 import {findAdjacentDropTargetId as getDTid} from './components/DropTarget';
+
+import type { AppDispatch } from './store';
+import type { AST, ASTNode } from './ast';
+import type { RootState } from './reducers';
+import type { EnhancedNodeProps } from './components/Node';
+import type { BlockEditorProps } from './ui/BlockEditor';
+
+/**
+ * This is completely bananas. This InputEnv type is what
+ * the keyDown() function expects for it's "env" parameter.
+ * 
+ * In theory, keyDown() is always passed the "this" value
+ * from inside of a Node react component, with a few extra
+ * things added on dynamically.
+ * 
+ * keyDown() then tacks on even more attributes to this "env"
+ * object so that all the handlers in commandMap can access
+ * these additional attributes.
+ * 
+ * This should be refactored to something that's is less
+ * abusive to the properties of the Node component.
+ */
+export type InputEnv = {
+  // added by BlockEditor before calling keyDown()
+  showDialog?: BlockEditorProps['showDialog'],
+  toolbarRef?: BlockEditorProps['toolbarRef'],
+
+  // defined by Node react component
+  isLocked?():boolean;
+  handleMakeEditable?: (e?:React.KeyboardEvent) => void;
+  setRight?():boolean;
+  setLeft?():boolean;
+
+  // These somehow come from somewhere. Either a BlockEditor or a Node
+  // elements presumably.
+  cur?: CodeMirror.Position;
+  dispatch?: AppDispatch,
+  ast?: AST;
+  props:{
+    dispatch: AppDispatch,
+    activateByNid: (nid: number, options?:{allowMove: boolean, record?: boolean})=>void,
+  } & Partial<EnhancedNodeProps>,
+  node?: ASTNode,
+
+  // these get tacked on by the keyDown function
+  fastSkip?: (next: (node: ASTNode)=>ASTNode) => ASTNode,
+  activate?: (n: ASTNode|null|undefined, options:{allowMove: boolean, record: boolean}) => void,
+  activateNoRecord?: (node?: ASTNode) => void;
+}
+
+type Env = InputEnv & InputEnv['props'] & Pick<RootState, "ast"|"selections"> & {
+  state: RootState
+};
 
 export const defaultKeyMap = {
   // NAVIGATION
@@ -66,7 +119,7 @@ const pcKeyMap = {
   'Shift-Ctrl-/':'Help',
 };
 
-const punctuation = {
+const punctuation:{[index:string]:string} = {
   ','    : 'Comma', 
   '.'    : 'Period',
   '\''   : 'Backslash', 
@@ -81,7 +134,7 @@ const punctuation = {
 
 // given an array of keys, produce a spoken string that
 // verbalizes punctuation and key names
-function prounounce(keys) {
+function prounounce(keys:string[]) {
   const match = new RegExp('Esc|Ctrl|Cmd|Alt|[.,/#!$%^&*;:{}=_`~()]', 'gi');
   let ws = keys.map(k => k.replace(match, m=>punctuation[m]));
   return ws.length < 3? ws.join(" or ")
@@ -93,7 +146,7 @@ Object.assign(defaultKeyMap, mac? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
-function pasteHandler(_, e) {
+function pasteHandler(this: Env, _:Editor, e:React.KeyboardEvent) {
   if(!this.node) { return CodeMirror.Pass; }
   const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
   const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
@@ -114,7 +167,7 @@ function pasteHandler(_, e) {
   }
 }
 
-export const commandMap = {
+export const commandMap:{[index: string]: (this: Env, cm: Editor, e:React.KeyboardEvent) => void} = {
   prevFocus : function (_, e) {
     e.preventDefault();
     this.toolbarRef.current.primitiveSearch.focus();
@@ -234,8 +287,8 @@ export const commandMap = {
     if(!this.node) { return CodeMirror.Pass; }
     e.preventDefault();
     const node = this.node;
-    const descendantIds = node => [...node.descendants()].map(d => d.id);
-    const ancestorIds = node => {
+    const descendantIds = (node: ASTNode) => [...node.descendants()].map(d => d.id);
+    const ancestorIds = (node: ASTNode) => {
       let ancestors = [], next = node.parent;
       while (next) { ancestors.push(next.id); next = next.parent; }
       return ancestors;
@@ -253,8 +306,8 @@ export const commandMap = {
       });
       // TODO(Emmanuel): announce removal
     } else {
-      const isContained = id => this.ast.isAncestor(node.id, id);
-      const doesContain = id => this.ast.isAncestor(id, node.id);
+      const isContained = (id: string) => this.ast.isAncestor(node.id, id);
+      const doesContain = (id: string) => this.ast.isAncestor(id, node.id);
       let [removed, newSelections] = partition(this.selections, isContained);
       for (const _r of removed) {
         // TODO(Emmanuel): announce removal
@@ -371,7 +424,7 @@ export const commandMap = {
 // editor's keyMap. If there is a handler for that event, flatten the
 // environment and add some utility methods, then set the key handler's
 // "this" object to be that environment and call it.
-export function keyDown(e, env, keyMap) {
+export function keyDown(e: React.KeyboardEvent, env: InputEnv, keyMap:{[index:string]:string}) {
   var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
   if(handler) {
     e.stopPropagation();
@@ -397,32 +450,31 @@ export function keyDown(e, env, keyMap) {
         env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid);
       }
     });
-    handler = handler.bind(env);
-    return handler(SHARED.cm, e);
+    return handler.bind(env as Env)(SHARED.cm, e);
   }
 }
 
-export function renderKeyMap(keyMap) {
-  const reverseMap = {};
+export function renderKeyMap(keyMap: {[index: string]: string}) {
+  const reverseMap:{[index:string]: string[]} = {};
   Object.keys(keyMap).forEach(key => {
     if(!reverseMap[keyMap[key]]) { reverseMap[keyMap[key]] = [key]; }
     else reverseMap[keyMap[key]].push(key);
   });
   return (
     <table className="shortcuts">
-    <tbody>
-    {
-      Object.entries(reverseMap).map(  // for each command, make a row...
-        (kv, i) =>                     // for each row, list the kbd shortcuts
-          (<tr key={i}>
-          <td>{kv[0]}</td>
-          <td>
-            {kv[1].map((k, j) => (<kbd aria-hidden="true" key={j}>{k}</kbd>))}
-            <span className="screenreader-only">{prounounce(kv[1])}</span>
-          </td></tr>)
-      )
-    }
-    </tbody>
+      <tbody>
+      {
+        Object.entries(reverseMap).map(  // for each command, make a row...
+          (kv, i) =>                     // for each row, list the kbd shortcuts
+            (<tr key={i}>
+            <td>{kv[0]}</td>
+            <td>
+              {kv[1].map((k, j) => (<kbd aria-hidden="true" key={j}>{k}</kbd>))}
+              <span className="screenreader-only">{prounounce(kv[1])}</span>
+            </td></tr>)
+        )
+      }
+      </tbody>
     </table>
   );
 }
