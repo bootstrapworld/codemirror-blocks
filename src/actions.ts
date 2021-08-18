@@ -3,7 +3,7 @@ import SHARED from './shared';
 import {AppDispatch, store} from './store';
 import {performEdits, edit_insert, edit_delete, edit_replace,
   edit_overwrite,
-  Edit,
+  EditInterface,
   OnSuccess,
   OnError} from './edits/performEdits';
 import { AST, ASTNode, Pos } from './ast';
@@ -284,7 +284,7 @@ export abstract class Target {
     return {from: this.from, to: this.to};
   }
 
-  abstract toEdit(test: string): Edit;
+  abstract toEdit(test: string): EditInterface;
 }
 
 // Insert at a location inside the AST.
@@ -303,7 +303,7 @@ export class InsertTarget extends Target {
     return "";
   }
 
-  toEdit(text: string) {
+  toEdit(text: string): EditInterface {
     return edit_insert(text, this.parent, this.field, this.pos);
   }
 }
@@ -322,7 +322,7 @@ export class ReplaceNodeTarget extends Target {
     return SHARED.cm.getRange(from, to);
   }
 
-  toEdit(text: string) {
+  toEdit(text: string): EditInterface {
     return edit_replace(text, this.node);
   }
 }
@@ -338,7 +338,7 @@ export class OverwriteTarget extends Target {
     return SHARED.cm.getRange(this.from, this.to);
   }
 
-  toEdit(text: string) {
+  toEdit(text: string): EditInterface {
     return edit_overwrite(text, this.from, this.to);
   }
 }

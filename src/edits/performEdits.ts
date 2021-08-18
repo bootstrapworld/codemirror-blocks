@@ -165,11 +165,20 @@ export function performEdits(
  * Instances represent *top-level text operations*, and
  * can be directly converted into a CM changeObject
  */
-export abstract class Edit {
+export interface EditInterface {
   from: Pos;
   to: Pos;
   node?: ASTNode;
+  toChangeObject?(ast:AST): EditorChange;
+  findDescendantNode(ancestor: ASTNode, id: string): ASTNode;
+  focusHint(newAST:AST): ASTNode|"fallback";
+  toString():string;
+}
 
+abstract class Edit implements EditInterface {
+  from: Pos;
+  to: Pos;
+  node?: ASTNode;
   constructor(from: Pos, to: Pos) {
     this.from = from;
     this.to = to;
