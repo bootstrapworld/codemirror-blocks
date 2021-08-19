@@ -18,16 +18,16 @@ function getInnerHTML(txt) {
   return el.value;
 }
 
-type Props = {
-  onChange: (e: string|React.FormEvent) => void,
-  onKeyDown: (e: React.KeyboardEvent) => void,
-  itDidMount: Function,
-  value: string,
-  id: string,
-  'aria-label': string,
+export type ContentEditableProps = React.ComponentPropsWithoutRef<"span"> & {
+  onChange?: (e: string|React.FormEvent) => void,
+  onKeyDown?: (e: React.KeyboardEvent) => void,
+  itDidMount?: Function,
+  value?: string,
+  id?: string,
+  'aria-label'?: string,
 };
 
-export default class ContentEditable extends Component<Props> {
+export default class ContentEditable extends Component<ContentEditableProps> {
   static defaultProps = {
     onChange:   () => {},
     onKeyDown:  () => {},
@@ -46,7 +46,7 @@ export default class ContentEditable extends Component<Props> {
 
   eltRef: React.RefObject<HTMLSpanElement>;
 
-  constructor(props: Props) {
+  constructor(props: ContentEditableProps) {
     super(props);
     this.eltRef = React.createRef();
   }
@@ -75,7 +75,7 @@ export default class ContentEditable extends Component<Props> {
   }
 
   /*eslint no-unused-vars: "off"*/
-  shouldComponentUpdate(props: Props) {
+  shouldComponentUpdate(props: ContentEditableProps) {
     const {value: newValue, 'aria-label': newAriaLabel, ...newProps} = props;
     const {value: oldValue, 'aria-label': oldAriaLabel, ...oldProps} = this.props;
     return (

@@ -200,7 +200,7 @@ export type ToggleEditorProps = {
   language: Language,
   options?: Options,
   api?: API,
-  appElement: Element,
+  appElement: HTMLElement,
   debuggingLog?: {
     history?: unknown,
   },
@@ -211,14 +211,14 @@ type ToggleEditorState = {
   code: string,
   // TODO(pcardune): dialog should probably not be a boolean.
   // I think we are using "false" in place of "null" unnecessarily.
-  dialog: boolean | {title: string, content: string},
+  dialog: null | {title: string, content: string},
   debuggingLog?: ToggleEditorProps['debuggingLog'],
 }
 
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state = {
     blockMode: false,
-    dialog: false,
+    dialog: null,
     code: "",
   }
 
@@ -396,7 +396,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    */
   showDialog = (contents: {title: string, content: string}) =>
     this.setState( () =>({dialog: contents}));  
-  closeDialog = () => this.setState( () =>({dialog: false}));
+  closeDialog = () => this.setState( () =>({dialog: null}));
 
   /**
    * @internal

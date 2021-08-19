@@ -1,35 +1,41 @@
-import React, {Component} from 'react';
+import React, {Component, ReactElement} from 'react';
 import {connect} from 'react-redux';
-import PropTypes from 'prop-types';
-import ContentEditable from './ContentEditable';
+import ContentEditable, { ContentEditableProps } from './ContentEditable';
 import SHARED from '../shared';
-import classNames from 'classnames';
+import classNames, {Argument as ClassNamesArgument} from 'classnames';
 import {insert, activateByNid, Target} from '../actions';
 import {say} from '../utils';
 import CodeMirror from 'codemirror';
+import { AppDispatch } from '../store';
+import { RootState } from '../reducers';
+import { AST } from '../ast';
 
-class NodeEditable extends Component {
+type Props = ContentEditableProps & {
+    target?: Target,
+    children?: ReactElement,
+    isInsertion: boolean,
+    value?: string,
+    dispatch?: Function,
+    setErrorId?: Function,
+    onChange?: (e:string|React.FormEvent)=>void,
+    onDisableEditable?: Function,
+    clearSelections?: Function,
+    focusSelf?: Function,
+    isErrored?: boolean,
+    contentEditableProps?: {},
+    extraClasses?: ClassNamesArgument,
+};
+
+class NodeEditable extends Component<Props> {
   static defaultProps = {
     children: null,
   }
 
-  static propTypes = {
-    target: PropTypes.instanceOf(Target),
-    children: PropTypes.node,
-    isInsertion: PropTypes.bool.isRequired,
-    value: PropTypes.string,
-    dispatch: PropTypes.func,
-    setErrorId: PropTypes.func,
-    onChange: PropTypes.func,
-    onDisableEditable: PropTypes.func,
-    clearSelections: PropTypes.func,
-    focusSelf: PropTypes.func,
-    isErrored: PropTypes.bool,
-    contentEditableProps: PropTypes.object,
-    extraClasses: PropTypes.array,
-  }
+  cachedValue: string;
+  ignoreBlur: boolean;
+  element: HTMLElement;
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     const {value, dispatch} = this.props;
     this.cachedValue = "";
@@ -42,10 +48,10 @@ class NodeEditable extends Component {
     }
   }
 
-  saveEdit = e => {
+  saveEdit = (e: React.SyntheticEvent) => {
     e.stopPropagation();
     const {target, setErrorId, onChange, onDisableEditable, dispatch} = this.props;
-    dispatch((dispatch, getState) => {
+    dispatch((dispatch: AppDispatch, getState:()=>RootState) => {
       const {focusId, ast} = getState();
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
@@ -60,7 +66,10 @@ class NodeEditable extends Component {
       const value = this.props.value;
       let annt = `${this.props.isInsertion ? 'inserted' : 'changed'} ${value}`;
 
-      const onSuccess = ({firstNewId}) => {
+
+      const onSuccess = ({firstNewId}:{newAST:AST, focusId:string, firstNewId?:number}) => {
+        // BUG? onSuccess never gets called with firstNewId, and it doesn't look
+        // like it has been passed in for at least two years.
         if (firstNewId !== null && firstNewId !== undefined) {
           const {ast} = getState();
           const firstNewNid = ast.getNodeById(focusId).nid;
@@ -73,7 +82,7 @@ class NodeEditable extends Component {
         setErrorId('');
         say(annt);
       };
-      const onError = e => {
+      const onError = (e: any) => {
         const errorText = SHARED.getExceptionMessage(e);
         console.log(errorText);
         this.ignoreBlur = false;
@@ -84,7 +93,7 @@ class NodeEditable extends Component {
     });
   }
 
-  handleKeyDown = e => {
+  handleKeyDown = (e: React.KeyboardEvent) => {
     switch (CodeMirror.keyName(e)) {
     case 'Enter': {
       this.ignoreBlur = true;
@@ -103,7 +112,7 @@ class NodeEditable extends Component {
     }
   }
 
-  suppressEvent = e => {
+  suppressEvent = (e:React.SyntheticEvent) => {
     e.stopPropagation();
   }
 
@@ -120,12 +129,12 @@ class NodeEditable extends Component {
    * with correct values.
    */
 
-  handleBlur = e => {
+  handleBlur = (e:React.FocusEvent) => {
     if (this.ignoreBlur) return;
     this.saveEdit(e);
   }
 
-  setSelection = isCollapsed => {
+  setSelection = (isCollapsed: boolean) => {
     window.requestAnimationFrame(() => setTimeout(() => {
       const range = document.createRange();
       range.selectNodeContents(this.element);
@@ -136,7 +145,7 @@ class NodeEditable extends Component {
     }, 0));
   }
 
-  contentEditableDidMount = el => {
+  contentEditableDidMount = (el:HTMLElement) => {
     this.element = el;
     this.setSelection(this.props.isInsertion);
   }
@@ -149,13 +158,13 @@ class NodeEditable extends Component {
       onChange,
     } = this.props;
 
-    const classes = [
+    const classes = ([
       'blocks-literal',
       'quarantine',
       'blocks-editing',
       'blocks-node',
       {'blocks-error': this.props.isErrored},
-    ].concat(extraClasses);
+    ] as ClassNamesArgument[]).concat(extraClasses);
 
     const text = value !== null ? value : this.cachedValue;
     return (
@@ -184,9 +193,9 @@ const mapStateToProps = ({cm, errorId}, {target}) => {
   return {cm, isErrored};
 };
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch: AppDispatch) => ({
   dispatch,
-  setErrorId: errorId => dispatch({type: 'SET_ERROR_ID', errorId}),
+  setErrorId: (errorId: string) => dispatch({type: 'SET_ERROR_ID', errorId}),
   focusSelf: () => dispatch(activateByNid(null, {allowMove: false})),
   clearSelections: () => dispatch({type: 'SET_SELECTIONS', selections: []}),
 });

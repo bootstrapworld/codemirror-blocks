@@ -81,6 +81,7 @@
     "@types/karma-parallel": "^0.3.1",
     "@types/react": "^17.0.15",
     "@types/react-dom": "^17.0.9",
+    "@types/react-modal": "^3.12.1",
     "@types/webpack": "^5.28.0",
     "@types/webpack-bundle-analyzer": "^4.4.1",
     "eslint": "^7.32.0",

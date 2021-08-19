@@ -275,6 +275,7 @@ function pasteFromClipboard(done:(value:string)=>void) {
 export abstract class Target {
   from: Pos;
   to: Pos;
+  node?: ASTNode;
   constructor(from: Pos, to: Pos) {
     this.from = from;
     this.to = to;
@@ -283,7 +284,7 @@ export abstract class Target {
   srcRange() {
     return {from: this.from, to: this.to};
   }
-
+  abstract getText(ast: AST): string;
   abstract toEdit(test: string): EditInterface;
 }
 
@@ -310,7 +311,6 @@ export class InsertTarget extends Target {
 
 // Target an ASTNode. This will replace the node.
 export class ReplaceNodeTarget extends Target {
-  node: ASTNode;
   constructor(node: ASTNode) {
     const range = node.srcRange();
     super(range.from, range.to);

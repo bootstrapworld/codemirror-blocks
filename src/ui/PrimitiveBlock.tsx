@@ -3,8 +3,13 @@ import PropTypes from 'prop-types';
 import {Primitive} from '../parsers/primitives';
 import './PrimitiveBlock.less';
 
+type Props = {
+  id?: string,
+  primitive?: Primitive,
+}
+
 // TODO: Sorawee says this whole class can probably be removed.
-export default class PrimitiveBlock extends Component {
+export default class PrimitiveBlock extends Component<Props> {
   static propTypes = {
     primitive: PropTypes.instanceOf(Primitive),
     id: PropTypes.string,
@@ -13,6 +18,8 @@ export default class PrimitiveBlock extends Component {
   static defaultProps = {
     primitive: null,
   }
+
+  root: HTMLSpanElement;
 
   render() {
     const astNode = this.props.primitive.getASTNode();
