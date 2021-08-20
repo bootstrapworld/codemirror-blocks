@@ -1,22 +1,21 @@
 import React, {Component} from 'react';
-import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import PrimitiveList from './PrimitiveList';
 import PrimitiveBlock from './PrimitiveBlock';
-import {PrimitiveGroup} from '../parsers/primitives';
+import {Primitive, PrimitiveGroup} from '../parsers/primitives';
 import CodeMirror from 'codemirror';
 import './Toolbar.less';
 
-export default class Toolbar extends Component {
-  constructor(props) {
+type Props = {
+  primitives?: PrimitiveGroup,
+  languageId?: string, // used to find the .blocks-language-{languageId} CSS class
+  blockMode?: boolean,
+}
+
+export default class Toolbar extends Component<Props> {
+  constructor(props: Props) {
     super(props);
     this.handleFocusPrimitive = this.handleFocusPrimitive.bind(this);
-  }
-
-  static propTypes = {
-    primitives: PropTypes.instanceOf(PrimitiveGroup),
-    languageId: PropTypes.string, // used to find the .blocks-language-{languageId} CSS class
-    blockMode: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -29,7 +28,9 @@ export default class Toolbar extends Component {
     selectedPrimitive: null,
   }
 
-  changeSearch = (event) => {
+  primitiveSearch: HTMLElement;
+
+  changeSearch: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     this.setState({search: event.target.value});
   }
 
@@ -60,7 +61,7 @@ export default class Toolbar extends Component {
     this.setState({selectedPrimitive: selectedPrimitive});
   }
 
-  selectPrimitive(selectedPrimitive) {
+  selectPrimitive(selectedPrimitive: null | PrimitiveGroup | Primitive) {
     if (selectedPrimitive?.element) {      
       selectedPrimitive.element.focus(); // will trigger handleFocusPrimitive
     } else {
@@ -71,10 +72,10 @@ export default class Toolbar extends Component {
   // NOTE(DS26GTE): this is just so onBlur has a non-null value
   handleBlurPrimitive() {}
 
-  handleKeyDown = event => {
+  handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
     switch(CodeMirror.keyName(event)) {
     case 'Esc':
-      event.target.blur();
+      (event.target as HTMLInputElement).blur();
       return;
     case 'Down':
       event.preventDefault();
@@ -98,7 +99,7 @@ export default class Toolbar extends Component {
     }
   }
 
-  getSelectedPrimitiveIndex(primitives) {
+  getSelectedPrimitiveIndex(primitives: (PrimitiveGroup|Primitive)[]) {
     const idx = primitives.findIndex(p => p === this.state.selectedPrimitive);
     return (idx == -1)? null : idx;
   }
@@ -128,7 +129,7 @@ export default class Toolbar extends Component {
               onClick={this.clearSearch} />
             : null}
         </div>
-        <div className="primitives-box" tabIndex="-1">
+        <div className="primitives-box" tabIndex={-1}>
           <PrimitiveList
             primitives={primitives}
             onFocus={this.handleFocusPrimitive}
@@ -143,7 +144,7 @@ export default class Toolbar extends Component {
           {selected? 
             (<PrimitiveBlock 
                 primitive={selected} 
-                id={primitives.findIndex(p => p.name === selected.name)} 
+                id={''+primitives.findIndex(p => p.name === selected.name)} 
             />) 
             : ""}
         </div>

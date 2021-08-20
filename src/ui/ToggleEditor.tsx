@@ -448,7 +448,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex={-1} aria-hidden={!this.state.blockMode}>
           <Toolbar 
-            primitives={this.props.language.primitivesFn ? this.props.language.primitivesFn() : []}
+            primitives={this.props.language.primitivesFn ? this.props.language.primitivesFn() : null}
             languageId={this.props.language.id}
             blockMode={this.state.blockMode} 
             ref={this.toolbarRef} />

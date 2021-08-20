@@ -1,6 +1,8 @@
 import {getLanguage} from '../languages';
 import type {Language} from '../CodeMirrorBlocks';
 
+
+
 export class Primitive {
   languageId: string;
   name: string;
@@ -10,6 +12,9 @@ export class Primitive {
   getLiteralNodeForPrimitive: Language['getLiteralNodeForPrimitive'];
   argumentTypes: string[];
   returnType: string;
+
+  // used by Toolbar
+  element?: HTMLElement;
 
   constructor(languageId: string, name: string, config: {argumentTypes?: string[], returnType?: string} = {}) {
     this.languageId = languageId;
@@ -66,6 +71,10 @@ export class PrimitiveGroup {
   languageId: string;
   name: string;
   primitives: (Primitive|PrimitiveGroup)[]
+
+  // used by Toolbar
+  element?: HTMLElement;
+
   constructor(languageId: string, name: string, primitives: (Primitive|PrimitiveGroup)[]) {
     this.languageId = languageId;
     this.name = name;
