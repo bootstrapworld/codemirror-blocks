@@ -12,20 +12,24 @@ type Props = {
   blockMode?: boolean,
 }
 
-export default class Toolbar extends Component<Props> {
+type State = {
+  search: string,
+  selectedPrimitive: null | Primitive,
+}
+
+export default class Toolbar extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.handleFocusPrimitive = this.handleFocusPrimitive.bind(this);
+    this.state = {
+      search: '',
+      selectedPrimitive: null,
+    };
   }
 
   static defaultProps = {
     primitives: null,
     blockMode: false
-  }
-
-  state = {
-    search: '',
-    selectedPrimitive: null,
   }
 
   primitiveSearch: HTMLElement;
@@ -61,7 +65,7 @@ export default class Toolbar extends Component<Props> {
     this.setState({selectedPrimitive: selectedPrimitive});
   }
 
-  selectPrimitive(selectedPrimitive: null | PrimitiveGroup | Primitive) {
+  selectPrimitive(selectedPrimitive: null | Primitive) {
     if (selectedPrimitive?.element) {      
       selectedPrimitive.element.focus(); // will trigger handleFocusPrimitive
     } else {
@@ -93,7 +97,7 @@ export default class Toolbar extends Component<Props> {
 
   getPrimitives() {
     if (this.props.primitives) {
-      return this.props.primitives.filter(this.state.search).primitives;
+      return this.props.primitives.filter(this.state.search).primitives as Primitive[];
     } else {
       return [];
     }

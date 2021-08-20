@@ -5,16 +5,24 @@ import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
 import {Primitive as LanguagePrimitive} from '../parsers/primitives';
 import {DragPrimitiveSource} from '../dnd';
 import {say} from '../utils';
-import SHARED from '../shared';
 import {copy} from '../actions';
 import CodeMirror from 'codemirror';
-import {commandMap, defaultKeyMap} from '../keymap';
+import {defaultKeyMap} from '../keymap';
 
 require('./PrimitiveList.less');
 
+type BasePrimitiveProps = {
+    primitive: LanguagePrimitive,
+    className: string,
+    onFocus: Function,
+    onBlur: Function,
+    onKeyDown: Function,
+    searchString?: string,
+    connectDragPreview: Function,
+    connectDragSource: Function,
+  }
 
-@DragPrimitiveSource
-class Primitive extends Component {
+class BasePrimitive extends Component<BasePrimitiveProps> {
   static propTypes = {
     primitive: PropTypes.instanceOf(LanguagePrimitive).isRequired,
     className: PropTypes.string.isRequired,
@@ -57,7 +65,16 @@ class Primitive extends Component {
   }
 }
 
-export class PrimitiveGroup extends Component {
+const Primitive = DragPrimitiveSource(BasePrimitive);
+
+type PrimitiveGroupProps = {
+  onFocus: Function,
+  onBlur: Function,
+  onKeyDown: Function,
+  selected?: string, // to start, no primitive is selected
+  group?: PrimitiveGroupModel,
+};
+export class PrimitiveGroup extends Component<PrimitiveGroupProps> {
   static defaultProps = {
     group: {
       name: '',
@@ -95,7 +112,7 @@ export class PrimitiveGroup extends Component {
         </div>
         {expanded ?
           <PrimitiveList
-            primitives={group.primitives}
+            primitives={group.primitives as LanguagePrimitive[]}
             onFocus={onFocus}
             onBlur={onBlur}
             onKeyDown={onKeyDown}
@@ -106,8 +123,15 @@ export class PrimitiveGroup extends Component {
     );
   }
 }
-
-export default class PrimitiveList extends Component {
+type PrimitiveListProps = {
+  onFocus: Function,
+  onBlur: Function,
+  onKeyDown: Function,
+  selected?: string,
+  primitives?: LanguagePrimitive[],
+  searchString?: string
+}
+export default class PrimitiveList extends Component<PrimitiveListProps> {
   static defaultProps = {
     selected: null,
   }
@@ -145,7 +169,7 @@ export default class PrimitiveList extends Component {
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
-          className={selected == primitive ? 'selected' : ''}
+          className={selected == primitive.name ? 'selected' : ''}
         />
       );
 
@@ -158,7 +182,7 @@ export default class PrimitiveList extends Component {
           id="toolbar_heading" 
           className="screenreader-only" 
           aria-live="assertive" 
-          atomic="true">
+          aria-atomic="true">
             {text}
           </h3>
         <ul className="PrimitiveList list-group" aria-labelledby="toolbar_heading">{nodes}</ul>
