@@ -8,7 +8,7 @@ type Props = {
   closeFn: () => void;
   isOpen: boolean;
   body: {
-    title: ReactElement,
+    title: string,
     content: ReactElement
   } | null;
   keyUp?: React.KeyboardEventHandler<HTMLDivElement>;

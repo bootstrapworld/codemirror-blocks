@@ -159,7 +159,7 @@ declare module 'codemirror' {
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
-const defaultCmOptions = {
+const defaultCmOptions: CodeMirror.EditorConfiguration = {
   lineNumbers: true,
   viewportMargin: 10,
   extraKeys: {"Shift-Tab": false},
@@ -514,9 +514,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         languageId={this.props.language.id}
         options={{...defaultOptions, ...this.props.options}}
         showDialog={this.showDialog}
-        closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
-        debugHistory={this.props.debuggingLog?.history}
      />
     );
   }
