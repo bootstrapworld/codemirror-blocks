@@ -66,6 +66,17 @@ declare module 'codemirror' {
      */
     redoSelection(): void;
 
+    /**
+     * This method can be used to implement search/replace functionality.
+     *  `query`: This can be a regular * expression or a string (only strings will match across lines -
+     *          if they contain newlines).
+     *  `start`: This provides the starting position of the search. It can be a `{line, ch} object,
+     *          or can be left off to default to the start of the document
+     *  `options`: options is an optional object, which can contain the property `caseFold: false`
+     *          to disable case folding when matching a string, or the property `multiline: disable`
+     *          to disable multi-line matching for regular expressions (which may help performance)
+     */
+    getSearchCursor(query: string | RegExp, start?: CodeMirror.Position, options?:{caseFold?: boolean, multiline?: boolean}): SearchCursor;
   }
 
   interface Editor {
