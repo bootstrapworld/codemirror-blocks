@@ -6,9 +6,9 @@ import {Primitive as LanguagePrimitive} from '../parsers/primitives';
 import {DragPrimitiveSource} from '../dnd';
 import {say} from '../utils';
 import SHARED from '../shared';
-import {copyNodes} from '../actions';
+import {copy} from '../actions';
 import CodeMirror from 'codemirror';
-import {commandMap} from '../keyMap';
+import {commandMap, defaultKeyMap} from '../keymap';
 
 require('./PrimitiveList.less');
 
@@ -27,10 +27,10 @@ class Primitive extends Component {
   }
 
   handleKeyDown = e => {
-    switch (commandMap[CodeMirror.keyName(e)]) {
-    case 'copy':
+    switch (defaultKeyMap[CodeMirror.keyName(e)]) {
+    case 'Copy':
       e.preventDefault();
-      copyNodes([this.props.primitive]);
+      copy([this.props.primitive.getASTNode()]);
       say("copied " + this.props.primitive.toString());
       this.props.primitive.element?.focus(); // restore focus
       return;

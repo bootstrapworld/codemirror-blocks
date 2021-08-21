@@ -54,11 +54,11 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
   // nid can be stale!! Always obtain a fresh copy of the node
   // from getState() before calling activateByNid
   handleMouseDown = e => {
-    if(!this.props.inToolbar) e.stopPropagation(); // prevent ancestors to steal focus
+    if(this.props.inToolbar) return; // do not process toolbar nodes
+    else e.stopPropagation();        // prevent ancestors from stealing focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
     const {ast} = store.getState();
     const currentNode = ast.getNodeById(this.props.node.id);  
-    //console.log('XXX Node:84 calling activateByNid');
     this.props.activateByNid(currentNode.nid, {allowMove: false});
   }
 
