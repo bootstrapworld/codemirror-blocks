@@ -7,6 +7,8 @@ import {DragPrimitiveSource} from '../dnd';
 import {say} from '../utils';
 import SHARED from '../shared';
 import {copyNodes} from '../actions';
+import CodeMirror from 'codemirror';
+import {commandMap} from '../keyMap';
 
 require('./PrimitiveList.less');
 
@@ -25,7 +27,7 @@ class Primitive extends Component {
   }
 
   handleKeyDown = e => {
-    switch (SHARED.keyMap[SHARED.keyName(e)]) {
+    switch (commandMap[CodeMirror.keyName(e)]) {
     case 'copy':
       e.preventDefault();
       copyNodes([this.props.primitive]);
