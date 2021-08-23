@@ -13,13 +13,22 @@ const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAge
 // pass along useful constants
 export const mac = ios || /Mac/.test(platform);
 export const cmd_ctrl = mac? { metaKey: true } : { ctrlKey: true };
-export const DELAY = 250;
 
-// pass along useful testing functions
+// wait a given number of milliseconds
 export async function wait(ms: number) {
   return new Promise(resolve => {
     setTimeout(resolve, ms);
   });
+}
+
+// wait for the editor to finish rendering, then
+// pad another 200ms 
+// NOTE(Emmanuel): 0ms causes all kinds of stuff to break
+export async function finishRender(editor) {
+  await new Promise(resolve => {
+    editor.afterDOMUpdate(resolve);  
+  });
+  return wait(200);
 }
 
 export function removeEventListeners() {

@@ -2,10 +2,10 @@ import wescheme from '../src/languages/wescheme';
 
 /*eslint no-unused-vars: "off"*/
 import {
-  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
-  dragend, dragleave, keyDown, keyPress, insertText
+  dragend, dragleave, keyDown, keyPress, insertText, finishRender
 } from '../src/toolkit/test-utils';
 
 console.log('Doing comment-test.js');
@@ -30,7 +30,7 @@ describe('When editing and moving commented nodes', function() {
 #| comment2 |#
 2`);
       this.cmb.setBlockMode(true);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       let ast = this.cmb.getAst();
       this.expr0 = ast.rootNodes[0];
       this.expr1 = ast.rootNodes[1];
@@ -39,7 +39,7 @@ describe('When editing and moving commented nodes', function() {
 
     it('when the mode is toggled, it should reformat all comments as block comments', async function() {
       this.cmb.setBlockMode(false);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       // the opening whitespace should be removed!
       expect(this.cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
@@ -51,7 +51,7 @@ describe('When editing and moving commented nodes', function() {
       this.cmb.setQuarantine({line: 3, ch: 1}, {line: 3, ch: 1}, "1 #| comment1 |#");
       await wait(QUARANTINE_DELAY);
       click(this.expr0);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(this.cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
 #| comment2 |#
@@ -63,7 +63,7 @@ describe('When editing and moving commented nodes', function() {
       this.cmb.setQuarantine({line: 0, ch: 14}, {line: 0, ch: 14}, "1 #| comment1 |#");
       await wait(QUARANTINE_DELAY);
       click(this.expr0);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(this.cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
 1 #| comment1 |#

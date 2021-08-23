@@ -3,10 +3,10 @@ import 'codemirror/addon/search/searchcursor.js';
 
 /*eslint no-unused-vars: "off"*/
 import {
-  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
-  dragend, dragleave, keyDown, keyPress, insertText
+  dragend, dragleave, keyDown, keyPress, insertText, finishRender
 } from '../src/toolkit/test-utils';
 
 console.log('Doing api-test.js');
@@ -23,7 +23,7 @@ describe("when testing CM apis,", function () {
     setup.call(this);
     this.cmb.setBlockMode(false);
     this.cmb.setValue(`(+ 1 2)\ny`);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     this.currentFocusNId = () => this.cmb.getFocusedNode().nid;
     this.roots = () => this.cmb.getAst().rootNodes;
     this.currentFirstRoot = () => this.roots()[0];
@@ -35,7 +35,7 @@ describe("when testing CM apis,", function () {
 
   it('those unsupported in the BlockEditor should throw errors', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(()=>this.cmb.cursorCoords(true,"page")).toThrow();
     expect(()=>this.cmb.addKeyMap(true)).toThrow();
     expect(()=>this.cmb.addOverlay(true)).toThrow();
@@ -127,7 +127,7 @@ describe("when testing CM apis,", function () {
     expect(()=>this.cmb.setSize(lineNumber)).not.toThrow();
     expect(()=>this.cmb.undo()).not.toThrow();
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
 
     expect(()=>this.cmb.setValue(code)).not.toThrow();
     expect(()=>this.cmb.addLineClass(className)).not.toThrow();
@@ -180,10 +180,10 @@ describe("when testing CM apis,", function () {
   });
 
   it('addSelection should work as-is for text mode', async function () {
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.listSelections().length).toBe(1);
     this.cmb.addSelection({line:0, ch:0}, {line:0, ch:7});
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // strip out the first selection, build a simple from/to Object
     const r = this.cmb.listSelections()[0];
     const simpleRange = {from: r.anchor, to: r.head};
@@ -192,19 +192,19 @@ describe("when testing CM apis,", function () {
 
   it('addSelection should work as-expected for block mode', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.listSelections().length).toBe(1);
     this.cmb.addSelection({line:0, ch:0}, {line:0, ch:7});
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.listSelections().length).toBe(2);
     const firstRoot = this.currentFirstRoot().element;
     expect(firstRoot.getAttribute('aria-selected')).toBe("true");
   });
 
   it('getCursor should work as-is for Text', async function () {
-    await wait(DELAY);
+    await finishRender(this.cmb);
     this.cmb.setSelection({line: 0, ch: 0}, {line: 0, ch: 7});
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getBlockMode()).toBe(false);
     expect(this.cmb.listSelections().length).toBe(1);
     expect(simpleCursor(this.cmb.getCursor())).toEqual({line: 0, ch: 7});
@@ -216,9 +216,9 @@ describe("when testing CM apis,", function () {
 
   it('getCursor should only work with head/to for Blocks', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     mouseDown(this.currentFirstRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(simpleCursor(this.cmb.getCursor())).toEqual({line: 0, ch: 0});
     expect(() => this.cmb.getCursor("head")).toThrow();
     expect(() => this.cmb.getCursor("anchor")).toThrow();
@@ -235,7 +235,7 @@ describe("when testing CM apis,", function () {
   it('getSelection should work as-expected for blocks selected programmatically', async function () {
     this.cmb.setValue(`(+ 1 2)\ny`);
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // blockmode API test
     this.cmb.setSelection({line: 0, ch: 0}, {line: 1, ch: 1});
     expect(this.cmb.getSelection("MOO")).toBe("(+ 1 2)MOOy");
@@ -245,16 +245,16 @@ describe("when testing CM apis,", function () {
 
   it('getSelection should work as-expected for blocks', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // blockmode API test
     click(this.currentFirstRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     keyDown(" ", {}, this.currentFirstRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     const selectedNodes = this.cmb.getSelectedNodes();
     expect(selectedNodes.length).toBe(4);
     expect(this.cmb.getSelection("MOO")).toBe("(+ 1 2)MOO");
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.currentFirstRoot().element.getAttribute("aria-selected"))
       .toBe("true");
   });
@@ -268,7 +268,7 @@ describe("when testing CM apis,", function () {
 
   it('getSelections should work as-expected for blocks selected programmatically', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     this.cmb.setSelection({line: 0, ch: 0}, {line: 1, ch: 1});
     expect(this.cmb.getSelections("MOO")).toEqual(["(+ 1 2)MOOy"]);
     this.cmb.setSelection({line: 0, ch: 0}, {line: 0, ch: 0});
@@ -277,11 +277,11 @@ describe("when testing CM apis,", function () {
 
   it('getSelections should work as-expected for blocks using block selection', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     mouseDown(this.currentFirstRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     keyDown(" ", {}, this.currentFirstRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     const selectedNodes = this.cmb.getSelectedNodes();
     expect(selectedNodes.length).toBe(4);
     const selections = this.cmb.getSelections("MOO");
@@ -295,14 +295,14 @@ describe("when testing CM apis,", function () {
     // textmode API test
     this.cmb.focus();
     this.cmb.setCursor({line: 0, ch: 0});
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.hasFocus()).toBe(true);
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // blockmode API test
     this.cmb.focus();
     click(this.currentFirstRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.hasFocus()).toBe(true);
   });
 
@@ -319,7 +319,7 @@ describe("when testing CM apis,", function () {
       {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}
     ]);
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // blockmode API test
     this.cmb.setSelections([{anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}, 
       {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}]);
@@ -331,7 +331,7 @@ describe("when testing CM apis,", function () {
 
   it('replaceRange', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // blockmode API test
     expect(() => this.cmb.replaceRange("Maya", {line: 0, ch: 2}, {line: 0, ch: 7}))
       .toThrow();
@@ -344,7 +344,7 @@ describe("when testing CM apis,", function () {
 
   it('replaceSelection', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // blockmode API test
     expect(() => this.cmb.replaceRange("Maya", {line: 0, ch: 2}, {line: 0, ch: 7}))
       .toThrow();
@@ -357,14 +357,14 @@ describe("when testing CM apis,", function () {
   it('replaceSelections should work as-expected in blockmode', async function () {
     this.cmb.setValue('(+ 1 2)\nx\n(+ 3 4)');
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // blockmode API test
     keyDown(" ", {}, this.currentFirstRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getSelectedNodes().length).toBe(4);
     mouseDown(this.currentThirdRoot());
     keyDown(" ", {}, this.currentThirdRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getSelectedNodes().length).toBe(8);
     this.cmb.replaceSelections(["Maya", "Schanzer"]);
     expect(this.cmb.getValue()).toBe("Maya\nx\nSchanzer");
@@ -372,9 +372,9 @@ describe("when testing CM apis,", function () {
 
   it('replaceSelections should work as-is in textmode', async function () {
     this.cmb.setBlockMode(false);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     this.cmb.setValue('(+ 1 2)\nx\n(+ 3 4)');
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // textmode API test
     this.cmb.setSelections([{anchor:{line:0,ch:0}, head:{line:0,ch:7}},
       {anchor:{line:2,ch:0}, head:{line:2,ch:7}}]);
@@ -385,16 +385,16 @@ describe("when testing CM apis,", function () {
   it('setBookmark', async function () {
     const domNode = document.createElement('span');
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(()=>this.cmb.setBookmark({line:0,ch:2}, {widget: domNode})).toThrow();
     this.cmb.setBlockMode(false);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.setBookmark({line:0,ch:2}, {widget: domNode})).not.toBe(null);
   });
 
   it('setCursor should work as-is for text, or activate the containing block', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     this.cmb.setCursor({line:1,ch:1});
     expect(simpleCursor(this.cmb.getCursor())).toEqual({line:1,ch:1});
     expect(this.currentFocusNId()).toBe(0);
@@ -415,7 +415,7 @@ describe("when testing CM apis,", function () {
       {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 7}}
     ]);
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // blockmode API test
     expect(() => this.cmb.setSelection(
       {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 3}})
@@ -444,7 +444,7 @@ describe("when testing CM apis,", function () {
       {anchor: {line: 2, ch: 0}, head: {line: 2, ch: 7}}
     ]);
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     // blockmode API test
     expect(() => this.cmb.setSelections([
       {anchor: {line: 0, ch: 0}, head: {line: 0, ch: 3}}, 
@@ -460,24 +460,24 @@ describe("when testing CM apis,", function () {
 
   it('somethingSelected should work for selected blocks and text ranges', async function () {
     this.cmb.setBlockMode(true);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     const firstRoot = this.currentFirstRoot();
     expect(this.cmb.somethingSelected()).toBe(false);
     mouseDown(firstRoot);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getSelectedNodes().length).toBe(0);
     keyDown(" ", {}, firstRoot);
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getSelectedNodes().length).toBe(4);
     expect(this.cmb.somethingSelected()).toBe(true);
     this.cmb.setSelection({line:0,ch:0}, {line:0,ch:0});
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getSelectedNodes().length).toBe(0);
     expect(this.cmb.somethingSelected()).toBe(false);
     this.cmb.addSelection({line:0,ch:0},{line:0,ch:7});
     expect(this.cmb.somethingSelected()).toBe(true);
     this.cmb.setSelection({line:0,ch:0}, {line:0,ch:0});
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getSelectedNodes().length).toBe(0);
     expect(this.cmb.somethingSelected()).toBe(false);
     this.cmb.addSelection({line:0,ch:0},{line:1,ch:1});

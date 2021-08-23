@@ -3,10 +3,10 @@ import 'codemirror/addon/search/searchcursor.js';
 
 /*eslint no-unused-vars: "off"*/
 import {
-  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
-  dragend, dragleave, keyDown, keyPress, insertText
+  dragend, dragleave, keyDown, keyPress, insertText, finishRender
 } from '../src/toolkit/test-utils';
 
 console.log('Doing undo-redo-test.js');
@@ -27,7 +27,7 @@ describe("when testing undo/redo,", function () {
         keyDown("Y", { ctrlKey: true }, node);
       }
     };
-    await wait(DELAY);
+    await finishRender(this.cmb);
   });
 
   afterEach(function () { teardown(); });
@@ -37,46 +37,46 @@ describe("when testing undo/redo,", function () {
 
     this.cmb.setValue(`A\nB\n`);
     this.cmb.clearHistory();
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 0});
     mouseDown(this.currentFirstRoot());                          // focus on the 1st root
     keyDown(" ", {}, this.currentFirstRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     keyDown("X", cmd_ctrl, this.currentFirstRoot());      // change (1): cut first root
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 0});
     this.cmb.setCursor({line: 2, ch: 0});
     keyDown("Enter");                                            // change (2): insert empty line
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 0});
     insertText("C");                                             // change (3): insert C at the end
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
     this.undo(this.currentFirstRoot());                          // undo (3), leaving \nB\n\n
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
     this.undo(this.currentFirstRoot());                          // undo (2), leaving \nB\n\n
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
     this.undo(this.currentFirstRoot());                          // undo (1), leaving A\nB\n
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('A\nB\n');    
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 3});
     this.redo(this.currentFirstRoot());                          // redo (1), leaving \nB\n
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 2});
     this.redo(this.currentFirstRoot());                          // redo (2), leaving \nB\n\n
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('\nB\n\n');
     expect(this.cmb.historySize()).toEqual({undo: 2, redo: 1});
     this.redo(this.currentFirstRoot());                          // redo (3), leaving \nB\n\nC
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('\nB\n\nC');
     expect(this.cmb.historySize()).toEqual({undo: 3, redo: 0});
   });
@@ -85,19 +85,19 @@ describe("when testing undo/redo,", function () {
 
     this.cmb.setValue(`A\nB\n`);
     this.cmb.clearHistory();
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 0});
 
     mouseDown(this.currentFirstRoot());                          // focus on the 1st root
     keyDown(" ", {}, this.currentFirstRoot());
-    await wait(DELAY);
+    await finishRender(this.cmb);
     keyDown("X", cmd_ctrl, this.currentFirstRoot());      // change (1): cut first root
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 1, redo: 0});
     this.cmb.setCursor({line: 1, ch: 0});
     this.undo(); // initiate undo from the top-level
-    await wait(DELAY);
+    await finishRender(this.cmb);
     expect(this.cmb.getValue()).toEqual('A\nB\n');
     expect(this.cmb.historySize()).toEqual({undo: 0, redo: 1});
     this.redo(); // initiate redo from the top-level

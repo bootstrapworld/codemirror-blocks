@@ -3,10 +3,10 @@ import wescheme from '../src/languages/wescheme';
 
 /*eslint no-unused-vars: "off"*/
 import {
-  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
-  dragend, dragleave, keyDown, keyPress, insertText
+  dragend, dragleave, keyDown, keyPress, insertText, finishRender
 } from '../src/toolkit/test-utils';
 const QUARANTINE_DELAY = 2000;
 
@@ -16,10 +16,11 @@ console.log('Doing new-blocks-test.js');
 let setup = function () { activationSetup.call(this, wescheme); };
 
 describe('The CodeMirrorBlocks Class', function() {
-  beforeEach(function() {
+  beforeEach(async function() {
     setup.call(this);
     this.blocks = this.cmb;
     this.blocks.setBlockMode(true);
+    await finishRender(this.cmb);
   });
 
   afterEach(function () { teardown(); });
@@ -63,18 +64,18 @@ describe('The CodeMirrorBlocks Class', function() {
   describe('events,', function() {
     beforeEach(async function() {
       this.blocks.setValue('11');
-      await wait(DELAY);
+      await finishRender(this.cmb);
       this.blocks.setBlockMode(true);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       this.literal = this.blocks.getAst().rootNodes[0];
-      await wait(DELAY);
+      await finishRender(this.cmb);
     });
 
     describe("when dealing with top-level input,", function() {
 
       beforeEach(async function() {
         this.blocks.setValue('42\n11');
-        await wait(DELAY);
+        await finishRender(this.cmb);
       });
 
       it('typing at the end of a line', async function() {
@@ -84,21 +85,21 @@ describe('The CodeMirrorBlocks Class', function() {
           "9");
         await wait(QUARANTINE_DELAY);
         click(this.literal);
-        await wait(DELAY);
+        await finishRender(this.cmb);
         expect(this.cmb.getValue()).toEqual('42\n9\n11');
       });
       it('typing at the beginning of a line', async function() {
         this.cmb.setQuarantine({line: 0, ch: 0, xRel: 0}, {line: 0, ch: 0, xRel: 0}, "9");
         await wait(QUARANTINE_DELAY);
         click(this.literal);
-        await wait(DELAY);
+        await finishRender(this.cmb);
         expect(this.cmb.getValue()).toEqual('9\n42\n11');
       });
       it('typing between two blocks on a line', async function() {
         this.cmb.setCursor({line: 0, ch: 3});
         keyDown("9", {}, this.cmb.getInputField());
         insertText("9");
-        await wait(DELAY);
+        await finishRender(this.cmb);
         expect(this.cmb.getValue()).toEqual('429\n11');
       });
 
@@ -107,36 +108,36 @@ describe('The CodeMirrorBlocks Class', function() {
     /*
     it('should begin editing a node on click', async function() {
       click(this.literal);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(document.activeElement.classList).toContain('blocks-editing');
     });
     
     it('should save a valid, edited node on blur', async function() {
       click(this.literal);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       insertText("9");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       keyDown("Enter");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(this.blocks.getValue()).toEqual('9');
     })
     */
     it('should not allow required blanks to be deleted', async function() {
       this.blocks.setValue('()');
-      await wait(DELAY);
+      await finishRender(this.cmb);
       this.blocks.getValue('(...)'); // blank should be inserted by parser, as '...'
       const blank = this.blocks.getAst().rootNodes[0].func;
       click(blank.element);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(blank.isEditable()).toBe(true);
       keyDown("Delete");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       this.blocks.getValue('(...)'); // deleting the blank should be a no-op
     });
 
     it('should return the node being edited on ESC', async function() {
       click(this.literal);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       const quarantine = document.activeElement;
       keyDown("Escape", {}, quarantine);
       expect(this.blocks.getValue()).toEqual('11');
@@ -145,16 +146,16 @@ describe('The CodeMirrorBlocks Class', function() {
     
     it('should blur the node being edited on enter', async function() {
       click(this.literal);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       let quarantine = document.activeElement;
       keyDown("Enter");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(document.activeElement).not.toBe();
     });
     
     it('should blur the node being edited on top-level click', async function() {
       click(this.literal.element);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       let quarantine = document.activeElement;
       click(this.blocks.getWrapperElement());
       expect(document.activeElement).not.toBe();
@@ -164,7 +165,7 @@ describe('The CodeMirrorBlocks Class', function() {
       beforeEach(async function() {
         spyOn(this.blocks, 'replaceRange');
         click(this.literal.element);
-        await wait(DELAY);
+        await finishRender(this.cmb);
         let quarantine = document.activeElement;
         let selection = window.getSelection();
         expect(selection.rangeCount).toEqual(1);
@@ -187,7 +188,7 @@ describe('The CodeMirrorBlocks Class', function() {
     describe('when dealing with whitespace,', function() {
       beforeEach(async function() {
         this.blocks.setValue('(+ 1 2) (+)');
-        await wait(DELAY);
+        await finishRender(this.cmb);
         this.ast = this.blocks.getAst();
         this.firstRoot = this.ast.rootNodes[0];
         this.firstArg = this.ast.rootNodes[0].args[0];
@@ -215,34 +216,35 @@ describe('The CodeMirrorBlocks Class', function() {
       it('Ctrl-[ should activate a quarantine to the left', async function() {
         mouseDown(this.firstArg.element);
         keyDown("[", {ctrlKey: true});
-        await wait(DELAY);
+        await finishRender(this.cmb);
         //expect(this.blocks.setQuarantine).toHaveBeenCalled();
       });
       
       it('Ctrl-] should activate a quarantine to the right', async function() {
         mouseDown(this.firstArg.element);
         keyDown("]", {ctrlKey: true}, this.firstArg.element);
-        await wait(DELAY);
+        await finishRender(this.cmb);
         //expect(this.blocks.setQuarantine).toHaveBeenCalled();
       });
       
       it('Ctrl-] should activate a quarantine in the first arg position', async function() {
         mouseDown(this.blank.func.element);
+        await finishRender(this.cmb);
         keyDown("]", {ctrlKey: true}, this.blank.func.element);
-        await wait(DELAY);
+        await finishRender(this.cmb);
         //expect(this.blocks.setQuarantine).toHaveBeenCalled();
       });
       
       it('should activate a quarantine on dblclick', async function() {
         click(this.whiteSpaceEl);
-        await wait(DELAY);
+        await finishRender(this.cmb);
         //expect(this.blocks.setQuarantine).toHaveBeenCalled();
       });
       
       describe('in corner-cases with no arguments,', function() {
         beforeEach(async function() {
           this.blocks.setValue('(f)');
-          await wait(DELAY);
+          await finishRender(this.cmb);
           this.ast = this.blocks.getAst();
           this.firstRoot = this.ast.rootNodes[0];
           this.func = this.ast.rootNodes[0].func;
@@ -251,7 +253,7 @@ describe('The CodeMirrorBlocks Class', function() {
         
         it('should allow editing the argument whitespace', async function() { /* left off here*/
           click(this.argWS);
-          await wait(DELAY);
+          await finishRender(this.cmb);
           //expect(this.blocks.setQuarantine).toHaveBeenCalled();
         }); 
       });
@@ -262,13 +264,13 @@ describe('The CodeMirrorBlocks Class', function() {
         // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
         // it('should save whiteSpace on blur', async function() {
         //   this.whiteSpaceEl.dispatchEvent(dblclick());
-        //   await wait(DELAY);
+        //   await finishRender(this.cmb);
         //   expect(this.trackSetQuarantine).toHaveBeenCalledWith("", this.whiteSpaceEl);
         //   let quarantine = this.trackSetQuarantine.calls.mostRecent().returnValue;
         //   let trackOnBlur = spyOn(quarantine, 'onblur').and.callThrough();
         //   quarantine.appendChild(document.createTextNode('4253'));
         //   quarantine.dispatchEvent(blur());
-        //   await wait(DELAY);
+        //   await finishRender(this.cmb);
         //   expect(trackOnBlur).toHaveBeenCalled();
         //   expect(this.trackSaveEdit).toHaveBeenCalledWith(quarantine);
         //   expect(quarantine.textContent).toBe('4253'); // confirms text=4253 inside saveEdit, blocks.js line 495
@@ -282,7 +284,7 @@ describe('The CodeMirrorBlocks Class', function() {
         // it('should blur whitespace you are editing on enter', async function() {
         //   this.whiteSpaceEl.dispatchEvent(dblclick());
         //   let quarantine = this.trackSetQuarantine.calls.mostRecent().returnValue;
-        //   await wait(DELAY);
+        //   await finishRender(this.cmb);
         //   quarantine.dispatchEvent(keydown(ENTER));
         //   expect(this.trackHandleChange).toHaveBeenCalled();
         // });
@@ -290,7 +292,7 @@ describe('The CodeMirrorBlocks Class', function() {
         describe('when "saving" bad whitepspace inputs,', function() {
           beforeEach(async function() {
             // this.whiteSpaceEl.dispatchEvent(dblclick());
-            // await wait(DELAY);
+            // await finishRender(this.cmb);
             // this.quarantine = this.trackSetQuarantine.calls.mostRecent().returnValue;
             // this.quarantine.appendChild(document.createTextNode('"moo'));
             // this.quarantine.dispatchEvent(blur());

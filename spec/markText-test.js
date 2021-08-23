@@ -2,10 +2,10 @@ import wescheme from '../src/languages/wescheme';
 
 /*eslint no-unused-vars: "off"*/
 import {
-  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
-  dragend, dragleave, keyDown, keyPress, insertText
+  dragend, dragleave, keyDown, keyPress, insertText, finishRender
 } from '../src/toolkit/test-utils';
 
 console.log('Doing markText-test.js');
@@ -28,7 +28,7 @@ describe('The CodeMirrorBlocks Class', function () {
 
     beforeEach(async function () {
       this.editor.setValue('11\n12\n(+ 3 4 5)');
-      await wait(DELAY); // give the editor a chance to re-render
+      await finishRender(this.cmb); // give the editor a chance to re-render
       this.editor.getAllMarks().forEach(m => m.clear());
       this.ast = this.editor.getAst();
       this.literal1 = this.ast.rootNodes[0];
@@ -113,7 +113,7 @@ describe('The CodeMirrorBlocks Class', function () {
             expect(this.editor.getAllMarks().length).toBe(1); 
             expect(this.literal1.element.style.background).toBe('red');
             this.editor.setBlockMode(false);
-            await wait(DELAY);
+            await finishRender(this.cmb);
             console.log(this.editor.getAllMarks());
             expect(this.editor.getAllMarks().length).toBe(1);
           });

@@ -3,10 +3,10 @@ import 'codemirror/addon/search/searchcursor.js';
 
 /*eslint no-unused-vars: "off"*/
 import {
-  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
-  dragend, dragleave, keyDown, keyPress, insertText
+  dragend, dragleave, keyDown, keyPress, insertText, finishRender
 } from '../src/toolkit/test-utils';
 
 console.log('Doing drag-test.js');
@@ -27,7 +27,7 @@ describe('Drag and drop', function() {
   describe('when drag existing node and drop on existing node,', function() {
     beforeEach(async function() {
       this.cmb.setValue('(+ 1 2 3)');
-      await wait(DELAY);
+      await finishRender(this.cmb);
       this.retrieve = function() {
         this.funcSymbol = this.cmb.getAst().rootNodes[0].func;
         this.firstArg = this.cmb.getAst().rootNodes[0].args[0];
@@ -168,7 +168,7 @@ describe('Drag and drop', function() {
     */
     it('save collapsed state when dragging root to be the last child of the next root', async function () {
       this.cmb.setValue('(collapse me)\n(+ 1 2)');
-      await wait(DELAY);
+      await finishRender(this.cmb);
       this.retrieve = function() {
         this.firstRoot = this.cmb.getAst().rootNodes[0];
         this.lastDropTarget = document.querySelectorAll('.blocks-drop-target')[4];
@@ -182,7 +182,7 @@ describe('Drag and drop', function() {
       let dragEvent = dragstart();
       this.firstRoot.element.dispatchEvent(dragEvent); // drag to the last droptarget
       this.lastDropTarget.dispatchEvent(drop(dragEvent.dataTransfer));
-      await wait(DELAY);
+      await finishRender(this.cmb);
       this.retrieve();
       this.newFirstRoot = this.cmb.getAst().rootNodes[0];
       this.newLastChild = this.newFirstRoot.args[2];
@@ -197,7 +197,7 @@ describe('Drag and drop', function() {
     beforeEach(async function () {
       setup.call(this);
       this.cmb.setValue(';comment\n(a)\n(c)\n(define-struct e ())\ng');
-      await wait(DELAY);
+      await finishRender(this.cmb);
       this.retrieve = function() {
         this.source = this.cmb.getAst().rootNodes[0];
         this.target1 = document.querySelectorAll('.blocks-drop-target')[1];
@@ -212,14 +212,14 @@ describe('Drag and drop', function() {
       let dragEvent = dragstart();
       this.source.element.dispatchEvent(dragEvent); // drag to the last droptarget
       this.target1.dispatchEvent(drop(dragEvent.dataTransfer));
-      await wait(DELAY);
+      await finishRender(this.cmb);
     });
 
     it('regression test for empty identifierLists returning a null location', async function () {
       let dragEvent = dragstart();
       this.source.element.dispatchEvent(dragEvent); // drag to the last droptarget
       this.target2.dispatchEvent(drop(dragEvent.dataTransfer));
-      await wait(DELAY);
+      await finishRender(this.cmb);
     });
   });
 });

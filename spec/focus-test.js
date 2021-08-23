@@ -2,10 +2,10 @@ import wescheme from '../src/languages/wescheme';
 
 /*eslint no-unused-vars: "off"*/
 import {
-  mac, cmd_ctrl, DELAY, wait, removeEventListeners, teardown, activationSetup,
+  mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
   paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
-  dragend, dragleave, keyDown, keyPress, insertText
+  dragend, dragleave, keyDown, keyPress, insertText, finishRender
 } from '../src/toolkit/test-utils';
 
 console.log('Doing focus-test.js');
@@ -26,7 +26,7 @@ describe('The CodeMirrorBlocks Class', function() {
   describe('focusing,', function() {
     beforeEach(async function() {
       this.cm.setValue('(+ 1 2 3)');
-      await wait(DELAY);
+      await finishRender(this.cmb);
       this.expression = this.blocks.getAst().rootNodes[0];
       this.func = this.expression.func;
       this.literal1 = this.expression.args[0];
@@ -41,59 +41,59 @@ describe('The CodeMirrorBlocks Class', function() {
 
     it('deleting the last node should shift focus to the next-to-last', async function() {
       mouseDown(this.literal3);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(document.activeElement).toBe(this.literal3.element);
       keyDown(" ");
       keyDown("Delete");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(this.cm.getValue()).toBe('(+ 1 2)');
       expect(this.blocks.getFocusedNode().id).toBe(this.literal2.id);
     });
 
     it('deleting the first node should shift focus to the parent', async function() {
       mouseDown(this.literal1);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(document.activeElement).toBe(this.literal1.element);
       keyDown(" ");
       keyDown("Delete");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(this.cm.getValue()).toBe('(+ 2 3)');
       expect(this.blocks.getFocusedNode().id).toBe(this.func.id);
     });
 
     it('deleting the nth node should shift focus to n-1', async function() {
       mouseDown(this.literal2);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(document.activeElement).toBe(this.literal2.element);
       keyDown(" ");
       keyDown("Delete");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(this.cm.getValue()).toBe('(+ 1 3)');
       expect(this.blocks.getFocusedNode().id).toBe(this.literal1.id);
     });
 
     it('deleting multiple nodes should shift focus to the one before', async function() {
       mouseDown(this.literal2);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       keyDown(" ");
       keyDown("ArrowDown");
       keyDown(" ", {}, this.literal3);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(this.blocks.getSelectedNodes().length).toBe(2);
       keyDown("Delete");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(this.cm.getValue()).toBe('(+ 1)');
       expect(this.blocks.getFocusedNode().id).toBe(this.literal1.id);
     });
     
     it('inserting a node should put focus on the new node', async function() {
       mouseDown(this.literal1);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       keyDown(']', {ctrlKey: true});
-      await wait(DELAY);
+      await finishRender(this.cmb);
       insertText('99'); // in place of 2x keydown
       keyDown("Enter");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       // extra WS is removed when we switch back to text, but in blockmode
       // there's an extra space inserted after 99
       expect(this.cm.getValue()).toBe('(+ 1 99 2 3)');
@@ -103,12 +103,12 @@ describe('The CodeMirrorBlocks Class', function() {
 
     it('inserting multiple nodes should put focus on the last of the new nodes', async function() {
       mouseDown(this.literal1);
-      await wait(DELAY);
+      await finishRender(this.cmb);
       keyDown(']', {ctrlKey: true});
-      await wait(DELAY);
+      await finishRender(this.cmb);
       insertText('99 88 77');
       keyDown("Enter");
-      await wait(DELAY);
+      await finishRender(this.cmb);
       expect(this.cm.getValue()).toBe('(+ 1 99 88 77 2 3)');
       // TODO(Emmanuel): does getFocusedNode().value always return strings?
       expect(this.blocks.getFocusedNode().value).toBe('77');
