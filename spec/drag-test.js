@@ -17,12 +17,9 @@ let setup = function () { activationSetup.call(this, wescheme); };
 describe('Drag and drop', function() {
   beforeEach(function() {
     setup.call(this);
-    this.cmb.setBlockMode(true);
   });
 
-  afterEach(function() {
-    teardown();
-  });
+  afterEach(function() { teardown(); });
 
   describe('when drag existing node and drop on existing node,', function() {
     beforeEach(async function() {

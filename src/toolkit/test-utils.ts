@@ -62,7 +62,7 @@ const fixture = `
  * or `call` (`activationSetup.call(this, pyret)`)
  * so that `this` is scoped correctly!
  */
-export function activationSetup(language: Language): void {
+export async function activationSetup(language: Language): void {
   document.body.insertAdjacentHTML('afterbegin', fixture);
   const container = document.getElementById('cmb-editor');
   const cmOptions = {historyEventDelay: 50}; // since our test harness is faster than people
@@ -73,9 +73,9 @@ export function activationSetup(language: Language): void {
     cmOptions
   );
   this.cmb.setBlockMode(true);
-
   this.activeNode = () => this.cmb.getFocusedNode();
   this.activeAriaId = () =>
     this.cmb.getScrollerElement().getAttribute('aria-activedescendent');
   this.selectedNodes = () => this.cmb.getSelectedNodes();
+  await finishRender(this.cmb);
 }

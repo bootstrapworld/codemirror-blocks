@@ -18,9 +18,6 @@ let setup = function () { activationSetup.call(this, wescheme); };
 describe('The CodeMirrorBlocks Class', function() {
   beforeEach(async function() {
     setup.call(this);
-    this.blocks = this.cmb;
-    this.blocks.setBlockMode(true);
-    await finishRender(this.cmb);
   });
 
   afterEach(function () { teardown(); });
@@ -47,8 +44,8 @@ describe('The CodeMirrorBlocks Class', function() {
     });
 
     it("should set block mode to false", function() {
-      this.blocks.setBlockMode(false);
-      expect(this.blocks.getBlockMode()).toBe(false);
+      this.cmb.setBlockMode(false);
+      expect(this.cmb.getBlockMode()).toBe(false);
     });
   });
   /*
@@ -63,18 +60,18 @@ describe('The CodeMirrorBlocks Class', function() {
   */
   describe('events,', function() {
     beforeEach(async function() {
-      this.blocks.setValue('11');
+      this.cmb.setValue('11');
       await finishRender(this.cmb);
-      this.blocks.setBlockMode(true);
+      this.cmb.setBlockMode(true);
       await finishRender(this.cmb);
-      this.literal = this.blocks.getAst().rootNodes[0];
+      this.literal = this.cmb.getAst().rootNodes[0];
       await finishRender(this.cmb);
     });
 
     describe("when dealing with top-level input,", function() {
 
       beforeEach(async function() {
-        this.blocks.setValue('42\n11');
+        this.cmb.setValue('42\n11');
         await finishRender(this.cmb);
       });
 
@@ -119,20 +116,20 @@ describe('The CodeMirrorBlocks Class', function() {
       await finishRender(this.cmb);
       keyDown("Enter");
       await finishRender(this.cmb);
-      expect(this.blocks.getValue()).toEqual('9');
+      expect(this.cmb.getValue()).toEqual('9');
     })
     */
     it('should not allow required blanks to be deleted', async function() {
-      this.blocks.setValue('()');
+      this.cmb.setValue('()');
       await finishRender(this.cmb);
-      this.blocks.getValue('(...)'); // blank should be inserted by parser, as '...'
-      const blank = this.blocks.getAst().rootNodes[0].func;
+      this.cmb.getValue('(...)'); // blank should be inserted by parser, as '...'
+      const blank = this.cmb.getAst().rootNodes[0].func;
       click(blank.element);
       await finishRender(this.cmb);
       expect(blank.isEditable()).toBe(true);
       keyDown("Delete");
       await finishRender(this.cmb);
-      this.blocks.getValue('(...)'); // deleting the blank should be a no-op
+      this.cmb.getValue('(...)'); // deleting the blank should be a no-op
     });
 
     it('should return the node being edited on ESC', async function() {
@@ -140,7 +137,7 @@ describe('The CodeMirrorBlocks Class', function() {
       await finishRender(this.cmb);
       const quarantine = document.activeElement;
       keyDown("Escape", {}, quarantine);
-      expect(this.blocks.getValue()).toEqual('11');
+      expect(this.cmb.getValue()).toEqual('11');
     });
     
     
@@ -157,13 +154,13 @@ describe('The CodeMirrorBlocks Class', function() {
       click(this.literal.element);
       await finishRender(this.cmb);
       let quarantine = document.activeElement;
-      click(this.blocks.getWrapperElement());
+      click(this.cmb.getWrapperElement());
       expect(document.activeElement).not.toBe();
     });
   
     describe('when "saving" bad inputs,', function() {
       beforeEach(async function() {
-        spyOn(this.blocks, 'replaceRange');
+        spyOn(this.cmb, 'replaceRange');
         click(this.literal.element);
         await finishRender(this.cmb);
         let quarantine = document.activeElement;
@@ -178,18 +175,18 @@ describe('The CodeMirrorBlocks Class', function() {
 
       /*it('should not save anything & set all error state', function() {
         let quarantine = document.activeElement;//this.trackSetQuarantine.calls.mostRecent().returnValue;
-        expect(this.blocks.replaceRange).not.toHaveBeenCalled();
+        expect(this.cmb.replaceRange).not.toHaveBeenCalled();
         expect(quarantine.classList).toContain('blocks-error');
         expect(quarantine.title).toBe('Error: parse error');
-        expect(this.blocks.hasInvalidEdit).toBe(quarantine);
+        expect(this.cmb.hasInvalidEdit).toBe(quarantine);
       });*/
     });
 
     describe('when dealing with whitespace,', function() {
       beforeEach(async function() {
-        this.blocks.setValue('(+ 1 2) (+)');
+        this.cmb.setValue('(+ 1 2) (+)');
         await finishRender(this.cmb);
-        this.ast = this.blocks.getAst();
+        this.ast = this.cmb.getAst();
         this.firstRoot = this.ast.rootNodes[0];
         this.firstArg = this.ast.rootNodes[0].args[0];
         this.whiteSpaceEl = this.firstArg.element.nextElementSibling;
@@ -200,7 +197,7 @@ describe('The CodeMirrorBlocks Class', function() {
       it('Ctrl-[ should jump to the left of a top-level node', function() {
         mouseDown(this.firstRoot.element);
         keyDown("[", {ctrlKey: true}, this.firstRoot.element);
-        let cursor = this.blocks.getCursor();
+        let cursor = this.cmb.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(0);
       });
@@ -208,7 +205,7 @@ describe('The CodeMirrorBlocks Class', function() {
       it('Ctrl-] should jump to the right of a top-level node', function() {
         mouseDown(this.firstRoot.element);
         keyDown("]", {ctrlKey: true}, this.firstRoot.element);
-        let cursor = this.blocks.getCursor();
+        let cursor = this.cmb.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(7);
       });
@@ -217,14 +214,14 @@ describe('The CodeMirrorBlocks Class', function() {
         mouseDown(this.firstArg.element);
         keyDown("[", {ctrlKey: true});
         await finishRender(this.cmb);
-        //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+        //expect(this.cmb.setQuarantine).toHaveBeenCalled();
       });
       
       it('Ctrl-] should activate a quarantine to the right', async function() {
         mouseDown(this.firstArg.element);
         keyDown("]", {ctrlKey: true}, this.firstArg.element);
         await finishRender(this.cmb);
-        //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+        //expect(this.cmb.setQuarantine).toHaveBeenCalled();
       });
       
       it('Ctrl-] should activate a quarantine in the first arg position', async function() {
@@ -232,20 +229,20 @@ describe('The CodeMirrorBlocks Class', function() {
         await finishRender(this.cmb);
         keyDown("]", {ctrlKey: true}, this.blank.func.element);
         await finishRender(this.cmb);
-        //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+        //expect(this.cmb.setQuarantine).toHaveBeenCalled();
       });
       
       it('should activate a quarantine on dblclick', async function() {
         click(this.whiteSpaceEl);
         await finishRender(this.cmb);
-        //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+        //expect(this.cmb.setQuarantine).toHaveBeenCalled();
       });
       
       describe('in corner-cases with no arguments,', function() {
         beforeEach(async function() {
-          this.blocks.setValue('(f)');
+          this.cmb.setValue('(f)');
           await finishRender(this.cmb);
-          this.ast = this.blocks.getAst();
+          this.ast = this.cmb.getAst();
           this.firstRoot = this.ast.rootNodes[0];
           this.func = this.ast.rootNodes[0].func;
           this.argWS = this.firstRoot.element.getElementsByClassName('blocks-args')[0].firstChild;
@@ -254,7 +251,7 @@ describe('The CodeMirrorBlocks Class', function() {
         it('should allow editing the argument whitespace', async function() { /* left off here*/
           click(this.argWS);
           await finishRender(this.cmb);
-          //expect(this.blocks.setQuarantine).toHaveBeenCalled();
+          //expect(this.cmb.setQuarantine).toHaveBeenCalled();
         }); 
       });
 
@@ -276,8 +273,8 @@ describe('The CodeMirrorBlocks Class', function() {
         //   expect(quarantine.textContent).toBe('4253'); // confirms text=4253 inside saveEdit, blocks.js line 495
         //   expect(this.trackCommitChange).toHaveBeenCalled();
         //   expect(this.trackReplaceRange).toHaveBeenCalledWith(' 4253', Object({ ch: 4, line: 0 }), Object({ ch: 4, line: 0 }));
-        //   expect(this.blocks.getValue()).toBe('(+ 1 4253 2) (+)');
-        //   expect(this.blocks.hasInvalidEdit).toBe(false);
+        //   expect(this.cmb.getValue()).toBe('(+ 1 4253 2) (+)');
+        //   expect(this.cmb.hasInvalidEdit).toBe(false);
         // });
 
         // not sure how to handle trackChange
@@ -304,10 +301,10 @@ describe('The CodeMirrorBlocks Class', function() {
           // it('should not save anything & set all error state', async function() {
           //   expect(this.trackSaveEdit).toHaveBeenCalledWith(this.quarantine);
           //   expect(this.quarantine.textContent).toBe('"moo');
-          //   expect(this.blocks.replaceRange).not.toHaveBeenCalled();
+          //   expect(this.cmb.replaceRange).not.toHaveBeenCalled();
           //   expect(this.quarantine.classList).toContain('blocks-error');
           //   expect(this.quarantine.title).toBe('Error: parse error');
-          //   expect(this.blocks.hasInvalidEdit).toBe(true);
+          //   expect(this.cmb.hasInvalidEdit).toBe(true);
           // });
           
         });

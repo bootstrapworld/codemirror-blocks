@@ -27,7 +27,6 @@ describe("when testing undo/redo,", function () {
         keyDown("Y", { ctrlKey: true }, node);
       }
     };
-    await finishRender(this.cmb);
   });
 
   afterEach(function () { teardown(); });

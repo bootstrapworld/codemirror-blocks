@@ -23,7 +23,6 @@ describe("when dealing with node activation,", function () {
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];
-    await finishRender(this.cmb);
   });
 
   afterEach(function () { teardown(); });

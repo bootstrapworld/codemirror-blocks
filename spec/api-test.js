@@ -22,6 +22,7 @@ describe("when testing CM apis,", function () {
   beforeEach(async function () {
     setup.call(this);
     this.cmb.setBlockMode(false);
+    await finishRender(this.cmb);
     this.cmb.setValue(`(+ 1 2)\ny`);
     await finishRender(this.cmb);
     this.currentFocusNId = () => this.cmb.getFocusedNode().nid;

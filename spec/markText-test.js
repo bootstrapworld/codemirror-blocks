@@ -16,75 +16,71 @@ let setup = function () { activationSetup.call(this, wescheme); };
 describe('The CodeMirrorBlocks Class', function () {
   beforeEach(function () {
     setup.call(this);
-    this.editor = this.cmb;
-    this.cm = this.editor;
-    this.editor.setBlockMode(true);
   });
 
   afterEach(function () { teardown(); });
 
 
   describe('text marking api,', function () {
-
     beforeEach(async function () {
-      this.editor.setValue('11\n12\n(+ 3 4 5)');
+      this.cmb.setValue('11\n12\n(+ 3 4 5)');
       await finishRender(this.cmb); // give the editor a chance to re-render
-      this.editor.getAllMarks().forEach(m => m.clear());
-      this.ast = this.editor.getAst();
+      this.cmb.getAllMarks().forEach(m => m.clear());
+      this.ast = this.cmb.getAst();
       this.literal1 = this.ast.rootNodes[0];
       this.literal2 = this.ast.rootNodes[1];
       this.expression = this.ast.rootNodes[2];
     });
 
     it("should allow you to mark nodes with the markText method", function () {
-      this.editor.markText(this.literal1.from, this.literal1.to, { css: "color: red" });
+      this.cmb.markText(this.literal1.from, this.literal1.to, { css: "color: red" });
       expect(this.literal1.element.style.color).toBe('red');
     });
 
     it("it should allow you to set a className value", function () {
-      this.editor.markText(this.expression.from, this.expression.to, { className: "error" });
+      this.cmb.markText(this.expression.from, this.expression.to, { className: "error" });
       expect(this.expression.element.className).toMatch(/error/);
     });
 
     it("it should allow you to set a className on a child node", function () {
       let child = this.expression.args[2];
-      this.editor.markText(child.from, child.to, { className: "error" });
+      this.cmb.markText(child.from, child.to, { className: "error" });
       expect(child.element.className).toMatch(/error/);
       expect(this.expression.element.className).not.toMatch(/error/);
     });
 
     it("it should allow you to set a title value", function () {
-      this.editor.markText(this.expression.from, this.expression.to, { title: "woot" });
+      this.cmb.markText(this.expression.from, this.expression.to, { title: "woot" });
       expect(this.expression.element.title).toBe("woot");
     });
 
     describe("which provides some getters,", function () {
       beforeEach(function () {
-        this.editor.markText(this.literal1.from, this.literal1.to, { css: "color: red" });
-        this.editor.markText(this.expression.from, this.expression.to, { title: "woot" });
+        this.cmb.markText(this.literal1.from, this.literal1.to, { css: "color: red" });
+        this.cmb.markText(this.expression.from, this.expression.to, { title: "woot" });
       });
 
       it("should return marks with findMarks", function () {
-        let marks = this.editor.findMarks(this.literal1.from, this.literal1.to);
+        let marks = this.cmb.findMarks(this.literal1.from, this.literal1.to);
         expect(marks.length).toBe(1);
-        marks = this.editor.findMarks(this.literal1.from, this.expression.to);
+        marks = this.cmb.findMarks(this.literal1.from, this.expression.to);
         expect(marks.length).toBe(2);
       });
 
       it("should return marks with findMarksAt", function () {
-        let marks = this.editor.findMarksAt(this.literal1.from, this.literal1.to);
+        let marks = this.cmb.findMarksAt(this.literal1.from, this.literal1.to);
         expect(marks.length).toBe(1);
       });
 
       it("should return all marks with getAllMarks", function () {
-        let marks = this.editor.getAllMarks();
+        let marks = this.cmb.getAllMarks();
         expect(marks.length).toBe(2);
       });
     });
 
     describe("which spits out TextMark-like objects,", function () {
       beforeEach(function () {
-        this.mark = this.editor.markText(
+        this.mark = this.cmb.markText(
           this.literal1.from, this.literal1.to, { css: "color: red" }
         );
       });
@@ -92,7 +88,7 @@ describe('The CodeMirrorBlocks Class', function () {
       it("should expose a clear function to remove the mark", function () {
         this.mark.clear();
         expect(this.literal1.element.style.color).toBeFalsy();
-        expect(this.editor.getAllMarks().length).toBe(0);
+        expect(this.cmb.getAllMarks().length).toBe(0);
       });
 
       it("should expose a find function", function () {
@@ -108,14 +104,14 @@ describe('The CodeMirrorBlocks Class', function () {
         describe("should preserve marks across mode transitions,", function() {
     
           it("such as a red background", async function() {
-            expect(this.editor.getAllMarks().length).toBe(0);
-            this.editor.markText(this.literal1.from, this.literal1.to, {css:"background: red"});
-            expect(this.editor.getAllMarks().length).toBe(1); 
+            expect(this.cmb.getAllMarks().length).toBe(0);
+            this.cmb.markText(this.literal1.from, this.literal1.to, {css:"background: red"});
+            expect(this.cmb.getAllMarks().length).toBe(1); 
             expect(this.literal1.element.style.background).toBe('red');
-            this.editor.setBlockMode(false);
+            this.cmb.setBlockMode(false);
             await finishRender(this.cmb);
-            console.log(this.editor.getAllMarks());
-            expect(this.editor.getAllMarks().length).toBe(1);
+            console.log(this.cmb.getAllMarks());
+            expect(this.cmb.getAllMarks().length).toBe(1);
           });
         });
     */
