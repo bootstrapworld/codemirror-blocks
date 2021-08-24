@@ -62,7 +62,7 @@ const fixture = `
  * or `call` (`activationSetup.call(this, pyret)`)
  * so that `this` is scoped correctly!
  */
-export async function activationSetup(language: Language): void {
+export async function activationSetup(language: Language): Promise<T> {
   document.body.insertAdjacentHTML('afterbegin', fixture);
   const container = document.getElementById('cmb-editor');
   const cmOptions = {historyEventDelay: 50}; // since our test harness is faster than people
