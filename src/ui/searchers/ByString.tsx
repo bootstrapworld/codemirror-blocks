@@ -1,13 +1,14 @@
 import React, {Component, createRef} from 'react';
-import PropTypes from 'prop-types';
 import {skipCollapsed, poscmp, skipWhile, getNodeContainingBiased } from '../../utils';
+import { SearchCursor } from 'codemirror';
+import { Searcher } from './Searcher';
 
 /**
  * Returns a query from settings. If the query is a regex but is invalid (indicating
  * that users are still in the middle of writing regex),
  * returns an always failing regex instead.
  */
-function getQueryFromSettings(state) {
+function getQueryFromSettings(state: SearchSettings) {
   let query = state.searchString;
   let isRegex = state.isRegex;
   let isExactMatch = state.isExactMatch;
@@ -24,13 +25,20 @@ function getQueryFromSettings(state) {
   }
 }
 
-class SearchOption extends Component {
-  static propTypes = {
-    onChange: PropTypes.func.isRequired,
-    setting: PropTypes.object.isRequired,
-    name: PropTypes.string.isRequired,
-    value: PropTypes.string.isRequired,
-  }
+type SearchSettings = {
+  searchString: string,
+  isRegex: boolean,
+  isExactMatch: boolean,
+  isIgnoreCase: boolean,
+}
+
+type SearchOptionProps = {
+  onChange: React.ChangeEventHandler,
+  setting: SearchSettings,
+  name: string,
+  value: string,
+}
+class SearchOption extends Component<SearchOptionProps> {
   render() {
     const {name, value, setting, onChange} = this.props;
     return (
@@ -60,7 +68,13 @@ class SearchOption extends Component {
 //   return searchMatches;
 // }
 
-export default {
+type Props = {
+  setting: SearchSettings,
+  onChange: (e: SearchSettings & {[targetName:string]: string|boolean}) => void,
+  firstTime?: boolean
+}
+
+const ByString: Searcher<SearchSettings, Props> = {
   label: 'Search by string',
   setting: {
     searchString: '',
@@ -68,16 +82,12 @@ export default {
     isExactMatch: false,
     isIgnoreCase: false
   },
-  component: class extends Component {
-    static propTypes = {
-      setting: PropTypes.object.isRequired,
-      onChange: PropTypes.func.isRequired,
-      firstTime: PropTypes.bool
-    }
-
+  component: class extends Component<Props> {
     displayName = 'Search by String'
 
-    constructor(props) {
+    inputRef: React.RefObject<HTMLInputElement>
+
+    constructor(props: Props) {
       super(props);
       this.inputRef = createRef();
     }
@@ -86,10 +96,16 @@ export default {
       if(this.props.firstTime) this.inputRef.current.select();
     }
 
-    handleChange = e => {
+    handleChange: React.ChangeEventHandler<HTMLSelectElement|HTMLInputElement> = e => {
+      let value: string|boolean;
+      if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
+        value = e.target.checked;
+      } else {
+        value = e.target.value;
+      }
       this.props.onChange({
         ...this.props.setting,
-        [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
+        [e.target.name]: value,
       });
     }
 
@@ -137,7 +153,7 @@ export default {
     const options = {caseFold: settings.isIgnoreCase};
     const query = getQueryFromSettings(settings);
 
-    function next(searchCursor) {
+    function next(searchCursor: SearchCursor) {
       const result = searchCursor.find(!forward);
       if (result) return searchCursor;
       return null;
@@ -162,3 +178,4 @@ export default {
   }
 };
 
+export default ByString;

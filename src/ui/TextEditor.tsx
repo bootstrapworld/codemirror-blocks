@@ -1,31 +1,43 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {connect} from 'react-redux';
-import {UnControlled as CodeMirror} from 'react-codemirror2';
+import {connect, ConnectedProps} from 'react-redux';
+import {IUnControlledCodeMirror, UnControlled as CodeMirror} from 'react-codemirror2';
 import SHARED from '../shared';
+import { API } from './ToggleEditor';
+import { AST } from '../ast';
+import { Editor } from 'codemirror';
+import { AppDispatch } from '../store';
 
 // CodeMirror APIs that we need to disallow
 // NOTE(Emmanuel): we should probably block 'on' and 'off'...
 const unsupportedAPIs = ['startOperation', 'endOperation', 'operation'];
 
-class TextEditor extends Component {
-  static propTypes = {
-    cmOptions: PropTypes.object,
-    parse: PropTypes.func.isRequired,
-    value: PropTypes.string.isRequired,
-    onBeforeChange: PropTypes.func,
-    onMount:PropTypes.func.isRequired,
-    setAnnouncer: PropTypes.func.isRequired,
-    api: PropTypes.object,
-    passedAST: PropTypes.object,
-  }
+const mapStateToProps = () => ({});
+const mapDispatchToProps = (dispatch: AppDispatch) => ({
+  dispatch,
+  setAnnouncer: (announcer: HTMLElement) => dispatch({type: 'SET_ANNOUNCER', announcer}),
+});
+const connector = connect(mapStateToProps, mapDispatchToProps);
+
+type Props = ConnectedProps<typeof connector> & {
+  cmOptions?: {},
+  parse: Function,
+  value: string,
+  onBeforeChange?: IUnControlledCodeMirror['onBeforeChange'],
+  onMount:(ed: Editor, api: API, ast: AST) => void,
+  setAnnouncer: Function,
+  api?: API,
+  passedAST?: AST,
+};
+
+class TextEditor extends Component<Props> {
 
   /**
    * @internal
    * When the editor mounts, build the API
    */
-    handleEditorDidMount = ed => {
-    this.props.onMount(ed, this.buildAPI(ed), this.props.passedAST);
+  handleEditorDidMount = (ed:Editor) => {
+    this.props.onMount(ed, this.buildAPI(), this.props.passedAST);
   }
 
   /**
@@ -40,7 +52,7 @@ class TextEditor extends Component {
       api[f] = () => {
         throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
       });
-    return api;
+    return api as API;
   }
 
   componentDidMount() {
@@ -62,10 +74,4 @@ class TextEditor extends Component {
   }
 }
 
-const mapStateToProps = _state => ({});
-const mapDispatchToProps = dispatch => ({
-  dispatch,
-  setAnnouncer: announcer => dispatch({type: 'SET_ANNOUNCER', announcer}),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(TextEditor);
+export default connector(TextEditor);

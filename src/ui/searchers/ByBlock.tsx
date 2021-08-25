@@ -1,31 +1,45 @@
 import React, {Component} from 'react';
-import PropTypes from 'prop-types';
 import {skipWhile, getNodeContainingBiased} from '../../utils';
+import { AST, Pos } from '../../ast';
+import { Searcher } from './Searcher';
 
-function getAllNodeTypes(ast) {
-  const allNodeTypes = new Set();
+function getAllNodeTypes(ast: AST) {
+  const allNodeTypes: Set<string> = new Set();
   for (const node of ast.nodeIdMap.values()) {
     allNodeTypes.add(node.type);
   }
   return allNodeTypes;
 }
 
-export default {
+type SearchSettings = {
+  blockType: string,
+};
+
+type Props = {
+  cmbState?: {
+    ast: AST,
+  },
+  setting: SearchSettings,
+  onChange: (e: SearchSettings & {[targetName:string]: string|boolean}) => void,
+}
+
+const ByBlock: Searcher<SearchSettings, Props> = {
   label: 'Search by block',
   setting: {blockType: ''},
-  component: class extends Component {
-    static propTypes = {
-      cmbState: PropTypes.object,
-      setting: PropTypes.object.isRequired,
-      onChange: PropTypes.func.isRequired,
-    }
+  component: class extends Component<Props> {
 
     displayName = 'Search by Block'
 
-    handleChange = e => {
+    handleChange: React.ChangeEventHandler<HTMLSelectElement|HTMLInputElement> = e => {
+      let value: string|boolean;
+      if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
+        value = e.target.checked;
+      } else {
+        value = e.target.value;
+      }
       this.props.onChange({
         ...this.props.setting,
-        [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
+        [e.target.name]: value,
       });
     }
 
@@ -72,3 +86,5 @@ export default {
     return null;
   }
 };
+
+export default ByBlock;

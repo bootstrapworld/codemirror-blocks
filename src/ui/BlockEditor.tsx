@@ -241,7 +241,7 @@ export type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
     setCM: Function;
   };
   toolbarRef?: React.RefObject<Toolbar>;
-  onBeforeChange: IUnControlledCodeMirror['onBeforeChange'];
+  onBeforeChange?: IUnControlledCodeMirror['onBeforeChange'];
   onMount: Function;
   api?: API;
   passedAST?: AST;
@@ -788,5 +788,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     return portals;
   }
 }
-
-export default blockEditorConnector(BlockEditor);
+export type {BlockEditor};
+const ConnectedBlockEditor = blockEditorConnector(BlockEditor);
+export type BlockEditorComponentClass = typeof ConnectedBlockEditor;
+export default ConnectedBlockEditor;

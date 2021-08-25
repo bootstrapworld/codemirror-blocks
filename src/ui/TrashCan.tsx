@@ -2,14 +2,14 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {DropNodeTarget} from '../dnd';
 import {dropOntoTrashCan} from '../actions';
+import { ConnectDropTarget } from 'react-dnd';
 require('./TrashCan.less');
 
-@DropNodeTarget(function(monitor) {
-  return dropOntoTrashCan(monitor.getItem());
-}) class TrashCan extends Component {
-  static propTypes = {
-    connectDropTarget: PropTypes.func.isRequired, // from dnd.js
-  }
+type Props = {
+  connectDropTarget: ConnectDropTarget
+}
+
+class TrashCan extends Component<Props> {
 
   state = {
     isOverTrashCan: false,
@@ -42,4 +42,6 @@ require('./TrashCan.less');
   }
 }
 
-export default TrashCan;
+export default DropNodeTarget(function(monitor) {
+  return dropOntoTrashCan(monitor.getItem());
+})(TrashCan);

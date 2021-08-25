@@ -66,6 +66,17 @@ declare module 'codemirror' {
      */
     redoSelection(): void;
 
+    /**
+     * This method can be used to implement search/replace functionality.
+     *  `query`: This can be a regular * expression or a string (only strings will match across lines -
+     *          if they contain newlines).
+     *  `start`: This provides the starting position of the search. It can be a `{line, ch} object,
+     *          or can be left off to default to the start of the document
+     *  `options`: options is an optional object, which can contain the property `caseFold: false`
+     *          to disable case folding when matching a string, or the property `multiline: disable`
+     *          to disable multi-line matching for regular expressions (which may help performance)
+     */
+    getSearchCursor(query: string | RegExp, start?: CodeMirror.Position, options?:{caseFold?: boolean, multiline?: boolean}): SearchCursor;
   }
 
   interface Editor {
@@ -148,7 +159,7 @@ declare module 'codemirror' {
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
-const defaultCmOptions = {
+const defaultCmOptions: CodeMirror.EditorConfiguration = {
   lineNumbers: true,
   viewportMargin: 10,
   extraKeys: {"Shift-Tab": false},
@@ -200,7 +211,7 @@ export type ToggleEditorProps = {
   language: Language,
   options?: Options,
   api?: API,
-  appElement: Element,
+  appElement: HTMLElement,
   debuggingLog?: {
     history?: unknown,
   },
@@ -211,14 +222,14 @@ type ToggleEditorState = {
   code: string,
   // TODO(pcardune): dialog should probably not be a boolean.
   // I think we are using "false" in place of "null" unnecessarily.
-  dialog: boolean | {title: string, content: string},
+  dialog: null | {title: string, content: string},
   debuggingLog?: ToggleEditorProps['debuggingLog'],
 }
 
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state = {
     blockMode: false,
-    dialog: false,
+    dialog: null,
     code: "",
   }
 
@@ -396,7 +407,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    */
   showDialog = (contents: {title: string, content: string}) =>
     this.setState( () =>({dialog: contents}));  
-  closeDialog = () => this.setState( () =>({dialog: false}));
+  closeDialog = () => this.setState( () =>({dialog: null}));
 
   /**
    * @internal
@@ -448,7 +459,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         {this.state.blockMode ? <TrashCan/> : null}
         <div className={"col-xs-3 toolbar-pane"} tabIndex={-1} aria-hidden={!this.state.blockMode}>
           <Toolbar 
-            primitives={this.props.language.primitivesFn ? this.props.language.primitivesFn() : []}
+            primitives={this.props.language.primitivesFn ? this.props.language.primitivesFn() : null}
             languageId={this.props.language.id}
             blockMode={this.state.blockMode} 
             ref={this.toolbarRef} />
@@ -503,9 +514,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         languageId={this.props.language.id}
         options={{...defaultOptions, ...this.props.options}}
         showDialog={this.showDialog}
-        closeDialog={this.closeDialog}
         toolbarRef={this.toolbarRef}
-        debugHistory={this.props.debuggingLog?.history}
      />
     );
   }

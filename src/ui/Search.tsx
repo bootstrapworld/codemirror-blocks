@@ -1,23 +1,39 @@
 import React, {Component} from 'react';
-import PropTypes from 'prop-types';
 import Dialog from '../components/Dialog';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
 import {say, getBeginCursor, getEndCursor, playSound, WRAP} from '../utils';
+import { BlockEditorComponentClass } from './BlockEditor';
+import { Searcher } from './searchers/Searcher';
+import { GetProps } from 'react-redux';
 
-export default (Editor, searchModes) => {
+export default function attachSearch(
+  Editor: BlockEditorComponentClass,
+  searchModes: Searcher<any, any>[]
+) {
+
   const settings = searchModes.reduce((acc, searchMode, i) => {
     acc[i] = searchMode.setting;
     return acc;
-  }, {});
+  }, {} as {[index:number]:unknown});
 
-  return class extends Component {
+  type Props = GetProps<BlockEditorComponentClass> & {
+    appElement: HTMLElement;
+  }
 
-    static propTypes = {
-      appElement: PropTypes.object.isRequired
-    }
+  type State = {
+    showSearchDialog: boolean,
+    searchEngine: number|null,
+    cursor: null,
+    settings: typeof settings,
+    cmbState: null,
+    firstTime: boolean,
+    searchForward?: () => void,
+  };
 
-    state = {
+  return class extends Component<Props, State> {
+
+    state: State = {
       showSearchDialog: false,
       searchEngine: null,
       cursor: null,
@@ -25,6 +41,8 @@ export default (Editor, searchModes) => {
       cmbState: null,
       firstTime: true
     }
+    cm: CodeMirror.Editor;
+    callback: () => void;
 
     displayName = 'Search Component'
 
@@ -34,7 +52,6 @@ export default (Editor, searchModes) => {
         searchEngine: i
       });
     }
-
     handleActivateSearch = (state, done, searchForward) => {
       this.setState({showSearchDialog: true});
       this.callback = done;
@@ -89,13 +106,13 @@ export default (Editor, searchModes) => {
     }
 
     // Override default: only allow tab switching via left/right, NOT up/down
-    handleTab = (searchEngine, lastTabIdx, event) => {
+    handleTab = (searchEngine: number|null, lastTabIdx:number, event: KeyboardEvent) => {
       this.setState({firstTime: false});
       if(["ArrowDown", "ArrowUp"].includes(event.key)) return false;
       return this.setState({searchEngine});
     }
 
-    handleSetCM = cm => this.cm = cm
+    handleSetCM = (cm: CodeMirror.Editor) => this.cm = cm
 
     search = {
       onSearch: this.handleActivateSearch,

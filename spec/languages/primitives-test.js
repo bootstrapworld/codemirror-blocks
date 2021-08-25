@@ -163,5 +163,19 @@ describe('The primitives module', function() {
       });
     });
 
+    describe('flatPrimitivesIter', function () {
+      it('should return a left recursive iterator over the Primitive instances in the group', function () {
+        let onlyPrimitives = [...this.group.flatPrimitivesIter()];
+        expect(onlyPrimitives.map((p) => p.name)).toEqual([
+          'add',
+          'subtract',
+          'multiply',
+          'divide',
+          'sqrt',
+          'concat',
+          'join',
+        ]);
+      });
+    });
   });
 });

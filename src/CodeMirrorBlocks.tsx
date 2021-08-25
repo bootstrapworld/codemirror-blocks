@@ -88,7 +88,7 @@ export type Language = {
  * @returns An object-representation of CMB, allowing for
  *  integration with external (non-react) code
  */
-function CodeMirrorBlocks(container: Element, options: Options = {}, language: Language, cmOptions: CodeMirror.EditorConfiguration = {}): API {
+function CodeMirrorBlocks(container: HTMLElement, options: Options = {}, language: Language, cmOptions: CodeMirror.EditorConfiguration = {}): API {
   let api: API = {} as any;
   let initialCode = options.value;
   ReactDOM.render(

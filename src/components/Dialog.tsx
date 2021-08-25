@@ -1,10 +1,22 @@
-import React, {Component} from 'react';
+import React, {Component, KeyboardEvent, ReactElement} from 'react';
 import Modal from 'react-modal';
 import PropTypes from 'prop-types';
 import '../less/Dialog.less';
 
-export default class Dialog extends Component {
-  constructor(props) {
+type Props = {
+  appElement: string | HTMLElement;
+  closeFn: () => void;
+  isOpen: boolean;
+  body: {
+    title: string,
+    content: ReactElement
+  } | null;
+  keyUp?: React.KeyboardEventHandler<HTMLDivElement>;
+}
+
+export default class Dialog extends Component<Props> {
+  titleRef: React.Ref<unknown>;
+  constructor(props:Props) {
     super(props);
     this.titleRef = React.createRef();
   }
@@ -17,9 +29,7 @@ export default class Dialog extends Component {
     body: PropTypes.oneOfType([PropTypes.bool, PropTypes.object]).isRequired
   }
 
-  static defaultProps = {
-    keyUp: e => { if (e.key === 'Escape') this.props.closeFn() },
-  }
+  onKeyUp = (e:KeyboardEvent) => { if (e.key === 'Escape') this.props.closeFn() }
 
   componentDidMount() {
     Modal.setAppElement(this.props.appElement);
@@ -36,16 +46,15 @@ export default class Dialog extends Component {
         isOpen={isOpen}
         className={"madeUpClassToCancelDefaultStyles"}
         onRequestClose={closeFn}
-        close={closeFn}
         shouldCloseOnEsc={true}
         shouldReturnFocusAfterClose={true}
         shouldFocusAfterRender={true}
         shouldCloseOnOverlayClick={true}
         onAfterOpen={this.focusTitle}
         aria={ {labelledby: "heading"} }>
-        <div tabIndex="-1" id="DialogContents" onKeyUp={keyUp}>
-          <h1 tabIndex="-1" id="heading">{this.props.body.title}</h1>
-          {this.props.body.content}
+        <div tabIndex={-1} id="DialogContents" onKeyUp={keyUp || this.onKeyUp}>
+          <h1 tabIndex={-1} id="heading">{this.props.body?.title}</h1>
+          {this.props.body?.content}
           <button className="closeDialog" onClick={() => this.props.closeFn()}>Close</button>
         </div>
       </Modal>
