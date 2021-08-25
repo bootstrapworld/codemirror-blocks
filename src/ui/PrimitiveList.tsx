@@ -112,7 +112,7 @@ export class PrimitiveGroup extends Component<PrimitiveGroupProps> {
         </div>
         {expanded ?
           <PrimitiveList
-            primitives={group.primitives as LanguagePrimitive[]}
+            primitives={[...group.flatPrimitivesIter()]}
             onFocus={onFocus}
             onBlur={onBlur}
             onKeyDown={onKeyDown}

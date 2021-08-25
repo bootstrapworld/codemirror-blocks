@@ -81,6 +81,21 @@ export class PrimitiveGroup {
     this.primitives = primitives;
   }
 
+  /**
+   * An iterator over the leaf nodes for the
+   * primitive group hierarchy that only yields
+   * instances of Primitive. Traverses left to right.
+   */
+  *flatPrimitivesIter(): Generator<Primitive> {
+    for (const primitive of this.primitives) {
+      if (primitive instanceof Primitive) {
+        yield primitive;
+      } else {
+        yield *primitive.flatPrimitivesIter();
+      }
+    }
+  }
+
   filter(search: string) {
     if (!search) {
       return this;
