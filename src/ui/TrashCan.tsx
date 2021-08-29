@@ -23,7 +23,7 @@ class TrashCan extends Component<Props> {
     this.setState({isOverTrashCan: false});
   }
 
-  handleDragOver = (event) => {
+  handleDragOver = (event: React.MouseEvent) => {
     event.preventDefault();
   }
 

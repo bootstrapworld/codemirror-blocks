@@ -138,28 +138,22 @@ class ToplevelBlock extends BlockComponent<ToplevelBlockProps, ToplevelBlockStat
   }
 }
 
-const mapStateToProps2 = ({quarantine}) => ({quarantine});
+const mapStateToProps2 = ({quarantine}: RootState) => ({quarantine});
 const mapDispatchToProps2 = (dispatch: AppDispatch) => ({
   onDisableEditable: () => dispatch({type: 'DISABLE_QUARANTINE'}),
-  onChange: text => dispatch({type: 'CHANGE_QUARANTINE', text}),
+  onChange: (text: string) => dispatch({type: 'CHANGE_QUARANTINE', text}),
 });
-const toplevelBlockEditableConnector = connect(mapStateToProps2, mapDispatchToProps2);
-
-type ToplevelBlockEditableCoreProps = ConnectedProps<typeof toplevelBlockEditableConnector> & {
+type ToplevelBlockEditableCoreProps = {
   quarantine: Quarantine;
+  onDisableEditable: () => void;
+  onChange: (text: string) => void;
 }
 class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps> {
-
-  static propTypes = {
-    quarantine: PropTypes.array.isRequired,
-    onDisableEditable: PropTypes.func.isRequired,
-    onChange: PropTypes.func.isRequired,
-  }
   
   container: HTMLElement;
   marker?: CodeMirror.TextMarker;
 
-  constructor(props) {
+  constructor(props:ToplevelBlockEditableCoreProps) {
     super(props);
     this.container = document.createElement('span');
     this.container.classList.add('react-container');
@@ -202,7 +196,7 @@ class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps
   }
 }
 
-const ToplevelBlockEditable = toplevelBlockEditableConnector(ToplevelBlockEditableCore);
+const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(ToplevelBlockEditableCore);
 
 
 const mapStateToProps = ({ast, cur, quarantine}) => ({

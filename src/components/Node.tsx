@@ -1,9 +1,8 @@
 import React, { HTMLAttributes }  from 'react';
 import {connect, ConnectedProps} from 'react-redux';
-import PropTypes from 'prop-types';
 import {ASTNode} from '../ast';
-import {drop, delete_, copy, paste, activateByNid, setCursor,
-        InsertTarget, ReplaceNodeTarget, OverwriteTarget} from '../actions';
+import {drop, activateByNid, setCursor,
+        ReplaceNodeTarget} from '../actions';
 import NodeEditable from './NodeEditable';
 import BlockComponent from './BlockComponent';
 import {NodeContext, DropTargetContext, findAdjacentDropTargetId} from './DropTarget';
@@ -14,6 +13,7 @@ import classNames from 'classnames';
 import {store} from '../store';
 import CodeMirror from 'codemirror';
 import { GetProps } from 'react-dnd';
+import { RootState } from '../reducers';
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -25,12 +25,11 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
   static contextType = DropTargetContext;
 
   static defaultProps = {
-    children: null,
     normallyEditable: false,
     expandable: true,
   }
 
-  state = {editable: false, value: null}
+  state:NodeState = {editable: false, value: null}
 
   componentDidMount() {
     // For testing
@@ -40,20 +39,20 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
   // if its a top level node (ie - it has a CM mark on the node) AND
   // its isCollapsed property has changed, call mark.changed() to
   // tell CodeMirror that the widget's height may have changed
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps:EnhancedNodeProps) {
     if(this.props.node.mark && 
-        (prevProps.isCollapsed ^ this.props.isCollapsed)) {
+        (prevProps.isCollapsed !== this.props.isCollapsed)) {
       this.props.node.mark.changed();
     }
   }
 
-  handleChange = (value) => {
+  handleChange = (value: NodeState['value']) => {
     this.setState({value});
   }
 
   // nid can be stale!! Always obtain a fresh copy of the node
   // from getState() before calling activateByNid
-  handleMouseDown = e => {
+  handleMouseDown = (e:React.MouseEvent) => {
     if(this.props.inToolbar) return; // do not process toolbar nodes
     else e.stopPropagation();        // prevent ancestors from stealing focus
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
@@ -62,14 +61,14 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
     this.props.activateByNid(currentNode.nid, {allowMove: false});
   }
 
-  handleClick = e => {
+  handleClick = (e:React.MouseEvent) => {
     const { inToolbar, isCollapsed, normallyEditable } = this.props;
     e.stopPropagation();
     if(inToolbar) return;
     if(normallyEditable) this.handleMakeEditable();
   }
 
-  handleDoubleClick = e => {
+  handleDoubleClick = (e:React.MouseEvent) => {
     const {
       inToolbar, isCollapsed, normallyEditable,
       collapse, uncollapse, node
@@ -83,10 +82,10 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
     }
   }
 
-  handleMouseDragRelated = e => {
+  handleMouseDragRelated = (e:React.MouseEvent<HTMLSpanElement>) => {
     if (e.type === 'dragstart') {
       let dt = new DataTransfer();
-      dt.setData('text/plain', e.target.innerText);
+      dt.setData('text/plain', (e.target as HTMLSpanElement).innerText);
     }
   }
 
@@ -205,8 +204,8 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
 }
 
 const mapStateToProps = (
-  {selections, collapsedList, markedMap},
-  {node}
+  {selections, collapsedList, markedMap}: RootState,
+  {node}:{node: ASTNode}
   // be careful here. Only node's id is accurate. Use getNodeById
   // to access accurate info
 ) => {
@@ -233,6 +232,7 @@ export type EnhancedNodeProps = ConnectedProps<typeof connector> & {
   inToolbar?: boolean;
   normallyEditable?: boolean;
   expandable: boolean;
+  children?: React.ReactFragment;
 
   // These all come from the dnd enhancers and don't need
   // to be supplied by users of the default export

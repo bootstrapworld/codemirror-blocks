@@ -60,7 +60,9 @@ type Env = InputEnv & InputEnv['props'] & Pick<RootState, "ast"|"selections"> & 
   state: RootState
 };
 
-export const defaultKeyMap = {
+type KeyMap = {[index:string]:string};
+
+export const defaultKeyMap:KeyMap = {
   // NAVIGATION
   'Down'      : 'Next Block',
   'Up'        : 'Previous Block',
@@ -95,7 +97,7 @@ export const defaultKeyMap = {
   'Ctrl-F'    : 'Activate Search Dialog',
 };
 
-const macKeyMap = {
+const macKeyMap:KeyMap = {
   'Cmd-Enter'  : 'Edit Anything',
   'Cmd-F'      : 'Activate Search Dialog',
   'Cmd-Z'      : 'Undo',
@@ -108,7 +110,7 @@ const macKeyMap = {
   'Shift-Ctrl-/':'Help',
 };
 
-const pcKeyMap = {
+const pcKeyMap:KeyMap = {
   'Ctrl-Z'     : 'Undo',
   'Ctrl-Y'     : 'Redo',
   'Shift-Ctrl-Z':'Redo',
@@ -119,7 +121,7 @@ const pcKeyMap = {
   'Shift-Ctrl-/':'Help',
 };
 
-const punctuation:{[index:string]:string} = {
+const punctuation:KeyMap = {
   ','    : 'Comma', 
   '.'    : 'Period',
   '\''   : 'Backslash', 

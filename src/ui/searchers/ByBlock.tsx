@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {skipWhile, getNodeContainingBiased} from '../../utils';
-import { AST, Pos } from '../../ast';
+import { AST, ASTNode, Pos } from '../../ast';
 import { Searcher } from './Searcher';
 
 function getAllNodeTypes(ast: AST) {
@@ -69,7 +69,7 @@ const ByBlock: Searcher<SearchSettings, Props> = {
     }
 
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
-    const next = node => forward ? node.next : node.prev;
+    const next = (node: ASTNode) => forward ? node.next : node.prev;
 
     // NOTE(Oak): if this is too slow, consider adding a
     // next/prevSibling attribute to short circuit navigation

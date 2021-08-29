@@ -35,7 +35,7 @@ type SearchSettings = {
 type SearchOptionProps = {
   onChange: React.ChangeEventHandler,
   setting: SearchSettings,
-  name: string,
+  name: "isRegex" | "isExactMatch" | "isIgnoreCase",
   value: string,
 }
 class SearchOption extends Component<SearchOptionProps> {

@@ -49,7 +49,7 @@ class TextEditor extends Component<Props> {
     const api = {};
     // show which APIs are unsupported
     unsupportedAPIs.forEach(f =>
-      api[f] = () => {
+      (api as any)[f] = () => {
         throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
       });
     return api as API;

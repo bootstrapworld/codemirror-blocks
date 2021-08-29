@@ -34,7 +34,7 @@ class BasePrimitive extends Component<BasePrimitiveProps> {
     connectDragSource: PropTypes.func.isRequired,
   }
 
-  handleKeyDown = e => {
+  handleKeyDown = (e:React.KeyboardEvent) => {
     switch (defaultKeyMap[CodeMirror.keyName(e)]) {
     case 'Copy':
       e.preventDefault();
@@ -76,10 +76,7 @@ type PrimitiveGroupProps = {
 };
 export class PrimitiveGroup extends Component<PrimitiveGroupProps> {
   static defaultProps = {
-    group: {
-      name: '',
-      primitives: []
-    }
+    group: new PrimitiveGroupModel('', '', [])
   }
 
   static propTypes = {
@@ -132,9 +129,6 @@ type PrimitiveListProps = {
   searchString?: string
 }
 export default class PrimitiveList extends Component<PrimitiveListProps> {
-  static defaultProps = {
-    selected: null,
-  }
 
   static propTypes = {
     onFocus: PropTypes.func.isRequired,

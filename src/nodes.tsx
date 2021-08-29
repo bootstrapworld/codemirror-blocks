@@ -17,7 +17,7 @@ import * as Spec from './nodeSpec';
 //   the same line). Line comments will stay as line comments _as long as they
 //   fit on the line_. If they don't, they'll be converted into a comment on the
 //   previous line.
-function withComment(doc, comment, container) {
+function withComment(doc: P.Doc, comment: ASTNode, container: ASTNode): P.Doc {
   if (comment) {
     // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
     if (container && container.to.line == comment.from.line) {
@@ -47,7 +47,7 @@ export class Unknown extends ASTNode {
       this.elts.map((e, i, elts)  => (elts.length>1? (i+1) + ": " : "")+ e.describe(level)).join(", ");
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return withComment(
       P.standardSexpr(this.elts[0], this.elts.slice(1)),
       this.options.comment,
@@ -93,7 +93,7 @@ export class FunctionApp extends ASTNode {
     else return `${this.func.describe(level)} of `+ this.args.map(a  => a.describe(level)).join(", ");
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return withComment(
       P.standardSexpr(this.func, this.args),
       this.options.comment,
@@ -129,11 +129,11 @@ export class IdentifierList extends ASTNode {
     Spec.list('ids')
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     return enumerateList(this.ids, level);
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return withComment(
       P.sepBy(this.ids, " "),
       this.options.comment,
@@ -165,11 +165,11 @@ export class StructDefinition extends ASTNode {
     Spec.required('fields')
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     return `define ${this.name.describe(level)} to be a structure with ${this.fields.describe(level)}`;
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return withComment(
       P.lambdaLikeSexpr("define-struct", this.name, P.horz("(", this.fields, ")")),
       this.options.comment,
@@ -206,12 +206,12 @@ export class VariableDefinition extends ASTNode {
     Spec.required('body')
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     let insert = ["literal", "blank"].includes(this.body.type)? "" : "the result of:";
     return `define ${this.name} to be ${insert} ${this.body.describe(level)}`;
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return withComment(
       P.lambdaLikeSexpr("define", this.name, this.body),
       this.options.comment,
@@ -249,13 +249,13 @@ export class LambdaExpression extends ASTNode {
     Spec.required('body')
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     return `an anonymous function of ${pluralize("argument", this.args.ids)}: 
             ${this.args.describe(level)}, with body:
             ${this.body.describe(level)}`;
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return P.lambdaLikeSexpr("lambda(", P.horz("(", this.args, ")"), this.body);
   }
 
@@ -292,17 +292,17 @@ export class FunctionDefinition extends ASTNode {
     Spec.required('body')
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     return `define ${this.name} to be a function of 
             ${this.params.describe(level)}, with body:
             ${this.body.describe(level)}`;
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return withComment(
       P.lambdaLikeSexpr(
         "define",
-        P.standardSexpr(this.name, this.params),
+        P.standardSexpr(this.name, [this.params]),
         this.body),
       this.options.comment,
       this);
@@ -339,11 +339,11 @@ export class CondClause extends ASTNode {
     Spec.list('thenExprs')
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     return `condition: if ${this.testExpr.describe(level)}, then, ${this.thenExprs.map(te => te.describe(level))}`;
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return P.horz("[", P.sepBy([this.testExpr].concat(this.thenExprs), " "), "]");
   }
 
@@ -385,7 +385,7 @@ export class CondExpression extends ASTNode {
             ${this.clauses.map(c => c.describe(level))}`;
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return P.beginLikeSexpr("cond", this.clauses);
   }
 
@@ -419,12 +419,12 @@ export class IfExpression extends ASTNode {
     Spec.required('elseExpr')
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     return `an if expression: if ${this.testExpr.describe(level)}, then ${this.thenExpr.describe(level)} `+
             `else ${this.elseExpr.describe(level)}`;
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return withComment(
       P.standardSexpr("if", [this.testExpr, this.thenExpr, this.elseExpr]),
       this.options.comment,
@@ -475,11 +475,11 @@ export class Literal extends ASTNode {
     Spec.value('dataType')
   ])
 
-  describe(_level) {
+  describe() {
     return this.options["aria-label"];
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return withComment(P.txt(this.value), this.options.comment, this);
   }
 
@@ -509,11 +509,11 @@ export class Comment extends ASTNode {
     Spec.value('comment')
   ])
 
-  describe(_level) {
+  describe() {
     return this.options["aria-label"];
   }
 
-  pretty() {
+  pretty(): P.Doc {
     let words = this.comment.trim().split(/\s+/);
     let wrapped = P.wrap(words);
     // Normalize all comments to block comments
@@ -541,11 +541,11 @@ export class Blank extends ASTNode {
     Spec.value('dataType')
   ])
 
-  describe(_level) {
+  describe() {
     return this.options["aria-label"];
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return P.txt(this.value);
   }
 
@@ -575,11 +575,11 @@ export class Sequence extends ASTNode {
     Spec.list('exprs'),
   ])
 
-  longDescription(level) {
+  longDescription(level: number) {
     return `a sequence containing ${enumerateList(this.exprs, level)}`;
   }
 
-  pretty() {
+  pretty(): P.Doc {
     return P.vert(this.name, ...this.exprs);
   }
 

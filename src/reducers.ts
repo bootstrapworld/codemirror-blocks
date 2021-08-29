@@ -54,7 +54,7 @@ export type ActionFocus = {oldFocusNId: number, newFocusNId: number}
 
 export type RootState = {
   selections: string[];
-  editable: {};
+  editable: {[index:string]: unknown};
   ast: AST | null;
   focusId: string | null;
   collapsedList: string[];

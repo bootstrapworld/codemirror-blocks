@@ -9,7 +9,8 @@ import {AppDispatch, isErrorFree} from '../store';
 import BlockComponent from './BlockComponent';
 import {gensym} from '../utils';
 import {drop, InsertTarget} from '../actions';
-import { AST, ASTNode } from '../ast';
+import { AST, ASTNode, Pos } from '../ast';
+import { RootState } from '../reducers';
 
 // Provided by `Node`
 export const NodeContext = createContext({
@@ -23,11 +24,11 @@ export const DropTargetContext = createContext({
 });
 
 // Find the id of the drop target (if any) on the given side of `child` node.
-export function findAdjacentDropTargetId(child, onLeft) {
-  let prevDropTargetId = null;
+export function findAdjacentDropTargetId(child: ASTNode, onLeft: boolean) {
+  let prevDropTargetId:string|null = null;
   let targetId = `block-node-${child.id}`;
 
-  function findDT(elem) {
+  function findDT(elem: Element): string|null {
     if (!elem.children) {
       return null;
     }
@@ -70,14 +71,8 @@ export class DropTarget extends Component<{field: string}> {
     field: PropTypes.string.isRequired,
   }
 
-  isDropTarget: boolean;
-  id: string;
-
-  constructor(props) {
-    super(props);
-    this.isDropTarget = true;
-    this.id = gensym(); // generate a unique ID
-  }
+  isDropTarget: boolean = true;
+  id: string = gensym(); // generate a unique ID
 
   render() {
     const value = {
@@ -107,11 +102,11 @@ field declared. The node was:`, value.node
 // check to see whether an adjacent DropTarget is being edited, or, for when the
 // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
 // as editable.
-const mapStateToProps2 = ({ast, editable}:{ast: AST, editable: {}}, {id}:{id: string}) => ({
+const mapStateToProps2 = ({ast, editable}:RootState, {id}:{id: string}) => ({
   ast,
   isEditable: editable[id] || false,
 });
-const mapDispatchToProps2 = (dispatch: AppDispatch, {id}) => ({
+const mapDispatchToProps2 = (dispatch: AppDispatch, {id}:{id: string}) => ({
   dispatch,
   setEditable: (bool: boolean) => dispatch({type: 'SET_EDITABLE', id, bool}),
 });
@@ -151,12 +146,12 @@ class ActualDropTarget extends Component<ActualDropTargetProps, ActualDropTarget
   }
 
   getLocation() {
-    let prevNodeId = null;
+    let prevNodeId:string|null = null;
     let targetId = `block-drop-target-${this.props.id}`;
     let ast = this.props.ast;
     let dropTargetWasFirst = false;
 
-    function findLoc(elem) {
+    function findLoc(elem: Element): Pos {
       if (elem == null || elem.children == null) { // if it's a new element (insertion)
         return null;
       }
@@ -196,29 +191,29 @@ class ActualDropTarget extends Component<ActualDropTargetProps, ActualDropTarget
     return findLoc(this.context.node.element) || this.context.pos;
   }
 
-  handleClick = e => {
+  handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
     this.props.setEditable(true);
   }
 
-  handleMouseEnterRelated = e => {
+  handleMouseEnterRelated = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     this.setState({mouseOver: true});
   }
 
-  handleMouseLeaveRelated = e => {
+  handleMouseLeaveRelated = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     this.setState({mouseOver: false});
   }
 
-  handleMouseDragRelated = _ => {
+  handleMouseDragRelated = () => {
     //NOTE(ds26gte): dummy handler
   }
 
-  handleChange = (value) => {
+  handleChange = (value: string) => {
     this.setState({value});
   }
 

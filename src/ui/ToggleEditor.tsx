@@ -1,4 +1,4 @@
-import React, {Component, createRef} from 'react';
+import React, {Component, createRef, ReactElement} from 'react';
 import BlockEditor from './BlockEditor';
 import TextEditor from './TextEditor';
 import CMBContext from '../components/Context';
@@ -101,7 +101,7 @@ declare module 'codemirror' {
    * https://github.com/codemirror/CodeMirror/blob/49a7fc497c85e5b51801b3f439f4bb126e3f226b/src/edit/legacy.js#L47
    * @param event the keyboard event from which to calculate a human readable name
    */
-  function keyName(event: React.KeyboardEvent):string;
+  function keyName(event: KeyboardEvent | React.KeyboardEvent):string;
 
   interface DocOrEditor {
     /**
@@ -131,7 +131,7 @@ declare module 'codemirror' {
      * These are applied in the reducer.
      */
     undoableAction?: string,
-    actionFocus?: ActionFocus,
+    actionFocus?: ActionFocus | false,
   }
 
   interface TextMarker {
@@ -220,14 +220,12 @@ export type ToggleEditorProps = {
 type ToggleEditorState = {
   blockMode: boolean,
   code: string,
-  // TODO(pcardune): dialog should probably not be a boolean.
-  // I think we are using "false" in place of "null" unnecessarily.
-  dialog: null | {title: string, content: string},
+  dialog: null | {title: string, content: ReactElement},
   debuggingLog?: ToggleEditorProps['debuggingLog'],
 }
 
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
-  state = {
+  state: ToggleEditorState = {
     blockMode: false,
     dialog: null,
     code: "",
@@ -268,7 +266,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    * Imports a json log of interactions and sets appropriate state
    * used for debugging and isolating cases
    */
-  loadLoggedActions = (jsonLog) => {
+  loadLoggedActions = (jsonLog: {startingSource: string, history?:unknown}) => {
     console.log('log is', jsonLog);
     this.setState({debuggingLog: jsonLog});
     this.props.api?.setValue(jsonLog.startingSource);
@@ -280,7 +278,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    * internal functions use it, and testing infrastructure may use it as well
    * see stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
    */
-  afterDOMUpdate = f => {
+  afterDOMUpdate = (f: ()=>void) => {
     window.requestAnimationFrame(() => setTimeout(f, 0));
   }
 
@@ -297,7 +295,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       // editor object when this code executes, so we have to do the lookup inside the
       // wrapper function. Hopefully by the time the wrapper function is called,
       // the function it proxies to has been added to the editor instance.
-      base[funcName] = (...args) => (ed as any)[funcName](...args);
+      base[funcName] = (...args:any[]) => (ed as any)[funcName](...args);
     });
 
     const api: ToggleEditorAPI = {
@@ -405,7 +403,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    * We pass them to mode-specific components, to allow those
    * components to show/hide dialogs
    */
-  showDialog = (contents: {title: string, content: string}) =>
+  showDialog = (contents: ToggleEditorState['dialog']) =>
     this.setState( () =>({dialog: contents}));  
   closeDialog = () => this.setState( () =>({dialog: null}));
 

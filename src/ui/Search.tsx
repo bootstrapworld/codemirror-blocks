@@ -6,6 +6,8 @@ import {say, getBeginCursor, getEndCursor, playSound, WRAP} from '../utils';
 import { BlockEditorComponentClass } from './BlockEditor';
 import { Searcher } from './searchers/Searcher';
 import { GetProps } from 'react-redux';
+import { ASTNode, Pos } from '../ast';
+import { RootState } from '../reducers';
 
 export default function attachSearch(
   Editor: BlockEditorComponentClass,
@@ -24,7 +26,7 @@ export default function attachSearch(
   type State = {
     showSearchDialog: boolean,
     searchEngine: number|null,
-    cursor: null,
+    cursor: null | Pos,
     settings: typeof settings,
     cmbState: null,
     firstTime: boolean,
@@ -46,13 +48,17 @@ export default function attachSearch(
 
     displayName = 'Search Component'
 
-    handleChangeSetting = i => setting => {
+    handleChangeSetting = (i:number) => (setting: unknown) => {
       this.setState({
         settings: {...this.state.settings, [i]: setting}, 
         searchEngine: i
       });
     }
-    handleActivateSearch = (state, done, searchForward) => {
+    handleActivateSearch = (
+      state: State['cmbState'],
+      done: () => void,
+      searchForward: State['searchForward']
+    ) => {
       this.setState({showSearchDialog: true});
       this.callback = done;
       this.setState({cmbState: state});
@@ -64,7 +70,11 @@ export default function attachSearch(
       this.callback();
     }
 
-    handleSearch = (forward, cmbState, overrideCur) => {
+    handleSearch = (
+      forward:boolean,
+      cmbState: RootState,
+      overrideCur: State['cursor']
+    ): ASTNode => {
       if(this.state.searchEngine == null) {
         say("No search settings have been selected");
         return;
@@ -92,7 +102,7 @@ export default function attachSearch(
       }
     }
 
-    handleKeyModal = e => {
+    handleKeyModal = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === 'Escape') { // enter or escape
         this.handleCloseModal();
         if (e.key === 'Escape') return; // don't initiate search
@@ -101,7 +111,7 @@ export default function attachSearch(
       }
     }
 
-    handleSetCursor = cursor => {
+    handleSetCursor = (cursor: State['cursor']) => {
       this.setState({cursor});
     }
 

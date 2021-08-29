@@ -4,6 +4,7 @@ import * as P from 'pretty-fast-pretty-printer';
 import type CodeMirror from 'codemirror';
 import type { Comment } from './nodes';
 import type { NodeSpec } from './nodeSpec'
+import type React from 'react';
 
 /**
  * @internal
@@ -167,7 +168,7 @@ export class AST {
     const newFieldNames =
           ["id", "parent", "level", "nid", "prev", "next", "hash",
            "aria-setsize", "aria-posinset", "mark"];
-    const invalidProp = newFieldNames.find(field => field in node && node[field] !== undefined)
+    const invalidProp = newFieldNames.find(field => field in node && (node as any)[field] !== undefined)
     if (!node.__alreadyValidated && invalidProp) {
       throw new Error(`The property ${invalidProp} is used by ASTNode, and should not be overridden in subclasses.`);
     }
@@ -409,7 +410,7 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
   id!: string;
   nid: number;
   level: number;
-  hash: any;
+  hash: number;
   "aria-setsize": number;
   "aria-posinset": number;
 
@@ -512,7 +513,7 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
   }
 
   // Produces an iterator over the children of this node.
-  children() {
+  children():Iterable<ASTNode> {
     return this.spec.children(this);
   }
 
@@ -536,11 +537,11 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions, Props = {}>
   }
 
   // Create a React _element_ (an instantiated component) for this node.
-  reactElement(props?: Props) {
+  reactElement(props?: Props): React.ReactElement {
     return renderASTNode({node:this, ...props});
   }
 
-  abstract render(props: Props): void;
+  abstract render(props: Props): React.ReactElement | void;
 }
 
 function renderASTNode(props: {node: ASTNode}) {

@@ -1,4 +1,6 @@
-import {DragSource, DropTarget} from 'react-dnd';
+import {DragSource, DragSourceConnector, DragSourceMonitor, DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec} from 'react-dnd';
+import { ASTNode } from './ast';
+import { Primitive } from './parsers/primitives';
 import {isDummyPos} from './utils';
 
 export const ItemTypes = {
@@ -6,13 +8,13 @@ export const ItemTypes = {
 };
 
 export const primitiveSource = {
-  beginDrag(props) {
+  beginDrag(props: {primitive: Primitive}) {
     return {content: props.primitive.name};
   }
 };
 
 export const nodeSource = {
-  beginDrag(props) {
+  beginDrag(props:{node: ASTNode}) {
     if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
       return {content: props.node.toString()};
     }
@@ -20,7 +22,7 @@ export const nodeSource = {
   }
 };
 
-export function collectSource(connect, monitor) {
+export function collectSource(connect:DragSourceConnector, monitor:DragSourceMonitor) {
   return {
     connectDragSource: connect.dragSource(),
     isDragging: monitor.isDragging(),
@@ -28,7 +30,7 @@ export function collectSource(connect, monitor) {
   };
 }
 
-function nodeTarget(dropMethod) {
+function nodeTarget<RequiredProps, DragObject, DropResult>(dropMethod: (monitor:unknown) => void): DropTargetSpec<RequiredProps, DragObject, DropResult> {
   return {
     drop(_, monitor, component) {
       if (monitor.didDrop()) return;
@@ -37,7 +39,7 @@ function nodeTarget(dropMethod) {
   };
 }
 
-export function collectTarget(connect, monitor) {
+export function collectTarget(connect:DropTargetConnector, monitor:DropTargetMonitor) {
   return {
     connectDropTarget: connect.dropTarget(),
     isOver: monitor.isOver({shallow: true})
@@ -47,4 +49,4 @@ export function collectTarget(connect, monitor) {
 
 export const DragPrimitiveSource = DragSource(ItemTypes.NODE, primitiveSource, collectSource);
 export const DragNodeSource = DragSource(ItemTypes.NODE, nodeSource, collectSource);
-export const DropNodeTarget = (f: (monitor) => void) => DropTarget(ItemTypes.NODE, nodeTarget(f), collectTarget);
+export const DropNodeTarget = (f: (monitor:DropTargetMonitor) => void) => DropTarget(ItemTypes.NODE, nodeTarget(f), collectTarget);

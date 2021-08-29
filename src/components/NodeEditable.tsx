@@ -17,7 +17,7 @@ type Props = ContentEditableProps & {
     value?: string,
     dispatch?: Function,
     setErrorId?: Function,
-    onChange?: (e:string|React.FormEvent)=>void,
+    onChange?: (e:string)=>void,
     onDisableEditable?: Function,
     clearSelections?: Function,
     focusSelf?: Function,
@@ -27,9 +27,6 @@ type Props = ContentEditableProps & {
 };
 
 class NodeEditable extends Component<Props> {
-  static defaultProps = {
-    children: null,
-  }
 
   cachedValue: string;
   ignoreBlur: boolean;
@@ -40,7 +37,7 @@ class NodeEditable extends Component<Props> {
     const {value, dispatch} = this.props;
     this.cachedValue = "";
     if (value === null) {
-      dispatch((_, getState) => {
+      dispatch((_:any, getState:()=>RootState) => {
         const {ast} = getState();
         const {target} = this.props;
         this.cachedValue = target.getText(ast);
@@ -59,7 +56,7 @@ class NodeEditable extends Component<Props> {
         this.props.onDisableEditable(false);
         const focusNode = ast.getNodeById(focusId);
         const nid = focusNode && focusNode.nid;
-        dispatch(activateByNid(nid, true));
+        dispatch(activateByNid(nid));
         return;
       }
 
@@ -187,10 +184,10 @@ class NodeEditable extends Component<Props> {
   }
 }
 
-const mapStateToProps = ({cm, errorId}, {target}) => {
+const mapStateToProps = ({errorId}: RootState, {target}: {target:Target}) => {
   const nodeId = target.node ? target.node.id : 'editing';
   const isErrored = errorId == nodeId;
-  return {cm, isErrored};
+  return {isErrored};
 };
 
 const mapDispatchToProps = (dispatch: AppDispatch) => ({

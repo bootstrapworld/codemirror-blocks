@@ -5,9 +5,9 @@ import type { ASTNode } from '../ast';
 // Check to see whether two `prop` or `state` objects are roughly equal to each
 // other, enough so that we don't need to re-render a node if that's all that
 // changed.
-function vaguelyEqual(x, y) {
+function vaguelyEqual(x:{[i:string]:any}, y:{[i:string]:any}) {
   const ignoreProps = ["location", "children", "ast", "hash"];
-  function ignoreProp(object, prop) {
+  function ignoreProp(object:{[i:string]:any}, prop: string) {
     // There _shouldn't_ be any relevant differences between functions in `props`.
     // We hope, we hope.
     return ignoreProps.includes(prop) || typeof object[prop] === "function";

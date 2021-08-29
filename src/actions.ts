@@ -123,7 +123,7 @@ export function drop(src: {id: string, content: string}, target: Target, onSucce
   }
 
   let edits = [];
-  let droppedHash;
+  let droppedHash: unknown;
 
   // Assuming it did not come from the toolbar...
   // (1) Delete the text of the dragged node, (2) and save the id and hash
@@ -170,7 +170,7 @@ export function setCursor(cur: Pos) {
 }
 
 // Activate the node with the given `nid`.
-export function activateByNid(nid:number|null, options?) {
+export function activateByNid(nid:number|null, options?:{allowMove?: boolean, record?: boolean}) {
   //console.log('XXX actions:169 activateByNid called with', nid);
   return (dispatch: AppDispatch, getState:()=>RootState) => {
     options = {...options, allowMove: true, record: true};
@@ -300,7 +300,7 @@ export class InsertTarget extends Target {
     this.pos = pos;
   }
 
-  getText(_ast) {
+  getText() {
     return "";
   }
 
@@ -334,7 +334,7 @@ export class OverwriteTarget extends Target {
     super(from, to);
   }
 
-  getText(_ast) {
+  getText() {
     return SHARED.cm.getRange(this.from, this.to);
   }
 

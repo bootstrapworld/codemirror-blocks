@@ -27,7 +27,7 @@ export default class Toolbar extends Component<Props, State> {
     };
   }
 
-  static defaultProps = {
+  static defaultProps: Props = {
     primitives: null,
     blockMode: false
   }
@@ -61,12 +61,12 @@ export default class Toolbar extends Component<Props, State> {
     this.selectPrimitive(i === null ? null : primitives[i - 1]);
   }
 
-  handleFocusPrimitive(selectedPrimitive) {
+  handleFocusPrimitive(selectedPrimitive: State['selectedPrimitive']) {
     this.setState({selectedPrimitive: selectedPrimitive});
   }
 
   selectPrimitive(selectedPrimitive: null | Primitive) {
-    if (selectedPrimitive?.element) {      
+    if (selectedPrimitive?.element) {
       selectedPrimitive.element.focus(); // will trigger handleFocusPrimitive
     } else {
       this.setState({selectedPrimitive: selectedPrimitive});

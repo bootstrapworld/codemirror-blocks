@@ -2,7 +2,7 @@ import type { AST, ASTNode } from '../ast';
 import {assert} from '../utils';
 
 // defaultdict with empty list
-function addIndex<V>(container:{[key:string]:V[]}, k:string, v:V) {
+function addIndex<V>(container:Record<string|number, V[]>, k:string|number, v:V) {
   if (container[k]) {
     container[k].push(v);
   } else {

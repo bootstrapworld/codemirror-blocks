@@ -12,14 +12,14 @@ import shallowequal from 'shallowequal';
 
 // use a plaintext INPUT elt to avoid characters being
 // converted to html entities ()
-function getInnerHTML(txt) {
+function getInnerHTML(txt:string) {
   const el = document.createElement('input');
   el.value = txt;
   return el.value;
 }
 
-export type ContentEditableProps = React.ComponentPropsWithoutRef<"span"> & {
-  onChange?: (e: string|React.FormEvent) => void,
+export type ContentEditableProps = Omit<React.ComponentPropsWithoutRef<"span">, 'onChange'> & {
+  onChange?: (e: string) => void,
   onKeyDown?: (e: React.KeyboardEvent) => void,
   itDidMount?: Function,
   value?: string,
@@ -51,7 +51,7 @@ export default class ContentEditable extends Component<ContentEditableProps> {
     this.eltRef = React.createRef();
   }
 
-  handleChange = _ => {
+  handleChange = () => {
     console.log('change happened');
     this.props.onChange(this.eltRef.current.textContent);
   }
@@ -85,7 +85,7 @@ export default class ContentEditable extends Component<ContentEditableProps> {
   }
 
   render () {
-    const {value, itDidMount, ...props} = this.props;
+    const {value, itDidMount, onChange, ...props} = this.props;
     return (
       <span
         {...props}

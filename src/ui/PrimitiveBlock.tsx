@@ -15,10 +15,6 @@ export default class PrimitiveBlock extends Component<Props> {
     id: PropTypes.string,
   }
 
-  static defaultProps = {
-    primitive: null,
-  }
-
   root: HTMLSpanElement;
 
   render() {

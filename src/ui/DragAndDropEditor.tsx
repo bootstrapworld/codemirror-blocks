@@ -22,7 +22,7 @@ class WrappedCodeMirror extends Component<Props> {
     }
   }
 
-  handleDrop = _ => {
+  handleDrop = () => {
     // :( this never fire because of the other onDrop, although this onDrop
     // has the access to the information whether we drop at the right place :(
   }
