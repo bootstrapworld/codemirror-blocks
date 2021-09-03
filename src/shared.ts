@@ -18,7 +18,6 @@ type Shared = {
     to: CodeMirror.Position;
     options: CodeMirror.TextMarkerOptions;
   }>;
-  announcer: HTMLElement;
 }
 
 export default {} as Shared;
