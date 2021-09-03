@@ -47,7 +47,7 @@ export class FakeAstInsertion {
     this.parent = parent;
     this.pos = pos;
     // Find the spec that matches the supplied field name.
-    let spec = null;
+    let spec: List|null = null;
     for (const s of parent.spec.childSpecs) {
       if (s instanceof List && s.fieldName === fieldName) {
         spec = s;
@@ -63,7 +63,7 @@ export class FakeAstInsertion {
       return;
     }
     // `pos` lies inside the list. Find out where.
-    const list = parent[fieldName];
+    const list = spec.getField(parent);
     // ideally, we'd use for(i in list) {...} here, but some badly-behaved
     // IDEs monkeypatch the Array prototype, causing that to fail
     for (var i = 0; i < list.length; i++) {
@@ -78,7 +78,7 @@ export class FakeAstInsertion {
 
   insertChild(clonedParent: ASTNode, text: string) {
     const newChildNode = new FakeInsertNode(this.pos, this.pos, text);
-    clonedParent[this.spec.fieldName].splice(this.index, 0, newChildNode);
+    this.spec.getField(clonedParent).splice(this.index, 0, newChildNode);
   }
 
   // Find the inserted child. If more than one was inserted at once, find the
@@ -90,9 +90,9 @@ export class FakeAstInsertion {
     try {
       const newParent = newAST.getNodeById(this.parent.id);
       if (!newParent) return null;
-      const indexFromEnd = this.parent[this.spec.fieldName].length - this.index;
-      const newIndex = newParent[this.spec.fieldName].length - indexFromEnd - 1;
-      return newParent[this.spec.fieldName][newIndex];
+      const indexFromEnd = this.spec.getField(this.parent).length - this.index;
+      const newIndex = this.spec.getField(newParent).length - indexFromEnd - 1;
+      return this.spec.getField(newParent)[newIndex];
     } catch (e) {
       return false;
     }
@@ -110,7 +110,7 @@ export class FakeAstReplacement {
     this.parent = parent;
     this.child = child;
     for (const spec of parent.spec.childSpecs) {
-      const field: ASTNode | ASTNode[] = parent[spec.fieldName];
+      const field: ASTNode | ASTNode[] = spec.getField(parent);
       if (!(field instanceof Array)) {
         if (spec instanceof Required && field.id === child.id) {
           this.spec = spec;
@@ -135,20 +135,20 @@ export class FakeAstReplacement {
   replaceChild(clonedParent: ClonedASTNode, text: string) {
     const newChildNode = new FakeInsertNode(this.child.from, this.child.to, text);
     if (this.index) {
-      clonedParent[this.spec.fieldName][this.index] = newChildNode;
+      this.spec.getField(clonedParent)[this.index] = newChildNode;
     } else {
-      clonedParent[this.spec.fieldName] = newChildNode;
+      this.spec.setField(clonedParent, newChildNode);
     }
   }
 
   deleteChild(clonedParent: ClonedASTNode) {
     if (this.index) {
-      clonedParent[this.spec.fieldName].splice(this.index, 1); // Remove the i'th element.
+      this.spec.getField(clonedParent).splice(this.index, 1); // Remove the i'th element.
     } else if (this.spec instanceof Optional) {
-      clonedParent[this.spec.fieldName] = null;
+      this.spec.setField(clonedParent, null);
     } else {
       playSound(BEEP);
-      clonedParent[this.spec.fieldName] = new FakeBlankNode(this.child.from, this.child.to);
+      this.spec.setField(clonedParent, new FakeBlankNode(this.child.from, this.child.to))
     }
   }
 
@@ -157,9 +157,9 @@ export class FakeAstReplacement {
     const newParent = newAST.getNodeById(this.parent.id);
     if (!newParent) return null;
     if (this.index) {
-      return this.parent[this.spec.fieldName][this.index];
+      return this.spec.getField(this.parent)[this.index];
     } else {
-      return this.parent[this.spec.fieldName];
+      return this.spec.getField(this.parent);
     }
   }
 }
@@ -217,15 +217,15 @@ export class ClonedASTNode extends ASTNode {
     super(oldNode.from, oldNode.to, oldNode.type, oldNode.options);
     for (const spec of oldNode.spec.childSpecs) {
       if (spec instanceof Required || spec instanceof Optional) {
-        if (oldNode[spec.fieldName]) {
-          this[spec.fieldName] = cloneNode(oldNode[spec.fieldName]);
+        if (spec.getField(oldNode)) {
+          spec.setField(this, cloneNode(spec.getField(oldNode)));
         } else {
-          this[spec.fieldName] = null;
+          spec.setField(this, null);
         }
       } else if (spec instanceof Value) {
-        this[spec.fieldName] = oldNode[spec.fieldName];
+        spec.setField(this, spec.getField(oldNode));
       } else if (spec instanceof List) {
-        this[spec.fieldName] = oldNode[spec.fieldName].map(cloneNode);
+        spec.setField(this, spec.getField(oldNode).map(cloneNode));
       }
     }
     this.type = oldNode.type;
