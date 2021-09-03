@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import classNames from 'classnames';
-import PropTypes from 'prop-types';
 import './Editor.less';
 import {connect, ConnectedProps} from 'react-redux';
 import SHARED from '../shared';
@@ -17,13 +16,13 @@ import {poscmp, resetNodeCounter, minpos, maxpos,
 import BlockComponent from '../components/BlockComponent';
 import { defaultKeyMap, keyDown } from '../keymap';
 import {AppStore, store} from '../store';
-import { ASTNode } from '../ast';
+import { ASTNode, Pos } from '../ast';
 import type { AST } from '../ast';
 import CodeMirror, { Editor, SelectionOptions } from 'codemirror';
 import type { Options, API } from '../CodeMirrorBlocks';
 import type { AppDispatch } from '../store';
 import Toolbar from './Toolbar';
-import type { AppAction, Quarantine, RootState } from '../reducers';
+import type { Activity, AppAction, Quarantine, RootState } from '../reducers';
 import type { IUnControlledCodeMirror } from 'react-codemirror2';
 
 // CodeMirror APIs that we need to disallow
@@ -64,7 +63,7 @@ type BlockEditorAPI = {
   /**
    * @internal
    */
-  executeAction(action: AppAction):void;
+  executeAction(activity: Activity):void;
 }
 
 export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
@@ -199,7 +198,7 @@ class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps
 const ToplevelBlockEditable = connect(mapStateToProps2, mapDispatchToProps2)(ToplevelBlockEditableCore);
 
 
-const mapStateToProps = ({ast, cur, quarantine}) => ({
+const mapStateToProps = ({ast, cur, quarantine}: RootState) => ({
   ast,
   cur,
   hasQuarantine: !!quarantine
@@ -207,18 +206,29 @@ const mapStateToProps = ({ast, cur, quarantine}) => ({
 const mapDispatchToProps = (dispatch: AppDispatch) => ({
   dispatch,
   setAST: (ast: AST) => dispatch({type: 'SET_AST', ast}),
-  setCursor: (_, cur?) => dispatch(setCursor(cur)),
+  setCursor: (cur?: CodeMirror.Position) => dispatch(setCursor(cur)),
   clearFocus: () => {
     return dispatch({type: 'SET_FOCUS', focusId: null});
   },
-  setQuarantine: (start, end, text) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
-  activateByNid: (nid, options) => dispatch(activateByNid(nid, options))
+  setQuarantine: (start:CodeMirror.Position, end:CodeMirror.Position, text:string) => dispatch({type: 'SET_QUARANTINE', start, end, text}),
+  activateByNid: (...args:Parameters<typeof activateByNid>) => dispatch(activateByNid(...args))
 });
 
 const blockEditorConnector = connect(mapStateToProps, mapDispatchToProps);
 type $TSFixMe = any;
 
-export type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
+export type Search = {
+  search: (
+    forward: boolean,
+    cmbState: RootState,
+    overrideCur: null | Pos
+  ) => ASTNode | null;
+  onSearch: (state: null, done: () => void, searchForward: () => void) => void;
+  setCursor: (cursor: Pos) => void;
+  setCM: (cm: CodeMirror.Editor) => void;
+};
+
+export type BlockEditorProps = typeof BlockEditor.defaultProps & ConnectedProps<typeof blockEditorConnector> & {
   value: string;
   options?: Options;
   cmOptions?: CodeMirror.EditorConfiguration;
@@ -228,12 +238,7 @@ export type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
    */
   languageId: string;
   parse: Function;
-  search?: {
-    onSearch: Function;
-    search: Function;
-    setCursor: Function;
-    setCM: Function;
-  };
+  search?: Search;
   toolbarRef?: React.RefObject<Toolbar>;
   onBeforeChange?: IUnControlledCodeMirror['onBeforeChange'];
   onMount: Function;
@@ -267,7 +272,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       onSearch: () => {},
       setCursor: () => {},
       setCM: () => {},
-    },
+    } as Search,
   }
 
   /**
@@ -276,7 +281,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * checked. NOTE: this only checks the *first change* in a changeset!
    * This is hooked up to CodeMirror's onBeforeChange event
    */
-  handleBeforeChange = (cm, change) => {
+  handleBeforeChange = (cm:Editor, change:CodeMirror.EditorChangeCancellable) => {
     if (!change.origin?.startsWith("cmb:")) {
       let {successful, newAST} = speculateChanges([change]);
       // Successful! Let's save all the hard work we did to build the new AST
@@ -293,7 +298,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * @internal
    * Given a CM Change Event, manually handle our own undo and focus stack
    */
-  handleChanges = (cm, changes) => {
+  handleChanges = (cm:Editor, changes:CodeMirror.EditorChange[]) => {
     this.props.dispatch((dispatch, getState) => {
       if (!changes.every(c => c.origin?.startsWith("cmb:"))) {
         // These changes did not originate from us. However, they've all
@@ -309,7 +314,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           const {actionFocus} = getState();
           if (actionFocus) {
             const {oldFocusNId} = actionFocus;
-            const focusHint = (newAST) => newAST.getNodeByNId(oldFocusNId);
+            const focusHint = (newAST:AST) => newAST.getNodeByNId(oldFocusNId);
             commitChanges(changes, true, focusHint, this.newAST);
             dispatch({type: 'UNDO'});  
           }
@@ -318,7 +323,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           const {actionFocus} = getState();
           if (actionFocus) {
             const {newFocusNId} = actionFocus;
-            const focusHint = (newAST) => newAST.getNodeByNId(newFocusNId);
+            const focusHint = (newAST:AST) => newAST.getNodeByNId(newFocusNId);
             commitChanges(changes, true, focusHint, this.newAST);
             dispatch({type: 'REDO'});
           }
@@ -345,7 +350,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * When the editor mounts, (1) set change event handlers and AST,
    * (2) set the focus, (3) set aria attributes, and (4) build the API
    */
-  handleEditorDidMount = ed => {
+  handleEditorDidMount = (ed: Editor) => {
     const {passedAST:ast, setAST, search, options, onMount} = this.props;
     ed.on('beforeChange', this.handleBeforeChange);
     ed.on('changes', this.handleChanges);
@@ -362,7 +367,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     const wrapper = ed.getWrapperElement();
     wrapper.setAttribute('role', 'tree');
     wrapper.setAttribute('aria-multiselectable', 'true');
-    wrapper.setAttribute('tabIndex', -1);
+    wrapper.setAttribute('tabIndex', '-1');
 
     // pass the block-mode CM editor, API, and current AST
     onMount(ed, this.buildAPI(ed), ast);
@@ -374,26 +379,24 @@ class BlockEditor extends Component<BlockEditorProps> {
    * Filter/Tweak logged history actions before dispatching them to
    * be executed.
    */
-  executeAction(action) {
+  executeAction(activity: Activity) {
     // ignore certain logged actions that are already
     // handled by the BlockEditor constructor
     const ignoreActions = ["SET_ANNOUNCER", "RESET_STORE_FOR_TESTING"];
-    if(ignoreActions.includes(action.type)){ return; }
+    if(ignoreActions.includes(activity.type)){ return; }
 
+    let action:AppAction;
     // SET_AST actions have been serialized to printed code
     // set the value of the editor to that code, reconstruct
     // the action to use the resulting AST, and delete code
-    if(action.type == "SET_AST") {
-      SHARED.cm.setValue(action.code);
-      action.ast = this.props.ast;
-      delete action.code;
+    if(activity.type == "SET_AST") {
+      SHARED.cm.setValue(activity.code);
+      const {code, ...toCopy} = activity;
+      action = {...toCopy, ast: this.props.ast};
     }
     // convert nid to node id, and use activate to generate the action
-    if(action.type == "SET_FOCUS") {
-      // NOTE(Emmanuel): the following line is probably dead code
-      action.focusId = this.props.ast.getNodeByNId(action.nid).id;
-      this.props.activateByNid(action.nid, {allowMove: true});
-      delete action.nid;
+    if(activity.type == "SET_FOCUS") {
+      this.props.activateByNid(activity.nid, {allowMove: true});
       return;
     }
     this.props.dispatch(action);
@@ -404,8 +407,11 @@ class BlockEditor extends Component<BlockEditorProps> {
    * Build the API for a block editor, restricting or modifying APIs
    * that are incompatible with our toggleable block editor
    */
-  buildAPI(ed): BuiltAPI {
-    let withState = (func) => this.props.dispatch((_, getState) => func(getState()));
+  buildAPI(ed:Editor): BuiltAPI {
+    const withState = <F extends (state:RootState)=>any>(func:F) => 
+      this.props.dispatch((_, getState) => func(getState()));
+    
+    // let withState = (func:(state: RootState)=>any) => this.props.dispatch((_, getState) => func(getState()));
     const cm = SHARED.cm;
     const api: BuiltAPI = {
       /*****************************************************************
@@ -423,7 +429,7 @@ class BlockEditor extends Component<BlockEditorProps> {
         cm.hasFocus() || Boolean(document.activeElement.id.match(/block-node/)),
       'extendSelection': (from: CodeMirror.Position, to: CodeMirror.Position, opts?: SelectionOptions) => this.extendSelections([from], opts, to),
       'extendSelections': (heads, opts) => this.extendSelections(heads, opts),
-      'extendSelectionsBy': (f:(range)=>CodeMirror.Position, opts?: SelectionOptions) =>
+      'extendSelectionsBy': (f:(range: CodeMirror.Range)=>CodeMirror.Position, opts?: SelectionOptions) =>
         this.extendSelections(this.listSelections().map(f), opts),
       'getSelections': (sep?: string) =>
         this.listSelections().map(s => SHARED.cm.getRange(s.anchor, s.head, sep)),
@@ -445,12 +451,13 @@ class BlockEditor extends Component<BlockEditorProps> {
       // If a node is active, return the start. Otherwise return the cursor as-is
       'getCursor': (where) => this.getCursor(where),
       // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
-      'setCursor': (cur) => withState(({ast}) => {
+      'setCursor': (curOrLine, ch, options) => withState(({ast}) => {
+        let cur = typeof curOrLine === 'number' ? {line: curOrLine, ch} : curOrLine;
         const node = ast.getNodeContaining(cur);
         if(node) {
           this.props.activateByNid(node.nid, {record: false, allowMove: true});
         }
-        this.props.setCursor(ed, cur);
+        this.props.setCursor(cur);
       }),
       // As long as widget isn't defined, we're good to go
       'setBookmark': (pos, opts) => {
@@ -480,7 +487,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     };
     // show which APIs are unsupported
     unsupportedAPIs.forEach(f =>
-      api[f] = () => {
+      (api as any)[f] = () => {
         throw new BlockError(
           `The CM API '${f}' is not supported in the block editor`,
           'API Error');
@@ -520,7 +527,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * Override CM's native setBookmark method, restricting it to the semantics
    * that make sense in a block editor (no widgets)
    */
-  setBookmark(pos, options) {
+  setBookmark:Editor['setBookmark'] = (pos, options) => {
     if(options.widget) {
       throw new BlockError(
         `setBookmark: option 'widget' is not supported in block mode`,
@@ -576,7 +583,8 @@ class BlockEditor extends Component<BlockEditorProps> {
     const {ast} = dispatch((_, getState) => getState());
     let tmpCM = getTempCM();
     tmpCM.setSelections(ranges, primary, options);
-    const textRanges = [], nodes = [];
+    const textRanges:{anchor:CodeMirror.Position, head: CodeMirror.Position}[] = [];
+    const nodes:string[] = [];
     try { validateRanges(ranges, ast); }
     catch(e) { throw new BlockError(e, "API Error"); }
     // process the selection ranges into an array of ranges and nodes
@@ -624,7 +632,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * @internal
    * Remove change handlers
    */
-  handleEditorWillUnmount = ed => {
+  handleEditorWillUnmount = (ed:Editor) => {
     ed.off('beforeChange', this.handleBeforeChange);
     ed.off('changes', this.handleChanges);
   }
@@ -636,7 +644,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * If the mouse WAS used there's no cursor set, get the cursor from CM
    * Otherwise ignore
    */
-  handleTopLevelFocus = (ed, _) => {
+  handleTopLevelFocus = (ed:Editor) => {
     const {dispatch} = this.props;
     dispatch((_, getState) => {
       const {cur} = getState();
@@ -646,7 +654,7 @@ class BlockEditor extends Component<BlockEditorProps> {
         this.mouseUsed = false;
       } else if(this.mouseUsed && (cur === null)) {
         // if it was a click, get the cursor from CM
-        setTimeout(() => this.props.setCursor(ed, ed.getCursor()));
+        setTimeout(() => this.props.setCursor(ed.getCursor()));
         this.mouseUsed = false;
       }
     });
@@ -666,7 +674,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * When the CM instance receives a keypress...start a quarantine if it's
    * not a modifier
    */
-  handleTopLevelKeyPress = (ed, e) => {
+  handleTopLevelKeyPress = (ed:Editor, e:React.KeyboardEvent) => {
     const text = e.key;
     // let CM handle kbd shortcuts or whitespace insertion
     if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
@@ -707,7 +715,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    */  
   handleTopLevelCursorActivity = (ed: Editor) => {
     let cur = (ed.getSelection().length > 0)? null : ed.getCursor();
-    this.props.setCursor(ed, cur);
+    this.props.setCursor(cur);
   }
 
   componentWillUnmount() {

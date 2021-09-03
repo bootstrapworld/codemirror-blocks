@@ -15,8 +15,8 @@ declare global {
  * all instances of the AST are replaced with the source code, and
  * focusIds get replaced with node ids.
  */
- type Activity =
- | Exclude<AppAction, {ast: AST}>
+ export type Activity =
+ | Exclude<AppAction, {ast: AST} | Action<"SET_AST"> | Action<"SET_FOCUS">>
  | Action<"SET_AST"> & {code: string}
  | Action<"SET_FOCUS"> & {nid: number};
 
@@ -146,10 +146,10 @@ export const reducer = (
     result = {...state, quarantine: null};
     break;
   case 'CHANGE_QUARANTINE':
-    result = {...state, quarantine: [state.quarantine[0], state.quarantine[1], action.text]};
+    result = {...state, quarantine: [state.quarantine[0], state.quarantine[1], action.text] as Quarantine};
     break;
   case 'SET_QUARANTINE':
-    result = {...state, quarantine: [action.start, action.end, action.text]};
+    result = {...state, quarantine: [action.start, action.end, action.text] as Quarantine};
     break;
   case 'SET_ANNOUNCER':
     result = {...state, announcer: action.announcer};

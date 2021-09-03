@@ -49,7 +49,7 @@ declare module 'codemirror' {
     /**
      * Applies the given function to all existing selections, and calls extendSelections on the result.
      */
-    extendSelectionsBy(f: (range: CodeMirror.Position) => CodeMirror.Position): void;
+    extendSelectionsBy(f: (range: CodeMirror.Range) => CodeMirror.Position): void;
 
     /**
      * Get the value of the 'extending' flag.

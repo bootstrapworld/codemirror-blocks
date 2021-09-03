@@ -70,6 +70,32 @@ export class NodeSpec {
   }
 }
 
+/**
+ * Get a field from an ASTNode.
+ * 
+ * At the moment, language module libraries create custom ASTNodes by
+ * extending the ASTNode class and adding whatever fields they want
+ * as instance properties. They can then specify a NodeSpec that says
+ * what fields on the node are what. This has the potential for
+ * namespace collisions between the ASTNode base class and it's
+ * descendants. 
+ * 
+ * In any case, to perform runtime type validation on the descendent nodes,
+ * we have to access arbitrary fields on them, which can't be statically
+ * type checked. This function unifies this "unsafe" behavior in one place.
+ * 
+ * In the future, if we wanted to provide support for static type checking
+ * of ASTNode descendants, we'd have to change the way they are layed out.
+ * 
+ * @param node ASTNode on which to lookup the field
+ * @param fieldName the name of the field.
+ * 
+ * @internal
+ */
+function getField<N extends ASTNode>(node: N, fieldName: string) {
+  return (node as any)[fieldName];
+}
+
 class ChildrenIterator {
   nodeSpec: NodeSpec;
   parent: ASTNode;
@@ -81,7 +107,7 @@ class ChildrenIterator {
   *[Symbol.iterator]() {
     for (let spec of this.nodeSpec.childSpecs) {
       if (spec instanceof Value) continue;
-      let field = this.parent[spec.fieldName];
+      let field = getField(this.parent, spec.fieldName);
       if (field instanceof ASTNode) {
         yield field;
       } else if (field instanceof Array) {
@@ -103,7 +129,7 @@ class HashIterator {
 
   *[Symbol.iterator]() {
     for (let spec of this.nodeSpec.childSpecs) {
-      let field = this.parent[spec.fieldName];
+      let field = getField(this.parent, spec.fieldName);
       if (spec instanceof Value) {
         yield hashObject(field);
       } else if (spec instanceof List) {
@@ -124,20 +150,20 @@ abstract class ChildSpec {
     this.fieldName = fieldName;
   }
 
-  abstract validate(parent): void;
+  abstract validate(parent:ASTNode): void;
 }
 
 export class Required extends ChildSpec {
-  validate(parent) {
-    if (!(parent[this.fieldName] instanceof ASTNode)) {
+  validate(parent:ASTNode) {
+    if (!(getField(parent, this.fieldName) instanceof ASTNode)) {
       throw new Error(`Expected the required field '${this.fieldName}' of '${parent.type}' to contain an ASTNode.`);
     }
   }
 }
 
 export class Optional extends ChildSpec {
-  validate(parent) {
-    let child = parent[this.fieldName];
+  validate(parent:ASTNode) {
+    let child = getField(parent, this.fieldName);
     if (child !== null && !(child instanceof ASTNode)) {
       throw new Error(`Expected the optional field '${this.fieldName}' of '${parent.type}' to contain an ASTNode or null.`);
     }
@@ -145,8 +171,8 @@ export class Optional extends ChildSpec {
 }
 
 export class List extends ChildSpec {
-  validate(parent) {
-    let array = parent[this.fieldName];
+  validate(parent:ASTNode) {
+    let array = getField(parent, this.fieldName);
     let valid = true;
     if (array instanceof Array) {
       for (const elem of array) {
@@ -162,7 +188,7 @@ export class List extends ChildSpec {
 }
 
 export class Value extends ChildSpec {
-  validate(_parent) {
+  validate(_parent:ASTNode) {
     // Any value is valid, even `undefined`, so there's nothing to check.
   }
 }
