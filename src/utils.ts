@@ -23,11 +23,25 @@ export const mac = ios || /Mac/.test(platform);
 
 // make sure we never assign the same ID to two nodes in ANY active
 // program at ANY point in time.
-store.nodeCounter = 0;
-export function gensym() {
-  return (store.nodeCounter++).toString(16);
+let nodeCounter = 0;
+/**
+ * Generates a unique string id. Note that this is only guaranteed to be
+ * unique between calls to {@link resetUniqueIdGenerator}.
+ * @internal
+ * @returns a unique string id
+ */
+export function genUniqueId() {
+  return (nodeCounter++).toString(16);
 }
-export function resetNodeCounter() { store.nodeCounter = 0; }
+
+/**
+ * Reset the state of the unique id generator. This should only be used
+ * for testing.
+ * @internal
+ */
+export function resetUniqueIdGenerator() {
+  nodeCounter = 0;
+}
 
 // Use reliable object->string library to generate a pseudohash,
 // then hash the string so we don't have giant "hashes" eating memory

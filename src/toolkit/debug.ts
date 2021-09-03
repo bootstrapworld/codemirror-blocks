@@ -2,6 +2,7 @@ import "codemirror/lib/codemirror.css";
 import "./debug-page.less";
 import type { Language } from '../CodeMirrorBlocks';
 import CodeMirrorBlocks from '../CodeMirrorBlocks';
+import { resetUniqueIdGenerator } from "../utils";
 
 /**
  * Renders the codemirror blocks editor to the page along with some
@@ -100,7 +101,7 @@ export function createDebuggingInterface(language: Language, value: string) {
       }
       editor.setValue('');
       editor.setBlockMode(true);
-      editor.resetNodeCounter();
+      resetUniqueIdGenerator();
       history = log.history;
       history.forEach((entry) => {
         let LI = document.createElement('LI');

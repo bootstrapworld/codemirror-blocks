@@ -1,5 +1,5 @@
 import {poscmp, minpos, maxpos, posWithinNode, 
-  nodeCommentContaining, gensym, hashObject} from './utils';
+  nodeCommentContaining, genUniqueId, hashObject} from './utils';
 import * as P from 'pretty-fast-pretty-printer';
 import type CodeMirror from 'codemirror';
 import type { Comment } from './nodes';
@@ -136,7 +136,8 @@ export class AST {
       nodes.forEach((node, i) => {
         this.validateNode(node);
         // Undefined if this DID NOT come from a patched AST.
-        if (node.id === undefined) { node.id = gensym();
+        if (node.id === undefined) {
+          node.id = genUniqueId();
         }
         node.parent = parent;
         node.level = level;
