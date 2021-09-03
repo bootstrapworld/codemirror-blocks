@@ -136,31 +136,45 @@ export function partition<T>(arr: T[], f:(i:T)=>boolean) {
 //   };
 // }
 
-store.muteAnnouncements = false;
-store.queuedAnnouncement = undefined;
+let muteAnnouncements = false;
+let queuedAnnouncement: ReturnType<typeof setTimeout>;
 
 // Note: screenreaders will automatically speak items with aria-labels!
 // This handles _everything_else_.
+/**
+ * Make a screenreader announce something to the user
+ * 
+ * @param text the text to say
+ * @param delay how long to wait (in ms) before making the announcement
+ * @param allowOverride whether or not this announcement can be overridden
+ * 
+ * @internal
+ */
 export function say(text: string, delay=200, allowOverride=false) {
   const announcement = document.createTextNode(text);
   const announcer = SHARED.announcer;
-  if (store.muteAnnouncements || !announcer) return; // if nothing to do, bail
-  clearTimeout(store.queuedAnnouncement);            // clear anything overrideable
-  if(allowOverride) {                                // enqueue overrideable announcements
-    store.queuedAnnouncement = setTimeout(() => say('Use enter to edit', 0), delay);
+  
+  if (muteAnnouncements || !announcer) {
+    return; // if nothing to do, bail
+  }
+
+  clearTimeout(queuedAnnouncement);            // clear anything overrideable
+  
+  if(allowOverride) {                          // enqueue overrideable announcements
+    queuedAnnouncement = setTimeout(() => say('Use enter to edit', 0), delay);
   } else {                                           // otherwise write it to the DOM,
     announcer.childNodes.forEach( c => c.remove() ); // remove the children
     console.log('say:', text);                       // then erase it 10ms later
     setTimeout(() => announcer.appendChild(announcement), delay);
   }
 }
-
-export function createAnnouncement(nodes: ASTNode[], action: string) {
-  nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
-  let annt = (action + " " +
-    nodes.map((node) => node.shortDescription())
-      .join(" and "));
-  return annt;
+/**
+ * Cancels a delayed announcement if there is one in the queue
+ * and it is allowed to be overridden.
+ * @internal
+ */
+export function cancelAnnouncement() {
+  clearTimeout(queuedAnnouncement);
 }
 
 export function skipCollapsed(node: ASTNode, next: (node: ASTNode)=>ASTNode, state: RootState) {

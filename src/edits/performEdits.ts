@@ -85,7 +85,7 @@ export function performEdits(
   edits: Edit[],
   onSuccess: OnSuccess=(r:{newAST:AST, focusId:string})=>{},
   onError: OnError=(e:any)=>{},
-  annt?: string|false
+  annt?: string
 ) {
   // Ensure that all of the edits are valid.
   //console.log('XXX performEdits:55 doing performEdits');
