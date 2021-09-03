@@ -2,14 +2,12 @@ import React, {Component, createContext} from 'react';
 import {connect, ConnectedProps} from 'react-redux';
 import PropTypes from 'prop-types';
 import NodeEditable from './NodeEditable';
-import SHARED from '../shared';
 import {DropNodeTarget} from '../dnd';
 import classNames from 'classnames';
 import {AppDispatch, isErrorFree} from '../store';
-import BlockComponent from './BlockComponent';
-import {gensym} from '../utils';
+import {genUniqueId} from '../utils';
 import {drop, InsertTarget} from '../actions';
-import { AST, ASTNode, Pos } from '../ast';
+import { ASTNode, Pos } from '../ast';
 import { RootState } from '../reducers';
 
 // Provided by `Node`
@@ -72,7 +70,7 @@ export class DropTarget extends Component<{field: string}> {
   }
 
   isDropTarget: boolean = true;
-  id: string = gensym(); // generate a unique ID
+  id: string = genUniqueId(); // generate a unique ID
 
   render() {
     const value = {

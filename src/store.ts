@@ -21,9 +21,6 @@ export type AppStore =
     // stored somewhere else.
     onKeyDown?: (e:React.KeyboardEvent, env: InputEnv)=>void,
 
-    // set in utils.ts and used for assigning unique ids to ast nodes.
-    nodeCounter?: number,
-
     // used in say() function of util.ts
     muteAnnouncements?: boolean,
     queuedAnnouncement?: ReturnType<typeof setTimeout>,

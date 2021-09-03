@@ -11,8 +11,7 @@ import {activateByNid, setCursor, OverwriteTarget} from '../actions';
 import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, resetNodeCounter, minpos, maxpos,
-  validateRanges, BlockError} from '../utils';
+import {poscmp, minpos, maxpos, validateRanges, BlockError} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 import { defaultKeyMap, keyDown } from '../keymap';
 import {AppStore, store} from '../store';
@@ -54,11 +53,6 @@ type BlockEditorAPI = {
    * @internal
    */
   setQuarantine(start: Quarantine[0], end: Quarantine[1], txt: Quarantine[2]): void;
-
-  /**
-   * @internal
-   */
-  resetNodeCounter():void;
 
   /**
    * @internal
@@ -482,7 +476,6 @@ class BlockEditor extends Component<BlockEditorProps> {
       */
       'getQuarantine': () => withState(({quarantine}) => quarantine),
       'setQuarantine': (start, end, txt) => this.props.setQuarantine(start, end, txt),
-      'resetNodeCounter': () => resetNodeCounter(),
       'executeAction' : (action) => this.executeAction(action),
     };
     // show which APIs are unsupported
