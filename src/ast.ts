@@ -307,7 +307,7 @@ export class AST {
       return (poscmp(from, n.from) == 0) && (poscmp(to, n.to) == 0)
         || (poscmp(from, srcFrom) == 0) && (poscmp(to, srcTo) == 0);
     });
-    return n || false;
+    return n || undefined;
   }
 
   /**

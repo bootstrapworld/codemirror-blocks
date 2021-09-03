@@ -1,4 +1,4 @@
-import CodeMirrorBlocks, { Language } from '../CodeMirrorBlocks';
+import CodeMirrorBlocks, { API, Language } from '../CodeMirrorBlocks';
 import { cleanup } from "@testing-library/react";
 // pass along all the simulated events
 export * from './simulate';
@@ -24,8 +24,8 @@ export async function wait(ms: number) {
 // wait for the editor to finish rendering, then
 // pad another 200ms 
 // NOTE(Emmanuel): 0ms causes all kinds of stuff to break
-export async function finishRender(editor) {
-  await new Promise(resolve => {
+export async function finishRender(editor:API) {
+  await new Promise<void>(resolve => {
     editor.afterDOMUpdate(resolve);  
   });
   return wait(200);

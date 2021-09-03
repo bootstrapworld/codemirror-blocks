@@ -3,7 +3,7 @@ import Dialog from '../components/Dialog';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import 'react-tabs/style/react-tabs.less';
 import {say, getBeginCursor, getEndCursor, playSound, WRAP} from '../utils';
-import { BlockEditorComponentClass } from './BlockEditor';
+import { BlockEditorComponentClass, Search } from './BlockEditor';
 import { Searcher } from './searchers/Searcher';
 import { GetProps } from 'react-redux';
 import { ASTNode, Pos } from '../ast';
@@ -124,7 +124,7 @@ export default function attachSearch(
 
     handleSetCM = (cm: CodeMirror.Editor) => this.cm = cm
 
-    search = {
+    search: Search = {
       onSearch: this.handleActivateSearch,
       search: this.handleSearch,
       setCursor: this.handleSetCursor,

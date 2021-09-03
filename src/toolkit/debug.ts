@@ -52,12 +52,20 @@ export function createDebuggingInterface(language: Language, value: string) {
     language
   );
 
-  let history,
-    lastAction,
-    currentAction = 0;
+  type JSONLog = {
+    history: typeof window.reducerActivities,
+    exception: string
+  };
+
+  let history: JSONLog['history'];
+  let lastAction: number;
+  let currentAction = 0;
 
   downloadLogButton.onclick = () => {
-    let json = { history: window.reducerActivities, exception: 'DUMMY' };
+    let json: JSONLog = {
+      history: window.reducerActivities,
+      exception: 'DUMMY'
+    };
 
     var element = document.createElement('a');
     element.setAttribute(
@@ -81,7 +89,7 @@ export function createDebuggingInterface(language: Language, value: string) {
     // parse the string, draw the actions, and set up counters
     // and UI for replaying them
     reader.onload = (readEvent) => {
-      let log;
+      let log: JSONLog;
       try {
         log = JSON.parse(readEvent.target.result.toString());
         if (!(log.exception && log.history)) throw 'Bad Log';

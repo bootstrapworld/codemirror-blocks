@@ -96,7 +96,7 @@ export class PrimitiveGroup {
     }
   }
 
-  filter(search: string) {
+  filter(search: string): PrimitiveGroup {
     if (!search) {
       return this;
     }
