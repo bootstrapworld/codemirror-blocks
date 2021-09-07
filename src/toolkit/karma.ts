@@ -40,6 +40,12 @@ function getWebpackTestConfig(basePath: string, runCoverage: boolean): webpack.C
         'process.env': { NODE_ENV: JSON.stringify('development') },
       }),
     ],
+    // TODO: remove this workaround to sourcemaps being broken in
+    // karma-webpack version 5. See this github issue:
+    // https://github.com/ryanclark/karma-webpack/issues/493
+    optimization: {
+      splitChunks: false,
+    }
   };
 }
 
