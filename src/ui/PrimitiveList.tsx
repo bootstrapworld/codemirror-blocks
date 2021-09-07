@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import {PrimitiveGroup as PrimitiveGroupModel} from '../parsers/primitives';
 import {Primitive as LanguagePrimitive} from '../parsers/primitives';
 import {DragPrimitiveSource} from '../dnd';
-import {say} from '../utils';
+import { say } from "../announcer";
 import {copy} from '../actions';
 import CodeMirror from 'codemirror';
 import {defaultKeyMap} from '../keymap';

@@ -20,10 +20,6 @@ export type AppStore =
     // reason. It's effectively a global variable and should be
     // stored somewhere else.
     onKeyDown?: (e:React.KeyboardEvent, env: InputEnv)=>void,
-
-    // used in say() function of util.ts
-    muteAnnouncements?: boolean,
-    queuedAnnouncement?: ReturnType<typeof setTimeout>,
   };
 
 export const store: AppStore = reduxStore

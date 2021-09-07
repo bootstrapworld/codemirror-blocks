@@ -8,7 +8,7 @@ import ByBlock from './searchers/ByBlock';
 import attachSearch from './Search';
 import Toolbar from './Toolbar';
 import { ToggleButton, BugButton } from './EditorButtons';
-import { say } from '../utils';
+import { mountAnnouncer, say } from "../announcer";
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import type { AST } from '../ast';
@@ -249,12 +249,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
     this.toolbarRef = createRef();
 
-    // construct announcer DOM node
-    const announcements = document.createElement('div');
-    announcements.setAttribute('aria-live', 'assertive');
-    announcements.setAttribute('aria-atomic', 'true');
-    SHARED.announcer = announcements;
-
     SHARED.recordedMarks = new Map();
     this.eventHandlers = {}; // blank event-handler record
 
@@ -328,12 +322,12 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    * and (3) re-render any TextMarkers.
    */
   handleEditorMounted = (ed: CodeMirror.Editor, api: API, ast: AST) => {
-    // set CM aria attributes, and add announcer
+    // set CM aria attributes, and mount announcer
     const mode = this.state.blockMode ? 'Block' : 'Text';
     const wrapper = ed.getWrapperElement();
     ed.getScrollerElement().setAttribute('role', 'presentation');
     wrapper.setAttribute('aria-label', mode+' Editor');
-    wrapper.appendChild(SHARED.announcer);
+    mountAnnouncer(wrapper);
     // Rebuild the API and assign re-events
     Object.assign(this.props.api, this.buildAPI(ed), api);
     Object.keys(this.eventHandlers).forEach(type => {

@@ -136,33 +136,6 @@ export function partition<T>(arr: T[], f:(i:T)=>boolean) {
 //   };
 // }
 
-store.muteAnnouncements = false;
-store.queuedAnnouncement = undefined;
-
-// Note: screenreaders will automatically speak items with aria-labels!
-// This handles _everything_else_.
-export function say(text: string, delay=200, allowOverride=false) {
-  const announcement = document.createTextNode(text);
-  const announcer = SHARED.announcer;
-  if (store.muteAnnouncements || !announcer) return; // if nothing to do, bail
-  clearTimeout(store.queuedAnnouncement);            // clear anything overrideable
-  if(allowOverride) {                                // enqueue overrideable announcements
-    store.queuedAnnouncement = setTimeout(() => say('Use enter to edit', 0), delay);
-  } else {                                           // otherwise write it to the DOM,
-    announcer.childNodes.forEach( c => c.remove() ); // remove the children
-    console.log('say:', text);                       // then erase it 10ms later
-    setTimeout(() => announcer.appendChild(announcement), delay);
-  }
-}
-
-export function createAnnouncement(nodes: ASTNode[], action: string) {
-  nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
-  let annt = (action + " " +
-    nodes.map((node) => node.shortDescription())
-      .join(" and "));
-  return annt;
-}
-
 export function skipCollapsed(node: ASTNode, next: (node: ASTNode)=>ASTNode, state: RootState) {
   const {collapsedList, ast} = state;
   const collapsedNodeList = collapsedList.map(ast.getNodeById);
@@ -356,7 +329,6 @@ export function validateRanges(ranges: {anchor: Pos, head: Pos}[], ast: AST) {
   return true;
 }
 
-
 export class BlockError extends Error {
   type: string;
   data: $TSFixMe;
@@ -409,6 +381,7 @@ class CustomAudio extends Audio {
 import beepSound from './ui/beep.mp3';
 export const BEEP = new CustomAudio(beepSound);
 import wrapSound from './ui/wrap.mp3';
+import { say } from './announcer';
 export const WRAP = new CustomAudio(wrapSound);
 
 

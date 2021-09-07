@@ -1,4 +1,5 @@
-import {say, poscmp, srcRangeIncludes, warn, createAnnouncement} from './utils';
+import {poscmp, srcRangeIncludes, warn} from './utils';
+import { say, cancelAnnouncement } from "./announcer";
 import SHARED from './shared';
 import {AppDispatch, store} from './store';
 import {performEdits, edit_insert, edit_delete, edit_replace,
@@ -53,15 +54,32 @@ export function insert(text: string, target: Target, onSuccess?: OnSuccess, onEr
   performEdits('cmb:insert', ast, edits, onSuccess, onError, annt);
 }
 
+/**
+ * Generates a description of an edit involving certain nodes
+ * that can be announced to the user.
+ * 
+ * @param nodes the ast nodes that are involved
+ * @param editWord a word describing the edit like "copied"
+ * @returns the human readable description of the edit
+ * @internal
+ */
+function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
+  nodes.sort((a,b) => poscmp(a.from, b.from)); // speak first-to-last
+  let annt = (editWord + " " +
+    nodes.map((node) => node.shortDescription())
+      .join(" and "));
+  return annt;
+}
+
 // Delete the given nodes.
 export function delete_(nodes: ASTNode[], editWord?: string) { // 'delete' is a reserved word
   if (nodes.length === 0) return;
   const {ast} = store.getState();
   nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
   const edits = nodes.map(node => edit_delete(node));
-  let annt: string|false = false;
+  let annt: string;
   if (editWord) {
-    annt = createAnnouncement(nodes, editWord);
+    annt = createEditAnnouncement(nodes, editWord);
     say(annt);
   }
   performEdits('cmb:delete-node', ast, edits, undefined, undefined, annt);
@@ -76,9 +94,9 @@ export function copy(nodes: ASTNode[], editWord?: string) {
   // commented nodes (to prevent a comment from attaching itself to a
   // different node after pasting).
   nodes.sort((a, b) => poscmp(a.from, b.from));
-  let annt: string|false = false;
+  let annt: string;
   if (editWord) {
-    annt = createAnnouncement(nodes, editWord);
+    annt = createEditAnnouncement(nodes, editWord);
     say(annt);
   }
   let text = "";
@@ -205,7 +223,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
       setTimeout(() => { if(newNode.element) newNode.element.focus(); }, 10);
     }
 
-    clearTimeout(store.queuedAnnouncement);  // clear any overrideable announcements
+    cancelAnnouncement();  // clear any overrideable announcements
     // FIXME(Oak): if possible, let's not hard code like this
     if (['blank', 'literal'].includes(newNode.type) && !collapsedList.includes(newNode.id)) {
       say('Use enter to edit', 1250, true); // wait 1.25s, and allow to be overridden

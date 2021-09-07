@@ -4,7 +4,7 @@ import ContentEditable, { ContentEditableProps } from './ContentEditable';
 import SHARED from '../shared';
 import classNames, {Argument as ClassNamesArgument} from 'classnames';
 import {insert, activateByNid, Target} from '../actions';
-import {say} from '../utils';
+import { say } from "../announcer";
 import CodeMirror from 'codemirror';
 import { AppDispatch } from '../store';
 import { RootState } from '../reducers';
