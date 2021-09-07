@@ -214,7 +214,14 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
     // a dummy element that just says "stand by" (see ToggleEditor.js).
     // When the new node is available, focus will shift automatically.
     if(!document.contains(newNode.element)) {
-      document.getElementById('SR_fix_for_slow_dom').focus();
+      const sr = document.getElementById('SR_fix_for_slow_dom');
+      // In the event that everything has been unmounted,
+      // for example in a unit test, then neither newNode.element nor
+      // SR_fix_for_slow_down will exist. So check to see if it's still
+      // there before attempting to focus it.
+      if (sr) {
+        sr.focus();
+      }
     }
 
     // If there's a previously-focused node, see if the ids match
