@@ -4,7 +4,7 @@ import wescheme from '../src/languages/wescheme';
 import {
   mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
   click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
-  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
+  paste, cut, dragstart, dragover, drop, dragenter, dragenterSeq, 
   dragend, dragleave, keyDown, keyPress, insertText, finishRender
 } from '../src/toolkit/test-utils';
 

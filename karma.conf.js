@@ -6,6 +6,5 @@ module.exports = (config) => {
   toolkitConfig.webpack.resolve.alias = {
     'codemirror-blocks': path.resolve(__dirname, 'src'),
   };
-  toolkitConfig.files = ["spec/index.js"];
   config.set(toolkitConfig);
 };
