@@ -8,7 +8,7 @@ import ByBlock from './searchers/ByBlock';
 import attachSearch from './Search';
 import Toolbar from './Toolbar';
 import { ToggleButton, BugButton } from './EditorButtons';
-import { mountAnnouncer, say } from '../utils';
+import { mountAnnouncer, say } from "../announcer";
 import TrashCan from './TrashCan';
 import SHARED from '../shared';
 import type { AST } from '../ast';

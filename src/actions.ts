@@ -1,4 +1,5 @@
-import {say, poscmp, srcRangeIncludes, warn, cancelAnnouncement} from './utils';
+import {poscmp, srcRangeIncludes, warn} from './utils';
+import { say, cancelAnnouncement } from "./announcer";
 import SHARED from './shared';
 import {AppDispatch, store} from './store';
 import {performEdits, edit_insert, edit_delete, edit_replace,
