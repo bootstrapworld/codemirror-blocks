@@ -1,4 +1,4 @@
-import {poscmp, srcRangeIncludes, warn} from './utils';
+import {poscmp, srcRangeIncludes, warn, afterDOMUpdate} from './utils';
 import { say, cancelAnnouncement } from "./announcer";
 import SHARED from './shared';
 import {AppDispatch, store} from './store';
@@ -240,7 +240,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
     // Note, however, that it is also a good thing that `activate` is invoked
     // when double click because we can set focusId on the to-be-focused node
 
-    setTimeout(() => {
+    afterDOMUpdate(() => {
       dispatch({type: 'SET_FOCUS', focusId: newNode.id});
       
       if (options.record) {
@@ -265,7 +265,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
         scroller.setAttribute('aria-activedescendent', newNode.element.id);
         newNode.element.focus();
       }
-    }, 25);
+    });
   };
 }
 

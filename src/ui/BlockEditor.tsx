@@ -11,7 +11,7 @@ import {activateByNid, setCursor, OverwriteTarget} from '../actions';
 import {commitChanges} from '../edits/commitChanges';
 import {speculateChanges, getTempCM} from '../edits/speculateChanges';
 import DragAndDropEditor from './DragAndDropEditor';
-import {poscmp, minpos, maxpos, validateRanges, BlockError} from '../utils';
+import {poscmp, minpos, maxpos, validateRanges, BlockError, afterDOMUpdate} from '../utils';
 import BlockComponent from '../components/BlockComponent';
 import { defaultKeyMap, keyDown } from '../keymap';
 import {AppStore, store} from '../store';
@@ -105,10 +105,7 @@ class ToplevelBlock extends BlockComponent<ToplevelBlockProps, ToplevelBlockStat
   // once the placeholder has mounted, wait 250ms and render
   componentDidMount() {
     if(!this.props.incrementalRendering) return; // bail if incremental is off
-    window.requestAnimationFrame( () => {
-      this.renderTimeout = setTimeout(() => 
-        this.setState({ renderPlaceholder: false }), 250);
-    });
+    afterDOMUpdate(() => this.setState({ renderPlaceholder: false }));
   }
 
   render() {
@@ -643,11 +640,11 @@ class BlockEditor extends Component<BlockEditorProps> {
       const {cur} = getState();
       if (!this.mouseUsed && (cur === null)) {
         // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-        setTimeout(() => this.props.activateByNid(null, {allowMove: true}), 0);
+        afterDOMUpdate(() => this.props.activateByNid(null, {allowMove: true}));
         this.mouseUsed = false;
       } else if(this.mouseUsed && (cur === null)) {
         // if it was a click, get the cursor from CM
-        setTimeout(() => this.props.setCursor(ed.getCursor()));
+        afterDOMUpdate(() => this.props.setCursor(ed.getCursor()));
         this.mouseUsed = false;
       }
     });

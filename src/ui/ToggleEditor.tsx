@@ -15,6 +15,7 @@ import type { AST } from '../ast';
 import type { Language, Options } from '../CodeMirrorBlocks';
 import CodeMirror, { MarkerRange, Position, TextMarker } from 'codemirror';
 import type { ActionFocus } from '../reducers';
+import { afterDOMUpdate } from '../utils';
 
 /**
  * Additional declarations of codemirror apis that are not in @types/codemirror... yet.
@@ -268,16 +269,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   /**
    * @internal
-   * Expose a scheduler for after react's render cycle is over. Some
-   * internal functions use it, and testing infrastructure may use it as well
-   * see stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-   */
-  afterDOMUpdate = (f: ()=>void) => {
-    window.requestAnimationFrame(() => setTimeout(f, 0));
-  }
-
-  /**
-   * @internal
    * Populate a base object with mode-agnostic methods we wish to expose
    */
   buildAPI(ed: CodeMirror.Editor): API {
@@ -296,7 +287,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       // custom CMB methods
       'getBlockMode': () => this.state.blockMode,
       'setBlockMode': this.handleToggle,
-      'afterDOMUpdate' : this.afterDOMUpdate,
+      'afterDOMUpdate' : afterDOMUpdate,
       'getCM': () => ed,
       'on' : (...args: Parameters<CodeMirror.Editor['on']>) => {
         const [type, fn] = args;
@@ -335,15 +326,14 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     });
     
     // once the DOM has loaded, reconstitute any marks and render them
-    // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-    window.requestAnimationFrame( () => setTimeout(() => {
+    afterDOMUpdate(() => {
       SHARED.recordedMarks.forEach((m: {options: CodeMirror.TextMarkerOptions}, k: number) => {
         let node = ast.getNodeByNId(k);
         if (node) {
           this.props.api?.markText(node.from, node.to, m.options);
         }
       });
-    }, 0));
+    });
     // save the editor, and announce completed mode switch
     SHARED.cm = ed;
     say(mode + " Mode Enabled", 500);

@@ -9,6 +9,7 @@ import CodeMirror from 'codemirror';
 import { AppDispatch } from '../store';
 import { RootState } from '../reducers';
 import { AST } from '../ast';
+import { afterDOMUpdate } from '../utils';
 
 type Props = ContentEditableProps & {
     target?: Target,
@@ -104,7 +105,7 @@ class NodeEditable extends Component<Props> {
       this.props.onChange(null);
       this.props.onDisableEditable(false);
       this.props.setErrorId('');
-      setTimeout(() => this.props.focusSelf(), 200);
+      afterDOMUpdate(this.props.focusSelf());
       return;
     }
   }
@@ -132,14 +133,14 @@ class NodeEditable extends Component<Props> {
   }
 
   setSelection = (isCollapsed: boolean) => {
-    window.requestAnimationFrame(() => setTimeout(() => {
+    afterDOMUpdate(() => {
       const range = document.createRange();
       range.selectNodeContents(this.element);
       if (isCollapsed) range.collapse(false);
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
       this.element.focus();
-    }, 0));
+    });
   }
 
   contentEditableDidMount = (el:HTMLElement) => {
