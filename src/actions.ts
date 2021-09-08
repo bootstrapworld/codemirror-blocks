@@ -272,7 +272,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
         // if this timeout fires after the node has been torn down, don't focus
         if(newNode.element) { newNode.element.focus(); }
       }
-    }, {}, 2000);
+    });
   };
 }
 
