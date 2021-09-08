@@ -141,11 +141,14 @@ export function getWebpackDevServerConfig(config: {
     },
     devServer: {
       hot: true,
-      inline: true,
       host: '0.0.0.0',
-      disableHostCheck: true,
+      allowedHosts: 'all',
       headers: { 'Access-Control-Allow-Origin': '*' },
-      contentBase: siteDir,
+      static : {
+        directory: path.resolve(__dirname, "static"),
+        publicPath: siteDir,
+        watch: true,
+      }
     },
   };
 }
