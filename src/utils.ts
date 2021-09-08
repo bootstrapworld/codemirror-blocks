@@ -32,19 +32,20 @@ export const mac = ios || /Mac/.test(platform);
  */
 export type afterDOMUpdateHandle = {
   raf?: number,
-  timeout?: ReturnType<typeof setTimeout>
+  timeout?: {h?:ReturnType<typeof setTimeout>}
 };
 export function setAfterDOMUpdate(f: ()=>void, extraDelay?:number): afterDOMUpdateHandle {
-  let timeoutHandle: ReturnType<typeof setTimeout>;
+  let timeoutHandle = {h: null as ReturnType<typeof setTimeout>};
   return {
-    raf: window.requestAnimationFrame(() => timeoutHandle = setTimeout(f, extraDelay)),
+    raf: window.requestAnimationFrame(() => timeoutHandle.h = setTimeout(f, extraDelay)),
     timeout: timeoutHandle
   };
 }
 
-export function cancelAfterDOMUpdate(handle:afterDOMUpdateHandle = {}): void {
+export function cancelAfterDOMUpdate(handle:afterDOMUpdateHandle): void {
+  if(!handle || !handle.timeout ) { return; }
   cancelAnimationFrame(handle.raf);
-  clearTimeout(handle.timeout);
+  clearTimeout(handle.timeout.h);
 }
 
 // make sure we never assign the same ID to two nodes in ANY active

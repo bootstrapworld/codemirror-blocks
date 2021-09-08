@@ -24,7 +24,7 @@ export async function wait(ms: number) {
 }
 
 // wait for the editor to finish rendering, then pad another 100ms 
-// NOTE(Emmanuel): 0ms causes all kinds of stuff to break
+// NOTE(Emmanuel): insufficient padding causes all kinds of stuff to break
 export async function finishRender(editor:API) {
   return new Promise<void>(resolve => setAfterDOMUpdate(resolve, 100));
 }

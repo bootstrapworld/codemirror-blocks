@@ -107,6 +107,7 @@ class NodeEditable extends Component<Props> {
       this.props.onChange(null);
       this.props.onDisableEditable(false);
       this.props.setErrorId('');
+      cancelAfterDOMUpdate(this.pendingTimeout);
       this.pendingTimeout = setAfterDOMUpdate(this.props.focusSelf());
       return;
     }
@@ -138,6 +139,7 @@ class NodeEditable extends Component<Props> {
   }
 
   setSelection = (isCollapsed: boolean) => {
+    cancelAfterDOMUpdate(this.pendingTimeout);
     this.pendingTimeout = setAfterDOMUpdate(() => {
       const range = document.createRange();
       range.selectNodeContents(this.element);

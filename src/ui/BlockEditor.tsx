@@ -650,11 +650,13 @@ class BlockEditor extends Component<BlockEditorProps> {
       const {cur} = getState();
       if (!this.mouseUsed && (cur === null)) {
         // NOTE(Emmanuel): setAfterDOMUpdate so that the CM cursor will not blink
+        cancelAfterDOMUpdate(this.pendingTimeout);
         this.pendingTimeout = setAfterDOMUpdate(() => 
           this.props.activateByNid(null, {allowMove: true}));
         this.mouseUsed = false;
       } else if(this.mouseUsed && (cur === null)) {
         // if it was a click, get the cursor from CM
+        cancelAfterDOMUpdate(this.pendingTimeout);
         this.pendingTimeout = setAfterDOMUpdate(() => this.props.setCursor(ed.getCursor()));
         this.mouseUsed = false;
       }
@@ -726,8 +728,6 @@ class BlockEditor extends Component<BlockEditorProps> {
 
   componentDidMount() {
     const { parse, options, search } = this.props;
-
-    this.pendingTimeout = null;
 
     // TODO: pass these with a React Context or something sensible like that.
     SHARED.parse = parse;

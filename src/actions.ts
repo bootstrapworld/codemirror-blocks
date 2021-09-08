@@ -240,10 +240,11 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
     setAfterDOMUpdate(() => {
       dispatch({type: 'SET_FOCUS', focusId: newNode.id});
       
-      if (options.record) {
+      if (options.record && SHARED.search) {
         SHARED.search.setCursor(newNode.from);
       }
-      if (newNode.element) {
+      // if this timeout fires after the node has been torn down, don't bother
+      if (newNode.element && SHARED.cm) {
         const scroller = SHARED.cm.getScrollerElement();
         const wrapper  = SHARED.cm.getWrapperElement();
 
@@ -260,8 +261,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
           SHARED.cm.scrollIntoView({top, bottom, left, right});
         }
         scroller.setAttribute('aria-activedescendent', newNode.element.id);
-        // if this timeout fires after the node has been torn down, don't focus
-        if(newNode.element) { newNode.element.focus(); }
+        newNode.element.focus();
       }
     });
   };
