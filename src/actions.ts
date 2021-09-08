@@ -1,4 +1,5 @@
-import {poscmp, srcRangeIncludes, warn, afterDOMUpdate} from './utils';
+import {poscmp, srcRangeIncludes, warn, setAfterDOMUpdate, cancelAfterDOMUpdate} from './utils';
+import type { afterDOMUpdateHandle } from './utils';
 import { say, cancelAnnouncement } from "./announcer";
 import SHARED from './shared';
 import {AppDispatch, store} from './store';
@@ -236,7 +237,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
       say('Use enter to edit', 1250, true); // wait 1.25s, and allow to be overridden
     }
 
-    afterDOMUpdate(() => {
+    setAfterDOMUpdate(() => {
       dispatch({type: 'SET_FOCUS', focusId: newNode.id});
       
       if (options.record) {

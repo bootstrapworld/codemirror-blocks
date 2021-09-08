@@ -32,13 +32,23 @@ export const mac = ios || /Mac/.test(platform);
  *   so that it can be cancelled by the owner later
  * - If an extraDelay is passed, the inner timeout waits Xms after the render cycle
  */
-
-export function afterDOMUpdate(f: ()=>void, owner?:$TSFixMe, extraDelay?:number) {
-  return window.requestAnimationFrame(() => {
-    const timeout = setTimeout(f, extraDelay);
-    if(owner) owner.pendingTimeout = timeout;
-  });
+export type afterDOMUpdateHandle = {
+  raf: number,
+  timeout: ReturnType<typeof setTimeout>
+};
+export function setAfterDOMUpdate(f: ()=>void, extraDelay?:number): afterDOMUpdateHandle {
+  let timeoutHandle: ReturnType<typeof setTimeout>;
+  return {
+    raf: window.requestAnimationFrame(() => timeoutHandle = setTimeout(f, extraDelay)),
+    timeout: timeoutHandle
+  };
 }
+
+export function cancelAfterDOMUpdate(handle:afterDOMUpdateHandle): void {
+  cancelAnimationFrame(handle.raf);
+  clearTimeout(handle.timeout);
+}
+
 // make sure we never assign the same ID to two nodes in ANY active
 // program at ANY point in time.
 let nodeCounter = 0;

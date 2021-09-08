@@ -1,5 +1,7 @@
 import CodeMirrorBlocks, { API, Language } from '../CodeMirrorBlocks';
 import { cleanup } from "@testing-library/react";
+import { setAfterDOMUpdate, cancelAfterDOMUpdate } from '../utils';
+import type { afterDOMUpdateHandle } from '../utils';
 // pass along all the simulated events
 export * from './simulate';
 
@@ -24,9 +26,7 @@ export async function wait(ms: number) {
 // wait for the editor to finish rendering, then pad another 100ms 
 // NOTE(Emmanuel): 0ms causes all kinds of stuff to break
 export async function finishRender(editor:API) {
-  return new Promise<void>(resolve => {
-    editor.afterDOMUpdate(resolve, {}, 100);  
-  });
+  return new Promise<void>(resolve => setAfterDOMUpdate(resolve, 100));
 }
 
 export function removeEventListeners() {
