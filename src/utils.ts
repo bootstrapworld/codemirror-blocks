@@ -28,13 +28,11 @@ export const mac = ios || /Mac/.test(platform);
  * internal functions use it, and testing infrastructure may use it as well
  * see stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
  * 
- * - If the owner argument is passed, an inner timeout of 0 is set as 'pendingTimeout'
- *   so that it can be cancelled by the owner later
  * - If an extraDelay is passed, the inner timeout waits Xms after the render cycle
  */
 export type afterDOMUpdateHandle = {
-  raf: number,
-  timeout: ReturnType<typeof setTimeout>
+  raf?: number,
+  timeout?: ReturnType<typeof setTimeout>
 };
 export function setAfterDOMUpdate(f: ()=>void, extraDelay?:number): afterDOMUpdateHandle {
   let timeoutHandle: ReturnType<typeof setTimeout>;
@@ -44,7 +42,7 @@ export function setAfterDOMUpdate(f: ()=>void, extraDelay?:number): afterDOMUpda
   };
 }
 
-export function cancelAfterDOMUpdate(handle:afterDOMUpdateHandle): void {
+export function cancelAfterDOMUpdate(handle:afterDOMUpdateHandle = {}): void {
   cancelAnimationFrame(handle.raf);
   clearTimeout(handle.timeout);
 }
