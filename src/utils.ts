@@ -21,6 +21,24 @@ export const mac = ios || /Mac/.test(platform);
 * Utility functions used in one or more files
 */
 
+/**
+ * @internal
+ * @returns a number, representing ReturnType<typeof requestAnimationFrame>
+ * Expose a scheduler for after react's render cycle is over. Some
+ * internal functions use it, and testing infrastructure may use it as well
+ * see stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
+ * 
+ * - If the owner argument is passed, an inner timeout of 0 is set as 'pendingTimeout'
+ *   so that it can be cancelled by the owner later
+ * - If an extraDelay is passed, the inner timeout waits Xms after the render cycle
+ */
+
+export function afterDOMUpdate(f: ()=>void, owner?:$TSFixMe, extraDelay?:number) {
+  return window.requestAnimationFrame(() => {
+    const timeout = setTimeout(f, extraDelay);
+    if(owner) owner.pendingTimeout = timeout;
+  });
+}
 // make sure we never assign the same ID to two nodes in ANY active
 // program at ANY point in time.
 let nodeCounter = 0;

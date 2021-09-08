@@ -21,8 +21,7 @@ export async function wait(ms: number) {
   });
 }
 
-// wait for the editor to finish rendering, then
-// pad another 200ms 
+// wait for the editor to finish rendering, then pad another 200ms 
 // NOTE(Emmanuel): 0ms causes all kinds of stuff to break
 export async function finishRender(editor:API) {
   await new Promise<void>(resolve => {

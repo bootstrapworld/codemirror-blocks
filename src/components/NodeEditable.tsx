@@ -9,6 +9,7 @@ import CodeMirror from 'codemirror';
 import { AppDispatch } from '../store';
 import { RootState } from '../reducers';
 import { AST } from '../ast';
+import { afterDOMUpdate } from '../utils';
 
 type Props = ContentEditableProps & {
     target?: Target,
@@ -31,6 +32,7 @@ class NodeEditable extends Component<Props> {
   cachedValue: string;
   ignoreBlur: boolean;
   element: HTMLElement;
+  pendingTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(props: Props) {
     super(props);
@@ -104,7 +106,7 @@ class NodeEditable extends Component<Props> {
       this.props.onChange(null);
       this.props.onDisableEditable(false);
       this.props.setErrorId('');
-      setTimeout(() => this.props.focusSelf(), 200);
+      afterDOMUpdate(this.props.focusSelf(), this);
       return;
     }
   }
@@ -120,6 +122,9 @@ class NodeEditable extends Component<Props> {
     this.props.clearSelections();
   }
 
+  // Teardown any pending timeouts
+  componentWillUnmount() { clearTimeout(this.pendingTimeout); }
+
   /*
    * No need to reset text because we assign new key (via the parser + patching)
    * to changed nodes, so they will be completely unmounted and mounted back
@@ -132,14 +137,14 @@ class NodeEditable extends Component<Props> {
   }
 
   setSelection = (isCollapsed: boolean) => {
-    window.requestAnimationFrame(() => setTimeout(() => {
+    afterDOMUpdate(() => {
       const range = document.createRange();
       range.selectNodeContents(this.element);
       if (isCollapsed) range.collapse(false);
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
       this.element.focus();
-    }, 0));
+    }, this);
   }
 
   contentEditableDidMount = (el:HTMLElement) => {

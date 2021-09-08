@@ -1,4 +1,4 @@
-import {poscmp, srcRangeIncludes, warn} from './utils';
+import {poscmp, srcRangeIncludes, warn, afterDOMUpdate} from './utils';
 import { say, cancelAnnouncement } from "./announcer";
 import SHARED from './shared';
 import {AppDispatch, store} from './store';
@@ -189,7 +189,6 @@ export function setCursor(cur: Pos) {
 
 // Activate the node with the given `nid`.
 export function activateByNid(nid:number|null, options?:{allowMove?: boolean, record?: boolean}) {
-  //console.log('XXX actions:169 activateByNid called with', nid);
   return (dispatch: AppDispatch, getState:()=>RootState) => {
     options = {...options, allowMove: true, record: true};
     let {ast, focusId, collapsedList} = getState();
@@ -227,6 +226,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
     // If there's a previously-focused node, see if the ids match
     // If so, we need to manually initiate a new focus event
     if (newNode.nid === currentNode?.nid) {
+      // if this timeout fires after the node has been torn down, don't focus
       setTimeout(() => { if(newNode.element) newNode.element.focus(); }, 10);
     }
 
@@ -246,8 +246,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
     // anything
     // Note, however, that it is also a good thing that `activate` is invoked
     // when double click because we can set focusId on the to-be-focused node
-
-    setTimeout(() => {
+    afterDOMUpdate(() => {
       dispatch({type: 'SET_FOCUS', focusId: newNode.id});
       
       if (options.record) {
@@ -270,9 +269,10 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
           SHARED.cm.scrollIntoView({top, bottom, left, right});
         }
         scroller.setAttribute('aria-activedescendent', newNode.element.id);
-        newNode.element.focus();
+        // if this timeout fires after the node has been torn down, don't focus
+        if(newNode.element) { newNode.element.focus(); }
       }
-    }, 25);
+    }, {}, 2000);
   };
 }
 
