@@ -21,16 +21,6 @@ export const mac = ios || /Mac/.test(platform);
 * Utility functions used in one or more files
 */
 
-/**
- * @internal
- * Expose a scheduler for after react's render cycle is over. Some
- * internal functions use it, and testing infrastructure may use it as well
- * see stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
- */
-export function afterDOMUpdate(f: ()=>void) {
-  window.requestAnimationFrame(() => setTimeout(f, 0));
-}
-
 // make sure we never assign the same ID to two nodes in ANY active
 // program at ANY point in time.
 let nodeCounter = 0;
