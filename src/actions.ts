@@ -235,17 +235,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
     if (['blank', 'literal'].includes(newNode.type) && !collapsedList.includes(newNode.id)) {
       say('Use enter to edit', 1250, true); // wait 1.25s, and allow to be overridden
     }
-    // FIXME(Oak): here's a problem. When we double click, the click event will
-    // be fired as well. That is, it tries to activate a node and then edit
-    // this is bad because both `say(...)` and `.focus()` will be unnecessarily
-    // invoked.
-    // The proper way to fix this is to do some kind of debouncing to avoid
-    // calling `activate` in the first place
-    // but we will use a hacky one for now: we will let `activate`
-    // happens, but we will detect that node.element is absent, so we won't do
-    // anything
-    // Note, however, that it is also a good thing that `activate` is invoked
-    // when double click because we can set focusId on the to-be-focused node
+
     afterDOMUpdate(() => {
       dispatch({type: 'SET_FOCUS', focusId: newNode.id});
       
