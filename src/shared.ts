@@ -13,11 +13,14 @@ type Shared = {
   };
   parse: Function;
   getExceptionMessage: Function;
-  recordedMarks: Map<number, {
-    from: CodeMirror.Position;
-    to: CodeMirror.Position;
-    options: CodeMirror.TextMarkerOptions;
-  }>;
-}
+  recordedMarks: Map<
+    number,
+    {
+      from: CodeMirror.Position;
+      to: CodeMirror.Position;
+      options: CodeMirror.TextMarkerOptions;
+    }
+  >;
+};
 
 export default {} as Shared;

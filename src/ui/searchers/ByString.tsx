@@ -1,7 +1,12 @@
-import React, {Component, createRef} from 'react';
-import {skipCollapsed, poscmp, skipWhile, getNodeContainingBiased } from '../../utils';
-import { SearchCursor } from 'codemirror';
-import { Searcher } from './Searcher';
+import React, { Component, createRef } from "react";
+import {
+  skipCollapsed,
+  poscmp,
+  skipWhile,
+  getNodeContainingBiased,
+} from "../../utils";
+import { SearchCursor } from "codemirror";
+import { Searcher } from "./Searcher";
 
 /**
  * Returns a query from settings. If the query is a regex but is invalid (indicating
@@ -17,7 +22,7 @@ function getQueryFromSettings(state: SearchSettings) {
     isRegex = true;
   }
   if (!isRegex) return query;
-  if (isExactMatch) query = '\\b' + query + '\\b';
+  if (isExactMatch) query = "\\b" + query + "\\b";
   try {
     return new RegExp(query);
   } catch (e) {
@@ -26,25 +31,29 @@ function getQueryFromSettings(state: SearchSettings) {
 }
 
 type SearchSettings = {
-  searchString: string,
-  isRegex: boolean,
-  isExactMatch: boolean,
-  isIgnoreCase: boolean,
-}
+  searchString: string;
+  isRegex: boolean;
+  isExactMatch: boolean;
+  isIgnoreCase: boolean;
+};
 
 type SearchOptionProps = {
-  onChange: React.ChangeEventHandler,
-  setting: SearchSettings,
-  name: "isRegex" | "isExactMatch" | "isIgnoreCase",
-  value: string,
-}
+  onChange: React.ChangeEventHandler;
+  setting: SearchSettings;
+  name: "isRegex" | "isExactMatch" | "isIgnoreCase";
+  value: string;
+};
 class SearchOption extends Component<SearchOptionProps> {
   render() {
-    const {name, value, setting, onChange} = this.props;
+    const { name, value, setting, onChange } = this.props;
     return (
       <label>
-        <input type="checkbox" name={name} onChange={onChange}
-               checked={setting[name]} />
+        <input
+          type="checkbox"
+          name={name}
+          onChange={onChange}
+          checked={setting[name]}
+        />
         {value}
       </label>
     );
@@ -69,23 +78,25 @@ class SearchOption extends Component<SearchOptionProps> {
 // }
 
 type Props = {
-  setting: SearchSettings,
-  onChange: (e: SearchSettings & {[targetName:string]: string|boolean}) => void,
-  firstTime?: boolean
-}
+  setting: SearchSettings;
+  onChange: (
+    e: SearchSettings & { [targetName: string]: string | boolean }
+  ) => void;
+  firstTime?: boolean;
+};
 
 const ByString: Searcher<SearchSettings, Props> = {
-  label: 'Search by string',
+  label: "Search by string",
   setting: {
-    searchString: '',
+    searchString: "",
     isRegex: false,
     isExactMatch: false,
-    isIgnoreCase: false
+    isIgnoreCase: false,
   },
   component: class extends Component<Props> {
-    displayName = 'Search by String'
+    displayName = "Search by String";
 
-    inputRef: React.RefObject<HTMLInputElement>
+    inputRef: React.RefObject<HTMLInputElement>;
 
     constructor(props: Props) {
       super(props);
@@ -93,12 +104,17 @@ const ByString: Searcher<SearchSettings, Props> = {
     }
 
     componentDidMount() {
-      if(this.props.firstTime) this.inputRef.current.select();
+      if (this.props.firstTime) this.inputRef.current.select();
     }
 
-    handleChange: React.ChangeEventHandler<HTMLSelectElement|HTMLInputElement> = e => {
-      let value: string|boolean;
-      if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
+    handleChange: React.ChangeEventHandler<
+      HTMLSelectElement | HTMLInputElement
+    > = (e) => {
+      let value: string | boolean;
+      if (
+        e.target instanceof HTMLInputElement &&
+        e.target.type === "checkbox"
+      ) {
         value = e.target.checked;
       } else {
         value = e.target.value;
@@ -107,50 +123,69 @@ const ByString: Searcher<SearchSettings, Props> = {
         ...this.props.setting,
         [e.target.name]: value,
       });
-    }
+    };
 
     render() {
-      const {setting} = this.props;
+      const { setting } = this.props;
       return (
         <>
           <div className="form-group">
-            <input type="text" className="form-control search-input"
-                   name="searchString"
-                   ref={this.inputRef}
-                   aria-label="Search String"
-                   onChange={this.handleChange}
-                   value={setting.searchString}
-                   spellCheck="false"/>
+            <input
+              type="text"
+              className="form-control search-input"
+              name="searchString"
+              ref={this.inputRef}
+              aria-label="Search String"
+              onChange={this.handleChange}
+              value={setting.searchString}
+              spellCheck="false"
+            />
           </div>
           <div className="search-options">
-            <SearchOption setting={setting} onChange={this.handleChange}
-                          name="isIgnoreCase" value="Ignore case" />
-            <SearchOption setting={setting} onChange={this.handleChange}
-                          name="isExactMatch" value="Exact match" />
-            <SearchOption setting={setting} onChange={this.handleChange}
-                          name="isRegex" value="Regex" />
+            <SearchOption
+              setting={setting}
+              onChange={this.handleChange}
+              name="isIgnoreCase"
+              value="Ignore case"
+            />
+            <SearchOption
+              setting={setting}
+              onChange={this.handleChange}
+              name="isExactMatch"
+              value="Exact match"
+            />
+            <SearchOption
+              setting={setting}
+              onChange={this.handleChange}
+              name="isRegex"
+              value="Regex"
+            />
           </div>
         </>
       );
     }
   },
   search: (cur, settings, cm, state, forward) => {
-    const {ast, collapsedList} = state;
+    const { ast, collapsedList } = state;
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
-    if (settings.searchString === '') {
+    if (settings.searchString === "") {
       let node = getNodeContainingBiased(cur, ast);
       if (node) {
-        node = skipCollapsed(node, node => forward ? node.next : node.prev, state);
-        if (node) return {node, cursor: node.from};
+        node = skipCollapsed(
+          node,
+          (node) => (forward ? node.next : node.prev),
+          state
+        );
+        if (node) return { node, cursor: node.from };
         return null;
       }
       node = forward ? ast.getNodeAfterCur(cur) : ast.getNodeBeforeCur(cur);
-      if (node) return {node, cursor: node.from};
+      if (node) return { node, cursor: node.from };
       return null;
     }
 
-    const options = {caseFold: settings.isIgnoreCase};
+    const options = { caseFold: settings.isIgnoreCase };
     const query = getQueryFromSettings(settings);
 
     function next(searchCursor: SearchCursor) {
@@ -163,19 +198,26 @@ const ByString: Searcher<SearchSettings, Props> = {
     if (forward && searchCursor && poscmp(searchCursor.from(), cur) === 0) {
       searchCursor = next(searchCursor);
     }
-    const newSearchCur = skipWhile(searchCur => {
-      if (!searchCur) return false;
-      const node = getNodeContainingBiased(searchCur.from(), ast);
-      return !!node && collapsedNodeList.some(
-        collapsed => ast.isAncestor(collapsed.id, node.id)
-      );
-    }, searchCursor, next);
+    const newSearchCur = skipWhile(
+      (searchCur) => {
+        if (!searchCur) return false;
+        const node = getNodeContainingBiased(searchCur.from(), ast);
+        return (
+          !!node &&
+          collapsedNodeList.some((collapsed) =>
+            ast.isAncestor(collapsed.id, node.id)
+          )
+        );
+      },
+      searchCursor,
+      next
+    );
     if (newSearchCur) {
       const node = getNodeContainingBiased(newSearchCur.from(), ast);
-      if (node) return {node, cursor: newSearchCur.from()};
+      if (node) return { node, cursor: newSearchCur.from() };
     }
     return null;
-  }
+  },
 };
 
 export default ByString;

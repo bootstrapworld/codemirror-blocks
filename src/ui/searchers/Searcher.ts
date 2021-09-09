@@ -4,14 +4,14 @@ import { ASTNode, Pos } from "../../ast";
 import { RootState } from "../../reducers";
 
 export type Searcher<Setting, Props> = {
-  label: string,
-  setting: Setting,
-  component: ComponentClass<Props>,
+  label: string;
+  setting: Setting;
+  component: ComponentClass<Props>;
   search: (
     cur: Pos,
     settings: Setting,
     cm: CodeMirror.Editor,
     state: RootState,
     forward: boolean
-  ) => {node: ASTNode, cursor: Pos}
-}
+  ) => { node: ASTNode; cursor: Pos };
+};

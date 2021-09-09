@@ -1,4 +1,4 @@
-import {shape, number} from 'prop-types';
+import { shape, number } from "prop-types";
 
 export const pos = shape({
   line: number,

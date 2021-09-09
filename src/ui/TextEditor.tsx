@@ -1,44 +1,47 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
-import {connect, ConnectedProps} from 'react-redux';
-import {IUnControlledCodeMirror, UnControlled as CodeMirror} from 'react-codemirror2';
-import SHARED from '../shared';
-import { API } from './ToggleEditor';
-import { AST } from '../ast';
-import { Editor } from 'codemirror';
-import { AppDispatch } from '../store';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import { connect, ConnectedProps } from "react-redux";
+import {
+  IUnControlledCodeMirror,
+  UnControlled as CodeMirror,
+} from "react-codemirror2";
+import SHARED from "../shared";
+import { API } from "./ToggleEditor";
+import { AST } from "../ast";
+import { Editor } from "codemirror";
+import { AppDispatch } from "../store";
 
 // CodeMirror APIs that we need to disallow
 // NOTE(Emmanuel): we should probably block 'on' and 'off'...
-const unsupportedAPIs = ['startOperation', 'endOperation', 'operation'];
+const unsupportedAPIs = ["startOperation", "endOperation", "operation"];
 
 const mapStateToProps = () => ({});
 const mapDispatchToProps = (dispatch: AppDispatch) => ({
   dispatch,
-  setAnnouncer: (announcer: HTMLElement) => dispatch({type: 'SET_ANNOUNCER', announcer}),
+  setAnnouncer: (announcer: HTMLElement) =>
+    dispatch({ type: "SET_ANNOUNCER", announcer }),
 });
 const connector = connect(mapStateToProps, mapDispatchToProps);
 
 type Props = ConnectedProps<typeof connector> & {
-  cmOptions?: {},
-  parse: Function,
-  value: string,
-  onBeforeChange?: IUnControlledCodeMirror['onBeforeChange'],
-  onMount:(ed: Editor, api: API, ast: AST) => void,
-  setAnnouncer: Function,
-  api?: API,
-  passedAST?: AST,
+  cmOptions?: {};
+  parse: Function;
+  value: string;
+  onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
+  onMount: (ed: Editor, api: API, ast: AST) => void;
+  setAnnouncer: Function;
+  api?: API;
+  passedAST?: AST;
 };
 
 class TextEditor extends Component<Props> {
-
   /**
    * @internal
    * When the editor mounts, build the API
    */
-  handleEditorDidMount = (ed:Editor) => {
+  handleEditorDidMount = (ed: Editor) => {
     this.props.onMount(ed, this.buildAPI(), this.props.passedAST);
-  }
+  };
 
   /**
    * @internal
@@ -48,10 +51,12 @@ class TextEditor extends Component<Props> {
   buildAPI() {
     const api = {};
     // show which APIs are unsupported
-    unsupportedAPIs.forEach(f =>
-      (api as any)[f] = () => {
-        throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
-      });
+    unsupportedAPIs.forEach(
+      (f) =>
+        ((api as any)[f] = () => {
+          throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
+        })
+    );
     return api as API;
   }
 
@@ -63,12 +68,13 @@ class TextEditor extends Component<Props> {
     return (
       // we add a wrapper div to maintain a consistent DOM with BlockEditor
       // see DragAndDropEditor.js for why the DND context needs a wrapper
-      <div> 
+      <div>
         <CodeMirror
           value={this.props.value}
           onBeforeChange={this.props.onBeforeChange}
           options={this.props.cmOptions}
-          editorDidMount={this.handleEditorDidMount} />
+          editorDidMount={this.handleEditorDidMount}
+        />
       </div>
     );
   }

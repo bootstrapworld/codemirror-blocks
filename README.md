@@ -1,5 +1,3 @@
-
-
 [![dependencies Status](https://david-dm.org/bootstrapworld/codemirror-blocks/status.svg)](https://david-dm.org/bootstrapworld/codemirror-blocks)
 [![devDependencies Status](https://david-dm.org/bootstrapworld/codemirror-blocks/dev-status.svg)](https://david-dm.org/bootstrapworld/codemirror-blocks?type=dev)
 [![Build Status](https://github.com/bootstrapworld/codemirror-blocks/actions/workflows/run-tests.yml/badge.svg)](https://github.com/bootstrapworld/codemirror-blocks/actions)
@@ -7,14 +5,17 @@
 [![Code Climate](https://codeclimate.com/github/bootstrapworld/codemirror-blocks/badges/gpa.svg)](https://codeclimate.com/github/bootstrapworld/codemirror-blocks)
 
 # codemirror-blocks
+
 A library for making functional languages editable using visual blocks inside of codemirror
 
 ## Usage
-**CodeMirror-Blocks ("CMB") is not a block editor.** It's a _toolkit for building block editors_. In other words, it is *NOT* intended to be used in your IDE. ;-) 
+
+**CodeMirror-Blocks ("CMB") is not a block editor.** It's a _toolkit for building block editors_. In other words, it is _NOT_ intended to be used in your IDE. ;-)
 
 CMB should instead be _included in language-specific modules_, so your Python editor would include a CMB-enabled Python module. CMB provides the blockification and a11y features, and the language module provides the parser and (optionally) the vocalization and appearance for each construct in the language. The language module is what you use in your IDE.
 
 The following language modules are available now:
+
 - https://github.com/bootstrapworld/wescheme-blocks
 - https://github.com/bootstrapworld/pyret-blocks
 
@@ -32,16 +33,18 @@ But if you're here, our guess is that you have a language in mind (Python, Rust,
 
 ## Making your own language module
 
-*NOTE: your IDE will need to load CodeMirror as an external dependency.* We assume it already does (otherwise, why would you be here?), so you'll need to provide it yourself.
+_NOTE: your IDE will need to load CodeMirror as an external dependency._ We assume it already does (otherwise, why would you be here?), so you'll need to provide it yourself.
 
 ### Create a new repository
-Make a repo  (e.g. - `YourFavLang-blocks`), and include CMB as a dependency:
+
+Make a repo (e.g. - `YourFavLang-blocks`), and include CMB as a dependency:
 
         npm install --save codemirror-blocks
-        
+
 Then add folders for your parser (`src/languages/YourFavLang`) and test cases (`spec/languages/YourFavLang`).
 
 ### Provide a Parser
+
 Write a parser for your language that produces an Abstract Syntax Tree composed of [CMB's node types](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodes.jsx).
 
 CMB's AST nodes all have constructors that take arguments specifying (1) the `from` and `to` position of the node (in CodeMirror's `{line, ch}` format), (2) the fields that define the node, and (3) an `options` object.
@@ -62,30 +65,35 @@ The `options` object is used for a number of CMB-internal purposes, but there ar
         }
 
 #### _Defining your own AST Nodes_
-You can also provide your own AST nodes, by extending the built-in `AST.ASTNode` class. [Here is one example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/ast.js) of a language defining custom AST nodes. 
+
+You can also provide your own AST nodes, by extending the built-in `AST.ASTNode` class. [Here is one example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/ast.js) of a language defining custom AST nodes.
 
 Your subclassed Node _**must**_ contain:
-1. `constructor` -  Consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`. 
+
+1. `constructor` - Consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`.
 2. `spec` - A static field, which defines specifications for all fields of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodeSpec.js). Note: failing to properly list all the fields of the node can leave the editor in an unstable state, and result in unspecified behavior.
 3. `longDescription()` - a method that dynamically computes a detailed description of the node (optionally referring to its children, for example), and produces a string that will be read aloud to the user.
 4. `pretty()` - A method that describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer).
 5. `render()` - A method that produces the node (usually in JSX) to be rendered. Note: all DropTargets in a node's `render()` method must declare a `field` property, corresponding to one of the fields of the node that are defined in `spec`. This tells CMB what part of the node is modified when the DropTarget is edited.
 
 ### Tell CMB about the Language
+
 Create an index.js [see this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/index.js) file that hooks up your language to the CMB library.
 
 ### Style Your Blocks
+
 CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS.
 
 Obviously, if you've added new AST node types, you'll have to provide the styling for those yourself!
 
 ### Write Your Tests
 
-In `spec/languages/YourFavLang`, add some unit tests for your parser! Make sure you test all the fields, but _especially_ the `aria-label` and `longDescription()` return values. 
+In `spec/languages/YourFavLang`, add some unit tests for your parser! Make sure you test all the fields, but _especially_ the `aria-label` and `longDescription()` return values.
 
 You may find it useful to check out [this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/spec/languages/wescheme/WeschemeParser-test.js).
 
 ## Hacking on CMB Itself
+
 But maybe you're not here to make an accessible block editor for a new language. Maybe you want to hack on the CMB library itself, and help close some of our [open issues](https://github.com/bootstrapworld/codemirror-blocks/issues)!
 
 ### Dev Environment
