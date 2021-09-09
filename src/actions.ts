@@ -224,13 +224,15 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
       }
     }
 
+/*
+    NOTE(Emmanuel): This was added for an a11y corner case years ago - still needed?
     // If there's a previously-focused node, see if the ids match
     // If so, we need to manually initiate a new focus event
     if (newNode.nid === currentNode?.nid) {
       // if this timeout fires after the node has been torn down, don't focus
       setTimeout(() => { if(newNode.element) newNode.element.focus(); }, 10);
     }
-
+*/
     cancelAnnouncement();  // clear any overrideable announcements
     // FIXME(Oak): if possible, let's not hard code like this
     if (['blank', 'literal'].includes(newNode.type) && !collapsedList.includes(newNode.id)) {
@@ -282,9 +284,7 @@ function copyToClipboard(text: string) {
 function pasteFromClipboard(done:(value:string)=>void) {
   SHARED.buffer.value = '';
   SHARED.buffer.focus();
-  setTimeout(() => {
-    done(SHARED.buffer.value);
-  }, 50);
+  setTimeout(() => { done(SHARED.buffer.value); }, 50);
 }
 
 // The class of all targets.

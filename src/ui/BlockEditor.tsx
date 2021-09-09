@@ -665,11 +665,12 @@ class BlockEditor extends Component<BlockEditorProps> {
 
   /**
    * @internal
-   * When the CM instance receives a click...store that fact in the state
+   * When the CM instance receives a click, give CM 100ms to fire a
+   * handleTopLevelFocus event before another one is processed
    */
   handleTopLevelMouseDown = () => {
     this.mouseUsed = true;
-    setTimeout(() => this.mouseUsed = false, 200);
+    this.pendingTimeout = setAfterDOMUpdate(() => this.mouseUsed = false, 100);
   }
 
   /**
