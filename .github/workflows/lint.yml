@@ -26,3 +26,7 @@ jobs:
           eslint: true
           eslint_extensions: js
           eslint_args: src spec example
+      
+      # Make sure prettier was run on any changes
+      - name: Check Prettier
+        run: npx prettier --check .
