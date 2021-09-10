@@ -11,9 +11,9 @@ import { ASTNode } from "./ast";
 import { Primitive } from "./parsers/primitives";
 import { isDummyPos } from "./utils";
 
-export const ItemTypes = {
-  NODE: "node",
-};
+export enum ItemTypes {
+  NODE = "node",
+}
 
 export const primitiveSource = {
   beginDrag(props: { primitive: Primitive }) {

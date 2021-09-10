@@ -1,48 +1,22 @@
-import React, { Component } from "react";
-import PropTypes from "prop-types";
-import { DropNodeTarget } from "../dnd";
+import React from "react";
+import { ItemTypes } from "../dnd";
 import { dropOntoTrashCan } from "../actions";
-import { ConnectDropTarget } from "react-dnd";
+import { useDrop } from "react-dnd";
 require("./TrashCan.less");
 
-type Props = {
-  connectDropTarget: ConnectDropTarget;
-};
+export default function TrashCan() {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: ItemTypes.NODE,
+    drop: (item: { id: string }) => {
+      dropOntoTrashCan(item);
+    },
+    collect: (monitor) => ({ isOver: monitor.isOver() }),
+  }));
 
-class TrashCan extends Component<Props> {
-  state = {
-    isOverTrashCan: false,
-  };
-
-  handleDragEnter = () => {
-    this.setState({ isOverTrashCan: true });
-  };
-
-  handleDragLeave = () => {
-    this.setState({ isOverTrashCan: false });
-  };
-
-  handleDragOver = (event: React.MouseEvent) => {
-    event.preventDefault();
-  };
-
-  render() {
-    let classNames = "TrashCan" + (this.state.isOverTrashCan ? " over" : "");
-    return this.props.connectDropTarget(
-      <div
-        className={classNames}
-        aria-hidden={true}
-        onDragEnter={this.handleDragEnter}
-        onDragLeave={this.handleDragLeave}
-        onDrop={this.handleDragLeave}
-        onDragOver={this.handleDragOver}
-      >
-        🗑️
-      </div>
-    );
-  }
+  const classNames = "TrashCan" + (isOver ? " over" : "");
+  return (
+    <div ref={drop} className={classNames} aria-hidden={true}>
+      🗑️
+    </div>
+  );
 }
-
-export default DropNodeTarget(function (monitor) {
-  return dropOntoTrashCan(monitor.getItem());
-})(TrashCan);
