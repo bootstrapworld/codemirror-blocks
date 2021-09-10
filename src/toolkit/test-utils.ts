@@ -1,24 +1,24 @@
-import CodeMirrorBlocks, { API, Language } from '../CodeMirrorBlocks';
+import CodeMirrorBlocks, { API, Language } from "../CodeMirrorBlocks";
 import { cleanup } from "@testing-library/react";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from '../utils';
 import type { afterDOMUpdateHandle } from '../utils';
 // pass along all the simulated events
-export * from './simulate';
+export * from "./simulate";
 
 // figure out what platform we're running on
 const userAgent = navigator.userAgent;
 const platform = navigator.platform;
 const edge = /Edge\/(\d+)/.exec(userAgent);
-const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
-
+const ios =
+  !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
 
 // pass along useful constants
 export const mac = ios || /Mac/.test(platform);
-export const cmd_ctrl = mac? { metaKey: true } : { ctrlKey: true };
+export const cmd_ctrl = mac ? { metaKey: true } : { ctrlKey: true };
 
 // wait a given number of milliseconds
 export async function wait(ms: number) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }
@@ -37,11 +37,14 @@ export function removeEventListeners() {
 
 export function teardown() {
   cleanup();
-  const rootNode = document.getElementById('root');
-  if (rootNode) { document.body.removeChild(rootNode); } 
-  else {
-    console.log('cleanupAfterTest() failed to find `root`.',
-      ' Did your test case use `activationSetup`?');
+  const rootNode = document.getElementById("root");
+  if (rootNode) {
+    document.body.removeChild(rootNode);
+  } else {
+    console.log(
+      "cleanupAfterTest() failed to find `root`.",
+      " Did your test case use `activationSetup`?"
+    );
   }
   const textareas = document.getElementsByTagName("textarea");
   while (textareas[0]) {
@@ -60,20 +63,20 @@ const fixture = `
  * or `call` (`activationSetup.call(this, pyret)`)
  * so that `this` is scoped correctly!
  */
-export async function activationSetup(language: Language) : Promise<void>{
-  document.body.insertAdjacentHTML('afterbegin', fixture);
-  const container = document.getElementById('cmb-editor');
-  const cmOptions = {historyEventDelay: 50}; // since our test harness is faster than people
+export async function activationSetup(language: Language): Promise<void> {
+  document.body.insertAdjacentHTML("afterbegin", fixture);
+  const container = document.getElementById("cmb-editor");
+  const cmOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
   this.cmb = CodeMirrorBlocks(
-    container, 
-    { collapseAll: false, value: "", incrementalRendering: false }, 
-    language, 
+    container,
+    { collapseAll: false, value: "", incrementalRendering: false },
+    language,
     cmOptions
   );
   this.cmb.setBlockMode(true);
   this.activeNode = () => this.cmb.getFocusedNode();
   this.activeAriaId = () =>
-    this.cmb.getScrollerElement().getAttribute('aria-activedescendent');
+    this.cmb.getScrollerElement().getAttribute("aria-activedescendent");
   this.selectedNodes = () => this.cmb.getSelectedNodes();
   await finishRender(this.cmb);
 }

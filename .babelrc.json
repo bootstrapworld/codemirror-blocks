@@ -10,9 +10,7 @@
     "@babel/plugin-proposal-class-properties",
     "@babel/plugin-transform-modules-commonjs"
   ],
-  "exclude": [
-    "/\bcore-js\b/"
-  ],
+  "exclude": ["/\bcore-js\b/"],
   "presets": [
     [
       "@babel/preset-env",

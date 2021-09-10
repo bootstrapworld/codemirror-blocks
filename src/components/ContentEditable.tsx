@@ -1,6 +1,6 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
-import shallowequal from 'shallowequal';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import shallowequal from "shallowequal";
 
 /**
  * Single line contentEditable
@@ -12,28 +12,31 @@ import shallowequal from 'shallowequal';
 
 // use a plaintext INPUT elt to avoid characters being
 // converted to html entities ()
-function getInnerHTML(txt:string) {
-  const el = document.createElement('input');
+function getInnerHTML(txt: string) {
+  const el = document.createElement("input");
   el.value = txt;
   return el.value;
 }
 
-export type ContentEditableProps = Omit<React.ComponentPropsWithoutRef<"span">, 'onChange'> & {
-  onChange?: (e: string) => void,
-  onKeyDown?: (e: React.KeyboardEvent) => void,
-  itDidMount?: Function,
-  value?: string,
-  id?: string,
-  'aria-label'?: string,
+export type ContentEditableProps = Omit<
+  React.ComponentPropsWithoutRef<"span">,
+  "onChange"
+> & {
+  onChange?: (e: string) => void;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
+  itDidMount?: Function;
+  value?: string;
+  id?: string;
+  "aria-label"?: string;
 };
 
 export default class ContentEditable extends Component<ContentEditableProps> {
   static defaultProps = {
-    onChange:   () => {},
-    onKeyDown:  () => {},
+    onChange: () => {},
+    onKeyDown: () => {},
     itDidMount: () => {},
-    value:      '',
-  }
+    value: "",
+  };
 
   static propTypes = {
     onChange: PropTypes.func,
@@ -41,8 +44,8 @@ export default class ContentEditable extends Component<ContentEditableProps> {
     itDidMount: PropTypes.func,
     value: PropTypes.string,
     id: PropTypes.string,
-    'aria-label': PropTypes.string,
-  }
+    "aria-label": PropTypes.string,
+  };
 
   eltRef: React.RefObject<HTMLSpanElement>;
 
@@ -53,21 +56,22 @@ export default class ContentEditable extends Component<ContentEditableProps> {
 
   handleChange = () => {
     this.props.onChange(this.eltRef.current.textContent);
-  }
+  };
 
   handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.keyCode === 13 && !e.shiftKey) { // ENTER
+    if (e.keyCode === 13 && !e.shiftKey) {
+      // ENTER
       e.preventDefault();
     }
     e.stopPropagation();
     this.props.onKeyDown(e);
-  }
+  };
 
   handlePaste = (ev: React.ClipboardEvent) => {
     ev.preventDefault();
-    const text = ev.clipboardData.getData('text');
-    document.execCommand('insertText', false, text);
-  }
+    const text = ev.clipboardData.getData("text");
+    document.execCommand("insertText", false, text);
+  };
 
   componentDidMount() {
     this.props.itDidMount(this.eltRef.current);
@@ -75,26 +79,31 @@ export default class ContentEditable extends Component<ContentEditableProps> {
 
   /*eslint no-unused-vars: "off"*/
   shouldComponentUpdate(props: ContentEditableProps) {
-    const {value: newValue, 'aria-label': newAriaLabel, ...newProps} = props;
-    const {value: oldValue, 'aria-label': oldAriaLabel, ...oldProps} = this.props;
+    const { value: newValue, "aria-label": newAriaLabel, ...newProps } = props;
+    const {
+      value: oldValue,
+      "aria-label": oldAriaLabel,
+      ...oldProps
+    } = this.props;
     return (
-      (getInnerHTML(newValue) !== this.eltRef.current.textContent) ||
-       !shallowequal(newProps, oldProps)
+      getInnerHTML(newValue) !== this.eltRef.current.textContent ||
+      !shallowequal(newProps, oldProps)
     );
   }
 
-  render () {
-    const {value, itDidMount, onChange, ...props} = this.props;
+  render() {
+    const { value, itDidMount, onChange, ...props } = this.props;
     return (
       <span
         {...props}
         ref={this.eltRef}
-        dangerouslySetInnerHTML={{__html: getInnerHTML(value)}}
+        dangerouslySetInnerHTML={{ __html: getInnerHTML(value) }}
         contentEditable={"plaintext-only" as any}
         spellCheck={false}
         onInput={this.handleChange}
         onKeyDown={this.handleKeyDown}
-        onPaste={this.handlePaste} />
+        onPaste={this.handlePaste}
+      />
     );
   }
 }

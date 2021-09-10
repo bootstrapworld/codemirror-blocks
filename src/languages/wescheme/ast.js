@@ -1,33 +1,38 @@
-import React from 'react';
-import Node from '../../components/Node';
-import * as P from 'pretty-fast-pretty-printer';
-import * as Spec from '../../nodeSpec';
-import {ASTNode, pluralize} from '../../ast';
-import {Sequence as CMBSequence} from '../../nodes';
+import React from "react";
+import Node from "../../components/Node";
+import * as P from "pretty-fast-pretty-printer";
+import * as Spec from "../../nodeSpec";
+import { ASTNode, pluralize } from "../../ast";
+import { Sequence as CMBSequence } from "../../nodes";
 
 /* Override the built-in pretty printer for Sequences,
  * so that they print as s-expressions
  */
 export class Sequence extends CMBSequence {
-  pretty() { return P.standardSexpr(this.name, this.exprs); }
+  pretty() {
+    return P.standardSexpr(this.name, this.exprs);
+  }
 }
 
 export class LetLikeExpr extends ASTNode {
-  constructor(from, to, form, bindings, expr, options={}) {
-    super(from, to, 'letLikeExpr', options);
+  constructor(from, to, form, bindings, expr, options = {}) {
+    super(from, to, "letLikeExpr", options);
     this.form = form;
     this.bindings = bindings;
     this.expr = expr;
   }
 
   static spec = Spec.nodeSpec([
-    Spec.value('form'),
-    Spec.required('bindings'),
-    Spec.required('expr')
-  ])
+    Spec.value("form"),
+    Spec.required("bindings"),
+    Spec.required("expr"),
+  ]);
 
   longDescription(_level) {
-    return `a ${this.form} expression with ${pluralize("binding", this.bindings.exprs)}`;
+    return `a ${this.form} expression with ${pluralize(
+      "binding",
+      this.bindings.exprs
+    )}`;
   }
 
   pretty() {
@@ -46,21 +51,23 @@ export class LetLikeExpr extends ASTNode {
 }
 
 export class WhenUnless extends ASTNode {
-  constructor(from, to, form, predicate, exprs, options={}) {
-    super(from, to, 'whenUnlessExpr', options);
+  constructor(from, to, form, predicate, exprs, options = {}) {
+    super(from, to, "whenUnlessExpr", options);
     this.form = form;
     this.predicate = predicate;
     this.exprs = exprs;
   }
 
   static spec = Spec.nodeSpec([
-    Spec.value('form'),
-    Spec.required('predicate'),
-    Spec.required('exprs')
-  ])
+    Spec.value("form"),
+    Spec.required("predicate"),
+    Spec.required("exprs"),
+  ]);
 
   longDescription(level) {
-    return `a ${this.form} expression: ${this.form} ${this.predicate.describe(level)}, ${this.exprs.describe(level)}`;
+    return `a ${this.form} expression: ${this.form} ${this.predicate.describe(
+      level
+    )}, ${this.exprs.describe(level)}`;
   }
 
   pretty() {

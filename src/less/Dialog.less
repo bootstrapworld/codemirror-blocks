@@ -1,28 +1,28 @@
-.ReactModal__Overlay { z-index: 1000; }
-
+.ReactModal__Overlay {
+  z-index: 1000;
+}
 
 #DialogContents {
-  position:     absolute;
-  z-index:      999;
-  top:          50%;
-  left:         50%;
-  background:   black;
-  opacity:      1;
-  display:      flex;
+  position: absolute;
+  z-index: 999;
+  top: 50%;
+  left: 50%;
+  background: black;
+  opacity: 1;
+  display: flex;
   flex-direction: column;
-  align-item:   center;
-  width:        50%;
-  height:       50%;
-  overflow:     scroll;
-  border-radius:50px;
-  border:       3px white double;
-  text-align:   center;
-  font-size:    14px;
-  color:        white;
-  padding:      20px; 
+  align-item: center;
+  width: 50%;
+  height: 50%;
+  overflow: scroll;
+  border-radius: 50px;
+  border: 3px white double;
+  text-align: center;
+  font-size: 14px;
+  color: white;
+  padding: 20px;
   transform: translateX(-50%) translateY(-50%);
-  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
-
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
 
   .dialogTitle {
     font-size: larger;
@@ -30,21 +30,25 @@
   }
 
   .closeDialog {
-    width:        150px;
-    background:   black;
-    border:       3px white double;
-    text-align:   center;
-    font-size:    18px;
-    color:        white;
-    display:      block;
-    margin:       auto;
-    margin-top:   50px;
-    clear:        both;
+    width: 150px;
+    background: black;
+    border: 3px white double;
+    text-align: center;
+    font-size: 18px;
+    color: white;
+    display: block;
+    margin: auto;
+    margin-top: 50px;
+    clear: both;
   }
 
-  kbd+kbd {margin-left: 10px; }
+  kbd + kbd {
+    margin-left: 10px;
+  }
 
-  .react-tabs { margin-top: 20px; }
+  .react-tabs {
+    margin-top: 20px;
+  }
   .react-tabs__tab--selected {
     background: black;
     border-color: #aaa;
@@ -53,8 +57,14 @@
     box-shadow: 0px -2px 4px #aaaa;
   }
 
-  .search-options label { margin: 5px; font-weight: normal; }
-  .search-options input { margin-right: 5px; margin-bottom: 20px; }
+  .search-options label {
+    margin: 5px;
+    font-weight: normal;
+  }
+  .search-options input {
+    margin-right: 5px;
+    margin-bottom: 20px;
+  }
 
   .shortcuts {
     width: 100%;
@@ -62,12 +72,26 @@
     text-align: center;
     float: left;
     padding: 20px;
-    table {width: 100%;}
-    td:first-child, th:first-child { text-align: left; width: 50%; }
-    td:last-child, th:last-child { text-align: right; width: 50%; }
-    tr:hover { 
-      background: white; color: black; 
-      kbd {background-color: lightgray; color: black;}
+    table {
+      width: 100%;
+    }
+    td:first-child,
+    th:first-child {
+      text-align: left;
+      width: 50%;
+    }
+    td:last-child,
+    th:last-child {
+      text-align: right;
+      width: 50%;
+    }
+    tr:hover {
+      background: white;
+      color: black;
+      kbd {
+        background-color: lightgray;
+        color: black;
+      }
     }
   }
 }

@@ -1,12 +1,12 @@
-import wescheme from '../lib/languages/wescheme';
-import bigExampleCode from './ast-test.rkt'; // eslint-disable-line no-unused-vars
-import hugeExampleCode from './huge-code.rkt'; // eslint-disable-line no-unused-vars
+import wescheme from "../lib/languages/wescheme";
+import bigExampleCode from "./ast-test.rkt"; // eslint-disable-line no-unused-vars
+import hugeExampleCode from "./huge-code.rkt"; // eslint-disable-line no-unused-vars
 const smallExampleCode = `(collapse me)\n(+ 1 2)`; // eslint-disable-line no-unused-vars
-import {createDebuggingInterface} from '../lib/toolkit/debug';
+import { createDebuggingInterface } from "../lib/toolkit/debug";
 
 // HACK: expose ALL test utilities, events, etc
 // so they can be used from the browser console
-import * as t from '../lib/toolkit/test-utils';
+import * as t from "../lib/toolkit/test-utils";
 Object.assign(window, t);
 
 //const exampleCode = smallExampleCode;

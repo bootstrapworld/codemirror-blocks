@@ -1,8 +1,8 @@
-import * as path from 'path';
-import type { Configuration as WebpackConfiguration } from 'webpack';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
-import type { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
+import * as path from "path";
+import type { Configuration as WebpackConfiguration } from "webpack";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
+import type { Configuration as WebpackDevServerConfiguration } from "webpack-dev-server";
 
 /**
  * @internal
@@ -15,7 +15,7 @@ export function getBaseConfig(): WebpackConfiguration {
           test: /.mp3$/,
           use: [
             {
-              loader: 'url-loader',
+              loader: "url-loader",
               options: { limit: 10000, esModule: false },
             },
           ],
@@ -23,39 +23,39 @@ export function getBaseConfig(): WebpackConfiguration {
         {
           test: /\.less$|.css$/,
           use: [
-            { loader: 'style-loader' },
-            { loader: 'css-loader' },
-            { loader: 'less-loader' },
+            { loader: "style-loader" },
+            { loader: "css-loader" },
+            { loader: "less-loader" },
           ],
         },
         {
           test: /\.(ts|tsx)$/,
-          enforce: 'pre',
+          enforce: "pre",
           use: {
-            loader: 'ts-loader',
+            loader: "ts-loader",
             options: { transpileOnly: true },
           },
         },
         {
           test: /\.(js|jsx)$/,
-          enforce: 'pre',
+          enforce: "pre",
           use: {
-            loader: 'babel-loader',
+            loader: "babel-loader",
             options: { cacheDirectory: true },
           },
         },
       ],
     },
     resolve: {
-      extensions: ['.ts', '.tsx', '.js', '.jsx'], // Order matters!
+      extensions: [".ts", ".tsx", ".js", ".jsx"], // Order matters!
     },
     resolveLoader: {
       modules: [
-        'node_modules',
-        path.resolve(__dirname, '..', '..', 'node_modules'),
+        "node_modules",
+        path.resolve(__dirname, "..", "..", "node_modules"),
       ],
     },
-    devtool: 'cheap-module-source-map',
+    devtool: "cheap-module-source-map",
     plugins: [],
   };
 }
@@ -69,36 +69,36 @@ export function getBaseConfig(): WebpackConfiguration {
  * @returns a webpack configuration object
  */
 export function getWebpackBundleConfig(config: {
-  entry: WebpackConfiguration['entry'];
+  entry: WebpackConfiguration["entry"];
 }): WebpackConfiguration {
   const baseConfig = getBaseConfig();
   return {
     ...baseConfig,
     entry: config.entry,
-    name: 'bundle',
-    mode: 'production',
+    name: "bundle",
+    mode: "production",
     output: {
-      filename: '[name]-min.js',
+      filename: "[name]-min.js",
       clean: true,
       library: {
-        name: 'CodeMirrorBlocks',
-        type: 'umd',
-        export: 'default',
+        name: "CodeMirrorBlocks",
+        type: "umd",
+        export: "default",
       },
     },
     plugins: [
       ...baseConfig.plugins,
       new BundleAnalyzerPlugin({
-        analyzerMode: 'static',
-        reportFilename: 'bundle-sizes.html',
+        analyzerMode: "static",
+        reportFilename: "bundle-sizes.html",
         generateStatsFile: true,
         openAnalyzer: false,
       }),
     ],
     externals: {
-      codemirror: 'codemirror',
-      'codemirror/addon/search/search': 'codemirror',
-      'codemirror/addon/search/searchcursor': 'codemirror',
+      codemirror: "codemirror",
+      "codemirror/addon/search/search": "codemirror",
+      "codemirror/addon/search/searchcursor": "codemirror",
     },
     optimization: {
       minimize: true,
@@ -116,8 +116,8 @@ export function getWebpackBundleConfig(config: {
  * @returns a webpack configuration object.
  */
 export function getWebpackDevServerConfig(config: {
-  entry: WebpackConfiguration['entry'];
-  context: WebpackConfiguration['context'];
+  entry: WebpackConfiguration["entry"];
+  context: WebpackConfiguration["context"];
 }): WebpackConfiguration & {
   devServer?: WebpackDevServerConfiguration;
 } {
@@ -125,27 +125,30 @@ export function getWebpackDevServerConfig(config: {
   const baseConfig = getBaseConfig();
   return {
     ...baseConfig,
-    name: 'devServer',
-    mode: 'development',
+    name: "devServer",
+    mode: "development",
     context: config.context,
     entry: config.entry,
     plugins: [
       ...baseConfig.plugins,
       new HtmlWebpackPlugin({
-        title: 'CMB Dev Page',
+        title: "CMB Dev Page",
       }),
     ],
-    devtool: 'cheap-module-source-map',
+    devtool: "cheap-module-source-map",
     optimization: {
       runtimeChunk: true,
     },
     devServer: {
       hot: true,
-      inline: true,
-      host: '0.0.0.0',
-      disableHostCheck: true,
-      headers: { 'Access-Control-Allow-Origin': '*' },
-      contentBase: siteDir,
+      host: "0.0.0.0",
+      allowedHosts: "all",
+      headers: { "Access-Control-Allow-Origin": "*" },
+      static: {
+        directory: path.resolve(__dirname, "static"),
+        publicPath: siteDir,
+        watch: true,
+      },
     },
   };
 }

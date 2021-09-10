@@ -1,12 +1,29 @@
 <html>
   <head>
-    <link rel="stylesheet" type="text/css" href="/node_modules/codemirror/lib/codemirror.css"/>
-    <link rel="stylesheet" type="text/css" href="/node_modules/codemirror/theme/3024-day.css"/>
-    <script type="text/javascript" src="/node_modules/codemirror/lib/codemirror.js"></script>
-    <script type="text/javascript" src="/node_modules/babel-polyfill/dist/polyfill.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="/build/example.css"/>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/node_modules/codemirror/lib/codemirror.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/node_modules/codemirror/theme/3024-day.css"
+    />
+    <script
+      type="text/javascript"
+      src="/node_modules/codemirror/lib/codemirror.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="/node_modules/babel-polyfill/dist/polyfill.min.js"
+    ></script>
+    <link rel="stylesheet" type="text/css" href="/build/example.css" />
     <script type="text/javascript" src="/build/CodeMirrorBlocks.js"></script>
-    <script type="text/javascript" src="/build/parsers/WeschemeParser.js"></script>
+    <script
+      type="text/javascript"
+      src="/build/parsers/WeschemeParser.js"
+    ></script>
   </head>
   <body>
     <textarea id="code">
@@ -16,15 +33,15 @@
 (product 5 6 7)
     </textarea>
     <script>
-     var blocks = new CodeMirrorBlocks(
-       CodeMirror.fromTextArea(
-         document.getElementById('code'),
-         {theme:'3024-day', autoCloseBrackets: true}
-       ),
-       {},
-       new CodeMirrorBlocks.parsers.WeschemeParser()
-     );
-     blocks.setBlockMode(true);
+      var blocks = new CodeMirrorBlocks(
+        CodeMirror.fromTextArea(document.getElementById("code"), {
+          theme: "3024-day",
+          autoCloseBrackets: true,
+        }),
+        {},
+        new CodeMirrorBlocks.parsers.WeschemeParser()
+      );
+      blocks.setBlockMode(true);
     </script>
   </body>
 </html>

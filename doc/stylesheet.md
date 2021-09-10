@@ -32,13 +32,13 @@ defaults. To set these, define them _after_ importing
 
 ### Sizes
 
-- **border-radius**:  The radius of the curve at the edges of blocks.
-    Zero would make them rectangles.
-    
+- **border-radius**: The radius of the curve at the edges of blocks.
+  Zero would make them rectangles.
+
         @border-radius: 5px;
 
-- **large-border-radius**:  An extra-large curve radius used for certain blocks.
-    
+- **large-border-radius**: An extra-large curve radius used for certain blocks.
+
         @large-border-radius: 15px;
 
 - **border-width**: The width of the border of a block.
@@ -49,7 +49,7 @@ defaults. To set these, define them _after_ importing
 
 - **comment-color**: The foreground color of comments (i.e., the color
   of their text).
-  
+
         @comment-color: #ddd;
 
 - **comment-background-color**: The background color of comments.
@@ -82,10 +82,9 @@ defaults. To set these, define them _after_ importing
         @hover-drop-background-color: lightblue;
 
 - **drag-replace-background-color**: When dragging a block over a spot
-    that's taken, this color highlights this potential replacement.
+  that's taken, this color highlights this potential replacement.
 
         @hover-replace-background-color: red;
-
 
 ## CSS Classes
 
@@ -116,7 +115,7 @@ are:
   Scheme's `begin`.
 
 - **blocks-TYPE**: A block of the given (non-literal) type. What TYPE
-    can be is defined by your language.
+  can be is defined by your language.
 
 - **blocks-hole**: This represents a part of the program that hasn't
   been filled in yet.
@@ -124,7 +123,7 @@ are:
 - **blocks-unknown**: A block of unknown type.
 
 - **blocks-locked**: "Locking" allows you to make certain blocks
-    opaque to novice users. This is the css class of locked blocks.
+  opaque to novice users. This is the css class of locked blocks.
 
 Most typical blocks have two parts: an `operator` (the black bar up
 top), and an `args` (the space below that contains its children):
@@ -145,8 +144,8 @@ And if a node is a literal, it instead contains a span with a more
 specific css class, for that particular literal:
 
 - **blocks-literal-TYPE**: A literal of type TYPE. This is contained
-    _inside_ of a span of class `blocks-literal`. What TYPE can be is
-    defined by your language.
+  _inside_ of a span of class `blocks-literal`. What TYPE can be is
+  defined by your language.
 
 Some blocks have spaces that you can drop a block onto. These spaces
 have the css class `blocks-drop-target`, as well as `blocks-white-space`:

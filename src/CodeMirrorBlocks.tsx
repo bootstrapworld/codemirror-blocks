@@ -1,19 +1,19 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import ToggleEditor from './ui/ToggleEditor';
-import Args from './components/Args';
-import * as DropTarget from './components/DropTarget';
-import Node from './components/Node';
-import * as AST from './ast';
-import * as Nodes from './nodes';
-import type {Literal} from './nodes';
-import * as NodeSpec from './nodeSpec';
-import * as Languages from './languages';
-import * as Pretty from 'pretty-fast-pretty-printer';
-import { PrimitiveGroup } from './parsers/primitives';
-import type {Primitive} from './parsers/primitives';
-import type {API} from './ui/ToggleEditor';
-export type {API} from './ui/ToggleEditor';
+import React from "react";
+import ReactDOM from "react-dom";
+import ToggleEditor from "./ui/ToggleEditor";
+import Args from "./components/Args";
+import * as DropTarget from "./components/DropTarget";
+import Node from "./components/Node";
+import * as AST from "./ast";
+import * as Nodes from "./nodes";
+import type { Literal } from "./nodes";
+import * as NodeSpec from "./nodeSpec";
+import * as Languages from "./languages";
+import * as Pretty from "pretty-fast-pretty-printer";
+import { PrimitiveGroup } from "./parsers/primitives";
+import type { Primitive } from "./parsers/primitives";
+import type { API } from "./ui/ToggleEditor";
+export type { API } from "./ui/ToggleEditor";
 
 /**
  * Options for CodeMirrorBlocks
@@ -76,7 +76,6 @@ export type Language = {
   primitivesFn?: () => PrimitiveGroup;
 };
 
-
 /**
  * The main entry point for creating a new CodeMirrorBlocks editor.
  *
@@ -88,13 +87,18 @@ export type Language = {
  * @returns An object-representation of CMB, allowing for
  *  integration with external (non-react) code
  */
-function CodeMirrorBlocks(container: HTMLElement, options: Options = {}, language: Language, cmOptions: CodeMirror.EditorConfiguration = {}): API {
+function CodeMirrorBlocks(
+  container: HTMLElement,
+  options: Options = {},
+  language: Language,
+  cmOptions: CodeMirror.EditorConfiguration = {}
+): API {
   let api: API = {} as any;
   let initialCode = options.value;
   ReactDOM.render(
     <ToggleEditor
       language={language}
-      initialCode={(initialCode == null) ? "" : initialCode}
+      initialCode={initialCode == null ? "" : initialCode}
       api={api}
       appElement={container}
       options={options}

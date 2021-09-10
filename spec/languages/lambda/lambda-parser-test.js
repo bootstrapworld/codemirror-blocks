@@ -1,218 +1,219 @@
-import {parseToIntermediateAST} from 'codemirror-blocks/languages/lambda/parser.js';
+import { parseToIntermediateAST } from "codemirror-blocks/languages/lambda/parser.js";
 
 var testData = [
   {
-    input: '123.5',
+    input: "123.5",
     output: {
-      from: {line: 0, ch: 0},
-      to: {line:0, ch: 5},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 5 },
       type: "num",
-      value: 123.5
-    }
+      value: 123.5,
+    },
   },
   {
     input: `"Hello World!"`,
     output: {
-      from: {line: 0, ch: 0},
-      to: {line:0, ch: 14},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 14 },
       type: "str",
-      value: "Hello World!"
-    }
+      value: "Hello World!",
+    },
   },
   {
-    input: 'true',
+    input: "true",
     output: {
-      from: {line: 0, ch: 0},
-      to: {line:0, ch: 4},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 4 },
       type: "bool",
-      value: true
-    }
+      value: true,
+    },
   },
   {
-    input: 'false',
+    input: "false",
     output: {
-      from: {line: 0, ch: 0},
-      to: {line:0, ch: 5},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 5 },
       type: "bool",
-      value: false
-    }
+      value: false,
+    },
   },
   {
-    input: 'foo',
+    input: "foo",
     output: {
-      from: {line: 0, ch: 0},
-      to: {line:0, ch: 3},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 3 },
       type: "var",
-      value: "foo"
-    }
+      value: "foo",
+    },
   },
   {
-    'input': 'lambda (x) 10',
+    input: "lambda (x) 10",
     output: {
-      from: {line: 0, ch: 0},
-      to: {line:0, ch: 13},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 13 },
       type: "lambda",
       name: null,
       vars: [
         {
           from: {
             line: 0,
-            ch: 8
+            ch: 8,
           },
           to: {
             line: 0,
-            ch: 9
+            ch: 9,
           },
-          type: 'literal',
-          dataType: 'var',
+          type: "literal",
+          dataType: "var",
           name: {
             from: {
               line: 0,
-              ch: 8
+              ch: 8,
             },
             to: {
               line: 0,
-              ch: 9
+              ch: 9,
             },
-            type: 'var',
-            value: 'x'
-          }
-        }
+            type: "var",
+            value: "x",
+          },
+        },
       ],
       body: {
-        from: {line: 0, ch: 11},
-        to: {line:0, ch: 13},
+        from: { line: 0, ch: 11 },
+        to: { line: 0, ch: 13 },
         type: "num",
-        value: 10
-      }
-    }
-  },
-  {
-    input: 'foo(a, 1)',
-    output: {
-      from: {line: 0, ch: 0},
-      to: {line:0, ch: 8},
-      type: "call",
-      "func": {
-        from: {line: 0, ch: 0},
-        to: {line:0, ch: 3},
-        type: "var",
-        value: "foo"
+        value: 10,
       },
-      "args": [
-        {
-          from: {line: 0, ch: 4},
-          to: {line:0, ch: 5},
-          type: "var",
-          value: "a"
-        }, {
-          from: {line: 0, ch: 7},
-          to: {line:0, ch: 8},
-          type: "num",
-          value: 1
-        }
-      ]
-    }
+    },
   },
   {
-    input: 'if foo then bar else baz',
+    input: "foo(a, 1)",
     output: {
-      from: {line: 0, ch: 0},
-      to: {line: 0, ch: 20},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 8 },
+      type: "call",
+      func: {
+        from: { line: 0, ch: 0 },
+        to: { line: 0, ch: 3 },
+        type: "var",
+        value: "foo",
+      },
+      args: [
+        {
+          from: { line: 0, ch: 4 },
+          to: { line: 0, ch: 5 },
+          type: "var",
+          value: "a",
+        },
+        {
+          from: { line: 0, ch: 7 },
+          to: { line: 0, ch: 8 },
+          type: "num",
+          value: 1,
+        },
+      ],
+    },
+  },
+  {
+    input: "if foo then bar else baz",
+    output: {
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 20 },
       type: "if",
       cond: {
-        from: {line: 0, ch: 3},
-        to: {line: 0, ch: 6},
+        from: { line: 0, ch: 3 },
+        to: { line: 0, ch: 6 },
         type: "var",
-        value: "foo"
+        value: "foo",
       },
       then: {
-        from: {line: 0, ch: 12},
-        to: {line: 0, ch: 15},
+        from: { line: 0, ch: 12 },
+        to: { line: 0, ch: 15 },
         type: "var",
-        value: "bar"
+        value: "bar",
       },
       else: {
-        from: {line: 0, ch: 21},
-        to: {line: 0, ch: 24},
+        from: { line: 0, ch: 21 },
+        to: { line: 0, ch: 24 },
         type: "var",
-        value: "baz"
-      }
-    }
+        value: "baz",
+      },
+    },
   },
   {
-    input: 'if foo then bar',
+    input: "if foo then bar",
     output: {
-      from: {line: 0, ch: 0},
-      to: {line: 0, ch: 15},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 15 },
       type: "if",
       cond: {
-        from: {line: 0, ch: 3},
-        to: {line: 0, ch: 6},
+        from: { line: 0, ch: 3 },
+        to: { line: 0, ch: 6 },
         type: "var",
-        value: "foo"
+        value: "foo",
       },
       then: {
-        from: {line: 0, ch: 12},
-        to: {line: 0, ch: 15},
+        from: { line: 0, ch: 12 },
+        to: { line: 0, ch: 15 },
         type: "var",
-        value: "bar"
-      }
-    }
+        value: "bar",
+      },
+    },
   },
   {
-    input: 'a = 10',
+    input: "a = 10",
     output: {
-      from: {line: 0, ch: 0},
-      to: {line: 0, ch: 6},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 6 },
       type: "assign",
       operator: "=",
       left: {
-        from: {line: 0, ch: 0},
-        to: {line: 0, ch: 1},
+        from: { line: 0, ch: 0 },
+        to: { line: 0, ch: 1 },
         type: "var",
-        value: "a"
+        value: "a",
       },
       right: {
-        from: {line: 0, ch: 4},
-        to: {line: 0, ch: 6},
+        from: { line: 0, ch: 4 },
+        to: { line: 0, ch: 6 },
         type: "num",
-        value: 10
-      }
-    }
+        value: 10,
+      },
+    },
   },
   {
-    input: 'x + y * z',
+    input: "x + y * z",
     output: {
-      from: {line: 0, ch: 0},
-      to: {line: 0, ch: 9},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 9 },
       type: "binary",
       operator: "+",
       left: {
-        from: {line: 0, ch: 0},
-        to: {line: 0, ch: 1},
+        from: { line: 0, ch: 0 },
+        to: { line: 0, ch: 1 },
         type: "var",
-        value: "x"
+        value: "x",
       },
       right: {
-        from: {line: 0, ch: 2},
-        to: {line: 0, ch: 9},
+        from: { line: 0, ch: 2 },
+        to: { line: 0, ch: 9 },
         type: "binary",
         operator: "*",
         left: {
-          from: {line: 0, ch: 4},
-          to: {line: 0, ch: 5},
+          from: { line: 0, ch: 4 },
+          to: { line: 0, ch: 5 },
           type: "var",
-          value: "y"
+          value: "y",
         },
         right: {
-          from: {line: 0, ch: 8},
-          to: {line: 0, ch: 9},
+          from: { line: 0, ch: 8 },
+          to: { line: 0, ch: 9 },
           type: "var",
-          value: "z"
-        }
-      }
-    }
+          value: "z",
+        },
+      },
+    },
   },
   {
     input: `a = 5;
@@ -220,140 +221,140 @@ b = a * 2;
 a + b;`,
     output: [
       {
-        from: {line: 0, ch: 0},
-        to: {line: 0, ch: 5},
+        from: { line: 0, ch: 0 },
+        to: { line: 0, ch: 5 },
         type: "assign",
         operator: "=",
         left: {
-          from: {line: 0, ch: 0},
-          to: {line: 0, ch: 1},
+          from: { line: 0, ch: 0 },
+          to: { line: 0, ch: 1 },
           type: "var",
-          value: "a"
+          value: "a",
         },
         right: {
-          from: {line: 0, ch: 4},
-          to: {line: 0, ch: 5},
+          from: { line: 0, ch: 4 },
+          to: { line: 0, ch: 5 },
           type: "num",
-          value: 5
-        }
+          value: 5,
+        },
       },
       {
-        from: {line: 1, ch: 0},
-        to: {line: 1, ch: 9},
+        from: { line: 1, ch: 0 },
+        to: { line: 1, ch: 9 },
         type: "assign",
         operator: "=",
         left: {
-          from: {line: 1, ch: 0},
-          to: {line: 1, ch: 1},
+          from: { line: 1, ch: 0 },
+          to: { line: 1, ch: 1 },
           type: "var",
-          value: "b"
+          value: "b",
         },
         right: {
-          from: {line: 1, ch: 2},
-          to: {line: 1, ch: 9},
+          from: { line: 1, ch: 2 },
+          to: { line: 1, ch: 9 },
           type: "binary",
           operator: "*",
           left: {
-            from: {line: 1, ch: 4},
-            to: {line: 1, ch: 5},
+            from: { line: 1, ch: 4 },
+            to: { line: 1, ch: 5 },
             type: "var",
-            value: "a"
+            value: "a",
           },
           right: {
-            from: {line: 1, ch: 8},
-            to: {line: 1, ch: 9},
+            from: { line: 1, ch: 8 },
+            to: { line: 1, ch: 9 },
             type: "num",
-            value: 2
-          }
-        }
+            value: 2,
+          },
+        },
       },
       {
-        from: {line: 2, ch: 0},
-        to: {line: 2, ch: 5},
+        from: { line: 2, ch: 0 },
+        to: { line: 2, ch: 5 },
         type: "binary",
         operator: "+",
         left: {
-          from: {line: 2, ch: 0},
-          to: {line: 2, ch: 1},
+          from: { line: 2, ch: 0 },
+          to: { line: 2, ch: 1 },
           type: "var",
-          value: "a"
+          value: "a",
         },
         right: {
-          from: {line: 2, ch: 4},
-          to: {line: 2, ch: 5},
+          from: { line: 2, ch: 4 },
+          to: { line: 2, ch: 5 },
           type: "var",
-          value: "b"
-        }
-      }
-    ]
+          value: "b",
+        },
+      },
+    ],
   },
   {
     input: `let (a = 10, b = a * 10) {a + b;}`,
     output: {
-      from: {line: 0, ch: 0},
-      to: {line: 0, ch: 23},
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 23 },
       type: "let",
       vars: [
         {
-          from: {line: 0, ch: 7},
-          to: {line: 0, ch: 11},
+          from: { line: 0, ch: 7 },
+          to: { line: 0, ch: 11 },
           name: "a",
           def: {
-            from: {line: 0, ch: 5},
-            to: {line: 0, ch: 6},
+            from: { line: 0, ch: 5 },
+            to: { line: 0, ch: 6 },
             type: "num",
-            value: 10
-          }
+            value: 10,
+          },
         },
         {
-          from: {line: 0, ch: 5},
-          to: {line: 0, ch: 6},
+          from: { line: 0, ch: 5 },
+          to: { line: 0, ch: 6 },
           name: "b",
           def: {
-            from: {line: 0, ch: 15},
-            to: {line: 0, ch: 23},
+            from: { line: 0, ch: 15 },
+            to: { line: 0, ch: 23 },
             type: "binary",
             operator: "*",
             left: {
-              from: {line: 0, ch: 17},
-              to: {line: 0, ch: 18},
+              from: { line: 0, ch: 17 },
+              to: { line: 0, ch: 18 },
               type: "var",
-              value: "a"
+              value: "a",
             },
             right: {
-              from: {line: 0, ch: 21},
-              to: {line: 0, ch: 23},
+              from: { line: 0, ch: 21 },
+              to: { line: 0, ch: 23 },
               type: "num",
-              value: 10
-            }
-          }
-        }
+              value: 10,
+            },
+          },
+        },
       ],
       body: {
-        from: {line: 0, ch: 26},
-        to: {line: 0, ch: 31},
+        from: { line: 0, ch: 26 },
+        to: { line: 0, ch: 31 },
         type: "binary",
         operator: "+",
         left: {
-          from: {line: 0, ch: 26},
-          to: {line: 0, ch: 27},
+          from: { line: 0, ch: 26 },
+          to: { line: 0, ch: 27 },
           type: "var",
-          value: "a"
+          value: "a",
         },
         right: {
-          from: {line: 0, ch: 30},
-          to: {line: 0, ch: 31},
+          from: { line: 0, ch: 30 },
+          to: { line: 0, ch: 31 },
           type: "var",
-          value: "b"
-        }
-      }
-    }
-  }
+          value: "b",
+        },
+      },
+    },
+  },
 ];
 
-describe("lambda parser test suite", function() {
-  testData.slice(0,12).forEach(function(data) {
-    it("testing" + " " + data.input, function() {
+describe("lambda parser test suite", function () {
+  testData.slice(0, 12).forEach(function (data) {
+    it("testing" + " " + data.input, function () {
       var prog = parseToIntermediateAST(data.input).prog;
       if (prog.length == 1) {
         prog = prog[0];

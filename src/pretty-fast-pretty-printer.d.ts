@@ -1,5 +1,5 @@
 // TODO: maybe move this into the pretty-fast-pretty-printer library...
-declare module 'pretty-fast-pretty-printer' {
+declare module "pretty-fast-pretty-printer" {
   export interface Doc {
     constructor(flat_width: number);
     display(width: number): string[];
@@ -163,8 +163,8 @@ declare module 'pretty-fast-pretty-printer' {
    */
   export function sepBy(
     items: DocLike[],
-    sep?: string = ' ',
-    vertSep?: string = ''
+    sep?: string = " ",
+    vertSep?: string = ""
   ): Doc;
 
   /**
@@ -183,8 +183,8 @@ declare module 'pretty-fast-pretty-printer' {
    */
   export function wrap(
     words: DocLike[],
-    sep?: string = ' ',
-    vertSep?: string = ''
+    sep?: string = " ",
+    vertSep?: string = ""
   ): Doc;
 
   /**
