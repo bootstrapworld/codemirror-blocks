@@ -1,4 +1,11 @@
-import { poscmp, srcRangeIncludes, warn } from "./utils";
+import {
+  poscmp,
+  srcRangeIncludes,
+  warn,
+  setAfterDOMUpdate,
+  cancelAfterDOMUpdate,
+} from "./utils";
+import type { afterDOMUpdateHandle } from "./utils";
 import { say, cancelAnnouncement } from "./announcer";
 import SHARED from "./shared";
 import { AppDispatch, store } from "./store";
@@ -211,7 +218,6 @@ export function activateByNid(
   nid: number | null,
   options?: { allowMove?: boolean; record?: boolean }
 ) {
-  //console.log('XXX actions:169 activateByNid called with', nid);
   return (dispatch: AppDispatch, getState: () => RootState) => {
     options = { ...options, allowMove: true, record: true };
     let { ast, focusId, collapsedList } = getState();
@@ -250,14 +256,15 @@ export function activateByNid(
       }
     }
 
+    /*
+    NOTE(Emmanuel): This was added for an a11y corner case years ago - still needed?
     // If there's a previously-focused node, see if the ids match
     // If so, we need to manually initiate a new focus event
     if (newNode.nid === currentNode?.nid) {
-      setTimeout(() => {
-        if (newNode.element) newNode.element.focus();
-      }, 10);
+      // if this timeout fires after the node has been torn down, don't focus
+      setTimeout(() => { if(newNode.element) newNode.element.focus(); }, 10);
     }
-
+*/
     cancelAnnouncement(); // clear any overrideable announcements
     // FIXME(Oak): if possible, let's not hard code like this
     if (
@@ -266,25 +273,15 @@ export function activateByNid(
     ) {
       say("Use enter to edit", 1250, true); // wait 1.25s, and allow to be overridden
     }
-    // FIXME(Oak): here's a problem. When we double click, the click event will
-    // be fired as well. That is, it tries to activate a node and then edit
-    // this is bad because both `say(...)` and `.focus()` will be unnecessarily
-    // invoked.
-    // The proper way to fix this is to do some kind of debouncing to avoid
-    // calling `activate` in the first place
-    // but we will use a hacky one for now: we will let `activate`
-    // happens, but we will detect that node.element is absent, so we won't do
-    // anything
-    // Note, however, that it is also a good thing that `activate` is invoked
-    // when double click because we can set focusId on the to-be-focused node
 
-    setTimeout(() => {
+    setAfterDOMUpdate(() => {
       dispatch({ type: "SET_FOCUS", focusId: newNode.id });
 
-      if (options.record) {
+      if (options.record && SHARED.search) {
         SHARED.search.setCursor(newNode.from);
       }
-      if (newNode.element) {
+      // if this timeout fires after the node has been torn down, don't bother
+      if (newNode.element && SHARED.cm) {
         const scroller = SHARED.cm.getScrollerElement();
         const wrapper = SHARED.cm.getWrapperElement();
 
@@ -304,7 +301,7 @@ export function activateByNid(
         scroller.setAttribute("aria-activedescendent", newNode.element.id);
         newNode.element.focus();
       }
-    }, 25);
+    });
   };
 }
 

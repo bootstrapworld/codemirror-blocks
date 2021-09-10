@@ -11,7 +11,16 @@ import { activateByNid, setCursor, OverwriteTarget } from "../actions";
 import { commitChanges } from "../edits/commitChanges";
 import { speculateChanges, getTempCM } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
-import { poscmp, minpos, maxpos, validateRanges, BlockError } from "../utils";
+import {
+  poscmp,
+  minpos,
+  maxpos,
+  validateRanges,
+  BlockError,
+  setAfterDOMUpdate,
+  cancelAfterDOMUpdate,
+} from "../utils";
+import type { afterDOMUpdateHandle } from "../utils";
 import BlockComponent from "../components/BlockComponent";
 import { defaultKeyMap, keyDown } from "../keymap";
 import { AppStore, store } from "../store";
@@ -98,7 +107,7 @@ class ToplevelBlock extends BlockComponent<
 > {
   container: HTMLElement;
   mark?: CodeMirror.TextMarker;
-  renderTimeout?: ReturnType<typeof setTimeout>;
+  pendingTimeout?: afterDOMUpdateHandle;
 
   constructor(props: ToplevelBlockProps) {
     super(props);
@@ -125,18 +134,19 @@ class ToplevelBlock extends BlockComponent<
   // When unmounting, clean up the TextMarker and any lingering timeouts
   componentWillUnmount() {
     this.mark?.clear();
-    this.renderTimeout && clearTimeout(this.renderTimeout);
+    cancelAfterDOMUpdate(this.pendingTimeout);
   }
 
   // once the placeholder has mounted, wait 250ms and render
+  // save both the timeout *and* requestAnimationFrame (RAF)
+  // in case someone unmounts before all the root components
+  // have even rendered
   componentDidMount() {
     if (!this.props.incrementalRendering) return; // bail if incremental is off
-    window.requestAnimationFrame(() => {
-      this.renderTimeout = setTimeout(
-        () => this.setState({ renderPlaceholder: false }),
-        250
-      );
-    });
+    this.pendingTimeout = setAfterDOMUpdate(
+      () => this.setState({ renderPlaceholder: false }),
+      250
+    );
   }
 
   render() {
@@ -295,6 +305,7 @@ class BlockEditor extends Component<BlockEditorProps> {
   mouseUsed: boolean;
   newAST: AST;
   parse: BlockEditorProps["parse"];
+  pendingTimeout: afterDOMUpdateHandle;
 
   constructor(props: BlockEditorProps) {
     super(props);
@@ -778,15 +789,18 @@ class BlockEditor extends Component<BlockEditorProps> {
     dispatch((_, getState) => {
       const { cur } = getState();
       if (!this.mouseUsed && cur === null) {
-        // NOTE(Oak): use setTimeout so that the CM cursor will not blink
-        setTimeout(
-          () => this.props.activateByNid(null, { allowMove: true }),
-          0
+        // NOTE(Emmanuel): setAfterDOMUpdate so that the CM cursor will not blink
+        cancelAfterDOMUpdate(this.pendingTimeout);
+        this.pendingTimeout = setAfterDOMUpdate(() =>
+          this.props.activateByNid(null, { allowMove: true })
         );
         this.mouseUsed = false;
       } else if (this.mouseUsed && cur === null) {
         // if it was a click, get the cursor from CM
-        setTimeout(() => this.props.setCursor(ed.getCursor()));
+        cancelAfterDOMUpdate(this.pendingTimeout);
+        this.pendingTimeout = setAfterDOMUpdate(() =>
+          this.props.setCursor(ed.getCursor())
+        );
         this.mouseUsed = false;
       }
     });
@@ -794,11 +808,15 @@ class BlockEditor extends Component<BlockEditorProps> {
 
   /**
    * @internal
-   * When the CM instance receives a click...store that fact in the state
+   * When the CM instance receives a click, give CM 100ms to fire a
+   * handleTopLevelFocus event before another one is processed
    */
   handleTopLevelMouseDown = () => {
     this.mouseUsed = true;
-    setTimeout(() => (this.mouseUsed = false), 200);
+    this.pendingTimeout = setAfterDOMUpdate(
+      () => (this.mouseUsed = false),
+      100
+    );
   };
 
   /**
@@ -852,6 +870,7 @@ class BlockEditor extends Component<BlockEditorProps> {
 
   componentWillUnmount() {
     SHARED.buffer.remove();
+    cancelAfterDOMUpdate(this.pendingTimeout);
   }
 
   componentDidMount() {
@@ -869,11 +888,11 @@ class BlockEditor extends Component<BlockEditorProps> {
     clipboardBuffer.style.height = "1px";
     SHARED.buffer = clipboardBuffer;
     document.body.appendChild(SHARED.buffer);
-    this.props.api.afterDOMUpdate(this.refreshCM() as $TSFixMe);
+    this.pendingTimeout = setAfterDOMUpdate(this.refreshCM() as $TSFixMe);
   }
 
   componentDidUpdate() {
-    this.props.api.afterDOMUpdate(this.refreshCM() as $TSFixMe);
+    this.pendingTimeout = setAfterDOMUpdate(this.refreshCM() as $TSFixMe);
   }
 
   /**
