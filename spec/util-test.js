@@ -1,108 +1,124 @@
-import {minimizeChange} from '../src/utils';
+import { minimizeChange } from "../src/utils";
 
-console.log('Doing util-test.js');
+console.log("Doing util-test.js");
 
-describe("The src/utils helper functions", function() {
-  describe("the minimizeChange function", function() {
-    it("should handle empty text OK", function() {
-      expect(minimizeChange({
-        from: {line: 1, ch: 1},
-        to: {line: 1, ch: 1},
+describe("The src/utils helper functions", function () {
+  describe("the minimizeChange function", function () {
+    it("should handle empty text OK", function () {
+      expect(
+        minimizeChange({
+          from: { line: 1, ch: 1 },
+          to: { line: 1, ch: 1 },
+          text: [""],
+          removed: [""],
+        })
+      ).toEqual({
+        from: { line: 1, ch: 1 },
+        to: { line: 1, ch: 1 },
         text: [""],
-        removed: [""]
-      })).toEqual({
-        from: {line: 1, ch: 1},
-        to: {line: 1, ch: 1},
-        text: [""],
-        removed: [""]
+        removed: [""],
       });
 
-      expect(minimizeChange({
-        from: {line: 1, ch: 1},
-        to: {line: 1, ch: 1},
+      expect(
+        minimizeChange({
+          from: { line: 1, ch: 1 },
+          to: { line: 1, ch: 1 },
+          text: [""],
+          removed: ["a"],
+        })
+      ).toEqual({
+        from: { line: 1, ch: 1 },
+        to: { line: 1, ch: 1 },
         text: [""],
-        removed: ["a"]
-      })).toEqual({
-        from: {line: 1, ch: 1},
-        to: {line: 1, ch: 1},
-        text: [""],
-        removed: ["a"]
+        removed: ["a"],
       });
     });
 
-    it("should find the first differing char", function() {
-      expect(minimizeChange({
-        from: {line: 1, ch: 1},
-        to: {line: 1, ch: 4},
+    it("should find the first differing char", function () {
+      expect(
+        minimizeChange({
+          from: { line: 1, ch: 1 },
+          to: { line: 1, ch: 4 },
+          text: ["xbc"],
+          removed: ["abc"],
+        })
+      ).toEqual({
+        from: { line: 1, ch: 1 },
+        to: { line: 1, ch: 4 },
         text: ["xbc"],
-        removed: ["abc"]
-      })).toEqual({
-        from: {line: 1, ch: 1},
-        to: {line: 1, ch: 4},
-        text: ["xbc"],
-        removed: ["abc"]
+        removed: ["abc"],
       });
 
-      expect(minimizeChange({
-        from: {line: 1, ch: 1},
-        to: {line: 1, ch: 4},
-        text: ["abx"],
-        removed: ["abc"]
-      })).toEqual({
-        from: {line: 1, ch: 3},
-        to: {line: 1, ch: 4},
+      expect(
+        minimizeChange({
+          from: { line: 1, ch: 1 },
+          to: { line: 1, ch: 4 },
+          text: ["abx"],
+          removed: ["abc"],
+        })
+      ).toEqual({
+        from: { line: 1, ch: 3 },
+        to: { line: 1, ch: 4 },
         text: ["x"],
-        removed: ["c"]
+        removed: ["c"],
       });
 
-      expect(minimizeChange({
-        from: {line: 1, ch: 1},
-        to: {line: 1, ch: 4},
-        text: ["abc"],
-        removed: ["abc"]
-      })).toEqual({
-        from: {line: 1, ch: 4},
-        to: {line: 1, ch: 4},
+      expect(
+        minimizeChange({
+          from: { line: 1, ch: 1 },
+          to: { line: 1, ch: 4 },
+          text: ["abc"],
+          removed: ["abc"],
+        })
+      ).toEqual({
+        from: { line: 1, ch: 4 },
+        to: { line: 1, ch: 4 },
         text: [""],
-        removed: [""]
+        removed: [""],
       });
     });
 
-    it("should find all identical lines", function() {
-      expect(minimizeChange({
-        from: {line: 1, ch: 1},
-        to: {line: 2, ch: 1},
-        text: ["a", "b"],
-        removed: ["a", "b"]
-      })).toEqual({
-        from: {line: 2, ch: 1},
-        to: {line: 2, ch: 1},
+    it("should find all identical lines", function () {
+      expect(
+        minimizeChange({
+          from: { line: 1, ch: 1 },
+          to: { line: 2, ch: 1 },
+          text: ["a", "b"],
+          removed: ["a", "b"],
+        })
+      ).toEqual({
+        from: { line: 2, ch: 1 },
+        to: { line: 2, ch: 1 },
         text: [""],
-        removed: [""]
+        removed: [""],
       });
 
-      expect(minimizeChange({
-        from: {line: 1, ch: 1},
-        to: {line: 2, ch: 1},
-        text: ["ab", "c"],
-        removed: ["ab", "x"]
-      })).toEqual({
-        from: {line: 2, ch: 0},
-        to: {line: 2, ch: 1},
+      expect(
+        minimizeChange({
+          from: { line: 1, ch: 1 },
+          to: { line: 2, ch: 1 },
+          text: ["ab", "c"],
+          removed: ["ab", "x"],
+        })
+      ).toEqual({
+        from: { line: 2, ch: 0 },
+        to: { line: 2, ch: 1 },
         text: ["c"],
-        removed: ["x"]
+        removed: ["x"],
       });
 
-      expect(minimizeChange({
-        from: {line: 1, ch: 1},
-        to: {line: 2, ch: 2},
-        text: ["a", "bc"],
-        removed: ["a", "c"]
-      })).toEqual({
-        from: {line: 2, ch: 0},
-        to: {line: 2, ch: 2},
+      expect(
+        minimizeChange({
+          from: { line: 1, ch: 1 },
+          to: { line: 2, ch: 2 },
+          text: ["a", "bc"],
+          removed: ["a", "c"],
+        })
+      ).toEqual({
+        from: { line: 2, ch: 0 },
+        to: { line: 2, ch: 2 },
         text: ["bc"],
-        removed: ["c"]
+        removed: ["c"],
       });
     });
   });

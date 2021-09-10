@@ -11,7 +11,7 @@ import { ASTNode } from "../ast";
 //   (You can also just look at the table in the source code below.)
 // - `props` sets other properties on the event (whatever you like).
 
-type ElementLike = Element | ASTNode
+type ElementLike = Element | ASTNode;
 
 export function click(node: ElementLike) {
   fireEvent.click(toElement(node));
@@ -25,11 +25,18 @@ export function doubleClick(node: ElementLike) {
 export function blur(node: ElementLike = document.activeElement) {
   fireEvent.blur(toElement(node));
 }
-export function paste(pastedString: string, node: ElementLike = document.activeElement) {
+export function paste(
+  pastedString: string,
+  node: ElementLike = document.activeElement
+) {
   var dT = null;
-  try { dT = new DataTransfer();} catch(e) { console.log('ERR in paste()'); }
-  var pasteEvent = new ClipboardEvent('paste', {clipboardData: dT});
-  pasteEvent.clipboardData.setData('text/plain', pastedString);
+  try {
+    dT = new DataTransfer();
+  } catch (e) {
+    console.log("ERR in paste()");
+  }
+  var pasteEvent = new ClipboardEvent("paste", { clipboardData: dT });
+  pasteEvent.clipboardData.setData("text/plain", pastedString);
   toElement(node).dispatchEvent(pasteEvent);
   //userEvent.paste(toElement(node), pastedString);
 }
@@ -44,64 +51,68 @@ function createBubbledEvent(type: string, props = {}) {
 }
 
 export function drop() {
-  let ans = createBubbledEvent('drop');
+  let ans = createBubbledEvent("drop");
   return ans;
 }
 
 export function dragstart() {
-  let ans = createBubbledEvent('dragstart');
+  let ans = createBubbledEvent("dragstart");
   return ans;
 }
 
 export function dragover(node: ElementLike = document.activeElement) {
-  toElement(node).dispatchEvent(createBubbledEvent('dragover'));
+  toElement(node).dispatchEvent(createBubbledEvent("dragover"));
 }
 
 export function mouseenter() {
-  return createBubbledEvent('mouseenter');
+  return createBubbledEvent("mouseenter");
 }
 
 export function dragenter() {
-  return createBubbledEvent('dragenter');
+  return createBubbledEvent("dragenter");
 }
 
 export function mouseover() {
-  return createBubbledEvent('mouseover');
+  return createBubbledEvent("mouseover");
 }
 
-export function dragenterSeq(node:ElementLike=document.activeElement) {
+export function dragenterSeq(node: ElementLike = document.activeElement) {
   //toElement(node).dispatchEvent(mouseenter());
   toElement(node).dispatchEvent(dragenter());
   toElement(node).dispatchEvent(mouseover());
 }
 
 export function dragleave() {
-  return createBubbledEvent('dragleave');
+  return createBubbledEvent("dragleave");
 }
 
 export function mouseleave() {
-  return createBubbledEvent('mouseleave');
+  return createBubbledEvent("mouseleave");
 }
 
 export function dragend() {
-  return createBubbledEvent('dragend');
+  return createBubbledEvent("dragend");
 }
 
 class CustomKeydownEvent extends CustomEvent<any> {
   which: number;
   keyCode: number;
   constructor(key: string) {
-    super('keydown', { bubbles: true });
+    super("keydown", { bubbles: true });
     this.which = this.keyCode = getKeyCode(key);
   }
 }
 
 // TODO: document.activeElement isn't always a good default to dispatch to.
 // What does the _browser_ dispatch to?
-export function keyDown(key: string, props={}, node:ElementLike=document.activeElement) {
+export function keyDown(
+  key: string,
+  props = {},
+  node: ElementLike = document.activeElement
+) {
   node = toElement(node);
   // NOTE(Emmanuel): if it's a textarea, use native browser events
-  if(node.nodeName == 'TEXTAREA') {
+  if (node.nodeName == "TEXTAREA") {
     let event = new CustomKeydownEvent(key);
     Object.assign(event, props);
     node.dispatchEvent(event);
@@ -109,12 +120,16 @@ export function keyDown(key: string, props={}, node:ElementLike=document.activeE
     fireEvent.keyDown(node, makeKeyEvent(key, props));
   }
 }
-export function keyPress(key: string, props={}, node=document.activeElement) {
+export function keyPress(
+  key: string,
+  props = {},
+  node = document.activeElement
+) {
   fireEvent.keyPress(toElement(node), makeKeyEvent(key, props));
 }
 export function insertText(text: string) {
   // TODO: can this be done via fireEvent?
-  document.execCommand('insertText', false, text);
+  document.execCommand("insertText", false, text);
 }
 
 // -------------------------------------------------------------------------- //
@@ -127,7 +142,7 @@ function makeKeyEvent<T extends {}>(key: string, props: T) {
     which: keyCode, // deprecated
     keyCode: keyCode, // deprecated
     key: key, // Good!
-    ...props
+    ...props,
   };
   return eventProps;
 }
@@ -147,27 +162,47 @@ function getKeyCode(key: string): number {
   // These key names must match the `.key` event property!
   // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
   switch (key) {
-  case "Enter": return 13;
-  case "Tab": return 9;
-  case " ": return 32;
-  case "ArrowLeft": return 37;
-  case "ArrowRight": return 39;
-  case "ArrowDown": return 40;
-  case "ArrowUp": return 38;
-  case "Home": return 36;
-  case "End": return 35;
-  case "PageUp": return 33;
-  case "PageDown": return 34;
-  case "Backspace": return 8;
-  case "Delete": return 46;
-  case "Escape": return 27;
-  case "F3": return 114;
-  case "[": return 219;
-  case "]": return 221;
-  case "/": return 191;
-  case "<": return 188;
-  // If you extend this, make sure to match the official table linked above.
-  default: throw new Error("Unknown key: " + key);
+    case "Enter":
+      return 13;
+    case "Tab":
+      return 9;
+    case " ":
+      return 32;
+    case "ArrowLeft":
+      return 37;
+    case "ArrowRight":
+      return 39;
+    case "ArrowDown":
+      return 40;
+    case "ArrowUp":
+      return 38;
+    case "Home":
+      return 36;
+    case "End":
+      return 35;
+    case "PageUp":
+      return 33;
+    case "PageDown":
+      return 34;
+    case "Backspace":
+      return 8;
+    case "Delete":
+      return 46;
+    case "Escape":
+      return 27;
+    case "F3":
+      return 114;
+    case "[":
+      return 219;
+    case "]":
+      return 221;
+    case "/":
+      return 191;
+    case "<":
+      return 188;
+    // If you extend this, make sure to match the official table linked above.
+    default:
+      throw new Error("Unknown key: " + key);
   }
 }
 

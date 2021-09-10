@@ -45,9 +45,9 @@ later construct the Element if it's needed. I'm going to call these
 `LazyElements`, and say that they have these pieces:
 
 - `props`: the React properties this element was built with. In the above
-example, `{prop: value, children: children}`.
+  example, `{prop: value, children: children}`.
 - `Component`: the Component class this element was built with. In the above
-example, `MyComponent`.
+  example, `MyComponent`.
 
 Again, I'm not sure how React _actually_ implements lazy elements, but I'll
 assume they have these fields for expository purposes.
@@ -72,7 +72,7 @@ Thus, any particular Element sees this order of events:
 1. Its constructor is called.
 2. Its `render()` method is called.
 3. React builds an actual DOM node based on the results of the `render()` call,
-and inserts it into the actual DOM.
+   and inserts it into the actual DOM.
 4. Its `componentDidMount()` method is called.
 
 When you call `React.renderDOM(elem, domNode)`, that essentially calls

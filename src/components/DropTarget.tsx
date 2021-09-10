@@ -1,19 +1,18 @@
-import React, {Component, createContext} from 'react';
-import {connect, ConnectedProps} from 'react-redux';
-import PropTypes from 'prop-types';
-import NodeEditable from './NodeEditable';
-import SHARED from '../shared';
-import {DropNodeTarget} from '../dnd';
-import classNames from 'classnames';
-import {AppDispatch, isErrorFree} from '../store';
-import BlockComponent from './BlockComponent';
-import {gensym} from '../utils';
-import {drop, InsertTarget} from '../actions';
-import { AST, ASTNode } from '../ast';
+import React, { Component, createContext } from "react";
+import { connect, ConnectedProps } from "react-redux";
+import PropTypes from "prop-types";
+import NodeEditable from "./NodeEditable";
+import { DropNodeTarget } from "../dnd";
+import classNames from "classnames";
+import { AppDispatch, isErrorFree } from "../store";
+import { genUniqueId } from "../utils";
+import { drop, InsertTarget } from "../actions";
+import { ASTNode, Pos } from "../ast";
+import { RootState } from "../reducers";
 
 // Provided by `Node`
 export const NodeContext = createContext({
-  node: null
+  node: null,
 });
 
 // Provided by `DropTargetContainer`
@@ -23,18 +22,20 @@ export const DropTargetContext = createContext({
 });
 
 // Find the id of the drop target (if any) on the given side of `child` node.
-export function findAdjacentDropTargetId(child, onLeft) {
-  let prevDropTargetId = null;
+export function findAdjacentDropTargetId(child: ASTNode, onLeft: boolean) {
+  let prevDropTargetId: string | null = null;
   let targetId = `block-node-${child.id}`;
 
-  function findDT(elem) {
+  function findDT(elem: Element): string | null {
     if (!elem.children) {
       return null;
     }
     // Convert array-like object into an Array.
     let children = [...elem.children];
     // If we want the drop-target to the right, iterate in reverse
-    if (!onLeft) { children.reverse(); }
+    if (!onLeft) {
+      children.reverse();
+    }
 
     for (let sibling of children) {
       if (sibling.id?.startsWith("block-drop-target-")) {
@@ -63,21 +64,15 @@ export function findAdjacentDropTargetId(child, onLeft) {
 // But AFAIK that's not feasible, because the `id` needs to be accessible
 // inside `mapStateToProps`, and it's only accessible if it's a `prop`.
 // Hence this extraneous class.
-export class DropTarget extends Component<{field: string}> {
+export class DropTarget extends Component<{ field: string }> {
   static contextType = NodeContext;
 
   static propTypes = {
     field: PropTypes.string.isRequired,
-  }
+  };
 
-  isDropTarget: boolean;
-  id: string;
-
-  constructor(props) {
-    super(props);
-    this.isDropTarget = true;
-    this.id = gensym(); // generate a unique ID
-  }
+  isDropTarget: boolean = true;
+  id: string = genUniqueId(); // generate a unique ID
 
   render() {
     const value = {
@@ -87,12 +82,14 @@ export class DropTarget extends Component<{field: string}> {
 
     // ensure that the field property is set
     if (!value.field) {
-      console.error(`
+      console.error(
+        `
 A dropTarget must be created with a prop 'field'. 
 Check the render() function for the ${value.node.type} 
 Component, and make sure all DropTargets have a 
-field declared. The node was:`, value.node
-        );
+field declared. The node was:`,
+        value.node
+      );
     }
 
     return (
@@ -107,13 +104,19 @@ field declared. The node was:`, value.node
 // check to see whether an adjacent DropTarget is being edited, or, for when the
 // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
 // as editable.
-const mapStateToProps2 = ({ast, editable}:{ast: AST, editable: {}}, {id}:{id: string}) => ({
+const mapStateToProps2 = (
+  { ast, editable }: RootState,
+  { id }: { id: string }
+) => ({
   ast,
   isEditable: editable[id] || false,
 });
-const mapDispatchToProps2 = (dispatch: AppDispatch, {id}) => ({
+const mapDispatchToProps2 = (
+  dispatch: AppDispatch,
+  { id }: { id: string }
+) => ({
   dispatch,
-  setEditable: (bool: boolean) => dispatch({type: 'SET_EDITABLE', id, bool}),
+  setEditable: (bool: boolean) => dispatch({ type: "SET_EDITABLE", id, bool }),
 });
 
 const connector = connect(mapStateToProps2, mapDispatchToProps2);
@@ -127,15 +130,17 @@ type ActualDropTargetProps = ConnectedProps<typeof connector> & {
   isOver: boolean;
 };
 
-type ActualDropTargetState = {value: string, mouseOver: boolean};
+type ActualDropTargetState = { value: string; mouseOver: boolean };
 
 // TODO(pcardune): verify that this does not need to extend BlockComponent.
 // BlockComponent requires a node in the props, just so it can have a custom
 // shouldComponentUpdate method that compares node hash values. But we were
 // never passing in a node to this component, in which case shouldComponentUpdate
 // would always return true.
-class ActualDropTarget extends Component<ActualDropTargetProps, ActualDropTargetState> {
-
+class ActualDropTarget extends Component<
+  ActualDropTargetProps,
+  ActualDropTargetState
+> {
   static contextType = DropTargetContext;
 
   isDropTarget: boolean;
@@ -151,13 +156,14 @@ class ActualDropTarget extends Component<ActualDropTargetProps, ActualDropTarget
   }
 
   getLocation() {
-    let prevNodeId = null;
+    let prevNodeId: string | null = null;
     let targetId = `block-drop-target-${this.props.id}`;
     let ast = this.props.ast;
     let dropTargetWasFirst = false;
 
-    function findLoc(elem) {
-      if (elem == null || elem.children == null) { // if it's a new element (insertion)
+    function findLoc(elem: Element): Pos {
+      if (elem == null || elem.children == null) {
+        // if it's a new element (insertion)
         return null;
       }
       // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
@@ -196,65 +202,71 @@ class ActualDropTarget extends Component<ActualDropTargetProps, ActualDropTarget
     return findLoc(this.context.node.element) || this.context.pos;
   }
 
-  handleClick = e => {
+  handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
     this.props.setEditable(true);
-  }
+  };
 
-  handleMouseEnterRelated = e => {
+  handleMouseEnterRelated = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    this.setState({mouseOver: true});
-  }
+    this.setState({ mouseOver: true });
+  };
 
-  handleMouseLeaveRelated = e => {
+  handleMouseLeaveRelated = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    this.setState({mouseOver: false});
-  }
+    this.setState({ mouseOver: false });
+  };
 
-  handleMouseDragRelated = _ => {
+  handleMouseDragRelated = () => {
     //NOTE(ds26gte): dummy handler
-  }
+  };
 
-  handleChange = (value) => {
-    this.setState({value});
-  }
+  handleChange = (value: string) => {
+    this.setState({ value });
+  };
 
   render() {
     const props = {
-      tabIndex          : "-1",
-      role              : 'textbox',
-      'aria-setsize'    : '1',
-      'aria-posinset'   : '1',
-      'aria-level'      : '1',
-      id                : `block-drop-target-${this.props.id}`,
+      tabIndex: "-1",
+      role: "textbox",
+      "aria-setsize": "1",
+      "aria-posinset": "1",
+      "aria-level": "1",
+      id: `block-drop-target-${this.props.id}`,
     };
 
     if (this.props.isEditable) {
-      const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
+      const target = new InsertTarget(
+        this.context.node,
+        this.context.field,
+        this.getLocation()
+      );
       return (
-        <NodeEditable target={target}
-                      value={this.state.value}
-                      onChange={this.handleChange}
-                      onMouseEnter={this.handleMouseEnterRelated}
-                      onDragEnter={this.handleMouseEnterRelated}
-                      onMouseLeave={this.handleMouseLeaveRelated}
-                      onDragLeave={this.handleMouseLeaveRelated}
-                      onMouseOver={this.handleMouseDragRelated}
-                      onDragOver={this.handleMouseDragRelated}
-                      onDrop={this.handleMouseDragRelated}
-                      isInsertion={true}
-                      contentEditableProps={props}
-                      extraClasses={['blocks-node', 'blocks-white-space']}
-                      onDisableEditable={() => this.props.setEditable(false)} />
+        <NodeEditable
+          target={target}
+          value={this.state.value}
+          onChange={this.handleChange}
+          onMouseEnter={this.handleMouseEnterRelated}
+          onDragEnter={this.handleMouseEnterRelated}
+          onMouseLeave={this.handleMouseLeaveRelated}
+          onDragLeave={this.handleMouseLeaveRelated}
+          onMouseOver={this.handleMouseDragRelated}
+          onDragOver={this.handleMouseDragRelated}
+          onDrop={this.handleMouseDragRelated}
+          isInsertion={true}
+          contentEditableProps={props}
+          extraClasses={["blocks-node", "blocks-white-space"]}
+          onDisableEditable={() => this.props.setEditable(false)}
+        />
       );
     }
     const classes = [
-      'blocks-drop-target',
-      'blocks-white-space',
-      {'blocks-over-target' : this.props.isOver || this.state.mouseOver}
+      "blocks-drop-target",
+      "blocks-white-space",
+      { "blocks-over-target": this.props.isOver || this.state.mouseOver },
     ];
     return this.props.connectDropTarget(
       <span
@@ -267,16 +279,20 @@ class ActualDropTarget extends Component<ActualDropTargetProps, ActualDropTarget
         onMouseOver={this.handleMouseDragRelated}
         onDragOver={this.handleMouseDragRelated}
         onDrop={this.handleMouseDragRelated}
-        onClick = {this.handleClick} 
-        data-field = {this.context.field}
-       />
+        onClick={this.handleClick}
+        data-field={this.context.field}
+      />
     );
   }
 }
 
 const ActualDropTargetEnhanced = connector(
-  DropNodeTarget(function(monitor) {
-    const target = new InsertTarget(this.context.node, this.context.field, this.getLocation());
+  DropNodeTarget(function (monitor) {
+    const target = new InsertTarget(
+      this.context.node,
+      this.context.field,
+      this.getLocation()
+    );
     return drop(monitor.getItem(), target);
   })(ActualDropTarget)
-)
+);

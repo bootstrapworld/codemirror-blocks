@@ -1,12 +1,12 @@
-import {AST} from '../../ast';
-import {Literal, FunctionApp} from '../../nodes';
+import { AST } from "../../ast";
+import { Literal, FunctionApp } from "../../nodes";
 
 const TOKENS = {
-  OPEN_PAREN: 'open-paren',
-  CLOSE_PAREN: 'close-paren',
-  IDENTIFIER: 'identifier',
-  NUMBER: 'number',
-  EOF: 'eof'
+  OPEN_PAREN: "open-paren",
+  CLOSE_PAREN: "close-paren",
+  IDENTIFIER: "identifier",
+  NUMBER: "number",
+  EOF: "eof",
 };
 
 class Token {
@@ -26,14 +26,14 @@ export default class ExampleParser {
     let ch = this.code[this.charIndex];
     this.charIndex++;
     this.colIndex++;
-    if (ch == '\n') {
+    if (ch == "\n") {
       this.lineIndex++;
       this.colIndex = 0;
     }
     return ch;
   }
 
-  getExceptionMessage(e){
+  getExceptionMessage(e) {
     return e || "Parser error";
   }
 
@@ -41,60 +41,66 @@ export default class ExampleParser {
     const IDENTIFIER_RE = /[\w-+/*]/;
     if (this.charIndex >= this.code.length) {
       return new Token(
-        {line: this.lineIndex, ch: this.colIndex},
-        {line: this.lineIndex, ch: this.colIndex},
+        { line: this.lineIndex, ch: this.colIndex },
+        { line: this.lineIndex, ch: this.colIndex },
         TOKENS.EOF,
-        ''
+        ""
       );
     }
-    if (this.code[this.charIndex] == '(') {
+    if (this.code[this.charIndex] == "(") {
       let token = new Token(
-        {line: this.lineIndex, ch: this.colIndex},
-        {line: this.lineIndex, ch: this.colIndex + 1},
+        { line: this.lineIndex, ch: this.colIndex },
+        { line: this.lineIndex, ch: this.colIndex + 1 },
         TOKENS.OPEN_PAREN,
-        '('
+        "("
       );
       this.getch();
       return token;
-    } else if (this.code[this.charIndex] == ')') {
+    } else if (this.code[this.charIndex] == ")") {
       let token = new Token(
-        {line: this.lineIndex, ch: this.colIndex},
-        {line: this.lineIndex, ch: this.colIndex+1},
+        { line: this.lineIndex, ch: this.colIndex },
+        { line: this.lineIndex, ch: this.colIndex + 1 },
         TOKENS.CLOSE_PAREN,
-        ')'
+        ")"
       );
       this.getch();
       return token;
-    } else if (this.code[this.charIndex] == ' ') {
-      while (this.code[this.charIndex] == ' ') {
+    } else if (this.code[this.charIndex] == " ") {
+      while (this.code[this.charIndex] == " ") {
         this.getch();
       }
       return this.getToken();
-    } else if (this.code[this.charIndex] >= '0' && this.code[this.charIndex] <= '9') {
+    } else if (
+      this.code[this.charIndex] >= "0" &&
+      this.code[this.charIndex] <= "9"
+    ) {
       let startIndex = this.colIndex;
-      let number = '';
-      while (this.code[this.charIndex] >= '0' && this.code[this.charIndex] <= '9') {
+      let number = "";
+      while (
+        this.code[this.charIndex] >= "0" &&
+        this.code[this.charIndex] <= "9"
+      ) {
         number += this.getch();
       }
       return new Token(
-        {line: this.lineIndex, ch: startIndex},
-        {line: this.lineIndex, ch: startIndex + number.length},
+        { line: this.lineIndex, ch: startIndex },
+        { line: this.lineIndex, ch: startIndex + number.length },
         TOKENS.NUMBER,
         number
       );
     } else if (this.code[this.charIndex].match(IDENTIFIER_RE)) {
-      let identifier = '';
+      let identifier = "";
       let startIndex = this.colIndex;
       while (this.code[this.charIndex].match(IDENTIFIER_RE)) {
         identifier += this.getch();
       }
       return new Token(
-        {line: this.lineIndex, ch: startIndex},
-        {line: this.lineIndex, ch: startIndex + identifier.length},
+        { line: this.lineIndex, ch: startIndex },
+        { line: this.lineIndex, ch: startIndex + identifier.length },
         TOKENS.IDENTIFIER,
         identifier
       );
-    } else if (this.code[this.charIndex] == '\n') {
+    } else if (this.code[this.charIndex] == "\n") {
       this.getch();
       return this.getToken();
     } else {
@@ -132,12 +138,12 @@ export default class ExampleParser {
 
   parseNextToken() {
     switch (this.peekToken().token) {
-    case TOKENS.OPEN_PAREN:
-      return this.parseExpression();
-    case TOKENS.NUMBER:
-      return this.parseLiteral();
-    default:
-      throw new Error("Expected either a number or another expression");
+      case TOKENS.OPEN_PAREN:
+        return this.parseExpression();
+      case TOKENS.NUMBER:
+        return this.parseLiteral();
+      default:
+        throw new Error("Expected either a number or another expression");
     }
   }
 
@@ -147,7 +153,7 @@ export default class ExampleParser {
       literalToken.from,
       literalToken.to,
       parseInt(literalToken.text),
-      'number'
+      "number"
     );
   }
 
@@ -168,7 +174,12 @@ export default class ExampleParser {
     return new FunctionApp(
       token.from,
       closeParenToken.to,
-      new Literal(identifierToken.from, identifierToken.to, identifierToken.text, 'symbol'),
+      new Literal(
+        identifierToken.from,
+        identifierToken.to,
+        identifierToken.text,
+        "symbol"
+      ),
       args
     );
   }

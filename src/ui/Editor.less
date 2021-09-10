@@ -7,10 +7,22 @@
   flex-wrap: wrap;
   user-select: none;
   -webkit-user-select: none;
-  .glyphicon { font-family: 'Glyphicons Halflings'; }
-  .glyphicon-pencil    { &:before { content: "\270f"; } }
-  .glyphicon-align-left{ &:before { content: "\e052"; } }
-  .react-codemirror2{ width: 100%; }
+  .glyphicon {
+    font-family: "Glyphicons Halflings";
+  }
+  .glyphicon-pencil {
+    &:before {
+      content: "\270f";
+    }
+  }
+  .glyphicon-align-left {
+    &:before {
+      content: "\e052";
+    }
+  }
+  .react-codemirror2 {
+    width: 100%;
+  }
 
   > .toolbar-pane {
     border-right: 1px solid #ddd;
@@ -34,11 +46,18 @@
   }
   /* in text mode, the toolbar should have a width of 0 */
   &.text {
-    > .toolbar-pane { border: none; width: 0px; min-width: 0px; }
-    > .codemirror-pane { width: 100%; }
+    > .toolbar-pane {
+      border: none;
+      width: 0px;
+      min-width: 0px;
+    }
+    > .codemirror-pane {
+      width: 100%;
+    }
   }
-  
-  .blocks-toggle-btn, .bug-btn {
+
+  .blocks-toggle-btn,
+  .bug-btn {
     position: absolute;
     display: inline-flex;
     align-items: center;
@@ -46,24 +65,37 @@
     right: 16px;
     z-index: 100;
     height: 34px;
-    width:  34px;
+    width: 34px;
     border-radius: 3px;
-    font-size: 18pt; 
+    font-size: 18pt;
     padding: 0px;
     transition: width 0.25s linear;
     box-shadow: 2px 2px 2px black, 4px 4px 4px white;
     padding: 0px 4px;
-    &:focus { width: 175px; outline: 0; }
-    &:hover { width: 175px; }
-    .btn-title { font-size: 14px; }
+    &:focus {
+      width: 175px;
+      outline: 0;
+    }
+    &:hover {
+      width: 175px;
+    }
+    .btn-title {
+      font-size: 14px;
+    }
   }
   /* hide button titles by default */
-  .bug-btn .btn-title, .blocks-toggle-btn .btn-title { 
-    position: absolute; clip: rect(0, 0, 0, 0); 
+  .bug-btn .btn-title,
+  .blocks-toggle-btn .btn-title {
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
   }
   .bug-btn:hover .btn-title,
   .blocks-toggle-btn:hover .btn-title {
-    display: inline-block; clip: auto; position: relative;
+    display: inline-block;
+    clip: auto;
+    position: relative;
   }
-  .bug-btn { right: 64px; }
+  .bug-btn {
+    right: 64px;
+  }
 }

@@ -1,8 +1,12 @@
-import type { AST, ASTNode } from '../ast';
-import {assert} from '../utils';
+import type { AST, ASTNode } from "../ast";
+import { assert } from "../utils";
 
 // defaultdict with empty list
-function addIndex<V>(container:{[key:string]:V[]}, k:string, v:V) {
+function addIndex<V>(
+  container: Record<string | number, V[]>,
+  k: string | number,
+  v: V
+) {
   if (container[k]) {
     container[k].push(v);
   } else {
@@ -25,9 +29,9 @@ function copyAllIds(oldTree: ASTNode, newTree: ASTNode) {
 }
 
 export default function unify(oldTree: AST, newTree: AST) {
-  function loop(oldTree: ASTNode|AST, newTree: ASTNode|AST) {
+  function loop(oldTree: ASTNode | AST, newTree: ASTNode | AST) {
     newTree.id = oldTree.id;
-    const index:{[key:string]: ASTNode[]} = {};
+    const index: { [key: string]: ASTNode[] } = {};
     for (const oldNode of oldTree.children()) {
       addIndex(index, oldNode.hash, oldNode);
     }
@@ -38,7 +42,7 @@ export default function unify(oldTree: AST, newTree: AST) {
     const processed = new Set();
 
     let partiallySuccess = false;
-    const newLeftover = [...newTree.children()].filter(newNode => {
+    const newLeftover = [...newTree.children()].filter((newNode) => {
       if (index[newNode.hash]?.length > 0) {
         const oldNode = index[newNode.hash].pop();
         copyAllIds(oldNode, newNode);
@@ -49,7 +53,7 @@ export default function unify(oldTree: AST, newTree: AST) {
         return true;
       }
     });
-    const oldLeftover = [...oldTree.children()].filter(oldNode => {
+    const oldLeftover = [...oldTree.children()].filter((oldNode) => {
       return !processed.has(oldNode.id);
     });
     if (partiallySuccess || newLeftover.length <= 1) {
