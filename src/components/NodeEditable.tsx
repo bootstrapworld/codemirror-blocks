@@ -5,12 +5,12 @@ import SHARED from "../shared";
 import classNames, { Argument as ClassNamesArgument } from "classnames";
 import { insert, activateByNid, Target } from "../actions";
 import { say } from "../announcer";
-import CodeMirror from 'codemirror';
-import { AppDispatch } from '../store';
-import { RootState } from '../reducers';
-import { AST } from '../ast';
-import { setAfterDOMUpdate, cancelAfterDOMUpdate } from '../utils';
-import type { afterDOMUpdateHandle } from '../utils';
+import CodeMirror from "codemirror";
+import { AppDispatch } from "../store";
+import { RootState } from "../reducers";
+import { AST } from "../ast";
+import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
+import type { afterDOMUpdateHandle } from "../utils";
 
 type Props = ContentEditableProps & {
   target?: Target;
@@ -100,21 +100,21 @@ class NodeEditable extends Component<Props> {
 
   handleKeyDown = (e: React.KeyboardEvent) => {
     switch (CodeMirror.keyName(e)) {
-    case 'Enter': {
-      this.ignoreBlur = true;
-      this.saveEdit(e);
-      return;
-    }
-    case 'Alt-Q':
-    case 'Esc':
-      this.ignoreBlur = true;
-      e.stopPropagation();
-      this.props.onChange(null);
-      this.props.onDisableEditable(false);
-      this.props.setErrorId('');
-      cancelAfterDOMUpdate(this.pendingTimeout);
-      this.pendingTimeout = setAfterDOMUpdate(this.props.focusSelf());
-      return;
+      case "Enter": {
+        this.ignoreBlur = true;
+        this.saveEdit(e);
+        return;
+      }
+      case "Alt-Q":
+      case "Esc":
+        this.ignoreBlur = true;
+        e.stopPropagation();
+        this.props.onChange(null);
+        this.props.onDisableEditable(false);
+        this.props.setErrorId("");
+        cancelAfterDOMUpdate(this.pendingTimeout);
+        this.pendingTimeout = setAfterDOMUpdate(this.props.focusSelf());
+        return;
     }
   };
 
@@ -131,7 +131,9 @@ class NodeEditable extends Component<Props> {
   }
 
   // Teardown any pending timeouts
-  componentWillUnmount() { cancelAfterDOMUpdate(this.pendingTimeout); }
+  componentWillUnmount() {
+    cancelAfterDOMUpdate(this.pendingTimeout);
+  }
 
   /*
    * No need to reset text because we assign new key (via the parser + patching)
@@ -154,7 +156,7 @@ class NodeEditable extends Component<Props> {
       window.getSelection().addRange(range);
       this.element.focus();
     });
-  }
+  };
 
   contentEditableDidMount = (el: HTMLElement) => {
     this.element = el;

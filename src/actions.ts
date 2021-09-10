@@ -1,5 +1,11 @@
-import {poscmp, srcRangeIncludes, warn, setAfterDOMUpdate, cancelAfterDOMUpdate} from './utils';
-import type { afterDOMUpdateHandle } from './utils';
+import {
+  poscmp,
+  srcRangeIncludes,
+  warn,
+  setAfterDOMUpdate,
+  cancelAfterDOMUpdate,
+} from "./utils";
+import type { afterDOMUpdateHandle } from "./utils";
 import { say, cancelAnnouncement } from "./announcer";
 import SHARED from "./shared";
 import { AppDispatch, store } from "./store";
@@ -208,11 +214,14 @@ export function setCursor(cur: Pos) {
 }
 
 // Activate the node with the given `nid`.
-export function activateByNid(nid:number|null, options?:{allowMove?: boolean, record?: boolean}) {
-  return (dispatch: AppDispatch, getState:()=>RootState) => {
-    options = {...options, allowMove: true, record: true};
-    let {ast, focusId, collapsedList} = getState();
-    
+export function activateByNid(
+  nid: number | null,
+  options?: { allowMove?: boolean; record?: boolean }
+) {
+  return (dispatch: AppDispatch, getState: () => RootState) => {
+    options = { ...options, allowMove: true, record: true };
+    let { ast, focusId, collapsedList } = getState();
+
     // If nid is null, try to get it from the focusId
     if (nid === null) {
       nid = ast?.getNodeById(focusId)?.nid;
@@ -247,7 +256,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
       }
     }
 
-/*
+    /*
     NOTE(Emmanuel): This was added for an a11y corner case years ago - still needed?
     // If there's a previously-focused node, see if the ids match
     // If so, we need to manually initiate a new focus event
@@ -256,7 +265,7 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
       setTimeout(() => { if(newNode.element) newNode.element.focus(); }, 10);
     }
 */
-    cancelAnnouncement();  // clear any overrideable announcements
+    cancelAnnouncement(); // clear any overrideable announcements
     // FIXME(Oak): if possible, let's not hard code like this
     if (
       ["blank", "literal"].includes(newNode.type) &&
@@ -266,8 +275,8 @@ export function activateByNid(nid:number|null, options?:{allowMove?: boolean, re
     }
 
     setAfterDOMUpdate(() => {
-      dispatch({type: 'SET_FOCUS', focusId: newNode.id});
-      
+      dispatch({ type: "SET_FOCUS", focusId: newNode.id });
+
       if (options.record && SHARED.search) {
         SHARED.search.setCursor(newNode.from);
       }
@@ -314,7 +323,9 @@ function copyToClipboard(text: string) {
 function pasteFromClipboard(done: (value: string) => void) {
   SHARED.buffer.value = "";
   SHARED.buffer.focus();
-  setTimeout(() => { done(SHARED.buffer.value); }, 50);
+  setTimeout(() => {
+    done(SHARED.buffer.value);
+  }, 50);
 }
 
 // The class of all targets.

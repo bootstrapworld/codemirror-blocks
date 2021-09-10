@@ -1,32 +1,37 @@
-import React, {Component} from 'react';
-import ReactDOM from 'react-dom';
-import 'codemirror/addon/search/search';
-import 'codemirror/addon/search/searchcursor';
-import classNames from 'classnames';
-import './Editor.less';
-import {connect, ConnectedProps} from 'react-redux';
-import SHARED from '../shared';
-import NodeEditable from '../components/NodeEditable';
-import {activateByNid, setCursor, OverwriteTarget} from '../actions';
-import {commitChanges} from '../edits/commitChanges';
-import {speculateChanges, getTempCM} from '../edits/speculateChanges';
-import DragAndDropEditor from './DragAndDropEditor';
-import { 
-  poscmp, minpos, maxpos, validateRanges, BlockError, 
-  setAfterDOMUpdate, cancelAfterDOMUpdate 
-} from '../utils';
-import type { afterDOMUpdateHandle } from '../utils';
-import BlockComponent from '../components/BlockComponent';
-import { defaultKeyMap, keyDown } from '../keymap';
-import {AppStore, store} from '../store';
-import { ASTNode, Pos } from '../ast';
-import type { AST } from '../ast';
-import CodeMirror, { Editor, SelectionOptions } from 'codemirror';
-import type { Options, API } from '../CodeMirrorBlocks';
-import type { AppDispatch } from '../store';
-import Toolbar from './Toolbar';
-import type { Activity, AppAction, Quarantine, RootState } from '../reducers';
-import type { IUnControlledCodeMirror } from 'react-codemirror2';
+import React, { Component } from "react";
+import ReactDOM from "react-dom";
+import "codemirror/addon/search/search";
+import "codemirror/addon/search/searchcursor";
+import classNames from "classnames";
+import "./Editor.less";
+import { connect, ConnectedProps } from "react-redux";
+import SHARED from "../shared";
+import NodeEditable from "../components/NodeEditable";
+import { activateByNid, setCursor, OverwriteTarget } from "../actions";
+import { commitChanges } from "../edits/commitChanges";
+import { speculateChanges, getTempCM } from "../edits/speculateChanges";
+import DragAndDropEditor from "./DragAndDropEditor";
+import {
+  poscmp,
+  minpos,
+  maxpos,
+  validateRanges,
+  BlockError,
+  setAfterDOMUpdate,
+  cancelAfterDOMUpdate,
+} from "../utils";
+import type { afterDOMUpdateHandle } from "../utils";
+import BlockComponent from "../components/BlockComponent";
+import { defaultKeyMap, keyDown } from "../keymap";
+import { AppStore, store } from "../store";
+import { ASTNode, Pos } from "../ast";
+import type { AST } from "../ast";
+import CodeMirror, { Editor, SelectionOptions } from "codemirror";
+import type { Options, API } from "../CodeMirrorBlocks";
+import type { AppDispatch } from "../store";
+import Toolbar from "./Toolbar";
+import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
+import type { IUnControlledCodeMirror } from "react-codemirror2";
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = [
@@ -127,20 +132,21 @@ class ToplevelBlock extends BlockComponent<
   }
 
   // When unmounting, clean up the TextMarker and any lingering timeouts
-  componentWillUnmount() { 
-    this.mark?.clear(); 
+  componentWillUnmount() {
+    this.mark?.clear();
     cancelAfterDOMUpdate(this.pendingTimeout);
   }
 
   // once the placeholder has mounted, wait 250ms and render
   // save both the timeout *and* requestAnimationFrame (RAF)
-  // in case someone unmounts before all the root components 
+  // in case someone unmounts before all the root components
   // have even rendered
   componentDidMount() {
-    if(!this.props.incrementalRendering) return; // bail if incremental is off
-    this.pendingTimeout = setAfterDOMUpdate(() => 
-      this.setState({ renderPlaceholder: false }), 
-      250);
+    if (!this.props.incrementalRendering) return; // bail if incremental is off
+    this.pendingTimeout = setAfterDOMUpdate(
+      () => this.setState({ renderPlaceholder: false }),
+      250
+    );
   }
 
   render() {
@@ -298,7 +304,7 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
 class BlockEditor extends Component<BlockEditorProps> {
   mouseUsed: boolean;
   newAST: AST;
-  parse: BlockEditorProps['parse'];
+  parse: BlockEditorProps["parse"];
   pendingTimeout: afterDOMUpdateHandle;
 
   constructor(props: BlockEditorProps) {
@@ -781,17 +787,20 @@ class BlockEditor extends Component<BlockEditorProps> {
   handleTopLevelFocus = (ed: Editor) => {
     const { dispatch } = this.props;
     dispatch((_, getState) => {
-      const {cur} = getState();
-      if (!this.mouseUsed && (cur === null)) {
+      const { cur } = getState();
+      if (!this.mouseUsed && cur === null) {
         // NOTE(Emmanuel): setAfterDOMUpdate so that the CM cursor will not blink
         cancelAfterDOMUpdate(this.pendingTimeout);
-        this.pendingTimeout = setAfterDOMUpdate(() => 
-          this.props.activateByNid(null, {allowMove: true}));
+        this.pendingTimeout = setAfterDOMUpdate(() =>
+          this.props.activateByNid(null, { allowMove: true })
+        );
         this.mouseUsed = false;
       } else if (this.mouseUsed && cur === null) {
         // if it was a click, get the cursor from CM
         cancelAfterDOMUpdate(this.pendingTimeout);
-        this.pendingTimeout = setAfterDOMUpdate(() => this.props.setCursor(ed.getCursor()));
+        this.pendingTimeout = setAfterDOMUpdate(() =>
+          this.props.setCursor(ed.getCursor())
+        );
         this.mouseUsed = false;
       }
     });
@@ -804,8 +813,11 @@ class BlockEditor extends Component<BlockEditorProps> {
    */
   handleTopLevelMouseDown = () => {
     this.mouseUsed = true;
-    this.pendingTimeout = setAfterDOMUpdate(() => this.mouseUsed = false, 100);
-  }
+    this.pendingTimeout = setAfterDOMUpdate(
+      () => (this.mouseUsed = false),
+      100
+    );
+  };
 
   /**
    * @internal
@@ -879,7 +891,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     this.pendingTimeout = setAfterDOMUpdate(this.refreshCM() as $TSFixMe);
   }
 
-  componentDidUpdate() { 
+  componentDidUpdate() {
     this.pendingTimeout = setAfterDOMUpdate(this.refreshCM() as $TSFixMe);
   }
 
