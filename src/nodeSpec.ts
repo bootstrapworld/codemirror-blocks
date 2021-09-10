@@ -1,5 +1,5 @@
-import { ASTNode } from './ast';
-import { hashObject } from './utils';
+import { ASTNode } from "./ast";
+import { hashObject } from "./utils";
 
 // A NodeSpec declares the types of the fields of an ASTNode.
 // It is used to compute hashes, to validate nodes (to prevent the construction
@@ -41,13 +41,13 @@ export class NodeSpec {
   constructor(childSpecs: ChildSpec[]) {
     if (!(childSpecs instanceof Array)) {
       throw new Error(
-        'NodeSpec: expected to receive an array of required/optional/list specs.'
+        "NodeSpec: expected to receive an array of required/optional/list specs."
       );
     }
     for (const childSpec of childSpecs) {
       if (!(childSpec instanceof ChildSpec)) {
         throw new Error(
-          'NodeSpec: all child specs must be created by one of the functions: required/optional/list.'
+          "NodeSpec: all child specs must be created by one of the functions: required/optional/list."
         );
       }
     }
@@ -159,32 +159,36 @@ abstract class ChildSpec {
    * @param node ASTNode on which to set the field
    * @param value the new value for the field
    */
-  setField<N extends ASTNode>(node: N, value: ASTNode|null) {
+  setField<N extends ASTNode>(node: N, value: ASTNode | null) {
     (node as any)[this.fieldName] = value;
   }
 
-  abstract validate(parent:ASTNode): void;
+  abstract validate(parent: ASTNode): void;
 }
 
 export class Required extends ChildSpec {
-  validate(parent:ASTNode) {
+  validate(parent: ASTNode) {
     if (!(this.getField(parent) instanceof ASTNode)) {
-      throw new Error(`Expected the required field '${this.fieldName}' of '${parent.type}' to contain an ASTNode.`);
+      throw new Error(
+        `Expected the required field '${this.fieldName}' of '${parent.type}' to contain an ASTNode.`
+      );
     }
   }
 }
 
 export class Optional extends ChildSpec {
-  validate(parent:ASTNode) {
+  validate(parent: ASTNode) {
     let child = this.getField(parent);
     if (child !== null && !(child instanceof ASTNode)) {
-      throw new Error(`Expected the optional field '${this.fieldName}' of '${parent.type}' to contain an ASTNode or null.`);
+      throw new Error(
+        `Expected the optional field '${this.fieldName}' of '${parent.type}' to contain an ASTNode or null.`
+      );
     }
   }
 }
 
 export class List extends ChildSpec {
-  validate(parent:ASTNode) {
+  validate(parent: ASTNode) {
     let array = this.getField(parent);
     let valid = true;
     if (array instanceof Array) {
@@ -195,13 +199,15 @@ export class List extends ChildSpec {
       valid = false;
     }
     if (!valid) {
-      throw new Error(`Expected the listy field '${this.fieldName}' of '${parent.type}' to contain an array of ASTNodes.`);
+      throw new Error(
+        `Expected the listy field '${this.fieldName}' of '${parent.type}' to contain an array of ASTNodes.`
+      );
     }
   }
 }
 
 export class Value extends ChildSpec {
-  validate(_parent:ASTNode) {
+  validate(_parent: ASTNode) {
     // Any value is valid, even `undefined`, so there's nothing to check.
   }
 }

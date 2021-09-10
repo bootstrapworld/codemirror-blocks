@@ -1,12 +1,18 @@
-import {store} from '../store';
-import SHARED from '../shared';
-import {poscmp, adjustForChange, minimizeChange, logResults, topmostUndoable} from '../utils';
-import {activateByNid} from '../actions';
-import patch from './patchAst';
-import { AST, ASTNode, Pos } from '../ast';
-import type { EditorChange } from 'codemirror';
+import { store } from "../store";
+import SHARED from "../shared";
+import {
+  poscmp,
+  adjustForChange,
+  minimizeChange,
+  logResults,
+  topmostUndoable,
+} from "../utils";
+import { activateByNid } from "../actions";
+import patch from "./patchAst";
+import { AST, ASTNode, Pos } from "../ast";
+import type { EditorChange } from "codemirror";
 
-type FocusHint = (ast:AST) => ASTNode | null | "fallback";
+type FocusHint = (ast: AST) => ASTNode | null | "fallback";
 // commitChanges :
 //   Changes, bool, FocusHint|undefined, AST|undefined
 //   -> {newAST, focusId}
@@ -27,16 +33,16 @@ type FocusHint = (ast:AST) => ASTNode | null | "fallback";
 // - astHint is the AST you get from parsing the result of these changes (which
 //   you may know from a call to `speculateChanges()`).
 export function commitChanges(
-  changes:EditorChange[],
-  isUndoOrRedo:boolean = false,
-  focusHint:FocusHint|-1 = undefined,
-  astHint:AST = undefined,
-  annt?: string|false
+  changes: EditorChange[],
+  isUndoOrRedo: boolean = false,
+  focusHint: FocusHint | -1 = undefined,
+  astHint: AST = undefined,
+  annt?: string | false
 ) {
   //console.log('XXX commitChanges:34 doing commitChanges');
-  try{
+  try {
     let state = store.getState();
-    let {ast: oldAST, focusId: oldFocusId} = state;
+    let { ast: oldAST, focusId: oldFocusId } = state;
     if (!isUndoOrRedo) {
       // Remember the previous focus. See the next `!isUndoOrRedo` block.
       let oldFocus = oldAST.getNodeById(oldFocusId);
@@ -46,27 +52,30 @@ export function commitChanges(
     let newAST: AST = astHint || SHARED.parse(SHARED.cm.getValue());
     // Patch the tree and set the state
     newAST = patch(oldAST, newAST);
-    store.dispatch({type: 'SET_AST', ast: newAST});
+    store.dispatch({ type: "SET_AST", ast: newAST });
     // Try to set the focus using hinting data. If that fails, use the first root
-    let focusId = setFocus(changes, focusHint, newAST) || newAST.getFirstRootNode()?.id;
+    let focusId =
+      setFocus(changes, focusHint, newAST) || newAST.getFirstRootNode()?.id;
     //console.log('XXX commitChanges:50 setFocus retd focusId=', focusId);
     if (!isUndoOrRedo) {
       // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
       // this is what populates our undo stack.
       //console.log('commitChanges:54 focusId=', focusId);
       let newFocus = null;
-      if (focusId) {  newFocus = newAST.getNodeById(focusId); }
+      if (focusId) {
+        newFocus = newAST.getNodeById(focusId);
+      }
       let newFocusNId = newFocus?.nid;
       //console.log('XXX commitChanges:58 oldFocusNId=', oldFocusNId);
       //console.log('XXX commitChanges:59 newFocusNId=', newFocusNId);
       //console.log('XXX commitChanges:60 annt=', annt);
-      let tU = topmostUndoable('undo');
+      let tU = topmostUndoable("undo");
       tU.undoableAction = annt || undefined;
-      tU.actionFocus = {oldFocusNId, newFocusNId};
-      store.dispatch({type: 'DO', focusId: focusId});
+      tU.actionFocus = { oldFocusNId, newFocusNId };
+      store.dispatch({ type: "DO", focusId: focusId });
     }
-    return {newAST, focusId};    
-  } catch(e){
+    return { newAST, focusId };
+  } catch (e) {
     logResults(window.reducerActivities, e);
   }
 }
@@ -76,10 +85,14 @@ export function commitChanges(
 // 2. There is a focus hint, but when you call it it returns "fallback".
 // In those cases, use `computeFocusNodeFromChanges` instead.
 // Note: a focusHint of -1 means "let CodeMirror set the focus"
-function setFocus(changes: EditorChange[], focusHint: FocusHint|-1, newAST: AST) {
+function setFocus(
+  changes: EditorChange[],
+  focusHint: FocusHint | -1,
+  newAST: AST
+) {
   //console.log('XXX commitChanges:78 doing setFocus');
-  if(focusHint == -1) return;
-  let {collapsedList} = store.getState();
+  if (focusHint == -1) return;
+  let { collapsedList } = store.getState();
   let focusNode = focusHint ? focusHint(newAST) : "fallback";
   if (focusNode === "fallback") {
     focusNode = computeFocusNodeFromChanges(changes, newAST);
@@ -113,24 +126,24 @@ function setFocus(changes: EditorChange[], focusHint: FocusHint|-1, newAST: AST)
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
 function computeFocusNodeFromChanges(changes: EditorChange[], newAST: AST) {
-  let insertion = false as EditorChange|false;
-  let startLocs = changes.map(c => {
+  let insertion = false as EditorChange | false;
+  let startLocs = changes.map((c) => {
     c = minimizeChange(c);
     c.from = adjustForChange(c.from, c, true);
-    c.to   = adjustForChange(c.to,   c, false);
-    if(c.text.join("").length > 0) insertion = c; // remember the most-recent insertion
-    return c.from;                                // return the starting srcLoc of the change
+    c.to = adjustForChange(c.to, c, false);
+    if (c.text.join("").length > 0) insertion = c; // remember the most-recent insertion
+    return c.from; // return the starting srcLoc of the change
   });
-  if(insertion) {
+  if (insertion) {
     // Case A: grab the inserted node, *or* the node that ends in
     // insertion's ending srcLoc (won't ever be null post-insertion)
     let insertedNode = newAST.getNodeAt(insertion.from, insertion.to);
     let lastNodeInserted = newAST.getNodeBeforeCur(insertion.to);
     return insertedNode || lastNodeInserted;
   } else {
-    startLocs.sort(poscmp);                                // sort the deleted ranges
+    startLocs.sort(poscmp); // sort the deleted ranges
     let focusNode = newAST.getNodeBeforeCur(startLocs[0]); // grab the node before the first
-    // Case B: If the node exists, use the Id. 
+    // Case B: If the node exists, use the Id.
     // Case C: If not, use the first node...unless...
     // Case D: the tree is empty, so return null
     return focusNode || newAST.getFirstRootNode() || null;

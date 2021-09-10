@@ -1,43 +1,46 @@
-import * as path from 'path';
-import * as webpack from 'webpack';
-import type { Config, ConfigOptions } from 'karma';
-import 'karma-jasmine';
-import 'karma-coverage';
-import 'karma-parallel';
-import { getBaseConfig } from './webpack';
+import * as path from "path";
+import * as webpack from "webpack";
+import type { Config, ConfigOptions } from "karma";
+import "karma-jasmine";
+import "karma-coverage";
+import "karma-parallel";
+import { getBaseConfig } from "./webpack";
 
-function getWebpackTestConfig(basePath: string, runCoverage: boolean): webpack.Configuration {
+function getWebpackTestConfig(
+  basePath: string,
+  runCoverage: boolean
+): webpack.Configuration {
   const baseConfig = getBaseConfig();
-  const coverageRules: webpack.Configuration['module']['rules'] = [];
+  const coverageRules: webpack.Configuration["module"]["rules"] = [];
   if (runCoverage) {
     coverageRules.push({
       test: /(\.js|\.ts)/,
       use: {
-        loader: 'istanbul-instrumenter-loader',
+        loader: "istanbul-instrumenter-loader",
         options: {
-          esModules: true
-        }
+          esModules: true,
+        },
       },
-      include: path.resolve(basePath, 'src'),
-      enforce: 'post',
+      include: path.resolve(basePath, "src"),
+      enforce: "post",
     });
   }
 
   return {
     ...baseConfig,
-    mode: 'development',
-    devtool: 'inline-source-map',
+    mode: "development",
+    devtool: "inline-source-map",
     module: {
       ...baseConfig.module,
       rules: [...baseConfig.module.rules, ...coverageRules],
     },
     plugins: [
       ...baseConfig.plugins,
-      
+
       // For webpack5 (at least for now), we have to manually define this
       // the 'mode' setting on the line above seems to be ignored
       new webpack.DefinePlugin({
-        'process.env': { NODE_ENV: JSON.stringify('development') },
+        "process.env": { NODE_ENV: JSON.stringify("development") },
       }),
     ],
     // TODO: remove this workaround to sourcemaps being broken in
@@ -45,7 +48,7 @@ function getWebpackTestConfig(basePath: string, runCoverage: boolean): webpack.C
     // https://github.com/ryanclark/karma-webpack/issues/493
     optimization: {
       splitChunks: false,
-    }
+    },
   };
 }
 
@@ -53,7 +56,7 @@ function getWebpackTestConfig(basePath: string, runCoverage: boolean): webpack.C
  * Creates a karma config object for use with the karma test runner.
  * Just call this function inside your projects karma.conf.js file like
  * shown in the example below.
- * 
+ *
  * @example
  * ```typescript
  * // karma.conf.js
@@ -64,41 +67,40 @@ function getWebpackTestConfig(basePath: string, runCoverage: boolean): webpack.C
  * ```
  * @param basePath This should always be the absolute path to the root
  * directory where your karma.conf.js file lives
- * @returns 
+ * @returns
  */
 export function getKarmaConfig(config: Config, basePath: string) {
   const envConfig = {
-    isCI: process.env.CONTINUOUS_INTEGRATION === 'true',
-    runCoverage: process.env.COVERAGE === 'true',
-    localDebug: process.env.DEBUG === 'true',
+    isCI: process.env.CONTINUOUS_INTEGRATION === "true",
+    runCoverage: process.env.COVERAGE === "true",
+    localDebug: process.env.DEBUG === "true",
   };
-
 
   // Configure frameworks and plugins:
   // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-  const frameworks = ['jasmine', 'webpack'];
+  const frameworks = ["jasmine", "webpack"];
   var plugins = [
-    require('karma-sourcemap-loader'),
-    require('karma-jasmine'),
-    require('karma-chrome-launcher'),
-    require('karma-webpack'),
-    require('karma-coveralls'),
+    require("karma-sourcemap-loader"),
+    require("karma-jasmine"),
+    require("karma-chrome-launcher"),
+    require("karma-webpack"),
+    require("karma-coveralls"),
   ];
 
   // If we're not on Travis or trying to debug, add parallelism
   if (!envConfig.localDebug) {
-    frameworks.unshift('parallel');
-    plugins.unshift(require('karma-parallel'));
+    frameworks.unshift("parallel");
+    plugins.unshift(require("karma-parallel"));
   }
   // Configure reporters:
   // if we're doing coverage, add the coverage reporter
   // if we're on Travis, add the coveralls reporter, too
-  var reporters = ['dots'];
+  var reporters = ["dots"];
   if (envConfig.runCoverage) {
-    reporters.push('coverage');
-    plugins.unshift(require('karma-coverage'));
+    reporters.push("coverage");
+    plugins.unshift(require("karma-coverage"));
     if (envConfig.isCI) {
-      reporters.push('coveralls');
+      reporters.push("coveralls");
     }
   }
 
@@ -110,26 +112,26 @@ export function getKarmaConfig(config: Config, basePath: string) {
     plugins: plugins,
     reporters: reporters,
     coverageReporter: {
-      dir: '.coverage',
-      reporters: [{ type: 'html' }, { type: 'lcovonly' }],
+      dir: ".coverage",
+      reporters: [{ type: "html" }, { type: "lcovonly" }],
     },
 
     parallelOptions: {
       // undefined: defaults to cpu-count - 1
       executors: envConfig.isCI || envConfig.localDebug ? 1 : undefined,
-      shardStrategy: 'round-robin',
+      shardStrategy: "round-robin",
     },
 
     // list of files / patterns to load in the browser
-    files: ['spec/**/*-test.js', 'spec/**/*-test.ts'],
+    files: ["spec/**/*-test.js", "spec/**/*-test.ts"],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'spec/**/*.js': ['webpack', 'sourcemap'],
-      'spec/**/*.ts': ['webpack', 'sourcemap'],
-      'src/**/*.js': ['webpack', 'sourcemap'],
-      'src/**/*.ts': ['webpack', 'sourcemap'],
+      "spec/**/*.js": ["webpack", "sourcemap"],
+      "spec/**/*.ts": ["webpack", "sourcemap"],
+      "src/**/*.js": ["webpack", "sourcemap"],
+      "src/**/*.ts": ["webpack", "sourcemap"],
     },
 
     client: {
@@ -157,14 +159,14 @@ export function getKarmaConfig(config: Config, basePath: string) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['ChromeHeadless'],
+    browsers: ["ChromeHeadless"],
     customLaunchers: {
       ChromeTravisCI: {
-        base: 'Chrome',
+        base: "Chrome",
         flags: [
-          '--no-sandbox',
-          '--no-proxy-server',
-          '--remote-debugging-port=9222',
+          "--no-sandbox",
+          "--no-proxy-server",
+          "--remote-debugging-port=9222",
         ],
       },
     },
@@ -195,6 +197,5 @@ export function getKarmaConfig(config: Config, basePath: string) {
     jasmineDiffReporter: {
       pretty: true,
     },
-  }
-
+  };
 }

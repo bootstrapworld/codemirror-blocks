@@ -1,4 +1,4 @@
-@import '../less/example.less';
+@import "../less/example.less";
 @import "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css";
 
 // Set the height based on the available screen height.
@@ -10,10 +10,14 @@
 @height: calc(~"100vh - 300px");
 
 .editor-container {
-    height: @height;
+  height: @height;
 }
 
-#code{width: 100%; min-height: @height; display: block; }
+#code {
+  width: 100%;
+  min-height: @height;
+  display: block;
+}
 
 .CodeMirror {
   border: 1px solid #ddd;
@@ -21,19 +25,26 @@
 }
 
 #language-chooser {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
-#loadFromLog, #debuggingLog, #nextButton{ display:inline-block; vertical-align: top; }
-#nextButton{ display: none; }
+#loadFromLog,
+#debuggingLog,
+#nextButton {
+  display: inline-block;
+  vertical-align: top;
+}
+#nextButton {
+  display: none;
+}
 
 .logEntry {
-    overflow: scroll;
-    white-space: nowrap;
-    width: 800px;
-    text-overflow: ellipsis;
+  overflow: scroll;
+  white-space: nowrap;
+  width: 800px;
+  text-overflow: ellipsis;
 }
-.logEntry:hover{
-	font-style: italic;
-	white-space: normal;
+.logEntry:hover {
+  font-style: italic;
+  white-space: normal;
 }

@@ -1,31 +1,57 @@
-import wescheme from '../src/languages/wescheme';
+import wescheme from "../src/languages/wescheme";
 
 /*eslint no-unused-vars: "off"*/
 import {
-  mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
-  click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
-  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
-  dragend, dragleave, keyDown, keyPress, insertText, finishRender
-} from '../src/toolkit/test-utils';
+  mac,
+  cmd_ctrl,
+  wait,
+  removeEventListeners,
+  teardown,
+  activationSetup,
+  click,
+  mouseDown,
+  mouseenter,
+  mouseover,
+  mouseleave,
+  doubleClick,
+  blur,
+  paste,
+  cut,
+  copy,
+  dragstart,
+  dragover,
+  drop,
+  dragenter,
+  dragenterSeq,
+  dragend,
+  dragleave,
+  keyDown,
+  keyPress,
+  insertText,
+  finishRender,
+} from "../src/toolkit/test-utils";
 
-console.log('Doing markText-test.js');
+console.log("Doing markText-test.js");
 
 // be sure to call with `apply` or `call`
-let setup = function () { activationSetup.call(this, wescheme); };
+let setup = function () {
+  activationSetup.call(this, wescheme);
+};
 
-describe('The CodeMirrorBlocks Class', function () {
+describe("The CodeMirrorBlocks Class", function () {
   beforeEach(function () {
     setup.call(this);
   });
 
-  afterEach(function () { teardown(); });
+  afterEach(function () {
+    teardown();
+  });
 
-
-  describe('text marking api,', function () {
+  describe("text marking api,", function () {
     beforeEach(async function () {
-      this.cmb.setValue('11\n12\n(+ 3 4 5)');
+      this.cmb.setValue("11\n12\n(+ 3 4 5)");
       await finishRender(this.cmb); // give the editor a chance to re-render
-      this.cmb.getAllMarks().forEach(m => m.clear());
+      this.cmb.getAllMarks().forEach((m) => m.clear());
       this.ast = this.cmb.getAst();
       this.literal1 = this.ast.rootNodes[0];
       this.literal2 = this.ast.rootNodes[1];
@@ -33,12 +59,16 @@ describe('The CodeMirrorBlocks Class', function () {
     });
 
     it("should allow you to mark nodes with the markText method", function () {
-      this.cmb.markText(this.literal1.from, this.literal1.to, { css: "color: red" });
-      expect(this.literal1.element.style.color).toBe('red');
+      this.cmb.markText(this.literal1.from, this.literal1.to, {
+        css: "color: red",
+      });
+      expect(this.literal1.element.style.color).toBe("red");
     });
 
     it("it should allow you to set a className value", function () {
-      this.cmb.markText(this.expression.from, this.expression.to, { className: "error" });
+      this.cmb.markText(this.expression.from, this.expression.to, {
+        className: "error",
+      });
       expect(this.expression.element.className).toMatch(/error/);
     });
 
@@ -50,14 +80,20 @@ describe('The CodeMirrorBlocks Class', function () {
     });
 
     it("it should allow you to set a title value", function () {
-      this.cmb.markText(this.expression.from, this.expression.to, { title: "woot" });
+      this.cmb.markText(this.expression.from, this.expression.to, {
+        title: "woot",
+      });
       expect(this.expression.element.title).toBe("woot");
     });
 
     describe("which provides some getters,", function () {
       beforeEach(function () {
-        this.cmb.markText(this.literal1.from, this.literal1.to, { css: "color: red" });
-        this.cmb.markText(this.expression.from, this.expression.to, { title: "woot" });
+        this.cmb.markText(this.literal1.from, this.literal1.to, {
+          css: "color: red",
+        });
+        this.cmb.markText(this.expression.from, this.expression.to, {
+          title: "woot",
+        });
       });
 
       it("should return marks with findMarks", function () {
@@ -80,9 +116,9 @@ describe('The CodeMirrorBlocks Class', function () {
 
     describe("which spits out TextMark-like objects,", function () {
       beforeEach(function () {
-        this.mark = this.cmb.markText(
-          this.literal1.from, this.literal1.to, { css: "color: red" }
-        );
+        this.mark = this.cmb.markText(this.literal1.from, this.literal1.to, {
+          css: "color: red",
+        });
       });
 
       it("should expose a clear function to remove the mark", function () {

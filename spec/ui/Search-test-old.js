@@ -1,27 +1,29 @@
-import example from 'codemirror-blocks/languages/example';
-import {click, keydown, pureevent, setNativeValue} from '../support/events';
-import {wait, teardown, activationSetup} from '../src/toolkit/test-utils';
-import {PGUP, PGDN, F3} from 'codemirror-blocks/keycode';
+import example from "codemirror-blocks/languages/example";
+import { click, keydown, pureevent, setNativeValue } from "../support/events";
+import { wait, teardown, activationSetup } from "../src/toolkit/test-utils";
+import { PGUP, PGDN, F3 } from "codemirror-blocks/keycode";
 
 // ms delay to let the DOM catch up before testing
 const DELAY = 500;
 
 // be sure to call with `apply` or `call`
-let setup = function () { activationSetup.call(this, example); };
+let setup = function () {
+  activationSetup.call(this, example);
+};
 
-describe('Search component', function() {
-  beforeEach(function() {
+describe("Search component", function () {
+  beforeEach(function () {
     setup.call(this);
     this.cmb.setBlockMode(true);
   });
 
-  afterEach(function() {
+  afterEach(function () {
     teardown();
   });
 
-  describe('Basic search', function() {
-    beforeEach(async function() {
-      this.editor.getCodeMirror().setValue('0 1 2 1 (+ 1 2)');
+  describe("Basic search", function () {
+    beforeEach(async function () {
+      this.editor.getCodeMirror().setValue("0 1 2 1 (+ 1 2)");
 
       this.nomatch1 = this.blocks.ast.rootNodes[0];
       this.match1 = this.blocks.ast.rootNodes[1];
@@ -34,22 +36,21 @@ describe('Search component', function() {
 
       await wait(DELAY);
 
-      const searchBox = document.querySelector('.search-input');
+      const searchBox = document.querySelector(".search-input");
       setNativeValue(searchBox, "1");
-      searchBox.dispatchEvent(pureevent('input'));
-      const close = document.querySelector('.wrapper-modal .close');
+      searchBox.dispatchEvent(pureevent("input"));
+      const close = document.querySelector(".wrapper-modal .close");
       close.dispatchEvent(click());
 
       await wait(DELAY);
     });
 
-
-    it('should stay where it is initially', function() {
+    it("should stay where it is initially", function () {
       expect(this.blocks.getActiveNode()).toBe(this.nomatch1);
       expect(document.activeElement).toBe(this.nomatch1.el);
     });
 
-    it('should find next match, skipping a non-matching literal', async function() {
+    it("should find next match, skipping a non-matching literal", async function () {
       this.match1.el.dispatchEvent(click());
       this.match1.el.dispatchEvent(keydown(PGDN));
 
@@ -59,7 +60,7 @@ describe('Search component', function() {
       expect(document.activeElement).toBe(this.match2.el);
     });
 
-    it('should wrap around to beginning of document for find-next', async function() {
+    it("should wrap around to beginning of document for find-next", async function () {
       this.match3.el.dispatchEvent(click());
       this.match3.el.dispatchEvent(keydown(PGDN));
 
@@ -69,7 +70,7 @@ describe('Search component', function() {
       expect(document.activeElement).toBe(this.match1.el);
     });
 
-    it('should wrap around to end of document for find-previous', async function() {
+    it("should wrap around to end of document for find-previous", async function () {
       this.match1.el.dispatchEvent(click());
       this.match1.el.dispatchEvent(keydown(PGUP));
 
@@ -80,10 +81,11 @@ describe('Search component', function() {
     });
   });
 
-
-  describe('when using advanced search mode,', function() {
-    beforeEach(async function() {
-      this.editor.getCodeMirror().setValue('(hello 1 (hell) 2 (Hello) 3 (lll))');
+  describe("when using advanced search mode,", function () {
+    beforeEach(async function () {
+      this.editor
+        .getCodeMirror()
+        .setValue("(hello 1 (hell) 2 (Hello) 3 (lll))");
 
       this.hello = this.blocks.ast.rootNodes[0].func;
       this.hell = this.blocks.ast.rootNodes[0].args[1].func;
@@ -93,15 +95,15 @@ describe('Search component', function() {
       this.hello.el.dispatchEvent(click());
     });
 
-    it('should be case insensitive by default', async function() {
+    it("should be case insensitive by default", async function () {
       this.hello.el.dispatchEvent(keydown(F3));
 
       await wait(DELAY);
 
-      const searchBox = document.querySelector('.search-input');
+      const searchBox = document.querySelector(".search-input");
       setNativeValue(searchBox, "hell");
-      searchBox.dispatchEvent(pureevent('input'));
-      const close = document.querySelector('.wrapper-modal .close');
+      searchBox.dispatchEvent(pureevent("input"));
+      const close = document.querySelector(".wrapper-modal .close");
       close.dispatchEvent(click());
 
       await wait(DELAY);
@@ -126,7 +128,7 @@ describe('Search component', function() {
       expect(document.activeElement).toBe(this.hello.el);
     });
 
-    it('should be able to use case sensitive mode', async function() {
+    it("should be able to use case sensitive mode", async function () {
       this.hello.el.dispatchEvent(keydown(F3));
 
       await wait(DELAY);
@@ -134,11 +136,11 @@ describe('Search component', function() {
       const ignoreCase = document.querySelector('input[name="isIgnoreCase"]');
       ignoreCase.dispatchEvent(click());
 
-      const searchBox = document.querySelector('.search-input');
+      const searchBox = document.querySelector(".search-input");
       setNativeValue(searchBox, "hell");
-      searchBox.dispatchEvent(pureevent('input'));
+      searchBox.dispatchEvent(pureevent("input"));
 
-      const close = document.querySelector('.wrapper-modal .close');
+      const close = document.querySelector(".wrapper-modal .close");
       close.dispatchEvent(click());
 
       await wait(DELAY);
@@ -157,8 +159,7 @@ describe('Search component', function() {
       expect(document.activeElement).toBe(this.hello.el);
     });
 
-
-    it('should be able to use regex mode', async function() {
+    it("should be able to use regex mode", async function () {
       this.hello.el.dispatchEvent(keydown(F3));
 
       await wait(DELAY);
@@ -166,11 +167,11 @@ describe('Search component', function() {
       const ignoreCase = document.querySelector('input[name="isRegex"]');
       ignoreCase.dispatchEvent(click());
 
-      const searchBox = document.querySelector('.search-input');
+      const searchBox = document.querySelector(".search-input");
       setNativeValue(searchBox, "ll[ol]");
-      searchBox.dispatchEvent(pureevent('input'));
+      searchBox.dispatchEvent(pureevent("input"));
 
-      const close = document.querySelector('.wrapper-modal .close');
+      const close = document.querySelector(".wrapper-modal .close");
       close.dispatchEvent(click());
 
       await wait(DELAY);
@@ -190,10 +191,9 @@ describe('Search component', function() {
     });
   });
 
-
-  describe('Block search', function() {
-    beforeEach(async function() {
-      this.editor.getCodeMirror().setValue('0 (+ (* 1 2) (/ 3 4)) (- 5 6)');
+  describe("Block search", function () {
+    beforeEach(async function () {
+      this.editor.getCodeMirror().setValue("0 (+ (* 1 2) (/ 3 4)) (- 5 6)");
 
       this.n0 = this.blocks.ast.rootNodes[0];
       this.n1 = this.blocks.ast.rootNodes[1].args[0].args[0];
@@ -215,29 +215,28 @@ describe('Search component', function() {
 
       await wait(DELAY);
 
-      const tab = document.querySelectorAll('.react-tabs li')[1]; // second tab
+      const tab = document.querySelectorAll(".react-tabs li")[1]; // second tab
       tab.dispatchEvent(click());
 
       await wait(DELAY);
 
-
       // There are two types: expression and literal (alphabetically)
       const selector = document.querySelector('select[name="blockType"]');
-      selector.value = 'expression';
-      selector.dispatchEvent(pureevent('change'));
+      selector.value = "expression";
+      selector.dispatchEvent(pureevent("change"));
 
-      const close = document.querySelector('.wrapper-modal .close');
+      const close = document.querySelector(".wrapper-modal .close");
       close.dispatchEvent(click());
 
       await wait(DELAY);
     });
 
-    it('should stay where it is initially', function() {
+    it("should stay where it is initially", function () {
       expect(this.blocks.getActiveNode()).toBe(this.n1);
       expect(document.activeElement).toBe(this.n1.el);
     });
 
-    it('should find expression', async function() {
+    it("should find expression", async function () {
       this.n1.el.dispatchEvent(keydown(PGDN));
 
       await wait(DELAY);
@@ -259,22 +258,22 @@ describe('Search component', function() {
       this.ePlus.el.dispatchEvent(keydown(PGDN));
     });
 
-    it('should find literals', async function() {
+    it("should find literals", async function () {
       this.n1.el.dispatchEvent(keydown(F3));
 
       await wait(DELAY);
 
-      const tab = document.querySelectorAll('.react-tabs li')[1]; // second tab
+      const tab = document.querySelectorAll(".react-tabs li")[1]; // second tab
       tab.dispatchEvent(click());
 
       await wait(DELAY);
 
       // There are two types: expression and literal (alphabetically)
       const selector = document.querySelector('select[name="blockType"]');
-      selector.value = 'literal';
-      selector.dispatchEvent(pureevent('change'));
+      selector.value = "literal";
+      selector.dispatchEvent(pureevent("change"));
 
-      const close = document.querySelector('.wrapper-modal .close');
+      const close = document.querySelector(".wrapper-modal .close");
       close.dispatchEvent(click());
 
       await wait(DELAY);

@@ -8,10 +8,9 @@ clear here, that's a good place to look to try to get a deeper understanding.
 Why are we using React? I see two big reasons:
 
 1. React is smart about what to update, and doesn't needlessly update parts of
-the DOM that haven't changed. This is good for efficiency.
+   the DOM that haven't changed. This is good for efficiency.
 2. React is an opinionated framework, with good opinions. It gives good
-structure to CMB.
-
+   structure to CMB.
 
 ## React Overview
 
@@ -48,10 +47,7 @@ browser DOM, via a function called `ReactDOM.render`. In this example, if we
 just want to render the clock, we can say:
 
 ```javascript
-ReactDOM.render(
-  <Clock />,
-  document.getElementById('root')
-);
+ReactDOM.render(<Clock />, document.getElementById("root"));
 ```
 
 Most of the rest of React is additional features that you can add to a
@@ -63,31 +59,26 @@ there are features to fix that.
 These three definitions produce approximately the same thing, a _React Element_:
 
 ```javascript
-const element = (
-  <h1 className="greeting">
-    Hello, world!
-  </h1>
-);
+const element = <h1 className="greeting">Hello, world!</h1>;
 
 const element = React.createElement(
-  'h1',
-  {className: 'greeting'},
-  'Hello, world!'
+  "h1",
+  { className: "greeting" },
+  "Hello, world!"
 );
 
 // Note: this structure is simplified
 const element = {
-  type: 'h1',
+  type: "h1",
   props: {
-  className: 'greeting',
-  children: 'Hello, world!'
-  }
+    className: "greeting",
+    children: "Hello, world!",
+  },
 };
 ```
 
 React Elements are the nodes that make up the virtual DOM tree that represents
 the state of your application. They are **immutable**.
-
 
 ### JSX
 
@@ -111,18 +102,16 @@ You can use curly-brace escapes in a variety of ways. They can:
 - Fill in a _sequence_ of children, by using a JS expression that evaluates to
   an _array_ of React Elements. For example, `<ul>{listItems}</ul>`. If you do
   this, each child should have a distinct `key` attribute.
-- Fill in an event handler with a function. For example, `<form
-  onSubmit={this.handleSubmit}>`.
+- Fill in an event handler with a function. For example, `<form onSubmit={this.handleSubmit}>`.
 
 ### Some additional notes:
 
 - Tags in comments are evaluated! Beware!
 - JSX is also the name of [an entirely unrelated thing](https://jsx.github.io/).
 - Unlike real HTML, all tags must be closed, and there are no weird rules about
-which tags are allowed to be self-closed (e.g. `<tag/>`) and which aren't.
+  which tags are allowed to be self-closed (e.g. `<tag/>`) and which aren't.
 - Tags sometimes need to be enclosed in parens, presumably to help with parsing.
-The tutorial doesn't seem to give any rules about when this is needed.
-
+  The tutorial doesn't seem to give any rules about when this is needed.
 
 ## React Components
 
@@ -168,7 +157,7 @@ a synchronous update. For example:
 
 ```javascript
 this.setState((state, props) => ({
-  counter: state.counter + props.increment
+  counter: state.counter + props.increment,
 }));
 ```
 

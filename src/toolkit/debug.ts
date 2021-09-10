@@ -1,13 +1,13 @@
 import "codemirror/lib/codemirror.css";
 import "./debug-page.less";
-import type { Language } from '../CodeMirrorBlocks';
-import CodeMirrorBlocks from '../CodeMirrorBlocks';
+import type { Language } from "../CodeMirrorBlocks";
+import CodeMirrorBlocks from "../CodeMirrorBlocks";
 import { resetUniqueIdGenerator } from "../utils";
 
 /**
  * Renders the codemirror blocks editor to the page along with some
  * debugging tools for downloading and replaying reducer action logs
- * 
+ *
  * @param language the language definition to use when instantiating the editor
  * @param value Initial string of code to load the codemirror blocks editor with
  * @returns the codemirror blocks editor
@@ -34,15 +34,15 @@ export function createDebuggingInterface(language: Language, value: string) {
 </div>
   `;
 
-  const container = document.getElementById('cmb-editor');
+  const container = document.getElementById("cmb-editor");
   // grab the load-from-log button
   const loadLogButton = document.getElementById(
-    'loadFromLog'
+    "loadFromLog"
   ) as HTMLInputElement;
   const downloadLogButton = document.getElementById(
-    'downloadLog'
+    "downloadLog"
   ) as HTMLButtonElement;
-  const nextButton = document.getElementById('nextButton') as HTMLButtonElement;
+  const nextButton = document.getElementById("nextButton") as HTMLButtonElement;
 
   const editor = CodeMirrorBlocks(
     container,
@@ -54,29 +54,29 @@ export function createDebuggingInterface(language: Language, value: string) {
   );
 
   type JSONLog = {
-    history: typeof window.reducerActivities,
-    exception: string
+    history: typeof window.reducerActivities;
+    exception: string;
   };
 
-  let history: JSONLog['history'];
+  let history: JSONLog["history"];
   let lastAction: number;
   let currentAction = 0;
 
   downloadLogButton.onclick = () => {
     let json: JSONLog = {
       history: window.reducerActivities,
-      exception: 'DUMMY'
+      exception: "DUMMY",
     };
 
-    var element = document.createElement('a');
+    var element = document.createElement("a");
     element.setAttribute(
-      'href',
-      'data:text/plain;charset=utf-8,' +
+      "href",
+      "data:text/plain;charset=utf-8," +
         encodeURIComponent(JSON.stringify(json))
     );
-    element.setAttribute('download', 'CMB Log.txt');
+    element.setAttribute("download", "CMB Log.txt");
 
-    element.style.display = 'none';
+    element.style.display = "none";
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -86,32 +86,32 @@ export function createDebuggingInterface(language: Language, value: string) {
   loadLogButton.onchange = (e) => {
     let file = (e.target as HTMLInputElement).files[0];
     let reader = new FileReader();
-    reader.readAsText(file, 'UTF-8');
+    reader.readAsText(file, "UTF-8");
     // parse the string, draw the actions, and set up counters
     // and UI for replaying them
     reader.onload = (readEvent) => {
       let log: JSONLog;
       try {
         log = JSON.parse(readEvent.target.result.toString());
-        if (!(log.exception && log.history)) throw 'Bad Log';
+        if (!(log.exception && log.history)) throw "Bad Log";
       } catch {
         console.log(readEvent.target.result.toString());
-        alert('Malformed log file!\nContents printed to console');
+        alert("Malformed log file!\nContents printed to console");
         return;
       }
-      editor.setValue('');
+      editor.setValue("");
       editor.setBlockMode(true);
       resetUniqueIdGenerator();
       history = log.history;
       history.forEach((entry) => {
-        let LI = document.createElement('LI');
-        LI.className = 'logEntry';
+        let LI = document.createElement("LI");
+        LI.className = "logEntry";
         LI.innerHTML = JSON.stringify(entry);
-        document.getElementById('entries').appendChild(LI);
+        document.getElementById("entries").appendChild(LI);
       });
       lastAction = history.length;
-      nextButton.style.display = 'inline-block';
-      loadLogButton.style.display = 'none';
+      nextButton.style.display = "inline-block";
+      loadLogButton.style.display = "none";
     };
   };
 
@@ -120,13 +120,15 @@ export function createDebuggingInterface(language: Language, value: string) {
   nextButton.onclick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    let entries = [...document.getElementById('entries').children] as HTMLElement[];
-    entries.forEach((c) => (c.style.background = 'none'));
-    entries[currentAction].style.background = 'lightblue';
+    let entries = [
+      ...document.getElementById("entries").children,
+    ] as HTMLElement[];
+    entries.forEach((c) => (c.style.background = "none"));
+    entries[currentAction].style.background = "lightblue";
     editor.executeAction(history[currentAction]);
     currentAction++;
     if (currentAction == lastAction) {
-      nextButton.value = 'Done';
+      nextButton.value = "Done";
       nextButton.disabled = true;
     }
     editor.focus();

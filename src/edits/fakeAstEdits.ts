@@ -1,10 +1,9 @@
-import * as P from 'pretty-fast-pretty-printer';
-import {warn, poscmp} from '../utils';
-import {Required, Optional, List, Value} from '../nodeSpec';
-import {ASTNode} from '../ast';
-import type {AST, Pos} from '../ast';
-import {playSound, BEEP} from '../utils';
-
+import * as P from "pretty-fast-pretty-printer";
+import { warn, poscmp } from "../utils";
+import { Required, Optional, List, Value } from "../nodeSpec";
+import { ASTNode } from "../ast";
+import type { AST, Pos } from "../ast";
+import { playSound, BEEP } from "../utils";
 
 // Say that you have the source code `[1, 3]`, representing a list, and you
 // insert `2` at a drop target in between `1` and `3`. We ultimately represent
@@ -35,7 +34,6 @@ import {playSound, BEEP} from '../utils';
 //
 // This file knows how to perform fake AST edits (steps 2&3).
 
-
 // Knows how to perform a fake insertion operation, and how to find the inserted
 // child after the AST is re-parsed.
 export class FakeAstInsertion {
@@ -47,14 +45,14 @@ export class FakeAstInsertion {
     this.parent = parent;
     this.pos = pos;
     // Find the spec that matches the supplied field name.
-    let spec: List|null = null;
+    let spec: List | null = null;
     for (const s of parent.spec.childSpecs) {
       if (s instanceof List && s.fieldName === fieldName) {
         spec = s;
       }
     }
     if (spec === null) {
-      warn('fakeAstEdits', "Failed to find list to insert child into.");
+      warn("fakeAstEdits", "Failed to find list to insert child into.");
     }
     this.spec = spec;
     // If `pos` is null, that means the list is empty.
@@ -84,7 +82,7 @@ export class FakeAstInsertion {
   // Find the inserted child. If more than one was inserted at once, find the
   // _last_.
   // Since nodeIds are not stable across edits, findChild may fail if the
-  // parent node has been changed. In that case, return false to trigger 
+  // parent node has been changed. In that case, return false to trigger
   // the fallback focusHint handler.
   findChild(newAST: AST) {
     try {
@@ -118,7 +116,7 @@ export class FakeAstReplacement {
         } else if (spec instanceof Optional && field && field.id === child.id) {
           this.spec = spec;
           return;
-        } 
+        }
       } else if (spec instanceof List) {
         for (const i in field) {
           if (field[i].id === child.id) {
@@ -129,11 +127,18 @@ export class FakeAstReplacement {
         }
       }
     }
-    warn('new ReplacementPoint', "Failed to find child to be replaced/deleted.");
+    warn(
+      "new ReplacementPoint",
+      "Failed to find child to be replaced/deleted."
+    );
   }
 
   replaceChild(clonedParent: ClonedASTNode, text: string) {
-    const newChildNode = new FakeInsertNode(this.child.from, this.child.to, text);
+    const newChildNode = new FakeInsertNode(
+      this.child.from,
+      this.child.to,
+      text
+    );
     if (this.index) {
       this.spec.getField(clonedParent)[this.index] = newChildNode;
     } else {
@@ -148,7 +153,10 @@ export class FakeAstReplacement {
       this.spec.setField(clonedParent, null);
     } else {
       playSound(BEEP);
-      this.spec.setField(clonedParent, new FakeBlankNode(this.child.from, this.child.to))
+      this.spec.setField(
+        clonedParent,
+        new FakeBlankNode(this.child.from, this.child.to)
+      );
     }
   }
 
@@ -167,8 +175,8 @@ export class FakeAstReplacement {
 // A fake ASTNode that just prints itself with the given text.
 class FakeInsertNode extends ASTNode {
   text: string;
-  constructor(from: Pos, to: Pos, text: string, options={}) {
-    super(from, to, 'fakeInsertNode', options);
+  constructor(from: Pos, to: Pos, text: string, options = {}) {
+    super(from, to, "fakeInsertNode", options);
     this.text = text;
   }
 
@@ -181,15 +189,15 @@ class FakeInsertNode extends ASTNode {
     return P.vertArray(lines.map(P.txt));
   }
 
-  render(_props:{}) {
-    warn('fakeAstEdits', "FakeInsertNode didn't expect to be rendered!");
+  render(_props: {}) {
+    warn("fakeAstEdits", "FakeInsertNode didn't expect to be rendered!");
   }
 }
 
 // A fake ASTNode that just prints itself like a Blank.
 class FakeBlankNode extends ASTNode {
-  constructor(from: Pos, to: Pos, options={}) {
-    super(from, to, 'fakeBlankNode', options);
+  constructor(from: Pos, to: Pos, options = {}) {
+    super(from, to, "fakeBlankNode", options);
   }
 
   toDescription(_level: number) {
@@ -200,8 +208,8 @@ class FakeBlankNode extends ASTNode {
     return P.txt("...");
   }
 
-  render(_props:{}) {
-    warn('fakeAstEdits', "FakeBlankNode didn't expect to be rendered!");
+  render(_props: {}) {
+    warn("fakeAstEdits", "FakeBlankNode didn't expect to be rendered!");
   }
 }
 
@@ -209,7 +217,6 @@ class FakeBlankNode extends ASTNode {
  * An ASTNode that is a clone of another ASTNode.
  */
 export class ClonedASTNode extends ASTNode {
-
   // Make a copy of a node, to perform fake edits on (so that the fake edits don't
   // show up in the real AST). This copy will be deep over the ASTNodes, but
   // shallow over the non-ASTNode values they contain.
@@ -234,8 +241,8 @@ export class ClonedASTNode extends ASTNode {
     this.spec = oldNode.spec;
     this.pretty = oldNode.pretty;
   }
-  render(_props:{}) {
-    warn('fakeAstEdits', "ClonedASTNode didn't expect to be rendered!");
+  render(_props: {}) {
+    warn("fakeAstEdits", "ClonedASTNode didn't expect to be rendered!");
   }
 }
 

@@ -1,33 +1,59 @@
-import wescheme from '../src/languages/wescheme';
-import 'codemirror/addon/search/searchcursor.js';
+import wescheme from "../src/languages/wescheme";
+import "codemirror/addon/search/searchcursor.js";
 
 /*eslint no-unused-vars: "off"*/
 import {
-  mac, cmd_ctrl, wait, removeEventListeners, teardown, activationSetup,
-  click, mouseDown, mouseenter, mouseover, mouseleave, doubleClick, blur, 
-  paste, cut, copy, dragstart, dragover, drop, dragenter, dragenterSeq, 
-  dragend, dragleave, keyDown, keyPress, insertText, finishRender
-} from '../src/toolkit/test-utils';
+  mac,
+  cmd_ctrl,
+  wait,
+  removeEventListeners,
+  teardown,
+  activationSetup,
+  click,
+  mouseDown,
+  mouseenter,
+  mouseover,
+  mouseleave,
+  doubleClick,
+  blur,
+  paste,
+  cut,
+  copy,
+  dragstart,
+  dragover,
+  drop,
+  dragenter,
+  dragenterSeq,
+  dragend,
+  dragleave,
+  keyDown,
+  keyPress,
+  insertText,
+  finishRender,
+} from "../src/toolkit/test-utils";
 
-console.log('Doing activation-test.js');
+console.log("Doing activation-test.js");
 
 // be sure to call with `apply` or `call`
-let setup = function () { activationSetup.call(this, wescheme); };
-
+let setup = function () {
+  activationSetup.call(this, wescheme);
+};
 
 describe("when dealing with node activation,", function () {
   beforeEach(async function () {
     setup.call(this);
-    this.cmb.setValue('11\n54');
+    this.cmb.setValue("11\n54");
     await finishRender(this.cmb);
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];
   });
 
-  afterEach(function () { teardown(); });
+  afterEach(function () {
+    teardown();
+  });
 
-  it('should only allow one node to be active at a time', async function () {
+  it("should only allow one node to be active at a time", async function () {
     mouseDown(this.literal1);
     await finishRender(this.cmb);
     mouseDown(this.literal2);
@@ -36,36 +62,37 @@ describe("when dealing with node activation,", function () {
     expect(this.activeNode()).toBe(this.literal2);
   });
 
-  it('should put focus on the active node', async function () {
+  it("should put focus on the active node", async function () {
     mouseDown(this.literal1);
     await finishRender(this.cmb);
     expect(document.activeElement).toBe(this.literal1.element);
     expect(this.activeAriaId()).toBe(this.literal1.element.id);
   });
 
-  it('should not delete active nodes when the delete key is pressed', async function () {
-    expect(this.cmb.getValue()).toBe('11\n54');
+  it("should not delete active nodes when the delete key is pressed", async function () {
+    expect(this.cmb.getValue()).toBe("11\n54");
     mouseDown(this.literal1);
     await finishRender(this.cmb);
     expect(this.activeNode()).toBe(this.literal1);
 
     keyDown("Delete");
     await finishRender(this.cmb);
-    expect(this.cmb.getValue()).toBe('11\n54');
+    expect(this.cmb.getValue()).toBe("11\n54");
   });
 
-  it('should activate the first node when down is pressed', async function () {
+  it("should activate the first node when down is pressed", async function () {
     mouseDown(this.literal1.element);
-    keyDown("[", {ctrlKey: true}, this.literal1.element); // set cursor to the left
+    keyDown("[", { ctrlKey: true }, this.literal1.element); // set cursor to the left
     await finishRender(this.cmb);
     keyDown("ArrowDown");
     await finishRender(this.cmb);
     expect(this.activeNode()).toBe(this.literal1);
-    expect(this.cmb.getScrollerElement().getAttribute('aria-activedescendent'))
-      .toBe('block-node-' + this.literal1.id);
+    expect(
+      this.cmb.getScrollerElement().getAttribute("aria-activedescendent")
+    ).toBe("block-node-" + this.literal1.id);
   });
 
-  it('should activate the next node when down is pressed', async function () {
+  it("should activate the next node when down is pressed", async function () {
     keyDown("ArrowDown");
     keyDown("ArrowDown");
     await finishRender(this.cmb);
@@ -74,7 +101,7 @@ describe("when dealing with node activation,", function () {
     expect(this.activeAriaId()).toBe(this.literal2.element.id);
   });
 
-  it('should activate the node after the cursor when down is pressed', async function () {
+  it("should activate the node after the cursor when down is pressed", async function () {
     this.cmb.setCursor({ line: 0, ch: 2 });
     keyDown("ArrowDown");
     await finishRender(this.cmb);
@@ -83,7 +110,7 @@ describe("when dealing with node activation,", function () {
     expect(this.activeAriaId()).toBe(this.literal2.element.id);
   });
 
-  it('should activate the node before the cursor when up is pressed', async function () {
+  it("should activate the node before the cursor when up is pressed", async function () {
     this.cmb.setCursor({ line: 0, ch: 2 });
     keyDown("ArrowUp");
     await finishRender(this.cmb);
@@ -92,7 +119,7 @@ describe("when dealing with node activation,", function () {
     expect(this.activeAriaId()).toBe(this.literal1.element.id);
   });
 
-  it('should toggle the editability of activated node when Enter is pressed', async function () {
+  it("should toggle the editability of activated node when Enter is pressed", async function () {
     mouseDown(this.literal1);
     await finishRender(this.cmb);
     expect(this.activeNode()).toBe(this.literal1);
@@ -103,7 +130,7 @@ describe("when dealing with node activation,", function () {
     expect(this.literal1.isEditable()).toBe(true);
   });
 
-  it('should cancel the editability of activated node when Esc is pressed', async function () {
+  it("should cancel the editability of activated node when Esc is pressed", async function () {
     mouseDown(this.literal1);
     await finishRender(this.cmb);
     expect(this.activeNode()).toBe(this.literal1);
@@ -116,10 +143,10 @@ describe("when dealing with node activation,", function () {
     keyDown("Escape");
     await finishRender(this.cmb);
     expect(this.literal1.isEditable()).toBe(false);
-    expect(this.cmb.getValue()).toBe('11\n54');
+    expect(this.cmb.getValue()).toBe("11\n54");
   });
 
-  it('should cancel the editability of activated node when Alt-Q is pressed', async function () {
+  it("should cancel the editability of activated node when Alt-Q is pressed", async function () {
     mouseDown(this.literal1);
     await finishRender(this.cmb);
     expect(this.activeNode()).toBe(this.literal1);
@@ -132,24 +159,26 @@ describe("when dealing with node activation,", function () {
     keyDown("Q", { altKey: true });
     await finishRender(this.cmb);
     expect(this.literal1.isEditable()).toBe(false);
-    expect(this.cmb.getValue()).toBe('11\n54');
+    expect(this.cmb.getValue()).toBe("11\n54");
   });
 });
 
-describe('cut/copy/paste',  function () {
+describe("cut/copy/paste", function () {
   beforeEach(async function () {
     setup.call(this);
 
-    this.cmb.setValue('11\n54');
+    this.cmb.setValue("11\n54");
     await finishRender(this.cmb);
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];
   });
 
-  afterEach(function () { teardown(); });
+  afterEach(function () {
+    teardown();
+  });
 
-  it('should remove selected nodes on cut', async function () {
+  it("should remove selected nodes on cut", async function () {
     mouseDown(this.literal1);
     await finishRender(this.cmb);
     keyDown(" ", {}, this.literal1);
@@ -157,12 +186,12 @@ describe('cut/copy/paste',  function () {
 
     keyDown("X", cmd_ctrl, this.literal1);
     await finishRender(this.cmb);
-    expect(this.cmb.getValue()).toBe('\n54');
+    expect(this.cmb.getValue()).toBe("\n54");
     expect(this.activeNode().id).toBe(this.literal2.id);
     expect(this.activeNode().hash).toBe(this.literal2.hash);
   });
 
-  it('should remove multiple selected nodes on cut', async function () {
+  it("should remove multiple selected nodes on cut", async function () {
     mouseDown(this.literal1);
     keyDown(" ", {}, this.literal1);
     await finishRender(this.cmb);
@@ -174,32 +203,34 @@ describe('cut/copy/paste',  function () {
     keyDown("X", cmd_ctrl, this.literal2);
     await finishRender(this.cmb);
     expect(this.selectedNodes().length).toBe(0);
-    expect(this.cmb.getValue()).toBe('\n');
+    expect(this.cmb.getValue()).toBe("\n");
     expect(this.activeNode()).toBe(undefined);
   });
 });
 
-describe('tree navigation', function () {
+describe("tree navigation", function () {
   beforeEach(async function () {
     setup.call(this);
 
-    this.cmb.setValue('(+ 1 2 3) 99 (* 7 (* 1 2))');
+    this.cmb.setValue("(+ 1 2 3) 99 (* 7 (* 1 2))");
     let ast = this.cmb.getAst();
-    this.firstRoot  = ast.rootNodes[0];
+    this.firstRoot = ast.rootNodes[0];
     this.secondRoot = ast.rootNodes[1];
-    this.thirdRoot  = ast.rootNodes[2];
+    this.thirdRoot = ast.rootNodes[2];
     this.funcSymbol = ast.rootNodes[0].func;
-    this.firstArg   = ast.rootNodes[0].args[0];
-    this.secondArg  = ast.rootNodes[0].args[1];
-    this.thirdArg   = ast.rootNodes[0].args[2];
+    this.firstArg = ast.rootNodes[0].args[0];
+    this.secondArg = ast.rootNodes[0].args[1];
+    this.thirdArg = ast.rootNodes[0].args[2];
     this.nestedExpr = ast.rootNodes[2].args[1];
-    this.lastNode   = this.thirdRoot.args[1].args[1];
+    this.lastNode = this.thirdRoot.args[1].args[1];
     await finishRender(this.cmb);
   });
 
-  afterEach(function () { teardown(); });
+  afterEach(function () {
+    teardown();
+  });
 
-  it('up-arrow should navigate to the previous visible node, but not beyond the tree', async function () {
+  it("up-arrow should navigate to the previous visible node, but not beyond the tree", async function () {
     mouseDown(this.firstRoot);
     keyDown("ArrowLeft", {}, this.firstRoot); // collapse that root
     mouseDown(this.secondRoot);
@@ -218,7 +249,7 @@ describe('tree navigation', function () {
     expect(this.activeAriaId()).toBe(this.firstRoot.element.id);
   });
 
-  it('down-arrow should navigate to the next sibling, but not beyond the tree', async function () {
+  it("down-arrow should navigate to the next sibling, but not beyond the tree", async function () {
     mouseDown(this.firstRoot);
     keyDown("ArrowLeft", {}, this.firstRoot); // collapse that root
     mouseDown(this.thirdRoot.args[1].args[0]);
@@ -236,7 +267,7 @@ describe('tree navigation', function () {
     expect(this.activeAriaId()).toBe(this.thirdRoot.args[1].args[1].element.id);
   });
 
-  it('left-arrow should collapse a block, if it can be', async function () {
+  it("left-arrow should collapse a block, if it can be", async function () {
     mouseDown(this.firstRoot);
     keyDown("ArrowLeft", {}, this.firstRoot); // collapse that root
     mouseDown(this.firstRoot);
@@ -250,7 +281,7 @@ describe('tree navigation', function () {
     expect(this.secondRoot.element.getAttribute("aria-expanded")).toBe(null);
   });
 
-  it('shift-left-arrow should collapse all blocks', async function () {
+  it("shift-left-arrow should collapse all blocks", async function () {
     mouseDown(this.firstRoot);
     keyDown("ArrowLeft", { shiftKey: true }, this.firstRoot);
     await finishRender(this.cmb);
@@ -260,7 +291,7 @@ describe('tree navigation', function () {
     expect(this.thirdArg.element.getAttribute("aria-expanded")).toBe(null);
   });
 
-  it('shift-right-arrow should expand all blocks', async function () {
+  it("shift-right-arrow should expand all blocks", async function () {
     mouseDown(this.firstRoot);
     keyDown("ArrowLeft", { shiftKey: true }, this.firstRoot);
     await finishRender(this.cmb);
@@ -271,7 +302,7 @@ describe('tree navigation', function () {
     expect(this.nestedExpr.element.getAttribute("aria-expanded")).toBe("true");
   });
 
-  it('shift-alt-left-arrow should collapse only the currently-active root', async function () {
+  it("shift-alt-left-arrow should collapse only the currently-active root", async function () {
     mouseDown(this.lastNode);
     keyDown("ArrowLeft", { shiftKey: true }, this.firstRoot); // collapse all
     await finishRender(this.cmb);
@@ -286,7 +317,7 @@ describe('tree navigation', function () {
     expect(this.nestedExpr.element.getAttribute("aria-expanded")).toBe("true");
   });
 
-  it('shift-alt-right-arrow should expand only the currently-active root', async function () {
+  it("shift-alt-right-arrow should expand only the currently-active root", async function () {
     mouseDown(this.lastNode);
     await finishRender(this.cmb);
     keyDown("ArrowLeft", { shiftKey: true, altKey: true }, this.lastNode);
@@ -296,7 +327,7 @@ describe('tree navigation', function () {
     expect(this.nestedExpr.element.getAttribute("aria-expanded")).toBe("false");
   });
 
-  it('less-than should activate root without collapsing', async function () {
+  it("less-than should activate root without collapsing", async function () {
     mouseDown(this.thirdRoot.args[1].args[1]);
     keyDown("<", { shiftKey: true }, this.thirdRoot.args[1].args[1]);
     await finishRender(this.cmb);
@@ -304,7 +335,7 @@ describe('tree navigation', function () {
     expect(this.activeNode()).toBe(this.thirdRoot);
   });
 
-  it('right-arrow should expand a block, or shift focus to 1st child', async function () {
+  it("right-arrow should expand a block, or shift focus to 1st child", async function () {
     mouseDown(this.firstRoot);
     keyDown("ArrowLeft", {}, this.firstRoot);
     await finishRender(this.cmb);
@@ -321,7 +352,7 @@ describe('tree navigation', function () {
     expect(this.firstRoot.element.getAttribute("aria-expanded")).toBe("true");
   });
 
-  it('home should activate the first visible node', async function () {
+  it("home should activate the first visible node", async function () {
     mouseDown(this.firstRoot);
     keyDown("ArrowLeft", {}, this.firstRoot);
     await finishRender(this.cmb);
@@ -333,7 +364,7 @@ describe('tree navigation', function () {
   });
 
   // TODO: this test legitimately fails
-  it('end should activate the last visible node', async function () {
+  it("end should activate the last visible node", async function () {
     mouseDown(this.secondRoot);
     await finishRender(this.cmb);
     keyDown("End");
@@ -355,7 +386,7 @@ describe("when dealing with node selection, ", function () {
   beforeEach(async function () {
     setup.call(this);
 
-    this.cmb.setValue('11\n54\n(+ 1 2)');
+    this.cmb.setValue("11\n54\n(+ 1 2)");
     let ast = this.cmb.getAst();
     this.literal1 = ast.rootNodes[0];
     this.literal2 = ast.rootNodes[1];
@@ -363,66 +394,68 @@ describe("when dealing with node selection, ", function () {
     await finishRender(this.cmb);
   });
 
-  afterEach(function () { teardown(); });
+  afterEach(function () {
+    teardown();
+  });
 
-  it('space key toggles selection on and off', async function () {
+  it("space key toggles selection on and off", async function () {
     mouseDown(this.literal1);
     keyDown(" ", {}, this.literal1);
     await finishRender(this.cmb);
-    expect(this.literal1.element.getAttribute("aria-selected")).toBe('true');
+    expect(this.literal1.element.getAttribute("aria-selected")).toBe("true");
     expect(this.selectedNodes().length).toBe(1);
 
     keyDown(" ", {}, this.literal1);
     await finishRender(this.cmb);
-    expect(this.literal1.element.getAttribute("aria-selected")).toBe('false');
+    expect(this.literal1.element.getAttribute("aria-selected")).toBe("false");
     expect(this.selectedNodes().length).toBe(0);
   });
 
-  it('esc key clears selection', async function () {
+  it("esc key clears selection", async function () {
     mouseDown(this.literal1);
     keyDown(" ", {}, this.literal1);
     await finishRender(this.cmb);
-    expect(this.literal1.element.getAttribute("aria-selected")).toBe('true');
+    expect(this.literal1.element.getAttribute("aria-selected")).toBe("true");
     expect(this.selectedNodes().length).toBe(1);
     mouseDown(this.literal2);
     keyDown(" ", {}, this.literal2);
     await finishRender(this.cmb);
-    expect(this.literal2.element.getAttribute("aria-selected")).toBe('true');
+    expect(this.literal2.element.getAttribute("aria-selected")).toBe("true");
     expect(this.selectedNodes().length).toBe(2);
     keyDown("Escape", {}, this.literal2);
     await finishRender(this.cmb);
     expect(this.selectedNodes().length).toBe(0);
   });
 
-  it('Alt-Q key clears selection', async function () {
+  it("Alt-Q key clears selection", async function () {
     mouseDown(this.literal1);
     keyDown(" ", {}, this.literal1);
     await finishRender(this.cmb);
-    expect(this.literal1.element.getAttribute("aria-selected")).toBe('true');
+    expect(this.literal1.element.getAttribute("aria-selected")).toBe("true");
     expect(this.selectedNodes().length).toBe(1);
     mouseDown(this.literal2);
     keyDown(" ", {}, this.literal2);
     await finishRender(this.cmb);
-    expect(this.literal2.element.getAttribute("aria-selected")).toBe('true');
+    expect(this.literal2.element.getAttribute("aria-selected")).toBe("true");
     expect(this.selectedNodes().length).toBe(2);
     keyDown("Q", { altKey: true }, this.literal2);
     await finishRender(this.cmb);
     expect(this.selectedNodes().length).toBe(0);
   });
 
-  it('arrow preserves selection & changes active ', async function () {
+  it("arrow preserves selection & changes active ", async function () {
     mouseDown(this.literal1);
     keyDown(" ", {}, this.literal1);
     await finishRender(this.cmb);
     keyDown("ArrowDown");
     await finishRender(this.cmb);
-    expect(this.literal1.element.getAttribute("aria-selected")).toBe('true');
-    expect(this.literal2.element.getAttribute("aria-selected")).toBe('false');
+    expect(this.literal1.element.getAttribute("aria-selected")).toBe("true");
+    expect(this.literal2.element.getAttribute("aria-selected")).toBe("false");
     expect(this.activeNode()).toBe(this.literal2);
     expect(this.selectedNodes().length).toBe(1);
   });
 
-  it('allow multiple, non-contiguous selection ', async function () {
+  it("allow multiple, non-contiguous selection ", async function () {
     mouseDown(this.literal1);
     keyDown(" ", {}, this.literal1);
     await finishRender(this.cmb);
@@ -432,14 +465,14 @@ describe("when dealing with node selection, ", function () {
     await finishRender(this.cmb);
     keyDown(" ", {}, this.expr);
     await finishRender(this.cmb);
-    expect(this.literal1.element.getAttribute("aria-selected")).toBe('true');
-    expect(this.literal2.element.getAttribute("aria-selected")).toBe('false');
-    expect(this.expr.element.getAttribute("aria-selected")).toBe('true');
+    expect(this.literal1.element.getAttribute("aria-selected")).toBe("true");
+    expect(this.literal2.element.getAttribute("aria-selected")).toBe("false");
+    expect(this.expr.element.getAttribute("aria-selected")).toBe("true");
     expect(this.activeNode()).toBe(this.expr);
     expect(this.selectedNodes().length).toBe(5);
   });
 
-  it('selecting a parent, then deselecting a child should deselect the parent ', async function () {
+  it("selecting a parent, then deselecting a child should deselect the parent ", async function () {
     mouseDown(this.expr);
     keyDown(" ", {}, this.expr);
     await finishRender(this.cmb);
@@ -447,16 +480,20 @@ describe("when dealing with node selection, ", function () {
     await finishRender(this.cmb);
     keyDown(" ", {}, this.expr.func);
     await finishRender(this.cmb);
-    expect(this.expr.element.getAttribute("aria-selected")).toBe('false');
-    expect(this.expr.func.element.getAttribute("aria-selected")).toBe('false');
-    expect(this.expr.args[0].element.getAttribute("aria-selected")).toBe('true');
-    expect(this.expr.args[1].element.getAttribute("aria-selected")).toBe('true');
+    expect(this.expr.element.getAttribute("aria-selected")).toBe("false");
+    expect(this.expr.func.element.getAttribute("aria-selected")).toBe("false");
+    expect(this.expr.args[0].element.getAttribute("aria-selected")).toBe(
+      "true"
+    );
+    expect(this.expr.args[1].element.getAttribute("aria-selected")).toBe(
+      "true"
+    );
     expect(this.activeNode()).toBe(this.expr.func);
     expect(this.selectedNodes().length).toBe(2);
     expect(this.selectedNodes()[0]).toBe(this.expr.args[0]);
   });
 
-  it('selecting a child, then parent should select all children as well ', async function () {
+  it("selecting a child, then parent should select all children as well ", async function () {
     mouseDown(this.expr.func);
     keyDown(" ", {}, this.expr.func);
     await finishRender(this.cmb);
@@ -464,8 +501,8 @@ describe("when dealing with node selection, ", function () {
     await finishRender(this.cmb);
     keyDown(" ", {}, this.expr);
     await finishRender(this.cmb);
-    expect(this.expr.element.getAttribute("aria-selected")).toBe('true');
-    expect(this.expr.func.element.getAttribute("aria-selected")).toBe('true');
+    expect(this.expr.element.getAttribute("aria-selected")).toBe("true");
+    expect(this.expr.func.element.getAttribute("aria-selected")).toBe("true");
     expect(this.activeNode()).toBe(this.expr);
     expect(this.selectedNodes().length).toBe(4);
     expect(this.selectedNodes()[0]).toBe(this.expr);

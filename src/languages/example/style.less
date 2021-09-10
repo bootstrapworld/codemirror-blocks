@@ -52,7 +52,6 @@
     > .blocks-literal {
       color: white;
     }
-
   }
 
   .blocks-args {
@@ -61,7 +60,8 @@
     flex-grow: 1;
     padding: 3px 0px;
 
-    > .blocks-literal, .blocks-white-space[contenteditable="true"] {
+    > .blocks-literal,
+    .blocks-white-space[contenteditable="true"] {
       background: white;
       border: @border-width lightgray solid;
       border-radius: 0px;
@@ -84,7 +84,8 @@
     cursor: hand;
     text-align: center;
 
-    &.blocks-editing, &.blocks-quarantine {
+    &.blocks-editing,
+    &.blocks-quarantine {
       border-color: @editing-border-color;
       &.blocks-error {
         border-color: @error-border-color;
@@ -124,7 +125,6 @@
     .blocks-literal-symbol {
       color: @literal-symbol-color;
     }
-
   }
 
   .blocks-name {
@@ -139,7 +139,6 @@
   .blocks-editing {
     outline: 0;
     cursor: text;
-
   }
 
   .blocks-over-target {
@@ -169,12 +168,15 @@
         background-color: transparent;
       }
     }
-
   }
   .blocks-unknown {
     border-width: 1px;
-    >.blocks-operator{ background: rgba(0,0,0,0.5); }
-    >.blocks-args    { background: rgba(255,190,190,0.5); }
+    > .blocks-operator {
+      background: rgba(0, 0, 0, 0.5);
+    }
+    > .blocks-args {
+      background: rgba(255, 190, 190, 0.5);
+    }
   }
   .blocks-comment {
     color: @comment-color;
@@ -182,6 +184,8 @@
   }
 
   .blocks-dragging {
-    .blocks-white-space{ background-color: transparent; }
+    .blocks-white-space {
+      background-color: transparent;
+    }
   }
 }

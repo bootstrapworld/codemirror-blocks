@@ -1,45 +1,61 @@
-import {warn, poscmp, srcRangeIncludes, changeEnd, logResults} from '../utils';
-import {AST, ASTNode, Pos, prettyPrintingWidth} from '../ast';
-import SHARED from '../shared';
-import {commitChanges} from './commitChanges';
-import {speculateChanges} from './speculateChanges';
-import {FakeAstInsertion, FakeAstReplacement, cloneNode, ClonedASTNode} from './fakeAstEdits';
-import {store} from '../store';
-import type { EditorChange } from 'codemirror';
+import {
+  warn,
+  poscmp,
+  srcRangeIncludes,
+  changeEnd,
+  logResults,
+} from "../utils";
+import { AST, ASTNode, Pos, prettyPrintingWidth } from "../ast";
+import SHARED from "../shared";
+import { commitChanges } from "./commitChanges";
+import { speculateChanges } from "./speculateChanges";
+import {
+  FakeAstInsertion,
+  FakeAstReplacement,
+  cloneNode,
+  ClonedASTNode,
+} from "./fakeAstEdits";
+import { store } from "../store";
+import type { EditorChange } from "codemirror";
 
-/** 
- * 
+/**
+ *
  * Edits made in the block editor cannot be described in strictly
  * textual terms! Deleting a root node may require removing extra
  * whitespace, and editing a child node often requires adding/removing
- * delimeter chars and pretty-printing. 
- * 
- * Instead, we define "abstract edits", which produce different 
+ * delimeter chars and pretty-printing.
+ *
+ * Instead, we define "abstract edits", which produce different
  * kinds of "Edits" depending on the action and whether the effected
  * node is a root or child. The workflow in this file is:
- * 
+ *
  * <abstract edit(s)>  ->  Edits  ->  EditGroup  ->  CM ChangeObject
  */
 
-/** 
- * ABSTRACT EDITS 
+/**
+ * ABSTRACT EDITS
  * These abstract edits are exported, and used
  * by the actions.ts file:
- * 
+ *
  * edit_insert : String, ASTNode, String, Pos -> Edit
  * Construct an edit to insert `text` in the list `parent.field` at the given `pos`.
- * 
+ *
  * edit_overwrite : String, Pos, Pos -> Edit
  * Construct an edit to replace a range of source code with `text`. The range
  * must be at the toplevel: it can neither begin nor end inside a root node.
- * 
+ *
  * edit_delete : ASTNode -> Edit
  * Construct an edit to delete the given node.
- * 
+ *
  * edit_replace : String, ASTNode -> Edit
  * Construct an edit to replace `node` with `text`.
  */
-export function edit_insert(text: string, parent: ASTNode, field: string, pos: Pos): Edit {
+export function edit_insert(
+  text: string,
+  parent: ASTNode,
+  field: string,
+  pos: Pos
+): Edit {
   return new InsertChildEdit(text, parent, field, pos);
 }
 
@@ -55,7 +71,7 @@ export function edit_delete(node: ASTNode): Edit {
   }
 }
 
-export function edit_replace(text:string, node:ASTNode): Edit {
+export function edit_replace(text: string, node: ASTNode): Edit {
   if (node.parent) {
     // if the text is the empty string, return a Deletion instead
     if (text === "") {
@@ -67,10 +83,10 @@ export function edit_replace(text:string, node:ASTNode): Edit {
   }
 }
 
-export type OnSuccess = (r:{newAST:AST, focusId:string}) => void;
-export type OnError = (e:any) => void;
+export type OnSuccess = (r: { newAST: AST; focusId: string }) => void;
+export type OnError = (e: any) => void;
 
-/** 
+/**
  * performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
  *
  * Attempt to commit a set of changes to CodeMirror. For more details, see the
@@ -83,15 +99,17 @@ export function performEdits(
   origin: string,
   ast: AST,
   edits: Edit[],
-  onSuccess: OnSuccess=(r:{newAST:AST, focusId:string})=>{},
-  onError: OnError=(e:any)=>{},
+  onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
+  onError: OnError = (e: any) => {},
   annt?: string
 ) {
   // Ensure that all of the edits are valid.
   //console.log('XXX performEdits:55 doing performEdits');
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {
-      throw new Error(`performEdits - invalid edit ${edit}: all edits must be instances of Edit.`);
+      throw new Error(
+        `performEdits - invalid edit ${edit}: all edits must be instances of Edit.`
+      );
     }
   }
   // Use the focus hint from the last edit provided.
@@ -146,9 +164,15 @@ export function performEdits(
         }
       });
       //console.log('XXX performEdits:110 calling commitChanges');
-      let {newAST, focusId} = commitChanges(changeArray, false, focusHint, result.newAST, annt);
-      onSuccess({newAST, focusId});
-    } catch(e) {
+      let { newAST, focusId } = commitChanges(
+        changeArray,
+        false,
+        focusHint,
+        result.newAST,
+        annt
+      );
+      onSuccess({ newAST, focusId });
+    } catch (e) {
       logResults(window.reducerActivities, e);
     }
   } else {
@@ -157,11 +181,11 @@ export function performEdits(
 }
 
 /**
- * @internal 
+ * @internal
  * Edits
  * NOTE(pcardune): I don't think this needs to be exported?
- * 
- * Edits overwrite, delete or replace a *root* node. 
+ *
+ * Edits overwrite, delete or replace a *root* node.
  * Instances represent *top-level text operations*, and
  * can be directly converted into a CM changeObject
  */
@@ -169,10 +193,10 @@ export interface EditInterface {
   from: Pos;
   to: Pos;
   node?: ASTNode;
-  toChangeObject?(ast:AST): EditorChange;
+  toChangeObject?(ast: AST): EditorChange;
   findDescendantNode(ancestor: ASTNode, id: string): ASTNode;
-  focusHint(newAST:AST): ASTNode|"fallback";
-  toString():string;
+  focusHint(newAST: AST): ASTNode | "fallback";
+  toString(): string;
 }
 
 abstract class Edit implements EditInterface {
@@ -184,7 +208,7 @@ abstract class Edit implements EditInterface {
     this.to = to;
   }
 
-  toChangeObject?(ast:AST):EditorChange;
+  toChangeObject?(ast: AST): EditorChange;
 
   findDescendantNode(ancestor: ASTNode, id: string) {
     for (const node of ancestor.descendants()) {
@@ -192,12 +216,16 @@ abstract class Edit implements EditInterface {
         return node;
       }
     }
-    warn('performEdits', `Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`);
+    warn(
+      "performEdits",
+      `Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`
+    );
   }
 
   // The default behavior for most edits
-  focusHint(newAST:AST) {
-    return !this.node.prev? newAST.getFirstRootNode()
+  focusHint(newAST: AST) {
+    return !this.node.prev
+      ? newAST.getFirstRootNode()
       : newAST.getNodeById(this.node.prev.id) || "fallback";
   }
 
@@ -209,9 +237,9 @@ abstract class Edit implements EditInterface {
 class OverwriteEdit extends Edit {
   text: string;
   changeObject?: {
-    text: string[],
-    from: Pos,
-    to: Pos,
+    text: string[];
+    from: Pos;
+    to: Pos;
   };
   constructor(text: string, from: Pos, to: Pos) {
     super(from, to);
@@ -219,25 +247,36 @@ class OverwriteEdit extends Edit {
   }
 
   toChangeObject(ast: AST) {
-    let {from, to, text} = this;
+    let { from, to, text } = this;
     // if this root starts or ends on the same line as another, insert a newline
-    const nodeBefore = ast.rootNodes.find(r => (r.to.line == from.line) && (r.to.ch <= from.ch));
-    const nodeAfter  = ast.rootNodes.find(r => (r.from.line == to.line) && (to.ch <= r.from.ch));
-    if(nodeBefore) { text = "\n" + text; }
-    if(nodeAfter)  { text = text + "\n"; }
+    const nodeBefore = ast.rootNodes.find(
+      (r) => r.to.line == from.line && r.to.ch <= from.ch
+    );
+    const nodeAfter = ast.rootNodes.find(
+      (r) => r.from.line == to.line && to.ch <= r.from.ch
+    );
+    if (nodeBefore) {
+      text = "\n" + text;
+    }
+    if (nodeAfter) {
+      text = text + "\n";
+    }
     this.changeObject = {
       text: text.split("\n"),
       from: this.from,
-      to: this.to
+      to: this.to,
     };
     return this.changeObject;
   }
 
-  focusHint(newAST:AST) {
+  focusHint(newAST: AST) {
     if (this.changeObject) {
       return newAST.getNodeBeforeCur(changeEnd(this.changeObject));
     } else {
-      warn('OverwriteEdit', `Cannot determine focus hint before .toChangeObject(ast) is called.`);
+      warn(
+        "OverwriteEdit",
+        `Cannot determine focus hint before .toChangeObject(ast) is called.`
+      );
       return "fallback";
     }
   }
@@ -256,11 +295,11 @@ class DeleteRootEdit extends Edit {
   }
 
   toChangeObject(_ast: AST) {
-    const {from, to} = removeWhitespace(this.from, this.to);
+    const { from, to } = removeWhitespace(this.from, this.to);
     return {
       text: [""],
       from,
-      to
+      to,
     };
   }
 
@@ -284,7 +323,7 @@ class ReplaceRootEdit extends Edit {
     return {
       text: this.text.split("\n"),
       from: this.from,
-      to: this.to
+      to: this.to,
     };
   }
 
@@ -297,22 +336,21 @@ class ReplaceRootEdit extends Edit {
   }
 }
 
-
 /**
  * @internal
  * AstEdits
- * 
+ *
  * AstEdits insert, delete or replace a *child* node.
- * Instances *cannot* be directly converted to CM 
+ * Instances *cannot* be directly converted to CM
  * changeObject for two reasons:
- * 1) Some user edits require additional text! E.g. - 
- *    inserting a new fn variable may also require 
- *    inserting a separator). 
+ * 1) Some user edits require additional text! E.g. -
+ *    inserting a new fn variable may also require
+ *    inserting a separator).
  * 2) The user-entered text may not obey pretty-printing
  *    rules, so the edit will need to made, the parent
- *    will need to be pretty-printed, and the *resulting 
+ *    will need to be pretty-printed, and the *resulting
  *    parent code* will be the actual CM edit
- * These require an intermediate, context-aware step, 
+ * These require an intermediate, context-aware step,
  * which is defined in the makeAstEdit() method.
  */
 abstract class AstEdit extends Edit {
@@ -340,7 +378,7 @@ class InsertChildEdit extends AstEdit {
     this.fakeAstInsertion.insertChild(clonedParent, this.text);
   }
 
-  focusHint(newAST:AST) {
+  focusHint(newAST: AST) {
     return this.fakeAstInsertion.findChild(newAST) || "fallback";
   }
 
@@ -361,7 +399,10 @@ class DeleteChildEdit extends AstEdit {
   }
 
   makeAstEdit(clonedAncestor: ClonedASTNode) {
-    const clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
+    const clonedParent = super.findDescendantNode(
+      clonedAncestor,
+      this.parent.id
+    );
     this.fakeAstReplacement.deleteChild(clonedParent);
   }
 
@@ -401,10 +442,10 @@ class ReplaceChildEdit extends AstEdit {
 /**
  * @internal
  * The EditGroup class
- * 
+ *
  * Some edits can be grouped into an *editGroup*,
  * which can then be represented as a single CM
- * changeObject (e.g. - deleting multiple adjacent 
+ * changeObject (e.g. - deleting multiple adjacent
  * siblings). An EditGroup represents this combination
  * and serves an an intermediary between one or more
  * AstEdits and the resulting CM changeObject.
@@ -412,7 +453,7 @@ class ReplaceChildEdit extends AstEdit {
  */
 class EditGroup {
   ancestor: ASTNode;
-  edits: Edit[]
+  edits: Edit[];
   completed?: boolean;
 
   constructor(ancestor: ASTNode, edits: AstEdit[]) {
@@ -455,13 +496,19 @@ function groupEditsByAncestor(edits: Edit[]) {
       editToEditGroup.set(edit, group);
       // Check if any existing ancestors are below the parent.
       for (const [e, g] of editToEditGroup) {
-        if (e !== edit && srcRangeIncludes(edit.parent.srcRange(), g.ancestor.srcRange())) {
+        if (
+          e !== edit &&
+          srcRangeIncludes(edit.parent.srcRange(), g.ancestor.srcRange())
+        ) {
           editToEditGroup.set(e, group);
         }
       }
       // Check if the parent is below an existing ancestor.
       for (const [e, g] of editToEditGroup) {
-        if (e !== edit && srcRangeIncludes(g.ancestor.srcRange(), edit.parent.srcRange())) {
+        if (
+          e !== edit &&
+          srcRangeIncludes(g.ancestor.srcRange(), edit.parent.srcRange())
+        ) {
           editToEditGroup.set(edit, g);
           break; // Ancestors are disjoint; can only be contained in one.
         }
@@ -483,16 +530,16 @@ function groupEditsByAncestor(edits: Edit[]) {
  * When deleting a root, don't leave behind excessive whitespace
  */
 function removeWhitespace(from: Pos, to: Pos) {
-  let prevChar = SHARED.cm.getRange({line: from.line, ch: from.ch - 1}, from);
-  let nextChar = SHARED.cm.getRange(to, {line: to.line, ch: to.ch + 1});
+  let prevChar = SHARED.cm.getRange({ line: from.line, ch: from.ch - 1 }, from);
+  let nextChar = SHARED.cm.getRange(to, { line: to.line, ch: to.ch + 1 });
   if (prevChar == " " && (nextChar == " " || nextChar == "")) {
     // Delete an excess space.
-    return {from: {line: from.line, ch: from.ch - 1}, to: to};
+    return { from: { line: from.line, ch: from.ch - 1 }, to: to };
   } else if (nextChar == " " && prevChar == "") {
     // Delete an excess space.
-    return {from: from, to: {line: to.line, ch: to.ch + 1}};
+    return { from: from, to: { line: to.line, ch: to.ch + 1 } };
   } else {
-    return {from: from, to: to};
+    return { from: from, to: to };
   }
 }
 
@@ -502,6 +549,6 @@ function removeWhitespace(from: Pos, to: Pos) {
  * for a given node ID
  */
 function getNode(node: ASTNode) {
-  let {ast} = store.getState();
+  let { ast } = store.getState();
   return ast.getNodeById(node.id);
 }

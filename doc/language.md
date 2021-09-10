@@ -17,9 +17,9 @@ Here is an example of how to add a language to CodeMirror-Blocks:
 
     import WeschemeParser from './WeschemeParser';
     import CodeMirrorBlocks from '../../blocks';
-    
+
     require('./style.less');
-    
+
     let parser = new WeschemeParser();
 
     export default CodeMirrorBlocks.languages.addLanguage(
@@ -44,14 +44,14 @@ Here is an example of how to add a language to CodeMirror-Blocks:
 
 The call to `addLanguage` takes an object containing the following fields:
 
-* `id` is a short alphanumeric identifier to be used internally.
+- `id` is a short alphanumeric identifier to be used internally.
   [TODO: how exactly is this used, e.g. might it show up in error messages?]
-* `name` is a human-facing name for the language.
+- `name` is a human-facing name for the language.
   [TODO: when is this actually shown?]
-* `description` [TODO: should say where this is used, or remove it if it's not]
-* `parse()` is a parser for your language. It has the signature
+- `description` [TODO: should say where this is used, or remove it if it's not]
+- `parse()` is a parser for your language. It has the signature
   `parse(text: String) -> AST`, described in the next section.
-* `getRenderOptions` Right now, the only render option is `lockNodesOfType`,
+- `getRenderOptions` Right now, the only render option is `lockNodesOfType`,
   which lists the names of nodes that should be "locked", and made opaque to
   novice users.
 
@@ -83,13 +83,11 @@ You'll see below that ASTNodes must be given a source location range (a `from`
 and a `to`) when they are constructed. The source location ranges must obey
 these rules:
 
-1. The source location ranges must be well-formed: for each node, `node.from <=
-   node.to`. (By `A <= B`, we mean that `A` comes before `B` in the document:
+1. The source location ranges must be well-formed: for each node, `node.from <= node.to`. (By `A <= B`, we mean that `A` comes before `B` in the document:
    either it's on an earlier line, or it's on the same line but to the left, or
    it's at exactly the same location.)
 2. The source location range of a parent node must encompass the source location
-   ranges of its children. (I.e., `parent.from <= child.from` and `child.to <=
-   parent.to` for each child.)
+   ranges of its children. (I.e., `parent.from <= child.from` and `child.to <= parent.to` for each child.)
 3. The source location ranges of a node's children must be non-overlapping and
    in-order. (I.e., if `child1` comes before `child2` in the AST, then
    `child1.to <= child2.from`.)
@@ -223,7 +221,6 @@ To learn how to implement `pretty()` in general, see the documentation for the
 You don't need to declare this module as a dependency: CodeMirrorBlocks provides
 it to you under the import [FILL].
 
-
 ### Rendering as a Block
 
 Finally, the node needs to know how to render itself as a block. This
@@ -276,8 +273,7 @@ the small squares betweeen nodes that you can drag blocks onto, or edit to
 insert a new child. When defining your blocks, you should include ample drop
 targets to make them easy to edit. There are two ways to get these.
 
-Most of the time, you should use `Args`. The syntax is `<Args
-field="FIELDNAME">{elts}</Args>`, which will intersperse drop targets
+Most of the time, you should use `Args`. The syntax is `<Args field="FIELDNAME">{elts}</Args>`, which will intersperse drop targets
 horizontally among `elts` (which should be an array of elements). "FIELDNAME" is
 the name of the field containing `elts`, which must be declared as type `Spec.list`.
 
@@ -286,6 +282,6 @@ However, if you want to put drop targets in a more interesting arrangement than
 Simply construct them with `<DropTarget field="FIELDNAME"/>` anywhere in your
 node.
 
------
+---
 
 That's it! We've fully defined the `VariableDefinition` node type.
