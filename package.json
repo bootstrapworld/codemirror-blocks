@@ -118,6 +118,7 @@
     "upgrade-interactive": "npm-check --update"
   },
   "author": "The Bootstrap Team",
+  "repository": "github:bootstrapworld/codemirror-blocks",
   "contributors": [
     "Paul Carduner",
     "Zachary Espiritu",
@@ -128,5 +129,5 @@
     "Dorai Sitaram",
     "Preston Tunnell Wilson"
   ],
-  "license": "MIT License"
+  "license": "MIT"
 }
