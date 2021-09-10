@@ -343,6 +343,8 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     this.toolbarRef = createRef();
 
     SHARED.recordedMarks = new Map();
+    SHARED.parse = this.props.language.parse;
+
     this.eventHandlers = {}; // blank event-handler record
 
     this.state.code = props.initialCode;
@@ -515,7 +517,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         try {
           let oldCode = SHARED.cm.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
-          oldAst = SHARED.parse(oldCode); // parse the code (WITH annotations)
+          oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
           try {
@@ -526,7 +528,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         }
         try {
           code = oldAst.toString() + (WS ? WS[0] : ""); // pretty-print and restore whitespace
-          this.ast = SHARED.parse(code); // parse the pretty-printed (PP) code
+          this.ast = this.props.language.parse(code); // parse the pretty-printed (PP) code
         } catch (e) {
           console.error("COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n", oldAst);
           console.error("PRETTY-PRINTED CODE WAS", oldAst.toString());
@@ -605,7 +607,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     return (
       <TextEditor
         cmOptions={{ ...defaultCmOptions, ...this.props.cmOptions }}
-        parse={this.props.language.parse}
         value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
@@ -623,7 +624,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     return (
       <UpgradedBlockEditor
         cmOptions={{ ...defaultCmOptions, ...this.props.cmOptions }}
-        parse={this.props.language.parse}
         value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
