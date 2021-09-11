@@ -13,39 +13,29 @@ import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 
 type Props = ContentEditableProps & {
+  // created by redux mapStateToProps
+  initialValue: string;
+  isErrored: boolean;
+  dispatch: AppDispatch;
+  setErrorId: (errorId: string) => void;
+  focusSelf: () => void;
+  clearSelections: () => void;
+
+  // passed from above
   target?: Target;
   children?: ReactElement;
   isInsertion: boolean;
-  value?: string;
-  dispatch?: Function;
-  setErrorId?: Function;
+  value?: string | null;
   onChange?: (e: string) => void;
   onDisableEditable?: Function;
-  clearSelections?: Function;
-  focusSelf?: Function;
-  isErrored?: boolean;
   contentEditableProps?: {};
   extraClasses?: ClassNamesArgument;
 };
 
 class NodeEditable extends Component<Props> {
-  cachedValue: string;
   ignoreBlur: boolean;
   element: HTMLElement;
   pendingTimeout?: afterDOMUpdateHandle;
-
-  constructor(props: Props) {
-    super(props);
-    const { value, dispatch } = this.props;
-    this.cachedValue = "";
-    if (value === null) {
-      dispatch((_: any, getState: () => RootState) => {
-        const { ast } = getState();
-        const { target } = this.props;
-        this.cachedValue = target.getText(ast);
-      });
-    }
-  }
 
   saveEdit = (e: React.SyntheticEvent) => {
     e.stopPropagation();
@@ -55,7 +45,7 @@ class NodeEditable extends Component<Props> {
       const { focusId, ast } = getState();
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
-      if (this.props.value === this.cachedValue || !this.props.value) {
+      if (this.props.value === this.props.initialValue || !this.props.value) {
         this.props.onDisableEditable(false);
         const focusNode = ast.getNodeById(focusId);
         const nid = focusNode && focusNode.nid;
@@ -113,7 +103,7 @@ class NodeEditable extends Component<Props> {
         this.props.onDisableEditable(false);
         this.props.setErrorId("");
         cancelAfterDOMUpdate(this.pendingTimeout);
-        this.pendingTimeout = setAfterDOMUpdate(this.props.focusSelf());
+        this.pendingTimeout = setAfterDOMUpdate(this.props.focusSelf);
         return;
     }
   };
@@ -123,7 +113,7 @@ class NodeEditable extends Component<Props> {
   };
 
   componentDidMount() {
-    const text = this.props.value || this.cachedValue || "";
+    const text = this.props.value || this.props.initialValue || "";
     const annt =
       (this.props.isInsertion ? "inserting" : "editing") + ` ${text}`;
     say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
@@ -176,7 +166,7 @@ class NodeEditable extends Component<Props> {
       ] as ClassNamesArgument[]
     ).concat(extraClasses);
 
-    const text = value !== null ? value : this.cachedValue;
+    const text = value !== null ? value : this.props.initialValue;
     return (
       <ContentEditable
         {...contentEditableProps}
@@ -199,12 +189,16 @@ class NodeEditable extends Component<Props> {
 }
 
 const mapStateToProps = (
-  { errorId }: RootState,
-  { target }: { target: Target }
+  state: RootState,
+  props: { value?: string | null; target: Target }
 ) => {
-  const nodeId = target.node ? target.node.id : "editing";
-  const isErrored = errorId == nodeId;
-  return { isErrored };
+  const nodeId = props.target.node ? props.target.node.id : "editing";
+  const isErrored = state.errorId == nodeId;
+
+  const initialValue =
+    props.value === null ? props.target.getText(state.ast) : "";
+
+  return { isErrored, initialValue };
 };
 
 const mapDispatchToProps = (dispatch: AppDispatch) => ({
