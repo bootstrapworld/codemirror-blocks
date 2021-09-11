@@ -34,6 +34,7 @@ type FocusHint = (ast: AST) => ASTNode | null | "fallback";
 //   you may know from a call to `speculateChanges()`).
 export function commitChanges(
   changes: EditorChange[],
+  parse: (code: string) => AST,
   isUndoOrRedo: boolean = false,
   focusHint: FocusHint | -1 = undefined,
   astHint: AST = undefined,
@@ -49,7 +50,7 @@ export function commitChanges(
       var oldFocusNId = oldFocus ? oldFocus.nid : null;
     }
     // If we haven't already parsed the AST during speculateChanges, parse it now.
-    let newAST: AST = astHint || SHARED.parse(SHARED.cm.getValue());
+    let newAST: AST = astHint || parse(SHARED.cm.getValue());
     // Patch the tree and set the state
     newAST = patch(oldAST, newAST);
     store.dispatch({ type: "SET_AST", ast: newAST });

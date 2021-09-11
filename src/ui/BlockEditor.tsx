@@ -290,7 +290,6 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
      * id of the language being used
      */
     languageId: string;
-    parse: Function;
     search?: Search;
     toolbarRef?: React.RefObject<Toolbar>;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
@@ -304,7 +303,6 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
 class BlockEditor extends Component<BlockEditorProps> {
   mouseUsed: boolean;
   newAST: AST;
-  parse: BlockEditorProps["parse"];
   pendingTimeout: afterDOMUpdateHandle;
 
   constructor(props: BlockEditorProps) {
@@ -340,7 +338,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     change: CodeMirror.EditorChangeCancellable
   ) => {
     if (!change.origin?.startsWith("cmb:")) {
-      let { successful, newAST } = speculateChanges([change]);
+      let { successful, newAST } = speculateChanges([change], SHARED.parse);
       // Successful! Let's save all the hard work we did to build the new AST
       if (successful) {
         this.newAST = newAST;
@@ -378,7 +376,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           if (actionFocus) {
             const { oldFocusNId } = actionFocus;
             const focusHint = (newAST: AST) => newAST.getNodeByNId(oldFocusNId);
-            commitChanges(changes, true, focusHint, this.newAST);
+            commitChanges(changes, SHARED.parse, true, focusHint, this.newAST);
             dispatch({ type: "UNDO" });
           }
         } else if (changes[0].origin === "redo") {
@@ -387,7 +385,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           if (actionFocus) {
             const { newFocusNId } = actionFocus;
             const focusHint = (newAST: AST) => newAST.getNodeByNId(newFocusNId);
-            commitChanges(changes, true, focusHint, this.newAST);
+            commitChanges(changes, SHARED.parse, true, focusHint, this.newAST);
             dispatch({ type: "REDO" });
           }
         } else {
@@ -402,7 +400,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           }
           if (annt === "") annt = "change";
           getState().undoableAction = annt; //?
-          commitChanges(changes, false, -1, this.newAST);
+          commitChanges(changes, SHARED.parse, false, -1, this.newAST);
         }
       }
     });
@@ -874,10 +872,9 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   componentDidMount() {
-    const { parse, options, search } = this.props;
+    const { options, search } = this.props;
 
     // TODO: pass these with a React Context or something sensible like that.
-    SHARED.parse = parse;
     SHARED.options = options;
     SHARED.search = search;
     // create a hidden buffer, for use with copy/cut/paste

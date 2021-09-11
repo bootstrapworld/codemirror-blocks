@@ -1,4 +1,5 @@
 import type CodeMirror from "codemirror";
+import type { AST } from "./ast";
 import type { Options } from "./CodeMirrorBlocks";
 
 type Shared = {
@@ -11,7 +12,7 @@ type Shared = {
     setCursor: Function;
     setCM: Function;
   };
-  parse: Function;
+  parse: (code: string) => AST;
   getExceptionMessage: Function;
   recordedMarks: Map<
     number,

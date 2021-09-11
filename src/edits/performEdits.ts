@@ -99,6 +99,7 @@ export function performEdits(
   origin: string,
   ast: AST,
   edits: Edit[],
+  parse: (code: string) => AST,
   onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
   onError: OnError = (e: any) => {},
   annt?: string
@@ -154,7 +155,7 @@ export function performEdits(
     c.origin = origin;
   }
   // Validate the text edits.
-  let result = speculateChanges(changeArray);
+  let result = speculateChanges(changeArray, parse);
   if (result.successful) {
     try {
       // Perform the text edits, and update the ast.
@@ -166,6 +167,7 @@ export function performEdits(
       //console.log('XXX performEdits:110 calling commitChanges');
       let { newAST, focusId } = commitChanges(
         changeArray,
+        parse,
         false,
         focusHint,
         result.newAST,
