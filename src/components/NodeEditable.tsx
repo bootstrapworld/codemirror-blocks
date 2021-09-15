@@ -142,12 +142,20 @@ class NodeEditable extends Component<Props> {
   setSelection = (isCollapsed: boolean) => {
     cancelAfterDOMUpdate(this.pendingTimeout);
     this.pendingTimeout = setAfterDOMUpdate(() => {
+      const element = this.element.current;
+      if (!element) {
+        // element has been unmounted already, nothing to do.
+        return;
+      }
       const range = document.createRange();
-      range.selectNodeContents(this.element.current);
+      range.selectNodeContents(element);
       if (isCollapsed) range.collapse(false);
-      window.getSelection().removeAllRanges();
-      window.getSelection().addRange(range);
-      this.element.current.focus();
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      element.focus();
     });
   };
 
