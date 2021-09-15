@@ -18,6 +18,29 @@ function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
 }
 
+/**
+ * Make the browser select the given html element and focus it
+ *
+ * @param element the html element to select
+ * @param shouldCollapse whether or not to force the browser
+ *        to collapse the selection to the end of the elements range.
+ */
+function selectElement(element: HTMLElement, shouldCollapse: boolean) {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  if (shouldCollapse) {
+    range.collapse(false);
+  }
+  const selection = window.getSelection();
+  if (selection) {
+    // window.getSelection can return null in firefox when rendered
+    // inside a hidden iframe: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection#return_value
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+  element.focus();
+}
+
 type Props = ContentEditableProps & {
   // created by redux mapStateToProps
   initialValue: string;
@@ -147,15 +170,7 @@ class NodeEditable extends Component<Props> {
         // element has been unmounted already, nothing to do.
         return;
       }
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      if (isCollapsed) range.collapse(false);
-      const selection = window.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-      element.focus();
+      selectElement(element, isCollapsed);
     });
   };
 
