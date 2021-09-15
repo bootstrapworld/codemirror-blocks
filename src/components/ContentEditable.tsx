@@ -42,24 +42,17 @@ export type Props = Omit<
 > & {
   onChange?: (e: string) => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
-  itDidMount?: (el: HTMLElement) => void;
   value?: string;
 };
 
-export default class OneLineContentEditable extends Component<Props> {
+class OneLineContentEditable extends Component<
+  Props & { forwardedRef: React.ForwardedRef<HTMLElement> }
+> {
   static defaultProps = {
     onChange: () => {},
     onKeyDown: () => {},
-    itDidMount: () => {},
     value: "",
   };
-
-  eltRef: React.RefObject<HTMLElement>;
-
-  constructor(props: Props) {
-    super(props);
-    this.eltRef = React.createRef();
-  }
 
   handleChange = (event: ContentEditableEvent) => {
     this.props.onChange(event.target.value);
@@ -80,12 +73,8 @@ export default class OneLineContentEditable extends Component<Props> {
     document.execCommand("insertText", false, text);
   };
 
-  componentDidMount() {
-    this.props.itDidMount(this.eltRef.current);
-  }
-
   render() {
-    const { value, itDidMount, onChange, ...props } = this.props;
+    const { value, onChange, forwardedRef, ...props } = this.props;
     return (
       <ContentEditable
         {...props}
@@ -95,8 +84,12 @@ export default class OneLineContentEditable extends Component<Props> {
         spellCheck={false}
         onKeyDown={this.handleKeyDown}
         onPaste={this.handlePaste}
-        innerRef={this.eltRef}
+        innerRef={forwardedRef}
       />
     );
   }
 }
+
+export default React.forwardRef<HTMLElement, Props>((props, ref) => (
+  <OneLineContentEditable {...props} forwardedRef={ref} />
+));
