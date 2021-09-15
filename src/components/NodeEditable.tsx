@@ -85,22 +85,8 @@ class NodeEditable extends Component<Props> {
       const value = this.props.value;
       let annt = `${this.props.isInsertion ? "inserted" : "changed"} ${value}`;
 
-      const onSuccess = ({
-        firstNewId,
-      }: {
-        newAST: AST;
-        focusId: string;
-        firstNewId?: number;
-      }) => {
-        // BUG? onSuccess never gets called with firstNewId, and it doesn't look
-        // like it has been passed in for at least two years.
-        if (firstNewId !== null && firstNewId !== undefined) {
-          const { ast } = getState();
-          const firstNewNid = ast.getNodeById(focusId).nid;
-          dispatch(activateByNid(firstNewNid, { allowMove: true }));
-        } else {
-          dispatch(activateByNid(null, { allowMove: false }));
-        }
+      const onSuccess = () => {
+        dispatch(activateByNid(null, { allowMove: false }));
         onChange(null);
         onDisableEditable(false);
         setErrorId("");
