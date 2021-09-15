@@ -1,6 +1,4 @@
 import React, { Component } from "react";
-import PropTypes from "prop-types";
-import shallowequal from "shallowequal";
 
 /**
  * Single line contentEditable
@@ -24,10 +22,8 @@ export type ContentEditableProps = Omit<
 > & {
   onChange?: (e: string) => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
-  itDidMount?: Function;
+  itDidMount?: (el: HTMLElement) => void;
   value?: string;
-  id?: string;
-  "aria-label"?: string;
 };
 
 export default class ContentEditable extends Component<ContentEditableProps> {
@@ -36,15 +32,6 @@ export default class ContentEditable extends Component<ContentEditableProps> {
     onKeyDown: () => {},
     itDidMount: () => {},
     value: "",
-  };
-
-  static propTypes = {
-    onChange: PropTypes.func,
-    onKeyDown: PropTypes.func,
-    itDidMount: PropTypes.func,
-    value: PropTypes.string,
-    id: PropTypes.string,
-    "aria-label": PropTypes.string,
   };
 
   eltRef: React.RefObject<HTMLSpanElement>;
@@ -75,20 +62,6 @@ export default class ContentEditable extends Component<ContentEditableProps> {
 
   componentDidMount() {
     this.props.itDidMount(this.eltRef.current);
-  }
-
-  /*eslint no-unused-vars: "off"*/
-  shouldComponentUpdate(props: ContentEditableProps) {
-    const { value: newValue, "aria-label": newAriaLabel, ...newProps } = props;
-    const {
-      value: oldValue,
-      "aria-label": oldAriaLabel,
-      ...oldProps
-    } = this.props;
-    return (
-      getInnerHTML(newValue) !== this.eltRef.current.textContent ||
-      !shallowequal(newProps, oldProps)
-    );
   }
 
   render() {
