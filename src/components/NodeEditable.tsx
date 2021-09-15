@@ -1,6 +1,8 @@
 import React, { Component, ReactElement } from "react";
 import { connect } from "react-redux";
-import ContentEditable, { ContentEditableProps } from "./ContentEditable";
+import ContentEditable, {
+  Props as ContentEditableProps,
+} from "./ContentEditable";
 import SHARED from "../shared";
 import classNames, { Argument as ClassNamesArgument } from "classnames";
 import { insert, activateByNid, Target } from "../actions";
