@@ -14,6 +14,10 @@ import { AST } from "../ast";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 
+function suppressEvent(e: React.SyntheticEvent) {
+  e.stopPropagation();
+}
+
 type Props = ContentEditableProps & {
   // created by redux mapStateToProps
   initialValue: string;
@@ -110,10 +114,6 @@ class NodeEditable extends Component<Props> {
     }
   };
 
-  suppressEvent = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-  };
-
   componentDidMount() {
     this.setSelection(this.props.isInsertion);
     const text = this.props.value || this.props.initialValue || "";
@@ -184,9 +184,9 @@ class NodeEditable extends Component<Props> {
         onKeyDown={this.handleKeyDown}
         // trap mousedown, clicks and doubleclicks, to prevent focus change, or
         // parent nodes from toggling collapsed state
-        onMouseDown={this.suppressEvent}
-        onClick={this.suppressEvent}
-        onDoubleClick={this.suppressEvent}
+        onMouseDown={suppressEvent}
+        onClick={suppressEvent}
+        onDoubleClick={suppressEvent}
         aria-label={text}
         value={text}
       />
