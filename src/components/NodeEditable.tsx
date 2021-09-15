@@ -98,7 +98,6 @@ type Props = ContentEditableProps & {
 };
 
 class NodeEditable extends Component<Props> {
-  ignoreBlur: boolean;
   element = React.createRef<HTMLElement>();
   pendingTimeout?: afterDOMUpdateHandle;
 
@@ -109,7 +108,6 @@ class NodeEditable extends Component<Props> {
     const onError = () => {
       const errorText = SHARED.getExceptionMessage(e);
       console.log(errorText);
-      this.ignoreBlur = false;
       setErrorId(target.node ? target.node.id : "editing");
       if (this.element.current) {
         selectElement(this.element.current, false);
@@ -121,13 +119,13 @@ class NodeEditable extends Component<Props> {
   handleKeyDown = (e: React.KeyboardEvent) => {
     switch (CodeMirror.keyName(e)) {
       case "Enter": {
-        this.ignoreBlur = true;
-        this.saveEdit(e);
+        // blur the element to trigger handleBlur
+        // which will save the edit
+        this.element.current.blur();
         return;
       }
       case "Alt-Q":
       case "Esc":
-        this.ignoreBlur = true;
         e.stopPropagation();
         this.props.onChange(null);
         this.props.onDisableEditable(false);
@@ -165,7 +163,6 @@ class NodeEditable extends Component<Props> {
    */
 
   handleBlur = (e: React.FocusEvent) => {
-    if (this.ignoreBlur) return;
     this.saveEdit(e);
   };
 
