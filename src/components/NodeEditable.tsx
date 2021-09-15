@@ -36,7 +36,7 @@ type Props = ContentEditableProps & {
 
 class NodeEditable extends Component<Props> {
   ignoreBlur: boolean;
-  element: HTMLElement;
+  element = React.createRef<HTMLElement>();
   pendingTimeout?: afterDOMUpdateHandle;
 
   saveEdit = (e: React.SyntheticEvent) => {
@@ -115,6 +115,7 @@ class NodeEditable extends Component<Props> {
   };
 
   componentDidMount() {
+    this.setSelection(this.props.isInsertion);
     const text = this.props.value || this.props.initialValue || "";
     const annt =
       (this.props.isInsertion ? "inserting" : "editing") + ` ${text}`;
@@ -142,17 +143,12 @@ class NodeEditable extends Component<Props> {
     cancelAfterDOMUpdate(this.pendingTimeout);
     this.pendingTimeout = setAfterDOMUpdate(() => {
       const range = document.createRange();
-      range.selectNodeContents(this.element);
+      range.selectNodeContents(this.element.current);
       if (isCollapsed) range.collapse(false);
       window.getSelection().removeAllRanges();
       window.getSelection().addRange(range);
-      this.element.focus();
+      this.element.current.focus();
     });
-  };
-
-  contentEditableDidMount = (el: HTMLElement) => {
-    this.element = el;
-    this.setSelection(this.props.isInsertion);
   };
 
   render() {
@@ -174,7 +170,7 @@ class NodeEditable extends Component<Props> {
         {...contentEditableProps}
         className={classNames(classes)}
         role="textbox"
-        itDidMount={this.contentEditableDidMount}
+        ref={this.element}
         onChange={onChange}
         onBlur={this.handleBlur}
         onKeyDown={this.handleKeyDown}
