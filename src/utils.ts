@@ -32,7 +32,7 @@ export const mac = ios || /Mac/.test(platform);
  * - If an extraDelay is passed, the inner timeout waits Xms after the render cycle
  */
 export type afterDOMUpdateHandle = {
-  raf?: number;
+  raf: number;
   timeout?: ReturnType<typeof setTimeout>;
 };
 export function setAfterDOMUpdate(
@@ -48,10 +48,13 @@ export function setAfterDOMUpdate(
 }
 
 export function cancelAfterDOMUpdate(handle: afterDOMUpdateHandle): void {
-  if (!handle || !handle.timeout) {
+  if (!handle) {
     return;
   }
   cancelAnimationFrame(handle.raf);
+  if (!handle.timeout) {
+    return;
+  }
   clearTimeout(handle.timeout);
 }
 
