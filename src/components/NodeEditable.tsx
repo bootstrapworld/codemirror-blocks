@@ -111,7 +111,9 @@ class NodeEditable extends Component<Props> {
         console.log(errorText);
         this.ignoreBlur = false;
         setErrorId(target.node ? target.node.id : "editing");
-        this.setSelection(false);
+        if (this.element.current) {
+          selectElement(this.element.current, false);
+        }
       };
       insert(value, target, onSuccess, onError, annt);
     });
@@ -138,7 +140,14 @@ class NodeEditable extends Component<Props> {
   };
 
   componentDidMount() {
-    this.setSelection(this.props.isInsertion);
+    this.pendingTimeout = setAfterDOMUpdate(() => {
+      const element = this.element.current;
+      if (!element) {
+        // element has been unmounted already, nothing to do.
+        return;
+      }
+      selectElement(element, this.props.isInsertion);
+    });
     const text = this.props.value || this.props.initialValue || "";
     const annt =
       (this.props.isInsertion ? "inserting" : "editing") + ` ${text}`;
@@ -160,18 +169,6 @@ class NodeEditable extends Component<Props> {
   handleBlur = (e: React.FocusEvent) => {
     if (this.ignoreBlur) return;
     this.saveEdit(e);
-  };
-
-  setSelection = (isCollapsed: boolean) => {
-    cancelAfterDOMUpdate(this.pendingTimeout);
-    this.pendingTimeout = setAfterDOMUpdate(() => {
-      const element = this.element.current;
-      if (!element) {
-        // element has been unmounted already, nothing to do.
-        return;
-      }
-      selectElement(element, isCollapsed);
-    });
   };
 
   render() {
