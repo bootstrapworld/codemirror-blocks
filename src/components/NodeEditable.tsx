@@ -101,40 +101,6 @@ class NodeEditable extends Component<Props> {
   element = React.createRef<HTMLElement>();
   pendingTimeout?: afterDOMUpdateHandle;
 
-  saveEdit = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    const { target, setErrorId, dispatch } = this.props;
-
-    const onError = () => {
-      const errorText = SHARED.getExceptionMessage(e);
-      console.log(errorText);
-      setErrorId(target.node ? target.node.id : "editing");
-      if (this.element.current) {
-        selectElement(this.element.current, false);
-      }
-    };
-    dispatch(saveEditAction(this.props, onError));
-  };
-
-  handleKeyDown = (e: React.KeyboardEvent) => {
-    switch (CodeMirror.keyName(e)) {
-      case "Enter": {
-        // blur the element to trigger handleBlur
-        // which will save the edit
-        this.element.current.blur();
-        return;
-      }
-      case "Alt-Q":
-      case "Esc":
-        e.stopPropagation();
-        this.props.onChange(null);
-        this.props.onDisableEditable(false);
-        this.props.setErrorId("");
-        this.props.focusSelf();
-        return;
-    }
-  };
-
   componentDidMount() {
     this.pendingTimeout = setAfterDOMUpdate(() => {
       const element = this.element.current;
@@ -162,11 +128,41 @@ class NodeEditable extends Component<Props> {
    * with correct values.
    */
 
-  handleBlur = (e: React.FocusEvent) => {
-    this.saveEdit(e);
-  };
-
   render() {
+    const saveEdit = (e: React.SyntheticEvent) => {
+      e.stopPropagation();
+      const { target, setErrorId, dispatch } = this.props;
+
+      const onError = () => {
+        const errorText = SHARED.getExceptionMessage(e);
+        console.log(errorText);
+        setErrorId(target.node ? target.node.id : "editing");
+        if (this.element.current) {
+          selectElement(this.element.current, false);
+        }
+      };
+      dispatch(saveEditAction(this.props, onError));
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      switch (CodeMirror.keyName(e)) {
+        case "Enter": {
+          // blur the element to trigger handleBlur
+          // which will save the edit
+          this.element.current.blur();
+          return;
+        }
+        case "Alt-Q":
+        case "Esc":
+          e.stopPropagation();
+          this.props.onChange(null);
+          this.props.onDisableEditable(false);
+          this.props.setErrorId("");
+          this.props.focusSelf();
+          return;
+      }
+    };
+
     const { contentEditableProps, extraClasses, value, onChange } = this.props;
 
     const classes = (
@@ -187,8 +183,8 @@ class NodeEditable extends Component<Props> {
         role="textbox"
         ref={this.element}
         onChange={onChange}
-        onBlur={this.handleBlur}
-        onKeyDown={this.handleKeyDown}
+        onBlur={saveEdit}
+        onKeyDown={handleKeyDown}
         // trap mousedown, clicks and doubleclicks, to prevent focus change, or
         // parent nodes from toggling collapsed state
         onMouseDown={suppressEvent}
