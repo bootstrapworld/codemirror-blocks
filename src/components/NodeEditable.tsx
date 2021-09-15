@@ -10,7 +10,6 @@ import { say } from "../announcer";
 import CodeMirror from "codemirror";
 import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
-import { AST } from "../ast";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 
@@ -41,6 +40,43 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
   element.focus();
 }
 
+function saveEditAction(
+  {
+    value,
+    initialValue,
+    isInsertion,
+    onDisableEditable,
+    onChange,
+    setErrorId,
+    target,
+  }: Props,
+  onError: () => void
+) {
+  return (dispatch: AppDispatch, getState: () => RootState) => {
+    const { focusId, ast } = getState();
+    // if there's no insertion value, or the new value is the same as the
+    // old one, preserve focus on original node and return silently
+    if (value === initialValue || !value) {
+      onDisableEditable(false);
+      const focusNode = ast.getNodeById(focusId);
+      const nid = focusNode && focusNode.nid;
+      dispatch(activateByNid(nid));
+      return;
+    }
+
+    let annt = `${isInsertion ? "inserted" : "changed"} ${value}`;
+    const onSuccess = () => {
+      dispatch(activateByNid(null, { allowMove: false }));
+      onChange(null);
+      onDisableEditable(false);
+      setErrorId("");
+      say(annt);
+    };
+
+    insert(value, target, onSuccess, onError, annt);
+  };
+}
+
 type Props = ContentEditableProps & {
   // created by redux mapStateToProps
   initialValue: string;
@@ -68,41 +104,18 @@ class NodeEditable extends Component<Props> {
 
   saveEdit = (e: React.SyntheticEvent) => {
     e.stopPropagation();
-    const { target, setErrorId, onChange, onDisableEditable, dispatch } =
-      this.props;
-    dispatch((dispatch: AppDispatch, getState: () => RootState) => {
-      const { focusId, ast } = getState();
-      // if there's no insertion value, or the new value is the same as the
-      // old one, preserve focus on original node and return silently
-      if (this.props.value === this.props.initialValue || !this.props.value) {
-        this.props.onDisableEditable(false);
-        const focusNode = ast.getNodeById(focusId);
-        const nid = focusNode && focusNode.nid;
-        dispatch(activateByNid(nid));
-        return;
+    const { target, setErrorId, dispatch } = this.props;
+
+    const onError = () => {
+      const errorText = SHARED.getExceptionMessage(e);
+      console.log(errorText);
+      this.ignoreBlur = false;
+      setErrorId(target.node ? target.node.id : "editing");
+      if (this.element.current) {
+        selectElement(this.element.current, false);
       }
-
-      const value = this.props.value;
-      let annt = `${this.props.isInsertion ? "inserted" : "changed"} ${value}`;
-
-      const onSuccess = () => {
-        dispatch(activateByNid(null, { allowMove: false }));
-        onChange(null);
-        onDisableEditable(false);
-        setErrorId("");
-        say(annt);
-      };
-      const onError = (e: any) => {
-        const errorText = SHARED.getExceptionMessage(e);
-        console.log(errorText);
-        this.ignoreBlur = false;
-        setErrorId(target.node ? target.node.id : "editing");
-        if (this.element.current) {
-          selectElement(this.element.current, false);
-        }
-      };
-      insert(value, target, onSuccess, onError, annt);
-    });
+    };
+    dispatch(saveEditAction(this.props, onError));
   };
 
   handleKeyDown = (e: React.KeyboardEvent) => {
