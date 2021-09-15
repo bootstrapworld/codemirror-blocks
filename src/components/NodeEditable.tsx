@@ -132,8 +132,7 @@ class NodeEditable extends Component<Props> {
         this.props.onChange(null);
         this.props.onDisableEditable(false);
         this.props.setErrorId("");
-        cancelAfterDOMUpdate(this.pendingTimeout);
-        this.pendingTimeout = setAfterDOMUpdate(this.props.focusSelf);
+        this.props.focusSelf();
         return;
     }
   };
@@ -221,7 +220,12 @@ const mapStateToProps = (
 const mapDispatchToProps = (dispatch: AppDispatch) => ({
   dispatch,
   setErrorId: (errorId: string) => dispatch({ type: "SET_ERROR_ID", errorId }),
-  focusSelf: () => dispatch(activateByNid(null, { allowMove: false })),
+  focusSelf: () =>
+    // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
+    // and then figoure out how to get rid of it.
+    setAfterDOMUpdate(() =>
+      dispatch(activateByNid(null, { allowMove: false }))
+    ),
   clearSelections: () => dispatch({ type: "SET_SELECTIONS", selections: [] }),
 });
 
