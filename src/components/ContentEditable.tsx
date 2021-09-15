@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React from "react";
 import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 import type { Props as ContentEditableProps } from "react-contenteditable";
 
@@ -45,49 +45,42 @@ export type Props = Omit<
   value?: string;
 };
 
-class OneLineContentEditable extends Component<
-  Props & { forwardedRef: React.ForwardedRef<HTMLElement> }
-> {
-  static defaultProps = {
-    onChange: () => {},
-    onKeyDown: () => {},
-    value: "",
+function OneLineContentEditable(
+  props: Props & { forwardedRef: React.Ref<HTMLElement> }
+) {
+  const { value, onChange, onKeyDown, forwardedRef, ...rest } = props;
+
+  const handleChange = (event: ContentEditableEvent) => {
+    onChange && onChange(event.target.value);
   };
 
-  handleChange = (event: ContentEditableEvent) => {
-    this.props.onChange(event.target.value);
-  };
-
-  handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.keyCode === 13 && !e.shiftKey) {
       // ENTER
       e.preventDefault();
     }
     e.stopPropagation();
-    this.props.onKeyDown(e);
+    onKeyDown && onKeyDown(e);
   };
 
-  handlePaste = (ev: React.ClipboardEvent) => {
+  const handlePaste = (ev: React.ClipboardEvent) => {
     ev.preventDefault();
     const text = ev.clipboardData.getData("text");
     document.execCommand("insertText", false, text);
   };
 
-  render() {
-    const { value, onChange, forwardedRef, ...props } = this.props;
-    return (
-      <ContentEditable
-        {...props}
-        html={getInnerHTML(value)}
-        onChange={this.handleChange}
-        tagName="span"
-        spellCheck={false}
-        onKeyDown={this.handleKeyDown}
-        onPaste={this.handlePaste}
-        innerRef={forwardedRef}
-      />
-    );
-  }
+  return (
+    <ContentEditable
+      {...rest}
+      html={getInnerHTML(value ?? "")}
+      onChange={handleChange}
+      tagName="span"
+      spellCheck={false}
+      onKeyDown={handleKeyDown}
+      onPaste={handlePaste}
+      innerRef={forwardedRef || undefined}
+    />
+  );
 }
 
 export default React.forwardRef<HTMLElement, Props>((props, ref) => (
