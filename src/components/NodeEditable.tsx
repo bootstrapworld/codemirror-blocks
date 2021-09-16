@@ -14,6 +14,33 @@ import { AST } from "../ast";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 
+function suppressEvent(e: React.SyntheticEvent) {
+  e.stopPropagation();
+}
+
+/**
+ * Make the browser select the given html element and focus it
+ *
+ * @param element the html element to select
+ * @param shouldCollapse whether or not to force the browser
+ *        to collapse the selection to the end of the elements range.
+ */
+function selectElement(element: HTMLElement, shouldCollapse: boolean) {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  if (shouldCollapse) {
+    range.collapse(false);
+  }
+  const selection = window.getSelection();
+  if (selection) {
+    // window.getSelection can return null in firefox when rendered
+    // inside a hidden iframe: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection#return_value
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+  element.focus();
+}
+
 type Props = ContentEditableProps & {
   // created by redux mapStateToProps
   initialValue: string;
@@ -84,7 +111,9 @@ class NodeEditable extends Component<Props> {
         console.log(errorText);
         this.ignoreBlur = false;
         setErrorId(target.node ? target.node.id : "editing");
-        this.setSelection(false);
+        if (this.element.current) {
+          selectElement(this.element.current, false);
+        }
       };
       insert(value, target, onSuccess, onError, annt);
     });
@@ -110,12 +139,15 @@ class NodeEditable extends Component<Props> {
     }
   };
 
-  suppressEvent = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-  };
-
   componentDidMount() {
-    this.setSelection(this.props.isInsertion);
+    this.pendingTimeout = setAfterDOMUpdate(() => {
+      const element = this.element.current;
+      if (!element) {
+        // element has been unmounted already, nothing to do.
+        return;
+      }
+      selectElement(element, this.props.isInsertion);
+    });
     const text = this.props.value || this.props.initialValue || "";
     const annt =
       (this.props.isInsertion ? "inserting" : "editing") + ` ${text}`;
@@ -137,26 +169,6 @@ class NodeEditable extends Component<Props> {
   handleBlur = (e: React.FocusEvent) => {
     if (this.ignoreBlur) return;
     this.saveEdit(e);
-  };
-
-  setSelection = (isCollapsed: boolean) => {
-    cancelAfterDOMUpdate(this.pendingTimeout);
-    this.pendingTimeout = setAfterDOMUpdate(() => {
-      const element = this.element.current;
-      if (!element) {
-        // element has been unmounted already, nothing to do.
-        return;
-      }
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      if (isCollapsed) range.collapse(false);
-      const selection = window.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-      element.focus();
-    });
   };
 
   render() {
@@ -184,9 +196,9 @@ class NodeEditable extends Component<Props> {
         onKeyDown={this.handleKeyDown}
         // trap mousedown, clicks and doubleclicks, to prevent focus change, or
         // parent nodes from toggling collapsed state
-        onMouseDown={this.suppressEvent}
-        onClick={this.suppressEvent}
-        onDoubleClick={this.suppressEvent}
+        onMouseDown={suppressEvent}
+        onClick={suppressEvent}
+        onDoubleClick={suppressEvent}
         aria-label={text}
         value={text}
       />
