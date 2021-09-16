@@ -1,10 +1,4 @@
-import React, {
-  Component,
-  ForwardedRef,
-  ReactElement,
-  useEffect,
-  useRef,
-} from "react";
+import React, { ReactElement, useEffect, useRef } from "react";
 import { connect } from "react-redux";
 import ContentEditable, {
   Props as ContentEditableProps,
@@ -17,8 +11,6 @@ import CodeMirror from "codemirror";
 import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
-import type { afterDOMUpdateHandle } from "../utils";
-import { ContentEditableEvent } from "react-contenteditable";
 
 function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
@@ -45,42 +37,6 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
     selection.addRange(range);
   }
   element.focus();
-}
-
-function saveEditAction(
-  {
-    value,
-    initialValue,
-    isInsertion,
-    onDisableEditable,
-    onChange,
-    setErrorId,
-    target,
-  }: Props,
-  onError: () => void
-) {
-  return (dispatch: AppDispatch, getState: () => RootState) => {
-    const { focusId, ast } = getState();
-    // if there's no insertion value, or the new value is the same as the
-    // old one, preserve focus on original node and return silently
-    if (value === initialValue || !value) {
-      onDisableEditable(false);
-      const focusNode = ast.getNodeById(focusId);
-      const nid = focusNode && focusNode.nid;
-      dispatch(activateByNid(nid));
-      return;
-    }
-
-    let annt = `${isInsertion ? "inserted" : "changed"} ${value}`;
-    const onSuccess = () => {
-      dispatch(activateByNid(null, { allowMove: false }));
-      onChange(null);
-      onDisableEditable(false);
-      setErrorId("");
-      say(annt);
-    };
-    insert(value, target, onSuccess, onError, annt);
-  };
 }
 
 type Props = ContentEditableProps & {
@@ -125,19 +81,40 @@ const NodeEditable = (props: Props) => {
   const onBlur = (e: React.SyntheticEvent) => {
     e.stopPropagation();
     const { target, setErrorId, dispatch } = props;
-    const onError = () => {
-      const errorText = SHARED.getExceptionMessage(e);
-      console.log(errorText);
-      setErrorId(target.node ? target.node.id : "editing");
-      if (element.current) {
-        selectElement(element.current, false);
-      }
-    };
-    dispatch(
-      // we override value in the line below to deal with this issue:
+    dispatch((dispatch: AppDispatch, getState: () => RootState) => {
+      // we grab the value directly from the content editable element
+      // to deal with this issue:
       // https://github.com/lovasoa/react-contenteditable/issues/161
-      saveEditAction({ ...props, value: element.current.innerText }, onError)
-    );
+      const value = element.current.innerText;
+      const { focusId, ast } = getState();
+      // if there's no insertion value, or the new value is the same as the
+      // old one, preserve focus on original node and return silently
+      if (value === props.initialValue || !value) {
+        props.onDisableEditable(false);
+        const focusNode = ast.getNodeById(focusId);
+        const nid = focusNode && focusNode.nid;
+        dispatch(activateByNid(nid));
+        return;
+      }
+
+      let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
+      const onSuccess = () => {
+        dispatch(activateByNid(null, { allowMove: false }));
+        props.onChange(null);
+        props.onDisableEditable(false);
+        setErrorId("");
+        say(annt);
+      };
+      const onError = () => {
+        const errorText = SHARED.getExceptionMessage(e);
+        console.log(errorText);
+        setErrorId(target.node ? target.node.id : "editing");
+        if (element.current) {
+          selectElement(element.current, false);
+        }
+      };
+      insert(value, target, onSuccess, onError, annt);
+    });
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
