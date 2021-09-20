@@ -1,7 +1,7 @@
-import React, { 
-  Component, 
-  KeyboardEvent, 
-  ReactElement, 
+import React, {
+  Component,
+  KeyboardEvent,
+  ReactElement,
   useEffect,
   useRef,
 } from "react";
@@ -25,7 +25,7 @@ const Dialog = (props: Props) => {
   var headerRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-   Modal.setAppElement(appElement);
+    Modal.setAppElement(appElement);
   }, []);
 
   const onKeyUp = (e: KeyboardEvent): void => {
@@ -33,10 +33,10 @@ const Dialog = (props: Props) => {
   };
 
   // NOTE(Emmanuel): this feels like a level of indirection
-  // that refs are supposed to deal with. 
+  // that refs are supposed to deal with.
   const focusTitle = () => {
     headerRef.current.focus();
-  }
+  };
 
   return (
     <Modal
@@ -61,6 +61,6 @@ const Dialog = (props: Props) => {
       </div>
     </Modal>
   );
-}
+};
 
 export default Dialog;
