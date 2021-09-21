@@ -4,7 +4,7 @@ import { Primitive } from "../parsers/primitives";
 import "./PrimitiveBlock.less";
 
 type Props = {
-  id?: string;
+  id?: number;
   primitive?: Primitive;
 };
 
@@ -12,7 +12,7 @@ type Props = {
 export default class PrimitiveBlock extends Component<Props> {
   static propTypes = {
     primitive: PropTypes.instanceOf(Primitive),
-    id: PropTypes.string,
+    id: PropTypes.number,
   };
 
   root: HTMLSpanElement;
@@ -26,7 +26,7 @@ export default class PrimitiveBlock extends Component<Props> {
       <span
         className="RenderedBlockNode"
         ref={(root) => (this.root = root)}
-        key={this.props.id}
+        key={String(this.props.id)}
       >
         {elem}
       </span>

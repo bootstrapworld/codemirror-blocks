@@ -333,7 +333,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   cmOptions: CodeMirror.EditorConfiguration;
   options: Options;
   eventHandlers: Record<string, Function[]>;
-  toolbarRef: React.RefObject<Toolbar>;
+  toolbarRef: React.RefObject<HTMLInputElement>;
   ast?: AST;
   newAST?: AST;
 
@@ -576,7 +576,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
               }
               languageId={this.props.language.id}
               blockMode={this.state.blockMode}
-              ref={this.toolbarRef}
+              toolbarRef={this.toolbarRef}
             />
           </div>
           <div className="col-xs-9 codemirror-pane">

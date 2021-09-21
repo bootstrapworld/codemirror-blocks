@@ -88,12 +88,12 @@ type KeyMap = { [index: string]: string };
 
 export const defaultKeyMap: KeyMap = {
   // NAVIGATION
-  Down: "Next Block",
-  Up: "Previous Block",
-  Home: "First Block",
-  End: "Last Visible Block",
-  Left: "Collapse or Focus Parent",
-  Right: "Expand or Focus 1st Child",
+  "Down": "Next Block",
+  "Up": "Previous Block",
+  "Home": "First Block",
+  "End": "Last Visible Block",
+  "Left": "Collapse or Focus Parent",
+  "Right": "Expand or Focus 1st Child",
   "Shift-Left": "Collapse All",
   "Shift-Right": "Expand All",
   "Shift-Alt-Left": "Collapse Current Root",
@@ -104,20 +104,20 @@ export const defaultKeyMap: KeyMap = {
   "Shift-Tab": "Shift Focus",
 
   // EDITING
-  Enter: "Edit",
+  "Enter": "Edit",
   "Ctrl-[": "Insert Left",
   "Ctrl-]": "Insert Right",
 
   // SEARCH, SELECTION & CLIPBOARD
-  Space: "Toggle Selection",
-  Esc: "Clear Selection",
+  "Space": "Toggle Selection",
+  "Esc": "Clear Selection",
   "Ctrl-Esc": "Clear Selection",
   "Alt-Q": "Clear Selection",
-  Delete: "Delete Nodes",
-  Backspace: "Delete Nodes",
-  PageUp: "Search Previous",
-  PageDown: "Search Next",
-  F3: "Activate Search Dialog",
+  "Delete": "Delete Nodes",
+  "Backspace": "Delete Nodes",
+  "PageUp": "Search Previous",
+  "PageDown": "Search Next",
+  "F3": "Activate Search Dialog",
   "Ctrl-F": "Activate Search Dialog",
 };
 
@@ -150,10 +150,10 @@ const punctuation: KeyMap = {
   ".": "Period",
   "'": "Backslash",
   "/": "Forward Slash",
-  Esc: "Escape",
-  Ctrl: "Control",
-  Cmd: "Command",
-  Alt: mac ? "Option" : "Alt",
+  "Esc": "Escape",
+  "Ctrl": "Control",
+  "Cmd": "Command",
+  "Alt": mac ? "Option" : "Alt",
   "[": "Left Bracket",
   "]": "Right Bracket",
 };
@@ -208,9 +208,9 @@ function pasteHandler(this: Env, _: Editor, e: React.KeyboardEvent) {
 export const commandMap: {
   [index: string]: (this: Env, cm: Editor, e: React.KeyboardEvent) => void;
 } = {
-  prevFocus: function (_, e) {
+  "Shift Focus": function (_, e) {
     e.preventDefault();
-    this.toolbarRef.current.primitiveSearch.focus();
+    this.toolbarRef.current.focus();
   },
   // NAVIGATION
   "Previous Block": function (_, e) {

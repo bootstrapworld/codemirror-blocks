@@ -15,7 +15,6 @@ type BasePrimitiveProps = {
   primitive: LanguagePrimitive;
   className: string;
   onFocus: Function;
-  onBlur: Function;
   onKeyDown: Function;
   searchString?: string;
   connectDragPreview: Function;
@@ -27,7 +26,6 @@ class BasePrimitive extends Component<BasePrimitiveProps> {
     primitive: PropTypes.instanceOf(LanguagePrimitive).isRequired,
     className: PropTypes.string.isRequired,
     onFocus: PropTypes.func.isRequired,
-    onBlur: PropTypes.func.isRequired,
     onKeyDown: PropTypes.func.isRequired,
     searchString: PropTypes.string,
     connectDragPreview: PropTypes.func.isRequired,
@@ -79,7 +77,6 @@ const Primitive = DragPrimitiveSource(BasePrimitive);
 
 type PrimitiveGroupProps = {
   onFocus: Function;
-  onBlur: Function;
   onKeyDown: Function;
   selected?: string; // to start, no primitive is selected
   group?: PrimitiveGroupModel;
@@ -91,7 +88,6 @@ export class PrimitiveGroup extends Component<PrimitiveGroupProps> {
 
   static propTypes = {
     onFocus: PropTypes.func.isRequired,
-    onBlur: PropTypes.func.isRequired,
     onKeyDown: PropTypes.func.isRequired,
     selected: PropTypes.string, // to start, no primitive is selected
     group: PropTypes.object,
@@ -106,7 +102,7 @@ export class PrimitiveGroup extends Component<PrimitiveGroupProps> {
   };
 
   render() {
-    let { group, onFocus, onBlur, onKeyDown, selected } = this.props;
+    let { group, onFocus, onKeyDown, selected } = this.props;
     let expanded = this.state.expanded;
     let expandoClass = classNames(
       "glyphicon",
@@ -121,7 +117,6 @@ export class PrimitiveGroup extends Component<PrimitiveGroupProps> {
           <PrimitiveList
             primitives={[...group.flatPrimitivesIter()]}
             onFocus={onFocus}
-            onBlur={onBlur}
             onKeyDown={onKeyDown}
             selected={selected}
           />
@@ -132,7 +127,6 @@ export class PrimitiveGroup extends Component<PrimitiveGroupProps> {
 }
 type PrimitiveListProps = {
   onFocus: Function;
-  onBlur: Function;
   onKeyDown: Function;
   selected?: string;
   primitives?: LanguagePrimitive[];
@@ -141,14 +135,13 @@ type PrimitiveListProps = {
 export default class PrimitiveList extends Component<PrimitiveListProps> {
   static propTypes = {
     onFocus: PropTypes.func.isRequired,
-    onBlur: PropTypes.func.isRequired,
     onKeyDown: PropTypes.func.isRequired,
     selected: PropTypes.string,
     primitives: PropTypes.array,
     searchString: PropTypes.string,
   };
   render() {
-    const { primitives, selected, onFocus, onBlur, onKeyDown, searchString } =
+    const { primitives, selected, onFocus, onKeyDown, searchString } =
       this.props;
     let nodes = [];
     for (let primitive of primitives) {
@@ -159,7 +152,6 @@ export default class PrimitiveList extends Component<PrimitiveListProps> {
             key={primitive.name}
             group={primitive}
             onFocus={onFocus}
-            onBlur={onBlur}
             onKeyDown={onKeyDown}
             selected={selected}
           />
@@ -171,7 +163,6 @@ export default class PrimitiveList extends Component<PrimitiveListProps> {
           key={primitive.name}
           primitive={primitive}
           onFocus={onFocus}
-          onBlur={onBlur}
           onKeyDown={onKeyDown}
           className={selected == primitive.name ? "selected" : ""}
         />
