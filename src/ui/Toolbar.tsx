@@ -35,7 +35,6 @@ var Toolbar = (props: Props) => {
   // Set selectedPrimitive state, depending on whether we go up or down
   const move = (dir: string) => {
     let primitives = getPrimitives();
-    console.log(primitives);
     if (primitives.length == 0) return; // Nothing to select. Bail.
     let i = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
     if (dir == "Down") {
@@ -68,13 +67,16 @@ var Toolbar = (props: Props) => {
   };
 
   // if a primitive is selected, make a block node for it
-  const selectedPrimitiveBlock = selectedPrimitive? 
-    (<span
+  const selectedPrimitiveBlock = selectedPrimitive ? (
+    <span
       className="RenderedBlockNode"
       key={String(getPrimitives().indexOf(selectedPrimitive))}
     >
       {selectedPrimitive.getASTNode().reactElement({ inToolbar: true })}
-    </span>) : "";
+    </span>
+  ) : (
+    ""
+  );
 
   return (
     <div
