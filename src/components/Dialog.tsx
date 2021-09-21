@@ -4,6 +4,7 @@ import React, {
   ReactElement,
   useEffect,
   useRef,
+  useCallback,
 } from "react";
 import Modal from "react-modal";
 import PropTypes from "prop-types";
@@ -22,7 +23,8 @@ type Props = {
 
 const Dialog = (props: Props) => {
   const { appElement, isOpen, closeFn, keyUp, body } = props;
-  var headerRef = useRef<HTMLHeadingElement>(null);
+  const headerRef = useRef<HTMLHeadingElement>(null);
+  const focusTitle = useCallback(() => headerRef.current.focus(), []);
 
   useEffect(() => {
     Modal.setAppElement(appElement);
@@ -30,12 +32,6 @@ const Dialog = (props: Props) => {
 
   const onKeyUp = (e: KeyboardEvent): void => {
     if (e.key === "Escape") closeFn();
-  };
-
-  // NOTE(Emmanuel): this feels like a level of indirection
-  // that refs are supposed to deal with.
-  const focusTitle = () => {
-    headerRef.current.focus();
   };
 
   return (
@@ -50,7 +46,7 @@ const Dialog = (props: Props) => {
       onAfterOpen={focusTitle}
       aria={{ labelledby: "heading" }}
     >
-      <div tabIndex={-1} id="DialogContents" onKeyUp={keyUp || onKeyUp}>
+      <div tabIndex={-1} id="DialogContents" onKeyUp={keyUp ?? onKeyUp}>
         <h1 tabIndex={-1} ref={headerRef}>
           {props.body?.title}
         </h1>
