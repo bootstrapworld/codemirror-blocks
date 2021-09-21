@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import classNames from "classnames";
 import PrimitiveList from "./PrimitiveList";
-import PrimitiveBlock from "./PrimitiveBlock";
 import { Primitive, PrimitiveGroup } from "../parsers/primitives";
 import CodeMirror from "codemirror";
 import "./Toolbar.less";
@@ -68,6 +67,15 @@ var Toolbar = (props: Props) => {
     }
   };
 
+  // if a primitive is selected, make a block node for it
+  const selectedPrimitiveBlock = selectedPrimitive? 
+    (<span
+      className="RenderedBlockNode"
+      key={String(getPrimitives().indexOf(selectedPrimitive))}
+    >
+      {selectedPrimitive.getASTNode().reactElement({ inToolbar: true })}
+    </span>) : "";
+
   return (
     <div
       className={classNames("blocks-ui Toolbar", {
@@ -113,14 +121,7 @@ var Toolbar = (props: Props) => {
         )}
       >
         <div className="block-header">Block</div>
-        {selectedPrimitive ? (
-          <PrimitiveBlock
-            primitive={selectedPrimitive}
-            id={getPrimitives().indexOf(selectedPrimitive)}
-          />
-        ) : (
-          ""
-        )}
+        {selectedPrimitiveBlock}
       </div>
     </div>
   );
