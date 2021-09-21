@@ -25,31 +25,29 @@ var Toolbar = (props: Props) => {
   const getPrimitives = () =>
     (primitives?.filter(search).primitives || []) as Primitive[];
 
-  // Set selectedPrimitive state, depending on whether we go up or down
-  const move = (dir: string) => {
-    let primitives = getPrimitives();
-    if (primitives.length == 0) return; // Nothing to select. Bail.
-    let i = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
-    if (dir == "Down") {
-      i = Math.min(i + 1, primitives.length - 1);
+  // Focus on the primitive if it's already selected, or select a new one
+  const focusPrimitive = (primitive:Primitive) => {
+    if (primitive?.element) {
+      primitive.element.focus(); // should *not* apply useCallback, correct?
     } else {
-      i = Math.max(i - 1, 0);
-    }
-    if (primitives[i]?.element) {
-      primitives[i].element.focus(); // should *not* apply useCallback, correct?
-    } else {
-      setSelectedPrimitive(primitives[i]);
+      setSelectedPrimitive(primitive);
     }
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (
     event
   ) => {
-    switch (CodeMirror.keyName(event)) {
+    const keyName = CodeMirror.keyName(event);
+    switch (keyName) {
       case "Down":
       case "Up":
         event.preventDefault();
-        move(CodeMirror.keyName(event));
+        let primitives = getPrimitives();
+        if (primitives.length == 0) return; // Nothing to select. Bail.
+        let i = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
+        i += (keyName == "Down")? 1 : -1;   // increment or decrement
+        i = Math.max(Math.min(i,  primitives.length - 1), 0); // clamp
+        focusPrimitive(primitives[i]);
         return;
       case "Esc":
         toolbarRef.current.focus();
@@ -102,10 +100,10 @@ var Toolbar = (props: Props) => {
       </div>
       <div className="primitives-box">
         <PrimitiveList
-          primitives={getPrimitives()}
           onFocus={setSelectedPrimitive}
           onKeyDown={handleKeyDown}
           selected={selectedPrimitive && selectedPrimitive.name}
+          primitives={getPrimitives()}
           searchString={search}
         />
       </div>
