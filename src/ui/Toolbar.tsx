@@ -1,11 +1,4 @@
-import React, {
-  Component,
-  KeyboardEvent,
-  ReactElement,
-  useState,
-  useEffect,
-  useRef,
-} from "react";
+import React, { ReactElement, useState } from "react";
 import classNames from "classnames";
 import PrimitiveList from "./PrimitiveList";
 import { Primitive, PrimitiveGroup } from "../parsers/primitives";
