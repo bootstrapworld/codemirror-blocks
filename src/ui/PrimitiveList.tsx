@@ -47,11 +47,11 @@ export function BasePrimitive(props: BasePrimitiveProps) {
   };
 
   // Build the primitive block and return it inside a list item
-  // NOTE(Emmanuel): is this still appropriate style for using refs?
   const elem = (
     <span
       tabIndex={-1}
       onKeyDown={handleKeyDown}
+      // NOTE(Emmanuel): is this still appropriate style for using refs?
       onFocus={() => onFocus(primitive)}
       ref={(elem) => (primitive.element = elem)}
       className={classNames(className, "Primitive list-group-item")}
