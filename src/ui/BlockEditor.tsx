@@ -291,7 +291,7 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
      */
     languageId: string;
     search?: Search;
-    toolbarRef?: React.RefObject<Toolbar>;
+    toolbarRef?: React.RefObject<HTMLInputElement>;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
     onMount: Function;
     api?: API;
