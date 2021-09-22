@@ -51,14 +51,14 @@ module.exports = function (config) {
     });
   }
   return {
-    resolve : {
-      alias: { 
-        "react": "preact/compat",
+    resolve: {
+      alias: {
+        react: "preact/compat",
         "react-dom/test-utils": "preact/test-utils",
         "react-dom": "preact/compat",
       },
-      extensions: ['.ts', '.tsx', '.js', '.jsx'],
-    }, 
+      extensions: [".ts", ".tsx", ".js", ".jsx"],
+    },
 
     output: {
       path: path.resolve(__dirname, "..", "build"),
@@ -115,5 +115,5 @@ module.exports = function (config) {
       ]),
     },
     plugins: plugins,
-  }
+  };
 };

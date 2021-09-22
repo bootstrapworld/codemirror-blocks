@@ -224,6 +224,6 @@ export const reducer = (state = initialState, action: AppAction) => {
       result = state;
   }
 
-//  loggerDebug(action, result.ast);
+  //  loggerDebug(action, result.ast);
   return result;
 };
