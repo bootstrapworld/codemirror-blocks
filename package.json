@@ -36,7 +36,7 @@
     "karma-babel-preprocessor": "^8.0.1",
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage": "^2.0.3",
-    "karma-coveralls": "^1.2.0",
+    "karma-coveralls": "^2.1.0",
     "karma-jasmine": "^4.0.1",
     "karma-jasmine-diff-reporter": "^2.0.1",
     "karma-parallel": "^0.3.1",
@@ -51,6 +51,7 @@
     "prop-types": "^15.7.2",
     "raw-loader": "^4.0.2",
     "react-codemirror2": "^7.2.1",
+    "react-contenteditable": "^3.3.6",
     "react-dnd": "^14.0.3",
     "react-dnd-html5-backend": "^14.0.1",
     "react-dom": "^17.0.2",
@@ -121,6 +122,7 @@
     "upgrade-interactive": "npm-check --update"
   },
   "author": "The Bootstrap Team",
+  "repository": "github:bootstrapworld/codemirror-blocks",
   "contributors": [
     "Paul Carduner",
     "Zachary Espiritu",
@@ -131,5 +133,5 @@
     "Dorai Sitaram",
     "Preston Tunnell Wilson"
   ],
-  "license": "MIT License"
+  "license": "MIT"
 }

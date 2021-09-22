@@ -66,7 +66,15 @@ export function insert(
   checkTarget(target);
   const { ast } = store.getState();
   const edits = [target.toEdit(text)];
-  performEdits("cmb:insert", ast, edits, onSuccess, onError, annt);
+  performEdits(
+    "cmb:insert",
+    ast,
+    edits,
+    SHARED.parse,
+    onSuccess,
+    onError,
+    annt
+  );
 }
 
 /**
@@ -97,7 +105,15 @@ export function delete_(nodes: ASTNode[], editWord?: string) {
     annt = createEditAnnouncement(nodes, editWord);
     say(annt);
   }
-  performEdits("cmb:delete-node", ast, edits, undefined, undefined, annt);
+  performEdits(
+    "cmb:delete-node",
+    ast,
+    edits,
+    SHARED.parse,
+    undefined,
+    undefined,
+    annt
+  );
   store.dispatch({ type: "SET_SELECTIONS", selections: [] });
 }
 
@@ -140,7 +156,7 @@ export function paste(
   pasteFromClipboard((text) => {
     const { ast } = store.getState();
     const edits = [target.toEdit(text)];
-    performEdits("cmb:paste", ast, edits, onSuccess, onError);
+    performEdits("cmb:paste", ast, edits, SHARED.parse, onSuccess, onError);
     store.dispatch({ type: "SET_SELECTIONS", selections: [] });
   });
 }
@@ -177,7 +193,7 @@ export function drop(
   // Insert or replace at the drop location, depending on what we dropped it on.
   edits.push(target.toEdit(content));
   // Perform the edits.
-  performEdits("cmb:drop-node", ast, edits, onSuccess, onError);
+  performEdits("cmb:drop-node", ast, edits, SHARED.parse, onSuccess, onError);
 
   // Assuming it did not come from the toolbar, and the srcNode was collapsed...
   // Find the matching node in the new tree and collapse it
@@ -198,7 +214,7 @@ export function dropOntoTrashCan(src: { id: string }) {
   const srcNode = src.id ? ast.getNodeById(src.id) : null; // null if dragged from toolbar
   if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
   let edits = [edit_delete(srcNode)];
-  performEdits("cmb:trash-node", ast, edits);
+  performEdits("cmb:trash-node", ast, edits, SHARED.parse);
 }
 
 // Set the cursor position.

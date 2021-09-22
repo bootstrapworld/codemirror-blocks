@@ -1,13 +1,24 @@
-import React, { Component } from "react";
-import PropTypes from "prop-types";
-import shallowequal from "shallowequal";
+import React from "react";
+import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
+import type { Props as ContentEditableProps } from "react-contenteditable";
 
 /**
  * Single line contentEditable
  *
  * This component creates a span with contenteditable
  * It only supports one line content, so users are expected
- * to pass in onKeyDown and intercept the enter key
+ * to pass in onKeyDown and intercept the enter key.
+ *
+ * There are a number of tricky issues when using content editable
+ * html components with react, which is why we use the react-contenteditable
+ * library. In short, a naive use of contenteditable in react causes the
+ * caret position to change on every update.
+ * See this stackoverflow answer for an overview:
+ * https://stackoverflow.com/questions/22677931/react-js-onchange-event-for-contenteditable/27255103#27255103
+ *
+ * To test this component manually, fire up the block editor and double click
+ * on a leaf node to edit it. Typing in the leaf node should not result in
+ * the caret moving to the beginning on every keypress.
  */
 
 // use a plaintext INPUT elt to avoid characters being
@@ -18,92 +29,60 @@ function getInnerHTML(txt: string) {
   return el.value;
 }
 
-export type ContentEditableProps = Omit<
-  React.ComponentPropsWithoutRef<"span">,
-  "onChange"
+export type Props = Omit<
+  ContentEditableProps,
+  | "html"
+  | "onChange"
+  | "tagName"
+  | "spellCheck"
+  | "onKeyDown"
+  | "onPaste"
+  | "innerRef"
+  | "ref"
 > & {
   onChange?: (e: string) => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
-  itDidMount?: Function;
   value?: string;
-  id?: string;
-  "aria-label"?: string;
 };
 
-export default class ContentEditable extends Component<ContentEditableProps> {
-  static defaultProps = {
-    onChange: () => {},
-    onKeyDown: () => {},
-    itDidMount: () => {},
-    value: "",
+function OneLineContentEditable(
+  props: Props & { forwardedRef: React.Ref<HTMLElement> }
+) {
+  const { value, onChange, onKeyDown, forwardedRef, ...rest } = props;
+
+  const handleChange = (event: ContentEditableEvent) => {
+    onChange && onChange(event.target.value);
   };
 
-  static propTypes = {
-    onChange: PropTypes.func,
-    onKeyDown: PropTypes.func,
-    itDidMount: PropTypes.func,
-    value: PropTypes.string,
-    id: PropTypes.string,
-    "aria-label": PropTypes.string,
-  };
-
-  eltRef: React.RefObject<HTMLSpanElement>;
-
-  constructor(props: ContentEditableProps) {
-    super(props);
-    this.eltRef = React.createRef();
-  }
-
-  handleChange = () => {
-    this.props.onChange(this.eltRef.current.textContent);
-  };
-
-  handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.keyCode === 13 && !e.shiftKey) {
       // ENTER
       e.preventDefault();
     }
     e.stopPropagation();
-    this.props.onKeyDown(e);
+    onKeyDown && onKeyDown(e);
   };
 
-  handlePaste = (ev: React.ClipboardEvent) => {
+  const handlePaste = (ev: React.ClipboardEvent) => {
     ev.preventDefault();
     const text = ev.clipboardData.getData("text");
     document.execCommand("insertText", false, text);
   };
 
-  componentDidMount() {
-    this.props.itDidMount(this.eltRef.current);
-  }
-
-  /*eslint no-unused-vars: "off"*/
-  shouldComponentUpdate(props: ContentEditableProps) {
-    const { value: newValue, "aria-label": newAriaLabel, ...newProps } = props;
-    const {
-      value: oldValue,
-      "aria-label": oldAriaLabel,
-      ...oldProps
-    } = this.props;
-    return (
-      getInnerHTML(newValue) !== this.eltRef.current.textContent ||
-      !shallowequal(newProps, oldProps)
-    );
-  }
-
-  render() {
-    const { value, itDidMount, onChange, ...props } = this.props;
-    return (
-      <span
-        {...props}
-        ref={this.eltRef}
-        dangerouslySetInnerHTML={{ __html: getInnerHTML(value) }}
-        contentEditable={"plaintext-only" as any}
-        spellCheck={false}
-        onInput={this.handleChange}
-        onKeyDown={this.handleKeyDown}
-        onPaste={this.handlePaste}
-      />
-    );
-  }
+  return (
+    <ContentEditable
+      {...rest}
+      html={getInnerHTML(value ?? "")}
+      onChange={handleChange}
+      tagName="span"
+      spellCheck={false}
+      onKeyDown={handleKeyDown}
+      onPaste={handlePaste}
+      innerRef={forwardedRef || undefined}
+    />
+  );
 }
+
+export default React.forwardRef<HTMLElement, Props>((props, ref) => (
+  <OneLineContentEditable {...props} forwardedRef={ref} />
+));

@@ -1,8 +1,9 @@
-import React, { Component } from "react";
+import React, { useState } from "react";
 import classNames from "classnames";
-import PropTypes from "prop-types";
-import { PrimitiveGroup as PrimitiveGroupModel } from "../parsers/primitives";
-import { Primitive as LanguagePrimitive } from "../parsers/primitives";
+import {
+  PrimitiveGroup as PrimitiveGroupModel,
+  Primitive as LanguagePrimitive,
+} from "../parsers/primitives";
 import { DragPrimitiveSource } from "../dnd";
 import { say } from "../announcer";
 import { copy } from "../actions";
@@ -15,189 +16,144 @@ type BasePrimitiveProps = {
   primitive: LanguagePrimitive;
   className: string;
   onFocus: Function;
-  onBlur: Function;
   onKeyDown: Function;
   searchString?: string;
   connectDragPreview: Function;
   connectDragSource: Function;
 };
 
-class BasePrimitive extends Component<BasePrimitiveProps> {
-  static propTypes = {
-    primitive: PropTypes.instanceOf(LanguagePrimitive).isRequired,
-    className: PropTypes.string.isRequired,
-    onFocus: PropTypes.func.isRequired,
-    onBlur: PropTypes.func.isRequired,
-    onKeyDown: PropTypes.func.isRequired,
-    searchString: PropTypes.string,
-    connectDragPreview: PropTypes.func.isRequired,
-    connectDragSource: PropTypes.func.isRequired,
-  };
+export function BasePrimitive(props: BasePrimitiveProps) {
+  const {
+    primitive,
+    className,
+    onFocus,
+    onKeyDown,
+    connectDragPreview,
+    connectDragSource,
+  } = props;
 
-  handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (defaultKeyMap[CodeMirror.keyName(e)]) {
       case "Copy":
         e.preventDefault();
-        copy([this.props.primitive.getASTNode()]);
-        say("copied " + this.props.primitive.toString());
-        this.props.primitive.element?.focus(); // restore focus
+        copy([primitive.getASTNode()]);
+        say("copied " + primitive.toString());
+        primitive.element?.focus(); // restore focus
         return;
       default:
-        this.props.onKeyDown(e);
+        onKeyDown(e);
         return;
     }
   };
 
-  render() {
-    let {
-      primitive,
-      className,
-      onFocus,
-      connectDragPreview,
-      connectDragSource,
-    } = this.props;
-    let elem = (
-      <span
-        tabIndex={-1}
-        onKeyDown={this.handleKeyDown}
-        onFocus={() => onFocus(primitive)}
-        ref={(elem) => (primitive.element = elem)}
-        className={classNames(className, "Primitive list-group-item")}
-      >
-        {primitive.name}
-      </span>
-    );
-    elem = connectDragPreview(connectDragSource(elem), {
-      offsetX: 1,
-      offsetY: 1,
-    });
-    return <li>{elem}</li>;
-  }
+  // Build the primitive block and return it inside a list item
+  const elem = (
+    <span
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+      // NOTE(Emmanuel): is this still appropriate style for using refs?
+      onFocus={() => onFocus(primitive)}
+      ref={(elem) => (primitive.element = elem)}
+      className={classNames(className, "Primitive list-group-item")}
+    >
+      {primitive.name}
+    </span>
+  );
+  const draggableElem = connectDragPreview(connectDragSource(elem), {
+    offsetX: 1,
+    offsetY: 1,
+  });
+  return <li>{draggableElem}</li>;
 }
 
 const Primitive = DragPrimitiveSource(BasePrimitive);
 
 type PrimitiveGroupProps = {
   onFocus: Function;
-  onBlur: Function;
   onKeyDown: Function;
   selected?: string; // to start, no primitive is selected
   group?: PrimitiveGroupModel;
 };
-export class PrimitiveGroup extends Component<PrimitiveGroupProps> {
-  static defaultProps = {
-    group: new PrimitiveGroupModel("", "", []),
-  };
 
-  static propTypes = {
-    onFocus: PropTypes.func.isRequired,
-    onBlur: PropTypes.func.isRequired,
-    onKeyDown: PropTypes.func.isRequired,
-    selected: PropTypes.string, // to start, no primitive is selected
-    group: PropTypes.object,
-  };
+export function PrimitiveGroup(props: PrimitiveGroupProps) {
+  const { onFocus, onKeyDown, selected } = props;
+  const group = props.group ?? new PrimitiveGroupModel("", "", []);
+  const [expanded, setExpanded] = useState(false);
+  const toggleExpanded = () => setExpanded(!expanded);
 
-  state = {
-    expanded: false,
-  };
-
-  toggleExpanded = () => {
-    this.setState({ expanded: !this.state.expanded });
-  };
-
-  render() {
-    let { group, onFocus, onBlur, onKeyDown, selected } = this.props;
-    let expanded = this.state.expanded;
-    let expandoClass = classNames(
-      "glyphicon",
-      expanded ? "glyphicon-minus" : "glyphicon-plus"
-    );
-    return (
-      <li className="PrimitiveGroup list-group-item" role="list">
-        <div onFocus={this.toggleExpanded} className="group-header">
-          <span className={expandoClass} aria-hidden="true" />
-        </div>
-        {expanded ? (
-          <PrimitiveList
-            primitives={[...group.flatPrimitivesIter()]}
-            onFocus={onFocus}
-            onBlur={onBlur}
-            onKeyDown={onKeyDown}
-            selected={selected}
-          />
-        ) : null}
-      </li>
-    );
-  }
+  const expandoClass = classNames(
+    "glyphicon",
+    expanded ? "glyphicon-minus" : "glyphicon-plus"
+  );
+  return (
+    <li className="PrimitiveGroup list-group-item" role="list">
+      <div onFocus={toggleExpanded} className="group-header">
+        <span className={expandoClass} aria-hidden="true" />
+      </div>
+      {expanded ? (
+        <PrimitiveList
+          primitives={[...group.flatPrimitivesIter()]}
+          onFocus={onFocus}
+          onKeyDown={onKeyDown}
+          selected={selected}
+        />
+      ) : null}
+    </li>
+  );
 }
+
 type PrimitiveListProps = {
   onFocus: Function;
-  onBlur: Function;
   onKeyDown: Function;
   selected?: string;
   primitives?: LanguagePrimitive[];
   searchString?: string;
 };
-export default class PrimitiveList extends Component<PrimitiveListProps> {
-  static propTypes = {
-    onFocus: PropTypes.func.isRequired,
-    onBlur: PropTypes.func.isRequired,
-    onKeyDown: PropTypes.func.isRequired,
-    selected: PropTypes.string,
-    primitives: PropTypes.array,
-    searchString: PropTypes.string,
-  };
-  render() {
-    const { primitives, selected, onFocus, onBlur, onKeyDown, searchString } =
-      this.props;
-    let nodes = [];
-    for (let primitive of primitives) {
-      if (primitive instanceof PrimitiveGroupModel) {
-        // this is a group.
-        nodes.push(
-          <PrimitiveGroup
-            key={primitive.name}
-            group={primitive}
-            onFocus={onFocus}
-            onBlur={onBlur}
-            onKeyDown={onKeyDown}
-            selected={selected}
-          />
-        );
-        continue;
-      }
-      nodes.push(
-        <Primitive
-          key={primitive.name}
-          primitive={primitive}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          onKeyDown={onKeyDown}
-          className={selected == primitive.name ? "selected" : ""}
-        />
-      );
-    }
-    const text = searchString
-      ? (primitives.length == 0 ? "No" : primitives.length) + " blocks found"
-      : "blocks";
+export default function PrimitiveList(props: PrimitiveListProps) {
+  const { primitives, selected, onFocus, onKeyDown, searchString } = props;
+  const renderGroup = (g: PrimitiveGroupModel) => (
+    <PrimitiveGroup
+      key={g.name}
+      group={g}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+      selected={selected}
+    />
+  );
+  const renderPrimitive = (p: LanguagePrimitive) => (
+    <Primitive
+      key={p.name}
+      primitive={p}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+      className={selected == p.name ? "selected" : ""}
+    />
+  );
 
-    return (
-      <div>
-        <h3
-          id="toolbar_heading"
-          className="screenreader-only"
-          aria-live="assertive"
-          aria-atomic="true"
-        >
-          {text}
-        </h3>
-        <ul
-          className="PrimitiveList list-group"
-          aria-labelledby="toolbar_heading"
-        >
-          {nodes}
-        </ul>
-      </div>
-    );
-  }
+  const text = searchString
+    ? (primitives.length == 0 ? "No" : primitives.length) + " blocks found"
+    : "blocks";
+
+  return (
+    <div>
+      <h3
+        id="toolbar_heading"
+        className="screenreader-only"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        {text}
+      </h3>
+      <ul
+        className="PrimitiveList list-group"
+        aria-labelledby="toolbar_heading"
+      >
+        {primitives.map((item) =>
+          item instanceof PrimitiveGroupModel
+            ? renderGroup(item)
+            : renderPrimitive(item)
+        )}
+      </ul>
+    </div>
+  );
 }

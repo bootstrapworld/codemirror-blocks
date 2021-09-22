@@ -25,7 +25,6 @@ const connector = connect(mapStateToProps, mapDispatchToProps);
 
 type Props = ConnectedProps<typeof connector> & {
   cmOptions?: {};
-  parse: Function;
   value: string;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: (ed: Editor, api: API, ast: AST) => void;
@@ -58,10 +57,6 @@ class TextEditor extends Component<Props> {
         })
     );
     return api as API;
-  }
-
-  componentDidMount() {
-    SHARED.parse = this.props.parse;
   }
 
   render() {

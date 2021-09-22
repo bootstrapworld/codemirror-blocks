@@ -1,6 +1,8 @@
-import React, { Component, ReactElement } from "react";
-import { connect } from "react-redux";
-import ContentEditable, { ContentEditableProps } from "./ContentEditable";
+import React, { ReactElement, useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import ContentEditable, {
+  Props as ContentEditableProps,
+} from "./ContentEditable";
 import SHARED from "../shared";
 import classNames, { Argument as ClassNamesArgument } from "classnames";
 import { insert, activateByNid, Target } from "../actions";
@@ -8,210 +10,170 @@ import { say } from "../announcer";
 import CodeMirror from "codemirror";
 import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
-import { AST } from "../ast";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
-import type { afterDOMUpdateHandle } from "../utils";
+
+function suppressEvent(e: React.SyntheticEvent) {
+  e.stopPropagation();
+}
+
+/**
+ * Make the browser select the given html element and focus it
+ *
+ * @param element the html element to select
+ * @param shouldCollapse whether or not to force the browser
+ *        to collapse the selection to the end of the elements range.
+ */
+function selectElement(element: HTMLElement, shouldCollapse: boolean) {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  if (shouldCollapse) {
+    range.collapse(false);
+  }
+  const selection = window.getSelection();
+  if (selection) {
+    // window.getSelection can return null in firefox when rendered
+    // inside a hidden iframe: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection#return_value
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+  element.focus();
+}
 
 type Props = ContentEditableProps & {
   target?: Target;
   children?: ReactElement;
   isInsertion: boolean;
-  value?: string;
-  dispatch?: Function;
-  setErrorId?: Function;
+  value?: string | null;
   onChange?: (e: string) => void;
   onDisableEditable?: Function;
-  clearSelections?: Function;
-  focusSelf?: Function;
-  isErrored?: boolean;
   contentEditableProps?: {};
   extraClasses?: ClassNamesArgument;
 };
 
-class NodeEditable extends Component<Props> {
-  cachedValue: string;
-  ignoreBlur: boolean;
-  element: HTMLElement;
-  pendingTimeout?: afterDOMUpdateHandle;
+const NodeEditable = (props: Props) => {
+  const element = useRef<HTMLElement>(null);
+  const dispatch: AppDispatch = useDispatch();
 
-  constructor(props: Props) {
-    super(props);
-    const { value, dispatch } = this.props;
-    this.cachedValue = "";
-    if (value === null) {
-      dispatch((_: any, getState: () => RootState) => {
-        const { ast } = getState();
-        const { target } = this.props;
-        this.cachedValue = target.getText(ast);
-      });
-    }
-  }
+  const { initialValue, isErrored } = useSelector((state: RootState) => {
+    const nodeId = props.target.node ? props.target.node.id : "editing";
+    const isErrored = state.errorId == nodeId;
 
-  saveEdit = (e: React.SyntheticEvent) => {
+    const initialValue =
+      props.value === null ? props.target.getText(state.ast) : "";
+
+    return { isErrored, initialValue };
+  });
+
+  useEffect(() => {
+    const pendingTimeout = setAfterDOMUpdate(() => {
+      const currentEl = element.current;
+      if (!currentEl) {
+        // element has been unmounted already, nothing to do.
+        return;
+      }
+      selectElement(currentEl, props.isInsertion);
+    });
+    const text = props.value || initialValue || "";
+    const annt = (props.isInsertion ? "inserting" : "editing") + ` ${text}`;
+    say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
+    dispatch({ type: "SET_SELECTIONS", selections: [] });
+    return () => cancelAfterDOMUpdate(pendingTimeout);
+  }, []);
+
+  const setErrorId = (errorId: string) =>
+    dispatch({ type: "SET_ERROR_ID", errorId });
+
+  const onBlur = (e: React.SyntheticEvent) => {
     e.stopPropagation();
-    const { target, setErrorId, onChange, onDisableEditable, dispatch } =
-      this.props;
+    const { target } = props;
     dispatch((dispatch: AppDispatch, getState: () => RootState) => {
+      // we grab the value directly from the content editable element
+      // to deal with this issue:
+      // https://github.com/lovasoa/react-contenteditable/issues/161
+      const value = element.current.innerText;
       const { focusId, ast } = getState();
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
-      if (this.props.value === this.cachedValue || !this.props.value) {
-        this.props.onDisableEditable(false);
+      if (value === initialValue || !value) {
+        props.onDisableEditable(false);
         const focusNode = ast.getNodeById(focusId);
         const nid = focusNode && focusNode.nid;
         dispatch(activateByNid(nid));
         return;
       }
 
-      const value = this.props.value;
-      let annt = `${this.props.isInsertion ? "inserted" : "changed"} ${value}`;
-
-      const onSuccess = ({
-        firstNewId,
-      }: {
-        newAST: AST;
-        focusId: string;
-        firstNewId?: number;
-      }) => {
-        // BUG? onSuccess never gets called with firstNewId, and it doesn't look
-        // like it has been passed in for at least two years.
-        if (firstNewId !== null && firstNewId !== undefined) {
-          const { ast } = getState();
-          const firstNewNid = ast.getNodeById(focusId).nid;
-          dispatch(activateByNid(firstNewNid, { allowMove: true }));
-        } else {
-          dispatch(activateByNid(null, { allowMove: false }));
-        }
-        onChange(null);
-        onDisableEditable(false);
+      let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
+      const onSuccess = () => {
+        dispatch(activateByNid(null, { allowMove: false }));
+        props.onChange(null);
+        props.onDisableEditable(false);
         setErrorId("");
         say(annt);
       };
-      const onError = (e: any) => {
+      const onError = () => {
         const errorText = SHARED.getExceptionMessage(e);
         console.log(errorText);
-        this.ignoreBlur = false;
         setErrorId(target.node ? target.node.id : "editing");
-        this.setSelection(false);
+        if (element.current) {
+          selectElement(element.current, false);
+        }
       };
       insert(value, target, onSuccess, onError, annt);
     });
   };
 
-  handleKeyDown = (e: React.KeyboardEvent) => {
+  const onKeyDown = (e: React.KeyboardEvent) => {
     switch (CodeMirror.keyName(e)) {
       case "Enter": {
-        this.ignoreBlur = true;
-        this.saveEdit(e);
+        // blur the element to trigger handleBlur
+        // which will save the edit
+        element.current.blur();
         return;
       }
       case "Alt-Q":
       case "Esc":
-        this.ignoreBlur = true;
         e.stopPropagation();
-        this.props.onChange(null);
-        this.props.onDisableEditable(false);
-        this.props.setErrorId("");
-        cancelAfterDOMUpdate(this.pendingTimeout);
-        this.pendingTimeout = setAfterDOMUpdate(this.props.focusSelf());
+        props.onChange(null);
+        props.onDisableEditable(false);
+        setErrorId("");
+        // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
+        // and then figure out how to get rid of it altogether.
+        setAfterDOMUpdate(() =>
+          dispatch(activateByNid(null, { allowMove: false }))
+        );
         return;
     }
   };
 
-  suppressEvent = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-  };
+  const { contentEditableProps, extraClasses, value } = props;
 
-  componentDidMount() {
-    const text = this.props.value || this.cachedValue || "";
-    const annt =
-      (this.props.isInsertion ? "inserting" : "editing") + ` ${text}`;
-    say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
-    this.props.clearSelections();
-  }
-
-  // Teardown any pending timeouts
-  componentWillUnmount() {
-    cancelAfterDOMUpdate(this.pendingTimeout);
-  }
-
-  /*
-   * No need to reset text because we assign new key (via the parser + patching)
-   * to changed nodes, so they will be completely unmounted and mounted back
-   * with correct values.
-   */
-
-  handleBlur = (e: React.FocusEvent) => {
-    if (this.ignoreBlur) return;
-    this.saveEdit(e);
-  };
-
-  setSelection = (isCollapsed: boolean) => {
-    cancelAfterDOMUpdate(this.pendingTimeout);
-    this.pendingTimeout = setAfterDOMUpdate(() => {
-      const range = document.createRange();
-      range.selectNodeContents(this.element);
-      if (isCollapsed) range.collapse(false);
-      window.getSelection().removeAllRanges();
-      window.getSelection().addRange(range);
-      this.element.focus();
-    });
-  };
-
-  contentEditableDidMount = (el: HTMLElement) => {
-    this.element = el;
-    this.setSelection(this.props.isInsertion);
-  };
-
-  render() {
-    const { contentEditableProps, extraClasses, value, onChange } = this.props;
-
-    const classes = (
-      [
-        "blocks-literal",
-        "quarantine",
-        "blocks-editing",
-        "blocks-node",
-        { "blocks-error": this.props.isErrored },
-      ] as ClassNamesArgument[]
-    ).concat(extraClasses);
-
-    const text = value !== null ? value : this.cachedValue;
-    return (
-      <ContentEditable
-        {...contentEditableProps}
-        className={classNames(classes)}
-        role="textbox"
-        itDidMount={this.contentEditableDidMount}
-        onChange={onChange}
-        onBlur={this.handleBlur}
-        onKeyDown={this.handleKeyDown}
-        // trap mousedown, clicks and doubleclicks, to prevent focus change, or
-        // parent nodes from toggling collapsed state
-        onMouseDown={this.suppressEvent}
-        onClick={this.suppressEvent}
-        onDoubleClick={this.suppressEvent}
-        aria-label={text}
-        value={text}
-      />
-    );
-  }
-}
-
-const mapStateToProps = (
-  { errorId }: RootState,
-  { target }: { target: Target }
-) => {
-  const nodeId = target.node ? target.node.id : "editing";
-  const isErrored = errorId == nodeId;
-  return { isErrored };
+  const classes = (
+    [
+      "blocks-literal",
+      "quarantine",
+      "blocks-editing",
+      "blocks-node",
+      { "blocks-error": isErrored },
+    ] as ClassNamesArgument[]
+  ).concat(extraClasses);
+  const text = value ?? initialValue;
+  return (
+    <ContentEditable
+      {...contentEditableProps}
+      className={classNames(classes)}
+      role="textbox"
+      ref={element}
+      onChange={props.onChange}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      // trap mousedown, clicks and doubleclicks, to prevent focus change, or
+      // parent nodes from toggling collapsed state
+      onMouseDown={suppressEvent}
+      onClick={suppressEvent}
+      onDoubleClick={suppressEvent}
+      aria-label={text}
+      value={text}
+    />
+  );
 };
-
-const mapDispatchToProps = (dispatch: AppDispatch) => ({
-  dispatch,
-  setErrorId: (errorId: string) => dispatch({ type: "SET_ERROR_ID", errorId }),
-  focusSelf: () => dispatch(activateByNid(null, { allowMove: false })),
-  clearSelections: () => dispatch({ type: "SET_SELECTIONS", selections: [] }),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(NodeEditable);
+export default NodeEditable;
