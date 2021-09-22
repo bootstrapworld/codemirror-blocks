@@ -54,10 +54,9 @@ var Toolbar = (props: Props) => {
         return;
       case "Esc":
         toolbarRef.current.focus(); // focus, then fall-through
-      default:
-        event.stopPropagation();
-        return;
+        break;
     }
+    event.stopPropagation();
   };
 
   // if a primitive is selected, make a block node for it

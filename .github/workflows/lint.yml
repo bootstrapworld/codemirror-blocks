@@ -24,7 +24,7 @@ jobs:
         uses: wearerequired/lint-action@v1
         with:
           eslint: true
-          eslint_extensions: js
+          eslint_extensions: js,jsx,ts,tsx
           eslint_args: src spec example
 
       # Make sure prettier was run on any changes
