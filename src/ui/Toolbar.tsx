@@ -1,7 +1,6 @@
-import React, { Component } from "react";
+import React, { ReactElement, useState } from "react";
 import classNames from "classnames";
 import PrimitiveList from "./PrimitiveList";
-import PrimitiveBlock from "./PrimitiveBlock";
 import { Primitive, PrimitiveGroup } from "../parsers/primitives";
 import CodeMirror from "codemirror";
 import "./Toolbar.less";
@@ -10,166 +9,115 @@ type Props = {
   primitives?: PrimitiveGroup;
   languageId?: string; // used to find the .blocks-language-{languageId} CSS class
   blockMode?: boolean;
+  toolbarRef: React.RefObject<HTMLInputElement>;
 };
 
-type State = {
-  search: string;
-  selectedPrimitive: null | Primitive;
-};
+var Toolbar = (props: Props) => {
+  const { primitives, languageId, blockMode, toolbarRef } = props;
 
-export default class Toolbar extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.handleFocusPrimitive = this.handleFocusPrimitive.bind(this);
-    this.state = {
-      search: "",
-      selectedPrimitive: null,
-    };
-  }
+  const [search, setSearch] = useState("");
+  const [selectedPrimitive, setSelectedPrimitive] = useState(null);
+  const clearSearch = () => setSearch("");
+  const changeSearch: React.ChangeEventHandler<HTMLInputElement> = (event) =>
+    setSearch(event.target.value);
 
-  static defaultProps: Props = {
-    primitives: null,
-    blockMode: false,
-  };
+  // Get a flat array of all primitives matching 'search'
+  const getPrimitives = () =>
+    (primitives?.filter(search).primitives || []) as Primitive[];
 
-  primitiveSearch: HTMLElement;
-
-  changeSearch: React.ChangeEventHandler<HTMLInputElement> = (event) => {
-    this.setState({ search: event.target.value });
-  };
-
-  clearSearch = () => {
-    this.setState({ search: "" });
-  };
-
-  next() {
-    let primitives = this.getPrimitives();
-    if (primitives.length == 0) return; // Nothing to select.
-    let i = this.getSelectedPrimitiveIndex(primitives);
-    // If nothing is selected, select the first primitive, otherwise select the next.
-    if (i === primitives.length - 1) i -= 1;
-    if (i === null) i = -1;
-    this.selectPrimitive(primitives[i + 1]);
-  }
-
-  prev() {
-    let primitives = this.getPrimitives();
-    if (primitives.length == 0) return; // Nothing to select.
-    let i = this.getSelectedPrimitiveIndex(primitives);
-    // If the first primitive is selected, keep it, otherwise select the previous.
-    if (i === 0) i = 1;
-    this.selectPrimitive(i === null ? null : primitives[i - 1]);
-  }
-
-  handleFocusPrimitive(selectedPrimitive: State["selectedPrimitive"]) {
-    this.setState({ selectedPrimitive: selectedPrimitive });
-  }
-
-  selectPrimitive(selectedPrimitive: null | Primitive) {
-    if (selectedPrimitive?.element) {
-      selectedPrimitive.element.focus(); // will trigger handleFocusPrimitive
+  // Set selectedPrimitive state, depending on whether we go up or down
+  const move = (dir: "Up" | "Down") => {
+    let primitives = getPrimitives();
+    if (primitives.length == 0) return; // Nothing to select. Bail.
+    let i = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
+    if (dir == "Down") {
+      i = Math.min(i + 1, primitives.length - 1);
     } else {
-      this.setState({ selectedPrimitive: selectedPrimitive });
+      i = Math.max(i - 1, 0);
     }
-  }
+    if (primitives[i]?.element) {
+      primitives[i].element.focus(); // should *not* apply useCallback, correct?
+    } else {
+      setSelectedPrimitive(primitives[i]);
+    }
+  };
 
-  // NOTE(DS26GTE): this is just so onBlur has a non-null value
-  handleBlurPrimitive() {}
-
-  handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (event) => {
-    switch (CodeMirror.keyName(event)) {
-      case "Esc":
-        (event.target as HTMLInputElement).blur();
-        return;
+  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (
+    event
+  ) => {
+    const keyName = CodeMirror.keyName(event);
+    switch (keyName) {
       case "Down":
-        event.preventDefault();
-        this.next();
-        return;
       case "Up":
         event.preventDefault();
-        this.prev();
+        move(keyName);
         return;
+      case "Esc":
+        toolbarRef.current.focus(); // focus, then fall-through
       default:
         event.stopPropagation();
         return;
     }
   };
 
-  getPrimitives() {
-    if (this.props.primitives) {
-      return this.props.primitives.filter(this.state.search)
-        .primitives as Primitive[];
-    } else {
-      return [];
-    }
-  }
+  // if a primitive is selected, make a block node for it
+  const selectedPrimitiveBlock = selectedPrimitive ? (
+    <span className="RenderedBlockNode">
+      {selectedPrimitive.getASTNode().reactElement({ inToolbar: true })}
+    </span>
+  ) : (
+    ""
+  );
 
-  getSelectedPrimitiveIndex(primitives: (PrimitiveGroup | Primitive)[]) {
-    const idx = primitives.findIndex((p) => p === this.state.selectedPrimitive);
-    return idx == -1 ? null : idx;
-  }
-
-  render() {
-    let primitives = this.getPrimitives();
-    const selected = this.state.selectedPrimitive;
-    return (
-      <div
-        className={classNames("blocks-ui Toolbar", {
-          "has-selected": !!selected,
-        })}
-      >
-        <div className="search-box" role="search">
-          <label className="screenreader-only" htmlFor="search_box">
-            <h2>Search Functions</h2>
-          </label>
-          <input
-            type="search"
-            id="search_box"
-            placeholder="Search functions"
-            disabled={!this.props.blockMode}
-            className="form-control"
-            value={this.state.search}
-            onKeyDown={this.handleKeyDown}
-            ref={(elt) => {
-              this.primitiveSearch = elt;
-            }}
-            onChange={this.changeSearch}
+  return (
+    <div
+      className={classNames("blocks-ui Toolbar", {
+        "has-selected": !!selectedPrimitive,
+      })}
+    >
+      <div className="search-box" role="search">
+        <label className="screenreader-only" htmlFor="search_box">
+          <h2>Search Functions</h2>
+        </label>
+        <input
+          type="search"
+          id="search_box"
+          placeholder="Search functions"
+          disabled={!blockMode}
+          className="form-control"
+          value={search}
+          onKeyDown={handleKeyDown}
+          ref={toolbarRef}
+          onChange={changeSearch}
+        />
+        {search ? (
+          <button
+            aria-label="clear text"
+            className="glyphicon glyphicon-remove"
+            onClick={clearSearch}
           />
-          {this.state.search ? (
-            <button
-              aria-label="clear text"
-              className="glyphicon glyphicon-remove"
-              onClick={this.clearSearch}
-            />
-          ) : null}
-        </div>
-        <div className="primitives-box" tabIndex={-1}>
-          <PrimitiveList
-            primitives={primitives}
-            onFocus={this.handleFocusPrimitive}
-            onBlur={this.handleBlurPrimitive}
-            onKeyDown={this.handleKeyDown}
-            selected={selected && selected.name}
-            searchString={this.state.search}
-          />
-        </div>
-        <div
-          className={classNames(
-            "selected-primitive",
-            `blocks-language-${this.props.languageId}`
-          )}
-        >
-          <div className="block-header">Block</div>
-          {selected ? (
-            <PrimitiveBlock
-              primitive={selected}
-              id={"" + primitives.findIndex((p) => p.name === selected.name)}
-            />
-          ) : (
-            ""
-          )}
-        </div>
+        ) : null}
       </div>
-    );
-  }
-}
+      <div className="primitives-box">
+        <PrimitiveList
+          primitives={getPrimitives()}
+          onFocus={setSelectedPrimitive}
+          onKeyDown={handleKeyDown}
+          selected={selectedPrimitive && selectedPrimitive.name}
+          searchString={search}
+        />
+      </div>
+      <div
+        className={classNames(
+          "selected-primitive",
+          `blocks-language-${languageId}`
+        )}
+      >
+        <div className="block-header">Block</div>
+        {selectedPrimitiveBlock}
+      </div>
+    </div>
+  );
+};
+
+export default Toolbar;

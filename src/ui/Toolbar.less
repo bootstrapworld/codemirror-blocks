@@ -34,6 +34,13 @@
     display: none;
   }
 
+  /* Don't let the fake block be grabbable */
+  .PrimitiveBlock * {
+    cursor: grab !important;
+    cursor: -moz-grab !important;
+    cursor: -webkit-grab !important;
+  }
+
   &.has-selected {
     @footer-height: 101px;
     > .primitives-box {

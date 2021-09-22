@@ -208,9 +208,9 @@ function pasteHandler(this: Env, _: Editor, e: React.KeyboardEvent) {
 export const commandMap: {
   [index: string]: (this: Env, cm: Editor, e: React.KeyboardEvent) => void;
 } = {
-  prevFocus: function (_, e) {
+  "Shift Focus": function (_, e) {
     e.preventDefault();
-    this.toolbarRef.current.primitiveSearch.focus();
+    this.toolbarRef.current.focus();
   },
   // NAVIGATION
   "Previous Block": function (_, e) {
