@@ -87,7 +87,7 @@ export function PrimitiveGroup(props: PrimitiveGroupProps) {
   );
   return (
     <li className="PrimitiveGroup list-group-item" role="list">
-      <div onFocus={this.toggleExpanded} className="group-header">
+      <div onFocus={toggleExpanded} className="group-header">
         <span className={expandoClass} aria-hidden="true" />
       </div>
       {expanded ? (

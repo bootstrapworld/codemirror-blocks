@@ -26,7 +26,7 @@ var Toolbar = (props: Props) => {
     (primitives?.filter(search).primitives || []) as Primitive[];
 
   // Set selectedPrimitive state, depending on whether we go up or down
-  const move = (dir: string) => {
+  const move = (dir: "Up" | "Down") => {
     let primitives = getPrimitives();
     if (primitives.length == 0) return; // Nothing to select. Bail.
     let i = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
@@ -45,14 +45,15 @@ var Toolbar = (props: Props) => {
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (
     event
   ) => {
-    switch (CodeMirror.keyName(event)) {
+    const keyName = CodeMirror.keyName(event);
+    switch (keyName) {
       case "Down":
       case "Up":
         event.preventDefault();
-        move(CodeMirror.keyName(event));
+        move(keyName);
         return;
       case "Esc":
-        toolbarRef.current.focus();
+        toolbarRef.current.focus(); // focus, then fall-through
       default:
         event.stopPropagation();
         return;
@@ -61,10 +62,7 @@ var Toolbar = (props: Props) => {
 
   // if a primitive is selected, make a block node for it
   const selectedPrimitiveBlock = selectedPrimitive ? (
-    <span
-      className="RenderedBlockNode"
-      key={String(getPrimitives().indexOf(selectedPrimitive))}
-    >
+    <span className="RenderedBlockNode">
       {selectedPrimitive.getASTNode().reactElement({ inToolbar: true })}
     </span>
   ) : (
