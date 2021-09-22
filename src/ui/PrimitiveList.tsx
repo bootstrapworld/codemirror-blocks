@@ -109,36 +109,31 @@ type PrimitiveListProps = {
   primitives?: LanguagePrimitive[];
   searchString?: string;
 };
-
 export default function PrimitiveList(props: PrimitiveListProps) {
   const { primitives, selected, onFocus, onKeyDown, searchString } = props;
-  // Each node is either a PrimitiveGroup or Primitive component
-  const nodes = primitives.map((primitive) => {
-    if (primitive instanceof PrimitiveGroupModel) {
-      return (
-        <PrimitiveGroup
-          key={primitive.name}
-          group={primitive}
-          onFocus={onFocus}
-          onKeyDown={onKeyDown}
-          selected={selected}
-        />
-      );
-    } else {
-      return (
-        <Primitive
-          key={primitive.name}
-          primitive={primitive}
-          onFocus={onFocus}
-          onKeyDown={onKeyDown}
-          className={selected == primitive.name ? "selected" : ""}
-        />
-      );
-    }
-  });
+  const renderGroup = (g: PrimitiveGroupModel) => (
+    <PrimitiveGroup
+      key={g.name}
+      group={g}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+      selected={selected}
+    />
+  );
+  const renderPrimitive = (p: LanguagePrimitive) => (
+    <Primitive
+      key={p.name}
+      primitive={p}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+      className={selected == p.name ? "selected" : ""}
+    />
+  );
+
   const text = searchString
     ? (primitives.length == 0 ? "No" : primitives.length) + " blocks found"
     : "blocks";
+
   return (
     <div>
       <h3
@@ -153,7 +148,11 @@ export default function PrimitiveList(props: PrimitiveListProps) {
         className="PrimitiveList list-group"
         aria-labelledby="toolbar_heading"
       >
-        {nodes}
+        {primitives.map((item) =>
+          item instanceof PrimitiveGroupModel
+            ? renderGroup(item)
+            : renderPrimitive(item)
+        )}
       </ul>
     </div>
   );
