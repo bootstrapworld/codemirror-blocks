@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useRef } from "react";
-import { connect } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import ContentEditable, {
   Props as ContentEditableProps,
 } from "./ContentEditable";
@@ -40,15 +40,6 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
 }
 
 type Props = ContentEditableProps & {
-  // created by redux mapStateToProps
-  initialValue: string;
-  isErrored: boolean;
-  dispatch: AppDispatch;
-  setErrorId: (errorId: string) => void;
-  focusSelf: () => void;
-  clearSelections: () => void;
-
-  // passed from above
   target?: Target;
   children?: ReactElement;
   isInsertion: boolean;
@@ -61,6 +52,17 @@ type Props = ContentEditableProps & {
 
 const NodeEditable = (props: Props) => {
   const element = useRef<HTMLElement>(null);
+  const dispatch: AppDispatch = useDispatch();
+
+  const { initialValue, isErrored } = useSelector((state: RootState) => {
+    const nodeId = props.target.node ? props.target.node.id : "editing";
+    const isErrored = state.errorId == nodeId;
+
+    const initialValue =
+      props.value === null ? props.target.getText(state.ast) : "";
+
+    return { isErrored, initialValue };
+  });
 
   useEffect(() => {
     const pendingTimeout = setAfterDOMUpdate(() => {
@@ -71,16 +73,19 @@ const NodeEditable = (props: Props) => {
       }
       selectElement(currentEl, props.isInsertion);
     });
-    const text = props.value || props.initialValue || "";
+    const text = props.value || initialValue || "";
     const annt = (props.isInsertion ? "inserting" : "editing") + ` ${text}`;
     say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
-    props.clearSelections();
+    dispatch({ type: "SET_SELECTIONS", selections: [] });
     return () => cancelAfterDOMUpdate(pendingTimeout);
   }, []);
 
+  const setErrorId = (errorId: string) =>
+    dispatch({ type: "SET_ERROR_ID", errorId });
+
   const onBlur = (e: React.SyntheticEvent) => {
     e.stopPropagation();
-    const { target, setErrorId, dispatch } = props;
+    const { target } = props;
     dispatch((dispatch: AppDispatch, getState: () => RootState) => {
       // we grab the value directly from the content editable element
       // to deal with this issue:
@@ -89,7 +94,7 @@ const NodeEditable = (props: Props) => {
       const { focusId, ast } = getState();
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
-      if (value === props.initialValue || !value) {
+      if (value === initialValue || !value) {
         props.onDisableEditable(false);
         const focusNode = ast.getNodeById(focusId);
         const nid = focusNode && focusNode.nid;
@@ -130,8 +135,12 @@ const NodeEditable = (props: Props) => {
         e.stopPropagation();
         props.onChange(null);
         props.onDisableEditable(false);
-        props.setErrorId("");
-        props.focusSelf();
+        setErrorId("");
+        // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
+        // and then figure out how to get rid of it altogether.
+        setAfterDOMUpdate(() =>
+          dispatch(activateByNid(null, { allowMove: false }))
+        );
         return;
     }
   };
@@ -144,10 +153,10 @@ const NodeEditable = (props: Props) => {
       "quarantine",
       "blocks-editing",
       "blocks-node",
-      { "blocks-error": props.isErrored },
+      { "blocks-error": isErrored },
     ] as ClassNamesArgument[]
   ).concat(extraClasses);
-  const text = value ?? props.initialValue;
+  const text = value ?? initialValue;
   return (
     <ContentEditable
       {...contentEditableProps}
@@ -167,30 +176,4 @@ const NodeEditable = (props: Props) => {
     />
   );
 };
-
-const mapStateToProps = (
-  state: RootState,
-  props: { value?: string | null; target: Target }
-) => {
-  const nodeId = props.target.node ? props.target.node.id : "editing";
-  const isErrored = state.errorId == nodeId;
-
-  const initialValue =
-    props.value === null ? props.target.getText(state.ast) : "";
-
-  return { isErrored, initialValue };
-};
-
-const mapDispatchToProps = (dispatch: AppDispatch) => ({
-  dispatch,
-  setErrorId: (errorId: string) => dispatch({ type: "SET_ERROR_ID", errorId }),
-  focusSelf: () =>
-    // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
-    // and then figoure out how to get rid of it.
-    setAfterDOMUpdate(() =>
-      dispatch(activateByNid(null, { allowMove: false }))
-    ),
-  clearSelections: () => dispatch({ type: "SET_SELECTIONS", selections: [] }),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(NodeEditable);
+export default NodeEditable;
