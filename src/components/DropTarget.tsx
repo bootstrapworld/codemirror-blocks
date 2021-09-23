@@ -1,8 +1,8 @@
-import React, { Component, createContext } from "react";
+import React, { Component, createContext, useContext } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import PropTypes from "prop-types";
 import NodeEditable from "./NodeEditable";
-import { DropTarget as DropTargetDnd, DropTargetConnector } from "react-dnd";
+import { useDrop } from "react-dnd";
 import classNames from "classnames";
 import { AppDispatch, isErrorFree } from "../store";
 import { genUniqueId } from "../utils";
@@ -10,7 +10,6 @@ import { drop, InsertTarget } from "../actions";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { AST } from "../CodeMirrorBlocks";
-import { DropTargetMonitor } from "react-dnd";
 import { ItemTypes } from "../dnd";
 
 // Provided by `Node`
@@ -274,35 +273,46 @@ class ActualDropTarget extends Component<
     );
   }
 }
-const DropTargetWithDnd = DropTargetDnd(
-  ItemTypes.NODE,
-  {
-    drop(_, monitor, component) {
+
+const DropTargetWithDnd = (props: {
+  // Every DropTarget has a globally unique `id` which can be used to look up
+  // its corresponding DOM element.
+  id: string;
+  // fulfilled by redux
+  ast: AST.AST;
+  isEditable: boolean;
+  setEditable: (bool: boolean) => void;
+}) => {
+  const context = useContext(DropTargetContext);
+  const [{ isOver }, connectDropTarget] = useDrop({
+    accept: ItemTypes.NODE,
+    drop: (item: { id: string; content: string }, monitor) => {
       if (monitor.didDrop()) {
         return;
       }
       const target = new InsertTarget(
-        component.context.node,
-        component.context.field,
+        context.node,
+        context.field,
         getLocation({
-          id: component.props.id,
-          ast: component.props.ast,
-          context: component.context,
+          id: props.id,
+          ast: props.ast,
+          context,
         })
       );
-      return drop(monitor.getItem(), target);
+      return drop(item, target);
     },
-  },
-  function collectTarget(
-    connect: DropTargetConnector,
-    monitor: DropTargetMonitor
-  ) {
-    return {
-      connectDropTarget: connect.dropTarget(),
-      isOver: monitor.isOver({ shallow: true }),
-    };
-  }
-)(ActualDropTarget);
+    collect: (monitor) => {
+      return { isOver: monitor.isOver({ shallow: true }) };
+    },
+  });
+  return (
+    <ActualDropTarget
+      {...props}
+      isOver={isOver}
+      connectDropTarget={connectDropTarget}
+    />
+  );
+};
 
 const ActualDropTargetEnhanced = (props: { id: string }) => {
   const dispatch: AppDispatch = useDispatch();
