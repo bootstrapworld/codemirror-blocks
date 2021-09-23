@@ -232,8 +232,6 @@ const ToplevelBlockEditable = () => {
   );
 };
 
-type $TSFixMe = any;
-
 export type Search = {
   search: (
     forward: boolean,
@@ -297,7 +295,7 @@ const BlockEditor = (props: BlockEditorProps) => {
     if (!mounted.current) {
       // Initial mount: create a buffer for use with copy/cut/paste
       const clipboardBuffer = document.createElement("textarea");
-      (clipboardBuffer as $TSFixMe).ariaHidden = true;
+      (clipboardBuffer as HTMLTextAreaElement).ariaHidden = "true";
       clipboardBuffer.tabIndex = -1;
       clipboardBuffer.style.opacity = "0";
       clipboardBuffer.style.height = "1px";
@@ -310,7 +308,7 @@ const BlockEditor = (props: BlockEditorProps) => {
       SHARED.buffer = clipboardBuffer;
     }
     // refresh() after component is mounted or updated
-    pendingTimeout = setAfterDOMUpdate(refreshCM() as $TSFixMe);
+    pendingTimeout = setAfterDOMUpdate(refreshCM);
 
     // return our cleanup function
     return () => {
@@ -783,8 +781,8 @@ const BlockEditor = (props: BlockEditorProps) => {
     // let CM handle kbd shortcuts or whitespace insertion
     if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
     e.preventDefault();
-    const start = SHARED.cm.getCursor(true as $TSFixMe);
-    const end = SHARED.cm.getCursor(false as $TSFixMe);
+    const start = SHARED.cm.getCursor("from");
+    const end = SHARED.cm.getCursor("to");
     dispatch({ type: "SET_QUARANTINE", start, end, text });
   };
 
@@ -803,8 +801,8 @@ const BlockEditor = (props: BlockEditorProps) => {
   const handleTopLevelPaste = (ed: Editor, e: ClipboardEvent) => {
     e.preventDefault();
     const text = e.clipboardData.getData("text/plain");
-    const start = SHARED.cm.getCursor(true as $TSFixMe);
-    const end = SHARED.cm.getCursor(false as $TSFixMe);
+    const start = SHARED.cm.getCursor("from");
+    const end = SHARED.cm.getCursor("to");
     dispatch({ type: "SET_QUARANTINE", start, end, text });
   };
 
@@ -816,7 +814,7 @@ const BlockEditor = (props: BlockEditorProps) => {
   };
 
   // As long as there's no quarantine, refresh the editor to compute
-  //possibly-changed node sizes
+  // possibly-changed node sizes
   const refreshCM = () => {
     dispatch((_, getState) => {
       if (!getState().quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
