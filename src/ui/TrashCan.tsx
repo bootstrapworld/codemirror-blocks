@@ -4,7 +4,7 @@ import { dropOntoTrashCan } from "../actions";
 import { useDrop } from "react-dnd";
 require("./TrashCan.less");
 
-export default function TrashCan() {
+const TrashCan = () => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.NODE,
     drop: (item: { id: string }) => {
@@ -19,4 +19,6 @@ export default function TrashCan() {
       🗑️
     </div>
   );
-}
+};
+
+export default TrashCan;

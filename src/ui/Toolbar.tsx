@@ -12,7 +12,7 @@ type Props = {
   toolbarRef: React.RefObject<HTMLInputElement>;
 };
 
-var Toolbar = (props: Props) => {
+const Toolbar = (props: Props) => {
   const { primitives, languageId, blockMode, toolbarRef } = props;
 
   const [search, setSearch] = useState("");

@@ -6,7 +6,7 @@ type ToggleButtonProps = {
   setBlockMode: (blockMode: boolean) => void;
   blockMode: boolean;
 };
-export function ToggleButton(props: ToggleButtonProps) {
+export const ToggleButton = (props: ToggleButtonProps) => {
   // call setBlockMode on the opposite of the current mode
   const handleToggle = () => props.setBlockMode(!props.blockMode);
 
@@ -25,10 +25,10 @@ export function ToggleButton(props: ToggleButtonProps) {
       <span className="btn-title">{buttonAria}</span>
     </button>
   );
-}
+};
 
 // TODO(pcardune): putting things on window is generally a bad idea
-export function BugButton() {
+export const BugButton = () => {
   const handleBugReport = () => {
     const history = JSON.stringify((window as any).reducerActivities);
     const description = prompt("Briefly describe what happened");
@@ -45,4 +45,4 @@ export function BugButton() {
       <span className="btn-title">Report a Bug</span>
     </button>
   );
-}
+};
