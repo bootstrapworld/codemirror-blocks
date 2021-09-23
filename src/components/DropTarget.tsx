@@ -95,26 +95,11 @@ field declared. The node was:`,
 
     return (
       <DropTargetContext.Provider value={value}>
-        <ActualDropTargetEnhanced id={this.id} />
+        <ActualDropTarget id={this.id} />
       </DropTargetContext.Provider>
     );
   }
 }
-
-type ActualDropTargetProps = {
-  // Every DropTarget has a globally unique `id` which can be used to look up
-  // its corresponding DOM element.
-  id: string;
-
-  // fulfilled by DropNodeTarget
-  connectDropTarget: Function;
-  isOver: boolean;
-
-  // fulfilled by redux
-  ast: AST.AST;
-  isEditable: boolean;
-  setEditable: (bool: boolean) => void;
-};
 
 type $TSFixMe = any;
 const getLocation = ({
@@ -171,15 +156,53 @@ const getLocation = ({
   return findLoc(context.node.element) || context.pos;
 };
 
+type ActualDropTargetProps = {
+  // Every DropTarget has a globally unique `id` which can be used to look up
+  // its corresponding DOM element.
+  id: string;
+};
 const ActualDropTarget = (props: ActualDropTargetProps) => {
   const context = useContext(DropTargetContext);
   const [value, setValue] = useState("");
   const [mouseOver, setMouseOver] = useState(false);
 
+  const dispatch: AppDispatch = useDispatch();
+  const { ast, isEditable } = useSelector((state: RootState) => {
+    return { ast: state.ast, isEditable: state.editable[props.id] ?? false };
+  });
+  // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
+  // check to see whether an adjacent DropTarget is being edited, or, for when the
+  // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
+  // as editable.
+  const setEditable = (bool: boolean) =>
+    dispatch({ type: "SET_EDITABLE", id: props.id, bool });
+
+  const [{ isOver }, connectDropTarget] = useDrop({
+    accept: ItemTypes.NODE,
+    drop: (item: { id: string; content: string }, monitor) => {
+      if (monitor.didDrop()) {
+        return;
+      }
+      const target = new InsertTarget(
+        context.node,
+        context.field,
+        getLocation({
+          id: props.id,
+          ast,
+          context,
+        })
+      );
+      return drop(item, target);
+    },
+    collect: (monitor) => {
+      return { isOver: monitor.isOver({ shallow: true }) };
+    },
+  });
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
-    props.setEditable(true);
+    setEditable(true);
   };
   const handleMouseEnterRelated = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -208,14 +231,14 @@ const ActualDropTarget = (props: ActualDropTargetProps) => {
     id: `block-drop-target-${props.id}`,
   };
 
-  if (props.isEditable) {
+  if (isEditable) {
     const target = new InsertTarget(
       context.node,
       context.field,
       getLocation({
-        ast: props.ast,
+        ast: ast,
         id: props.id,
-        context: context,
+        context,
       })
     );
     return (
@@ -233,16 +256,16 @@ const ActualDropTarget = (props: ActualDropTargetProps) => {
         isInsertion={true}
         contentEditableProps={contentEditableProps}
         extraClasses={["blocks-node", "blocks-white-space"]}
-        onDisableEditable={() => props.setEditable(false)}
+        onDisableEditable={() => setEditable(false)}
       />
     );
   }
   const classes = [
     "blocks-drop-target",
     "blocks-white-space",
-    { "blocks-over-target": props.isOver || mouseOver },
+    { "blocks-over-target": isOver || mouseOver },
   ];
-  return props.connectDropTarget(
+  return connectDropTarget(
     <span
       id={`block-drop-target-${props.id}`}
       className={classNames(classes)}
@@ -255,67 +278,6 @@ const ActualDropTarget = (props: ActualDropTargetProps) => {
       onDrop={handleMouseDragRelated}
       onClick={handleClick}
       data-field={context.field}
-    />
-  );
-};
-
-const DropTargetWithDnd = (props: {
-  // Every DropTarget has a globally unique `id` which can be used to look up
-  // its corresponding DOM element.
-  id: string;
-  // fulfilled by redux
-  ast: AST.AST;
-  isEditable: boolean;
-  setEditable: (bool: boolean) => void;
-}) => {
-  const context = useContext(DropTargetContext);
-  const [{ isOver }, connectDropTarget] = useDrop({
-    accept: ItemTypes.NODE,
-    drop: (item: { id: string; content: string }, monitor) => {
-      if (monitor.didDrop()) {
-        return;
-      }
-      const target = new InsertTarget(
-        context.node,
-        context.field,
-        getLocation({
-          id: props.id,
-          ast: props.ast,
-          context,
-        })
-      );
-      return drop(item, target);
-    },
-    collect: (monitor) => {
-      return { isOver: monitor.isOver({ shallow: true }) };
-    },
-  });
-  return (
-    <ActualDropTarget
-      {...props}
-      isOver={isOver}
-      connectDropTarget={connectDropTarget}
-    />
-  );
-};
-
-const ActualDropTargetEnhanced = (props: { id: string }) => {
-  const dispatch: AppDispatch = useDispatch();
-  const { ast, isEditable } = useSelector((state: RootState) => {
-    return { ast: state.ast, isEditable: state.editable[props.id] ?? false };
-  });
-  // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
-  // check to see whether an adjacent DropTarget is being edited, or, for when the
-  // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
-  // as editable.
-  const setEditable = (bool: boolean) =>
-    dispatch({ type: "SET_EDITABLE", id: props.id, bool });
-  return (
-    <DropTargetWithDnd
-      id={props.id}
-      ast={ast}
-      isEditable={isEditable}
-      setEditable={setEditable}
     />
   );
 };
