@@ -55,7 +55,12 @@ export type ActionFocus = { oldFocusNId: number; newFocusNId: number };
 
 export type RootState = {
   selections: string[];
-  editable: { [index: string]: unknown };
+
+  /**
+   * Mapping from node ids to whether or not
+   * that node is currently editable.
+   */
+  editable: { [nid: string]: boolean };
   ast: AST | null;
   focusId: string | null;
   collapsedList: string[];
