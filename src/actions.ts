@@ -1,11 +1,4 @@
-import {
-  poscmp,
-  srcRangeIncludes,
-  warn,
-  setAfterDOMUpdate,
-  cancelAfterDOMUpdate,
-} from "./utils";
-import type { afterDOMUpdateHandle } from "./utils";
+import { poscmp, srcRangeIncludes, warn, setAfterDOMUpdate } from "./utils";
 import { say, cancelAnnouncement } from "./announcer";
 import SHARED from "./shared";
 import { AppDispatch, store } from "./store";
@@ -243,9 +236,7 @@ export function activateByNid(
       nid = ast?.getNodeById(focusId)?.nid;
     }
 
-    // Get the currently-focused node *based strictly on focusId*
-    // And the new node from the nid
-    const currentNode = ast?.getNodeById(focusId);
+    // Get the new node from the nid
     const newNode = ast?.getNodeByNId(nid);
 
     // If there is no valid node found in the AST, bail.
