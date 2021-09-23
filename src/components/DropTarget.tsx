@@ -9,6 +9,7 @@ import { genUniqueId } from "../utils";
 import { drop, InsertTarget } from "../actions";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
+import { AST } from "../CodeMirrorBlocks";
 
 // Provided by `Node`
 export const NodeContext = createContext({
@@ -71,7 +72,6 @@ export class DropTarget extends Component<{ field: string }> {
     field: PropTypes.string.isRequired,
   };
 
-  isDropTarget: boolean = true;
   id: string = genUniqueId(); // generate a unique ID
 
   render() {
@@ -131,6 +131,60 @@ type ActualDropTargetProps = ConnectedProps<typeof connector> & {
 };
 
 type ActualDropTargetState = { value: string; mouseOver: boolean };
+type $TSFixMe = any;
+const getLocation = ({
+  ast,
+  id,
+  context,
+}: {
+  ast: AST.AST;
+  id: string;
+  context: { pos?: $TSFixMe; node: $TSFixMe; field: $TSFixMe };
+}) => {
+  let prevNodeId: string | null = null;
+  let targetId = `block-drop-target-${id}`;
+  let dropTargetWasFirst = false;
+
+  function findLoc(elem: Element): Pos {
+    if (elem == null || elem.children == null) {
+      // if it's a new element (insertion)
+      return null;
+    }
+    // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
+    if (elem.id?.startsWith("block-node-")) {
+      prevNodeId = elem.id.substring(11); // skip "block-node-"
+    }
+    for (let sibling of elem.children) {
+      if (sibling.id?.startsWith("block-node-")) {
+        // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
+        prevNodeId = sibling.id.substring(11); // skip "block-node-"
+        if (dropTargetWasFirst) {
+          // Edge case: the drop target was literally the first thing, so we
+          // need to return the `from` of its _next_ sibling. That's this one.
+          return ast.getNodeById(prevNodeId).from;
+        }
+      } else if (sibling.id == targetId) {
+        // We've found this drop target! Return the `to` location of the previous ASTNode.
+        if (prevNodeId) {
+          return ast.getNodeById(prevNodeId).to;
+        } else {
+          // Edge case: nothing is before the drop target.
+          dropTargetWasFirst = true;
+        }
+      } else if (sibling.id?.startsWith("block-drop-target")) {
+        // It's a different drop target. Skip it.
+      } else if (sibling.children) {
+        // We're... somewhere else. If it has children, traverse them to look for the drop target.
+        let result = findLoc(sibling);
+        if (result !== null) {
+          return result; // drop target found.
+        }
+      }
+    }
+    return null;
+  }
+  return findLoc(context.node.element) || context.pos;
+};
 
 // TODO(pcardune): verify that this does not need to extend BlockComponent.
 // BlockComponent requires a node in the props, just so it can have a custom
@@ -142,93 +196,37 @@ class ActualDropTarget extends Component<
   ActualDropTargetState
 > {
   static contextType = DropTargetContext;
+  declare context: React.ContextType<typeof DropTargetContext>;
 
-  isDropTarget: boolean;
-
-  constructor(props: ActualDropTargetProps) {
-    super(props);
-    this.isDropTarget = true;
-
-    this.state = {
-      value: "",
-      mouseOver: false,
-    };
-  }
-
-  getLocation() {
-    let prevNodeId: string | null = null;
-    let targetId = `block-drop-target-${this.props.id}`;
-    let ast = this.props.ast;
-    let dropTargetWasFirst = false;
-
-    function findLoc(elem: Element): Pos {
-      if (elem == null || elem.children == null) {
-        // if it's a new element (insertion)
-        return null;
-      }
-      // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
-      if (elem.id?.startsWith("block-node-")) {
-        prevNodeId = elem.id.substring(11); // skip "block-node-"
-      }
-      for (let sibling of elem.children) {
-        if (sibling.id?.startsWith("block-node-")) {
-          // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
-          prevNodeId = sibling.id.substring(11); // skip "block-node-"
-          if (dropTargetWasFirst) {
-            // Edge case: the drop target was literally the first thing, so we
-            // need to return the `from` of its _next_ sibling. That's this one.
-            return ast.getNodeById(prevNodeId).from;
-          }
-        } else if (sibling.id == targetId) {
-          // We've found this drop target! Return the `to` location of the previous ASTNode.
-          if (prevNodeId) {
-            return ast.getNodeById(prevNodeId).to;
-          } else {
-            // Edge case: nothing is before the drop target.
-            dropTargetWasFirst = true;
-          }
-        } else if (sibling.id?.startsWith("block-drop-target")) {
-          // It's a different drop target. Skip it.
-        } else if (sibling.children) {
-          // We're... somewhere else. If it has children, traverse them to look for the drop target.
-          let result = findLoc(sibling);
-          if (result !== null) {
-            return result; // drop target found.
-          }
-        }
-      }
-      return null;
-    }
-    return findLoc(this.context.node.element) || this.context.pos;
-  }
-
-  handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
-    this.props.setEditable(true);
-  };
-
-  handleMouseEnterRelated = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    this.setState({ mouseOver: true });
-  };
-
-  handleMouseLeaveRelated = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    this.setState({ mouseOver: false });
-  };
-
-  handleMouseDragRelated = () => {
-    //NOTE(ds26gte): dummy handler
-  };
-
-  handleChange = (value: string) => {
-    this.setState({ value });
+  state: ActualDropTargetState = {
+    value: "",
+    mouseOver: false,
   };
 
   render() {
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
+      this.props.setEditable(true);
+    };
+    const handleMouseEnterRelated = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.setState({ mouseOver: true });
+    };
+
+    const handleMouseLeaveRelated = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.setState({ mouseOver: false });
+    };
+    const handleMouseDragRelated = () => {
+      //NOTE(ds26gte): dummy handler
+    };
+    const handleChange = (value: string) => {
+      this.setState({ value });
+    };
+
     const props = {
       tabIndex: "-1",
       role: "textbox",
@@ -242,20 +240,24 @@ class ActualDropTarget extends Component<
       const target = new InsertTarget(
         this.context.node,
         this.context.field,
-        this.getLocation()
+        getLocation({
+          ast: this.props.ast,
+          id: this.props.id,
+          context: this.context,
+        })
       );
       return (
         <NodeEditable
           target={target}
           value={this.state.value}
-          onChange={this.handleChange}
-          onMouseEnter={this.handleMouseEnterRelated}
-          onDragEnter={this.handleMouseEnterRelated}
-          onMouseLeave={this.handleMouseLeaveRelated}
-          onDragLeave={this.handleMouseLeaveRelated}
-          onMouseOver={this.handleMouseDragRelated}
-          onDragOver={this.handleMouseDragRelated}
-          onDrop={this.handleMouseDragRelated}
+          onChange={handleChange}
+          onMouseEnter={handleMouseEnterRelated}
+          onDragEnter={handleMouseEnterRelated}
+          onMouseLeave={handleMouseLeaveRelated}
+          onDragLeave={handleMouseLeaveRelated}
+          onMouseOver={handleMouseDragRelated}
+          onDragOver={handleMouseDragRelated}
+          onDrop={handleMouseDragRelated}
           isInsertion={true}
           contentEditableProps={props}
           extraClasses={["blocks-node", "blocks-white-space"]}
@@ -272,14 +274,14 @@ class ActualDropTarget extends Component<
       <span
         id={`block-drop-target-${this.props.id}`}
         className={classNames(classes)}
-        onMouseEnter={this.handleMouseEnterRelated}
-        onDragEnter={this.handleMouseEnterRelated}
-        onMouseLeave={this.handleMouseLeaveRelated}
-        onDragLeave={this.handleMouseLeaveRelated}
-        onMouseOver={this.handleMouseDragRelated}
-        onDragOver={this.handleMouseDragRelated}
-        onDrop={this.handleMouseDragRelated}
-        onClick={this.handleClick}
+        onMouseEnter={handleMouseEnterRelated}
+        onDragEnter={handleMouseEnterRelated}
+        onMouseLeave={handleMouseLeaveRelated}
+        onDragLeave={handleMouseLeaveRelated}
+        onMouseOver={handleMouseDragRelated}
+        onDragOver={handleMouseDragRelated}
+        onDrop={handleMouseDragRelated}
+        onClick={handleClick}
         data-field={this.context.field}
       />
     );
@@ -291,7 +293,11 @@ const ActualDropTargetEnhanced = connector(
     const target = new InsertTarget(
       this.context.node,
       this.context.field,
-      this.getLocation()
+      getLocation({
+        id: this.props.id,
+        ast: this.props.ast,
+        context: this.context,
+      })
     );
     return drop(monitor.getItem(), target);
   })(ActualDropTarget)
