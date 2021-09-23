@@ -256,50 +256,6 @@ export type EnhancedNodeProps = ConnectedNodeProps &
     isOver: boolean;
   };
 
-const NodeDnD = (props: ConnectedNodeProps & DragSourceProps & ReduxProps) => {
-  const [{ isOver }, connectDropTarget] = useDrop({
-    accept: ItemTypes.NODE,
-    drop: (_item, monitor) => {
-      if (monitor.didDrop()) {
-        return;
-      }
-      const node = store.getState().ast.getNodeById(props.node.id);
-      return drop(monitor.getItem(), new ReplaceNodeTarget(node));
-    },
-    collect: (monitor) => {
-      return {
-        isOver: monitor.isOver({ shallow: true }),
-      };
-    },
-  });
-  return (
-    <Node {...props} isOver={isOver} connectDropTarget={connectDropTarget} />
-  );
-};
-
-const NodeSource = (props: ConnectedNodeProps & ReduxProps) => {
-  const [collected, connectDragSource, connectDragPreview] = useDrag({
-    type: ItemTypes.NODE,
-    item: () => {
-      if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
-        return { content: props.node.toString() };
-      }
-      return { id: props.node.id };
-    },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-  return (
-    <NodeDnD
-      {...props}
-      isDragging={collected.isDragging}
-      connectDragPreview={connectDragPreview}
-      connectDragSource={connectDragSource}
-    />
-  );
-};
-
 type ConnectedNodeProps = {
   node: ASTNode;
   inToolbar?: boolean;
@@ -334,7 +290,45 @@ const ConnectedNode = (props: ConnectedNodeProps) => {
     setEditable: (id: string, bool: boolean) =>
       dispatch({ type: "SET_EDITABLE", id, bool }),
   };
-  return <NodeSource {...stateProps} {...dispatchProps} {...props} />;
+  const [collected, connectDragSource, connectDragPreview] = useDrag({
+    type: ItemTypes.NODE,
+    item: () => {
+      if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
+        return { content: props.node.toString() };
+      }
+      return { id: props.node.id };
+    },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+  const [{ isOver }, connectDropTarget] = useDrop({
+    accept: ItemTypes.NODE,
+    drop: (_item, monitor) => {
+      if (monitor.didDrop()) {
+        return;
+      }
+      const node = store.getState().ast.getNodeById(props.node.id);
+      return drop(monitor.getItem(), new ReplaceNodeTarget(node));
+    },
+    collect: (monitor) => {
+      return {
+        isOver: monitor.isOver({ shallow: true }),
+      };
+    },
+  });
+  return (
+    <Node
+      {...stateProps}
+      {...dispatchProps}
+      {...props}
+      isDragging={collected.isDragging}
+      connectDragPreview={connectDragPreview}
+      connectDragSource={connectDragSource}
+      isOver={isOver}
+      connectDropTarget={connectDropTarget}
+    />
+  );
 };
 
 export type NodeProps = GetProps<typeof ConnectedNode>;
