@@ -71,7 +71,6 @@ export class DropTarget extends Component<{ field: string }> {
     field: PropTypes.string.isRequired,
   };
 
-  isDropTarget: boolean = true;
   id: string = genUniqueId(); // generate a unique ID
 
   render() {
@@ -143,17 +142,10 @@ class ActualDropTarget extends Component<
 > {
   static contextType = DropTargetContext;
 
-  isDropTarget: boolean;
-
-  constructor(props: ActualDropTargetProps) {
-    super(props);
-    this.isDropTarget = true;
-
-    this.state = {
-      value: "",
-      mouseOver: false,
-    };
-  }
+  state: ActualDropTargetState = {
+    value: "",
+    mouseOver: false,
+  };
 
   getLocation() {
     let prevNodeId: string | null = null;
