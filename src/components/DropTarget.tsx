@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "react-dnd";
@@ -86,7 +86,7 @@ field declared. The node was:`,
   }
   return (
     <DropTargetContext.Provider value={value}>
-      <ActualDropTarget id={genUniqueId()} />
+      <ActualDropTarget />
     </DropTargetContext.Provider>
   );
 };
@@ -146,26 +146,24 @@ const getLocation = ({
   return findLoc(context.node.element) || context.pos;
 };
 
-type ActualDropTargetProps = {
+const ActualDropTarget = () => {
   // Every DropTarget has a globally unique `id` which can be used to look up
   // its corresponding DOM element.
-  id: string;
-};
-const ActualDropTarget = (props: ActualDropTargetProps) => {
+  const id = useMemo(genUniqueId, [genUniqueId]);
   const context = useContext(DropTargetContext);
   const [value, setValue] = useState("");
   const [mouseOver, setMouseOver] = useState(false);
 
   const dispatch: AppDispatch = useDispatch();
   const { ast, isEditable } = useSelector((state: RootState) => {
-    return { ast: state.ast, isEditable: state.editable[props.id] ?? false };
+    return { ast: state.ast, isEditable: state.editable[id] ?? false };
   });
   // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
   // check to see whether an adjacent DropTarget is being edited, or, for when the
   // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
   // as editable.
   const setEditable = (bool: boolean) =>
-    dispatch({ type: "SET_EDITABLE", id: props.id, bool });
+    dispatch({ type: "SET_EDITABLE", id: id, bool });
 
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
@@ -177,7 +175,7 @@ const ActualDropTarget = (props: ActualDropTargetProps) => {
         context.node,
         context.field,
         getLocation({
-          id: props.id,
+          id: id,
           ast,
           context,
         })
@@ -218,7 +216,7 @@ const ActualDropTarget = (props: ActualDropTargetProps) => {
     "aria-setsize": "1",
     "aria-posinset": "1",
     "aria-level": "1",
-    id: `block-drop-target-${props.id}`,
+    id: `block-drop-target-${id}`,
   };
 
   if (isEditable) {
@@ -227,7 +225,7 @@ const ActualDropTarget = (props: ActualDropTargetProps) => {
       context.field,
       getLocation({
         ast: ast,
-        id: props.id,
+        id: id,
         context,
       })
     );
@@ -257,7 +255,7 @@ const ActualDropTarget = (props: ActualDropTargetProps) => {
   ];
   return connectDropTarget(
     <span
-      id={`block-drop-target-${props.id}`}
+      id={`block-drop-target-${id}`}
       className={classNames(classes)}
       onMouseEnter={handleMouseEnterRelated}
       onDragEnter={handleMouseEnterRelated}
