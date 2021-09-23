@@ -4,11 +4,7 @@ import { ASTNode } from "../ast";
 import { drop, activateByNid, setCursor, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
 import BlockComponent from "./BlockComponent";
-import {
-  NodeContext,
-  DropTargetContext,
-  findAdjacentDropTargetId,
-} from "./DropTarget";
+import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch, isErrorFree } from "../store";
 import SHARED from "../shared";
 import { DragNodeSource, DropNodeTarget } from "../dnd";
@@ -25,8 +21,6 @@ import { RootState } from "../reducers";
 type NodeState = { editable: boolean; value: string | null };
 
 class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
-  static contextType = DropTargetContext;
-
   static defaultProps = {
     normallyEditable: false,
     expandable: true,

@@ -12,14 +12,8 @@ import { AST } from "../CodeMirrorBlocks";
 import { ItemTypes } from "../dnd";
 
 // Provided by `Node`
-export const NodeContext = createContext({
+export const NodeContext = createContext<{ node: ASTNode | null }>({
   node: null,
-});
-
-// Provided by `DropTargetContainer`
-export const DropTargetContext = createContext({
-  node: null,
-  field: null,
 });
 
 // Find the id of the drop target (if any) on the given side of `child` node.
@@ -61,37 +55,6 @@ export function findAdjacentDropTargetId(child: ASTNode, onLeft: boolean) {
   return findDT(child.parent.element);
 }
 
-// NOTE(Justin) It sure would be nice to generate the id inside of DropTarget.
-// But AFAIK that's not feasible, because the `id` needs to be accessible
-// inside `mapStateToProps`, and it's only accessible if it's a `prop`.
-// Hence this extraneous class.
-export const DropTarget = (props: { field: string }) => {
-  const context = useContext(NodeContext);
-
-  const value = {
-    field: props.field,
-    node: context.node,
-  };
-
-  // ensure that the field property is set
-  if (!value.field) {
-    console.error(
-      `
-A dropTarget must be created with a prop 'field'. 
-Check the render() function for the ${value.node.type} 
-Component, and make sure all DropTargets have a 
-field declared. The node was:`,
-      value.node
-    );
-  }
-  return (
-    <DropTargetContext.Provider value={value}>
-      <ActualDropTarget />
-    </DropTargetContext.Provider>
-  );
-};
-
-type $TSFixMe = any;
 const getLocation = ({
   ast,
   id,
@@ -99,7 +62,7 @@ const getLocation = ({
 }: {
   ast: AST.AST;
   id: string;
-  context: { pos?: $TSFixMe; node: $TSFixMe; field: $TSFixMe };
+  context: { node: ASTNode; field: string };
 }) => {
   let prevNodeId: string | null = null;
   let targetId = `block-drop-target-${id}`;
@@ -143,14 +106,28 @@ const getLocation = ({
     }
     return null;
   }
-  return findLoc(context.node.element) || context.pos;
+  return findLoc(context.node.element);
 };
 
-const ActualDropTarget = () => {
+export const DropTarget = (props: { field: string }) => {
   // Every DropTarget has a globally unique `id` which can be used to look up
   // its corresponding DOM element.
   const id = useMemo(genUniqueId, [genUniqueId]);
-  const context = useContext(DropTargetContext);
+
+  const node = useContext(NodeContext).node;
+
+  // ensure that the field property is set
+  if (!props.field) {
+    console.error(
+      `
+A dropTarget must be created with a prop 'field'. 
+Check the render() function for the ${node.type} 
+Component, and make sure all DropTargets have a 
+field declared. The node was:`,
+      node
+    );
+  }
+
   const [value, setValue] = useState("");
   const [mouseOver, setMouseOver] = useState(false);
 
@@ -165,21 +142,25 @@ const ActualDropTarget = () => {
   const setEditable = (bool: boolean) =>
     dispatch({ type: "SET_EDITABLE", id: id, bool });
 
+  const target = new InsertTarget(
+    node,
+    props.field,
+    getLocation({
+      id: id,
+      ast,
+      context: {
+        field: props.field,
+        node,
+      },
+    })
+  );
+
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (item: { id: string; content: string }, monitor) => {
       if (monitor.didDrop()) {
         return;
       }
-      const target = new InsertTarget(
-        context.node,
-        context.field,
-        getLocation({
-          id: id,
-          ast,
-          context,
-        })
-      );
       return drop(item, target);
     },
     collect: (monitor) => {
@@ -220,15 +201,6 @@ const ActualDropTarget = () => {
   };
 
   if (isEditable) {
-    const target = new InsertTarget(
-      context.node,
-      context.field,
-      getLocation({
-        ast: ast,
-        id: id,
-        context,
-      })
-    );
     return (
       <NodeEditable
         target={target}
@@ -265,7 +237,7 @@ const ActualDropTarget = () => {
       onDragOver={handleMouseDragRelated}
       onDrop={handleMouseDragRelated}
       onClick={handleClick}
-      data-field={context.field}
+      data-field={props.field}
     />
   );
 };
