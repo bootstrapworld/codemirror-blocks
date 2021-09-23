@@ -265,10 +265,10 @@ const BlockEditor = (props: BlockEditorProps) => {
   const mounted = useRef(); // from https://stackoverflow.com/a/53406363/12026982
   const dispatch: AppDispatch = useDispatch();
   // grab some properties from state
-  const { ast, cur, hasQuarantine } = useSelector((state: RootState) => {
+  const { cur, hasQuarantine } = useSelector((state: RootState) => {
     console.log("@@@@@@@@@@@@@@@@", state);
     return {
-      ast: state.ast,
+      //ast: state.ast,
       cur: state.cur,
       hasQuarantine: !!state.quarantine,
     };
@@ -277,6 +277,7 @@ const BlockEditor = (props: BlockEditorProps) => {
   const clearFocus = () => dispatch({ type: "SET_FOCUS", focusId: null });
 
   const {
+    passedAST: ast,
     options,
     keyMap = defaultKeyMap,
     search = {
@@ -293,13 +294,15 @@ const BlockEditor = (props: BlockEditorProps) => {
 
   useEffect(() => {
     if (!mounted.current) {
-      // Initial mount: create a buffer for use with copy/cut/paste
+      // Initial mount: reset store, and create a buffer for clipboard ops
+      dispatch({ type: "RESET_STORE_FOR_TESTING" });
+
       const clipboardBuffer = document.createElement("textarea");
       (clipboardBuffer as HTMLTextAreaElement).ariaHidden = "true";
       clipboardBuffer.tabIndex = -1;
       clipboardBuffer.style.opacity = "0";
       clipboardBuffer.style.height = "1px";
-      document.body.appendChild(SHARED.buffer);
+      document.body.appendChild(clipboardBuffer);
 
       // TODO (Emmanuel): pass SHARED fields below inside a React
       // Context, instead of storing them in a junk drawer
@@ -316,10 +319,6 @@ const BlockEditor = (props: BlockEditorProps) => {
       cancelAfterDOMUpdate(pendingTimeout);
     };
   }, []);
-
-  // NOTE(Emmanuel): we shouldn't have to dispatch this in the constructor
-  // just for tests to pass! Figure out how to reset the store manually
-  dispatch({ type: "RESET_STORE_FOR_TESTING" });
 
   // Anything that didn't come from CMB itself must be speculatively
   // checked. NOTE: this only checks the *first change* in a changeset!
@@ -813,12 +812,10 @@ const BlockEditor = (props: BlockEditorProps) => {
     dispatch({ type: "SET_CURSOR", cur: cur });
   };
 
-  // As long as there's no quarantine, refresh the editor to compute
-  // possibly-changed node sizes
+  // Refresh the editor to compute possibly-changed node sizes
+  // **As long as there's no quarantine!**
   const refreshCM = () => {
-    dispatch((_, getState) => {
-      if (!getState().quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
-    });
+    if (!hasQuarantine) SHARED.cm.refresh();
   };
 
   const renderPortals = () => {
