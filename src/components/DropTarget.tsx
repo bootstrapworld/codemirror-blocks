@@ -1,8 +1,8 @@
-import React, { Component, createContext } from "react";
-import { connect, ConnectedProps } from "react-redux";
+import React, { Component, createContext, useContext } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import PropTypes from "prop-types";
 import NodeEditable from "./NodeEditable";
-import { DropNodeTarget } from "../dnd";
+import { useDrop } from "react-dnd";
 import classNames from "classnames";
 import { AppDispatch, isErrorFree } from "../store";
 import { genUniqueId } from "../utils";
@@ -10,6 +10,7 @@ import { drop, InsertTarget } from "../actions";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { AST } from "../CodeMirrorBlocks";
+import { ItemTypes } from "../dnd";
 
 // Provided by `Node`
 export const NodeContext = createContext({
@@ -100,34 +101,19 @@ field declared. The node was:`,
   }
 }
 
-// These `isEditable` and `setEditable` methods allow DropTargetSiblings to
-// check to see whether an adjacent DropTarget is being edited, or, for when the
-// insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
-// as editable.
-const mapStateToProps2 = (
-  { ast, editable }: RootState,
-  { id }: { id: string }
-) => ({
-  ast,
-  isEditable: editable[id] || false,
-});
-const mapDispatchToProps2 = (
-  dispatch: AppDispatch,
-  { id }: { id: string }
-) => ({
-  dispatch,
-  setEditable: (bool: boolean) => dispatch({ type: "SET_EDITABLE", id, bool }),
-});
-
-const connector = connect(mapStateToProps2, mapDispatchToProps2);
-
-type ActualDropTargetProps = ConnectedProps<typeof connector> & {
+type ActualDropTargetProps = {
   // Every DropTarget has a globally unique `id` which can be used to look up
   // its corresponding DOM element.
   id: string;
+
   // fulfilled by DropNodeTarget
   connectDropTarget: Function;
   isOver: boolean;
+
+  // fulfilled by redux
+  ast: AST.AST;
+  isEditable: boolean;
+  setEditable: (bool: boolean) => void;
 };
 
 type ActualDropTargetState = { value: string; mouseOver: boolean };
@@ -288,17 +274,63 @@ class ActualDropTarget extends Component<
   }
 }
 
-const ActualDropTargetEnhanced = connector(
-  DropNodeTarget(function (monitor) {
-    const target = new InsertTarget(
-      this.context.node,
-      this.context.field,
-      getLocation({
-        id: this.props.id,
-        ast: this.props.ast,
-        context: this.context,
-      })
-    );
-    return drop(monitor.getItem(), target);
-  })(ActualDropTarget)
-);
+const DropTargetWithDnd = (props: {
+  // Every DropTarget has a globally unique `id` which can be used to look up
+  // its corresponding DOM element.
+  id: string;
+  // fulfilled by redux
+  ast: AST.AST;
+  isEditable: boolean;
+  setEditable: (bool: boolean) => void;
+}) => {
+  const context = useContext(DropTargetContext);
+  const [{ isOver }, connectDropTarget] = useDrop({
+    accept: ItemTypes.NODE,
+    drop: (item: { id: string; content: string }, monitor) => {
+      if (monitor.didDrop()) {
+        return;
+      }
+      const target = new InsertTarget(
+        context.node,
+        context.field,
+        getLocation({
+          id: props.id,
+          ast: props.ast,
+          context,
+        })
+      );
+      return drop(item, target);
+    },
+    collect: (monitor) => {
+      return { isOver: monitor.isOver({ shallow: true }) };
+    },
+  });
+  return (
+    <ActualDropTarget
+      {...props}
+      isOver={isOver}
+      connectDropTarget={connectDropTarget}
+    />
+  );
+};
+
+const ActualDropTargetEnhanced = (props: { id: string }) => {
+  const dispatch: AppDispatch = useDispatch();
+  const { ast, isEditable } = useSelector((state: RootState) => {
+    return { ast: state.ast, isEditable: state.editable[props.id] ?? false };
+  });
+  // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
+  // check to see whether an adjacent DropTarget is being edited, or, for when the
+  // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
+  // as editable.
+  const setEditable = (bool: boolean) =>
+    dispatch({ type: "SET_EDITABLE", id: props.id, bool });
+  return (
+    <DropTargetWithDnd
+      id={props.id}
+      ast={ast}
+      isEditable={isEditable}
+      setEditable={setEditable}
+    />
+  );
+};
