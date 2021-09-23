@@ -1,8 +1,8 @@
 import React, { Component, createContext } from "react";
-import { connect, ConnectedProps, useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import PropTypes from "prop-types";
 import NodeEditable from "./NodeEditable";
-import { DropNodeTarget } from "../dnd";
+import { DropTarget as DropTargetDnd, DropTargetConnector } from "react-dnd";
 import classNames from "classnames";
 import { AppDispatch, isErrorFree } from "../store";
 import { genUniqueId } from "../utils";
@@ -10,6 +10,8 @@ import { drop, InsertTarget } from "../actions";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { AST } from "../CodeMirrorBlocks";
+import { DropTargetMonitor } from "react-dnd";
+import { ItemTypes } from "../dnd";
 
 // Provided by `Node`
 export const NodeContext = createContext({
@@ -272,19 +274,35 @@ class ActualDropTarget extends Component<
     );
   }
 }
-
-const DropTargetWithDnd = DropNodeTarget(function (monitor) {
-  const target = new InsertTarget(
-    this.context.node,
-    this.context.field,
-    getLocation({
-      id: this.props.id,
-      ast: this.props.ast,
-      context: this.context,
-    })
-  );
-  return drop(monitor.getItem(), target);
-})(ActualDropTarget);
+const DropTargetWithDnd = DropTargetDnd(
+  ItemTypes.NODE,
+  {
+    drop(_, monitor, component) {
+      if (monitor.didDrop()) {
+        return;
+      }
+      const target = new InsertTarget(
+        component.context.node,
+        component.context.field,
+        getLocation({
+          id: component.props.id,
+          ast: component.props.ast,
+          context: component.context,
+        })
+      );
+      return drop(monitor.getItem(), target);
+    },
+  },
+  function collectTarget(
+    connect: DropTargetConnector,
+    monitor: DropTargetMonitor
+  ) {
+    return {
+      connectDropTarget: connect.dropTarget(),
+      isOver: monitor.isOver({ shallow: true }),
+    };
+  }
+)(ActualDropTarget);
 
 const ActualDropTargetEnhanced = (props: { id: string }) => {
   const dispatch: AppDispatch = useDispatch();
