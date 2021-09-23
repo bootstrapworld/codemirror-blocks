@@ -7,12 +7,13 @@ import BlockComponent from "./BlockComponent";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch, isErrorFree } from "../store";
 import SHARED from "../shared";
-import { DragNodeSource, ItemTypes } from "../dnd";
+import { ItemTypes } from "../dnd";
 import classNames from "classnames";
 import { store } from "../store";
 import CodeMirror from "codemirror";
-import { GetProps, useDrop } from "react-dnd";
+import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
+import { isDummyPos } from "../utils";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -276,7 +277,28 @@ const NodeDnD = (props: ConnectedNodeProps & DragSourceProps & ReduxProps) => {
   );
 };
 
-const NodeSource = DragNodeSource(NodeDnD);
+const NodeSource = (props: ConnectedNodeProps & ReduxProps) => {
+  const [collected, connectDragSource, connectDragPreview] = useDrag({
+    type: ItemTypes.NODE,
+    item: () => {
+      if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
+        return { content: props.node.toString() };
+      }
+      return { id: props.node.id };
+    },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+  return (
+    <NodeDnD
+      {...props}
+      isDragging={collected.isDragging}
+      connectDragPreview={connectDragPreview}
+      connectDragSource={connectDragSource}
+    />
+  );
+};
 
 type ConnectedNodeProps = {
   node: ASTNode;
