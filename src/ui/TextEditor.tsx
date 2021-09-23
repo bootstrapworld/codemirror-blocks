@@ -12,6 +12,18 @@ import { Editor } from "codemirror";
 // NOTE(Emmanuel): we should probably block 'on' and 'off'...
 const unsupportedAPIs = ["startOperation", "endOperation", "operation"];
 
+const buildAPI = () => {
+  const api = {};
+  // show which APIs are unsupported
+  unsupportedAPIs.forEach(
+    (f) =>
+      ((api as any)[f] = () => {
+        throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
+      })
+  );
+  return api as API;
+};
+
 type Props = {
   cmOptions?: {};
   value: string;
@@ -24,31 +36,13 @@ type Props = {
 const TextEditor = (props: Props) => {
   const { onMount, passedAST, value, onBeforeChange, cmOptions } = props;
 
-  /**
-   * @internal
-   * When the editor mounts, build the API
-   */
+  // build the API on mount
   const handleEditorDidMount = (ed: Editor) => {
     onMount(ed, buildAPI(), passedAST);
   };
 
-  /**
-   * @internal
-   * Build the API for a text editor, restricting APIs that are
-   * incompatible with our toggleable block editor
-   */
-  const buildAPI = () => {
-    const api = {};
-    // show which APIs are unsupported
-    unsupportedAPIs.forEach(
-      (f) =>
-        ((api as any)[f] = () => {
-          throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
-        })
-    );
-    return api as API;
-  };
-
+  // Build the API for a text editor, restricting APIs that are
+  // incompatible with our toggleable block editor
   return (
     // we add a wrapper div to maintain a consistent DOM with BlockEditor
     // see DragAndDropEditor.js for why the DND context needs a wrapper

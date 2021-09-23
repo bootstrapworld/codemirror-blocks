@@ -7,8 +7,7 @@ export type ArgsProps = {
   children: ASTNode[];
 };
 
-const Args = (props: ArgsProps) => {
-  const { field, children } = props;
+const Args = ({ field, children }: ArgsProps) => {
   // elems starts with a dropTarget
   const elems = [<DropTarget key={"drop-0"} field={field} />];
   children.forEach((child, index) => {
