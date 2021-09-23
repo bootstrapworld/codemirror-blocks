@@ -1,4 +1,4 @@
-import React, { Component, useEffect } from "react";
+import React, { Component, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
@@ -232,28 +232,6 @@ const ToplevelBlockEditable = () => {
   );
 };
 
-const mapStateToProps = ({ ast, cur, quarantine }: RootState) => ({
-  ast,
-  cur,
-  hasQuarantine: !!quarantine,
-});
-const mapDispatchToProps = (dispatch: AppDispatch) => ({
-  dispatch,
-  setAST: (ast: AST) => dispatch({ type: "SET_AST", ast }),
-  setCursor: (cur?: CodeMirror.Position) => dispatch(setCursor(cur)),
-  clearFocus: () => {
-    return dispatch({ type: "SET_FOCUS", focusId: null });
-  },
-  setQuarantine: (
-    start: CodeMirror.Position,
-    end: CodeMirror.Position,
-    text: string
-  ) => dispatch({ type: "SET_QUARANTINE", start, end, text }),
-  activateByNid: (...args: Parameters<typeof activateByNid>) =>
-    dispatch(activateByNid(...args)),
-});
-
-const blockEditorConnector = connect(mapStateToProps, mapDispatchToProps);
 type $TSFixMe = any;
 
 export type Search = {
@@ -267,7 +245,7 @@ export type Search = {
   setCM: (cm: CodeMirror.Editor) => void;
 };
 
-export type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
+export type BlockEditorProps = {
   value: string;
   options?: Options;
   cmOptions?: CodeMirror.EditorConfiguration;
@@ -281,22 +259,27 @@ export type BlockEditorProps = ConnectedProps<typeof blockEditorConnector> & {
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: Function;
   api?: API;
-  passedAST?: AST;
+  passedAST?: AST; // not used?
   showDialog: Function;
-  ast: AST;
 };
 
 const BlockEditor = (props: BlockEditorProps) => {
+  const mounted = useRef(); // from https://stackoverflow.com/a/53406363/12026982
+  const dispatch: AppDispatch = useDispatch();
+  // grab some properties from state
+  const { ast, cur, hasQuarantine } = useSelector((state: RootState) => {
+    console.log("@@@@@@@@@@@@@@@@", state);
+    return {
+      ast: state.ast,
+      cur: state.cur,
+      hasQuarantine: !!state.quarantine,
+    };
+  });
+  // NOTE(Emmanuel): this was in matchDispatchToProps, but appears unused
+  const clearFocus = () => dispatch({ type: "SET_FOCUS", focusId: null });
+
   const {
-    dispatch,
-    passedAST: ast,
-    setAST,
     options,
-    onMount,
-    activateByNid,
-    setCursor,
-    setQuarantine,
-    showDialog,
     keyMap = defaultKeyMap,
     search = {
       search: () => null,
@@ -304,12 +287,37 @@ const BlockEditor = (props: BlockEditorProps) => {
       setCursor: () => {},
       setCM: () => {},
     } as Search,
-    toolbarRef,
   } = props;
 
   let mouseUsed: boolean = false;
   let newAST: AST = null;
   let pendingTimeout: afterDOMUpdateHandle;
+
+  useEffect(() => {
+    if (!mounted.current) {
+      // Initial mount: create a buffer for use with copy/cut/paste
+      const clipboardBuffer = document.createElement("textarea");
+      (clipboardBuffer as $TSFixMe).ariaHidden = true;
+      clipboardBuffer.tabIndex = -1;
+      clipboardBuffer.style.opacity = "0";
+      clipboardBuffer.style.height = "1px";
+      document.body.appendChild(SHARED.buffer);
+
+      // TODO (Emmanuel): pass SHARED fields below inside a React
+      // Context, instead of storing them in a junk drawer
+      SHARED.options = options;
+      SHARED.search = search;
+      SHARED.buffer = clipboardBuffer;
+    }
+    // refresh() after component is mounted or updated
+    pendingTimeout = setAfterDOMUpdate(refreshCM() as $TSFixMe);
+
+    // return our cleanup function
+    return () => {
+      SHARED.buffer.remove();
+      cancelAfterDOMUpdate(pendingTimeout);
+    };
+  }, []);
 
   // NOTE(Emmanuel): we shouldn't have to dispatch this in the constructor
   // just for tests to pass! Figure out how to reset the store manually
@@ -407,7 +415,7 @@ const BlockEditor = (props: BlockEditorProps) => {
     ed.on("changes", handleChanges);
 
     // set AST and searchg properties and collapse preferences
-    setAST(ast);
+    dispatch({ type: "SET_AST", ast });
     search.setCM(ed);
     if (options.collapseAll) {
       dispatch({ type: "COLLAPSE_ALL" });
@@ -424,7 +432,7 @@ const BlockEditor = (props: BlockEditorProps) => {
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    onMount(ed, buildAPI(ed), ast);
+    props.onMount(ed, buildAPI(ed), ast);
   };
 
   /**
@@ -452,7 +460,7 @@ const BlockEditor = (props: BlockEditorProps) => {
     }
     // convert nid to node id, and use activate to generate the action
     if (activity.type == "SET_FOCUS") {
-      activateByNid(activity.nid, { allowMove: true });
+      dispatch(activateByNid(activity.nid, { allowMove: true }));
       return;
     }
     dispatch(action);
@@ -529,12 +537,14 @@ const BlockEditor = (props: BlockEditorProps) => {
             typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
           const node = ast.getNodeContaining(cur);
           if (node) {
-            activateByNid(node.nid, {
-              record: false,
-              allowMove: true,
-            });
+            dispatch(
+              activateByNid(node.nid, {
+                record: false,
+                allowMove: true,
+              })
+            );
           }
-          setCursor(cur);
+          dispatch({ type: "SET_CURSOR", cur: cur });
         }),
       // As long as widget isn't defined, we're good to go
       setBookmark: (pos, opts) => {
@@ -565,7 +575,8 @@ const BlockEditor = (props: BlockEditorProps) => {
        * APIs FOR TESTING
        */
       getQuarantine: () => withState(({ quarantine }) => quarantine),
-      setQuarantine: (start, end, txt) => setQuarantine(start, end, txt),
+      setQuarantine: (start, end, text) =>
+        dispatch({ type: "SET_QUARANTINE", start, end, text }),
       executeAction: (action) => executeAction(action),
     };
     // show which APIs are unsupported
@@ -744,9 +755,12 @@ const BlockEditor = (props: BlockEditorProps) => {
       setSelections(tmpCM.listSelections());
     }
     if (select == "start") {
-      setCursor(tmpCM.listSelections().pop().head);
+      dispatch({ type: "SET_CURSOR", cur: tmpCM.listSelections().pop().head });
     } else {
-      setCursor(tmpCM.listSelections().pop().anchor);
+      dispatch({
+        type: "SET_CURSOR",
+        cur: tmpCM.listSelections().pop().anchor,
+      });
     }
   };
 
@@ -773,13 +787,15 @@ const BlockEditor = (props: BlockEditorProps) => {
         // NOTE(Emmanuel): setAfterDOMUpdate so that the CM cursor will not blink
         cancelAfterDOMUpdate(pendingTimeout);
         pendingTimeout = setAfterDOMUpdate(() =>
-          activateByNid(null, { allowMove: true })
+          dispatch(activateByNid(null, { allowMove: true }))
         );
         mouseUsed = false;
       } else if (mouseUsed && cur === null) {
         // if it was a click, get the cursor from CM
         cancelAfterDOMUpdate(pendingTimeout);
-        pendingTimeout = setAfterDOMUpdate(() => setCursor(ed.getCursor()));
+        pendingTimeout = setAfterDOMUpdate(() =>
+          dispatch({ type: "SET_CURSOR", cur: ed.getCursor() })
+        );
         mouseUsed = false;
       }
     });
@@ -807,7 +823,7 @@ const BlockEditor = (props: BlockEditorProps) => {
     e.preventDefault();
     const start = SHARED.cm.getCursor(true as $TSFixMe);
     const end = SHARED.cm.getCursor(false as $TSFixMe);
-    setQuarantine(start, end, text);
+    dispatch({ type: "SET_QUARANTINE", start, end, text });
   };
 
   /**
@@ -817,8 +833,8 @@ const BlockEditor = (props: BlockEditorProps) => {
    * for passing 'this' as the environment. Be sure to add showDialog and toolbarRef!
    */
   const handleKeyDown: AppStore["onKeyDown"] = (e, env) => {
-    env.showDialog = showDialog;
-    env.toolbarRef = toolbarRef;
+    env.showDialog = props.showDialog;
+    env.toolbarRef = props.toolbarRef;
     return keyDown(e, env, keyMap);
   };
   // stick the keyDown handler in the store
@@ -833,7 +849,7 @@ const BlockEditor = (props: BlockEditorProps) => {
     const text = e.clipboardData.getData("text/plain");
     const start = SHARED.cm.getCursor(true as $TSFixMe);
     const end = SHARED.cm.getCursor(false as $TSFixMe);
-    setQuarantine(start, end, text);
+    dispatch({ type: "SET_QUARANTINE", start, end, text });
   };
 
   /**
@@ -843,31 +859,7 @@ const BlockEditor = (props: BlockEditorProps) => {
    */
   const handleTopLevelCursorActivity = (ed: Editor) => {
     let cur = ed.getSelection().length > 0 ? null : ed.getCursor();
-    setCursor(cur);
-  };
-
-  const componentWillUnmount = () => {
-    SHARED.buffer.remove();
-    cancelAfterDOMUpdate(pendingTimeout);
-  };
-
-  const componentDidMount = () => {
-    // TODO: pass these with a React Context or something sensible like that.
-    SHARED.options = options;
-    SHARED.search = search;
-    // create a hidden buffer, for use with copy/cut/paste
-    const clipboardBuffer = document.createElement("textarea");
-    (clipboardBuffer as $TSFixMe).ariaHidden = true;
-    clipboardBuffer.tabIndex = -1;
-    clipboardBuffer.style.opacity = "0";
-    clipboardBuffer.style.height = "1px";
-    SHARED.buffer = clipboardBuffer;
-    document.body.appendChild(SHARED.buffer);
-    pendingTimeout = setAfterDOMUpdate(refreshCM() as $TSFixMe);
-  };
-
-  const componentDidUpdate = () => {
-    pendingTimeout = setAfterDOMUpdate(refreshCM() as $TSFixMe);
+    dispatch({ type: "SET_CURSOR", cur: cur });
   };
 
   /**
@@ -893,7 +885,7 @@ const BlockEditor = (props: BlockEditorProps) => {
           incrementalRendering={incrementalRendering}
         />
       ));
-      if (props.hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
+      if (hasQuarantine) portals.push(<ToplevelBlockEditable key="-1" />);
     }
     return portals;
   };
@@ -922,7 +914,4 @@ const BlockEditor = (props: BlockEditorProps) => {
   );
 };
 
-export type { BlockEditor };
-const ConnectedBlockEditor = blockEditorConnector(BlockEditor);
-export type BlockEditorComponentClass = typeof ConnectedBlockEditor;
-export default ConnectedBlockEditor;
+export default BlockEditor;
