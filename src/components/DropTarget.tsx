@@ -1,6 +1,5 @@
-import React, { Component, createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import PropTypes from "prop-types";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "react-dnd";
 import classNames from "classnames";
@@ -66,40 +65,31 @@ export function findAdjacentDropTargetId(child: ASTNode, onLeft: boolean) {
 // But AFAIK that's not feasible, because the `id` needs to be accessible
 // inside `mapStateToProps`, and it's only accessible if it's a `prop`.
 // Hence this extraneous class.
-export class DropTarget extends Component<{ field: string }> {
-  static contextType = NodeContext;
+export const DropTarget = (props: { field: string }) => {
+  const context = useContext(NodeContext);
 
-  static propTypes = {
-    field: PropTypes.string.isRequired,
+  const value = {
+    field: props.field,
+    node: context.node,
   };
 
-  id: string = genUniqueId(); // generate a unique ID
-
-  render() {
-    const value = {
-      field: this.props.field,
-      node: this.context.node,
-    };
-
-    // ensure that the field property is set
-    if (!value.field) {
-      console.error(
-        `
+  // ensure that the field property is set
+  if (!value.field) {
+    console.error(
+      `
 A dropTarget must be created with a prop 'field'. 
 Check the render() function for the ${value.node.type} 
 Component, and make sure all DropTargets have a 
 field declared. The node was:`,
-        value.node
-      );
-    }
-
-    return (
-      <DropTargetContext.Provider value={value}>
-        <ActualDropTarget id={this.id} />
-      </DropTargetContext.Provider>
+      value.node
     );
   }
-}
+  return (
+    <DropTargetContext.Provider value={value}>
+      <ActualDropTarget id={genUniqueId()} />
+    </DropTargetContext.Provider>
+  );
+};
 
 type $TSFixMe = any;
 const getLocation = ({
