@@ -7,11 +7,11 @@ import BlockComponent from "./BlockComponent";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch, isErrorFree } from "../store";
 import SHARED from "../shared";
-import { DragNodeSource, DropNodeTarget } from "../dnd";
+import { DragNodeSource, ItemTypes } from "../dnd";
 import classNames from "classnames";
 import { store } from "../store";
 import CodeMirror from "codemirror";
-import { GetProps } from "react-dnd";
+import { GetProps, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
@@ -225,22 +225,7 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
   }
 }
 
-export type EnhancedNodeProps = {
-  node: ASTNode;
-  inToolbar?: boolean;
-  normallyEditable?: boolean;
-  expandable: boolean;
-  children?: React.ReactFragment;
-
-  // These all come from the dnd enhancers and don't need
-  // to be supplied by users of the default export
-  connectDragSource: Function;
-  isDragging: boolean;
-  connectDropTarget: Function;
-  connectDragPreview: Function;
-  isOver: boolean;
-
-  // these are provided by redux wrapper
+type ReduxProps = {
   isSelected: boolean;
   isCollapsed: boolean;
   textMarker: CodeMirror.TextMarker;
@@ -255,20 +240,53 @@ export type EnhancedNodeProps = {
   dispatch: AppDispatch;
 };
 
-const NodeSource = DragNodeSource(
-  DropNodeTarget(function (monitor) {
-    const node = store.getState().ast.getNodeById(this.props.node.id);
-    return drop(monitor.getItem(), new ReplaceNodeTarget(node));
-  })(Node)
-);
+type DragSourceProps = {
+  connectDragSource: Function;
+  isDragging: boolean;
+  connectDragPreview: Function;
+};
 
-const ConnectedNode = (props: {
+export type EnhancedNodeProps = ConnectedNodeProps &
+  ReduxProps &
+  DragSourceProps & {
+    // These all come from the dnd enhancers and don't need
+    // to be supplied by users of the default export
+    connectDropTarget: Function;
+    isOver: boolean;
+  };
+
+const NodeDnD = (props: ConnectedNodeProps & DragSourceProps & ReduxProps) => {
+  const [{ isOver }, connectDropTarget] = useDrop({
+    accept: ItemTypes.NODE,
+    drop: (_item, monitor) => {
+      if (monitor.didDrop()) {
+        return;
+      }
+      const node = store.getState().ast.getNodeById(props.node.id);
+      return drop(monitor.getItem(), new ReplaceNodeTarget(node));
+    },
+    collect: (monitor) => {
+      return {
+        isOver: monitor.isOver({ shallow: true }),
+      };
+    },
+  });
+  return (
+    <Node {...props} isOver={isOver} connectDropTarget={connectDropTarget} />
+  );
+};
+
+const NodeSource = DragNodeSource(NodeDnD);
+
+type ConnectedNodeProps = {
   node: ASTNode;
   inToolbar?: boolean;
   normallyEditable?: boolean;
   expandable: boolean;
   children?: React.ReactFragment;
-}) => {
+};
+
+const ConnectedNode = (props: ConnectedNodeProps) => {
   const dispatch: AppDispatch = useDispatch();
   const { node } = props;
   const stateProps = useSelector(
