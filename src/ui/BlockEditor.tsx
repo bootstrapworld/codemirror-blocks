@@ -323,12 +323,9 @@ const BlockEditor = (props: BlockEditorProps) => {
   // just for tests to pass! Figure out how to reset the store manually
   dispatch({ type: "RESET_STORE_FOR_TESTING" });
 
-  /**
-   * @internal
-   * Anything that didn't come from CMB itself must be speculatively
-   * checked. NOTE: this only checks the *first change* in a changeset!
-   * This is hooked up to CodeMirror's onBeforeChange event
-   */
+  // Anything that didn't come from CMB itself must be speculatively
+  // checked. NOTE: this only checks the *first change* in a changeset!
+  // This is hooked up to CodeMirror's onBeforeChange event
   const handleBeforeChange = (
     cm: Editor,
     change: CodeMirror.EditorChangeCancellable
@@ -354,10 +351,7 @@ const BlockEditor = (props: BlockEditorProps) => {
     }
   };
 
-  /**
-   * @internal
-   * Given a CM Change Event, manually handle our own undo and focus stack
-   */
+  // Given a CM Change Event, manually handle our own undo and focus stack
   const handleChanges = (cm: Editor, changes: CodeMirror.EditorChange[]) => {
     dispatch((dispatch, getState) => {
       if (!changes.every((c) => c.origin?.startsWith("cmb:"))) {
@@ -405,16 +399,13 @@ const BlockEditor = (props: BlockEditorProps) => {
     });
   };
 
-  /**
-   * @internal
-   * When the editor mounts, (1) set change event handlers and AST,
-   * (2) set the focus, (3) set aria attributes, and (4) build the API
-   */
+  // When the editor mounts, (1) set change event handlers and AST,
+  // (2) set the focus, (3) set aria attributes, and (4) build the API
   const handleEditorDidMount = (ed: Editor) => {
     ed.on("beforeChange", handleBeforeChange);
     ed.on("changes", handleChanges);
 
-    // set AST and searchg properties and collapse preferences
+    // set AST, search properties, and collapse preferences
     dispatch({ type: "SET_AST", ast });
     search.setCM(ed);
     if (options.collapseAll) {
@@ -435,12 +426,7 @@ const BlockEditor = (props: BlockEditorProps) => {
     props.onMount(ed, buildAPI(ed), ast);
   };
 
-  /**
-   * @internal
-   * Used for reproducing/debugging (see ToggleEditor::loadLoggedActions)
-   * Filter/Tweak logged history actions before dispatching them to
-   * be executed.
-   */
+  // Used for reproducing/debugging (see ToggleEditor::loadLoggedActions)
   const executeAction = (activity: Activity) => {
     // ignore certain logged actions that are already
     // handled by the BlockEditor constructor
@@ -466,11 +452,8 @@ const BlockEditor = (props: BlockEditorProps) => {
     dispatch(action);
   };
 
-  /**
-   * @internal
-   * Build the API for a block editor, restricting or modifying APIs
-   * that are incompatible with our toggleable block editor
-   */
+  // Build the API for a block editor, restricting or modifying APIs
+  // that are incompatible with our toggleable block editor
   const buildAPI = (ed: Editor): BuiltAPI => {
     const withState = <F extends (state: RootState) => any>(func: F) =>
       dispatch((_, getState) => func(getState()));
@@ -592,11 +575,9 @@ const BlockEditor = (props: BlockEditorProps) => {
     return api;
   };
 
-  /**
-   * Override CM's native markText method, restricting it to the semantics
-   * that make sense in a block editor (fewer options, restricted to node
-   * boundaries)
-   */
+  // Override CM's native markText method, restricting it to the semantics
+  // that make sense in a block editor (fewer options, restricted to node
+  // boundaries)
   const markText = (
     from: CodeMirror.Position,
     to: CodeMirror.Position,
@@ -632,10 +613,8 @@ const BlockEditor = (props: BlockEditorProps) => {
     return mark;
   };
 
-  /**
-   * Override CM's native setBookmark method, restricting it to the semantics
-   * that make sense in a block editor (no widgets)
-   */
+  // Override CM's native setBookmark method, restricting it to the semantics
+  // that make sense in a block editor (no widgets)
   const setBookmark: Editor["setBookmark"] = (pos, options) => {
     if (options.widget) {
       throw new BlockError(
@@ -645,10 +624,9 @@ const BlockEditor = (props: BlockEditorProps) => {
     }
     return SHARED.cm.setBookmark(pos, options);
   };
-  /**
-   * Override CM's native getCursor method, restricting it to the semantics
-   * that make sense in a block editor
-   */
+
+  // Override CM's native getCursor method, restricting it to the semantics
+  // that make sense in a block editor
   const getCursor = (where = "from") => {
     const { focusId, ast } = dispatch((_, getState) => getState());
     if (focusId && document.activeElement.id.match(/block-node/)) {
@@ -664,10 +642,9 @@ const BlockEditor = (props: BlockEditorProps) => {
       return SHARED.cm.getCursor(where);
     }
   };
-  /**
-   * Override CM's native listSelections method, using the selection
-   * state from the block editor
-   */
+
+  // Override CM's native listSelections method, using the selection
+  // state from the block editor
   const listSelections = () => {
     const { selections, ast } = dispatch((_, getState) => getState());
     let tmpCM = getTempCM();
@@ -681,10 +658,9 @@ const BlockEditor = (props: BlockEditorProps) => {
     // return all the selections
     return tmpCM.listSelections();
   };
-  /**
-   * Override CM's native setSelections method, restricting it to the semantics
-   * that make sense in a block editor (must include only valid node ranges)
-   */
+
+  // Override CM's native setSelections method, restricting it to the semantics
+  // that make sense in a block editor (must include only valid node ranges)
   const setSelections = (
     ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
     primary?: number,
@@ -719,10 +695,9 @@ const BlockEditor = (props: BlockEditorProps) => {
     }
     dispatch({ type: "SET_SELECTIONS", selections: nodes });
   };
-  /**
-   * Override CM's native extendSelections method, restricting it to the semantics
-   * that make sense in a block editor (must include only valid node ranges)
-   */
+
+  // Override CM's native extendSelections method, restricting it to the semantics
+  // that make sense in a block editor (must include only valid node ranges)
   const extendSelections = (
     heads: CodeMirror.Position[],
     opts: SelectionOptions,
@@ -738,10 +713,9 @@ const BlockEditor = (props: BlockEditorProps) => {
     // if one of the ranges is invalid, setSelections will raise an error
     setSelections(tmpCM.listSelections(), null, opts);
   };
-  /**
-   * Override CM's native replaceSelections method, restricting it to the semantics
-   * that make sense in a block editor (must include only valid node ranges)
-   */
+
+  // Override CM's native replaceSelections method, restricting it to the semantics
+  // that make sense in a block editor (must include only valid node ranges)
   const replaceSelections = (
     replacements: string[],
     select?: "around" | "start"
@@ -764,22 +738,16 @@ const BlockEditor = (props: BlockEditorProps) => {
     }
   };
 
-  /**
-   * @internal
-   * Remove change handlers
-   */
+  // Remove change handlers
   const handleEditorWillUnmount = (ed: Editor) => {
     ed.off("beforeChange", handleBeforeChange);
     ed.off("changes", handleChanges);
   };
 
-  /**
-   * @internal
-   * When the CM instance receives focus...
-   * If the mouse wasn't used and there's no cursor set, focus on the first root
-   * If the mouse WAS used there's no cursor set, get the cursor from CM
-   * Otherwise ignore
-   */
+  // When the CM instance receives focus...
+  // If the mouse wasn't used and there's no cursor set, focus on the first root
+  // If the mouse WAS used there's no cursor set, get the cursor from CM
+  // Otherwise ignore
   const handleTopLevelFocus = (ed: Editor) => {
     dispatch((_, getState) => {
       const { cur } = getState();
@@ -801,21 +769,15 @@ const BlockEditor = (props: BlockEditorProps) => {
     });
   };
 
-  /**
-   * @internal
-   * When the CM instance receives a click, give CM 100ms to fire a
-   * handleTopLevelFocus event before another one is processed
-   */
+  // When the CM instance receives a click, give CM 100ms to fire a
+  // handleTopLevelFocus event before another one is processed
   const handleTopLevelMouseDown = () => {
     mouseUsed = true;
     pendingTimeout = setAfterDOMUpdate(() => (mouseUsed = false), 100);
   };
 
-  /**
-   * @internal
-   * When the CM instance receives a keypress...start a quarantine if it's
-   * not a modifier
-   */
+  // When the CM instance receives a keypress...start a quarantine if it's
+  // not a modifier
   const handleTopLevelKeyPress = (ed: Editor, e: React.KeyboardEvent) => {
     const text = e.key;
     // let CM handle kbd shortcuts or whitespace insertion
@@ -826,12 +788,9 @@ const BlockEditor = (props: BlockEditorProps) => {
     dispatch({ type: "SET_QUARANTINE", start, end, text });
   };
 
-  /**
-   * @internal
-   * When the CM instance receives a keydown event...construct the environment
-   * NOTE: This is called from both CM *and* Node components. Each is responsible
-   * for passing 'this' as the environment. Be sure to add showDialog and toolbarRef!
-   */
+  // When the CM instance receives a keydown event...construct the environment
+  // NOTE: This is called from both CM *and* Node components. Each is responsible
+  // for passing 'this' as the environment. Be sure to add showDialog and toolbarRef!
   const handleKeyDown: AppStore["onKeyDown"] = (e, env) => {
     env.showDialog = props.showDialog;
     env.toolbarRef = props.toolbarRef;
@@ -840,10 +799,7 @@ const BlockEditor = (props: BlockEditorProps) => {
   // stick the keyDown handler in the store
   store.onKeyDown = handleKeyDown;
 
-  /**
-   * @internal
-   * When the CM instance receives a paste event...start a quarantine
-   */
+  // When the CM instance receives a paste event...start a quarantine
   const handleTopLevelPaste = (ed: Editor, e: ClipboardEvent) => {
     e.preventDefault();
     const text = e.clipboardData.getData("text/plain");
@@ -852,21 +808,15 @@ const BlockEditor = (props: BlockEditorProps) => {
     dispatch({ type: "SET_QUARANTINE", start, end, text });
   };
 
-  /**
-   * @internal
-   * When the CM instance receives cursor activity...
-   * If there are selections, pass null. Otherwise pass the cursor.
-   */
+  // When the CM instance receives cursor activity...
+  // If there are selections, pass null. Otherwise pass the cursor.
   const handleTopLevelCursorActivity = (ed: Editor) => {
     let cur = ed.getSelection().length > 0 ? null : ed.getCursor();
     dispatch({ type: "SET_CURSOR", cur: cur });
   };
 
-  /**
-   * @internal
-   * As long as there's no quarantine, refresh the editor to compute
-   * possibly-changed node sizes
-   */
+  // As long as there's no quarantine, refresh the editor to compute
+  //possibly-changed node sizes
   const refreshCM = () => {
     dispatch((_, getState) => {
       if (!getState().quarantine) SHARED.cm.refresh(); // don't refresh mid-quarantine
