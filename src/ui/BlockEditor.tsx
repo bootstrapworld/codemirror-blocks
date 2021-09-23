@@ -1,10 +1,11 @@
-import React, { Component } from "react";
+import React, { Component, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import classNames from "classnames";
 import "./Editor.less";
 import { connect, ConnectedProps } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import SHARED from "../shared";
 import NodeEditable from "../components/NodeEditable";
 import { activateByNid, setCursor, OverwriteTarget } from "../actions";
@@ -174,76 +175,62 @@ class ToplevelBlock extends BlockComponent<
   }
 }
 
-const mapStateToProps2 = ({ quarantine }: RootState) => ({ quarantine });
-const mapDispatchToProps2 = (dispatch: AppDispatch) => ({
-  onDisableEditable: () => dispatch({ type: "DISABLE_QUARANTINE" }),
-  onChange: (text: string) => dispatch({ type: "CHANGE_QUARANTINE", text }),
-});
-type ToplevelBlockEditableCoreProps = {
-  quarantine: Quarantine;
-  onDisableEditable: () => void;
-  onChange: (text: string) => void;
+const ToplevelBlockEditable = () => {
+  const dispatch: AppDispatch = useDispatch();
+  const onDisableEditable = () => dispatch({ type: "DISABLE_QUARANTINE" });
+  const onChange = (text: string) =>
+    dispatch({ type: "CHANGE_QUARANTINE", text });
+  const [start, end, value] = useSelector(
+    ({ quarantine }: RootState) => quarantine
+  );
+
+  // if there's a marker when the component unmounts, clear it
+  useEffect(() => {
+    return () => marker?.clear();
+  }, []);
+
+  const contentEditableProps = {
+    tabIndex: "-1",
+    role: "text box",
+    "aria-setsize": "1",
+    "aria-posinset": "1",
+    "aria-level": "1",
+  };
+
+  // CM marker for the rootNode, and its DOM container
+  let marker: CodeMirror.TextMarker;
+  const container = document.createElement("span");
+  container.classList.add("react-container");
+
+  // IF NO MARKER IS DEFINED, WAIT UNTIL THE REACT RENDER
+  // CYCLE IS OVER and make a new block marker
+  if (!marker)
+    window.requestAnimationFrame(() => {
+      // CM treats 0-width ranges differently than other ranges, so check
+      if (poscmp(start, end) === 0) {
+        marker = SHARED.cm.setBookmark(start, {
+          widget: container,
+        });
+      } else {
+        marker = SHARED.cm.markText(start, end, {
+          replacedWith: container,
+        });
+      }
+    });
+
+  return ReactDOM.createPortal(
+    <NodeEditable
+      target={new OverwriteTarget(start, end)}
+      value={value}
+      onChange={onChange}
+      contentEditableProps={contentEditableProps}
+      isInsertion={true}
+      extraClasses={[]}
+      onDisableEditable={onDisableEditable}
+    />,
+    container
+  );
 };
-class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps> {
-  container: HTMLElement;
-  marker?: CodeMirror.TextMarker;
-
-  constructor(props: ToplevelBlockEditableCoreProps) {
-    super(props);
-    this.container = document.createElement("span");
-    this.container.classList.add("react-container");
-  }
-
-  componentWillUnmount() {
-    this.marker?.clear();
-  }
-
-  render() {
-    const { onDisableEditable, onChange, quarantine } = this.props;
-    const [start, end, value] = quarantine;
-    const props = {
-      tabIndex: "-1",
-      role: "text box",
-      "aria-setsize": "1",
-      "aria-posinset": "1",
-      "aria-level": "1",
-    };
-
-    // IF NO MARKER IS DEFINED, WAIT UNTIL THE REACT RENDER
-    // CYCLE IS OVER and make a new block marker
-    if (!this.marker)
-      window.requestAnimationFrame(() => {
-        // CM treats 0-width ranges differently than other ranges, so check
-        if (poscmp(start, end) === 0) {
-          this.marker = SHARED.cm.setBookmark(start, {
-            widget: this.container,
-          });
-        } else {
-          this.marker = SHARED.cm.markText(start, end, {
-            replacedWith: this.container,
-          });
-        }
-      });
-
-    return ReactDOM.createPortal(
-      <NodeEditable
-        target={new OverwriteTarget(start, end)}
-        value={value}
-        onChange={onChange}
-        contentEditableProps={props}
-        isInsertion={true}
-        extraClasses={[]}
-        onDisableEditable={onDisableEditable}
-      />,
-      this.container
-    );
-  }
-}
-
-const ToplevelBlockEditable = connect(
-  mapStateToProps2,
-  mapDispatchToProps2
-)(ToplevelBlockEditableCore);
 
 const mapStateToProps = ({ ast, cur, quarantine }: RootState) => ({
   ast,
