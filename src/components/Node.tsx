@@ -1,5 +1,5 @@
 import React, { HTMLAttributes } from "react";
-import { connect, ConnectedProps } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ASTNode } from "../ast";
 import { drop, activateByNid, setCursor, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
@@ -225,36 +225,7 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
   }
 }
 
-const mapStateToProps = (
-  { selections, collapsedList, markedMap }: RootState,
-  { node }: { node: ASTNode }
-) =>
-  // be careful here. Only node's id is accurate. Use getNodeById
-  // to access accurate info
-  {
-    return {
-      isSelected: selections.includes(node.id),
-      isCollapsed: collapsedList.includes(node.id),
-      textMarker: markedMap.get(node.id),
-    };
-  };
-
-const mapDispatchToProps = (dispatch: AppDispatch) => ({
-  dispatch,
-  collapse: (id: string) => dispatch({ type: "COLLAPSE", id }),
-  uncollapse: (id: string) => dispatch({ type: "UNCOLLAPSE", id }),
-  setCursor: (cur: CodeMirror.Position) => dispatch(setCursor(cur)),
-  activateByNid: (
-    nid: number,
-    options: { allowMove?: boolean; record?: boolean }
-  ) => dispatch(activateByNid(nid, options)),
-  setEditable: (id: string, bool: boolean) =>
-    dispatch({ type: "SET_EDITABLE", id, bool }),
-});
-
-const connector = connect(mapStateToProps, mapDispatchToProps);
-
-export type EnhancedNodeProps = ConnectedProps<typeof connector> & {
+export type EnhancedNodeProps = {
   node: ASTNode;
   inToolbar?: boolean;
   normallyEditable?: boolean;
@@ -268,16 +239,63 @@ export type EnhancedNodeProps = ConnectedProps<typeof connector> & {
   connectDropTarget: Function;
   connectDragPreview: Function;
   isOver: boolean;
+
+  // these are provided by redux wrapper
+  isSelected: boolean;
+  isCollapsed: boolean;
+  textMarker: CodeMirror.TextMarker;
+  collapse: (id: string) => void;
+  uncollapse: (id: string) => void;
+  setCursor: (cur: CodeMirror.Position) => void;
+  activateByNid: (
+    nid: number,
+    options: { allowMove?: boolean; record?: boolean }
+  ) => void;
+  setEditable: (id: string, bool: boolean) => void;
+  dispatch: AppDispatch;
 };
 
-const ConnectedNode = connector(
-  DragNodeSource(
-    DropNodeTarget(function (monitor) {
-      const node = store.getState().ast.getNodeById(this.props.node.id);
-      return drop(monitor.getItem(), new ReplaceNodeTarget(node));
-    })(Node)
-  )
+const NodeSource = DragNodeSource(
+  DropNodeTarget(function (monitor) {
+    const node = store.getState().ast.getNodeById(this.props.node.id);
+    return drop(monitor.getItem(), new ReplaceNodeTarget(node));
+  })(Node)
 );
+
+const ConnectedNode = (props: {
+  node: ASTNode;
+  inToolbar?: boolean;
+  normallyEditable?: boolean;
+  expandable: boolean;
+  children?: React.ReactFragment;
+}) => {
+  const dispatch: AppDispatch = useDispatch();
+  const { node } = props;
+  const stateProps = useSelector(
+    ({ selections, collapsedList, markedMap }: RootState) => {
+      // be careful here. Only node's id is accurate. Use getNodeById
+      // to access accurate info
+      return {
+        isSelected: selections.includes(node.id),
+        isCollapsed: collapsedList.includes(node.id),
+        textMarker: markedMap.get(node.id),
+      };
+    }
+  );
+  const dispatchProps = {
+    dispatch,
+    collapse: (id: string) => dispatch({ type: "COLLAPSE", id }),
+    uncollapse: (id: string) => dispatch({ type: "UNCOLLAPSE", id }),
+    setCursor: (cur: CodeMirror.Position) => dispatch(setCursor(cur)),
+    activateByNid: (
+      nid: number,
+      options: { allowMove?: boolean; record?: boolean }
+    ) => dispatch(activateByNid(nid, options)),
+    setEditable: (id: string, bool: boolean) =>
+      dispatch({ type: "SET_EDITABLE", id, bool }),
+  };
+  return <NodeSource {...stateProps} {...dispatchProps} {...props} />;
+};
 
 export type NodeProps = GetProps<typeof ConnectedNode>;
 
