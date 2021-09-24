@@ -528,11 +528,13 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
+          let message = "";
           try {
-            throw SHARED.getExceptionMessage(err);
+            message = this.props.language.getExceptionMessage(err);
           } catch (e) {
-            throw "The parser failed, and the error could not be retrieved";
+            message = "The parser failed, and the error could not be retrieved";
           }
+          throw message;
         }
         try {
           code = oldAst.toString() + (WS ? WS[0] : ""); // pretty-print and restore whitespace

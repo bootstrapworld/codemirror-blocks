@@ -13,7 +13,6 @@ type Shared = {
     setCM: Function;
   };
   parse: (code: string) => AST;
-  getExceptionMessage: Function;
 };
 
 export default {} as Shared;
