@@ -47,42 +47,6 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
     }
   }
 
-  handleChange = (value: NodeState["value"]) => {
-    this.setState({ value });
-  };
-
-  // nid can be stale!! Always obtain a fresh copy of the node
-  // from getState() before calling activateByNid
-  handleMouseDown = (e: React.MouseEvent) => {
-    if (this.props.inToolbar) return;
-    // do not process toolbar nodes
-    else e.stopPropagation(); // prevent ancestors from stealing focus
-    if (!isErrorFree()) return; // TODO(Oak): is this the best way?
-    const { ast } = store.getState();
-    const currentNode = ast.getNodeById(this.props.node.id);
-    this.props.activateByNid(currentNode.nid, { allowMove: false });
-  };
-
-  handleDoubleClick = (e: React.MouseEvent) => {
-    const { inToolbar, isCollapsed, collapse, uncollapse, node } = this.props;
-    e.stopPropagation();
-    if (inToolbar) return;
-    if (isCollapsed) {
-      uncollapse(node.id);
-    } else {
-      collapse(node.id);
-    }
-  };
-
-  handleMouseDragRelated = (e: React.MouseEvent<HTMLSpanElement>) => {
-    if (e.type === "dragstart") {
-      let dt = new DataTransfer();
-      dt.setData("text/plain", (e.target as HTMLSpanElement).innerText);
-    }
-  };
-
-  handleDisableEditable = () => this.setState({ editable: false });
-
   render() {
     const isLocked = () => this.props.node.isLockedP;
     const handleMakeEditable = () => {
@@ -115,6 +79,35 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
       e.stopPropagation();
       if (inToolbar) return;
       if (normallyEditable) handleMakeEditable();
+    };
+    // nid can be stale!! Always obtain a fresh copy of the node
+    // from getState() before calling activateByNid
+    const handleMouseDown = (e: React.MouseEvent) => {
+      if (this.props.inToolbar) return;
+      // do not process toolbar nodes
+      else e.stopPropagation(); // prevent ancestors from stealing focus
+      if (!isErrorFree()) return; // TODO(Oak): is this the best way?
+      const { ast } = store.getState();
+      const currentNode = ast.getNodeById(this.props.node.id);
+      this.props.activateByNid(currentNode.nid, { allowMove: false });
+    };
+
+    const handleDoubleClick = (e: React.MouseEvent) => {
+      const { inToolbar, isCollapsed, collapse, uncollapse, node } = this.props;
+      e.stopPropagation();
+      if (inToolbar) return;
+      if (isCollapsed) {
+        uncollapse(node.id);
+      } else {
+        collapse(node.id);
+      }
+    };
+
+    const handleMouseDragRelated = (e: React.MouseEvent<HTMLSpanElement>) => {
+      if (e.type === "dragstart") {
+        let dt = new DataTransfer();
+        dt.setData("text/plain", (e.target as HTMLSpanElement).innerText);
+      }
     };
     const {
       isSelected,
@@ -154,15 +147,15 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
       return (
         <NodeEditable
           {...passingProps}
-          onDisableEditable={this.handleDisableEditable}
+          onDisableEditable={() => this.setState({ editable: false })}
           extraClasses={classes}
           isInsertion={false}
           target={new ReplaceNodeTarget(node)}
           value={this.state.value}
-          onChange={this.handleChange}
-          onDragStart={this.handleMouseDragRelated}
-          onDragEnd={this.handleMouseDragRelated}
-          onDrop={this.handleMouseDragRelated}
+          onChange={(value) => this.setState({ value })}
+          onDragStart={handleMouseDragRelated}
+          onDragEnd={handleMouseDragRelated}
+          onDrop={handleMouseDragRelated}
           contentEditableProps={props}
         />
       );
@@ -190,12 +183,12 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
             } as any
           }
           title={textMarker ? textMarker.options.title : null}
-          onMouseDown={this.handleMouseDown}
+          onMouseDown={handleMouseDown}
           onClick={handleClick}
-          onDoubleClick={this.handleDoubleClick}
-          onDragStart={this.handleMouseDragRelated}
-          onDragEnd={this.handleMouseDragRelated}
-          onDrop={this.handleMouseDragRelated}
+          onDoubleClick={handleDoubleClick}
+          onDragStart={handleMouseDragRelated}
+          onDragEnd={handleMouseDragRelated}
+          onDrop={handleMouseDragRelated}
           onKeyDown={(e) => store.onKeyDown(e, keydownEnv)}
         >
           {children}
