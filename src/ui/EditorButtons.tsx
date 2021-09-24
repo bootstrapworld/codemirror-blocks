@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import PropTypes from "prop-types";
+import React from "react";
+import { getReducerActivities } from "../reducers";
 import { logResults } from "../utils";
 
 type ToggleButtonProps = {
@@ -27,10 +27,9 @@ export const ToggleButton = (props: ToggleButtonProps) => {
   );
 };
 
-// TODO(pcardune): putting things on window is generally a bad idea
 export const BugButton = () => {
   const handleBugReport = () => {
-    const history = JSON.stringify((window as any).reducerActivities);
+    const history = JSON.stringify(getReducerActivities());
     const description = prompt("Briefly describe what happened");
     logResults(history, "user-generated bug report", description);
   };
