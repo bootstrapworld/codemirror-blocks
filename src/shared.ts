@@ -5,7 +5,6 @@ import type { Options } from "./CodeMirrorBlocks";
 type Shared = {
   cm: CodeMirror.Editor;
   options: Options;
-  buffer: HTMLTextAreaElement;
   search: {
     onSearch: Function;
     search: Function;
