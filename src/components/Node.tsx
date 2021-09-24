@@ -14,6 +14,7 @@ import CodeMirror from "codemirror";
 import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
+import { InputEnv } from "../keymap";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -62,22 +63,8 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
     this.props.activateByNid(currentNode.nid, { allowMove: false });
   };
 
-  handleClick = (e: React.MouseEvent) => {
-    const { inToolbar, isCollapsed, normallyEditable } = this.props;
-    e.stopPropagation();
-    if (inToolbar) return;
-    if (normallyEditable) this.handleMakeEditable();
-  };
-
   handleDoubleClick = (e: React.MouseEvent) => {
-    const {
-      inToolbar,
-      isCollapsed,
-      normallyEditable,
-      collapse,
-      uncollapse,
-      node,
-    } = this.props;
+    const { inToolbar, isCollapsed, collapse, uncollapse, node } = this.props;
     e.stopPropagation();
     if (inToolbar) return;
     if (isCollapsed) {
@@ -94,35 +81,41 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
     }
   };
 
-  handleMakeEditable = () => {
-    if (!isErrorFree() || this.props.inToolbar) return;
-    this.setState({ editable: true });
-    SHARED.cm.refresh(); // is this needed?
-  };
-
   handleDisableEditable = () => this.setState({ editable: false });
 
-  setLeft() {
-    const dropTargetId = findAdjacentDropTargetId(this.props.node, true);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
-    }
-    return !!dropTargetId;
-  }
-
-  setRight() {
-    const dropTargetId = findAdjacentDropTargetId(this.props.node, false);
-    if (dropTargetId) {
-      this.props.setEditable(dropTargetId, true);
-    }
-    return !!dropTargetId;
-  }
-
-  isLocked() {
-    return this.props.node.isLockedP;
-  }
-
   render() {
+    const isLocked = () => this.props.node.isLockedP;
+    const handleMakeEditable = () => {
+      if (!isErrorFree() || this.props.inToolbar) return;
+      this.setState({ editable: true });
+      SHARED.cm.refresh(); // is this needed?
+    };
+    const keydownEnv: InputEnv = {
+      isLocked,
+      handleMakeEditable,
+      setLeft: () => {
+        const dropTargetId = findAdjacentDropTargetId(this.props.node, true);
+        if (dropTargetId) {
+          this.props.setEditable(dropTargetId, true);
+        }
+        return !!dropTargetId;
+      },
+      setRight: () => {
+        const dropTargetId = findAdjacentDropTargetId(this.props.node, false);
+        if (dropTargetId) {
+          this.props.setEditable(dropTargetId, true);
+        }
+        return !!dropTargetId;
+      },
+      // TODO(pcardune): don't blindly pass in all props
+      props: this.props,
+    };
+    const handleClick = (e: React.MouseEvent) => {
+      const { inToolbar, isCollapsed, normallyEditable } = this.props;
+      e.stopPropagation();
+      if (inToolbar) return;
+      if (normallyEditable) handleMakeEditable();
+    };
     const {
       isSelected,
       isCollapsed,
@@ -136,7 +129,7 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
 
     let comment = node.options.comment;
     if (comment) comment.id = `block-node-${node.id}-comment`;
-    const locked = this.isLocked();
+    const locked = isLocked();
 
     const props: HTMLAttributes<HTMLSpanElement> = {
       id: `block-node-${node.id}`,
@@ -198,12 +191,12 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
           }
           title={textMarker ? textMarker.options.title : null}
           onMouseDown={this.handleMouseDown}
-          onClick={this.handleClick}
+          onClick={handleClick}
           onDoubleClick={this.handleDoubleClick}
           onDragStart={this.handleMouseDragRelated}
           onDragEnd={this.handleMouseDragRelated}
           onDrop={this.handleMouseDragRelated}
-          onKeyDown={(e) => store.onKeyDown(e, this)}
+          onKeyDown={(e) => store.onKeyDown(e, keydownEnv)}
         >
           {children}
           {comment && comment.reactElement()}
