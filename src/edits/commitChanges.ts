@@ -9,8 +9,9 @@ import {
 } from "../utils";
 import { activateByNid } from "../actions";
 import patch from "./patchAst";
-import { AST, ASTNode, Pos } from "../ast";
+import { AST, ASTNode } from "../ast";
 import type { EditorChange } from "codemirror";
+import { getReducerActivities } from "../reducers";
 
 type FocusHint = (ast: AST) => ASTNode | null | "fallback";
 // commitChanges :
@@ -77,7 +78,7 @@ export function commitChanges(
     }
     return { newAST, focusId };
   } catch (e) {
-    logResults(window.reducerActivities, e);
+    logResults(getReducerActivities(), e);
   }
 }
 

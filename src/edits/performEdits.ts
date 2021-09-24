@@ -17,6 +17,7 @@ import {
 } from "./fakeAstEdits";
 import { store } from "../store";
 import type { EditorChange } from "codemirror";
+import { getReducerActivities } from "../reducers";
 
 /**
  *
@@ -175,7 +176,7 @@ export function performEdits(
       );
       onSuccess({ newAST, focusId });
     } catch (e) {
-      logResults(window.reducerActivities, e);
+      logResults(getReducerActivities(), e);
     }
   } else {
     onError(result.exception);
