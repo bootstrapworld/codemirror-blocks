@@ -877,11 +877,11 @@ class BlockEditor extends Component<BlockEditorProps> {
     SHARED.options = options;
     SHARED.search = search;
 
-    this.pendingTimeout = setAfterDOMUpdate(this.refreshCM() as $TSFixMe);
+    this.refreshCM();
   }
 
   componentDidUpdate() {
-    this.pendingTimeout = setAfterDOMUpdate(this.refreshCM() as $TSFixMe);
+    this.refreshCM();
   }
 
   /**
