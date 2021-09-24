@@ -337,12 +337,20 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   ast?: AST;
   newAST?: AST;
 
+  private recordedMarks: Map<
+    number,
+    {
+      from: CodeMirror.Position;
+      to: CodeMirror.Position;
+      options: CodeMirror.TextMarkerOptions;
+    }
+  > = new Map();
+
   constructor(props: ToggleEditorProps) {
     super(props);
 
     this.toolbarRef = createRef();
 
-    SHARED.recordedMarks = new Map();
     SHARED.parse = this.props.language.parse;
 
     this.eventHandlers = {}; // blank event-handler record
@@ -428,7 +436,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
     this.pendingTimeout = setAfterDOMUpdate(() => {
-      SHARED.recordedMarks.forEach(
+      this.recordedMarks.forEach(
         (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
           let node = ast.getNodeByNId(k);
           if (node) {
@@ -449,7 +457,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    * the editor mounts.
    */
   recordMarks(oldAST: AST) {
-    SHARED.recordedMarks.clear();
+    this.recordedMarks.clear();
     (SHARED.cm as CodeMirror.Editor)
       .getAllMarks()
       .filter((m) => !m.BLOCK_NODE_ID && m.type !== "bookmark")
@@ -477,7 +485,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           throw new Error("Could not find node " + oldNode.nid + " in new AST");
         }
         const { from, to } = newNode;
-        SHARED.recordedMarks.set(oldNode.nid, {
+        this.recordedMarks.set(oldNode.nid, {
           from: from,
           to: to,
           options: {
