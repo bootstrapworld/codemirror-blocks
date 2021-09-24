@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ContentEditable, {
   Props as ContentEditableProps,
@@ -41,7 +41,7 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
 
 type Props = ContentEditableProps & {
   target?: Target;
-  children?: ReactElement;
+  children?: React.ReactNode;
   isInsertion: boolean;
   value?: string | null;
   onChange?: (e: string) => void;

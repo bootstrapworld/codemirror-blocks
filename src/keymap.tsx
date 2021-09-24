@@ -66,7 +66,15 @@ export type InputEnv = {
       nid: number,
       options?: { allowMove: boolean; record?: boolean }
     ) => void;
-  } & Partial<EnhancedNodeProps>;
+
+    // the following are from Node.tsx
+    collapse?: (id: string) => void;
+    uncollapse?: (id: string) => void;
+    setCursor?: (cur: CodeMirror.Position) => void;
+    isCollapsed?: boolean;
+    expandable?: boolean;
+    normallyEditable?: boolean;
+  };
   node?: ASTNode;
 
   // these get tacked on by the keyDown function
