@@ -1,4 +1,4 @@
-import React, { HTMLAttributes } from "react";
+import React, { HTMLAttributes, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ASTNode } from "../ast";
 import { drop, activateByNid, setCursor, ReplaceNodeTarget } from "../actions";
@@ -22,7 +22,7 @@ import { InputEnv } from "../keymap";
 
 type NodeState = { editable: boolean; value: string | null };
 
-class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
+class BlockComponentNode extends BlockComponent<EnhancedNodeProps, NodeState> {
   static defaultProps = {
     normallyEditable: false,
     expandable: true,
@@ -48,223 +48,38 @@ class Node extends BlockComponent<EnhancedNodeProps, NodeState> {
   }
 
   render() {
-    const isLocked = () => this.props.node.isLockedP;
-    const handleMakeEditable = () => {
-      if (!isErrorFree() || this.props.inToolbar) return;
-      this.setState({ editable: true });
-      SHARED.cm.refresh(); // is this needed?
-    };
-    const keydownEnv: InputEnv = {
-      isLocked,
-      handleMakeEditable,
-      setLeft: () => {
-        const dropTargetId = findAdjacentDropTargetId(this.props.node, true);
-        if (dropTargetId) {
-          this.props.setEditable(dropTargetId, true);
-        }
-        return !!dropTargetId;
-      },
-      setRight: () => {
-        const dropTargetId = findAdjacentDropTargetId(this.props.node, false);
-        if (dropTargetId) {
-          this.props.setEditable(dropTargetId, true);
-        }
-        return !!dropTargetId;
-      },
-      // TODO(pcardune): don't blindly pass in all props
-      props: this.props,
-    };
-    const handleClick = (e: React.MouseEvent) => {
-      const { inToolbar, isCollapsed, normallyEditable } = this.props;
-      e.stopPropagation();
-      if (inToolbar) return;
-      if (normallyEditable) handleMakeEditable();
-    };
-    // nid can be stale!! Always obtain a fresh copy of the node
-    // from getState() before calling activateByNid
-    const handleMouseDown = (e: React.MouseEvent) => {
-      if (this.props.inToolbar) return;
-      // do not process toolbar nodes
-      else e.stopPropagation(); // prevent ancestors from stealing focus
-      if (!isErrorFree()) return; // TODO(Oak): is this the best way?
-      const { ast } = store.getState();
-      const currentNode = ast.getNodeById(this.props.node.id);
-      this.props.activateByNid(currentNode.nid, { allowMove: false });
-    };
-
-    const handleDoubleClick = (e: React.MouseEvent) => {
-      const { inToolbar, isCollapsed, collapse, uncollapse, node } = this.props;
-      e.stopPropagation();
-      if (inToolbar) return;
-      if (isCollapsed) {
-        uncollapse(node.id);
-      } else {
-        collapse(node.id);
-      }
-    };
-
-    const handleMouseDragRelated = (e: React.MouseEvent<HTMLSpanElement>) => {
-      if (e.type === "dragstart") {
-        let dt = new DataTransfer();
-        dt.setData("text/plain", (e.target as HTMLSpanElement).innerText);
-      }
-    };
-    const {
-      isSelected,
-      isCollapsed,
-      expandable,
-      textMarker,
-      children,
-      inToolbar,
-      node,
-      ...passingProps
-    } = this.props;
-
-    let comment = node.options.comment;
-    if (comment) comment.id = `block-node-${node.id}-comment`;
-    const locked = isLocked();
-
-    const props: HTMLAttributes<HTMLSpanElement> = {
-      id: `block-node-${node.id}`,
-      tabIndex: -1,
-      "aria-selected": isSelected,
-      "aria-label": node.shortDescription() + ",",
-      "aria-labelledby": `block-node-${node.id} ${comment ? comment.id : ""}`,
-      "aria-disabled": locked ? "true" : undefined,
-      "aria-expanded": expandable && !locked ? !isCollapsed : undefined,
-      "aria-setsize": node["aria-setsize"],
-      "aria-posinset": node["aria-posinset"],
-      "aria-level": node.level,
-    };
-
-    const classes: Parameters<typeof classNames> = [
-      { "blocks-locked": locked },
-      `blocks-${node.type}`,
-    ];
-
-    if (this.state.editable) {
-      // TODO: combine passingProps and contentEditableProps
-      return (
-        <NodeEditable
-          {...passingProps}
-          onDisableEditable={() => this.setState({ editable: false })}
-          extraClasses={classes}
-          isInsertion={false}
-          target={new ReplaceNodeTarget(node)}
-          value={this.state.value}
-          onChange={(value) => this.setState({ value })}
-          onDragStart={handleMouseDragRelated}
-          onDragEnd={handleMouseDragRelated}
-          onDrop={handleMouseDragRelated}
-          contentEditableProps={props}
-        />
-      );
-    } else {
-      const {
-        connectDragSource,
-        isDragging,
-        connectDropTarget,
-        isOver,
-        connectDragPreview,
-      } = this.props;
-      classes.push({ "blocks-over-target": isOver, "blocks-node": true });
-      if (textMarker?.options.className)
-        classes.push(textMarker.options.className);
-      let result = (
-        <span
-          {...props}
-          className={classNames(classes)}
-          ref={(el) => (node.element = el)}
-          role={inToolbar ? "listitem" : "treeitem"}
-          style={
-            {
-              opacity: isDragging ? 0.5 : 1,
-              cssText: textMarker ? textMarker.options.css : null,
-            } as any
-          }
-          title={textMarker ? textMarker.options.title : null}
-          onMouseDown={handleMouseDown}
-          onClick={handleClick}
-          onDoubleClick={handleDoubleClick}
-          onDragStart={handleMouseDragRelated}
-          onDragEnd={handleMouseDragRelated}
-          onDrop={handleMouseDragRelated}
-          onKeyDown={(e) => store.onKeyDown(e, keydownEnv)}
-        >
-          {children}
-          {comment && comment.reactElement()}
-        </span>
-      );
-      if (this.props.normallyEditable) {
-        result = connectDropTarget(result);
-      }
-      result = connectDragPreview(connectDragSource(result), {
-        offsetX: 1,
-        offsetY: 1,
-      });
-      result = (
-        <NodeContext.Provider value={{ node: this.props.node }}>
-          {result}
-        </NodeContext.Provider>
-      );
-      return result;
-    }
+    return (
+      <Node
+        {...this.props}
+        state={this.state}
+        setState={(s) => this.setState(s)}
+      />
+    );
   }
 }
 
-type ReduxProps = {
-  isSelected: boolean;
-  isCollapsed: boolean;
-  textMarker: CodeMirror.TextMarker;
-  collapse: (id: string) => void;
-  uncollapse: (id: string) => void;
-  setCursor: (cur: CodeMirror.Position) => void;
-  activateByNid: (
-    nid: number,
-    options: { allowMove?: boolean; record?: boolean }
-  ) => void;
-  setEditable: (id: string, bool: boolean) => void;
-  dispatch: AppDispatch;
-};
+const Node = (
+  props: EnhancedNodeProps & {
+    state: NodeState;
+    setState: (s: NodeState) => void;
+  }
+) => {
+  const editable = props.state.editable;
+  const setEditable = (editable: boolean) =>
+    props.setState({ ...props.state, editable });
+  const value = props.state.value;
+  const setValue = (value: string) => props.setState({ ...props.state, value });
 
-type DragSourceProps = {
-  connectDragSource: Function;
-  isDragging: boolean;
-  connectDragPreview: Function;
-};
-
-export type EnhancedNodeProps = ConnectedNodeProps &
-  ReduxProps &
-  DragSourceProps & {
-    // These all come from the dnd enhancers and don't need
-    // to be supplied by users of the default export
-    connectDropTarget: Function;
-    isOver: boolean;
+  const isLocked = () => props.node.isLockedP;
+  const handleMakeEditable = () => {
+    if (!isErrorFree() || props.inToolbar) return;
+    props.setState({ ...props.state, editable: true });
+    setEditable(true);
+    SHARED.cm.refresh(); // is this needed?
   };
 
-type ConnectedNodeProps = {
-  node: ASTNode;
-  inToolbar?: boolean;
-  normallyEditable?: boolean;
-  expandable: boolean;
-  children?: React.ReactFragment;
-};
-
-const ConnectedNode = (props: ConnectedNodeProps) => {
   const dispatch: AppDispatch = useDispatch();
-  const { node } = props;
-  const stateProps = useSelector(
-    ({ selections, collapsedList, markedMap }: RootState) => {
-      // be careful here. Only node's id is accurate. Use getNodeById
-      // to access accurate info
-      return {
-        isSelected: selections.includes(node.id),
-        isCollapsed: collapsedList.includes(node.id),
-        textMarker: markedMap.get(node.id),
-      };
-    }
-  );
-  const dispatchProps = {
+  const redux = {
     dispatch,
     collapse: (id: string) => dispatch({ type: "COLLAPSE", id }),
     uncollapse: (id: string) => dispatch({ type: "UNCOLLAPSE", id }),
@@ -276,18 +91,88 @@ const ConnectedNode = (props: ConnectedNodeProps) => {
     setEditable: (id: string, bool: boolean) =>
       dispatch({ type: "SET_EDITABLE", id, bool }),
   };
-  const [collected, connectDragSource, connectDragPreview] = useDrag({
-    type: ItemTypes.NODE,
-    item: () => {
-      if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
-        return { content: props.node.toString() };
+
+  const keydownEnv: InputEnv = {
+    isLocked,
+    handleMakeEditable,
+    setLeft: () => {
+      const dropTargetId = findAdjacentDropTargetId(props.node, true);
+      if (dropTargetId) {
+        redux.setEditable(dropTargetId, true);
       }
-      return { id: props.node.id };
+      return !!dropTargetId;
     },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
+    setRight: () => {
+      const dropTargetId = findAdjacentDropTargetId(props.node, false);
+      if (dropTargetId) {
+        redux.setEditable(dropTargetId, true);
+      }
+      return !!dropTargetId;
+    },
+    // TODO(pcardune): don't blindly pass in all props
+    props: { ...props, ...redux },
+  };
+  const handleClick = (e: React.MouseEvent) => {
+    const { inToolbar, normallyEditable } = props;
+    e.stopPropagation();
+    if (inToolbar) return;
+    if (normallyEditable) handleMakeEditable();
+  };
+  // nid can be stale!! Always obtain a fresh copy of the node
+  // from getState() before calling activateByNid
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (props.inToolbar) return;
+    // do not process toolbar nodes
+    else e.stopPropagation(); // prevent ancestors from stealing focus
+    if (!isErrorFree()) return; // TODO(Oak): is this the best way?
+    const { ast } = store.getState();
+    const currentNode = ast.getNodeById(props.node.id);
+    redux.activateByNid(currentNode.nid, { allowMove: false });
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (props.inToolbar) return;
+    if (props.isCollapsed) {
+      redux.uncollapse(props.node.id);
+    } else {
+      redux.collapse(props.node.id);
+    }
+  };
+
+  const handleMouseDragRelated = (e: React.MouseEvent<HTMLSpanElement>) => {
+    if (e.type === "dragstart") {
+      let dt = new DataTransfer();
+      dt.setData("text/plain", (e.target as HTMLSpanElement).innerText);
+    }
+  };
+  const { ...passingProps } = props;
+
+  let comment = props.node.options.comment;
+  if (comment) comment.id = `block-node-${props.node.id}-comment`;
+  const locked = isLocked();
+
+  const contentEditableProps: HTMLAttributes<HTMLSpanElement> = {
+    id: `block-node-${props.node.id}`,
+    tabIndex: -1,
+    "aria-selected": props.isSelected,
+    "aria-label": props.node.shortDescription() + ",",
+    "aria-labelledby": `block-node-${props.node.id} ${
+      comment ? comment.id : ""
+    }`,
+    "aria-disabled": locked ? "true" : undefined,
+    "aria-expanded":
+      props.expandable && !locked ? !props.isCollapsed : undefined,
+    "aria-setsize": props.node["aria-setsize"],
+    "aria-posinset": props.node["aria-posinset"],
+    "aria-level": props.node.level,
+  };
+
+  const classes: Parameters<typeof classNames> = [
+    { "blocks-locked": locked },
+    `blocks-${props.node.type}`,
+  ];
+
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_item, monitor) => {
@@ -303,18 +188,114 @@ const ConnectedNode = (props: ConnectedNodeProps) => {
       };
     },
   });
-  return (
-    <Node
-      {...stateProps}
-      {...dispatchProps}
-      {...props}
-      isDragging={collected.isDragging}
-      connectDragPreview={connectDragPreview}
-      connectDragSource={connectDragSource}
-      isOver={isOver}
-      connectDropTarget={connectDropTarget}
-    />
+  const [{ isDragging }, connectDragSource, connectDragPreview] = useDrag({
+    type: ItemTypes.NODE,
+    item: () => {
+      if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
+        return { content: props.node.toString() };
+      }
+      return { id: props.node.id };
+    },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  if (editable) {
+    // TODO: combine passingProps and contentEditableProps
+    return (
+      <NodeEditable
+        {...passingProps}
+        onDisableEditable={() => setEditable(false)}
+        extraClasses={classes}
+        isInsertion={false}
+        target={new ReplaceNodeTarget(props.node)}
+        value={value}
+        onChange={(value) => setValue(value)}
+        onDragStart={handleMouseDragRelated}
+        onDragEnd={handleMouseDragRelated}
+        onDrop={handleMouseDragRelated}
+        contentEditableProps={contentEditableProps}
+      >
+        {props.children}
+      </NodeEditable>
+    );
+  } else {
+    classes.push({ "blocks-over-target": isOver, "blocks-node": true });
+    if (props.textMarker?.options.className) {
+      classes.push(props.textMarker.options.className);
+    }
+    let result = (
+      <span
+        {...contentEditableProps}
+        className={classNames(classes)}
+        ref={(el) => (props.node.element = el)}
+        role={props.inToolbar ? "listitem" : "treeitem"}
+        style={
+          {
+            opacity: isDragging ? 0.5 : 1,
+            cssText: props.textMarker ? props.textMarker.options.css : null,
+          } as any
+        }
+        title={props.textMarker ? props.textMarker.options.title : null}
+        onMouseDown={handleMouseDown}
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+        onDragStart={handleMouseDragRelated}
+        onDragEnd={handleMouseDragRelated}
+        onDrop={handleMouseDragRelated}
+        onKeyDown={(e) => store.onKeyDown(e, keydownEnv)}
+      >
+        {props.children}
+        {comment && comment.reactElement()}
+      </span>
+    );
+    if (props.normallyEditable) {
+      result = connectDropTarget(result);
+    }
+    result = connectDragPreview(connectDragSource(result), {
+      offsetX: 1,
+      offsetY: 1,
+    });
+    result = (
+      <NodeContext.Provider value={{ node: props.node }}>
+        {result}
+      </NodeContext.Provider>
+    );
+    return result;
+  }
+};
+
+type ReduxProps = {
+  isSelected: boolean;
+  isCollapsed: boolean;
+  textMarker: CodeMirror.TextMarker;
+};
+
+export type EnhancedNodeProps = ConnectedNodeProps & ReduxProps;
+
+type ConnectedNodeProps = {
+  node: ASTNode;
+  inToolbar?: boolean;
+  normallyEditable?: boolean;
+  expandable: boolean;
+  children?: React.ReactNode | React.ReactElement;
+};
+
+const ConnectedNode = (props: ConnectedNodeProps) => {
+  const { node } = props;
+  const stateProps = useSelector(
+    ({ selections, collapsedList, markedMap }: RootState) => {
+      // be careful here. Only node's id is accurate. Use getNodeById
+      // to access accurate info
+      return {
+        isSelected: selections.includes(node.id),
+        isCollapsed: collapsedList.includes(node.id),
+        textMarker: markedMap.get(node.id),
+      };
+    }
   );
+  return <BlockComponentNode {...stateProps} {...props} />;
 };
 
 export type NodeProps = GetProps<typeof ConnectedNode>;
