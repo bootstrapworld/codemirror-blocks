@@ -35,27 +35,85 @@ export type afterDOMUpdateHandle = {
   raf: number;
   timeout?: ReturnType<typeof setTimeout>;
 };
+
+const uncompletedDOMUpdates: Set<afterDOMUpdateHandle> = new Set();
+const afterAllDOMUpdateCallbacks: (() => void)[] = [];
+
+function markDOMUpdateCompleted(handle: afterDOMUpdateHandle) {
+  // remove the handle from the set of uncompleted handles
+  uncompletedDOMUpdates.delete(handle);
+
+  // check that there are still 0 updates left
+  // after each callback is called, since the callback could
+  // theoreticaly add more dom updates into the
+  // queue.
+  while (
+    uncompletedDOMUpdates.size === 0 &&
+    afterAllDOMUpdateCallbacks.length > 0
+  ) {
+    afterAllDOMUpdateCallbacks.shift()();
+  }
+}
+
+/**
+ * A combination of setTimeout and requestAnimationFrame that executes
+ * a callback function after a new animation frame is available and
+ * the given delay has past.
+ *
+ * @param callback callback to call
+ * @param extraDelay optional delay in milliseconds
+ * @returns a handle that can passed to {@link cancelAfterDOMUpdate}
+ *
+ * @internal
+ */
 export function setAfterDOMUpdate(
-  f: () => void,
+  callback: () => void,
   extraDelay?: number
 ): afterDOMUpdateHandle {
   const handle: afterDOMUpdateHandle = {
-    raf: window.requestAnimationFrame(
-      () => (handle.timeout = setTimeout(f, extraDelay))
-    ),
+    raf: window.requestAnimationFrame(() => {
+      handle.timeout = setTimeout(() => {
+        callback();
+        markDOMUpdateCompleted(handle);
+      }, extraDelay);
+    }),
   };
+  uncompletedDOMUpdates.add(handle);
   return handle;
 }
 
+/**
+ * Cancels a pending call to {@link setAfterDOMUpdate}
+ *
+ * @param handle a handle returned by {@link setAfterDOMUpdate}
+ *
+ * @internal
+ */
 export function cancelAfterDOMUpdate(handle: afterDOMUpdateHandle): void {
-  if (!handle) {
-    return;
+  if (handle) {
+    cancelAnimationFrame(handle.raf);
+    if (handle.timeout) {
+      clearTimeout(handle.timeout);
+    }
+    markDOMUpdateCompleted(handle);
   }
-  cancelAnimationFrame(handle.raf);
-  if (!handle.timeout) {
-    return;
-  }
-  clearTimeout(handle.timeout);
+}
+
+/**
+ * Waits for all outstanding calls to setAfterDOMUpdate to finish or
+ * be cancelled.
+ *
+ * This should really only be used by tests.
+ *
+ * @returns a promise that will be resolved once all dom updates have finished
+ *
+ * @internal
+ */
+export function afterAllDOMUpdates(): Promise<void> {
+  return new Promise((resolve) => {
+    afterAllDOMUpdateCallbacks.push(resolve);
+    setAfterDOMUpdate(() => {});
+  });
 }
 
 // make sure we never assign the same ID to two nodes in ANY active
