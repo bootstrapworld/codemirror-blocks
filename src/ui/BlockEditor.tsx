@@ -867,7 +867,6 @@ class BlockEditor extends Component<BlockEditorProps> {
   };
 
   componentWillUnmount() {
-    SHARED.buffer.remove();
     cancelAfterDOMUpdate(this.pendingTimeout);
   }
 
@@ -877,14 +876,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     // TODO: pass these with a React Context or something sensible like that.
     SHARED.options = options;
     SHARED.search = search;
-    // create a hidden buffer, for use with copy/cut/paste
-    const clipboardBuffer = document.createElement("textarea");
-    (clipboardBuffer as $TSFixMe).ariaHidden = true;
-    clipboardBuffer.tabIndex = -1;
-    clipboardBuffer.style.opacity = "0";
-    clipboardBuffer.style.height = "1px";
-    SHARED.buffer = clipboardBuffer;
-    document.body.appendChild(SHARED.buffer);
+
     this.pendingTimeout = setAfterDOMUpdate(this.refreshCM() as $TSFixMe);
   }
 

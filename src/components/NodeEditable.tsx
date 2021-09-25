@@ -110,9 +110,8 @@ const NodeEditable = (props: Props) => {
         setErrorId("");
         say(annt);
       };
-      const onError = () => {
-        const errorText = SHARED.getExceptionMessage(e);
-        console.log(errorText);
+      const onError = (e: any) => {
+        console.error(e);
         setErrorId(target.node ? target.node.id : "editing");
         if (element.current) {
           selectElement(element.current, false);
