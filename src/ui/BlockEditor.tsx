@@ -22,7 +22,7 @@ import {
 } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 import BlockComponent from "../components/BlockComponent";
-import { keyDown } from "../keymap";
+import { InputEnv, keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { Editor, SelectionOptions } from "codemirror";
@@ -879,6 +879,15 @@ class BlockEditor extends Component<BlockEditorProps> {
     if (this.props.languageId) {
       classes.push(`blocks-language-${this.props.languageId}`);
     }
+
+    const keyDownEnv: InputEnv = {
+      props: {
+        dispatch: this.props.dispatch,
+        activateByNid: this.props.activateByNid,
+        setCursor: this.props.setCursor,
+      },
+    };
+
     return (
       <>
         <DragAndDropEditor
@@ -890,7 +899,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
-          onKeyDown={(_, e) => keyDown(e, this)}
+          onKeyDown={(_, e) => keyDown(e, keyDownEnv)}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount}
         />
