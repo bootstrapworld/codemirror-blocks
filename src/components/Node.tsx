@@ -93,6 +93,8 @@ const Node = (
   };
 
   const keydownEnv: InputEnv = {
+    node: props.node,
+
     isLocked,
     handleMakeEditable,
     setLeft: () => {
@@ -109,8 +111,15 @@ const Node = (
       }
       return !!dropTargetId;
     },
-    // TODO(pcardune): don't blindly pass in all props
-    props: { ...props, ...redux },
+    normallyEditable: props.normallyEditable,
+    expandable: props.expandable,
+    isCollapsed: props.isCollapsed,
+
+    dispatch: redux.dispatch,
+    activateByNid: redux.activateByNid,
+    collapse: redux.collapse,
+    uncollapse: redux.uncollapse,
+    setCursor: redux.setCursor,
   };
   const handleClick = (e: React.MouseEvent) => {
     const { inToolbar, normallyEditable } = props;

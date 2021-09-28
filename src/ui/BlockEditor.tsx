@@ -881,11 +881,9 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
 
     const keyDownEnv: InputEnv = {
-      props: {
-        dispatch: this.props.dispatch,
-        activateByNid: this.props.activateByNid,
-        setCursor: this.props.setCursor,
-      },
+      dispatch: this.props.dispatch,
+      activateByNid: this.props.activateByNid,
+      setCursor: this.props.setCursor,
     };
 
     return (

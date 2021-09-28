@@ -24,9 +24,8 @@ import { say } from "./announcer";
 import { findAdjacentDropTargetId as getDTid } from "./components/DropTarget";
 
 import type { AppDispatch } from "./store";
-import type { AST, ASTNode } from "./ast";
+import type { ASTNode } from "./ast";
 import type { RootState } from "./reducers";
-import type { BlockEditorProps } from "./ui/BlockEditor";
 import { KeyDownContext } from "./ui/ToggleEditor";
 
 /**
@@ -53,27 +52,24 @@ export type InputEnv = {
 
   // These somehow come from somewhere. Either a BlockEditor or a Node
   // elements presumably.
-  cur?: CodeMirror.Position;
-  dispatch?: AppDispatch;
-  ast?: AST;
-  props: {
-    dispatch: AppDispatch;
-    activateByNid: (
-      nid: number,
-      options?: { allowMove: boolean; record?: boolean }
-    ) => void;
+  dispatch: AppDispatch;
+  activateByNid: (
+    nid: number,
+    options?: { allowMove: boolean; record?: boolean }
+  ) => void;
 
-    // the following are from Node.tsx
-    collapse?: (id: string) => void;
-    uncollapse?: (id: string) => void;
-    setCursor?: (cur: CodeMirror.Position) => void;
-    isCollapsed?: boolean;
-    expandable?: boolean;
-    normallyEditable?: boolean;
-  };
+  // the following are from Node.tsx
+  collapse?: (id: string) => void;
+  uncollapse?: (id: string) => void;
+  setCursor: (cur: CodeMirror.Position) => void;
+  isCollapsed?: boolean;
+  expandable?: boolean;
+  normallyEditable?: boolean;
   node?: ASTNode;
+};
 
-  // these get tacked on by the keyDown function
+type Env = InputEnv & {
+  state: RootState;
   fastSkip?: (next: (node: ASTNode) => ASTNode) => ASTNode;
   activate?: (
     n: ASTNode | null | undefined,
@@ -81,12 +77,6 @@ export type InputEnv = {
   ) => void;
   activateNoRecord?: (node?: ASTNode) => void;
 };
-
-type Env = InputEnv &
-  InputEnv["props"] &
-  Pick<RootState, "ast" | "selections"> & {
-    state: RootState;
-  };
 
 type KeyMap = { [index: string]: string };
 
@@ -187,7 +177,7 @@ function pasteHandler(this: Env, _: Editor, e: React.KeyboardEvent) {
   const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
   const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
   // Case 1: Overwriting selected nodes
-  if (this.selections.includes(this.node.id)) {
+  if (this.state.selections.includes(this.node.id)) {
     paste(new ReplaceNodeTarget(this.node));
   }
   // Case 2: Inserting to the left or right of the root
@@ -223,9 +213,12 @@ export const commandMap: {
       let prev = this.fastSkip((node) => node.prev);
       if (prev) {
         return this.activateByNid(prev.nid);
+      } else {
+        return playSound(BEEP);
       }
     }
-    const prevNode = this.cur && this.ast.getNodeBeforeCur(this.cur);
+    const prevNode =
+      this.state.cur && this.state.ast.getNodeBeforeCur(this.state.cur);
     return prevNode
       ? this.activateByNid(prevNode.nid, { allowMove: true })
       : playSound(BEEP);
@@ -237,9 +230,12 @@ export const commandMap: {
       let next = this.fastSkip((node) => node.next);
       if (next) {
         return this.activateByNid(next.nid);
+      } else {
+        return playSound(BEEP);
       }
     }
-    const nextNode = this.cur && this.ast.getNodeAfterCur(this.cur);
+    const nextNode =
+      this.state.cur && this.state.ast.getNodeAfterCur(this.state.cur);
     return nextNode
       ? this.activateByNid(nextNode.nid, { allowMove: true })
       : playSound(BEEP);
@@ -382,8 +378,8 @@ export const commandMap: {
 
     // if the node is already selected, remove it, its descendants
     // and any ancestor
-    if (this.selections.includes(this.node.id)) {
-      const prunedSelection = this.selections
+    if (this.state.selections.includes(this.node.id)) {
+      const prunedSelection = this.state.selections
         .filter((s) => !descendantIds(node).includes(s))
         .filter((s) => !ancestorIds(node).includes(s));
       this.dispatch({
@@ -392,9 +388,14 @@ export const commandMap: {
       });
       // TODO(Emmanuel): announce removal
     } else {
-      const isContained = (id: string) => this.ast.isAncestor(node.id, id);
-      const doesContain = (id: string) => this.ast.isAncestor(id, node.id);
-      let [removed, newSelections] = partition(this.selections, isContained);
+      const isContained = (id: string) =>
+        this.state.ast.isAncestor(node.id, id);
+      const doesContain = (id: string) =>
+        this.state.ast.isAncestor(id, node.id);
+      let [removed, newSelections] = partition(
+        this.state.selections,
+        isContained
+      );
       for (const _r of removed) {
         // TODO(Emmanuel): announce removal
       }
@@ -445,10 +446,10 @@ export const commandMap: {
     if (!this.node) {
       return CodeMirror.Pass;
     }
-    if (!this.selections.length) {
+    if (!this.state.selections.length) {
       return say("Nothing selected");
     }
-    const nodesToDelete = this.selections.map(this.ast.getNodeById);
+    const nodesToDelete = this.state.selections.map(this.state.ast.getNodeById);
     delete_(nodesToDelete, "deleted");
   },
 
@@ -475,10 +476,10 @@ export const commandMap: {
     if (!this.node) {
       return CodeMirror.Pass;
     }
-    if (!this.selections.length) {
+    if (!this.state.selections.length) {
       return say("Nothing selected");
     }
-    const nodesToCut = this.selections.map(this.ast.getNodeById);
+    const nodesToCut = this.state.selections.map(this.state.ast.getNodeById);
     copy(nodesToCut, "cut");
     delete_(nodesToCut);
   },
@@ -488,8 +489,10 @@ export const commandMap: {
       return CodeMirror.Pass;
     }
     // if no nodes are selected, do it on focused node's id instead
-    const nodeIds = !this.selections.length ? [this.node.id] : this.selections;
-    const nodesToCopy = nodeIds.map(this.ast.getNodeById);
+    const nodeIds = !this.state.selections.length
+      ? [this.node.id]
+      : this.state.selections;
+    const nodesToCopy = nodeIds.map(this.state.ast.getNodeById);
     copy(nodesToCopy, "copied");
   },
 
@@ -538,42 +541,44 @@ export const commandMap: {
 // editor's keyMap. If there is a handler for that event, flatten the
 // environment and add some utility methods, then set the key handler's
 // "this" object to be that environment and call it.
-export function keyDown(e: React.KeyboardEvent, env: InputEnv) {
+export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
   var handler = commandMap[defaultKeyMap[CodeMirror.keyName(e)]];
   if (handler) {
     e.stopPropagation();
-    env.props.dispatch((_, getState) => {
+    inputEnv.dispatch((_, getState) => {
       // set up the environment
       const state = getState();
-      const { ast, selections } = state;
-      Object.assign(env, env.props, { ast, selections, state });
-      // add convenience methods
-      env.fastSkip = function (next) {
-        return skipCollapsed(env.node, next, state);
-      };
-      env.activate = (n, options = { allowMove: true, record: true }) => {
-        if (n === null) {
-          playSound(BEEP);
-        }
-        env.props.activateByNid(
-          n === undefined ? env.node.nid : n.nid,
-          options
-        );
-      };
-      env.activateNoRecord = (node) => {
-        if (!node) {
-          return playSound(BEEP);
-        } // nothing to activate
-        env.dispatch(
-          activateByNid(node.nid, { record: false, allowMove: true })
-        );
+      const env: Env = {
+        ...inputEnv,
+        state,
+        // add convenience methods
+        fastSkip: (next: (node: ASTNode) => ASTNode) =>
+          skipCollapsed(env.node, next, state),
+        activate: (
+          n: ASTNode | null | undefined,
+          options = { allowMove: true, record: true }
+        ) => {
+          if (n === null) {
+            playSound(BEEP);
+          }
+          env.activateByNid(n === undefined ? env.node.nid : n.nid, options);
+        },
+        activateNoRecord: (node?: ASTNode) => {
+          if (!node) {
+            return playSound(BEEP);
+          } // nothing to activate
+          env.dispatch(
+            activateByNid(node.nid, { record: false, allowMove: true })
+          );
+        },
       };
       // If there's a node, make sure it's fresh
       if (env.node) {
-        env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid);
+        const updatedNode = state.ast.getNodeById(env.node.id);
+        env.node = updatedNode && state.ast.getNodeByNId(updatedNode.nid);
       }
+      handler.bind(env)(SHARED.cm, e);
     });
-    return handler.bind(env as Env)(SHARED.cm, e);
   }
 }
 
