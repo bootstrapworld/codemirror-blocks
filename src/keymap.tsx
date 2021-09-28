@@ -1,5 +1,5 @@
 import React from "react";
-import CodeMirror, { Editor } from "codemirror";
+import CodeMirror from "codemirror";
 import SHARED from "./shared";
 import {
   delete_,
@@ -9,6 +9,7 @@ import {
   ReplaceNodeTarget,
   OverwriteTarget,
   activateByNid,
+  setCursor,
 } from "./actions";
 import {
   partition,
@@ -31,34 +32,18 @@ import { KeyDownContext } from "./ui/ToggleEditor";
 type BlockEditorEnv = {
   isNodeEnv: false;
   dispatch: AppDispatch;
-  activateByNid: (
-    nid: number,
-    options?: { allowMove: boolean; record?: boolean }
-  ) => void;
-  setCursor: (cur: CodeMirror.Position) => void;
 };
 
 type NodeEnv = {
   isNodeEnv: true;
 
-  // defined by Node react component
   isLocked: () => boolean;
   handleMakeEditable: (e?: React.KeyboardEvent) => void;
   setRight: () => boolean;
   setLeft: () => boolean;
 
-  // These somehow come from somewhere. Either a BlockEditor or a Node
-  // elements presumably.
   dispatch: AppDispatch;
-  activateByNid: (
-    nid: number,
-    options?: { allowMove: boolean; record?: boolean }
-  ) => void;
 
-  // the following are from Node.tsx
-  collapse: (id: string) => void;
-  uncollapse: (id: string) => void;
-  setCursor: (cur: CodeMirror.Position) => void;
   isCollapsed: boolean;
   expandable: boolean;
   normallyEditable: boolean;
@@ -211,7 +196,7 @@ const commandMap: {
     if (env.isNodeEnv) {
       let prev = env.fastSkip((node) => node.prev);
       if (prev) {
-        return env.activateByNid(prev.nid);
+        return env.dispatch(activateByNid(prev.nid));
       } else {
         return playSound(BEEP);
       }
@@ -219,7 +204,7 @@ const commandMap: {
     const prevNode =
       env.state.cur && env.state.ast.getNodeBeforeCur(env.state.cur);
     return prevNode
-      ? env.activateByNid(prevNode.nid, { allowMove: true })
+      ? env.dispatch(activateByNid(prevNode.nid, { allowMove: true }))
       : playSound(BEEP);
   },
 
@@ -228,7 +213,7 @@ const commandMap: {
     if (env.isNodeEnv) {
       let next = env.fastSkip((node) => node.next);
       if (next) {
-        return env.activateByNid(next.nid);
+        return env.dispatch(activateByNid(next.nid));
       } else {
         return playSound(BEEP);
       }
@@ -236,7 +221,7 @@ const commandMap: {
     const nextNode =
       env.state.cur && env.state.ast.getNodeAfterCur(env.state.cur);
     return nextNode
-      ? env.activateByNid(nextNode.nid, { allowMove: true })
+      ? env.dispatch(activateByNid(nextNode.nid, { allowMove: true }))
       : playSound(BEEP);
   },
 
@@ -244,14 +229,14 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    env.activateByNid(0, { allowMove: true });
+    env.dispatch(activateByNid(0, { allowMove: true }));
   },
 
   "Last Visible Block": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      env.activateByNid(getLastVisibleNode(env.state).nid);
+      env.dispatch(activateByNid(getLastVisibleNode(env.state).nid));
     }
   },
 
@@ -261,9 +246,9 @@ const commandMap: {
       return CodeMirror.Pass;
     }
     if (env.expandable && !env.isCollapsed && !env.isLocked()) {
-      env.collapse(env.node.id);
+      env.dispatch({ type: "COLLAPSE", id: env.node.id });
     } else if (env.node.parent) {
-      env.activateByNid(env.node.parent.nid);
+      env.dispatch(activateByNid(env.node.parent.nid));
     } else {
       playSound(BEEP);
     }
@@ -276,9 +261,9 @@ const commandMap: {
     const node = env.node;
     e.preventDefault();
     if (env.expandable && env.isCollapsed && !env.isLocked()) {
-      env.uncollapse(node.id);
+      env.dispatch({ type: "UNCOLLAPSE", id: node.id });
     } else if (node.next?.parent === node) {
-      env.activateByNid(node.next.nid);
+      env.dispatch(activateByNid(node.next.nid));
     } else {
       playSound(BEEP);
     }
@@ -289,7 +274,7 @@ const commandMap: {
       return CodeMirror.Pass;
     }
     env.dispatch({ type: "COLLAPSE_ALL" });
-    env.activateByNid(getRoot(env.node).nid);
+    env.dispatch(activateByNid(getRoot(env.node).nid));
   },
 
   "Expand All": (env, _) => {
@@ -309,8 +294,10 @@ const commandMap: {
     } else {
       let root = getRoot(env.node);
       let descendants = [...root.descendants()];
-      descendants.forEach((d) => env.isNodeEnv && env.collapse(d.id));
-      env.activateByNid(root.nid);
+      descendants.forEach(
+        (d) => env.isNodeEnv && env.dispatch({ type: "COLLAPSE", id: d.id })
+      );
+      env.dispatch(activateByNid(root.nid));
     }
   },
 
@@ -320,16 +307,16 @@ const commandMap: {
     }
     let root = getRoot(env.node);
     [...root.descendants()].forEach(
-      (d) => env.isNodeEnv && env.uncollapse(d.id)
+      (d) => env.isNodeEnv && env.dispatch({ type: "UNCOLLAPSE", id: d.id })
     );
-    env.activateByNid(root.nid);
+    env.dispatch(activateByNid(root.nid));
   },
 
   "Jump to Root": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      env.activateByNid(getRoot(env.node).nid);
+      env.dispatch(activateByNid(getRoot(env.node).nid));
     }
   },
 
@@ -420,7 +407,11 @@ const commandMap: {
       env.handleMakeEditable(e);
       e.preventDefault();
     } else if (env.expandable && !env.isLocked()) {
-      (env.isCollapsed ? env.uncollapse : env.collapse)(env.node.id);
+      if (env.isCollapsed) {
+        env.dispatch({ type: "UNCOLLAPSE", id: env.node.id });
+      } else {
+        env.dispatch({ type: "COLLAPSE", id: env.node.id });
+      }
     } else {
       playSound(BEEP);
     }
@@ -459,7 +450,7 @@ const commandMap: {
       return CodeMirror.Pass;
     }
     if (!env.setRight()) {
-      env.setCursor(env.node.srcRange().to);
+      env.dispatch(setCursor(env.node.srcRange().to));
     }
   },
   "Insert Left": (env, _) => {
@@ -467,7 +458,7 @@ const commandMap: {
       return CodeMirror.Pass;
     }
     if (!env.setLeft()) {
-      env.setCursor(env.node.srcRange().from);
+      env.dispatch(setCursor(env.node.srcRange().from));
     }
   },
 
@@ -537,9 +528,8 @@ const commandMap: {
 };
 
 // Recieves the key event, an environment (BlockEditor or Node), and the
-// editor's keyMap. If there is a handler for that event, flatten the
-// environment and add some utility methods, then set the key handler's
-// "this" object to be that environment and call it.
+// editor's keyMap. If there is a handler for that event, add some utility
+// methods and call the handler with the environment.
 export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
   var handler = commandMap[defaultKeyMap[CodeMirror.keyName(e)]];
   if (handler) {
@@ -561,7 +551,9 @@ export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
             playSound(BEEP);
           }
           env.isNodeEnv &&
-            env.activateByNid(n === undefined ? env.node.nid : n.nid, options);
+            env.dispatch(
+              activateByNid(n === undefined ? env.node.nid : n.nid, options)
+            );
         },
         activateNoRecord: (node?: ASTNode) => {
           if (!node) {
