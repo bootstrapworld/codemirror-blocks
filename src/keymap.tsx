@@ -169,28 +169,28 @@ Object.assign(defaultKeyMap, mac ? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
-function pasteHandler(this: Env, _: Editor, e: React.KeyboardEvent) {
-  if (!this.isNodeEnv) {
+function pasteHandler(this: void, env: Env, _: Editor, e: React.KeyboardEvent) {
+  if (!env.isNodeEnv) {
     return CodeMirror.Pass;
   }
   const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
-  const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
+  const pos = before ? env.node.srcRange().from : env.node.srcRange().to;
   // Case 1: Overwriting selected nodes
-  if (this.state.selections.includes(this.node.id)) {
-    paste(new ReplaceNodeTarget(this.node));
+  if (env.state.selections.includes(env.node.id)) {
+    paste(new ReplaceNodeTarget(env.node));
   }
   // Case 2: Inserting to the left or right of the root
-  else if (!this.node.parent) {
+  else if (!env.node.parent) {
     paste(new OverwriteTarget(pos, pos));
   }
   // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
   else {
     const DTnode = document.getElementById(
-      "block-drop-target-" + getDTid(this.node, before)
+      "block-drop-target-" + getDTid(env.node, before)
     );
     if (DTnode?.dataset?.field) {
       // We're somewhere valid in the AST. Initiate paste on the target field!
-      paste(new InsertTarget(this.node.parent, DTnode.dataset.field, pos));
+      paste(new InsertTarget(env.node.parent, DTnode.dataset.field, pos));
     } else {
       playSound(BEEP);
       say(`Cannot paste ${e.shiftKey ? "before" : "after"} this node.`);
@@ -198,147 +198,152 @@ function pasteHandler(this: Env, _: Editor, e: React.KeyboardEvent) {
   }
 }
 
-export const commandMap: {
-  [index: string]: (this: Env, cm: Editor, e: React.KeyboardEvent) => void;
+const commandMap: {
+  [index: string]: (
+    this: void,
+    env: Env,
+    cm: Editor,
+    e: React.KeyboardEvent
+  ) => void;
 } = {
-  "Shift Focus": function (_, e) {
+  "Shift Focus": function (env, _, e) {
     e.preventDefault();
     KeyDownContext.toolbarRef.current.focus();
   },
   // NAVIGATION
-  "Previous Block": function (_, e) {
+  "Previous Block": function (env, _, e) {
     e.preventDefault();
-    if (this.isNodeEnv) {
-      let prev = this.fastSkip((node) => node.prev);
+    if (env.isNodeEnv) {
+      let prev = env.fastSkip((node) => node.prev);
       if (prev) {
-        return this.activateByNid(prev.nid);
+        return env.activateByNid(prev.nid);
       } else {
         return playSound(BEEP);
       }
     }
     const prevNode =
-      this.state.cur && this.state.ast.getNodeBeforeCur(this.state.cur);
+      env.state.cur && env.state.ast.getNodeBeforeCur(env.state.cur);
     return prevNode
-      ? this.activateByNid(prevNode.nid, { allowMove: true })
+      ? env.activateByNid(prevNode.nid, { allowMove: true })
       : playSound(BEEP);
   },
 
-  "Next Block": function (_, e) {
+  "Next Block": function (env, _, e) {
     e.preventDefault();
-    if (this.isNodeEnv) {
-      let next = this.fastSkip((node) => node.next);
+    if (env.isNodeEnv) {
+      let next = env.fastSkip((node) => node.next);
       if (next) {
-        return this.activateByNid(next.nid);
+        return env.activateByNid(next.nid);
       } else {
         return playSound(BEEP);
       }
     }
     const nextNode =
-      this.state.cur && this.state.ast.getNodeAfterCur(this.state.cur);
+      env.state.cur && env.state.ast.getNodeAfterCur(env.state.cur);
     return nextNode
-      ? this.activateByNid(nextNode.nid, { allowMove: true })
+      ? env.activateByNid(nextNode.nid, { allowMove: true })
       : playSound(BEEP);
   },
 
-  "First Block": function (_) {
-    if (!this.isNodeEnv) {
+  "First Block": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    this.activateByNid(0, { allowMove: true });
+    env.activateByNid(0, { allowMove: true });
   },
 
-  "Last Visible Block": function (_) {
-    if (!this.isNodeEnv) {
+  "Last Visible Block": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      this.activateByNid(getLastVisibleNode(this.state).nid);
+      env.activateByNid(getLastVisibleNode(env.state).nid);
     }
   },
 
-  "Collapse or Focus Parent": function (_, e) {
+  "Collapse or Focus Parent": function (env, _, e) {
     e.preventDefault();
-    if (!this.isNodeEnv) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (this.expandable && !this.isCollapsed && !this.isLocked()) {
-      this.collapse(this.node.id);
-    } else if (this.node.parent) {
-      this.activateByNid(this.node.parent.nid);
+    if (env.expandable && !env.isCollapsed && !env.isLocked()) {
+      env.collapse(env.node.id);
+    } else if (env.node.parent) {
+      env.activateByNid(env.node.parent.nid);
     } else {
       playSound(BEEP);
     }
   },
 
-  "Expand or Focus 1st Child": function (_, e) {
-    if (!this.isNodeEnv) {
+  "Expand or Focus 1st Child": function (env, _, e) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    const node = this.node;
+    const node = env.node;
     e.preventDefault();
-    if (this.expandable && this.isCollapsed && !this.isLocked()) {
-      this.uncollapse(node.id);
+    if (env.expandable && env.isCollapsed && !env.isLocked()) {
+      env.uncollapse(node.id);
     } else if (node.next?.parent === node) {
-      this.activateByNid(node.next.nid);
+      env.activateByNid(node.next.nid);
     } else {
       playSound(BEEP);
     }
   },
 
-  "Collapse All": function (_) {
-    if (!this.isNodeEnv) {
+  "Collapse All": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    this.dispatch({ type: "COLLAPSE_ALL" });
-    this.activateByNid(getRoot(this.node).nid);
+    env.dispatch({ type: "COLLAPSE_ALL" });
+    env.activateByNid(getRoot(env.node).nid);
   },
 
-  "Expand All": function (_) {
-    if (!this.isNodeEnv) {
+  "Expand All": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      return this.dispatch({ type: "UNCOLLAPSE_ALL" });
+      return env.dispatch({ type: "UNCOLLAPSE_ALL" });
     }
   },
 
-  "Collapse Current Root": function (_) {
-    if (!this.isNodeEnv) {
+  "Collapse Current Root": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.node.parent && (this.isCollapsed || !this.expandable)) {
+    if (!env.node.parent && (env.isCollapsed || !env.expandable)) {
       playSound(BEEP);
     } else {
-      let root = getRoot(this.node);
+      let root = getRoot(env.node);
       let descendants = [...root.descendants()];
-      descendants.forEach((d) => this.isNodeEnv && this.collapse(d.id));
-      this.activateByNid(root.nid);
+      descendants.forEach((d) => env.isNodeEnv && env.collapse(d.id));
+      env.activateByNid(root.nid);
     }
   },
 
-  "Expand Current Root": function (_) {
-    if (!this.isNodeEnv) {
+  "Expand Current Root": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    let root = getRoot(this.node);
+    let root = getRoot(env.node);
     [...root.descendants()].forEach(
-      (d) => this.isNodeEnv && this.uncollapse(d.id)
+      (d) => env.isNodeEnv && env.uncollapse(d.id)
     );
-    this.activateByNid(root.nid);
+    env.activateByNid(root.nid);
   },
 
-  "Jump to Root": function (_) {
-    if (!this.isNodeEnv) {
+  "Jump to Root": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      this.activateByNid(getRoot(this.node).nid);
+      env.activateByNid(getRoot(env.node).nid);
     }
   },
 
-  "Read Ancestors": function (_) {
-    if (!this.isNodeEnv) {
+  "Read Ancestors": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    const parents = [this.node.shortDescription()];
-    let next = this.node.parent;
+    const parents = [env.node.shortDescription()];
+    let next = env.node.parent;
     while (next) {
       parents.push(next.shortDescription() + ", at level " + next.level);
       next = next.parent;
@@ -350,21 +355,21 @@ export const commandMap: {
     }
   },
 
-  "Read Children": function (_) {
-    if (!this.isNodeEnv) {
+  "Read Children": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      say(this.node.describe(this.node.level));
+      say(env.node.describe(env.node.level));
     }
   },
 
   // SEARCH, SELECTION & CLIPBOARD
-  "Toggle Selection": function (_, e) {
-    if (!this.isNodeEnv) {
+  "Toggle Selection": function (env, _, e) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
     e.preventDefault();
-    const node = this.node;
+    const node = env.node;
     const descendantIds = (node: ASTNode) =>
       [...node.descendants()].map((d) => d.id);
     const ancestorIds = (node: ASTNode) => {
@@ -379,22 +384,20 @@ export const commandMap: {
 
     // if the node is already selected, remove it, its descendants
     // and any ancestor
-    if (this.state.selections.includes(this.node.id)) {
-      const prunedSelection = this.state.selections
+    if (env.state.selections.includes(env.node.id)) {
+      const prunedSelection = env.state.selections
         .filter((s) => !descendantIds(node).includes(s))
         .filter((s) => !ancestorIds(node).includes(s));
-      this.dispatch({
+      env.dispatch({
         type: "SET_SELECTIONS",
         selections: prunedSelection,
       });
       // TODO(Emmanuel): announce removal
     } else {
-      const isContained = (id: string) =>
-        this.state.ast.isAncestor(node.id, id);
-      const doesContain = (id: string) =>
-        this.state.ast.isAncestor(id, node.id);
+      const isContained = (id: string) => env.state.ast.isAncestor(node.id, id);
+      const doesContain = (id: string) => env.state.ast.isAncestor(id, node.id);
       let [removed, newSelections] = partition(
-        this.state.selections,
+        env.state.selections,
         isContained
       );
       for (const _r of removed) {
@@ -406,7 +409,7 @@ export const commandMap: {
       } else {
         // TODO(Emmanuel): announce addition
         newSelections = newSelections.concat(descendantIds(node));
-        this.dispatch({
+        env.dispatch({
           type: "SET_SELECTIONS",
           selections: newSelections,
         });
@@ -414,123 +417,123 @@ export const commandMap: {
     }
   },
 
-  Edit: function (_, e) {
-    if (!this.isNodeEnv) {
+  Edit: function (env, _, e) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (this.normallyEditable) {
-      this.handleMakeEditable(e);
+    if (env.normallyEditable) {
+      env.handleMakeEditable(e);
       e.preventDefault();
-    } else if (this.expandable && !this.isLocked()) {
-      (this.isCollapsed ? this.uncollapse : this.collapse)(this.node.id);
+    } else if (env.expandable && !env.isLocked()) {
+      (env.isCollapsed ? env.uncollapse : env.collapse)(env.node.id);
     } else {
       playSound(BEEP);
     }
   },
 
-  "Edit Anything": function (_, e) {
-    if (!this.isNodeEnv) {
+  "Edit Anything": function (env, _, e) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      return this.handleMakeEditable(e);
+      return env.handleMakeEditable(e);
     }
   },
 
-  "Clear Selection": function (_) {
-    if (!this.isNodeEnv) {
+  "Clear Selection": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    this.dispatch({ type: "SET_SELECTIONS", selections: [] });
+    env.dispatch({ type: "SET_SELECTIONS", selections: [] });
   },
 
-  "Delete Nodes": function (_) {
-    if (!this.isNodeEnv) {
+  "Delete Nodes": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.state.selections.length) {
+    if (!env.state.selections.length) {
       return say("Nothing selected");
     }
-    const nodesToDelete = this.state.selections.map(this.state.ast.getNodeById);
+    const nodesToDelete = env.state.selections.map(env.state.ast.getNodeById);
     delete_(nodesToDelete, "deleted");
   },
 
   // use the srcRange() to insert before/after the node *and*
   // any associated comments
-  "Insert Right": function (_) {
-    if (!this.isNodeEnv) {
+  "Insert Right": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.setRight()) {
-      this.setCursor(this.node.srcRange().to);
+    if (!env.setRight()) {
+      env.setCursor(env.node.srcRange().to);
     }
   },
-  "Insert Left": function (_) {
-    if (!this.isNodeEnv) {
+  "Insert Left": function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.setLeft()) {
-      this.setCursor(this.node.srcRange().from);
+    if (!env.setLeft()) {
+      env.setCursor(env.node.srcRange().from);
     }
   },
 
-  Cut: function (_) {
-    if (!this.isNodeEnv) {
+  Cut: function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.state.selections.length) {
+    if (!env.state.selections.length) {
       return say("Nothing selected");
     }
-    const nodesToCut = this.state.selections.map(this.state.ast.getNodeById);
+    const nodesToCut = env.state.selections.map(env.state.ast.getNodeById);
     copy(nodesToCut, "cut");
     delete_(nodesToCut);
   },
 
-  Copy: function (_) {
-    if (!this.isNodeEnv) {
+  Copy: function (env, _) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
     // if no nodes are selected, do it on focused node's id instead
-    const nodeIds = !this.state.selections.length
-      ? [this.node.id]
-      : this.state.selections;
-    const nodesToCopy = nodeIds.map(this.state.ast.getNodeById);
+    const nodeIds = !env.state.selections.length
+      ? [env.node.id]
+      : env.state.selections;
+    const nodesToCopy = nodeIds.map(env.state.ast.getNodeById);
     copy(nodesToCopy, "copied");
   },
 
   Paste: pasteHandler,
   "Paste Before": pasteHandler,
 
-  "Activate Search Dialog": function (_) {
+  "Activate Search Dialog": function (env, _) {
     SHARED.search.onSearch(
-      this.state,
+      env.state,
       () => {},
-      () => this.activateNoRecord(SHARED.search.search(true, this.state))
+      () => env.activateNoRecord(SHARED.search.search(true, env.state))
     );
   },
 
-  "Search Previous": function (_, e) {
+  "Search Previous": function (env, _, e) {
     e.preventDefault();
-    this.activateNoRecord(SHARED.search.search(false, this.state));
+    env.activateNoRecord(SHARED.search.search(false, env.state));
   },
 
-  "Search Next": function (_, e) {
+  "Search Next": function (env, _, e) {
     e.preventDefault();
-    this.activateNoRecord(SHARED.search.search(true, this.state));
+    env.activateNoRecord(SHARED.search.search(true, env.state));
   },
 
-  Undo: function (_, e) {
+  Undo: function (env, _, e) {
     e.preventDefault();
     preambleUndoRedo("undo");
     SHARED.cm.undo();
   },
 
-  Redo: function (_, e) {
+  Redo: function (env, _, e) {
     e.preventDefault();
     preambleUndoRedo("redo");
     SHARED.cm.redo();
   },
 
-  Help: function (_) {
+  Help: function (env, _) {
     KeyDownContext.showDialog({
       title: "Keyboard Shortcuts",
       content: <KeyMapTable keyMap={defaultKeyMap} />,
@@ -579,7 +582,7 @@ export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
         const updatedNode = state.ast.getNodeById(env.node.id);
         env.node = updatedNode && state.ast.getNodeByNId(updatedNode.nid);
       }
-      handler.bind(env)(SHARED.cm, e);
+      handler(env, SHARED.cm, e);
     });
   }
 }
