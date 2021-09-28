@@ -14,7 +14,7 @@ import CodeMirror from "codemirror";
 import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
-import { defaultKeyMap, InputEnv, keyDown } from "../keymap";
+import { InputEnv, keyDown } from "../keymap";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -244,7 +244,7 @@ const Node = (
         onDragStart={handleMouseDragRelated}
         onDragEnd={handleMouseDragRelated}
         onDrop={handleMouseDragRelated}
-        onKeyDown={(e) => keyDown(e, keydownEnv, defaultKeyMap)}
+        onKeyDown={(e) => keyDown(e, keydownEnv)}
       >
         {props.children}
         {comment && comment.reactElement()}

@@ -22,7 +22,7 @@ import {
 } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 import BlockComponent from "../components/BlockComponent";
-import { defaultKeyMap, keyDown } from "../keymap";
+import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { Editor, SelectionOptions } from "codemirror";
@@ -890,7 +890,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
-          onKeyDown={(_, e) => keyDown(e, this, defaultKeyMap)}
+          onKeyDown={(_, e) => keyDown(e, this)}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount}
         />
