@@ -169,7 +169,7 @@ Object.assign(defaultKeyMap, mac ? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
-function pasteHandler(this: void, env: Env, _: Editor, e: React.KeyboardEvent) {
+const pasteHandler = (env: Env, e: React.KeyboardEvent) => {
   if (!env.isNodeEnv) {
     return CodeMirror.Pass;
   }
@@ -196,22 +196,17 @@ function pasteHandler(this: void, env: Env, _: Editor, e: React.KeyboardEvent) {
       say(`Cannot paste ${e.shiftKey ? "before" : "after"} this node.`);
     }
   }
-}
+};
 
 const commandMap: {
-  [index: string]: (
-    this: void,
-    env: Env,
-    cm: Editor,
-    e: React.KeyboardEvent
-  ) => void;
+  [index: string]: (env: Env, e: React.KeyboardEvent) => void;
 } = {
-  "Shift Focus": function (env, _, e) {
+  "Shift Focus": (env, e) => {
     e.preventDefault();
     KeyDownContext.toolbarRef.current.focus();
   },
   // NAVIGATION
-  "Previous Block": function (env, _, e) {
+  "Previous Block": (env, e) => {
     e.preventDefault();
     if (env.isNodeEnv) {
       let prev = env.fastSkip((node) => node.prev);
@@ -228,7 +223,7 @@ const commandMap: {
       : playSound(BEEP);
   },
 
-  "Next Block": function (env, _, e) {
+  "Next Block": (env, e) => {
     e.preventDefault();
     if (env.isNodeEnv) {
       let next = env.fastSkip((node) => node.next);
@@ -245,14 +240,14 @@ const commandMap: {
       : playSound(BEEP);
   },
 
-  "First Block": function (env, _) {
+  "First Block": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
     env.activateByNid(0, { allowMove: true });
   },
 
-  "Last Visible Block": function (env, _) {
+  "Last Visible Block": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
@@ -260,7 +255,7 @@ const commandMap: {
     }
   },
 
-  "Collapse or Focus Parent": function (env, _, e) {
+  "Collapse or Focus Parent": (env, e) => {
     e.preventDefault();
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
@@ -274,7 +269,7 @@ const commandMap: {
     }
   },
 
-  "Expand or Focus 1st Child": function (env, _, e) {
+  "Expand or Focus 1st Child": (env, e) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -289,7 +284,7 @@ const commandMap: {
     }
   },
 
-  "Collapse All": function (env, _) {
+  "Collapse All": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -297,7 +292,7 @@ const commandMap: {
     env.activateByNid(getRoot(env.node).nid);
   },
 
-  "Expand All": function (env, _) {
+  "Expand All": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
@@ -305,7 +300,7 @@ const commandMap: {
     }
   },
 
-  "Collapse Current Root": function (env, _) {
+  "Collapse Current Root": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -319,7 +314,7 @@ const commandMap: {
     }
   },
 
-  "Expand Current Root": function (env, _) {
+  "Expand Current Root": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -330,7 +325,7 @@ const commandMap: {
     env.activateByNid(root.nid);
   },
 
-  "Jump to Root": function (env, _) {
+  "Jump to Root": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
@@ -338,7 +333,7 @@ const commandMap: {
     }
   },
 
-  "Read Ancestors": function (env, _) {
+  "Read Ancestors": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -355,7 +350,7 @@ const commandMap: {
     }
   },
 
-  "Read Children": function (env, _) {
+  "Read Children": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
@@ -364,7 +359,7 @@ const commandMap: {
   },
 
   // SEARCH, SELECTION & CLIPBOARD
-  "Toggle Selection": function (env, _, e) {
+  "Toggle Selection": (env, e) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -417,7 +412,7 @@ const commandMap: {
     }
   },
 
-  Edit: function (env, _, e) {
+  Edit: (env, e) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -431,7 +426,7 @@ const commandMap: {
     }
   },
 
-  "Edit Anything": function (env, _, e) {
+  "Edit Anything": (env, e) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
@@ -439,14 +434,14 @@ const commandMap: {
     }
   },
 
-  "Clear Selection": function (env, _) {
+  "Clear Selection": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
     env.dispatch({ type: "SET_SELECTIONS", selections: [] });
   },
 
-  "Delete Nodes": function (env, _) {
+  "Delete Nodes": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -459,7 +454,7 @@ const commandMap: {
 
   // use the srcRange() to insert before/after the node *and*
   // any associated comments
-  "Insert Right": function (env, _) {
+  "Insert Right": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -467,7 +462,7 @@ const commandMap: {
       env.setCursor(env.node.srcRange().to);
     }
   },
-  "Insert Left": function (env, _) {
+  "Insert Left": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -476,7 +471,7 @@ const commandMap: {
     }
   },
 
-  Cut: function (env, _) {
+  Cut: (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -488,7 +483,7 @@ const commandMap: {
     delete_(nodesToCut);
   },
 
-  Copy: function (env, _) {
+  Copy: (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
@@ -503,7 +498,7 @@ const commandMap: {
   Paste: pasteHandler,
   "Paste Before": pasteHandler,
 
-  "Activate Search Dialog": function (env, _) {
+  "Activate Search Dialog": (env, _) => {
     SHARED.search.onSearch(
       env.state,
       () => {},
@@ -511,29 +506,29 @@ const commandMap: {
     );
   },
 
-  "Search Previous": function (env, _, e) {
+  "Search Previous": (env, e) => {
     e.preventDefault();
     env.activateNoRecord(SHARED.search.search(false, env.state));
   },
 
-  "Search Next": function (env, _, e) {
+  "Search Next": (env, e) => {
     e.preventDefault();
     env.activateNoRecord(SHARED.search.search(true, env.state));
   },
 
-  Undo: function (env, _, e) {
+  Undo: (env, e) => {
     e.preventDefault();
     preambleUndoRedo("undo");
     SHARED.cm.undo();
   },
 
-  Redo: function (env, _, e) {
+  Redo: (env, e) => {
     e.preventDefault();
     preambleUndoRedo("redo");
     SHARED.cm.redo();
   },
 
-  Help: function (env, _) {
+  Help: (env, _) => {
     KeyDownContext.showDialog({
       title: "Keyboard Shortcuts",
       content: <KeyMapTable keyMap={defaultKeyMap} />,
@@ -582,7 +577,7 @@ export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
         const updatedNode = state.ast.getNodeById(env.node.id);
         env.node = updatedNode && state.ast.getNodeByNId(updatedNode.nid);
       }
-      handler(env, SHARED.cm, e);
+      handler(env, e);
     });
   }
 }
