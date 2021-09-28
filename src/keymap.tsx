@@ -45,9 +45,6 @@ import { KeyDownContext } from "./ui/ToggleEditor";
  * abusive to the properties of the Node component.
  */
 export type InputEnv = {
-  // added by BlockEditor before calling keyDown()
-  toolbarRef?: BlockEditorProps["toolbarRef"];
-
   // defined by Node react component
   isLocked?(): boolean;
   handleMakeEditable?: (e?: React.KeyboardEvent) => void;
@@ -217,7 +214,7 @@ export const commandMap: {
 } = {
   "Shift Focus": function (_, e) {
     e.preventDefault();
-    this.toolbarRef.current.focus();
+    KeyDownContext.toolbarRef.current.focus();
   },
   // NAVIGATION
   "Previous Block": function (_, e) {

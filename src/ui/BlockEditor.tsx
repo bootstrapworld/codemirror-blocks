@@ -23,13 +23,11 @@ import {
 import type { afterDOMUpdateHandle } from "../utils";
 import BlockComponent from "../components/BlockComponent";
 import { defaultKeyMap, keyDown } from "../keymap";
-import { AppStore, store } from "../store";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { Editor, SelectionOptions } from "codemirror";
 import type { Options, API } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
-import Toolbar from "./Toolbar";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 
@@ -285,13 +283,11 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
     value: string;
     options?: Options;
     cmOptions?: CodeMirror.EditorConfiguration;
-    keyMap?: { [index: string]: string };
     /**
      * id of the language being used
      */
     languageId: string;
     search?: Search;
-    toolbarRef?: React.RefObject<HTMLInputElement>;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
     onMount: Function;
     api?: API;
@@ -308,24 +304,12 @@ class BlockEditor extends Component<BlockEditorProps> {
     super(props);
     this.mouseUsed = false;
 
-    /**
-     * @internal
-     * When the CM instance receives a keydown event...construct the environment
-     * NOTE: This is called from both CM *and* Node components. Each is responsible
-     * for passing 'this' as the environment. Be sure to add showDialog and toolbarRef!
-     */
-    store.onKeyDown = (e, env) => {
-      env.toolbarRef = this.props.toolbarRef;
-      return keyDown(e, env, this.props.keyMap);
-    };
-
     // NOTE(Emmanuel): we shouldn't have to dispatch this in the constructor
     // just for tests to pass! Figure out how to reset the store manually
     props.dispatch({ type: "RESET_STORE_FOR_TESTING" });
   }
 
   static defaultProps = {
-    keyMap: defaultKeyMap,
     search: {
       search: () => null,
       onSearch: () => {},
@@ -906,7 +890,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
-          onKeyDown={(_, e) => store.onKeyDown(e, this)}
+          onKeyDown={(_, e) => keyDown(e, this, defaultKeyMap)}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount}
         />

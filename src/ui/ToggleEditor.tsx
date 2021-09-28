@@ -328,6 +328,8 @@ export const KeyDownContext = {
   showDialog: (contents: ToggleEditorState["dialog"]) => {
     console.warn(`ToggleEditor has not been mounted yet. Can't show dialog`);
   },
+
+  toolbarRef: createRef<HTMLInputElement>(),
 };
 
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
@@ -348,7 +350,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   cmOptions: CodeMirror.EditorConfiguration;
   options: Options;
   eventHandlers: Record<string, Function[]>;
-  toolbarRef: React.RefObject<HTMLInputElement> = createRef();
   ast?: AST;
   newAST?: AST;
 
@@ -592,7 +593,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
               }
               languageId={this.props.language.id}
               blockMode={this.state.blockMode}
-              toolbarRef={this.toolbarRef}
+              toolbarRef={KeyDownContext.toolbarRef}
             />
           </div>
           <div className="col-xs-9 codemirror-pane">
@@ -648,7 +649,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         appElement={this.props.appElement}
         languageId={this.props.language.id}
         options={{ ...defaultOptions, ...this.props.options }}
-        toolbarRef={this.toolbarRef}
       />
     );
   }
