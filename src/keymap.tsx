@@ -529,7 +529,7 @@ export const commandMap: {
   Help: function (_) {
     KeyDownContext.showDialog({
       title: "Keyboard Shortcuts",
-      content: renderKeyMap(defaultKeyMap),
+      content: <KeyMapTable keyMap={defaultKeyMap} />,
     });
   },
 };
@@ -581,7 +581,8 @@ export function keyDown(
   }
 }
 
-export function renderKeyMap(keyMap: { [index: string]: string }) {
+const KeyMapTable = (props: { keyMap: KeyMap }) => {
+  const { keyMap } = props;
   const reverseMap: { [index: string]: string[] } = {};
   Object.keys(keyMap).forEach((key) => {
     if (!reverseMap[keyMap[key]]) {
@@ -613,4 +614,4 @@ export function renderKeyMap(keyMap: { [index: string]: string }) {
       </tbody>
     </table>
   );
-}
+};
