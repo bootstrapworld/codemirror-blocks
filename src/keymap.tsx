@@ -28,27 +28,24 @@ import type { ASTNode } from "./ast";
 import type { RootState } from "./reducers";
 import { KeyDownContext } from "./ui/ToggleEditor";
 
-/**
- * This is completely bananas. This InputEnv type is what
- * the keyDown() function expects for it's "env" parameter.
- *
- * In theory, keyDown() is always passed the "this" value
- * from inside of a Node react component, with a few extra
- * things added on dynamically.
- *
- * keyDown() then tacks on even more attributes to this "env"
- * object so that all the handlers in commandMap can access
- * these additional attributes.
- *
- * This should be refactored to something that's is less
- * abusive to the properties of the Node component.
- */
-export type InputEnv = {
+type BlockEditorEnv = {
+  isNodeEnv: false;
+  dispatch: AppDispatch;
+  activateByNid: (
+    nid: number,
+    options?: { allowMove: boolean; record?: boolean }
+  ) => void;
+  setCursor: (cur: CodeMirror.Position) => void;
+};
+
+type NodeEnv = {
+  isNodeEnv: true;
+
   // defined by Node react component
-  isLocked?(): boolean;
-  handleMakeEditable?: (e?: React.KeyboardEvent) => void;
-  setRight?(): boolean;
-  setLeft?(): boolean;
+  isLocked: () => boolean;
+  handleMakeEditable: (e?: React.KeyboardEvent) => void;
+  setRight: () => boolean;
+  setLeft: () => boolean;
 
   // These somehow come from somewhere. Either a BlockEditor or a Node
   // elements presumably.
@@ -59,14 +56,16 @@ export type InputEnv = {
   ) => void;
 
   // the following are from Node.tsx
-  collapse?: (id: string) => void;
-  uncollapse?: (id: string) => void;
+  collapse: (id: string) => void;
+  uncollapse: (id: string) => void;
   setCursor: (cur: CodeMirror.Position) => void;
-  isCollapsed?: boolean;
-  expandable?: boolean;
-  normallyEditable?: boolean;
-  node?: ASTNode;
+  isCollapsed: boolean;
+  expandable: boolean;
+  normallyEditable: boolean;
+  node: ASTNode;
 };
+
+export type InputEnv = BlockEditorEnv | NodeEnv;
 
 type Env = InputEnv & {
   state: RootState;
@@ -171,7 +170,7 @@ Object.assign(defaultKeyMap, mac ? macKeyMap : pcKeyMap);
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
 function pasteHandler(this: Env, _: Editor, e: React.KeyboardEvent) {
-  if (!this.node) {
+  if (!this.isNodeEnv) {
     return CodeMirror.Pass;
   }
   const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
@@ -209,7 +208,7 @@ export const commandMap: {
   // NAVIGATION
   "Previous Block": function (_, e) {
     e.preventDefault();
-    if (this.node) {
+    if (this.isNodeEnv) {
       let prev = this.fastSkip((node) => node.prev);
       if (prev) {
         return this.activateByNid(prev.nid);
@@ -226,7 +225,7 @@ export const commandMap: {
 
   "Next Block": function (_, e) {
     e.preventDefault();
-    if (this.node) {
+    if (this.isNodeEnv) {
       let next = this.fastSkip((node) => node.next);
       if (next) {
         return this.activateByNid(next.nid);
@@ -242,14 +241,14 @@ export const commandMap: {
   },
 
   "First Block": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     this.activateByNid(0, { allowMove: true });
   },
 
   "Last Visible Block": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
       this.activateByNid(getLastVisibleNode(this.state).nid);
@@ -258,7 +257,7 @@ export const commandMap: {
 
   "Collapse or Focus Parent": function (_, e) {
     e.preventDefault();
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     if (this.expandable && !this.isCollapsed && !this.isLocked()) {
@@ -271,7 +270,7 @@ export const commandMap: {
   },
 
   "Expand or Focus 1st Child": function (_, e) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     const node = this.node;
@@ -286,7 +285,7 @@ export const commandMap: {
   },
 
   "Collapse All": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     this.dispatch({ type: "COLLAPSE_ALL" });
@@ -294,7 +293,7 @@ export const commandMap: {
   },
 
   "Expand All": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
       return this.dispatch({ type: "UNCOLLAPSE_ALL" });
@@ -302,7 +301,7 @@ export const commandMap: {
   },
 
   "Collapse Current Root": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     if (!this.node.parent && (this.isCollapsed || !this.expandable)) {
@@ -310,22 +309,24 @@ export const commandMap: {
     } else {
       let root = getRoot(this.node);
       let descendants = [...root.descendants()];
-      descendants.forEach((d) => this.collapse(d.id));
+      descendants.forEach((d) => this.isNodeEnv && this.collapse(d.id));
       this.activateByNid(root.nid);
     }
   },
 
   "Expand Current Root": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     let root = getRoot(this.node);
-    [...root.descendants()].forEach((d) => this.uncollapse(d.id));
+    [...root.descendants()].forEach(
+      (d) => this.isNodeEnv && this.uncollapse(d.id)
+    );
     this.activateByNid(root.nid);
   },
 
   "Jump to Root": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
       this.activateByNid(getRoot(this.node).nid);
@@ -333,7 +334,7 @@ export const commandMap: {
   },
 
   "Read Ancestors": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     const parents = [this.node.shortDescription()];
@@ -350,7 +351,7 @@ export const commandMap: {
   },
 
   "Read Children": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
       say(this.node.describe(this.node.level));
@@ -359,7 +360,7 @@ export const commandMap: {
 
   // SEARCH, SELECTION & CLIPBOARD
   "Toggle Selection": function (_, e) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     e.preventDefault();
@@ -414,7 +415,7 @@ export const commandMap: {
   },
 
   Edit: function (_, e) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     if (this.normallyEditable) {
@@ -428,7 +429,7 @@ export const commandMap: {
   },
 
   "Edit Anything": function (_, e) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
       return this.handleMakeEditable(e);
@@ -436,14 +437,14 @@ export const commandMap: {
   },
 
   "Clear Selection": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     this.dispatch({ type: "SET_SELECTIONS", selections: [] });
   },
 
   "Delete Nodes": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     if (!this.state.selections.length) {
@@ -456,7 +457,7 @@ export const commandMap: {
   // use the srcRange() to insert before/after the node *and*
   // any associated comments
   "Insert Right": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     if (!this.setRight()) {
@@ -464,7 +465,7 @@ export const commandMap: {
     }
   },
   "Insert Left": function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     if (!this.setLeft()) {
@@ -473,7 +474,7 @@ export const commandMap: {
   },
 
   Cut: function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     if (!this.state.selections.length) {
@@ -485,7 +486,7 @@ export const commandMap: {
   },
 
   Copy: function (_) {
-    if (!this.node) {
+    if (!this.isNodeEnv) {
       return CodeMirror.Pass;
     }
     // if no nodes are selected, do it on focused node's id instead
@@ -553,7 +554,7 @@ export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
         state,
         // add convenience methods
         fastSkip: (next: (node: ASTNode) => ASTNode) =>
-          skipCollapsed(env.node, next, state),
+          env.isNodeEnv && skipCollapsed(env.node, next, state),
         activate: (
           n: ASTNode | null | undefined,
           options = { allowMove: true, record: true }
@@ -561,7 +562,8 @@ export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
           if (n === null) {
             playSound(BEEP);
           }
-          env.activateByNid(n === undefined ? env.node.nid : n.nid, options);
+          env.isNodeEnv &&
+            env.activateByNid(n === undefined ? env.node.nid : n.nid, options);
         },
         activateNoRecord: (node?: ASTNode) => {
           if (!node) {
@@ -573,7 +575,7 @@ export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
         },
       };
       // If there's a node, make sure it's fresh
-      if (env.node) {
+      if (env.isNodeEnv) {
         const updatedNode = state.ast.getNodeById(env.node.id);
         env.node = updatedNode && state.ast.getNodeByNId(updatedNode.nid);
       }

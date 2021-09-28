@@ -93,6 +93,7 @@ const Node = (
   };
 
   const keydownEnv: InputEnv = {
+    isNodeEnv: true,
     node: props.node,
 
     isLocked,

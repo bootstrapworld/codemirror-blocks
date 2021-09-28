@@ -881,6 +881,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
 
     const keyDownEnv: InputEnv = {
+      isNodeEnv: false,
       dispatch: this.props.dispatch,
       activateByNid: this.props.activateByNid,
       setCursor: this.props.setCursor,
