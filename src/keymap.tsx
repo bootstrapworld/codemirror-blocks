@@ -26,8 +26,8 @@ import { findAdjacentDropTargetId as getDTid } from "./components/DropTarget";
 import type { AppDispatch } from "./store";
 import type { AST, ASTNode } from "./ast";
 import type { RootState } from "./reducers";
-import type { EnhancedNodeProps } from "./components/Node";
 import type { BlockEditorProps } from "./ui/BlockEditor";
+import { KeyDownContext } from "./ui/ToggleEditor";
 
 /**
  * This is completely bananas. This InputEnv type is what
@@ -46,7 +46,6 @@ import type { BlockEditorProps } from "./ui/BlockEditor";
  */
 export type InputEnv = {
   // added by BlockEditor before calling keyDown()
-  showDialog?: BlockEditorProps["showDialog"];
   toolbarRef?: BlockEditorProps["toolbarRef"];
 
   // defined by Node react component
@@ -531,7 +530,7 @@ export const commandMap: {
   },
 
   Help: function (_) {
-    this.showDialog({
+    KeyDownContext.showDialog({
       title: "Keyboard Shortcuts",
       content: renderKeyMap(defaultKeyMap),
     });

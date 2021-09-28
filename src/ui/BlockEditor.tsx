@@ -296,7 +296,6 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
     onMount: Function;
     api?: API;
     passedAST?: AST;
-    showDialog: Function;
     ast: AST;
   };
 
@@ -309,8 +308,16 @@ class BlockEditor extends Component<BlockEditorProps> {
     super(props);
     this.mouseUsed = false;
 
-    // stick the keyDown handler in the store
-    store.onKeyDown = this.handleKeyDown;
+    /**
+     * @internal
+     * When the CM instance receives a keydown event...construct the environment
+     * NOTE: This is called from both CM *and* Node components. Each is responsible
+     * for passing 'this' as the environment. Be sure to add showDialog and toolbarRef!
+     */
+    store.onKeyDown = (e, env) => {
+      env.toolbarRef = this.props.toolbarRef;
+      return keyDown(e, env, this.props.keyMap);
+    };
 
     // NOTE(Emmanuel): we shouldn't have to dispatch this in the constructor
     // just for tests to pass! Figure out how to reset the store manually
@@ -834,18 +841,6 @@ class BlockEditor extends Component<BlockEditorProps> {
 
   /**
    * @internal
-   * When the CM instance receives a keydown event...construct the environment
-   * NOTE: This is called from both CM *and* Node components. Each is responsible
-   * for passing 'this' as the environment. Be sure to add showDialog and toolbarRef!
-   */
-  handleKeyDown: AppStore["onKeyDown"] = (e, env) => {
-    env.showDialog = this.props.showDialog;
-    env.toolbarRef = this.props.toolbarRef;
-    return keyDown(e, env, this.props.keyMap);
-  };
-
-  /**
-   * @internal
    * When the CM instance receives a paste event...start a quarantine
    */
   handleTopLevelPaste = (ed: Editor, e: ClipboardEvent) => {
@@ -911,7 +906,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
-          onKeyDown={(_, e) => this.handleKeyDown(e, this)}
+          onKeyDown={(_, e) => store.onKeyDown(e, this)}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount}
         />
