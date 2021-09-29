@@ -1,13 +1,6 @@
 {
   "plugins": [
     "react-hot-loader/babel",
-    [
-      "@babel/plugin-proposal-decorators",
-      {
-        "legacy": true
-      }
-    ],
-    "@babel/plugin-proposal-class-properties",
     "@babel/plugin-transform-modules-commonjs"
   ],
   "exclude": ["/\bcore-js\b/"],
@@ -30,7 +23,12 @@
       }
     ],
     "@babel/preset-react",
-    "@babel/preset-typescript"
+    [
+      "@babel/preset-typescript",
+      {
+        "allowDeclareFields": true
+      }
+    ]
   ],
   "sourceMaps": true
 }

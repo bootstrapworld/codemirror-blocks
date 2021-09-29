@@ -315,6 +315,23 @@ type ToggleEditorState = {
   debuggingLog?: ToggleEditorProps["debuggingLog"];
 };
 
+// TODO(pcardune): make this use an actual context? Or maybe redux state?
+export const KeyDownContext = {
+  /**
+   * @internal
+   * Dialog showing/hiding methods deal with ToggleEditor state.
+   * We pass them to mode-specific components, to allow those
+   * components to show/hide dialogs
+   *
+   * This is hooked up when ToggleEditor gets mounted
+   */
+  showDialog: (contents: ToggleEditorState["dialog"]) => {
+    console.warn(`ToggleEditor has not been mounted yet. Can't show dialog`);
+  },
+
+  toolbarRef: createRef<HTMLInputElement>(),
+};
+
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state: ToggleEditorState = {
     blockMode: false,
@@ -333,21 +350,29 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   cmOptions: CodeMirror.EditorConfiguration;
   options: Options;
   eventHandlers: Record<string, Function[]>;
-  toolbarRef: React.RefObject<HTMLInputElement>;
   ast?: AST;
   newAST?: AST;
+
+  private recordedMarks: Map<
+    number,
+    {
+      from: CodeMirror.Position;
+      to: CodeMirror.Position;
+      options: CodeMirror.TextMarkerOptions;
+    }
+  > = new Map();
 
   constructor(props: ToggleEditorProps) {
     super(props);
 
-    this.toolbarRef = createRef();
-
-    SHARED.recordedMarks = new Map();
     SHARED.parse = this.props.language.parse;
 
     this.eventHandlers = {}; // blank event-handler record
 
     this.state.code = props.initialCode;
+
+    KeyDownContext.showDialog = (contents: ToggleEditorState["dialog"]) =>
+      this.setState(() => ({ dialog: contents }));
   }
 
   /**
@@ -428,7 +453,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
     this.pendingTimeout = setAfterDOMUpdate(() => {
-      SHARED.recordedMarks.forEach(
+      this.recordedMarks.forEach(
         (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
           let node = ast.getNodeByNId(k);
           if (node) {
@@ -449,7 +474,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    * the editor mounts.
    */
   recordMarks(oldAST: AST) {
-    SHARED.recordedMarks.clear();
+    this.recordedMarks.clear();
     (SHARED.cm as CodeMirror.Editor)
       .getAllMarks()
       .filter((m) => !m.BLOCK_NODE_ID && m.type !== "bookmark")
@@ -477,7 +502,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           throw new Error("Could not find node " + oldNode.nid + " in new AST");
         }
         const { from, to } = newNode;
-        SHARED.recordedMarks.set(oldNode.nid, {
+        this.recordedMarks.set(oldNode.nid, {
           from: from,
           to: to,
           options: {
@@ -496,16 +521,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   /**
    * @internal
-   * Dialog showing/hiding methods deal with ToggleEditor state.
-   * We pass them to mode-specific components, to allow those
-   * components to show/hide dialogs
-   */
-  showDialog = (contents: ToggleEditorState["dialog"]) =>
-    this.setState(() => ({ dialog: contents }));
-  closeDialog = () => this.setState(() => ({ dialog: null }));
-
-  /**
-   * @internal
    * When the mode is toggled, (1) parse the value of the editor,
    * (2) pretty-print and re-parse to canonicalize the text,
    * (3) record TextMarkers and update editor state
@@ -520,11 +535,13 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
+          let message = "";
           try {
-            throw SHARED.getExceptionMessage(err);
+            message = this.props.language.getExceptionMessage(err);
           } catch (e) {
-            throw "The parser failed, and the error could not be retrieved";
+            message = "The parser failed, and the error could not be retrieved";
           }
+          throw message;
         }
         try {
           code = oldAst.toString() + (WS ? WS[0] : ""); // pretty-print and restore whitespace
@@ -576,7 +593,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
               }
               languageId={this.props.language.id}
               blockMode={this.state.blockMode}
-              toolbarRef={this.toolbarRef}
+              toolbarRef={KeyDownContext.toolbarRef}
             />
           </div>
           <div className="col-xs-9 codemirror-pane">
@@ -597,7 +614,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           appElement={this.props.appElement}
           isOpen={!!this.state.dialog}
           body={this.state.dialog}
-          closeFn={this.closeDialog}
+          closeFn={() => this.setState({ dialog: null })}
         />
       </>
     );
@@ -632,8 +649,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         appElement={this.props.appElement}
         languageId={this.props.language.id}
         options={{ ...defaultOptions, ...this.props.options }}
-        showDialog={this.showDialog}
-        toolbarRef={this.toolbarRef}
       />
     );
   }

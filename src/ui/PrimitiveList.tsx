@@ -22,7 +22,7 @@ type BasePrimitiveProps = {
   connectDragSource: Function;
 };
 
-export function BasePrimitive(props: BasePrimitiveProps) {
+export const BasePrimitive = (props: BasePrimitiveProps) => {
   const {
     primitive,
     className,
@@ -64,7 +64,7 @@ export function BasePrimitive(props: BasePrimitiveProps) {
     offsetY: 1,
   });
   return <li>{draggableElem}</li>;
-}
+};
 
 const Primitive = DragPrimitiveSource(BasePrimitive);
 
@@ -75,7 +75,7 @@ type PrimitiveGroupProps = {
   group?: PrimitiveGroupModel;
 };
 
-export function PrimitiveGroup(props: PrimitiveGroupProps) {
+export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
   const { onFocus, onKeyDown, selected } = props;
   const group = props.group ?? new PrimitiveGroupModel("", "", []);
   const [expanded, setExpanded] = useState(false);
@@ -100,7 +100,7 @@ export function PrimitiveGroup(props: PrimitiveGroupProps) {
       ) : null}
     </li>
   );
-}
+};
 
 type PrimitiveListProps = {
   onFocus: Function;
@@ -109,7 +109,7 @@ type PrimitiveListProps = {
   primitives?: LanguagePrimitive[];
   searchString?: string;
 };
-export default function PrimitiveList(props: PrimitiveListProps) {
+export const PrimitiveList = (props: PrimitiveListProps) => {
   const { primitives, selected, onFocus, onKeyDown, searchString } = props;
   const renderGroup = (g: PrimitiveGroupModel) => (
     <PrimitiveGroup
@@ -156,4 +156,6 @@ export default function PrimitiveList(props: PrimitiveListProps) {
       </ul>
     </div>
   );
-}
+};
+
+export default PrimitiveList;

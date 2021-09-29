@@ -1,11 +1,4 @@
-import {
-  poscmp,
-  srcRangeIncludes,
-  warn,
-  setAfterDOMUpdate,
-  cancelAfterDOMUpdate,
-} from "./utils";
-import type { afterDOMUpdateHandle } from "./utils";
+import { poscmp, srcRangeIncludes, warn, setAfterDOMUpdate } from "./utils";
 import { say, cancelAnnouncement } from "./announcer";
 import SHARED from "./shared";
 import { AppDispatch, store } from "./store";
@@ -243,9 +236,7 @@ export function activateByNid(
       nid = ast?.getNodeById(focusId)?.nid;
     }
 
-    // Get the currently-focused node *based strictly on focusId*
-    // And the new node from the nid
-    const currentNode = ast?.getNodeById(focusId);
+    // Get the new node from the nid
     const newNode = ast?.getNodeByNId(nid);
 
     // If there is no valid node found in the AST, bail.
@@ -330,17 +321,25 @@ function checkTarget(target: Target) {
   }
 }
 
+// create a hidden buffer, for use with copy/cut/paste
+const buffer = document.createElement("textarea");
+buffer.ariaHidden = "true";
+buffer.tabIndex = -1;
+buffer.style.opacity = "0";
+buffer.style.height = "1px";
+document.body.appendChild(buffer);
+
 function copyToClipboard(text: string) {
-  SHARED.buffer.value = text;
-  SHARED.buffer.select();
+  buffer.value = text;
+  buffer.select();
   document.execCommand("copy");
 }
 
 function pasteFromClipboard(done: (value: string) => void) {
-  SHARED.buffer.value = "";
-  SHARED.buffer.focus();
+  buffer.value = "";
+  buffer.focus();
   setTimeout(() => {
-    done(SHARED.buffer.value);
+    done(buffer.value);
   }, 50);
 }
 

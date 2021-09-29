@@ -3,6 +3,7 @@ import "./debug-page.less";
 import type { Language } from "../CodeMirrorBlocks";
 import CodeMirrorBlocks from "../CodeMirrorBlocks";
 import { resetUniqueIdGenerator } from "../utils";
+import { getReducerActivities } from "../reducers";
 
 /**
  * Renders the codemirror blocks editor to the page along with some
@@ -54,7 +55,7 @@ export function createDebuggingInterface(language: Language, value: string) {
   );
 
   type JSONLog = {
-    history: typeof window.reducerActivities;
+    history: ReturnType<typeof getReducerActivities>;
     exception: string;
   };
 
@@ -64,7 +65,7 @@ export function createDebuggingInterface(language: Language, value: string) {
 
   downloadLogButton.onclick = () => {
     let json: JSONLog = {
-      history: window.reducerActivities,
+      history: getReducerActivities(),
       exception: "DUMMY",
     };
 

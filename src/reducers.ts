@@ -2,13 +2,6 @@ import CodeMirror from "codemirror";
 import type { Action } from "redux";
 import { AST } from "./ast";
 import { topmostUndoable } from "./utils";
-//import SHARED from './shared'; //used only in debug statements
-
-declare global {
-  interface Window {
-    reducerActivities?: Activity[];
-  }
-}
 
 /**
  * An Activity is a shallow-clone of a reducer action, except that
@@ -20,11 +13,17 @@ export type Activity =
   | (Action<"SET_AST"> & { code: string })
   | (Action<"SET_FOCUS"> & { nid: number });
 
+const reducerActivities: Activity[] = [];
+
+/**
+ * @internal
+ * Get a readonly list of all reducer actions that have taken place
+ * that is suitable for serialization
+ */
+export const getReducerActivities = (): ReadonlyArray<Activity> =>
+  reducerActivities;
+
 function loggerDebug(action: AppAction, ast: AST) {
-  // in lieu of logger.debug
-  if (!window.reducerActivities) {
-    window.reducerActivities = [];
-  }
   // Shallow-clone the action, removing the AST.
   // Then replace the AST with the source code.
   // We'll reconstruct it when replaying the log.
@@ -46,7 +45,7 @@ function loggerDebug(action: AppAction, ast: AST) {
       activity = { ...action };
   }
 
-  window.reducerActivities.push(activity);
+  reducerActivities.push(activity);
 }
 
 export type Quarantine = [CodeMirror.Position, CodeMirror.Position, string];
@@ -55,7 +54,12 @@ export type ActionFocus = { oldFocusNId: number; newFocusNId: number };
 
 export type RootState = {
   selections: string[];
-  editable: { [index: string]: unknown };
+
+  /**
+   * Mapping from node ids to whether or not
+   * that node is currently editable.
+   */
+  editable: { [nid: string]: boolean };
   ast: AST | null;
   focusId: string | null;
   collapsedList: string[];

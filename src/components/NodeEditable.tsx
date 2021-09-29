@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ContentEditable, {
   Props as ContentEditableProps,
@@ -41,11 +41,11 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
 
 type Props = ContentEditableProps & {
   target?: Target;
-  children?: ReactElement;
+  children?: React.ReactNode;
   isInsertion: boolean;
   value?: string | null;
   onChange?: (e: string) => void;
-  onDisableEditable?: Function;
+  onDisableEditable?: () => void;
   contentEditableProps?: {};
   extraClasses?: ClassNamesArgument;
 };
@@ -95,7 +95,7 @@ const NodeEditable = (props: Props) => {
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
       if (value === initialValue || !value) {
-        props.onDisableEditable(false);
+        props.onDisableEditable();
         const focusNode = ast.getNodeById(focusId);
         const nid = focusNode && focusNode.nid;
         dispatch(activateByNid(nid));
@@ -106,13 +106,12 @@ const NodeEditable = (props: Props) => {
       const onSuccess = () => {
         dispatch(activateByNid(null, { allowMove: false }));
         props.onChange(null);
-        props.onDisableEditable(false);
+        props.onDisableEditable();
         setErrorId("");
         say(annt);
       };
-      const onError = () => {
-        const errorText = SHARED.getExceptionMessage(e);
-        console.log(errorText);
+      const onError = (e: any) => {
+        console.error(e);
         setErrorId(target.node ? target.node.id : "editing");
         if (element.current) {
           selectElement(element.current, false);
@@ -134,13 +133,13 @@ const NodeEditable = (props: Props) => {
       case "Esc":
         e.stopPropagation();
         props.onChange(null);
-        props.onDisableEditable(false);
+        props.onDisableEditable();
         setErrorId("");
         // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
         // and then figure out how to get rid of it altogether.
-        setAfterDOMUpdate(() =>
-          dispatch(activateByNid(null, { allowMove: false }))
-        );
+        setAfterDOMUpdate(() => {
+          dispatch(activateByNid(null, { allowMove: false }));
+        });
         return;
     }
   };

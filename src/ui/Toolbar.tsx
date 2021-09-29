@@ -12,7 +12,7 @@ type Props = {
   toolbarRef: React.RefObject<HTMLInputElement>;
 };
 
-var Toolbar = (props: Props) => {
+const Toolbar = (props: Props) => {
   const { primitives, languageId, blockMode, toolbarRef } = props;
 
   const [search, setSearch] = useState("");
@@ -54,10 +54,9 @@ var Toolbar = (props: Props) => {
         return;
       case "Esc":
         toolbarRef.current.focus(); // focus, then fall-through
-      default:
-        event.stopPropagation();
-        return;
+        break;
     }
+    event.stopPropagation();
   };
 
   // if a primitive is selected, make a block node for it
