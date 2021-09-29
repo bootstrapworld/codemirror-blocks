@@ -22,14 +22,12 @@ import {
 } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 import BlockComponent from "../components/BlockComponent";
-import { defaultKeyMap, keyDown } from "../keymap";
-import { AppStore, store } from "../store";
+import { InputEnv, keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { Editor, SelectionOptions } from "codemirror";
 import type { Options, API } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
-import Toolbar from "./Toolbar";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 
@@ -285,18 +283,15 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
     value: string;
     options?: Options;
     cmOptions?: CodeMirror.EditorConfiguration;
-    keyMap?: { [index: string]: string };
     /**
      * id of the language being used
      */
     languageId: string;
     search?: Search;
-    toolbarRef?: React.RefObject<HTMLInputElement>;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
     onMount: Function;
     api?: API;
     passedAST?: AST;
-    showDialog: Function;
     ast: AST;
   };
 
@@ -309,16 +304,12 @@ class BlockEditor extends Component<BlockEditorProps> {
     super(props);
     this.mouseUsed = false;
 
-    // stick the keyDown handler in the store
-    store.onKeyDown = this.handleKeyDown;
-
     // NOTE(Emmanuel): we shouldn't have to dispatch this in the constructor
     // just for tests to pass! Figure out how to reset the store manually
     props.dispatch({ type: "RESET_STORE_FOR_TESTING" });
   }
 
   static defaultProps = {
-    keyMap: defaultKeyMap,
     search: {
       search: () => null,
       onSearch: () => {},
@@ -834,18 +825,6 @@ class BlockEditor extends Component<BlockEditorProps> {
 
   /**
    * @internal
-   * When the CM instance receives a keydown event...construct the environment
-   * NOTE: This is called from both CM *and* Node components. Each is responsible
-   * for passing 'this' as the environment. Be sure to add showDialog and toolbarRef!
-   */
-  handleKeyDown: AppStore["onKeyDown"] = (e, env) => {
-    env.showDialog = this.props.showDialog;
-    env.toolbarRef = this.props.toolbarRef;
-    return keyDown(e, env, this.props.keyMap);
-  };
-
-  /**
-   * @internal
    * When the CM instance receives a paste event...start a quarantine
    */
   handleTopLevelPaste = (ed: Editor, e: ClipboardEvent) => {
@@ -900,6 +879,12 @@ class BlockEditor extends Component<BlockEditorProps> {
     if (this.props.languageId) {
       classes.push(`blocks-language-${this.props.languageId}`);
     }
+
+    const keyDownEnv: InputEnv = {
+      isNodeEnv: false,
+      dispatch: this.props.dispatch,
+    };
+
     return (
       <>
         <DragAndDropEditor
@@ -911,7 +896,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
-          onKeyDown={(_, e) => this.handleKeyDown(e, this)}
+          onKeyDown={(_, e) => keyDown(e, keyDownEnv)}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount}
         />

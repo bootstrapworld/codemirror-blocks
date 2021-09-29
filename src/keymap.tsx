@@ -1,5 +1,5 @@
 import React from "react";
-import CodeMirror, { Editor } from "codemirror";
+import CodeMirror from "codemirror";
 import SHARED from "./shared";
 import {
   delete_,
@@ -9,6 +9,7 @@ import {
   ReplaceNodeTarget,
   OverwriteTarget,
   activateByNid,
+  setCursor,
 } from "./actions";
 import {
   partition,
@@ -24,60 +25,35 @@ import { say } from "./announcer";
 import { findAdjacentDropTargetId as getDTid } from "./components/DropTarget";
 
 import type { AppDispatch } from "./store";
-import type { AST, ASTNode } from "./ast";
+import type { ASTNode } from "./ast";
 import type { RootState } from "./reducers";
-import type { EnhancedNodeProps } from "./components/Node";
-import type { BlockEditorProps } from "./ui/BlockEditor";
+import { KeyDownContext } from "./ui/ToggleEditor";
 
-/**
- * This is completely bananas. This InputEnv type is what
- * the keyDown() function expects for it's "env" parameter.
- *
- * In theory, keyDown() is always passed the "this" value
- * from inside of a Node react component, with a few extra
- * things added on dynamically.
- *
- * keyDown() then tacks on even more attributes to this "env"
- * object so that all the handlers in commandMap can access
- * these additional attributes.
- *
- * This should be refactored to something that's is less
- * abusive to the properties of the Node component.
- */
-export type InputEnv = {
-  // added by BlockEditor before calling keyDown()
-  showDialog?: BlockEditorProps["showDialog"];
-  toolbarRef?: BlockEditorProps["toolbarRef"];
+type BlockEditorEnv = {
+  isNodeEnv: false;
+  dispatch: AppDispatch;
+};
 
-  // defined by Node react component
-  isLocked?(): boolean;
-  handleMakeEditable?: (e?: React.KeyboardEvent) => void;
-  setRight?(): boolean;
-  setLeft?(): boolean;
+type NodeEnv = {
+  isNodeEnv: true;
 
-  // These somehow come from somewhere. Either a BlockEditor or a Node
-  // elements presumably.
-  cur?: CodeMirror.Position;
-  dispatch?: AppDispatch;
-  ast?: AST;
-  props: {
-    dispatch: AppDispatch;
-    activateByNid: (
-      nid: number,
-      options?: { allowMove: boolean; record?: boolean }
-    ) => void;
+  isLocked: () => boolean;
+  handleMakeEditable: (e?: React.KeyboardEvent) => void;
+  setRight: () => boolean;
+  setLeft: () => boolean;
 
-    // the following are from Node.tsx
-    collapse?: (id: string) => void;
-    uncollapse?: (id: string) => void;
-    setCursor?: (cur: CodeMirror.Position) => void;
-    isCollapsed?: boolean;
-    expandable?: boolean;
-    normallyEditable?: boolean;
-  };
-  node?: ASTNode;
+  dispatch: AppDispatch;
 
-  // these get tacked on by the keyDown function
+  isCollapsed: boolean;
+  expandable: boolean;
+  normallyEditable: boolean;
+  node: ASTNode;
+};
+
+export type InputEnv = BlockEditorEnv | NodeEnv;
+
+type Env = InputEnv & {
+  state: RootState;
   fastSkip?: (next: (node: ASTNode) => ASTNode) => ASTNode;
   activate?: (
     n: ASTNode | null | undefined,
@@ -85,12 +61,6 @@ export type InputEnv = {
   ) => void;
   activateNoRecord?: (node?: ASTNode) => void;
 };
-
-type Env = InputEnv &
-  InputEnv["props"] &
-  Pick<RootState, "ast" | "selections"> & {
-    state: RootState;
-  };
 
 type KeyMap = { [index: string]: string };
 
@@ -184,168 +154,178 @@ Object.assign(defaultKeyMap, mac ? macKeyMap : pcKeyMap);
 // see https://codemirror.net/doc/manual.html#keymaps
 CodeMirror.normalizeKeyMap(defaultKeyMap);
 
-function pasteHandler(this: Env, _: Editor, e: React.KeyboardEvent) {
-  if (!this.node) {
+const pasteHandler = (env: Env, e: React.KeyboardEvent) => {
+  if (!env.isNodeEnv) {
     return CodeMirror.Pass;
   }
   const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
-  const pos = before ? this.node.srcRange().from : this.node.srcRange().to;
+  const pos = before ? env.node.srcRange().from : env.node.srcRange().to;
   // Case 1: Overwriting selected nodes
-  if (this.selections.includes(this.node.id)) {
-    paste(new ReplaceNodeTarget(this.node));
+  if (env.state.selections.includes(env.node.id)) {
+    paste(new ReplaceNodeTarget(env.node));
   }
   // Case 2: Inserting to the left or right of the root
-  else if (!this.node.parent) {
+  else if (!env.node.parent) {
     paste(new OverwriteTarget(pos, pos));
   }
   // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
   else {
     const DTnode = document.getElementById(
-      "block-drop-target-" + getDTid(this.node, before)
+      "block-drop-target-" + getDTid(env.node, before)
     );
     if (DTnode?.dataset?.field) {
       // We're somewhere valid in the AST. Initiate paste on the target field!
-      paste(new InsertTarget(this.node.parent, DTnode.dataset.field, pos));
+      paste(new InsertTarget(env.node.parent, DTnode.dataset.field, pos));
     } else {
       playSound(BEEP);
       say(`Cannot paste ${e.shiftKey ? "before" : "after"} this node.`);
     }
   }
-}
+};
 
-export const commandMap: {
-  [index: string]: (this: Env, cm: Editor, e: React.KeyboardEvent) => void;
+const commandMap: {
+  [index: string]: (env: Env, e: React.KeyboardEvent) => void;
 } = {
-  "Shift Focus": function (_, e) {
+  "Shift Focus": (env, e) => {
     e.preventDefault();
-    this.toolbarRef.current.focus();
+    KeyDownContext.toolbarRef.current.focus();
   },
   // NAVIGATION
-  "Previous Block": function (_, e) {
+  "Previous Block": (env, e) => {
     e.preventDefault();
-    if (this.node) {
-      let prev = this.fastSkip((node) => node.prev);
+    if (env.isNodeEnv) {
+      let prev = env.fastSkip((node) => node.prev);
       if (prev) {
-        return this.activateByNid(prev.nid);
+        return env.dispatch(activateByNid(prev.nid));
+      } else {
+        return playSound(BEEP);
       }
     }
-    const prevNode = this.cur && this.ast.getNodeBeforeCur(this.cur);
+    const prevNode =
+      env.state.cur && env.state.ast.getNodeBeforeCur(env.state.cur);
     return prevNode
-      ? this.activateByNid(prevNode.nid, { allowMove: true })
+      ? env.dispatch(activateByNid(prevNode.nid, { allowMove: true }))
       : playSound(BEEP);
   },
 
-  "Next Block": function (_, e) {
+  "Next Block": (env, e) => {
     e.preventDefault();
-    if (this.node) {
-      let next = this.fastSkip((node) => node.next);
+    if (env.isNodeEnv) {
+      let next = env.fastSkip((node) => node.next);
       if (next) {
-        return this.activateByNid(next.nid);
+        return env.dispatch(activateByNid(next.nid));
+      } else {
+        return playSound(BEEP);
       }
     }
-    const nextNode = this.cur && this.ast.getNodeAfterCur(this.cur);
+    const nextNode =
+      env.state.cur && env.state.ast.getNodeAfterCur(env.state.cur);
     return nextNode
-      ? this.activateByNid(nextNode.nid, { allowMove: true })
+      ? env.dispatch(activateByNid(nextNode.nid, { allowMove: true }))
       : playSound(BEEP);
   },
 
-  "First Block": function (_) {
-    if (!this.node) {
+  "First Block": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    this.activateByNid(0, { allowMove: true });
+    env.dispatch(activateByNid(0, { allowMove: true }));
   },
 
-  "Last Visible Block": function (_) {
-    if (!this.node) {
+  "Last Visible Block": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      this.activateByNid(getLastVisibleNode(this.state).nid);
+      env.dispatch(activateByNid(getLastVisibleNode(env.state).nid));
     }
   },
 
-  "Collapse or Focus Parent": function (_, e) {
+  "Collapse or Focus Parent": (env, e) => {
     e.preventDefault();
-    if (!this.node) {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (this.expandable && !this.isCollapsed && !this.isLocked()) {
-      this.collapse(this.node.id);
-    } else if (this.node.parent) {
-      this.activateByNid(this.node.parent.nid);
+    if (env.expandable && !env.isCollapsed && !env.isLocked()) {
+      env.dispatch({ type: "COLLAPSE", id: env.node.id });
+    } else if (env.node.parent) {
+      env.dispatch(activateByNid(env.node.parent.nid));
     } else {
       playSound(BEEP);
     }
   },
 
-  "Expand or Focus 1st Child": function (_, e) {
-    if (!this.node) {
+  "Expand or Focus 1st Child": (env, e) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    const node = this.node;
+    const node = env.node;
     e.preventDefault();
-    if (this.expandable && this.isCollapsed && !this.isLocked()) {
-      this.uncollapse(node.id);
+    if (env.expandable && env.isCollapsed && !env.isLocked()) {
+      env.dispatch({ type: "UNCOLLAPSE", id: node.id });
     } else if (node.next?.parent === node) {
-      this.activateByNid(node.next.nid);
+      env.dispatch(activateByNid(node.next.nid));
     } else {
       playSound(BEEP);
     }
   },
 
-  "Collapse All": function (_) {
-    if (!this.node) {
+  "Collapse All": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    this.dispatch({ type: "COLLAPSE_ALL" });
-    this.activateByNid(getRoot(this.node).nid);
+    env.dispatch({ type: "COLLAPSE_ALL" });
+    env.dispatch(activateByNid(getRoot(env.node).nid));
   },
 
-  "Expand All": function (_) {
-    if (!this.node) {
+  "Expand All": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      return this.dispatch({ type: "UNCOLLAPSE_ALL" });
+      return env.dispatch({ type: "UNCOLLAPSE_ALL" });
     }
   },
 
-  "Collapse Current Root": function (_) {
-    if (!this.node) {
+  "Collapse Current Root": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.node.parent && (this.isCollapsed || !this.expandable)) {
+    if (!env.node.parent && (env.isCollapsed || !env.expandable)) {
       playSound(BEEP);
     } else {
-      let root = getRoot(this.node);
+      let root = getRoot(env.node);
       let descendants = [...root.descendants()];
-      descendants.forEach((d) => this.collapse(d.id));
-      this.activateByNid(root.nid);
+      descendants.forEach(
+        (d) => env.isNodeEnv && env.dispatch({ type: "COLLAPSE", id: d.id })
+      );
+      env.dispatch(activateByNid(root.nid));
     }
   },
 
-  "Expand Current Root": function (_) {
-    if (!this.node) {
+  "Expand Current Root": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    let root = getRoot(this.node);
-    [...root.descendants()].forEach((d) => this.uncollapse(d.id));
-    this.activateByNid(root.nid);
+    let root = getRoot(env.node);
+    [...root.descendants()].forEach(
+      (d) => env.isNodeEnv && env.dispatch({ type: "UNCOLLAPSE", id: d.id })
+    );
+    env.dispatch(activateByNid(root.nid));
   },
 
-  "Jump to Root": function (_) {
-    if (!this.node) {
+  "Jump to Root": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      this.activateByNid(getRoot(this.node).nid);
+      env.dispatch(activateByNid(getRoot(env.node).nid));
     }
   },
 
-  "Read Ancestors": function (_) {
-    if (!this.node) {
+  "Read Ancestors": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    const parents = [this.node.shortDescription()];
-    let next = this.node.parent;
+    const parents = [env.node.shortDescription()];
+    let next = env.node.parent;
     while (next) {
       parents.push(next.shortDescription() + ", at level " + next.level);
       next = next.parent;
@@ -357,21 +337,21 @@ export const commandMap: {
     }
   },
 
-  "Read Children": function (_) {
-    if (!this.node) {
+  "Read Children": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      say(this.node.describe(this.node.level));
+      say(env.node.describe(env.node.level));
     }
   },
 
   // SEARCH, SELECTION & CLIPBOARD
-  "Toggle Selection": function (_, e) {
-    if (!this.node) {
+  "Toggle Selection": (env, e) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
     e.preventDefault();
-    const node = this.node;
+    const node = env.node;
     const descendantIds = (node: ASTNode) =>
       [...node.descendants()].map((d) => d.id);
     const ancestorIds = (node: ASTNode) => {
@@ -386,19 +366,22 @@ export const commandMap: {
 
     // if the node is already selected, remove it, its descendants
     // and any ancestor
-    if (this.selections.includes(this.node.id)) {
-      const prunedSelection = this.selections
+    if (env.state.selections.includes(env.node.id)) {
+      const prunedSelection = env.state.selections
         .filter((s) => !descendantIds(node).includes(s))
         .filter((s) => !ancestorIds(node).includes(s));
-      this.dispatch({
+      env.dispatch({
         type: "SET_SELECTIONS",
         selections: prunedSelection,
       });
       // TODO(Emmanuel): announce removal
     } else {
-      const isContained = (id: string) => this.ast.isAncestor(node.id, id);
-      const doesContain = (id: string) => this.ast.isAncestor(id, node.id);
-      let [removed, newSelections] = partition(this.selections, isContained);
+      const isContained = (id: string) => env.state.ast.isAncestor(node.id, id);
+      const doesContain = (id: string) => env.state.ast.isAncestor(id, node.id);
+      let [removed, newSelections] = partition(
+        env.state.selections,
+        isContained
+      );
       for (const _r of removed) {
         // TODO(Emmanuel): announce removal
       }
@@ -408,7 +391,7 @@ export const commandMap: {
       } else {
         // TODO(Emmanuel): announce addition
         newSelections = newSelections.concat(descendantIds(node));
-        this.dispatch({
+        env.dispatch({
           type: "SET_SELECTIONS",
           selections: newSelections,
         });
@@ -416,176 +399,183 @@ export const commandMap: {
     }
   },
 
-  Edit: function (_, e) {
-    if (!this.node) {
+  Edit: (env, e) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (this.normallyEditable) {
-      this.handleMakeEditable(e);
+    if (env.normallyEditable) {
+      env.handleMakeEditable(e);
       e.preventDefault();
-    } else if (this.expandable && !this.isLocked()) {
-      (this.isCollapsed ? this.uncollapse : this.collapse)(this.node.id);
+    } else if (env.expandable && !env.isLocked()) {
+      if (env.isCollapsed) {
+        env.dispatch({ type: "UNCOLLAPSE", id: env.node.id });
+      } else {
+        env.dispatch({ type: "COLLAPSE", id: env.node.id });
+      }
     } else {
       playSound(BEEP);
     }
   },
 
-  "Edit Anything": function (_, e) {
-    if (!this.node) {
+  "Edit Anything": (env, e) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      return this.handleMakeEditable(e);
+      return env.handleMakeEditable(e);
     }
   },
 
-  "Clear Selection": function (_) {
-    if (!this.node) {
+  "Clear Selection": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    this.dispatch({ type: "SET_SELECTIONS", selections: [] });
+    env.dispatch({ type: "SET_SELECTIONS", selections: [] });
   },
 
-  "Delete Nodes": function (_) {
-    if (!this.node) {
+  "Delete Nodes": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.selections.length) {
+    if (!env.state.selections.length) {
       return say("Nothing selected");
     }
-    const nodesToDelete = this.selections.map(this.ast.getNodeById);
+    const nodesToDelete = env.state.selections.map(env.state.ast.getNodeById);
     delete_(nodesToDelete, "deleted");
   },
 
   // use the srcRange() to insert before/after the node *and*
   // any associated comments
-  "Insert Right": function (_) {
-    if (!this.node) {
+  "Insert Right": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.setRight()) {
-      this.setCursor(this.node.srcRange().to);
+    if (!env.setRight()) {
+      env.dispatch(setCursor(env.node.srcRange().to));
     }
   },
-  "Insert Left": function (_) {
-    if (!this.node) {
+  "Insert Left": (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.setLeft()) {
-      this.setCursor(this.node.srcRange().from);
+    if (!env.setLeft()) {
+      env.dispatch(setCursor(env.node.srcRange().from));
     }
   },
 
-  Cut: function (_) {
-    if (!this.node) {
+  Cut: (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    if (!this.selections.length) {
+    if (!env.state.selections.length) {
       return say("Nothing selected");
     }
-    const nodesToCut = this.selections.map(this.ast.getNodeById);
+    const nodesToCut = env.state.selections.map(env.state.ast.getNodeById);
     copy(nodesToCut, "cut");
     delete_(nodesToCut);
   },
 
-  Copy: function (_) {
-    if (!this.node) {
+  Copy: (env, _) => {
+    if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
     // if no nodes are selected, do it on focused node's id instead
-    const nodeIds = !this.selections.length ? [this.node.id] : this.selections;
-    const nodesToCopy = nodeIds.map(this.ast.getNodeById);
+    const nodeIds = !env.state.selections.length
+      ? [env.node.id]
+      : env.state.selections;
+    const nodesToCopy = nodeIds.map(env.state.ast.getNodeById);
     copy(nodesToCopy, "copied");
   },
 
   Paste: pasteHandler,
   "Paste Before": pasteHandler,
 
-  "Activate Search Dialog": function (_) {
+  "Activate Search Dialog": (env, _) => {
     SHARED.search.onSearch(
-      this.state,
+      env.state,
       () => {},
-      () => this.activateNoRecord(SHARED.search.search(true, this.state))
+      () => env.activateNoRecord(SHARED.search.search(true, env.state))
     );
   },
 
-  "Search Previous": function (_, e) {
+  "Search Previous": (env, e) => {
     e.preventDefault();
-    this.activateNoRecord(SHARED.search.search(false, this.state));
+    env.activateNoRecord(SHARED.search.search(false, env.state));
   },
 
-  "Search Next": function (_, e) {
+  "Search Next": (env, e) => {
     e.preventDefault();
-    this.activateNoRecord(SHARED.search.search(true, this.state));
+    env.activateNoRecord(SHARED.search.search(true, env.state));
   },
 
-  Undo: function (_, e) {
+  Undo: (env, e) => {
     e.preventDefault();
     preambleUndoRedo("undo");
     SHARED.cm.undo();
   },
 
-  Redo: function (_, e) {
+  Redo: (env, e) => {
     e.preventDefault();
     preambleUndoRedo("redo");
     SHARED.cm.redo();
   },
 
-  Help: function (_) {
-    this.showDialog({
+  Help: (env, _) => {
+    KeyDownContext.showDialog({
       title: "Keyboard Shortcuts",
-      content: renderKeyMap(defaultKeyMap),
+      content: <KeyMapTable keyMap={defaultKeyMap} />,
     });
   },
 };
 
 // Recieves the key event, an environment (BlockEditor or Node), and the
-// editor's keyMap. If there is a handler for that event, flatten the
-// environment and add some utility methods, then set the key handler's
-// "this" object to be that environment and call it.
-export function keyDown(
-  e: React.KeyboardEvent,
-  env: InputEnv,
-  keyMap: { [index: string]: string }
-) {
-  var handler = commandMap[keyMap[CodeMirror.keyName(e)]];
+// editor's keyMap. If there is a handler for that event, add some utility
+// methods and call the handler with the environment.
+export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
+  var handler = commandMap[defaultKeyMap[CodeMirror.keyName(e)]];
   if (handler) {
     e.stopPropagation();
-    env.props.dispatch((_, getState) => {
+    inputEnv.dispatch((_, getState) => {
       // set up the environment
       const state = getState();
-      const { ast, selections } = state;
-      Object.assign(env, env.props, { ast, selections, state });
-      // add convenience methods
-      env.fastSkip = function (next) {
-        return skipCollapsed(env.node, next, state);
-      };
-      env.activate = (n, options = { allowMove: true, record: true }) => {
-        if (n === null) {
-          playSound(BEEP);
-        }
-        env.props.activateByNid(
-          n === undefined ? env.node.nid : n.nid,
-          options
-        );
-      };
-      env.activateNoRecord = (node) => {
-        if (!node) {
-          return playSound(BEEP);
-        } // nothing to activate
-        env.dispatch(
-          activateByNid(node.nid, { record: false, allowMove: true })
-        );
+      const env: Env = {
+        ...inputEnv,
+        state,
+        // add convenience methods
+        fastSkip: (next: (node: ASTNode) => ASTNode) =>
+          env.isNodeEnv && skipCollapsed(env.node, next, state),
+        activate: (
+          n: ASTNode | null | undefined,
+          options = { allowMove: true, record: true }
+        ) => {
+          if (n === null) {
+            playSound(BEEP);
+          }
+          env.isNodeEnv &&
+            env.dispatch(
+              activateByNid(n === undefined ? env.node.nid : n.nid, options)
+            );
+        },
+        activateNoRecord: (node?: ASTNode) => {
+          if (!node) {
+            return playSound(BEEP);
+          } // nothing to activate
+          env.dispatch(
+            activateByNid(node.nid, { record: false, allowMove: true })
+          );
+        },
       };
       // If there's a node, make sure it's fresh
-      if (env.node) {
-        env.node = env.ast.getNodeByNId(env.ast.getNodeById(env.node.id).nid);
+      if (env.isNodeEnv) {
+        const updatedNode = state.ast.getNodeById(env.node.id);
+        env.node = updatedNode && state.ast.getNodeByNId(updatedNode.nid);
       }
+      handler(env, e);
     });
-    return handler.bind(env as Env)(SHARED.cm, e);
   }
 }
 
-export function renderKeyMap(keyMap: { [index: string]: string }) {
+const KeyMapTable = (props: { keyMap: KeyMap }) => {
+  const { keyMap } = props;
   const reverseMap: { [index: string]: string[] } = {};
   Object.keys(keyMap).forEach((key) => {
     if (!reverseMap[keyMap[key]]) {
@@ -617,4 +607,4 @@ export function renderKeyMap(keyMap: { [index: string]: string }) {
       </tbody>
     </table>
   );
-}
+};

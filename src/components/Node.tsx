@@ -1,4 +1,4 @@
-import React, { HTMLAttributes, useEffect, useState } from "react";
+import React, { HTMLAttributes } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ASTNode } from "../ast";
 import { drop, activateByNid, setCursor, ReplaceNodeTarget } from "../actions";
@@ -14,7 +14,7 @@ import CodeMirror from "codemirror";
 import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
-import { InputEnv } from "../keymap";
+import { InputEnv, keyDown } from "../keymap";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -79,38 +79,32 @@ const Node = (
   };
 
   const dispatch: AppDispatch = useDispatch();
-  const redux = {
-    dispatch,
-    collapse: (id: string) => dispatch({ type: "COLLAPSE", id }),
-    uncollapse: (id: string) => dispatch({ type: "UNCOLLAPSE", id }),
-    setCursor: (cur: CodeMirror.Position) => dispatch(setCursor(cur)),
-    activateByNid: (
-      nid: number,
-      options: { allowMove?: boolean; record?: boolean }
-    ) => dispatch(activateByNid(nid, options)),
-    setEditable: (id: string, bool: boolean) =>
-      dispatch({ type: "SET_EDITABLE", id, bool }),
-  };
 
   const keydownEnv: InputEnv = {
+    isNodeEnv: true,
+    node: props.node,
+
     isLocked,
     handleMakeEditable,
     setLeft: () => {
       const dropTargetId = findAdjacentDropTargetId(props.node, true);
       if (dropTargetId) {
-        redux.setEditable(dropTargetId, true);
+        dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
       }
       return !!dropTargetId;
     },
     setRight: () => {
       const dropTargetId = findAdjacentDropTargetId(props.node, false);
       if (dropTargetId) {
-        redux.setEditable(dropTargetId, true);
+        dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
       }
       return !!dropTargetId;
     },
-    // TODO(pcardune): don't blindly pass in all props
-    props: { ...props, ...redux },
+    normallyEditable: props.normallyEditable,
+    expandable: props.expandable,
+    isCollapsed: props.isCollapsed,
+
+    dispatch,
   };
   const handleClick = (e: React.MouseEvent) => {
     const { inToolbar, normallyEditable } = props;
@@ -127,16 +121,16 @@ const Node = (
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
     const { ast } = store.getState();
     const currentNode = ast.getNodeById(props.node.id);
-    redux.activateByNid(currentNode.nid, { allowMove: false });
+    dispatch(activateByNid(currentNode.nid, { allowMove: false }));
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (props.inToolbar) return;
     if (props.isCollapsed) {
-      redux.uncollapse(props.node.id);
+      dispatch({ type: "UNCOLLAPSE", id: props.node.id });
     } else {
-      redux.collapse(props.node.id);
+      dispatch({ type: "COLLAPSE", id: props.node.id });
     }
   };
 
@@ -244,7 +238,7 @@ const Node = (
         onDragStart={handleMouseDragRelated}
         onDragEnd={handleMouseDragRelated}
         onDrop={handleMouseDragRelated}
-        onKeyDown={(e) => store.onKeyDown(e, keydownEnv)}
+        onKeyDown={(e) => keyDown(e, keydownEnv)}
       >
         {props.children}
         {comment && comment.reactElement()}

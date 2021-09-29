@@ -315,6 +315,23 @@ type ToggleEditorState = {
   debuggingLog?: ToggleEditorProps["debuggingLog"];
 };
 
+// TODO(pcardune): make this use an actual context? Or maybe redux state?
+export const KeyDownContext = {
+  /**
+   * @internal
+   * Dialog showing/hiding methods deal with ToggleEditor state.
+   * We pass them to mode-specific components, to allow those
+   * components to show/hide dialogs
+   *
+   * This is hooked up when ToggleEditor gets mounted
+   */
+  showDialog: (contents: ToggleEditorState["dialog"]) => {
+    console.warn(`ToggleEditor has not been mounted yet. Can't show dialog`);
+  },
+
+  toolbarRef: createRef<HTMLInputElement>(),
+};
+
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state: ToggleEditorState = {
     blockMode: false,
@@ -333,7 +350,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   cmOptions: CodeMirror.EditorConfiguration;
   options: Options;
   eventHandlers: Record<string, Function[]>;
-  toolbarRef: React.RefObject<HTMLInputElement>;
   ast?: AST;
   newAST?: AST;
 
@@ -349,13 +365,14 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   constructor(props: ToggleEditorProps) {
     super(props);
 
-    this.toolbarRef = createRef();
-
     SHARED.parse = this.props.language.parse;
 
     this.eventHandlers = {}; // blank event-handler record
 
     this.state.code = props.initialCode;
+
+    KeyDownContext.showDialog = (contents: ToggleEditorState["dialog"]) =>
+      this.setState(() => ({ dialog: contents }));
   }
 
   /**
@@ -504,16 +521,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   /**
    * @internal
-   * Dialog showing/hiding methods deal with ToggleEditor state.
-   * We pass them to mode-specific components, to allow those
-   * components to show/hide dialogs
-   */
-  showDialog = (contents: ToggleEditorState["dialog"]) =>
-    this.setState(() => ({ dialog: contents }));
-  closeDialog = () => this.setState(() => ({ dialog: null }));
-
-  /**
-   * @internal
    * When the mode is toggled, (1) parse the value of the editor,
    * (2) pretty-print and re-parse to canonicalize the text,
    * (3) record TextMarkers and update editor state
@@ -586,7 +593,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
               }
               languageId={this.props.language.id}
               blockMode={this.state.blockMode}
-              toolbarRef={this.toolbarRef}
+              toolbarRef={KeyDownContext.toolbarRef}
             />
           </div>
           <div className="col-xs-9 codemirror-pane">
@@ -607,7 +614,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           appElement={this.props.appElement}
           isOpen={!!this.state.dialog}
           body={this.state.dialog}
-          closeFn={this.closeDialog}
+          closeFn={() => this.setState({ dialog: null })}
         />
       </>
     );
@@ -642,8 +649,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         appElement={this.props.appElement}
         languageId={this.props.language.id}
         options={{ ...defaultOptions, ...this.props.options }}
-        showDialog={this.showDialog}
-        toolbarRef={this.toolbarRef}
       />
     );
   }
