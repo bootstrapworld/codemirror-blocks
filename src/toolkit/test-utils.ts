@@ -1,6 +1,7 @@
 import CodeMirrorBlocks, { API, Language } from "../CodeMirrorBlocks";
 import { cleanup } from "@testing-library/react";
 import { afterAllDOMUpdates } from "../utils";
+import type { ASTNode } from "../ast";
 // pass along all the simulated events
 export * from "./simulate";
 
@@ -57,25 +58,51 @@ const fixture = `
     <div id="cmb-editor" class="editor-container"/>
   </div>
 `;
+
+export type TestContext = {
+  cmb: API;
+  activeNode: () => ASTNode;
+  activeAriaId: () => string;
+  selectedNodes: () => ASTNode[];
+};
+
 /**
- * Setup, be sure to use with `apply` (`activationSetup.apply(this, [pyret])`)
- * or `call` (`await activationSetup.call(this, pyret)`)
- * so that `this` is scoped correctly!
+ * Helper function for tests which constructs and mounts an instance of codemirror blocks
+ * into a DOM tree with block mode enabled and some other helpful default settings.
+ *
+ * @param language the language spec to use
  */
-export async function activationSetup(language: Language): Promise<void> {
+export async function mountCMB(language: Language): Promise<API> {
   document.body.insertAdjacentHTML("afterbegin", fixture);
   const container = document.getElementById("cmb-editor");
   const cmOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
-  this.cmb = CodeMirrorBlocks(
+  const cmb = CodeMirrorBlocks(
     container,
     { collapseAll: false, value: "", incrementalRendering: false },
     language,
     cmOptions
   );
-  this.cmb.setBlockMode(true);
+  await finishRender(cmb);
+  cmb.setBlockMode(true);
+  await finishRender(cmb);
+  return cmb;
+}
+
+/**
+ * Setup, be sure to use with `apply` (`activationSetup.apply(this, [pyret])`)
+ * or `call` (`await activationSetup.call(this, pyret)`)
+ * so that `this` is scoped correctly!
+ *
+ * @deprecated use mountCMB() instead
+ */
+export async function activationSetup(
+  this: TestContext,
+  language: Language
+): Promise<void> {
+  const cmb = await mountCMB(language);
+  this.cmb = cmb;
   this.activeNode = () => this.cmb.getFocusedNode();
   this.activeAriaId = () =>
     this.cmb.getScrollerElement().getAttribute("aria-activedescendent");
   this.selectedNodes = () => this.cmb.getSelectedNodes();
-  await finishRender(this.cmb);
 }
