@@ -59,7 +59,7 @@ const fixture = `
 `;
 /**
  * Setup, be sure to use with `apply` (`activationSetup.apply(this, [pyret])`)
- * or `call` (`activationSetup.call(this, pyret)`)
+ * or `call` (`await activationSetup.call(this, pyret)`)
  * so that `this` is scoped correctly!
  */
 export async function activationSetup(language: Language): Promise<void> {

@@ -35,13 +35,13 @@ import {
 console.log("Doing drag-test.js");
 
 // be sure to call with `apply` or `call`
-let setup = function () {
-  activationSetup.call(this, wescheme);
+let setup = async function () {
+  await activationSetup.call(this, wescheme);
 };
 
 describe("Drag and drop", function () {
-  beforeEach(function () {
-    setup.call(this);
+  beforeEach(async function () {
+    await setup.call(this);
   });
 
   afterEach(function () {
@@ -227,7 +227,7 @@ describe("Drag and drop", function () {
 
   describe("corner cases", function () {
     beforeEach(async function () {
-      setup.call(this);
+      await setup.call(this);
       this.cmb.setValue(";comment\n(a)\n(c)\n(define-struct e ())\ng");
       await finishRender(this.cmb);
       this.retrieve = function () {

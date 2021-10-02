@@ -35,13 +35,13 @@ import {
 console.log("Doing undo-redo-test.js");
 
 // be sure to call with `apply` or `call`
-let setup = function () {
-  activationSetup.call(this, wescheme);
+let setup = async function () {
+  await activationSetup.call(this, wescheme);
 };
 
 describe("when testing undo/redo,", function () {
   beforeEach(async function () {
-    setup.call(this);
+    await setup.call(this);
     this.currentFirstRoot = () => this.cmb.getAst().rootNodes[0];
     this.undo = (node) => keyDown("Z", cmd_ctrl, node);
     this.redo = (node) => {

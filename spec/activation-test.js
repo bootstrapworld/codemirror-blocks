@@ -35,13 +35,13 @@ import {
 console.log("Doing activation-test.js");
 
 // be sure to call with `apply` or `call`
-let setup = function () {
-  activationSetup.call(this, wescheme);
+let setup = async function () {
+  await activationSetup.call(this, wescheme);
 };
 
 describe("when dealing with node activation,", function () {
   beforeEach(async function () {
-    setup.call(this);
+    await setup.call(this);
     this.cmb.setValue("11\n54");
     await finishRender(this.cmb);
     let ast = this.cmb.getAst();
@@ -165,7 +165,7 @@ describe("when dealing with node activation,", function () {
 
 describe("cut/copy/paste", function () {
   beforeEach(async function () {
-    setup.call(this);
+    await setup.call(this);
 
     this.cmb.setValue("11\n54");
     await finishRender(this.cmb);
@@ -210,7 +210,7 @@ describe("cut/copy/paste", function () {
 
 describe("tree navigation", function () {
   beforeEach(async function () {
-    setup.call(this);
+    await setup.call(this);
 
     this.cmb.setValue("(+ 1 2 3) 99 (* 7 (* 1 2))");
     let ast = this.cmb.getAst();
@@ -384,7 +384,7 @@ describe("tree navigation", function () {
 
 describe("when dealing with node selection, ", function () {
   beforeEach(async function () {
-    setup.call(this);
+    await setup.call(this);
 
     this.cmb.setValue("11\n54\n(+ 1 2)");
     let ast = this.cmb.getAst();

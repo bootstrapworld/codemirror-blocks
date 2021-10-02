@@ -35,8 +35,8 @@ import {
 console.log("Doing api-test.js");
 
 // be sure to call with `apply` or `call`
-let setup = function () {
-  activationSetup.call(this, wescheme);
+let setup = async function () {
+  await activationSetup.call(this, wescheme);
 };
 function simpleCursor(cur) {
   const { line, ch } = cur;
@@ -45,7 +45,7 @@ function simpleCursor(cur) {
 
 describe("when testing CM apis,", function () {
   beforeEach(async function () {
-    setup.call(this);
+    await setup.call(this);
     this.cmb.setBlockMode(false);
     await finishRender(this.cmb);
     this.cmb.setValue(`(+ 1 2)\ny`);

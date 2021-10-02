@@ -35,13 +35,13 @@ console.log("Doing comment-test.js");
 const QUARANTINE_DELAY = 2000;
 
 // be sure to call with `apply` or `call`
-let setup = function () {
-  activationSetup.call(this, wescheme);
+let setup = async function () {
+  await activationSetup.call(this, wescheme);
 };
 
 describe("When editing and moving commented nodes", function () {
-  beforeEach(function () {
-    setup.call(this);
+  beforeEach(async function () {
+    await setup.call(this);
   });
 
   afterEach(function () {
