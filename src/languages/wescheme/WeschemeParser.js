@@ -20,16 +20,9 @@ import { LetLikeExpr, WhenUnless, Sequence } from "./ast";
 import { PrimitiveGroup } from "../../parsers/primitives";
 import PRIMITIVES_CONFIG from "./primitives-config";
 
-try {
-  var lex = require("wescheme-js/src/lex").lex;
-  var types = require("wescheme-js/src/runtime/types");
-  var structures = require("wescheme-js/src/structures");
-} catch (e) {
-  console.error(
-    "wescheme-js, which is required to use the wescheme blocks parser, does not appear to be installed.",
-    e
-  );
-}
+import { lex } from "wescheme-js/src/lex";
+const types = require("wescheme-js/src/runtime/types");
+const structures = require("wescheme-js/src/structures");
 
 let symbolMap = new Map();
 symbolMap.set("*", "multiply");
