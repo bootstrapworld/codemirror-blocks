@@ -2,6 +2,7 @@ node_modules
 build
 lib
 .coverage
+coverage
 docs
 npm-debug.log
 dist
