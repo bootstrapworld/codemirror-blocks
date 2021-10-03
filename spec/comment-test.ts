@@ -1,3 +1,5 @@
+import { ASTNode } from "../src/ast";
+import { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
 
 /*eslint no-unused-vars: "off"*/
@@ -7,7 +9,6 @@ import {
   wait,
   removeEventListeners,
   teardown,
-  activationSetup,
   click,
   mouseDown,
   mouseenter,
@@ -28,20 +29,18 @@ import {
   keyPress,
   insertText,
   finishRender,
+  mountCMB,
 } from "../src/toolkit/test-utils";
+import { debugLog } from "../src/utils";
 
-console.log("Doing comment-test.js");
+debugLog("Doing comment-test.js");
 
 const QUARANTINE_DELAY = 2000;
 
-// be sure to call with `apply` or `call`
-let setup = function () {
-  activationSetup.call(this, wescheme);
-};
-
 describe("When editing and moving commented nodes", function () {
-  beforeEach(function () {
-    setup.call(this);
+  let cmb!: API;
+  beforeEach(async function () {
+    cmb = await mountCMB(wescheme);
   });
 
   afterEach(function () {
@@ -49,40 +48,44 @@ describe("When editing and moving commented nodes", function () {
   });
 
   describe("inserting comments", function () {
+    let expr0!: ASTNode;
+    let expr1!: ASTNode;
+    let expr2!: ASTNode;
+
     beforeEach(async function () {
-      this.cmb.setValue(`
+      cmb.setValue(`
 (comment free)
 1; comment1
 #| comment2 |#
 2`);
-      this.cmb.setBlockMode(true);
-      await finishRender(this.cmb);
-      let ast = this.cmb.getAst();
-      this.expr0 = ast.rootNodes[0];
-      this.expr1 = ast.rootNodes[1];
-      this.expr2 = ast.rootNodes[2];
+      cmb.setBlockMode(true);
+      await finishRender(cmb);
+      let ast = cmb.getAst();
+      expr0 = ast.rootNodes[0];
+      expr1 = ast.rootNodes[1];
+      expr2 = ast.rootNodes[2];
     });
 
     it("when the mode is toggled, it should reformat all comments as block comments", async function () {
-      this.cmb.setBlockMode(false);
-      await finishRender(this.cmb);
+      cmb.setBlockMode(false);
+      await finishRender(cmb);
       // the opening whitespace should be removed!
-      expect(this.cmb.getValue()).toBe(`(comment free)
+      expect(cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
 #| comment2 |#
 2`);
     });
 
     it("you should be able to insert a commented node after a commented node", async function () {
-      this.cmb.setQuarantine(
+      cmb.setQuarantine(
         { line: 3, ch: 1 },
         { line: 3, ch: 1 },
         "1 #| comment1 |#"
       );
       await wait(QUARANTINE_DELAY);
-      click(this.expr0);
-      await finishRender(this.cmb);
-      expect(this.cmb.getValue()).toBe(`(comment free)
+      click(expr0);
+      await finishRender(cmb);
+      expect(cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
 #| comment2 |#
 2
@@ -90,15 +93,15 @@ describe("When editing and moving commented nodes", function () {
     });
 
     it("you should be able to insert a commented node after an uncommented node", async function () {
-      this.cmb.setQuarantine(
+      cmb.setQuarantine(
         { line: 0, ch: 14 },
         { line: 0, ch: 14 },
         "1 #| comment1 |#"
       );
       await wait(QUARANTINE_DELAY);
-      click(this.expr0);
-      await finishRender(this.cmb);
-      expect(this.cmb.getValue()).toBe(`(comment free)
+      click(expr0);
+      await finishRender(cmb);
+      expect(cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
 1 #| comment1 |#
 #| comment2 |#

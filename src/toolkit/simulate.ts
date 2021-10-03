@@ -11,7 +11,7 @@ import { ASTNode } from "../ast";
 //   (You can also just look at the table in the source code below.)
 // - `props` sets other properties on the event (whatever you like).
 
-type ElementLike = Element | ASTNode;
+type ElementLike = Node | Element | ASTNode;
 
 export function click(node: ElementLike) {
   fireEvent.click(toElement(node));
@@ -33,7 +33,7 @@ export function paste(
   try {
     dT = new DataTransfer();
   } catch (e) {
-    console.log("ERR in paste()");
+    console.error("ERR in paste()");
   }
   var pasteEvent = new ClipboardEvent("paste", { clipboardData: dT });
   pasteEvent.clipboardData.setData("text/plain", pastedString);
@@ -208,8 +208,8 @@ function getKeyCode(key: string): number {
 
 // Return either `node` or `node.element`, whichever is an instance of a DOM
 // element. If neither is, throw an error.
-function toElement(node: ElementLike): Element {
-  if (node instanceof Element) {
+function toElement(node: ElementLike): Element | Node {
+  if (node instanceof Element || node instanceof Node) {
     return node;
   }
   if (node && node.element instanceof Element) {

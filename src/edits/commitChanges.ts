@@ -41,7 +41,7 @@ export function commitChanges(
   astHint: AST = undefined,
   annt?: string | false
 ) {
-  //console.log('XXX commitChanges:34 doing commitChanges');
+  //debugLog('XXX commitChanges:34 doing commitChanges');
   try {
     let state = store.getState();
     let { ast: oldAST, focusId: oldFocusId } = state;
@@ -58,19 +58,19 @@ export function commitChanges(
     // Try to set the focus using hinting data. If that fails, use the first root
     let focusId =
       setFocus(changes, focusHint, newAST) || newAST.getFirstRootNode()?.id;
-    //console.log('XXX commitChanges:50 setFocus retd focusId=', focusId);
+    //debugLog('XXX commitChanges:50 setFocus retd focusId=', focusId);
     if (!isUndoOrRedo) {
       // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
       // this is what populates our undo stack.
-      //console.log('commitChanges:54 focusId=', focusId);
+      //debugLog('commitChanges:54 focusId=', focusId);
       let newFocus = null;
       if (focusId) {
         newFocus = newAST.getNodeById(focusId);
       }
       let newFocusNId = newFocus?.nid;
-      //console.log('XXX commitChanges:58 oldFocusNId=', oldFocusNId);
-      //console.log('XXX commitChanges:59 newFocusNId=', newFocusNId);
-      //console.log('XXX commitChanges:60 annt=', annt);
+      //debugLog('XXX commitChanges:58 oldFocusNId=', oldFocusNId);
+      //debugLog('XXX commitChanges:59 newFocusNId=', newFocusNId);
+      //debugLog('XXX commitChanges:60 annt=', annt);
       let tU = topmostUndoable("undo");
       tU.undoableAction = annt || undefined;
       tU.actionFocus = { oldFocusNId, newFocusNId };
@@ -92,7 +92,7 @@ function setFocus(
   focusHint: FocusHint | -1,
   newAST: AST
 ) {
-  //console.log('XXX commitChanges:78 doing setFocus');
+  //debugLog('XXX commitChanges:78 doing setFocus');
   if (focusHint == -1) return;
   let { collapsedList } = store.getState();
   let focusNode = focusHint ? focusHint(newAST) : "fallback";
@@ -104,9 +104,9 @@ function setFocus(
     if (collapsedList.includes(focusNode.id)) focusNId = focusNode.nid;
   }
   // get the nid and activate
-  //console.log('XXX commitChanges:90 focusNId=', focusNId, 'focusId=', focusNode.id);
+  //debugLog('XXX commitChanges:90 focusNId=', focusNId, 'focusId=', focusNode.id);
   if (focusNId !== null) {
-    //console.log('XXX commitChanges:92 calling dispatch of activateByNid', focusNId);
+    //debugLog('XXX commitChanges:92 calling dispatch of activateByNid', focusNId);
     store.dispatch(activateByNid(focusNId));
   }
 
@@ -114,7 +114,7 @@ function setFocus(
   let focusId = focusNode2 && focusNode2.id;
 
   // let focusId = focusNode ? focusNode.id : null; // this is wrong
-  //console.log('XXX commitChanges:100 focusId=', focusId);
+  //debugLog('XXX commitChanges:100 focusId=', focusId);
   return focusId;
 }
 

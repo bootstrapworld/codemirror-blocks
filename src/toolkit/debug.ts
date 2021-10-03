@@ -96,7 +96,7 @@ export function createDebuggingInterface(language: Language, value: string) {
         log = JSON.parse(readEvent.target.result.toString());
         if (!(log.exception && log.history)) throw "Bad Log";
       } catch {
-        console.log(readEvent.target.result.toString());
+        console.error(readEvent.target.result.toString());
         alert("Malformed log file!\nContents printed to console");
         return;
       }

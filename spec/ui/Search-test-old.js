@@ -8,12 +8,12 @@ const DELAY = 500;
 
 // be sure to call with `apply` or `call`
 let setup = function () {
-  activationSetup.call(this, example);
+  await activationSetup.call(this, example);
 };
 
 describe("Search component", function () {
-  beforeEach(function () {
-    setup.call(this);
+  beforeEach(async function () {
+    await setup.call(this);
     this.cmb.setBlockMode(true);
   });
 

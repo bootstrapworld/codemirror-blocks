@@ -63,7 +63,7 @@ type PrimitiveConfig = {
   name: string;
   argumentTypes: string[];
   returnType: string;
-  primitives: undefined;
+  primitives?: undefined;
 };
 
 type PrimitiveGroupConfig = {
@@ -141,7 +141,9 @@ export class PrimitiveGroup {
       } else if (typeof item == "object") {
         if (item.primitives) {
           // it's a group
-          items.push(PrimitiveGroup.fromConfig(languageId, item));
+          items.push(
+            PrimitiveGroup.fromConfig(languageId, item as PrimitiveGroupConfig)
+          );
         } else {
           items.push(Primitive.fromConfig(languageId, item as PrimitiveConfig));
         }

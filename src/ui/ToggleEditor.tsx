@@ -15,7 +15,7 @@ import type { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror, { MarkerRange, Position, TextMarker } from "codemirror";
 import type { ActionFocus } from "../reducers";
-import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
+import { setAfterDOMUpdate, cancelAfterDOMUpdate, debugLog } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 
 /**
@@ -30,6 +30,13 @@ declare module "codemirror" {
     scroll?: boolean;
   }
   interface DocOrEditor {
+    /**
+     * Get the currently selected code. Optionally pass a line separator to put between
+     * the lines in the output. When multiple selections are present, they are concatenated
+     * with instances of lineSep in between.
+     */
+    getSelection(lineSep?: string): string;
+
     /**
      * Adds a new selection to the existing set of selections, and makes it the primary selection.
      */
@@ -384,7 +391,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     startingSource: string;
     history?: unknown;
   }) => {
-    console.log("log is", jsonLog);
+    debugLog("log is", jsonLog);
     this.setState({ debuggingLog: jsonLog });
     this.props.api?.setValue(jsonLog.startingSource);
   };
