@@ -1,6 +1,6 @@
-import { parseToIntermediateAST } from "codemirror-blocks/languages/lambda/parser.js";
+import { parseToIntermediateAST } from "../../../src/languages/lambda/parser";
 
-var testData = [
+const testData: { input: string; output: any }[] = [
   {
     input: "123.5",
     output: {
@@ -352,9 +352,9 @@ a + b;`,
   },
 ];
 
-describe("lambda parser test suite", function () {
-  testData.slice(0, 12).forEach(function (data) {
-    it("testing" + " " + data.input, function () {
+describe("lambda parser test suite", () => {
+  testData.slice(0, 12).forEach((data) => {
+    it("testing" + " " + data.input, () => {
       var prog = parseToIntermediateAST(data.input).prog;
       if (prog.length == 1) {
         prog = prog[0];
