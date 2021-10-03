@@ -45,6 +45,15 @@ export type Props = Omit<
   value?: string;
 };
 
+function insertTextAtCaret(text: string) {
+  const sel = window.getSelection();
+  if (sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(text));
+  }
+}
+
 function OneLineContentEditable(
   props: Props & { forwardedRef: React.Ref<HTMLElement> }
 ) {
@@ -63,10 +72,10 @@ function OneLineContentEditable(
     onKeyDown && onKeyDown(e);
   };
 
-  const handlePaste = (ev: React.ClipboardEvent) => {
+  const handlePaste = (ev: React.ClipboardEvent<HTMLDivElement>) => {
     ev.preventDefault();
     const text = ev.clipboardData.getData("text");
-    document.execCommand("insertText", false, text);
+    insertTextAtCaret(text);
   };
 
   return (
