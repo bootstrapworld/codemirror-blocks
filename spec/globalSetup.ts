@@ -18,3 +18,38 @@ document.createRange = () => {
 
   return range;
 };
+
+class MockDataTransfer implements DataTransfer {
+  dropEffect: "none" | "copy" | "link" | "move";
+  effectAllowed:
+    | "none"
+    | "copy"
+    | "link"
+    | "move"
+    | "copyLink"
+    | "copyMove"
+    | "linkMove"
+    | "all"
+    | "uninitialized";
+  files: FileList;
+  items: DataTransferItemList;
+  types: readonly string[];
+  clearData(format?: string): void {
+    throw new Error("Method not implemented.");
+  }
+  private data: string;
+  getData(format: string): string {
+    return this.data;
+  }
+  setData(format: string, data: string): void {
+    this.data = data;
+  }
+  setDragImage(image: Element, x: number, y: number): void {
+    throw new Error("Method not implemented.");
+  }
+}
+
+window.DataTransfer = MockDataTransfer as typeof window.DataTransfer;
+
+window.HTMLMediaElement.prototype.play = jest.fn();
+window.HTMLMediaElement.prototype.pause = jest.fn();
