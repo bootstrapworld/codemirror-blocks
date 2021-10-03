@@ -4,8 +4,9 @@ import { teardown, finishRender, mountCMB } from "../src/toolkit/test-utils";
 import { API, AST } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
 import { MarkerRange, TextMarker } from "codemirror";
+import { debugLog } from "../src/utils";
 
-console.log("Doing markText-test.js");
+debugLog("Doing markText-test.js");
 
 describe("The CodeMirrorBlocks Class", function () {
   describe("text marking api,", function () {
@@ -118,7 +119,7 @@ describe("The CodeMirrorBlocks Class", function () {
             expect(literal1.element.style.background).toBe('red');
             cmb.setBlockMode(false);
             await finishRender(cmb);
-            console.log(cmb.getAllMarks());
+            debugLog(cmb.getAllMarks());
             expect(cmb.getAllMarks().length).toBe(1);
           });
         });

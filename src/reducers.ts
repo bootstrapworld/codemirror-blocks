@@ -1,7 +1,7 @@
 import CodeMirror from "codemirror";
 import type { Action } from "redux";
 import { AST } from "./ast";
-import { topmostUndoable } from "./utils";
+import { debugLog, topmostUndoable } from "./utils";
 
 /**
  * An Activity is a shallow-clone of a reducer action, except that
@@ -114,7 +114,7 @@ const initialState: RootState = {
 };
 
 export const reducer = (state = initialState, action: AppAction) => {
-  console.log(action);
+  debugLog(action);
   let result = null;
   let tU;
   switch (action.type) {
@@ -195,9 +195,9 @@ export const reducer = (state = initialState, action: AppAction) => {
       break;
 
     case "DO":
-      //console.log('XXX reducers:100 state.focusId=', state.focusId, 'action.focusId=', action.focusId);
+      //debugLog('XXX reducers:100 state.focusId=', state.focusId, 'action.focusId=', action.focusId);
       if (state.focusId !== action.focusId) {
-        //console.log('XXX reducers:102 updating focusId in state');
+        //debugLog('XXX reducers:102 updating focusId in state');
         result = { ...state, focusId: action.focusId };
       } else {
         result = { ...state };
@@ -224,7 +224,7 @@ export const reducer = (state = initialState, action: AppAction) => {
       result = initialState;
       break;
     default:
-      console.log("unprocessed action type=", (action as Action<any>).type);
+      debugLog("unprocessed action type=", (action as Action<any>).type);
       result = state;
   }
 

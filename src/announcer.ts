@@ -1,3 +1,5 @@
+import { debugLog } from "./utils";
+
 class Announcer {
   private queuedAnnouncement: ReturnType<typeof setTimeout>;
   private announcerElement: HTMLElement;
@@ -36,7 +38,7 @@ class Announcer {
     } else {
       // otherwise write it to the DOM,
       this.announcerElement.childNodes.forEach((c) => c.remove()); // remove the children
-      console.log("say:", text); // then erase it 10ms later
+      debugLog("say:", text); // then erase it 10ms later
       setTimeout(() => this.announcerElement.appendChild(announcement), delay);
     }
   }

@@ -159,10 +159,10 @@ export function hashObject(obj: Object) {
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a: Pos, b: Pos): number {
   if (!a) {
-    console.log("utils:44, hitting null a");
+    debugLog("utils:44, hitting null a");
   }
   if (!b) {
-    console.log("utils:44, hitting null b");
+    debugLog("utils:44, hitting null b");
   }
   return a.line - b.line || a.ch - b.ch;
 }
@@ -430,7 +430,7 @@ export function logResults(
   exception: any,
   description = "Crash Log"
 ) {
-  console.log(exception, history);
+  debugLog(exception, history);
   try {
     (document.getElementById("description") as HTMLTextAreaElement).value =
       description;
@@ -440,7 +440,7 @@ export function logResults(
       exception;
     (document.getElementById("errorLogForm") as HTMLFormElement).submit();
   } catch (e) {
-    console.log("LOGGING FAILED.", e, history);
+    debugLog("LOGGING FAILED.", e, history);
   }
 }
 
@@ -530,7 +530,7 @@ export const WRAP = new CustomAudio(wrapSound);
 
 export function playSound(sound: CustomAudio) {
   sound.pause();
-  console.log("BEEP!");
+  debugLog("BEEP!");
   if (!(sound.paused && !sound.isPlaying)) return;
   if (sound.readyState > 0) sound.currentTime = 0;
   // Promise handling from: https://goo.gl/xX8pDD
@@ -541,5 +541,11 @@ export function playSound(sound: CustomAudio) {
     playPromise
       .then(() => {}) // Automatic playback started!
       .catch(() => {}); // Automatic playback failed.
+  }
+}
+
+export function debugLog(...args: any[]) {
+  if (process.env.DEBUG) {
+    console.log(...args);
   }
 }

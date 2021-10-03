@@ -31,8 +31,9 @@ import {
   finishRender,
   mountCMB,
 } from "../src/toolkit/test-utils";
+import { debugLog } from "../src/utils";
 
-console.log("Doing comment-test.js");
+debugLog("Doing comment-test.js");
 
 const QUARANTINE_DELAY = 2000;
 

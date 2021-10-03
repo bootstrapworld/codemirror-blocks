@@ -12,8 +12,9 @@ import {
   finishRender,
   mountCMB,
 } from "../src/toolkit/test-utils";
+import { debugLog } from "../src/utils";
 
-console.log("Doing focus-test.js");
+debugLog("Doing focus-test.js");
 
 describe("focusing,", () => {
   let cmb!: API;

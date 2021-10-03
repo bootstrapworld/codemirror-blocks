@@ -13,8 +13,9 @@ import {
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
 import { FunctionApp } from "../src/nodes";
+import { debugLog } from "../src/utils";
 
-console.log("Doing activation-test.js");
+debugLog("Doing activation-test.js");
 
 const activeAriaId = (cmb: API) =>
   cmb.getScrollerElement().getAttribute("aria-activedescendent");

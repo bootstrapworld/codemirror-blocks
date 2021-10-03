@@ -106,7 +106,7 @@ export function performEdits(
   annt?: string
 ) {
   // Ensure that all of the edits are valid.
-  //console.log('XXX performEdits:55 doing performEdits');
+  //debugLog('XXX performEdits:55 doing performEdits');
   for (const edit of edits) {
     if (!(edit instanceof Edit)) {
       throw new Error(
@@ -140,15 +140,15 @@ export function performEdits(
       }
     }
   }
-  //console.log(origin, "edits:", edits, "changeArray:", changeArray); // temporary logging
+  //debugLog(origin, "edits:", edits, "changeArray:", changeArray); // temporary logging
   /* More detailed logging:
-  console.log(`${origin} - edits:`);
+  debugLog(`${origin} - edits:`);
   for (let edit of edits) {
-    console.log(`    ${edit.toString()}`);
+    debugLog(`    ${edit.toString()}`);
   }
-  console.log(`${origin} - text edits:`);
+  debugLog(`${origin} - text edits:`);
   for (let edit of changeArray) {
-    console.log(`    ${edit.from.line}:${edit.from.ch}-${edit.to.line}:${edit.to.ch}="${edit.text}"`);
+    debugLog(`    ${edit.from.line}:${edit.from.ch}-${edit.to.line}:${edit.to.ch}="${edit.text}"`);
   }
   */
   // Set the origins
@@ -165,7 +165,7 @@ export function performEdits(
           SHARED.cm.replaceRange(c.text, c.from, c.to, c.origin);
         }
       });
-      //console.log('XXX performEdits:110 calling commitChanges');
+      //debugLog('XXX performEdits:110 calling commitChanges');
       let { newAST, focusId } = commitChanges(
         changeArray,
         parse,

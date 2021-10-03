@@ -1,8 +1,9 @@
 import CodeMirror from "codemirror";
 import { AST } from "../src/CodeMirrorBlocks";
 import { FunctionApp, Literal, Sequence, Comment } from "../src/nodes";
+import { debugLog } from "../src/utils";
 
-console.log("Doing ast-test.js");
+debugLog("Doing ast-test.js");
 
 describe("The Literal Class", () => {
   it("should be constructed with a value and data type", () => {

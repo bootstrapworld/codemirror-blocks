@@ -15,7 +15,7 @@ import type { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror, { MarkerRange, Position, TextMarker } from "codemirror";
 import type { ActionFocus } from "../reducers";
-import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
+import { setAfterDOMUpdate, cancelAfterDOMUpdate, debugLog } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 
 /**
@@ -391,7 +391,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     startingSource: string;
     history?: unknown;
   }) => {
-    console.log("log is", jsonLog);
+    debugLog("log is", jsonLog);
     this.setState({ debuggingLog: jsonLog });
     this.props.api?.setValue(jsonLog.startingSource);
   };

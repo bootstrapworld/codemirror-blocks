@@ -12,8 +12,9 @@ import {
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import CodeMirror from "codemirror";
+import { debugLog } from "../src/utils";
 
-console.log("Doing api-test.js");
+debugLog("Doing api-test.js");
 
 function simpleCursor(cur: CodeMirror.Position) {
   const { line, ch } = cur;

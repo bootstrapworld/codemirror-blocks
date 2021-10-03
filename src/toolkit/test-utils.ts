@@ -41,7 +41,7 @@ export function teardown() {
   if (rootNode) {
     document.body.removeChild(rootNode);
   } else {
-    console.log(
+    console.error(
       "cleanupAfterTest() failed to find `root`.",
       " Did your test case use `activationSetup`?"
     );

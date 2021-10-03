@@ -16,9 +16,10 @@ import {
   finishRender,
   mountCMB,
 } from "../src/toolkit/test-utils";
+import { debugLog } from "../src/utils";
 const QUARANTINE_DELAY = 2000;
 
-console.log("Doing new-blocks-test.js");
+debugLog("Doing new-blocks-test.js");
 
 describe("The CodeMirrorBlocks Class", function () {
   let cmb!: API;

@@ -14,8 +14,9 @@ import {
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
+import { debugLog } from "../src/utils";
 
-console.log("Doing undo-redo-test.js");
+debugLog("Doing undo-redo-test.js");
 
 describe("when testing undo/redo,", () => {
   let cmb!: API;

@@ -33,7 +33,7 @@ export function paste(
   try {
     dT = new DataTransfer();
   } catch (e) {
-    console.log("ERR in paste()");
+    console.error("ERR in paste()");
   }
   var pasteEvent = new ClipboardEvent("paste", { clipboardData: dT });
   pasteEvent.clipboardData.setData("text/plain", pastedString);

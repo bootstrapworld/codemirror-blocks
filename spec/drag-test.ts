@@ -17,8 +17,9 @@ import {
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
 import { FunctionApp } from "../src/nodes";
+import { debugLog } from "../src/utils";
 
-console.log("Doing drag-test.js");
+debugLog("Doing drag-test.js");
 
 describe("Drag and drop", () => {
   let cmb!: API;
@@ -123,7 +124,7 @@ describe("Drag and drop", () => {
 
     /*
     it('should move an item to the top level when dragged outside a node 8', function() {
-      console.log('################ 8');
+      debugLog('################ 8');
       let dragEvent = dragstart();
       secondArg.element.dispatchEvent(dragEvent);
       let dropEvent = drop(dragEvent.dataTransfer);
@@ -134,7 +135,7 @@ describe("Drag and drop", () => {
       dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
       nodeEl.parentElement.dispatchEvent(dropEvent);
       expect(cmb.getValue().replace('  ', ' ')).toBe('(+ 1 3) 2');
-      console.log('%%%%%%%%%%%%%%%% 8');
+      debugLog('%%%%%%%%%%%%%%%% 8');
     });
     */
 
@@ -150,7 +151,7 @@ describe("Drag and drop", () => {
 
     /*
     it('should support dragging plain text to replace a literal 10', function() {
-      console.log('################ 10');
+      debugLog('################ 10');
       let elt1 = firstArg.element;
       let dragEvent = dragstart();
       elt1.dispatchEvent(dragEvent);
@@ -159,13 +160,13 @@ describe("Drag and drop", () => {
       elt1.dispatchEvent(dragend());
       firstArg.element.dispatchEvent(drop(dragEvent.dataTransfer));
       //expect(cmb.getValue().replace(/\s+/, ' ')).toBe('(+ 5000 2 3)');
-      console.log('%%%%%%%%%%%%%%%% 10');
+      debugLog('%%%%%%%%%%%%%%%% 10');
     });
     */
 
     /*
     it('should support dragging plain text onto some whitespace 11', function() {
-      console.log('################ 11');
+      debugLog('################ 11');
       let dragEvent = dragstart();
       dragEvent.dataTransfer = new DataTransfer();
       dragEvent.dataTransfer.setData('text/plain', '5000');
@@ -176,7 +177,7 @@ describe("Drag and drop", () => {
       dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
       nodeEl.parentElement.dispatchEvent(dropEvent);
       expect(cmb.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
-      console.log('%%%%%%%%%%%%%%%% 11');
+      debugLog('%%%%%%%%%%%%%%%% 11');
     });
     */
     it("save collapsed state when dragging root to be the last child of the next root", async () => {
