@@ -31,6 +31,13 @@ declare module "codemirror" {
   }
   interface DocOrEditor {
     /**
+     * Get the currently selected code. Optionally pass a line separator to put between
+     * the lines in the output. When multiple selections are present, they are concatenated
+     * with instances of lineSep in between.
+     */
+    getSelection(lineSep?: string): string;
+
+    /**
      * Adds a new selection to the existing set of selections, and makes it the primary selection.
      */
     addSelection(anchor: CodeMirror.Position, head?: CodeMirror.Position): void;
