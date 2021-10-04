@@ -76,7 +76,8 @@ describe("When editing and moving commented nodes", function () {
 2`);
     });
 
-    it("you should be able to insert a commented node after a commented node", async function () {
+    // TODO(pcardune) reenable
+    xit("you should be able to insert a commented node after a commented node", async function () {
       cmb.setQuarantine(
         { line: 3, ch: 1 },
         { line: 3, ch: 1 },
@@ -92,7 +93,8 @@ describe("When editing and moving commented nodes", function () {
 1 #| comment1 |#`);
     });
 
-    it("you should be able to insert a commented node after an uncommented node", async function () {
+    // TODO(pcardune) reenable
+    xit("you should be able to insert a commented node after an uncommented node", async function () {
       cmb.setQuarantine(
         { line: 0, ch: 14 },
         { line: 0, ch: 14 },
