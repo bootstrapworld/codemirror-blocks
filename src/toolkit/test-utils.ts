@@ -25,7 +25,7 @@ export async function wait(ms: number) {
 
 // wait for the editor to finish rendering and for any
 // other async DOM tasks to finish
-export function finishRender(editor: API) {
+export function finishRender() {
   return afterAllDOMUpdates();
 }
 
@@ -82,9 +82,9 @@ export async function mountCMB(language: Language): Promise<API> {
     language,
     cmOptions
   );
-  await finishRender(cmb);
+  await finishRender();
   cmb.setBlockMode(true);
-  await finishRender(cmb);
+  await finishRender();
   return cmb;
 }
 

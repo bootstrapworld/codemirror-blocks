@@ -59,7 +59,7 @@ describe("When editing and moving commented nodes", function () {
 #| comment2 |#
 2`);
       cmb.setBlockMode(true);
-      await finishRender(cmb);
+      await finishRender();
       let ast = cmb.getAst();
       expr0 = ast.rootNodes[0];
       expr1 = ast.rootNodes[1];
@@ -68,7 +68,7 @@ describe("When editing and moving commented nodes", function () {
 
     it("when the mode is toggled, it should reformat all comments as block comments", async function () {
       cmb.setBlockMode(false);
-      await finishRender(cmb);
+      await finishRender();
       // the opening whitespace should be removed!
       expect(cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
@@ -84,7 +84,7 @@ describe("When editing and moving commented nodes", function () {
       );
       await wait(QUARANTINE_DELAY);
       click(expr0);
-      await finishRender(cmb);
+      await finishRender();
       expect(cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
 #| comment2 |#
@@ -100,7 +100,7 @@ describe("When editing and moving commented nodes", function () {
       );
       await wait(QUARANTINE_DELAY);
       click(expr0);
-      await finishRender(cmb);
+      await finishRender();
       expect(cmb.getValue()).toBe(`(comment free)
 1 #| comment1 |#
 1 #| comment1 |#
