@@ -135,10 +135,9 @@ export function insertText(text: string) {
   ) {
     userEvent.type(document.activeElement, text);
   } else {
-    if (document.execCommand) {
-      // TODO: can this be done via fireEvent?
-      document.execCommand("insertText", false, text);
-    }
+    // this is some contenteditable node, so use an input event.
+    // See https://github.com/testing-library/dom-testing-library/pull/235
+    // for some discussion about this.
     fireEvent.input(document.activeElement, {
       target: { innerHTML: text },
     });
