@@ -6,9 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: sudo apt-get install xvfb
-      - run: export CHROME_BIN=google-chrome-stable
-      - run: google-chrome-stable --disable-gpu http://localhost &
 
       # Install Node
       - name: Use Node.js

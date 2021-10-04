@@ -11,29 +11,6 @@
  * - {@link getWebpackBundleConfig} for generating a minified javascript bundle that
  *   can be included with a `<script>` tag.
  *
- * **Karma Configuration**
- *
- * These helper functions are for setting up the karma test runner:
- *
- * - {@link getKarmaConfig}
- *
- * @example
- * ```js
- * import path from 'path';
- * import {getWebpackDevServerConfig, getWebpackBundleConfig} from 'codemirror-blocks/toolkit';
- * module.exports = [
- *   getWebpackDevServerConfig({
- *     context: path.resolve('site'),
- *     entry: "./index.ts"
- *   }),
- *   getWebpackBundleConfig({
- *     entry: {
- *       "CodeMirrorBlocks": path.resolve(__dirname, "src", "index"),
- *     }
- *   })
- * ];
- * ```
  * @module codemirror-blocks/toolkit
  */
 export { getWebpackBundleConfig, getWebpackDevServerConfig } from "./webpack";
-export { getKarmaConfig } from "./karma";
