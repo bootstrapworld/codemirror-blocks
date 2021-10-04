@@ -19,9 +19,7 @@ export default function attachSearch(
     return acc;
   }, {} as { [index: number]: unknown });
 
-  type Props = GetProps<BlockEditorComponentClass> & {
-    appElement: HTMLElement;
-  };
+  type Props = GetProps<BlockEditorComponentClass>;
 
   type State = {
     showSearchDialog: boolean;
@@ -185,7 +183,6 @@ export default function attachSearch(
           <Dialog
             isOpen={this.state.showSearchDialog}
             closeFn={this.handleCloseModal}
-            appElement={this.props.appElement}
             keyUp={this.handleKeyModal}
             body={{ title: "Search Settings", content: content }}
           ></Dialog>

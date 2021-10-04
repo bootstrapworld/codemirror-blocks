@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import Modal from "react-modal";
 import ToggleEditor from "./ui/ToggleEditor";
 import Args from "./components/Args";
 import * as DropTarget from "./components/DropTarget";
@@ -100,12 +101,15 @@ function CodeMirrorBlocks(
       language={language}
       initialCode={initialCode == null ? "" : initialCode}
       api={api}
-      appElement={container}
       options={options}
       cmOptions={cmOptions}
     />,
     container
   );
+  // See http://reactcommunity.org/react-modal/examples/set_app_element/
+  // Used to hide the application from screen readers while a modal
+  // is open.
+  Modal.setAppElement(container);
   return api;
 }
 

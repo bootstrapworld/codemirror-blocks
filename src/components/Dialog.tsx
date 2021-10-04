@@ -1,15 +1,8 @@
-import React, {
-  KeyboardEvent,
-  ReactElement,
-  useEffect,
-  useRef,
-  useCallback,
-} from "react";
+import React, { KeyboardEvent, ReactElement, useRef, useCallback } from "react";
 import Modal from "react-modal";
 import "../less/Dialog.less";
 
 type Props = {
-  appElement: string | HTMLElement;
   closeFn: () => void;
   isOpen: boolean;
   body: {
@@ -20,13 +13,9 @@ type Props = {
 };
 
 const Dialog = (props: Props) => {
-  const { appElement, isOpen, closeFn, keyUp, body } = props;
+  const { isOpen, closeFn, keyUp, body } = props;
   const headerRef = useRef<HTMLHeadingElement>(null);
   const focusTitle = useCallback(() => headerRef.current.focus(), []);
-
-  useEffect(() => {
-    Modal.setAppElement(appElement);
-  }, []);
 
   const onKeyUp = (e: KeyboardEvent): void => {
     if (e.key === "Escape") closeFn();
