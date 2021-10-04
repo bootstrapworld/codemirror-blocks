@@ -99,8 +99,8 @@ describe("The primitives module", () => {
         expect(group.languageId).toBe("my-lang");
         expect(group.primitives.length).toBe(6);
         const subGroup = group.primitives[5] as PrimitiveGroup;
-        expect(group.primitives[0]).toEqual(jasmine.any(Primitive));
-        expect(subGroup).toEqual(jasmine.any(PrimitiveGroup));
+        expect(group.primitives[0] instanceof Primitive).toBe(true);
+        expect(subGroup instanceof PrimitiveGroup).toBe(true);
         expect(group.primitives[0].name).toBe("add");
         expect(subGroup.name).toBe("String Manipulation");
         expect(subGroup.primitives.length).toBe(2);
