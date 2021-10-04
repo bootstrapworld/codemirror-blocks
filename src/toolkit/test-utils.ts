@@ -1,6 +1,6 @@
 import CodeMirrorBlocks, { API, Language } from "../CodeMirrorBlocks";
 import { cleanup } from "@testing-library/react";
-import { afterAllDOMUpdates } from "../utils";
+import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
 import type { ASTNode } from "../ast";
 // pass along all the simulated events
 export * from "./simulate";
@@ -36,6 +36,7 @@ export function removeEventListeners() {
 }
 
 export function teardown() {
+  cancelAllDOMUpdates();
   cleanup();
   const rootNode = document.getElementById("root");
   if (rootNode) {
