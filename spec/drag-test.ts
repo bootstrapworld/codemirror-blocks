@@ -54,12 +54,12 @@ describe("Drag and drop", () => {
     });
 
     it("should override nodes 1", () => {
-      expect(secondArg.element.innerText).toBe("2");
+      expect(secondArg.element.textContent).toBe("2");
       let dragEvent = dragstart();
       firstArg.element.dispatchEvent(dragEvent);
       secondArg.element.dispatchEvent(drop());
       retrieve();
-      expect(secondArg.element.innerText).toBe("3");
+      expect(secondArg.element.textContent).toBe("3");
     });
 
     it("should set the right css class on dragenter 2", () => {

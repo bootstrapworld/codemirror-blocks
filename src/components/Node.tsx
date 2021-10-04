@@ -137,7 +137,7 @@ const Node = (
   const handleMouseDragRelated = (e: React.MouseEvent<HTMLSpanElement>) => {
     if (e.type === "dragstart") {
       let dt = new DataTransfer();
-      dt.setData("text/plain", (e.target as HTMLSpanElement).innerText);
+      dt.setData("text/plain", (e.target as HTMLSpanElement).textContent);
     }
   };
   const { ...passingProps } = props;
