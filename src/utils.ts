@@ -100,6 +100,19 @@ export function cancelAfterDOMUpdate(handle: afterDOMUpdateHandle): void {
 }
 
 /**
+ * Cancels all pendings calls to {@link setAfterDOMUpdate}
+ *
+ * This should only be used in testing environments.
+ *
+ * @internal
+ */
+export function cancelAllDOMUpdates() {
+  for (const handle of uncompletedDOMUpdates) {
+    cancelAfterDOMUpdate(handle);
+  }
+}
+
+/**
  * Waits for all outstanding calls to setAfterDOMUpdate to finish or
  * be cancelled.
  *
@@ -545,7 +558,7 @@ export function playSound(sound: CustomAudio) {
 }
 
 export function debugLog(...args: any[]) {
-  if (process.env.DEBUG) {
+  if (global?.process?.env?.DEBUG) {
     console.log(...args);
   }
 }

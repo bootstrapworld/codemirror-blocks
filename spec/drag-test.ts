@@ -27,9 +27,7 @@ describe("Drag and drop", () => {
     cmb = await mountCMB(wescheme);
   });
 
-  afterEach(() => {
-    teardown();
-  });
+  afterEach(teardown);
 
   describe("when drag existing node and drop on existing node,", () => {
     let funcSymbol: ASTNode;
@@ -51,7 +49,7 @@ describe("Drag and drop", () => {
 
     beforeEach(async () => {
       cmb.setValue("(+ 1 2 3)");
-      await finishRender(cmb);
+      await finishRender();
       retrieve();
     });
 
@@ -182,7 +180,7 @@ describe("Drag and drop", () => {
     */
     it("save collapsed state when dragging root to be the last child of the next root", async () => {
       cmb.setValue("(collapse me)\n(+ 1 2)");
-      await finishRender(cmb);
+      await finishRender();
       let firstRoot: ASTNode;
       let lastDropTarget: Element;
       let retrieve = () => {
@@ -198,7 +196,7 @@ describe("Drag and drop", () => {
       let dragEvent = dragstart();
       firstRoot.element.dispatchEvent(dragEvent); // drag to the last droptarget
       lastDropTarget.dispatchEvent(drop());
-      await finishRender(cmb);
+      await finishRender();
       retrieve();
       let newFirstRoot = cmb.getAst().rootNodes[0] as FunctionApp;
       let newLastChild = newFirstRoot.args[2];
@@ -221,7 +219,7 @@ describe("Drag and drop", () => {
 
     beforeEach(async () => {
       cmb.setValue(";comment\n(a)\n(c)\n(define-struct e ())\ng");
-      await finishRender(cmb);
+      await finishRender();
       retrieve();
     });
 
@@ -233,14 +231,14 @@ describe("Drag and drop", () => {
       let dragEvent = dragstart();
       source.element.dispatchEvent(dragEvent); // drag to the last droptarget
       target1.dispatchEvent(drop());
-      await finishRender(cmb);
+      await finishRender();
     });
 
     it("regression test for empty identifierLists returning a null location", async () => {
       let dragEvent = dragstart();
       source.element.dispatchEvent(dragEvent); // drag to the last droptarget
       target2.dispatchEvent(drop());
-      await finishRender(cmb);
+      await finishRender();
     });
   });
 });

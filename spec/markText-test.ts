@@ -18,7 +18,7 @@ describe("The CodeMirrorBlocks Class", function () {
     beforeEach(async function () {
       cmb = await mountCMB(wescheme);
       cmb.setValue("11\n12\n(+ 3 4 5)");
-      await finishRender(cmb); // give the editor a chance to re-render
+      await finishRender(); // give the editor a chance to re-render
       cmb.getAllMarks().forEach((m) => m.clear());
       ast = cmb.getAst();
       literal1 = ast.rootNodes[0];
@@ -118,7 +118,7 @@ describe("The CodeMirrorBlocks Class", function () {
             expect(cmb.getAllMarks().length).toBe(1); 
             expect(literal1.element.style.background).toBe('red');
             cmb.setBlockMode(false);
-            await finishRender(cmb);
+            await finishRender();
             debugLog(cmb.getAllMarks());
             expect(cmb.getAllMarks().length).toBe(1);
           });

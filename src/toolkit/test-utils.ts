@@ -1,6 +1,6 @@
 import CodeMirrorBlocks, { API, Language } from "../CodeMirrorBlocks";
 import { cleanup } from "@testing-library/react";
-import { afterAllDOMUpdates } from "../utils";
+import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
 import type { ASTNode } from "../ast";
 // pass along all the simulated events
 export * from "./simulate";
@@ -25,7 +25,7 @@ export async function wait(ms: number) {
 
 // wait for the editor to finish rendering and for any
 // other async DOM tasks to finish
-export function finishRender(editor: API) {
+export function finishRender() {
   return afterAllDOMUpdates();
 }
 
@@ -36,6 +36,7 @@ export function removeEventListeners() {
 }
 
 export function teardown() {
+  cancelAllDOMUpdates();
   cleanup();
   const rootNode = document.getElementById("root");
   if (rootNode) {
@@ -82,9 +83,9 @@ export async function mountCMB(language: Language): Promise<API> {
     language,
     cmOptions
   );
-  await finishRender(cmb);
+  await finishRender();
   cmb.setBlockMode(true);
-  await finishRender(cmb);
+  await finishRender();
   return cmb;
 }
 
