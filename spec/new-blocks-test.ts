@@ -117,11 +117,15 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toEqual("9\n42\n11");
       });
       it("typing between two blocks on a line", async function () {
-        cmb.setCursor({ line: 0, ch: 3 });
-        keyDown("9", {}, cmb.getInputField());
-        insertText("9");
+        cmb.setQuarantine(
+          { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
+          { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
+          "9"
+        );
+        await wait(QUARANTINE_DELAY);
+        click(literal);
         await finishRender();
-        expect(cmb.getValue()).toEqual("429\n11");
+        expect(cmb.getValue()).toEqual("42\n9\n11");
       });
 
       // TODO: figure out how to fire a paste event
