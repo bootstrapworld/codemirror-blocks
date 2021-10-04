@@ -332,7 +332,15 @@ document.body.appendChild(buffer);
 function copyToClipboard(text: string) {
   buffer.value = text;
   buffer.select();
-  document.execCommand("copy");
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch((e) => {
+      console.error("Failed copying to clipboard: ", e);
+      // lets try using the deprecated API:
+      document.execCommand("copy");
+    });
+  } else if (document.execCommand) {
+    document.execCommand("copy");
+  }
 }
 
 function pasteFromClipboard(done: (value: string) => void) {

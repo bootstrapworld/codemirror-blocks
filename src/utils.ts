@@ -37,7 +37,10 @@ export type afterDOMUpdateHandle = {
 };
 
 const uncompletedDOMUpdates: Set<afterDOMUpdateHandle> = new Set();
-const afterAllDOMUpdateCallbacks: (() => void)[] = [];
+let afterAllDOMUpdateCallbacks: {
+  resolve: () => void;
+  reject: (e: any) => void;
+}[] = [];
 
 function markDOMUpdateCompleted(handle: afterDOMUpdateHandle) {
   // remove the handle from the set of uncompleted handles
@@ -51,7 +54,20 @@ function markDOMUpdateCompleted(handle: afterDOMUpdateHandle) {
     uncompletedDOMUpdates.size === 0 &&
     afterAllDOMUpdateCallbacks.length > 0
   ) {
-    afterAllDOMUpdateCallbacks.shift()();
+    afterAllDOMUpdateCallbacks.shift().resolve();
+  }
+}
+
+function markDOMUpdateFailed(handle: afterDOMUpdateHandle, e: any) {
+  // remove the handle from the set of uncompleted handles
+  uncompletedDOMUpdates.delete(handle);
+
+  // go through all afterAll callbacks hand reject them
+  // so that errors don't get swallowed
+  const failedCallbacks = [...afterAllDOMUpdateCallbacks];
+  afterAllDOMUpdateCallbacks = [];
+  for (const callback of failedCallbacks) {
+    callback.reject(e);
   }
 }
 
@@ -73,7 +89,12 @@ export function setAfterDOMUpdate(
   const handle: afterDOMUpdateHandle = {
     raf: window.requestAnimationFrame(() => {
       handle.timeout = setTimeout(() => {
-        callback();
+        try {
+          callback();
+        } catch (e) {
+          markDOMUpdateFailed(handle, e);
+          return;
+        }
         markDOMUpdateCompleted(handle);
       }, extraDelay);
     }),
@@ -123,10 +144,11 @@ export function cancelAllDOMUpdates() {
  * @internal
  */
 export function afterAllDOMUpdates(): Promise<void> {
-  return new Promise((resolve) => {
-    afterAllDOMUpdateCallbacks.push(resolve);
+  let promise: Promise<void> = new Promise((resolve, reject) => {
+    afterAllDOMUpdateCallbacks.push({ resolve, reject });
     setAfterDOMUpdate(() => {});
   });
+  return promise;
 }
 
 // make sure we never assign the same ID to two nodes in ANY active

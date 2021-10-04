@@ -10,12 +10,10 @@ export default addLanguage({
   description: "The WeScheme language",
   parse: parser.parse,
   getExceptionMessage: parser.getExceptionMessage,
-  primitives: [],
   getASTNodeForPrimitive: parser.getASTNodeForPrimitive,
   getLiteralNodeForPrimitive: parser.getLiteralNodeForPrimitive,
   primitivesFn() {
     let x = parser.primitivesFn();
-    this.primitives = x;
     return x;
   },
 });

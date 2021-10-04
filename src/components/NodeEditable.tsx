@@ -90,7 +90,7 @@ const NodeEditable = (props: Props) => {
       // we grab the value directly from the content editable element
       // to deal with this issue:
       // https://github.com/lovasoa/react-contenteditable/issues/161
-      const value = element.current.innerText;
+      const value = element.current.textContent;
       const { focusId, ast } = getState();
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently

@@ -117,11 +117,15 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toEqual("9\n42\n11");
       });
       it("typing between two blocks on a line", async function () {
-        cmb.setCursor({ line: 0, ch: 3 });
-        keyDown("9", {}, cmb.getInputField());
-        insertText("9");
+        cmb.setQuarantine(
+          { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
+          { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
+          "9"
+        );
+        await wait(QUARANTINE_DELAY);
+        click(literal);
         await finishRender();
-        expect(cmb.getValue()).toEqual("429\n11");
+        expect(cmb.getValue()).toEqual("42\n9\n11");
       });
 
       // TODO: figure out how to fire a paste event
@@ -180,20 +184,19 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(document.activeElement).not.toBe(undefined);
     });
 
-    describe('when "saving" bad inputs,', function () {
-      beforeEach(async function () {
-        spyOn(cmb, "replaceRange");
-        click(literal.element);
-        await finishRender();
-        let quarantine = document.activeElement;
-        let selection = window.getSelection();
-        expect(selection.rangeCount).toEqual(1);
-        let range = selection.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode('"moo'));
-        blur(quarantine);
-      });
-
+    xdescribe('when "saving" bad inputs,', function () {
+      // beforeEach(async function () {
+      //   spyOn(cmb, "replaceRange");
+      //   click(literal.element);
+      //   await finishRender();
+      //   let quarantine = document.activeElement;
+      //   let selection = window.getSelection();
+      //   expect(selection.rangeCount).toEqual(1);
+      //   let range = selection.getRangeAt(0);
+      //   range.deleteContents();
+      //   range.insertNode(document.createTextNode('"moo'));
+      //   blur(quarantine);
+      // });
       /*it('should not save anything & set all error state', function() {
         let quarantine = document.activeElement;//trackSetQuarantine.calls.mostRecent().returnValue;
         expect(cmb.replaceRange).not.toHaveBeenCalled();
@@ -321,15 +324,14 @@ describe("The CodeMirrorBlocks Class", function () {
         //   expect(trackHandleChange).toHaveBeenCalled();
         // });
 
-        describe('when "saving" bad whitepspace inputs,', function () {
-          beforeEach(async function () {
-            // whiteSpaceEl.dispatchEvent(dblclick());
-            // await finishRender();
-            // quarantine = trackSetQuarantine.calls.mostRecent().returnValue;
-            // quarantine.appendChild(document.createTextNode('"moo'));
-            // quarantine.dispatchEvent(blur());
-          });
-
+        xdescribe('when "saving" bad whitepspace inputs,', function () {
+          // beforeEach(async function () {
+          // whiteSpaceEl.dispatchEvent(dblclick());
+          // await finishRender();
+          // quarantine = trackSetQuarantine.calls.mostRecent().returnValue;
+          // quarantine.appendChild(document.createTextNode('"moo'));
+          // quarantine.dispatchEvent(blur());
+          // });
           // fails nondeterministically - figure out how to avoid
           // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
           // it('should not save anything & set all error state', async function() {

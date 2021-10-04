@@ -1,4 +1,5 @@
 import { fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ASTNode } from "../ast";
 
 // These exported functions simulate browser events for testing.
@@ -128,8 +129,20 @@ export function keyPress(
   fireEvent.keyPress(toElement(node), makeKeyEvent(key, props));
 }
 export function insertText(text: string) {
-  // TODO: can this be done via fireEvent?
-  document.execCommand("insertText", false, text);
+  if (
+    document.activeElement.tagName == "textarea" ||
+    document.activeElement.tagName == "input"
+  ) {
+    userEvent.type(document.activeElement, text);
+  } else {
+    if (document.execCommand) {
+      // TODO: can this be done via fireEvent?
+      document.execCommand("insertText", false, text);
+    }
+    fireEvent.input(document.activeElement, {
+      target: { innerHTML: text },
+    });
+  }
 }
 
 // -------------------------------------------------------------------------- //
