@@ -311,7 +311,9 @@ export function getRoot(node: ASTNode) {
 export function getLastVisibleNode(state: RootState) {
   const { collapsedList, ast } = state;
   const collapsedNodeList = collapsedList.map(ast.getNodeById);
-  const lastNode = ast.getNodeBeforeCur(ast.reverseRootNodes[0].to);
+  const lastNode = ast.getNodeBeforeCur(
+    ast.rootNodes[ast.rootNodes.length - 1].to
+  );
   return skipWhile(
     (node) =>
       !!node &&

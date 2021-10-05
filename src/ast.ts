@@ -53,20 +53,14 @@ export const prettyPrintingWidth = 80;
  * are required to spit out an `AST` instance.
  */
 export class AST {
-  rootNodes: ASTNode[];
-  reverseRootNodes: ASTNode[];
-  nodeIdMap: Map<string, ASTNode>;
-  nodeNIdMap: Map<number, ASTNode>;
-  id: number;
-  hash: any;
+  readonly rootNodes: ASTNode[];
+  readonly nodeIdMap: Map<string, ASTNode>;
+  readonly nodeNIdMap: Map<number, ASTNode>;
 
   constructor(rootNodes: ASTNode[], annotate = true) {
     // the `rootNodes` attribute simply contains a list of the top level nodes
     // that were parsed, in srcLoc order
     this.rootNodes = rootNodes;
-    this.rootNodes.sort((a, b) => poscmp(a.from, b.from));
-    // the `reverseRootNodes` attribute is a shallow, reversed copy of the rootNodes
-    this.reverseRootNodes = rootNodes.slice().reverse();
 
     // *Unique* ID for every newly-parsed node. No ID is ever re-used.
     this.nodeIdMap = new Map();
@@ -76,10 +70,9 @@ export class AST {
     // When an AST is to be used by CMB, it must be annotated.
     // This step is computationally intensive, and in certain instances
     // unecessary
-    if (annotate) this.annotateNodes();
-
-    this.id = -1; // just for the sake of having an id, though unused
-    this.hash = hashObject(this.rootNodes.map((node) => node.hash));
+    if (annotate) {
+      this.annotateNodes();
+    }
   }
 
   /**
@@ -176,7 +169,7 @@ export class AST {
    * validateNode : ASTNode -> Void
    * Raise an exception if a Node has is invalid
    */
-  validateNode(node: ASTNode) {
+  private validateNode(node: ASTNode) {
     const astFieldNames = [
       "from",
       "to",
@@ -580,13 +573,13 @@ export abstract class ASTNode<
   // based on the depth level, choose short v. long descriptions
   describe(level: number) {
     if (this.level - level >= descDepth) {
-      return this.shortDescription(level);
+      return this.shortDescription();
     } else {
       return this.longDescription(level);
     }
   }
   // the short description is literally the ARIA label
-  shortDescription(level?: number): string {
+  shortDescription(): string {
     return this.options["aria-label"] || "";
   }
 
