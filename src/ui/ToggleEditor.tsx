@@ -309,7 +309,6 @@ export type ToggleEditorProps = {
   language: Language;
   options?: Options;
   api?: API;
-  appElement: HTMLElement;
   debuggingLog?: {
     history?: unknown;
   };
@@ -618,7 +617,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         </div>
 
         <Dialog
-          appElement={this.props.appElement}
           isOpen={!!this.state.dialog}
           body={this.state.dialog}
           closeFn={() => this.setState({ dialog: null })}
@@ -653,7 +651,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         api={this.props.api}
         passedAST={this.ast}
         // the props below are unique to the BlockEditor
-        appElement={this.props.appElement}
         languageId={this.props.language.id}
         options={{ ...defaultOptions, ...this.props.options }}
       />
