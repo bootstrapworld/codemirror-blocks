@@ -87,7 +87,7 @@ function OneLineContentEditable(
       spellCheck={false}
       onKeyDown={handleKeyDown}
       onPaste={handlePaste}
-      innerRef={forwardedRef || undefined}
+      innerRef={forwardedRef}
     />
   );
 }
