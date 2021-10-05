@@ -1,4 +1,4 @@
-import { AST } from "../../ast";
+import { AST, ASTNode, Pos } from "../../ast";
 import { Literal, FunctionApp } from "../../nodes";
 
 const TOKENS = {
@@ -10,7 +10,11 @@ const TOKENS = {
 };
 
 class Token {
-  constructor(from, to, token, text) {
+  from: Pos;
+  to: Pos;
+  token: string;
+  text: string;
+  constructor(from: Pos, to: Pos, token: string, text: string) {
     this.from = from;
     this.to = to;
     this.token = token;
@@ -22,6 +26,10 @@ class Token {
 }
 
 export default class ExampleParser {
+  code: string;
+  charIndex: number;
+  lineIndex: number;
+  colIndex: number;
   getch() {
     let ch = this.code[this.charIndex];
     this.charIndex++;
@@ -33,11 +41,11 @@ export default class ExampleParser {
     return ch;
   }
 
-  getExceptionMessage(e) {
+  getExceptionMessage(e: any) {
     return e || "Parser error";
   }
 
-  getToken() {
+  getToken(): Token {
     const IDENTIFIER_RE = /[\w-+/*]/;
     if (this.charIndex >= this.code.length) {
       return new Token(
@@ -119,11 +127,11 @@ export default class ExampleParser {
     return token;
   }
 
-  lex(code) {
+  lex(code: string) {
     return this.parse(code);
   }
 
-  parse(code) {
+  parse(code: string) {
     this.code = code;
     this.charIndex = 0;
     this.lineIndex = 0;
@@ -136,7 +144,7 @@ export default class ExampleParser {
     return new AST(rootNodes);
   }
 
-  parseNextToken() {
+  parseNextToken(): ASTNode {
     switch (this.peekToken().token) {
       case TOKENS.OPEN_PAREN:
         return this.parseExpression();
