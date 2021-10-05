@@ -1,3 +1,5 @@
+import "@testing-library/jest-dom";
+
 export {};
 
 window.focus = () => {};
