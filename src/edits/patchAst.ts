@@ -1,4 +1,5 @@
-import type { AST, ASTNode } from "../ast";
+import type { AST } from "../ast";
+import { ASTNode } from "../ast";
 import { assert } from "../utils";
 
 // defaultdict with empty list
@@ -30,7 +31,9 @@ function copyAllIds(oldTree: ASTNode, newTree: ASTNode) {
 
 export default function unify(oldTree: AST, newTree: AST) {
   function loop(oldTree: ASTNode | AST, newTree: ASTNode | AST) {
-    newTree.id = oldTree.id;
+    if (newTree instanceof ASTNode && oldTree instanceof ASTNode) {
+      newTree.id = oldTree.id;
+    }
     const index: { [key: string]: ASTNode[] } = {};
     for (const oldNode of oldTree.children()) {
       addIndex(index, oldNode.hash, oldNode);
