@@ -22,7 +22,7 @@ import {
 } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 import BlockComponent from "../components/BlockComponent";
-import { InputEnv, keyDown } from "../keymap";
+import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { Editor, SelectionOptions } from "codemirror";
@@ -93,6 +93,7 @@ export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
 type ToplevelBlockProps = {
   incrementalRendering: boolean;
   node: ASTNode;
+  cm: Editor;
 };
 
 type ToplevelBlockState = {
@@ -158,11 +159,11 @@ class ToplevelBlock extends BlockComponent<
     // make a new block marker, and fill it with the portal
     window.requestAnimationFrame(() => {
       const { from, to } = node.srcRange(); // includes the node's comment, if any
-      SHARED.cm
+      this.props.cm
         .findMarks(from, to)
         .filter((m) => m.BLOCK_NODE_ID)
         .forEach((m) => m.clear());
-      this.mark = SHARED.cm.markText(from, to, {
+      this.mark = this.props.cm.markText(from, to, {
         replacedWith: this.container,
       });
       this.mark.BLOCK_NODE_ID = node.id;
@@ -181,6 +182,7 @@ type ToplevelBlockEditableCoreProps = {
   quarantine: Quarantine;
   onDisableEditable: () => void;
   onChange: (text: string) => void;
+  cm: Editor;
 };
 class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps> {
   container: HTMLElement;
@@ -213,11 +215,11 @@ class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps
       window.requestAnimationFrame(() => {
         // CM treats 0-width ranges differently than other ranges, so check
         if (poscmp(start, end) === 0) {
-          this.marker = SHARED.cm.setBookmark(start, {
+          this.marker = this.props.cm.setBookmark(start, {
             widget: this.container,
           });
         } else {
-          this.marker = SHARED.cm.markText(start, end, {
+          this.marker = this.props.cm.markText(start, end, {
             replacedWith: this.container,
           });
         }
@@ -941,10 +943,11 @@ class BlockEditor extends Component<BlockEditorProps> {
           key={r.id}
           node={r}
           incrementalRendering={incrementalRendering}
+          cm={SHARED.cm}
         />
       ));
       if (this.props.hasQuarantine)
-        portals.push(<ToplevelBlockEditable key="-1" />);
+        portals.push(<ToplevelBlockEditable cm={SHARED.cm} key="-1" />);
     }
     return portals;
   };
