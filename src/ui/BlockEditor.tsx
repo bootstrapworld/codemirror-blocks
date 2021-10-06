@@ -156,7 +156,7 @@ class ToplevelBlock extends BlockComponent<
     // AFTER THE REACT RENDER CYCLE IS OVER:
     // if any prior block markers are in this range, clear them
     // make a new block marker, and fill it with the portal
-    window.requestAnimationFrame(() => {
+    setAfterDOMUpdate(() => {
       const { from, to } = node.srcRange(); // includes the node's comment, if any
       SHARED.cm
         .findMarks(from, to)
@@ -210,7 +210,7 @@ class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps
     // IF NO MARKER IS DEFINED, WAIT UNTIL THE REACT RENDER
     // CYCLE IS OVER and make a new block marker
     if (!this.marker)
-      window.requestAnimationFrame(() => {
+      setAfterDOMUpdate(() => {
         // CM treats 0-width ranges differently than other ranges, so check
         if (poscmp(start, end) === 0) {
           this.marker = SHARED.cm.setBookmark(start, {
