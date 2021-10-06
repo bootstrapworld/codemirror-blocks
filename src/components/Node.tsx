@@ -201,6 +201,7 @@ const Node = (
     return (
       <NodeEditable
         {...passingProps}
+        cm={SHARED.cm}
         onDisableEditable={() => setEditable(false)}
         extraClasses={classes}
         isInsertion={false}

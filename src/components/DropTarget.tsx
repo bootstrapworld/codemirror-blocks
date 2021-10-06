@@ -204,6 +204,7 @@ field declared. The node was:`,
   if (isEditable) {
     return (
       <NodeEditable
+        cm={SHARED.cm}
         target={target}
         value={value}
         onChange={handleChange}

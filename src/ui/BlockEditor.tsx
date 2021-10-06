@@ -227,6 +227,7 @@ class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps
 
     return ReactDOM.createPortal(
       <NodeEditable
+        cm={SHARED.cm}
         target={new OverwriteTarget(start, end)}
         value={value}
         onChange={onChange}
