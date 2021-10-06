@@ -13,7 +13,12 @@ import TrashCan from "./TrashCan";
 import SHARED from "../shared";
 import type { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
-import CodeMirror, { MarkerRange, Position, TextMarker } from "codemirror";
+import CodeMirror, {
+  Editor,
+  MarkerRange,
+  Position,
+  TextMarker,
+} from "codemirror";
 import type { ActionFocus } from "../reducers";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate, debugLog } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
@@ -319,6 +324,7 @@ type ToggleEditorState = {
   code: string;
   dialog: null | { title: string; content: ReactElement };
   debuggingLog?: ToggleEditorProps["debuggingLog"];
+  cm: Editor | null;
 };
 
 // TODO(pcardune): make this use an actual context? Or maybe redux state?
@@ -343,6 +349,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     blockMode: false,
     dialog: null,
     code: "",
+    cm: null,
   };
 
   pendingTimeout?: afterDOMUpdateHandle;
@@ -423,12 +430,12 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         } else {
           this.eventHandlers[type].push(fn);
         }
-        SHARED.cm.on(type, fn);
+        this.state.cm.on(type, fn);
       },
       off: (...args: Parameters<CodeMirror.Editor["on"]>) => {
         const [type, fn] = args;
         this.eventHandlers[type]?.filter((h) => h !== fn);
-        SHARED.cm.off(type, fn);
+        this.state.cm.off(type, fn);
       },
       runMode: () => {
         throw "runMode is not supported in CodeMirror-blocks";
@@ -470,6 +477,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     });
     // save the editor, and announce completed mode switch
     SHARED.cm = ed;
+    this.setState({ cm: ed });
     say(mode + " Mode Enabled", 500);
   };
 
@@ -481,7 +489,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    */
   recordMarks(oldAST: AST) {
     this.recordedMarks.clear();
-    (SHARED.cm as CodeMirror.Editor)
+    this.state.cm
       .getAllMarks()
       .filter((m) => !m.BLOCK_NODE_ID && m.type !== "bookmark")
       .forEach((m: CodeMirror.TextMarker<MarkerRange | Position>) => {
@@ -536,7 +544,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       let oldAst, WS, code;
       try {
         try {
-          let oldCode = SHARED.cm.getValue();
+          let oldCode = this.state.cm.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
           oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
         } catch (err) {
@@ -585,7 +593,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
             setBlockMode={this.handleToggle}
             blockMode={this.state.blockMode}
           />
-          {this.state.blockMode ? <TrashCan /> : null}
+          {this.state.blockMode ? <TrashCan cm={this.state.cm} /> : null}
           <div
             className={"col-xs-3 toolbar-pane"}
             tabIndex={-1}
