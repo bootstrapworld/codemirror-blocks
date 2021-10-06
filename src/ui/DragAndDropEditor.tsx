@@ -1,21 +1,29 @@
-import { DomEvent, UnControlled as CodeMirror } from "react-codemirror2";
-import React from "react";
+import {
+  DomEvent,
+  IUnControlledCodeMirror,
+  UnControlled as CodeMirror,
+} from "react-codemirror2";
+import React, { useRef } from "react";
 import { ItemTypes } from "../dnd";
 import { drop, OverwriteTarget } from "../actions";
-import SHARED from "../shared";
 import { playSound, BEEP } from "../utils";
-import { GetProps, useDrop } from "react-dnd";
+import { useDrop } from "react-dnd";
+import { Editor } from "codemirror";
 
-type Props = GetProps<typeof CodeMirror>;
+type Props = Omit<IUnControlledCodeMirror, "editorDidMount"> & {
+  editorDidMount?: (ed: Editor) => void;
+};
 
-const WrappedCodeMirror = (props: Props) => {
+const DragAndDropEditor = (props: Props) => {
+  const cmRef = useRef<Editor>(null);
+
   const [_, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_, monitor) => {
       if (monitor.didDrop()) {
         return;
       }
-      const roots = SHARED.cm.getAllMarks().filter((m) => m.BLOCK_NODE_ID);
+      const roots = cmRef.current.getAllMarks().filter((m) => m.BLOCK_NODE_ID);
       const { x: left, y: top } = monitor.getClientOffset();
 
       // Did we get proper coordinate information from react DND?
@@ -34,8 +42,8 @@ const WrappedCodeMirror = (props: Props) => {
 
       // If it's in a valid part of CM whitespace, translate to "insert at loc" edit
       if (isDroppedOnWhitespace) {
-        const loc = SHARED.cm.coordsChar({ left, top });
-        drop(SHARED.cm, monitor.getItem(), new OverwriteTarget(loc, loc));
+        const loc = cmRef.current.coordsChar({ left, top });
+        drop(cmRef.current, monitor.getItem(), new OverwriteTarget(loc, loc));
         // Or else beep and make it a no-op
       } else {
         playSound(BEEP);
@@ -43,6 +51,11 @@ const WrappedCodeMirror = (props: Props) => {
     },
     collect: () => null,
   });
+
+  const onEditorMounted = (ed: Editor) => {
+    props.editorDidMount && props.editorDidMount(ed);
+    cmRef.current = ed;
+  };
 
   const handleDragOver: DomEvent = (ed, e) => {
     if (!e.target.classList.contains("CodeMirror-line")) {
@@ -57,7 +70,12 @@ const WrappedCodeMirror = (props: Props) => {
 
   return connectDropTarget(
     <div>
-      <CodeMirror onDrop={handleDrop} onDragOver={handleDragOver} {...props} />
+      <CodeMirror
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        {...props}
+        editorDidMount={onEditorMounted}
+      />
       {/* 
           Invisible form for error logging
           NOTE(Emmanuel) we should re-evaluate this when dealing 
@@ -97,4 +115,4 @@ const WrappedCodeMirror = (props: Props) => {
   );
 };
 
-export default WrappedCodeMirror;
+export default DragAndDropEditor;
