@@ -1,7 +1,8 @@
-import CodeMirror from "codemirror";
+import CodeMirror, { Editor } from "codemirror";
 import type { Action } from "redux";
 import { AST } from "./ast";
 import { debugLog, topmostUndoable } from "./utils";
+import SHARED from "./shared";
 
 /**
  * An Activity is a shallow-clone of a reducer action, except that
@@ -94,8 +95,8 @@ export type AppAction =
   | (Action<"ADD_MARK"> & { id: string; mark: CodeMirror.TextMarker })
   | (Action<"CLEAR_MARK"> & { id: string })
   | (Action<"DO"> & { focusId: string })
-  | Action<"UNDO">
-  | Action<"REDO">
+  | (Action<"UNDO"> & { cm: Editor })
+  | (Action<"REDO"> & { cm: Editor })
   | Action<"RESET_STORE_FOR_TESTING">;
 
 const initialState: RootState = {
@@ -204,7 +205,7 @@ export const reducer = (state = initialState, action: AppAction) => {
       }
       break;
     case "UNDO":
-      tU = topmostUndoable("redo", state);
+      tU = topmostUndoable(action.cm, "redo", state);
       tU.undoableAction = state.undoableAction;
       tU.actionFocus = state.actionFocus;
       state.undoableAction = null;
@@ -212,7 +213,7 @@ export const reducer = (state = initialState, action: AppAction) => {
       result = { ...state };
       break;
     case "REDO":
-      tU = topmostUndoable("undo", state);
+      tU = topmostUndoable(action.cm, "undo", state);
       tU.undoableAction = state.undoableAction;
       tU.actionFocus = state.actionFocus;
       state.undoableAction = null;

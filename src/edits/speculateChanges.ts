@@ -1,5 +1,4 @@
-import CodeMirror from "codemirror";
-import SHARED from "../shared";
+import CodeMirror, { Editor } from "codemirror";
 import type { EditorChange } from "codemirror";
 import type { AST } from "../ast";
 
@@ -14,9 +13,10 @@ const tmpCM = CodeMirror(tmpDiv, { value: "" });
 // - {successful: false, exception}
 export function speculateChanges(
   changeArr: EditorChange[],
-  parse: (code: string) => AST
+  parse: (code: string) => AST,
+  cm: Editor
 ) {
-  tmpCM.setValue(SHARED.cm.getValue());
+  tmpCM.setValue(cm.getValue());
   for (let c of changeArr) {
     tmpCM.replaceRange(c.text, c.from, c.to, c.origin);
   }
@@ -29,8 +29,8 @@ export function speculateChanges(
   }
 }
 
-export function getTempCM() {
-  const tmpCM = CodeMirror(tmpDiv, { value: SHARED.cm.getValue() });
-  tmpCM.setCursor(SHARED.cm.getCursor());
+export function getTempCM(cm: Editor) {
+  const tmpCM = CodeMirror(tmpDiv, { value: cm.getValue() });
+  tmpCM.setCursor(cm.getCursor());
   return tmpCM;
 }

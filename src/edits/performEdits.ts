@@ -6,7 +6,6 @@ import {
   logResults,
 } from "../utils";
 import { AST, ASTNode, Pos, prettyPrintingWidth } from "../ast";
-import SHARED from "../shared";
 import { commitChanges } from "./commitChanges";
 import { speculateChanges } from "./speculateChanges";
 import {
@@ -16,7 +15,7 @@ import {
   ClonedASTNode,
 } from "./fakeAstEdits";
 import { store } from "../store";
-import type { EditorChange } from "codemirror";
+import type { Editor, EditorChange } from "codemirror";
 import { getReducerActivities } from "../reducers";
 
 /**
@@ -101,6 +100,7 @@ export function performEdits(
   ast: AST,
   edits: Edit[],
   parse: (code: string) => AST,
+  cm: Editor,
   onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
   onError: OnError = (e: any) => {},
   annt?: string
@@ -136,7 +136,7 @@ export function performEdits(
       }
     } else {
       if (edit.toChangeObject) {
-        changeArray.push(edit.toChangeObject(ast));
+        changeArray.push(edit.toChangeObject(ast, cm));
       }
     }
   }
@@ -156,19 +156,20 @@ export function performEdits(
     c.origin = origin;
   }
   // Validate the text edits.
-  let result = speculateChanges(changeArray, parse);
+  let result = speculateChanges(changeArray, parse, cm);
   if (result.successful) {
     try {
       // Perform the text edits, and update the ast.
-      SHARED.cm.operation(() => {
+      cm.operation(() => {
         for (let c of changeArray) {
-          SHARED.cm.replaceRange(c.text, c.from, c.to, c.origin);
+          cm.replaceRange(c.text, c.from, c.to, c.origin);
         }
       });
       //debugLog('XXX performEdits:110 calling commitChanges');
       let { newAST, focusId } = commitChanges(
         changeArray,
         parse,
+        cm,
         false,
         focusHint,
         result.newAST,
@@ -196,7 +197,7 @@ export interface EditInterface {
   from: Pos;
   to: Pos;
   node?: ASTNode;
-  toChangeObject?(ast: AST): EditorChange;
+  toChangeObject?(ast: AST, cm: Editor): EditorChange;
   findDescendantNode(ancestor: ASTNode, id: string): ASTNode;
   focusHint(newAST: AST): ASTNode | "fallback";
   toString(): string;
@@ -211,7 +212,7 @@ abstract class Edit implements EditInterface {
     this.to = to;
   }
 
-  toChangeObject?(ast: AST): EditorChange;
+  toChangeObject?(ast: AST, cm: Editor): EditorChange;
 
   findDescendantNode(ancestor: ASTNode, id: string) {
     for (const node of ancestor.descendants()) {
@@ -297,8 +298,8 @@ class DeleteRootEdit extends Edit {
     this.node = node;
   }
 
-  toChangeObject(_ast: AST) {
-    const { from, to } = removeWhitespace(this.from, this.to);
+  toChangeObject(_ast: AST, cm: Editor) {
+    const { from, to } = removeWhitespace(this.from, this.to, cm);
     return {
       text: [""],
       from,
@@ -532,9 +533,9 @@ function groupEditsByAncestor(edits: Edit[]) {
  * @internal
  * When deleting a root, don't leave behind excessive whitespace
  */
-function removeWhitespace(from: Pos, to: Pos) {
-  let prevChar = SHARED.cm.getRange({ line: from.line, ch: from.ch - 1 }, from);
-  let nextChar = SHARED.cm.getRange(to, { line: to.line, ch: to.ch + 1 });
+function removeWhitespace(from: Pos, to: Pos, cm: Editor) {
+  let prevChar = cm.getRange({ line: from.line, ch: from.ch - 1 }, from);
+  let nextChar = cm.getRange(to, { line: to.line, ch: to.ch + 1 });
   if (prevChar == " " && (nextChar == " " || nextChar == "")) {
     // Delete an excess space.
     return { from: { line: from.line, ch: from.ch - 1 }, to: to };

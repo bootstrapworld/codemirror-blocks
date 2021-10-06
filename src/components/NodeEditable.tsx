@@ -3,11 +3,10 @@ import { useDispatch, useSelector } from "react-redux";
 import ContentEditable, {
   Props as ContentEditableProps,
 } from "./ContentEditable";
-import SHARED from "../shared";
 import classNames, { Argument as ClassNamesArgument } from "classnames";
 import { insert, activateByNid, Target } from "../actions";
 import { say } from "../announcer";
-import CodeMirror from "codemirror";
+import CodeMirror, { Editor } from "codemirror";
 import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
@@ -48,6 +47,7 @@ type Props = ContentEditableProps & {
   onDisableEditable?: () => void;
   contentEditableProps?: {};
   extraClasses?: ClassNamesArgument;
+  cm: Editor;
 };
 
 const NodeEditable = (props: Props) => {
@@ -59,7 +59,7 @@ const NodeEditable = (props: Props) => {
     const isErrored = state.errorId == nodeId;
 
     const initialValue =
-      props.value === null ? props.target.getText(state.ast) : "";
+      props.value === null ? props.target.getText(state.ast, props.cm) : "";
 
     return { isErrored, initialValue };
   });
@@ -98,13 +98,13 @@ const NodeEditable = (props: Props) => {
         props.onDisableEditable();
         const focusNode = ast.getNodeById(focusId);
         const nid = focusNode && focusNode.nid;
-        dispatch(activateByNid(nid));
+        dispatch(activateByNid(props.cm, nid));
         return;
       }
 
       let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
       const onSuccess = () => {
-        dispatch(activateByNid(null, { allowMove: false }));
+        dispatch(activateByNid(props.cm, null, { allowMove: false }));
         props.onChange(null);
         props.onDisableEditable();
         setErrorId("");
@@ -117,7 +117,7 @@ const NodeEditable = (props: Props) => {
           selectElement(element.current, false);
         }
       };
-      insert(value, target, onSuccess, onError, annt);
+      insert(value, target, props.cm, onSuccess, onError, annt);
     });
   };
 
@@ -138,7 +138,7 @@ const NodeEditable = (props: Props) => {
         // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
         // and then figure out how to get rid of it altogether.
         setAfterDOMUpdate(() => {
-          dispatch(activateByNid(null, { allowMove: false }));
+          dispatch(activateByNid(props.cm, null, { allowMove: false }));
         });
         return;
     }

@@ -1,8 +1,11 @@
+import { Editor } from "codemirror";
 import React from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Provider } from "react-redux";
 import { store } from "../store";
+
+export const CMContext: React.Context<Editor> = React.createContext(null);
 
 export default function Context<Props>(
   WrappedComponent: React.ComponentType<Props>

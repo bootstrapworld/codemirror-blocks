@@ -14,6 +14,7 @@ import {
 } from "./edits/performEdits";
 import { AST, ASTNode, Pos } from "./ast";
 import { RootState } from "./reducers";
+import { Editor } from "codemirror";
 
 // All editing actions are defined here.
 //
@@ -52,6 +53,7 @@ import { RootState } from "./reducers";
 export function insert(
   text: string,
   target: Target,
+  cm: Editor,
   onSuccess?: OnSuccess,
   onError?: OnError,
   annt?: string
@@ -64,6 +66,7 @@ export function insert(
     ast,
     edits,
     SHARED.parse,
+    cm,
     onSuccess,
     onError,
     annt
@@ -87,7 +90,7 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 }
 
 // Delete the given nodes.
-export function delete_(nodes: ASTNode[], editWord?: string) {
+export function delete_(cm: Editor, nodes: ASTNode[], editWord?: string) {
   // 'delete' is a reserved word
   if (nodes.length === 0) return;
   const { ast } = store.getState();
@@ -103,6 +106,7 @@ export function delete_(nodes: ASTNode[], editWord?: string) {
     ast,
     edits,
     SHARED.parse,
+    cm,
     undefined,
     undefined,
     annt
@@ -141,6 +145,7 @@ export function copy(nodes: ASTNode[], editWord?: string) {
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function paste(
+  cm: Editor,
   target: Target,
   onSuccess?: OnSuccess,
   onError?: OnError
@@ -149,7 +154,7 @@ export function paste(
   pasteFromClipboard((text) => {
     const { ast } = store.getState();
     const edits = [target.toEdit(text)];
-    performEdits("cmb:paste", ast, edits, SHARED.parse, onSuccess, onError);
+    performEdits("cmb:paste", ast, edits, SHARED.parse, cm, onSuccess, onError);
     store.dispatch({ type: "SET_SELECTIONS", selections: [] });
   });
 }
@@ -157,6 +162,7 @@ export function paste(
 // Drag from `src` (which should be a d&d monitor thing) to `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function drop(
+  cm: Editor,
   src: { id: string; content: string },
   target: Target,
   onSuccess?: OnSuccess,
@@ -186,7 +192,15 @@ export function drop(
   // Insert or replace at the drop location, depending on what we dropped it on.
   edits.push(target.toEdit(content));
   // Perform the edits.
-  performEdits("cmb:drop-node", ast, edits, SHARED.parse, onSuccess, onError);
+  performEdits(
+    "cmb:drop-node",
+    ast,
+    edits,
+    SHARED.parse,
+    cm,
+    onSuccess,
+    onError
+  );
 
   // Assuming it did not come from the toolbar, and the srcNode was collapsed...
   // Find the matching node in the new tree and collapse it
@@ -202,21 +216,21 @@ export function drop(
 
 // Drag from `src` (which should be a d&d monitor thing) to the trash can, which
 // just deletes the block.
-export function dropOntoTrashCan(src: { id: string }) {
+export function dropOntoTrashCan(cm: Editor, src: { id: string }) {
   const { ast } = store.getState();
   const srcNode = src.id ? ast.getNodeById(src.id) : null; // null if dragged from toolbar
   if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
   let edits = [edit_delete(srcNode)];
-  performEdits("cmb:trash-node", ast, edits, SHARED.parse);
+  performEdits("cmb:trash-node", ast, edits, SHARED.parse, cm);
 }
 
 // Set the cursor position.
-export function setCursor(cur: Pos) {
+export function setCursor(cm: Editor, cur: Pos) {
   return (dispatch: AppDispatch) => {
-    if (SHARED.cm && cur) {
-      SHARED.cm.focus();
+    if (cm && cur) {
+      cm.focus();
       SHARED.search.setCursor(cur);
-      SHARED.cm.setCursor(cur);
+      cm.setCursor(cur);
     }
     dispatch({ type: "SET_CURSOR", cur });
   };
@@ -224,6 +238,7 @@ export function setCursor(cur: Pos) {
 
 // Activate the node with the given `nid`.
 export function activateByNid(
+  cm: Editor,
   nid: number | null,
   options?: { allowMove?: boolean; record?: boolean }
 ) {
@@ -288,22 +303,22 @@ export function activateByNid(
         SHARED.search.setCursor(newNode.from);
       }
       // if this timeout fires after the node has been torn down, don't bother
-      if (newNode.element && SHARED.cm) {
-        const scroller = SHARED.cm.getScrollerElement();
-        const wrapper = SHARED.cm.getWrapperElement();
+      if (newNode.element && cm) {
+        const scroller = cm.getScrollerElement();
+        const wrapper = cm.getWrapperElement();
 
         if (options.allowMove) {
-          SHARED.cm.scrollIntoView(newNode.from);
+          cm.scrollIntoView(newNode.from);
           // get the *actual* bounding rect
           let { top, bottom, left, right } =
             newNode.element.getBoundingClientRect();
           let offset = wrapper.getBoundingClientRect();
-          let scroll = SHARED.cm.getScrollInfo();
+          let scroll = cm.getScrollInfo();
           top = top + scroll.top - offset.top;
           bottom = bottom + scroll.top - offset.top;
           left = left + scroll.left - offset.left;
           right = right + scroll.left - offset.left;
-          SHARED.cm.scrollIntoView({ top, bottom, left, right });
+          cm.scrollIntoView({ top, bottom, left, right });
         }
         scroller.setAttribute("aria-activedescendent", newNode.element.id);
         newNode.element.focus();
@@ -364,7 +379,7 @@ export abstract class Target {
   srcRange() {
     return { from: this.from, to: this.to };
   }
-  abstract getText(ast: AST): string;
+  abstract getText(ast: AST, cm: Editor): string;
   abstract toEdit(test: string): EditInterface;
 }
 
@@ -397,9 +412,9 @@ export class ReplaceNodeTarget extends Target {
     this.node = node;
   }
 
-  getText(ast: AST) {
+  getText(ast: AST, cm: Editor) {
     const { from, to } = ast.getNodeById(this.node.id);
-    return SHARED.cm.getRange(from, to);
+    return cm.getRange(from, to);
   }
 
   toEdit(text: string): EditInterface {
@@ -414,8 +429,8 @@ export class OverwriteTarget extends Target {
     super(from, to);
   }
 
-  getText() {
-    return SHARED.cm.getRange(this.from, this.to);
+  getText(ast: AST, cm: Editor) {
+    return cm.getRange(this.from, this.to);
   }
 
   toEdit(text: string): EditInterface {

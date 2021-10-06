@@ -431,14 +431,11 @@ export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
 
 // Minimize a CodeMirror-style change object, by excluding any shared prefix
 // between the old and new text. Mutates part of the change object.
-export function minimizeChange({
-  from,
-  to,
-  text,
-  removed,
-  origin = undefined,
-}: EditorChange) {
-  if (!removed) removed = SHARED.cm.getRange(from, to).split("\n");
+export function minimizeChange(
+  { from, to, text, removed, origin = undefined }: EditorChange,
+  cm?: Editor
+) {
+  if (!removed) removed = cm.getRange(from, to).split("\n");
   // Remove shared lines
   while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
     text.shift();
@@ -514,12 +511,16 @@ export class BlockError extends Error {
   }
 }
 
-export function topmostUndoable(which: "undo" | "redo", state?: RootState) {
+export function topmostUndoable(
+  cm: Editor,
+  which: "undo" | "redo",
+  state?: RootState
+) {
   if (!state) state = store.getState();
   let arr =
     which === "undo"
-      ? SHARED.cm.getDoc().getHistory().done
-      : SHARED.cm.getDoc().getHistory().undone;
+      ? cm.getDoc().getHistory().done
+      : cm.getDoc().getHistory().undone;
   for (let i = arr.length - 1; i >= 0; i--) {
     if (!arr[i].ranges) {
       return arr[i];
@@ -527,9 +528,9 @@ export function topmostUndoable(which: "undo" | "redo", state?: RootState) {
   }
 }
 
-export function preambleUndoRedo(which: "undo" | "redo") {
+export function preambleUndoRedo(cm: Editor, which: "undo" | "redo") {
   let state = store.getState();
-  let tU = topmostUndoable(which);
+  let tU = topmostUndoable(cm, which);
   if (tU) {
     say((which === "undo" ? "UNDID" : "REDID") + ": " + tU.undoableAction);
     state.undoableAction = tU.undoableAction;

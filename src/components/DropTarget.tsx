@@ -10,6 +10,7 @@ import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { AST } from "../CodeMirrorBlocks";
 import { ItemTypes } from "../dnd";
+import { CMContext } from "./Context";
 
 // Provided by `Node`
 export const NodeContext = createContext<{ node: ASTNode | null }>({
@@ -115,6 +116,7 @@ export const DropTarget = (props: { field: string }) => {
   const id = useMemo(genUniqueId, [genUniqueId]);
 
   const node = useContext(NodeContext).node;
+  const cm = useContext(CMContext);
 
   // ensure that the field property is set
   if (!props.field) {
@@ -161,7 +163,7 @@ field declared. The node was:`,
       if (monitor.didDrop()) {
         return;
       }
-      return drop(item, target);
+      return drop(cm, item, target);
     },
     collect: (monitor) => {
       return { isOver: monitor.isOver({ shallow: true }) };
@@ -203,6 +205,7 @@ field declared. The node was:`,
   if (isEditable) {
     return (
       <NodeEditable
+        cm={cm}
         target={target}
         value={value}
         onChange={handleChange}

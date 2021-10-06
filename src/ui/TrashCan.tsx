@@ -2,13 +2,14 @@ import React from "react";
 import { ItemTypes } from "../dnd";
 import { dropOntoTrashCan } from "../actions";
 import { useDrop } from "react-dnd";
+import { Editor } from "codemirror";
 require("./TrashCan.less");
 
-const TrashCan = () => {
+const TrashCan = (props: { cm: Editor }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.NODE,
     drop: (item: { id: string }) => {
-      dropOntoTrashCan(item);
+      dropOntoTrashCan(props.cm, item);
     },
     collect: (monitor) => ({ isOver: monitor.isOver() }),
   }));
