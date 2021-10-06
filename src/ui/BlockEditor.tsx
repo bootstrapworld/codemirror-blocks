@@ -30,6 +30,7 @@ import type { Options, API } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
+import { CMContext } from "../components/Context";
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = [
@@ -227,7 +228,7 @@ class ToplevelBlockEditableCore extends Component<ToplevelBlockEditableCoreProps
 
     return ReactDOM.createPortal(
       <NodeEditable
-        cm={SHARED.cm}
+        cm={this.props.cm}
         target={new OverwriteTarget(start, end)}
         value={value}
         onChange={onChange}
@@ -948,14 +949,15 @@ class BlockEditor extends Component<BlockEditorProps> {
     if (this.state.cm && this.props.ast) {
       // Render all the top-level nodes
       portals = this.props.ast.rootNodes.map((r) => (
-        <ToplevelBlock
-          key={r.id}
-          node={r}
-          incrementalRendering={incrementalRendering}
-          // TODO(pcardune): figure out why passing this.state.cm
-          // instead of SHARED.cm breaks tests.
-          cm={SHARED.cm}
-        />
+        <CMContext.Provider value={this.state.cm} key={r.id}>
+          <ToplevelBlock
+            node={r}
+            incrementalRendering={incrementalRendering}
+            // TODO(pcardune): figure out why passing this.state.cm
+            // instead of SHARED.cm breaks tests.
+            cm={SHARED.cm}
+          />
+        </CMContext.Provider>
       ));
       if (this.props.hasQuarantine) {
         // TODO(pcardune): figure out why passing this.state.cm

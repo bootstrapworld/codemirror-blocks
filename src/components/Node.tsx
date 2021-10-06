@@ -1,12 +1,11 @@
-import React, { HTMLAttributes } from "react";
+import React, { HTMLAttributes, useContext } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ASTNode } from "../ast";
-import { drop, activateByNid, setCursor, ReplaceNodeTarget } from "../actions";
+import { drop, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
 import BlockComponent from "./BlockComponent";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch, isErrorFree } from "../store";
-import SHARED from "../shared";
 import { ItemTypes } from "../dnd";
 import classNames from "classnames";
 import { store } from "../store";
@@ -15,6 +14,7 @@ import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
 import { InputEnv, keyDown } from "../keymap";
+import { CMContext } from "./Context";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -69,13 +69,13 @@ const Node = (
     props.setState({ ...props.state, editable });
   const value = props.state.value;
   const setValue = (value: string) => props.setState({ ...props.state, value });
-
+  const cm = useContext(CMContext);
   const isLocked = () => props.node.isLockedP;
   const handleMakeEditable = () => {
     if (!isErrorFree() || props.inToolbar) return;
     props.setState({ ...props.state, editable: true });
     setEditable(true);
-    SHARED.cm.refresh(); // is this needed?
+    cm.refresh(); // is this needed?
   };
 
   const dispatch: AppDispatch = useDispatch();
@@ -83,7 +83,7 @@ const Node = (
   const keydownEnv: InputEnv = {
     isNodeEnv: true,
     node: props.node,
-    cm: SHARED.cm,
+    cm: cm,
 
     isLocked,
     handleMakeEditable,
@@ -122,7 +122,7 @@ const Node = (
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
     const { ast } = store.getState();
     const currentNode = ast.getNodeById(props.node.id);
-    dispatch(activateByNid(SHARED.cm, currentNode.nid, { allowMove: false }));
+    dispatch(activateByNid(cm, currentNode.nid, { allowMove: false }));
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -175,7 +175,7 @@ const Node = (
         return;
       }
       const node = store.getState().ast.getNodeById(props.node.id);
-      return drop(SHARED.cm, monitor.getItem(), new ReplaceNodeTarget(node));
+      return drop(cm, monitor.getItem(), new ReplaceNodeTarget(node));
     },
     collect: (monitor) => {
       return {
@@ -201,7 +201,7 @@ const Node = (
     return (
       <NodeEditable
         {...passingProps}
-        cm={SHARED.cm}
+        cm={cm}
         onDisableEditable={() => setEditable(false)}
         extraClasses={classes}
         isInsertion={false}
