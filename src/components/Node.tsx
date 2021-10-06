@@ -83,6 +83,7 @@ const Node = (
   const keydownEnv: InputEnv = {
     isNodeEnv: true,
     node: props.node,
+    cm: SHARED.cm,
 
     isLocked,
     handleMakeEditable,
@@ -121,7 +122,7 @@ const Node = (
     if (!isErrorFree()) return; // TODO(Oak): is this the best way?
     const { ast } = store.getState();
     const currentNode = ast.getNodeById(props.node.id);
-    dispatch(activateByNid(currentNode.nid, { allowMove: false }));
+    dispatch(activateByNid(SHARED.cm, currentNode.nid, { allowMove: false }));
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -174,7 +175,7 @@ const Node = (
         return;
       }
       const node = store.getState().ast.getNodeById(props.node.id);
-      return drop(monitor.getItem(), new ReplaceNodeTarget(node));
+      return drop(SHARED.cm, monitor.getItem(), new ReplaceNodeTarget(node));
     },
     collect: (monitor) => {
       return {

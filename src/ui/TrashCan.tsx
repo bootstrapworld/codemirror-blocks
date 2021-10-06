@@ -1,4 +1,5 @@
 import React from "react";
+import SHARED from "../shared";
 import { ItemTypes } from "../dnd";
 import { dropOntoTrashCan } from "../actions";
 import { useDrop } from "react-dnd";
@@ -8,7 +9,7 @@ const TrashCan = () => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.NODE,
     drop: (item: { id: string }) => {
-      dropOntoTrashCan(item);
+      dropOntoTrashCan(SHARED.cm, item);
     },
     collect: (monitor) => ({ isOver: monitor.isOver() }),
   }));

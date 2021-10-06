@@ -94,7 +94,7 @@ const DropTarget = DropNodeTarget(function (monitor) {
   // If it's in a valid part of CM whitespace, translate to "insert at loc" edit
   if (isDroppedOnWhitespace) {
     const loc = SHARED.cm.coordsChar({ left, top });
-    drop(monitor.getItem(), new OverwriteTarget(loc, loc));
+    drop(SHARED.cm, monitor.getItem(), new OverwriteTarget(loc, loc));
     // Or else beep and make it a no-op
   } else {
     playSound(BEEP);

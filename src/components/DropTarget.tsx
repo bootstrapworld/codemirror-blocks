@@ -10,6 +10,7 @@ import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { AST } from "../CodeMirrorBlocks";
 import { ItemTypes } from "../dnd";
+import SHARED from "../shared";
 
 // Provided by `Node`
 export const NodeContext = createContext<{ node: ASTNode | null }>({
@@ -161,7 +162,7 @@ field declared. The node was:`,
       if (monitor.didDrop()) {
         return;
       }
-      return drop(item, target);
+      return drop(SHARED.cm, item, target);
     },
     collect: (monitor) => {
       return { isOver: monitor.isOver({ shallow: true }) };

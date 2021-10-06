@@ -251,7 +251,7 @@ const mapStateToProps = ({ ast, cur, quarantine }: RootState) => ({
 const mapDispatchToProps = (dispatch: AppDispatch) => ({
   dispatch,
   setAST: (ast: AST) => dispatch({ type: "SET_AST", ast }),
-  setCursor: (cur?: CodeMirror.Position) => dispatch(setCursor(cur)),
+  setCursor: (cur?: CodeMirror.Position) => dispatch(setCursor(SHARED.cm, cur)),
   clearFocus: () => {
     return dispatch({ type: "SET_FOCUS", focusId: null });
   },
@@ -329,7 +329,11 @@ class BlockEditor extends Component<BlockEditorProps> {
     change: CodeMirror.EditorChangeCancellable
   ) => {
     if (!change.origin?.startsWith("cmb:")) {
-      let { successful, newAST } = speculateChanges([change], SHARED.parse);
+      let { successful, newAST } = speculateChanges(
+        [change],
+        SHARED.parse,
+        SHARED.cm
+      );
       // Successful! Let's save all the hard work we did to build the new AST
       if (successful) {
         this.newAST = newAST;
@@ -367,8 +371,15 @@ class BlockEditor extends Component<BlockEditorProps> {
           if (actionFocus) {
             const { oldFocusNId } = actionFocus;
             const focusHint = (newAST: AST) => newAST.getNodeByNId(oldFocusNId);
-            commitChanges(changes, SHARED.parse, true, focusHint, this.newAST);
-            dispatch({ type: "UNDO" });
+            commitChanges(
+              changes,
+              SHARED.parse,
+              SHARED.cm,
+              true,
+              focusHint,
+              this.newAST
+            );
+            dispatch({ type: "UNDO", cm: SHARED.cm });
           }
         } else if (changes[0].origin === "redo") {
           for (let c of changes) c.origin = "cmb:redo";
@@ -376,8 +387,15 @@ class BlockEditor extends Component<BlockEditorProps> {
           if (actionFocus) {
             const { newFocusNId } = actionFocus;
             const focusHint = (newAST: AST) => newAST.getNodeByNId(newFocusNId);
-            commitChanges(changes, SHARED.parse, true, focusHint, this.newAST);
-            dispatch({ type: "REDO" });
+            commitChanges(
+              changes,
+              SHARED.parse,
+              SHARED.cm,
+              true,
+              focusHint,
+              this.newAST
+            );
+            dispatch({ type: "REDO", cm: SHARED.cm });
           }
         } else {
           // This (valid) changeset is coming from outside of the editor, but we
@@ -391,7 +409,14 @@ class BlockEditor extends Component<BlockEditorProps> {
           }
           if (annt === "") annt = "change";
           getState().undoableAction = annt; //?
-          commitChanges(changes, SHARED.parse, false, -1, this.newAST);
+          commitChanges(
+            changes,
+            SHARED.parse,
+            SHARED.cm,
+            false,
+            -1,
+            this.newAST
+          );
         }
       }
     });
@@ -453,7 +478,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
     // convert nid to node id, and use activate to generate the action
     if (activity.type == "SET_FOCUS") {
-      this.props.activateByNid(activity.nid, { allowMove: true });
+      this.props.activateByNid(SHARED.cm, activity.nid, { allowMove: true });
       return;
     }
     this.props.dispatch(action);
@@ -535,7 +560,7 @@ class BlockEditor extends Component<BlockEditorProps> {
             typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
           const node = ast.getNodeContaining(cur);
           if (node) {
-            this.props.activateByNid(node.nid, {
+            this.props.activateByNid(SHARED.cm, node.nid, {
               record: false,
               allowMove: true,
             });
@@ -668,7 +693,7 @@ class BlockEditor extends Component<BlockEditorProps> {
   listSelections() {
     const dispatch = this.props.dispatch;
     const { selections, ast } = dispatch((_, getState) => getState());
-    let tmpCM = getTempCM();
+    let tmpCM = getTempCM(SHARED.cm);
     // write all the ranges for all selected nodes
     selections.forEach((id) => {
       const node = ast.getNodeById(id);
@@ -691,7 +716,7 @@ class BlockEditor extends Component<BlockEditorProps> {
   ) {
     const dispatch = this.props.dispatch;
     const { ast } = dispatch((_, getState) => getState());
-    let tmpCM = getTempCM();
+    let tmpCM = getTempCM(SHARED.cm);
     tmpCM.setSelections(ranges, primary, options);
     const textRanges: {
       anchor: CodeMirror.Position;
@@ -727,7 +752,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     opts: SelectionOptions,
     to?: CodeMirror.Position
   ) {
-    let tmpCM: CodeMirror.Editor = getTempCM();
+    let tmpCM: CodeMirror.Editor = getTempCM(SHARED.cm);
     tmpCM.setSelections(this.listSelections());
     if (to) {
       tmpCM.extendSelections(heads, opts);
@@ -742,7 +767,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * that make sense in a block editor (must include only valid node ranges)
    */
   replaceSelections(replacements: string[], select?: "around" | "start") {
-    let tmpCM: CodeMirror.Editor = getTempCM();
+    let tmpCM: CodeMirror.Editor = getTempCM(SHARED.cm);
     tmpCM.setSelections(this.listSelections());
     tmpCM.replaceSelections(replacements, select);
     SHARED.cm.setValue(tmpCM.getValue());
@@ -781,7 +806,7 @@ class BlockEditor extends Component<BlockEditorProps> {
         // NOTE(Emmanuel): setAfterDOMUpdate so that the CM cursor will not blink
         cancelAfterDOMUpdate(this.pendingTimeout);
         this.pendingTimeout = setAfterDOMUpdate(() =>
-          this.props.activateByNid(null, { allowMove: true })
+          this.props.activateByNid(SHARED.cm, null, { allowMove: true })
         );
         this.mouseUsed = false;
       } else if (this.mouseUsed && cur === null) {
@@ -880,11 +905,6 @@ class BlockEditor extends Component<BlockEditorProps> {
       classes.push(`blocks-language-${this.props.languageId}`);
     }
 
-    const keyDownEnv: InputEnv = {
-      isNodeEnv: false,
-      dispatch: this.props.dispatch,
-    };
-
     return (
       <>
         <DragAndDropEditor
@@ -896,7 +916,13 @@ class BlockEditor extends Component<BlockEditorProps> {
           onMouseDown={this.handleTopLevelMouseDown}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
-          onKeyDown={(_, e) => keyDown(e, keyDownEnv)}
+          onKeyDown={(_, e) =>
+            keyDown(e, {
+              cm: SHARED.cm,
+              isNodeEnv: false,
+              dispatch: this.props.dispatch,
+            })
+          }
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount}
         />
