@@ -146,18 +146,20 @@ field declared. The node was:`,
   const setEditable = (bool: boolean) =>
     dispatch({ type: "SET_EDITABLE", id: id, bool });
 
-  const target = new InsertTarget(
-    node,
-    props.field,
-    getLocation({
-      id: id,
-      ast,
-      context: {
-        field: props.field,
-        node,
-      },
-    })
-  );
+  const createTarget = () =>
+    new InsertTarget(
+      node,
+      props.field,
+      getLocation({
+        id: id,
+        ast,
+        context: {
+          field: props.field,
+          node,
+        },
+      })
+    );
+
   const drop = useDropAction();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
@@ -165,7 +167,7 @@ field declared. The node was:`,
       if (monitor.didDrop()) {
         return;
       }
-      return drop(cm, item, target);
+      return drop(cm, item, createTarget());
     },
     collect: (monitor) => {
       return { isOver: monitor.isOver({ shallow: true }) };
@@ -211,7 +213,7 @@ field declared. The node was:`,
     return (
       <NodeEditable
         cm={cm}
-        target={target}
+        target={createTarget()}
         value={value}
         onChange={handleChange}
         onMouseEnter={handleMouseEnterRelated}
