@@ -157,7 +157,7 @@ declare module "codemirror" {
      * These are applied in the reducer.
      */
     undoableAction?: string;
-    actionFocus?: ActionFocus | false;
+    actionFocus?: ActionFocus;
   }
 
   interface TextMarker {

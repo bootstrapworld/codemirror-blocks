@@ -519,6 +519,7 @@ export function topmostUndoable(cm: Editor, which: "undo" | "redo") {
       return arr[i];
     }
   }
+  throw new Error(`No undoable found`);
 }
 
 export function preambleUndoRedo(

@@ -265,6 +265,14 @@ export class AST {
   getNodeById = (id: string) => this.nodeIdMap.get(id);
   getNodeByNId = (nid: number) => this.nodeNIdMap.get(nid);
 
+  getNodeByIdOrThrow = (id: string) => {
+    const node = this.getNodeById(id);
+    if (!node) {
+      throw new Error(`Node with id ${id} not found`);
+    }
+    return node;
+  };
+
   /**
    * Returns whether `u` is a strict ancestor of `v`
    * throws an exception if either isn't found
