@@ -278,7 +278,7 @@ export function partition<T>(arr: T[], f: (i: T) => boolean) {
 
 export function skipCollapsed(
   node: ASTNode,
-  next: (node: ASTNode) => ASTNode,
+  next: (node: ASTNode | undefined) => ASTNode | undefined,
   state: RootState
 ) {
   const { collapsedList, ast } = state;
