@@ -557,7 +557,7 @@ export class Comment extends ASTNode {
 
   static spec = Spec.nodeSpec([Spec.value("comment")]);
 
-  describe() {
+  describe(): string {
     return this.options["aria-label"];
   }
 

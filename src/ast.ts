@@ -579,7 +579,7 @@ export abstract class ASTNode<
   }
 
   // based on the depth level, choose short v. long descriptions
-  describe(level: number) {
+  describe(level: number): string | undefined {
     if (this.level - level >= descDepth) {
       return this.shortDescription();
     } else {

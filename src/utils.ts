@@ -52,7 +52,7 @@ function markDOMUpdateCompleted(handle: afterDOMUpdateHandle) {
     uncompletedDOMUpdates.size === 0 &&
     afterAllDOMUpdateCallbacks.length > 0
   ) {
-    afterAllDOMUpdateCallbacks.shift().resolve();
+    afterAllDOMUpdateCallbacks.shift()?.resolve();
   }
 }
 
@@ -230,11 +230,11 @@ export function srcRangeContains(range: Range, pos: Pos) {
 }
 
 export function skipWhile<T>(
-  skipper: (i: T) => boolean,
+  skipper: (i: T | undefined) => boolean | null | undefined,
   start: T,
-  next: (i: T) => T
+  next: (i: T | undefined) => T | undefined
 ) {
-  let now = start;
+  let now: T | undefined = start;
   while (skipper(now)) {
     now = next(now);
   }
@@ -289,8 +289,8 @@ export function skipCollapsed(
   return skipWhile(
     (node) =>
       node &&
-      collapsedNodeList.some((collapsed) =>
-        ast.isAncestor(collapsed.id, node.id)
+      collapsedNodeList.some(
+        (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
       ),
     next(node),
     next
@@ -308,17 +308,17 @@ export function getRoot(node: ASTNode) {
 
 export function getLastVisibleNode(state: RootState) {
   const { collapsedList, ast } = state;
-  const collapsedNodeList = collapsedList.map(ast.getNodeById);
+  const collapsedNodeList = collapsedList.map(ast.getNodeByIdOrThrow);
   const lastNode = ast.getNodeBeforeCur(
     ast.rootNodes[ast.rootNodes.length - 1].to
   );
   return skipWhile(
     (node) =>
-      !!node &&
+      node &&
       node.parent &&
-      collapsedNodeList.some((collapsed) => collapsed.id === node.parent.id),
+      collapsedNodeList.some((collapsed) => collapsed.id === node?.parent?.id),
     lastNode,
-    (n) => n.parent
+    (n) => n?.parent
   );
 }
 
@@ -431,9 +431,11 @@ export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
 // between the old and new text. Mutates part of the change object.
 export function minimizeChange(
   { from, to, text, removed, origin = undefined }: EditorChange,
-  cm?: Editor
+  cm: Editor
 ) {
-  if (!removed) removed = cm.getRange(from, to).split("\n");
+  if (!removed) {
+    removed = cm.getRange(from, to).split("\n");
+  }
   // Remove shared lines
   while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
     text.shift();
