@@ -466,7 +466,7 @@ class BlockEditor extends Component<BlockEditorProps> {
   private executeAction(activity: Activity) {
     // ignore certain logged actions that are already
     // handled by the BlockEditor constructor
-    const ignoreActions = ["SET_ANNOUNCER", "RESET_STORE_FOR_TESTING"];
+    const ignoreActions = ["RESET_STORE_FOR_TESTING"];
     if (ignoreActions.includes(activity.type)) {
       return;
     }

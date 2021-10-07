@@ -70,7 +70,6 @@ export type RootState = {
   errorId: string;
   cur: CodeMirror.Position | null;
   quarantine: Quarantine | null;
-  announcer: HTMLElement;
 };
 
 export type AppAction =
@@ -91,7 +90,6 @@ export type AppAction =
       end: CodeMirror.Position;
       text: string;
     })
-  | (Action<"SET_ANNOUNCER"> & { announcer: HTMLElement })
   | (Action<"ADD_MARK"> & { id: string; mark: CodeMirror.TextMarker })
   | (Action<"CLEAR_MARK"> & { id: string })
   | (Action<"DO"> & { focusId: string })
@@ -111,10 +109,9 @@ const initialState: RootState = {
   errorId: "",
   cur: null,
   quarantine: null,
-  announcer: null,
 };
 
-export const reducer = (state = initialState, action: AppAction) => {
+export const reducer = (state = initialState, action: AppAction): RootState => {
   debugLog(action);
   let result = null;
   let tU;
@@ -180,9 +177,6 @@ export const reducer = (state = initialState, action: AppAction) => {
         ...state,
         quarantine: [action.start, action.end, action.text] as Quarantine,
       };
-      break;
-    case "SET_ANNOUNCER":
-      result = { ...state, announcer: action.announcer };
       break;
     case "ADD_MARK":
       result = {
