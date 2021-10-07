@@ -666,4 +666,4 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }
 }
 
-export default CMBContext<ToggleEditorProps>(ToggleEditor);
+export default ToggleEditor;

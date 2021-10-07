@@ -14,9 +14,11 @@ import {
   cloneNode,
   ClonedASTNode,
 } from "./fakeAstEdits";
-import { store } from "../store";
+import type { AppDispatch } from "../store";
 import type { Editor, EditorChange } from "codemirror";
-import { getReducerActivities } from "../reducers";
+import { getReducerActivities, RootState } from "../reducers";
+import { useDispatch, useSelector } from "react-redux";
+import { useCallback } from "react";
 
 /**
  *
@@ -86,6 +88,54 @@ export function edit_replace(text: string, node: ASTNode): Edit {
 export type OnSuccess = (r: { newAST: AST; focusId: string }) => void;
 export type OnError = (e: any) => void;
 
+export type PerformEditState = Pick<
+  RootState,
+  "ast" | "focusId" | "collapsedList"
+>;
+
+export function usePerformEdits() {
+  const dispatch = useDispatch();
+  const state = useSelector(({ ast, focusId, collapsedList }: RootState) => ({
+    ast,
+    focusId,
+    collapsedList,
+  }));
+  return useCallback(
+    (
+      origin: string,
+      edits: Edit[],
+      parse: (code: string) => AST,
+      cm: Editor,
+      onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
+      onError: OnError = (e: any) => {},
+      annt?: string
+    ) =>
+      performEdits(
+        state,
+        dispatch,
+        origin,
+        edits,
+        parse,
+        cm,
+        onSuccess,
+        onError,
+        annt
+      ),
+    [state.ast, state.focusId, state.collapsedList]
+  );
+}
+
+type EditResult =
+  | {
+      successful: true;
+      newAST: AST;
+      focusId: string;
+    }
+  | {
+      successful: false;
+      exception: any;
+    };
+
 /**
  * performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
  *
@@ -96,24 +146,16 @@ export type OnError = (e: any) => void;
  * determined by the focus of the _last_ edit in `edits`.
  */
 export function performEdits(
+  state: PerformEditState,
+  dispatch: AppDispatch,
   origin: string,
-  ast: AST,
   edits: Edit[],
   parse: (code: string) => AST,
   cm: Editor,
   onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
   onError: OnError = (e: any) => {},
   annt?: string
-) {
-  // Ensure that all of the edits are valid.
-  //debugLog('XXX performEdits:55 doing performEdits');
-  for (const edit of edits) {
-    if (!(edit instanceof Edit)) {
-      throw new Error(
-        `performEdits - invalid edit ${edit}: all edits must be instances of Edit.`
-      );
-    }
-  }
+): EditResult {
   // Use the focus hint from the last edit provided.
   const lastEdit = edits[edits.length - 1];
   const focusHint = (newAST: AST) => lastEdit.focusHint(newAST);
@@ -136,7 +178,7 @@ export function performEdits(
       }
     } else {
       if (edit.toChangeObject) {
-        changeArray.push(edit.toChangeObject(ast, cm));
+        changeArray.push(edit.toChangeObject(state.ast, cm));
       }
     }
   }
@@ -167,6 +209,8 @@ export function performEdits(
       });
       //debugLog('XXX performEdits:110 calling commitChanges');
       let { newAST, focusId } = commitChanges(
+        state,
+        dispatch,
         changeArray,
         parse,
         cm,
@@ -176,11 +220,13 @@ export function performEdits(
         annt
       );
       onSuccess({ newAST, focusId });
+      return { successful: true, newAST, focusId };
     } catch (e) {
       logResults(getReducerActivities(), e);
     }
   } else {
     onError(result.exception);
+    return { successful: false, exception: result.exception };
   }
 }
 
@@ -292,7 +338,6 @@ class OverwriteEdit extends Edit {
 
 class DeleteRootEdit extends Edit {
   constructor(node: ASTNode) {
-    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to);
     this.node = node;
@@ -316,7 +361,6 @@ class ReplaceRootEdit extends Edit {
   text: string;
   node: ASTNode;
   constructor(text: string, node: ASTNode) {
-    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to);
     this.text = text;
@@ -361,7 +405,7 @@ abstract class AstEdit extends Edit {
   parent: ASTNode;
   constructor(from: Pos, to: Pos, parent: ASTNode) {
     super(from, to);
-    this.parent = getNode(parent);
+    this.parent = parent;
   }
   abstract makeAstEdit(clonedAncestor: ClonedASTNode): void;
 }
@@ -395,7 +439,6 @@ class DeleteChildEdit extends AstEdit {
   node: ASTNode;
   fakeAstReplacement: FakeAstReplacement;
   constructor(node: ASTNode, parent: ASTNode) {
-    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to, parent);
     this.node = node;
@@ -421,7 +464,6 @@ class ReplaceChildEdit extends AstEdit {
   fakeAstReplacement: FakeAstReplacement;
 
   constructor(text: string, node: ASTNode, parent: ASTNode) {
-    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to, parent);
     this.text = text;
@@ -461,7 +503,7 @@ class EditGroup {
   completed?: boolean;
 
   constructor(ancestor: ASTNode, edits: AstEdit[]) {
-    this.ancestor = getNode(ancestor);
+    this.ancestor = ancestor;
     this.edits = edits;
   }
 
@@ -545,14 +587,4 @@ function removeWhitespace(from: Pos, to: Pos, cm: Editor) {
   } else {
     return { from: from, to: to };
   }
-}
-
-/**
- * @internal
- * Ensure that we are getting the most up-to-date ASTNode
- * for a given node ID
- */
-function getNode(node: ASTNode) {
-  let { ast } = store.getState();
-  return ast.getNodeById(node.id);
 }

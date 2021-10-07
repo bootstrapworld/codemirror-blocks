@@ -5,10 +5,11 @@ import {
 } from "react-codemirror2";
 import React, { useRef } from "react";
 import { ItemTypes } from "../dnd";
-import { drop, OverwriteTarget } from "../actions";
+import { OverwriteTarget, useDropAction } from "../actions";
 import { playSound, BEEP } from "../utils";
 import { useDrop } from "react-dnd";
 import { Editor } from "codemirror";
+import { useDispatch, useStore } from "react-redux";
 
 type Props = Omit<IUnControlledCodeMirror, "editorDidMount"> & {
   editorDidMount?: (ed: Editor) => void;
@@ -16,6 +17,8 @@ type Props = Omit<IUnControlledCodeMirror, "editorDidMount"> & {
 
 const DragAndDropEditor = (props: Props) => {
   const cmRef = useRef<Editor>(null);
+  const dispatch = useDispatch();
+  const drop = useDropAction();
 
   const [_, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,

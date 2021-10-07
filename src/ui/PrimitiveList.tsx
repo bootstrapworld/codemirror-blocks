@@ -9,6 +9,8 @@ import { say } from "../announcer";
 import { copy } from "../actions";
 import CodeMirror from "codemirror";
 import { defaultKeyMap } from "../keymap";
+import { useSelector } from "react-redux";
+import { RootState } from "../reducers";
 
 require("./PrimitiveList.less");
 
@@ -32,11 +34,16 @@ export const BasePrimitive = (props: BasePrimitiveProps) => {
     connectDragSource,
   } = props;
 
+  const { ast, focusId } = useSelector(({ ast, focusId }: RootState) => ({
+    ast,
+    focusId,
+  }));
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (defaultKeyMap[CodeMirror.keyName(e)]) {
       case "Copy":
         e.preventDefault();
-        copy([primitive.getASTNode()]);
+        copy({ ast, focusId }, [primitive.getASTNode()]);
         say("copied " + primitive.toString());
         primitive.element?.focus(); // restore focus
         return;

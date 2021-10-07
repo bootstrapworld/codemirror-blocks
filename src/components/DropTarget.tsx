@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "react-dnd";
 import classNames from "classnames";
-import { AppDispatch, isErrorFree } from "../store";
+import { AppDispatch } from "../store";
 import { genUniqueId } from "../utils";
-import { drop, InsertTarget } from "../actions";
+import { useDropAction, InsertTarget } from "../actions";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { AST } from "../CodeMirrorBlocks";
@@ -117,6 +117,8 @@ export const DropTarget = (props: { field: string }) => {
 
   const node = useContext(NodeContext).node;
   const cm = useContext(CMContext);
+  const store = useStore();
+  const isErrorFree = () => store.getState().errorId === "";
 
   // ensure that the field property is set
   if (!props.field) {
@@ -156,7 +158,7 @@ field declared. The node was:`,
       },
     })
   );
-
+  const drop = useDropAction();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (item: { id: string; content: string }, monitor) => {
@@ -172,7 +174,10 @@ field declared. The node was:`,
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isErrorFree()) return; // TODO(Oak): is this the best way to handle this?
+    if (!isErrorFree()) {
+      // TODO(Oak): is this the best way to handle this?
+      return;
+    }
     setEditable(true);
   };
   const handleMouseEnterRelated = (e: React.MouseEvent) => {

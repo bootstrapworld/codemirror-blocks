@@ -1,7 +1,7 @@
 import { poscmp, srcRangeIncludes, warn, setAfterDOMUpdate } from "./utils";
 import { say, cancelAnnouncement } from "./announcer";
 import SHARED from "./shared";
-import { AppDispatch, store } from "./store";
+import { AppDispatch, AppStore } from "./store";
 import {
   performEdits,
   edit_insert,
@@ -11,10 +11,12 @@ import {
   EditInterface,
   OnSuccess,
   OnError,
+  PerformEditState,
 } from "./edits/performEdits";
 import { AST, ASTNode, Pos } from "./ast";
 import { RootState } from "./reducers";
 import { Editor } from "codemirror";
+import { useDispatch, useStore } from "react-redux";
 
 // All editing actions are defined here.
 //
@@ -51,6 +53,8 @@ import { Editor } from "codemirror";
 // Insert `text` at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function insert(
+  state: PerformEditState,
+  dispatch: AppDispatch,
   text: string,
   target: Target,
   cm: Editor,
@@ -59,11 +63,11 @@ export function insert(
   annt?: string
 ) {
   checkTarget(target);
-  const { ast } = store.getState();
   const edits = [target.toEdit(text)];
   performEdits(
+    state,
+    dispatch,
     "cmb:insert",
-    ast,
     edits,
     SHARED.parse,
     cm,
@@ -90,20 +94,28 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 }
 
 // Delete the given nodes.
-export function delete_(cm: Editor, nodes: ASTNode[], editWord?: string) {
-  // 'delete' is a reserved word
-  if (nodes.length === 0) return;
-  const { ast } = store.getState();
+// 'delete' is a reserved word, hence the trailing underscore
+export function delete_(
+  state: PerformEditState,
+  dispatch: AppDispatch,
+  cm: Editor,
+  nodes: ASTNode[],
+  editWord?: string
+) {
+  if (nodes.length === 0) {
+    return;
+  }
   nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
-  const edits = nodes.map((node) => edit_delete(node));
+  const edits = nodes.map(edit_delete);
   let annt: string;
   if (editWord) {
     annt = createEditAnnouncement(nodes, editWord);
     say(annt);
   }
   performEdits(
+    state,
+    dispatch,
     "cmb:delete-node",
-    ast,
     edits,
     SHARED.parse,
     cm,
@@ -111,13 +123,17 @@ export function delete_(cm: Editor, nodes: ASTNode[], editWord?: string) {
     undefined,
     annt
   );
-  store.dispatch({ type: "SET_SELECTIONS", selections: [] });
+  dispatch({ type: "SET_SELECTIONS", selections: [] });
 }
 
 // Copy the given nodes onto the clipboard.
-export function copy(nodes: ASTNode[], editWord?: string) {
+export function copy(
+  state: Pick<RootState, "ast" | "focusId">,
+  nodes: ASTNode[],
+  editWord?: string
+) {
   if (nodes.length === 0) return;
-  const { ast, focusId } = store.getState();
+  const { ast, focusId } = state;
   // Pretty-print each copied node. Join them with spaces, or newlines for
   // commented nodes (to prevent a comment from attaching itself to a
   // different node after pasting).
@@ -145,6 +161,8 @@ export function copy(nodes: ASTNode[], editWord?: string) {
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export function paste(
+  state: PerformEditState,
+  dispatch: AppDispatch,
   cm: Editor,
   target: Target,
   onSuccess?: OnSuccess,
@@ -152,76 +170,82 @@ export function paste(
 ) {
   checkTarget(target);
   pasteFromClipboard((text) => {
-    const { ast } = store.getState();
     const edits = [target.toEdit(text)];
-    performEdits("cmb:paste", ast, edits, SHARED.parse, cm, onSuccess, onError);
-    store.dispatch({ type: "SET_SELECTIONS", selections: [] });
+    performEdits(
+      state,
+      dispatch,
+      "cmb:paste",
+      edits,
+      SHARED.parse,
+      cm,
+      onSuccess,
+      onError
+    );
+    dispatch({ type: "SET_SELECTIONS", selections: [] });
   });
 }
 
-// Drag from `src` (which should be a d&d monitor thing) to `target`.
-// See the comment at the top of the file for what kinds of `target` there are.
-export function drop(
-  cm: Editor,
-  src: { id: string; content: string },
-  target: Target,
-  onSuccess?: OnSuccess,
-  onError?: OnError
-) {
-  checkTarget(target);
-  const { id: srcId, content: srcContent } = src;
-  let { ast, collapsedList } = store.getState(); // get the AST, and which nodes are collapsed
-  const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
-  const content = srcNode ? srcNode.toString() : srcContent;
+export function useDropAction() {
+  // Drag from `src` (which should be a d&d monitor thing) to `target`.
+  // See the comment at the top of the file for what kinds of `target` there are.
+  const store: AppStore = useStore();
+  const dispatch: AppDispatch = useDispatch();
+  return function drop(
+    cm: Editor,
+    src: { id: string; content: string },
+    target: Target,
+    onSuccess?: OnSuccess,
+    onError?: OnError
+  ) {
+    checkTarget(target);
+    const { id: srcId, content: srcContent } = src;
+    const state = store.getState();
+    let { ast, collapsedList } = state; // get the AST, and which nodes are collapsed
+    const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
+    const content = srcNode ? srcNode.toString() : srcContent;
 
-  // If we dropped the node _inside_ where we dragged it from, do nothing.
-  if (srcNode && srcRangeIncludes(srcNode.srcRange(), target.srcRange())) {
-    return;
-  }
+    // If we dropped the node _inside_ where we dragged it from, do nothing.
+    if (srcNode && srcRangeIncludes(srcNode.srcRange(), target.srcRange())) {
+      return;
+    }
 
-  let edits = [];
-  let droppedHash: unknown;
+    let edits = [];
+    let droppedHash: unknown;
 
-  // Assuming it did not come from the toolbar...
-  // (1) Delete the text of the dragged node, (2) and save the id and hash
-  if (srcNode !== null) {
-    edits.push(edit_delete(srcNode));
-    droppedHash = ast.nodeIdMap.get(srcNode.id).hash;
-  }
+    // Assuming it did not come from the toolbar...
+    // (1) Delete the text of the dragged node, (2) and save the id and hash
+    if (srcNode !== null) {
+      edits.push(edit_delete(state.ast.getNodeById(srcNode.id)));
+      droppedHash = ast.nodeIdMap.get(srcNode.id).hash;
+    }
 
-  // Insert or replace at the drop location, depending on what we dropped it on.
-  edits.push(target.toEdit(content));
-  // Perform the edits.
-  performEdits(
-    "cmb:drop-node",
-    ast,
-    edits,
-    SHARED.parse,
-    cm,
-    onSuccess,
-    onError
-  );
-
-  // Assuming it did not come from the toolbar, and the srcNode was collapsed...
-  // Find the matching node in the new tree and collapse it
-  if (srcNode !== null && collapsedList.find((id) => id == srcNode.id)) {
-    let { ast } = store.getState();
-    const newNode = [...ast.nodeIdMap.values()].find(
-      (n) => n.hash == droppedHash
+    // Insert or replace at the drop location, depending on what we dropped it on.
+    edits.push(target.toEdit(content));
+    // Perform the edits.
+    const editResult = performEdits(
+      state,
+      dispatch,
+      "cmb:drop-node",
+      edits,
+      SHARED.parse,
+      cm,
+      onSuccess,
+      onError
     );
-    store.dispatch({ type: "COLLAPSE", id: newNode.id });
-    store.dispatch({ type: "UNCOLLAPSE", id: srcNode.id });
-  }
-}
 
-// Drag from `src` (which should be a d&d monitor thing) to the trash can, which
-// just deletes the block.
-export function dropOntoTrashCan(cm: Editor, src: { id: string }) {
-  const { ast } = store.getState();
-  const srcNode = src.id ? ast.getNodeById(src.id) : null; // null if dragged from toolbar
-  if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
-  let edits = [edit_delete(srcNode)];
-  performEdits("cmb:trash-node", ast, edits, SHARED.parse, cm);
+    // Assuming it did not come from the toolbar, and the srcNode was collapsed...
+    // Find the matching node in the new tree and collapse it
+    if (srcNode !== null && collapsedList.find((id) => id == srcNode.id)) {
+      if (editResult.successful) {
+        ast = editResult.newAST;
+      }
+      const newNode = [...ast.nodeIdMap.values()].find(
+        (n) => n.hash == droppedHash
+      );
+      dispatch({ type: "COLLAPSE", id: newNode.id });
+      dispatch({ type: "UNCOLLAPSE", id: srcNode.id });
+    }
+  };
 }
 
 // Set the cursor position.

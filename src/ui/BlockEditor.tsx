@@ -380,6 +380,8 @@ class BlockEditor extends Component<BlockEditorProps> {
             const { oldFocusNId } = actionFocus;
             const focusHint = (newAST: AST) => newAST.getNodeByNId(oldFocusNId);
             commitChanges(
+              getState(),
+              dispatch,
               changes,
               SHARED.parse,
               this.state.cm,
@@ -396,6 +398,8 @@ class BlockEditor extends Component<BlockEditorProps> {
             const { newFocusNId } = actionFocus;
             const focusHint = (newAST: AST) => newAST.getNodeByNId(newFocusNId);
             commitChanges(
+              getState(),
+              dispatch,
               changes,
               SHARED.parse,
               this.state.cm,
@@ -418,6 +422,8 @@ class BlockEditor extends Component<BlockEditorProps> {
           if (annt === "") annt = "change";
           getState().undoableAction = annt; //?
           commitChanges(
+            getState(),
+            dispatch,
             changes,
             SHARED.parse,
             this.state.cm,

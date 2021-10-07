@@ -164,11 +164,11 @@ const pasteHandler = (env: Env, e: React.KeyboardEvent) => {
   const pos = before ? env.node.srcRange().from : env.node.srcRange().to;
   // Case 1: Overwriting selected nodes
   if (env.state.selections.includes(env.node.id)) {
-    paste(env.cm, new ReplaceNodeTarget(env.node));
+    paste(env.state, env.dispatch, env.cm, new ReplaceNodeTarget(env.node));
   }
   // Case 2: Inserting to the left or right of the root
   else if (!env.node.parent) {
-    paste(env.cm, new OverwriteTarget(pos, pos));
+    paste(env.state, env.dispatch, env.cm, new OverwriteTarget(pos, pos));
   }
   // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
   else {
@@ -178,6 +178,8 @@ const pasteHandler = (env: Env, e: React.KeyboardEvent) => {
     if (DTnode?.dataset?.field) {
       // We're somewhere valid in the AST. Initiate paste on the target field!
       paste(
+        env.state,
+        env.dispatch,
         env.cm,
         new InsertTarget(env.node.parent, DTnode.dataset.field, pos)
       );
@@ -445,7 +447,7 @@ const commandMap: {
       return say("Nothing selected");
     }
     const nodesToDelete = env.state.selections.map(env.state.ast.getNodeById);
-    delete_(env.cm, nodesToDelete, "deleted");
+    delete_(env.state, env.dispatch, env.cm, nodesToDelete, "deleted");
   },
 
   // use the srcRange() to insert before/after the node *and*
@@ -475,8 +477,8 @@ const commandMap: {
       return say("Nothing selected");
     }
     const nodesToCut = env.state.selections.map(env.state.ast.getNodeById);
-    copy(nodesToCut, "cut");
-    delete_(env.cm, nodesToCut);
+    copy(env.state, nodesToCut, "cut");
+    delete_(env.state, env.dispatch, env.cm, nodesToCut);
   },
 
   Copy: (env, _) => {
@@ -488,7 +490,7 @@ const commandMap: {
       ? [env.node.id]
       : env.state.selections;
     const nodesToCopy = nodeIds.map(env.state.ast.getNodeById);
-    copy(nodesToCopy, "copied");
+    copy(env.state, nodesToCopy, "copied");
   },
 
   Paste: pasteHandler,
@@ -514,13 +516,13 @@ const commandMap: {
 
   Undo: (env, e) => {
     e.preventDefault();
-    preambleUndoRedo(env.cm, "undo");
+    preambleUndoRedo(env.state, env.cm, "undo");
     env.cm.undo();
   },
 
   Redo: (env, e) => {
     e.preventDefault();
-    preambleUndoRedo(env.cm, "redo");
+    preambleUndoRedo(env.state, env.cm, "redo");
     env.cm.redo();
   },
 

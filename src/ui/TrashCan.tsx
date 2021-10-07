@@ -1,18 +1,31 @@
 import React from "react";
 import { ItemTypes } from "../dnd";
-import { dropOntoTrashCan } from "../actions";
 import { useDrop } from "react-dnd";
 import { Editor } from "codemirror";
+import { useSelector, useStore } from "react-redux";
+import { RootState } from "../reducers";
+import { edit_delete, usePerformEdits } from "../edits/performEdits";
+import SHARED from "../shared";
 require("./TrashCan.less");
 
 const TrashCan = (props: { cm: Editor }) => {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: ItemTypes.NODE,
-    drop: (item: { id: string }) => {
-      dropOntoTrashCan(props.cm, item);
-    },
-    collect: (monitor) => ({ isOver: monitor.isOver() }),
-  }));
+  const performEdits = usePerformEdits();
+
+  const { ast } = useSelector(({ ast }: RootState) => ({ ast }));
+  const store = useStore();
+  const [{ isOver }, drop] = useDrop(
+    () => ({
+      accept: ItemTypes.NODE,
+      drop: (item: { id: string }) => {
+        const srcNode = item.id ? ast.getNodeById(item.id) : null; // null if dragged from toolbar
+        if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
+        let edits = [edit_delete(store.getState().ast.getNodeById(srcNode.id))];
+        performEdits("cmb:trash-node", edits, SHARED.parse, props.cm);
+      },
+      collect: (monitor) => ({ isOver: monitor.isOver() }),
+    }),
+    [performEdits, ast]
+  );
 
   const classNames = "TrashCan" + (isOver ? " over" : "");
   return (
