@@ -4,13 +4,14 @@ import {
   PrimitiveGroup as PrimitiveGroupModel,
   Primitive as LanguagePrimitive,
 } from "../parsers/primitives";
-import { DragPrimitiveSource } from "../dnd";
+import { ItemTypes } from "../dnd";
 import { say } from "../announcer";
 import { copy } from "../actions";
 import CodeMirror from "codemirror";
 import { defaultKeyMap } from "../keymap";
 import { useSelector } from "react-redux";
 import { RootState } from "../reducers";
+import { useDrag } from "react-dnd";
 
 require("./PrimitiveList.less");
 
@@ -19,25 +20,20 @@ type BasePrimitiveProps = {
   className: string;
   onFocus: Function;
   onKeyDown: Function;
-  searchString?: string;
-  connectDragPreview: Function;
-  connectDragSource: Function;
 };
 
-export const BasePrimitive = (props: BasePrimitiveProps) => {
-  const {
-    primitive,
-    className,
-    onFocus,
-    onKeyDown,
-    connectDragPreview,
-    connectDragSource,
-  } = props;
+export const Primitive = (props: BasePrimitiveProps) => {
+  const { primitive, className, onFocus, onKeyDown } = props;
 
   const { ast, focusId } = useSelector(({ ast, focusId }: RootState) => ({
     ast,
     focusId,
   }));
+
+  const [_, connectDragSource, connectDragPreview] = useDrag({
+    type: ItemTypes.NODE,
+    item: { content: primitive.name },
+  });
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (defaultKeyMap[CodeMirror.keyName(e)]) {
@@ -58,8 +54,8 @@ export const BasePrimitive = (props: BasePrimitiveProps) => {
     <span
       tabIndex={-1}
       onKeyDown={handleKeyDown}
-      // NOTE(Emmanuel): is this still appropriate style for using refs?
       onFocus={() => onFocus(primitive)}
+      // NOTE(Emmanuel): is this still appropriate style for using refs?
       ref={(elem) => (primitive.element = elem)}
       className={classNames(className, "Primitive list-group-item")}
     >
@@ -72,8 +68,6 @@ export const BasePrimitive = (props: BasePrimitiveProps) => {
   });
   return <li>{draggableElem}</li>;
 };
-
-const Primitive = DragPrimitiveSource(BasePrimitive);
 
 type PrimitiveGroupProps = {
   onFocus: Function;
