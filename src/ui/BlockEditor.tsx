@@ -178,7 +178,7 @@ class ToplevelBlock extends BlockComponent<
 type ToplevelBlockEditableProps = {
   cm: Editor;
 };
-const ToplevelBlockEditable = (props:ToplevelBlockEditableProps) => {
+const ToplevelBlockEditable = (props: ToplevelBlockEditableProps) => {
   const dispatch: AppDispatch = useDispatch();
   const onDisableEditable = () => dispatch({ type: "DISABLE_QUARANTINE" });
   const onChange = (text: string) =>
