@@ -71,32 +71,40 @@ export default function attachSearch(
       forward: boolean,
       cmbState: RootState,
       overrideCur: State["cursor"]
-    ): ASTNode => {
+    ): ASTNode | null => {
       if (this.state.searchEngine == null) {
         say("No search settings have been selected");
-        return;
+        return null;
       }
-      var searchFrom = overrideCur || this.state.cursor,
-        result;
+      let result;
+
       // keep searching until we find an unfocused node, or we run out of results
-      while (
-        (result = searchModes[this.state.searchEngine].search(
+      let searchFrom = overrideCur || this.state.cursor;
+      do {
+        if (!searchFrom) {
+          break;
+        }
+        result = searchModes[this.state.searchEngine].search(
           searchFrom,
           this.state.settings[this.state.searchEngine],
           this.cm,
           cmbState,
           forward
-        ))
-      ) {
-        if (result && result.node.id !== cmbState.focusId) break;
-        searchFrom = result.cursor;
-      }
-      if (result !== null) {
+        );
+
+        if (result) {
+          searchFrom = result.cursor;
+        }
+      } while (!(result && result.node.id !== cmbState.focusId));
+
+      if (result) {
         const { node, cursor } = result;
         this.setState({ cursor });
         return node;
       } else {
-        if (overrideCur) return null; // if there's no wrapped match, give up
+        if (overrideCur) {
+          return null; // if there's no wrapped match, give up
+        }
         playSound(WRAP);
         const wrappedStart = (forward ? getBeginCursor : getEndCursor)(this.cm);
         return this.handleSearch(forward, cmbState, wrappedStart);
@@ -107,7 +115,9 @@ export default function attachSearch(
       if (e.key === "Enter" || e.key === "Escape") {
         // enter or escape
         this.handleCloseModal();
-        if (e.key === "Escape") return; // don't initiate search
+        if (e.key === "Escape" || !this.state.searchForward) {
+          return; // don't initiate search
+        }
         this.state.searchForward();
         say(
           "Searching for next match. Use PageUp and PageDown to search forwards and backwards"

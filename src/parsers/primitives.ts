@@ -12,7 +12,7 @@ export class Primitive {
   returnType: string;
 
   // used by Toolbar
-  element?: HTMLElement;
+  element?: HTMLElement | null;
 
   constructor(
     languageId: string,

@@ -37,12 +37,19 @@ export const Primitive = (props: BasePrimitiveProps) => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (defaultKeyMap[CodeMirror.keyName(e)]) {
-      case "Copy":
+      case "Copy": {
         e.preventDefault();
-        copy({ ast, focusId }, [primitive.getASTNode()]);
+        const node = primitive.getASTNode();
+        if (!node) {
+          // there's no node for this primitive, do nothing.
+          // TODO(pcardune): is this the right behavior?
+          return;
+        }
+        copy({ ast, focusId }, [node]);
         say("copied " + primitive.toString());
         primitive.element?.focus(); // restore focus
         return;
+      }
       default:
         onKeyDown(e);
         return;
@@ -111,7 +118,7 @@ type PrimitiveListProps = {
   searchString?: string;
 };
 export const PrimitiveList = (props: PrimitiveListProps) => {
-  const { primitives, selected, onFocus, onKeyDown, searchString } = props;
+  const { primitives = [], selected, onFocus, onKeyDown, searchString } = props;
   const renderGroup = (g: PrimitiveGroupModel) => (
     <PrimitiveGroup
       key={g.name}
