@@ -14,7 +14,7 @@ import {
   cloneNode,
   ClonedASTNode,
 } from "./fakeAstEdits";
-import { AppDispatch, store } from "../store";
+import type { AppDispatch } from "../store";
 import type { Editor, EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { useDispatch, useSelector } from "react-redux";
@@ -156,15 +156,6 @@ export function performEdits(
   onError: OnError = (e: any) => {},
   annt?: string
 ): EditResult {
-  // Ensure that all of the edits are valid.
-  //debugLog('XXX performEdits:55 doing performEdits');
-  for (const edit of edits) {
-    if (!(edit instanceof Edit)) {
-      throw new Error(
-        `performEdits - invalid edit ${edit}: all edits must be instances of Edit.`
-      );
-    }
-  }
   // Use the focus hint from the last edit provided.
   const lastEdit = edits[edits.length - 1];
   const focusHint = (newAST: AST) => lastEdit.focusHint(newAST);
@@ -347,7 +338,6 @@ class OverwriteEdit extends Edit {
 
 class DeleteRootEdit extends Edit {
   constructor(node: ASTNode) {
-    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to);
     this.node = node;
@@ -371,7 +361,6 @@ class ReplaceRootEdit extends Edit {
   text: string;
   node: ASTNode;
   constructor(text: string, node: ASTNode) {
-    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to);
     this.text = text;
@@ -416,7 +405,7 @@ abstract class AstEdit extends Edit {
   parent: ASTNode;
   constructor(from: Pos, to: Pos, parent: ASTNode) {
     super(from, to);
-    this.parent = getNode(parent);
+    this.parent = parent;
   }
   abstract makeAstEdit(clonedAncestor: ClonedASTNode): void;
 }
@@ -450,7 +439,6 @@ class DeleteChildEdit extends AstEdit {
   node: ASTNode;
   fakeAstReplacement: FakeAstReplacement;
   constructor(node: ASTNode, parent: ASTNode) {
-    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to, parent);
     this.node = node;
@@ -476,7 +464,6 @@ class ReplaceChildEdit extends AstEdit {
   fakeAstReplacement: FakeAstReplacement;
 
   constructor(text: string, node: ASTNode, parent: ASTNode) {
-    node = getNode(node);
     let range = node.srcRange();
     super(range.from, range.to, parent);
     this.text = text;
@@ -516,7 +503,7 @@ class EditGroup {
   completed?: boolean;
 
   constructor(ancestor: ASTNode, edits: AstEdit[]) {
-    this.ancestor = getNode(ancestor);
+    this.ancestor = ancestor;
     this.edits = edits;
   }
 
@@ -600,14 +587,4 @@ function removeWhitespace(from: Pos, to: Pos, cm: Editor) {
   } else {
     return { from: from, to: to };
   }
-}
-
-/**
- * @internal
- * Ensure that we are getting the most up-to-date ASTNode
- * for a given node ID
- */
-function getNode(node: ASTNode) {
-  let { ast } = store.getState();
-  return ast.getNodeById(node.id);
 }

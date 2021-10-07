@@ -94,6 +94,7 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 }
 
 // Delete the given nodes.
+// 'delete' is a reserved word, hence the trailing underscore
 export function delete_(
   state: PerformEditState,
   dispatch: AppDispatch,
@@ -101,10 +102,11 @@ export function delete_(
   nodes: ASTNode[],
   editWord?: string
 ) {
-  // 'delete' is a reserved word
-  if (nodes.length === 0) return;
+  if (nodes.length === 0) {
+    return;
+  }
   nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
-  const edits = nodes.map((node) => edit_delete(node));
+  const edits = nodes.map(edit_delete);
   let annt: string;
   if (editWord) {
     annt = createEditAnnouncement(nodes, editWord);
@@ -213,7 +215,7 @@ export function useDropAction() {
     // Assuming it did not come from the toolbar...
     // (1) Delete the text of the dragged node, (2) and save the id and hash
     if (srcNode !== null) {
-      edits.push(edit_delete(srcNode));
+      edits.push(edit_delete(state.ast.getNodeById(srcNode.id)));
       droppedHash = ast.nodeIdMap.get(srcNode.id).hash;
     }
 

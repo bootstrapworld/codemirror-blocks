@@ -14,6 +14,8 @@ import * as Pretty from "pretty-fast-pretty-printer";
 import { PrimitiveGroup } from "./parsers/primitives";
 import type { Primitive } from "./parsers/primitives";
 import type { API } from "./ui/ToggleEditor";
+import Context from "./components/Context";
+import { createAppStore } from "./store";
 export type { API } from "./ui/ToggleEditor";
 
 /**
@@ -78,6 +80,14 @@ export type Language = {
 };
 
 /**
+ * TODO(pcardune): create a new instance of the store inside
+ * the CodeMirrorBlocks() call, rather than having this
+ * global around. And fix the tests that are depending on
+ * state leakage to work!
+ */
+const store = createAppStore();
+
+/**
  * The main entry point for creating a new CodeMirrorBlocks editor.
  *
  * @param container a DOM node to host the editor
@@ -97,13 +107,15 @@ function CodeMirrorBlocks(
   let api: API = {} as any;
   let initialCode = options.value;
   ReactDOM.render(
-    <ToggleEditor
-      language={language}
-      initialCode={initialCode == null ? "" : initialCode}
-      api={api}
-      options={options}
-      cmOptions={cmOptions}
-    />,
+    <Context store={store}>
+      <ToggleEditor
+        language={language}
+        initialCode={initialCode == null ? "" : initialCode}
+        api={api}
+        options={options}
+        cmOptions={cmOptions}
+      />
+    </Context>,
     container
   );
   // See http://reactcommunity.org/react-modal/examples/set_app_element/

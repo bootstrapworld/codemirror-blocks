@@ -5,7 +5,7 @@ import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
 import BlockComponent from "./BlockComponent";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
-import { AppDispatch, isErrorFree } from "../store";
+import { AppDispatch } from "../store";
 import { ItemTypes } from "../dnd";
 import classNames from "classnames";
 import CodeMirror from "codemirror";
@@ -70,14 +70,20 @@ const Node = (
   const setValue = (value: string) => props.setState({ ...props.state, value });
   const cm = useContext(CMContext);
   const isLocked = () => props.node.isLockedP;
+
+  const dispatch: AppDispatch = useDispatch();
+  const store = useStore();
+
+  const isErrorFree = () => store.getState().errorId === "";
+
   const handleMakeEditable = () => {
-    if (!isErrorFree() || props.inToolbar) return;
+    if (!isErrorFree() || props.inToolbar) {
+      return;
+    }
     props.setState({ ...props.state, editable: true });
     setEditable(true);
     cm.refresh(); // is this needed?
   };
-
-  const dispatch: AppDispatch = useDispatch();
 
   const keydownEnv: InputEnv = {
     isNodeEnv: true,
@@ -112,14 +118,22 @@ const Node = (
     if (inToolbar) return;
     if (normallyEditable) handleMakeEditable();
   };
+
   // nid can be stale!! Always obtain a fresh copy of the node
   // from getState() before calling activateByNid
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (props.inToolbar) return;
-    // do not process toolbar nodes
-    else e.stopPropagation(); // prevent ancestors from stealing focus
-    if (!isErrorFree()) return; // TODO(Oak): is this the best way?
+    if (props.inToolbar) {
+      // do not process toolbar nodes
+      return;
+    } else {
+      // prevent ancestors from stealing focus
+      e.stopPropagation();
+    }
     const { ast } = store.getState();
+    if (!isErrorFree()) {
+      // TODO(Oak): is this the best way?
+      return;
+    }
     const currentNode = ast.getNodeById(props.node.id);
     dispatch(activateByNid(cm, currentNode.nid, { allowMove: false }));
   };
@@ -167,7 +181,6 @@ const Node = (
     `blocks-${props.node.type}`,
   ];
   const drop = useDropAction();
-  const store = useStore();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_item, monitor) => {
