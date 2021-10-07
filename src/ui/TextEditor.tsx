@@ -28,7 +28,7 @@ type Props = {
   cmOptions?: {};
   value: string;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
-  onMount: (ed: Editor, api: API, ast: AST) => void;
+  onMount: (ed: Editor, api: API, ast: AST | undefined) => void;
   api?: API;
   passedAST?: AST;
 };

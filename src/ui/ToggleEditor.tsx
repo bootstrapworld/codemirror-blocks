@@ -308,7 +308,7 @@ function isTextMarkerRange(
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
-export type ToggleEditorProps = {
+export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
   initialCode?: string;
   cmOptions?: CodeMirror.EditorConfiguration;
   language: Language;
@@ -357,7 +357,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   static defaultProps = {
     debuggingLog: {},
     cmOptions: {},
-    code: "",
+    initialCode: "",
   };
 
   cmOptions: CodeMirror.EditorConfiguration;
@@ -430,12 +430,12 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         } else {
           this.eventHandlers[type].push(fn);
         }
-        this.state.cm.on(type, fn);
+        this.state.cm?.on(type, fn);
       },
       off: (...args: Parameters<CodeMirror.Editor["on"]>) => {
         const [type, fn] = args;
         this.eventHandlers[type]?.filter((h) => h !== fn);
-        this.state.cm.off(type, fn);
+        this.state.cm?.off(type, fn);
       },
       runMode: () => {
         throw "runMode is not supported in CodeMirror-blocks";
@@ -489,6 +489,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    */
   recordMarks(oldAST: AST) {
     this.recordedMarks.clear();
+    if (!this.state.cm) {
+      // editor hasn't mounted yet, nothing to do.
+      return;
+    }
     this.state.cm
       .getAllMarks()
       .filter((m) => !m.BLOCK_NODE_ID && m.type !== "bookmark")
@@ -530,7 +534,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   // Teardown any pending timeouts
   componentWillUnmount() {
-    cancelAfterDOMUpdate(this.pendingTimeout);
+    this.pendingTimeout && cancelAfterDOMUpdate(this.pendingTimeout);
   }
 
   /**
@@ -541,19 +545,26 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    */
   handleToggle = (blockMode: boolean) => {
     this.setState((state) => {
+      if (!state.cm) {
+        // editor hasn't mounted yet, so can't toggle.
+        return state;
+      }
       let oldAst, WS, code;
       try {
         try {
-          let oldCode = this.state.cm.getValue();
+          let oldCode = state.cm.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
           oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
           let message = "";
-          try {
-            message = this.props.language.getExceptionMessage(err);
-          } catch (e) {
-            message = "The parser failed, and the error could not be retrieved";
+          if (this.props.language.getExceptionMessage) {
+            try {
+              message = this.props.language.getExceptionMessage(err);
+            } catch (e) {
+              message =
+                "The parser failed, and the error could not be retrieved";
+            }
           }
           throw message;
         }
@@ -593,7 +604,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
             setBlockMode={this.handleToggle}
             blockMode={this.state.blockMode}
           />
-          {this.state.blockMode ? <TrashCan cm={this.state.cm} /> : null}
+          {this.state.blockMode && this.state.cm ? (
+            <TrashCan cm={this.state.cm} />
+          ) : null}
           <div
             className={"col-xs-3 toolbar-pane"}
             tabIndex={-1}
@@ -603,7 +616,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
               primitives={
                 this.props.language.primitivesFn
                   ? this.props.language.primitivesFn()
-                  : null
+                  : undefined
               }
               languageId={this.props.language.id}
               blockMode={this.state.blockMode}
