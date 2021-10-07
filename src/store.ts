@@ -11,6 +11,10 @@ const reduxStore = createStore(
 
 export type AppStore = typeof reduxStore;
 
+/**
+ * @deprecated do not access the store through this global
+ * Instead access it through redux context
+ */
 export const store: AppStore = reduxStore;
 
 /**
@@ -25,6 +29,10 @@ export type AppDispatch = ThunkDispatch<RootState, unknown, AppAction>;
  * Indicating whether there is no error. Note that this function has side-effect.
  * It should not be used in rendering, since React should be notified by changes directly
  * Only use this function in event handlers.
+ *
+ * @deprecated Ignore the above comment. This function should not be used.
+ * You should never modify the state directly, and instead always dispatch
+ * an action and let the reducers handle state modification.
  */
 export function isErrorFree() {
   return store.getState().errorId === "";

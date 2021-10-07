@@ -1,5 +1,3 @@
-import SHARED from "./shared";
-import { store } from "./store";
 import objToStableString from "fast-json-stable-stringify";
 import CodeMirror from "codemirror";
 import type { Editor, EditorChange } from "codemirror";
@@ -511,12 +509,7 @@ export class BlockError extends Error {
   }
 }
 
-export function topmostUndoable(
-  cm: Editor,
-  which: "undo" | "redo",
-  state?: RootState
-) {
-  if (!state) state = store.getState();
+export function topmostUndoable(cm: Editor, which: "undo" | "redo") {
   let arr =
     which === "undo"
       ? cm.getDoc().getHistory().done
@@ -528,8 +521,11 @@ export function topmostUndoable(
   }
 }
 
-export function preambleUndoRedo(cm: Editor, which: "undo" | "redo") {
-  let state = store.getState();
+export function preambleUndoRedo(
+  state: RootState,
+  cm: Editor,
+  which: "undo" | "redo"
+) {
   let tU = topmostUndoable(cm, which);
   if (tU) {
     say((which === "undo" ? "UNDID" : "REDID") + ": " + tU.undoableAction);

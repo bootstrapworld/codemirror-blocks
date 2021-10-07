@@ -14,9 +14,11 @@ import {
   cloneNode,
   ClonedASTNode,
 } from "./fakeAstEdits";
-import { store } from "../store";
+import { AppDispatch, store } from "../store";
 import type { Editor, EditorChange } from "codemirror";
-import { getReducerActivities } from "../reducers";
+import { getReducerActivities, RootState } from "../reducers";
+import { useDispatch, useSelector } from "react-redux";
+import { useCallback } from "react";
 
 /**
  *
@@ -86,6 +88,54 @@ export function edit_replace(text: string, node: ASTNode): Edit {
 export type OnSuccess = (r: { newAST: AST; focusId: string }) => void;
 export type OnError = (e: any) => void;
 
+export type PerformEditState = Pick<
+  RootState,
+  "ast" | "focusId" | "collapsedList"
+>;
+
+export function usePerformEdits() {
+  const dispatch = useDispatch();
+  const state = useSelector(({ ast, focusId, collapsedList }: RootState) => ({
+    ast,
+    focusId,
+    collapsedList,
+  }));
+  return useCallback(
+    (
+      origin: string,
+      edits: Edit[],
+      parse: (code: string) => AST,
+      cm: Editor,
+      onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
+      onError: OnError = (e: any) => {},
+      annt?: string
+    ) =>
+      performEdits(
+        state,
+        dispatch,
+        origin,
+        edits,
+        parse,
+        cm,
+        onSuccess,
+        onError,
+        annt
+      ),
+    [state.ast, state.focusId, state.collapsedList]
+  );
+}
+
+type EditResult =
+  | {
+      successful: true;
+      newAST: AST;
+      focusId: string;
+    }
+  | {
+      successful: false;
+      exception: any;
+    };
+
 /**
  * performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
  *
@@ -96,15 +146,16 @@ export type OnError = (e: any) => void;
  * determined by the focus of the _last_ edit in `edits`.
  */
 export function performEdits(
+  state: PerformEditState,
+  dispatch: AppDispatch,
   origin: string,
-  ast: AST,
   edits: Edit[],
   parse: (code: string) => AST,
   cm: Editor,
   onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
   onError: OnError = (e: any) => {},
   annt?: string
-) {
+): EditResult {
   // Ensure that all of the edits are valid.
   //debugLog('XXX performEdits:55 doing performEdits');
   for (const edit of edits) {
@@ -136,7 +187,7 @@ export function performEdits(
       }
     } else {
       if (edit.toChangeObject) {
-        changeArray.push(edit.toChangeObject(ast, cm));
+        changeArray.push(edit.toChangeObject(state.ast, cm));
       }
     }
   }
@@ -167,6 +218,8 @@ export function performEdits(
       });
       //debugLog('XXX performEdits:110 calling commitChanges');
       let { newAST, focusId } = commitChanges(
+        state,
+        dispatch,
         changeArray,
         parse,
         cm,
@@ -176,11 +229,13 @@ export function performEdits(
         annt
       );
       onSuccess({ newAST, focusId });
+      return { successful: true, newAST, focusId };
     } catch (e) {
       logResults(getReducerActivities(), e);
     }
   } else {
     onError(result.exception);
+    return { successful: false, exception: result.exception };
   }
 }
 

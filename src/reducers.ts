@@ -205,7 +205,7 @@ export const reducer = (state = initialState, action: AppAction) => {
       }
       break;
     case "UNDO":
-      tU = topmostUndoable(action.cm, "redo", state);
+      tU = topmostUndoable(action.cm, "redo");
       tU.undoableAction = state.undoableAction;
       tU.actionFocus = state.actionFocus;
       state.undoableAction = null;
@@ -213,7 +213,7 @@ export const reducer = (state = initialState, action: AppAction) => {
       result = { ...state };
       break;
     case "REDO":
-      tU = topmostUndoable(action.cm, "undo", state);
+      tU = topmostUndoable(action.cm, "undo");
       tU.undoableAction = state.undoableAction;
       tU.actionFocus = state.actionFocus;
       state.undoableAction = null;

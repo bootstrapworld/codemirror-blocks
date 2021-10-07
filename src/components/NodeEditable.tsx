@@ -117,7 +117,16 @@ const NodeEditable = (props: Props) => {
           selectElement(element.current, false);
         }
       };
-      insert(value, target, props.cm, onSuccess, onError, annt);
+      insert(
+        getState(),
+        dispatch,
+        value,
+        target,
+        props.cm,
+        onSuccess,
+        onError,
+        annt
+      );
     });
   };
 

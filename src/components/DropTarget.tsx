@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "react-dnd";
 import classNames from "classnames";
 import { AppDispatch, isErrorFree } from "../store";
 import { genUniqueId } from "../utils";
-import { drop, InsertTarget } from "../actions";
+import { useDropAction, InsertTarget } from "../actions";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { AST } from "../CodeMirrorBlocks";
@@ -156,7 +156,7 @@ field declared. The node was:`,
       },
     })
   );
-
+  const drop = useDropAction();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (item: { id: string; content: string }, monitor) => {

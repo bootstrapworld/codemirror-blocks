@@ -1,14 +1,13 @@
 import React, { HTMLAttributes, useContext } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { ASTNode } from "../ast";
-import { drop, activateByNid, ReplaceNodeTarget } from "../actions";
+import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
 import BlockComponent from "./BlockComponent";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch, isErrorFree } from "../store";
 import { ItemTypes } from "../dnd";
 import classNames from "classnames";
-import { store } from "../store";
 import CodeMirror from "codemirror";
 import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
@@ -167,7 +166,8 @@ const Node = (
     { "blocks-locked": locked },
     `blocks-${props.node.type}`,
   ];
-
+  const drop = useDropAction();
+  const store = useStore();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_item, monitor) => {
