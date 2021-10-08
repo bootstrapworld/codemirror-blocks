@@ -11,7 +11,7 @@ import { debugLog, topmostUndoable } from "./utils";
 export type Activity =
   | Exclude<AppAction, { ast: AST } | Action<"SET_AST"> | Action<"SET_FOCUS">>
   | (Action<"SET_AST"> & { code: string })
-  | (Action<"SET_FOCUS"> & { nid: number });
+  | (Action<"SET_FOCUS"> & { nid: number | null });
 
 const reducerActivities: Activity[] = [];
 
@@ -36,7 +36,7 @@ function loggerDebug(action: AppAction, ast: AST) {
     case "SET_FOCUS":
       activity = {
         type: action.type,
-        nid: ast.getNodeByIdOrThrow(action.focusId).nid,
+        nid: action.focusId ? ast.getNodeByIdOrThrow(action.focusId).nid : null,
       };
       break;
     default:
@@ -76,7 +76,7 @@ export type RootState = {
 };
 
 export type AppAction =
-  | (Action<"SET_FOCUS"> & { focusId: string })
+  | (Action<"SET_FOCUS"> & { focusId: string | null })
   | (Action<"SET_AST"> & { ast: AST })
   | (Action<"SET_SELECTIONS"> & { selections: string[] })
   | (Action<"SET_EDITABLE"> & { id: string; bool: boolean })
@@ -85,7 +85,7 @@ export type AppAction =
   | (Action<"UNCOLLAPSE"> & { id: string })
   | Action<"COLLAPSE_ALL">
   | Action<"UNCOLLAPSE_ALL">
-  | (Action<"SET_CURSOR"> & { cur: CodeMirror.Position })
+  | (Action<"SET_CURSOR"> & { cur: CodeMirror.Position | null })
   | Action<"DISABLE_QUARANTINE">
   | (Action<"CHANGE_QUARANTINE"> & { text: string })
   | (Action<"SET_QUARANTINE"> & {

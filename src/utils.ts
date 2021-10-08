@@ -108,7 +108,9 @@ export function setAfterDOMUpdate(
  *
  * @internal
  */
-export function cancelAfterDOMUpdate(handle: afterDOMUpdateHandle): void {
+export function cancelAfterDOMUpdate(
+  handle: afterDOMUpdateHandle | undefined
+): void {
   if (handle) {
     cancelAnimationFrame(handle.raf);
     if (handle.timeout) {
@@ -478,10 +480,13 @@ export function logResults(
   }
 }
 
-export function validateRanges(ranges: { anchor: Pos; head: Pos }[], ast: AST) {
+export function validateRanges(
+  ranges: { anchor: Pos; head?: Pos }[],
+  ast: AST
+) {
   ranges.forEach(({ anchor, head }) => {
-    const c1 = minpos(anchor, head);
-    const c2 = maxpos(anchor, head);
+    const c1 = head ? minpos(anchor, head) : anchor;
+    const c2 = head ? maxpos(anchor, head) : anchor;
     if (ast.getNodeAt(c1, c2)) return; // if there's a node, it's a valid range
     // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
     const N1 = ast.getNodeContaining(c1); // get node containing c1

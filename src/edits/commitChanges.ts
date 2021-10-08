@@ -12,7 +12,7 @@ import { AST, ASTNode } from "../ast";
 import type { Editor, EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 
-type FocusHint = (ast: AST) => ASTNode | null | "fallback";
+export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
 //   Changes, bool, FocusHint|undefined, AST|undefined
 //   -> {newAST, focusId}

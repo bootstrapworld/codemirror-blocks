@@ -1,7 +1,6 @@
 import React, { Component, createRef, ReactElement } from "react";
 import BlockEditor from "./BlockEditor";
 import TextEditor from "./TextEditor";
-import CMBContext from "../components/Context";
 import Dialog from "../components/Dialog";
 import ByString from "./searchers/ByString";
 import ByBlock from "./searchers/ByBlock";
@@ -11,7 +10,7 @@ import { ToggleButton, BugButton } from "./EditorButtons";
 import { mountAnnouncer, say } from "../announcer";
 import TrashCan from "./TrashCan";
 import SHARED from "../shared";
-import type { AST } from "../ast";
+import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror, {
   Editor,
@@ -46,6 +45,25 @@ declare module "codemirror" {
      * Adds a new selection to the existing set of selections, and makes it the primary selection.
      */
     addSelection(anchor: CodeMirror.Position, head?: CodeMirror.Position): void;
+
+    /**
+     * Sets a new set of selections. There must be at least one selection in the given array. When primary is a
+     * number, it determines which selection is the primary one. When it is not given, the primary index is taken from
+     * the previous selection, or set to the last range if the previous selection had less ranges than the new one.
+     * Supports the same options as setSelection.
+     */
+    setSelections(
+      ranges: Array<{
+        anchor: CodeMirror.Position;
+        head?: CodeMirror.Position;
+      }>,
+      primary?: number,
+      options?: {
+        bias?: number | undefined;
+        origin?: string | undefined;
+        scroll?: boolean | undefined;
+      }
+    ): void;
 
     /**
      * Similar to setSelection , but will, if shift is held or the extending flag is set,
@@ -670,7 +688,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
-        passedAST={this.ast}
+        passedAST={this.ast || new AST([])}
         // the props below are unique to the BlockEditor
         languageId={this.props.language.id}
         options={{ ...defaultOptions, ...this.props.options }}

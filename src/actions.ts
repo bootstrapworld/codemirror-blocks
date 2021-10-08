@@ -249,7 +249,7 @@ export function useDropAction() {
 }
 
 // Set the cursor position.
-export function setCursor(cm: Editor, cur: Pos) {
+export function setCursor(cm: Editor, cur: Pos | null) {
   return (dispatch: AppDispatch) => {
     if (cm && cur) {
       cm.focus();
