@@ -1,4 +1,4 @@
-import React, { HTMLAttributes, useContext } from "react";
+import React, { HTMLAttributes, useContext, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { ASTNode } from "../ast";
 import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
@@ -12,14 +12,14 @@ import CodeMirror from "codemirror";
 import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
-import { InputEnv, keyDown } from "../keymap";
+import { keyDown } from "../keymap";
 import { EditorContext } from "./Context";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
 
-type NodeState = { editable: boolean; value?: string | null };
+type NodeState = { editable: boolean };
 
 class BlockComponentNode extends BlockComponent<EnhancedNodeProps, NodeState> {
   static defaultProps = {
@@ -66,9 +66,6 @@ const Node = (
   const editable = props.state.editable;
   const setEditable = (editable: boolean) =>
     props.setState({ ...props.state, editable });
-  const value = props.state.value;
-  const setValue = (value: string | null) =>
-    props.setState({ ...props.state, value });
   const editor = useContext(EditorContext);
   const isLocked = () => props.node.isLockedP;
 
@@ -223,10 +220,14 @@ const Node = (
     }),
   });
 
+  const [value, setValue] = useState<string | null>(null);
+
   if (editable) {
     if (!editor) {
       throw new Error("can't edit nodes before codemirror has mounted");
     }
+    const target = new ReplaceNodeTarget(props.node);
+    const editValue = value ?? target.getText(store.getState().ast, editor);
     // TODO: combine passingProps and contentEditableProps
     return (
       <NodeEditable
@@ -235,8 +236,8 @@ const Node = (
         onDisableEditable={() => setEditable(false)}
         extraClasses={classes}
         isInsertion={false}
-        target={new ReplaceNodeTarget(props.node)}
-        value={value}
+        target={target}
+        value={editValue}
         onChange={(value) => setValue(value)}
         onDragStart={handleMouseDragRelated}
         onDragEnd={handleMouseDragRelated}

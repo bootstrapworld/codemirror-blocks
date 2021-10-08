@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ContentEditable, {
   Props as ContentEditableProps,
@@ -9,8 +9,8 @@ import { say } from "../announcer";
 import CodeMirror from "codemirror";
 import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
-import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 import { CMBEditor } from "../editor";
+import { setAfterDOMUpdate } from "../utils";
 
 function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
@@ -39,11 +39,11 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
   element.focus();
 }
 
-type Props = Omit<ContentEditableProps, "value"> & {
+export type Props = Omit<ContentEditableProps, "value"> & {
   target: Target;
   children?: React.ReactNode;
   isInsertion: boolean;
-  value?: string | null;
+  value: string;
   onChange: (e: string | null) => void;
   onDisableEditable: () => void;
   contentEditableProps?: {};
@@ -51,81 +51,87 @@ type Props = Omit<ContentEditableProps, "value"> & {
   editor: CMBEditor;
 };
 
+const saveEdit =
+  (
+    value: string,
+    editor: CMBEditor,
+    props: Pick<
+      Props,
+      "isInsertion" | "onDisableEditable" | "target" | "onChange"
+    >
+  ) =>
+  (dispatch: AppDispatch, getState: () => RootState) => {
+    const { focusId, ast } = getState();
+    // if there's no insertion value, or the new value is the same as the
+    // old one, preserve focus on original node and return silently
+    if (value === "" || !value) {
+      props.onDisableEditable();
+      const focusNode = focusId ? ast.getNodeById(focusId) || null : null;
+      const nid = focusNode && focusNode.nid;
+      dispatch(activateByNid(editor, nid));
+      return;
+    }
+
+    let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
+    const result = insert(
+      getState(),
+      dispatch,
+      value,
+      props.target,
+      editor,
+      annt
+    );
+    if (result.successful) {
+      dispatch(activateByNid(editor, null, { allowMove: false }));
+      props.onChange(null);
+      props.onDisableEditable();
+      dispatch({ type: "SET_ERROR_ID", errorId: "" });
+      say(annt);
+    } else {
+      console.error(result.exception);
+      dispatch({
+        type: "SET_ERROR_ID",
+        errorId: props.target.node ? props.target.node.id : "editing",
+      });
+    }
+    return result;
+  };
+
 const NodeEditable = (props: Props) => {
   const element = useRef<HTMLElement>(null);
   const dispatch: AppDispatch = useDispatch();
 
-  const { initialValue, isErrored } = useSelector((state: RootState) => {
+  const [initialValue] = useState("");
+
+  const { isErrored } = useSelector((state: RootState) => {
     const nodeId = props.target.node ? props.target.node.id : "editing";
-    const isErrored = state.errorId == nodeId;
-
-    const initialValue =
-      props.value === null ? props.target.getText(state.ast, props.editor) : "";
-
-    return { isErrored, initialValue };
+    return {
+      isErrored: state.errorId === nodeId,
+    };
   });
-
   useEffect(() => {
-    const pendingTimeout = setAfterDOMUpdate(() => {
-      const currentEl = element.current;
-      if (!currentEl) {
-        // element has been unmounted already, nothing to do.
-        return;
-      }
-      selectElement(currentEl, props.isInsertion);
-    });
     const text = props.value || initialValue || "";
     const annt = (props.isInsertion ? "inserting" : "editing") + ` ${text}`;
     say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
+    selectElement(element.current!, props.isInsertion);
+    // TODO(pcardune): put this somewhere else.
+    // It doesn't make sense here. Maybe where editing starts?
     dispatch({ type: "SET_SELECTIONS", selections: [] });
-    return () => cancelAfterDOMUpdate(pendingTimeout);
   }, []);
-
-  const setErrorId = (errorId: string) =>
-    dispatch({ type: "SET_ERROR_ID", errorId });
 
   const onBlur = (e: React.SyntheticEvent) => {
     e.stopPropagation();
-    const { target } = props;
-    dispatch((dispatch: AppDispatch, getState: () => RootState) => {
-      // we grab the value directly from the content editable element
-      // to deal with this issue:
-      // https://github.com/lovasoa/react-contenteditable/issues/161
-      const value = element.current?.textContent;
-      const { focusId, ast } = getState();
-      // if there's no insertion value, or the new value is the same as the
-      // old one, preserve focus on original node and return silently
-      if (value === initialValue || !value) {
-        props.onDisableEditable();
-        const focusNode = focusId ? ast.getNodeById(focusId) || null : null;
-        const nid = focusNode && focusNode.nid;
-        dispatch(activateByNid(props.editor, nid));
-        return;
-      }
-
-      let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
-      const result = insert(
-        getState(),
-        dispatch,
-        value,
-        target,
-        props.editor,
-        annt
-      );
-      if (result.successful) {
-        dispatch(activateByNid(props.editor, null, { allowMove: false }));
-        props.onChange(null);
-        props.onDisableEditable();
-        setErrorId("");
-        say(annt);
-      } else {
-        console.error(result.exception);
-        setErrorId(target.node ? target.node.id : "editing");
-        if (element.current) {
-          selectElement(element.current, false);
-        }
-      }
-    });
+    if (!element.current) {
+      throw new Error(`Expected ref to be set in NodeEditable`);
+    }
+    // we grab the value directly from the content editable element
+    // to deal with this issue:
+    // https://github.com/lovasoa/react-contenteditable/issues/161
+    const value = element.current.textContent ?? "";
+    const result = dispatch(saveEdit(value, props.editor, props));
+    if (result && !result.successful) {
+      selectElement(element.current, false);
+    }
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -141,7 +147,7 @@ const NodeEditable = (props: Props) => {
         e.stopPropagation();
         props.onChange(null);
         props.onDisableEditable();
-        setErrorId("");
+        dispatch({ type: "SET_ERROR_ID", errorId: "" });
         // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
         // and then figure out how to get rid of it altogether.
         setAfterDOMUpdate(() => {
@@ -151,8 +157,6 @@ const NodeEditable = (props: Props) => {
     }
   };
 
-  const { contentEditableProps, extraClasses, value } = props;
-
   const classes = (
     [
       "blocks-literal",
@@ -161,11 +165,10 @@ const NodeEditable = (props: Props) => {
       "blocks-node",
       { "blocks-error": isErrored },
     ] as ClassNamesArgument[]
-  ).concat(extraClasses);
-  const text = value ?? initialValue;
+  ).concat(props.extraClasses);
   return (
     <ContentEditable
-      {...contentEditableProps}
+      {...props.contentEditableProps}
       className={classNames(classes)}
       role="textbox"
       ref={element}
@@ -177,8 +180,8 @@ const NodeEditable = (props: Props) => {
       onMouseDown={suppressEvent}
       onClick={suppressEvent}
       onDoubleClick={suppressEvent}
-      aria-label={text}
-      value={text}
+      aria-label={props.value}
+      value={props.value}
     />
   );
 };
