@@ -803,12 +803,12 @@ class BlockEditor extends Component<BlockEditorProps> {
    * If the mouse WAS used there's no cursor set, get the cursor from CM
    * Otherwise ignore
    */
-  private handleTopLevelFocus = (ed: Editor, e:Event) => {
+  private handleTopLevelFocus = (ed: Editor, e: Event) => {
     cancelAfterDOMUpdate(this.pendingTimeout);
     this.props.dispatch((_, getState) => {
-      if(getState().cur != null) return; // if we already have a cursor, bail
+      if (getState().cur != null) return; // if we already have a cursor, bail
       this.pendingTimeout = setAfterDOMUpdate(() => {
-        if(e instanceof MouseEvent) {
+        if (e instanceof MouseEvent) {
           this.props.dispatch(setCursor(this.state.cm, ed.getCursor()));
         } else {
           this.props.activateByNid(this.state.cm, null, { allowMove: true });
