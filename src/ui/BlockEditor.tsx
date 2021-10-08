@@ -803,39 +803,18 @@ class BlockEditor extends Component<BlockEditorProps> {
    * If the mouse WAS used there's no cursor set, get the cursor from CM
    * Otherwise ignore
    */
-  private handleTopLevelFocus = (ed: Editor) => {
-    const { dispatch } = this.props;
-    dispatch((_, getState) => {
-      const { cur } = getState();
-      if (!this.mouseUsed && cur === null) {
-        // NOTE(Emmanuel): setAfterDOMUpdate so that the CM cursor will not blink
-        cancelAfterDOMUpdate(this.pendingTimeout);
-        this.pendingTimeout = setAfterDOMUpdate(() =>
-          this.props.activateByNid(this.state.cm, null, { allowMove: true })
-        );
-        this.mouseUsed = false;
-      } else if (this.mouseUsed && cur === null) {
-        // if it was a click, get the cursor from CM
-        cancelAfterDOMUpdate(this.pendingTimeout);
-        this.pendingTimeout = setAfterDOMUpdate(() =>
-          this.props.dispatch(setCursor(this.state.cm, ed.getCursor()))
-        );
-        this.mouseUsed = false;
-      }
+  private handleTopLevelFocus = (ed: Editor, e:Event) => {
+    cancelAfterDOMUpdate(this.pendingTimeout);
+    this.props.dispatch((_, getState) => {
+      if(getState().cur != null) return; // if we already have a cursor, bail
+      this.pendingTimeout = setAfterDOMUpdate(() => {
+        if(e instanceof MouseEvent) {
+          this.props.dispatch(setCursor(this.state.cm, ed.getCursor()));
+        } else {
+          this.props.activateByNid(this.state.cm, null, { allowMove: true });
+        }
+      });
     });
-  };
-
-  /**
-   * @internal
-   * When the CM instance receives a click, give CM 100ms to fire a
-   * handleTopLevelFocus event before another one is processed
-   */
-  private handleTopLevelMouseDown = () => {
-    this.mouseUsed = true;
-    this.pendingTimeout = setAfterDOMUpdate(
-      () => (this.mouseUsed = false),
-      100
-    );
   };
 
   /**
@@ -920,7 +899,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           value={this.props.value}
           onBeforeChange={this.props.onBeforeChange}
           onKeyPress={this.handleTopLevelKeyPress}
-          onMouseDown={this.handleTopLevelMouseDown}
+          onMouseDown={this.handleTopLevelFocus}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
           onKeyDown={(_, e) =>
