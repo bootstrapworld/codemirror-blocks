@@ -368,9 +368,10 @@ class BlockEditor extends Component<BlockEditorProps> {
           for (let c of changes) c.origin = "cmb:undo";
           const { actionFocus } = getState();
           if (actionFocus) {
-            const { oldFocusNId } = actionFocus;
             const focusHint: FocusHint = (newAST) =>
-              newAST.getNodeByNId(oldFocusNId);
+              actionFocus.oldFocusNId === null
+                ? null
+                : newAST.getNodeByNId(actionFocus.oldFocusNId);
             commitChanges(
               getState(),
               dispatch,
@@ -388,7 +389,8 @@ class BlockEditor extends Component<BlockEditorProps> {
           const { actionFocus } = getState();
           if (actionFocus) {
             const { newFocusNId } = actionFocus;
-            const focusHint = (newAST: AST) => newAST.getNodeByNId(newFocusNId);
+            const focusHint = (newAST: AST) =>
+              newFocusNId === null ? null : newAST.getNodeByNId(newFocusNId);
             commitChanges(
               getState(),
               dispatch,

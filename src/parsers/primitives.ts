@@ -3,13 +3,10 @@ import type { Language } from "../CodeMirrorBlocks";
 
 export class Primitive {
   languageId: string;
+  language: Language;
   name: string;
-  parse: Language["parse"];
-  primitivesFn: Language["primitivesFn"];
-  getASTNodeForPrimitive: Language["getASTNodeForPrimitive"];
-  getLiteralNodeForPrimitive: Language["getLiteralNodeForPrimitive"];
   argumentTypes: string[];
-  returnType: string;
+  returnType?: string;
 
   // used by Toolbar
   element?: HTMLElement | null;
@@ -20,16 +17,8 @@ export class Primitive {
     config: { argumentTypes?: string[]; returnType?: string } = {}
   ) {
     this.languageId = languageId;
-    this.parse = languageId ? getLanguage(languageId).parse : null;
-    this.primitivesFn = languageId
-      ? getLanguage(languageId).primitivesFn
-      : null;
-    this.getASTNodeForPrimitive = languageId
-      ? getLanguage(languageId).getASTNodeForPrimitive
-      : null;
-    this.getLiteralNodeForPrimitive = languageId
-      ? getLanguage(languageId).getLiteralNodeForPrimitive
-      : null;
+    this.language = getLanguage(languageId);
+
     this.name = name;
     this.argumentTypes = config.argumentTypes || [];
     this.returnType = config.returnType;
@@ -40,14 +29,14 @@ export class Primitive {
   }
 
   getASTNode() {
-    if (this.getASTNodeForPrimitive) {
-      return this.getASTNodeForPrimitive(this);
+    if (this.language.getASTNodeForPrimitive) {
+      return this.language.getASTNodeForPrimitive(this);
     }
   }
 
   getLiteralNode() {
-    if (this.getLiteralNodeForPrimitive) {
-      return this.getLiteralNodeForPrimitive(this);
+    if (this.language.getLiteralNodeForPrimitive) {
+      return this.language.getLiteralNodeForPrimitive(this);
     }
   }
 

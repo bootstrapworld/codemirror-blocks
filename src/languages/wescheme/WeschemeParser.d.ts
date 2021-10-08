@@ -1,7 +1,7 @@
 import { Language } from "../../CodeMirrorBlocks";
 
 interface WeschemeParser {
-  new (): Language;
+  new (): Required<Language>;
 }
 
 declare const parser: WeschemeParser;

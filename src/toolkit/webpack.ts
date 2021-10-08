@@ -87,7 +87,7 @@ export function getWebpackBundleConfig(config: {
       },
     },
     plugins: [
-      ...baseConfig.plugins,
+      ...(baseConfig.plugins ?? []),
       new BundleAnalyzerPlugin({
         analyzerMode: "static",
         reportFilename: "bundle-sizes.html",
@@ -130,7 +130,7 @@ export function getWebpackDevServerConfig(config: {
     context: config.context,
     entry: config.entry,
     plugins: [
-      ...baseConfig.plugins,
+      ...(baseConfig.plugins ?? []),
       new HtmlWebpackPlugin({
         title: "CMB Dev Page",
       }),

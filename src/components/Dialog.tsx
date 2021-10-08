@@ -15,7 +15,7 @@ type Props = {
 const Dialog = (props: Props) => {
   const { isOpen, closeFn, keyUp, body } = props;
   const headerRef = useRef<HTMLHeadingElement>(null);
-  const focusTitle = useCallback(() => headerRef.current.focus(), []);
+  const focusTitle = useCallback(() => headerRef.current?.focus(), []);
 
   const onKeyUp = (e: KeyboardEvent): void => {
     if (e.key === "Escape") closeFn();

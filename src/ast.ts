@@ -5,7 +5,6 @@ import {
   posWithinNode,
   nodeCommentContaining,
   genUniqueId,
-  hashObject,
 } from "./utils";
 import * as P from "pretty-fast-pretty-printer";
 import type CodeMirror from "codemirror";
@@ -269,6 +268,14 @@ export class AST {
     const node = this.getNodeById(id);
     if (!node) {
       throw new Error(`Node with id ${id} not found`);
+    }
+    return node;
+  };
+
+  getNodeByNIdOrThrow = (nid: number) => {
+    const node = this.getNodeByNId(nid);
+    if (!node) {
+      throw new Error(`Node with nid ${nid} not found`);
     }
     return node;
   };
@@ -539,7 +546,7 @@ export abstract class ASTNode<
    * @internal
    * Stores the html element that this ast node was rendered into.
    */
-  element: HTMLElement;
+  element: HTMLElement | null = null;
 
   /**
    * @internal
@@ -593,7 +600,7 @@ export abstract class ASTNode<
 
   // the long description is node-specific, detailed, and must be
   // implemented by the ASTNode itself
-  longDescription(level: number): string {
+  longDescription(level: number): string | undefined {
     throw new Error("ASTNodes must implement `.longDescription()`");
   }
 

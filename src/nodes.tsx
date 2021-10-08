@@ -15,7 +15,11 @@ import * as Spec from "./nodeSpec";
 //   the same line). Line comments will stay as line comments _as long as they
 //   fit on the line_. If they don't, they'll be converted into a comment on the
 //   previous line.
-function withComment(doc: P.Doc, comment: ASTNode, container: ASTNode): P.Doc {
+function withComment(
+  doc: P.Doc,
+  comment: ASTNode | undefined,
+  container: ASTNode
+): P.Doc {
   if (comment) {
     // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
     if (container && container.to.line == comment.from.line) {
@@ -62,7 +66,7 @@ export class Unknown extends ASTNode {
     const firstElt = this.elts[0].reactElement();
     const restElts = this.elts.slice(1);
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-operator">{firstElt}</span>
         <span className="blocks-args">
           <Args field="elts">{restElts}</Args>
@@ -124,7 +128,7 @@ export class FunctionApp extends ASTNode {
 
   render(props: NodeProps) {
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-operator">{this.func.reactElement()}</span>
         <span className="blocks-args">
           <Args field="args">{this.args}</Args>
@@ -162,7 +166,7 @@ export class IdentifierList extends ASTNode {
 
   render(props: NodeProps) {
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-args">
           <Args field="ids">{this.ids}</Args>
         </span>
@@ -210,7 +214,7 @@ export class StructDefinition extends ASTNode {
     const name = this.name.reactElement();
     const fields = this.fields.reactElement();
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-operator">
           define-struct
           {name}
@@ -252,7 +256,7 @@ export class VariableDefinition extends ASTNode {
     const body = this.body.reactElement();
     const name = this.name.reactElement();
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-operator">
           define
           {name}
@@ -294,7 +298,7 @@ export class LambdaExpression extends ASTNode {
     const args = this.args.reactElement();
     const body = this.body.reactElement();
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-operator">&lambda; ({args})</span>
         <span className="blocks-args">{body}</span>
       </Node>
@@ -349,7 +353,7 @@ export class FunctionDefinition extends ASTNode {
     let body = this.body.reactElement();
     let name = this.name.reactElement();
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-operator">
           define ({name} {params})
         </span>
@@ -396,7 +400,7 @@ export class CondClause extends ASTNode {
   render(props: NodeProps) {
     const testExpr = this.testExpr.reactElement();
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">{testExpr}</div>
           <div className="blocks-cond-result">
@@ -440,7 +444,7 @@ export class CondExpression extends ASTNode {
       clause.reactElement({ key: index })
     );
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-operator">cond</span>
         <div className="blocks-cond-table">{clauses}</div>
       </Node>
@@ -494,7 +498,7 @@ export class IfExpression extends ASTNode {
     const thenExpr = this.thenExpr.reactElement();
     const elseExpr = this.elseExpr.reactElement();
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">
@@ -538,7 +542,7 @@ export class Literal extends ASTNode {
 
   render(props: NodeProps) {
     return (
-      <Node node={this} normallyEditable={true} expandable={false} {...props}>
+      <Node {...props} normallyEditable={true} expandable={false}>
         <span className={`blocks-literal-${this.dataType}`}>
           {this.value.toString()}
         </span>
@@ -557,7 +561,7 @@ export class Comment extends ASTNode {
 
   static spec = Spec.nodeSpec([Spec.value("comment")]);
 
-  describe(): string {
+  describe(): string | undefined {
     return this.options["aria-label"];
   }
 
@@ -606,7 +610,7 @@ export class Blank extends ASTNode {
 
   render(props: NodeProps) {
     return (
-      <Node node={this} normallyEditable={true} expandable={false} {...props}>
+      <Node {...props} normallyEditable={true} expandable={false}>
         <span className="blocks-literal-symbol" />
       </Node>
     );
@@ -640,7 +644,7 @@ export class Sequence extends ASTNode {
 
   render(props: NodeProps) {
     return (
-      <Node node={this} {...props}>
+      <Node {...props}>
         <span className="blocks-operator">{this.name.reactElement()}</span>
         <span className="blocks-sequence-exprs">
           <Args field="exprs">{this.exprs}</Args>

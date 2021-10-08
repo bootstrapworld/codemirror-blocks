@@ -56,12 +56,10 @@ export type InputEnv = BlockEditorEnv | NodeEnv;
 
 type Env = InputEnv & {
   state: RootState;
-  fastSkip?: (next: (node: ASTNode) => ASTNode) => ASTNode;
-  activate?: (
-    n: ASTNode | null | undefined,
-    options: { allowMove: boolean; record: boolean }
-  ) => void;
-  activateNoRecord?: (node?: ASTNode) => void;
+  fastSkip: (
+    next: (node: ASTNode) => ASTNode | undefined
+  ) => ASTNode | undefined;
+  activateNoRecord: (node?: ASTNode) => void;
 };
 
 type KeyMap = { [index: string]: string };
@@ -195,7 +193,7 @@ const commandMap: {
 } = {
   "Shift Focus": (env, e) => {
     e.preventDefault();
-    KeyDownContext.toolbarRef.current.focus();
+    KeyDownContext.toolbarRef.current?.focus();
   },
   // NAVIGATION
   "Previous Block": (env, e) => {
@@ -243,7 +241,8 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      env.dispatch(activateByNid(env.cm, getLastVisibleNode(env.state).nid));
+      const lastVisible = getLastVisibleNode(env.state);
+      lastVisible && env.dispatch(activateByNid(env.cm, lastVisible.nid));
     }
   },
 
@@ -348,7 +347,8 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      say(env.node.describe(env.node.level));
+      const description = env.node.describe(env.node.level);
+      description && say(description);
     }
   },
 
@@ -446,7 +446,9 @@ const commandMap: {
     if (!env.state.selections.length) {
       return say("Nothing selected");
     }
-    const nodesToDelete = env.state.selections.map(env.state.ast.getNodeById);
+    const nodesToDelete = env.state.selections.map(
+      env.state.ast.getNodeByIdOrThrow
+    );
     delete_(env.state, env.dispatch, env.cm, nodesToDelete, "deleted");
   },
 
@@ -476,7 +478,9 @@ const commandMap: {
     if (!env.state.selections.length) {
       return say("Nothing selected");
     }
-    const nodesToCut = env.state.selections.map(env.state.ast.getNodeById);
+    const nodesToCut = env.state.selections.map(
+      env.state.ast.getNodeByIdOrThrow
+    );
     copy(env.state, nodesToCut, "cut");
     delete_(env.state, env.dispatch, env.cm, nodesToCut);
   },
@@ -489,7 +493,7 @@ const commandMap: {
     const nodeIds = !env.state.selections.length
       ? [env.node.id]
       : env.state.selections;
-    const nodesToCopy = nodeIds.map(env.state.ast.getNodeById);
+    const nodesToCopy = nodeIds.map(env.state.ast.getNodeByIdOrThrow);
     copy(env.state, nodesToCopy, "copied");
   },
 
@@ -549,23 +553,7 @@ export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
         state,
         // add convenience methods
         fastSkip: (next: (node: ASTNode) => ASTNode) =>
-          env.isNodeEnv && skipCollapsed(env.node, next, state),
-        activate: (
-          n: ASTNode | null | undefined,
-          options = { allowMove: true, record: true }
-        ) => {
-          if (n === null) {
-            playSound(BEEP);
-          }
-          env.isNodeEnv &&
-            env.dispatch(
-              activateByNid(
-                env.cm,
-                n === undefined ? env.node.nid : n.nid,
-                options
-              )
-            );
-        },
+          env.isNodeEnv ? skipCollapsed(env.node, next, state) : undefined,
         activateNoRecord: (node?: ASTNode) => {
           if (!node) {
             return playSound(BEEP);
@@ -580,8 +568,9 @@ export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
       };
       // If there's a node, make sure it's fresh
       if (env.isNodeEnv) {
-        const updatedNode = state.ast.getNodeById(env.node.id);
-        env.node = updatedNode && state.ast.getNodeByNId(updatedNode.nid);
+        const updatedNode = state.ast.getNodeByIdOrThrow(env.node.id);
+        env.node =
+          updatedNode && state.ast.getNodeByNIdOrThrow(updatedNode.nid);
       }
       handler(env, e);
     });

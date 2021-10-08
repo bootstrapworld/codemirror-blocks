@@ -107,7 +107,7 @@ export function delete_(
   }
   nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
   const edits = nodes.map(edit_delete);
-  let annt: string;
+  let annt: string | undefined = undefined;
   if (editWord) {
     annt = createEditAnnouncement(nodes, editWord);
     say(annt);
@@ -154,7 +154,7 @@ export function copy(
   // Copy steals focus. Force it back to the node's DOM element
   // without announcing via activateByNid().
   if (focusId) {
-    ast.getNodeById(focusId).element.focus();
+    ast.getNodeByIdOrThrow(focusId).element?.focus();
   }
 }
 
@@ -214,9 +214,9 @@ export function useDropAction() {
 
     // Assuming it did not come from the toolbar...
     // (1) Delete the text of the dragged node, (2) and save the id and hash
-    if (srcNode !== null) {
-      edits.push(edit_delete(state.ast.getNodeById(srcNode.id)));
-      droppedHash = ast.nodeIdMap.get(srcNode.id).hash;
+    if (srcNode) {
+      edits.push(edit_delete(state.ast.getNodeByIdOrThrow(srcNode.id)));
+      droppedHash = ast.getNodeByIdOrThrow(srcNode.id).hash;
     }
 
     // Insert or replace at the drop location, depending on what we dropped it on.
@@ -235,14 +235,14 @@ export function useDropAction() {
 
     // Assuming it did not come from the toolbar, and the srcNode was collapsed...
     // Find the matching node in the new tree and collapse it
-    if (srcNode !== null && collapsedList.find((id) => id == srcNode.id)) {
+    if (srcNode && collapsedList.find((id) => id == srcNode.id)) {
       if (editResult.successful) {
-        ast = editResult.newAST;
+        ast = editResult.value.newAST;
       }
       const newNode = [...ast.nodeIdMap.values()].find(
         (n) => n.hash == droppedHash
       );
-      dispatch({ type: "COLLAPSE", id: newNode.id });
+      newNode && dispatch({ type: "COLLAPSE", id: newNode.id });
       dispatch({ type: "UNCOLLAPSE", id: srcNode.id });
     }
   };
@@ -264,19 +264,19 @@ export function setCursor(cm: Editor, cur: Pos | null) {
 export function activateByNid(
   cm: Editor,
   nid: number | null,
-  options?: { allowMove?: boolean; record?: boolean }
+  options: { allowMove?: boolean; record?: boolean } = {}
 ) {
   return (dispatch: AppDispatch, getState: () => RootState) => {
     options = { ...options, allowMove: true, record: true };
     let { ast, focusId, collapsedList } = getState();
 
     // If nid is null, try to get it from the focusId
-    if (nid === null) {
-      nid = ast?.getNodeById(focusId)?.nid;
+    if (nid === null && focusId) {
+      nid = ast.getNodeById(focusId)?.nid ?? null;
     }
 
     // Get the new node from the nid
-    const newNode = ast?.getNodeByNId(nid);
+    const newNode = nid === null ? null : ast.getNodeByNId(nid);
 
     // If there is no valid node found in the AST, bail.
     // (This could also mean a node was selected in the toolbar!
@@ -395,6 +395,7 @@ export abstract class Target {
   from: Pos;
   to: Pos;
   node?: ASTNode;
+
   constructor(from: Pos, to: Pos) {
     this.from = from;
     this.to = to;
@@ -430,6 +431,8 @@ export class InsertTarget extends Target {
 
 // Target an ASTNode. This will replace the node.
 export class ReplaceNodeTarget extends Target {
+  node: ASTNode;
+
   constructor(node: ASTNode) {
     const range = node.srcRange();
     super(range.from, range.to);
@@ -437,7 +440,7 @@ export class ReplaceNodeTarget extends Target {
   }
 
   getText(ast: AST, cm: Editor) {
-    const { from, to } = ast.getNodeById(this.node.id);
+    const { from, to } = ast.getNodeByIdOrThrow(this.node.id);
     return cm.getRange(from, to);
   }
 

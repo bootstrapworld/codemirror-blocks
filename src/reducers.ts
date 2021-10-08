@@ -50,7 +50,10 @@ export type Quarantine = Readonly<
   [CodeMirror.Position, CodeMirror.Position, string]
 >;
 
-export type ActionFocus = { oldFocusNId: number; newFocusNId: number };
+export type ActionFocus = {
+  oldFocusNId: number | null;
+  newFocusNId: number | null;
+};
 
 export type RootState = {
   readonly selections: string[];
@@ -95,7 +98,7 @@ export type AppAction =
     })
   | (Action<"ADD_MARK"> & { id: string; mark: CodeMirror.TextMarker })
   | (Action<"CLEAR_MARK"> & { id: string })
-  | (Action<"DO"> & { focusId: string })
+  | (Action<"DO"> & { focusId: RootState["focusId"] })
   | (Action<"UNDO"> & { cm: Editor })
   | (Action<"REDO"> & { cm: Editor })
   | Action<"RESET_STORE_FOR_TESTING">;

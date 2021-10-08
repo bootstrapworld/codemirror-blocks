@@ -52,8 +52,11 @@ export function findAdjacentDropTargetId(child: ASTNode, onLeft: boolean) {
     }
     return null;
   }
-  if (!child.parent) return null;
-  return findDT(child.parent.element);
+  const parentEl = child.parent?.element;
+  if (!parentEl) {
+    return null;
+  }
+  return findDT(parentEl);
 }
 
 const getLocation = ({
@@ -69,7 +72,7 @@ const getLocation = ({
   let targetId = `block-drop-target-${id}`;
   let dropTargetWasFirst = false;
 
-  function findLoc(elem: Element): Pos {
+  function findLoc(elem: Element | null): Pos | null {
     if (elem == null || elem.children == null) {
       // if it's a new element (insertion)
       return null;
@@ -85,12 +88,12 @@ const getLocation = ({
         if (dropTargetWasFirst) {
           // Edge case: the drop target was literally the first thing, so we
           // need to return the `from` of its _next_ sibling. That's this one.
-          return ast.getNodeById(prevNodeId).from;
+          return ast.getNodeByIdOrThrow(prevNodeId).from;
         }
       } else if (sibling.id == targetId) {
         // We've found this drop target! Return the `to` location of the previous ASTNode.
         if (prevNodeId) {
-          return ast.getNodeById(prevNodeId).to;
+          return ast.getNodeByIdOrThrow(prevNodeId).to;
         } else {
           // Edge case: nothing is before the drop target.
           dropTargetWasFirst = true;
@@ -116,7 +119,11 @@ export const DropTarget = (props: { field: string }) => {
   const id = useMemo(genUniqueId, [genUniqueId]);
 
   const node = useContext(NodeContext).node;
+  if (!node) {
+    throw new Error("DropTarget can only be rendered from inside a Node");
+  }
   const cm = useContext(CMContext);
+
   const store = useStore();
   const isErrorFree = () => store.getState().errorId === "";
 
@@ -146,24 +153,29 @@ field declared. The node was:`,
   const setEditable = (bool: boolean) =>
     dispatch({ type: "SET_EDITABLE", id: id, bool });
 
-  const createTarget = () =>
-    new InsertTarget(
-      node,
-      props.field,
-      getLocation({
-        id: id,
-        ast,
-        context: {
-          field: props.field,
-          node,
-        },
-      })
-    );
+  const createTarget = () => {
+    const pos = getLocation({
+      id: id,
+      ast,
+      context: {
+        field: props.field,
+        node,
+      },
+    });
+    if (!pos) {
+      throw new Error(`Can't determine location for InsertTarget`);
+    }
+    return new InsertTarget(node, props.field, pos);
+  };
 
   const drop = useDropAction();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (item: { id: string; content: string }, monitor) => {
+      if (!cm) {
+        // codemirror hasn't mounted yet, do nothing.
+        return;
+      }
       if (monitor.didDrop()) {
         return;
       }
@@ -210,6 +222,10 @@ field declared. The node was:`,
   };
 
   if (isEditable) {
+    if (!cm) {
+      throw new Error("can't edit a DropTarget before codemirror has mounted");
+    }
+
     return (
       <NodeEditable
         cm={cm}

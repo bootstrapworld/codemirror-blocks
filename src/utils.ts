@@ -177,7 +177,7 @@ export function resetUniqueIdGenerator() {
 // then hash the string so we don't have giant "hashes" eating memory
 // (see https://stackoverflow.com/a/7616484/12026982 and
 // https://anchortagdev.com/consistent-object-hashing-using-stable-stringification/ )
-export function hashObject(obj: Object) {
+export function hashObject(obj: any) {
   const str = objToStableString(obj);
   var hash = 0,
     i,

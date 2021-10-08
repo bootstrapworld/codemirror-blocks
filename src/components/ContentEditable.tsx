@@ -47,7 +47,7 @@ export type Props = Omit<
 
 function insertTextAtCaret(text: string) {
   const sel = window.getSelection();
-  if (sel.rangeCount > 0) {
+  if (sel && sel.rangeCount > 0) {
     const range = sel.getRangeAt(0);
     range.deleteContents();
     range.insertNode(document.createTextNode(text));
@@ -87,7 +87,10 @@ function OneLineContentEditable(
       spellCheck={false}
       onKeyDown={handleKeyDown}
       onPaste={handlePaste}
-      innerRef={forwardedRef}
+      // TODO(pcardune): send a patch to react-contenteditable
+      // project to update the type for innerRef to React.Ref
+      // which is more accurate
+      innerRef={forwardedRef as React.RefObject<HTMLElement>}
     />
   );
 }
