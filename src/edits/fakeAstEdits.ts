@@ -52,7 +52,9 @@ export class FakeAstInsertion {
       }
     }
     if (spec === null) {
-      warn("fakeAstEdits", "Failed to find list to insert child into.");
+      throw new Error(
+        "fakeAstEdits: Failed to find list to insert child into."
+      );
     }
     this.spec = spec;
     // If `pos` is null, that means the list is empty.

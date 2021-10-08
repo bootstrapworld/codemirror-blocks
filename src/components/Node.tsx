@@ -19,7 +19,7 @@ import { CMContext } from "./Context";
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
 
-type NodeState = { editable: boolean; value?: string };
+type NodeState = { editable: boolean; value?: string | null };
 
 class BlockComponentNode extends BlockComponent<EnhancedNodeProps, NodeState> {
   static defaultProps = {
@@ -67,7 +67,8 @@ const Node = (
   const setEditable = (editable: boolean) =>
     props.setState({ ...props.state, editable });
   const value = props.state.value;
-  const setValue = (value: string) => props.setState({ ...props.state, value });
+  const setValue = (value: string | null) =>
+    props.setState({ ...props.state, value });
   const cm = useContext(CMContext);
   const isLocked = () => props.node.isLockedP;
 
