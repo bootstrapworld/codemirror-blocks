@@ -40,7 +40,7 @@ describe("focusing,", () => {
 
   it("tabbing to the editor for the first time should activate node 0", async () => {
     cmb.focus();
-    expect(cmb.getFocusedNode().nid).toBe(0);
+    expect(cmb.getFocusedNode()!.nid).toBe(0);
   });
 
   it("deleting the last node should shift focus to the next-to-last", async () => {
@@ -51,7 +51,7 @@ describe("focusing,", () => {
     keyDown("Delete");
     await finishRender();
     expect(cmb.getValue()).toBe("(+ 1 2)");
-    expect(cmb.getFocusedNode().id).toBe(literal2.id);
+    expect(cmb.getFocusedNode()!.id).toBe(literal2.id);
   });
 
   it("deleting the first node should shift focus to the parent", async () => {
@@ -62,7 +62,7 @@ describe("focusing,", () => {
     keyDown("Delete");
     await finishRender();
     expect(cmb.getValue()).toBe("(+ 2 3)");
-    expect(cmb.getFocusedNode().id).toBe(func.id);
+    expect(cmb.getFocusedNode()!.id).toBe(func.id);
   });
 
   it("deleting the nth node should shift focus to n-1", async () => {
@@ -73,7 +73,7 @@ describe("focusing,", () => {
     keyDown("Delete");
     await finishRender();
     expect(cmb.getValue()).toBe("(+ 1 3)");
-    expect(cmb.getFocusedNode().id).toBe(literal1.id);
+    expect(cmb.getFocusedNode()!.id).toBe(literal1.id);
   });
 
   it("deleting multiple nodes should shift focus to the one before", async () => {
@@ -87,7 +87,7 @@ describe("focusing,", () => {
     keyDown("Delete");
     await finishRender();
     expect(cmb.getValue()).toBe("(+ 1)");
-    expect(cmb.getFocusedNode().id).toBe(literal1.id);
+    expect(cmb.getFocusedNode()!.id).toBe(literal1.id);
   });
 
   it("inserting a node should put focus on the new node", async () => {

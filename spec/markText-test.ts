@@ -34,28 +34,28 @@ describe("The CodeMirrorBlocks Class", function () {
       cmb.markText(literal1.from, literal1.to, {
         css: "color: red",
       });
-      expect(literal1.element.style.color).toBe("red");
+      expect(literal1.element!.style.color).toBe("red");
     });
 
     it("it should allow you to set a className value", function () {
       cmb.markText(expression.from, expression.to, {
         className: "error",
       });
-      expect(expression.element.className).toMatch(/error/);
+      expect(expression.element!.className).toMatch(/error/);
     });
 
     it("it should allow you to set a className on a child node", function () {
       let child = expression.args[2];
       cmb.markText(child.from, child.to, { className: "error" });
-      expect(child.element.className).toMatch(/error/);
-      expect(expression.element.className).not.toMatch(/error/);
+      expect(child.element!.className).toMatch(/error/);
+      expect(expression.element!.className).not.toMatch(/error/);
     });
 
     it("it should allow you to set a title value", function () {
       cmb.markText(expression.from, expression.to, {
         title: "woot",
       });
-      expect(expression.element.title).toBe("woot");
+      expect(expression.element!.title).toBe("woot");
     });
 
     describe("which provides some getters,", function () {
@@ -96,15 +96,15 @@ describe("The CodeMirrorBlocks Class", function () {
 
       it("should expose a clear function to remove the mark", function () {
         mark.clear();
-        expect(literal1.element.style.color).toBeFalsy();
+        expect(literal1.element!.style.color).toBeFalsy();
         expect(cmb.getAllMarks().length).toBe(0);
       });
 
       it("should expose a find function", function () {
-        expect(mark.find().from.line).toEqual(literal1.from.line);
-        expect(mark.find().from.ch).toEqual(literal1.from.ch);
-        expect(mark.find().to.line).toEqual(literal1.to.line);
-        expect(mark.find().to.ch).toEqual(literal1.to.ch);
+        expect(mark.find()!.from.line).toEqual(literal1.from.line);
+        expect(mark.find()!.from.ch).toEqual(literal1.from.ch);
+        expect(mark.find()!.to.line).toEqual(literal1.to.line);
+        expect(mark.find()!.to.ch).toEqual(literal1.to.ch);
       });
     });
 

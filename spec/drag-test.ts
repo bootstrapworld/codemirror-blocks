@@ -44,7 +44,7 @@ describe("Drag and drop", () => {
       thirdArg = funcApp.args[2];
       dropTargetEls = cmb
         .getAst()
-        .rootNodes[0].element.querySelectorAll(".blocks-drop-target");
+        .rootNodes[0].element!.querySelectorAll(".blocks-drop-target");
     };
 
     beforeEach(async () => {
@@ -54,17 +54,17 @@ describe("Drag and drop", () => {
     });
 
     it("should override nodes 1", () => {
-      expect(secondArg.element.textContent).toBe("2");
+      expect(secondArg.element!.textContent).toBe("2");
       let dragEvent = dragstart();
-      firstArg.element.dispatchEvent(dragEvent);
-      secondArg.element.dispatchEvent(drop());
+      firstArg.element!.dispatchEvent(dragEvent);
+      secondArg.element!.dispatchEvent(drop());
       retrieve();
-      expect(secondArg.element.textContent).toBe("3");
+      expect(secondArg.element!.textContent).toBe("3");
     });
 
     it("should set the right css class on dragenter 2", () => {
       let dragEvent = dragstart();
-      firstArg.element.dispatchEvent(dragEvent);
+      firstArg.element!.dispatchEvent(dragEvent);
       let elt = dropTargetEls[3];
       expect(elt.classList).toContain("blocks-drop-target");
       dragenterSeq(elt);
@@ -73,14 +73,14 @@ describe("Drag and drop", () => {
 
     it("should set the right css class on dragenter 2’", () => {
       let dragEvent = dragstart();
-      firstArg.element.dispatchEvent(dragEvent);
+      firstArg.element!.dispatchEvent(dragEvent);
       let elt = secondArg;
       dragenterSeq(elt);
     });
 
     it("should set the right css class on dragleave 3", () => {
       let dragEvent = dragstart();
-      firstArg.element.dispatchEvent(dragEvent);
+      firstArg.element!.dispatchEvent(dragEvent);
       let elt = dropTargetEls[3];
       dragenter();
       dragleave();
@@ -89,17 +89,17 @@ describe("Drag and drop", () => {
 
     it("should do nothing when dragging over a non-drop target 4", () => {
       let dragEvent = dragstart();
-      firstArg.element.dispatchEvent(dragEvent);
-      let nonDT = cmb.getAst().rootNodes[0].element;
+      firstArg.element!.dispatchEvent(dragEvent);
+      let nonDT = cmb.getAst().rootNodes[0].element!;
       dragenterSeq(nonDT);
-      expect(secondArg.element.classList).not.toContain("blocks-over-target");
+      expect(secondArg.element!.classList).not.toContain("blocks-over-target");
     });
 
     it("should do nothing when dropping onto a non-drop target 5", () => {
       let initialValue = cmb.getValue();
       let dragEvent = dragstart();
-      firstArg.element.dispatchEvent(dragEvent);
-      let nonDT = cmb.getAst().rootNodes[0].element;
+      firstArg.element!.dispatchEvent(dragEvent);
+      let nonDT = cmb.getAst().rootNodes[0].element!;
       nonDT.dispatchEvent(drop());
       expect(cmb.getValue()).toBe(initialValue);
     });
@@ -108,14 +108,14 @@ describe("Drag and drop", () => {
       expect(dropTargetEls[3].classList).toContain("blocks-drop-target");
       // drag the first arg to the drop target
       let dragEvent = dragstart();
-      firstArg.element.dispatchEvent(dragEvent);
+      firstArg.element!.dispatchEvent(dragEvent);
       dropTargetEls[3].dispatchEvent(drop());
       expect(cmb.getValue().replace(/\s+/, " ")).toBe("(+ 2 3 1)");
     });
 
     it("should update the text on drop to an earlier point in the file 7", () => {
       let dragEvent = dragstart();
-      secondArg.element.dispatchEvent(dragEvent);
+      secondArg.element!.dispatchEvent(dragEvent);
       dropTargetEls[0].dispatchEvent(drop());
       expect(cmb.getValue().replace("  ", " ")).toBe("(+ 2 1 3)");
     });
@@ -139,8 +139,8 @@ describe("Drag and drop", () => {
 
     it("should replace a literal that you drag onto 9", () => {
       let dragEvent = dragstart();
-      firstArg.element.dispatchEvent(dragEvent);
-      secondArg.element.dispatchEvent(drop());
+      firstArg.element!.dispatchEvent(dragEvent);
+      secondArg.element!.dispatchEvent(drop());
       expect(cmb.getValue().replace(/\s+/, " ")).toBe("(+ 1 3)");
     });
 
@@ -182,8 +182,8 @@ describe("Drag and drop", () => {
     xit("save collapsed state when dragging root to be the last child of the next root", async () => {
       cmb.setValue("(collapse me)\n(+ 1 2)");
       await finishRender();
-      let firstRoot: ASTNode;
-      let lastDropTarget: Element;
+      let firstRoot!: ASTNode;
+      let lastDropTarget!: Element;
       let retrieve = () => {
         firstRoot = cmb.getAst().rootNodes[0];
         lastDropTarget = document.querySelectorAll(".blocks-drop-target")[4];
@@ -192,18 +192,18 @@ describe("Drag and drop", () => {
 
       mouseDown(firstRoot); // click the root
       keyDown("ArrowLeft", {}, firstRoot); // collapse it
-      expect(firstRoot.element.getAttribute("aria-expanded")).toBe("false");
+      expect(firstRoot.element!.getAttribute("aria-expanded")).toBe("false");
       expect(firstRoot.nid).toBe(0);
       let dragEvent = dragstart();
-      firstRoot.element.dispatchEvent(dragEvent); // drag to the last droptarget
+      firstRoot.element!.dispatchEvent(dragEvent); // drag to the last droptarget
       lastDropTarget.dispatchEvent(drop());
       await finishRender();
       retrieve();
       let newFirstRoot = cmb.getAst().rootNodes[0] as FunctionApp;
       let newLastChild = newFirstRoot.args[2];
       expect(cmb.getValue()).toBe("\n(+ 1 2 (collapse me))");
-      expect(newFirstRoot.element.getAttribute("aria-expanded")).toBe("true");
-      expect(newLastChild.element.getAttribute("aria-expanded")).toBe("false");
+      expect(newFirstRoot.element!.getAttribute("aria-expanded")).toBe("true");
+      expect(newLastChild.element!.getAttribute("aria-expanded")).toBe("false");
     });
   });
 
@@ -231,7 +231,7 @@ describe("Drag and drop", () => {
     // TODO(pcardune) reenable
     xit("regression test for unstable block IDs", async () => {
       let dragEvent = dragstart();
-      source.element.dispatchEvent(dragEvent); // drag to the last droptarget
+      source.element!.dispatchEvent(dragEvent); // drag to the last droptarget
       target1.dispatchEvent(drop());
       await finishRender();
     });
@@ -239,7 +239,7 @@ describe("Drag and drop", () => {
     // TODO(pcardune) reenable
     xit("regression test for empty identifierLists returning a null location", async () => {
       let dragEvent = dragstart();
-      source.element.dispatchEvent(dragEvent); // drag to the last droptarget
+      source.element!.dispatchEvent(dragEvent); // drag to the last droptarget
       target2.dispatchEvent(drop());
       await finishRender();
     });

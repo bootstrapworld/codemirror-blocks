@@ -23,7 +23,7 @@ function simpleCursor(cur: CodeMirror.Position) {
 
 describe("when testing CM apis,", () => {
   let cmb!: API;
-  const currentFocusNId = () => cmb.getFocusedNode().nid;
+  const currentFocusNId = () => cmb.getFocusedNode()!.nid;
   const roots = () => cmb.getAst().rootNodes;
   const currentFirstRoot = () => roots()[0];
   const currentSecondRoot = () => roots()[1];
@@ -208,7 +208,7 @@ describe("when testing CM apis,", () => {
     await finishRender();
     expect(cmb.listSelections().length).toBe(2);
     const firstRoot = currentFirstRoot().element;
-    expect(firstRoot.getAttribute("aria-selected")).toBe("true");
+    expect(firstRoot!.getAttribute("aria-selected")).toBe("true");
   });
 
   it("getCursor should work as-is for Text", async () => {
@@ -274,7 +274,7 @@ describe("when testing CM apis,", () => {
     expect(selectedNodes.length).toBe(4);
     expect(cmb.getSelection("MOO")).toBe("(+ 1 2)MOO");
     await finishRender();
-    expect(currentFirstRoot().element.getAttribute("aria-selected")).toBe(
+    expect(currentFirstRoot().element!.getAttribute("aria-selected")).toBe(
       "true"
     );
   });
@@ -307,7 +307,7 @@ describe("when testing CM apis,", () => {
     const selections = cmb.getSelections("MOO");
     expect(selections.length).toBe(2);
     expect(selections).toEqual(["(+ 1 2)", ""]);
-    expect(currentFirstRoot().element.getAttribute("aria-selected")).toBe(
+    expect(currentFirstRoot().element!.getAttribute("aria-selected")).toBe(
       "true"
     );
   });

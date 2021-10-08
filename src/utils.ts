@@ -433,7 +433,7 @@ export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
 // between the old and new text. Mutates part of the change object.
 export function minimizeChange(
   { from, to, text, removed, origin = undefined }: EditorChange,
-  cm: Editor
+  cm: Pick<Editor, "getRange">
 ) {
   if (!removed) {
     removed = cm.getRange(from, to).split("\n");
