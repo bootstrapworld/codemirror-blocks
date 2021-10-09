@@ -5,7 +5,7 @@ import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
 import BlockComponent from "./BlockComponent";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
-import { AppDispatch } from "../store";
+import { AppDispatch, AppStore } from "../store";
 import { ItemTypes } from "../dnd";
 import classNames from "classnames";
 import CodeMirror from "codemirror";
@@ -73,7 +73,7 @@ const Node = (
   const isLocked = () => props.node.isLockedP;
 
   const dispatch: AppDispatch = useDispatch();
-  const store = useStore();
+  const store: AppStore = useStore();
 
   const isErrorFree = () => store.getState().errorId === "";
 
@@ -144,7 +144,7 @@ const Node = (
       // TODO(Oak): is this the best way?
       return;
     }
-    const currentNode = ast.getNodeById(props.node.id);
+    const currentNode = ast.getNodeByIdOrThrow(props.node.id);
     dispatch(activateByNid(cm, currentNode.nid, { allowMove: false }));
   };
 
@@ -201,7 +201,7 @@ const Node = (
       if (monitor.didDrop()) {
         return;
       }
-      const node = store.getState().ast.getNodeById(props.node.id);
+      const node = store.getState().ast.getNodeByIdOrThrow(props.node.id);
       return drop(cm, monitor.getItem(), new ReplaceNodeTarget(node));
     },
     collect: (monitor) => {

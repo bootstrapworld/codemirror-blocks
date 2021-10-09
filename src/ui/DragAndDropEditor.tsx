@@ -9,7 +9,7 @@ import { OverwriteTarget, useDropAction } from "../actions";
 import { playSound, BEEP } from "../utils";
 import { useDrop } from "react-dnd";
 import { Editor } from "codemirror";
-import { useDispatch, useStore } from "react-redux";
+import { useDispatch } from "react-redux";
 
 type Props = Omit<IUnControlledCodeMirror, "editorDidMount"> & {
   editorDidMount?: (ed: Editor) => void;
