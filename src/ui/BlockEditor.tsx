@@ -805,9 +805,9 @@ class BlockEditor extends Component<BlockEditorProps> {
    */
   private handleTopLevelFocus = (ed: Editor, e: Event) => {
     cancelAfterDOMUpdate(this.pendingTimeout);
-    this.props.dispatch((_, getState) => {
-      if (getState().cur != null) return; // if we already have a cursor, bail
-      this.pendingTimeout = setAfterDOMUpdate(() => {
+    this.pendingTimeout = setAfterDOMUpdate(() => {
+      this.props.dispatch((_, getState) => {
+        if (getState().cur != null) return; // if we already have a cursor, bail
         if (e instanceof MouseEvent) {
           this.props.dispatch(setCursor(this.state.cm, ed.getCursor()));
         } else {
