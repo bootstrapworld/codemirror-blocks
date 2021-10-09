@@ -86,9 +86,6 @@ export function edit_replace(text: string, node: ASTNode): Edit {
   }
 }
 
-export type OnSuccess = (r: { newAST: AST; focusId?: string }) => void;
-export type OnError = (e: any) => void;
-
 export type PerformEditState = Pick<
   RootState,
   "ast" | "focusId" | "collapsedList"
@@ -107,21 +104,10 @@ export function usePerformEdits() {
       edits: Edit[],
       parse: (code: string) => AST,
       cm: Editor,
-      onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
-      onError: OnError = (e: any) => {},
       annt?: string
-    ) =>
-      performEdits(
-        state,
-        dispatch,
-        origin,
-        edits,
-        parse,
-        cm,
-        onSuccess,
-        onError,
-        annt
-      ),
+    ) => {
+      return performEdits(state, dispatch, origin, edits, parse, cm, annt);
+    },
     [state.ast, state.focusId, state.collapsedList]
   );
 }
@@ -142,11 +128,6 @@ export function performEdits(
   edits: Edit[],
   parse: (code: string) => AST,
   cm: Editor,
-  onSuccess: OnSuccess = (r: {
-    newAST: AST;
-    focusId?: string | undefined;
-  }) => {},
-  onError: OnError = (e: any) => {},
   annt?: string
 ): Result<{ newAST: AST; focusId?: string | undefined }> {
   // Use the focus hint from the last edit provided.
@@ -200,16 +181,12 @@ export function performEdits(
         result.newAST,
         annt
       );
-      if (changeResult.successful) {
-        onSuccess(changeResult.value);
-      }
       return changeResult;
     } catch (e) {
       logResults(getReducerActivities(), e);
       return err(e);
     }
   } else {
-    onError(result.exception);
     return err(result.exception);
   }
 }
