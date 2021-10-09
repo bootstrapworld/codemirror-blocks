@@ -447,6 +447,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     if (ast.rootNodes.length > 0) {
       this.props.dispatch({ type: "SET_FOCUS", focusId: ast.rootNodes[0].id });
     }
+
     // Set extra aria attributes
     const wrapper = ed.getWrapperElement();
     wrapper.setAttribute("role", "tree");
@@ -799,20 +800,17 @@ class BlockEditor extends Component<BlockEditorProps> {
   /**
    * @internal
    * When the CM instance receives focus...
-   * If the mouse wasn't used and there's no cursor set, focus on the first root
-   * If the mouse WAS used there's no cursor set, get the cursor from CM
-   * Otherwise ignore
+   * If we have a CM cursor, let CM handle it (no-op)
+   * Otherwise grab the focusId, compute NId, and activate
    */
   private handleTopLevelFocus = (ed: Editor, e: Event) => {
     cancelAfterDOMUpdate(this.pendingTimeout);
     this.pendingTimeout = setAfterDOMUpdate(() => {
       this.props.dispatch((_, getState) => {
-        if (getState().cur != null) return; // if we already have a cursor, bail
-        if (e instanceof MouseEvent) {
-          this.props.dispatch(setCursor(this.state.cm, ed.getCursor()));
-        } else {
-          this.props.activateByNid(this.state.cm, null, { allowMove: true });
-        }
+        const {cur, focusId, ast} = getState();
+        if (cur != null) return; // if we already have a cursor, bail
+        const nid = ast.getNodeById(focusId).nid;
+        this.props.activateByNid(this.state.cm, nid, { allowMove: true });
       });
     });
   };
@@ -899,7 +897,6 @@ class BlockEditor extends Component<BlockEditorProps> {
           value={this.props.value}
           onBeforeChange={this.props.onBeforeChange}
           onKeyPress={this.handleTopLevelKeyPress}
-          onMouseDown={this.handleTopLevelFocus}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
           onKeyDown={(_, e) =>
