@@ -129,17 +129,21 @@ function setFocus(
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
 function computeFocusNodeFromChanges(
-  cm: Editor,
+  cm: Pick<Editor, "getRange">,
   changes: EditorChange[],
   newAST: AST
 ) {
   let insertion = false as EditorChange | false;
-  let startLocs = changes.map((c) => {
-    c = minimizeChange(c, cm);
-    c.from = adjustForChange(c.from, c, true);
-    c.to = adjustForChange(c.to, c, false);
-    if (c.text.join("").length > 0) insertion = c; // remember the most-recent insertion
-    return c.from; // return the starting srcLoc of the change
+  let startLocs = changes.map((change) => {
+    let { removed } = change;
+    if (!removed) {
+      removed = cm.getRange(change.from, change.to).split("\n");
+    }
+    change = minimizeChange({ ...change, removed });
+    change.from = adjustForChange(change.from, change, true);
+    change.to = adjustForChange(change.to, change, false);
+    if (change.text.join("").length > 0) insertion = change; // remember the most-recent insertion
+    return change.from; // return the starting srcLoc of the change
   });
   if (insertion) {
     // Case A: grab the inserted node, *or* the node that ends in

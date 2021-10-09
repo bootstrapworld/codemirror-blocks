@@ -431,13 +431,13 @@ export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
 
 // Minimize a CodeMirror-style change object, by excluding any shared prefix
 // between the old and new text. Mutates part of the change object.
-export function minimizeChange(
-  { from, to, text, removed, origin = undefined }: EditorChange,
-  cm: Pick<Editor, "getRange">
-) {
-  if (!removed) {
-    removed = cm.getRange(from, to).split("\n");
-  }
+export function minimizeChange({
+  from,
+  to,
+  text,
+  removed,
+  origin = undefined,
+}: EditorChange & { removed: string[] }) {
   // Remove shared lines
   while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
     text.shift();
