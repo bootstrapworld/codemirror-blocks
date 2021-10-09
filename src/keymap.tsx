@@ -17,9 +17,9 @@ import {
   skipCollapsed,
   mac,
   getLastVisibleNode,
-  preambleUndoRedo,
   playSound,
   BEEP,
+  topmostUndoable,
 } from "./utils";
 import { say } from "./announcer";
 import { findAdjacentDropTargetId as getDTid } from "./components/DropTarget";
@@ -518,17 +518,9 @@ const commandMap: {
     env.activateNoRecord(SHARED.search.search(true, env.state));
   },
 
-  Undo: (env, e) => {
-    e.preventDefault();
-    preambleUndoRedo(env.state, env.cm, "undo");
-    env.cm.undo();
-  },
+  Undo: (env, e) => undoRedo(env, e, "undo"),
 
-  Redo: (env, e) => {
-    e.preventDefault();
-    preambleUndoRedo(env.state, env.cm, "redo");
-    env.cm.redo();
-  },
+  Redo: (env, e) => undoRedo(env, e, "redo"),
 
   Help: (env, _) => {
     KeyDownContext.showDialog({
@@ -537,6 +529,24 @@ const commandMap: {
     });
   },
 };
+
+function undoRedo(
+  { state, cm }: { state: RootState; cm: Editor },
+  e: React.KeyboardEvent,
+  which: "undo" | "redo"
+) {
+  e.preventDefault();
+  const undoable = topmostUndoable(cm, which);
+  state.undoableAction = undoable.undoableAction;
+  state.actionFocus = undoable.actionFocus;
+  if (which === "undo") {
+    say(`UNDID: ${undoable.undoableAction}`);
+    cm.undo();
+  } else {
+    say(`REDID: ${undoable.undoableAction}`);
+    cm.redo();
+  }
+}
 
 // Recieves the key event, an environment (BlockEditor or Node), and the
 // editor's keyMap. If there is a handler for that event, add some utility

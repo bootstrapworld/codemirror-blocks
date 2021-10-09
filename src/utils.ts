@@ -529,19 +529,6 @@ export function topmostUndoable(cm: Editor, which: "undo" | "redo") {
   throw new Error(`No undoable found`);
 }
 
-export function preambleUndoRedo(
-  state: RootState,
-  cm: Editor,
-  which: "undo" | "redo"
-) {
-  let tU = topmostUndoable(cm, which);
-  if (tU) {
-    say((which === "undo" ? "UNDID" : "REDID") + ": " + tU.undoableAction);
-    state.undoableAction = tU.undoableAction;
-    state.actionFocus = tU.actionFocus;
-  }
-}
-
 /****************************************************************
  * SOUND HANDLING
  */
