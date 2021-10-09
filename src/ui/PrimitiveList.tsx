@@ -40,11 +40,6 @@ export const Primitive = (props: BasePrimitiveProps) => {
       case "Copy": {
         e.preventDefault();
         const node = primitive.getASTNode();
-        if (!node) {
-          // there's no node for this primitive, do nothing.
-          // TODO(pcardune): is this the right behavior?
-          return;
-        }
         copy({ ast, focusId }, [node]);
         say("copied " + primitive.toString());
         primitive.element?.focus(); // restore focus

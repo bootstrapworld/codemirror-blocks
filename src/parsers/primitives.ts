@@ -32,12 +32,18 @@ export class Primitive {
     if (this.language.getASTNodeForPrimitive) {
       return this.language.getASTNodeForPrimitive(this);
     }
+    throw Error(
+      `getASTNodeForPrimitive() must be implemented if primitives are used.`
+    );
   }
 
   getLiteralNode() {
     if (this.language.getLiteralNodeForPrimitive) {
       return this.language.getLiteralNodeForPrimitive(this);
     }
+    throw Error(
+      `getLiteralNodeForPrimitive() must be implemented if primitives are used.`
+    );
   }
 
   static fromConfig(languageId: string, config: PrimitiveConfig) {
