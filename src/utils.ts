@@ -1,6 +1,5 @@
 import objToStableString from "fast-json-stable-stringify";
-import CodeMirror from "codemirror";
-import type { Editor, EditorChange } from "codemirror";
+import type { EditorChange } from "codemirror";
 import type { RootState } from "./reducers";
 import type { AST, ASTNode, Pos, Range } from "./ast";
 
@@ -193,12 +192,6 @@ export function hashObject(obj: any) {
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a: Pos, b: Pos): number {
-  if (!a) {
-    debugLog("utils:44, hitting null a");
-  }
-  if (!b) {
-    debugLog("utils:44, hitting null b");
-  }
   return a.line - b.line || a.ch - b.ch;
 }
 
@@ -322,14 +315,6 @@ export function getLastVisibleNode(state: RootState) {
     lastNode,
     (n) => n?.parent
   );
-}
-
-export function getBeginCursor() {
-  return CodeMirror.Pos(0, 0);
-}
-
-export function getEndCursor(cm: Editor) {
-  return CodeMirror.Pos(cm.lastLine(), cm.getLine(cm.lastLine()).length);
 }
 
 export function posWithinNode(pos: Pos, node: ASTNode) {
@@ -514,19 +499,6 @@ export class BlockError extends Error {
     this.type = type;
     this.data = data;
   }
-}
-
-export function topmostUndoable(cm: Editor, which: "undo" | "redo") {
-  let arr =
-    which === "undo"
-      ? cm.getDoc().getHistory().done
-      : cm.getDoc().getHistory().undone;
-  for (let i = arr.length - 1; i >= 0; i--) {
-    if (!arr[i].ranges) {
-      return arr[i];
-    }
-  }
-  throw new Error(`No undoable found`);
 }
 
 /****************************************************************

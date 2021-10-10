@@ -1,5 +1,5 @@
 import React from "react";
-import CodeMirror, { Editor } from "codemirror";
+import CodeMirror from "codemirror";
 import SHARED from "./shared";
 import {
   delete_,
@@ -19,7 +19,6 @@ import {
   getLastVisibleNode,
   playSound,
   BEEP,
-  topmostUndoable,
 } from "./utils";
 import { say } from "./announcer";
 import { findAdjacentDropTargetId as getDTid } from "./components/DropTarget";
@@ -28,17 +27,18 @@ import type { AppDispatch } from "./store";
 import type { ASTNode } from "./ast";
 import type { RootState } from "./reducers";
 import { KeyDownContext } from "./ui/ToggleEditor";
+import { CMBEditor } from "./editor";
 
 type BlockEditorEnv = {
   isNodeEnv: false;
-  cm: Editor;
+  cm: CMBEditor;
   dispatch: AppDispatch;
 };
 
 type NodeEnv = {
   isNodeEnv: true;
 
-  cm: Editor;
+  cm: CMBEditor;
   isLocked: () => boolean;
   handleMakeEditable: (e?: React.KeyboardEvent) => void;
   setRight: () => boolean;
@@ -531,12 +531,12 @@ const commandMap: {
 };
 
 function undoRedo(
-  { state, cm }: { state: RootState; cm: Editor },
+  { state, cm }: { state: RootState; cm: CMBEditor },
   e: React.KeyboardEvent,
   which: "undo" | "redo"
 ) {
   e.preventDefault();
-  const undoable = topmostUndoable(cm, which);
+  const undoable = cm.getTopmostUndoable(which);
   state.undoableAction = undoable.undoableAction;
   state.actionFocus = undoable.actionFocus;
   if (which === "undo") {

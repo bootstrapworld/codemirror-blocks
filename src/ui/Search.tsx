@@ -2,13 +2,14 @@ import React, { Component } from "react";
 import Dialog from "../components/Dialog";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import "react-tabs/style/react-tabs.less";
-import { getBeginCursor, getEndCursor, playSound, WRAP } from "../utils";
+import { playSound, WRAP } from "../utils";
 import { say } from "../announcer";
 import { BlockEditorComponentClass, Search } from "./BlockEditor";
 import { Searcher } from "./searchers/Searcher";
 import { GetProps } from "react-redux";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
+import { ReadonlyCMBEditor } from "../editor";
 
 export default function attachSearch(
   Editor: BlockEditorComponentClass,
@@ -40,7 +41,7 @@ export default function attachSearch(
       cmbState: null,
       firstTime: true,
     };
-    cm: CodeMirror.Editor;
+    cm: ReadonlyCMBEditor;
     callback: () => void;
 
     displayName = "Search Component";
@@ -106,7 +107,10 @@ export default function attachSearch(
           return null; // if there's no wrapped match, give up
         }
         playSound(WRAP);
-        const wrappedStart = (forward ? getBeginCursor : getEndCursor)(this.cm);
+
+        const wrappedStart = forward
+          ? { line: 0, ch: 0 }
+          : this.cm.getLastPos();
         return this.handleSearch(forward, cmbState, wrappedStart);
       }
     };
@@ -140,7 +144,7 @@ export default function attachSearch(
       return this.setState({ searchEngine });
     };
 
-    handleSetCM = (cm: CodeMirror.Editor) => (this.cm = cm);
+    handleSetCM = (cm: ReadonlyCMBEditor) => (this.cm = cm);
 
     search: Search = {
       onSearch: this.handleActivateSearch,

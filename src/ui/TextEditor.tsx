@@ -3,10 +3,10 @@ import {
   IUnControlledCodeMirror,
   UnControlled as CodeMirror,
 } from "react-codemirror2";
-import SHARED from "../shared";
 import { API } from "./ToggleEditor";
 import { AST } from "../ast";
 import { Editor } from "codemirror";
+import { CodeMirrorFacade } from "../editor";
 
 // CodeMirror APIs that we need to disallow
 // NOTE(Emmanuel): we should probably block 'on' and 'off'...
@@ -28,7 +28,7 @@ type Props = {
   cmOptions?: {};
   value: string;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
-  onMount: (ed: Editor, api: API, ast: AST | undefined) => void;
+  onMount: (ed: CodeMirrorFacade, api: API, ast: AST | undefined) => void;
   api?: API;
   passedAST?: AST;
 };
@@ -38,7 +38,7 @@ const TextEditor = (props: Props) => {
 
   // build the API on mount
   const handleEditorDidMount = (ed: Editor) => {
-    onMount(ed, buildAPI(), passedAST);
+    onMount(new CodeMirrorFacade(ed), buildAPI(), passedAST);
   };
 
   // Build the API for a text editor, restricting APIs that are

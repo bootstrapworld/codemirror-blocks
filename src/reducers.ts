@@ -1,7 +1,8 @@
-import CodeMirror, { Editor } from "codemirror";
+import CodeMirror from "codemirror";
 import type { Action } from "redux";
 import { AST } from "./ast";
-import { debugLog, topmostUndoable } from "./utils";
+import { ReadonlyCMBEditor } from "./editor";
+import { debugLog } from "./utils";
 
 /**
  * An Activity is a shallow-clone of a reducer action, except that
@@ -99,8 +100,8 @@ export type AppAction =
   | (Action<"ADD_MARK"> & { id: string; mark: CodeMirror.TextMarker })
   | (Action<"CLEAR_MARK"> & { id: string })
   | (Action<"DO"> & { focusId: RootState["focusId"] })
-  | (Action<"UNDO"> & { cm: Editor })
-  | (Action<"REDO"> & { cm: Editor })
+  | (Action<"UNDO"> & { cm: ReadonlyCMBEditor })
+  | (Action<"REDO"> & { cm: ReadonlyCMBEditor })
   | Action<"RESET_STORE_FOR_TESTING">;
 
 const initialState: RootState = {
@@ -185,7 +186,7 @@ function reduce(state = initialState, action: AppAction): RootState {
       }
       return state;
     case "UNDO": {
-      const historyItem = topmostUndoable(action.cm, "redo");
+      const historyItem = action.cm.getTopmostUndoable("redo");
       historyItem.undoableAction = state.undoableAction;
       historyItem.actionFocus = state.actionFocus;
       return {
@@ -195,7 +196,7 @@ function reduce(state = initialState, action: AppAction): RootState {
       };
     }
     case "REDO": {
-      const historyItem = topmostUndoable(action.cm, "undo");
+      const historyItem = action.cm.getTopmostUndoable("undo");
       historyItem.undoableAction = state.undoableAction;
       historyItem.actionFocus = state.actionFocus;
       return {

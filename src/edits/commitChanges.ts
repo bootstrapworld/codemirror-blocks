@@ -1,17 +1,12 @@
-import { AppDispatch, AppStore } from "../store";
-import {
-  poscmp,
-  adjustForChange,
-  minimizeChange,
-  logResults,
-  topmostUndoable,
-} from "../utils";
+import { AppDispatch } from "../store";
+import { poscmp, adjustForChange, minimizeChange, logResults } from "../utils";
 import { activateByNid } from "../actions";
 import patch from "./patchAst";
 import { AST, ASTNode } from "../ast";
-import type { Editor, EditorChange } from "codemirror";
+import type { EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { err, ok, Result } from "./result";
+import { CMBEditor, ReadonlyRangedText } from "../editor";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
@@ -38,7 +33,7 @@ export function commitChanges(
   dispatch: AppDispatch,
   changes: EditorChange[],
   parse: (code: string) => AST,
-  cm: Editor,
+  cm: CMBEditor,
   isUndoOrRedo: boolean = false,
   focusHint?: FocusHint | -1,
   astHint?: AST,
@@ -69,7 +64,7 @@ export function commitChanges(
         newFocus = newAST.getNodeById(focusId);
       }
       let newFocusNId = newFocus?.nid || null;
-      let tU = topmostUndoable(cm, "undo");
+      let tU = cm.getTopmostUndoable("undo");
       tU.undoableAction = annt || undefined;
       tU.actionFocus = { oldFocusNId, newFocusNId };
       dispatch({ type: "DO", focusId: focusId || null });
@@ -89,7 +84,7 @@ export function commitChanges(
 function setFocus(
   state: Pick<RootState, "collapsedList">,
   dispatch: AppDispatch,
-  cm: Editor,
+  cm: CMBEditor,
   changes: EditorChange[],
   focusHint: FocusHint | -1 | undefined,
   newAST: AST
@@ -129,7 +124,7 @@ function setFocus(
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
 function computeFocusNodeFromChanges(
-  cm: Pick<Editor, "getRange">,
+  cm: ReadonlyRangedText,
   changes: EditorChange[],
   newAST: AST
 ) {

@@ -15,11 +15,12 @@ import {
   ClonedASTNode,
 } from "./fakeAstEdits";
 import type { AppDispatch } from "../store";
-import type { Editor, EditorChange } from "codemirror";
+import type { EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback } from "react";
 import { err, Result } from "./result";
+import { CMBEditor, ReadonlyRangedText } from "../editor";
 
 /**
  *
@@ -103,7 +104,7 @@ export function usePerformEdits() {
       origin: string,
       edits: Edit[],
       parse: (code: string) => AST,
-      cm: Editor,
+      cm: CMBEditor,
       annt?: string
     ) => {
       return performEdits(state, dispatch, origin, edits, parse, cm, annt);
@@ -127,7 +128,7 @@ export function performEdits(
   origin: string,
   edits: Edit[],
   parse: (code: string) => AST,
-  cm: Editor,
+  cm: CMBEditor,
   annt?: string
 ): Result<{ newAST: AST; focusId?: string | undefined }> {
   // Use the focus hint from the last edit provided.
@@ -165,11 +166,7 @@ export function performEdits(
   if (result.successful) {
     try {
       // Perform the text edits, and update the ast.
-      cm.operation(() => {
-        for (let c of changeArray) {
-          cm.replaceRange(c.text, c.from, c.to, c.origin);
-        }
-      });
+      cm.applyChanges(changeArray);
       const changeResult = commitChanges(
         state,
         dispatch,
@@ -204,7 +201,7 @@ export interface EditInterface {
   from: Pos;
   to: Pos;
   node?: ASTNode;
-  toChangeObject?(ast: AST, cm: Editor): EditorChange;
+  toChangeObject?(ast: AST, cm: ReadonlyRangedText): EditorChange;
   findDescendantNode(ancestor: ASTNode, id: string): ASTNode;
   focusHint(newAST: AST): ASTNode | "fallback";
   toString(): string;
@@ -219,7 +216,7 @@ abstract class Edit implements EditInterface {
     this.to = to;
   }
 
-  toChangeObject?(ast: AST, cm: Editor): EditorChange;
+  toChangeObject?(ast: AST, cm: ReadonlyRangedText): EditorChange;
 
   findDescendantNode(ancestor: ASTNode, id: string) {
     for (const node of ancestor.descendants()) {
@@ -307,7 +304,7 @@ class DeleteRootEdit extends Edit {
     this.node = node;
   }
 
-  toChangeObject(_ast: AST, cm: Editor) {
+  toChangeObject(_ast: AST, cm: ReadonlyRangedText) {
     const { from, to } = removeWhitespace(this.from, this.to, cm);
     return {
       text: [""],
@@ -539,7 +536,7 @@ function groupEditsByAncestor(edits: Edit[]) {
  * @internal
  * When deleting a root, don't leave behind excessive whitespace
  */
-function removeWhitespace(from: Pos, to: Pos, cm: Editor) {
+function removeWhitespace(from: Pos, to: Pos, cm: ReadonlyRangedText) {
   let prevChar = cm.getRange({ line: from.line, ch: from.ch - 1 }, from);
   let nextChar = cm.getRange(to, { line: to.line, ch: to.ch + 1 });
   if (prevChar == " " && (nextChar == " " || nextChar == "")) {

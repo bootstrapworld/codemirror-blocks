@@ -10,7 +10,7 @@ import SHARED from "../shared";
 import NodeEditable from "../components/NodeEditable";
 import { activateByNid, setCursor, OverwriteTarget } from "../actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
-import { speculateChanges, getTempCM } from "../edits/speculateChanges";
+import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
 import {
   poscmp,
@@ -32,6 +32,19 @@ import type { AppDispatch } from "../store";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { CMContext } from "../components/Context";
+import {
+  CodeMirrorFacade,
+  CMBEditor,
+  ReadonlyCMBEditor,
+  isBlockNodeMarker,
+} from "../editor";
+
+const tmpDiv = document.createElement("div");
+function getTempCM(cm: CodeMirrorFacade) {
+  const tmpCM = CodeMirror(tmpDiv, { value: cm.getValue() });
+  tmpCM.setCursor(cm.cm.getCursor());
+  return tmpCM;
+}
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = [
@@ -95,7 +108,7 @@ export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
 type ToplevelBlockProps = {
   incrementalRendering: boolean;
   node: ASTNode;
-  cm: Editor;
+  cm: CMBEditor;
 };
 
 type ToplevelBlockState = {
@@ -161,14 +174,7 @@ class ToplevelBlock extends BlockComponent<
     // make a new block marker, and fill it with the portal
     setAfterDOMUpdate(() => {
       const { from, to } = node.srcRange(); // includes the node's comment, if any
-      this.props.cm
-        .findMarks(from, to)
-        .filter((m) => m.BLOCK_NODE_ID)
-        .forEach((m) => m.clear());
-      this.mark = this.props.cm.markText(from, to, {
-        replacedWith: this.container,
-      });
-      this.mark.BLOCK_NODE_ID = node.id;
+      this.mark = this.props.cm.replaceMarkerWidget(from, to, this.container);
       node.mark = this.mark;
     });
     return ReactDOM.createPortal(elt, this.container);
@@ -176,7 +182,7 @@ class ToplevelBlock extends BlockComponent<
 }
 
 type ToplevelBlockEditableProps = {
-  cm: Editor;
+  cm: CMBEditor;
 };
 const ToplevelBlockEditable = (props: ToplevelBlockEditableProps) => {
   const dispatch: AppDispatch = useDispatch();
@@ -214,16 +220,7 @@ const ToplevelBlockEditable = (props: ToplevelBlockEditableProps) => {
   // CYCLE IS OVER and make a new block marker
   if (!marker)
     window.requestAnimationFrame(() => {
-      // CM treats 0-width ranges differently than other ranges, so check
-      if (poscmp(start, end) === 0) {
-        marker = SHARED.cm.setBookmark(start, {
-          widget: container,
-        });
-      } else {
-        marker = SHARED.cm.markText(start, end, {
-          replacedWith: container,
-        });
-      }
+      SHARED.cm.replaceMarkerWidget(start, end, container);
     });
 
   return ReactDOM.createPortal(
@@ -272,7 +269,7 @@ export type Search = {
   ) => ASTNode | null;
   onSearch: (state: null, done: () => void, searchForward: () => void) => void;
   setCursor: (cursor: Pos) => void;
-  setCM: (cm: CodeMirror.Editor) => void;
+  setCM: (cm: ReadonlyCMBEditor) => void;
 };
 
 export type BlockEditorProps = typeof BlockEditor.defaultProps &
@@ -286,14 +283,14 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
     languageId: string;
     search?: Search;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
-    onMount: Function;
+    onMount: (cm: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
     api?: API;
     passedAST: AST;
     ast: AST;
   };
 
 type BlockEditorState = {
-  cm: Editor | null;
+  cm: CMBEditor | null;
 };
 
 class BlockEditor extends Component<BlockEditorProps> {
@@ -328,7 +325,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * This is hooked up to CodeMirror's onBeforeChange event
    */
   private handleBeforeChange = (
-    cm: Editor,
+    cm: CodeMirrorFacade,
     change: CodeMirror.EditorChangeCancellable
   ) => {
     if (!change.origin?.startsWith("cmb:")) {
@@ -353,7 +350,10 @@ class BlockEditor extends Component<BlockEditorProps> {
    * @internal
    * Given a CM Change Event, manually handle our own undo and focus stack
    */
-  private handleChanges = (cm: Editor, changes: CodeMirror.EditorChange[]) => {
+  private handleChanges = (
+    cm: CMBEditor,
+    changes: CodeMirror.EditorChange[]
+  ) => {
     this.props.dispatch((dispatch, getState) => {
       if (!changes.every((c) => c.origin?.startsWith("cmb:"))) {
         // These changes did not originate from us. However, they've all
@@ -435,15 +435,17 @@ class BlockEditor extends Component<BlockEditorProps> {
    * When the editor mounts, (1) set change event handlers and AST,
    * (2) set the focus, (3) set aria attributes, and (4) build the API
    */
-  private handleEditorDidMount = (ed: Editor) => {
-    this.setState({ cm: ed });
+  private handleEditorDidMount = (cm: CodeMirrorFacade) => {
+    this.setState({ cm });
     const { passedAST: ast, setAST, search, options, onMount } = this.props;
-    ed.on("beforeChange", this.handleBeforeChange);
-    ed.on("changes", this.handleChanges);
+    cm.cm.on("beforeChange", (ed, change) =>
+      this.handleBeforeChange(cm, change)
+    );
+    cm.cm.on("changes", (ed, changes) => this.handleChanges(cm, changes));
 
     // set AST and searchg properties and collapse preferences
     setAST(ast);
-    search.setCM(ed);
+    search.setCM(cm);
     if (options.collapseAll) {
       this.props.dispatch({ type: "COLLAPSE_ALL" });
     }
@@ -453,13 +455,13 @@ class BlockEditor extends Component<BlockEditorProps> {
       this.props.dispatch({ type: "SET_FOCUS", focusId: ast.rootNodes[0].id });
     }
     // Set extra aria attributes
-    const wrapper = ed.getWrapperElement();
+    const wrapper = cm.cm.getWrapperElement();
     wrapper.setAttribute("role", "tree");
     wrapper.setAttribute("aria-multiselectable", "true");
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    onMount(ed, this.buildAPI(ed), ast);
+    onMount(cm, this.buildAPI(cm), ast);
   };
 
   /**
@@ -502,7 +504,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * Build the API for a block editor, restricting or modifying APIs
    * that are incompatible with our toggleable block editor
    */
-  private buildAPI(ed: Editor): BuiltAPI {
+  private buildAPI(cm: CodeMirrorFacade): BuiltAPI {
     const withState = <F extends (state: RootState) => any>(func: F) =>
       this.props.dispatch((_, getState) => func(getState()));
 
@@ -511,73 +513,72 @@ class BlockEditor extends Component<BlockEditorProps> {
        * CM APIs WE WANT TO OVERRIDE
        */
       findMarks: (from, to) =>
-        this.getEditorOrThrow()
-          .findMarks(from, to)
-          .filter((m) => !m.BLOCK_NODE_ID),
+        cm.cm.findMarks(from, to).filter((m) => !isBlockNodeMarker(m)),
       findMarksAt: (pos) =>
-        this.getEditorOrThrow()
-          .findMarksAt(pos)
-          .filter((m) => !m.BLOCK_NODE_ID),
+        cm.cm.findMarksAt(pos).filter((m) => !isBlockNodeMarker(m)),
       getAllMarks: () =>
-        this.getEditorOrThrow()
-          .getAllMarks()
-          .filter((m) => !m.BLOCK_NODE_ID),
-      markText: (from, to, opts) => this.markText(from, to, opts),
+        cm.cm.getAllMarks().filter((m) => !isBlockNodeMarker(m)),
+      markText: (from, to, opts) => this.markText(cm, from, to, opts),
       // Something is selected if CM has a selection OR a block is selected
       somethingSelected: () =>
         withState(({ selections }) =>
-          Boolean(
-            this.getEditorOrThrow().somethingSelected() || selections.length
-          )
+          Boolean(cm.cm.somethingSelected() || selections.length)
         ),
       // CMB has focus if CM has focus OR a block is active
       hasFocus: () =>
-        this.getEditorOrThrow().hasFocus() ||
+        cm.cm.hasFocus() ||
         Boolean(document.activeElement?.id.match(/block-node/)),
       extendSelection: (
         from: CodeMirror.Position,
         to: CodeMirror.Position,
         opts?: SelectionOptions
-      ) => this.extendSelections([from], opts, to),
-      extendSelections: (heads, opts) => this.extendSelections(heads, opts),
+      ) => this.extendSelections(cm, [from], opts, to),
+      extendSelections: (heads, opts) => this.extendSelections(cm, heads, opts),
       extendSelectionsBy: (
         f: (range: CodeMirror.Range) => CodeMirror.Position,
         opts?: SelectionOptions
-      ) => this.extendSelections(this.listSelections().map(f), opts),
+      ) => this.extendSelections(cm, this.listSelections(cm).map(f), opts),
       getSelections: (sep?: string) =>
-        this.listSelections().map((s) =>
-          this.getEditorOrThrow().getRange(s.anchor, s.head, sep)
+        this.listSelections(cm).map((s) =>
+          cm.cm.getRange(s.anchor, s.head, sep)
         ),
       getSelection: (sep?: string) =>
-        this.listSelections()
-          .map((s) => this.getEditorOrThrow().getRange(s.anchor, s.head, sep))
+        this.listSelections(cm)
+          .map((s) => cm.cm.getRange(s.anchor, s.head, sep))
           .join(sep),
-      listSelections: () => this.listSelections(),
+      listSelections: () => this.listSelections(cm),
       replaceRange: (text, from, to, origin) =>
         withState(({ ast }) => {
           validateRanges([{ anchor: from, head: to }], ast);
-          this.getEditorOrThrow().replaceRange(text, from, to, origin);
+          cm.cm.replaceRange(text, from, to, origin);
         }),
       setSelections: (ranges, primary, opts) =>
-        this.setSelections(ranges, primary, opts),
+        this.setSelections(cm, ranges, primary, opts),
       setSelection: (anchor, head = anchor, opts) =>
-        this.setSelections([{ anchor: anchor, head: head }], undefined, opts),
+        this.setSelections(
+          cm,
+          [{ anchor: anchor, head: head }],
+          undefined,
+          opts
+        ),
       addSelection: (anchor, head) =>
         this.setSelections(
+          cm,
           [{ anchor: anchor, head: head }],
           undefined,
           undefined,
           false
         ),
       replaceSelections: (rStrings, select?: "around" | "start") =>
-        this.replaceSelections(rStrings, select),
+        this.replaceSelections(cm, rStrings, select),
       replaceSelection: (rString, select?: "around" | "start") =>
         this.replaceSelections(
-          Array(this.listSelections().length).fill(rString),
+          cm,
+          Array(this.listSelections(cm).length).fill(rString),
           select
         ),
       // If a node is active, return the start. Otherwise return the cursor as-is
-      getCursor: (where) => this.getCursor(where),
+      getCursor: (where) => this.getCursor(cm, where),
       // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
       setCursor: (curOrLine, ch, options) =>
         withState(({ ast }) => {
@@ -586,12 +587,12 @@ class BlockEditor extends Component<BlockEditorProps> {
             typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
           const node = ast.getNodeContaining(cur);
           if (node) {
-            this.props.activateByNid(this.getEditorOrThrow(), node.nid, {
+            this.props.activateByNid(cm, node.nid, {
               record: false,
               allowMove: true,
             });
           }
-          this.props.dispatch(setCursor(this.getEditorOrThrow(), cur));
+          this.props.dispatch(setCursor(cm, cur));
         }),
       // As long as widget isn't defined, we're good to go
       setBookmark: (pos, opts) => {
@@ -601,7 +602,7 @@ class BlockEditor extends Component<BlockEditorProps> {
             "API Error"
           );
         }
-        return this.getEditorOrThrow().setBookmark(pos, opts);
+        return cm.cm.setBookmark(pos, opts);
       },
 
       /*****************************************************************
@@ -645,6 +646,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * boundaries)
    */
   private markText(
+    ed: CodeMirrorFacade,
     from: CodeMirror.Position,
     to: CodeMirror.Position,
     options: CodeMirror.TextMarkerOptions = {}
@@ -664,7 +666,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           `API Error`
         );
     }
-    let mark = this.getEditorOrThrow().markText(from, to, options); // keep CM in sync
+    let mark = ed.cm.markText(from, to, options); // keep CM in sync
     const _clear = mark.clear.bind(mark);
     mark.clear = () => {
       _clear();
@@ -683,7 +685,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * Override CM's native getCursor method, restricting it to the semantics
    * that make sense in a block editor
    */
-  private getCursor(where = "from") {
+  private getCursor(cm: CodeMirrorFacade, where = "from") {
     const dispatch = this.props.dispatch;
     const { focusId, ast } = dispatch((_, getState) => getState());
     if (focusId && document.activeElement?.id.match(/block-node/)) {
@@ -696,26 +698,24 @@ class BlockEditor extends Component<BlockEditorProps> {
           `API Error`
         );
     } else {
-      return this.getEditorOrThrow().getCursor(where);
+      return cm.cm.getCursor(where);
     }
   }
   /**
    * Override CM's native listSelections method, using the selection
    * state from the block editor
    */
-  private listSelections() {
+  private listSelections(cm: CodeMirrorFacade) {
     const dispatch = this.props.dispatch;
     const { selections, ast } = dispatch((_, getState) => getState());
-    let tmpCM = getTempCM(this.getEditorOrThrow());
+    let tmpCM = getTempCM(cm);
     // write all the ranges for all selected nodes
     selections.forEach((id) => {
       const node = ast.getNodeByIdOrThrow(id);
       tmpCM.addSelection(node.from, node.to);
     });
     // write all the existing selection ranges
-    this.getEditorOrThrow()
-      .listSelections()
-      .map((s) => tmpCM.addSelection(s.anchor, s.head));
+    cm.cm.listSelections().map((s) => tmpCM.addSelection(s.anchor, s.head));
     // return all the selections
     return tmpCM.listSelections();
   }
@@ -724,6 +724,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * that make sense in a block editor (must include only valid node ranges)
    */
   private setSelections(
+    ed: CodeMirrorFacade,
     ranges: Array<{ anchor: CodeMirror.Position; head?: CodeMirror.Position }>,
     primary?: number,
     options?: { bias?: number; origin?: string; scroll?: boolean },
@@ -731,7 +732,7 @@ class BlockEditor extends Component<BlockEditorProps> {
   ) {
     const dispatch = this.props.dispatch;
     const { ast } = dispatch((_, getState) => getState());
-    let tmpCM = getTempCM(this.getEditorOrThrow());
+    let tmpCM = getTempCM(ed);
     tmpCM.setSelections(ranges, primary, options);
     const textRanges: {
       anchor: CodeMirror.Position;
@@ -753,13 +754,11 @@ class BlockEditor extends Component<BlockEditorProps> {
       } else textRanges.push({ anchor: anchor, head: head });
     });
     if (textRanges.length) {
-      if (replace)
-        this.getEditorOrThrow().setSelections(textRanges, primary, options);
-      else
-        this.getEditorOrThrow().addSelection(
-          textRanges[0].anchor,
-          textRanges[0].head
-        );
+      if (replace) {
+        ed.cm.setSelections(textRanges, primary, options);
+      } else {
+        ed.cm.addSelection(textRanges[0].anchor, textRanges[0].head);
+      }
     }
     dispatch({ type: "SET_SELECTIONS", selections: nodes });
   }
@@ -768,49 +767,45 @@ class BlockEditor extends Component<BlockEditorProps> {
    * that make sense in a block editor (must include only valid node ranges)
    */
   private extendSelections(
+    ed: CodeMirrorFacade,
     heads: CodeMirror.Position[],
     opts?: SelectionOptions,
     to?: CodeMirror.Position
   ) {
-    let tmpCM: CodeMirror.Editor = getTempCM(this.getEditorOrThrow());
-    tmpCM.setSelections(this.listSelections());
+    let tmpCM: CodeMirror.Editor = getTempCM(ed);
+    tmpCM.setSelections(this.listSelections(ed));
     if (to) {
       tmpCM.extendSelections(heads, opts);
     } else {
       tmpCM.extendSelection(heads[0], to, opts);
     }
     // if one of the ranges is invalid, setSelections will raise an error
-    this.setSelections(tmpCM.listSelections(), undefined, opts);
+    this.setSelections(ed, tmpCM.listSelections(), undefined, opts);
   }
   /**
    * Override CM's native replaceSelections method, restricting it to the semantics
    * that make sense in a block editor (must include only valid node ranges)
    */
   private replaceSelections(
+    cm: CodeMirrorFacade,
     replacements: string[],
     select?: "around" | "start"
   ) {
-    let tmpCM: CodeMirror.Editor = getTempCM(this.getEditorOrThrow());
-    tmpCM.setSelections(this.listSelections());
+    let tmpCM: CodeMirror.Editor = getTempCM(cm);
+    tmpCM.setSelections(this.listSelections(cm));
     tmpCM.replaceSelections(replacements, select);
     this.getEditorOrThrow().setValue(tmpCM.getValue());
     // if one of the ranges is invalid, setSelections will raise an error
     if (select == "around") {
-      this.setSelections(tmpCM.listSelections());
+      this.setSelections(cm, tmpCM.listSelections());
     }
     if (select == "start") {
       this.props.dispatch(
-        setCursor(
-          this.getEditorOrThrow(),
-          tmpCM.listSelections().pop()?.head ?? null
-        )
+        setCursor(cm, tmpCM.listSelections().pop()?.head ?? null)
       );
     } else {
       this.props.dispatch(
-        setCursor(
-          this.getEditorOrThrow(),
-          tmpCM.listSelections().pop()?.anchor ?? null
-        )
+        setCursor(cm, tmpCM.listSelections().pop()?.anchor ?? null)
       );
     }
   }
@@ -822,7 +817,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * If the mouse WAS used there's no cursor set, get the cursor from CM
    * Otherwise ignore
    */
-  private handleTopLevelFocus = (ed: Editor) => {
+  private handleTopLevelFocus = (cm: CodeMirrorFacade) => {
     const { dispatch } = this.props;
     dispatch((_, getState) => {
       const { cur } = getState();
@@ -830,14 +825,16 @@ class BlockEditor extends Component<BlockEditorProps> {
         // NOTE(Emmanuel): setAfterDOMUpdate so that the CM cursor will not blink
         cancelAfterDOMUpdate(this.pendingTimeout);
         this.pendingTimeout = setAfterDOMUpdate(() =>
-          this.props.activateByNid(ed, null, { allowMove: true })
+          this.props.activateByNid(cm, null, {
+            allowMove: true,
+          })
         );
         this.mouseUsed = false;
       } else if (this.mouseUsed && cur === null) {
         // if it was a click, get the cursor from CM
         cancelAfterDOMUpdate(this.pendingTimeout);
         this.pendingTimeout = setAfterDOMUpdate(() =>
-          this.props.dispatch(setCursor(ed, ed.getCursor()))
+          this.props.dispatch(setCursor(cm, cm.cm.getCursor()))
         );
         this.mouseUsed = false;
       }
@@ -876,12 +873,12 @@ class BlockEditor extends Component<BlockEditorProps> {
    * @internal
    * When the CM instance receives a paste event...start a quarantine
    */
-  private handleTopLevelPaste = (ed: Editor, e: ClipboardEvent) => {
+  private handleTopLevelPaste = (cm: CodeMirrorFacade, e: ClipboardEvent) => {
     e.preventDefault();
     const text = e.clipboardData?.getData("text/plain");
     if (text) {
-      const start = ed.getCursor(true as $TSFixMe);
-      const end = ed.getCursor(false as $TSFixMe);
+      const start = cm.cm.getCursor(true as $TSFixMe);
+      const end = cm.cm.getCursor(false as $TSFixMe);
       this.props.setQuarantine(start, end, text);
     }
   };
@@ -891,9 +888,9 @@ class BlockEditor extends Component<BlockEditorProps> {
    * When the CM instance receives cursor activity...
    * If there are selections, pass null. Otherwise pass the cursor.
    */
-  private handleTopLevelCursorActivity = (ed: Editor) => {
-    let cur = ed.getSelection().length > 0 ? null : ed.getCursor();
-    this.props.dispatch(setCursor(ed, cur));
+  private handleTopLevelCursorActivity = (cm: CodeMirrorFacade) => {
+    let cur = cm.cm.getSelection().length > 0 ? null : cm.cm.getCursor();
+    this.props.dispatch(setCursor(cm, cur));
   };
 
   componentWillUnmount() {
@@ -953,7 +950,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           onPaste={this.handleTopLevelPaste}
           onKeyDown={(cm, e) => {
             keyDown(e, {
-              cm,
+              cm: cm,
               isNodeEnv: false,
               dispatch: this.props.dispatch,
             });

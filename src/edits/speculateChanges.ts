@@ -1,11 +1,13 @@
-import CodeMirror, { Editor } from "codemirror";
+import CodeMirror from "codemirror";
 import type { EditorChange } from "codemirror";
 import type { AST } from "../ast";
+import { CodeMirrorFacade, RangedText, ReadonlyRangedText } from "../editor";
 
 // TODO: For efficiency, we don't really need a full CodeMirror instance here:
 // create a mock one.
-const tmpDiv = document.createElement("div");
-const tmpCM = CodeMirror(tmpDiv, { value: "" });
+const tmpCM: RangedText = new CodeMirrorFacade(
+  CodeMirror(document.createElement("div"), { value: "" })
+);
 
 // Check if a set of codemirror changes parses successfully. Returns one of:
 //
@@ -14,7 +16,7 @@ const tmpCM = CodeMirror(tmpDiv, { value: "" });
 export function speculateChanges(
   changeArr: EditorChange[],
   parse: (code: string) => AST,
-  cm: Editor
+  cm: ReadonlyRangedText
 ) {
   tmpCM.setValue(cm.getValue());
   for (let c of changeArr) {
@@ -27,10 +29,4 @@ export function speculateChanges(
   } catch (exception) {
     return { successful: false as const, exception };
   }
-}
-
-export function getTempCM(cm: Editor) {
-  const tmpCM = CodeMirror(tmpDiv, { value: cm.getValue() });
-  tmpCM.setCursor(cm.getCursor());
-  return tmpCM;
 }

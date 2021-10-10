@@ -6,10 +6,11 @@ import ContentEditable, {
 import classNames, { Argument as ClassNamesArgument } from "classnames";
 import { insert, activateByNid, Target } from "../actions";
 import { say } from "../announcer";
-import CodeMirror, { Editor } from "codemirror";
+import CodeMirror from "codemirror";
 import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
+import { CMBEditor } from "../editor";
 
 function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
@@ -47,7 +48,7 @@ type Props = Omit<ContentEditableProps, "value"> & {
   onDisableEditable: () => void;
   contentEditableProps?: {};
   extraClasses?: ClassNamesArgument;
-  cm: Editor;
+  cm: CMBEditor;
 };
 
 const NodeEditable = (props: Props) => {
