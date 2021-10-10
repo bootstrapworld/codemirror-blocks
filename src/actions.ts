@@ -242,10 +242,6 @@ export function activateByNid(
   nid: number | null,
   options: { allowMove?: boolean; record?: boolean } = {}
 ) {
-  if (!cm.scrollASTNodeIntoView) {
-    console.log("Got cm", cm);
-    throw new Error("WTF");
-  }
   return (dispatch: AppDispatch, getState: () => RootState) => {
     options = { ...options, allowMove: true, record: true };
     let { ast, focusId, collapsedList } = getState();

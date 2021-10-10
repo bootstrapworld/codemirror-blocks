@@ -186,7 +186,7 @@ function reduce(state = initialState, action: AppAction): RootState {
       }
       return state;
     case "UNDO": {
-      const historyItem = action.cm.getTopmostUndoable("redo");
+      const historyItem = action.cm.getTopmostAction("redo");
       historyItem.undoableAction = state.undoableAction;
       historyItem.actionFocus = state.actionFocus;
       return {
@@ -196,7 +196,7 @@ function reduce(state = initialState, action: AppAction): RootState {
       };
     }
     case "REDO": {
-      const historyItem = action.cm.getTopmostUndoable("undo");
+      const historyItem = action.cm.getTopmostAction("undo");
       historyItem.undoableAction = state.undoableAction;
       historyItem.actionFocus = state.actionFocus;
       return {

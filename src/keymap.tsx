@@ -518,9 +518,9 @@ const commandMap: {
     env.activateNoRecord(SHARED.search.search(true, env.state));
   },
 
-  Undo: (env, e) => undoRedo(env, e, "undo"),
+  Undo: (env, e) => doTopmostAction(env, e, "undo"),
 
-  Redo: (env, e) => undoRedo(env, e, "redo"),
+  Redo: (env, e) => doTopmostAction(env, e, "redo"),
 
   Help: (env, _) => {
     KeyDownContext.showDialog({
@@ -530,20 +530,20 @@ const commandMap: {
   },
 };
 
-function undoRedo(
+function doTopmostAction(
   { state, cm }: { state: RootState; cm: CMBEditor },
   e: React.KeyboardEvent,
   which: "undo" | "redo"
 ) {
   e.preventDefault();
-  const undoable = cm.getTopmostUndoable(which);
-  state.undoableAction = undoable.undoableAction;
-  state.actionFocus = undoable.actionFocus;
+  const topmostAction = cm.getTopmostAction(which);
+  state.undoableAction = topmostAction.undoableAction;
+  state.actionFocus = topmostAction.actionFocus;
   if (which === "undo") {
-    say(`UNDID: ${undoable.undoableAction}`);
+    say(`UNDID: ${topmostAction.undoableAction}`);
     cm.undo();
   } else {
-    say(`REDID: ${undoable.undoableAction}`);
+    say(`REDID: ${topmostAction.undoableAction}`);
     cm.redo();
   }
 }

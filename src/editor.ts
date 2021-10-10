@@ -206,7 +206,7 @@ export interface ReadonlyRangedText {
 }
 
 export interface ReadonlyCMBEditor extends ReadonlyRangedText {
-  getTopmostUndoable(which: "undo" | "redo"): HistoryItem;
+  getTopmostAction(which: "undo" | "redo"): HistoryItem;
 
   getAllBlockNodeMarkers(): BlockNodeMarker[];
   getAllTextMarkers(): TextMarker<MarkerRange>[];
@@ -279,7 +279,7 @@ export class CodeMirrorFacade implements CMBEditor {
   ): SearchCursor {
     return this.cm.getSearchCursor(query, start, options);
   }
-  getTopmostUndoable(which: "undo" | "redo"): HistoryItem {
+  getTopmostAction(which: "undo" | "redo"): HistoryItem {
     const items =
       which === "undo"
         ? this.cm.getDoc().getHistory().done

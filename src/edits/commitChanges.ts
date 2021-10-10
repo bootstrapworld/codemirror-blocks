@@ -64,9 +64,9 @@ export function commitChanges(
         newFocus = newAST.getNodeById(focusId);
       }
       let newFocusNId = newFocus?.nid || null;
-      let tU = cm.getTopmostUndoable("undo");
-      tU.undoableAction = annt || undefined;
-      tU.actionFocus = { oldFocusNId, newFocusNId };
+      let topmostAction = cm.getTopmostAction("undo");
+      topmostAction.undoableAction = annt || undefined;
+      topmostAction.actionFocus = { oldFocusNId, newFocusNId };
       dispatch({ type: "DO", focusId: focusId || null });
     }
     return ok({ newAST, focusId });
