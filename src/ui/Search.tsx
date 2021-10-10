@@ -115,10 +115,10 @@ export default function attachSearch(
       if (e.key === "Enter" || e.key === "Escape") {
         // enter or escape
         this.handleCloseModal();
-        if (e.key === "Escape" || !this.state.searchForward) {
+        if (e.key === "Escape") {
           return; // don't initiate search
         }
-        this.state.searchForward();
+        this.state.searchForward && this.state.searchForward();
         say(
           "Searching for next match. Use PageUp and PageDown to search forwards and backwards"
         );
