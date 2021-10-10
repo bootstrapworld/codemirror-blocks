@@ -54,18 +54,16 @@ describe("The primitives module", () => {
         primitive = new Primitive("my-lang", "add");
       });
 
-      it("should delegate to the parsers getASTNodeForPrimitive method if available", () => {
-        expect(primitive.getASTNode()).toBeUndefined();
-        // this can no longer be set dynamically
-        //getASTNodeForPrimitive = () => 'foo';
-        //expect(primitive.getASTNode()).toBe('foo');
+      it("should delegate to the parsers getASTNodeForPrimitive", () => {
+        expect(() => primitive.getASTNode()).toThrowError(
+          "getASTNodeForPrimitive() must be implemented if primitives are used."
+        );
       });
 
-      it("should delegate to the parsers getLiteralNodeForPrimitive method if available", () => {
-        expect(primitive.getLiteralNode()).toBeUndefined();
-        // this can no longer be set dynamically
-        //getLiteralNodeForPrimitive = () => 'foo';
-        //expect(primitive.getLiteralNode()).toBe('foo');
+      it("should delegate to the parsers getLiteralNodeForPrimitive", () => {
+        expect(() => primitive.getLiteralNode()).toThrowError(
+          "getLiteralNodeForPrimitive() must be implemented if primitives are used."
+        );
       });
     });
   });

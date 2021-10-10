@@ -5,7 +5,6 @@ import {
   posWithinNode,
   nodeCommentContaining,
   genUniqueId,
-  hashObject,
 } from "./utils";
 import * as P from "pretty-fast-pretty-printer";
 import type CodeMirror from "codemirror";
@@ -264,6 +263,22 @@ export class AST {
    */
   getNodeById = (id: string) => this.nodeIdMap.get(id);
   getNodeByNId = (nid: number) => this.nodeNIdMap.get(nid);
+
+  getNodeByIdOrThrow = (id: string) => {
+    const node = this.getNodeById(id);
+    if (!node) {
+      throw new Error(`Node with id ${id} not found`);
+    }
+    return node;
+  };
+
+  getNodeByNIdOrThrow = (nid: number) => {
+    const node = this.getNodeByNId(nid);
+    if (!node) {
+      throw new Error(`Node with nid ${nid} not found`);
+    }
+    return node;
+  };
 
   /**
    * Returns whether `u` is a strict ancestor of `v`
@@ -531,7 +546,7 @@ export abstract class ASTNode<
    * @internal
    * Stores the html element that this ast node was rendered into.
    */
-  element: HTMLElement;
+  element: HTMLElement | null = null;
 
   /**
    * @internal
@@ -571,7 +586,7 @@ export abstract class ASTNode<
   }
 
   // based on the depth level, choose short v. long descriptions
-  describe(level: number) {
+  describe(level: number): string | undefined {
     if (this.level - level >= descDepth) {
       return this.shortDescription();
     } else {
@@ -585,7 +600,7 @@ export abstract class ASTNode<
 
   // the long description is node-specific, detailed, and must be
   // implemented by the ASTNode itself
-  longDescription(level: number): string {
+  longDescription(level: number): string | undefined {
     throw new Error("ASTNodes must implement `.longDescription()`");
   }
 

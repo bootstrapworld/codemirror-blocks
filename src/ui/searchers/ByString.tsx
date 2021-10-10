@@ -7,6 +7,7 @@ import {
 } from "../../utils";
 import { SearchCursor } from "codemirror";
 import { Searcher } from "./Searcher";
+import { ASTNode } from "../../ast";
 
 /**
  * Returns a query from settings. If the query is a regex but is invalid (indicating
@@ -104,7 +105,9 @@ const ByString: Searcher<SearchSettings, Props> = {
     }
 
     componentDidMount() {
-      if (this.props.firstTime) this.inputRef.current.select();
+      if (this.props.firstTime) {
+        this.inputRef.current?.select();
+      }
     }
 
     handleChange: React.ChangeEventHandler<
@@ -170,11 +173,11 @@ const ByString: Searcher<SearchSettings, Props> = {
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
     if (settings.searchString === "") {
-      let node = getNodeContainingBiased(cur, ast);
+      let node: ASTNode | null | undefined = getNodeContainingBiased(cur, ast);
       if (node) {
         node = skipCollapsed(
           node,
-          (node) => (forward ? node.next : node.prev),
+          (node) => (forward ? node?.next : node?.prev),
           state
         );
         if (node) return { node, cursor: node.from };
@@ -204,8 +207,8 @@ const ByString: Searcher<SearchSettings, Props> = {
         const node = getNodeContainingBiased(searchCur.from(), ast);
         return (
           !!node &&
-          collapsedNodeList.some((collapsed) =>
-            ast.isAncestor(collapsed.id, node.id)
+          collapsedNodeList.some(
+            (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
           )
         );
       },

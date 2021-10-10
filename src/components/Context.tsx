@@ -5,7 +5,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { Provider } from "react-redux";
 import type { AppStore } from "../store";
 
-export const CMContext: React.Context<Editor> = React.createContext(null);
+export const CMContext = React.createContext<Editor | null>(null);
 
 export default function Context(props: {
   store: AppStore;

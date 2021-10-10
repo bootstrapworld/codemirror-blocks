@@ -52,7 +52,7 @@ function markDOMUpdateCompleted(handle: afterDOMUpdateHandle) {
     uncompletedDOMUpdates.size === 0 &&
     afterAllDOMUpdateCallbacks.length > 0
   ) {
-    afterAllDOMUpdateCallbacks.shift().resolve();
+    afterAllDOMUpdateCallbacks.shift()?.resolve();
   }
 }
 
@@ -108,7 +108,9 @@ export function setAfterDOMUpdate(
  *
  * @internal
  */
-export function cancelAfterDOMUpdate(handle: afterDOMUpdateHandle): void {
+export function cancelAfterDOMUpdate(
+  handle: afterDOMUpdateHandle | undefined
+): void {
   if (handle) {
     cancelAnimationFrame(handle.raf);
     if (handle.timeout) {
@@ -175,7 +177,7 @@ export function resetUniqueIdGenerator() {
 // then hash the string so we don't have giant "hashes" eating memory
 // (see https://stackoverflow.com/a/7616484/12026982 and
 // https://anchortagdev.com/consistent-object-hashing-using-stable-stringification/ )
-export function hashObject(obj: Object) {
+export function hashObject(obj: any) {
   const str = objToStableString(obj);
   var hash = 0,
     i,
@@ -230,11 +232,11 @@ export function srcRangeContains(range: Range, pos: Pos) {
 }
 
 export function skipWhile<T>(
-  skipper: (i: T) => boolean,
+  skipper: (i: T | undefined) => boolean | null | undefined,
   start: T,
-  next: (i: T) => T
+  next: (i: T | undefined) => T | undefined
 ) {
-  let now = start;
+  let now: T | undefined = start;
   while (skipper(now)) {
     now = next(now);
   }
@@ -278,7 +280,7 @@ export function partition<T>(arr: T[], f: (i: T) => boolean) {
 
 export function skipCollapsed(
   node: ASTNode,
-  next: (node: ASTNode) => ASTNode,
+  next: (node: ASTNode | undefined) => ASTNode | undefined,
   state: RootState
 ) {
   const { collapsedList, ast } = state;
@@ -289,8 +291,8 @@ export function skipCollapsed(
   return skipWhile(
     (node) =>
       node &&
-      collapsedNodeList.some((collapsed) =>
-        ast.isAncestor(collapsed.id, node.id)
+      collapsedNodeList.some(
+        (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
       ),
     next(node),
     next
@@ -308,17 +310,17 @@ export function getRoot(node: ASTNode) {
 
 export function getLastVisibleNode(state: RootState) {
   const { collapsedList, ast } = state;
-  const collapsedNodeList = collapsedList.map(ast.getNodeById);
+  const collapsedNodeList = collapsedList.map(ast.getNodeByIdOrThrow);
   const lastNode = ast.getNodeBeforeCur(
     ast.rootNodes[ast.rootNodes.length - 1].to
   );
   return skipWhile(
     (node) =>
-      !!node &&
+      node &&
       node.parent &&
-      collapsedNodeList.some((collapsed) => collapsed.id === node.parent.id),
+      collapsedNodeList.some((collapsed) => collapsed.id === node?.parent?.id),
     lastNode,
-    (n) => n.parent
+    (n) => n?.parent
   );
 }
 
@@ -431,9 +433,11 @@ export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
 // between the old and new text. Mutates part of the change object.
 export function minimizeChange(
   { from, to, text, removed, origin = undefined }: EditorChange,
-  cm?: Editor
+  cm: Pick<Editor, "getRange">
 ) {
-  if (!removed) removed = cm.getRange(from, to).split("\n");
+  if (!removed) {
+    removed = cm.getRange(from, to).split("\n");
+  }
   // Remove shared lines
   while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
     text.shift();
@@ -476,10 +480,13 @@ export function logResults(
   }
 }
 
-export function validateRanges(ranges: { anchor: Pos; head: Pos }[], ast: AST) {
+export function validateRanges(
+  ranges: { anchor: Pos; head?: Pos }[],
+  ast: AST
+) {
   ranges.forEach(({ anchor, head }) => {
-    const c1 = minpos(anchor, head);
-    const c2 = maxpos(anchor, head);
+    const c1 = head ? minpos(anchor, head) : anchor;
+    const c2 = head ? maxpos(anchor, head) : anchor;
     if (ast.getNodeAt(c1, c2)) return; // if there's a node, it's a valid range
     // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
     const N1 = ast.getNodeContaining(c1); // get node containing c1
@@ -519,6 +526,7 @@ export function topmostUndoable(cm: Editor, which: "undo" | "redo") {
       return arr[i];
     }
   }
+  throw new Error(`No undoable found`);
 }
 
 export function preambleUndoRedo(

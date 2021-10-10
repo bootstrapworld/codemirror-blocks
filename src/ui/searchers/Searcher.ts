@@ -13,5 +13,5 @@ export type Searcher<Setting, Props> = {
     cm: CodeMirror.Editor,
     state: RootState,
     forward: boolean
-  ) => { node: ASTNode; cursor: Pos };
+  ) => { node: ASTNode; cursor: Pos } | null;
 };

@@ -16,7 +16,9 @@ const Toolbar = (props: Props) => {
   const { primitives, languageId, blockMode, toolbarRef } = props;
 
   const [search, setSearch] = useState("");
-  const [selectedPrimitive, setSelectedPrimitive] = useState(null);
+  const [selectedPrimitive, setSelectedPrimitive] = useState<
+    Primitive | undefined
+  >(undefined);
   const clearSearch = () => setSearch("");
   const changeSearch: React.ChangeEventHandler<HTMLInputElement> = (event) =>
     setSearch(event.target.value);
@@ -28,15 +30,18 @@ const Toolbar = (props: Props) => {
   // Set selectedPrimitive state, depending on whether we go up or down
   const move = (dir: "Up" | "Down") => {
     let primitives = getPrimitives();
-    if (primitives.length == 0) return; // Nothing to select. Bail.
+    if (!selectedPrimitive || primitives.length == 0) {
+      return; // Nothing to select. Bail.
+    }
     let i = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
     if (dir == "Down") {
       i = Math.min(i + 1, primitives.length - 1);
     } else {
       i = Math.max(i - 1, 0);
     }
-    if (primitives[i]?.element) {
-      primitives[i].element.focus(); // should *not* apply useCallback, correct?
+    const el = primitives[i]?.element;
+    if (el) {
+      el.focus(); // should *not* apply useCallback, correct?
     } else {
       setSelectedPrimitive(primitives[i]);
     }
@@ -53,16 +58,17 @@ const Toolbar = (props: Props) => {
         move(keyName);
         return;
       case "Esc":
-        toolbarRef.current.focus(); // focus, then fall-through
+        toolbarRef.current?.focus(); // focus, then fall-through
         break;
     }
     event.stopPropagation();
   };
 
   // if a primitive is selected, make a block node for it
-  const selectedPrimitiveBlock = selectedPrimitive ? (
+  const primitiveNode = selectedPrimitive?.getASTNode();
+  const selectedPrimitiveBlock = primitiveNode ? (
     <span className="RenderedBlockNode">
-      {selectedPrimitive.getASTNode().reactElement({ inToolbar: true })}
+      {primitiveNode.reactElement({ inToolbar: true })}
     </span>
   ) : (
     ""

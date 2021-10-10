@@ -35,7 +35,7 @@ export function createDebuggingInterface(language: Language, value: string) {
 </div>
   `;
 
-  const container = document.getElementById("cmb-editor");
+  const container = document.getElementById("cmb-editor")!;
   // grab the load-from-log button
   const loadLogButton = document.getElementById(
     "loadFromLog"
@@ -85,18 +85,28 @@ export function createDebuggingInterface(language: Language, value: string) {
 
   // When a file is loaded, read it
   loadLogButton.onchange = (e) => {
-    let file = (e.target as HTMLInputElement).files[0];
+    const files = (e.target as HTMLInputElement).files;
+    if (!files) {
+      throw new Error("loadLogButton should be a file input");
+    }
+    let file = files[0];
     let reader = new FileReader();
     reader.readAsText(file, "UTF-8");
     // parse the string, draw the actions, and set up counters
     // and UI for replaying them
     reader.onload = (readEvent) => {
       let log: JSONLog;
+      const result = readEvent.target?.result;
+      if (!result) {
+        throw new Error("no result");
+      }
       try {
-        log = JSON.parse(readEvent.target.result.toString());
-        if (!(log.exception && log.history)) throw "Bad Log";
+        log = JSON.parse(result.toString());
+        if (!(log.exception && log.history)) {
+          throw "Bad Log";
+        }
       } catch {
-        console.error(readEvent.target.result.toString());
+        console.error(result.toString());
         alert("Malformed log file!\nContents printed to console");
         return;
       }
@@ -108,7 +118,7 @@ export function createDebuggingInterface(language: Language, value: string) {
         let LI = document.createElement("LI");
         LI.className = "logEntry";
         LI.innerHTML = JSON.stringify(entry);
-        document.getElementById("entries").appendChild(LI);
+        document.getElementById("entries")?.appendChild(LI);
       });
       lastAction = history.length;
       nextButton.style.display = "inline-block";
@@ -122,7 +132,7 @@ export function createDebuggingInterface(language: Language, value: string) {
     e.preventDefault();
     e.stopPropagation();
     let entries = [
-      ...document.getElementById("entries").children,
+      ...(document.getElementById("entries")?.children ?? []),
     ] as HTMLElement[];
     entries.forEach((c) => (c.style.background = "none"));
     entries[currentAction].style.background = "lightblue";

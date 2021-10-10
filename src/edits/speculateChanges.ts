@@ -23,9 +23,9 @@ export function speculateChanges(
   let newText = tmpCM.getValue();
   try {
     let newAST = parse(newText);
-    return { successful: true, newAST: newAST };
+    return { successful: true as const, newAST: newAST };
   } catch (exception) {
-    return { successful: false, exception };
+    return { successful: false as const, exception };
   }
 }
 

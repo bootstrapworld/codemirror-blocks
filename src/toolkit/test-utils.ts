@@ -29,12 +29,6 @@ export function finishRender() {
   return afterAllDOMUpdates();
 }
 
-export function removeEventListeners() {
-  const oldElem = document.body;
-  const newElem = oldElem.cloneNode(true);
-  oldElem.parentNode.replaceChild(newElem, oldElem);
-}
-
 export function teardown() {
   cancelAllDOMUpdates();
   cleanup();
@@ -50,7 +44,7 @@ export function teardown() {
   const textareas = document.getElementsByTagName("textarea");
   while (textareas[0]) {
     const current = textareas[0];
-    current.parentNode.removeChild(current);
+    current.parentNode!.removeChild(current);
   }
 }
 
@@ -62,8 +56,8 @@ const fixture = `
 
 export type TestContext = {
   cmb: API;
-  activeNode: () => ASTNode;
-  activeAriaId: () => string;
+  activeNode: () => ASTNode | undefined;
+  activeAriaId: () => string | null;
   selectedNodes: () => ASTNode[];
 };
 
@@ -75,7 +69,7 @@ export type TestContext = {
  */
 export async function mountCMB(language: Language): Promise<API> {
   document.body.insertAdjacentHTML("afterbegin", fixture);
-  const container = document.getElementById("cmb-editor");
+  const container = document.getElementById("cmb-editor")!;
   const cmOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
   const cmb = CodeMirrorBlocks(
     container,

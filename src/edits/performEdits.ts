@@ -19,6 +19,7 @@ import type { Editor, EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback } from "react";
+import { err, Result } from "./result";
 
 /**
  *
@@ -85,7 +86,7 @@ export function edit_replace(text: string, node: ASTNode): Edit {
   }
 }
 
-export type OnSuccess = (r: { newAST: AST; focusId: string }) => void;
+export type OnSuccess = (r: { newAST: AST; focusId?: string }) => void;
 export type OnError = (e: any) => void;
 
 export type PerformEditState = Pick<
@@ -125,17 +126,6 @@ export function usePerformEdits() {
   );
 }
 
-type EditResult =
-  | {
-      successful: true;
-      newAST: AST;
-      focusId: string;
-    }
-  | {
-      successful: false;
-      exception: any;
-    };
-
 /**
  * performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
  *
@@ -152,10 +142,13 @@ export function performEdits(
   edits: Edit[],
   parse: (code: string) => AST,
   cm: Editor,
-  onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
+  onSuccess: OnSuccess = (r: {
+    newAST: AST;
+    focusId?: string | undefined;
+  }) => {},
   onError: OnError = (e: any) => {},
   annt?: string
-): EditResult {
+): Result<{ newAST: AST; focusId?: string | undefined }> {
   // Use the focus hint from the last edit provided.
   const lastEdit = edits[edits.length - 1];
   const focusHint = (newAST: AST) => lastEdit.focusHint(newAST);
@@ -182,17 +175,6 @@ export function performEdits(
       }
     }
   }
-  //debugLog(origin, "edits:", edits, "changeArray:", changeArray); // temporary logging
-  /* More detailed logging:
-  debugLog(`${origin} - edits:`);
-  for (let edit of edits) {
-    debugLog(`    ${edit.toString()}`);
-  }
-  debugLog(`${origin} - text edits:`);
-  for (let edit of changeArray) {
-    debugLog(`    ${edit.from.line}:${edit.from.ch}-${edit.to.line}:${edit.to.ch}="${edit.text}"`);
-  }
-  */
   // Set the origins
   for (const c of changeArray) {
     c.origin = origin;
@@ -207,8 +189,7 @@ export function performEdits(
           cm.replaceRange(c.text, c.from, c.to, c.origin);
         }
       });
-      //debugLog('XXX performEdits:110 calling commitChanges');
-      let { newAST, focusId } = commitChanges(
+      const changeResult = commitChanges(
         state,
         dispatch,
         changeArray,
@@ -219,14 +200,17 @@ export function performEdits(
         result.newAST,
         annt
       );
-      onSuccess({ newAST, focusId });
-      return { successful: true, newAST, focusId };
+      if (changeResult.successful) {
+        onSuccess(changeResult.value);
+      }
+      return changeResult;
     } catch (e) {
       logResults(getReducerActivities(), e);
+      return err(e);
     }
   } else {
     onError(result.exception);
-    return { successful: false, exception: result.exception };
+    return err(result.exception);
   }
 }
 
@@ -266,17 +250,18 @@ abstract class Edit implements EditInterface {
         return node;
       }
     }
-    warn(
-      "performEdits",
-      `Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`
+    throw new Error(
+      `performEdits: Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`
     );
   }
 
   // The default behavior for most edits
   focusHint(newAST: AST) {
-    return !this.node.prev
-      ? newAST.getFirstRootNode()
-      : newAST.getNodeById(this.node.prev.id) || "fallback";
+    const prev = this.node?.prev;
+    if (prev) {
+      return newAST.getNodeById(prev.id) || "fallback";
+    }
+    return newAST.getFirstRootNode() || "fallback";
   }
 
   toString() {
@@ -321,7 +306,9 @@ class OverwriteEdit extends Edit {
 
   focusHint(newAST: AST) {
     if (this.changeObject) {
-      return newAST.getNodeBeforeCur(changeEnd(this.changeObject));
+      return (
+        newAST.getNodeBeforeCur(changeEnd(this.changeObject)) || "fallback"
+      );
     } else {
       warn(
         "OverwriteEdit",
@@ -376,7 +363,7 @@ class ReplaceRootEdit extends Edit {
   }
 
   focusHint(newAST: AST) {
-    return newAST.getNodeAfterCur(this.from);
+    return newAST.getNodeAfterCur(this.from) || "fallback";
   }
 
   toString() {

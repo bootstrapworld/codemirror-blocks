@@ -6,20 +6,23 @@ import { useSelector, useStore } from "react-redux";
 import { RootState } from "../reducers";
 import { edit_delete, usePerformEdits } from "../edits/performEdits";
 import SHARED from "../shared";
+import { AppStore } from "../store";
 require("./TrashCan.less");
 
 const TrashCan = (props: { cm: Editor }) => {
   const performEdits = usePerformEdits();
 
   const { ast } = useSelector(({ ast }: RootState) => ({ ast }));
-  const store = useStore();
+  const store: AppStore = useStore();
   const [{ isOver }, drop] = useDrop(
     () => ({
       accept: ItemTypes.NODE,
       drop: (item: { id: string }) => {
         const srcNode = item.id ? ast.getNodeById(item.id) : null; // null if dragged from toolbar
         if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
-        let edits = [edit_delete(store.getState().ast.getNodeById(srcNode.id))];
+        let edits = [
+          edit_delete(store.getState().ast.getNodeByIdOrThrow(srcNode.id)),
+        ];
         performEdits("cmb:trash-node", edits, SHARED.parse, props.cm);
       },
       collect: (monitor) => ({ isOver: monitor.isOver() }),

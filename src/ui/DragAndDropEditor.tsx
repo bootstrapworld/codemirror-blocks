@@ -9,47 +9,49 @@ import { OverwriteTarget, useDropAction } from "../actions";
 import { playSound, BEEP } from "../utils";
 import { useDrop } from "react-dnd";
 import { Editor } from "codemirror";
-import { useDispatch, useStore } from "react-redux";
+import { useDispatch } from "react-redux";
 
 type Props = Omit<IUnControlledCodeMirror, "editorDidMount"> & {
   editorDidMount?: (ed: Editor) => void;
 };
 
 const DragAndDropEditor = (props: Props) => {
-  const cmRef = useRef<Editor>(null);
+  const cmRef = useRef<Editor>();
   const dispatch = useDispatch();
   const drop = useDropAction();
 
   const [_, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_, monitor) => {
+      if (!cmRef.current) {
+        // editor hasn't mounted yet, do nothing.
+        return;
+      }
       if (monitor.didDrop()) {
         return;
       }
       const roots = cmRef.current.getAllMarks().filter((m) => m.BLOCK_NODE_ID);
-      const { x: left, y: top } = monitor.getClientOffset();
+      const { x: left, y: top } = monitor.getClientOffset() || {};
 
       // Did we get proper coordinate information from react DND?
-      let droppedOn: Element | false = false;
       if (left && top) {
-        droppedOn = document.elementFromPoint(left, top);
-      }
+        const droppedOn = document.elementFromPoint(left, top);
+        // Do those coordinates land outside all roots, but still in CM whitespace?
+        let isDroppedOnWhitespace = false;
+        if (droppedOn) {
+          isDroppedOnWhitespace = !roots.some((r) =>
+            r.replacedWith?.contains(droppedOn as Element)
+          );
+        }
 
-      // Do those coordinates land outside all roots, but still in CM whitespace?
-      let isDroppedOnWhitespace = false;
-      if (droppedOn) {
-        isDroppedOnWhitespace = !roots.some((r) =>
-          r.replacedWith.contains(droppedOn as Element)
-        );
-      }
-
-      // If it's in a valid part of CM whitespace, translate to "insert at loc" edit
-      if (isDroppedOnWhitespace) {
-        const loc = cmRef.current.coordsChar({ left, top });
-        drop(cmRef.current, monitor.getItem(), new OverwriteTarget(loc, loc));
-        // Or else beep and make it a no-op
-      } else {
-        playSound(BEEP);
+        // If it's in a valid part of CM whitespace, translate to "insert at loc" edit
+        if (isDroppedOnWhitespace) {
+          const loc = cmRef.current.coordsChar({ left, top });
+          drop(cmRef.current, monitor.getItem(), new OverwriteTarget(loc, loc));
+          // Or else beep and make it a no-op
+        } else {
+          playSound(BEEP);
+        }
       }
     },
     collect: () => null,

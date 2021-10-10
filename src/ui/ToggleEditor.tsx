@@ -1,7 +1,6 @@
 import React, { Component, createRef, ReactElement } from "react";
 import BlockEditor from "./BlockEditor";
 import TextEditor from "./TextEditor";
-import CMBContext from "../components/Context";
 import Dialog from "../components/Dialog";
 import ByString from "./searchers/ByString";
 import ByBlock from "./searchers/ByBlock";
@@ -11,7 +10,7 @@ import { ToggleButton, BugButton } from "./EditorButtons";
 import { mountAnnouncer, say } from "../announcer";
 import TrashCan from "./TrashCan";
 import SHARED from "../shared";
-import type { AST } from "../ast";
+import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror, {
   Editor,
@@ -46,6 +45,25 @@ declare module "codemirror" {
      * Adds a new selection to the existing set of selections, and makes it the primary selection.
      */
     addSelection(anchor: CodeMirror.Position, head?: CodeMirror.Position): void;
+
+    /**
+     * Sets a new set of selections. There must be at least one selection in the given array. When primary is a
+     * number, it determines which selection is the primary one. When it is not given, the primary index is taken from
+     * the previous selection, or set to the last range if the previous selection had less ranges than the new one.
+     * Supports the same options as setSelection.
+     */
+    setSelections(
+      ranges: Array<{
+        anchor: CodeMirror.Position;
+        head?: CodeMirror.Position;
+      }>,
+      primary?: number,
+      options?: {
+        bias?: number | undefined;
+        origin?: string | undefined;
+        scroll?: boolean | undefined;
+      }
+    ): void;
 
     /**
      * Similar to setSelection , but will, if shift is held or the extending flag is set,
@@ -157,7 +175,7 @@ declare module "codemirror" {
      * These are applied in the reducer.
      */
     undoableAction?: string;
-    actionFocus?: ActionFocus | false;
+    actionFocus?: ActionFocus;
   }
 
   interface TextMarker {
@@ -308,7 +326,7 @@ function isTextMarkerRange(
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
-export type ToggleEditorProps = {
+export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
   initialCode?: string;
   cmOptions?: CodeMirror.EditorConfiguration;
   language: Language;
@@ -357,7 +375,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   static defaultProps = {
     debuggingLog: {},
     cmOptions: {},
-    code: "",
+    initialCode: "",
   };
 
   cmOptions: CodeMirror.EditorConfiguration;
@@ -430,12 +448,12 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         } else {
           this.eventHandlers[type].push(fn);
         }
-        this.state.cm.on(type, fn);
+        this.state.cm?.on(type, fn);
       },
       off: (...args: Parameters<CodeMirror.Editor["on"]>) => {
         const [type, fn] = args;
         this.eventHandlers[type]?.filter((h) => h !== fn);
-        this.state.cm.off(type, fn);
+        this.state.cm?.off(type, fn);
       },
       runMode: () => {
         throw "runMode is not supported in CodeMirror-blocks";
@@ -489,6 +507,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    */
   recordMarks(oldAST: AST) {
     this.recordedMarks.clear();
+    if (!this.state.cm) {
+      // editor hasn't mounted yet, nothing to do.
+      return;
+    }
     this.state.cm
       .getAllMarks()
       .filter((m) => !m.BLOCK_NODE_ID && m.type !== "bookmark")
@@ -530,7 +552,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   // Teardown any pending timeouts
   componentWillUnmount() {
-    cancelAfterDOMUpdate(this.pendingTimeout);
+    this.pendingTimeout && cancelAfterDOMUpdate(this.pendingTimeout);
   }
 
   /**
@@ -541,19 +563,26 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    */
   handleToggle = (blockMode: boolean) => {
     this.setState((state) => {
+      if (!state.cm) {
+        // editor hasn't mounted yet, so can't toggle.
+        return state;
+      }
       let oldAst, WS, code;
       try {
         try {
-          let oldCode = this.state.cm.getValue();
+          let oldCode = state.cm.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
           oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
           let message = "";
-          try {
-            message = this.props.language.getExceptionMessage(err);
-          } catch (e) {
-            message = "The parser failed, and the error could not be retrieved";
+          if (this.props.language.getExceptionMessage) {
+            try {
+              message = this.props.language.getExceptionMessage(err);
+            } catch (e) {
+              message =
+                "The parser failed, and the error could not be retrieved";
+            }
           }
           throw message;
         }
@@ -593,7 +622,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
             setBlockMode={this.handleToggle}
             blockMode={this.state.blockMode}
           />
-          {this.state.blockMode ? <TrashCan cm={this.state.cm} /> : null}
+          {this.state.blockMode && this.state.cm ? (
+            <TrashCan cm={this.state.cm} />
+          ) : null}
           <div
             className={"col-xs-3 toolbar-pane"}
             tabIndex={-1}
@@ -603,7 +634,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
               primitives={
                 this.props.language.primitivesFn
                   ? this.props.language.primitivesFn()
-                  : null
+                  : undefined
               }
               languageId={this.props.language.id}
               blockMode={this.state.blockMode}
@@ -657,7 +688,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
-        passedAST={this.ast}
+        passedAST={this.ast || new AST([])}
         // the props below are unique to the BlockEditor
         languageId={this.props.language.id}
         options={{ ...defaultOptions, ...this.props.options }}

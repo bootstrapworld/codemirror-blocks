@@ -14,6 +14,13 @@ import { ASTNode } from "../ast";
 
 type ElementLike = Node | Element | ASTNode;
 
+function getActiveElementOrThrow() {
+  if (!document.activeElement) {
+    throw new Error("No element has focus");
+  }
+  return document.activeElement;
+}
+
 export function click(node: ElementLike) {
   fireEvent.click(toElement(node));
 }
@@ -23,12 +30,12 @@ export function mouseDown(node: ElementLike) {
 export function doubleClick(node: ElementLike) {
   fireEvent.doubleClick(toElement(node));
 }
-export function blur(node: ElementLike = document.activeElement) {
+export function blur(node: ElementLike = getActiveElementOrThrow()) {
   fireEvent.blur(toElement(node));
 }
 export function paste(
   pastedString: string,
-  node: ElementLike = document.activeElement
+  node: ElementLike = getActiveElementOrThrow()
 ) {
   var dT = null;
   try {
@@ -37,11 +44,11 @@ export function paste(
     console.error("ERR in paste()");
   }
   var pasteEvent = new ClipboardEvent("paste", { clipboardData: dT });
-  pasteEvent.clipboardData.setData("text/plain", pastedString);
+  pasteEvent.clipboardData?.setData("text/plain", pastedString);
   toElement(node).dispatchEvent(pasteEvent);
   //userEvent.paste(toElement(node), pastedString);
 }
-export function cut(node: ElementLike = document.activeElement) {
+export function cut(node: ElementLike = getActiveElementOrThrow()) {
   fireEvent.cut(toElement(node));
 }
 
@@ -61,7 +68,7 @@ export function dragstart() {
   return ans;
 }
 
-export function dragover(node: ElementLike = document.activeElement) {
+export function dragover(node: ElementLike = getActiveElementOrThrow()) {
   toElement(node).dispatchEvent(createBubbledEvent("dragover"));
 }
 
@@ -77,7 +84,7 @@ export function mouseover() {
   return createBubbledEvent("mouseover");
 }
 
-export function dragenterSeq(node: ElementLike = document.activeElement) {
+export function dragenterSeq(node: ElementLike = getActiveElementOrThrow()) {
   //toElement(node).dispatchEvent(mouseenter());
   toElement(node).dispatchEvent(dragenter());
   toElement(node).dispatchEvent(mouseover());
@@ -109,7 +116,7 @@ class CustomKeydownEvent extends CustomEvent<any> {
 export function keyDown(
   key: string,
   props = {},
-  node: ElementLike = document.activeElement
+  node: ElementLike = getActiveElementOrThrow()
 ) {
   node = toElement(node);
   // NOTE(Emmanuel): if it's a textarea, use native browser events
@@ -124,21 +131,19 @@ export function keyDown(
 export function keyPress(
   key: string,
   props = {},
-  node = document.activeElement
+  node = getActiveElementOrThrow()
 ) {
   fireEvent.keyPress(toElement(node), makeKeyEvent(key, props));
 }
 export function insertText(text: string) {
-  if (
-    document.activeElement.tagName == "textarea" ||
-    document.activeElement.tagName == "input"
-  ) {
-    userEvent.type(document.activeElement, text);
+  const activeEl = getActiveElementOrThrow();
+  if (activeEl.tagName == "textarea" || activeEl.tagName == "input") {
+    userEvent.type(activeEl, text);
   } else {
     // this is some contenteditable node, so use an input event.
     // See https://github.com/testing-library/dom-testing-library/pull/235
     // for some discussion about this.
-    fireEvent.input(document.activeElement, {
+    fireEvent.input(activeEl, {
       target: { innerHTML: text },
     });
   }

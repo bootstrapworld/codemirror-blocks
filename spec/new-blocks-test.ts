@@ -39,7 +39,7 @@ describe("The CodeMirrorBlocks Class", function () {
         </div>
       `;
       document.body.insertAdjacentHTML("afterbegin", fixture);
-      const container = document.getElementById("cmb-editor-temp");
+      const container = document.getElementById("cmb-editor-temp")!;
       const tempBlocks = CodeMirrorBlocks(
         container,
         { value: "", incrementalRendering: false },
@@ -49,7 +49,7 @@ describe("The CodeMirrorBlocks Class", function () {
       const ast = tempBlocks.getAst();
       expect(tempBlocks.getBlockMode()).toBe(true); //broken
       expect(ast.rootNodes.length).toBe(0);
-      document.body.removeChild(document.getElementById("temp"));
+      document.body.removeChild(document.getElementById("temp")!);
     });
 
     it("should set block mode to false", function () {
@@ -152,7 +152,7 @@ describe("The CodeMirrorBlocks Class", function () {
       await finishRender();
       cmb.getValue("(...)"); // blank should be inserted by parser, as '...'
       const blank = (cmb.getAst().rootNodes[0] as FunctionApp).func;
-      click(blank.element);
+      click(blank.element!);
       await finishRender();
       expect(blank.isEditable()).toBe(true);
       keyDown("Delete");
@@ -164,7 +164,7 @@ describe("The CodeMirrorBlocks Class", function () {
       click(literal);
       await finishRender();
       const quarantine = document.activeElement;
-      keyDown("Escape", {}, quarantine);
+      keyDown("Escape", {}, quarantine!);
       expect(cmb.getValue()).toEqual("11");
     });
 
@@ -178,7 +178,7 @@ describe("The CodeMirrorBlocks Class", function () {
     });
 
     it("should blur the node being edited on top-level click", async function () {
-      click(literal.element);
+      click(literal.element!);
       await finishRender();
       click(cmb.getWrapperElement());
       expect(document.activeElement).not.toBe(undefined);
@@ -220,45 +220,45 @@ describe("The CodeMirrorBlocks Class", function () {
         ast = cmb.getAst();
         firstRoot = ast.rootNodes[0];
         firstArg = (ast.rootNodes[0] as FunctionApp).args[0];
-        whiteSpaceEl = firstArg.element.nextElementSibling;
+        whiteSpaceEl = firstArg.element!.nextElementSibling!;
         blank = ast.rootNodes[1] as FunctionApp;
-        blankWS = blank.element.querySelectorAll(".blocks-white-space")[0];
+        blankWS = blank.element!.querySelectorAll(".blocks-white-space")[0];
       });
 
       it("Ctrl-[ should jump to the left of a top-level node", function () {
-        mouseDown(firstRoot.element);
-        keyDown("[", { ctrlKey: true }, firstRoot.element);
+        mouseDown(firstRoot.element!);
+        keyDown("[", { ctrlKey: true }, firstRoot.element!);
         let cursor = cmb.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(0);
       });
 
       it("Ctrl-] should jump to the right of a top-level node", function () {
-        mouseDown(firstRoot.element);
-        keyDown("]", { ctrlKey: true }, firstRoot.element);
+        mouseDown(firstRoot.element!);
+        keyDown("]", { ctrlKey: true }, firstRoot.element!);
         let cursor = cmb.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(7);
       });
 
       it("Ctrl-[ should activate a quarantine to the left", async function () {
-        mouseDown(firstArg.element);
+        mouseDown(firstArg.element!);
         keyDown("[", { ctrlKey: true });
         await finishRender();
         //expect(cmb.setQuarantine).toHaveBeenCalled();
       });
 
       it("Ctrl-] should activate a quarantine to the right", async function () {
-        mouseDown(firstArg.element);
-        keyDown("]", { ctrlKey: true }, firstArg.element);
+        mouseDown(firstArg.element!);
+        keyDown("]", { ctrlKey: true }, firstArg.element!);
         await finishRender();
         //expect(cmb.setQuarantine).toHaveBeenCalled();
       });
 
       it("Ctrl-] should activate a quarantine in the first arg position", async function () {
-        mouseDown(blank.func.element);
+        mouseDown(blank.func.element!);
         await finishRender();
-        keyDown("]", { ctrlKey: true }, blank.func.element);
+        keyDown("]", { ctrlKey: true }, blank.func.element!);
         await finishRender();
         //expect(cmb.setQuarantine).toHaveBeenCalled();
       });
@@ -273,7 +273,7 @@ describe("The CodeMirrorBlocks Class", function () {
         let ast!: AST.AST;
         let firstRoot!: ASTNode;
         let func!: ASTNode;
-        let argWS!: Element["firstChild"];
+        let argWS!: ChildNode;
 
         beforeEach(async function () {
           cmb.setValue("(f)");
@@ -282,8 +282,8 @@ describe("The CodeMirrorBlocks Class", function () {
           firstRoot = ast.rootNodes[0];
           func = (ast.rootNodes[0] as FunctionApp).func;
           argWS =
-            firstRoot.element.getElementsByClassName("blocks-args")[0]
-              .firstChild;
+            firstRoot.element!.getElementsByClassName("blocks-args")[0]
+              .firstChild!;
         });
 
         it("should allow editing the argument whitespace", async function () {

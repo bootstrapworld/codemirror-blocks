@@ -38,13 +38,13 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
   element.focus();
 }
 
-type Props = ContentEditableProps & {
-  target?: Target;
+type Props = Omit<ContentEditableProps, "value"> & {
+  target: Target;
   children?: React.ReactNode;
   isInsertion: boolean;
   value?: string | null;
-  onChange?: (e: string) => void;
-  onDisableEditable?: () => void;
+  onChange: (e: string | null) => void;
+  onDisableEditable: () => void;
   contentEditableProps?: {};
   extraClasses?: ClassNamesArgument;
   cm: Editor;
@@ -90,13 +90,13 @@ const NodeEditable = (props: Props) => {
       // we grab the value directly from the content editable element
       // to deal with this issue:
       // https://github.com/lovasoa/react-contenteditable/issues/161
-      const value = element.current.textContent;
+      const value = element.current?.textContent;
       const { focusId, ast } = getState();
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
       if (value === initialValue || !value) {
         props.onDisableEditable();
-        const focusNode = ast.getNodeById(focusId);
+        const focusNode = focusId ? ast.getNodeById(focusId) || null : null;
         const nid = focusNode && focusNode.nid;
         dispatch(activateByNid(props.cm, nid));
         return;
@@ -135,7 +135,7 @@ const NodeEditable = (props: Props) => {
       case "Enter": {
         // blur the element to trigger handleBlur
         // which will save the edit
-        element.current.blur();
+        element.current?.blur();
         return;
       }
       case "Alt-Q":
