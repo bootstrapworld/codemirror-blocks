@@ -8,29 +8,32 @@ import { ItemTypes } from "../dnd";
 import { OverwriteTarget, useDropAction } from "../actions";
 import { playSound, BEEP } from "../utils";
 import { useDrop } from "react-dnd";
-import { Editor } from "codemirror";
-import { useDispatch } from "react-redux";
+import { CodeMirrorFacade } from "../editor";
 
-type Props = Omit<IUnControlledCodeMirror, "editorDidMount"> & {
-  editorDidMount?: (ed: Editor) => void;
+type OurProps = {
+  editorDidMount?: (ed: CodeMirrorFacade) => void;
+  onFocus?: (ed: CodeMirrorFacade) => void;
+  onPaste?: (ed: CodeMirrorFacade, e: ClipboardEvent) => void;
+  onKeyDown?: (ed: CodeMirrorFacade, e: React.KeyboardEvent) => void;
+  onCursorActivity?: (ed: CodeMirrorFacade) => void;
 };
+type Props = Omit<IUnControlledCodeMirror, keyof OurProps> & OurProps;
 
 const DragAndDropEditor = (props: Props) => {
-  const cmRef = useRef<Editor>();
-  const dispatch = useDispatch();
+  const editorRef = useRef<CodeMirrorFacade>();
   const drop = useDropAction();
 
   const [_, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_, monitor) => {
-      if (!cmRef.current) {
+      if (!editorRef.current) {
         // editor hasn't mounted yet, do nothing.
         return;
       }
       if (monitor.didDrop()) {
         return;
       }
-      const roots = cmRef.current.getAllMarks().filter((m) => m.BLOCK_NODE_ID);
+      const rootMarks = editorRef.current.getAllBlockNodeMarkers();
       const { x: left, y: top } = monitor.getClientOffset() || {};
 
       // Did we get proper coordinate information from react DND?
@@ -39,15 +42,19 @@ const DragAndDropEditor = (props: Props) => {
         // Do those coordinates land outside all roots, but still in CM whitespace?
         let isDroppedOnWhitespace = false;
         if (droppedOn) {
-          isDroppedOnWhitespace = !roots.some((r) =>
-            r.replacedWith?.contains(droppedOn as Element)
+          isDroppedOnWhitespace = !rootMarks.some((mark) =>
+            mark.replacedWith.contains(droppedOn as Element)
           );
         }
 
         // If it's in a valid part of CM whitespace, translate to "insert at loc" edit
         if (isDroppedOnWhitespace) {
-          const loc = cmRef.current.coordsChar({ left, top });
-          drop(cmRef.current, monitor.getItem(), new OverwriteTarget(loc, loc));
+          const loc = editorRef.current.codemirror.coordsChar({ left, top });
+          drop(
+            editorRef.current,
+            monitor.getItem(),
+            new OverwriteTarget(loc, loc)
+          );
           // Or else beep and make it a no-op
         } else {
           playSound(BEEP);
@@ -57,9 +64,10 @@ const DragAndDropEditor = (props: Props) => {
     collect: () => null,
   });
 
-  const onEditorMounted = (ed: Editor) => {
-    props.editorDidMount && props.editorDidMount(ed);
-    cmRef.current = ed;
+  const onEditorMounted = (ed: CodeMirror.Editor) => {
+    const editor = new CodeMirrorFacade(ed);
+    props.editorDidMount && props.editorDidMount(editor);
+    editorRef.current = editor;
   };
 
   const handleDragOver: DomEvent = (ed, e) => {
@@ -80,6 +88,16 @@ const DragAndDropEditor = (props: Props) => {
         onDragOver={handleDragOver}
         {...props}
         editorDidMount={onEditorMounted}
+        onCursorActivity={() =>
+          props.onCursorActivity && props.onCursorActivity(editorRef.current!)
+        }
+        onFocus={() => props.onFocus && props.onFocus(editorRef.current!)}
+        onPaste={(ed, e) =>
+          props.onPaste && props.onPaste(editorRef.current!, e)
+        }
+        onKeyDown={(ed, e) =>
+          props.onKeyDown && props.onKeyDown(editorRef.current!, e)
+        }
       />
       {/* 
           Invisible form for error logging

@@ -94,7 +94,7 @@ const store = createAppStore();
  * @param options configuration options for CodeMirrorBlocks
  * @param language A language definition object that has been previously
  *  registered using {@link Languages.addLanguage}
- * @param cmOptions Any additional [codemirror-specific configuration](https://codemirror.net/doc/manual.html#config)
+ * @param codemirrorOptions Any additional [codemirror-specific configuration](https://codemirror.net/doc/manual.html#config)
  * @returns An object-representation of CMB, allowing for
  *  integration with external (non-react) code
  */
@@ -102,7 +102,7 @@ function CodeMirrorBlocks(
   container: HTMLElement,
   options: Options = {},
   language: Language,
-  cmOptions: CodeMirror.EditorConfiguration = {}
+  codemirrorOptions: CodeMirror.EditorConfiguration = {}
 ): API {
   let api: API = {} as any;
   let initialCode = options.value;
@@ -113,7 +113,7 @@ function CodeMirrorBlocks(
         initialCode={initialCode == null ? "" : initialCode}
         api={api}
         options={options}
-        cmOptions={cmOptions}
+        codemirrorOptions={codemirrorOptions}
       />
     </Context>,
     container

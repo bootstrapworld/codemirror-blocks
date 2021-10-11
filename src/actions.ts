@@ -13,7 +13,7 @@ import {
 } from "./edits/performEdits";
 import { AST, ASTNode, Pos } from "./ast";
 import { RootState } from "./reducers";
-import { Editor } from "codemirror";
+import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "./editor";
 import { useDispatch, useStore } from "react-redux";
 
 // All editing actions are defined here.
@@ -54,7 +54,7 @@ export function insert(
   dispatch: AppDispatch,
   text: string,
   target: Target,
-  cm: Editor,
+  editor: CMBEditor,
   annt?: string
 ) {
   checkTarget(target);
@@ -65,7 +65,7 @@ export function insert(
     "cmb:insert",
     edits,
     SHARED.parse,
-    cm,
+    editor,
     annt
   );
 }
@@ -91,7 +91,7 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 export function delete_(
   state: PerformEditState,
   dispatch: AppDispatch,
-  cm: Editor,
+  editor: CMBEditor,
   nodes: ASTNode[],
   editWord?: string
 ) {
@@ -111,7 +111,7 @@ export function delete_(
     "cmb:delete-node",
     edits,
     SHARED.parse,
-    cm,
+    editor,
     annt
   );
   dispatch({ type: "SET_SELECTIONS", selections: [] });
@@ -154,13 +154,13 @@ export function copy(
 export function paste(
   state: PerformEditState,
   dispatch: AppDispatch,
-  cm: Editor,
+  editor: CMBEditor,
   target: Target
 ) {
   checkTarget(target);
   pasteFromClipboard((text) => {
     const edits = [target.toEdit(text)];
-    performEdits(state, dispatch, "cmb:paste", edits, SHARED.parse, cm);
+    performEdits(state, dispatch, "cmb:paste", edits, SHARED.parse, editor);
     dispatch({ type: "SET_SELECTIONS", selections: [] });
   });
 }
@@ -171,7 +171,7 @@ export function useDropAction() {
   const store: AppStore = useStore();
   const dispatch: AppDispatch = useDispatch();
   return function drop(
-    cm: Editor,
+    editor: CMBEditor,
     src: { id: string; content: string },
     target: Target
   ) {
@@ -206,7 +206,7 @@ export function useDropAction() {
       "cmb:drop-node",
       edits,
       SHARED.parse,
-      cm
+      editor
     );
 
     // Assuming it did not come from the toolbar, and the srcNode was collapsed...
@@ -225,12 +225,12 @@ export function useDropAction() {
 }
 
 // Set the cursor position.
-export function setCursor(cm: Editor, cur: Pos | null) {
+export function setCursor(editor: CMBEditor, cur: Pos | null) {
   return (dispatch: AppDispatch) => {
-    if (cm && cur) {
-      cm.focus();
+    if (editor && cur) {
+      editor.focus();
       SHARED.search.setCursor(cur);
-      cm.setCursor(cur);
+      editor.setCursor(cur);
     }
     dispatch({ type: "SET_CURSOR", cur });
   };
@@ -238,7 +238,7 @@ export function setCursor(cm: Editor, cur: Pos | null) {
 
 // Activate the node with the given `nid`.
 export function activateByNid(
-  cm: Editor,
+  editor: ReadonlyCMBEditor,
   nid: number | null,
   options: { allowMove?: boolean; record?: boolean } = {}
 ) {
@@ -303,24 +303,10 @@ export function activateByNid(
         SHARED.search.setCursor(newNode.from);
       }
       // if this timeout fires after the node has been torn down, don't bother
-      if (newNode.element && cm) {
-        const scroller = cm.getScrollerElement();
-        const wrapper = cm.getWrapperElement();
-
+      if (newNode.element) {
         if (options.allowMove) {
-          cm.scrollIntoView(newNode.from);
-          // get the *actual* bounding rect
-          let { top, bottom, left, right } =
-            newNode.element.getBoundingClientRect();
-          let offset = wrapper.getBoundingClientRect();
-          let scroll = cm.getScrollInfo();
-          top = top + scroll.top - offset.top;
-          bottom = bottom + scroll.top - offset.top;
-          left = left + scroll.left - offset.left;
-          right = right + scroll.left - offset.left;
-          cm.scrollIntoView({ top, bottom, left, right });
+          editor.scrollASTNodeIntoView(newNode);
         }
-        scroller.setAttribute("aria-activedescendent", newNode.element.id);
         newNode.element.focus();
       }
     });
@@ -380,7 +366,7 @@ export abstract class Target {
   srcRange() {
     return { from: this.from, to: this.to };
   }
-  abstract getText(ast: AST, cm: Editor): string;
+  abstract getText(ast: AST, text: ReadonlyRangedText): string;
   abstract toEdit(test: string): EditInterface;
 }
 
@@ -415,9 +401,9 @@ export class ReplaceNodeTarget extends Target {
     this.node = node;
   }
 
-  getText(ast: AST, cm: Editor) {
+  getText(ast: AST, text: ReadonlyRangedText) {
     const { from, to } = ast.getNodeByIdOrThrow(this.node.id);
-    return cm.getRange(from, to);
+    return text.getRange(from, to);
   }
 
   toEdit(text: string): EditInterface {
@@ -432,8 +418,8 @@ export class OverwriteTarget extends Target {
     super(from, to);
   }
 
-  getText(ast: AST, cm: Editor) {
-    return cm.getRange(this.from, this.to);
+  getText(ast: AST, text: ReadonlyRangedText) {
+    return text.getRange(this.from, this.to);
   }
 
   toEdit(text: string): EditInterface {

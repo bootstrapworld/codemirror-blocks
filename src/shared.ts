@@ -1,9 +1,9 @@
-import type CodeMirror from "codemirror";
 import type { AST } from "./ast";
 import type { Options } from "./CodeMirrorBlocks";
+import { CMBEditor } from "./editor";
 
 type Shared = {
-  cm: CodeMirror.Editor;
+  editor: CMBEditor;
   options: Options;
   search: {
     onSearch: Function;

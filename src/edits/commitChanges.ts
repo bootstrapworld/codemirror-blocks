@@ -1,17 +1,12 @@
-import { AppDispatch, AppStore } from "../store";
-import {
-  poscmp,
-  adjustForChange,
-  minimizeChange,
-  logResults,
-  topmostUndoable,
-} from "../utils";
+import { AppDispatch } from "../store";
+import { poscmp, adjustForChange, minimizeChange, logResults } from "../utils";
 import { activateByNid } from "../actions";
 import patch from "./patchAst";
 import { AST, ASTNode } from "../ast";
-import type { Editor, EditorChange } from "codemirror";
+import type { EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { err, ok, Result } from "./result";
+import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
@@ -38,7 +33,7 @@ export function commitChanges(
   dispatch: AppDispatch,
   changes: EditorChange[],
   parse: (code: string) => AST,
-  cm: Editor,
+  editor: ReadonlyCMBEditor,
   isUndoOrRedo: boolean = false,
   focusHint?: FocusHint | -1,
   astHint?: AST,
@@ -53,13 +48,13 @@ export function commitChanges(
       oldFocusNId = oldFocus ? oldFocus.nid : null;
     }
     // If we haven't already parsed the AST during speculateChanges, parse it now.
-    let newAST: AST = astHint || parse(cm.getValue());
+    let newAST: AST = astHint || parse(editor.getValue());
     // Patch the tree and set the state
     newAST = patch(oldAST, newAST);
     dispatch({ type: "SET_AST", ast: newAST });
     // Try to set the focus using hinting data. If that fails, use the first root
     let focusId =
-      setFocus(state, dispatch, cm, changes, focusHint, newAST) ||
+      setFocus(state, dispatch, editor, changes, focusHint, newAST) ||
       newAST.getFirstRootNode()?.id;
     if (!isUndoOrRedo) {
       // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
@@ -69,9 +64,9 @@ export function commitChanges(
         newFocus = newAST.getNodeById(focusId);
       }
       let newFocusNId = newFocus?.nid || null;
-      let tU = topmostUndoable(cm, "undo");
-      tU.undoableAction = annt || undefined;
-      tU.actionFocus = { oldFocusNId, newFocusNId };
+      let topmostAction = editor.getTopmostAction("undo");
+      topmostAction.undoableAction = annt || undefined;
+      topmostAction.actionFocus = { oldFocusNId, newFocusNId };
       dispatch({ type: "DO", focusId: focusId || null });
     }
     return ok({ newAST, focusId });
@@ -89,7 +84,7 @@ export function commitChanges(
 function setFocus(
   state: Pick<RootState, "collapsedList">,
   dispatch: AppDispatch,
-  cm: Editor,
+  editor: ReadonlyCMBEditor,
   changes: EditorChange[],
   focusHint: FocusHint | -1 | undefined,
   newAST: AST
@@ -100,7 +95,7 @@ function setFocus(
   let { collapsedList } = state;
   let focusNode = focusHint ? focusHint(newAST) : "fallback";
   if (focusNode === "fallback") {
-    focusNode = computeFocusNodeFromChanges(cm, changes, newAST);
+    focusNode = computeFocusNodeFromChanges(editor, changes, newAST);
   }
   let focusNId = focusNode ? focusNode.nid : null;
   while (focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
@@ -110,7 +105,7 @@ function setFocus(
   }
   // get the nid and activate
   if (focusNId !== null) {
-    dispatch(activateByNid(cm, focusNId));
+    dispatch(activateByNid(editor, focusNId));
   }
 
   let focusNode2 = focusNId && newAST.getNodeByNId(focusNId);
@@ -129,17 +124,21 @@ function setFocus(
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
 function computeFocusNodeFromChanges(
-  cm: Editor,
+  text: ReadonlyRangedText,
   changes: EditorChange[],
   newAST: AST
 ) {
   let insertion = false as EditorChange | false;
-  let startLocs = changes.map((c) => {
-    c = minimizeChange(c, cm);
-    c.from = adjustForChange(c.from, c, true);
-    c.to = adjustForChange(c.to, c, false);
-    if (c.text.join("").length > 0) insertion = c; // remember the most-recent insertion
-    return c.from; // return the starting srcLoc of the change
+  let startLocs = changes.map((change) => {
+    let { removed } = change;
+    if (!removed) {
+      removed = text.getRange(change.from, change.to).split("\n");
+    }
+    change = minimizeChange({ ...change, removed });
+    change.from = adjustForChange(change.from, change, true);
+    change.to = adjustForChange(change.to, change, false);
+    if (change.text.join("").length > 0) insertion = change; // remember the most-recent insertion
+    return change.from; // return the starting srcLoc of the change
   });
   if (insertion) {
     // Case A: grab the inserted node, *or* the node that ends in

@@ -1,5 +1,5 @@
 import React from "react";
-import CodeMirror, { Editor } from "codemirror";
+import CodeMirror from "codemirror";
 import SHARED from "./shared";
 import {
   delete_,
@@ -17,7 +17,6 @@ import {
   skipCollapsed,
   mac,
   getLastVisibleNode,
-  preambleUndoRedo,
   playSound,
   BEEP,
 } from "./utils";
@@ -28,17 +27,18 @@ import type { AppDispatch } from "./store";
 import type { ASTNode } from "./ast";
 import type { RootState } from "./reducers";
 import { KeyDownContext } from "./ui/ToggleEditor";
+import { CMBEditor } from "./editor";
 
 type BlockEditorEnv = {
   isNodeEnv: false;
-  cm: Editor;
+  editor: CMBEditor;
   dispatch: AppDispatch;
 };
 
 type NodeEnv = {
   isNodeEnv: true;
 
-  cm: Editor;
+  editor: CMBEditor;
   isLocked: () => boolean;
   handleMakeEditable: (e?: React.KeyboardEvent) => void;
   setRight: () => boolean;
@@ -162,11 +162,11 @@ const pasteHandler = (env: Env, e: React.KeyboardEvent) => {
   const pos = before ? env.node.srcRange().from : env.node.srcRange().to;
   // Case 1: Overwriting selected nodes
   if (env.state.selections.includes(env.node.id)) {
-    paste(env.state, env.dispatch, env.cm, new ReplaceNodeTarget(env.node));
+    paste(env.state, env.dispatch, env.editor, new ReplaceNodeTarget(env.node));
   }
   // Case 2: Inserting to the left or right of the root
   else if (!env.node.parent) {
-    paste(env.state, env.dispatch, env.cm, new OverwriteTarget(pos, pos));
+    paste(env.state, env.dispatch, env.editor, new OverwriteTarget(pos, pos));
   }
   // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
   else {
@@ -178,7 +178,7 @@ const pasteHandler = (env: Env, e: React.KeyboardEvent) => {
       paste(
         env.state,
         env.dispatch,
-        env.cm,
+        env.editor,
         new InsertTarget(env.node.parent, DTnode.dataset.field, pos)
       );
     } else {
@@ -201,7 +201,7 @@ const commandMap: {
     if (env.isNodeEnv) {
       let prev = env.fastSkip((node) => node.prev);
       if (prev) {
-        return env.dispatch(activateByNid(env.cm, prev.nid));
+        return env.dispatch(activateByNid(env.editor, prev.nid));
       } else {
         return playSound(BEEP);
       }
@@ -209,7 +209,9 @@ const commandMap: {
     const prevNode =
       env.state.cur && env.state.ast.getNodeBeforeCur(env.state.cur);
     return prevNode
-      ? env.dispatch(activateByNid(env.cm, prevNode.nid, { allowMove: true }))
+      ? env.dispatch(
+          activateByNid(env.editor, prevNode.nid, { allowMove: true })
+        )
       : playSound(BEEP);
   },
 
@@ -218,7 +220,7 @@ const commandMap: {
     if (env.isNodeEnv) {
       let next = env.fastSkip((node) => node.next);
       if (next) {
-        return env.dispatch(activateByNid(env.cm, next.nid));
+        return env.dispatch(activateByNid(env.editor, next.nid));
       } else {
         return playSound(BEEP);
       }
@@ -226,7 +228,9 @@ const commandMap: {
     const nextNode =
       env.state.cur && env.state.ast.getNodeAfterCur(env.state.cur);
     return nextNode
-      ? env.dispatch(activateByNid(env.cm, nextNode.nid, { allowMove: true }))
+      ? env.dispatch(
+          activateByNid(env.editor, nextNode.nid, { allowMove: true })
+        )
       : playSound(BEEP);
   },
 
@@ -234,7 +238,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     }
-    env.dispatch(activateByNid(env.cm, 0, { allowMove: true }));
+    env.dispatch(activateByNid(env.editor, 0, { allowMove: true }));
   },
 
   "Last Visible Block": (env, _) => {
@@ -242,7 +246,7 @@ const commandMap: {
       return CodeMirror.Pass;
     } else {
       const lastVisible = getLastVisibleNode(env.state);
-      lastVisible && env.dispatch(activateByNid(env.cm, lastVisible.nid));
+      lastVisible && env.dispatch(activateByNid(env.editor, lastVisible.nid));
     }
   },
 
@@ -254,7 +258,7 @@ const commandMap: {
     if (env.expandable && !env.isCollapsed && !env.isLocked()) {
       env.dispatch({ type: "COLLAPSE", id: env.node.id });
     } else if (env.node.parent) {
-      env.dispatch(activateByNid(env.cm, env.node.parent.nid));
+      env.dispatch(activateByNid(env.editor, env.node.parent.nid));
     } else {
       playSound(BEEP);
     }
@@ -269,7 +273,7 @@ const commandMap: {
     if (env.expandable && env.isCollapsed && !env.isLocked()) {
       env.dispatch({ type: "UNCOLLAPSE", id: node.id });
     } else if (node.next?.parent === node) {
-      env.dispatch(activateByNid(env.cm, node.next.nid));
+      env.dispatch(activateByNid(env.editor, node.next.nid));
     } else {
       playSound(BEEP);
     }
@@ -280,7 +284,7 @@ const commandMap: {
       return CodeMirror.Pass;
     }
     env.dispatch({ type: "COLLAPSE_ALL" });
-    env.dispatch(activateByNid(env.cm, getRoot(env.node).nid));
+    env.dispatch(activateByNid(env.editor, getRoot(env.node).nid));
   },
 
   "Expand All": (env, _) => {
@@ -303,7 +307,7 @@ const commandMap: {
       descendants.forEach(
         (d) => env.isNodeEnv && env.dispatch({ type: "COLLAPSE", id: d.id })
       );
-      env.dispatch(activateByNid(env.cm, root.nid));
+      env.dispatch(activateByNid(env.editor, root.nid));
     }
   },
 
@@ -315,14 +319,14 @@ const commandMap: {
     [...root.descendants()].forEach(
       (d) => env.isNodeEnv && env.dispatch({ type: "UNCOLLAPSE", id: d.id })
     );
-    env.dispatch(activateByNid(env.cm, root.nid));
+    env.dispatch(activateByNid(env.editor, root.nid));
   },
 
   "Jump to Root": (env, _) => {
     if (!env.isNodeEnv) {
       return CodeMirror.Pass;
     } else {
-      env.dispatch(activateByNid(env.cm, getRoot(env.node).nid));
+      env.dispatch(activateByNid(env.editor, getRoot(env.node).nid));
     }
   },
 
@@ -449,7 +453,7 @@ const commandMap: {
     const nodesToDelete = env.state.selections.map(
       env.state.ast.getNodeByIdOrThrow
     );
-    delete_(env.state, env.dispatch, env.cm, nodesToDelete, "deleted");
+    delete_(env.state, env.dispatch, env.editor, nodesToDelete, "deleted");
   },
 
   // use the srcRange() to insert before/after the node *and*
@@ -459,7 +463,7 @@ const commandMap: {
       return CodeMirror.Pass;
     }
     if (!env.setRight()) {
-      env.dispatch(setCursor(env.cm, env.node.srcRange().to));
+      env.dispatch(setCursor(env.editor, env.node.srcRange().to));
     }
   },
   "Insert Left": (env, _) => {
@@ -467,7 +471,7 @@ const commandMap: {
       return CodeMirror.Pass;
     }
     if (!env.setLeft()) {
-      env.dispatch(setCursor(env.cm, env.node.srcRange().from));
+      env.dispatch(setCursor(env.editor, env.node.srcRange().from));
     }
   },
 
@@ -482,7 +486,7 @@ const commandMap: {
       env.state.ast.getNodeByIdOrThrow
     );
     copy(env.state, nodesToCut, "cut");
-    delete_(env.state, env.dispatch, env.cm, nodesToCut);
+    delete_(env.state, env.dispatch, env.editor, nodesToCut);
   },
 
   Copy: (env, _) => {
@@ -518,17 +522,9 @@ const commandMap: {
     env.activateNoRecord(SHARED.search.search(true, env.state));
   },
 
-  Undo: (env, e) => {
-    e.preventDefault();
-    preambleUndoRedo(env.state, env.cm, "undo");
-    env.cm.undo();
-  },
+  Undo: (env, e) => doTopmostAction(env, e, "undo"),
 
-  Redo: (env, e) => {
-    e.preventDefault();
-    preambleUndoRedo(env.state, env.cm, "redo");
-    env.cm.redo();
-  },
+  Redo: (env, e) => doTopmostAction(env, e, "redo"),
 
   Help: (env, _) => {
     KeyDownContext.showDialog({
@@ -537,6 +533,24 @@ const commandMap: {
     });
   },
 };
+
+function doTopmostAction(
+  { state, editor: editor }: { state: RootState; editor: CMBEditor },
+  e: React.KeyboardEvent,
+  which: "undo" | "redo"
+) {
+  e.preventDefault();
+  const topmostAction = editor.getTopmostAction(which);
+  state.undoableAction = topmostAction.undoableAction;
+  state.actionFocus = topmostAction.actionFocus;
+  if (which === "undo") {
+    say(`UNDID: ${topmostAction.undoableAction}`);
+    editor.undo();
+  } else {
+    say(`REDID: ${topmostAction.undoableAction}`);
+    editor.redo();
+  }
+}
 
 // Recieves the key event, an environment (BlockEditor or Node), and the
 // editor's keyMap. If there is a handler for that event, add some utility
@@ -559,7 +573,7 @@ export function keyDown(e: React.KeyboardEvent, inputEnv: InputEnv) {
             return playSound(BEEP);
           } // nothing to activate
           env.dispatch(
-            activateByNid(env.cm, node.nid, {
+            activateByNid(env.editor, node.nid, {
               record: false,
               allowMove: true,
             })
