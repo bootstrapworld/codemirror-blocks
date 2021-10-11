@@ -609,12 +609,6 @@ export abstract class ASTNode<
     return this.pretty().display(prettyPrintingWidth).join("\n");
   }
 
-  // Pretty-printing is node-specific, and must be implemented by
-  // the ASTNode itself
-  pretty(): P.Doc {
-    throw new Error("Method not implemented.");
-  }
-
   // Produces an iterator over the children of this node.
   children(): Iterable<ASTNode> {
     return this.spec.children(this);
@@ -643,6 +637,10 @@ export abstract class ASTNode<
   reactElement(props?: Props): React.ReactElement {
     return renderASTNode({ node: this, ...props });
   }
+
+  // Pretty-printing is node-specific, and must be implemented by
+  // the ASTNode itself
+  abstract pretty(): P.Doc;
 
   abstract render(props: Props): React.ReactElement | void;
 }
