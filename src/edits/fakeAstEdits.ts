@@ -246,6 +246,9 @@ export class ClonedASTNode extends ASTNode {
   render(_props: {}) {
     warn("fakeAstEdits", "ClonedASTNode didn't expect to be rendered!");
   }
+  pretty(): P.Doc {
+    throw new Error("ClonedASTNode didn't expect to be prettied!");
+  }
 }
 
 // Make a copy of a node, to perform fake edits on (so that the fake edits don't
