@@ -103,30 +103,27 @@ const NodeEditable = (props: Props) => {
       }
 
       let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
-      const onSuccess = () => {
-        dispatch(activateByNid(props.cm, null, { allowMove: false }));
-        props.onChange(null);
-        props.onDisableEditable();
-        setErrorId("");
-        say(annt);
-      };
-      const onError = (e: any) => {
-        console.error(e);
-        setErrorId(target.node ? target.node.id : "editing");
-        if (element.current) {
-          selectElement(element.current, false);
-        }
-      };
-      insert(
+      const result = insert(
         getState(),
         dispatch,
         value,
         target,
         props.cm,
-        onSuccess,
-        onError,
         annt
       );
+      if (result.successful) {
+        dispatch(activateByNid(props.cm, null, { allowMove: false }));
+        props.onChange(null);
+        props.onDisableEditable();
+        setErrorId("");
+        say(annt);
+      } else {
+        console.error(result.exception);
+        setErrorId(target.node ? target.node.id : "editing");
+        if (element.current) {
+          selectElement(element.current, false);
+        }
+      }
     });
   };
 

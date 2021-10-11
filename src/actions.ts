@@ -9,8 +9,6 @@ import {
   edit_replace,
   edit_overwrite,
   EditInterface,
-  OnSuccess,
-  OnError,
   PerformEditState,
 } from "./edits/performEdits";
 import { AST, ASTNode, Pos } from "./ast";
@@ -23,9 +21,8 @@ import { useDispatch, useStore } from "react-redux";
 // Many actions take a Target as an option. A Target may be constructed by any
 // of the methods on the `Targets` export below.
 //
-// Just about every action can take an optional `onSuccess` and `onError`
-// callback. If the action is successful, it will call `onSuccess(newAST)`. If
-// it fails, it will call `onError(theError)`.
+// Just about every action will return a result object, containing the new ast
+// if successful, or an error value if unssucessful. See the types.
 //
 // The implementation of actions is in the folder `src/edits/`. IT IS PRIVATE,
 // AND FOR THE MOST PART, NO FILE EXCEPT src/actions.js SHOULD NEED TO IMPORT IT.
@@ -58,21 +55,17 @@ export function insert(
   text: string,
   target: Target,
   cm: Editor,
-  onSuccess?: OnSuccess,
-  onError?: OnError,
   annt?: string
 ) {
   checkTarget(target);
   const edits = [target.toEdit(text)];
-  performEdits(
+  return performEdits(
     state,
     dispatch,
     "cmb:insert",
     edits,
     SHARED.parse,
     cm,
-    onSuccess,
-    onError,
     annt
   );
 }
@@ -119,8 +112,6 @@ export function delete_(
     edits,
     SHARED.parse,
     cm,
-    undefined,
-    undefined,
     annt
   );
   dispatch({ type: "SET_SELECTIONS", selections: [] });
@@ -164,23 +155,12 @@ export function paste(
   state: PerformEditState,
   dispatch: AppDispatch,
   cm: Editor,
-  target: Target,
-  onSuccess?: OnSuccess,
-  onError?: OnError
+  target: Target
 ) {
   checkTarget(target);
   pasteFromClipboard((text) => {
     const edits = [target.toEdit(text)];
-    performEdits(
-      state,
-      dispatch,
-      "cmb:paste",
-      edits,
-      SHARED.parse,
-      cm,
-      onSuccess,
-      onError
-    );
+    performEdits(state, dispatch, "cmb:paste", edits, SHARED.parse, cm);
     dispatch({ type: "SET_SELECTIONS", selections: [] });
   });
 }
@@ -193,9 +173,7 @@ export function useDropAction() {
   return function drop(
     cm: Editor,
     src: { id: string; content: string },
-    target: Target,
-    onSuccess?: OnSuccess,
-    onError?: OnError
+    target: Target
   ) {
     checkTarget(target);
     const { id: srcId, content: srcContent } = src;
@@ -228,9 +206,7 @@ export function useDropAction() {
       "cmb:drop-node",
       edits,
       SHARED.parse,
-      cm,
-      onSuccess,
-      onError
+      cm
     );
 
     // Assuming it did not come from the toolbar, and the srcNode was collapsed...
