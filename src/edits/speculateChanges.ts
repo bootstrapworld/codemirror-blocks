@@ -5,7 +5,7 @@ import { CodeMirrorFacade, RangedText, ReadonlyRangedText } from "../editor";
 
 // TODO: For efficiency, we don't really need a full CodeMirror instance here:
 // create a mock one.
-const tmpCM: RangedText = new CodeMirrorFacade(
+const tmpRangedText: RangedText = new CodeMirrorFacade(
   CodeMirror(document.createElement("div"), { value: "" })
 );
 
@@ -16,13 +16,13 @@ const tmpCM: RangedText = new CodeMirrorFacade(
 export function speculateChanges(
   changeArr: EditorChange[],
   parse: (code: string) => AST,
-  editor: ReadonlyRangedText
+  text: ReadonlyRangedText
 ) {
-  tmpCM.setValue(editor.getValue());
+  tmpRangedText.setValue(text.getValue());
   for (let c of changeArr) {
-    tmpCM.replaceRange(c.text, c.from, c.to, c.origin);
+    tmpRangedText.replaceRange(c.text, c.from, c.to, c.origin);
   }
-  let newText = tmpCM.getValue();
+  let newText = tmpRangedText.getValue();
   try {
     let newAST = parse(newText);
     return { successful: true as const, newAST: newAST };

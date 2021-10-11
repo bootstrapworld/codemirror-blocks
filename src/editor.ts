@@ -206,6 +206,8 @@ export interface ReadonlyRangedText {
 }
 
 export interface ReadonlyCMBEditor extends ReadonlyRangedText {
+  scrollASTNodeIntoView(node: ASTNode): void;
+
   getTopmostAction(which: "undo" | "redo"): HistoryItem;
 
   getAllBlockNodeMarkers(): BlockNodeMarker[];
@@ -229,8 +231,6 @@ export interface RangedText extends ReadonlyRangedText {
 }
 
 export interface CMBEditor extends ReadonlyCMBEditor, RangedText {
-  scrollASTNodeIntoView(node: ASTNode): void;
-
   applyChanges(changes: EditorChange[]): void;
   focus(): void;
   setCursor(cur: Pos): void;

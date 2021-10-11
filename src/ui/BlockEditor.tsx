@@ -355,7 +355,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    * Given a CM Change Event, manually handle our own undo and focus stack
    */
   private handleChanges = (
-    editor: CMBEditor,
+    editor: ReadonlyCMBEditor,
     changes: CodeMirror.EditorChange[]
   ) => {
     this.props.dispatch((dispatch, getState) => {

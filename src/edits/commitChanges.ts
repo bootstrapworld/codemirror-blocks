@@ -6,7 +6,7 @@ import { AST, ASTNode } from "../ast";
 import type { EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { err, ok, Result } from "./result";
-import { CMBEditor, ReadonlyRangedText } from "../editor";
+import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
@@ -33,7 +33,7 @@ export function commitChanges(
   dispatch: AppDispatch,
   changes: EditorChange[],
   parse: (code: string) => AST,
-  editor: CMBEditor,
+  editor: ReadonlyCMBEditor,
   isUndoOrRedo: boolean = false,
   focusHint?: FocusHint | -1,
   astHint?: AST,
@@ -84,7 +84,7 @@ export function commitChanges(
 function setFocus(
   state: Pick<RootState, "collapsedList">,
   dispatch: AppDispatch,
-  editor: CMBEditor,
+  editor: ReadonlyCMBEditor,
   changes: EditorChange[],
   focusHint: FocusHint | -1 | undefined,
   newAST: AST
@@ -124,7 +124,7 @@ function setFocus(
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
 function computeFocusNodeFromChanges(
-  editor: ReadonlyRangedText,
+  text: ReadonlyRangedText,
   changes: EditorChange[],
   newAST: AST
 ) {
@@ -132,7 +132,7 @@ function computeFocusNodeFromChanges(
   let startLocs = changes.map((change) => {
     let { removed } = change;
     if (!removed) {
-      removed = editor.getRange(change.from, change.to).split("\n");
+      removed = text.getRange(change.from, change.to).split("\n");
     }
     change = minimizeChange({ ...change, removed });
     change.from = adjustForChange(change.from, change, true);

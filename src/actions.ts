@@ -13,7 +13,7 @@ import {
 } from "./edits/performEdits";
 import { AST, ASTNode, Pos } from "./ast";
 import { RootState } from "./reducers";
-import { CMBEditor, ReadonlyRangedText } from "./editor";
+import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "./editor";
 import { useDispatch, useStore } from "react-redux";
 
 // All editing actions are defined here.
@@ -238,7 +238,7 @@ export function setCursor(editor: CMBEditor, cur: Pos | null) {
 
 // Activate the node with the given `nid`.
 export function activateByNid(
-  editor: CMBEditor,
+  editor: ReadonlyCMBEditor,
   nid: number | null,
   options: { allowMove?: boolean; record?: boolean } = {}
 ) {
@@ -366,7 +366,7 @@ export abstract class Target {
   srcRange() {
     return { from: this.from, to: this.to };
   }
-  abstract getText(ast: AST, editor: ReadonlyRangedText): string;
+  abstract getText(ast: AST, text: ReadonlyRangedText): string;
   abstract toEdit(test: string): EditInterface;
 }
 
@@ -401,9 +401,9 @@ export class ReplaceNodeTarget extends Target {
     this.node = node;
   }
 
-  getText(ast: AST, editor: ReadonlyRangedText) {
+  getText(ast: AST, text: ReadonlyRangedText) {
     const { from, to } = ast.getNodeByIdOrThrow(this.node.id);
-    return editor.getRange(from, to);
+    return text.getRange(from, to);
   }
 
   toEdit(text: string): EditInterface {
@@ -418,8 +418,8 @@ export class OverwriteTarget extends Target {
     super(from, to);
   }
 
-  getText(ast: AST, editor: ReadonlyRangedText) {
-    return editor.getRange(this.from, this.to);
+  getText(ast: AST, text: ReadonlyRangedText) {
+    return text.getRange(this.from, this.to);
   }
 
   toEdit(text: string): EditInterface {
