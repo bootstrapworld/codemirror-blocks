@@ -5,7 +5,6 @@ import {
 } from "react-codemirror2";
 import { API } from "./ToggleEditor";
 import { AST } from "../ast";
-import { Editor } from "codemirror";
 import { CodeMirrorFacade } from "../editor";
 
 // CodeMirror APIs that we need to disallow
@@ -38,7 +37,7 @@ const TextEditor = (props: Props) => {
     props;
 
   // build the API on mount
-  const handleEditorDidMount = (ed: Editor) => {
+  const handleEditorDidMount = (ed: CodeMirror.Editor) => {
     onMount(new CodeMirrorFacade(ed), buildAPI(), passedAST);
   };
 

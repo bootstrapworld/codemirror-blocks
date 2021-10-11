@@ -8,7 +8,6 @@ import { ItemTypes } from "../dnd";
 import { OverwriteTarget, useDropAction } from "../actions";
 import { playSound, BEEP } from "../utils";
 import { useDrop } from "react-dnd";
-import { Editor } from "codemirror";
 import { CodeMirrorFacade } from "../editor";
 
 type OurProps = {
@@ -65,7 +64,7 @@ const DragAndDropEditor = (props: Props) => {
     collect: () => null,
   });
 
-  const onEditorMounted = (ed: Editor) => {
+  const onEditorMounted = (ed: CodeMirror.Editor) => {
     const editor = new CodeMirrorFacade(ed);
     props.editorDidMount && props.editorDidMount(editor);
     editorRef.current = editor;

@@ -26,7 +26,7 @@ import BlockComponent from "../components/BlockComponent";
 import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
-import CodeMirror, { Editor, SelectionOptions } from "codemirror";
+import CodeMirror, { SelectionOptions } from "codemirror";
 import type { Options, API } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
@@ -871,7 +871,10 @@ class BlockEditor extends Component<BlockEditorProps> {
    * When the CM instance receives a keypress...start a quarantine if it's
    * not a modifier
    */
-  private handleTopLevelKeyPress = (ed: Editor, e: React.KeyboardEvent) => {
+  private handleTopLevelKeyPress = (
+    ed: CodeMirror.Editor,
+    e: React.KeyboardEvent
+  ) => {
     const text = e.key;
     // let CM handle kbd shortcuts or whitespace insertion
     if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
