@@ -144,7 +144,7 @@ export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
   initialCode?: string;
-  cmOptions?: CodeMirror.EditorConfiguration;
+  codemirrorOptions?: CodeMirror.EditorConfiguration;
   language: Language;
   options?: Options;
   api?: API;
@@ -158,7 +158,7 @@ type ToggleEditorState = {
   code: string;
   dialog: null | { title: string; content: ReactElement };
   debuggingLog?: ToggleEditorProps["debuggingLog"];
-  cm: CMBEditor | null;
+  editor: CMBEditor | null;
 };
 
 // TODO(pcardune): make this use an actual context? Or maybe redux state?
@@ -183,18 +183,18 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     blockMode: false,
     dialog: null,
     code: "",
-    cm: null,
+    editor: null,
   };
 
   pendingTimeout?: afterDOMUpdateHandle;
 
   static defaultProps = {
     debuggingLog: {},
-    cmOptions: {},
+    codemirrorOptions: {},
     initialCode: "",
   };
 
-  cmOptions: CodeMirror.EditorConfiguration;
+  codemirrorOptions: CodeMirror.EditorConfiguration;
   options: Options;
   eventHandlers: Record<string, Function[]>;
   ast?: AST;
@@ -285,17 +285,19 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    * API with mode-specific versions, (2) re-assign event handlers,
    * and (3) re-render any TextMarkers.
    */
-  handleEditorMounted = (cm: CodeMirrorFacade, api: API, ast: AST) => {
+  handleEditorMounted = (editor: CodeMirrorFacade, api: API, ast: AST) => {
     // set CM aria attributes, and mount announcer
     const mode = this.state.blockMode ? "Block" : "Text";
-    const wrapper = cm.cm.getWrapperElement();
-    cm.cm.getScrollerElement().setAttribute("role", "presentation");
+    const wrapper = editor.codemirror.getWrapperElement();
+    editor.codemirror.getScrollerElement().setAttribute("role", "presentation");
     wrapper.setAttribute("aria-label", mode + " Editor");
     mountAnnouncer(wrapper);
     // Rebuild the API and assign re-events
-    Object.assign(this.props.api, this.buildAPI(cm.cm), api);
+    Object.assign(this.props.api, this.buildAPI(editor.codemirror), api);
     Object.keys(this.eventHandlers).forEach((type) => {
-      this.eventHandlers[type].forEach((h) => cm.cm.on(type as any, h));
+      this.eventHandlers[type].forEach((h) =>
+        editor.codemirror.on(type as any, h)
+      );
     });
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
@@ -310,8 +312,8 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       );
     });
     // save the editor, and announce completed mode switch
-    SHARED.cm = cm;
-    this.setState({ cm });
+    SHARED.editor = editor;
+    this.setState({ editor: editor });
     say(mode + " Mode Enabled", 500);
   };
 
@@ -328,14 +330,14 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    */
   handleToggle = (blockMode: boolean) => {
     this.setState((state) => {
-      if (!state.cm) {
+      if (!state.editor) {
         // editor hasn't mounted yet, so can't toggle.
         return state;
       }
       let oldAst, WS, code;
       try {
         try {
-          let oldCode = state.cm.getValue();
+          let oldCode = state.editor.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
           oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
         } catch (err) {
@@ -361,7 +363,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           the pretty-printer probably produced invalid code.
           See the JS console for more detailed reporting.`;
         }
-        this.recordedMarks = recordMarks(state.cm, oldAst, this.newAST); // Preserve old TextMarkers
+        this.recordedMarks = recordMarks(state.editor, oldAst, this.newAST); // Preserve old TextMarkers
         return { ...state, blockMode: blockMode, code: code }; // Success! Set the state
       } catch (e) {
         // Failure! Set the dialog state
@@ -387,8 +389,8 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
             setBlockMode={this.handleToggle}
             blockMode={this.state.blockMode}
           />
-          {this.state.blockMode && this.state.cm ? (
-            <TrashCan cm={this.state.cm} />
+          {this.state.blockMode && this.state.editor ? (
+            <TrashCan editor={this.state.editor} />
           ) : null}
           <div
             className={"col-xs-3 toolbar-pane"}
@@ -432,7 +434,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   renderCode() {
     return (
       <TextEditor
-        cmOptions={{ ...defaultCmOptions, ...this.props.cmOptions }}
+        codemirrorOptions={{
+          ...defaultCmOptions,
+          ...this.props.codemirrorOptions,
+        }}
         value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
@@ -449,7 +454,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     };
     return (
       <UpgradedBlockEditor
-        cmOptions={{ ...defaultCmOptions, ...this.props.cmOptions }}
+        codemirrorOptions={{
+          ...defaultCmOptions,
+          ...this.props.codemirrorOptions,
+        }}
         value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
@@ -470,7 +478,7 @@ export default ToggleEditor;
  * the editor mounts.
  */
 function recordMarks(
-  cm: ReadonlyCMBEditor,
+  editor: ReadonlyCMBEditor,
   oldAST: AST,
   newAST: AST | undefined
 ) {
@@ -482,7 +490,7 @@ function recordMarks(
       options: CodeMirror.TextMarkerOptions;
     }
   > = new Map();
-  for (const mark of cm.getAllTextMarkers()) {
+  for (const mark of editor.getAllTextMarkers()) {
     const markRange = mark.find();
     if (!markRange) {
       // marker is no longer in the document, bail

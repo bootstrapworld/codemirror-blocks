@@ -3,7 +3,7 @@ import type { Options } from "./CodeMirrorBlocks";
 import { CMBEditor } from "./editor";
 
 type Shared = {
-  cm: CMBEditor;
+  editor: CMBEditor;
   options: Options;
   search: {
     onSearch: Function;

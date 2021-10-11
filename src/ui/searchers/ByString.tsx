@@ -61,10 +61,10 @@ class SearchOption extends Component<SearchOptionProps> {
   }
 }
 
-// function getResults(settings, cm, {ast, collapsedList}, limit=Infinity) {
+// function getResults(settings, editor, {ast, collapsedList}, limit=Infinity) {
 //   const query = getQueryFromSettings(settings);
 //   const collapsedNodeList = collapsedList.map(ast.getNodeById);
-//   const searchCursor = cm.getSearchCursor(
+//   const searchCursor = editor.getSearchCursor(
 //     query, null, {caseFold: settings.isIgnoreCase}
 //   );
 //   const searchMatches = [];
@@ -168,7 +168,7 @@ const ByString: Searcher<SearchSettings, Props> = {
       );
     }
   },
-  search: (cur, settings, cm, state, forward) => {
+  search: (cur, settings, editor, state, forward) => {
     const { ast, collapsedList } = state;
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
@@ -197,7 +197,7 @@ const ByString: Searcher<SearchSettings, Props> = {
       return null;
     }
 
-    let searchCursor = next(cm.getSearchCursor(query, cur, options));
+    let searchCursor = next(editor.getSearchCursor(query, cur, options));
     if (forward && searchCursor && poscmp(searchCursor.from(), cur) === 0) {
       searchCursor = next(searchCursor);
     }

@@ -10,7 +10,7 @@ import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { AST } from "../CodeMirrorBlocks";
 import { ItemTypes } from "../dnd";
-import { CMContext } from "./Context";
+import { EditorContext } from "./Context";
 
 // Provided by `Node`
 export const NodeContext = createContext<{ node: ASTNode | null }>({
@@ -122,7 +122,7 @@ export const DropTarget = (props: { field: string }) => {
   if (!node) {
     throw new Error("DropTarget can only be rendered from inside a Node");
   }
-  const cm = useContext(CMContext);
+  const editor = useContext(EditorContext);
 
   const store: AppStore = useStore();
   const isErrorFree = () => store.getState().errorId === "";
@@ -172,14 +172,14 @@ field declared. The node was:`,
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (item: { id: string; content: string }, monitor) => {
-      if (!cm) {
+      if (!editor) {
         // codemirror hasn't mounted yet, do nothing.
         return;
       }
       if (monitor.didDrop()) {
         return;
       }
-      return drop(cm, item, createTarget());
+      return drop(editor, item, createTarget());
     },
     collect: (monitor) => {
       return { isOver: monitor.isOver({ shallow: true }) };
@@ -222,13 +222,13 @@ field declared. The node was:`,
   };
 
   if (isEditable) {
-    if (!cm) {
+    if (!editor) {
       throw new Error("can't edit a DropTarget before codemirror has mounted");
     }
 
     return (
       <NodeEditable
-        cm={cm}
+        editor={editor}
         target={createTarget()}
         value={value}
         onChange={handleChange}

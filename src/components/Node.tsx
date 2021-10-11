@@ -13,7 +13,7 @@ import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
 import { InputEnv, keyDown } from "../keymap";
-import { CMContext } from "./Context";
+import { EditorContext } from "./Context";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -69,7 +69,7 @@ const Node = (
   const value = props.state.value;
   const setValue = (value: string | null) =>
     props.setState({ ...props.state, value });
-  const cm = useContext(CMContext);
+  const editor = useContext(EditorContext);
   const isLocked = () => props.node.isLockedP;
 
   const dispatch: AppDispatch = useDispatch();
@@ -83,17 +83,17 @@ const Node = (
     }
     props.setState({ ...props.state, editable: true });
     setEditable(true);
-    cm?.refresh(); // is this needed?
+    editor?.refresh(); // is this needed?
   };
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!cm) {
+    if (!editor) {
       // codemirror hasn't mounted yet, do nothing.
       return;
     }
     keyDown(e, {
       isNodeEnv: true,
       node: props.node,
-      cm: cm,
+      editor: editor,
 
       isLocked,
       handleMakeEditable,
@@ -128,7 +128,7 @@ const Node = (
   // nid can be stale!! Always obtain a fresh copy of the node
   // from getState() before calling activateByNid
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!cm) {
+    if (!editor) {
       // codemirror hasn't mounted yet, do nothing
       return;
     }
@@ -145,7 +145,7 @@ const Node = (
       return;
     }
     const currentNode = ast.getNodeByIdOrThrow(props.node.id);
-    dispatch(activateByNid(cm, currentNode.nid, { allowMove: false }));
+    dispatch(activateByNid(editor, currentNode.nid, { allowMove: false }));
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -194,7 +194,7 @@ const Node = (
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_item, monitor) => {
-      if (!cm) {
+      if (!editor) {
         // codemirror hasn't mounted yet, do nothing
         return;
       }
@@ -202,7 +202,7 @@ const Node = (
         return;
       }
       const node = store.getState().ast.getNodeByIdOrThrow(props.node.id);
-      return drop(cm, monitor.getItem(), new ReplaceNodeTarget(node));
+      return drop(editor, monitor.getItem(), new ReplaceNodeTarget(node));
     },
     collect: (monitor) => {
       return {
@@ -224,14 +224,14 @@ const Node = (
   });
 
   if (editable) {
-    if (!cm) {
+    if (!editor) {
       throw new Error("can't edit nodes before codemirror has mounted");
     }
     // TODO: combine passingProps and contentEditableProps
     return (
       <NodeEditable
         {...passingProps}
-        cm={cm}
+        editor={editor}
         onDisableEditable={() => setEditable(false)}
         extraClasses={classes}
         isInsertion={false}

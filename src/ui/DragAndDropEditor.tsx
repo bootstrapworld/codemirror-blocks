@@ -21,20 +21,20 @@ type OurProps = {
 type Props = Omit<IUnControlledCodeMirror, keyof OurProps> & OurProps;
 
 const DragAndDropEditor = (props: Props) => {
-  const cmRef = useRef<CodeMirrorFacade>();
+  const editorRef = useRef<CodeMirrorFacade>();
   const drop = useDropAction();
 
   const [_, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_, monitor) => {
-      if (!cmRef.current) {
+      if (!editorRef.current) {
         // editor hasn't mounted yet, do nothing.
         return;
       }
       if (monitor.didDrop()) {
         return;
       }
-      const rootMarks = cmRef.current.getAllBlockNodeMarkers();
+      const rootMarks = editorRef.current.getAllBlockNodeMarkers();
       const { x: left, y: top } = monitor.getClientOffset() || {};
 
       // Did we get proper coordinate information from react DND?
@@ -50,8 +50,12 @@ const DragAndDropEditor = (props: Props) => {
 
         // If it's in a valid part of CM whitespace, translate to "insert at loc" edit
         if (isDroppedOnWhitespace) {
-          const loc = cmRef.current.cm.coordsChar({ left, top });
-          drop(cmRef.current, monitor.getItem(), new OverwriteTarget(loc, loc));
+          const loc = editorRef.current.codemirror.coordsChar({ left, top });
+          drop(
+            editorRef.current,
+            monitor.getItem(),
+            new OverwriteTarget(loc, loc)
+          );
           // Or else beep and make it a no-op
         } else {
           playSound(BEEP);
@@ -62,9 +66,9 @@ const DragAndDropEditor = (props: Props) => {
   });
 
   const onEditorMounted = (ed: Editor) => {
-    const cm = new CodeMirrorFacade(ed);
-    props.editorDidMount && props.editorDidMount(cm);
-    cmRef.current = cm;
+    const editor = new CodeMirrorFacade(ed);
+    props.editorDidMount && props.editorDidMount(editor);
+    editorRef.current = editor;
   };
 
   const handleDragOver: DomEvent = (ed, e) => {
@@ -86,12 +90,14 @@ const DragAndDropEditor = (props: Props) => {
         {...props}
         editorDidMount={onEditorMounted}
         onCursorActivity={() =>
-          props.onCursorActivity && props.onCursorActivity(cmRef.current!)
+          props.onCursorActivity && props.onCursorActivity(editorRef.current!)
         }
-        onFocus={() => props.onFocus && props.onFocus(cmRef.current!)}
-        onPaste={(ed, e) => props.onPaste && props.onPaste(cmRef.current!, e)}
+        onFocus={() => props.onFocus && props.onFocus(editorRef.current!)}
+        onPaste={(ed, e) =>
+          props.onPaste && props.onPaste(editorRef.current!, e)
+        }
         onKeyDown={(ed, e) =>
-          props.onKeyDown && props.onKeyDown(cmRef.current!, e)
+          props.onKeyDown && props.onKeyDown(editorRef.current!, e)
         }
       />
       {/* 

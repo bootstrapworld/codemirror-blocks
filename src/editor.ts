@@ -253,22 +253,22 @@ export function isBlockNodeMarker(
 }
 
 export class CodeMirrorFacade implements CMBEditor {
-  readonly cm: Editor;
-  constructor(cm: Editor) {
-    this.cm = cm;
+  readonly codemirror: CodeMirror.Editor;
+  constructor(codemirror: CodeMirror.Editor) {
+    this.codemirror = codemirror;
   }
 
   getValue() {
-    return this.cm.getValue();
+    return this.codemirror.getValue();
   }
   getRange(from: Pos, to: Pos): string {
-    return this.cm.getRange(from, to);
+    return this.codemirror.getRange(from, to);
   }
   getLastPos(): Pos {
-    const lastLine = this.cm.lastLine();
+    const lastLine = this.codemirror.lastLine();
     return {
       line: lastLine,
-      ch: this.cm.getLine(lastLine).length,
+      ch: this.codemirror.getLine(lastLine).length,
     };
   }
 
@@ -277,13 +277,13 @@ export class CodeMirrorFacade implements CMBEditor {
     start: Pos,
     options: { caseFold: boolean }
   ): SearchCursor {
-    return this.cm.getSearchCursor(query, start, options);
+    return this.codemirror.getSearchCursor(query, start, options);
   }
   getTopmostAction(which: "undo" | "redo"): HistoryItem {
     const items =
       which === "undo"
-        ? this.cm.getDoc().getHistory().done
-        : this.cm.getDoc().getHistory().undone;
+        ? this.codemirror.getDoc().getHistory().done
+        : this.codemirror.getDoc().getHistory().undone;
     for (let i = items.length - 1; i >= 0; i--) {
       if (!items[i].ranges) {
         return items[i];
@@ -292,10 +292,10 @@ export class CodeMirrorFacade implements CMBEditor {
     throw new Error(`No undoable found`);
   }
   getAllBlockNodeMarkers(): BlockNodeMarker[] {
-    return this.cm.getAllMarks().filter(isBlockNodeMarker);
+    return this.codemirror.getAllMarks().filter(isBlockNodeMarker);
   }
   getAllTextMarkers() {
-    return this.cm
+    return this.codemirror
       .getAllMarks()
       .filter(
         (m): m is TextMarker<MarkerRange> =>
@@ -309,31 +309,31 @@ export class CodeMirrorFacade implements CMBEditor {
     to: Pos,
     origin: string | undefined
   ): void {
-    this.cm.replaceRange(replacement, from, to, origin);
+    this.codemirror.replaceRange(replacement, from, to, origin);
   }
   focus(): void {
-    this.cm.focus();
+    this.codemirror.focus();
   }
   setCursor(cur: Pos): void {
-    this.cm.setCursor(cur);
+    this.codemirror.setCursor(cur);
   }
   undo(): void {
-    this.cm.undo();
+    this.codemirror.undo();
   }
   redo(): void {
-    this.cm.redo();
+    this.codemirror.redo();
   }
   setValue(value: string) {
-    this.cm.setValue(value);
+    this.codemirror.setValue(value);
   }
   refresh() {
-    this.cm.refresh();
+    this.codemirror.refresh();
   }
 
   applyChanges(changes: EditorChange[]) {
-    this.cm.operation(() => {
+    this.codemirror.operation(() => {
       for (const change of changes) {
-        this.cm.replaceRange(
+        this.codemirror.replaceRange(
           change.text,
           change.from,
           change.to,
@@ -349,17 +349,17 @@ export class CodeMirrorFacade implements CMBEditor {
         "can't scroll an ast node into view if it doesn't have an element set"
       );
     }
-    this.cm.scrollIntoView(node.from);
+    this.codemirror.scrollIntoView(node.from);
     // get the *actual* bounding rect
     let { top, bottom, left, right } = node.element.getBoundingClientRect();
-    const offset = this.cm.getWrapperElement().getBoundingClientRect();
-    const scroll = this.cm.getScrollInfo();
+    const offset = this.codemirror.getWrapperElement().getBoundingClientRect();
+    const scroll = this.codemirror.getScrollInfo();
     top = top + scroll.top - offset.top;
     bottom = bottom + scroll.top - offset.top;
     left = left + scroll.left - offset.left;
     right = right + scroll.left - offset.left;
-    this.cm.scrollIntoView({ top, bottom, left, right });
-    this.cm
+    this.codemirror.scrollIntoView({ top, bottom, left, right });
+    this.codemirror
       .getScrollerElement()
       .setAttribute("aria-activedescendent", node.element.id);
   }
@@ -370,7 +370,7 @@ export class CodeMirrorFacade implements CMBEditor {
     widget: HTMLElement
   ): BlockNodeMarker {
     // clear any existing block node markers
-    for (const m of this.cm.findMarks(from, to)) {
+    for (const m of this.codemirror.findMarks(from, to)) {
       if (m.isBlockNode) {
         m.clear();
       }
@@ -379,11 +379,11 @@ export class CodeMirrorFacade implements CMBEditor {
     let mark: TextMarker;
     // CM treats 0-width ranges differently than other ranges, so check
     if (poscmp(from, to) === 0) {
-      mark = this.cm.setBookmark(from, {
+      mark = this.codemirror.setBookmark(from, {
         widget,
       });
     } else {
-      mark = this.cm.markText(from, to, {
+      mark = this.codemirror.markText(from, to, {
         replacedWith: widget,
       });
     }

@@ -100,8 +100,8 @@ export type AppAction =
   | (Action<"ADD_MARK"> & { id: string; mark: CodeMirror.TextMarker })
   | (Action<"CLEAR_MARK"> & { id: string })
   | (Action<"DO"> & { focusId: RootState["focusId"] })
-  | (Action<"UNDO"> & { cm: ReadonlyCMBEditor })
-  | (Action<"REDO"> & { cm: ReadonlyCMBEditor })
+  | (Action<"UNDO"> & { editor: ReadonlyCMBEditor })
+  | (Action<"REDO"> & { editor: ReadonlyCMBEditor })
   | Action<"RESET_STORE_FOR_TESTING">;
 
 const initialState: RootState = {
@@ -186,7 +186,7 @@ function reduce(state = initialState, action: AppAction): RootState {
       }
       return state;
     case "UNDO": {
-      const historyItem = action.cm.getTopmostAction("redo");
+      const historyItem = action.editor.getTopmostAction("redo");
       historyItem.undoableAction = state.undoableAction;
       historyItem.actionFocus = state.actionFocus;
       return {
@@ -196,7 +196,7 @@ function reduce(state = initialState, action: AppAction): RootState {
       };
     }
     case "REDO": {
-      const historyItem = action.cm.getTopmostAction("undo");
+      const historyItem = action.editor.getTopmostAction("undo");
       historyItem.undoableAction = state.undoableAction;
       historyItem.actionFocus = state.actionFocus;
       return {

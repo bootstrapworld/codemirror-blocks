@@ -25,7 +25,7 @@ const buildAPI = () => {
 };
 
 type Props = {
-  cmOptions?: {};
+  codemirrorOptions?: {};
   value: string;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: (ed: CodeMirrorFacade, api: API, ast: AST | undefined) => void;
@@ -34,7 +34,8 @@ type Props = {
 };
 
 const TextEditor = (props: Props) => {
-  const { onMount, passedAST, value, onBeforeChange, cmOptions } = props;
+  const { onMount, passedAST, value, onBeforeChange, codemirrorOptions } =
+    props;
 
   // build the API on mount
   const handleEditorDidMount = (ed: Editor) => {
@@ -50,7 +51,7 @@ const TextEditor = (props: Props) => {
       <CodeMirror
         value={value}
         onBeforeChange={onBeforeChange}
-        options={cmOptions}
+        options={codemirrorOptions}
         editorDidMount={handleEditorDidMount}
       />
     </div>

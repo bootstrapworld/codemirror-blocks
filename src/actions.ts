@@ -54,7 +54,7 @@ export function insert(
   dispatch: AppDispatch,
   text: string,
   target: Target,
-  cm: CMBEditor,
+  editor: CMBEditor,
   annt?: string
 ) {
   checkTarget(target);
@@ -65,7 +65,7 @@ export function insert(
     "cmb:insert",
     edits,
     SHARED.parse,
-    cm,
+    editor,
     annt
   );
 }
@@ -91,7 +91,7 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 export function delete_(
   state: PerformEditState,
   dispatch: AppDispatch,
-  cm: CMBEditor,
+  editor: CMBEditor,
   nodes: ASTNode[],
   editWord?: string
 ) {
@@ -111,7 +111,7 @@ export function delete_(
     "cmb:delete-node",
     edits,
     SHARED.parse,
-    cm,
+    editor,
     annt
   );
   dispatch({ type: "SET_SELECTIONS", selections: [] });
@@ -154,13 +154,13 @@ export function copy(
 export function paste(
   state: PerformEditState,
   dispatch: AppDispatch,
-  cm: CMBEditor,
+  editor: CMBEditor,
   target: Target
 ) {
   checkTarget(target);
   pasteFromClipboard((text) => {
     const edits = [target.toEdit(text)];
-    performEdits(state, dispatch, "cmb:paste", edits, SHARED.parse, cm);
+    performEdits(state, dispatch, "cmb:paste", edits, SHARED.parse, editor);
     dispatch({ type: "SET_SELECTIONS", selections: [] });
   });
 }
@@ -171,7 +171,7 @@ export function useDropAction() {
   const store: AppStore = useStore();
   const dispatch: AppDispatch = useDispatch();
   return function drop(
-    cm: CMBEditor,
+    editor: CMBEditor,
     src: { id: string; content: string },
     target: Target
   ) {
@@ -206,7 +206,7 @@ export function useDropAction() {
       "cmb:drop-node",
       edits,
       SHARED.parse,
-      cm
+      editor
     );
 
     // Assuming it did not come from the toolbar, and the srcNode was collapsed...
@@ -225,12 +225,12 @@ export function useDropAction() {
 }
 
 // Set the cursor position.
-export function setCursor(cm: CMBEditor, cur: Pos | null) {
+export function setCursor(editor: CMBEditor, cur: Pos | null) {
   return (dispatch: AppDispatch) => {
-    if (cm && cur) {
-      cm.focus();
+    if (editor && cur) {
+      editor.focus();
       SHARED.search.setCursor(cur);
-      cm.setCursor(cur);
+      editor.setCursor(cur);
     }
     dispatch({ type: "SET_CURSOR", cur });
   };
@@ -238,7 +238,7 @@ export function setCursor(cm: CMBEditor, cur: Pos | null) {
 
 // Activate the node with the given `nid`.
 export function activateByNid(
-  cm: CMBEditor,
+  editor: CMBEditor,
   nid: number | null,
   options: { allowMove?: boolean; record?: boolean } = {}
 ) {
@@ -305,7 +305,7 @@ export function activateByNid(
       // if this timeout fires after the node has been torn down, don't bother
       if (newNode.element) {
         if (options.allowMove) {
-          cm.scrollASTNodeIntoView(newNode);
+          editor.scrollASTNodeIntoView(newNode);
         }
         newNode.element.focus();
       }
@@ -366,7 +366,7 @@ export abstract class Target {
   srcRange() {
     return { from: this.from, to: this.to };
   }
-  abstract getText(ast: AST, cm: ReadonlyRangedText): string;
+  abstract getText(ast: AST, editor: ReadonlyRangedText): string;
   abstract toEdit(test: string): EditInterface;
 }
 
@@ -401,9 +401,9 @@ export class ReplaceNodeTarget extends Target {
     this.node = node;
   }
 
-  getText(ast: AST, cm: ReadonlyRangedText) {
+  getText(ast: AST, editor: ReadonlyRangedText) {
     const { from, to } = ast.getNodeByIdOrThrow(this.node.id);
-    return cm.getRange(from, to);
+    return editor.getRange(from, to);
   }
 
   toEdit(text: string): EditInterface {
@@ -418,8 +418,8 @@ export class OverwriteTarget extends Target {
     super(from, to);
   }
 
-  getText(ast: AST, cm: ReadonlyRangedText) {
-    return cm.getRange(this.from, this.to);
+  getText(ast: AST, editor: ReadonlyRangedText) {
+    return editor.getRange(this.from, this.to);
   }
 
   toEdit(text: string): EditInterface {

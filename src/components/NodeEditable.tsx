@@ -48,7 +48,7 @@ type Props = Omit<ContentEditableProps, "value"> & {
   onDisableEditable: () => void;
   contentEditableProps?: {};
   extraClasses?: ClassNamesArgument;
-  cm: CMBEditor;
+  editor: CMBEditor;
 };
 
 const NodeEditable = (props: Props) => {
@@ -60,7 +60,7 @@ const NodeEditable = (props: Props) => {
     const isErrored = state.errorId == nodeId;
 
     const initialValue =
-      props.value === null ? props.target.getText(state.ast, props.cm) : "";
+      props.value === null ? props.target.getText(state.ast, props.editor) : "";
 
     return { isErrored, initialValue };
   });
@@ -99,7 +99,7 @@ const NodeEditable = (props: Props) => {
         props.onDisableEditable();
         const focusNode = focusId ? ast.getNodeById(focusId) || null : null;
         const nid = focusNode && focusNode.nid;
-        dispatch(activateByNid(props.cm, nid));
+        dispatch(activateByNid(props.editor, nid));
         return;
       }
 
@@ -109,11 +109,11 @@ const NodeEditable = (props: Props) => {
         dispatch,
         value,
         target,
-        props.cm,
+        props.editor,
         annt
       );
       if (result.successful) {
-        dispatch(activateByNid(props.cm, null, { allowMove: false }));
+        dispatch(activateByNid(props.editor, null, { allowMove: false }));
         props.onChange(null);
         props.onDisableEditable();
         setErrorId("");
@@ -145,7 +145,7 @@ const NodeEditable = (props: Props) => {
         // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
         // and then figure out how to get rid of it altogether.
         setAfterDOMUpdate(() => {
-          dispatch(activateByNid(props.cm, null, { allowMove: false }));
+          dispatch(activateByNid(props.editor, null, { allowMove: false }));
         });
         return;
     }

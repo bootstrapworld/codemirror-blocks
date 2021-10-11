@@ -70,12 +70,12 @@ export type TestContext = {
 export async function mountCMB(language: Language): Promise<API> {
   document.body.insertAdjacentHTML("afterbegin", fixture);
   const container = document.getElementById("cmb-editor")!;
-  const cmOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
+  const codemirrorOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
   const cmb = CodeMirrorBlocks(
     container,
     { collapseAll: false, value: "", incrementalRendering: false },
     language,
-    cmOptions
+    codemirrorOptions
   );
   await finishRender();
   cmb.setBlockMode(true);

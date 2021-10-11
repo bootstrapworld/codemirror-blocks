@@ -33,7 +33,7 @@ export function commitChanges(
   dispatch: AppDispatch,
   changes: EditorChange[],
   parse: (code: string) => AST,
-  cm: CMBEditor,
+  editor: CMBEditor,
   isUndoOrRedo: boolean = false,
   focusHint?: FocusHint | -1,
   astHint?: AST,
@@ -48,13 +48,13 @@ export function commitChanges(
       oldFocusNId = oldFocus ? oldFocus.nid : null;
     }
     // If we haven't already parsed the AST during speculateChanges, parse it now.
-    let newAST: AST = astHint || parse(cm.getValue());
+    let newAST: AST = astHint || parse(editor.getValue());
     // Patch the tree and set the state
     newAST = patch(oldAST, newAST);
     dispatch({ type: "SET_AST", ast: newAST });
     // Try to set the focus using hinting data. If that fails, use the first root
     let focusId =
-      setFocus(state, dispatch, cm, changes, focusHint, newAST) ||
+      setFocus(state, dispatch, editor, changes, focusHint, newAST) ||
       newAST.getFirstRootNode()?.id;
     if (!isUndoOrRedo) {
       // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
@@ -64,7 +64,7 @@ export function commitChanges(
         newFocus = newAST.getNodeById(focusId);
       }
       let newFocusNId = newFocus?.nid || null;
-      let topmostAction = cm.getTopmostAction("undo");
+      let topmostAction = editor.getTopmostAction("undo");
       topmostAction.undoableAction = annt || undefined;
       topmostAction.actionFocus = { oldFocusNId, newFocusNId };
       dispatch({ type: "DO", focusId: focusId || null });
@@ -84,7 +84,7 @@ export function commitChanges(
 function setFocus(
   state: Pick<RootState, "collapsedList">,
   dispatch: AppDispatch,
-  cm: CMBEditor,
+  editor: CMBEditor,
   changes: EditorChange[],
   focusHint: FocusHint | -1 | undefined,
   newAST: AST
@@ -95,7 +95,7 @@ function setFocus(
   let { collapsedList } = state;
   let focusNode = focusHint ? focusHint(newAST) : "fallback";
   if (focusNode === "fallback") {
-    focusNode = computeFocusNodeFromChanges(cm, changes, newAST);
+    focusNode = computeFocusNodeFromChanges(editor, changes, newAST);
   }
   let focusNId = focusNode ? focusNode.nid : null;
   while (focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
@@ -105,7 +105,7 @@ function setFocus(
   }
   // get the nid and activate
   if (focusNId !== null) {
-    dispatch(activateByNid(cm, focusNId));
+    dispatch(activateByNid(editor, focusNId));
   }
 
   let focusNode2 = focusNId && newAST.getNodeByNId(focusNId);
@@ -124,7 +124,7 @@ function setFocus(
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
 function computeFocusNodeFromChanges(
-  cm: ReadonlyRangedText,
+  editor: ReadonlyRangedText,
   changes: EditorChange[],
   newAST: AST
 ) {
@@ -132,7 +132,7 @@ function computeFocusNodeFromChanges(
   let startLocs = changes.map((change) => {
     let { removed } = change;
     if (!removed) {
-      removed = cm.getRange(change.from, change.to).split("\n");
+      removed = editor.getRange(change.from, change.to).split("\n");
     }
     change = minimizeChange({ ...change, removed });
     change.from = adjustForChange(change.from, change, true);

@@ -16,9 +16,9 @@ const tmpCM: RangedText = new CodeMirrorFacade(
 export function speculateChanges(
   changeArr: EditorChange[],
   parse: (code: string) => AST,
-  cm: ReadonlyRangedText
+  editor: ReadonlyRangedText
 ) {
-  tmpCM.setValue(cm.getValue());
+  tmpCM.setValue(editor.getValue());
   for (let c of changeArr) {
     tmpCM.replaceRange(c.text, c.from, c.to, c.origin);
   }

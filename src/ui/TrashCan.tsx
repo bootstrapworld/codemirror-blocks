@@ -9,7 +9,7 @@ import { AppStore } from "../store";
 import { CMBEditor } from "../editor";
 require("./TrashCan.less");
 
-const TrashCan = (props: { cm: CMBEditor }) => {
+const TrashCan = (props: { editor: CMBEditor }) => {
   const performEdits = usePerformEdits();
 
   const { ast } = useSelector(({ ast }: RootState) => ({ ast }));
@@ -23,7 +23,7 @@ const TrashCan = (props: { cm: CMBEditor }) => {
         let edits = [
           edit_delete(store.getState().ast.getNodeByIdOrThrow(srcNode.id)),
         ];
-        performEdits("cmb:trash-node", edits, SHARED.parse, props.cm);
+        performEdits("cmb:trash-node", edits, SHARED.parse, props.editor);
       },
       collect: (monitor) => ({ isOver: monitor.isOver() }),
     }),

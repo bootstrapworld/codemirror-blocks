@@ -72,7 +72,7 @@ const ByBlock: Searcher<SearchSettings, Props> = {
       );
     }
   },
-  search: (cur, settings, cm, { ast, collapsedList }, forward) => {
+  search: (cur, settings, editor, { ast, collapsedList }, forward) => {
     let startingNode = getNodeContainingBiased(cur, ast);
     if (!startingNode) {
       startingNode = forward

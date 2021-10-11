@@ -10,7 +10,7 @@ export type Searcher<Setting, Props> = {
   search: (
     cur: Pos,
     settings: Setting,
-    cm: ReadonlyCMBEditor,
+    editor: ReadonlyCMBEditor,
     state: RootState,
     forward: boolean
   ) => { node: ASTNode; cursor: Pos } | null;

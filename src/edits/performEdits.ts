@@ -104,10 +104,10 @@ export function usePerformEdits() {
       origin: string,
       edits: Edit[],
       parse: (code: string) => AST,
-      cm: CMBEditor,
+      editor: CMBEditor,
       annt?: string
     ) => {
-      return performEdits(state, dispatch, origin, edits, parse, cm, annt);
+      return performEdits(state, dispatch, origin, edits, parse, editor, annt);
     },
     [state.ast, state.focusId, state.collapsedList]
   );
@@ -128,7 +128,7 @@ export function performEdits(
   origin: string,
   edits: Edit[],
   parse: (code: string) => AST,
-  cm: CMBEditor,
+  editor: CMBEditor,
   annt?: string
 ): Result<{ newAST: AST; focusId?: string | undefined }> {
   // Use the focus hint from the last edit provided.
@@ -153,7 +153,7 @@ export function performEdits(
       }
     } else {
       if (edit.toChangeObject) {
-        changeArray.push(edit.toChangeObject(state.ast, cm));
+        changeArray.push(edit.toChangeObject(state.ast, editor));
       }
     }
   }
@@ -162,17 +162,17 @@ export function performEdits(
     c.origin = origin;
   }
   // Validate the text edits.
-  let result = speculateChanges(changeArray, parse, cm);
+  let result = speculateChanges(changeArray, parse, editor);
   if (result.successful) {
     try {
       // Perform the text edits, and update the ast.
-      cm.applyChanges(changeArray);
+      editor.applyChanges(changeArray);
       const changeResult = commitChanges(
         state,
         dispatch,
         changeArray,
         parse,
-        cm,
+        editor,
         false,
         focusHint,
         result.newAST,
@@ -201,7 +201,7 @@ export interface EditInterface {
   from: Pos;
   to: Pos;
   node?: ASTNode;
-  toChangeObject?(ast: AST, cm: ReadonlyRangedText): EditorChange;
+  toChangeObject?(ast: AST, editor: ReadonlyRangedText): EditorChange;
   findDescendantNode(ancestor: ASTNode, id: string): ASTNode;
   focusHint(newAST: AST): ASTNode | "fallback";
   toString(): string;
@@ -216,7 +216,7 @@ abstract class Edit implements EditInterface {
     this.to = to;
   }
 
-  toChangeObject?(ast: AST, cm: ReadonlyRangedText): EditorChange;
+  toChangeObject?(ast: AST, editor: ReadonlyRangedText): EditorChange;
 
   findDescendantNode(ancestor: ASTNode, id: string) {
     for (const node of ancestor.descendants()) {
@@ -304,8 +304,8 @@ class DeleteRootEdit extends Edit {
     this.node = node;
   }
 
-  toChangeObject(_ast: AST, cm: ReadonlyRangedText) {
-    const { from, to } = removeWhitespace(this.from, this.to, cm);
+  toChangeObject(_ast: AST, editor: ReadonlyRangedText) {
+    const { from, to } = removeWhitespace(this.from, this.to, editor);
     return {
       text: [""],
       from,
@@ -536,9 +536,9 @@ function groupEditsByAncestor(edits: Edit[]) {
  * @internal
  * When deleting a root, don't leave behind excessive whitespace
  */
-function removeWhitespace(from: Pos, to: Pos, cm: ReadonlyRangedText) {
-  let prevChar = cm.getRange({ line: from.line, ch: from.ch - 1 }, from);
-  let nextChar = cm.getRange(to, { line: to.line, ch: to.ch + 1 });
+function removeWhitespace(from: Pos, to: Pos, editor: ReadonlyRangedText) {
+  let prevChar = editor.getRange({ line: from.line, ch: from.ch - 1 }, from);
+  let nextChar = editor.getRange(to, { line: to.line, ch: to.ch + 1 });
   if (prevChar == " " && (nextChar == " " || nextChar == "")) {
     // Delete an excess space.
     return { from: { line: from.line, ch: from.ch - 1 }, to: to };

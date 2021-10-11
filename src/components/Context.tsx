@@ -5,7 +5,7 @@ import { Provider } from "react-redux";
 import { CMBEditor } from "../editor";
 import type { AppStore } from "../store";
 
-export const CMContext = React.createContext<CMBEditor | null>(null);
+export const EditorContext = React.createContext<CMBEditor | null>(null);
 
 export default function Context(props: {
   store: AppStore;

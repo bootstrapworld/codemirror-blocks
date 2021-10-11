@@ -41,7 +41,7 @@ export default function attachSearch(
       cmbState: null,
       firstTime: true,
     };
-    cm: ReadonlyCMBEditor;
+    editor: ReadonlyCMBEditor;
     callback: () => void;
 
     displayName = "Search Component";
@@ -88,7 +88,7 @@ export default function attachSearch(
         result = searchModes[this.state.searchEngine].search(
           searchFrom,
           this.state.settings[this.state.searchEngine],
-          this.cm,
+          this.editor,
           cmbState,
           forward
         );
@@ -110,7 +110,7 @@ export default function attachSearch(
 
         const wrappedStart = forward
           ? { line: 0, ch: 0 }
-          : this.cm.getLastPos();
+          : this.editor.getLastPos();
         return this.handleSearch(forward, cmbState, wrappedStart);
       }
     };
@@ -144,7 +144,7 @@ export default function attachSearch(
       return this.setState({ searchEngine });
     };
 
-    handleSetCM = (cm: ReadonlyCMBEditor) => (this.cm = cm);
+    handleSetCM = (editor: ReadonlyCMBEditor) => (this.editor = editor);
 
     search: Search = {
       onSearch: this.handleActivateSearch,
