@@ -83,6 +83,10 @@ export function setAfterDOMUpdate(
   callback: () => void,
   extraDelay?: number
 ): afterDOMUpdateHandle {
+  if (!(typeof callback == "function")) {
+    console.error("setAfterDOMUpdate given a non-function value:", callback);
+    throw "setAfterDOMUpdate given a non-function value";
+  }
   const handle: afterDOMUpdateHandle = {
     raf: window.requestAnimationFrame(() => {
       handle.timeout = setTimeout(() => {
