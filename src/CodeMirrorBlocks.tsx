@@ -79,14 +79,6 @@ export type Language = {
   primitivesFn?: () => PrimitiveGroup;
 };
 
-/**
- * TODO(pcardune): create a new instance of the store inside
- * the CodeMirrorBlocks() call, rather than having this
- * global around. And fix the tests that are depending on
- * state leakage to work!
- */
-const store = createAppStore();
-
 type Props = {
   api: any;
   options?: Options;
@@ -100,7 +92,7 @@ export const CodeMirrorBlocksComponent = ({
   codemirrorOptions = {},
 }: Props) => {
   return (
-    <Context store={store}>
+    <Context store={createAppStore()}>
       <ToggleEditor
         language={language}
         initialCode={options.value ?? ""}
