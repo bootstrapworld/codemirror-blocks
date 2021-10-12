@@ -11,6 +11,7 @@ import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 import { CMBEditor } from "../editor";
+import { useLanguageOrThrow } from "../hooks";
 
 function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
@@ -54,6 +55,7 @@ type Props = Omit<ContentEditableProps, "value"> & {
 const NodeEditable = (props: Props) => {
   const element = useRef<HTMLElement>(null);
   const dispatch: AppDispatch = useDispatch();
+  const language = useLanguageOrThrow();
 
   const { initialValue, isErrored } = useSelector((state: RootState) => {
     const nodeId = props.target.node ? props.target.node.id : "editing";
@@ -110,6 +112,7 @@ const NodeEditable = (props: Props) => {
         value,
         target,
         props.editor,
+        language.parse,
         annt
       );
       if (result.successful) {

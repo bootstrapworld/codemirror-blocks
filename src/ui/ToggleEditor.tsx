@@ -212,8 +212,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   constructor(props: ToggleEditorProps) {
     super(props);
 
-    SHARED.parse = this.props.language.parse;
-
     this.eventHandlers = {}; // blank event-handler record
 
     this.state.code = props.initialCode;
@@ -389,7 +387,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
             blockMode={this.state.blockMode}
           />
           {this.state.blockMode && this.state.editor ? (
-            <TrashCan editor={this.state.editor} />
+            <TrashCan
+              language={this.props.language}
+              editor={this.state.editor}
+            />
           ) : null}
           <div
             className={"col-xs-3 toolbar-pane"}
@@ -462,7 +463,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         api={this.props.api}
         passedAST={this.ast || new AST([])}
         // the props below are unique to the BlockEditor
-        languageId={this.props.language.id}
+        language={this.props.language}
         options={{ ...defaultOptions, ...this.props.options }}
       />
     );

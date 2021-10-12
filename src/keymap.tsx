@@ -28,17 +28,20 @@ import type { ASTNode } from "./ast";
 import type { RootState } from "./reducers";
 import { KeyDownContext } from "./ui/ToggleEditor";
 import { CMBEditor } from "./editor";
+import { Language } from "./CodeMirrorBlocks";
 
 type BlockEditorEnv = {
   isNodeEnv: false;
   editor: CMBEditor;
   dispatch: AppDispatch;
+  language: Language;
 };
 
 type NodeEnv = {
   isNodeEnv: true;
 
   editor: CMBEditor;
+  language: Language;
   isLocked: () => boolean;
   handleMakeEditable: (e?: React.KeyboardEvent) => void;
   setRight: () => boolean;
@@ -162,11 +165,23 @@ const pasteHandler = (env: Env, e: React.KeyboardEvent) => {
   const pos = before ? env.node.srcRange().from : env.node.srcRange().to;
   // Case 1: Overwriting selected nodes
   if (env.state.selections.includes(env.node.id)) {
-    paste(env.state, env.dispatch, env.editor, new ReplaceNodeTarget(env.node));
+    paste(
+      env.state,
+      env.dispatch,
+      env.editor,
+      new ReplaceNodeTarget(env.node),
+      env.language.parse
+    );
   }
   // Case 2: Inserting to the left or right of the root
   else if (!env.node.parent) {
-    paste(env.state, env.dispatch, env.editor, new OverwriteTarget(pos, pos));
+    paste(
+      env.state,
+      env.dispatch,
+      env.editor,
+      new OverwriteTarget(pos, pos),
+      env.language.parse
+    );
   }
   // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
   else {
@@ -179,7 +194,8 @@ const pasteHandler = (env: Env, e: React.KeyboardEvent) => {
         env.state,
         env.dispatch,
         env.editor,
-        new InsertTarget(env.node.parent, DTnode.dataset.field, pos)
+        new InsertTarget(env.node.parent, DTnode.dataset.field, pos),
+        env.language.parse
       );
     } else {
       playSound(BEEP);
@@ -453,7 +469,14 @@ const commandMap: {
     const nodesToDelete = env.state.selections.map(
       env.state.ast.getNodeByIdOrThrow
     );
-    delete_(env.state, env.dispatch, env.editor, nodesToDelete, "deleted");
+    delete_(
+      env.state,
+      env.dispatch,
+      env.editor,
+      nodesToDelete,
+      env.language.parse,
+      "deleted"
+    );
   },
 
   // use the srcRange() to insert before/after the node *and*
@@ -486,7 +509,13 @@ const commandMap: {
       env.state.ast.getNodeByIdOrThrow
     );
     copy(env.state, nodesToCut, "cut");
-    delete_(env.state, env.dispatch, env.editor, nodesToCut);
+    delete_(
+      env.state,
+      env.dispatch,
+      env.editor,
+      nodesToCut,
+      env.language.parse
+    );
   },
 
   Copy: (env, _) => {

@@ -4,12 +4,12 @@ import { useDrop } from "react-dnd";
 import { useSelector, useStore } from "react-redux";
 import { RootState } from "../reducers";
 import { edit_delete, usePerformEdits } from "../edits/performEdits";
-import SHARED from "../shared";
 import { AppStore } from "../store";
 import { CMBEditor } from "../editor";
+import type { Language } from "../CodeMirrorBlocks";
 require("./TrashCan.less");
 
-const TrashCan = (props: { editor: CMBEditor }) => {
+const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
   const performEdits = usePerformEdits();
 
   const { ast } = useSelector(({ ast }: RootState) => ({ ast }));
@@ -23,7 +23,12 @@ const TrashCan = (props: { editor: CMBEditor }) => {
         let edits = [
           edit_delete(store.getState().ast.getNodeByIdOrThrow(srcNode.id)),
         ];
-        performEdits("cmb:trash-node", edits, SHARED.parse, props.editor);
+        performEdits(
+          "cmb:trash-node",
+          edits,
+          props.language.parse,
+          props.editor
+        );
       },
       collect: (monitor) => ({ isOver: monitor.isOver() }),
     }),

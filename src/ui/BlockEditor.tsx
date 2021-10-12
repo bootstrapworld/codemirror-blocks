@@ -25,11 +25,11 @@ import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { SelectionOptions } from "codemirror";
-import type { Options, API } from "../CodeMirrorBlocks";
+import type { Options, API, Language } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
-import { EditorContext } from "../components/Context";
+import { EditorContext, LanguageContext } from "../components/Context";
 import {
   CodeMirrorFacade,
   CMBEditor,
@@ -225,9 +225,9 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
     options?: Options;
     codemirrorOptions?: CodeMirror.EditorConfiguration;
     /**
-     * id of the language being used
+     * language being used
      */
-    languageId: string;
+    language: Language;
     search?: Search;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
     onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
@@ -276,7 +276,11 @@ class BlockEditor extends Component<BlockEditorProps> {
     change: CodeMirror.EditorChangeCancellable
   ) => {
     if (!change.origin?.startsWith("cmb:")) {
-      const result = speculateChanges([change], SHARED.parse, editor);
+      const result = speculateChanges(
+        [change],
+        this.props.language.parse,
+        editor
+      );
       // Successful! Let's save all the hard work we did to build the new AST
       if (result.successful) {
         this.newAST = result.newAST;
@@ -323,7 +327,7 @@ class BlockEditor extends Component<BlockEditorProps> {
               getState(),
               dispatch,
               changes,
-              SHARED.parse,
+              this.props.language.parse,
               editor,
               true,
               focusHint,
@@ -342,7 +346,7 @@ class BlockEditor extends Component<BlockEditorProps> {
               getState(),
               dispatch,
               changes,
-              SHARED.parse,
+              this.props.language.parse,
               editor,
               true,
               focusHint,
@@ -366,7 +370,7 @@ class BlockEditor extends Component<BlockEditorProps> {
             getState(),
             dispatch,
             changes,
-            SHARED.parse,
+            this.props.language.parse,
             editor,
             false,
             -1,
@@ -893,16 +897,11 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   render() {
-    const classes = [];
-    if (this.props.languageId) {
-      classes.push(`blocks-language-${this.props.languageId}`);
-    }
-
     return (
-      <>
+      <LanguageContext.Provider value={this.props.language}>
         <DragAndDropEditor
           options={this.props.codemirrorOptions}
-          className={classNames(classes)}
+          className={`blocks-language-${this.props.language.id}`}
           value={this.props.value}
           onBeforeChange={this.props.onBeforeChange}
           onKeyPress={this.handleTopLevelKeyPress}
@@ -911,6 +910,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           onPaste={this.handleTopLevelPaste}
           onKeyDown={(editor, e) => {
             keyDown(e, {
+              language: this.props.language,
               editor,
               isNodeEnv: false,
               dispatch: this.props.dispatch,
@@ -920,7 +920,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           editorDidMount={this.handleEditorDidMount}
         />
         {this.renderPortals()}
-      </>
+      </LanguageContext.Provider>
     );
   }
 

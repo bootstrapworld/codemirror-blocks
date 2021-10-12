@@ -15,6 +15,10 @@ import { AST, ASTNode, Pos } from "./ast";
 import { RootState } from "./reducers";
 import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "./editor";
 import { useDispatch, useStore } from "react-redux";
+import type { Language } from "./CodeMirrorBlocks";
+import { useContext } from "react";
+import { LanguageContext } from "./components/Context";
+import { useLanguageOrThrow } from "./hooks";
 
 // All editing actions are defined here.
 //
@@ -55,6 +59,7 @@ export function insert(
   text: string,
   target: Target,
   editor: CMBEditor,
+  parse: Language["parse"],
   annt?: string
 ) {
   checkTarget(target);
@@ -64,7 +69,7 @@ export function insert(
     dispatch,
     "cmb:insert",
     edits,
-    SHARED.parse,
+    parse,
     editor,
     annt
   );
@@ -93,6 +98,7 @@ export function delete_(
   dispatch: AppDispatch,
   editor: CMBEditor,
   nodes: ASTNode[],
+  parse: Language["parse"],
   editWord?: string
 ) {
   if (nodes.length === 0) {
@@ -105,15 +111,7 @@ export function delete_(
     annt = createEditAnnouncement(nodes, editWord);
     say(annt);
   }
-  performEdits(
-    state,
-    dispatch,
-    "cmb:delete-node",
-    edits,
-    SHARED.parse,
-    editor,
-    annt
-  );
+  performEdits(state, dispatch, "cmb:delete-node", edits, parse, editor, annt);
   dispatch({ type: "SET_SELECTIONS", selections: [] });
 }
 
@@ -155,12 +153,13 @@ export function paste(
   state: PerformEditState,
   dispatch: AppDispatch,
   editor: CMBEditor,
-  target: Target
+  target: Target,
+  parse: Language["parse"]
 ) {
   checkTarget(target);
   pasteFromClipboard((text) => {
     const edits = [target.toEdit(text)];
-    performEdits(state, dispatch, "cmb:paste", edits, SHARED.parse, editor);
+    performEdits(state, dispatch, "cmb:paste", edits, parse, editor);
     dispatch({ type: "SET_SELECTIONS", selections: [] });
   });
 }
@@ -170,6 +169,7 @@ export function useDropAction() {
   // See the comment at the top of the file for what kinds of `target` there are.
   const store: AppStore = useStore();
   const dispatch: AppDispatch = useDispatch();
+  const language = useLanguageOrThrow();
   return function drop(
     editor: CMBEditor,
     src: { id: string; content: string },
@@ -205,7 +205,7 @@ export function useDropAction() {
       dispatch,
       "cmb:drop-node",
       edits,
-      SHARED.parse,
+      language.parse,
       editor
     );
 
