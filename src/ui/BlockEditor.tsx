@@ -1,14 +1,12 @@
-import React, { Component, useEffect } from "react";
+import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import classNames from "classnames";
 import "./Editor.less";
-import { useDispatch, useSelector } from "react-redux";
 import { connect, ConnectedProps } from "react-redux";
 import SHARED from "../shared";
-import NodeEditable from "../components/NodeEditable";
-import { activateByNid, setCursor, OverwriteTarget } from "../actions";
+import { activateByNid, setCursor } from "../actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
@@ -37,7 +35,9 @@ import {
   CMBEditor,
   ReadonlyCMBEditor,
   isBlockNodeMarker,
+  BlockNodeMarker,
 } from "../editor";
+import ToplevelBlockEditable from "./ToplevelBlockEditable";
 
 const tmpDiv = document.createElement("div");
 function getTempCM(editor: CodeMirrorFacade) {
@@ -120,7 +120,7 @@ class ToplevelBlock extends BlockComponent<
   ToplevelBlockState
 > {
   container: HTMLElement;
-  mark?: CodeMirror.TextMarker;
+  mark?: BlockNodeMarker;
   pendingTimeout?: afterDOMUpdateHandle;
 
   constructor(props: ToplevelBlockProps) {
@@ -184,63 +184,6 @@ class ToplevelBlock extends BlockComponent<
     return ReactDOM.createPortal(elt, this.container);
   }
 }
-
-type ToplevelBlockEditableProps = {
-  editor: CMBEditor;
-};
-const ToplevelBlockEditable = (props: ToplevelBlockEditableProps) => {
-  const dispatch: AppDispatch = useDispatch();
-  const onDisableEditable = () => dispatch({ type: "DISABLE_QUARANTINE" });
-  const onChange = (text: string) =>
-    dispatch({ type: "CHANGE_QUARANTINE", text });
-  const [start, end, value] = useSelector(({ quarantine }: RootState) => {
-    if (!quarantine) {
-      throw new Error(
-        "ToplevelBlockEditable should only be rendered when there's a quarantine"
-      );
-    }
-    return quarantine;
-  });
-
-  // if there's a marker when the component unmounts, clear it
-  useEffect(() => {
-    return () => marker?.clear();
-  }, []);
-
-  const contentEditableProps = {
-    tabIndex: "-1",
-    role: "text box",
-    "aria-setsize": "1",
-    "aria-posinset": "1",
-    "aria-level": "1",
-  };
-
-  // CM marker for the rootNode, and its DOM container
-  let marker: CodeMirror.TextMarker | undefined = undefined;
-  const container = document.createElement("span");
-  container.classList.add("react-container");
-
-  // IF NO MARKER IS DEFINED, WAIT UNTIL THE REACT RENDER
-  // CYCLE IS OVER and make a new block marker
-  if (!marker)
-    window.requestAnimationFrame(() => {
-      SHARED.editor.replaceMarkerWidget(start, end, container);
-    });
-
-  return ReactDOM.createPortal(
-    <NodeEditable
-      editor={props.editor}
-      target={new OverwriteTarget(start, end)}
-      value={value}
-      onChange={onChange}
-      contentEditableProps={contentEditableProps}
-      isInsertion={true}
-      extraClasses={[]}
-      onDisableEditable={onDisableEditable}
-    />,
-    container
-  );
-};
 
 const mapStateToProps = ({ ast, cur, quarantine }: RootState) => ({
   ast,
@@ -1003,7 +946,7 @@ class BlockEditor extends Component<BlockEditorProps> {
         </EditorContext.Provider>
       ));
       if (this.props.hasQuarantine) {
-        // TODO(pcardune): figure out why passing this.state.cm
+        // TODO(pcardune): figure out why passing this.state.editor
         // instead of SHARED.editor breaks tests
         portals.push(<ToplevelBlockEditable editor={SHARED.editor} key="-1" />);
       }
