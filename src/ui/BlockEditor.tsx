@@ -1,4 +1,4 @@
-import React, { Component, useEffect } from "react";
+import React, { Component, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
@@ -37,6 +37,7 @@ import {
   CMBEditor,
   ReadonlyCMBEditor,
   isBlockNodeMarker,
+  BlockNodeMarker,
 } from "../editor";
 
 const tmpDiv = document.createElement("div");
@@ -120,7 +121,7 @@ class ToplevelBlock extends BlockComponent<
   ToplevelBlockState
 > {
   container: HTMLElement;
-  mark?: CodeMirror.TextMarker;
+  mark?: BlockNodeMarker;
   pendingTimeout?: afterDOMUpdateHandle;
 
   constructor(props: ToplevelBlockProps) {
@@ -202,30 +203,25 @@ const ToplevelBlockEditable = (props: ToplevelBlockEditableProps) => {
     return quarantine;
   });
 
-  // if there's a marker when the component unmounts, clear it
-  useEffect(() => {
-    return () => marker?.clear();
+  // add a marker to codemirror, with an empty "widget" into which
+  // the react component will be rendered.
+  // We use useMemo to make sure this marker only gets added the first
+  // time this component is rendered.
+  const { container, marker } = useMemo(() => {
+    const container = document.createElement("span");
+    container.classList.add("react-container");
+    const marker = SHARED.editor.replaceMarkerWidget(start, end, container);
+    // call endOperation to flush all buffered updates
+    // forcing codemirror to put the marker into the document's DOM
+    // right away, making it immediately focusable/selectable.
+    // SHARED.editor.endOperation();
+    return { container, marker };
   }, []);
-
-  const contentEditableProps = {
-    tabIndex: "-1",
-    role: "text box",
-    "aria-setsize": "1",
-    "aria-posinset": "1",
-    "aria-level": "1",
-  };
-
-  // CM marker for the rootNode, and its DOM container
-  let marker: CodeMirror.TextMarker | undefined = undefined;
-  const container = document.createElement("span");
-  container.classList.add("react-container");
-
-  // IF NO MARKER IS DEFINED, WAIT UNTIL THE REACT RENDER
-  // CYCLE IS OVER and make a new block marker
-  if (!marker)
-    window.requestAnimationFrame(() => {
-      SHARED.editor.replaceMarkerWidget(start, end, container);
-    });
+  // make sure to clear the marker from codemirror
+  // when the component unmounts
+  useEffect(() => {
+    return () => marker.clear();
+  }, []);
 
   return ReactDOM.createPortal(
     <NodeEditable
@@ -233,7 +229,13 @@ const ToplevelBlockEditable = (props: ToplevelBlockEditableProps) => {
       target={new OverwriteTarget(start, end)}
       value={value}
       onChange={onChange}
-      contentEditableProps={contentEditableProps}
+      contentEditableProps={{
+        tabIndex: "-1",
+        role: "text box",
+        "aria-setsize": "1",
+        "aria-posinset": "1",
+        "aria-level": "1",
+      }}
       isInsertion={true}
       extraClasses={[]}
       onDisableEditable={onDisableEditable}

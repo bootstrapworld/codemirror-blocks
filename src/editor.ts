@@ -1,11 +1,3 @@
-import type {
-  Editor,
-  EditorChange,
-  HistoryItem,
-  MarkerRange,
-  SearchCursor,
-  TextMarker,
-} from "codemirror";
 import type { ASTNode } from "./ast";
 import type { ActionFocus } from "./reducers";
 import { poscmp } from "./utils";
@@ -189,7 +181,9 @@ declare module "codemirror" {
   }
 }
 
-export type BlockNodeMarker = TextMarker & {
+export type BlockNodeMarker = {
+  clear: () => void;
+  changed: () => void;
   isBlockNode: true;
   replacedWith: HTMLElement;
 };
@@ -208,16 +202,16 @@ export interface ReadonlyRangedText {
 export interface ReadonlyCMBEditor extends ReadonlyRangedText {
   scrollASTNodeIntoView(node: ASTNode): void;
 
-  getTopmostAction(which: "undo" | "redo"): HistoryItem;
+  getTopmostAction(which: "undo" | "redo"): CodeMirror.HistoryItem;
 
   getAllBlockNodeMarkers(): BlockNodeMarker[];
-  getAllTextMarkers(): TextMarker<MarkerRange>[];
+  getAllTextMarkers(): CodeMirror.TextMarker<CodeMirror.MarkerRange>[];
 
   getSearchCursor(
     query: string | RegExp,
     start: Pos,
     options: { caseFold: boolean }
-  ): SearchCursor;
+  ): CodeMirror.SearchCursor;
 }
 
 export interface RangedText extends ReadonlyRangedText {
@@ -231,23 +225,23 @@ export interface RangedText extends ReadonlyRangedText {
 }
 
 export interface CMBEditor extends ReadonlyCMBEditor, RangedText {
-  applyChanges(changes: EditorChange[]): void;
+  applyChanges(changes: CodeMirror.EditorChange[]): void;
   focus(): void;
   setCursor(cur: Pos): void;
   undo(): void;
   redo(): void;
   refresh(): void;
-  replaceMarkerWidget(from: Pos, to: Pos, widget: HTMLElement): TextMarker;
+  replaceMarkerWidget(from: Pos, to: Pos, widget: HTMLElement): BlockNodeMarker;
 }
 
 function isTextMarkerRange(
-  marker: TextMarker<MarkerRange | Pos>
-): marker is TextMarker<MarkerRange> {
+  marker: CodeMirror.TextMarker<CodeMirror.MarkerRange | Pos>
+): marker is CodeMirror.TextMarker<CodeMirror.MarkerRange> {
   return marker.type !== "bookmark";
 }
 
 export function isBlockNodeMarker(
-  marker: TextMarker
+  marker: CodeMirror.TextMarker | BlockNodeMarker
 ): marker is BlockNodeMarker {
   return Boolean(marker.isBlockNode);
 }
@@ -276,10 +270,10 @@ export class CodeMirrorFacade implements CMBEditor {
     query: string | RegExp,
     start: Pos,
     options: { caseFold: boolean }
-  ): SearchCursor {
+  ): CodeMirror.SearchCursor {
     return this.codemirror.getSearchCursor(query, start, options);
   }
-  getTopmostAction(which: "undo" | "redo"): HistoryItem {
+  getTopmostAction(which: "undo" | "redo"): CodeMirror.HistoryItem {
     const items =
       which === "undo"
         ? this.codemirror.getDoc().getHistory().done
@@ -292,13 +286,15 @@ export class CodeMirrorFacade implements CMBEditor {
     throw new Error(`No undoable found`);
   }
   getAllBlockNodeMarkers(): BlockNodeMarker[] {
-    return this.codemirror.getAllMarks().filter(isBlockNodeMarker);
+    return this.codemirror
+      .getAllMarks()
+      .filter(isBlockNodeMarker) as BlockNodeMarker[];
   }
   getAllTextMarkers() {
     return this.codemirror
       .getAllMarks()
       .filter(
-        (m): m is TextMarker<MarkerRange> =>
+        (m): m is CodeMirror.TextMarker<CodeMirror.MarkerRange> =>
           !isBlockNodeMarker(m) && isTextMarkerRange(m)
       );
   }
@@ -330,7 +326,7 @@ export class CodeMirrorFacade implements CMBEditor {
     this.codemirror.refresh();
   }
 
-  applyChanges(changes: EditorChange[]) {
+  applyChanges(changes: CodeMirror.EditorChange[]) {
     this.codemirror.operation(() => {
       for (const change of changes) {
         this.codemirror.replaceRange(
@@ -376,7 +372,7 @@ export class CodeMirrorFacade implements CMBEditor {
       }
     }
 
-    let mark: TextMarker;
+    let mark: CodeMirror.TextMarker;
     // CM treats 0-width ranges differently than other ranges, so check
     if (poscmp(from, to) === 0) {
       mark = this.codemirror.setBookmark(from, {

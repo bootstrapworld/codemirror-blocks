@@ -7,10 +7,10 @@ import {
   genUniqueId,
 } from "./utils";
 import * as P from "pretty-fast-pretty-printer";
-import type CodeMirror from "codemirror";
 import type { Comment } from "./nodes";
 import type { NodeSpec } from "./nodeSpec";
 import type React from "react";
+import type { BlockNodeMarker } from "./editor";
 
 /**
  * @internal
@@ -566,7 +566,7 @@ export abstract class ASTNode<
    * the CM TextMarker which contains the element representing the node
    * (only relevant for rootNodes)
    */
-  mark: CodeMirror.TextMarker;
+  mark: BlockNodeMarker;
 
   constructor(from: Pos, to: Pos, type: string, options: Opt) {
     this.from = from;
