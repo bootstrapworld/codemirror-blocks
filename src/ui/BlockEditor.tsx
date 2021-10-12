@@ -1,14 +1,12 @@
-import React, { Component, useEffect, useMemo } from "react";
+import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import classNames from "classnames";
 import "./Editor.less";
-import { useDispatch, useSelector } from "react-redux";
 import { connect, ConnectedProps } from "react-redux";
 import SHARED from "../shared";
-import NodeEditable from "../components/NodeEditable";
-import { activateByNid, setCursor, OverwriteTarget } from "../actions";
+import { activateByNid, setCursor } from "../actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
@@ -39,6 +37,7 @@ import {
   isBlockNodeMarker,
   BlockNodeMarker,
 } from "../editor";
+import ToplevelBlockEditable from "./ToplevelBlockEditable";
 
 const tmpDiv = document.createElement("div");
 function getTempCM(editor: CodeMirrorFacade) {
@@ -185,64 +184,6 @@ class ToplevelBlock extends BlockComponent<
     return ReactDOM.createPortal(elt, this.container);
   }
 }
-
-type ToplevelBlockEditableProps = {
-  editor: CMBEditor;
-};
-const ToplevelBlockEditable = (props: ToplevelBlockEditableProps) => {
-  const dispatch: AppDispatch = useDispatch();
-  const onDisableEditable = () => dispatch({ type: "DISABLE_QUARANTINE" });
-  const onChange = (text: string) =>
-    dispatch({ type: "CHANGE_QUARANTINE", text });
-  const [start, end, value] = useSelector(({ quarantine }: RootState) => {
-    if (!quarantine) {
-      throw new Error(
-        "ToplevelBlockEditable should only be rendered when there's a quarantine"
-      );
-    }
-    return quarantine;
-  });
-
-  // add a marker to codemirror, with an empty "widget" into which
-  // the react component will be rendered.
-  // We use useMemo to make sure this marker only gets added the first
-  // time this component is rendered.
-  const { container, marker } = useMemo(() => {
-    const container = document.createElement("span");
-    container.classList.add("react-container");
-    const marker = SHARED.editor.replaceMarkerWidget(start, end, container);
-    // call endOperation to flush all buffered updates
-    // forcing codemirror to put the marker into the document's DOM
-    // right away, making it immediately focusable/selectable.
-    // SHARED.editor.endOperation();
-    return { container, marker };
-  }, []);
-  // make sure to clear the marker from codemirror
-  // when the component unmounts
-  useEffect(() => {
-    return () => marker.clear();
-  }, []);
-
-  return ReactDOM.createPortal(
-    <NodeEditable
-      editor={props.editor}
-      target={new OverwriteTarget(start, end)}
-      value={value}
-      onChange={onChange}
-      contentEditableProps={{
-        tabIndex: "-1",
-        role: "text box",
-        "aria-setsize": "1",
-        "aria-posinset": "1",
-        "aria-level": "1",
-      }}
-      isInsertion={true}
-      extraClasses={[]}
-      onDisableEditable={onDisableEditable}
-    />,
-    container
-  );
-};
 
 const mapStateToProps = ({ ast, cur, quarantine }: RootState) => ({
   ast,
@@ -1005,7 +946,7 @@ class BlockEditor extends Component<BlockEditorProps> {
         </EditorContext.Provider>
       ));
       if (this.props.hasQuarantine) {
-        // TODO(pcardune): figure out why passing this.state.cm
+        // TODO(pcardune): figure out why passing this.state.editor
         // instead of SHARED.editor breaks tests
         portals.push(<ToplevelBlockEditable editor={SHARED.editor} key="-1" />);
       }
