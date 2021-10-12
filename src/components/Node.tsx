@@ -317,7 +317,7 @@ const ConnectedNode = (props: ConnectedNodeProps) => {
       return {
         isSelected: selections.includes(node.id),
         isCollapsed: collapsedList.includes(node.id),
-        textMarker: markedMap.get(node.id),
+        textMarker: markedMap[node.id],
       };
     }
   );

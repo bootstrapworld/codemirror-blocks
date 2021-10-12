@@ -2,7 +2,7 @@ import CodeMirror from "codemirror";
 import type { Action } from "redux";
 import { AST } from "./ast";
 import { ReadonlyCMBEditor } from "./editor";
-import { debugLog } from "./utils";
+import { debugLog, setAfterDOMUpdate } from "./utils";
 
 /**
  * An Activity is a shallow-clone of a reducer action, except that
@@ -51,32 +51,30 @@ export type Quarantine = Readonly<
   [CodeMirror.Position, CodeMirror.Position, string]
 >;
 
-export type ActionFocus = {
+export type ActionFocus = Readonly<{
   oldFocusNId: number | null;
   newFocusNId: number | null;
-};
+}>;
 
 export type RootState = {
-  readonly selections: string[];
+  readonly selections: ReadonlyArray<string>;
 
   /**
    * Mapping from node ids to whether or not
    * that node is currently editable.
    */
-  readonly editable: { [nid: string]: boolean };
+  readonly editable: Readonly<{ [nid: string]: boolean }>;
   readonly ast: AST;
   readonly focusId: string | null;
-  readonly collapsedList: string[];
+  readonly collapsedList: ReadonlyArray<string>;
   readonly errorId: string;
   readonly cur: CodeMirror.Position | null;
   readonly quarantine: Quarantine | null;
+  readonly markedMap: Readonly<{ [key: string]: CodeMirror.TextMarker }>;
 
   // TODO(pcardune): make these readonly
   undoableAction: string | undefined;
   actionFocus: ActionFocus | undefined;
-
-  // TODO(pcardune): make this a ReadonlyMap
-  readonly markedMap: Map<string, CodeMirror.TextMarker>;
 };
 
 export type AppAction =
@@ -104,21 +102,21 @@ export type AppAction =
   | (Action<"REDO"> & { editor: ReadonlyCMBEditor })
   | Action<"RESET_STORE_FOR_TESTING">;
 
-const initialState: RootState = {
+const initialState: () => RootState = () => ({
   selections: [],
   editable: {},
   ast: new AST([]),
   focusId: null,
   collapsedList: [],
-  markedMap: new Map(),
+  markedMap: {},
   undoableAction: undefined,
   actionFocus: undefined,
   errorId: "",
   cur: null,
   quarantine: null,
-};
+});
 
-function reduce(state = initialState, action: AppAction): RootState {
+function reduce(state = initialState(), action: AppAction): RootState {
   switch (action.type) {
     case "SET_FOCUS":
       return { ...state, focusId: action.focusId };
@@ -175,11 +173,16 @@ function reduce(state = initialState, action: AppAction): RootState {
     case "ADD_MARK":
       return {
         ...state,
-        markedMap: state.markedMap.set(action.id, action.mark),
+        markedMap: {
+          ...state.markedMap,
+          [action.id]: action.mark,
+        },
       };
-    case "CLEAR_MARK":
-      state.markedMap.delete(action.id);
-      return { ...state };
+    case "CLEAR_MARK": {
+      const markedMap = { ...state.markedMap };
+      delete markedMap[action.id];
+      return { ...state, markedMap };
+    }
     case "DO":
       if (state.focusId !== action.focusId) {
         return { ...state, focusId: action.focusId };
@@ -187,6 +190,7 @@ function reduce(state = initialState, action: AppAction): RootState {
       return state;
     case "UNDO": {
       const historyItem = action.editor.getTopmostAction("redo");
+
       historyItem.undoableAction = state.undoableAction;
       historyItem.actionFocus = state.actionFocus;
       return {
@@ -206,14 +210,17 @@ function reduce(state = initialState, action: AppAction): RootState {
       };
     }
     case "RESET_STORE_FOR_TESTING":
-      return initialState;
+      return initialState();
     default:
       debugLog("unprocessed action type=", (action as Action<any>).type);
       return state;
   }
 }
 
-export const reducer = (state = initialState, action: AppAction): RootState => {
+export const reducer = (
+  state = initialState(),
+  action: AppAction
+): RootState => {
   debugLog(action);
   let result = reduce(state, action);
   loggerDebug(action, result.ast);

@@ -246,7 +246,7 @@ export function warn(origin: string, message: string) {
   console.warn(`CodeMirrorBlocks - ${origin} - ${message}`);
 }
 
-export function partition<T>(arr: T[], f: (i: T) => boolean) {
+export function partition<T>(arr: Readonly<T[]>, f: (i: T) => boolean) {
   const matched: T[] = [];
   const notMatched: T[] = [];
   for (const e of arr) {
