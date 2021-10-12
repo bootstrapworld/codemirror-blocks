@@ -87,6 +87,31 @@ export type Language = {
  */
 const store = createAppStore();
 
+type Props = {
+  api: any;
+  options?: Options;
+  language: Language;
+  codemirrorOptions?: CodeMirror.EditorConfiguration;
+};
+export const CodeMirrorBlocksReact = ({
+  api,
+  options = {},
+  language,
+  codemirrorOptions = {},
+}: Props) => {
+  return (
+    <Context store={store}>
+      <ToggleEditor
+        language={language}
+        initialCode={options.value ?? ""}
+        api={api}
+        options={options}
+        codemirrorOptions={codemirrorOptions}
+      />
+    </Context>
+  );
+};
+
 /**
  * The main entry point for creating a new CodeMirrorBlocks editor.
  *
@@ -105,17 +130,13 @@ function CodeMirrorBlocks(
   codemirrorOptions: CodeMirror.EditorConfiguration = {}
 ): API {
   let api: API = {} as any;
-  let initialCode = options.value;
   ReactDOM.render(
-    <Context store={store}>
-      <ToggleEditor
-        language={language}
-        initialCode={initialCode == null ? "" : initialCode}
-        api={api}
-        options={options}
-        codemirrorOptions={codemirrorOptions}
-      />
-    </Context>,
+    <CodeMirrorBlocksReact
+      language={language}
+      api={api}
+      options={options}
+      codemirrorOptions={codemirrorOptions}
+    />,
     container
   );
   // See http://reactcommunity.org/react-modal/examples/set_app_element/

@@ -1,25 +1,17 @@
 import CodeMirror from "codemirror";
 import { ASTNode } from "../src/ast";
-import CodeMirrorBlocks, { API, AST } from "../src/CodeMirrorBlocks";
+import type { API, AST } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
 import { FunctionApp } from "../src/nodes";
 
-/*eslint no-unused-vars: "off"*/
 import {
-  wait,
   teardown,
   click,
   mouseDown,
-  blur,
   keyDown,
-  insertText,
   finishRender,
   mountCMB,
 } from "../src/toolkit/test-utils";
-import { debugLog } from "../src/utils";
-const QUARANTINE_DELAY = 2000;
-
-debugLog("Doing new-blocks-test.js");
 
 describe("The CodeMirrorBlocks Class", function () {
   let cmb!: API;
@@ -33,23 +25,9 @@ describe("The CodeMirrorBlocks Class", function () {
 
   describe("constructor,", function () {
     it("should create an empty editor", function () {
-      const fixture = `
-        <div id="temp">
-          <div id="cmb-editor-temp" class="editor-container"/>
-        </div>
-      `;
-      document.body.insertAdjacentHTML("afterbegin", fixture);
-      const container = document.getElementById("cmb-editor-temp")!;
-      const tempBlocks = CodeMirrorBlocks(
-        container,
-        { value: "", incrementalRendering: false },
-        wescheme
-      );
-      tempBlocks.setBlockMode(true);
-      const ast = tempBlocks.getAst();
-      expect(tempBlocks.getBlockMode()).toBe(true); //broken
+      const ast = cmb.getAst();
+      expect(cmb.getBlockMode()).toBe(true); //broken
       expect(ast.rootNodes.length).toBe(0);
-      document.body.removeChild(document.getElementById("temp")!);
     });
 
     it("should set block mode to false", function () {
@@ -83,7 +61,6 @@ describe("The CodeMirrorBlocks Class", function () {
         cmb.setValue("42\n11");
         await finishRender();
       });
-
       it("typing at the end of a line", async function () {
         cmb.setQuarantine(
           {
@@ -100,8 +77,8 @@ describe("The CodeMirrorBlocks Class", function () {
           } as CodeMirror.Position,
           "9"
         );
-        await wait(QUARANTINE_DELAY);
-        click(literal);
+        await finishRender();
+        keyDown("Enter");
         await finishRender();
         expect(cmb.getValue()).toEqual("42\n9\n11");
       });
@@ -111,8 +88,8 @@ describe("The CodeMirrorBlocks Class", function () {
           { line: 0, ch: 0, xRel: 0 } as CodeMirror.Position,
           "9"
         );
-        await wait(QUARANTINE_DELAY);
-        click(literal);
+        await finishRender();
+        keyDown("Enter");
         await finishRender();
         expect(cmb.getValue()).toEqual("9\n42\n11");
       });
@@ -122,8 +99,8 @@ describe("The CodeMirrorBlocks Class", function () {
           { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
           "9"
         );
-        await wait(QUARANTINE_DELAY);
-        click(literal);
+        await finishRender();
+        keyDown("Enter");
         await finishRender();
         expect(cmb.getValue()).toEqual("42\n9\n11");
       });

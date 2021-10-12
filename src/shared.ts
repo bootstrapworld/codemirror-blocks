@@ -1,9 +1,7 @@
 import type { AST } from "./ast";
 import type { Options } from "./CodeMirrorBlocks";
-import { CMBEditor } from "./editor";
 
 type Shared = {
-  editor: CMBEditor;
   options: Options;
   search: {
     onSearch: Function;
