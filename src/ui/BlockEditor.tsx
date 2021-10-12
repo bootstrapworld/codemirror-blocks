@@ -862,11 +862,8 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   componentDidMount() {
-    const { options, search } = this.props;
-
     // TODO: pass these with a React Context or something sensible like that.
-    SHARED.options = options;
-    SHARED.search = search;
+    SHARED.search = this.props.search;
 
     this.refreshCM();
   }
@@ -883,7 +880,7 @@ class BlockEditor extends Component<BlockEditorProps> {
   refreshCM() {
     this.props.dispatch((_, getState) => {
       if (!getState().quarantine) {
-        SHARED.editor.refresh(); // don't refresh mid-quarantine
+        this.state.editor?.refresh(); // don't refresh mid-quarantine
       }
     });
   }
@@ -939,16 +936,12 @@ class BlockEditor extends Component<BlockEditorProps> {
           <ToplevelBlock
             node={r}
             incrementalRendering={incrementalRendering}
-            // TODO(pcardune): figure out why passing this.state.cm
-            // instead of SHARED.editor breaks tests.
-            editor={SHARED.editor}
+            editor={editor}
           />
         </EditorContext.Provider>
       ));
       if (this.props.hasQuarantine) {
-        // TODO(pcardune): figure out why passing this.state.editor
-        // instead of SHARED.editor breaks tests
-        portals.push(<ToplevelBlockEditable editor={SHARED.editor} key="-1" />);
+        portals.push(<ToplevelBlockEditable editor={editor} key="-1" />);
       }
     }
     return portals;

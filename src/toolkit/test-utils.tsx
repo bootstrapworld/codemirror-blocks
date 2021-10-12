@@ -1,7 +1,8 @@
-import CodeMirrorBlocks, { API, Language } from "../CodeMirrorBlocks";
-import { cleanup } from "@testing-library/react";
+import { API, CodeMirrorBlocksComponent, Language } from "../CodeMirrorBlocks";
+import { cleanup, render } from "@testing-library/react";
 import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
 import type { ASTNode } from "../ast";
+import React from "react";
 // pass along all the simulated events
 export * from "./simulate";
 
@@ -71,11 +72,16 @@ export async function mountCMB(language: Language): Promise<API> {
   document.body.insertAdjacentHTML("afterbegin", fixture);
   const container = document.getElementById("cmb-editor")!;
   const codemirrorOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
-  const cmb = CodeMirrorBlocks(
-    container,
-    { collapseAll: false, value: "", incrementalRendering: false },
-    language,
-    codemirrorOptions
+
+  const cmb: API = {} as any;
+  render(
+    <CodeMirrorBlocksComponent
+      language={language}
+      api={cmb}
+      options={{ collapseAll: false, value: "", incrementalRendering: false }}
+      codemirrorOptions={codemirrorOptions}
+    />,
+    { container }
   );
   await finishRender();
   cmb.setBlockMode(true);

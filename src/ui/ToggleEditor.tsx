@@ -312,7 +312,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       );
     });
     // save the editor, and announce completed mode switch
-    SHARED.editor = editor;
     this.setState({ editor: editor });
     say(mode + " Mode Enabled", 500);
   };

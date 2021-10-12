@@ -45,7 +45,7 @@ const ToplevelBlockEditable = (props: Props) => {
   const { container, marker } = useMemo(() => {
     const container = document.createElement("span");
     container.classList.add("react-container");
-    const marker = SHARED.editor.replaceMarkerWidget(start, end, container);
+    const marker = props.editor.replaceMarkerWidget(start, end, container);
     // call endOperation to flush all buffered updates
     // forcing codemirror to put the marker into the document's DOM
     // right away, making it immediately focusable/selectable.
