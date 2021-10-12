@@ -862,11 +862,8 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   componentDidMount() {
-    const { options, search } = this.props;
-
     // TODO: pass these with a React Context or something sensible like that.
-    SHARED.options = options;
-    SHARED.search = search;
+    SHARED.search = this.props.search;
 
     this.refreshCM();
   }
