@@ -93,7 +93,7 @@ type Props = {
   language: Language;
   codemirrorOptions?: CodeMirror.EditorConfiguration;
 };
-export const CodeMirrorBlocksReact = ({
+export const CodeMirrorBlocksComponent = ({
   api,
   options = {},
   language,
@@ -131,7 +131,7 @@ function CodeMirrorBlocks(
 ): API {
   let api: API = {} as any;
   ReactDOM.render(
-    <CodeMirrorBlocksReact
+    <CodeMirrorBlocksComponent
       language={language}
       api={api}
       options={options}

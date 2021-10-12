@@ -1,8 +1,4 @@
-import CodeMirrorBlocks, {
-  API,
-  CodeMirrorBlocksReact,
-  Language,
-} from "../CodeMirrorBlocks";
+import { API, CodeMirrorBlocksComponent, Language } from "../CodeMirrorBlocks";
 import { cleanup, render } from "@testing-library/react";
 import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
 import type { ASTNode } from "../ast";
@@ -79,7 +75,7 @@ export async function mountCMB(language: Language): Promise<API> {
 
   const cmb: API = {} as any;
   render(
-    <CodeMirrorBlocksReact
+    <CodeMirrorBlocksComponent
       language={language}
       api={cmb}
       options={{ collapseAll: false, value: "", incrementalRendering: false }}
