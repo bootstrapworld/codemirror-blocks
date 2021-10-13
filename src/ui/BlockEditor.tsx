@@ -531,7 +531,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       addSelection: (anchor, head) =>
         this.setSelections(
           editor,
-          [{ anchor: anchor, head: head }],
+          [{ anchor: anchor, head: head ?? anchor }],
           undefined,
           undefined,
           false
@@ -694,7 +694,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    */
   private setSelections(
     ed: CodeMirrorFacade,
-    ranges: Array<{ anchor: CodeMirror.Position; head?: CodeMirror.Position }>,
+    ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
     primary?: number,
     options?: { bias?: number; origin?: string; scroll?: boolean },
     replace = true
