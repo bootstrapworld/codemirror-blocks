@@ -16,7 +16,7 @@ import {
 } from "./fakeAstEdits";
 import type { AppThunk } from "../store";
 import { getReducerActivities } from "../reducers";
-import { err, Result } from "./result";
+import { err, ok, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
 import { Search } from "../ui/BlockEditor";
 import CodeMirror from "codemirror";
@@ -58,15 +58,19 @@ export function edit_insert(
   parent: ASTNode,
   field: string,
   pos: Pos
-): Edit {
+): EditInterface {
   return new InsertChildEdit(text, parent, field, pos);
 }
 
-export function edit_overwrite(text: string, from: Pos, to: Pos): Edit {
+export function edit_overwrite(
+  text: string,
+  from: Pos,
+  to: Pos
+): EditInterface {
   return new OverwriteEdit(text, from, to);
 }
 
-export function edit_delete(node: ASTNode): Edit {
+export function edit_delete(node: ASTNode): EditInterface {
   if (node.parent) {
     return new DeleteChildEdit(node, node.parent);
   } else {
@@ -74,7 +78,7 @@ export function edit_delete(node: ASTNode): Edit {
   }
 }
 
-export function edit_replace(text: string, node: ASTNode): Edit {
+export function edit_replace(text: string, node: ASTNode): EditInterface {
   if (node.parent) {
     // if the text is the empty string, return a Deletion instead
     if (text === "") {
@@ -132,10 +136,6 @@ export function isChangeObject(
 
 /**
  * Converts an array of Edit objects into an array of change objects
- * @param edits
- * @param ast
- * @param text
- * @returns
  */
 function editsToChange(
   edits: EditInterface[],
@@ -147,25 +147,43 @@ function editsToChange(
   edits.sort((a, b) => poscmp(b.from, a.from));
   // Group edits by shared ancestor, so that edits so grouped can be made with a
   // single textual edit.
-  const editToEditGroup = groupEditsByAncestor(edits);
+  const editToEditGroup = groupEditsByAncestor(
+    edits.filter((edit): edit is AstEdit => edit instanceof AstEdit)
+  );
   // Convert the edits into CodeMirror-style change objects
   // (with `from`, `to`, and `text`, but not `removed` or `origin`).
-  let changeArray: ChangeObject[] = [];
+  const changeObjects: ChangeObject[] = [];
   for (const edit of edits) {
-    let group = editToEditGroup.get(edit);
+    const group = edit instanceof AstEdit && editToEditGroup.get(edit);
     if (group) {
       // Convert the group into a text edit.
       if (!group.completed) {
-        changeArray.push(group.toChangeObject());
+        changeObjects.push(group.toChangeObject());
         group.completed = true;
       }
     } else {
       if (edit.toChangeObject) {
-        changeArray.push(edit.toChangeObject(ast, text));
+        changeObjects.push(edit.toChangeObject(ast, text));
       }
     }
   }
-  return changeArray;
+  return changeObjects;
+}
+
+export function applyEdits(
+  edits: EditInterface[],
+  ast: AST,
+  editor: CMBEditor,
+  parse: (code: string) => AST
+): Result<{ newAST: AST; changeObjects: ChangeObject[] }> {
+  const changeObjects = editsToChange(edits, ast, editor);
+  // Validate the text edits.
+  const result = speculateChanges(changeObjects, parse, editor.getValue());
+  if (result.successful) {
+    editor.applyChanges(changeObjects);
+    return ok({ newAST: result.value, changeObjects });
+  }
+  return err(result.exception);
 }
 
 /**
@@ -180,31 +198,27 @@ function editsToChange(
 export const performEdits =
   (
     search: Search,
-    edits: Edit[],
+    edits: EditInterface[],
     parse: (code: string) => AST,
     editor: CMBEditor,
     annt?: string
   ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
   (dispatch, getState) => {
-    // Use the focus hint from the last edit provided.
-    const focusHint = (newAST: AST) =>
-      edits[edits.length - 1].focusHint(newAST);
-    const changeArray = editsToChange(edits, getState().ast, editor);
-    // Validate the text edits.
-    let result = speculateChanges(changeArray, parse, editor.getValue());
+    // Perform the text edits, and update the ast.
+    const result = applyEdits(edits, getState().ast, editor, parse);
     if (result.successful) {
       try {
-        // Perform the text edits, and update the ast.
-        editor.applyChanges(changeArray);
+        // update the ast.
         const changeResult = dispatch(
           commitChanges(
             search,
-            changeArray,
+            result.value.changeObjects,
             parse,
             editor,
             false,
-            focusHint,
-            result.value,
+            // Use the focus hint from the last edit provided.
+            (newAST: AST) => edits[edits.length - 1].focusHint(newAST),
+            result.value.newAST,
             annt
           )
         );
@@ -232,9 +246,19 @@ export interface EditInterface {
   to: Pos;
   node?: ASTNode;
   toChangeObject?(ast: AST, text: ReadonlyRangedText): ChangeObject;
-  findDescendantNode(ancestor: ASTNode, id: string): ASTNode;
   focusHint(newAST: AST): ASTNode | "fallback";
   toString(): string;
+}
+
+function findDescendantNode(ancestor: ASTNode, id: string) {
+  for (const node of ancestor.descendants()) {
+    if (node.id === id) {
+      return node;
+    }
+  }
+  throw new Error(
+    `performEdits: Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`
+  );
 }
 
 abstract class Edit implements EditInterface {
@@ -247,17 +271,6 @@ abstract class Edit implements EditInterface {
   }
 
   toChangeObject?(ast: AST, text: ReadonlyRangedText): ChangeObject;
-
-  findDescendantNode(ancestor: ASTNode, id: string) {
-    for (const node of ancestor.descendants()) {
-      if (node.id === id) {
-        return node;
-      }
-    }
-    throw new Error(
-      `performEdits: Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`
-    );
-  }
 
   // The default behavior for most edits
   focusHint(newAST: AST) {
@@ -354,7 +367,7 @@ class ReplaceRootEdit extends Edit {
     this.node = node;
   }
 
-  toChangeObject(_ast: AST) {
+  toChangeObject() {
     return makeChangeObject({
       text: this.text.split("\n"),
       from: this.from,
@@ -409,7 +422,7 @@ class InsertChildEdit extends AstEdit {
   }
 
   makeAstEdit(clonedAncestor: ClonedASTNode) {
-    let clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
+    let clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstInsertion.insertChild(clonedParent, this.text);
   }
 
@@ -433,10 +446,7 @@ class DeleteChildEdit extends AstEdit {
   }
 
   makeAstEdit(clonedAncestor: ClonedASTNode) {
-    const clonedParent = super.findDescendantNode(
-      clonedAncestor,
-      this.parent.id
-    );
+    const clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstReplacement.deleteChild(clonedParent);
   }
 
@@ -459,7 +469,7 @@ class ReplaceChildEdit extends AstEdit {
   }
 
   makeAstEdit(clonedAncestor: ClonedASTNode) {
-    let clonedParent = super.findDescendantNode(clonedAncestor, this.parent.id);
+    let clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstReplacement.replaceChild(clonedParent, this.text);
   }
 
@@ -486,7 +496,7 @@ class ReplaceChildEdit extends AstEdit {
  */
 class EditGroup {
   ancestor: ASTNode;
-  edits: Edit[];
+  edits: AstEdit[];
   completed?: boolean;
 
   constructor(ancestor: ASTNode, edits: AstEdit[]) {
@@ -499,9 +509,7 @@ class EditGroup {
     let range = this.ancestor.srcRange();
     let clonedAncestor = cloneNode(this.ancestor);
     for (const edit of this.edits) {
-      if (edit instanceof AstEdit) {
-        edit.makeAstEdit(clonedAncestor);
-      }
+      edit.makeAstEdit(clonedAncestor);
     }
     // Pretty-print to determine the new text.
     let width = prettyPrintingWidth - range.from.ch;
@@ -519,32 +527,30 @@ class EditGroup {
  * Group edits by shared ancestor, so that edits so grouped can be made with a
  * single text replacement. Returns a Map from Edit to EditGroup.
  */
-function groupEditsByAncestor(edits: Edit[]) {
-  let editToEditGroup: Map<Edit, EditGroup> = new Map(); // {Edit: EditGroup}
+function groupEditsByAncestor(edits: AstEdit[]) {
+  const editToEditGroup: Map<AstEdit, EditGroup> = new Map();
   // Group n AstEdits into m EditGroups (m <= n)
   for (const edit of edits) {
-    if (edit instanceof AstEdit) {
-      // Start with the default assumption that this parent is independent.
-      let group = new EditGroup(edit.parent, []);
-      editToEditGroup.set(edit, group);
-      // Check if any existing ancestors are below the parent.
-      for (const [e, g] of editToEditGroup) {
-        if (
-          e !== edit &&
-          srcRangeIncludes(edit.parent.srcRange(), g.ancestor.srcRange())
-        ) {
-          editToEditGroup.set(e, group);
-        }
+    // Start with the default assumption that this parent is independent.
+    const group = new EditGroup(edit.parent, []);
+    editToEditGroup.set(edit, group);
+    // Check if any existing ancestors are below the parent.
+    for (const [e, g] of editToEditGroup) {
+      if (
+        e !== edit &&
+        srcRangeIncludes(edit.parent.srcRange(), g.ancestor.srcRange())
+      ) {
+        editToEditGroup.set(e, group);
       }
-      // Check if the parent is below an existing ancestor.
-      for (const [e, g] of editToEditGroup) {
-        if (
-          e !== edit &&
-          srcRangeIncludes(g.ancestor.srcRange(), edit.parent.srcRange())
-        ) {
-          editToEditGroup.set(edit, g);
-          break; // Ancestors are disjoint; can only be contained in one.
-        }
+    }
+    // Check if the parent is below an existing ancestor.
+    for (const [e, g] of editToEditGroup) {
+      if (
+        e !== edit &&
+        srcRangeIncludes(g.ancestor.srcRange(), edit.parent.srcRange())
+      ) {
+        editToEditGroup.set(edit, g);
+        break; // Ancestors are disjoint; can only be contained in one.
       }
     }
   }
