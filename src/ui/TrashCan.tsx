@@ -29,13 +29,7 @@ const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
           throw new Error(`Can't perform edits before search has mounted`);
         }
         return dispatch(
-          performEdits(
-            search,
-            origin,
-            edits,
-            props.language.parse,
-            props.editor
-          )
+          performEdits(search, edits, props.language.parse, props.editor)
         );
       },
       collect: (monitor) => ({ isOver: monitor.isOver() }),

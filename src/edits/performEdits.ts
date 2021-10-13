@@ -14,16 +14,12 @@ import {
   cloneNode,
   ClonedASTNode,
 } from "./fakeAstEdits";
-import type { AppDispatch, AppThunk } from "../store";
-import type { EditorChange } from "codemirror";
-import { getReducerActivities, RootState } from "../reducers";
-import { useDispatch, useSelector } from "react-redux";
-import { useCallback, useContext } from "react";
+import type { AppThunk } from "../store";
+import { getReducerActivities } from "../reducers";
 import { err, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
 import { Search } from "../ui/BlockEditor";
-import { useSearchOrThrow } from "../hooks";
-import { SearchContext } from "../components/Context";
+import CodeMirror from "codemirror";
 
 /**
  *
@@ -90,6 +86,88 @@ export function edit_replace(text: string, node: ASTNode): Edit {
   }
 }
 
+const CMB_TEXT_CHANGE_ORIGIN = "codemirror-blocks-change-origin";
+
+/**
+ * An object representing a change to some text.
+ *
+ * This is similar to a CodeMirror.EditorChange object except that
+ * the origin is always CMB_TEXT_CHANGE_ORIGIN to distinguish it
+ * from change objects that were created outside of codemirror-blocks.
+ *
+ * Rather than creating objects of this type directly, you should instead
+ * use {@link makeChangeObject}.
+ *
+ * Rather than checking the value of `origin` directly, you should use
+ * {@link isChangeObject}
+ */
+export type ChangeObject = {
+  /** Position (in the pre-change coordinate system) where the change started. */
+  from: Pos;
+  /** Position (in the pre-change coordinate system) where the change ended. */
+  to: Pos;
+  /** Array of strings representing the text that replaced the changed range (split by line). */
+  text: string[];
+  /** Origin, which should always be cmb: to distinguish it from codemirror changes */
+  origin: typeof CMB_TEXT_CHANGE_ORIGIN;
+};
+
+export function makeChangeObject({
+  from,
+  to,
+  text,
+}: {
+  from: Pos;
+  to: Pos;
+  text: string[];
+}): ChangeObject {
+  return { from, to, text, origin: CMB_TEXT_CHANGE_ORIGIN };
+}
+
+export function isChangeObject(
+  change: CodeMirror.EditorChange | ChangeObject
+): change is ChangeObject {
+  return change.origin === CMB_TEXT_CHANGE_ORIGIN;
+}
+
+/**
+ * Converts an array of Edit objects into an array of change objects
+ * @param edits
+ * @param ast
+ * @param text
+ * @returns
+ */
+function editsToChange(
+  edits: EditInterface[],
+  ast: AST,
+  text: ReadonlyRangedText
+): ChangeObject[] {
+  // Sort the edits from last to first, so that they don't interfere with
+  // each other's source locations or indices.
+  edits.sort((a, b) => poscmp(b.from, a.from));
+  // Group edits by shared ancestor, so that edits so grouped can be made with a
+  // single textual edit.
+  const editToEditGroup = groupEditsByAncestor(edits);
+  // Convert the edits into CodeMirror-style change objects
+  // (with `from`, `to`, and `text`, but not `removed` or `origin`).
+  let changeArray: ChangeObject[] = [];
+  for (const edit of edits) {
+    let group = editToEditGroup.get(edit);
+    if (group) {
+      // Convert the group into a text edit.
+      if (!group.completed) {
+        changeArray.push(group.toChangeObject());
+        group.completed = true;
+      }
+    } else {
+      if (edit.toChangeObject) {
+        changeArray.push(edit.toChangeObject(ast, text));
+      }
+    }
+  }
+  return changeArray;
+}
+
 /**
  * performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
  *
@@ -102,46 +180,18 @@ export function edit_replace(text: string, node: ASTNode): Edit {
 export const performEdits =
   (
     search: Search,
-    origin: string,
     edits: Edit[],
     parse: (code: string) => AST,
     editor: CMBEditor,
     annt?: string
   ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
   (dispatch, getState) => {
-    const state = getState();
     // Use the focus hint from the last edit provided.
-    const lastEdit = edits[edits.length - 1];
-    const focusHint = (newAST: AST) => lastEdit.focusHint(newAST);
-    // Sort the edits from last to first, so that they don't interfere with
-    // each other's source locations or indices.
-    edits.sort((a, b) => poscmp(b.from, a.from));
-    // Group edits by shared ancestor, so that edits so grouped can be made with a
-    // single textual edit.
-    const editToEditGroup = groupEditsByAncestor(edits);
-    // Convert the edits into CodeMirror-style change objects
-    // (with `from`, `to`, and `text`, but not `removed` or `origin`).
-    let changeArray: EditorChange[] = new Array();
-    for (const edit of edits) {
-      let group = editToEditGroup.get(edit);
-      if (group) {
-        // Convert the group into a text edit.
-        if (!group.completed) {
-          changeArray.push(group.toChangeObject());
-          group.completed = true;
-        }
-      } else {
-        if (edit.toChangeObject) {
-          changeArray.push(edit.toChangeObject(state.ast, editor));
-        }
-      }
-    }
-    // Set the origins
-    for (const c of changeArray) {
-      c.origin = origin;
-    }
+    const focusHint = (newAST: AST) =>
+      edits[edits.length - 1].focusHint(newAST);
+    const changeArray = editsToChange(edits, getState().ast, editor);
     // Validate the text edits.
-    let result = speculateChanges(changeArray, parse, editor);
+    let result = speculateChanges(changeArray, parse, editor.getValue());
     if (result.successful) {
       try {
         // Perform the text edits, and update the ast.
@@ -154,7 +204,7 @@ export const performEdits =
             editor,
             false,
             focusHint,
-            result.newAST,
+            result.value,
             annt
           )
         );
@@ -181,7 +231,7 @@ export interface EditInterface {
   from: Pos;
   to: Pos;
   node?: ASTNode;
-  toChangeObject?(ast: AST, text: ReadonlyRangedText): EditorChange;
+  toChangeObject?(ast: AST, text: ReadonlyRangedText): ChangeObject;
   findDescendantNode(ancestor: ASTNode, id: string): ASTNode;
   focusHint(newAST: AST): ASTNode | "fallback";
   toString(): string;
@@ -196,7 +246,7 @@ abstract class Edit implements EditInterface {
     this.to = to;
   }
 
-  toChangeObject?(ast: AST, text: ReadonlyRangedText): EditorChange;
+  toChangeObject?(ast: AST, text: ReadonlyRangedText): ChangeObject;
 
   findDescendantNode(ancestor: ASTNode, id: string) {
     for (const node of ancestor.descendants()) {
@@ -225,11 +275,7 @@ abstract class Edit implements EditInterface {
 
 class OverwriteEdit extends Edit {
   text: string;
-  changeObject?: {
-    text: string[];
-    from: Pos;
-    to: Pos;
-  };
+  changeObject?: ChangeObject;
   constructor(text: string, from: Pos, to: Pos) {
     super(from, to);
     this.text = text;
@@ -250,11 +296,11 @@ class OverwriteEdit extends Edit {
     if (nodeAfter) {
       text = text + "\n";
     }
-    this.changeObject = {
+    this.changeObject = makeChangeObject({
       text: text.split("\n"),
       from: this.from,
       to: this.to,
-    };
+    });
     return this.changeObject;
   }
 
@@ -286,11 +332,11 @@ class DeleteRootEdit extends Edit {
 
   toChangeObject(_ast: AST, text: ReadonlyRangedText) {
     const { from, to } = removeWhitespace(this.from, this.to, text);
-    return {
+    return makeChangeObject({
       text: [""],
       from,
       to,
-    };
+    });
   }
 
   toString() {
@@ -309,11 +355,11 @@ class ReplaceRootEdit extends Edit {
   }
 
   toChangeObject(_ast: AST) {
-    return {
+    return makeChangeObject({
       text: this.text.split("\n"),
       from: this.from,
       to: this.to,
-    };
+    });
   }
 
   focusHint(newAST: AST) {
@@ -448,7 +494,7 @@ class EditGroup {
     this.edits = edits;
   }
 
-  toChangeObject() {
+  toChangeObject(): ChangeObject {
     // Perform the edits on a copy of the shared ancestor node.
     let range = this.ancestor.srcRange();
     let clonedAncestor = cloneNode(this.ancestor);
@@ -460,11 +506,11 @@ class EditGroup {
     // Pretty-print to determine the new text.
     let width = prettyPrintingWidth - range.from.ch;
     let newText = clonedAncestor.pretty().display(width);
-    return {
+    return makeChangeObject({
       from: range.from,
       to: range.to,
       text: newText,
-    };
+    });
   }
 }
 

@@ -1,13 +1,14 @@
-import { AppDispatch, AppThunk } from "../store";
+import { AppThunk } from "../store";
 import { poscmp, adjustForChange, minimizeChange, logResults } from "../utils";
 import { activateByNid } from "../actions";
 import patch from "./patchAst";
 import { AST, ASTNode } from "../ast";
 import type { EditorChange } from "codemirror";
-import { getReducerActivities, RootState } from "../reducers";
+import { getReducerActivities } from "../reducers";
 import { err, ok, Result } from "./result";
-import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
+import { ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { Search } from "../ui/BlockEditor";
+import { ChangeObject } from "./performEdits";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
@@ -32,7 +33,7 @@ export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 export const commitChanges =
   (
     search: Search,
-    changes: EditorChange[],
+    changes: ChangeObject[],
     parse: (code: string) => AST,
     editor: ReadonlyCMBEditor,
     isUndoOrRedo: boolean = false,
