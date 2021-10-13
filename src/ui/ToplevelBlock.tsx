@@ -51,7 +51,9 @@ export default class ToplevelBlock extends BlockComponent<Props, State> {
   // in case someone unmounts before all the root components
   // have even rendered
   componentDidMount() {
-    if (!this.props.incrementalRendering) return; // bail if incremental is off
+    if (!this.props.incrementalRendering) {
+      return; // bail if incremental is off
+    }
     this.pendingTimeout = setAfterDOMUpdate(
       () => this.setState({ renderPlaceholder: false }),
       250
@@ -64,18 +66,11 @@ export default class ToplevelBlock extends BlockComponent<Props, State> {
     // set elt to a cheap placeholder, OR render the entire rootNode
     const elt = this.state.renderPlaceholder ? <div /> : node.reactElement();
 
-    // AFTER THE REACT RENDER CYCLE IS OVER:
-    // if any prior block markers are in this range, clear them
     // make a new block marker, and fill it with the portal
-    setAfterDOMUpdate(() => {
-      const { from, to } = node.srcRange(); // includes the node's comment, if any
-      this.mark = this.props.editor.replaceMarkerWidget(
-        from,
-        to,
-        this.container
-      );
-      node.mark = this.mark;
-    });
+    const { from, to } = node.srcRange(); // includes the node's comment, if any
+    this.mark = this.props.editor.replaceMarkerWidget(from, to, this.container);
+    node.mark = this.mark;
+
     return ReactDOM.createPortal(elt, this.container);
   }
 }
