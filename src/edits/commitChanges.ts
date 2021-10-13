@@ -7,6 +7,7 @@ import type { EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { err, ok, Result } from "./result";
 import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
+import { Search } from "../ui/BlockEditor";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
@@ -31,6 +32,7 @@ export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 export function commitChanges(
   state: Pick<RootState, "ast" | "focusId" | "collapsedList">,
   dispatch: AppDispatch,
+  search: Search,
   changes: EditorChange[],
   parse: (code: string) => AST,
   editor: ReadonlyCMBEditor,
@@ -54,7 +56,7 @@ export function commitChanges(
     dispatch({ type: "SET_AST", ast: newAST });
     // Try to set the focus using hinting data. If that fails, use the first root
     let focusId =
-      setFocus(state, dispatch, editor, changes, focusHint, newAST) ||
+      setFocus(state, dispatch, editor, search, changes, focusHint, newAST) ||
       newAST.getFirstRootNode()?.id;
     if (!isUndoOrRedo) {
       // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
@@ -85,6 +87,7 @@ function setFocus(
   state: Pick<RootState, "collapsedList">,
   dispatch: AppDispatch,
   editor: ReadonlyCMBEditor,
+  search: Search,
   changes: EditorChange[],
   focusHint: FocusHint | -1 | undefined,
   newAST: AST
@@ -105,7 +108,7 @@ function setFocus(
   }
   // get the nid and activate
   if (focusNId !== null) {
-    dispatch(activateByNid(editor, focusNId));
+    dispatch(activateByNid(editor, search, focusNId));
   }
 
   let focusNode2 = focusNId && newAST.getNodeByNId(focusNId);

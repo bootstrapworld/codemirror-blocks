@@ -1,6 +1,5 @@
 import { poscmp, srcRangeIncludes, warn, setAfterDOMUpdate } from "./utils";
 import { say, cancelAnnouncement } from "./announcer";
-import SHARED from "./shared";
 import { AppDispatch, AppStore } from "./store";
 import {
   performEdits,
@@ -18,7 +17,8 @@ import { useDispatch, useStore } from "react-redux";
 import type { Language } from "./CodeMirrorBlocks";
 import { useContext } from "react";
 import { LanguageContext } from "./components/Context";
-import { useLanguageOrThrow } from "./hooks";
+import { useLanguageOrThrow, useSearchOrThrow } from "./hooks";
+import { Search } from "./ui/BlockEditor";
 
 // All editing actions are defined here.
 //
@@ -56,6 +56,7 @@ import { useLanguageOrThrow } from "./hooks";
 export function insert(
   state: PerformEditState,
   dispatch: AppDispatch,
+  search: Search,
   text: string,
   target: Target,
   editor: CMBEditor,
@@ -67,6 +68,7 @@ export function insert(
   return performEdits(
     state,
     dispatch,
+    search,
     "cmb:insert",
     edits,
     parse,
@@ -96,6 +98,7 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 export function delete_(
   state: PerformEditState,
   dispatch: AppDispatch,
+  search: Search,
   editor: CMBEditor,
   nodes: ASTNode[],
   parse: Language["parse"],
@@ -111,7 +114,16 @@ export function delete_(
     annt = createEditAnnouncement(nodes, editWord);
     say(annt);
   }
-  performEdits(state, dispatch, "cmb:delete-node", edits, parse, editor, annt);
+  performEdits(
+    state,
+    dispatch,
+    search,
+    "cmb:delete-node",
+    edits,
+    parse,
+    editor,
+    annt
+  );
   dispatch({ type: "SET_SELECTIONS", selections: [] });
 }
 
@@ -153,13 +165,14 @@ export function paste(
   state: PerformEditState,
   dispatch: AppDispatch,
   editor: CMBEditor,
+  search: Search,
   target: Target,
   parse: Language["parse"]
 ) {
   checkTarget(target);
   pasteFromClipboard((text) => {
     const edits = [target.toEdit(text)];
-    performEdits(state, dispatch, "cmb:paste", edits, parse, editor);
+    performEdits(state, dispatch, search, "cmb:paste", edits, parse, editor);
     dispatch({ type: "SET_SELECTIONS", selections: [] });
   });
 }
@@ -170,6 +183,7 @@ export function useDropAction() {
   const store: AppStore = useStore();
   const dispatch: AppDispatch = useDispatch();
   const language = useLanguageOrThrow();
+  const search = useSearchOrThrow();
   return function drop(
     editor: CMBEditor,
     src: { id: string; content: string },
@@ -203,6 +217,7 @@ export function useDropAction() {
     const editResult = performEdits(
       state,
       dispatch,
+      search,
       "cmb:drop-node",
       edits,
       language.parse,
@@ -225,11 +240,11 @@ export function useDropAction() {
 }
 
 // Set the cursor position.
-export function setCursor(editor: CMBEditor, cur: Pos | null) {
+export function setCursor(editor: CMBEditor, cur: Pos | null, search: Search) {
   return (dispatch: AppDispatch) => {
     if (editor && cur) {
       editor.focus();
-      SHARED.search.setCursor(cur);
+      search.setCursor(cur);
       editor.setCursor(cur);
     }
     dispatch({ type: "SET_CURSOR", cur });
@@ -239,6 +254,7 @@ export function setCursor(editor: CMBEditor, cur: Pos | null) {
 // Activate the node with the given `nid`.
 export function activateByNid(
   editor: ReadonlyCMBEditor,
+  search: Search,
   nid: number | null,
   options: { allowMove?: boolean; record?: boolean } = {}
 ) {
@@ -299,8 +315,8 @@ export function activateByNid(
     setAfterDOMUpdate(() => {
       dispatch({ type: "SET_FOCUS", focusId: newNode.id });
 
-      if (options.record && SHARED.search) {
-        SHARED.search.setCursor(newNode.from);
+      if (options.record && search) {
+        search.setCursor(newNode.from);
       }
       // if this timeout fires after the node has been torn down, don't bother
       if (newNode.element) {

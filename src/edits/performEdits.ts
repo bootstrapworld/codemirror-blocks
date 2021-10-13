@@ -18,9 +18,12 @@ import type { AppDispatch } from "../store";
 import type { EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { useDispatch, useSelector } from "react-redux";
-import { useCallback } from "react";
+import { useCallback, useContext } from "react";
 import { err, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
+import { Search } from "../ui/BlockEditor";
+import { useSearchOrThrow } from "../hooks";
+import { SearchContext } from "../components/Context";
 
 /**
  *
@@ -99,6 +102,7 @@ export function usePerformEdits() {
     focusId,
     collapsedList,
   }));
+  const search = useContext(SearchContext);
   return useCallback(
     (
       origin: string,
@@ -107,9 +111,21 @@ export function usePerformEdits() {
       editor: CMBEditor,
       annt?: string
     ) => {
-      return performEdits(state, dispatch, origin, edits, parse, editor, annt);
+      if (!search) {
+        throw new Error(`Can't perform edits before search has mounted`);
+      }
+      return performEdits(
+        state,
+        dispatch,
+        search,
+        origin,
+        edits,
+        parse,
+        editor,
+        annt
+      );
     },
-    [state.ast, state.focusId, state.collapsedList]
+    [state.ast, state.focusId, state.collapsedList, search]
   );
 }
 
@@ -125,6 +141,7 @@ export function usePerformEdits() {
 export function performEdits(
   state: PerformEditState,
   dispatch: AppDispatch,
+  search: Search,
   origin: string,
   edits: Edit[],
   parse: (code: string) => AST,
@@ -170,6 +187,7 @@ export function performEdits(
       const changeResult = commitChanges(
         state,
         dispatch,
+        search,
         changeArray,
         parse,
         editor,

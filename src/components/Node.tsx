@@ -12,9 +12,9 @@ import CodeMirror from "codemirror";
 import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
-import { InputEnv, keyDown } from "../keymap";
-import { EditorContext, LanguageContext } from "./Context";
-import { useLanguageOrThrow } from "../hooks";
+import { keyDown } from "../keymap";
+import { EditorContext } from "./Context";
+import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -76,6 +76,7 @@ const Node = (
   const dispatch: AppDispatch = useDispatch();
   const store: AppStore = useStore();
   const language = useLanguageOrThrow();
+  const search = useSearchOrThrow();
 
   const isErrorFree = () => store.getState().errorId === "";
 
@@ -97,6 +98,7 @@ const Node = (
       node: props.node,
       editor: editor,
       language: language,
+      search: search,
 
       isLocked,
       handleMakeEditable,
@@ -148,7 +150,9 @@ const Node = (
       return;
     }
     const currentNode = ast.getNodeByIdOrThrow(props.node.id);
-    dispatch(activateByNid(editor, currentNode.nid, { allowMove: false }));
+    dispatch(
+      activateByNid(editor, search, currentNode.nid, { allowMove: false })
+    );
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {

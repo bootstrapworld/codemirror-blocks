@@ -2,10 +2,8 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
-import classNames from "classnames";
 import "./Editor.less";
 import { connect, ConnectedProps } from "react-redux";
-import SHARED from "../shared";
 import { activateByNid, setCursor } from "../actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
@@ -29,7 +27,11 @@ import type { Options, API, Language } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
-import { EditorContext, LanguageContext } from "../components/Context";
+import {
+  EditorContext,
+  LanguageContext,
+  SearchContext,
+} from "../components/Context";
 import {
   CodeMirrorFacade,
   CMBEditor,
@@ -212,9 +214,9 @@ export type Search = {
   search: (
     forward: boolean,
     cmbState: RootState,
-    overrideCur: null | Pos
+    overrideCur?: null | Pos
   ) => ASTNode | null;
-  onSearch: (state: null, done: () => void, searchForward: () => void) => void;
+  onSearch: (done: () => void, searchForward: () => void) => void;
   setCursor: (cursor: Pos) => void;
   setCM: (editor: ReadonlyCMBEditor) => void;
 };
@@ -326,6 +328,7 @@ class BlockEditor extends Component<BlockEditorProps> {
             commitChanges(
               getState(),
               dispatch,
+              this.props.search,
               changes,
               this.props.language.parse,
               editor,
@@ -345,6 +348,7 @@ class BlockEditor extends Component<BlockEditorProps> {
             commitChanges(
               getState(),
               dispatch,
+              this.props.search,
               changes,
               this.props.language.parse,
               editor,
@@ -369,6 +373,7 @@ class BlockEditor extends Component<BlockEditorProps> {
           commitChanges(
             getState(),
             dispatch,
+            this.props.search,
             changes,
             this.props.language.parse,
             editor,
@@ -442,9 +447,14 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
     // convert nid to node id, and use activate to generate the action
     else if (activity.type == "SET_FOCUS") {
-      this.props.activateByNid(this.getEditorOrThrow(), activity.nid, {
-        allowMove: true,
-      });
+      this.props.activateByNid(
+        this.getEditorOrThrow(),
+        this.props.search,
+        activity.nid,
+        {
+          allowMove: true,
+        }
+      );
       return;
     } else {
       action = activity;
@@ -544,12 +554,12 @@ class BlockEditor extends Component<BlockEditorProps> {
             typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
           const node = ast.getNodeContaining(cur);
           if (node) {
-            this.props.activateByNid(editor, node.nid, {
+            this.props.activateByNid(editor, this.props.search, node.nid, {
               record: false,
               allowMove: true,
             });
           }
-          this.props.dispatch(setCursor(editor, cur));
+          this.props.dispatch(setCursor(editor, cur, this.props.search));
         }),
       // As long as widget isn't defined, we're good to go
       setBookmark: (pos, opts) => {
@@ -760,11 +770,19 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
     if (select == "start") {
       this.props.dispatch(
-        setCursor(editor, tmpCM.listSelections().pop()?.head ?? null)
+        setCursor(
+          editor,
+          tmpCM.listSelections().pop()?.head ?? null,
+          this.props.search
+        )
       );
     } else {
       this.props.dispatch(
-        setCursor(editor, tmpCM.listSelections().pop()?.anchor ?? null)
+        setCursor(
+          editor,
+          tmpCM.listSelections().pop()?.anchor ?? null,
+          this.props.search
+        )
       );
     }
   }
@@ -784,7 +802,7 @@ class BlockEditor extends Component<BlockEditorProps> {
         // NOTE(Emmanuel): setAfterDOMUpdate so that the CM cursor will not blink
         cancelAfterDOMUpdate(this.pendingTimeout);
         this.pendingTimeout = setAfterDOMUpdate(() =>
-          this.props.activateByNid(editor, null, {
+          this.props.activateByNid(editor, this.props.search, null, {
             allowMove: true,
           })
         );
@@ -793,7 +811,9 @@ class BlockEditor extends Component<BlockEditorProps> {
         // if it was a click, get the cursor from CM
         cancelAfterDOMUpdate(this.pendingTimeout);
         this.pendingTimeout = setAfterDOMUpdate(() =>
-          this.props.dispatch(setCursor(editor, editor.codemirror.getCursor()))
+          this.props.dispatch(
+            setCursor(editor, editor.codemirror.getCursor(), this.props.search)
+          )
         );
         this.mouseUsed = false;
       }
@@ -858,7 +878,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       editor.codemirror.getSelection().length > 0
         ? null
         : editor.codemirror.getCursor();
-    this.props.dispatch(setCursor(editor, cur));
+    this.props.dispatch(setCursor(editor, cur, this.props.search));
   };
 
   componentWillUnmount() {
@@ -866,9 +886,6 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   componentDidMount() {
-    // TODO: pass these with a React Context or something sensible like that.
-    SHARED.search = this.props.search;
-
     this.refreshCM();
   }
 
@@ -898,29 +915,32 @@ class BlockEditor extends Component<BlockEditorProps> {
 
   render() {
     return (
-      <LanguageContext.Provider value={this.props.language}>
-        <DragAndDropEditor
-          options={this.props.codemirrorOptions}
-          className={`blocks-language-${this.props.language.id}`}
-          value={this.props.value}
-          onBeforeChange={this.props.onBeforeChange}
-          onKeyPress={this.handleTopLevelKeyPress}
-          onMouseDown={this.handleTopLevelMouseDown}
-          onFocus={this.handleTopLevelFocus}
-          onPaste={this.handleTopLevelPaste}
-          onKeyDown={(editor, e) => {
-            keyDown(e, {
-              language: this.props.language,
-              editor,
-              isNodeEnv: false,
-              dispatch: this.props.dispatch,
-            });
-          }}
-          onCursorActivity={this.handleTopLevelCursorActivity}
-          editorDidMount={this.handleEditorDidMount}
-        />
-        {this.renderPortals()}
-      </LanguageContext.Provider>
+      <SearchContext.Provider value={this.props.search}>
+        <LanguageContext.Provider value={this.props.language}>
+          <DragAndDropEditor
+            options={this.props.codemirrorOptions}
+            className={`blocks-language-${this.props.language.id}`}
+            value={this.props.value}
+            onBeforeChange={this.props.onBeforeChange}
+            onKeyPress={this.handleTopLevelKeyPress}
+            onMouseDown={this.handleTopLevelMouseDown}
+            onFocus={this.handleTopLevelFocus}
+            onPaste={this.handleTopLevelPaste}
+            onKeyDown={(editor, e) => {
+              keyDown(e, {
+                search: this.props.search,
+                language: this.props.language,
+                editor,
+                isNodeEnv: false,
+                dispatch: this.props.dispatch,
+              });
+            }}
+            onCursorActivity={this.handleTopLevelCursorActivity}
+            editorDidMount={this.handleEditorDidMount}
+          />
+          {this.renderPortals()}
+        </LanguageContext.Provider>
+      </SearchContext.Provider>
     );
   }
 

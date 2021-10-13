@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
-import SHARED from "../shared";
 import NodeEditable from "../components/NodeEditable";
 import { OverwriteTarget } from "../actions";
 import type { AppDispatch } from "../store";
