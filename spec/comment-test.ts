@@ -7,7 +7,6 @@ import {
   mac,
   cmd_ctrl,
   wait,
-  removeEventListeners,
   teardown,
   click,
   mouseDown,

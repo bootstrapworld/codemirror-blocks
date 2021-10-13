@@ -16,7 +16,7 @@ type SearchSettings = {
 };
 
 type Props = {
-  cmbState?: {
+  cmbState: {
     ast: AST;
   };
   setting: SearchSettings;
@@ -72,7 +72,7 @@ const ByBlock: Searcher<SearchSettings, Props> = {
       );
     }
   },
-  search: (cur, settings, cm, { ast, collapsedList }, forward) => {
+  search: (cur, settings, editor, { ast, collapsedList }, forward) => {
     let startingNode = getNodeContainingBiased(cur, ast);
     if (!startingNode) {
       startingNode = forward
@@ -86,7 +86,7 @@ const ByBlock: Searcher<SearchSettings, Props> = {
     }
 
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
-    const next = (node: ASTNode) => (forward ? node.next : node.prev);
+    const next = (node: ASTNode | null) => (forward ? node?.next : node?.prev);
 
     // NOTE(Oak): if this is too slow, consider adding a
     // next/prevSibling attribute to short circuit navigation
@@ -94,8 +94,8 @@ const ByBlock: Searcher<SearchSettings, Props> = {
       (node) => {
         return (
           node &&
-          (collapsedNodeList.some((collapsed) =>
-            ast.isAncestor(collapsed.id, node.id)
+          (collapsedNodeList.some(
+            (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
           ) ||
             node.type !== settings.blockType)
         );

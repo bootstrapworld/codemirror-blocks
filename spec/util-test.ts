@@ -1,6 +1,4 @@
-import { debugLog, minimizeChange } from "../src/utils";
-
-debugLog("Doing util-test.js");
+import { minimizeChange } from "../src/utils";
 
 describe("The src/utils helper functions", function () {
   describe("the minimizeChange function", function () {

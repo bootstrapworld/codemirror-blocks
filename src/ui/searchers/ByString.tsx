@@ -7,6 +7,7 @@ import {
 } from "../../utils";
 import { SearchCursor } from "codemirror";
 import { Searcher } from "./Searcher";
+import { ASTNode } from "../../ast";
 
 /**
  * Returns a query from settings. If the query is a regex but is invalid (indicating
@@ -60,10 +61,10 @@ class SearchOption extends Component<SearchOptionProps> {
   }
 }
 
-// function getResults(settings, cm, {ast, collapsedList}, limit=Infinity) {
+// function getResults(settings, editor, {ast, collapsedList}, limit=Infinity) {
 //   const query = getQueryFromSettings(settings);
 //   const collapsedNodeList = collapsedList.map(ast.getNodeById);
-//   const searchCursor = cm.getSearchCursor(
+//   const searchCursor = editor.getSearchCursor(
 //     query, null, {caseFold: settings.isIgnoreCase}
 //   );
 //   const searchMatches = [];
@@ -104,7 +105,9 @@ const ByString: Searcher<SearchSettings, Props> = {
     }
 
     componentDidMount() {
-      if (this.props.firstTime) this.inputRef.current.select();
+      if (this.props.firstTime) {
+        this.inputRef.current?.select();
+      }
     }
 
     handleChange: React.ChangeEventHandler<
@@ -165,16 +168,16 @@ const ByString: Searcher<SearchSettings, Props> = {
       );
     }
   },
-  search: (cur, settings, cm, state, forward) => {
+  search: (cur, settings, editor, state, forward) => {
     const { ast, collapsedList } = state;
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
     if (settings.searchString === "") {
-      let node = getNodeContainingBiased(cur, ast);
+      let node: ASTNode | null | undefined = getNodeContainingBiased(cur, ast);
       if (node) {
         node = skipCollapsed(
           node,
-          (node) => (forward ? node.next : node.prev),
+          (node) => (forward ? node?.next : node?.prev),
           state
         );
         if (node) return { node, cursor: node.from };
@@ -194,7 +197,7 @@ const ByString: Searcher<SearchSettings, Props> = {
       return null;
     }
 
-    let searchCursor = next(cm.getSearchCursor(query, cur, options));
+    let searchCursor = next(editor.getSearchCursor(query, cur, options));
     if (forward && searchCursor && poscmp(searchCursor.from(), cur) === 0) {
       searchCursor = next(searchCursor);
     }
@@ -204,8 +207,8 @@ const ByString: Searcher<SearchSettings, Props> = {
         const node = getNodeContainingBiased(searchCur.from(), ast);
         return (
           !!node &&
-          collapsedNodeList.some((collapsed) =>
-            ast.isAncestor(collapsed.id, node.id)
+          collapsedNodeList.some(
+            (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
           )
         );
       },

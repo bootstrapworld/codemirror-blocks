@@ -1,6 +1,5 @@
 import objToStableString from "fast-json-stable-stringify";
-import CodeMirror from "codemirror";
-import type { Editor, EditorChange } from "codemirror";
+import type { EditorChange } from "codemirror";
 import type { RootState } from "./reducers";
 import type { AST, ASTNode, Pos, Range } from "./ast";
 
@@ -52,7 +51,7 @@ function markDOMUpdateCompleted(handle: afterDOMUpdateHandle) {
     uncompletedDOMUpdates.size === 0 &&
     afterAllDOMUpdateCallbacks.length > 0
   ) {
-    afterAllDOMUpdateCallbacks.shift().resolve();
+    afterAllDOMUpdateCallbacks.shift()?.resolve();
   }
 }
 
@@ -108,7 +107,9 @@ export function setAfterDOMUpdate(
  *
  * @internal
  */
-export function cancelAfterDOMUpdate(handle: afterDOMUpdateHandle): void {
+export function cancelAfterDOMUpdate(
+  handle: afterDOMUpdateHandle | undefined
+): void {
   if (handle) {
     cancelAnimationFrame(handle.raf);
     if (handle.timeout) {
@@ -175,7 +176,7 @@ export function resetUniqueIdGenerator() {
 // then hash the string so we don't have giant "hashes" eating memory
 // (see https://stackoverflow.com/a/7616484/12026982 and
 // https://anchortagdev.com/consistent-object-hashing-using-stable-stringification/ )
-export function hashObject(obj: Object) {
+export function hashObject(obj: any) {
   const str = objToStableString(obj);
   var hash = 0,
     i,
@@ -191,12 +192,6 @@ export function hashObject(obj: Object) {
 
 // give (a,b), produce -1 if a<b, +1 if a>b, and 0 if a=b
 export function poscmp(a: Pos, b: Pos): number {
-  if (!a) {
-    debugLog("utils:44, hitting null a");
-  }
-  if (!b) {
-    debugLog("utils:44, hitting null b");
-  }
   return a.line - b.line || a.ch - b.ch;
 }
 
@@ -230,11 +225,11 @@ export function srcRangeContains(range: Range, pos: Pos) {
 }
 
 export function skipWhile<T>(
-  skipper: (i: T) => boolean,
+  skipper: (i: T | undefined) => boolean | null | undefined,
   start: T,
-  next: (i: T) => T
+  next: (i: T | undefined) => T | undefined
 ) {
-  let now = start;
+  let now: T | undefined = start;
   while (skipper(now)) {
     now = next(now);
   }
@@ -251,7 +246,7 @@ export function warn(origin: string, message: string) {
   console.warn(`CodeMirrorBlocks - ${origin} - ${message}`);
 }
 
-export function partition<T>(arr: T[], f: (i: T) => boolean) {
+export function partition<T>(arr: Readonly<T[]>, f: (i: T) => boolean) {
   const matched: T[] = [];
   const notMatched: T[] = [];
   for (const e of arr) {
@@ -278,7 +273,7 @@ export function partition<T>(arr: T[], f: (i: T) => boolean) {
 
 export function skipCollapsed(
   node: ASTNode,
-  next: (node: ASTNode) => ASTNode,
+  next: (node: ASTNode | undefined) => ASTNode | undefined,
   state: RootState
 ) {
   const { collapsedList, ast } = state;
@@ -289,8 +284,8 @@ export function skipCollapsed(
   return skipWhile(
     (node) =>
       node &&
-      collapsedNodeList.some((collapsed) =>
-        ast.isAncestor(collapsed.id, node.id)
+      collapsedNodeList.some(
+        (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
       ),
     next(node),
     next
@@ -308,26 +303,18 @@ export function getRoot(node: ASTNode) {
 
 export function getLastVisibleNode(state: RootState) {
   const { collapsedList, ast } = state;
-  const collapsedNodeList = collapsedList.map(ast.getNodeById);
+  const collapsedNodeList = collapsedList.map(ast.getNodeByIdOrThrow);
   const lastNode = ast.getNodeBeforeCur(
     ast.rootNodes[ast.rootNodes.length - 1].to
   );
   return skipWhile(
     (node) =>
-      !!node &&
+      node &&
       node.parent &&
-      collapsedNodeList.some((collapsed) => collapsed.id === node.parent.id),
+      collapsedNodeList.some((collapsed) => collapsed.id === node?.parent?.id),
     lastNode,
-    (n) => n.parent
+    (n) => n?.parent
   );
-}
-
-export function getBeginCursor() {
-  return CodeMirror.Pos(0, 0);
-}
-
-export function getEndCursor(cm: Editor) {
-  return CodeMirror.Pos(cm.lastLine(), cm.getLine(cm.lastLine()).length);
 }
 
 export function posWithinNode(pos: Pos, node: ASTNode) {
@@ -429,11 +416,13 @@ export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
 
 // Minimize a CodeMirror-style change object, by excluding any shared prefix
 // between the old and new text. Mutates part of the change object.
-export function minimizeChange(
-  { from, to, text, removed, origin = undefined }: EditorChange,
-  cm?: Editor
-) {
-  if (!removed) removed = cm.getRange(from, to).split("\n");
+export function minimizeChange({
+  from,
+  to,
+  text,
+  removed,
+  origin = undefined,
+}: EditorChange & { removed: string[] }) {
   // Remove shared lines
   while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
     text.shift();
@@ -476,10 +465,13 @@ export function logResults(
   }
 }
 
-export function validateRanges(ranges: { anchor: Pos; head: Pos }[], ast: AST) {
+export function validateRanges(
+  ranges: { anchor: Pos; head?: Pos }[],
+  ast: AST
+) {
   ranges.forEach(({ anchor, head }) => {
-    const c1 = minpos(anchor, head);
-    const c2 = maxpos(anchor, head);
+    const c1 = head ? minpos(anchor, head) : anchor;
+    const c2 = head ? maxpos(anchor, head) : anchor;
     if (ast.getNodeAt(c1, c2)) return; // if there's a node, it's a valid range
     // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
     const N1 = ast.getNodeContaining(c1); // get node containing c1
@@ -506,31 +498,6 @@ export class BlockError extends Error {
     super(message);
     this.type = type;
     this.data = data;
-  }
-}
-
-export function topmostUndoable(cm: Editor, which: "undo" | "redo") {
-  let arr =
-    which === "undo"
-      ? cm.getDoc().getHistory().done
-      : cm.getDoc().getHistory().undone;
-  for (let i = arr.length - 1; i >= 0; i--) {
-    if (!arr[i].ranges) {
-      return arr[i];
-    }
-  }
-}
-
-export function preambleUndoRedo(
-  state: RootState,
-  cm: Editor,
-  which: "undo" | "redo"
-) {
-  let tU = topmostUndoable(cm, which);
-  if (tU) {
-    say((which === "undo" ? "UNDID" : "REDID") + ": " + tU.undoableAction);
-    state.undoableAction = tU.undoableAction;
-    state.actionFocus = tU.actionFocus;
   }
 }
 

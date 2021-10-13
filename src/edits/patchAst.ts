@@ -48,13 +48,14 @@ export default function unify(oldTree: AST, newTree: AST) {
     const newLeftover = [...newTree.children()].filter((newNode) => {
       if (index[newNode.hash]?.length > 0) {
         const oldNode = index[newNode.hash].pop();
-        copyAllIds(oldNode, newNode);
-        partiallySuccess = true;
-        processed.add(oldNode.id);
-        return false;
-      } else {
-        return true;
+        if (oldNode) {
+          copyAllIds(oldNode, newNode);
+          partiallySuccess = true;
+          processed.add(oldNode.id);
+          return false;
+        }
       }
+      return true;
     });
     const oldLeftover = [...oldTree.children()].filter((oldNode) => {
       return !processed.has(oldNode.id);

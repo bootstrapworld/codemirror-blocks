@@ -3,10 +3,9 @@ import {
   IUnControlledCodeMirror,
   UnControlled as CodeMirror,
 } from "react-codemirror2";
-import SHARED from "../shared";
 import { API } from "./ToggleEditor";
 import { AST } from "../ast";
-import { Editor } from "codemirror";
+import { CodeMirrorFacade } from "../editor";
 
 // CodeMirror APIs that we need to disallow
 // NOTE(Emmanuel): we should probably block 'on' and 'off'...
@@ -25,20 +24,21 @@ const buildAPI = () => {
 };
 
 type Props = {
-  cmOptions?: {};
+  codemirrorOptions?: {};
   value: string;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
-  onMount: (ed: Editor, api: API, ast: AST) => void;
+  onMount: (ed: CodeMirrorFacade, api: API, ast: AST | undefined) => void;
   api?: API;
   passedAST?: AST;
 };
 
 const TextEditor = (props: Props) => {
-  const { onMount, passedAST, value, onBeforeChange, cmOptions } = props;
+  const { onMount, passedAST, value, onBeforeChange, codemirrorOptions } =
+    props;
 
   // build the API on mount
-  const handleEditorDidMount = (ed: Editor) => {
-    onMount(ed, buildAPI(), passedAST);
+  const handleEditorDidMount = (ed: CodeMirror.Editor) => {
+    onMount(new CodeMirrorFacade(ed), buildAPI(), passedAST);
   };
 
   // Build the API for a text editor, restricting APIs that are
@@ -50,7 +50,7 @@ const TextEditor = (props: Props) => {
       <CodeMirror
         value={value}
         onBeforeChange={onBeforeChange}
-        options={cmOptions}
+        options={codemirrorOptions}
         editorDidMount={handleEditorDidMount}
       />
     </div>

@@ -3,14 +3,14 @@ import { useDispatch, useSelector, useStore } from "react-redux";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "react-dnd";
 import classNames from "classnames";
-import { AppDispatch } from "../store";
+import { AppDispatch, AppStore } from "../store";
 import { genUniqueId } from "../utils";
 import { useDropAction, InsertTarget } from "../actions";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { AST } from "../CodeMirrorBlocks";
 import { ItemTypes } from "../dnd";
-import { CMContext } from "./Context";
+import { EditorContext } from "./Context";
 
 // Provided by `Node`
 export const NodeContext = createContext<{ node: ASTNode | null }>({
@@ -52,8 +52,11 @@ export function findAdjacentDropTargetId(child: ASTNode, onLeft: boolean) {
     }
     return null;
   }
-  if (!child.parent) return null;
-  return findDT(child.parent.element);
+  const parentEl = child.parent?.element;
+  if (!parentEl) {
+    return null;
+  }
+  return findDT(parentEl);
 }
 
 const getLocation = ({
@@ -69,7 +72,7 @@ const getLocation = ({
   let targetId = `block-drop-target-${id}`;
   let dropTargetWasFirst = false;
 
-  function findLoc(elem: Element): Pos {
+  function findLoc(elem: Element | null): Pos | null {
     if (elem == null || elem.children == null) {
       // if it's a new element (insertion)
       return null;
@@ -85,12 +88,12 @@ const getLocation = ({
         if (dropTargetWasFirst) {
           // Edge case: the drop target was literally the first thing, so we
           // need to return the `from` of its _next_ sibling. That's this one.
-          return ast.getNodeById(prevNodeId).from;
+          return ast.getNodeByIdOrThrow(prevNodeId).from;
         }
       } else if (sibling.id == targetId) {
         // We've found this drop target! Return the `to` location of the previous ASTNode.
         if (prevNodeId) {
-          return ast.getNodeById(prevNodeId).to;
+          return ast.getNodeByIdOrThrow(prevNodeId).to;
         } else {
           // Edge case: nothing is before the drop target.
           dropTargetWasFirst = true;
@@ -116,8 +119,12 @@ export const DropTarget = (props: { field: string }) => {
   const id = useMemo(genUniqueId, [genUniqueId]);
 
   const node = useContext(NodeContext).node;
-  const cm = useContext(CMContext);
-  const store = useStore();
+  if (!node) {
+    throw new Error("DropTarget can only be rendered from inside a Node");
+  }
+  const editor = useContext(EditorContext);
+
+  const store: AppStore = useStore();
   const isErrorFree = () => store.getState().errorId === "";
 
   // ensure that the field property is set
@@ -146,28 +153,33 @@ field declared. The node was:`,
   const setEditable = (bool: boolean) =>
     dispatch({ type: "SET_EDITABLE", id: id, bool });
 
-  const createTarget = () =>
-    new InsertTarget(
-      node,
-      props.field,
-      getLocation({
-        id: id,
-        ast,
-        context: {
-          field: props.field,
-          node,
-        },
-      })
-    );
+  const createTarget = () => {
+    const pos = getLocation({
+      id: id,
+      ast,
+      context: {
+        field: props.field,
+        node,
+      },
+    });
+    if (!pos) {
+      throw new Error(`Can't determine location for InsertTarget`);
+    }
+    return new InsertTarget(node, props.field, pos);
+  };
 
   const drop = useDropAction();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (item: { id: string; content: string }, monitor) => {
+      if (!editor) {
+        // codemirror hasn't mounted yet, do nothing.
+        return;
+      }
       if (monitor.didDrop()) {
         return;
       }
-      return drop(cm, item, createTarget());
+      return drop(editor, item, createTarget());
     },
     collect: (monitor) => {
       return { isOver: monitor.isOver({ shallow: true }) };
@@ -210,9 +222,13 @@ field declared. The node was:`,
   };
 
   if (isEditable) {
+    if (!editor) {
+      throw new Error("can't edit a DropTarget before codemirror has mounted");
+    }
+
     return (
       <NodeEditable
-        cm={cm}
+        editor={editor}
         target={createTarget()}
         value={value}
         onChange={handleChange}

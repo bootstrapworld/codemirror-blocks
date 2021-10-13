@@ -1,6 +1,6 @@
-import CodeMirror from "codemirror";
 import { ComponentClass } from "react";
 import { ASTNode, Pos } from "../../ast";
+import { ReadonlyCMBEditor } from "../../editor";
 import { RootState } from "../../reducers";
 
 export type Searcher<Setting, Props> = {
@@ -10,8 +10,8 @@ export type Searcher<Setting, Props> = {
   search: (
     cur: Pos,
     settings: Setting,
-    cm: CodeMirror.Editor,
+    editor: ReadonlyCMBEditor,
     state: RootState,
     forward: boolean
-  ) => { node: ASTNode; cursor: Pos };
+  ) => { node: ASTNode; cursor: Pos } | null;
 };

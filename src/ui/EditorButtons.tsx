@@ -31,7 +31,7 @@ export const BugButton = () => {
   const handleBugReport = () => {
     const history = JSON.stringify(getReducerActivities());
     const description = prompt("Briefly describe what happened");
-    logResults(history, "user-generated bug report", description);
+    logResults(history, "user-generated bug report", description || undefined);
   };
 
   return (

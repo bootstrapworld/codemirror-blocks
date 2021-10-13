@@ -1,9 +1,7 @@
-import type CodeMirror from "codemirror";
 import type { AST } from "./ast";
 import type { Options } from "./CodeMirrorBlocks";
 
 type Shared = {
-  cm: CodeMirror.Editor;
   options: Options;
   search: {
     onSearch: Function;

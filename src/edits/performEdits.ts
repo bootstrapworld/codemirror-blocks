@@ -15,10 +15,12 @@ import {
   ClonedASTNode,
 } from "./fakeAstEdits";
 import type { AppDispatch } from "../store";
-import type { Editor, EditorChange } from "codemirror";
+import type { EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback } from "react";
+import { err, Result } from "./result";
+import { CMBEditor, ReadonlyRangedText } from "../editor";
 
 /**
  *
@@ -85,9 +87,6 @@ export function edit_replace(text: string, node: ASTNode): Edit {
   }
 }
 
-export type OnSuccess = (r: { newAST: AST; focusId: string }) => void;
-export type OnError = (e: any) => void;
-
 export type PerformEditState = Pick<
   RootState,
   "ast" | "focusId" | "collapsedList"
@@ -105,36 +104,14 @@ export function usePerformEdits() {
       origin: string,
       edits: Edit[],
       parse: (code: string) => AST,
-      cm: Editor,
-      onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
-      onError: OnError = (e: any) => {},
+      editor: CMBEditor,
       annt?: string
-    ) =>
-      performEdits(
-        state,
-        dispatch,
-        origin,
-        edits,
-        parse,
-        cm,
-        onSuccess,
-        onError,
-        annt
-      ),
+    ) => {
+      return performEdits(state, dispatch, origin, edits, parse, editor, annt);
+    },
     [state.ast, state.focusId, state.collapsedList]
   );
 }
-
-type EditResult =
-  | {
-      successful: true;
-      newAST: AST;
-      focusId: string;
-    }
-  | {
-      successful: false;
-      exception: any;
-    };
 
 /**
  * performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
@@ -151,11 +128,9 @@ export function performEdits(
   origin: string,
   edits: Edit[],
   parse: (code: string) => AST,
-  cm: Editor,
-  onSuccess: OnSuccess = (r: { newAST: AST; focusId: string }) => {},
-  onError: OnError = (e: any) => {},
+  editor: CMBEditor,
   annt?: string
-): EditResult {
+): Result<{ newAST: AST; focusId?: string | undefined }> {
   // Use the focus hint from the last edit provided.
   const lastEdit = edits[edits.length - 1];
   const focusHint = (newAST: AST) => lastEdit.focusHint(newAST);
@@ -178,55 +153,38 @@ export function performEdits(
       }
     } else {
       if (edit.toChangeObject) {
-        changeArray.push(edit.toChangeObject(state.ast, cm));
+        changeArray.push(edit.toChangeObject(state.ast, editor));
       }
     }
   }
-  //debugLog(origin, "edits:", edits, "changeArray:", changeArray); // temporary logging
-  /* More detailed logging:
-  debugLog(`${origin} - edits:`);
-  for (let edit of edits) {
-    debugLog(`    ${edit.toString()}`);
-  }
-  debugLog(`${origin} - text edits:`);
-  for (let edit of changeArray) {
-    debugLog(`    ${edit.from.line}:${edit.from.ch}-${edit.to.line}:${edit.to.ch}="${edit.text}"`);
-  }
-  */
   // Set the origins
   for (const c of changeArray) {
     c.origin = origin;
   }
   // Validate the text edits.
-  let result = speculateChanges(changeArray, parse, cm);
+  let result = speculateChanges(changeArray, parse, editor);
   if (result.successful) {
     try {
       // Perform the text edits, and update the ast.
-      cm.operation(() => {
-        for (let c of changeArray) {
-          cm.replaceRange(c.text, c.from, c.to, c.origin);
-        }
-      });
-      //debugLog('XXX performEdits:110 calling commitChanges');
-      let { newAST, focusId } = commitChanges(
+      editor.applyChanges(changeArray);
+      const changeResult = commitChanges(
         state,
         dispatch,
         changeArray,
         parse,
-        cm,
+        editor,
         false,
         focusHint,
         result.newAST,
         annt
       );
-      onSuccess({ newAST, focusId });
-      return { successful: true, newAST, focusId };
+      return changeResult;
     } catch (e) {
       logResults(getReducerActivities(), e);
+      return err(e);
     }
   } else {
-    onError(result.exception);
-    return { successful: false, exception: result.exception };
+    return err(result.exception);
   }
 }
 
@@ -243,7 +201,7 @@ export interface EditInterface {
   from: Pos;
   to: Pos;
   node?: ASTNode;
-  toChangeObject?(ast: AST, cm: Editor): EditorChange;
+  toChangeObject?(ast: AST, text: ReadonlyRangedText): EditorChange;
   findDescendantNode(ancestor: ASTNode, id: string): ASTNode;
   focusHint(newAST: AST): ASTNode | "fallback";
   toString(): string;
@@ -258,7 +216,7 @@ abstract class Edit implements EditInterface {
     this.to = to;
   }
 
-  toChangeObject?(ast: AST, cm: Editor): EditorChange;
+  toChangeObject?(ast: AST, text: ReadonlyRangedText): EditorChange;
 
   findDescendantNode(ancestor: ASTNode, id: string) {
     for (const node of ancestor.descendants()) {
@@ -266,17 +224,18 @@ abstract class Edit implements EditInterface {
         return node;
       }
     }
-    warn(
-      "performEdits",
-      `Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`
+    throw new Error(
+      `performEdits: Could not find descendant ${id} of ${ancestor.type} ${ancestor.id}`
     );
   }
 
   // The default behavior for most edits
   focusHint(newAST: AST) {
-    return !this.node.prev
-      ? newAST.getFirstRootNode()
-      : newAST.getNodeById(this.node.prev.id) || "fallback";
+    const prev = this.node?.prev;
+    if (prev) {
+      return newAST.getNodeById(prev.id) || "fallback";
+    }
+    return newAST.getFirstRootNode() || "fallback";
   }
 
   toString() {
@@ -321,7 +280,9 @@ class OverwriteEdit extends Edit {
 
   focusHint(newAST: AST) {
     if (this.changeObject) {
-      return newAST.getNodeBeforeCur(changeEnd(this.changeObject));
+      return (
+        newAST.getNodeBeforeCur(changeEnd(this.changeObject)) || "fallback"
+      );
     } else {
       warn(
         "OverwriteEdit",
@@ -343,8 +304,8 @@ class DeleteRootEdit extends Edit {
     this.node = node;
   }
 
-  toChangeObject(_ast: AST, cm: Editor) {
-    const { from, to } = removeWhitespace(this.from, this.to, cm);
+  toChangeObject(_ast: AST, text: ReadonlyRangedText) {
+    const { from, to } = removeWhitespace(this.from, this.to, text);
     return {
       text: [""],
       from,
@@ -376,7 +337,7 @@ class ReplaceRootEdit extends Edit {
   }
 
   focusHint(newAST: AST) {
-    return newAST.getNodeAfterCur(this.from);
+    return newAST.getNodeAfterCur(this.from) || "fallback";
   }
 
   toString() {
@@ -575,9 +536,9 @@ function groupEditsByAncestor(edits: Edit[]) {
  * @internal
  * When deleting a root, don't leave behind excessive whitespace
  */
-function removeWhitespace(from: Pos, to: Pos, cm: Editor) {
-  let prevChar = cm.getRange({ line: from.line, ch: from.ch - 1 }, from);
-  let nextChar = cm.getRange(to, { line: to.line, ch: to.ch + 1 });
+function removeWhitespace(from: Pos, to: Pos, text: ReadonlyRangedText) {
+  let prevChar = text.getRange({ line: from.line, ch: from.ch - 1 }, from);
+  let nextChar = text.getRange(to, { line: to.line, ch: to.ch + 1 });
   if (prevChar == " " && (nextChar == " " || nextChar == "")) {
     // Delete an excess space.
     return { from: { line: from.line, ch: from.ch - 1 }, to: to };

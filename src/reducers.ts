@@ -1,8 +1,8 @@
-import CodeMirror, { Editor } from "codemirror";
+import CodeMirror from "codemirror";
 import type { Action } from "redux";
 import { AST } from "./ast";
-import { debugLog, topmostUndoable } from "./utils";
-import SHARED from "./shared";
+import { ReadonlyCMBEditor } from "./editor";
+import { debugLog, setAfterDOMUpdate } from "./utils";
 
 /**
  * An Activity is a shallow-clone of a reducer action, except that
@@ -12,7 +12,7 @@ import SHARED from "./shared";
 export type Activity =
   | Exclude<AppAction, { ast: AST } | Action<"SET_AST"> | Action<"SET_FOCUS">>
   | (Action<"SET_AST"> & { code: string })
-  | (Action<"SET_FOCUS"> & { nid: number });
+  | (Action<"SET_FOCUS"> & { nid: number | null });
 
 const reducerActivities: Activity[] = [];
 
@@ -35,12 +35,10 @@ function loggerDebug(action: AppAction, ast: AST) {
       activity = { type: action.type, code: ast.toString() };
       break;
     case "SET_FOCUS":
-      if (ast && ast.getNodeById(action.focusId)) {
-        activity = {
-          type: action.type,
-          nid: ast.getNodeById(action.focusId).nid,
-        };
-      }
+      activity = {
+        type: action.type,
+        nid: action.focusId ? ast.getNodeByIdOrThrow(action.focusId).nid : null,
+      };
       break;
     default:
       activity = { ...action };
@@ -49,32 +47,38 @@ function loggerDebug(action: AppAction, ast: AST) {
   reducerActivities.push(activity);
 }
 
-export type Quarantine = [CodeMirror.Position, CodeMirror.Position, string];
+export type Quarantine = Readonly<
+  [CodeMirror.Position, CodeMirror.Position, string]
+>;
 
-export type ActionFocus = { oldFocusNId: number; newFocusNId: number };
+export type ActionFocus = Readonly<{
+  oldFocusNId: number | null;
+  newFocusNId: number | null;
+}>;
 
 export type RootState = {
-  selections: string[];
+  readonly selections: ReadonlyArray<string>;
 
   /**
    * Mapping from node ids to whether or not
    * that node is currently editable.
    */
-  editable: { [nid: string]: boolean };
-  ast: AST | null;
-  focusId: string | null;
-  collapsedList: string[];
-  markedMap: Map<string, CodeMirror.TextMarker>;
-  undoableAction: string | null;
-  actionFocus: ActionFocus | false;
-  errorId: string;
-  cur: CodeMirror.Position | null;
-  quarantine: Quarantine | null;
-  announcer: HTMLElement;
+  readonly editable: Readonly<{ [nid: string]: boolean }>;
+  readonly ast: AST;
+  readonly focusId: string | null;
+  readonly collapsedList: ReadonlyArray<string>;
+  readonly errorId: string;
+  readonly cur: CodeMirror.Position | null;
+  readonly quarantine: Quarantine | null;
+  readonly markedMap: Readonly<{ [key: string]: CodeMirror.TextMarker }>;
+
+  // TODO(pcardune): make these readonly
+  undoableAction: string | undefined;
+  actionFocus: ActionFocus | undefined;
 };
 
 export type AppAction =
-  | (Action<"SET_FOCUS"> & { focusId: string })
+  | (Action<"SET_FOCUS"> & { focusId: string | null })
   | (Action<"SET_AST"> & { ast: AST })
   | (Action<"SET_SELECTIONS"> & { selections: string[] })
   | (Action<"SET_EDITABLE"> & { id: string; bool: boolean })
@@ -83,7 +87,7 @@ export type AppAction =
   | (Action<"UNCOLLAPSE"> & { id: string })
   | Action<"COLLAPSE_ALL">
   | Action<"UNCOLLAPSE_ALL">
-  | (Action<"SET_CURSOR"> & { cur: CodeMirror.Position })
+  | (Action<"SET_CURSOR"> & { cur: CodeMirror.Position | null })
   | Action<"DISABLE_QUARANTINE">
   | (Action<"CHANGE_QUARANTINE"> & { text: string })
   | (Action<"SET_QUARANTINE"> & {
@@ -91,82 +95,69 @@ export type AppAction =
       end: CodeMirror.Position;
       text: string;
     })
-  | (Action<"SET_ANNOUNCER"> & { announcer: HTMLElement })
   | (Action<"ADD_MARK"> & { id: string; mark: CodeMirror.TextMarker })
   | (Action<"CLEAR_MARK"> & { id: string })
-  | (Action<"DO"> & { focusId: string })
-  | (Action<"UNDO"> & { cm: Editor })
-  | (Action<"REDO"> & { cm: Editor })
+  | (Action<"DO"> & { focusId: RootState["focusId"] })
+  | (Action<"UNDO"> & { editor: ReadonlyCMBEditor })
+  | (Action<"REDO"> & { editor: ReadonlyCMBEditor })
   | Action<"RESET_STORE_FOR_TESTING">;
 
-const initialState: RootState = {
+const initialState: () => RootState = () => ({
   selections: [],
   editable: {},
-  ast: null,
+  ast: new AST([]),
   focusId: null,
   collapsedList: [],
-  markedMap: new Map(),
-  undoableAction: null,
-  actionFocus: false,
+  markedMap: {},
+  undoableAction: undefined,
+  actionFocus: undefined,
   errorId: "",
   cur: null,
   quarantine: null,
-  announcer: null,
-};
+});
 
-export const reducer = (state = initialState, action: AppAction) => {
-  debugLog(action);
-  let result = null;
-  let tU;
+function reduce(state = initialState(), action: AppAction): RootState {
   switch (action.type) {
     case "SET_FOCUS":
-      result = { ...state, focusId: action.focusId };
-      break;
+      return { ...state, focusId: action.focusId };
     case "SET_AST":
-      result = {
+      return {
         ...state,
         ast: action.ast,
         collapsedList: state.collapsedList.filter(action.ast.getNodeById),
       };
-      break;
     case "SET_SELECTIONS":
-      result = { ...state, selections: action.selections };
-      break;
+      return { ...state, selections: action.selections };
     case "SET_EDITABLE":
-      result = {
+      return {
         ...state,
         editable: { ...state.editable, [action.id]: action.bool },
       };
-      break;
     case "SET_ERROR_ID":
-      result = { ...state, errorId: action.errorId };
-      break;
+      return { ...state, errorId: action.errorId };
     case "COLLAPSE":
-      result = {
+      return {
         ...state,
         collapsedList: state.collapsedList.concat([action.id]),
       };
-      break;
     case "UNCOLLAPSE":
-      result = {
+      return {
         ...state,
         collapsedList: state.collapsedList.filter((e) => e !== action.id),
       };
-      break;
     case "COLLAPSE_ALL":
-      result = { ...state, collapsedList: [...state.ast.nodeIdMap.keys()] };
-      break;
+      return { ...state, collapsedList: [...state.ast.nodeIdMap.keys()] };
     case "UNCOLLAPSE_ALL":
-      result = { ...state, collapsedList: [] };
-      break;
+      return { ...state, collapsedList: [] };
     case "SET_CURSOR":
-      result = { ...state, cur: action.cur };
-      break;
+      return { ...state, cur: action.cur };
     case "DISABLE_QUARANTINE":
-      result = { ...state, quarantine: null };
-      break;
+      return { ...state, quarantine: null };
     case "CHANGE_QUARANTINE":
-      result = {
+      if (!state.quarantine) {
+        throw new Error(`Can't change quarantine that does not exist`);
+      }
+      return {
         ...state,
         quarantine: [
           state.quarantine[0],
@@ -174,61 +165,64 @@ export const reducer = (state = initialState, action: AppAction) => {
           action.text,
         ] as Quarantine,
       };
-      break;
     case "SET_QUARANTINE":
-      result = {
+      return {
         ...state,
         quarantine: [action.start, action.end, action.text] as Quarantine,
       };
-      break;
-    case "SET_ANNOUNCER":
-      result = { ...state, announcer: action.announcer };
-      break;
     case "ADD_MARK":
-      result = {
+      return {
         ...state,
-        markedMap: state.markedMap.set(action.id, action.mark),
+        markedMap: {
+          ...state.markedMap,
+          [action.id]: action.mark,
+        },
       };
-      break;
-    case "CLEAR_MARK":
-      state.markedMap.delete(action.id);
-      result = { ...state };
-      break;
-
+    case "CLEAR_MARK": {
+      const markedMap = { ...state.markedMap };
+      delete markedMap[action.id];
+      return { ...state, markedMap };
+    }
     case "DO":
-      //debugLog('XXX reducers:100 state.focusId=', state.focusId, 'action.focusId=', action.focusId);
       if (state.focusId !== action.focusId) {
-        //debugLog('XXX reducers:102 updating focusId in state');
-        result = { ...state, focusId: action.focusId };
-      } else {
-        result = { ...state };
+        return { ...state, focusId: action.focusId };
       }
-      break;
-    case "UNDO":
-      tU = topmostUndoable(action.cm, "redo");
-      tU.undoableAction = state.undoableAction;
-      tU.actionFocus = state.actionFocus;
-      state.undoableAction = null;
-      state.actionFocus = null;
-      result = { ...state };
-      break;
-    case "REDO":
-      tU = topmostUndoable(action.cm, "undo");
-      tU.undoableAction = state.undoableAction;
-      tU.actionFocus = state.actionFocus;
-      state.undoableAction = null;
-      state.actionFocus = null;
-      result = { ...state };
-      break;
+      return state;
+    case "UNDO": {
+      const historyItem = action.editor.getTopmostAction("redo");
 
+      historyItem.undoableAction = state.undoableAction;
+      historyItem.actionFocus = state.actionFocus;
+      return {
+        ...state,
+        undoableAction: undefined,
+        actionFocus: undefined,
+      };
+    }
+    case "REDO": {
+      const historyItem = action.editor.getTopmostAction("undo");
+      historyItem.undoableAction = state.undoableAction;
+      historyItem.actionFocus = state.actionFocus;
+      return {
+        ...state,
+        undoableAction: undefined,
+        actionFocus: undefined,
+      };
+    }
     case "RESET_STORE_FOR_TESTING":
-      result = initialState;
-      break;
+      return initialState();
     default:
       debugLog("unprocessed action type=", (action as Action<any>).type);
-      result = state;
+      return state;
   }
+}
 
+export const reducer = (
+  state = initialState(),
+  action: AppAction
+): RootState => {
+  debugLog(action);
+  let result = reduce(state, action);
   loggerDebug(action, result.ast);
   return result;
 };

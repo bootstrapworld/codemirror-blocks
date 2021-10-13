@@ -79,13 +79,30 @@ export type Language = {
   primitivesFn?: () => PrimitiveGroup;
 };
 
-/**
- * TODO(pcardune): create a new instance of the store inside
- * the CodeMirrorBlocks() call, rather than having this
- * global around. And fix the tests that are depending on
- * state leakage to work!
- */
-const store = createAppStore();
+type Props = {
+  api: any;
+  options?: Options;
+  language: Language;
+  codemirrorOptions?: CodeMirror.EditorConfiguration;
+};
+export const CodeMirrorBlocksComponent = ({
+  api,
+  options = {},
+  language,
+  codemirrorOptions = {},
+}: Props) => {
+  return (
+    <Context store={createAppStore()}>
+      <ToggleEditor
+        language={language}
+        initialCode={options.value ?? ""}
+        api={api}
+        options={options}
+        codemirrorOptions={codemirrorOptions}
+      />
+    </Context>
+  );
+};
 
 /**
  * The main entry point for creating a new CodeMirrorBlocks editor.
@@ -94,7 +111,7 @@ const store = createAppStore();
  * @param options configuration options for CodeMirrorBlocks
  * @param language A language definition object that has been previously
  *  registered using {@link Languages.addLanguage}
- * @param cmOptions Any additional [codemirror-specific configuration](https://codemirror.net/doc/manual.html#config)
+ * @param codemirrorOptions Any additional [codemirror-specific configuration](https://codemirror.net/doc/manual.html#config)
  * @returns An object-representation of CMB, allowing for
  *  integration with external (non-react) code
  */
@@ -102,20 +119,16 @@ function CodeMirrorBlocks(
   container: HTMLElement,
   options: Options = {},
   language: Language,
-  cmOptions: CodeMirror.EditorConfiguration = {}
+  codemirrorOptions: CodeMirror.EditorConfiguration = {}
 ): API {
   let api: API = {} as any;
-  let initialCode = options.value;
   ReactDOM.render(
-    <Context store={store}>
-      <ToggleEditor
-        language={language}
-        initialCode={initialCode == null ? "" : initialCode}
-        api={api}
-        options={options}
-        cmOptions={cmOptions}
-      />
-    </Context>,
+    <CodeMirrorBlocksComponent
+      language={language}
+      api={api}
+      options={options}
+      codemirrorOptions={codemirrorOptions}
+    />,
     container
   );
   // See http://reactcommunity.org/react-modal/examples/set_app_element/

@@ -5,11 +5,11 @@ import ContentEditable from "../../src/components/ContentEditable";
 function paste(text: string) {
   const dt = new DataTransfer();
   dt.setData("text", text);
-  fireEvent.paste(document.getSelection().anchorNode, { clipboardData: dt });
+  fireEvent.paste(document.getSelection()!.anchorNode!, { clipboardData: dt });
 }
 
 function select(range: Range) {
-  const selection = document.getSelection();
+  const selection = document.getSelection()!;
   selection.removeAllRanges();
   selection.addRange(range);
   return selection;
@@ -29,7 +29,11 @@ function selectNodeRange(node: Node, start: number, end: number) {
 }
 
 describe("ContentEditable", () => {
-  const ref: React.RefObject<HTMLElement> = React.createRef();
+  const ref: React.Ref<HTMLElement> = React.createRef();
+
+  it("renders a contentEditable span", () => {
+    render(<ContentEditable role="textbox" ref={ref} />);
+  });
 
   it("forwards the ref to the underlying element", () => {
     render(<ContentEditable role="textbox" ref={ref} />);
@@ -44,8 +48,8 @@ describe("ContentEditable", () => {
   it("calls onChange with the current innerHTML for input events", () => {
     const onChange = jest.fn();
     render(<ContentEditable onChange={onChange} ref={ref} />);
-    ref.current.innerHTML = "new content";
-    fireEvent.input(ref.current);
+    ref.current!.innerHTML = "new content";
+    fireEvent.input(ref.current!);
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith("new content");
   });
@@ -56,19 +60,19 @@ describe("ContentEditable", () => {
     });
 
     it("replaces all the selected text with the pasted text", () => {
-      const selection = selectNodeContents(ref.current);
+      const selection = selectNodeContents(ref.current!);
       expect(selection.toString()).toEqual("some text");
 
       paste("pasted content");
       expect(ref.current).toHaveTextContent("pasted content");
 
-      selectNodeRange(ref.current.firstChild, 0, 6);
+      selectNodeRange(ref.current?.firstChild!, 0, 6);
       paste("new");
       expect(ref.current).toHaveTextContent("new content");
     });
 
     it("inserts pasted text at the carat position", () => {
-      selectNodeRange(ref.current.firstChild, 4, 4);
+      selectNodeRange(ref.current?.firstChild!, 4, 4);
       paste(" new");
       expect(ref.current).toHaveTextContent("some new text");
     });
@@ -83,12 +87,12 @@ describe("ContentEditable", () => {
     });
 
     it("prevents the default behavior (adding a newline) when enter is pressed", () => {
-      fireEvent.keyDown(ref.current, { keyCode: 13 });
+      fireEvent.keyDown(ref.current!, { keyCode: 13 });
       expect(keyDownEvent.defaultPrevented).toBe(true);
     });
 
     it("does not prevent default behavior (adding a newline) when shift-enter is pressed", () => {
-      fireEvent.keyDown(ref.current, { keyCode: 13, shiftKey: true });
+      fireEvent.keyDown(ref.current!, { keyCode: 13, shiftKey: true });
       expect(keyDownEvent.defaultPrevented).toBe(false);
     });
   });

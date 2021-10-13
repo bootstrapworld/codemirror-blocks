@@ -1,11 +1,11 @@
-import { Editor } from "codemirror";
 import React from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Provider } from "react-redux";
+import { CMBEditor } from "../editor";
 import type { AppStore } from "../store";
 
-export const CMContext: React.Context<Editor> = React.createContext(null);
+export const EditorContext = React.createContext<CMBEditor | null>(null);
 
 export default function Context(props: {
   store: AppStore;

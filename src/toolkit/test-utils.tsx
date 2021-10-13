@@ -1,7 +1,8 @@
-import CodeMirrorBlocks, { API, Language } from "../CodeMirrorBlocks";
-import { cleanup } from "@testing-library/react";
+import { API, CodeMirrorBlocksComponent, Language } from "../CodeMirrorBlocks";
+import { cleanup, render } from "@testing-library/react";
 import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
 import type { ASTNode } from "../ast";
+import React from "react";
 // pass along all the simulated events
 export * from "./simulate";
 
@@ -29,12 +30,6 @@ export function finishRender() {
   return afterAllDOMUpdates();
 }
 
-export function removeEventListeners() {
-  const oldElem = document.body;
-  const newElem = oldElem.cloneNode(true);
-  oldElem.parentNode.replaceChild(newElem, oldElem);
-}
-
 export function teardown() {
   cancelAllDOMUpdates();
   cleanup();
@@ -50,7 +45,7 @@ export function teardown() {
   const textareas = document.getElementsByTagName("textarea");
   while (textareas[0]) {
     const current = textareas[0];
-    current.parentNode.removeChild(current);
+    current.parentNode!.removeChild(current);
   }
 }
 
@@ -62,8 +57,8 @@ const fixture = `
 
 export type TestContext = {
   cmb: API;
-  activeNode: () => ASTNode;
-  activeAriaId: () => string;
+  activeNode: () => ASTNode | undefined;
+  activeAriaId: () => string | null;
   selectedNodes: () => ASTNode[];
 };
 
@@ -75,13 +70,18 @@ export type TestContext = {
  */
 export async function mountCMB(language: Language): Promise<API> {
   document.body.insertAdjacentHTML("afterbegin", fixture);
-  const container = document.getElementById("cmb-editor");
-  const cmOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
-  const cmb = CodeMirrorBlocks(
-    container,
-    { collapseAll: false, value: "", incrementalRendering: false },
-    language,
-    cmOptions
+  const container = document.getElementById("cmb-editor")!;
+  const codemirrorOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
+
+  const cmb: API = {} as any;
+  render(
+    <CodeMirrorBlocksComponent
+      language={language}
+      api={cmb}
+      options={{ collapseAll: false, value: "", incrementalRendering: false }}
+      codemirrorOptions={codemirrorOptions}
+    />,
+    { container }
   );
   await finishRender();
   cmb.setBlockMode(true);

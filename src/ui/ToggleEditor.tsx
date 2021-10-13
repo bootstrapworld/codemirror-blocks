@@ -1,7 +1,6 @@
 import React, { Component, createRef, ReactElement } from "react";
 import BlockEditor from "./BlockEditor";
 import TextEditor from "./TextEditor";
-import CMBContext from "../components/Context";
 import Dialog from "../components/Dialog";
 import ByString from "./searchers/ByString";
 import ByBlock from "./searchers/ByBlock";
@@ -11,177 +10,11 @@ import { ToggleButton, BugButton } from "./EditorButtons";
 import { mountAnnouncer, say } from "../announcer";
 import TrashCan from "./TrashCan";
 import SHARED from "../shared";
-import type { AST } from "../ast";
+import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
-import CodeMirror, {
-  Editor,
-  MarkerRange,
-  Position,
-  TextMarker,
-} from "codemirror";
-import type { ActionFocus } from "../reducers";
+import CodeMirror, { MarkerRange, Position, TextMarker } from "codemirror";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate, debugLog } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
-
-/**
- * Additional declarations of codemirror apis that are not in @types/codemirror... yet.
- * TODO(pcardune): open a pull request on this file to add these changes:
- * https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/codemirror/index.d.ts
- */
-declare module "codemirror" {
-  interface SelectionOptions {
-    bias?: number;
-    origin?: string;
-    scroll?: boolean;
-  }
-  interface DocOrEditor {
-    /**
-     * Get the currently selected code. Optionally pass a line separator to put between
-     * the lines in the output. When multiple selections are present, they are concatenated
-     * with instances of lineSep in between.
-     */
-    getSelection(lineSep?: string): string;
-
-    /**
-     * Adds a new selection to the existing set of selections, and makes it the primary selection.
-     */
-    addSelection(anchor: CodeMirror.Position, head?: CodeMirror.Position): void;
-
-    /**
-     * Similar to setSelection , but will, if shift is held or the extending flag is set,
-     * move the head of the selection while leaving the anchor at its current place.
-     * pos2 is optional , and can be passed to ensure a region (for example a word or paragraph) will end up selected
-     * (in addition to whatever lies between that region and the current anchor).
-     */
-    extendSelection(
-      from: CodeMirror.Position,
-      to?: CodeMirror.Position,
-      options?: SelectionOptions
-    ): void;
-
-    /**
-     * An equivalent of extendSelection that acts on all selections at once.
-     */
-    extendSelections(
-      heads: CodeMirror.Position[],
-      options?: SelectionOptions
-    ): void;
-
-    /**
-     * Applies the given function to all existing selections, and calls extendSelections on the result.
-     */
-    extendSelectionsBy(
-      f: (range: CodeMirror.Range) => CodeMirror.Position
-    ): void;
-
-    /**
-     * Get the value of the 'extending' flag.
-     */
-    getExtending(): boolean;
-
-    /**
-     * Undo one edit or selection change.
-     */
-    undoSelection(): void;
-
-    /**
-     * Redo one undone edit or selection change.
-     */
-    redoSelection(): void;
-
-    /**
-     * This method can be used to implement search/replace functionality.
-     *  `query`: This can be a regular * expression or a string (only strings will match across lines -
-     *          if they contain newlines).
-     *  `start`: This provides the starting position of the search. It can be a `{line, ch} object,
-     *          or can be left off to default to the start of the document
-     *  `options`: options is an optional object, which can contain the property `caseFold: false`
-     *          to disable case folding when matching a string, or the property `multiline: disable`
-     *          to disable multi-line matching for regular expressions (which may help performance)
-     */
-    getSearchCursor(
-      query: string | RegExp,
-      start?: CodeMirror.Position,
-      options?: { caseFold?: boolean; multiline?: boolean }
-    ): SearchCursor;
-  }
-
-  interface Editor {
-    /**
-     * Allow the given string to be translated with the phrases option.
-     */
-    phrase(text: string): string;
-  }
-}
-
-/**
- * Extensions to the codemirror API that are internal to CMB or
- * not documented in the codemirror docs.
- */
-declare module "codemirror" {
-  /**
-   * Get a human readable name for a given keyboard event key.
-   *
-   * @deprecated This appears in src/edit/legacy.js of the codemirror source, so
-   * presumably that means it's deprecated. See
-   * https://github.com/codemirror/CodeMirror/blob/49a7fc497c85e5b51801b3f439f4bb126e3f226b/src/edit/legacy.js#L47
-   * @param event the keyboard event from which to calculate a human readable name
-   */
-  function keyName(event: KeyboardEvent | React.KeyboardEvent): string;
-
-  interface DocOrEditor {
-    /**
-     * Get a (JSON - serializeable) representation of the undo history.
-     *
-     * @types/codemirror-blocks uses any as the return type. The codemirror docs
-     * do not say anything about the return type, but through our own testing,
-     * it appears to be the following.
-     */
-    getHistory(): { done: HistoryItem[]; undone: HistoryItem[] };
-  }
-
-  /**
-   * The codemirror documentation does not specify the interface of objects
-   * used to track edit history. But we monkey patch those objects anyway
-   * to keep track of additional information.
-   */
-  interface HistoryItem {
-    /**
-     * This is set by codemirror on certain history items but not on others.
-     * We only monkey patch the history items that *do not* contain this property.
-     */
-    ranges?: CodeMirror.Range[];
-
-    /**
-     * The below are custom additions we make to certain history items.
-     * These are applied in the reducer.
-     */
-    undoableAction?: string;
-    actionFocus?: ActionFocus | false;
-  }
-
-  interface TextMarker {
-    /**
-     * Specifies the type of text marker, either one made with markText,
-     * or one made with setBookmark. Ones made with setBookmark have
-     * type == "bookmark". This property is not documented in the codemirror
-     * docs.
-     */
-    type: string;
-
-    /**
-     * Specified the options that were used when the marker was created.
-     * This property is not documented in the codemirror docs but apparently
-     * works.
-     */
-    options: CodeMirror.TextMarkerOptions;
-
-    /**
-     * Stores the ast node id associated with this text marker.
-     */
-    BLOCK_NODE_ID?: string;
-  }
-}
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
@@ -302,15 +135,16 @@ type ToggleEditorAPI = {
 function isTextMarkerRange(
   marker: TextMarker<MarkerRange | Position>
 ): marker is TextMarker<MarkerRange> {
-  return marker.type != "bookmark";
+  return marker.type !== "bookmark";
 }
 
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
+import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
-export type ToggleEditorProps = {
+export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
   initialCode?: string;
-  cmOptions?: CodeMirror.EditorConfiguration;
+  codemirrorOptions?: CodeMirror.EditorConfiguration;
   language: Language;
   options?: Options;
   api?: API;
@@ -324,7 +158,7 @@ type ToggleEditorState = {
   code: string;
   dialog: null | { title: string; content: ReactElement };
   debuggingLog?: ToggleEditorProps["debuggingLog"];
-  cm: Editor | null;
+  editor: CMBEditor | null;
 };
 
 // TODO(pcardune): make this use an actual context? Or maybe redux state?
@@ -349,18 +183,18 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     blockMode: false,
     dialog: null,
     code: "",
-    cm: null,
+    editor: null,
   };
 
   pendingTimeout?: afterDOMUpdateHandle;
 
   static defaultProps = {
     debuggingLog: {},
-    cmOptions: {},
-    code: "",
+    codemirrorOptions: {},
+    initialCode: "",
   };
 
-  cmOptions: CodeMirror.EditorConfiguration;
+  codemirrorOptions: CodeMirror.EditorConfiguration;
   options: Options;
   eventHandlers: Record<string, Function[]>;
   ast?: AST;
@@ -430,12 +264,12 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         } else {
           this.eventHandlers[type].push(fn);
         }
-        this.state.cm.on(type, fn);
+        ed.on(type, fn);
       },
       off: (...args: Parameters<CodeMirror.Editor["on"]>) => {
         const [type, fn] = args;
         this.eventHandlers[type]?.filter((h) => h !== fn);
-        this.state.cm.off(type, fn);
+        ed.off(type, fn);
       },
       runMode: () => {
         throw "runMode is not supported in CodeMirror-blocks";
@@ -451,17 +285,19 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    * API with mode-specific versions, (2) re-assign event handlers,
    * and (3) re-render any TextMarkers.
    */
-  handleEditorMounted = (ed: CodeMirror.Editor, api: API, ast: AST) => {
+  handleEditorMounted = (editor: CodeMirrorFacade, api: API, ast: AST) => {
     // set CM aria attributes, and mount announcer
     const mode = this.state.blockMode ? "Block" : "Text";
-    const wrapper = ed.getWrapperElement();
-    ed.getScrollerElement().setAttribute("role", "presentation");
+    const wrapper = editor.codemirror.getWrapperElement();
+    editor.codemirror.getScrollerElement().setAttribute("role", "presentation");
     wrapper.setAttribute("aria-label", mode + " Editor");
     mountAnnouncer(wrapper);
     // Rebuild the API and assign re-events
-    Object.assign(this.props.api, this.buildAPI(ed), api);
+    Object.assign(this.props.api, this.buildAPI(editor.codemirror), api);
     Object.keys(this.eventHandlers).forEach((type) => {
-      this.eventHandlers[type].forEach((h) => ed.on(type as any, h));
+      this.eventHandlers[type].forEach((h) =>
+        editor.codemirror.on(type as any, h)
+      );
     });
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
@@ -476,61 +312,13 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       );
     });
     // save the editor, and announce completed mode switch
-    SHARED.cm = ed;
-    this.setState({ cm: ed });
+    this.setState({ editor: editor });
     say(mode + " Mode Enabled", 500);
   };
 
-  /**
-   * @internal
-   * Record all TextMarkers that are (a) not bookmarks and (b) still
-   * in the document. This record is used to reconstitute them after
-   * the editor mounts.
-   */
-  recordMarks(oldAST: AST) {
-    this.recordedMarks.clear();
-    this.state.cm
-      .getAllMarks()
-      .filter((m) => !m.BLOCK_NODE_ID && m.type !== "bookmark")
-      .forEach((m: CodeMirror.TextMarker<MarkerRange | Position>) => {
-        if (!isTextMarkerRange(m)) {
-          return;
-        }
-        const marker = m.find();
-        // marker is no longer in the document, bail
-        if (!marker) {
-          return;
-        }
-        let { from: oldFrom, to: oldTo } = marker;
-        const oldNode = oldAST.getNodeAt(oldFrom, oldTo); // find the node for the mark
-        if (!oldNode) {
-          // bail on non-node markers
-          console.error(
-            `Removed TextMarker at [{line:${oldFrom.line}, ch:${oldFrom.ch}},` +
-              `{line:${oldTo.line}, ch:${oldTo.ch}}], since that range does not correspond to a node boundary`
-          );
-          return;
-        }
-        const newNode = this.newAST?.getNodeByNId(oldNode.nid); // use the NID to look node up srcLoc post-PP
-        if (!newNode) {
-          throw new Error("Could not find node " + oldNode.nid + " in new AST");
-        }
-        const { from, to } = newNode;
-        this.recordedMarks.set(oldNode.nid, {
-          from: from,
-          to: to,
-          options: {
-            css: m.css,
-            title: m.title,
-            className: m.className,
-          },
-        });
-      });
-  }
-
   // Teardown any pending timeouts
   componentWillUnmount() {
-    cancelAfterDOMUpdate(this.pendingTimeout);
+    this.pendingTimeout && cancelAfterDOMUpdate(this.pendingTimeout);
   }
 
   /**
@@ -541,19 +329,26 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
    */
   handleToggle = (blockMode: boolean) => {
     this.setState((state) => {
+      if (!state.editor) {
+        // editor hasn't mounted yet, so can't toggle.
+        return state;
+      }
       let oldAst, WS, code;
       try {
         try {
-          let oldCode = this.state.cm.getValue();
+          let oldCode = state.editor.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
           oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
           let message = "";
-          try {
-            message = this.props.language.getExceptionMessage(err);
-          } catch (e) {
-            message = "The parser failed, and the error could not be retrieved";
+          if (this.props.language.getExceptionMessage) {
+            try {
+              message = this.props.language.getExceptionMessage(err);
+            } catch (e) {
+              message =
+                "The parser failed, and the error could not be retrieved";
+            }
           }
           throw message;
         }
@@ -567,7 +362,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           the pretty-printer probably produced invalid code.
           See the JS console for more detailed reporting.`;
         }
-        this.recordMarks(oldAst); // Preserve old TextMarkers
+        this.recordedMarks = recordMarks(state.editor, oldAst, this.newAST); // Preserve old TextMarkers
         return { ...state, blockMode: blockMode, code: code }; // Success! Set the state
       } catch (e) {
         // Failure! Set the dialog state
@@ -593,7 +388,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
             setBlockMode={this.handleToggle}
             blockMode={this.state.blockMode}
           />
-          {this.state.blockMode ? <TrashCan cm={this.state.cm} /> : null}
+          {this.state.blockMode && this.state.editor ? (
+            <TrashCan editor={this.state.editor} />
+          ) : null}
           <div
             className={"col-xs-3 toolbar-pane"}
             tabIndex={-1}
@@ -603,7 +400,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
               primitives={
                 this.props.language.primitivesFn
                   ? this.props.language.primitivesFn()
-                  : null
+                  : undefined
               }
               languageId={this.props.language.id}
               blockMode={this.state.blockMode}
@@ -636,7 +433,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   renderCode() {
     return (
       <TextEditor
-        cmOptions={{ ...defaultCmOptions, ...this.props.cmOptions }}
+        codemirrorOptions={{
+          ...defaultCmOptions,
+          ...this.props.codemirrorOptions,
+        }}
         value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
@@ -653,11 +453,14 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     };
     return (
       <UpgradedBlockEditor
-        cmOptions={{ ...defaultCmOptions, ...this.props.cmOptions }}
+        codemirrorOptions={{
+          ...defaultCmOptions,
+          ...this.props.codemirrorOptions,
+        }}
         value={this.state.code}
         onMount={this.handleEditorMounted}
         api={this.props.api}
-        passedAST={this.ast}
+        passedAST={this.ast || new AST([])}
         // the props below are unique to the BlockEditor
         languageId={this.props.language.id}
         options={{ ...defaultOptions, ...this.props.options }}
@@ -667,3 +470,53 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 }
 
 export default ToggleEditor;
+
+/**
+ * Get all TextMarkers that are (a) not bookmarks and (b) still
+ * in the document. This record is used to reconstitute them after
+ * the editor mounts.
+ */
+function recordMarks(
+  editor: ReadonlyCMBEditor,
+  oldAST: AST,
+  newAST: AST | undefined
+) {
+  const recordedMarks: Map<
+    number,
+    {
+      from: CodeMirror.Position;
+      to: CodeMirror.Position;
+      options: CodeMirror.TextMarkerOptions;
+    }
+  > = new Map();
+  for (const mark of editor.getAllTextMarkers()) {
+    const markRange = mark.find();
+    if (!markRange) {
+      // marker is no longer in the document, bail
+      continue;
+    }
+    const oldNode = oldAST.getNodeAt(markRange.from, markRange.to); // find the node for the mark
+    if (!oldNode) {
+      // bail on non-node markers
+      console.error(
+        `Removed TextMarker at [{line:${markRange.from.line}, ch:${markRange.from.ch}},` +
+          `{line:${markRange.to.line}, ch:${markRange.to.ch}}], since that range does not correspond to a node boundary`
+      );
+      continue;
+    }
+    const newNode = newAST?.getNodeByNId(oldNode.nid); // use the NID to look node up srcLoc post-PP
+    if (!newNode) {
+      throw new Error("Could not find node " + oldNode.nid + " in new AST");
+    }
+    recordedMarks.set(oldNode.nid, {
+      from: newNode.from,
+      to: newNode.to,
+      options: {
+        css: mark.css,
+        title: mark.title,
+        className: mark.className,
+      },
+    });
+  }
+  return recordedMarks;
+}

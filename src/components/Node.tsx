@@ -5,7 +5,7 @@ import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
 import BlockComponent from "./BlockComponent";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
-import { AppDispatch } from "../store";
+import { AppDispatch, AppStore } from "../store";
 import { ItemTypes } from "../dnd";
 import classNames from "classnames";
 import CodeMirror from "codemirror";
@@ -13,13 +13,13 @@ import { GetProps, useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
 import { InputEnv, keyDown } from "../keymap";
-import { CMContext } from "./Context";
+import { EditorContext } from "./Context";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
 
-type NodeState = { editable: boolean; value: string | null };
+type NodeState = { editable: boolean; value?: string | null };
 
 class BlockComponentNode extends BlockComponent<EnhancedNodeProps, NodeState> {
   static defaultProps = {
@@ -27,7 +27,7 @@ class BlockComponentNode extends BlockComponent<EnhancedNodeProps, NodeState> {
     expandable: true,
   };
 
-  state: NodeState = { editable: false, value: null };
+  state: NodeState = { editable: false };
 
   componentDidMount() {
     // For testing
@@ -67,12 +67,13 @@ const Node = (
   const setEditable = (editable: boolean) =>
     props.setState({ ...props.state, editable });
   const value = props.state.value;
-  const setValue = (value: string) => props.setState({ ...props.state, value });
-  const cm = useContext(CMContext);
+  const setValue = (value: string | null) =>
+    props.setState({ ...props.state, value });
+  const editor = useContext(EditorContext);
   const isLocked = () => props.node.isLockedP;
 
   const dispatch: AppDispatch = useDispatch();
-  const store = useStore();
+  const store: AppStore = useStore();
 
   const isErrorFree = () => store.getState().errorId === "";
 
@@ -82,35 +83,40 @@ const Node = (
     }
     props.setState({ ...props.state, editable: true });
     setEditable(true);
-    cm.refresh(); // is this needed?
+    editor?.refresh(); // is this needed?
   };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!editor) {
+      // codemirror hasn't mounted yet, do nothing.
+      return;
+    }
+    keyDown(e, {
+      isNodeEnv: true,
+      node: props.node,
+      editor: editor,
 
-  const keydownEnv: InputEnv = {
-    isNodeEnv: true,
-    node: props.node,
-    cm: cm,
+      isLocked,
+      handleMakeEditable,
+      setLeft: () => {
+        const dropTargetId = findAdjacentDropTargetId(props.node, true);
+        if (dropTargetId) {
+          dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
+        }
+        return !!dropTargetId;
+      },
+      setRight: () => {
+        const dropTargetId = findAdjacentDropTargetId(props.node, false);
+        if (dropTargetId) {
+          dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
+        }
+        return !!dropTargetId;
+      },
+      normallyEditable: Boolean(props.normallyEditable),
+      expandable: props.expandable,
+      isCollapsed: props.isCollapsed,
 
-    isLocked,
-    handleMakeEditable,
-    setLeft: () => {
-      const dropTargetId = findAdjacentDropTargetId(props.node, true);
-      if (dropTargetId) {
-        dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
-      }
-      return !!dropTargetId;
-    },
-    setRight: () => {
-      const dropTargetId = findAdjacentDropTargetId(props.node, false);
-      if (dropTargetId) {
-        dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
-      }
-      return !!dropTargetId;
-    },
-    normallyEditable: props.normallyEditable,
-    expandable: props.expandable,
-    isCollapsed: props.isCollapsed,
-
-    dispatch,
+      dispatch,
+    });
   };
   const handleClick = (e: React.MouseEvent) => {
     const { inToolbar, normallyEditable } = props;
@@ -122,6 +128,10 @@ const Node = (
   // nid can be stale!! Always obtain a fresh copy of the node
   // from getState() before calling activateByNid
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (!editor) {
+      // codemirror hasn't mounted yet, do nothing
+      return;
+    }
     if (props.inToolbar) {
       // do not process toolbar nodes
       return;
@@ -134,8 +144,8 @@ const Node = (
       // TODO(Oak): is this the best way?
       return;
     }
-    const currentNode = ast.getNodeById(props.node.id);
-    dispatch(activateByNid(cm, currentNode.nid, { allowMove: false }));
+    const currentNode = ast.getNodeByIdOrThrow(props.node.id);
+    dispatch(activateByNid(editor, currentNode.nid, { allowMove: false }));
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -151,7 +161,7 @@ const Node = (
   const handleMouseDragRelated = (e: React.MouseEvent<HTMLSpanElement>) => {
     if (e.type === "dragstart") {
       let dt = new DataTransfer();
-      dt.setData("text/plain", (e.target as HTMLSpanElement).textContent);
+      dt.setData("text/plain", (e.target as HTMLSpanElement).textContent || "");
     }
   };
   const { ...passingProps } = props;
@@ -184,11 +194,15 @@ const Node = (
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_item, monitor) => {
+      if (!editor) {
+        // codemirror hasn't mounted yet, do nothing
+        return;
+      }
       if (monitor.didDrop()) {
         return;
       }
-      const node = store.getState().ast.getNodeById(props.node.id);
-      return drop(cm, monitor.getItem(), new ReplaceNodeTarget(node));
+      const node = store.getState().ast.getNodeByIdOrThrow(props.node.id);
+      return drop(editor, monitor.getItem(), new ReplaceNodeTarget(node));
     },
     collect: (monitor) => {
       return {
@@ -210,11 +224,14 @@ const Node = (
   });
 
   if (editable) {
+    if (!editor) {
+      throw new Error("can't edit nodes before codemirror has mounted");
+    }
     // TODO: combine passingProps and contentEditableProps
     return (
       <NodeEditable
         {...passingProps}
-        cm={cm}
+        editor={editor}
         onDisableEditable={() => setEditable(false)}
         extraClasses={classes}
         isInsertion={false}
@@ -234,7 +251,7 @@ const Node = (
     if (props.textMarker?.options.className) {
       classes.push(props.textMarker.options.className);
     }
-    let result = (
+    let result: React.ReactElement | null = (
       <span
         {...contentEditableProps}
         className={classNames(classes)}
@@ -246,14 +263,14 @@ const Node = (
             cssText: props.textMarker ? props.textMarker.options.css : null,
           } as any
         }
-        title={props.textMarker ? props.textMarker.options.title : null}
+        title={props.textMarker?.options.title}
         onMouseDown={handleMouseDown}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onDragStart={handleMouseDragRelated}
         onDragEnd={handleMouseDragRelated}
         onDrop={handleMouseDragRelated}
-        onKeyDown={(e) => keyDown(e, keydownEnv)}
+        onKeyDown={handleKeyDown}
       >
         {props.children}
         {comment && comment.reactElement()}
@@ -278,7 +295,7 @@ const Node = (
 type ReduxProps = {
   isSelected: boolean;
   isCollapsed: boolean;
-  textMarker: CodeMirror.TextMarker;
+  textMarker?: CodeMirror.TextMarker;
 };
 
 export type EnhancedNodeProps = ConnectedNodeProps & ReduxProps;
@@ -300,7 +317,7 @@ const ConnectedNode = (props: ConnectedNodeProps) => {
       return {
         isSelected: selections.includes(node.id),
         isCollapsed: collapsedList.includes(node.id),
-        textMarker: markedMap.get(node.id),
+        textMarker: markedMap[node.id],
       };
     }
   );

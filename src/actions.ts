@@ -9,13 +9,11 @@ import {
   edit_replace,
   edit_overwrite,
   EditInterface,
-  OnSuccess,
-  OnError,
   PerformEditState,
 } from "./edits/performEdits";
 import { AST, ASTNode, Pos } from "./ast";
 import { RootState } from "./reducers";
-import { Editor } from "codemirror";
+import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "./editor";
 import { useDispatch, useStore } from "react-redux";
 
 // All editing actions are defined here.
@@ -23,9 +21,8 @@ import { useDispatch, useStore } from "react-redux";
 // Many actions take a Target as an option. A Target may be constructed by any
 // of the methods on the `Targets` export below.
 //
-// Just about every action can take an optional `onSuccess` and `onError`
-// callback. If the action is successful, it will call `onSuccess(newAST)`. If
-// it fails, it will call `onError(theError)`.
+// Just about every action will return a result object, containing the new ast
+// if successful, or an error value if unssucessful. See the types.
 //
 // The implementation of actions is in the folder `src/edits/`. IT IS PRIVATE,
 // AND FOR THE MOST PART, NO FILE EXCEPT src/actions.js SHOULD NEED TO IMPORT IT.
@@ -57,22 +54,18 @@ export function insert(
   dispatch: AppDispatch,
   text: string,
   target: Target,
-  cm: Editor,
-  onSuccess?: OnSuccess,
-  onError?: OnError,
+  editor: CMBEditor,
   annt?: string
 ) {
   checkTarget(target);
   const edits = [target.toEdit(text)];
-  performEdits(
+  return performEdits(
     state,
     dispatch,
     "cmb:insert",
     edits,
     SHARED.parse,
-    cm,
-    onSuccess,
-    onError,
+    editor,
     annt
   );
 }
@@ -98,7 +91,7 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 export function delete_(
   state: PerformEditState,
   dispatch: AppDispatch,
-  cm: Editor,
+  editor: CMBEditor,
   nodes: ASTNode[],
   editWord?: string
 ) {
@@ -107,7 +100,7 @@ export function delete_(
   }
   nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
   const edits = nodes.map(edit_delete);
-  let annt: string;
+  let annt: string | undefined = undefined;
   if (editWord) {
     annt = createEditAnnouncement(nodes, editWord);
     say(annt);
@@ -118,9 +111,7 @@ export function delete_(
     "cmb:delete-node",
     edits,
     SHARED.parse,
-    cm,
-    undefined,
-    undefined,
+    editor,
     annt
   );
   dispatch({ type: "SET_SELECTIONS", selections: [] });
@@ -154,7 +145,7 @@ export function copy(
   // Copy steals focus. Force it back to the node's DOM element
   // without announcing via activateByNid().
   if (focusId) {
-    ast.getNodeById(focusId).element.focus();
+    ast.getNodeByIdOrThrow(focusId).element?.focus();
   }
 }
 
@@ -163,24 +154,13 @@ export function copy(
 export function paste(
   state: PerformEditState,
   dispatch: AppDispatch,
-  cm: Editor,
-  target: Target,
-  onSuccess?: OnSuccess,
-  onError?: OnError
+  editor: CMBEditor,
+  target: Target
 ) {
   checkTarget(target);
   pasteFromClipboard((text) => {
     const edits = [target.toEdit(text)];
-    performEdits(
-      state,
-      dispatch,
-      "cmb:paste",
-      edits,
-      SHARED.parse,
-      cm,
-      onSuccess,
-      onError
-    );
+    performEdits(state, dispatch, "cmb:paste", edits, SHARED.parse, editor);
     dispatch({ type: "SET_SELECTIONS", selections: [] });
   });
 }
@@ -191,11 +171,9 @@ export function useDropAction() {
   const store: AppStore = useStore();
   const dispatch: AppDispatch = useDispatch();
   return function drop(
-    cm: Editor,
+    editor: CMBEditor,
     src: { id: string; content: string },
-    target: Target,
-    onSuccess?: OnSuccess,
-    onError?: OnError
+    target: Target
   ) {
     checkTarget(target);
     const { id: srcId, content: srcContent } = src;
@@ -214,9 +192,9 @@ export function useDropAction() {
 
     // Assuming it did not come from the toolbar...
     // (1) Delete the text of the dragged node, (2) and save the id and hash
-    if (srcNode !== null) {
-      edits.push(edit_delete(state.ast.getNodeById(srcNode.id)));
-      droppedHash = ast.nodeIdMap.get(srcNode.id).hash;
+    if (srcNode) {
+      edits.push(edit_delete(state.ast.getNodeByIdOrThrow(srcNode.id)));
+      droppedHash = ast.getNodeByIdOrThrow(srcNode.id).hash;
     }
 
     // Insert or replace at the drop location, depending on what we dropped it on.
@@ -228,33 +206,31 @@ export function useDropAction() {
       "cmb:drop-node",
       edits,
       SHARED.parse,
-      cm,
-      onSuccess,
-      onError
+      editor
     );
 
     // Assuming it did not come from the toolbar, and the srcNode was collapsed...
     // Find the matching node in the new tree and collapse it
-    if (srcNode !== null && collapsedList.find((id) => id == srcNode.id)) {
+    if (srcNode && collapsedList.find((id) => id == srcNode.id)) {
       if (editResult.successful) {
-        ast = editResult.newAST;
+        ast = editResult.value.newAST;
       }
       const newNode = [...ast.nodeIdMap.values()].find(
         (n) => n.hash == droppedHash
       );
-      dispatch({ type: "COLLAPSE", id: newNode.id });
+      newNode && dispatch({ type: "COLLAPSE", id: newNode.id });
       dispatch({ type: "UNCOLLAPSE", id: srcNode.id });
     }
   };
 }
 
 // Set the cursor position.
-export function setCursor(cm: Editor, cur: Pos) {
+export function setCursor(editor: CMBEditor, cur: Pos | null) {
   return (dispatch: AppDispatch) => {
-    if (cm && cur) {
-      cm.focus();
+    if (editor && cur) {
+      editor.focus();
       SHARED.search.setCursor(cur);
-      cm.setCursor(cur);
+      editor.setCursor(cur);
     }
     dispatch({ type: "SET_CURSOR", cur });
   };
@@ -262,21 +238,21 @@ export function setCursor(cm: Editor, cur: Pos) {
 
 // Activate the node with the given `nid`.
 export function activateByNid(
-  cm: Editor,
+  editor: ReadonlyCMBEditor,
   nid: number | null,
-  options?: { allowMove?: boolean; record?: boolean }
+  options: { allowMove?: boolean; record?: boolean } = {}
 ) {
   return (dispatch: AppDispatch, getState: () => RootState) => {
     options = { ...options, allowMove: true, record: true };
     let { ast, focusId, collapsedList } = getState();
 
     // If nid is null, try to get it from the focusId
-    if (nid === null) {
-      nid = ast?.getNodeById(focusId)?.nid;
+    if (nid === null && focusId) {
+      nid = ast.getNodeById(focusId)?.nid ?? null;
     }
 
     // Get the new node from the nid
-    const newNode = ast?.getNodeByNId(nid);
+    const newNode = nid === null ? null : ast.getNodeByNId(nid);
 
     // If there is no valid node found in the AST, bail.
     // (This could also mean a node was selected in the toolbar!
@@ -327,24 +303,10 @@ export function activateByNid(
         SHARED.search.setCursor(newNode.from);
       }
       // if this timeout fires after the node has been torn down, don't bother
-      if (newNode.element && cm) {
-        const scroller = cm.getScrollerElement();
-        const wrapper = cm.getWrapperElement();
-
+      if (newNode.element) {
         if (options.allowMove) {
-          cm.scrollIntoView(newNode.from);
-          // get the *actual* bounding rect
-          let { top, bottom, left, right } =
-            newNode.element.getBoundingClientRect();
-          let offset = wrapper.getBoundingClientRect();
-          let scroll = cm.getScrollInfo();
-          top = top + scroll.top - offset.top;
-          bottom = bottom + scroll.top - offset.top;
-          left = left + scroll.left - offset.left;
-          right = right + scroll.left - offset.left;
-          cm.scrollIntoView({ top, bottom, left, right });
+          editor.scrollASTNodeIntoView(newNode);
         }
-        scroller.setAttribute("aria-activedescendent", newNode.element.id);
         newNode.element.focus();
       }
     });
@@ -395,6 +357,7 @@ export abstract class Target {
   from: Pos;
   to: Pos;
   node?: ASTNode;
+
   constructor(from: Pos, to: Pos) {
     this.from = from;
     this.to = to;
@@ -403,7 +366,7 @@ export abstract class Target {
   srcRange() {
     return { from: this.from, to: this.to };
   }
-  abstract getText(ast: AST, cm: Editor): string;
+  abstract getText(ast: AST, text: ReadonlyRangedText): string;
   abstract toEdit(test: string): EditInterface;
 }
 
@@ -430,15 +393,17 @@ export class InsertTarget extends Target {
 
 // Target an ASTNode. This will replace the node.
 export class ReplaceNodeTarget extends Target {
+  node: ASTNode;
+
   constructor(node: ASTNode) {
     const range = node.srcRange();
     super(range.from, range.to);
     this.node = node;
   }
 
-  getText(ast: AST, cm: Editor) {
-    const { from, to } = ast.getNodeById(this.node.id);
-    return cm.getRange(from, to);
+  getText(ast: AST, text: ReadonlyRangedText) {
+    const { from, to } = ast.getNodeByIdOrThrow(this.node.id);
+    return text.getRange(from, to);
   }
 
   toEdit(text: string): EditInterface {
@@ -453,8 +418,8 @@ export class OverwriteTarget extends Target {
     super(from, to);
   }
 
-  getText(ast: AST, cm: Editor) {
-    return cm.getRange(this.from, this.to);
+  getText(ast: AST, text: ReadonlyRangedText) {
+    return text.getRange(this.from, this.to);
   }
 
   toEdit(text: string): EditInterface {

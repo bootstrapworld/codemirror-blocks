@@ -6,10 +6,11 @@ import ContentEditable, {
 import classNames, { Argument as ClassNamesArgument } from "classnames";
 import { insert, activateByNid, Target } from "../actions";
 import { say } from "../announcer";
-import CodeMirror, { Editor } from "codemirror";
+import CodeMirror from "codemirror";
 import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
+import { CMBEditor } from "../editor";
 
 function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
@@ -38,16 +39,16 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
   element.focus();
 }
 
-type Props = ContentEditableProps & {
-  target?: Target;
+type Props = Omit<ContentEditableProps, "value"> & {
+  target: Target;
   children?: React.ReactNode;
   isInsertion: boolean;
   value?: string | null;
-  onChange?: (e: string) => void;
-  onDisableEditable?: () => void;
+  onChange: (e: string | null) => void;
+  onDisableEditable: () => void;
   contentEditableProps?: {};
   extraClasses?: ClassNamesArgument;
-  cm: Editor;
+  editor: CMBEditor;
 };
 
 const NodeEditable = (props: Props) => {
@@ -59,7 +60,7 @@ const NodeEditable = (props: Props) => {
     const isErrored = state.errorId == nodeId;
 
     const initialValue =
-      props.value === null ? props.target.getText(state.ast, props.cm) : "";
+      props.value === null ? props.target.getText(state.ast, props.editor) : "";
 
     return { isErrored, initialValue };
   });
@@ -90,43 +91,40 @@ const NodeEditable = (props: Props) => {
       // we grab the value directly from the content editable element
       // to deal with this issue:
       // https://github.com/lovasoa/react-contenteditable/issues/161
-      const value = element.current.textContent;
+      const value = element.current?.textContent;
       const { focusId, ast } = getState();
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
       if (value === initialValue || !value) {
         props.onDisableEditable();
-        const focusNode = ast.getNodeById(focusId);
+        const focusNode = focusId ? ast.getNodeById(focusId) || null : null;
         const nid = focusNode && focusNode.nid;
-        dispatch(activateByNid(props.cm, nid));
+        dispatch(activateByNid(props.editor, nid));
         return;
       }
 
       let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
-      const onSuccess = () => {
-        dispatch(activateByNid(props.cm, null, { allowMove: false }));
-        props.onChange(null);
-        props.onDisableEditable();
-        setErrorId("");
-        say(annt);
-      };
-      const onError = (e: any) => {
-        console.error(e);
-        setErrorId(target.node ? target.node.id : "editing");
-        if (element.current) {
-          selectElement(element.current, false);
-        }
-      };
-      insert(
+      const result = insert(
         getState(),
         dispatch,
         value,
         target,
-        props.cm,
-        onSuccess,
-        onError,
+        props.editor,
         annt
       );
+      if (result.successful) {
+        dispatch(activateByNid(props.editor, null, { allowMove: false }));
+        props.onChange(null);
+        props.onDisableEditable();
+        setErrorId("");
+        say(annt);
+      } else {
+        console.error(result.exception);
+        setErrorId(target.node ? target.node.id : "editing");
+        if (element.current) {
+          selectElement(element.current, false);
+        }
+      }
     });
   };
 
@@ -135,7 +133,7 @@ const NodeEditable = (props: Props) => {
       case "Enter": {
         // blur the element to trigger handleBlur
         // which will save the edit
-        element.current.blur();
+        element.current?.blur();
         return;
       }
       case "Alt-Q":
@@ -147,7 +145,7 @@ const NodeEditable = (props: Props) => {
         // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
         // and then figure out how to get rid of it altogether.
         setAfterDOMUpdate(() => {
-          dispatch(activateByNid(props.cm, null, { allowMove: false }));
+          dispatch(activateByNid(props.editor, null, { allowMove: false }));
         });
         return;
     }
