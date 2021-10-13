@@ -1,5 +1,9 @@
 import { createStore, applyMiddleware } from "redux";
-import thunk, { ThunkDispatch, ThunkMiddleware } from "redux-thunk";
+import thunk, {
+  ThunkAction,
+  ThunkDispatch,
+  ThunkMiddleware,
+} from "redux-thunk";
 import { reducer } from "./reducers";
 import type { RootState, AppAction } from "./reducers";
 
@@ -18,3 +22,10 @@ export type AppStore = ReturnType<typeof createAppStore>;
  * AppActions and thunks.
  */
 export type AppDispatch = ThunkDispatch<RootState, unknown, AppAction>;
+
+export type AppThunk<ReturnType = void> = ThunkAction<
+  ReturnType,
+  RootState,
+  unknown,
+  AppAction
+>;

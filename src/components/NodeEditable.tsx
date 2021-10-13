@@ -107,15 +107,8 @@ const NodeEditable = (props: Props) => {
       }
 
       let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
-      const result = insert(
-        getState(),
-        dispatch,
-        search,
-        value,
-        target,
-        props.editor,
-        language.parse,
-        annt
+      const result = dispatch(
+        insert(search, value, target, props.editor, language.parse, annt)
       );
       if (result.successful) {
         dispatch(
