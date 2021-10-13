@@ -1,5 +1,5 @@
 import React, { Component, createRef, ReactElement } from "react";
-import BlockEditor from "./BlockEditor";
+import BlockEditor, { Search } from "./BlockEditor";
 import TextEditor from "./TextEditor";
 import Dialog from "../components/Dialog";
 import ByString from "./searchers/ByString";
@@ -9,7 +9,6 @@ import Toolbar from "./Toolbar";
 import { ToggleButton, BugButton } from "./EditorButtons";
 import { mountAnnouncer, say } from "../announcer";
 import TrashCan from "./TrashCan";
-import SHARED from "../shared";
 import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror, { MarkerRange, Position, TextMarker } from "codemirror";
@@ -140,6 +139,7 @@ function isTextMarkerRange(
 
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
+import { SearchContext } from "../components/Context";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
@@ -211,8 +211,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   constructor(props: ToggleEditorProps) {
     super(props);
-
-    SHARED.parse = this.props.language.parse;
 
     this.eventHandlers = {}; // blank event-handler record
 
@@ -378,10 +376,12 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     });
   };
 
+  private search: Search | null = null;
+
   render() {
     const classes = "Editor " + (this.state.blockMode ? "blocks" : "text");
     return (
-      <>
+      <SearchContext.Provider value={this.search}>
         <div className={classes}>
           {this.state.blockMode ? <BugButton /> : null}
           <ToggleButton
@@ -389,7 +389,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
             blockMode={this.state.blockMode}
           />
           {this.state.blockMode && this.state.editor ? (
-            <TrashCan editor={this.state.editor} />
+            <TrashCan
+              language={this.props.language}
+              editor={this.state.editor}
+            />
           ) : null}
           <div
             className={"col-xs-3 toolbar-pane"}
@@ -426,7 +429,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           body={this.state.dialog}
           closeFn={() => this.setState({ dialog: null })}
         />
-      </>
+      </SearchContext.Provider>
     );
   }
 
@@ -453,6 +456,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     };
     return (
       <UpgradedBlockEditor
+        onSearchMounted={(search) => (this.search = search)}
         codemirrorOptions={{
           ...defaultCmOptions,
           ...this.props.codemirrorOptions,
@@ -462,7 +466,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         api={this.props.api}
         passedAST={this.ast || new AST([])}
         // the props below are unique to the BlockEditor
-        languageId={this.props.language.id}
+        language={this.props.language}
         options={{ ...defaultOptions, ...this.props.options }}
       />
     );

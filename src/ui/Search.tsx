@@ -10,6 +10,7 @@ import { GetProps } from "react-redux";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { ReadonlyCMBEditor } from "../editor";
+import { SearchContext } from "../components/Context";
 
 export default function attachSearch(
   Editor: BlockEditorComponentClass,
@@ -20,14 +21,15 @@ export default function attachSearch(
     return acc;
   }, {} as { [index: number]: unknown });
 
-  type Props = GetProps<BlockEditorComponentClass>;
+  type Props = GetProps<BlockEditorComponentClass> & {
+    onSearchMounted: (search: Search) => void;
+  };
 
   type State = {
     showSearchDialog: boolean;
     searchEngine: number | null;
     cursor: null | Pos;
     settings: typeof settings;
-    cmbState: null;
     firstTime: boolean;
     searchForward?: () => void;
   };
@@ -38,7 +40,6 @@ export default function attachSearch(
       searchEngine: null,
       cursor: null,
       settings: settings,
-      cmbState: null,
       firstTime: true,
     };
     editor: ReadonlyCMBEditor;
@@ -53,13 +54,11 @@ export default function attachSearch(
       });
     };
     handleActivateSearch = (
-      state: State["cmbState"],
       done: () => void,
       searchForward: State["searchForward"]
     ) => {
       this.setState({ showSearchDialog: true });
       this.callback = done;
-      this.setState({ cmbState: state });
       this.setState({ searchForward: searchForward });
     };
 
@@ -153,6 +152,15 @@ export default function attachSearch(
       setCM: this.handleSetCM,
     };
 
+    componentDidMount() {
+      // TODO(pcardune): delete this onSearchMounted crud. It's only necessary
+      // because the search object isn't created until this component is mounted
+      // but is required by components higher up in the component tree
+      // (TrashCan via ToggleEditor). If search is really needed everywhere, it
+      // should be instantiated at the top level and not here.
+      this.props.onSearchMounted(this.search);
+    }
+
     render() {
       const tabs = searchModes.map(({ label }, i) => (
         <Tab key={i}>{label}</Tab>
@@ -163,7 +171,6 @@ export default function attachSearch(
             setting={this.state.settings[i]}
             firstTime={this.state.firstTime}
             onChange={this.handleChangeSetting(i)}
-            cmbState={this.state.cmbState}
           />
         </TabPanel>
       ));
@@ -190,9 +197,11 @@ export default function attachSearch(
         </>
       );
 
+      const { onSearchMounted, ...editorProps } = this.props;
+
       return (
-        <>
-          <Editor {...this.props} search={this.search} />
+        <SearchContext.Provider value={this.search}>
+          <Editor {...editorProps} search={this.search} />
 
           <Dialog
             isOpen={this.state.showSearchDialog}
@@ -200,7 +209,7 @@ export default function attachSearch(
             keyUp={this.handleKeyModal}
             body={{ title: "Search Settings", content: content }}
           ></Dialog>
-        </>
+        </SearchContext.Provider>
       );
     }
   };
