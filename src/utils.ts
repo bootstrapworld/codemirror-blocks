@@ -414,8 +414,13 @@ export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
   return { line: line, ch: ch };
 }
 
-// Minimize a CodeMirror-style change object, by excluding any shared prefix
-// between the old and new text. Mutates part of the change object.
+/**
+ * Minimize a CodeMirror-style change object, by excluding any shared prefix
+ * between the old and new text. Mutates part of the change object.
+ *
+ * @param param0
+ * @returns
+ */
 export function minimizeChange({
   from,
   to,
