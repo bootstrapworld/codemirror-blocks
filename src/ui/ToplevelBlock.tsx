@@ -1,8 +1,8 @@
-import React from "react";
+import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import { poscmp, setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
-import BlockComponent from "../components/BlockComponent";
+import shouldBlockComponentUpdate from "../components/shouldBlockComponentUpdate";
 import { ASTNode } from "../ast";
 import { CMBEditor, BlockNodeMarker } from "../editor";
 
@@ -16,7 +16,7 @@ type State = {
   renderPlaceholder: boolean;
 };
 
-export default class ToplevelBlock extends BlockComponent<Props, State> {
+export default class ToplevelBlock extends Component<Props, State> {
   container: HTMLElement;
   mark?: BlockNodeMarker;
   pendingTimeout?: afterDOMUpdateHandle;
@@ -35,7 +35,12 @@ export default class ToplevelBlock extends BlockComponent<Props, State> {
     return (
       poscmp(this.props.node.from, nextProps.node.from) !== 0 || // moved
       poscmp(this.props.node.to, nextProps.node.to) !== 0 || // resized
-      super.shouldComponentUpdate(nextProps, nextState) || // changed
+      shouldBlockComponentUpdate(
+        this.props,
+        this.state,
+        nextProps,
+        nextState
+      ) || // changed
       !document.contains(this.mark?.replacedWith || null)
     ); // removed from DOM
   }
