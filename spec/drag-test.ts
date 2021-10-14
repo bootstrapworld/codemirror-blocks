@@ -17,9 +17,7 @@ import {
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
 import { FunctionApp } from "../src/nodes";
-import { debugLog } from "../src/utils";
-
-debugLog("Doing drag-test.js");
+import { fireEvent } from "@testing-library/react";
 
 describe("Drag and drop", () => {
   let cmb!: API;
@@ -56,15 +54,15 @@ describe("Drag and drop", () => {
     it("should override nodes 1", () => {
       expect(secondArg.element!.textContent).toBe("2");
       let dragEvent = dragstart();
-      firstArg.element!.dispatchEvent(dragEvent);
-      secondArg.element!.dispatchEvent(drop());
+      fireEvent(firstArg.element!, dragEvent);
+      fireEvent(secondArg.element!, drop());
       retrieve();
       expect(secondArg.element!.textContent).toBe("3");
     });
 
     it("should set the right css class on dragenter 2", () => {
       let dragEvent = dragstart();
-      firstArg.element!.dispatchEvent(dragEvent);
+      fireEvent(firstArg.element!, dragEvent);
       let elt = dropTargetEls[3];
       expect(elt.classList).toContain("blocks-drop-target");
       dragenterSeq(elt);
@@ -73,14 +71,14 @@ describe("Drag and drop", () => {
 
     it("should set the right css class on dragenter 2’", () => {
       let dragEvent = dragstart();
-      firstArg.element!.dispatchEvent(dragEvent);
+      fireEvent(firstArg.element!, dragEvent);
       let elt = secondArg;
       dragenterSeq(elt);
     });
 
     it("should set the right css class on dragleave 3", () => {
       let dragEvent = dragstart();
-      firstArg.element!.dispatchEvent(dragEvent);
+      fireEvent(firstArg.element!, dragEvent);
       let elt = dropTargetEls[3];
       dragenter();
       dragleave();
@@ -89,7 +87,7 @@ describe("Drag and drop", () => {
 
     it("should do nothing when dragging over a non-drop target 4", () => {
       let dragEvent = dragstart();
-      firstArg.element!.dispatchEvent(dragEvent);
+      fireEvent(firstArg.element!, dragEvent);
       let nonDT = cmb.getAst().rootNodes[0].element!;
       dragenterSeq(nonDT);
       expect(secondArg.element!.classList).not.toContain("blocks-over-target");
@@ -98,9 +96,9 @@ describe("Drag and drop", () => {
     it("should do nothing when dropping onto a non-drop target 5", () => {
       let initialValue = cmb.getValue();
       let dragEvent = dragstart();
-      firstArg.element!.dispatchEvent(dragEvent);
+      fireEvent(firstArg.element!, dragEvent);
       let nonDT = cmb.getAst().rootNodes[0].element!;
-      nonDT.dispatchEvent(drop());
+      fireEvent(nonDT, drop());
       expect(cmb.getValue()).toBe(initialValue);
     });
 
@@ -108,15 +106,15 @@ describe("Drag and drop", () => {
       expect(dropTargetEls[3].classList).toContain("blocks-drop-target");
       // drag the first arg to the drop target
       let dragEvent = dragstart();
-      firstArg.element!.dispatchEvent(dragEvent);
-      dropTargetEls[3].dispatchEvent(drop());
+      fireEvent(firstArg.element!, dragEvent);
+      fireEvent(dropTargetEls[3], drop());
       expect(cmb.getValue().replace(/\s+/, " ")).toBe("(+ 2 3 1)");
     });
 
     it("should update the text on drop to an earlier point in the file 7", () => {
       let dragEvent = dragstart();
-      secondArg.element!.dispatchEvent(dragEvent);
-      dropTargetEls[0].dispatchEvent(drop());
+      fireEvent(secondArg.element!, dragEvent);
+      fireEvent(dropTargetEls[0], drop());
       expect(cmb.getValue().replace("  ", " ")).toBe("(+ 2 1 3)");
     });
 
@@ -124,14 +122,14 @@ describe("Drag and drop", () => {
     it('should move an item to the top level when dragged outside a node 8', function() {
       debugLog('################ 8');
       let dragEvent = dragstart();
-      secondArg.element.dispatchEvent(dragEvent);
+      fireEvent(secondArg.element,dragEvent);
       let dropEvent = drop(dragEvent.dataTransfer);
       let nodeEl = cmb.getAst().rootNodes[0].element;
       let wrapperEl = cmb.getWrapperElement();
       // These two show up as undefined in monitor.getClientOffset ?
       dropEvent.pageX = wrapperEl.offsetLeft + wrapperEl.offsetWidth - 10;
       dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
-      nodeEl.parentElement.dispatchEvent(dropEvent);
+      fireEvent(nodeEl.parentElement,dropEvent);
       expect(cmb.getValue().replace('  ', ' ')).toBe('(+ 1 3) 2');
       debugLog('%%%%%%%%%%%%%%%% 8');
     });
@@ -139,8 +137,8 @@ describe("Drag and drop", () => {
 
     it("should replace a literal that you drag onto 9", () => {
       let dragEvent = dragstart();
-      firstArg.element!.dispatchEvent(dragEvent);
-      secondArg.element!.dispatchEvent(drop());
+      fireEvent(firstArg.element!, dragEvent);
+      fireEvent(secondArg.element!, drop());
       expect(cmb.getValue().replace(/\s+/, " ")).toBe("(+ 1 3)");
     });
 
@@ -152,11 +150,11 @@ describe("Drag and drop", () => {
       debugLog('################ 10');
       let elt1 = firstArg.element;
       let dragEvent = dragstart();
-      elt1.dispatchEvent(dragEvent);
+      fireEvent(elt1,dragEvent);
       dragEvent.dataTransfer = new DataTransfer();
       dragEvent.dataTransfer.setData('text/plain', '5000');
-      elt1.dispatchEvent(dragend());
-      firstArg.element.dispatchEvent(drop(dragEvent.dataTransfer));
+      fireEvent(elt1,dragend());
+      fireEvent(firstArg.element,drop(dragEvent.dataTransfer));
       //expect(cmb.getValue().replace(/\s+/, ' ')).toBe('(+ 5000 2 3)');
       debugLog('%%%%%%%%%%%%%%%% 10');
     });
@@ -173,7 +171,7 @@ describe("Drag and drop", () => {
       let wrapperEl = cmb.getWrapperElement();
       dropEvent.pageX = wrapperEl.offsetLeft + wrapperEl.offsetWidth - 10;
       dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
-      nodeEl.parentElement.dispatchEvent(dropEvent);
+      fireEvent(nodeEl.parentElement,dropEvent);
       expect(cmb.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
       debugLog('%%%%%%%%%%%%%%%% 11');
     });
@@ -195,8 +193,8 @@ describe("Drag and drop", () => {
       expect(firstRoot.element!.getAttribute("aria-expanded")).toBe("false");
       expect(firstRoot.nid).toBe(0);
       let dragEvent = dragstart();
-      firstRoot.element!.dispatchEvent(dragEvent); // drag to the last droptarget
-      lastDropTarget.dispatchEvent(drop());
+      fireEvent(firstRoot.element!, dragEvent); // drag to the last droptarget
+      fireEvent(lastDropTarget, drop());
       await finishRender();
       retrieve();
       let newFirstRoot = cmb.getAst().rootNodes[0] as FunctionApp;
@@ -231,16 +229,16 @@ describe("Drag and drop", () => {
     // TODO(pcardune) reenable
     xit("regression test for unstable block IDs", async () => {
       let dragEvent = dragstart();
-      source.element!.dispatchEvent(dragEvent); // drag to the last droptarget
-      target1.dispatchEvent(drop());
+      fireEvent(source.element!, dragEvent); // drag to the last droptarget
+      fireEvent(target1, drop());
       await finishRender();
     });
 
     // TODO(pcardune) reenable
     xit("regression test for empty identifierLists returning a null location", async () => {
       let dragEvent = dragstart();
-      source.element!.dispatchEvent(dragEvent); // drag to the last droptarget
-      target2.dispatchEvent(drop());
+      fireEvent(source.element!, dragEvent); // drag to the last droptarget
+      fireEvent(target2, drop());
       await finishRender();
     });
   });
