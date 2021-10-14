@@ -152,7 +152,7 @@ export class AST {
         node.nid = nid++;
         if (lastNode) {
           node.prevId = lastNode.id;
-          lastNode.next = node;
+          lastNode.nextId = node.id;
         }
         this.nodeIdMap.set(node.id, node);
         this.nodeNIdMap.set(node.nid, node);
@@ -187,7 +187,7 @@ export class AST {
       "level",
       "nid",
       "prevId",
-      "next",
+      "nextId",
       "hash",
       "aria-setsize",
       "aria-posinset",
@@ -302,7 +302,12 @@ export class AST {
    * getNodeAfter : ASTNode -> ASTNode
    * Returns the next node or null
    */
-  getNodeAfter = (selection: ASTNode) => selection.next || null;
+  getNodeAfter = (selection: ASTNode) => {
+    if (selection.nextId) {
+      return this.getNodeByIdOrThrow(selection.nextId);
+    }
+    return null;
+  };
 
   /**
    * getNodeBefore : ASTNode -> ASTNode
@@ -530,7 +535,7 @@ export abstract class ASTNode<
    */
   parent?: ASTNode;
   prevId?: string;
-  next?: ASTNode;
+  nextId?: string;
   options: Opt;
 
   /**

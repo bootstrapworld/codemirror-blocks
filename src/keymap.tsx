@@ -240,7 +240,8 @@ const commandMap: {
   "Next Block": (env, e) => (dispatch, getState) => {
     e.preventDefault();
     if (env.isNodeEnv) {
-      let next = env.fastSkip((node) => node.next);
+      const { ast } = getState();
+      let next = env.fastSkip((node) => ast.getNodeAfter(node) || undefined);
       if (next) {
         return dispatch(activateByNid(env.editor, env.search, next.nid));
       } else {
@@ -289,16 +290,19 @@ const commandMap: {
     }
   },
 
-  "Expand or Focus 1st Child": (env, e) => (dispatch) => {
+  "Expand or Focus 1st Child": (env, e) => (dispatch, getState) => {
     if (!env.isNodeEnv) {
       return;
     }
     const node = env.node;
+    const { ast } = getState();
     e.preventDefault();
     if (env.expandable && env.isCollapsed && !env.isLocked()) {
       dispatch({ type: "UNCOLLAPSE", id: node.id });
-    } else if (node.next?.parent === node) {
-      dispatch(activateByNid(env.editor, env.search, node.next.nid));
+    } else if (ast.getNodeAfter(node)?.parent === node) {
+      dispatch(
+        activateByNid(env.editor, env.search, ast.getNodeAfter(node)!.nid)
+      );
     } else {
       playSound(BEEP);
     }

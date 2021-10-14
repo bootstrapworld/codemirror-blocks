@@ -87,7 +87,7 @@ const ByBlock: Searcher<SearchSettings, Props> = {
 
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
     const next = (node: ASTNode | null) =>
-      forward ? node?.next : node && ast.getNodeBefore(node);
+      node && (forward ? ast.getNodeAfter(node) : ast.getNodeBefore(node));
 
     // NOTE(Oak): if this is too slow, consider adding a
     // next/prevSibling attribute to short circuit navigation
