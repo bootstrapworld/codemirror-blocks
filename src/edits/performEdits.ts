@@ -70,21 +70,27 @@ export function edit_overwrite(
   return new OverwriteEdit(text, from, to);
 }
 
-export function edit_delete(node: ASTNode): EditInterface {
-  if (node.parent) {
-    return new DeleteChildEdit(node, node.parent);
+export function edit_delete(ast: AST, node: ASTNode): EditInterface {
+  const parent = ast.getNodeParent(node);
+  if (parent) {
+    return new DeleteChildEdit(node, parent);
   } else {
     return new DeleteRootEdit(node);
   }
 }
 
-export function edit_replace(text: string, node: ASTNode): EditInterface {
-  if (node.parent) {
+export function edit_replace(
+  text: string,
+  ast: AST,
+  node: ASTNode
+): EditInterface {
+  const parent = ast.getNodeParent(node);
+  if (parent) {
     // if the text is the empty string, return a Deletion instead
     if (text === "") {
-      return new DeleteChildEdit(node, node.parent);
+      return new DeleteChildEdit(node, parent);
     }
-    return new ReplaceChildEdit(text, node, node.parent);
+    return new ReplaceChildEdit(text, node, parent);
   } else {
     return new ReplaceRootEdit(text, node);
   }

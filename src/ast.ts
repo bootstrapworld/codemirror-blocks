@@ -145,7 +145,7 @@ export class AST {
         if (node.id === undefined) {
           node.id = genUniqueId();
         }
-        node.parent = parent;
+        node.parentId = parent?.id;
         node.level = level;
         node["aria-setsize"] = nodes.length;
         node["aria-posinset"] = i + 1;
@@ -183,7 +183,7 @@ export class AST {
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames = [
       "id",
-      "parent",
+      "parentId",
       "level",
       "nid",
       "prevId",
@@ -285,15 +285,11 @@ export class AST {
    * throws an exception if either isn't found
    */
   isAncestor = (uid: string, vid: string) => {
-    let v = this.getNodeById(vid);
-    const u = this.getNodeById(uid);
-    if (!u) throw new Error(`The nodeId ${uid} was not found`);
-    if (!v) throw new Error(`The nodeId ${vid} was not found`);
-    if (v) {
-      v = v.parent;
-    }
-    while (v && u && v.level > u.level) {
-      v = v.parent;
+    let v: ASTNode | null = this.getNodeByIdOrThrow(vid);
+    const u = this.getNodeByIdOrThrow(uid);
+    v = this.getNodeParent(v);
+    while (v && v.level > u.level) {
+      v = this.getNodeParent(v);
     }
     return u === v;
   };
@@ -414,10 +410,10 @@ export class AST {
 
   /**
    * getNodeParent : ASTNode -> ASTNode | Boolean
-   * return the parent or false
+   * return the parent or null
    */
   getNodeParent = (node: ASTNode) => {
-    return node.parent || false;
+    return node.parentId ? this.getNodeByIdOrThrow(node.parentId) : null;
   };
 
   /**
@@ -533,7 +529,7 @@ export abstract class ASTNode<
    * the options object always contains the aria-label, but can also
    * include other values
    */
-  parent?: ASTNode;
+  parentId?: string;
   prevId?: string;
   nextId?: string;
   options: Opt;

@@ -51,18 +51,20 @@ import { Result } from "./edits/result";
 
 // Insert `text` at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export const insert = (
-  search: Search,
-  text: string,
-  target: Target,
-  editor: CMBEditor,
-  parse: Language["parse"],
-  annt?: string
-): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> => {
-  checkTarget(target);
-  const edits = [target.toEdit(text)];
-  return performEdits(search, edits, parse, editor, annt);
-};
+export const insert =
+  (
+    search: Search,
+    text: string,
+    target: Target,
+    editor: CMBEditor,
+    parse: Language["parse"],
+    annt?: string
+  ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
+  (dispatch, getState) => {
+    checkTarget(target);
+    const edits = [target.toEdit(getState().ast, text)];
+    return dispatch(performEdits(search, edits, parse, editor, annt));
+  };
 
 /**
  * Generates a description of an edit involving certain nodes
@@ -95,7 +97,8 @@ export const delete_ =
       return;
     }
     nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
-    const edits = nodes.map(edit_delete);
+    const { ast } = getState();
+    const edits = nodes.map((node) => edit_delete(ast, node));
     let annt: string | undefined = undefined;
     if (editWord) {
       annt = createEditAnnouncement(nodes, editWord);
@@ -149,7 +152,7 @@ export const paste =
   (dispatch, getState) => {
     checkTarget(target);
     pasteFromClipboard((text) => {
-      const edits = [target.toEdit(text)];
+      const edits = [target.toEdit(getState().ast, text)];
       dispatch(performEdits(search, edits, parse, editor));
       dispatch({ type: "SET_SELECTIONS", selections: [] });
     });
@@ -185,12 +188,14 @@ export function useDropAction() {
     // Assuming it did not come from the toolbar...
     // (1) Delete the text of the dragged node, (2) and save the id and hash
     if (srcNode) {
-      edits.push(edit_delete(state.ast.getNodeByIdOrThrow(srcNode.id)));
+      edits.push(
+        edit_delete(state.ast, state.ast.getNodeByIdOrThrow(srcNode.id))
+      );
       droppedHash = ast.getNodeByIdOrThrow(srcNode.id).hash;
     }
 
     // Insert or replace at the drop location, depending on what we dropped it on.
-    edits.push(target.toEdit(content));
+    edits.push(target.toEdit(ast, content));
     // Perform the edits.
     const editResult = dispatch(
       performEdits(search, edits, language.parse, editor)
@@ -357,7 +362,7 @@ export abstract class Target {
     return { from: this.from, to: this.to };
   }
   abstract getText(ast: AST, text: ReadonlyRangedText): string;
-  abstract toEdit(test: string): EditInterface;
+  abstract toEdit(ast: AST, text: string): EditInterface;
 }
 
 // Insert at a location inside the AST.
@@ -376,7 +381,7 @@ export class InsertTarget extends Target {
     return "";
   }
 
-  toEdit(text: string): EditInterface {
+  toEdit(ast: AST, text: string): EditInterface {
     return edit_insert(text, this.parent, this.field, this.pos);
   }
 }
@@ -396,8 +401,8 @@ export class ReplaceNodeTarget extends Target {
     return text.getRange(from, to);
   }
 
-  toEdit(text: string): EditInterface {
-    return edit_replace(text, this.node);
+  toEdit(ast: AST, text: string): EditInterface {
+    return edit_replace(text, ast, this.node);
   }
 }
 
@@ -412,7 +417,7 @@ export class OverwriteTarget extends Target {
     return text.getRange(this.from, this.to);
   }
 
-  toEdit(text: string): EditInterface {
+  toEdit(ast: AST, text: string): EditInterface {
     return edit_overwrite(text, this.from, this.to);
   }
 }

@@ -96,13 +96,20 @@ const setFocus =
     if (focusHint == -1) {
       return;
     }
-    let { collapsedList } = getState();
-    let focusNode = focusHint ? focusHint(newAST) : "fallback";
-    if (focusNode === "fallback") {
-      focusNode = computeFocusNodeFromChanges(editor, changes, newAST);
-    }
+    const { collapsedList } = getState();
+    const focusNodeOrFallback = focusHint ? focusHint(newAST) : "fallback";
+    let focusNode =
+      focusNodeOrFallback === "fallback"
+        ? computeFocusNodeFromChanges(editor, changes, newAST)
+        : focusNodeOrFallback;
     let focusNId = focusNode ? focusNode.nid : null;
-    while (focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
+    while (focusNode) {
+      const parent = newAST.getNodeParent(focusNode);
+      if (parent) {
+        focusNode = parent;
+      } else {
+        break;
+      }
       if (collapsedList.includes(focusNode.id)) {
         focusNId = focusNode.nid;
       }
