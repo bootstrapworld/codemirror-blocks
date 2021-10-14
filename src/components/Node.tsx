@@ -1,4 +1,10 @@
-import React, { Component, HTMLAttributes, useContext } from "react";
+import React, {
+  Component,
+  HTMLAttributes,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { ASTNode } from "../ast";
 import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
@@ -20,65 +26,21 @@ import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
 
-type NodeState = { editable: boolean; value?: string | null };
-
-class BlockComponentNode extends Component<EnhancedNodeProps, NodeState> {
-  static defaultProps = {
-    normallyEditable: false,
-    expandable: true,
-  };
-
-  state: NodeState = { editable: false };
-
-  shouldComponentUpdate(newProps: EnhancedNodeProps, newState: NodeState) {
-    return shouldBlockComponentUpdate(
-      this.props,
-      this.state,
-      newProps,
-      newState
-    );
-  }
-
-  componentDidMount() {
-    // For testing
-    this.props.node.isEditable = () => this.state.editable;
-  }
-
-  // if its a top level node (ie - it has a CM mark on the node) AND
-  // its isCollapsed property has changed, call mark.changed() to
-  // tell CodeMirror that the widget's height may have changed
-  componentDidUpdate(prevProps: EnhancedNodeProps) {
-    if (
-      this.props.node.mark &&
-      prevProps.isCollapsed !== this.props.isCollapsed
-    ) {
-      this.props.node.mark.changed();
+const Node = ({ expandable = true, ...props }: EnhancedNodeProps) => {
+  useEffect(() => {
+    // if its a top level node (ie - it has a CM mark on the node) AND
+    // its isCollapsed property has changed, call mark.changed() to
+    // tell CodeMirror that the widget's height may have changed
+    // TODO(pcardune): Does this logic perhaps belong in ToplevelBlock?
+    if (props.node.mark) {
+      props.node.mark.changed();
     }
-  }
+  }, [props.isCollapsed, props.node.mark]);
 
-  render() {
-    return (
-      <Node
-        {...this.props}
-        state={this.state}
-        setState={(s) => this.setState(s)}
-      />
-    );
-  }
-}
+  const [editable, setEditable] = useState(false);
+  props.node.isEditable = () => editable;
 
-const Node = (
-  props: EnhancedNodeProps & {
-    state: NodeState;
-    setState: (s: NodeState) => void;
-  }
-) => {
-  const editable = props.state.editable;
-  const setEditable = (editable: boolean) =>
-    props.setState({ ...props.state, editable });
-  const value = props.state.value;
-  const setValue = (value: string | null) =>
-    props.setState({ ...props.state, value });
+  const [value, setValue] = useState<string | null | undefined>();
   const editor = useContext(EditorContext);
   const isLocked = () => props.node.isLockedP;
 
@@ -93,7 +55,6 @@ const Node = (
     if (!isErrorFree() || props.inToolbar) {
       return;
     }
-    props.setState({ ...props.state, editable: true });
     setEditable(true);
     editor?.refresh(); // is this needed?
   };
@@ -127,7 +88,7 @@ const Node = (
           return !!dropTargetId;
         },
         normallyEditable: Boolean(props.normallyEditable),
-        expandable: props.expandable,
+        expandable,
         isCollapsed: props.isCollapsed,
       })
     );
@@ -195,8 +156,7 @@ const Node = (
       comment ? comment.id : ""
     }`,
     "aria-disabled": locked ? "true" : undefined,
-    "aria-expanded":
-      props.expandable && !locked ? !props.isCollapsed : undefined,
+    "aria-expanded": expandable && !locked ? !props.isCollapsed : undefined,
     "aria-setsize": props.node["aria-setsize"],
     "aria-posinset": props.node["aria-posinset"],
     "aria-level": props.node.level,
@@ -337,7 +297,7 @@ const ConnectedNode = (props: ConnectedNodeProps) => {
       };
     }
   );
-  return <BlockComponentNode {...stateProps} {...props} />;
+  return <Node {...stateProps} {...props} />;
 };
 
 export type NodeProps = GetProps<typeof ConnectedNode>;
