@@ -47,6 +47,8 @@ const descDepth = 1;
  */
 export const prettyPrintingWidth = 80;
 
+type Edges = { parentId?: string; nextId?: string; prevId?: string };
+
 /**
  * This is the the *Abstract Syntax Tree*. Parser implementations
  * are required to spit out an `AST` instance.
@@ -55,6 +57,11 @@ export class AST {
   readonly rootNodes: ASTNode[];
   readonly nodeIdMap: Map<string, ASTNode>;
   readonly nodeNIdMap: Map<number, ASTNode>;
+
+  /**
+   * Mapping from node id to parent node id
+   */
+  private edgeIdMap: Record<string, Readonly<Edges>> = {};
 
   constructor(rootNodes: ASTNode[], annotate = true) {
     // the `rootNodes` attribute simply contains a list of the top level nodes
@@ -145,14 +152,20 @@ export class AST {
         if (node.id === undefined) {
           node.id = genUniqueId();
         }
-        node.parentId = parent?.id;
+        const edges: Edges = {
+          parentId: parent?.id,
+        };
+        this.edgeIdMap[node.id] = edges;
         node.level = level;
         node["aria-setsize"] = nodes.length;
         node["aria-posinset"] = i + 1;
         node.nid = nid++;
         if (lastNode) {
           node.prevId = lastNode.id;
-          lastNode.nextId = node.id;
+          this.edgeIdMap[lastNode.id] = {
+            ...this.edgeIdMap[lastNode.id],
+            nextId: node.id,
+          };
         }
         this.nodeIdMap.set(node.id, node);
         this.nodeNIdMap.set(node.nid, node);
@@ -183,11 +196,9 @@ export class AST {
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames = [
       "id",
-      "parentId",
       "level",
       "nid",
       "prevId",
-      "nextId",
       "hash",
       "aria-setsize",
       "aria-posinset",
@@ -299,8 +310,9 @@ export class AST {
    * Returns the next node or null
    */
   getNodeAfter = (selection: ASTNode) => {
-    if (selection.nextId) {
-      return this.getNodeByIdOrThrow(selection.nextId);
+    const nextId = this.edgeIdMap[selection.id].nextId;
+    if (nextId) {
+      return this.getNodeByIdOrThrow(nextId);
     }
     return null;
   };
@@ -413,7 +425,8 @@ export class AST {
    * return the parent or null
    */
   getNodeParent = (node: ASTNode) => {
-    return node.parentId ? this.getNodeByIdOrThrow(node.parentId) : null;
+    const parentId = this.edgeIdMap[node.id].parentId;
+    return parentId ? this.getNodeByIdOrThrow(parentId) : null;
   };
 
   /**
@@ -529,9 +542,7 @@ export abstract class ASTNode<
    * the options object always contains the aria-label, but can also
    * include other values
    */
-  parentId?: string;
   prevId?: string;
-  nextId?: string;
   options: Opt;
 
   /**
