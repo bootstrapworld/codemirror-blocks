@@ -218,7 +218,9 @@ const commandMap: {
     const state = getState();
     e.preventDefault();
     if (env.isNodeEnv) {
-      let prev = env.fastSkip((node) => node.prev);
+      const prev = env.fastSkip(
+        (node) => state.ast.getNodeBefore(node) || undefined
+      );
       if (prev) {
         return dispatch(activateByNid(env.editor, env.search, prev.nid));
       } else {

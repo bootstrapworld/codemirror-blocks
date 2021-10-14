@@ -151,7 +151,7 @@ export class AST {
         node["aria-posinset"] = i + 1;
         node.nid = nid++;
         if (lastNode) {
-          node.prev = lastNode;
+          node.prevId = lastNode.id;
           lastNode.next = node;
         }
         this.nodeIdMap.set(node.id, node);
@@ -186,7 +186,7 @@ export class AST {
       "parent",
       "level",
       "nid",
-      "prev",
+      "prevId",
       "next",
       "hash",
       "aria-setsize",
@@ -308,7 +308,12 @@ export class AST {
    * getNodeBefore : ASTNode -> ASTNode
    * Returns the previous node or null
    */
-  getNodeBefore = (selection: ASTNode) => selection.prev || null;
+  getNodeBefore = (selection: ASTNode) => {
+    if (selection.prevId) {
+      return this.getNodeByIdOrThrow(selection.prevId);
+    }
+    return null;
+  };
 
   // NOTE: If we have x|y where | indicates the cursor, the position of the cursor
   // is the same as the position of y's `from`. Hence, going forward requires ">= 0"
@@ -524,7 +529,7 @@ export abstract class ASTNode<
    * include other values
    */
   parent?: ASTNode;
-  prev?: ASTNode;
+  prevId?: string;
   next?: ASTNode;
   options: Opt;
 

@@ -274,9 +274,9 @@ abstract class Edit implements EditInterface {
 
   // The default behavior for most edits
   focusHint(newAST: AST) {
-    const prev = this.node?.prev;
-    if (prev) {
-      return newAST.getNodeById(prev.id) || "fallback";
+    const prevId = this.node?.prevId;
+    if (prevId) {
+      return newAST.getNodeById(prevId) || "fallback";
     }
     return newAST.getFirstRootNode() || "fallback";
   }
