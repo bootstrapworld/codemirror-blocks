@@ -1,9 +1,9 @@
-import React, { HTMLAttributes, useContext } from "react";
+import React, { Component, HTMLAttributes, useContext } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { ASTNode } from "../ast";
 import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
-import BlockComponent from "./BlockComponent";
+import shouldBlockComponentUpdate from "./shouldBlockComponentUpdate";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch, AppStore } from "../store";
 import { ItemTypes } from "../dnd";
@@ -22,13 +22,22 @@ import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
 
 type NodeState = { editable: boolean; value?: string | null };
 
-class BlockComponentNode extends BlockComponent<EnhancedNodeProps, NodeState> {
+class BlockComponentNode extends Component<EnhancedNodeProps, NodeState> {
   static defaultProps = {
     normallyEditable: false,
     expandable: true,
   };
 
   state: NodeState = { editable: false };
+
+  shouldComponentUpdate(newProps: EnhancedNodeProps, newState: NodeState) {
+    return shouldBlockComponentUpdate(
+      this.props,
+      this.state,
+      newProps,
+      newState
+    );
+  }
 
   componentDidMount() {
     // For testing

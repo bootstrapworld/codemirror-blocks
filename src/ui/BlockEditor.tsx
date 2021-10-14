@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import ReactDOM from "react-dom";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
@@ -9,7 +8,6 @@ import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
 import {
-  poscmp,
   minpos,
   maxpos,
   validateRanges,
@@ -18,7 +16,6 @@ import {
   cancelAfterDOMUpdate,
 } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
-import BlockComponent from "../components/BlockComponent";
 import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
@@ -37,10 +34,10 @@ import {
   CMBEditor,
   ReadonlyCMBEditor,
   isBlockNodeMarker,
-  BlockNodeMarker,
 } from "../editor";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
+import ToplevelBlock from "./ToplevelBlock";
 
 const tmpDiv = document.createElement("div");
 function getTempCM(editor: CodeMirrorFacade) {
@@ -104,89 +101,6 @@ type BlockEditorAPI = {
 };
 
 export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
-
-// TODO(Oak): this should really be a new file, but for convenience we will put it
-// here for now
-
-type ToplevelBlockProps = {
-  incrementalRendering: boolean;
-  node: ASTNode;
-  editor: CMBEditor;
-};
-
-type ToplevelBlockState = {
-  renderPlaceholder: boolean;
-};
-
-class ToplevelBlock extends BlockComponent<
-  ToplevelBlockProps,
-  ToplevelBlockState
-> {
-  container: HTMLElement;
-  mark?: BlockNodeMarker;
-  pendingTimeout?: afterDOMUpdateHandle;
-
-  constructor(props: ToplevelBlockProps) {
-    super(props);
-    this.container = document.createElement("span");
-    this.container.classList.add("react-container");
-    // by default, let's render a placeholder
-    this.state = { renderPlaceholder: props.incrementalRendering };
-  }
-
-  // we need to trigger a render if the node was moved or resized at the
-  // top-level, in order to re-mark the node and put the DOM in the new marker
-  shouldComponentUpdate(
-    nextProps: ToplevelBlockProps,
-    nextState: ToplevelBlockState
-  ) {
-    return (
-      poscmp(this.props.node.from, nextProps.node.from) !== 0 || // moved
-      poscmp(this.props.node.to, nextProps.node.to) !== 0 || // resized
-      super.shouldComponentUpdate(nextProps, nextState) || // changed
-      !document.contains(this.mark?.replacedWith || null)
-    ); // removed from DOM
-  }
-
-  // When unmounting, clean up the TextMarker and any lingering timeouts
-  componentWillUnmount() {
-    this.mark?.clear();
-    cancelAfterDOMUpdate(this.pendingTimeout);
-  }
-
-  // once the placeholder has mounted, wait 250ms and render
-  // save both the timeout *and* requestAnimationFrame (RAF)
-  // in case someone unmounts before all the root components
-  // have even rendered
-  componentDidMount() {
-    if (!this.props.incrementalRendering) return; // bail if incremental is off
-    this.pendingTimeout = setAfterDOMUpdate(
-      () => this.setState({ renderPlaceholder: false }),
-      250
-    );
-  }
-
-  render() {
-    const { node } = this.props;
-
-    // set elt to a cheap placeholder, OR render the entire rootNode
-    const elt = this.state.renderPlaceholder ? <div /> : node.reactElement();
-
-    // AFTER THE REACT RENDER CYCLE IS OVER:
-    // if any prior block markers are in this range, clear them
-    // make a new block marker, and fill it with the portal
-    setAfterDOMUpdate(() => {
-      const { from, to } = node.srcRange(); // includes the node's comment, if any
-      this.mark = this.props.editor.replaceMarkerWidget(
-        from,
-        to,
-        this.container
-      );
-      node.mark = this.mark;
-    });
-    return ReactDOM.createPortal(elt, this.container);
-  }
-}
 
 const mapStateToProps = ({ ast, cur, quarantine }: RootState) => ({
   ast,

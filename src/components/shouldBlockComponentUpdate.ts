@@ -1,5 +1,3 @@
-import { Component } from "react";
-import PropTypes from "prop-types";
 import type { ASTNode } from "../ast";
 
 // Check to see whether two `prop` or `state` objects are roughly equal to each
@@ -37,26 +35,22 @@ function vaguelyEqual(x: { [i: string]: any }, y: { [i: string]: any }) {
   return true;
 }
 
-export default class BlockComponent<
+export default function shouldBlockComponentUpdate<
   Props extends { node: ASTNode },
   State
-> extends Component<Props, State> {
-  // update if one of the nodes is null, the hash has changed, the props or state
-  // have changed, or if the aria properties have changed
-  shouldComponentUpdate(props: Props, state: State) {
-    // NOTE: don't care about the node since the patching algorithm will deal
-    // with the update already
-    const { node: newValue, ...newProps } = props;
-    const { node: oldValue, ...oldProps } = this.props;
+>(oldProps: Props, oldState: State, newProps: Props, newState: State) {
+  // NOTE: don't care about the node since the patching algorithm will deal
+  // with the update already
+  const { node: newValue, ...newOtherProps } = newProps;
+  const { node: oldValue, ...oldOtherProps } = oldProps;
 
-    const shouldUpdate =
-      !(newValue && oldValue) ||
-      newValue.hash !== oldValue.hash ||
-      !vaguelyEqual(newProps, oldProps) ||
-      !vaguelyEqual(state, this.state) ||
-      newValue["aria-setsize"] !== oldValue["aria-setsize"] ||
-      newValue["aria-posinset"] !== oldValue["aria-posinset"];
+  const shouldUpdate =
+    !(newValue && oldValue) ||
+    newValue.hash !== oldValue.hash ||
+    !vaguelyEqual(newOtherProps, oldOtherProps) ||
+    !vaguelyEqual(newState, oldState) ||
+    newValue["aria-setsize"] !== oldValue["aria-setsize"] ||
+    newValue["aria-posinset"] !== oldValue["aria-posinset"];
 
-    return shouldUpdate;
-  }
+  return shouldUpdate;
 }
