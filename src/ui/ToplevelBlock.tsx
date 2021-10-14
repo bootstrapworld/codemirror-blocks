@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { poscmp, setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
-import shouldBlockComponentUpdate from "../components/shouldBlockComponentUpdate";
 import { ASTNode } from "../ast";
 import { CMBEditor } from "../editor";
 
@@ -48,14 +47,21 @@ const ToplevelBlock = (props: Props) => {
   return ReactDOM.createPortal(elt, container);
 };
 
+function areNodesEqualish(prevNode: ASTNode, nextNode: ASTNode) {
+  return (
+    nextNode.hash === prevNode.hash &&
+    nextNode["aria-setsize"] === prevNode["aria-setsize"] &&
+    nextNode["aria-posinset"] === prevNode["aria-posinset"] &&
+    poscmp(prevNode.from, nextNode.from) === 0 && // didn't move
+    poscmp(prevNode.to, nextNode.to) === 0 // didn't resize
+  );
+}
+
 export default React.memo(
   ToplevelBlock,
-  (prevProps: Props, nextProps: Props) => {
-    return !(
-      poscmp(prevProps.node.from, nextProps.node.from) !== 0 || // moved
-      poscmp(prevProps.node.to, nextProps.node.to) !== 0 || // resized
-      shouldBlockComponentUpdate(prevProps, null, nextProps, null) || // changed
-      !document.contains(nextProps.node.mark?.replacedWith || null)
-    ); // removed from DOM
-  }
+  (prevProps: Props, nextProps: Props) =>
+    nextProps.incrementalRendering === prevProps.incrementalRendering &&
+    nextProps.editor === prevProps.editor &&
+    areNodesEqualish(prevProps.node, nextProps.node) && // didn't change
+    document.contains(nextProps.node.mark?.replacedWith || null) // wasn't removed from dom
 );
