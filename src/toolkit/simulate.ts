@@ -45,7 +45,7 @@ export function paste(
   }
   var pasteEvent = new ClipboardEvent("paste", { clipboardData: dT });
   pasteEvent.clipboardData?.setData("text/plain", pastedString);
-  toElement(node).dispatchEvent(pasteEvent);
+  fireEvent(toElement(node), pasteEvent);
   //userEvent.paste(toElement(node), pastedString);
 }
 export function cut(node: ElementLike = getActiveElementOrThrow()) {
@@ -69,7 +69,7 @@ export function dragstart() {
 }
 
 export function dragover(node: ElementLike = getActiveElementOrThrow()) {
-  toElement(node).dispatchEvent(createBubbledEvent("dragover"));
+  fireEvent(toElement(node), createBubbledEvent("dragover"));
 }
 
 export function mouseenter() {
@@ -85,9 +85,9 @@ export function mouseover() {
 }
 
 export function dragenterSeq(node: ElementLike = getActiveElementOrThrow()) {
-  //toElement(node).dispatchEvent(mouseenter());
-  toElement(node).dispatchEvent(dragenter());
-  toElement(node).dispatchEvent(mouseover());
+  //fireEvent(toElement(node), mouseenter());
+  fireEvent(toElement(node), dragenter());
+  fireEvent(toElement(node), mouseover());
 }
 
 export function dragleave() {
@@ -123,7 +123,7 @@ export function keyDown(
   if (node.nodeName == "TEXTAREA") {
     let event = new CustomKeydownEvent(key);
     Object.assign(event, props);
-    node.dispatchEvent(event);
+    fireEvent(node, event);
   } else {
     fireEvent.keyDown(node, makeKeyEvent(key, props));
   }

@@ -31,16 +31,16 @@ describe("Search component", function () {
       this.match2 = this.blocks.ast.rootNodes[3];
       this.match3 = this.blocks.ast.rootNodes[4].args[0];
 
-      this.nomatch1.el.dispatchEvent(click());
-      this.nomatch1.el.dispatchEvent(keydown(F3));
+      fireEvent(this.nomatch1.el, click());
+      fireEvent(this.nomatch1.el, keydown(F3));
 
       await wait(DELAY);
 
       const searchBox = document.querySelector(".search-input");
       setNativeValue(searchBox, "1");
-      searchBox.dispatchEvent(pureevent("input"));
+      fireEvent(searchBox, pureevent("input"));
       const close = document.querySelector(".wrapper-modal .close");
-      close.dispatchEvent(click());
+      fireEvent(close, click());
 
       await wait(DELAY);
     });
@@ -51,8 +51,8 @@ describe("Search component", function () {
     });
 
     it("should find next match, skipping a non-matching literal", async function () {
-      this.match1.el.dispatchEvent(click());
-      this.match1.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.match1.el, click());
+      fireEvent(this.match1.el, keydown(PGDN));
 
       await wait(DELAY);
 
@@ -61,8 +61,8 @@ describe("Search component", function () {
     });
 
     it("should wrap around to beginning of document for find-next", async function () {
-      this.match3.el.dispatchEvent(click());
-      this.match3.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.match3.el, click());
+      fireEvent(this.match3.el, keydown(PGDN));
 
       await wait(DELAY);
 
@@ -71,8 +71,8 @@ describe("Search component", function () {
     });
 
     it("should wrap around to end of document for find-previous", async function () {
-      this.match1.el.dispatchEvent(click());
-      this.match1.el.dispatchEvent(keydown(PGUP));
+      fireEvent(this.match1.el, click());
+      fireEvent(this.match1.el, keydown(PGUP));
 
       await wait(DELAY);
 
@@ -92,35 +92,35 @@ describe("Search component", function () {
       this.Hello = this.blocks.ast.rootNodes[0].args[3].func;
       this.lll = this.blocks.ast.rootNodes[0].args[5].func;
 
-      this.hello.el.dispatchEvent(click());
+      fireEvent(this.hello.el, click());
     });
 
     it("should be case insensitive by default", async function () {
-      this.hello.el.dispatchEvent(keydown(F3));
+      fireEvent(this.hello.el, keydown(F3));
 
       await wait(DELAY);
 
       const searchBox = document.querySelector(".search-input");
       setNativeValue(searchBox, "hell");
-      searchBox.dispatchEvent(pureevent("input"));
+      fireEvent(searchBox, pureevent("input"));
       const close = document.querySelector(".wrapper-modal .close");
-      close.dispatchEvent(click());
+      fireEvent(close, click());
 
       await wait(DELAY);
 
-      this.hello.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.hello.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.hell);
       expect(document.activeElement).toBe(this.hell.el);
-      this.hell.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.hell.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.Hello);
       expect(document.activeElement).toBe(this.Hello.el);
-      this.Hello.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.Hello.el, keydown(PGDN));
 
       await wait(DELAY);
 
@@ -129,29 +129,29 @@ describe("Search component", function () {
     });
 
     it("should be able to use case sensitive mode", async function () {
-      this.hello.el.dispatchEvent(keydown(F3));
+      fireEvent(this.hello.el, keydown(F3));
 
       await wait(DELAY);
 
       const ignoreCase = document.querySelector('input[name="isIgnoreCase"]');
-      ignoreCase.dispatchEvent(click());
+      fireEvent(ignoreCase, click());
 
       const searchBox = document.querySelector(".search-input");
       setNativeValue(searchBox, "hell");
-      searchBox.dispatchEvent(pureevent("input"));
+      fireEvent(searchBox, pureevent("input"));
 
       const close = document.querySelector(".wrapper-modal .close");
-      close.dispatchEvent(click());
+      fireEvent(close, click());
 
       await wait(DELAY);
 
-      this.hello.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.hello.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.hell);
       expect(document.activeElement).toBe(this.hell.el);
-      this.hell.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.hell.el, keydown(PGDN));
 
       await wait(DELAY);
 
@@ -160,29 +160,29 @@ describe("Search component", function () {
     });
 
     it("should be able to use regex mode", async function () {
-      this.hello.el.dispatchEvent(keydown(F3));
+      fireEvent(this.hello.el, keydown(F3));
 
       await wait(DELAY);
 
       const ignoreCase = document.querySelector('input[name="isRegex"]');
-      ignoreCase.dispatchEvent(click());
+      fireEvent(ignoreCase, click());
 
       const searchBox = document.querySelector(".search-input");
       setNativeValue(searchBox, "ll[ol]");
-      searchBox.dispatchEvent(pureevent("input"));
+      fireEvent(searchBox, pureevent("input"));
 
       const close = document.querySelector(".wrapper-modal .close");
-      close.dispatchEvent(click());
+      fireEvent(close, click());
 
       await wait(DELAY);
 
-      this.hello.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.hello.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.Hello);
       expect(document.activeElement).toBe(this.Hello.el);
-      this.Hello.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.Hello.el, keydown(PGDN));
 
       await wait(DELAY);
 
@@ -210,23 +210,23 @@ describe("Search component", function () {
       this.eDivide = this.blocks.ast.rootNodes[1].args[1];
       this.eMinus = this.blocks.ast.rootNodes[2];
 
-      this.n1.el.dispatchEvent(click());
-      this.n1.el.dispatchEvent(keydown(F3));
+      fireEvent(this.n1.el, click());
+      fireEvent(this.n1.el, keydown(F3));
 
       await wait(DELAY);
 
       const tab = document.querySelectorAll(".react-tabs li")[1]; // second tab
-      tab.dispatchEvent(click());
+      fireEvent(tab, click());
 
       await wait(DELAY);
 
       // There are two types: expression and literal (alphabetically)
       const selector = document.querySelector('select[name="blockType"]');
       selector.value = "expression";
-      selector.dispatchEvent(pureevent("change"));
+      fireEvent(selector, pureevent("change"));
 
       const close = document.querySelector(".wrapper-modal .close");
-      close.dispatchEvent(click());
+      fireEvent(close, click());
 
       await wait(DELAY);
     });
@@ -237,66 +237,66 @@ describe("Search component", function () {
     });
 
     it("should find expression", async function () {
-      this.n1.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.n1.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.eDivide);
       expect(document.activeElement).toBe(this.eDivide.el);
-      this.eDivide.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.eDivide.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.eMinus);
       expect(document.activeElement).toBe(this.eMinus.el);
-      this.eMinus.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.eMinus.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.ePlus);
       expect(document.activeElement).toBe(this.ePlus.el);
-      this.ePlus.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.ePlus.el, keydown(PGDN));
     });
 
     it("should find literals", async function () {
-      this.n1.el.dispatchEvent(keydown(F3));
+      fireEvent(this.n1.el, keydown(F3));
 
       await wait(DELAY);
 
       const tab = document.querySelectorAll(".react-tabs li")[1]; // second tab
-      tab.dispatchEvent(click());
+      fireEvent(tab, click());
 
       await wait(DELAY);
 
       // There are two types: expression and literal (alphabetically)
       const selector = document.querySelector('select[name="blockType"]');
       selector.value = "literal";
-      selector.dispatchEvent(pureevent("change"));
+      fireEvent(selector, pureevent("change"));
 
       const close = document.querySelector(".wrapper-modal .close");
-      close.dispatchEvent(click());
+      fireEvent(close, click());
 
       await wait(DELAY);
 
-      this.n1.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.n1.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.n2);
       expect(document.activeElement).toBe(this.n2.el);
-      this.n2.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.n2.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.divide);
       expect(document.activeElement).toBe(this.divide.el);
-      this.divide.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.divide.el, keydown(PGDN));
 
       await wait(DELAY);
 
       expect(this.blocks.getActiveNode()).toBe(this.n3);
       expect(document.activeElement).toBe(this.n3.el);
-      this.n3.el.dispatchEvent(keydown(PGDN));
+      fireEvent(this.n3.el, keydown(PGDN));
     });
   });
 });
