@@ -1,21 +1,13 @@
-import React, {
-  Component,
-  HTMLAttributes,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { HTMLAttributes, useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { ASTNode } from "../ast";
 import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
-import shouldBlockComponentUpdate from "./shouldBlockComponentUpdate";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch, AppStore } from "../store";
 import { ItemTypes } from "../dnd";
 import classNames from "classnames";
-import CodeMirror from "codemirror";
-import { GetProps, useDrag, useDrop } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
@@ -26,7 +18,27 @@ import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
 // since it might be cached and outdated
 // EVEN BETTER: is it possible to just pass an id?
 
-const Node = ({ expandable = true, ...props }: EnhancedNodeProps) => {
+export type Props = {
+  node: ASTNode;
+  inToolbar?: boolean;
+  normallyEditable?: boolean;
+  expandable?: boolean;
+  children?: React.ReactNode | React.ReactElement;
+};
+
+const Node = ({ expandable = true, ...props }: Props) => {
+  const stateProps = useSelector(
+    ({ selections, collapsedList, markedMap }: RootState) => {
+      // be careful here. Only node's id is accurate. Use getNodeById
+      // to access accurate info
+      return {
+        isSelected: selections.includes(props.node.id),
+        isCollapsed: collapsedList.includes(props.node.id),
+        textMarker: markedMap[props.node.id],
+      };
+    }
+  );
+
   useEffect(() => {
     // if its a top level node (ie - it has a CM mark on the node) AND
     // its isCollapsed property has changed, call mark.changed() to
@@ -35,7 +47,7 @@ const Node = ({ expandable = true, ...props }: EnhancedNodeProps) => {
     if (props.node.mark) {
       props.node.mark.changed();
     }
-  }, [props.isCollapsed, props.node.mark]);
+  }, [stateProps.isCollapsed, props.node.mark]);
 
   const [editable, setEditable] = useState(false);
   props.node.isEditable = () => editable;
@@ -89,7 +101,7 @@ const Node = ({ expandable = true, ...props }: EnhancedNodeProps) => {
         },
         normallyEditable: Boolean(props.normallyEditable),
         expandable,
-        isCollapsed: props.isCollapsed,
+        isCollapsed: stateProps.isCollapsed,
       })
     );
   };
@@ -128,7 +140,7 @@ const Node = ({ expandable = true, ...props }: EnhancedNodeProps) => {
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (props.inToolbar) return;
-    if (props.isCollapsed) {
+    if (stateProps.isCollapsed) {
       dispatch({ type: "UNCOLLAPSE", id: props.node.id });
     } else {
       dispatch({ type: "COLLAPSE", id: props.node.id });
@@ -150,13 +162,14 @@ const Node = ({ expandable = true, ...props }: EnhancedNodeProps) => {
   const contentEditableProps: HTMLAttributes<HTMLSpanElement> = {
     id: `block-node-${props.node.id}`,
     tabIndex: -1,
-    "aria-selected": props.isSelected,
+    "aria-selected": stateProps.isSelected,
     "aria-label": props.node.shortDescription() + ",",
     "aria-labelledby": `block-node-${props.node.id} ${
       comment ? comment.id : ""
     }`,
     "aria-disabled": locked ? "true" : undefined,
-    "aria-expanded": expandable && !locked ? !props.isCollapsed : undefined,
+    "aria-expanded":
+      expandable && !locked ? !stateProps.isCollapsed : undefined,
     "aria-setsize": props.node["aria-setsize"],
     "aria-posinset": props.node["aria-posinset"],
     "aria-level": props.node.level,
@@ -224,8 +237,8 @@ const Node = ({ expandable = true, ...props }: EnhancedNodeProps) => {
     );
   } else {
     classes.push({ "blocks-over-target": isOver, "blocks-node": true });
-    if (props.textMarker?.options.className) {
-      classes.push(props.textMarker.options.className);
+    if (stateProps.textMarker?.options.className) {
+      classes.push(stateProps.textMarker.options.className);
     }
     let result: React.ReactElement | null = (
       <span
@@ -236,10 +249,12 @@ const Node = ({ expandable = true, ...props }: EnhancedNodeProps) => {
         style={
           {
             opacity: isDragging ? 0.5 : 1,
-            cssText: props.textMarker ? props.textMarker.options.css : null,
+            cssText: stateProps.textMarker
+              ? stateProps.textMarker.options.css
+              : null,
           } as any
         }
-        title={props.textMarker?.options.title}
+        title={stateProps.textMarker?.options.title}
         onMouseDown={handleMouseDown}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
@@ -268,38 +283,4 @@ const Node = ({ expandable = true, ...props }: EnhancedNodeProps) => {
   }
 };
 
-type ReduxProps = {
-  isSelected: boolean;
-  isCollapsed: boolean;
-  textMarker?: CodeMirror.TextMarker;
-};
-
-export type EnhancedNodeProps = ConnectedNodeProps & ReduxProps;
-
-type ConnectedNodeProps = {
-  node: ASTNode;
-  inToolbar?: boolean;
-  normallyEditable?: boolean;
-  expandable: boolean;
-  children?: React.ReactNode | React.ReactElement;
-};
-
-const ConnectedNode = (props: ConnectedNodeProps) => {
-  const { node } = props;
-  const stateProps = useSelector(
-    ({ selections, collapsedList, markedMap }: RootState) => {
-      // be careful here. Only node's id is accurate. Use getNodeById
-      // to access accurate info
-      return {
-        isSelected: selections.includes(node.id),
-        isCollapsed: collapsedList.includes(node.id),
-        textMarker: markedMap[node.id],
-      };
-    }
-  );
-  return <Node {...stateProps} {...props} />;
-};
-
-export type NodeProps = GetProps<typeof ConnectedNode>;
-
-export default ConnectedNode;
+export default Node;
