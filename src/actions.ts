@@ -61,7 +61,7 @@ export const insert = (
 ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> => {
   checkTarget(target);
   const edits = [target.toEdit(text)];
-  return performEdits(search, "cmb:insert", edits, parse, editor, annt);
+  return performEdits(search, edits, parse, editor, annt);
 };
 
 /**
@@ -101,9 +101,7 @@ export const delete_ =
       annt = createEditAnnouncement(nodes, editWord);
       say(annt);
     }
-    dispatch(
-      performEdits(search, "cmb:delete-node", edits, parse, editor, annt)
-    );
+    dispatch(performEdits(search, edits, parse, editor, annt));
     dispatch({ type: "SET_SELECTIONS", selections: [] });
   };
 
@@ -152,7 +150,7 @@ export const paste =
     checkTarget(target);
     pasteFromClipboard((text) => {
       const edits = [target.toEdit(text)];
-      dispatch(performEdits(search, "cmb:paste", edits, parse, editor));
+      dispatch(performEdits(search, edits, parse, editor));
       dispatch({ type: "SET_SELECTIONS", selections: [] });
     });
   };
@@ -195,7 +193,7 @@ export function useDropAction() {
     edits.push(target.toEdit(content));
     // Perform the edits.
     const editResult = dispatch(
-      performEdits(search, "cmb:drop-node", edits, language.parse, editor)
+      performEdits(search, edits, language.parse, editor)
     );
 
     // Assuming it did not come from the toolbar, and the srcNode was collapsed...

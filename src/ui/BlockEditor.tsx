@@ -40,6 +40,7 @@ import {
   BlockNodeMarker,
 } from "../editor";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
+import { isChangeObject, makeChangeObject } from "../edits/performEdits";
 
 const tmpDiv = document.createElement("div");
 function getTempCM(editor: CodeMirrorFacade) {
@@ -277,15 +278,15 @@ class BlockEditor extends Component<BlockEditorProps> {
     editor: CodeMirrorFacade,
     change: CodeMirror.EditorChangeCancellable
   ) => {
-    if (!change.origin?.startsWith("cmb:")) {
+    if (!isChangeObject(change)) {
       const result = speculateChanges(
         [change],
         this.props.language.parse,
-        editor
+        editor.getValue()
       );
       // Successful! Let's save all the hard work we did to build the new AST
       if (result.successful) {
-        this.newAST = result.newAST;
+        this.newAST = result.value;
       }
       // Error! Cancel the change and report the error
       else {
@@ -308,7 +309,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     changes: CodeMirror.EditorChange[]
   ) => {
     this.props.dispatch((dispatch, getState) => {
-      if (!changes.every((c) => c.origin?.startsWith("cmb:"))) {
+      if (!changes.every(isChangeObject)) {
         // These changes did not originate from us. However, they've all
         // passed the `handleBeforeChange` function, so they must be valid edits.
         // (There's almost certainly just one edit here; I (Justin) am not
@@ -318,7 +319,6 @@ class BlockEditor extends Component<BlockEditorProps> {
         // Turn undo and redo into cmb actions, update the focusStack, and
         // provide a focusHint
         if (changes[0].origin === "undo") {
-          for (let c of changes) c.origin = "cmb:undo";
           const { actionFocus } = getState();
           if (actionFocus) {
             const focusHint: FocusHint = (newAST) =>
@@ -328,7 +328,7 @@ class BlockEditor extends Component<BlockEditorProps> {
             dispatch(
               commitChanges(
                 this.props.search,
-                changes,
+                changes.map(makeChangeObject),
                 this.props.language.parse,
                 editor,
                 true,
@@ -339,7 +339,6 @@ class BlockEditor extends Component<BlockEditorProps> {
             dispatch({ type: "UNDO", editor: editor });
           }
         } else if (changes[0].origin === "redo") {
-          for (let c of changes) c.origin = "cmb:redo";
           const { actionFocus } = getState();
           if (actionFocus) {
             const { newFocusNId } = actionFocus;
@@ -348,7 +347,7 @@ class BlockEditor extends Component<BlockEditorProps> {
             dispatch(
               commitChanges(
                 this.props.search,
-                changes,
+                changes.map(makeChangeObject),
                 this.props.language.parse,
                 editor,
                 true,
@@ -366,14 +365,18 @@ class BlockEditor extends Component<BlockEditorProps> {
           let annt = "";
           for (let i = changes.length - 1; i >= 0; i--) {
             annt = annt + changes[i].origin;
-            if (i !== 0) annt = " and " + annt;
+            if (i !== 0) {
+              annt = " and " + annt;
+            }
           }
-          if (annt === "") annt = "change";
+          if (annt === "") {
+            annt = "change";
+          }
           getState().undoableAction = annt; //?
           dispatch(
             commitChanges(
               this.props.search,
-              changes,
+              changes.map(makeChangeObject),
               this.props.language.parse,
               editor,
               false,
