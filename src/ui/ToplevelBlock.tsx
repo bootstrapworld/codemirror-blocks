@@ -1,10 +1,9 @@
-import React, { Component } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { poscmp, setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
-import type { afterDOMUpdateHandle } from "../utils";
 import shouldBlockComponentUpdate from "../components/shouldBlockComponentUpdate";
 import { ASTNode } from "../ast";
-import { CMBEditor, BlockNodeMarker } from "../editor";
+import { CMBEditor } from "../editor";
 
 type Props = {
   incrementalRendering: boolean;
@@ -12,70 +11,51 @@ type Props = {
   editor: CMBEditor;
 };
 
-type State = {
-  renderPlaceholder: boolean;
+const ToplevelBlock = (props: Props) => {
+  const [renderPlaceholder, setRenderPlaceholder] = useState(
+    props.incrementalRendering
+  );
+  useEffect(() => {
+    if (renderPlaceholder) {
+      // if we've rendered a placeholder, then wait 250ms and switch to rendering
+      // the full element.
+      const timeout = setAfterDOMUpdate(() => setRenderPlaceholder(false), 250);
+      return () => cancelAfterDOMUpdate(timeout);
+    }
+  }, [renderPlaceholder]);
+
+  const { container } = useMemo(() => {
+    const container = document.createElement("span");
+    container.classList.add("react-container");
+    return { container };
+  }, []);
+
+  // set elt to a cheap placeholder, OR render the entire rootNode
+  const elt = renderPlaceholder ? <div /> : props.node.reactElement();
+
+  // make a new block marker, and fill it with the portal
+  const { from, to } = props.node.srcRange(); // includes the node's comment, if any
+  const mark = props.editor.replaceMarkerWidget(from, to, container);
+  props.node.mark = mark;
+
+  useEffect(() => {
+    // When unmounting, clean up the TextMarker
+    return () => {
+      mark.clear();
+    };
+  });
+
+  return ReactDOM.createPortal(elt, container);
 };
 
-export default class ToplevelBlock extends Component<Props, State> {
-  container: HTMLElement;
-  mark?: BlockNodeMarker;
-  pendingTimeout?: afterDOMUpdateHandle;
-
-  constructor(props: Props) {
-    super(props);
-    this.container = document.createElement("span");
-    this.container.classList.add("react-container");
-    // by default, let's render a placeholder
-    this.state = { renderPlaceholder: props.incrementalRendering };
-  }
-
-  // we need to trigger a render if the node was moved or resized at the
-  // top-level, in order to re-mark the node and put the DOM in the new marker
-  shouldComponentUpdate(nextProps: Props, nextState: State) {
-    return (
-      poscmp(this.props.node.from, nextProps.node.from) !== 0 || // moved
-      poscmp(this.props.node.to, nextProps.node.to) !== 0 || // resized
-      shouldBlockComponentUpdate(
-        this.props,
-        this.state,
-        nextProps,
-        nextState
-      ) || // changed
-      !document.contains(this.mark?.replacedWith || null)
+export default React.memo(
+  ToplevelBlock,
+  (prevProps: Props, nextProps: Props) => {
+    return !(
+      poscmp(prevProps.node.from, nextProps.node.from) !== 0 || // moved
+      poscmp(prevProps.node.to, nextProps.node.to) !== 0 || // resized
+      shouldBlockComponentUpdate(prevProps, null, nextProps, null) || // changed
+      !document.contains(nextProps.node.mark?.replacedWith || null)
     ); // removed from DOM
   }
-
-  // When unmounting, clean up the TextMarker and any lingering timeouts
-  componentWillUnmount() {
-    this.mark?.clear();
-    cancelAfterDOMUpdate(this.pendingTimeout);
-  }
-
-  // once the placeholder has mounted, wait 250ms and render
-  // save both the timeout *and* requestAnimationFrame (RAF)
-  // in case someone unmounts before all the root components
-  // have even rendered
-  componentDidMount() {
-    if (!this.props.incrementalRendering) {
-      return; // bail if incremental is off
-    }
-    this.pendingTimeout = setAfterDOMUpdate(
-      () => this.setState({ renderPlaceholder: false }),
-      250
-    );
-  }
-
-  render() {
-    const { node } = this.props;
-
-    // set elt to a cheap placeholder, OR render the entire rootNode
-    const elt = this.state.renderPlaceholder ? <div /> : node.reactElement();
-
-    // make a new block marker, and fill it with the portal
-    const { from, to } = node.srcRange(); // includes the node's comment, if any
-    this.mark = this.props.editor.replaceMarkerWidget(from, to, this.container);
-    node.mark = this.mark;
-
-    return ReactDOM.createPortal(elt, this.container);
-  }
-}
+);
