@@ -1,16 +1,18 @@
-import React from "react";
+import React, { useContext } from "react";
 import { ItemTypes } from "../dnd";
 import { useDrop } from "react-dnd";
-import { useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { RootState } from "../reducers";
-import { edit_delete, usePerformEdits } from "../edits/performEdits";
-import { AppStore } from "../store";
+import { edit_delete, performEdits } from "../edits/performEdits";
+import { AppDispatch, AppStore } from "../store";
 import { CMBEditor } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
+import { SearchContext } from "../components/Context";
 require("./TrashCan.less");
 
 const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
-  const performEdits = usePerformEdits();
+  const dispatch: AppDispatch = useDispatch();
+  const search = useContext(SearchContext);
 
   const { ast } = useSelector(({ ast }: RootState) => ({ ast }));
   const store: AppStore = useStore();
@@ -23,11 +25,17 @@ const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
         let edits = [
           edit_delete(store.getState().ast.getNodeByIdOrThrow(srcNode.id)),
         ];
-        performEdits(
-          "cmb:trash-node",
-          edits,
-          props.language.parse,
-          props.editor
+        if (!search) {
+          throw new Error(`Can't perform edits before search has mounted`);
+        }
+        return dispatch(
+          performEdits(
+            search,
+            origin,
+            edits,
+            props.language.parse,
+            props.editor
+          )
         );
       },
       collect: (monitor) => ({ isOver: monitor.isOver() }),

@@ -325,16 +325,16 @@ class BlockEditor extends Component<BlockEditorProps> {
               actionFocus.oldFocusNId === null
                 ? null
                 : newAST.getNodeByNId(actionFocus.oldFocusNId);
-            commitChanges(
-              getState(),
-              dispatch,
-              this.props.search,
-              changes,
-              this.props.language.parse,
-              editor,
-              true,
-              focusHint,
-              this.newAST
+            dispatch(
+              commitChanges(
+                this.props.search,
+                changes,
+                this.props.language.parse,
+                editor,
+                true,
+                focusHint,
+                this.newAST
+              )
             );
             dispatch({ type: "UNDO", editor: editor });
           }
@@ -345,16 +345,16 @@ class BlockEditor extends Component<BlockEditorProps> {
             const { newFocusNId } = actionFocus;
             const focusHint = (newAST: AST) =>
               newFocusNId === null ? null : newAST.getNodeByNId(newFocusNId);
-            commitChanges(
-              getState(),
-              dispatch,
-              this.props.search,
-              changes,
-              this.props.language.parse,
-              editor,
-              true,
-              focusHint,
-              this.newAST
+            dispatch(
+              commitChanges(
+                this.props.search,
+                changes,
+                this.props.language.parse,
+                editor,
+                true,
+                focusHint,
+                this.newAST
+              )
             );
             dispatch({ type: "REDO", editor });
           }
@@ -370,16 +370,16 @@ class BlockEditor extends Component<BlockEditorProps> {
           }
           if (annt === "") annt = "change";
           getState().undoableAction = annt; //?
-          commitChanges(
-            getState(),
-            dispatch,
-            this.props.search,
-            changes,
-            this.props.language.parse,
-            editor,
-            false,
-            -1,
-            this.newAST
+          dispatch(
+            commitChanges(
+              this.props.search,
+              changes,
+              this.props.language.parse,
+              editor,
+              false,
+              -1,
+              this.newAST
+            )
           );
         }
       }
@@ -927,13 +927,14 @@ class BlockEditor extends Component<BlockEditorProps> {
             onFocus={this.handleTopLevelFocus}
             onPaste={this.handleTopLevelPaste}
             onKeyDown={(editor, e) => {
-              keyDown(e, {
-                search: this.props.search,
-                language: this.props.language,
-                editor,
-                isNodeEnv: false,
-                dispatch: this.props.dispatch,
-              });
+              this.props.dispatch(
+                keyDown(e, {
+                  search: this.props.search,
+                  language: this.props.language,
+                  editor,
+                  isNodeEnv: false,
+                })
+              );
             }}
             onCursorActivity={this.handleTopLevelCursorActivity}
             editorDidMount={this.handleEditorDidMount}

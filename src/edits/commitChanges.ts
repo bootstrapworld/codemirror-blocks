@@ -1,4 +1,4 @@
-import { AppDispatch } from "../store";
+import { AppDispatch, AppThunk } from "../store";
 import { poscmp, adjustForChange, minimizeChange, logResults } from "../utils";
 import { activateByNid } from "../actions";
 import patch from "./patchAst";
@@ -29,93 +29,93 @@ export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 //   (If null, remove focus. If "fallback", fall back on computeFocusNodeFromChanges.)
 // - astHint is the AST you get from parsing the result of these changes (which
 //   you may know from a call to `speculateChanges()`).
-export function commitChanges(
-  state: Pick<RootState, "ast" | "focusId" | "collapsedList">,
-  dispatch: AppDispatch,
-  search: Search,
-  changes: EditorChange[],
-  parse: (code: string) => AST,
-  editor: ReadonlyCMBEditor,
-  isUndoOrRedo: boolean = false,
-  focusHint?: FocusHint | -1,
-  astHint?: AST,
-  annt?: string | false
-): Result<{ newAST: AST; focusId?: string }> {
-  try {
-    let { ast: oldAST, focusId: oldFocusId } = state;
-    let oldFocusNId = null;
-    if (!isUndoOrRedo) {
-      // Remember the previous focus. See the next `!isUndoOrRedo` block.
-      let oldFocus = oldFocusId && oldAST.getNodeById(oldFocusId);
-      oldFocusNId = oldFocus ? oldFocus.nid : null;
-    }
-    // If we haven't already parsed the AST during speculateChanges, parse it now.
-    let newAST: AST = astHint || parse(editor.getValue());
-    // Patch the tree and set the state
-    newAST = patch(oldAST, newAST);
-    dispatch({ type: "SET_AST", ast: newAST });
-    // Try to set the focus using hinting data. If that fails, use the first root
-    let focusId =
-      setFocus(state, dispatch, editor, search, changes, focusHint, newAST) ||
-      newAST.getFirstRootNode()?.id;
-    if (!isUndoOrRedo) {
-      // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
-      // this is what populates our undo stack.
-      let newFocus = null;
-      if (focusId) {
-        newFocus = newAST.getNodeById(focusId);
+export const commitChanges =
+  (
+    search: Search,
+    changes: EditorChange[],
+    parse: (code: string) => AST,
+    editor: ReadonlyCMBEditor,
+    isUndoOrRedo: boolean = false,
+    focusHint?: FocusHint | -1,
+    astHint?: AST,
+    annt?: string | false
+  ): AppThunk<Result<{ newAST: AST; focusId?: string }>> =>
+  (dispatch, getState) => {
+    try {
+      let { ast: oldAST, focusId: oldFocusId } = getState();
+      let oldFocusNId = null;
+      if (!isUndoOrRedo) {
+        // Remember the previous focus. See the next `!isUndoOrRedo` block.
+        let oldFocus = oldFocusId && oldAST.getNodeById(oldFocusId);
+        oldFocusNId = oldFocus ? oldFocus.nid : null;
       }
-      let newFocusNId = newFocus?.nid || null;
-      let topmostAction = editor.getTopmostAction("undo");
-      topmostAction.undoableAction = annt || undefined;
-      topmostAction.actionFocus = { oldFocusNId, newFocusNId };
-      dispatch({ type: "DO", focusId: focusId || null });
+      // If we haven't already parsed the AST during speculateChanges, parse it now.
+      let newAST: AST = astHint || parse(editor.getValue());
+      // Patch the tree and set the state
+      newAST = patch(oldAST, newAST);
+      dispatch({ type: "SET_AST", ast: newAST });
+      // Try to set the focus using hinting data. If that fails, use the first root
+      let focusId =
+        dispatch(setFocus(editor, search, changes, focusHint, newAST)) ||
+        newAST.getFirstRootNode()?.id;
+      if (!isUndoOrRedo) {
+        // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
+        // this is what populates our undo stack.
+        let newFocus = null;
+        if (focusId) {
+          newFocus = newAST.getNodeById(focusId);
+        }
+        let newFocusNId = newFocus?.nid || null;
+        let topmostAction = editor.getTopmostAction("undo");
+        topmostAction.undoableAction = annt || undefined;
+        topmostAction.actionFocus = { oldFocusNId, newFocusNId };
+        dispatch({ type: "DO", focusId: focusId || null });
+      }
+      return ok({ newAST, focusId });
+    } catch (e) {
+      logResults(getReducerActivities(), e);
+      return err(e);
     }
-    return ok({ newAST, focusId });
-  } catch (e) {
-    logResults(getReducerActivities(), e);
-    return err(e);
-  }
-}
+  };
 
 // Use the focus hint to determine focus, unless:
 // 1. There is no focus hint, or
 // 2. There is a focus hint, but when you call it it returns "fallback".
 // In those cases, use `computeFocusNodeFromChanges` instead.
 // Note: a focusHint of -1 means "let CodeMirror set the focus"
-function setFocus(
-  state: Pick<RootState, "collapsedList">,
-  dispatch: AppDispatch,
-  editor: ReadonlyCMBEditor,
-  search: Search,
-  changes: EditorChange[],
-  focusHint: FocusHint | -1 | undefined,
-  newAST: AST
-) {
-  if (focusHint == -1) {
-    return;
-  }
-  let { collapsedList } = state;
-  let focusNode = focusHint ? focusHint(newAST) : "fallback";
-  if (focusNode === "fallback") {
-    focusNode = computeFocusNodeFromChanges(editor, changes, newAST);
-  }
-  let focusNId = focusNode ? focusNode.nid : null;
-  while (focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
-    if (collapsedList.includes(focusNode.id)) {
-      focusNId = focusNode.nid;
+const setFocus =
+  (
+    editor: ReadonlyCMBEditor,
+    search: Search,
+    changes: EditorChange[],
+    focusHint: FocusHint | -1 | undefined,
+    newAST: AST
+  ): AppThunk<string | 0 | null | undefined> =>
+  (dispatch, getState) => {
+    if (focusHint == -1) {
+      return;
     }
-  }
-  // get the nid and activate
-  if (focusNId !== null) {
-    dispatch(activateByNid(editor, search, focusNId));
-  }
+    let { collapsedList } = getState();
+    let focusNode = focusHint ? focusHint(newAST) : "fallback";
+    if (focusNode === "fallback") {
+      focusNode = computeFocusNodeFromChanges(editor, changes, newAST);
+    }
+    let focusNId = focusNode ? focusNode.nid : null;
+    while (focusNode && focusNode.parent && (focusNode = focusNode.parent)) {
+      if (collapsedList.includes(focusNode.id)) {
+        focusNId = focusNode.nid;
+      }
+    }
+    // get the nid and activate
+    if (focusNId !== null) {
+      dispatch(activateByNid(editor, search, focusNId));
+    }
 
-  let focusNode2 = focusNId && newAST.getNodeByNId(focusNId);
-  let focusId = focusNode2 && focusNode2.id;
+    let focusNode2 = focusNId && newAST.getNodeByNId(focusNId);
+    let focusId = focusNode2 && focusNode2.id;
 
-  return focusId;
-}
+    return focusId;
+  };
 
 // computeFocusNodeFromChanges : [CMchanges], AST -> Number
 // compute the focusId by identifying the node in the newAST that was

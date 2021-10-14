@@ -93,35 +93,35 @@ const Node = (
       // codemirror hasn't mounted yet, do nothing.
       return;
     }
-    keyDown(e, {
-      isNodeEnv: true,
-      node: props.node,
-      editor: editor,
-      language: language,
-      search: search,
+    dispatch(
+      keyDown(e, {
+        isNodeEnv: true,
+        node: props.node,
+        editor: editor,
+        language: language,
+        search: search,
 
-      isLocked,
-      handleMakeEditable,
-      setLeft: () => {
-        const dropTargetId = findAdjacentDropTargetId(props.node, true);
-        if (dropTargetId) {
-          dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
-        }
-        return !!dropTargetId;
-      },
-      setRight: () => {
-        const dropTargetId = findAdjacentDropTargetId(props.node, false);
-        if (dropTargetId) {
-          dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
-        }
-        return !!dropTargetId;
-      },
-      normallyEditable: Boolean(props.normallyEditable),
-      expandable: props.expandable,
-      isCollapsed: props.isCollapsed,
-
-      dispatch,
-    });
+        isLocked,
+        handleMakeEditable,
+        setLeft: () => {
+          const dropTargetId = findAdjacentDropTargetId(props.node, true);
+          if (dropTargetId) {
+            dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
+          }
+          return !!dropTargetId;
+        },
+        setRight: () => {
+          const dropTargetId = findAdjacentDropTargetId(props.node, false);
+          if (dropTargetId) {
+            dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
+          }
+          return !!dropTargetId;
+        },
+        normallyEditable: Boolean(props.normallyEditable),
+        expandable: props.expandable,
+        isCollapsed: props.isCollapsed,
+      })
+    );
   };
   const handleClick = (e: React.MouseEvent) => {
     const { inToolbar, normallyEditable } = props;

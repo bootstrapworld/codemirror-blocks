@@ -14,7 +14,7 @@ import {
   cloneNode,
   ClonedASTNode,
 } from "./fakeAstEdits";
-import type { AppDispatch } from "../store";
+import type { AppDispatch, AppThunk } from "../store";
 import type { EditorChange } from "codemirror";
 import { getReducerActivities, RootState } from "../reducers";
 import { useDispatch, useSelector } from "react-redux";
@@ -90,45 +90,6 @@ export function edit_replace(text: string, node: ASTNode): Edit {
   }
 }
 
-export type PerformEditState = Pick<
-  RootState,
-  "ast" | "focusId" | "collapsedList"
->;
-
-export function usePerformEdits() {
-  const dispatch = useDispatch();
-  const state = useSelector(({ ast, focusId, collapsedList }: RootState) => ({
-    ast,
-    focusId,
-    collapsedList,
-  }));
-  const search = useContext(SearchContext);
-  return useCallback(
-    (
-      origin: string,
-      edits: Edit[],
-      parse: (code: string) => AST,
-      editor: CMBEditor,
-      annt?: string
-    ) => {
-      if (!search) {
-        throw new Error(`Can't perform edits before search has mounted`);
-      }
-      return performEdits(
-        state,
-        dispatch,
-        search,
-        origin,
-        edits,
-        parse,
-        editor,
-        annt
-      );
-    },
-    [state.ast, state.focusId, state.collapsedList, search]
-  );
-}
-
 /**
  * performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
  *
@@ -138,73 +99,74 @@ export function usePerformEdits() {
  * functions: `edit_insert`, `edit_delete`, and `edit_replace`. Focus is
  * determined by the focus of the _last_ edit in `edits`.
  */
-export function performEdits(
-  state: PerformEditState,
-  dispatch: AppDispatch,
-  search: Search,
-  origin: string,
-  edits: Edit[],
-  parse: (code: string) => AST,
-  editor: CMBEditor,
-  annt?: string
-): Result<{ newAST: AST; focusId?: string | undefined }> {
-  // Use the focus hint from the last edit provided.
-  const lastEdit = edits[edits.length - 1];
-  const focusHint = (newAST: AST) => lastEdit.focusHint(newAST);
-  // Sort the edits from last to first, so that they don't interfere with
-  // each other's source locations or indices.
-  edits.sort((a, b) => poscmp(b.from, a.from));
-  // Group edits by shared ancestor, so that edits so grouped can be made with a
-  // single textual edit.
-  const editToEditGroup = groupEditsByAncestor(edits);
-  // Convert the edits into CodeMirror-style change objects
-  // (with `from`, `to`, and `text`, but not `removed` or `origin`).
-  let changeArray: EditorChange[] = new Array();
-  for (const edit of edits) {
-    let group = editToEditGroup.get(edit);
-    if (group) {
-      // Convert the group into a text edit.
-      if (!group.completed) {
-        changeArray.push(group.toChangeObject());
-        group.completed = true;
+export const performEdits =
+  (
+    search: Search,
+    origin: string,
+    edits: Edit[],
+    parse: (code: string) => AST,
+    editor: CMBEditor,
+    annt?: string
+  ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
+  (dispatch, getState) => {
+    const state = getState();
+    // Use the focus hint from the last edit provided.
+    const lastEdit = edits[edits.length - 1];
+    const focusHint = (newAST: AST) => lastEdit.focusHint(newAST);
+    // Sort the edits from last to first, so that they don't interfere with
+    // each other's source locations or indices.
+    edits.sort((a, b) => poscmp(b.from, a.from));
+    // Group edits by shared ancestor, so that edits so grouped can be made with a
+    // single textual edit.
+    const editToEditGroup = groupEditsByAncestor(edits);
+    // Convert the edits into CodeMirror-style change objects
+    // (with `from`, `to`, and `text`, but not `removed` or `origin`).
+    let changeArray: EditorChange[] = new Array();
+    for (const edit of edits) {
+      let group = editToEditGroup.get(edit);
+      if (group) {
+        // Convert the group into a text edit.
+        if (!group.completed) {
+          changeArray.push(group.toChangeObject());
+          group.completed = true;
+        }
+      } else {
+        if (edit.toChangeObject) {
+          changeArray.push(edit.toChangeObject(state.ast, editor));
+        }
+      }
+    }
+    // Set the origins
+    for (const c of changeArray) {
+      c.origin = origin;
+    }
+    // Validate the text edits.
+    let result = speculateChanges(changeArray, parse, editor);
+    if (result.successful) {
+      try {
+        // Perform the text edits, and update the ast.
+        editor.applyChanges(changeArray);
+        const changeResult = dispatch(
+          commitChanges(
+            search,
+            changeArray,
+            parse,
+            editor,
+            false,
+            focusHint,
+            result.newAST,
+            annt
+          )
+        );
+        return changeResult;
+      } catch (e) {
+        logResults(getReducerActivities(), e);
+        return err(e);
       }
     } else {
-      if (edit.toChangeObject) {
-        changeArray.push(edit.toChangeObject(state.ast, editor));
-      }
+      return err(result.exception);
     }
-  }
-  // Set the origins
-  for (const c of changeArray) {
-    c.origin = origin;
-  }
-  // Validate the text edits.
-  let result = speculateChanges(changeArray, parse, editor);
-  if (result.successful) {
-    try {
-      // Perform the text edits, and update the ast.
-      editor.applyChanges(changeArray);
-      const changeResult = commitChanges(
-        state,
-        dispatch,
-        search,
-        changeArray,
-        parse,
-        editor,
-        false,
-        focusHint,
-        result.newAST,
-        annt
-      );
-      return changeResult;
-    } catch (e) {
-      logResults(getReducerActivities(), e);
-      return err(e);
-    }
-  } else {
-    return err(result.exception);
-  }
-}
+  };
 
 /**
  * @internal

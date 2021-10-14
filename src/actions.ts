@@ -1,6 +1,6 @@
 import { poscmp, srcRangeIncludes, warn, setAfterDOMUpdate } from "./utils";
 import { say, cancelAnnouncement } from "./announcer";
-import { AppDispatch, AppStore } from "./store";
+import { AppDispatch, AppStore, AppThunk } from "./store";
 import {
   performEdits,
   edit_insert,
@@ -8,17 +8,15 @@ import {
   edit_replace,
   edit_overwrite,
   EditInterface,
-  PerformEditState,
 } from "./edits/performEdits";
 import { AST, ASTNode, Pos } from "./ast";
-import { RootState } from "./reducers";
+import { AppAction, RootState } from "./reducers";
 import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "./editor";
 import { useDispatch, useStore } from "react-redux";
 import type { Language } from "./CodeMirrorBlocks";
-import { useContext } from "react";
-import { LanguageContext } from "./components/Context";
 import { useLanguageOrThrow, useSearchOrThrow } from "./hooks";
 import { Search } from "./ui/BlockEditor";
+import { Result } from "./edits/result";
 
 // All editing actions are defined here.
 //
@@ -53,29 +51,18 @@ import { Search } from "./ui/BlockEditor";
 
 // Insert `text` at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export function insert(
-  state: PerformEditState,
-  dispatch: AppDispatch,
+export const insert = (
   search: Search,
   text: string,
   target: Target,
   editor: CMBEditor,
   parse: Language["parse"],
   annt?: string
-) {
+): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> => {
   checkTarget(target);
   const edits = [target.toEdit(text)];
-  return performEdits(
-    state,
-    dispatch,
-    search,
-    "cmb:insert",
-    edits,
-    parse,
-    editor,
-    annt
-  );
-}
+  return performEdits(search, "cmb:insert", edits, parse, editor, annt);
+};
 
 /**
  * Generates a description of an edit involving certain nodes
@@ -95,37 +82,30 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 
 // Delete the given nodes.
 // 'delete' is a reserved word, hence the trailing underscore
-export function delete_(
-  state: PerformEditState,
-  dispatch: AppDispatch,
-  search: Search,
-  editor: CMBEditor,
-  nodes: ASTNode[],
-  parse: Language["parse"],
-  editWord?: string
-) {
-  if (nodes.length === 0) {
-    return;
-  }
-  nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
-  const edits = nodes.map(edit_delete);
-  let annt: string | undefined = undefined;
-  if (editWord) {
-    annt = createEditAnnouncement(nodes, editWord);
-    say(annt);
-  }
-  performEdits(
-    state,
-    dispatch,
-    search,
-    "cmb:delete-node",
-    edits,
-    parse,
-    editor,
-    annt
-  );
-  dispatch({ type: "SET_SELECTIONS", selections: [] });
-}
+export const delete_ =
+  (
+    search: Search,
+    editor: CMBEditor,
+    nodes: ASTNode[],
+    parse: Language["parse"],
+    editWord?: string
+  ): AppThunk =>
+  (dispatch, getState) => {
+    if (nodes.length === 0) {
+      return;
+    }
+    nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
+    const edits = nodes.map(edit_delete);
+    let annt: string | undefined = undefined;
+    if (editWord) {
+      annt = createEditAnnouncement(nodes, editWord);
+      say(annt);
+    }
+    dispatch(
+      performEdits(search, "cmb:delete-node", edits, parse, editor, annt)
+    );
+    dispatch({ type: "SET_SELECTIONS", selections: [] });
+  };
 
 // Copy the given nodes onto the clipboard.
 export function copy(
@@ -161,21 +141,21 @@ export function copy(
 
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export function paste(
-  state: PerformEditState,
-  dispatch: AppDispatch,
-  editor: CMBEditor,
-  search: Search,
-  target: Target,
-  parse: Language["parse"]
-) {
-  checkTarget(target);
-  pasteFromClipboard((text) => {
-    const edits = [target.toEdit(text)];
-    performEdits(state, dispatch, search, "cmb:paste", edits, parse, editor);
-    dispatch({ type: "SET_SELECTIONS", selections: [] });
-  });
-}
+export const paste =
+  (
+    editor: CMBEditor,
+    search: Search,
+    target: Target,
+    parse: Language["parse"]
+  ): AppThunk =>
+  (dispatch, getState) => {
+    checkTarget(target);
+    pasteFromClipboard((text) => {
+      const edits = [target.toEdit(text)];
+      dispatch(performEdits(search, "cmb:paste", edits, parse, editor));
+      dispatch({ type: "SET_SELECTIONS", selections: [] });
+    });
+  };
 
 export function useDropAction() {
   // Drag from `src` (which should be a d&d monitor thing) to `target`.
@@ -214,14 +194,8 @@ export function useDropAction() {
     // Insert or replace at the drop location, depending on what we dropped it on.
     edits.push(target.toEdit(content));
     // Perform the edits.
-    const editResult = performEdits(
-      state,
-      dispatch,
-      search,
-      "cmb:drop-node",
-      edits,
-      language.parse,
-      editor
+    const editResult = dispatch(
+      performEdits(search, "cmb:drop-node", edits, language.parse, editor)
     );
 
     // Assuming it did not come from the toolbar, and the srcNode was collapsed...
@@ -240,16 +214,18 @@ export function useDropAction() {
 }
 
 // Set the cursor position.
-export function setCursor(editor: CMBEditor, cur: Pos | null, search: Search) {
-  return (dispatch: AppDispatch) => {
-    if (editor && cur) {
-      editor.focus();
-      search.setCursor(cur);
-      editor.setCursor(cur);
-    }
-    dispatch({ type: "SET_CURSOR", cur });
-  };
-}
+export const setCursor = (
+  editor: CMBEditor,
+  cur: Pos | null,
+  search: Search
+): AppAction => {
+  if (editor && cur) {
+    editor.focus();
+    search.setCursor(cur);
+    editor.setCursor(cur);
+  }
+  return { type: "SET_CURSOR", cur };
+};
 
 // Activate the node with the given `nid`.
 export function activateByNid(
@@ -257,8 +233,8 @@ export function activateByNid(
   search: Search,
   nid: number | null,
   options: { allowMove?: boolean; record?: boolean } = {}
-) {
-  return (dispatch: AppDispatch, getState: () => RootState) => {
+): AppThunk {
+  return (dispatch, getState) => {
     options = { ...options, allowMove: true, record: true };
     let { ast, focusId, collapsedList } = getState();
 
