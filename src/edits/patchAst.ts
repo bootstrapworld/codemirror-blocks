@@ -1,4 +1,4 @@
-import type { AST } from "../ast";
+import { AST } from "../ast";
 import { ASTNode } from "../ast";
 import { assert } from "../utils";
 
@@ -29,13 +29,20 @@ function copyAllIds(oldTree: ASTNode, newTree: ASTNode) {
   }
 }
 
-export default function unify(oldTree: AST, newTree: AST) {
-  function loop(oldTree: ASTNode | AST, newTree: ASTNode | AST) {
+export default function unify(oldTree: ASTNode[], newTree: ASTNode[]) {
+  function children(node: ASTNode | ASTNode[]): ASTNode[] {
+    if (node instanceof ASTNode) {
+      return [...node.children()];
+    }
+    return node;
+  }
+
+  function loop(oldTree: ASTNode | ASTNode[], newTree: ASTNode | ASTNode[]) {
     if (newTree instanceof ASTNode && oldTree instanceof ASTNode) {
       newTree.id = oldTree.id;
     }
     const index: { [key: string]: ASTNode[] } = {};
-    for (const oldNode of oldTree.children()) {
+    for (const oldNode of children(oldTree)) {
       addIndex(index, oldNode.hash, oldNode);
     }
     for (const key in index) {
@@ -45,7 +52,7 @@ export default function unify(oldTree: AST, newTree: AST) {
     const processed = new Set();
 
     let partiallySuccess = false;
-    const newLeftover = [...newTree.children()].filter((newNode) => {
+    const newLeftover = children(newTree).filter((newNode) => {
       if (index[newNode.hash]?.length > 0) {
         const oldNode = index[newNode.hash].pop();
         if (oldNode) {
@@ -57,7 +64,7 @@ export default function unify(oldTree: AST, newTree: AST) {
       }
       return true;
     });
-    const oldLeftover = [...oldTree.children()].filter((oldNode) => {
+    const oldLeftover = children(oldTree).filter((oldNode) => {
       return !processed.has(oldNode.id);
     });
     if (partiallySuccess || newLeftover.length <= 1) {
@@ -68,6 +75,5 @@ export default function unify(oldTree: AST, newTree: AST) {
     }
   }
   loop(oldTree, newTree);
-  newTree.annotateNodes();
-  return newTree;
+  return new AST(newTree);
 }

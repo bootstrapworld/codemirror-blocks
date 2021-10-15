@@ -53,7 +53,7 @@ export const commitChanges =
       // If we haven't already parsed the AST during speculateChanges, parse it now.
       let newAST: AST = astHint || parse(editor.getValue());
       // Patch the tree and set the state
-      newAST = patch(oldAST, newAST);
+      newAST = patch([...oldAST.rootNodes], [...newAST.rootNodes]);
       dispatch({ type: "SET_AST", ast: newAST });
       // Try to set the focus using hinting data. If that fails, use the first root
       let focusId =
