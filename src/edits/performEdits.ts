@@ -73,7 +73,7 @@ export function edit_overwrite(
 export function edit_delete(ast: AST, node: ASTNode): EditInterface {
   const parent = ast.getNodeParent(node);
   if (parent) {
-    return new DeleteChildEdit(node, parent);
+    return new DeleteChildEdit(node, parent, ast.getNodeBefore(node));
   } else {
     return new DeleteRootEdit(node);
   }
@@ -88,7 +88,7 @@ export function edit_replace(
   if (parent) {
     // if the text is the empty string, return a Deletion instead
     if (text === "") {
-      return new DeleteChildEdit(node, parent);
+      return new DeleteChildEdit(node, parent, ast.getNodeBefore(node));
     }
     return new ReplaceChildEdit(text, node, parent);
   } else {
@@ -281,7 +281,8 @@ abstract class Edit implements EditInterface {
   // The default behavior for most edits
   focusHint(newAST: AST) {
     if (this.node) {
-      return newAST.getNodeBefore(this.node) || "fallback";
+      const newNode = newAST.getNodeById(this.node.id);
+      return (newNode && newAST.getNodeBefore(newNode)) || "fallback";
     }
     return newAST.getFirstRootNode() || "fallback";
   }
@@ -442,12 +443,18 @@ class InsertChildEdit extends AstEdit {
 
 class DeleteChildEdit extends AstEdit {
   node: ASTNode;
+  private prevId?: string;
   fakeAstReplacement: FakeAstReplacement;
-  constructor(node: ASTNode, parent: ASTNode) {
+  constructor(node: ASTNode, parent: ASTNode, prev: ASTNode | null) {
     let range = node.srcRange();
     super(range.from, range.to, parent);
     this.node = node;
+    this.prevId = prev?.id;
     this.fakeAstReplacement = new FakeAstReplacement(parent, node);
+  }
+
+  focusHint(newAST: AST) {
+    return (this.prevId && newAST.getNodeById(this.prevId)) || "fallback";
   }
 
   makeAstEdit(clonedAncestor: ClonedASTNode) {

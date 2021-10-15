@@ -152,21 +152,20 @@ export class AST {
         if (node.id === undefined) {
           node.id = genUniqueId();
         }
-        const edges: Edges = {
-          parentId: parent?.id,
-        };
-        this.edgeIdMap[node.id] = edges;
         node.level = level;
         node["aria-setsize"] = nodes.length;
         node["aria-posinset"] = i + 1;
         node.nid = nid++;
         if (lastNode) {
-          node.prevId = lastNode.id;
           this.edgeIdMap[lastNode.id] = {
             ...this.edgeIdMap[lastNode.id],
             nextId: node.id,
           };
         }
+        this.edgeIdMap[node.id] = {
+          parentId: parent?.id,
+          prevId: lastNode?.id,
+        };
         this.nodeIdMap.set(node.id, node);
         this.nodeNIdMap.set(node.nid, node);
         lastNode = node;
@@ -198,7 +197,6 @@ export class AST {
       "id",
       "level",
       "nid",
-      "prevId",
       "hash",
       "aria-setsize",
       "aria-posinset",
@@ -322,8 +320,9 @@ export class AST {
    * Returns the previous node or null
    */
   getNodeBefore = (selection: ASTNode) => {
-    if (selection.prevId) {
-      return this.getNodeByIdOrThrow(selection.prevId);
+    const prevId = this.edgeIdMap[selection.id].prevId;
+    if (prevId) {
+      return this.getNodeByIdOrThrow(prevId);
     }
     return null;
   };
@@ -538,11 +537,9 @@ export abstract class ASTNode<
 
   /**
    * @internal
-   * Optional pointers to the node's parent and prev/next siblings
    * the options object always contains the aria-label, but can also
    * include other values
    */
-  prevId?: string;
   options: Opt;
 
   /**
