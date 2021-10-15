@@ -1,7 +1,7 @@
 import * as P from "pretty-fast-pretty-printer";
 import React from "react";
 import { ASTNode, enumerateList, NodeOptions, pluralize, Pos } from "./ast";
-import Node, { NodeProps } from "./components/Node";
+import Node, { Props as NodeProps } from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
 import * as Spec from "./nodeSpec";
