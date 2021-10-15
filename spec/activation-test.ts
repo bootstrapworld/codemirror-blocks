@@ -13,9 +13,6 @@ import {
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
 import { FunctionApp } from "../src/nodes";
-import { debugLog } from "../src/utils";
-
-debugLog("Doing activation-test.js");
 
 const activeAriaId = (cmb: API) =>
   cmb.getScrollerElement().getAttribute("aria-activedescendent");
@@ -62,10 +59,9 @@ describe("when dealing with node activation,", () => {
     expect(cmb.getValue()).toBe("11\n54");
   });
 
-  // TODO(pcardune): fix this test, which is also generating
-  // errors with cyclic data structures...
-  xit("should activate the first node when down is pressed", async () => {
+  it("should activate the first node when down is pressed", async () => {
     mouseDown(literal1.element!);
+    await finishRender();
     keyDown("[", { ctrlKey: true }, literal1.element!); // set cursor to the left
     await finishRender();
     keyDown("ArrowDown");
@@ -78,6 +74,7 @@ describe("when dealing with node activation,", () => {
 
   it("should activate the next node when down is pressed", async () => {
     keyDown("ArrowDown");
+    await finishRender();
     keyDown("ArrowDown");
     await finishRender();
     expect(cmb.getFocusedNode()).not.toBe(literal1);
