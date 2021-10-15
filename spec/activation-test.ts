@@ -322,7 +322,7 @@ describe("tree navigation", () => {
     expect(nestedExpr.element!.getAttribute("aria-expanded")).toBe("false");
   });
 
-  xit("less-than should activate root without collapsing", async () => {
+  it("less-than should activate root without collapsing", async () => {
     mouseDown(nestedExpr.args[1]);
     keyDown("<", { shiftKey: true }, nestedExpr.args[1]);
     await finishRender();

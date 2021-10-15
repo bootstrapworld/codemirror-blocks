@@ -365,10 +365,12 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     } else {
-      return activateByNid(
-        env.editor,
-        env.search,
-        getRoot(getState().ast, env.node).nid
+      return dispatch(
+        activateByNid(
+          env.editor,
+          env.search,
+          getRoot(getState().ast, env.node).nid
+        )
       );
     }
   },
