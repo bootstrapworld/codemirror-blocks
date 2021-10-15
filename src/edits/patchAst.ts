@@ -75,5 +75,5 @@ export default function unify(oldTree: ASTNode[], newTree: ASTNode[]) {
     }
   }
   loop(oldTree, newTree);
-  return new AST(newTree);
+  return newTree;
 }

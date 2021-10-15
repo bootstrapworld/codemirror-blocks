@@ -30,7 +30,7 @@ beforeEach(() => {
   editor = new CodeMirrorFacade(
     CodeMirror(document.body, { value: initialCode })
   );
-  ast = wescheme.parse(editor.getValue());
+  ast = new AST(wescheme.parse(editor.getValue()));
 });
 
 afterEach(() => {

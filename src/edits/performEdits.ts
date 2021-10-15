@@ -20,6 +20,7 @@ import { err, ok, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
 import { Search } from "../ui/BlockEditor";
 import CodeMirror from "codemirror";
+import { Language } from "../CodeMirrorBlocks";
 
 /**
  *
@@ -180,8 +181,11 @@ export function applyEdits(
   edits: EditInterface[],
   ast: AST,
   editor: CMBEditor,
-  parse: (code: string) => AST
-): Result<{ newAST: AST; changeObjects: ChangeObject[] }> {
+  parse: Language["parse"]
+): Result<{
+  newAST: AST;
+  changeObjects: ChangeObject[];
+}> {
   const changeObjects = editsToChange(edits, ast, editor);
   // Validate the text edits.
   const result = speculateChanges(changeObjects, parse, editor.getValue());
@@ -205,7 +209,7 @@ export const performEdits =
   (
     search: Search,
     edits: EditInterface[],
-    parse: (code: string) => AST,
+    parse: Language["parse"],
     editor: CMBEditor,
     annt?: string
   ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>

@@ -1,6 +1,5 @@
 /*eslint indent: "off"*/
 import { BlockError } from "../../utils";
-import { AST } from "../../ast";
 import {
   Blank,
   Literal,
@@ -443,7 +442,7 @@ class WeschemeParser {
     return lex(code);
   }
 
-  parse(code, annotate = true) {
+  parse(code) {
     function fallback(sexp) {
       var elts =
         sexp instanceof Array ? parseStar(sexp) : [parseExprSingleton(sexp)];
@@ -1202,7 +1201,7 @@ class WeschemeParser {
 
     let ast = parseStar(lex(code));
     let rootNodes = ast.map(parseNode).filter((item) => item !== null);
-    return new AST(rootNodes, annotate);
+    return rootNodes;
   }
 
   getExceptionMessage(e) {

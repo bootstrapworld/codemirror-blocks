@@ -1,4 +1,4 @@
-import { AST, ASTNode, Pos } from "../../ast";
+import { ASTNode, Pos } from "../../ast";
 import { Literal, FunctionApp } from "../../nodes";
 
 const TOKENS = {
@@ -141,7 +141,7 @@ export default class ExampleParser {
     while (this.peekToken().token != TOKENS.EOF) {
       rootNodes.push(this.parseNextToken());
     }
-    return new AST(rootNodes);
+    return rootNodes;
   }
 
   parseNextToken(): ASTNode {

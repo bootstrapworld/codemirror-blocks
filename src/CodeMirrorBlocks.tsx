@@ -54,7 +54,7 @@ export type Language = {
    * @param code source code for the program
    * @returns The ast that codemirror-blocks will render
    */
-  parse(code: string): AST.AST;
+  parse(code: string): AST.ASTNode[];
 
   /**
    * A function for generating a human readable error message
