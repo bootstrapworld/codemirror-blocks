@@ -1,8 +1,8 @@
 import wescheme from "../src/languages/wescheme";
 
 import { teardown, finishRender, mountCMB } from "../src/toolkit/test-utils";
-import { API, AST } from "../src/CodeMirrorBlocks";
-import { ASTNode } from "../src/ast";
+import { API } from "../src/CodeMirrorBlocks";
+import { AST, ASTNode } from "../src/ast";
 import { MarkerRange, TextMarker } from "codemirror";
 import { debugLog } from "../src/utils";
 
@@ -11,7 +11,7 @@ debugLog("Doing markText-test.js");
 describe("The CodeMirrorBlocks Class", function () {
   describe("text marking api,", function () {
     let cmb!: API;
-    let ast!: AST.AST;
+    let ast!: AST;
     let literal1!: ASTNode;
     let literal2!: ASTNode;
     let expression!: ASTNode & { args: ASTNode[] };
