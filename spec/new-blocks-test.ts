@@ -1,6 +1,6 @@
 import CodeMirror from "codemirror";
-import { ASTNode } from "../src/ast";
-import type { API, AST } from "../src/CodeMirrorBlocks";
+import { AST, ASTNode } from "../src/ast";
+import type { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
 import { FunctionApp } from "../src/nodes";
 
@@ -184,7 +184,7 @@ describe("The CodeMirrorBlocks Class", function () {
     });
 
     describe("when dealing with whitespace,", function () {
-      let ast!: AST.AST;
+      let ast!: AST;
       let firstRoot!: ASTNode;
       let firstArg!: ASTNode;
       let whiteSpaceEl!: Element;
@@ -247,7 +247,7 @@ describe("The CodeMirrorBlocks Class", function () {
       });
 
       describe("in corner-cases with no arguments,", function () {
-        let ast!: AST.AST;
+        let ast!: AST;
         let firstRoot!: ASTNode;
         let func!: ASTNode;
         let argWS!: ChildNode;

@@ -326,8 +326,9 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
 
     // When the editor receives focus, select the first root (if it exists)
-    if (ast.rootNodes.length > 0) {
-      this.props.dispatch({ type: "SET_FOCUS", focusId: ast.rootNodes[0].id });
+    const firstRoot = ast.getFirstRootNode();
+    if (firstRoot) {
+      this.props.dispatch({ type: "SET_FOCUS", focusId: firstRoot.id });
     }
     // Set extra aria attributes
     const wrapper = editor.codemirror.getWrapperElement();
@@ -869,7 +870,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     const { editor } = this.state;
     if (editor && this.props.ast) {
       // Render all the top-level nodes
-      portals = this.props.ast.rootNodes.map((r) => (
+      portals = [...this.props.ast.children()].map((r) => (
         <EditorContext.Provider value={editor} key={r.id}>
           <ToplevelBlock
             node={r}

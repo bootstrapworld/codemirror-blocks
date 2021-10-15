@@ -1,5 +1,5 @@
 import CodeMirror from "codemirror";
-import { AST } from "../src/CodeMirrorBlocks";
+import { AST } from "../src/ast";
 import { FunctionApp, Literal, Sequence, Comment } from "../src/nodes";
 
 describe("The Literal Class", () => {
@@ -116,7 +116,7 @@ describe("The FunctionApp Class", () => {
   let func: Literal;
   let args: Literal[];
   let nestedExpression: FunctionApp;
-  let ast: AST.AST;
+  let ast: AST;
   beforeEach(() => {
     func = new Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol");
     args = [
@@ -150,7 +150,7 @@ describe("The FunctionApp Class", () => {
       ]
     );
     // build the AST, thereby assigning parent/child/sibling relationships
-    ast = new AST.AST([expression]);
+    ast = new AST([expression]);
   });
 
   it("should take a function name and list of args in its constructor", () => {
@@ -184,7 +184,7 @@ describe("The FunctionApp Class", () => {
 describe("The AST Class", () => {
   it("should take a set of root nodes in its constructor", () => {
     const nodes = [new Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, 11)];
-    const ast = new AST.AST(nodes);
+    const ast = new AST(nodes);
     expect(ast.rootNodes).toBe(nodes);
   });
 
@@ -201,11 +201,11 @@ describe("The AST Class", () => {
         ]
       ),
     ] as [Literal, FunctionApp];
-    const ast = new AST.AST(nodes);
-    expect(ast.nodeIdMap.get(nodes[0].id)).toBe(nodes[0]);
-    expect(ast.nodeIdMap.get(nodes[1].id)).toBe(nodes[1]);
-    expect(ast.nodeIdMap.get(nodes[1].args[0].id)).toBe(nodes[1].args[0]);
-    expect(ast.nodeIdMap.get(nodes[1].args[1].id)).toBe(nodes[1].args[1]);
+    const ast = new AST(nodes);
+    expect(ast.getNodeById(nodes[0].id)).toBe(nodes[0]);
+    expect(ast.getNodeById(nodes[1].id)).toBe(nodes[1]);
+    expect(ast.getNodeById(nodes[1].args[0].id)).toBe(nodes[1].args[0]);
+    expect(ast.getNodeById(nodes[1].args[1].id)).toBe(nodes[1].args[1]);
   });
 
   it("idential subtrees should have the same hash", () => {
@@ -233,8 +233,8 @@ describe("The AST Class", () => {
         ]
       ),
     ];
-    const ast1 = new AST.AST(nodes1);
-    const ast2 = new AST.AST(nodes2);
+    const ast1 = new AST(nodes1);
+    const ast2 = new AST(nodes2);
     expect(ast1.rootNodes[0].hash).toBe(ast2.rootNodes[0].hash);
   });
 
@@ -265,8 +265,8 @@ describe("The AST Class", () => {
         ]
       ),
     ];
-    const ast1 = new AST.AST(nodes1);
-    const ast2 = new AST.AST(nodes2);
+    const ast1 = new AST(nodes1);
+    const ast2 = new AST(nodes2);
     expect(ast1.rootNodes[0].hash).not.toBe(ast2.rootNodes[0].hash);
   });
 });

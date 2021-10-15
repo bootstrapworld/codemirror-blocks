@@ -336,7 +336,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         try {
           let oldCode = state.editor.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
-          oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
+          oldAst = new AST(this.props.language.parse(oldCode)); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
           let message = "";
@@ -352,7 +352,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         }
         try {
           code = oldAst.toString() + (WS ? WS[0] : ""); // pretty-print and restore whitespace
-          this.ast = this.props.language.parse(code); // parse the pretty-printed (PP) code
+          this.ast = new AST(this.props.language.parse(code)); // parse the pretty-printed (PP) code
         } catch (e) {
           console.error("COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n", oldAst);
           console.error("PRETTY-PRINTED CODE WAS", oldAst.toString());

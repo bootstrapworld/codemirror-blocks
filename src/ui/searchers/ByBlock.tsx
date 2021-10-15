@@ -5,7 +5,7 @@ import { Searcher } from "./Searcher";
 
 function getAllNodeTypes(ast: AST) {
   const allNodeTypes: Set<string> = new Set();
-  for (const node of ast.nodeIdMap.values()) {
+  for (const node of ast.getAllNodes()) {
     allNodeTypes.add(node.type);
   }
   return allNodeTypes;

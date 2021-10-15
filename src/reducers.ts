@@ -146,7 +146,7 @@ function reduce(state = initialState(), action: AppAction): RootState {
         collapsedList: state.collapsedList.filter((e) => e !== action.id),
       };
     case "COLLAPSE_ALL":
-      return { ...state, collapsedList: [...state.ast.nodeIdMap.keys()] };
+      return { ...state, collapsedList: [...state.ast.getAllNodeIds()] };
     case "UNCOLLAPSE_ALL":
       return { ...state, collapsedList: [] };
     case "SET_CURSOR":

@@ -1,8 +1,9 @@
 import CodeMirror from "codemirror";
 import type { EditorChange } from "codemirror";
-import type { AST } from "../ast";
+import { AST } from "../ast";
 import { CodeMirrorFacade, RangedText } from "../editor";
 import { err, ok, Result } from "./result";
+import { Language } from "../CodeMirrorBlocks";
 
 // TODO: For efficiency, we don't really need a full CodeMirror instance here:
 // create a mock one.
@@ -16,7 +17,7 @@ const tmpRangedText: RangedText = new CodeMirrorFacade(
  */
 export function speculateChanges(
   changeArr: EditorChange[],
-  parse: (code: string) => AST,
+  parse: Language["parse"],
   text: string
 ): Result<AST> {
   tmpRangedText.setValue(text);
@@ -25,8 +26,7 @@ export function speculateChanges(
   }
   let newText = tmpRangedText.getValue();
   try {
-    let newAST = parse(newText);
-    return ok(newAST);
+    return ok(new AST(parse(newText)));
   } catch (exception) {
     return err(exception);
   }

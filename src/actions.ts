@@ -207,9 +207,7 @@ export function useDropAction() {
       if (editResult.successful) {
         ast = editResult.value.newAST;
       }
-      const newNode = [...ast.nodeIdMap.values()].find(
-        (n) => n.hash == droppedHash
-      );
+      const newNode = [...ast.getAllNodes()].find((n) => n.hash == droppedHash);
       newNode && dispatch({ type: "COLLAPSE", id: newNode.id });
       dispatch({ type: "UNCOLLAPSE", id: srcNode.id });
     }

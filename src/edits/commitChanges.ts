@@ -9,6 +9,7 @@ import { err, ok, Result } from "./result";
 import { ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { Search } from "../ui/BlockEditor";
 import { ChangeObject } from "./performEdits";
+import { Language } from "../CodeMirrorBlocks";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
@@ -34,7 +35,7 @@ export const commitChanges =
   (
     search: Search,
     changes: ChangeObject[],
-    parse: (code: string) => AST,
+    parse: Language["parse"],
     editor: ReadonlyCMBEditor,
     isUndoOrRedo: boolean = false,
     focusHint?: FocusHint | -1,
@@ -51,9 +52,11 @@ export const commitChanges =
         oldFocusNId = oldFocus ? oldFocus.nid : null;
       }
       // If we haven't already parsed the AST during speculateChanges, parse it now.
-      let newAST: AST = astHint || parse(editor.getValue());
+      const newNodes: ASTNode[] = astHint
+        ? [...astHint.rootNodes]
+        : parse(editor.getValue());
       // Patch the tree and set the state
-      newAST = patch(oldAST, newAST);
+      const newAST = new AST(patch([...oldAST.rootNodes], newNodes));
       dispatch({ type: "SET_AST", ast: newAST });
       // Try to set the focus using hinting data. If that fails, use the first root
       let focusId =
