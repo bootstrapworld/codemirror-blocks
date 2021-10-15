@@ -582,13 +582,6 @@ export abstract class ASTNode<
    */
   __alreadyValidated: boolean = false;
 
-  /**
-   * @internal
-   * the CM TextMarker which contains the element representing the node
-   * (only relevant for rootNodes)
-   */
-  mark: BlockNodeMarker;
-
   constructor(from: Pos, to: Pos, type: string, options: Opt) {
     this.from = from;
     this.to = to;
