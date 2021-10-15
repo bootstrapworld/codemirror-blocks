@@ -13,6 +13,7 @@ import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
 import { EditorContext } from "./Context";
 import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
+import { RootNodeContext } from "../ui/ToplevelBlock";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -39,15 +40,14 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   );
 
+  const rootNode = useContext(RootNodeContext);
   useEffect(() => {
-    // if its a top level node (ie - it has a CM mark on the node) AND
-    // its isCollapsed property has changed, call mark.changed() to
-    // tell CodeMirror that the widget's height may have changed
-    // TODO(pcardune): Does this logic perhaps belong in ToplevelBlock?
-    if (props.node.mark) {
-      props.node.mark.changed();
-    }
-  }, [stateProps.isCollapsed, props.node.mark]);
+    // Whenever a node gets rerendered because it's collapsed state has changed,
+    // make sure to notifiy
+    // codemirror by calling marker.changed() on the rootNode
+    // marker object, in case the widget's height has changed.
+    rootNode.marker?.changed();
+  }, [stateProps.isCollapsed]);
 
   const [editable, setEditable] = useState(false);
   props.node.isEditable = () => editable;

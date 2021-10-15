@@ -1,14 +1,24 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { createContext, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { poscmp, setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 import { ASTNode } from "../ast";
-import { CMBEditor } from "../editor";
+import { BlockNodeMarker, CMBEditor } from "../editor";
 
 type Props = {
   incrementalRendering: boolean;
   node: ASTNode;
   editor: CMBEditor;
 };
+
+export const RootNodeContext = createContext<{
+  /**
+   * The codemirror block node marker that was created
+   * when the root node was rendered. We make this
+   * available in a context so that child nodes can
+   * call the changed() method when they rerender.
+   */
+  marker?: BlockNodeMarker;
+}>({});
 
 const ToplevelBlock = (props: Props) => {
   const [renderPlaceholder, setRenderPlaceholder] = useState(
@@ -29,13 +39,18 @@ const ToplevelBlock = (props: Props) => {
     return { container };
   }, []);
 
-  // set elt to a cheap placeholder, OR render the entire rootNode
-  const elt = renderPlaceholder ? <div /> : props.node.reactElement();
-
   // make a new block marker, and fill it with the portal
   const { from, to } = props.node.srcRange(); // includes the node's comment, if any
   const mark = props.editor.replaceMarkerWidget(from, to, container);
-  props.node.mark = mark;
+
+  // set elt to a cheap placeholder, OR render the entire rootNode
+  const elt = renderPlaceholder ? (
+    <div />
+  ) : (
+    <RootNodeContext.Provider value={{ marker: mark }}>
+      {props.node.reactElement()}
+    </RootNodeContext.Provider>
+  );
 
   useEffect(() => {
     // When unmounting, clean up the TextMarker
@@ -62,6 +77,5 @@ export default React.memo(
   (prevProps: Props, nextProps: Props) =>
     nextProps.incrementalRendering === prevProps.incrementalRendering &&
     nextProps.editor === prevProps.editor &&
-    areNodesEqualish(prevProps.node, nextProps.node) && // didn't change
-    document.contains(nextProps.node.mark?.replacedWith || null) // wasn't removed from dom
+    areNodesEqualish(prevProps.node, nextProps.node) // didn't change
 );
