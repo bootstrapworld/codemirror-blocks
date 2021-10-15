@@ -202,7 +202,7 @@ export class AST {
   /**
    * *Unique* ID for every newly-parsed node. No ID is ever re-used.
    */
-  readonly nodeIdMap: ReadonlyMap<string, ASTNode> = new Map();
+  private readonly nodeIdMap: ReadonlyMap<string, ASTNode> = new Map();
 
   /**
    * Index of each node (in-order walk). NIds always start at 0
@@ -271,8 +271,8 @@ export class AST {
     const that = this;
     return {
       *[Symbol.iterator]() {
-        for (const node in that.rootNodes) {
-          yield* (node as unknown as ASTNode).descendants();
+        for (const node of that.rootNodes) {
+          yield* node.descendants();
         }
       },
     };
@@ -285,6 +285,16 @@ export class AST {
    */
   getNodeById = (id: string) => this.nodeIdMap.get(id);
   getNodeByNId = (nid: number) => this.nodeNIdMap.get(nid);
+
+  /**
+   * Get all node ids in no particular order
+   */
+  getAllNodeIds = () => this.nodeIdMap.keys();
+
+  /**
+   * Get all nodes in no particular order
+   */
+  getAllNodes = () => this.nodeIdMap.values();
 
   getNodeByIdOrThrow = (id: string) => {
     const node = this.getNodeById(id);

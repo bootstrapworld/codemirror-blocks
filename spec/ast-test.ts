@@ -202,10 +202,10 @@ describe("The AST Class", () => {
       ),
     ] as [Literal, FunctionApp];
     const ast = new AST.AST(nodes);
-    expect(ast.nodeIdMap.get(nodes[0].id)).toBe(nodes[0]);
-    expect(ast.nodeIdMap.get(nodes[1].id)).toBe(nodes[1]);
-    expect(ast.nodeIdMap.get(nodes[1].args[0].id)).toBe(nodes[1].args[0]);
-    expect(ast.nodeIdMap.get(nodes[1].args[1].id)).toBe(nodes[1].args[1]);
+    expect(ast.getNodeById(nodes[0].id)).toBe(nodes[0]);
+    expect(ast.getNodeById(nodes[1].id)).toBe(nodes[1]);
+    expect(ast.getNodeById(nodes[1].args[0].id)).toBe(nodes[1].args[0]);
+    expect(ast.getNodeById(nodes[1].args[1].id)).toBe(nodes[1].args[1]);
   });
 
   it("idential subtrees should have the same hash", () => {
