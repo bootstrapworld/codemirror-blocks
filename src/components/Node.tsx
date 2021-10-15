@@ -1,6 +1,6 @@
 import React, { HTMLAttributes, useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
-import { ASTNode } from "../ast";
+import { AST, ASTNode } from "../ast";
 import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
@@ -85,15 +85,15 @@ const Node = ({ expandable = true, ...props }: Props) => {
 
         isLocked,
         handleMakeEditable,
-        setLeft: () => {
-          const dropTargetId = findAdjacentDropTargetId(props.node, true);
+        setLeft: (ast: AST) => {
+          const dropTargetId = findAdjacentDropTargetId(ast, props.node, true);
           if (dropTargetId) {
             dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
           }
           return !!dropTargetId;
         },
-        setRight: () => {
-          const dropTargetId = findAdjacentDropTargetId(props.node, false);
+        setRight: (ast: AST) => {
+          const dropTargetId = findAdjacentDropTargetId(ast, props.node, false);
           if (dropTargetId) {
             dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
           }

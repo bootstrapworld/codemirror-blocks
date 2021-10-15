@@ -169,7 +169,7 @@ describe("The FunctionApp Class", () => {
   });
 
   it("should have all navigation pointers and aria attributes set", () => {
-    expect(expression.next).toEqual(expression.func);
+    expect(ast.getNodeAfter(expression)).toEqual(expression.func);
     expect(ast.getNodeParent(expression.func)).toEqual(expression);
     expect(ast.getNodeAfter(expression.func)).toEqual(expression.args[0]);
     expect(ast.getNodeParent(expression.args[0])).toEqual(expression);

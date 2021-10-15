@@ -47,24 +47,38 @@ const descDepth = 1;
  */
 export const prettyPrintingWidth = 80;
 
+type Edges = { parentId?: string; nextId?: string; prevId?: string };
+
 /**
  * This is the the *Abstract Syntax Tree*. Parser implementations
  * are required to spit out an `AST` instance.
  */
 export class AST {
-  readonly rootNodes: ASTNode[];
-  readonly nodeIdMap: Map<string, ASTNode>;
-  readonly nodeNIdMap: Map<number, ASTNode>;
+  /**
+   * the `rootNodes` attribute simply contains a list of the top level nodes
+   * that were parsed, in srcLoc order
+   */
+  readonly rootNodes: Readonly<ASTNode[]>;
+
+  /**
+   * *Unique* ID for every newly-parsed node. No ID is ever re-used.
+   */
+  readonly nodeIdMap: Map<string, ASTNode> = new Map();
+
+  /**
+   * Index of each node (in-order walk). NIds always start at 0
+   */
+  private readonly nodeNIdMap: Map<number, ASTNode> = new Map();
+
+  /**
+   * Mapping from node id to other node ids through various edges.
+   * Used for {@link getNodeBefore}, {@link getNodeAfter}, and
+   * {@link getNodeParent}
+   */
+  private readonly edgeIdMap: Record<string, Readonly<Edges>> = {};
 
   constructor(rootNodes: ASTNode[], annotate = true) {
-    // the `rootNodes` attribute simply contains a list of the top level nodes
-    // that were parsed, in srcLoc order
     this.rootNodes = rootNodes;
-
-    // *Unique* ID for every newly-parsed node. No ID is ever re-used.
-    this.nodeIdMap = new Map();
-    // Index of each node (in-order walk). NIds always start at 0
-    this.nodeNIdMap = new Map();
 
     // When an AST is to be used by CMB, it must be annotated.
     // This step is computationally intensive, and in certain instances
@@ -135,7 +149,7 @@ export class AST {
     let nid = 0;
 
     const processChildren = (
-      nodes: ASTNode[],
+      nodes: Readonly<ASTNode[]>,
       parent: ASTNode | undefined,
       level: number
     ) => {
@@ -145,15 +159,20 @@ export class AST {
         if (node.id === undefined) {
           node.id = genUniqueId();
         }
-        node.parent = parent;
         node.level = level;
         node["aria-setsize"] = nodes.length;
         node["aria-posinset"] = i + 1;
         node.nid = nid++;
         if (lastNode) {
-          node.prev = lastNode;
-          lastNode.next = node;
+          this.edgeIdMap[lastNode.id] = {
+            ...this.edgeIdMap[lastNode.id],
+            nextId: node.id,
+          };
         }
+        this.edgeIdMap[node.id] = {
+          parentId: parent?.id,
+          prevId: lastNode?.id,
+        };
         this.nodeIdMap.set(node.id, node);
         this.nodeNIdMap.set(node.nid, node);
         lastNode = node;
@@ -183,11 +202,8 @@ export class AST {
     // Check that the node doesn't define any of the fields we're going to add to it.
     const newFieldNames = [
       "id",
-      "parent",
       "level",
       "nid",
-      "prev",
-      "next",
       "hash",
       "aria-setsize",
       "aria-posinset",
@@ -285,15 +301,11 @@ export class AST {
    * throws an exception if either isn't found
    */
   isAncestor = (uid: string, vid: string) => {
-    let v = this.getNodeById(vid);
-    const u = this.getNodeById(uid);
-    if (!u) throw new Error(`The nodeId ${uid} was not found`);
-    if (!v) throw new Error(`The nodeId ${vid} was not found`);
-    if (v) {
-      v = v.parent;
-    }
-    while (v && u && v.level > u.level) {
-      v = v.parent;
+    let v: ASTNode | null = this.getNodeByIdOrThrow(vid);
+    const u = this.getNodeByIdOrThrow(uid);
+    v = this.getNodeParent(v);
+    while (v && v.level > u.level) {
+      v = this.getNodeParent(v);
     }
     return u === v;
   };
@@ -302,13 +314,25 @@ export class AST {
    * getNodeAfter : ASTNode -> ASTNode
    * Returns the next node or null
    */
-  getNodeAfter = (selection: ASTNode) => selection.next || null;
+  getNodeAfter = (selection: ASTNode) => {
+    const nextId = this.edgeIdMap[selection.id].nextId;
+    if (nextId) {
+      return this.getNodeByIdOrThrow(nextId);
+    }
+    return null;
+  };
 
   /**
    * getNodeBefore : ASTNode -> ASTNode
    * Returns the previous node or null
    */
-  getNodeBefore = (selection: ASTNode) => selection.prev || null;
+  getNodeBefore = (selection: ASTNode) => {
+    const prevId = this.edgeIdMap[selection.id].prevId;
+    if (prevId) {
+      return this.getNodeByIdOrThrow(prevId);
+    }
+    return null;
+  };
 
   // NOTE: If we have x|y where | indicates the cursor, the position of the cursor
   // is the same as the position of y's `from`. Hence, going forward requires ">= 0"
@@ -320,7 +344,7 @@ export class AST {
    */
   getNodeAfterCur = (cur: Pos) => {
     function loop(
-      nodes: ASTNode[],
+      nodes: Readonly<ASTNode[]>,
       parentFallback: ASTNode | null
     ): ASTNode | null {
       let n = nodes.find((n) => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
@@ -342,7 +366,7 @@ export class AST {
    */
   getNodeBeforeCur = (cur: Pos) => {
     function loop(
-      nodes: ASTNode[],
+      nodes: Readonly<ASTNode[]>,
       parentFallback: ASTNode | null
     ): ASTNode | null {
       // find the last node that begins before cur
@@ -404,10 +428,11 @@ export class AST {
 
   /**
    * getNodeParent : ASTNode -> ASTNode | Boolean
-   * return the parent or false
+   * return the parent or null
    */
   getNodeParent = (node: ASTNode) => {
-    return node.parent || false;
+    const parentId = this.edgeIdMap[node.id].parentId;
+    return parentId ? this.getNodeByIdOrThrow(parentId) : null;
   };
 
   /**
@@ -519,13 +544,9 @@ export abstract class ASTNode<
 
   /**
    * @internal
-   * Optional pointers to the node's parent and prev/next siblings
    * the options object always contains the aria-label, but can also
    * include other values
    */
-  parent?: ASTNode;
-  prev?: ASTNode;
-  next?: ASTNode;
   options: Opt;
 
   /**

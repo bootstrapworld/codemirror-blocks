@@ -22,9 +22,7 @@ const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
       drop: (item: { id: string }) => {
         const srcNode = item.id ? ast.getNodeById(item.id) : null; // null if dragged from toolbar
         if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
-        let edits = [
-          edit_delete(store.getState().ast.getNodeByIdOrThrow(srcNode.id)),
-        ];
+        let edits = [edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id))];
         if (!search) {
           throw new Error(`Can't perform edits before search has mounted`);
         }
