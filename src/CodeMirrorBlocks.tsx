@@ -80,13 +80,13 @@ export type Language = {
 };
 
 type Props = {
-  api: any;
+  onMount: (api: API) => void;
   options?: Options;
   language: Language;
   codemirrorOptions?: CodeMirror.EditorConfiguration;
 };
 export const CodeMirrorBlocksComponent = ({
-  api,
+  onMount,
   options = {},
   language,
   codemirrorOptions = {},
@@ -96,7 +96,7 @@ export const CodeMirrorBlocksComponent = ({
       <ToggleEditor
         language={language}
         initialCode={options.value ?? ""}
-        api={api}
+        onMount={onMount}
         options={options}
         codemirrorOptions={codemirrorOptions}
       />
@@ -121,11 +121,11 @@ function CodeMirrorBlocks(
   language: Language,
   codemirrorOptions: CodeMirror.EditorConfiguration = {}
 ): API {
-  let api: API = {} as any;
+  let apiBox: API = {} as any;
   ReactDOM.render(
     <CodeMirrorBlocksComponent
       language={language}
-      api={api}
+      onMount={(api) => Object.assign(apiBox, api)}
       options={options}
       codemirrorOptions={codemirrorOptions}
     />,
@@ -135,7 +135,7 @@ function CodeMirrorBlocks(
   // Used to hide the application from screen readers while a modal
   // is open.
   Modal.setAppElement(container);
-  return api;
+  return apiBox;
 }
 
 export {

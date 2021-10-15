@@ -28,7 +28,6 @@ type Props = {
   value: string;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: (ed: CodeMirrorFacade, api: API, ast: AST | undefined) => void;
-  api?: API;
   passedAST?: AST;
 };
 

@@ -148,7 +148,6 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
     search?: Search;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
     onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
-    api?: API;
     passedAST: AST;
     ast: AST;
   };
@@ -310,7 +309,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    */
   private handleEditorDidMount = (editor: CodeMirrorFacade) => {
     this.setState({ editor });
-    const { passedAST: ast, setAST, search, options, onMount } = this.props;
+    const { passedAST: ast, setAST, search, options } = this.props;
     editor.codemirror.on("beforeChange", (ed, change) =>
       this.handleBeforeChange(editor, change)
     );
@@ -337,7 +336,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    onMount(editor, this.buildAPI(editor), ast);
+    this.props.onMount(editor, this.buildAPI(editor), ast);
   };
 
   /**
