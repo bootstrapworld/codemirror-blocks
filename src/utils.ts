@@ -345,7 +345,7 @@ export function nodeCommentContaining(pos: Pos, node: ASTNode) {
 }
 
 export function getNodeContainingBiased(cursor: Pos, ast: AST) {
-  function iter(nodes: ASTNode[]): ASTNode | null {
+  function iter(nodes: Readonly<ASTNode[]>): ASTNode | null {
     const node = nodes.find(
       (node) =>
         posWithinNodeBiased(cursor, node) || nodeCommentContaining(cursor, node)

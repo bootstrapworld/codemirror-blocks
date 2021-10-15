@@ -54,24 +54,31 @@ type Edges = { parentId?: string; nextId?: string; prevId?: string };
  * are required to spit out an `AST` instance.
  */
 export class AST {
-  readonly rootNodes: ASTNode[];
-  readonly nodeIdMap: Map<string, ASTNode>;
-  readonly nodeNIdMap: Map<number, ASTNode>;
+  /**
+   * the `rootNodes` attribute simply contains a list of the top level nodes
+   * that were parsed, in srcLoc order
+   */
+  readonly rootNodes: Readonly<ASTNode[]>;
 
   /**
-   * Mapping from node id to parent node id
+   * *Unique* ID for every newly-parsed node. No ID is ever re-used.
    */
-  private edgeIdMap: Record<string, Readonly<Edges>> = {};
+  readonly nodeIdMap: Map<string, ASTNode> = new Map();
+
+  /**
+   * Index of each node (in-order walk). NIds always start at 0
+   */
+  private readonly nodeNIdMap: Map<number, ASTNode> = new Map();
+
+  /**
+   * Mapping from node id to other node ids through various edges.
+   * Used for {@link getNodeBefore}, {@link getNodeAfter}, and
+   * {@link getNodeParent}
+   */
+  private readonly edgeIdMap: Record<string, Readonly<Edges>> = {};
 
   constructor(rootNodes: ASTNode[], annotate = true) {
-    // the `rootNodes` attribute simply contains a list of the top level nodes
-    // that were parsed, in srcLoc order
     this.rootNodes = rootNodes;
-
-    // *Unique* ID for every newly-parsed node. No ID is ever re-used.
-    this.nodeIdMap = new Map();
-    // Index of each node (in-order walk). NIds always start at 0
-    this.nodeNIdMap = new Map();
 
     // When an AST is to be used by CMB, it must be annotated.
     // This step is computationally intensive, and in certain instances
@@ -142,7 +149,7 @@ export class AST {
     let nid = 0;
 
     const processChildren = (
-      nodes: ASTNode[],
+      nodes: Readonly<ASTNode[]>,
       parent: ASTNode | undefined,
       level: number
     ) => {
@@ -337,7 +344,7 @@ export class AST {
    */
   getNodeAfterCur = (cur: Pos) => {
     function loop(
-      nodes: ASTNode[],
+      nodes: Readonly<ASTNode[]>,
       parentFallback: ASTNode | null
     ): ASTNode | null {
       let n = nodes.find((n) => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
@@ -359,7 +366,7 @@ export class AST {
    */
   getNodeBeforeCur = (cur: Pos) => {
     function loop(
-      nodes: ASTNode[],
+      nodes: Readonly<ASTNode[]>,
       parentFallback: ASTNode | null
     ): ASTNode | null {
       // find the last node that begins before cur
