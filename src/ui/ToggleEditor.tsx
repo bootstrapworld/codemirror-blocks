@@ -147,7 +147,7 @@ export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
   codemirrorOptions?: CodeMirror.EditorConfiguration;
   language: Language;
   options?: Options;
-  api?: API;
+  onMount: (api: API) => void;
   debuggingLog?: {
     history?: unknown;
   };
@@ -231,15 +231,15 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }) => {
     debugLog("log is", jsonLog);
     this.setState({ debuggingLog: jsonLog });
-    this.props.api?.setValue(jsonLog.startingSource);
+    this.state.editor?.setValue(jsonLog.startingSource);
   };
 
   /**
    * @internal
    * Populate a base object with mode-agnostic methods we wish to expose
    */
-  buildAPI(ed: CodeMirror.Editor): API {
-    const base: any = {};
+  buildAPI(ed: CodeMirror.Editor): ToggleEditorAPI & Partial<CodeMirrorAPI> {
+    const base: Partial<CodeMirrorAPI> = {};
     // any CodeMirror function that we can call directly should be passed-through.
     // TextEditor and BlockEditor can add their own, or override them
     codeMirrorAPI.forEach((funcName) => {
@@ -273,7 +273,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         throw "runMode is not supported in CodeMirror-blocks";
       },
     };
-    return Object.assign(base, api);
+    return { ...base, ...api };
   }
 
   /**
@@ -291,7 +291,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     wrapper.setAttribute("aria-label", mode + " Editor");
     mountAnnouncer(wrapper);
     // Rebuild the API and assign re-events
-    Object.assign(this.props.api, this.buildAPI(editor.codemirror), api);
+    this.props.onMount({ ...this.buildAPI(editor.codemirror), ...api });
     Object.keys(this.eventHandlers).forEach((type) => {
       this.eventHandlers[type].forEach((h) =>
         editor.codemirror.on(type as any, h)
@@ -304,7 +304,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
           let node = ast.getNodeByNId(k);
           if (node) {
-            this.props.api?.markText(node.from, node.to, m.options);
+            editor.codemirror.markText(node.from, node.to, m.options);
           }
         }
       );
@@ -442,7 +442,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         }}
         value={this.state.code}
         onMount={this.handleEditorMounted}
-        api={this.props.api}
         passedAST={this.ast}
       />
     );
@@ -463,7 +462,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         }}
         value={this.state.code}
         onMount={this.handleEditorMounted}
-        api={this.props.api}
         passedAST={this.ast || new AST([])}
         // the props below are unique to the BlockEditor
         language={this.props.language}

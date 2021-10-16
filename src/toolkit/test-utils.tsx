@@ -77,7 +77,9 @@ export async function mountCMB(language: Language): Promise<API> {
   render(
     <CodeMirrorBlocksComponent
       language={language}
-      api={cmb}
+      onMount={(newAPI) => {
+        Object.assign(cmb, newAPI);
+      }}
       options={{ collapseAll: false, value: "", incrementalRendering: false }}
       codemirrorOptions={codemirrorOptions}
     />,
