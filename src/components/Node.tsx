@@ -14,6 +14,7 @@ import { keyDown } from "../keymap";
 import { EditorContext } from "./Context";
 import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
 import { RootNodeContext } from "../ui/ToplevelBlock";
+import { KeyDownContext } from "../ui/ToggleEditor";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -60,7 +61,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const store: AppStore = useStore();
   const language = useLanguageOrThrow();
   const search = useSearchOrThrow();
-
+  const keyDownHelpers = useContext(KeyDownContext);
   const isErrorFree = () => store.getState().errorId === "";
 
   const handleMakeEditable = () => {
@@ -82,6 +83,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
         editor: editor,
         language: language,
         search: search,
+        keyDownHelpers,
 
         isLocked,
         handleMakeEditable,

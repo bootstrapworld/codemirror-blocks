@@ -38,6 +38,7 @@ import {
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
 import ToplevelBlock from "./ToplevelBlock";
+import { KeyDownHelpers } from "./ToggleEditor";
 
 const tmpDiv = document.createElement("div");
 function getTempCM(editor: CodeMirrorFacade) {
@@ -146,6 +147,7 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
      */
     language: Language;
     search?: Search;
+    keyDownHelpers: KeyDownHelpers;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
     onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
     passedAST: AST;
@@ -850,6 +852,7 @@ class BlockEditor extends Component<BlockEditorProps> {
                   language: this.props.language,
                   editor,
                   isNodeEnv: false,
+                  keyDownHelpers: this.props.keyDownHelpers,
                 })
               );
             }}

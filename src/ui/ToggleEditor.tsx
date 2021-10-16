@@ -162,7 +162,7 @@ type ToggleEditorState = {
 };
 
 // TODO(pcardune): make this use an actual context? Or maybe redux state?
-export const KeyDownContext = {
+export type KeyDownHelpers = {
   /**
    * @internal
    * Dialog showing/hiding methods deal with ToggleEditor state.
@@ -171,12 +171,12 @@ export const KeyDownContext = {
    *
    * This is hooked up when ToggleEditor gets mounted
    */
-  showDialog: (contents: ToggleEditorState["dialog"]) => {
-    console.warn(`ToggleEditor has not been mounted yet. Can't show dialog`);
-  },
-
-  toolbarRef: createRef<HTMLInputElement>(),
+  showDialog?: (
+    contents: null | { title: string; content: ReactElement }
+  ) => void;
+  focusToolbar?: () => void;
 };
+export const KeyDownContext = React.createContext<KeyDownHelpers>({});
 
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state: ToggleEditorState = {
@@ -196,7 +196,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   codemirrorOptions: CodeMirror.EditorConfiguration;
   options: Options;
-  eventHandlers: Record<string, Function[]>;
+  eventHandlers: Record<string, Function[]> = {};
   ast?: AST;
   newAST?: AST;
 
@@ -212,12 +212,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   constructor(props: ToggleEditorProps) {
     super(props);
 
-    this.eventHandlers = {}; // blank event-handler record
-
     this.state.code = props.initialCode;
-
-    KeyDownContext.showDialog = (contents: ToggleEditorState["dialog"]) =>
-      this.setState(() => ({ dialog: contents }));
   }
 
   /**
@@ -377,59 +372,67 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   };
 
   private search: Search | null = null;
+  private toolbarRef = React.createRef<HTMLInputElement>();
+  private readonly keyDownHelpers = {
+    showDialog: (contents: ToggleEditorState["dialog"]) =>
+      this.setState(() => ({ dialog: contents })),
+    focusToolbar: () => this.toolbarRef.current?.focus(),
+  };
 
   render() {
     const classes = "Editor " + (this.state.blockMode ? "blocks" : "text");
     return (
-      <SearchContext.Provider value={this.search}>
-        <div className={classes}>
-          {this.state.blockMode ? <BugButton /> : null}
-          <ToggleButton
-            setBlockMode={this.handleToggle}
-            blockMode={this.state.blockMode}
-          />
-          {this.state.blockMode && this.state.editor ? (
-            <TrashCan
-              language={this.props.language}
-              editor={this.state.editor}
-            />
-          ) : null}
-          <div
-            className={"col-xs-3 toolbar-pane"}
-            tabIndex={-1}
-            aria-hidden={!this.state.blockMode}
-          >
-            <Toolbar
-              primitives={
-                this.props.language.primitivesFn
-                  ? this.props.language.primitivesFn()
-                  : undefined
-              }
-              languageId={this.props.language.id}
+      <KeyDownContext.Provider value={this.keyDownHelpers}>
+        <SearchContext.Provider value={this.search}>
+          <div className={classes}>
+            {this.state.blockMode ? <BugButton /> : null}
+            <ToggleButton
+              setBlockMode={this.handleToggle}
               blockMode={this.state.blockMode}
-              toolbarRef={KeyDownContext.toolbarRef}
             />
+            {this.state.blockMode && this.state.editor ? (
+              <TrashCan
+                language={this.props.language}
+                editor={this.state.editor}
+              />
+            ) : null}
+            <div
+              className={"col-xs-3 toolbar-pane"}
+              tabIndex={-1}
+              aria-hidden={!this.state.blockMode}
+            >
+              <Toolbar
+                primitives={
+                  this.props.language.primitivesFn
+                    ? this.props.language.primitivesFn()
+                    : undefined
+                }
+                languageId={this.props.language.id}
+                blockMode={this.state.blockMode}
+                toolbarRef={this.toolbarRef}
+              />
+            </div>
+            <div className="col-xs-9 codemirror-pane">
+              {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+            </div>
           </div>
-          <div className="col-xs-9 codemirror-pane">
-            {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+
+          <div role="application" aria-roledescription="Stand by">
+            <a
+              id="SR_fix_for_slow_dom"
+              href="#"
+              aria-roledescription=":"
+              aria-label=""
+            ></a>
           </div>
-        </div>
 
-        <div role="application" aria-roledescription="Stand by">
-          <a
-            id="SR_fix_for_slow_dom"
-            href="#"
-            aria-roledescription=":"
-            aria-label=""
-          ></a>
-        </div>
-
-        <Dialog
-          isOpen={!!this.state.dialog}
-          body={this.state.dialog}
-          closeFn={() => this.setState({ dialog: null })}
-        />
-      </SearchContext.Provider>
+          <Dialog
+            isOpen={!!this.state.dialog}
+            body={this.state.dialog}
+            closeFn={() => this.setState({ dialog: null })}
+          />
+        </SearchContext.Provider>
+      </KeyDownContext.Provider>
     );
   }
 
@@ -446,7 +449,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       />
     );
   }
-
   renderBlocks() {
     let defaultOptions = {
       parse: this.props.language.parse,
@@ -466,6 +468,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         // the props below are unique to the BlockEditor
         language={this.props.language}
         options={{ ...defaultOptions, ...this.props.options }}
+        keyDownHelpers={this.keyDownHelpers}
       />
     );
   }
