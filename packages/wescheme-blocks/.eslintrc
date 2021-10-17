@@ -2,16 +2,37 @@
   "parser": "babel-eslint",
   "rules": {
     "comma-dangle": 0,
-    "indent": ["warn", 2, {
-      // from https://github.com/airbnb/javascript/blob/e9fff7adbf6dd4e3723c12849c407aafd429cf0f/packages/eslint-config-airbnb-base/rules/style.js#L141
-      "ignoredNodes": ["JSXElement", "JSXElement > *", "JSXAttribute", "JSXIdentifier", "JSXNamespacedName", "JSXMemberExpression", "JSXSpreadAttribute", "JSXExpressionContainer", "JSXOpeningElement", "JSXClosingElement", "JSXText", "JSXEmptyExpression", "JSXSpreadChild"]
-    }],
+    "indent": [
+      "warn",
+      2,
+      {
+        // from https://github.com/airbnb/javascript/blob/e9fff7adbf6dd4e3723c12849c407aafd429cf0f/packages/eslint-config-airbnb-base/rules/style.js#L141
+        "ignoredNodes": [
+          "JSXElement",
+          "JSXElement > *",
+          "JSXAttribute",
+          "JSXIdentifier",
+          "JSXNamespacedName",
+          "JSXMemberExpression",
+          "JSXSpreadAttribute",
+          "JSXExpressionContainer",
+          "JSXOpeningElement",
+          "JSXClosingElement",
+          "JSXText",
+          "JSXEmptyExpression",
+          "JSXSpreadChild"
+        ]
+      }
+    ],
     "linebreak-style": ["error", "unix"],
     "no-console": 0,
-    "no-unused-vars": ["error", {
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_"
-    }],
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
     "semi": ["error", "always"]
   },
   "env": {
@@ -20,10 +41,7 @@
     "node": true,
     "jasmine": true
   },
-  "extends": [
-    "eslint:recommended",
-    "plugin:react/recommended"
-  ],
+  "extends": ["eslint:recommended", "plugin:react/recommended"],
   "parserOptions": {
     "ecmaVersion": 7,
     "ecmaFeatures": {
@@ -40,7 +58,5 @@
       "jsx": true
     }
   },
-  "plugins": [
-    "react"
-  ]
+  "plugins": ["react"]
 }

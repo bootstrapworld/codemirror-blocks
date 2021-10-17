@@ -1,29 +1,35 @@
-const path = require('path');
+const path = require("path");
 const {
   getWebpackDevServerConfig,
   getWebpackBundleConfig,
-} = require('codemirror-blocks/lib/toolkit/webpack');
+} = require("codemirror-blocks/lib/toolkit/webpack");
 
 const devServerConfig = getWebpackDevServerConfig({
-  context: path.resolve(__dirname, 'dev-server'),
-  entry: './index.js',
+  context: path.resolve(__dirname, "dev-server"),
+  entry: "./index.js",
 });
 const bundleConfig = getWebpackBundleConfig({
   entry: {
-    CodeMirrorBlocks: path.resolve(__dirname, 'src', 'languages', 'wescheme', 'index'),
+    CodeMirrorBlocks: path.resolve(
+      __dirname,
+      "src",
+      "languages",
+      "wescheme",
+      "index"
+    ),
   },
 });
 
 const alias = {
-  jsnums: 'wescheme-js/src/runtime/js-numbers',
-  lex: 'wescheme-js/src/lex',
-  types: 'wescheme-js/src/runtime/types',
-  structs: 'wescheme-js/src/structures',
+  jsnums: "wescheme-js/src/runtime/js-numbers",
+  lex: "wescheme-js/src/lex",
+  types: "wescheme-js/src/runtime/types",
+  structs: "wescheme-js/src/structures",
 };
 
 devServerConfig.module.rules.push({
   test: /\.rkt$/,
-  use: [{ loader: 'raw-loader' }],
+  use: [{ loader: "raw-loader" }],
 });
 
 // Add aliases needed by WeschemeParser.js
@@ -33,24 +39,21 @@ devServerConfig.resolve.alias = alias;
 bundleConfig.resolve.alias = alias;
 
 bundleConfig.externals = {
-  'codemirror': 'codemirror',
-  'codemirror/addon/search/search' : 'codemirror',
-  'codemirror/addon/search/searchcursor' : 'codemirror',
-  'jsnums': 'jsnums',
-  'lex': {
-    commonjs: 'plt.compiler',
-    commonjs2: 'plt.compiler',
-    root: ['plt','compiler'],
+  codemirror: "codemirror",
+  "codemirror/addon/search/search": "codemirror",
+  "codemirror/addon/search/searchcursor": "codemirror",
+  jsnums: "jsnums",
+  lex: {
+    commonjs: "plt.compiler",
+    commonjs2: "plt.compiler",
+    root: ["plt", "compiler"],
   },
-  'types': 'types',
-  'structs': {
-    commonjs: 'plt.compiler',
-    commonjs2: 'plt.compiler',
-    root: ['plt','compiler'],
+  types: "types",
+  structs: {
+    commonjs: "plt.compiler",
+    commonjs2: "plt.compiler",
+    root: ["plt", "compiler"],
   },
 };
 
-module.exports = [
-  devServerConfig,
-  bundleConfig,
-];
+module.exports = [devServerConfig, bundleConfig];

@@ -1,11 +1,11 @@
-import {createDebuggingInterface} from "codemirror-blocks/lib/toolkit/debug";
+import { createDebuggingInterface } from "codemirror-blocks/lib/toolkit/debug";
 
-import {WeScheme} from '../src/languages/wescheme';
-import bigExampleCode from './ast-test.rkt';
+import { WeScheme } from "../src/languages/wescheme";
+import bigExampleCode from "./ast-test.rkt";
 
 // HACK: expose ALL test utilities, events, etc
 // so they can be used from the browser console
-import * as t from 'codemirror-blocks/lib/toolkit/test-utils';
+import * as t from "codemirror-blocks/lib/toolkit/test-utils";
 Object.assign(window, t);
 
 const smallExampleCode = `(+ 1 2) ;comment\n(+ 3 4)`;

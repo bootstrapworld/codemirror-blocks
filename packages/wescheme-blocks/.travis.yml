@@ -10,14 +10,14 @@ addons:
   chrome: stable
 cache:
   directories:
-    - yarn               # cache the yarn bundle to save time on Travis
+    - yarn # cache the yarn bundle to save time on Travis
     - /home/travis/.rvm/ # cache the RVM to save time on Travis
     - "$HOME/.npm"
 branches:
   only:
     - master
 services:
-    - xvfb
+  - xvfb
 before_install:
   - export CHROME_BIN=google-chrome-stable
   - google-chrome-stable --disable-gpu http://localhost &
@@ -33,7 +33,7 @@ notifications:
     - schanzer@bootstrapworld.org
   webhooks:
     urls:
-      - 'https://webhooks.gitter.im/e/6184180c077043a1109a'
+      - "https://webhooks.gitter.im/e/6184180c077043a1109a"
     on_success: change
     on_failure: always
     on_start: never

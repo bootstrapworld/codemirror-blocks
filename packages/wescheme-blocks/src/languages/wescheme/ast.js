@@ -1,29 +1,41 @@
-import {React, AST, Pretty as P, Node, Nodes, NodeSpec as Spec} from 'codemirror-blocks';
-const {pluralize} = AST;
+import {
+  React,
+  AST,
+  Pretty as P,
+  Node,
+  Nodes,
+  NodeSpec as Spec,
+} from "codemirror-blocks";
+const { pluralize } = AST;
 
 /* Override the default pretty printer for Sequences,
  * so that they print as s-expressions
  */
 export class Sequence extends Nodes.Sequence {
-  pretty() { return P.standardSexpr(this.name, this.exprs); }
+  pretty() {
+    return P.standardSexpr(this.name, this.exprs);
+  }
 }
 
 export class LetLikeExpr extends AST.ASTNode {
-  constructor(from, to, form, bindings, expr, options={}) {
-    super(from, to, 'letLikeExpr', options);
+  constructor(from, to, form, bindings, expr, options = {}) {
+    super(from, to, "letLikeExpr", options);
     this.form = form;
     this.bindings = bindings;
     this.expr = expr;
   }
 
   static spec = Spec.nodeSpec([
-    Spec.value('form'),
-    Spec.required('bindings'),
-    Spec.required('expr')
-  ])
+    Spec.value("form"),
+    Spec.required("bindings"),
+    Spec.required("expr"),
+  ]);
 
   longDescription(_level) {
-    return `a ${this.form} expression with ${pluralize("binding", this.bindings.exprs)}`;
+    return `a ${this.form} expression with ${pluralize(
+      "binding",
+      this.bindings.exprs
+    )}`;
   }
 
   pretty() {
@@ -42,22 +54,24 @@ export class LetLikeExpr extends AST.ASTNode {
 }
 
 export class WhenUnless extends AST.ASTNode {
-  constructor(from, to, form, predicate, exprs, options={}) {
-    super(from, to, 'whenUnlessExpr', options);
+  constructor(from, to, form, predicate, exprs, options = {}) {
+    super(from, to, "whenUnlessExpr", options);
     this.form = form;
     this.predicate = predicate;
-    console.log('predicate is', predicate);
+    console.log("predicate is", predicate);
     this.exprs = exprs;
   }
 
   static spec = Spec.nodeSpec([
-    Spec.value('form'),
-    Spec.required('predicate'),
-    Spec.required('exprs')
-  ])
+    Spec.value("form"),
+    Spec.required("predicate"),
+    Spec.required("exprs"),
+  ]);
 
   longDescription(level) {
-    return `a ${this.form} expression: ${this.form} ${this.predicate.describe(level)}, ${this.exprs.describe(level)}`;
+    return `a ${this.form} expression: ${this.form} ${this.predicate.describe(
+      level
+    )}, ${this.exprs.describe(level)}`;
   }
 
   pretty() {
