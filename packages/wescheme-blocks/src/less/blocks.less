@@ -1,0 +1,106 @@
+@import "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css";
+
+.blocks-node * { box-sizing: border-box; }
+
+@font-face {
+  font-family: 'Glyphicons Halflings';
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.eot');
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.woff2') format('woff2'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.woff') format('woff'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.ttf') format('truetype'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+}
+.glyphicon {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font: normal normal 16px/1 'Glyphicons Halflings';
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  margin-right: 4px;
+}
+
+.CodeMirror-lines.fadein, .fadein .blocks-node{
+  animation-name: fadein;
+  animation-duration: 1.5s; 
+}
+.fadeout{
+  animation-name: fadeout;
+  animation-duration: 1.5s;
+  white-space: pre;
+}
+#clones * { 
+  display:  inline-block;
+  position: absolute;
+  will-change: transform;
+  transform-origin: top left;
+}
+#clones .box{ border: dashed 1px gray; border-radius: 15px; color: transparent;}
+#clones.animate * { transition: transform 1.0s linear; transform: none !important;}
+#clones.animate.blocks .literal {margin-left: 4px;}
+
+@keyframes fadein {
+    0% { opacity: 0; }
+   50% { opacity: 0; }
+   70% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes fadeout {
+    0% { opacity: 1; }
+   50% { opacity: 0; }
+   70% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* locked and collapsed nodes should not be editable */
+.blocks-node[aria-expanded="false"] *, .blocks-locked * { 
+  pointer-events : none; cursor: hand;
+}
+
+.blocks-literal.blocks-error { background: #fdd; }
+
+.screenreader-only {
+    position: absolute !important;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    clip: rect(1px 1px 1px 1px);
+    clip: rect(1px, 1px, 1px, 1px);
+}
+
+.react-modal, .modal-content {
+    height: 100%;
+    outline: 0;
+}
+
+.search-input {
+    margin-bottom: 20px;
+}
+
+.wrapper-modal {
+    position: relative;
+    width: 50%;
+    left: 50%;
+    top: 50%;
+    padding: 0;
+    transform: translate(-50%, -50%);
+}
+
+.search-options label {
+    margin-left: 5px;
+    margin-right: 5px;
+    font-weight: normal;
+}
+
+.search-options input {
+    margin-right: 5px;
+}
+
+.ReactModal__Overlay {
+    z-index: 1000;
+}
+
+.react-codemirror2 {
+    width: 100%;
+}

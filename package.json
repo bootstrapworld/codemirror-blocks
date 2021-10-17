@@ -7,6 +7,7 @@
     "npm": ">=7.x"
   },
   "workspaces": [
-    "packages/codemirror-blocks"
+    "packages/codemirror-blocks",
+    "packages/wescheme-blocks"
   ]
 }

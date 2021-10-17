@@ -1,0 +1,12 @@
+node_modules
+build
+lib
+.coverage
+docs
+npm-debug.log
+dist
+site-build
+.sass-cache
+vendors
+doc/*.html
+.DS_Store
