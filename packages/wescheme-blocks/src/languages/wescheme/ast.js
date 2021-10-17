@@ -1,12 +1,19 @@
 import {
   React,
-  AST,
+  ASTNode,
   Pretty as P,
   Node,
   Nodes,
   NodeSpec as Spec,
 } from "codemirror-blocks";
-const { pluralize } = AST;
+
+/**
+ * given a noun and an array, generate a (possibly-plural)
+ * version of that noun
+ */
+function pluralize(noun, set) {
+  return set.length + " " + noun + (set.length != 1 ? "s" : "");
+}
 
 /* Override the default pretty printer for Sequences,
  * so that they print as s-expressions
@@ -17,7 +24,7 @@ export class Sequence extends Nodes.Sequence {
   }
 }
 
-export class LetLikeExpr extends AST.ASTNode {
+export class LetLikeExpr extends ASTNode {
   constructor(from, to, form, bindings, expr, options = {}) {
     super(from, to, "letLikeExpr", options);
     this.form = form;
@@ -53,7 +60,7 @@ export class LetLikeExpr extends AST.ASTNode {
   }
 }
 
-export class WhenUnless extends AST.ASTNode {
+export class WhenUnless extends ASTNode {
   constructor(from, to, form, predicate, exprs, options = {}) {
     super(from, to, "whenUnlessExpr", options);
     this.form = form;

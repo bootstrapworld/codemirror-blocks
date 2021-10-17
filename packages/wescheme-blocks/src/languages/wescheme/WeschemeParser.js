@@ -1,6 +1,6 @@
 /*eslint indent: "off"*/
 
-import { AST, Nodes, PrimitiveGroup } from "codemirror-blocks";
+import { Nodes, PrimitiveGroup } from "codemirror-blocks";
 const {
   Blank,
   Literal,
@@ -1202,8 +1202,7 @@ class WeschemeParser {
     }
 
     let ast = parseStar(lex(code));
-    let rootNodes = ast.map(parseNode).filter((item) => item !== null);
-    return new AST.AST(rootNodes);
+    return ast.map(parseNode).filter((item) => item !== null);
   }
 
   getExceptionMessage(e) {
