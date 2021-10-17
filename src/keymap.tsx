@@ -27,11 +27,11 @@ import type { AST, ASTNode } from "./ast";
 import { CMBEditor } from "./editor";
 import { Language } from "./CodeMirrorBlocks";
 import type { Search } from "./ui/BlockEditor";
-import type { KeyDownHelpers } from "./ui/ToggleEditor";
+import type { AppHelpers } from "./ui/ToggleEditor";
 
 type BlockEditorEnv = {
   isNodeEnv: false;
-  keyDownHelpers: KeyDownHelpers;
+  appHelpers: AppHelpers;
   editor: CMBEditor;
   language: Language;
   search: Search;
@@ -40,7 +40,7 @@ type BlockEditorEnv = {
 type NodeEnv = {
   isNodeEnv: true;
 
-  keyDownHelpers: KeyDownHelpers;
+  appHelpers: AppHelpers;
 
   search: Search;
   editor: CMBEditor;
@@ -216,7 +216,7 @@ const commandMap: {
 } = {
   "Shift Focus": (env, e) => {
     e.preventDefault();
-    env.keyDownHelpers.focusToolbar!();
+    env.appHelpers.focusToolbar!();
   },
   // NAVIGATION
   "Previous Block": (env, e) => (dispatch, getState) => {
@@ -579,12 +579,12 @@ const commandMap: {
   Redo: (env, e) => doTopmostAction(env, e, "redo"),
 
   Help: (env, _) => {
-    if (!env.keyDownHelpers.showDialog) {
+    if (!env.appHelpers.showDialog) {
       throw new Error(
         "Expected Help to be used in a context that can show a dialog."
       );
     }
-    env.keyDownHelpers.showDialog({
+    env.appHelpers.showDialog({
       title: "Keyboard Shortcuts",
       content: <KeyMapTable keyMap={defaultKeyMap} />,
     });

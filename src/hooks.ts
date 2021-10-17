@@ -1,5 +1,6 @@
 import { useContext } from "react";
-import { LanguageContext, SearchContext } from "./components/Context";
+import { LanguageContext } from "./components/Context";
+import { AppContext } from "./ui/ToggleEditor";
 
 export function useLanguageOrThrow() {
   const language = useContext(LanguageContext);
@@ -10,7 +11,7 @@ export function useLanguageOrThrow() {
 }
 
 export function useSearchOrThrow() {
-  const search = useContext(SearchContext);
+  const { search } = useContext(AppContext);
   if (!search) {
     throw new Error("Must render inside a search context");
   }

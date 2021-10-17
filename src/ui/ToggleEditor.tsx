@@ -139,7 +139,6 @@ function isTextMarkerRange(
 
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
-import { SearchContext } from "../components/Context";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
@@ -161,8 +160,7 @@ type ToggleEditorState = {
   editor: CMBEditor | null;
 };
 
-// TODO(pcardune): make this use an actual context? Or maybe redux state?
-export type KeyDownHelpers = {
+export type AppHelpers = {
   /**
    * @internal
    * Dialog showing/hiding methods deal with ToggleEditor state.
@@ -175,8 +173,9 @@ export type KeyDownHelpers = {
     contents: null | { title: string; content: ReactElement }
   ) => void;
   focusToolbar?: () => void;
+  search?: Search;
 };
-export const KeyDownContext = React.createContext<KeyDownHelpers>({});
+export const AppContext = React.createContext<AppHelpers>({});
 
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state: ToggleEditorState = {
@@ -371,68 +370,79 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     });
   };
 
-  private search: Search | null = null;
   private toolbarRef = React.createRef<HTMLInputElement>();
-  private readonly keyDownHelpers = {
+  private appContext: AppHelpers = {
     showDialog: (contents: ToggleEditorState["dialog"]) =>
       this.setState(() => ({ dialog: contents })),
     focusToolbar: () => this.toolbarRef.current?.focus(),
+    search: {
+      search: () => {
+        throw new Error("Search not ready yet");
+      },
+      onSearch: () => {
+        throw new Error("Search not ready yet");
+      },
+      setCursor: () => {
+        throw new Error("Search not ready yet");
+      },
+      setCM: () => {
+        throw new Error("Search not ready yet");
+      },
+    },
   };
 
   render() {
     const classes = "Editor " + (this.state.blockMode ? "blocks" : "text");
     return (
-      <KeyDownContext.Provider value={this.keyDownHelpers}>
-        <SearchContext.Provider value={this.search}>
-          <div className={classes}>
-            {this.state.blockMode ? <BugButton /> : null}
-            <ToggleButton
-              setBlockMode={this.handleToggle}
-              blockMode={this.state.blockMode}
-            />
-            {this.state.blockMode && this.state.editor ? (
-              <TrashCan
-                language={this.props.language}
-                editor={this.state.editor}
-              />
-            ) : null}
-            <div
-              className={"col-xs-3 toolbar-pane"}
-              tabIndex={-1}
-              aria-hidden={!this.state.blockMode}
-            >
-              <Toolbar
-                primitives={
-                  this.props.language.primitivesFn
-                    ? this.props.language.primitivesFn()
-                    : undefined
-                }
-                languageId={this.props.language.id}
-                blockMode={this.state.blockMode}
-                toolbarRef={this.toolbarRef}
-              />
-            </div>
-            <div className="col-xs-9 codemirror-pane">
-              {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
-            </div>
-          </div>
-
-          <div role="application" aria-roledescription="Stand by">
-            <a
-              id="SR_fix_for_slow_dom"
-              href="#"
-              aria-roledescription=":"
-              aria-label=""
-            ></a>
-          </div>
-
-          <Dialog
-            isOpen={!!this.state.dialog}
-            body={this.state.dialog}
-            closeFn={() => this.setState({ dialog: null })}
+      <AppContext.Provider value={this.appContext}>
+        <div className={classes}>
+          {this.state.blockMode ? <BugButton /> : null}
+          <ToggleButton
+            setBlockMode={this.handleToggle}
+            blockMode={this.state.blockMode}
           />
-        </SearchContext.Provider>
-      </KeyDownContext.Provider>
+          {this.state.blockMode && this.state.editor ? (
+            <TrashCan
+              language={this.props.language}
+              editor={this.state.editor}
+            />
+          ) : null}
+          <div
+            className={"col-xs-3 toolbar-pane"}
+            tabIndex={-1}
+            aria-hidden={!this.state.blockMode}
+          >
+            <Toolbar
+              primitives={
+                this.props.language.primitivesFn
+                  ? this.props.language.primitivesFn()
+                  : undefined
+              }
+              languageId={this.props.language.id}
+              blockMode={this.state.blockMode}
+              toolbarRef={this.toolbarRef}
+            />
+          </div>
+          <div className="col-xs-9 codemirror-pane">
+            {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
+          </div>
+        </div>
+
+        <div role="application" aria-roledescription="Stand by">
+          <a
+            id="SR_fix_for_slow_dom"
+            href="#"
+            aria-roledescription=":"
+            aria-label=""
+          ></a>
+        </div>
+
+        <Dialog
+          isOpen={!!this.state.dialog}
+          body={this.state.dialog}
+          closeFn={() => this.setState({ dialog: null })}
+        />
+      </AppContext.Provider>
     );
   }
 
@@ -457,7 +467,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     };
     return (
       <UpgradedBlockEditor
-        onSearchMounted={(search) => (this.search = search)}
+        onSearchMounted={(search) => {
+          this.appContext = { ...this.appContext, search };
+        }}
         codemirrorOptions={{
           ...defaultCmOptions,
           ...this.props.codemirrorOptions,
@@ -468,7 +480,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         // the props below are unique to the BlockEditor
         language={this.props.language}
         options={{ ...defaultOptions, ...this.props.options }}
-        keyDownHelpers={this.keyDownHelpers}
+        keyDownHelpers={this.appContext}
       />
     );
   }
