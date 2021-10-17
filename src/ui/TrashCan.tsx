@@ -1,21 +1,20 @@
 import React, { useContext } from "react";
 import { ItemTypes } from "../dnd";
 import { useDrop } from "react-dnd";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../reducers";
 import { edit_delete, performEdits } from "../edits/performEdits";
-import { AppDispatch, AppStore } from "../store";
+import { AppDispatch } from "../store";
 import { CMBEditor } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
-import { SearchContext } from "../components/Context";
+import { AppContext } from "../components/Context";
 require("./TrashCan.less");
 
 const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
   const dispatch: AppDispatch = useDispatch();
-  const search = useContext(SearchContext);
+  const { search } = useContext(AppContext);
 
   const { ast } = useSelector(({ ast }: RootState) => ({ ast }));
-  const store: AppStore = useStore();
   const [{ isOver }, drop] = useDrop(
     () => ({
       accept: ItemTypes.NODE,

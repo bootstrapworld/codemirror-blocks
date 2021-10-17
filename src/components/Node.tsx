@@ -11,7 +11,7 @@ import { useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
-import { EditorContext } from "./Context";
+import { AppContext, EditorContext } from "./Context";
 import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
 import { RootNodeContext } from "../ui/ToplevelBlock";
 
@@ -60,7 +60,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const store: AppStore = useStore();
   const language = useLanguageOrThrow();
   const search = useSearchOrThrow();
-
+  const appHelpers = useContext(AppContext);
   const isErrorFree = () => store.getState().errorId === "";
 
   const handleMakeEditable = () => {
@@ -82,6 +82,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
         editor: editor,
         language: language,
         search: search,
+        appHelpers: appHelpers,
 
         isLocked,
         handleMakeEditable,

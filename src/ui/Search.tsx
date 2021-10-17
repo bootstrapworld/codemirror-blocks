@@ -10,7 +10,6 @@ import { GetProps } from "react-redux";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { ReadonlyCMBEditor } from "../editor";
-import { SearchContext } from "../components/Context";
 
 export default function attachSearch(
   Editor: BlockEditorComponentClass,
@@ -200,7 +199,7 @@ export default function attachSearch(
       const { onSearchMounted, ...editorProps } = this.props;
 
       return (
-        <SearchContext.Provider value={this.search}>
+        <>
           <Editor {...editorProps} search={this.search} />
 
           <Dialog
@@ -209,7 +208,7 @@ export default function attachSearch(
             keyUp={this.handleKeyModal}
             body={{ title: "Search Settings", content: content }}
           ></Dialog>
-        </SearchContext.Provider>
+        </>
       );
     }
   };

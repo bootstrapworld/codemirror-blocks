@@ -24,11 +24,7 @@ import type { Options, API, Language } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
-import {
-  EditorContext,
-  LanguageContext,
-  SearchContext,
-} from "../components/Context";
+import { EditorContext, LanguageContext } from "../components/Context";
 import {
   CodeMirrorFacade,
   CMBEditor,
@@ -38,6 +34,7 @@ import {
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
 import ToplevelBlock from "./ToplevelBlock";
+import { AppHelpers } from "../components/Context";
 
 const tmpDiv = document.createElement("div");
 function getTempCM(editor: CodeMirrorFacade) {
@@ -146,6 +143,7 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
      */
     language: Language;
     search?: Search;
+    keyDownHelpers: AppHelpers;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
     onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
     passedAST: AST;
@@ -832,33 +830,32 @@ class BlockEditor extends Component<BlockEditorProps> {
 
   render() {
     return (
-      <SearchContext.Provider value={this.props.search}>
-        <LanguageContext.Provider value={this.props.language}>
-          <DragAndDropEditor
-            options={this.props.codemirrorOptions}
-            className={`blocks-language-${this.props.language.id}`}
-            value={this.props.value}
-            onBeforeChange={this.props.onBeforeChange}
-            onKeyPress={this.handleTopLevelKeyPress}
-            onMouseDown={this.handleTopLevelMouseDown}
-            onFocus={this.handleTopLevelFocus}
-            onPaste={this.handleTopLevelPaste}
-            onKeyDown={(editor, e) => {
-              this.props.dispatch(
-                keyDown(e, {
-                  search: this.props.search,
-                  language: this.props.language,
-                  editor,
-                  isNodeEnv: false,
-                })
-              );
-            }}
-            onCursorActivity={this.handleTopLevelCursorActivity}
-            editorDidMount={this.handleEditorDidMount}
-          />
-          {this.renderPortals()}
-        </LanguageContext.Provider>
-      </SearchContext.Provider>
+      <LanguageContext.Provider value={this.props.language}>
+        <DragAndDropEditor
+          options={this.props.codemirrorOptions}
+          className={`blocks-language-${this.props.language.id}`}
+          value={this.props.value}
+          onBeforeChange={this.props.onBeforeChange}
+          onKeyPress={this.handleTopLevelKeyPress}
+          onMouseDown={this.handleTopLevelMouseDown}
+          onFocus={this.handleTopLevelFocus}
+          onPaste={this.handleTopLevelPaste}
+          onKeyDown={(editor, e) => {
+            this.props.dispatch(
+              keyDown(e, {
+                search: this.props.search,
+                language: this.props.language,
+                editor,
+                isNodeEnv: false,
+                appHelpers: this.props.keyDownHelpers,
+              })
+            );
+          }}
+          onCursorActivity={this.handleTopLevelCursorActivity}
+          editorDidMount={this.handleEditorDidMount}
+        />
+        {this.renderPortals()}
+      </LanguageContext.Provider>
     );
   }
 

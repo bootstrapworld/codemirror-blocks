@@ -139,7 +139,7 @@ function isTextMarkerRange(
 
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
-import { SearchContext } from "../components/Context";
+import { AppContext, AppHelpers } from "../components/Context";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
@@ -161,23 +161,6 @@ type ToggleEditorState = {
   editor: CMBEditor | null;
 };
 
-// TODO(pcardune): make this use an actual context? Or maybe redux state?
-export const KeyDownContext = {
-  /**
-   * @internal
-   * Dialog showing/hiding methods deal with ToggleEditor state.
-   * We pass them to mode-specific components, to allow those
-   * components to show/hide dialogs
-   *
-   * This is hooked up when ToggleEditor gets mounted
-   */
-  showDialog: (contents: ToggleEditorState["dialog"]) => {
-    console.warn(`ToggleEditor has not been mounted yet. Can't show dialog`);
-  },
-
-  toolbarRef: createRef<HTMLInputElement>(),
-};
-
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state: ToggleEditorState = {
     blockMode: false,
@@ -196,7 +179,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   codemirrorOptions: CodeMirror.EditorConfiguration;
   options: Options;
-  eventHandlers: Record<string, Function[]>;
+  eventHandlers: Record<string, Function[]> = {};
   ast?: AST;
   newAST?: AST;
 
@@ -212,12 +195,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   constructor(props: ToggleEditorProps) {
     super(props);
 
-    this.eventHandlers = {}; // blank event-handler record
-
     this.state.code = props.initialCode;
-
-    KeyDownContext.showDialog = (contents: ToggleEditorState["dialog"]) =>
-      this.setState(() => ({ dialog: contents }));
   }
 
   /**
@@ -376,12 +354,31 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     });
   };
 
-  private search: Search | null = null;
+  private toolbarRef = React.createRef<HTMLInputElement>();
+  private appContext: AppHelpers = {
+    showDialog: (contents: ToggleEditorState["dialog"]) =>
+      this.setState(() => ({ dialog: contents })),
+    focusToolbar: () => this.toolbarRef.current?.focus(),
+    search: {
+      search: () => {
+        throw new Error("Search not ready yet");
+      },
+      onSearch: () => {
+        throw new Error("Search not ready yet");
+      },
+      setCursor: () => {
+        throw new Error("Search not ready yet");
+      },
+      setCM: () => {
+        throw new Error("Search not ready yet");
+      },
+    },
+  };
 
   render() {
     const classes = "Editor " + (this.state.blockMode ? "blocks" : "text");
     return (
-      <SearchContext.Provider value={this.search}>
+      <AppContext.Provider value={this.appContext}>
         <div className={classes}>
           {this.state.blockMode ? <BugButton /> : null}
           <ToggleButton
@@ -407,7 +404,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
               }
               languageId={this.props.language.id}
               blockMode={this.state.blockMode}
-              toolbarRef={KeyDownContext.toolbarRef}
+              toolbarRef={this.toolbarRef}
             />
           </div>
           <div className="col-xs-9 codemirror-pane">
@@ -429,7 +426,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           body={this.state.dialog}
           closeFn={() => this.setState({ dialog: null })}
         />
-      </SearchContext.Provider>
+      </AppContext.Provider>
     );
   }
 
@@ -446,7 +443,6 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
       />
     );
   }
-
   renderBlocks() {
     let defaultOptions = {
       parse: this.props.language.parse,
@@ -455,7 +451,9 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     };
     return (
       <UpgradedBlockEditor
-        onSearchMounted={(search) => (this.search = search)}
+        onSearchMounted={(search) => {
+          this.appContext = { ...this.appContext, search };
+        }}
         codemirrorOptions={{
           ...defaultCmOptions,
           ...this.props.codemirrorOptions,
@@ -466,6 +464,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         // the props below are unique to the BlockEditor
         language={this.props.language}
         options={{ ...defaultOptions, ...this.props.options }}
+        keyDownHelpers={this.appContext}
       />
     );
   }
