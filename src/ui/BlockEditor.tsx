@@ -717,7 +717,7 @@ class BlockEditor extends Component<BlockEditorProps> {
         if (cur != null) return; // if we already have a cursor, bail
         let nid = focusId && ast.getNodeById(focusId)?.nid;
         if(!nid) nid = 0;
-        this.props.activateByNid(editor, nid, { allowMove: true });
+        this.props.activateByNid(editor, this.props.search, nid, { allowMove: true });
       });
     });
   };
