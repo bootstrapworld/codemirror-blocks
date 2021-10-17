@@ -27,7 +27,7 @@ import type { AST, ASTNode } from "./ast";
 import { CMBEditor } from "./editor";
 import { Language } from "./CodeMirrorBlocks";
 import type { Search } from "./ui/BlockEditor";
-import type { AppHelpers } from "./ui/ToggleEditor";
+import type { AppHelpers } from "./components/Context";
 
 type BlockEditorEnv = {
   isNodeEnv: false;

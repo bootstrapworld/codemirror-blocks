@@ -1,6 +1,5 @@
 import { useContext } from "react";
-import { LanguageContext } from "./components/Context";
-import { AppContext } from "./ui/ToggleEditor";
+import { AppContext, LanguageContext } from "./components/Context";
 
 export function useLanguageOrThrow() {
   const language = useContext(LanguageContext);

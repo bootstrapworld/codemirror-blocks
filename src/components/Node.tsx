@@ -11,10 +11,9 @@ import { useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
-import { EditorContext } from "./Context";
+import { AppContext, EditorContext } from "./Context";
 import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
 import { RootNodeContext } from "../ui/ToplevelBlock";
-import { AppContext } from "../ui/ToggleEditor";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated

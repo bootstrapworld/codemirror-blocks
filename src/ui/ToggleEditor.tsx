@@ -139,6 +139,7 @@ function isTextMarkerRange(
 
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
+import { AppContext, AppHelpers } from "../components/Context";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
@@ -159,23 +160,6 @@ type ToggleEditorState = {
   debuggingLog?: ToggleEditorProps["debuggingLog"];
   editor: CMBEditor | null;
 };
-
-export type AppHelpers = {
-  /**
-   * @internal
-   * Dialog showing/hiding methods deal with ToggleEditor state.
-   * We pass them to mode-specific components, to allow those
-   * components to show/hide dialogs
-   *
-   * This is hooked up when ToggleEditor gets mounted
-   */
-  showDialog?: (
-    contents: null | { title: string; content: ReactElement }
-  ) => void;
-  focusToolbar?: () => void;
-  search?: Search;
-};
-export const AppContext = React.createContext<AppHelpers>({});
 
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   state: ToggleEditorState = {

@@ -34,7 +34,7 @@ import {
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
 import ToplevelBlock from "./ToplevelBlock";
-import { AppHelpers } from "./ToggleEditor";
+import { AppHelpers } from "../components/Context";
 
 const tmpDiv = document.createElement("div");
 function getTempCM(editor: CodeMirrorFacade) {

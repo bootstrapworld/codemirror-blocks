@@ -7,7 +7,7 @@ import { edit_delete, performEdits } from "../edits/performEdits";
 import { AppDispatch } from "../store";
 import { CMBEditor } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
-import { AppContext } from "./ToggleEditor";
+import { AppContext } from "../components/Context";
 require("./TrashCan.less");
 
 const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
