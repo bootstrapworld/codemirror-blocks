@@ -29,7 +29,7 @@
     "less-loader": "^10.0.1",
     "mini-css-extract-plugin": "^2.2.0",
     "npm": "^7.22.0",
-    "pretty-fast-pretty-printer": "^0.9.7",
+    "pretty-fast-pretty-printer": "^0.10.0",
     "prop-types": "^15.7.2",
     "raw-loader": "^4.0.2",
     "react": "^17.0.2",
