@@ -5,7 +5,6 @@ import {
   mac,
   cmd_ctrl,
   teardown,
-  activationSetup,
   mouseDown,
   keyDown,
   insertText,
@@ -14,9 +13,6 @@ import {
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
-import { debugLog } from "../src/utils";
-
-debugLog("Doing undo-redo-test.js");
 
 describe("when testing undo/redo,", () => {
   let cmb!: API;
@@ -87,24 +83,31 @@ describe("when testing undo/redo,", () => {
   });
 
   it("make sure edits can be properly undone/redone from the top level", async () => {
+    // initialize the document
     cmb.setValue(`A\nB\n`);
     cmb.clearHistory();
     await finishRender();
     expect(cmb.historySize()).toEqual({ undo: 0, redo: 0 });
 
+    // change (1): cut first root
     mouseDown(currentFirstRoot()); // focus on the 1st root
     keyDown(" ", {}, currentFirstRoot());
     await finishRender();
-    keyDown("X", cmd_ctrl, currentFirstRoot()); // change (1): cut first root
+    keyDown("X", cmd_ctrl, currentFirstRoot());
     await finishRender();
     expect(cmb.getValue()).toEqual("\nB\n");
     expect(cmb.historySize()).toEqual({ undo: 1, redo: 0 });
+
+    // initiate undo from the top-level
     cmb.setCursor({ line: 1, ch: 0 });
-    undo(); // initiate undo from the top-level
+    undo();
     await finishRender();
     expect(cmb.getValue()).toEqual("A\nB\n");
     expect(cmb.historySize()).toEqual({ undo: 0, redo: 1 });
-    redo(); // initiate redo from the top-level
+
+    // initiate redo from the top-level
+    cmb.setCursor({ line: 1, ch: 0 });
+    redo();
     expect(cmb.getValue()).toEqual("\nB\n");
     expect(cmb.historySize()).toEqual({ undo: 1, redo: 0 });
   });

@@ -1,9 +1,8 @@
-import { AST } from "../../src/CodeMirrorBlocks";
 import { addLanguage, removeLanguage } from "../../src/languages";
 import { Primitive, PrimitiveGroup } from "../../src/parsers/primitives";
 
 describe("The primitives module", () => {
-  const parse = (code: string) => new AST.AST([]);
+  const parse = (code: string) => [];
   beforeEach(() => {
     addLanguage({
       id: "my-lang",

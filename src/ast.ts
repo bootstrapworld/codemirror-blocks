@@ -47,30 +47,186 @@ const descDepth = 1;
  */
 export const prettyPrintingWidth = 80;
 
+type Edges = { parentId?: string; nextId?: string; prevId?: string };
+
+/**
+ * validateNode : ASTNode -> Void
+ * Raise an exception if a Node has is invalid
+ */
+function validateNode(node: ASTNode) {
+  const astFieldNames = [
+    "from",
+    "to",
+    "type",
+    "options",
+    "spec",
+    "isLockedP",
+    "__alreadyValidated",
+    "element",
+    "isEditable",
+  ];
+  // Check that the node doesn't define any of the fields we're going to add to it.
+  const newFieldNames = [
+    "id",
+    "level",
+    "nid",
+    "hash",
+    "aria-setsize",
+    "aria-posinset",
+    "mark",
+  ];
+  const invalidProp = newFieldNames.find(
+    (field) => field in node && (node as any)[field] !== undefined
+  );
+  if (!node.__alreadyValidated && invalidProp) {
+    throw new Error(
+      `The property ${invalidProp} is used by ASTNode, and should not be overridden in subclasses.`
+    );
+  }
+
+  node.__alreadyValidated = true;
+  // Check that the node declares all of the required fields and methods.
+  if (typeof node.type !== "string") {
+    throw new Error(
+      `ASTNodes must each have a fixed 'type', which must be a string.`
+    );
+  }
+  if (typeof node.options !== "object") {
+    throw new Error(
+      `ASTNode.options is optional, but if provided it must be an object. This rule was broken by ${node.type}.`
+    );
+  }
+  // Check that the Pos objects are correctly-formatted
+  if (
+    [node.from?.line, node.from?.ch, node.to?.line, node.to?.ch].some(
+      (v) => typeof v !== "number"
+    )
+  ) {
+    throw new Error(
+      `ASTNode.from and .to are required and must have the form {line: number, to: number} (they are source locations). This rule was broken by ${node.type}.`
+    );
+  }
+  if (typeof node.pretty !== "function") {
+    throw new Error(
+      `ASTNode ${node.type} needs to have a pretty() method, but does not.`
+    );
+  }
+  if (typeof node.render !== "function") {
+    throw new Error(
+      `ASTNode ${node.type} needs to have a render() method, but does not.`
+    );
+  }
+  // Check that the node obeys its own spec.
+  if (!node.spec) {
+    throw new Error(
+      `ASTNode ${node.type} needs to have a static 'spec' of type NodeSpec, declaring the types of its fields.`
+    );
+  }
+  node.spec.validate(node);
+  // Check that the node doesn't contain any extraneous data.
+  // (If it does, its hash is probably wrong. All data should be declared in the spec.)
+  const expectedFieldNames = node.spec
+    .fieldNames()
+    .concat(newFieldNames, astFieldNames);
+  const undeclaredField = Object.getOwnPropertyNames(node).find(
+    (p) => !expectedFieldNames.includes(p)
+  );
+  if (undeclaredField) {
+    throw new Error(
+      `An ASTNode ${node.type} contains a field called '${undeclaredField}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`
+    );
+  }
+}
+
+/**
+ * annotateNodes : ASTNodes ASTNode -> Void
+ * walk through the siblings, assigning aria-* attributes
+ * and populating various maps for tree navigation
+ */
+function annotateNodes(nodes: Readonly<ASTNode[]>): {
+  nodeIdMap: ReadonlyMap<string, ASTNode>;
+  nodeNIdMap: ReadonlyMap<number, ASTNode>;
+  edgeIdMap: Readonly<{ [id: string]: Readonly<Edges> }>;
+} {
+  const nodeIdMap = new Map<string, ASTNode>();
+  const nodeNIdMap = new Map<number, ASTNode>();
+  const edgeIdMap: Record<string, Edges> = {};
+
+  let lastNode: ASTNode | null = null;
+  let nid = 0;
+
+  const processChildren = (
+    nodes: Readonly<ASTNode[]>,
+    parent: ASTNode | undefined,
+    level: number
+  ) => {
+    nodes.forEach((node, i) => {
+      validateNode(node);
+      // Undefined if this DID NOT come from a patched AST.
+      if (node.id === undefined) {
+        node.id = genUniqueId();
+      }
+      node.level = level;
+      node["aria-setsize"] = nodes.length;
+      node["aria-posinset"] = i + 1;
+      node.nid = nid++;
+      if (lastNode) {
+        edgeIdMap[lastNode.id].nextId = node.id;
+      }
+      edgeIdMap[node.id] = {
+        parentId: parent?.id,
+        prevId: lastNode?.id,
+      };
+      nodeIdMap.set(node.id, node);
+      nodeNIdMap.set(node.nid, node);
+      lastNode = node;
+      processChildren([...node.children()], node, level + 1);
+      node.hash = node.spec.hash(node); // Relies on child hashes; must be bottom-up
+    });
+  };
+  processChildren(nodes, undefined, 1);
+  return { nodeIdMap, nodeNIdMap, edgeIdMap };
+}
+
 /**
  * This is the the *Abstract Syntax Tree*. Parser implementations
  * are required to spit out an `AST` instance.
  */
 export class AST {
-  readonly rootNodes: ASTNode[];
-  readonly nodeIdMap: Map<string, ASTNode>;
-  readonly nodeNIdMap: Map<number, ASTNode>;
+  /**
+   * the `rootNodes` attribute simply contains a list of the top level nodes
+   * that were parsed, in srcLoc order
+   */
+  readonly rootNodes: Readonly<ASTNode[]>;
 
-  constructor(rootNodes: ASTNode[], annotate = true) {
-    // the `rootNodes` attribute simply contains a list of the top level nodes
-    // that were parsed, in srcLoc order
+  /**
+   * *Unique* ID for every newly-parsed node. No ID is ever re-used.
+   */
+  private readonly nodeIdMap: ReadonlyMap<string, ASTNode> = new Map();
+
+  /**
+   * Index of each node (in-order walk). NIds always start at 0
+   */
+  private readonly nodeNIdMap: ReadonlyMap<number, ASTNode> = new Map();
+
+  /**
+   * Mapping from node id to other node ids through various edges.
+   * Used for {@link getNodeBefore}, {@link getNodeAfter}, and
+   * {@link getNodeParent}
+   */
+  private readonly edgeIdMap: Record<string, Readonly<Edges>> = {};
+
+  constructor(rootNodes: Readonly<ASTNode[]>, annotate = true) {
     this.rootNodes = rootNodes;
-
-    // *Unique* ID for every newly-parsed node. No ID is ever re-used.
-    this.nodeIdMap = new Map();
-    // Index of each node (in-order walk). NIds always start at 0
-    this.nodeNIdMap = new Map();
 
     // When an AST is to be used by CMB, it must be annotated.
     // This step is computationally intensive, and in certain instances
     // unecessary
     if (annotate) {
-      this.annotateNodes();
+      const annotations = annotateNodes(this.rootNodes);
+      this.nodeIdMap = annotations.nodeIdMap;
+      this.edgeIdMap = annotations.edgeIdMap;
+      this.nodeNIdMap = annotations.nodeNIdMap;
     }
   }
 
@@ -115,145 +271,11 @@ export class AST {
     const that = this;
     return {
       *[Symbol.iterator]() {
-        for (const node in that.rootNodes) {
-          yield* (node as unknown as ASTNode).descendants();
+        for (const node of that.rootNodes) {
+          yield* node.descendants();
         }
       },
     };
-  }
-
-  /**
-   * annotateNodes : ASTNodes ASTNode -> Void
-   * walk through the siblings, assigning aria-* attributes
-   * and populating various maps for tree navigation
-   */
-  annotateNodes() {
-    this.nodeIdMap.clear();
-    this.nodeNIdMap.clear();
-
-    let lastNode: ASTNode | null = null;
-    let nid = 0;
-
-    const processChildren = (
-      nodes: ASTNode[],
-      parent: ASTNode | undefined,
-      level: number
-    ) => {
-      nodes.forEach((node, i) => {
-        this.validateNode(node);
-        // Undefined if this DID NOT come from a patched AST.
-        if (node.id === undefined) {
-          node.id = genUniqueId();
-        }
-        node.parent = parent;
-        node.level = level;
-        node["aria-setsize"] = nodes.length;
-        node["aria-posinset"] = i + 1;
-        node.nid = nid++;
-        if (lastNode) {
-          node.prev = lastNode;
-          lastNode.next = node;
-        }
-        this.nodeIdMap.set(node.id, node);
-        this.nodeNIdMap.set(node.nid, node);
-        lastNode = node;
-        processChildren([...node.children()], node, level + 1);
-        node.hash = node.spec.hash(node); // Relies on child hashes; must be bottom-up
-      });
-    };
-    processChildren(this.rootNodes, undefined, 1);
-  }
-
-  /**
-   * validateNode : ASTNode -> Void
-   * Raise an exception if a Node has is invalid
-   */
-  private validateNode(node: ASTNode) {
-    const astFieldNames = [
-      "from",
-      "to",
-      "type",
-      "options",
-      "spec",
-      "isLockedP",
-      "__alreadyValidated",
-      "element",
-      "isEditable",
-    ];
-    // Check that the node doesn't define any of the fields we're going to add to it.
-    const newFieldNames = [
-      "id",
-      "parent",
-      "level",
-      "nid",
-      "prev",
-      "next",
-      "hash",
-      "aria-setsize",
-      "aria-posinset",
-      "mark",
-    ];
-    const invalidProp = newFieldNames.find(
-      (field) => field in node && (node as any)[field] !== undefined
-    );
-    if (!node.__alreadyValidated && invalidProp) {
-      throw new Error(
-        `The property ${invalidProp} is used by ASTNode, and should not be overridden in subclasses.`
-      );
-    }
-
-    node.__alreadyValidated = true;
-    // Check that the node declares all of the required fields and methods.
-    if (typeof node.type !== "string") {
-      throw new Error(
-        `ASTNodes must each have a fixed 'type', which must be a string.`
-      );
-    }
-    if (typeof node.options !== "object") {
-      throw new Error(
-        `ASTNode.options is optional, but if provided it must be an object. This rule was broken by ${node.type}.`
-      );
-    }
-    // Check that the Pos objects are correctly-formatted
-    if (
-      [node.from?.line, node.from?.ch, node.to?.line, node.to?.ch].some(
-        (v) => typeof v !== "number"
-      )
-    ) {
-      throw new Error(
-        `ASTNode.from and .to are required and must have the form {line: number, to: number} (they are source locations). This rule was broken by ${node.type}.`
-      );
-    }
-    if (typeof node.pretty !== "function") {
-      throw new Error(
-        `ASTNode ${node.type} needs to have a pretty() method, but does not.`
-      );
-    }
-    if (typeof node.render !== "function") {
-      throw new Error(
-        `ASTNode ${node.type} needs to have a render() method, but does not.`
-      );
-    }
-    // Check that the node obeys its own spec.
-    if (!node.spec) {
-      throw new Error(
-        `ASTNode ${node.type} needs to have a static 'spec' of type NodeSpec, declaring the types of its fields.`
-      );
-    }
-    node.spec.validate(node);
-    // Check that the node doesn't contain any extraneous data.
-    // (If it does, its hash is probably wrong. All data should be declared in the spec.)
-    const expectedFieldNames = node.spec
-      .fieldNames()
-      .concat(newFieldNames, astFieldNames);
-    const undeclaredField = Object.getOwnPropertyNames(node).find(
-      (p) => !expectedFieldNames.includes(p)
-    );
-    if (undeclaredField) {
-      throw new Error(
-        `An ASTNode ${node.type} contains a field called '${undeclaredField}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`
-      );
-    }
   }
 
   /**
@@ -263,6 +285,16 @@ export class AST {
    */
   getNodeById = (id: string) => this.nodeIdMap.get(id);
   getNodeByNId = (nid: number) => this.nodeNIdMap.get(nid);
+
+  /**
+   * Get all node ids in no particular order
+   */
+  getAllNodeIds = () => this.nodeIdMap.keys();
+
+  /**
+   * Get all nodes in no particular order
+   */
+  getAllNodes = () => this.nodeIdMap.values();
 
   getNodeByIdOrThrow = (id: string) => {
     const node = this.getNodeById(id);
@@ -285,15 +317,11 @@ export class AST {
    * throws an exception if either isn't found
    */
   isAncestor = (uid: string, vid: string) => {
-    let v = this.getNodeById(vid);
-    const u = this.getNodeById(uid);
-    if (!u) throw new Error(`The nodeId ${uid} was not found`);
-    if (!v) throw new Error(`The nodeId ${vid} was not found`);
-    if (v) {
-      v = v.parent;
-    }
-    while (v && u && v.level > u.level) {
-      v = v.parent;
+    let v: ASTNode | null = this.getNodeByIdOrThrow(vid);
+    const u = this.getNodeByIdOrThrow(uid);
+    v = this.getNodeParent(v);
+    while (v && v.level > u.level) {
+      v = this.getNodeParent(v);
     }
     return u === v;
   };
@@ -302,13 +330,25 @@ export class AST {
    * getNodeAfter : ASTNode -> ASTNode
    * Returns the next node or null
    */
-  getNodeAfter = (selection: ASTNode) => selection.next || null;
+  getNodeAfter = (selection: ASTNode) => {
+    const nextId = this.edgeIdMap[selection.id].nextId;
+    if (nextId) {
+      return this.getNodeByIdOrThrow(nextId);
+    }
+    return null;
+  };
 
   /**
    * getNodeBefore : ASTNode -> ASTNode
    * Returns the previous node or null
    */
-  getNodeBefore = (selection: ASTNode) => selection.prev || null;
+  getNodeBefore = (selection: ASTNode) => {
+    const prevId = this.edgeIdMap[selection.id].prevId;
+    if (prevId) {
+      return this.getNodeByIdOrThrow(prevId);
+    }
+    return null;
+  };
 
   // NOTE: If we have x|y where | indicates the cursor, the position of the cursor
   // is the same as the position of y's `from`. Hence, going forward requires ">= 0"
@@ -320,7 +360,7 @@ export class AST {
    */
   getNodeAfterCur = (cur: Pos) => {
     function loop(
-      nodes: ASTNode[],
+      nodes: Readonly<ASTNode[]>,
       parentFallback: ASTNode | null
     ): ASTNode | null {
       let n = nodes.find((n) => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
@@ -342,7 +382,7 @@ export class AST {
    */
   getNodeBeforeCur = (cur: Pos) => {
     function loop(
-      nodes: ASTNode[],
+      nodes: Readonly<ASTNode[]>,
       parentFallback: ASTNode | null
     ): ASTNode | null {
       // find the last node that begins before cur
@@ -404,10 +444,11 @@ export class AST {
 
   /**
    * getNodeParent : ASTNode -> ASTNode | Boolean
-   * return the parent or false
+   * return the parent or null
    */
   getNodeParent = (node: ASTNode) => {
-    return node.parent || false;
+    const parentId = this.edgeIdMap[node.id].parentId;
+    return parentId ? this.getNodeByIdOrThrow(parentId) : null;
   };
 
   /**
@@ -519,13 +560,9 @@ export abstract class ASTNode<
 
   /**
    * @internal
-   * Optional pointers to the node's parent and prev/next siblings
    * the options object always contains the aria-label, but can also
    * include other values
    */
-  parent?: ASTNode;
-  prev?: ASTNode;
-  next?: ASTNode;
   options: Opt;
 
   /**
@@ -560,13 +597,6 @@ export abstract class ASTNode<
    * validated by {@link AST.validateNode}
    */
   __alreadyValidated: boolean = false;
-
-  /**
-   * @internal
-   * the CM TextMarker which contains the element representing the node
-   * (only relevant for rootNodes)
-   */
-  mark: BlockNodeMarker;
 
   constructor(from: Pos, to: Pos, type: string, options: Opt) {
     this.from = from;

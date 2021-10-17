@@ -1,7 +1,6 @@
 import { poscmp, srcRangeIncludes, warn, setAfterDOMUpdate } from "./utils";
 import { say, cancelAnnouncement } from "./announcer";
-import SHARED from "./shared";
-import { AppDispatch, AppStore } from "./store";
+import { AppDispatch, AppStore, AppThunk } from "./store";
 import {
   performEdits,
   edit_insert,
@@ -9,12 +8,15 @@ import {
   edit_replace,
   edit_overwrite,
   EditInterface,
-  PerformEditState,
 } from "./edits/performEdits";
 import { AST, ASTNode, Pos } from "./ast";
-import { RootState } from "./reducers";
+import { AppAction, RootState } from "./reducers";
 import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "./editor";
 import { useDispatch, useStore } from "react-redux";
+import type { Language } from "./CodeMirrorBlocks";
+import { useLanguageOrThrow, useSearchOrThrow } from "./hooks";
+import { Search } from "./ui/BlockEditor";
+import { Result } from "./edits/result";
 
 // All editing actions are defined here.
 //
@@ -49,26 +51,20 @@ import { useDispatch, useStore } from "react-redux";
 
 // Insert `text` at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export function insert(
-  state: PerformEditState,
-  dispatch: AppDispatch,
-  text: string,
-  target: Target,
-  editor: CMBEditor,
-  annt?: string
-) {
-  checkTarget(target);
-  const edits = [target.toEdit(text)];
-  return performEdits(
-    state,
-    dispatch,
-    "cmb:insert",
-    edits,
-    SHARED.parse,
-    editor,
-    annt
-  );
-}
+export const insert =
+  (
+    search: Search,
+    text: string,
+    target: Target,
+    editor: CMBEditor,
+    parse: Language["parse"],
+    annt?: string
+  ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
+  (dispatch, getState) => {
+    checkTarget(target);
+    const edits = [target.toEdit(getState().ast, text)];
+    return dispatch(performEdits(search, edits, parse, editor, annt));
+  };
 
 /**
  * Generates a description of an edit involving certain nodes
@@ -88,34 +84,29 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 
 // Delete the given nodes.
 // 'delete' is a reserved word, hence the trailing underscore
-export function delete_(
-  state: PerformEditState,
-  dispatch: AppDispatch,
-  editor: CMBEditor,
-  nodes: ASTNode[],
-  editWord?: string
-) {
-  if (nodes.length === 0) {
-    return;
-  }
-  nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
-  const edits = nodes.map(edit_delete);
-  let annt: string | undefined = undefined;
-  if (editWord) {
-    annt = createEditAnnouncement(nodes, editWord);
-    say(annt);
-  }
-  performEdits(
-    state,
-    dispatch,
-    "cmb:delete-node",
-    edits,
-    SHARED.parse,
-    editor,
-    annt
-  );
-  dispatch({ type: "SET_SELECTIONS", selections: [] });
-}
+export const delete_ =
+  (
+    search: Search,
+    editor: CMBEditor,
+    nodes: ASTNode[],
+    parse: Language["parse"],
+    editWord?: string
+  ): AppThunk =>
+  (dispatch, getState) => {
+    if (nodes.length === 0) {
+      return;
+    }
+    nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
+    const { ast } = getState();
+    const edits = nodes.map((node) => edit_delete(ast, node));
+    let annt: string | undefined = undefined;
+    if (editWord) {
+      annt = createEditAnnouncement(nodes, editWord);
+      say(annt);
+    }
+    dispatch(performEdits(search, edits, parse, editor, annt));
+    dispatch({ type: "SET_SELECTIONS", selections: [] });
+  };
 
 // Copy the given nodes onto the clipboard.
 export function copy(
@@ -151,25 +142,29 @@ export function copy(
 
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
-export function paste(
-  state: PerformEditState,
-  dispatch: AppDispatch,
-  editor: CMBEditor,
-  target: Target
-) {
-  checkTarget(target);
-  pasteFromClipboard((text) => {
-    const edits = [target.toEdit(text)];
-    performEdits(state, dispatch, "cmb:paste", edits, SHARED.parse, editor);
-    dispatch({ type: "SET_SELECTIONS", selections: [] });
-  });
-}
+export const paste =
+  (
+    editor: CMBEditor,
+    search: Search,
+    target: Target,
+    parse: Language["parse"]
+  ): AppThunk =>
+  (dispatch, getState) => {
+    checkTarget(target);
+    pasteFromClipboard((text) => {
+      const edits = [target.toEdit(getState().ast, text)];
+      dispatch(performEdits(search, edits, parse, editor));
+      dispatch({ type: "SET_SELECTIONS", selections: [] });
+    });
+  };
 
 export function useDropAction() {
   // Drag from `src` (which should be a d&d monitor thing) to `target`.
   // See the comment at the top of the file for what kinds of `target` there are.
   const store: AppStore = useStore();
   const dispatch: AppDispatch = useDispatch();
+  const language = useLanguageOrThrow();
+  const search = useSearchOrThrow();
   return function drop(
     editor: CMBEditor,
     src: { id: string; content: string },
@@ -193,20 +188,17 @@ export function useDropAction() {
     // Assuming it did not come from the toolbar...
     // (1) Delete the text of the dragged node, (2) and save the id and hash
     if (srcNode) {
-      edits.push(edit_delete(state.ast.getNodeByIdOrThrow(srcNode.id)));
+      edits.push(
+        edit_delete(state.ast, state.ast.getNodeByIdOrThrow(srcNode.id))
+      );
       droppedHash = ast.getNodeByIdOrThrow(srcNode.id).hash;
     }
 
     // Insert or replace at the drop location, depending on what we dropped it on.
-    edits.push(target.toEdit(content));
+    edits.push(target.toEdit(ast, content));
     // Perform the edits.
-    const editResult = performEdits(
-      state,
-      dispatch,
-      "cmb:drop-node",
-      edits,
-      SHARED.parse,
-      editor
+    const editResult = dispatch(
+      performEdits(search, edits, language.parse, editor)
     );
 
     // Assuming it did not come from the toolbar, and the srcNode was collapsed...
@@ -215,9 +207,7 @@ export function useDropAction() {
       if (editResult.successful) {
         ast = editResult.value.newAST;
       }
-      const newNode = [...ast.nodeIdMap.values()].find(
-        (n) => n.hash == droppedHash
-      );
+      const newNode = [...ast.getAllNodes()].find((n) => n.hash == droppedHash);
       newNode && dispatch({ type: "COLLAPSE", id: newNode.id });
       dispatch({ type: "UNCOLLAPSE", id: srcNode.id });
     }
@@ -225,24 +215,27 @@ export function useDropAction() {
 }
 
 // Set the cursor position.
-export function setCursor(editor: CMBEditor, cur: Pos | null) {
-  return (dispatch: AppDispatch) => {
-    if (editor && cur) {
-      editor.focus();
-      SHARED.search.setCursor(cur);
-      editor.setCursor(cur);
-    }
-    dispatch({ type: "SET_CURSOR", cur });
-  };
-}
+export const setCursor = (
+  editor: CMBEditor,
+  cur: Pos | null,
+  search: Search
+): AppAction => {
+  if (editor && cur) {
+    editor.focus();
+    search.setCursor(cur);
+    editor.setCursor(cur);
+  }
+  return { type: "SET_CURSOR", cur };
+};
 
 // Activate the node with the given `nid`.
 export function activateByNid(
   editor: ReadonlyCMBEditor,
+  search: Search,
   nid: number | null,
   options: { allowMove?: boolean; record?: boolean } = {}
-) {
-  return (dispatch: AppDispatch, getState: () => RootState) => {
+): AppThunk {
+  return (dispatch, getState) => {
     options = { ...options, allowMove: true, record: true };
     let { ast, focusId, collapsedList } = getState();
 
@@ -299,8 +292,8 @@ export function activateByNid(
     setAfterDOMUpdate(() => {
       dispatch({ type: "SET_FOCUS", focusId: newNode.id });
 
-      if (options.record && SHARED.search) {
-        SHARED.search.setCursor(newNode.from);
+      if (options.record && search) {
+        search.setCursor(newNode.from);
       }
       // if this timeout fires after the node has been torn down, don't bother
       if (newNode.element) {
@@ -367,7 +360,7 @@ export abstract class Target {
     return { from: this.from, to: this.to };
   }
   abstract getText(ast: AST, text: ReadonlyRangedText): string;
-  abstract toEdit(test: string): EditInterface;
+  abstract toEdit(ast: AST, text: string): EditInterface;
 }
 
 // Insert at a location inside the AST.
@@ -386,7 +379,7 @@ export class InsertTarget extends Target {
     return "";
   }
 
-  toEdit(text: string): EditInterface {
+  toEdit(ast: AST, text: string): EditInterface {
     return edit_insert(text, this.parent, this.field, this.pos);
   }
 }
@@ -406,8 +399,8 @@ export class ReplaceNodeTarget extends Target {
     return text.getRange(from, to);
   }
 
-  toEdit(text: string): EditInterface {
-    return edit_replace(text, this.node);
+  toEdit(ast: AST, text: string): EditInterface {
+    return edit_replace(text, ast, this.node);
   }
 }
 
@@ -422,7 +415,7 @@ export class OverwriteTarget extends Target {
     return text.getRange(this.from, this.to);
   }
 
-  toEdit(text: string): EditInterface {
+  toEdit(ast: AST, text: string): EditInterface {
     return edit_overwrite(text, this.from, this.to);
   }
 }

@@ -34,7 +34,7 @@ describe("The PrimitiveBlock component,", function () {
     const el = renderedBlockNode.root;
 
     const dragEvent = dragstart();
-    el.firstChild.dispatchEvent(dragEvent);
+    fireEvent(el.firstChild, dragEvent);
     expect(dragEvent.dataTransfer.getData("text/plain")).toBe("some-primitive");
   });
 
@@ -56,7 +56,7 @@ describe("The PrimitiveBlock component,", function () {
     );
     const el = renderedBlockNode.root;
     const dragEvent = dragstart();
-    el.firstChild.dispatchEvent(dragEvent);
+    fireEvent(el.firstChild, dragEvent);
     expect(dragEvent.dataTransfer.getData("text/plain")).toBe("some-primitive");
   });
 

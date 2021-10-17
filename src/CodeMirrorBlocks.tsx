@@ -5,7 +5,7 @@ import ToggleEditor from "./ui/ToggleEditor";
 import Args from "./components/Args";
 import * as DropTarget from "./components/DropTarget";
 import Node from "./components/Node";
-import * as AST from "./ast";
+import { ASTNode } from "./ast";
 import * as Nodes from "./nodes";
 import type { Literal } from "./nodes";
 import * as NodeSpec from "./nodeSpec";
@@ -54,7 +54,7 @@ export type Language = {
    * @param code source code for the program
    * @returns The ast that codemirror-blocks will render
    */
-  parse(code: string): AST.AST;
+  parse(code: string): ASTNode[];
 
   /**
    * A function for generating a human readable error message
@@ -65,7 +65,7 @@ export type Language = {
   /**
    * A function for generating ASTNodes from Primitives
    */
-  getASTNodeForPrimitive?: (primitive: Primitive) => AST.ASTNode;
+  getASTNodeForPrimitive?: (primitive: Primitive) => ASTNode;
 
   /**
    * A function for generating a Literal ast node from a Primitive
@@ -80,13 +80,13 @@ export type Language = {
 };
 
 type Props = {
-  api: any;
+  onMount: (api: API) => void;
   options?: Options;
   language: Language;
   codemirrorOptions?: CodeMirror.EditorConfiguration;
 };
 export const CodeMirrorBlocksComponent = ({
-  api,
+  onMount,
   options = {},
   language,
   codemirrorOptions = {},
@@ -96,7 +96,7 @@ export const CodeMirrorBlocksComponent = ({
       <ToggleEditor
         language={language}
         initialCode={options.value ?? ""}
-        api={api}
+        onMount={onMount}
         options={options}
         codemirrorOptions={codemirrorOptions}
       />
@@ -121,11 +121,11 @@ function CodeMirrorBlocks(
   language: Language,
   codemirrorOptions: CodeMirror.EditorConfiguration = {}
 ): API {
-  let api: API = {} as any;
+  let apiBox: API = {} as any;
   ReactDOM.render(
     <CodeMirrorBlocksComponent
       language={language}
-      api={api}
+      onMount={(api) => Object.assign(apiBox, api)}
       options={options}
       codemirrorOptions={codemirrorOptions}
     />,
@@ -135,14 +135,14 @@ function CodeMirrorBlocks(
   // Used to hide the application from screen readers while a modal
   // is open.
   Modal.setAppElement(container);
-  return api;
+  return apiBox;
 }
 
 export {
   CodeMirrorBlocks,
   Args,
   DropTarget as DT,
-  AST,
+  ASTNode,
   Node,
   Nodes,
   NodeSpec,

@@ -1,5 +1,5 @@
 import React, { Component, createRef, ReactElement } from "react";
-import BlockEditor from "./BlockEditor";
+import BlockEditor, { Search } from "./BlockEditor";
 import TextEditor from "./TextEditor";
 import Dialog from "../components/Dialog";
 import ByString from "./searchers/ByString";
@@ -9,7 +9,6 @@ import Toolbar from "./Toolbar";
 import { ToggleButton, BugButton } from "./EditorButtons";
 import { mountAnnouncer, say } from "../announcer";
 import TrashCan from "./TrashCan";
-import SHARED from "../shared";
 import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror, { MarkerRange, Position, TextMarker } from "codemirror";
@@ -140,6 +139,7 @@ function isTextMarkerRange(
 
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
+import { AppContext, AppHelpers } from "../components/Context";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
@@ -147,7 +147,7 @@ export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
   codemirrorOptions?: CodeMirror.EditorConfiguration;
   language: Language;
   options?: Options;
-  api?: API;
+  onMount: (api: API) => void;
   debuggingLog?: {
     history?: unknown;
   };
@@ -159,23 +159,6 @@ type ToggleEditorState = {
   dialog: null | { title: string; content: ReactElement };
   debuggingLog?: ToggleEditorProps["debuggingLog"];
   editor: CMBEditor | null;
-};
-
-// TODO(pcardune): make this use an actual context? Or maybe redux state?
-export const KeyDownContext = {
-  /**
-   * @internal
-   * Dialog showing/hiding methods deal with ToggleEditor state.
-   * We pass them to mode-specific components, to allow those
-   * components to show/hide dialogs
-   *
-   * This is hooked up when ToggleEditor gets mounted
-   */
-  showDialog: (contents: ToggleEditorState["dialog"]) => {
-    console.warn(`ToggleEditor has not been mounted yet. Can't show dialog`);
-  },
-
-  toolbarRef: createRef<HTMLInputElement>(),
 };
 
 class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
@@ -196,7 +179,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
 
   codemirrorOptions: CodeMirror.EditorConfiguration;
   options: Options;
-  eventHandlers: Record<string, Function[]>;
+  eventHandlers: Record<string, Function[]> = {};
   ast?: AST;
   newAST?: AST;
 
@@ -212,14 +195,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   constructor(props: ToggleEditorProps) {
     super(props);
 
-    SHARED.parse = this.props.language.parse;
-
-    this.eventHandlers = {}; // blank event-handler record
-
     this.state.code = props.initialCode;
-
-    KeyDownContext.showDialog = (contents: ToggleEditorState["dialog"]) =>
-      this.setState(() => ({ dialog: contents }));
   }
 
   /**
@@ -233,15 +209,15 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
   }) => {
     debugLog("log is", jsonLog);
     this.setState({ debuggingLog: jsonLog });
-    this.props.api?.setValue(jsonLog.startingSource);
+    this.state.editor?.setValue(jsonLog.startingSource);
   };
 
   /**
    * @internal
    * Populate a base object with mode-agnostic methods we wish to expose
    */
-  buildAPI(ed: CodeMirror.Editor): API {
-    const base: any = {};
+  buildAPI(ed: CodeMirror.Editor): ToggleEditorAPI & Partial<CodeMirrorAPI> {
+    const base: Partial<CodeMirrorAPI> = {};
     // any CodeMirror function that we can call directly should be passed-through.
     // TextEditor and BlockEditor can add their own, or override them
     codeMirrorAPI.forEach((funcName) => {
@@ -275,7 +251,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         throw "runMode is not supported in CodeMirror-blocks";
       },
     };
-    return Object.assign(base, api);
+    return { ...base, ...api };
   }
 
   /**
@@ -293,7 +269,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     wrapper.setAttribute("aria-label", mode + " Editor");
     mountAnnouncer(wrapper);
     // Rebuild the API and assign re-events
-    Object.assign(this.props.api, this.buildAPI(editor.codemirror), api);
+    this.props.onMount({ ...this.buildAPI(editor.codemirror), ...api });
     Object.keys(this.eventHandlers).forEach((type) => {
       this.eventHandlers[type].forEach((h) =>
         editor.codemirror.on(type as any, h)
@@ -306,7 +282,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
           let node = ast.getNodeByNId(k);
           if (node) {
-            this.props.api?.markText(node.from, node.to, m.options);
+            editor.codemirror.markText(node.from, node.to, m.options);
           }
         }
       );
@@ -338,7 +314,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         try {
           let oldCode = state.editor.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
-          oldAst = this.props.language.parse(oldCode); // parse the code (WITH annotations)
+          oldAst = new AST(this.props.language.parse(oldCode)); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
           let message = "";
@@ -354,7 +330,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         }
         try {
           code = oldAst.toString() + (WS ? WS[0] : ""); // pretty-print and restore whitespace
-          this.ast = this.props.language.parse(code); // parse the pretty-printed (PP) code
+          this.ast = new AST(this.props.language.parse(code)); // parse the pretty-printed (PP) code
         } catch (e) {
           console.error("COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n", oldAst);
           console.error("PRETTY-PRINTED CODE WAS", oldAst.toString());
@@ -378,10 +354,31 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     });
   };
 
+  private toolbarRef = React.createRef<HTMLInputElement>();
+  private appContext: AppHelpers = {
+    showDialog: (contents: ToggleEditorState["dialog"]) =>
+      this.setState(() => ({ dialog: contents })),
+    focusToolbar: () => this.toolbarRef.current?.focus(),
+    search: {
+      search: () => {
+        throw new Error("Search not ready yet");
+      },
+      onSearch: () => {
+        throw new Error("Search not ready yet");
+      },
+      setCursor: () => {
+        throw new Error("Search not ready yet");
+      },
+      setCM: () => {
+        throw new Error("Search not ready yet");
+      },
+    },
+  };
+
   render() {
     const classes = "Editor " + (this.state.blockMode ? "blocks" : "text");
     return (
-      <>
+      <AppContext.Provider value={this.appContext}>
         <div className={classes}>
           {this.state.blockMode ? <BugButton /> : null}
           <ToggleButton
@@ -389,7 +386,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
             blockMode={this.state.blockMode}
           />
           {this.state.blockMode && this.state.editor ? (
-            <TrashCan editor={this.state.editor} />
+            <TrashCan
+              language={this.props.language}
+              editor={this.state.editor}
+            />
           ) : null}
           <div
             className={"col-xs-3 toolbar-pane"}
@@ -404,7 +404,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
               }
               languageId={this.props.language.id}
               blockMode={this.state.blockMode}
-              toolbarRef={KeyDownContext.toolbarRef}
+              toolbarRef={this.toolbarRef}
             />
           </div>
           <div className="col-xs-9 codemirror-pane">
@@ -426,7 +426,7 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
           body={this.state.dialog}
           closeFn={() => this.setState({ dialog: null })}
         />
-      </>
+      </AppContext.Provider>
     );
   }
 
@@ -439,12 +439,10 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         }}
         value={this.state.code}
         onMount={this.handleEditorMounted}
-        api={this.props.api}
         passedAST={this.ast}
       />
     );
   }
-
   renderBlocks() {
     let defaultOptions = {
       parse: this.props.language.parse,
@@ -453,17 +451,20 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
     };
     return (
       <UpgradedBlockEditor
+        onSearchMounted={(search) => {
+          this.appContext = { ...this.appContext, search };
+        }}
         codemirrorOptions={{
           ...defaultCmOptions,
           ...this.props.codemirrorOptions,
         }}
         value={this.state.code}
         onMount={this.handleEditorMounted}
-        api={this.props.api}
         passedAST={this.ast || new AST([])}
         // the props below are unique to the BlockEditor
-        languageId={this.props.language.id}
+        language={this.props.language}
         options={{ ...defaultOptions, ...this.props.options }}
+        keyDownHelpers={this.appContext}
       />
     );
   }

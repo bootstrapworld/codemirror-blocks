@@ -8,11 +8,6 @@ import { poscmp } from "./utils";
  * https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/codemirror/index.d.ts
  */
 declare module "codemirror" {
-  interface SelectionOptions {
-    bias?: number;
-    origin?: string;
-    scroll?: boolean;
-  }
   interface DocOrEditor {
     /**
      * Get the currently selected code. Optionally pass a line separator to put between
@@ -20,72 +15,6 @@ declare module "codemirror" {
      * with instances of lineSep in between.
      */
     getSelection(lineSep?: string): string;
-
-    /**
-     * Adds a new selection to the existing set of selections, and makes it the primary selection.
-     */
-    addSelection(anchor: CodeMirror.Position, head?: CodeMirror.Position): void;
-
-    /**
-     * Sets a new set of selections. There must be at least one selection in the given array. When primary is a
-     * number, it determines which selection is the primary one. When it is not given, the primary index is taken from
-     * the previous selection, or set to the last range if the previous selection had less ranges than the new one.
-     * Supports the same options as setSelection.
-     */
-    setSelections(
-      ranges: Array<{
-        anchor: CodeMirror.Position;
-        head?: CodeMirror.Position;
-      }>,
-      primary?: number,
-      options?: {
-        bias?: number | undefined;
-        origin?: string | undefined;
-        scroll?: boolean | undefined;
-      }
-    ): void;
-
-    /**
-     * Similar to setSelection , but will, if shift is held or the extending flag is set,
-     * move the head of the selection while leaving the anchor at its current place.
-     * pos2 is optional , and can be passed to ensure a region (for example a word or paragraph) will end up selected
-     * (in addition to whatever lies between that region and the current anchor).
-     */
-    extendSelection(
-      from: CodeMirror.Position,
-      to?: CodeMirror.Position,
-      options?: SelectionOptions
-    ): void;
-
-    /**
-     * An equivalent of extendSelection that acts on all selections at once.
-     */
-    extendSelections(
-      heads: CodeMirror.Position[],
-      options?: SelectionOptions
-    ): void;
-
-    /**
-     * Applies the given function to all existing selections, and calls extendSelections on the result.
-     */
-    extendSelectionsBy(
-      f: (range: CodeMirror.Range) => CodeMirror.Position
-    ): void;
-
-    /**
-     * Get the value of the 'extending' flag.
-     */
-    getExtending(): boolean;
-
-    /**
-     * Undo one edit or selection change.
-     */
-    undoSelection(): void;
-
-    /**
-     * Redo one undone edit or selection change.
-     */
-    redoSelection(): void;
 
     /**
      * This method can be used to implement search/replace functionality.
@@ -102,13 +31,6 @@ declare module "codemirror" {
       start?: CodeMirror.Position,
       options?: { caseFold?: boolean; multiline?: boolean }
     ): SearchCursor;
-  }
-
-  interface Editor {
-    /**
-     * Allow the given string to be translated with the phrases option.
-     */
-    phrase(text: string): string;
   }
 }
 

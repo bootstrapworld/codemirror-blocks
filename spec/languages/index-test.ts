@@ -1,4 +1,3 @@
-import { AST } from "../../src/CodeMirrorBlocks";
 import { addLanguage, removeLanguage } from "../../src/languages";
 
 describe("addLanguage function,", () => {
@@ -8,7 +7,7 @@ describe("addLanguage function,", () => {
       id: "foo",
       name: "foo",
       parse(code: string) {
-        return new AST.AST([]);
+        return [];
       },
     });
   });

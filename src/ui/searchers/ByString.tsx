@@ -177,7 +177,10 @@ const ByString: Searcher<SearchSettings, Props> = {
       if (node) {
         node = skipCollapsed(
           node,
-          (node) => (forward ? node?.next : node?.prev),
+          (node) =>
+            (node &&
+              (forward ? ast.getNodeAfter(node) : ast.getNodeBefore(node))) ||
+            undefined,
           state
         );
         if (node) return { node, cursor: node.from };

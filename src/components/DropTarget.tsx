@@ -6,9 +6,8 @@ import classNames from "classnames";
 import { AppDispatch, AppStore } from "../store";
 import { genUniqueId } from "../utils";
 import { useDropAction, InsertTarget } from "../actions";
-import { ASTNode, Pos } from "../ast";
+import type { ASTNode, AST, Pos } from "../ast";
 import { RootState } from "../reducers";
-import { AST } from "../CodeMirrorBlocks";
 import { ItemTypes } from "../dnd";
 import { EditorContext } from "./Context";
 
@@ -18,7 +17,11 @@ export const NodeContext = createContext<{ node: ASTNode | null }>({
 });
 
 // Find the id of the drop target (if any) on the given side of `child` node.
-export function findAdjacentDropTargetId(child: ASTNode, onLeft: boolean) {
+export function findAdjacentDropTargetId(
+  ast: AST,
+  child: ASTNode,
+  onLeft: boolean
+) {
   let prevDropTargetId: string | null = null;
   let targetId = `block-node-${child.id}`;
 
@@ -52,7 +55,7 @@ export function findAdjacentDropTargetId(child: ASTNode, onLeft: boolean) {
     }
     return null;
   }
-  const parentEl = child.parent?.element;
+  const parentEl = ast.getNodeParent(child)?.element;
   if (!parentEl) {
     return null;
   }
@@ -64,7 +67,7 @@ const getLocation = ({
   id,
   context,
 }: {
-  ast: AST.AST;
+  ast: AST;
   id: string;
   context: { node: ASTNode; field: string };
 }) => {

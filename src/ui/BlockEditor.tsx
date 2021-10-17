@@ -1,17 +1,13 @@
 import React, { Component } from "react";
-import ReactDOM from "react-dom";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
-import classNames from "classnames";
 import "./Editor.less";
 import { connect, ConnectedProps } from "react-redux";
-import SHARED from "../shared";
 import { activateByNid, setCursor } from "../actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
 import {
-  poscmp,
   minpos,
   maxpos,
   validateRanges,
@@ -20,24 +16,25 @@ import {
   cancelAfterDOMUpdate,
 } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
-import BlockComponent from "../components/BlockComponent";
 import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { SelectionOptions } from "codemirror";
-import type { Options, API } from "../CodeMirrorBlocks";
+import type { Options, API, Language } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
-import { EditorContext } from "../components/Context";
+import { EditorContext, LanguageContext } from "../components/Context";
 import {
   CodeMirrorFacade,
   CMBEditor,
   ReadonlyCMBEditor,
   isBlockNodeMarker,
-  BlockNodeMarker,
 } from "../editor";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
+import { isChangeObject, makeChangeObject } from "../edits/performEdits";
+import ToplevelBlock from "./ToplevelBlock";
+import { AppHelpers } from "../components/Context";
 
 const tmpDiv = document.createElement("div");
 function getTempCM(editor: CodeMirrorFacade) {
@@ -102,89 +99,6 @@ type BlockEditorAPI = {
 
 export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
 
-// TODO(Oak): this should really be a new file, but for convenience we will put it
-// here for now
-
-type ToplevelBlockProps = {
-  incrementalRendering: boolean;
-  node: ASTNode;
-  editor: CMBEditor;
-};
-
-type ToplevelBlockState = {
-  renderPlaceholder: boolean;
-};
-
-class ToplevelBlock extends BlockComponent<
-  ToplevelBlockProps,
-  ToplevelBlockState
-> {
-  container: HTMLElement;
-  mark?: BlockNodeMarker;
-  pendingTimeout?: afterDOMUpdateHandle;
-
-  constructor(props: ToplevelBlockProps) {
-    super(props);
-    this.container = document.createElement("span");
-    this.container.classList.add("react-container");
-    // by default, let's render a placeholder
-    this.state = { renderPlaceholder: props.incrementalRendering };
-  }
-
-  // we need to trigger a render if the node was moved or resized at the
-  // top-level, in order to re-mark the node and put the DOM in the new marker
-  shouldComponentUpdate(
-    nextProps: ToplevelBlockProps,
-    nextState: ToplevelBlockState
-  ) {
-    return (
-      poscmp(this.props.node.from, nextProps.node.from) !== 0 || // moved
-      poscmp(this.props.node.to, nextProps.node.to) !== 0 || // resized
-      super.shouldComponentUpdate(nextProps, nextState) || // changed
-      !document.contains(this.mark?.replacedWith || null)
-    ); // removed from DOM
-  }
-
-  // When unmounting, clean up the TextMarker and any lingering timeouts
-  componentWillUnmount() {
-    this.mark?.clear();
-    cancelAfterDOMUpdate(this.pendingTimeout);
-  }
-
-  // once the placeholder has mounted, wait 250ms and render
-  // save both the timeout *and* requestAnimationFrame (RAF)
-  // in case someone unmounts before all the root components
-  // have even rendered
-  componentDidMount() {
-    if (!this.props.incrementalRendering) return; // bail if incremental is off
-    this.pendingTimeout = setAfterDOMUpdate(
-      () => this.setState({ renderPlaceholder: false }),
-      250
-    );
-  }
-
-  render() {
-    const { node } = this.props;
-
-    // set elt to a cheap placeholder, OR render the entire rootNode
-    const elt = this.state.renderPlaceholder ? <div /> : node.reactElement();
-
-    // AFTER THE REACT RENDER CYCLE IS OVER:
-    // if any prior block markers are in this range, clear them
-    // make a new block marker, and fill it with the portal
-    setAfterDOMUpdate(() => {
-      const { from, to } = node.srcRange(); // includes the node's comment, if any
-      this.mark = this.props.editor.replaceMarkerWidget(
-        from,
-        to,
-        this.container
-      );
-      node.mark = this.mark;
-    });
-    return ReactDOM.createPortal(elt, this.container);
-  }
-}
-
 const mapStateToProps = ({ ast, cur, quarantine }: RootState) => ({
   ast,
   cur,
@@ -212,9 +126,9 @@ export type Search = {
   search: (
     forward: boolean,
     cmbState: RootState,
-    overrideCur: null | Pos
+    overrideCur?: null | Pos
   ) => ASTNode | null;
-  onSearch: (state: null, done: () => void, searchForward: () => void) => void;
+  onSearch: (done: () => void, searchForward: () => void) => void;
   setCursor: (cursor: Pos) => void;
   setCM: (editor: ReadonlyCMBEditor) => void;
 };
@@ -225,13 +139,13 @@ export type BlockEditorProps = typeof BlockEditor.defaultProps &
     options?: Options;
     codemirrorOptions?: CodeMirror.EditorConfiguration;
     /**
-     * id of the language being used
+     * language being used
      */
-    languageId: string;
+    language: Language;
     search?: Search;
+    keyDownHelpers: AppHelpers;
     onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
     onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
-    api?: API;
     passedAST: AST;
     ast: AST;
   };
@@ -275,11 +189,15 @@ class BlockEditor extends Component<BlockEditorProps> {
     editor: CodeMirrorFacade,
     change: CodeMirror.EditorChangeCancellable
   ) => {
-    if (!change.origin?.startsWith("cmb:")) {
-      const result = speculateChanges([change], SHARED.parse, editor);
+    if (!isChangeObject(change)) {
+      const result = speculateChanges(
+        [change],
+        this.props.language.parse,
+        editor.getValue()
+      );
       // Successful! Let's save all the hard work we did to build the new AST
       if (result.successful) {
-        this.newAST = result.newAST;
+        this.newAST = result.value;
       }
       // Error! Cancel the change and report the error
       else {
@@ -302,7 +220,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     changes: CodeMirror.EditorChange[]
   ) => {
     this.props.dispatch((dispatch, getState) => {
-      if (!changes.every((c) => c.origin?.startsWith("cmb:"))) {
+      if (!changes.every(isChangeObject)) {
         // These changes did not originate from us. However, they've all
         // passed the `handleBeforeChange` function, so they must be valid edits.
         // (There's almost certainly just one edit here; I (Justin) am not
@@ -312,41 +230,41 @@ class BlockEditor extends Component<BlockEditorProps> {
         // Turn undo and redo into cmb actions, update the focusStack, and
         // provide a focusHint
         if (changes[0].origin === "undo") {
-          for (let c of changes) c.origin = "cmb:undo";
           const { actionFocus } = getState();
           if (actionFocus) {
             const focusHint: FocusHint = (newAST) =>
               actionFocus.oldFocusNId === null
                 ? null
                 : newAST.getNodeByNId(actionFocus.oldFocusNId);
-            commitChanges(
-              getState(),
-              dispatch,
-              changes,
-              SHARED.parse,
-              editor,
-              true,
-              focusHint,
-              this.newAST
+            dispatch(
+              commitChanges(
+                this.props.search,
+                changes.map(makeChangeObject),
+                this.props.language.parse,
+                editor,
+                true,
+                focusHint,
+                this.newAST
+              )
             );
             dispatch({ type: "UNDO", editor: editor });
           }
         } else if (changes[0].origin === "redo") {
-          for (let c of changes) c.origin = "cmb:redo";
           const { actionFocus } = getState();
           if (actionFocus) {
             const { newFocusNId } = actionFocus;
             const focusHint = (newAST: AST) =>
               newFocusNId === null ? null : newAST.getNodeByNId(newFocusNId);
-            commitChanges(
-              getState(),
-              dispatch,
-              changes,
-              SHARED.parse,
-              editor,
-              true,
-              focusHint,
-              this.newAST
+            dispatch(
+              commitChanges(
+                this.props.search,
+                changes.map(makeChangeObject),
+                this.props.language.parse,
+                editor,
+                true,
+                focusHint,
+                this.newAST
+              )
             );
             dispatch({ type: "REDO", editor });
           }
@@ -358,19 +276,24 @@ class BlockEditor extends Component<BlockEditorProps> {
           let annt = "";
           for (let i = changes.length - 1; i >= 0; i--) {
             annt = annt + changes[i].origin;
-            if (i !== 0) annt = " and " + annt;
+            if (i !== 0) {
+              annt = " and " + annt;
+            }
           }
-          if (annt === "") annt = "change";
+          if (annt === "") {
+            annt = "change";
+          }
           getState().undoableAction = annt; //?
-          commitChanges(
-            getState(),
-            dispatch,
-            changes,
-            SHARED.parse,
-            editor,
-            false,
-            -1,
-            this.newAST
+          dispatch(
+            commitChanges(
+              this.props.search,
+              changes.map(makeChangeObject),
+              this.props.language.parse,
+              editor,
+              false,
+              -1,
+              this.newAST
+            )
           );
         }
       }
@@ -384,7 +307,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    */
   private handleEditorDidMount = (editor: CodeMirrorFacade) => {
     this.setState({ editor });
-    const { passedAST: ast, setAST, search, options, onMount } = this.props;
+    const { passedAST: ast, setAST, search, options } = this.props;
     editor.codemirror.on("beforeChange", (ed, change) =>
       this.handleBeforeChange(editor, change)
     );
@@ -400,8 +323,9 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
 
     // When the editor receives focus, select the first root (if it exists)
-    if (ast.rootNodes.length > 0) {
-      this.props.dispatch({ type: "SET_FOCUS", focusId: ast.rootNodes[0].id });
+    const firstRoot = ast.getFirstRootNode();
+    if (firstRoot) {
+      this.props.dispatch({ type: "SET_FOCUS", focusId: firstRoot.id });
     }
 
     // Set extra aria attributes
@@ -411,7 +335,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    onMount(editor, this.buildAPI(editor), ast);
+    this.props.onMount(editor, this.buildAPI(editor), ast);
   };
 
   /**
@@ -439,9 +363,14 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
     // convert nid to node id, and use activate to generate the action
     else if (activity.type == "SET_FOCUS") {
-      this.props.activateByNid(this.getEditorOrThrow(), activity.nid, {
-        allowMove: true,
-      });
+      this.props.activateByNid(
+        this.getEditorOrThrow(),
+        this.props.search,
+        activity.nid,
+        {
+          allowMove: true,
+        }
+      );
       return;
     } else {
       action = activity;
@@ -518,7 +447,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       addSelection: (anchor, head) =>
         this.setSelections(
           editor,
-          [{ anchor: anchor, head: head }],
+          [{ anchor: anchor, head: head ?? anchor }],
           undefined,
           undefined,
           false
@@ -541,12 +470,12 @@ class BlockEditor extends Component<BlockEditorProps> {
             typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
           const node = ast.getNodeContaining(cur);
           if (node) {
-            this.props.activateByNid(editor, node.nid, {
+            this.props.activateByNid(editor, this.props.search, node.nid, {
               record: false,
               allowMove: true,
             });
           }
-          this.props.dispatch(setCursor(editor, cur));
+          this.props.dispatch(setCursor(editor, cur, this.props.search));
         }),
       // As long as widget isn't defined, we're good to go
       setBookmark: (pos, opts) => {
@@ -681,7 +610,7 @@ class BlockEditor extends Component<BlockEditorProps> {
    */
   private setSelections(
     ed: CodeMirrorFacade,
-    ranges: Array<{ anchor: CodeMirror.Position; head?: CodeMirror.Position }>,
+    ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
     primary?: number,
     options?: { bias?: number; origin?: string; scroll?: boolean },
     replace = true
@@ -757,11 +686,19 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
     if (select == "start") {
       this.props.dispatch(
-        setCursor(editor, tmpCM.listSelections().pop()?.head ?? null)
+        setCursor(
+          editor,
+          tmpCM.listSelections().pop()?.head ?? null,
+          this.props.search
+        )
       );
     } else {
       this.props.dispatch(
-        setCursor(editor, tmpCM.listSelections().pop()?.anchor ?? null)
+        setCursor(
+          editor,
+          tmpCM.listSelections().pop()?.anchor ?? null,
+          this.props.search
+        )
       );
     }
   }
@@ -830,7 +767,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       editor.codemirror.getSelection().length > 0
         ? null
         : editor.codemirror.getCursor();
-    this.props.dispatch(setCursor(editor, cur));
+    this.props.dispatch(setCursor(editor, cur, this.props.search));
   };
 
   componentWillUnmount() {
@@ -838,9 +775,6 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   componentDidMount() {
-    // TODO: pass these with a React Context or something sensible like that.
-    SHARED.search = this.props.search;
-
     this.refreshCM();
   }
 
@@ -869,33 +803,32 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   render() {
-    const classes = [];
-    if (this.props.languageId) {
-      classes.push(`blocks-language-${this.props.languageId}`);
-    }
-
     return (
-      <>
+      <LanguageContext.Provider value={this.props.language}>
         <DragAndDropEditor
           options={this.props.codemirrorOptions}
-          className={classNames(classes)}
+          className={`blocks-language-${this.props.language.id}`}
           value={this.props.value}
           onBeforeChange={this.props.onBeforeChange}
           onKeyPress={this.handleTopLevelKeyPress}
           onFocus={this.handleTopLevelFocus}
           onPaste={this.handleTopLevelPaste}
           onKeyDown={(editor, e) => {
-            keyDown(e, {
-              editor,
-              isNodeEnv: false,
-              dispatch: this.props.dispatch,
-            });
+            this.props.dispatch(
+              keyDown(e, {
+                search: this.props.search,
+                language: this.props.language,
+                editor,
+                isNodeEnv: false,
+                appHelpers: this.props.keyDownHelpers,
+              })
+            );
           }}
           onCursorActivity={this.handleTopLevelCursorActivity}
           editorDidMount={this.handleEditorDidMount}
         />
         {this.renderPortals()}
-      </>
+      </LanguageContext.Provider>
     );
   }
 
@@ -906,7 +839,7 @@ class BlockEditor extends Component<BlockEditorProps> {
     const { editor } = this.state;
     if (editor && this.props.ast) {
       // Render all the top-level nodes
-      portals = this.props.ast.rootNodes.map((r) => (
+      portals = [...this.props.ast.children()].map((r) => (
         <EditorContext.Provider value={editor} key={r.id}>
           <ToplevelBlock
             node={r}

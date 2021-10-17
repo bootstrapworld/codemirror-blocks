@@ -292,11 +292,16 @@ export function skipCollapsed(
   );
 }
 
-export function getRoot(node: ASTNode) {
+export function getRoot(ast: AST, node: ASTNode) {
   let next = node;
   // keep going until there's no next parent
-  while (next && next.parent) {
-    next = next.parent;
+  while (next) {
+    const parent = ast.getNodeParent(next);
+    if (parent) {
+      next = parent;
+    } else {
+      break;
+    }
   }
   return next;
 }
@@ -308,12 +313,19 @@ export function getLastVisibleNode(state: RootState) {
     ast.rootNodes[ast.rootNodes.length - 1].to
   );
   return skipWhile(
-    (node) =>
-      node &&
-      node.parent &&
-      collapsedNodeList.some((collapsed) => collapsed.id === node?.parent?.id),
+    (node: ASTNode | null) => {
+      if (node) {
+        const parent = ast.getNodeParent(node);
+        if (parent) {
+          return collapsedNodeList.some(
+            (collapsed) => collapsed.id === parent?.id
+          );
+        }
+      }
+      return null;
+    },
     lastNode,
-    (n) => n?.parent
+    (n) => n && ast.getNodeParent(n)
   );
 }
 
@@ -333,7 +345,7 @@ export function nodeCommentContaining(pos: Pos, node: ASTNode) {
 }
 
 export function getNodeContainingBiased(cursor: Pos, ast: AST) {
-  function iter(nodes: ASTNode[]): ASTNode | null {
+  function iter(nodes: Readonly<ASTNode[]>): ASTNode | null {
     const node = nodes.find(
       (node) =>
         posWithinNodeBiased(cursor, node) || nodeCommentContaining(cursor, node)
@@ -414,8 +426,13 @@ export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
   return { line: line, ch: ch };
 }
 
-// Minimize a CodeMirror-style change object, by excluding any shared prefix
-// between the old and new text. Mutates part of the change object.
+/**
+ * Minimize a CodeMirror-style change object, by excluding any shared prefix
+ * between the old and new text. Mutates part of the change object.
+ *
+ * @param param0
+ * @returns
+ */
 export function minimizeChange({
   from,
   to,
@@ -477,9 +494,11 @@ export function validateRanges(
     const N1 = ast.getNodeContaining(c1); // get node containing c1
     const N2 = ast.getNodeContaining(c2); // get node containing c2
     const c1IsTopLevel =
-      !N1 || (!N1.parent && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
+      !N1 ||
+      (!ast.getNodeParent(N1) && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
     const c2IsTopLevel =
-      !N2 || (!N2.parent && (!poscmp(c2, N2.from) || !poscmp(c2, N2.to)));
+      !N2 ||
+      (!ast.getNodeParent(N2) && (!poscmp(c2, N2.from) || !poscmp(c2, N2.to)));
 
     // If they're both top-level, it's a valid text range
     if (c1IsTopLevel && c2IsTopLevel) return;

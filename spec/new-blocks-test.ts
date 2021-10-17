@@ -1,6 +1,6 @@
 import CodeMirror from "codemirror";
-import { ASTNode } from "../src/ast";
-import type { API, AST } from "../src/CodeMirrorBlocks";
+import { AST, ASTNode } from "../src/ast";
+import type { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
 import { FunctionApp } from "../src/nodes";
 
@@ -184,7 +184,7 @@ describe("The CodeMirrorBlocks Class", function () {
     });
 
     describe("when dealing with whitespace,", function () {
-      let ast!: AST.AST;
+      let ast!: AST;
       let firstRoot!: ASTNode;
       let firstArg!: ASTNode;
       let whiteSpaceEl!: Element;
@@ -247,7 +247,7 @@ describe("The CodeMirrorBlocks Class", function () {
       });
 
       describe("in corner-cases with no arguments,", function () {
-        let ast!: AST.AST;
+        let ast!: AST;
         let firstRoot!: ASTNode;
         let func!: ASTNode;
         let argWS!: ChildNode;
@@ -275,13 +275,13 @@ describe("The CodeMirrorBlocks Class", function () {
         // fails nondeterministically - figure out how to avoid
         // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
         // it('should save whiteSpace on blur', async function() {
-        //   whiteSpaceEl.dispatchEvent(dblclick());
+        //   fireEvent(whiteSpaceEl, dblclick());
         //   await finishRender();
         //   expect(trackSetQuarantine).toHaveBeenCalledWith("", whiteSpaceEl);
         //   let quarantine = trackSetQuarantine.calls.mostRecent().returnValue;
         //   let trackOnBlur = spyOn(quarantine, 'onblur').and.callThrough();
         //   quarantine.appendChild(document.createTextNode('4253'));
-        //   quarantine.dispatchEvent(blur());
+        //   fireEvent(quarantine, blur());
         //   await finishRender();
         //   expect(trackOnBlur).toHaveBeenCalled();
         //   expect(trackSaveEdit).toHaveBeenCalledWith(quarantine);
@@ -294,20 +294,20 @@ describe("The CodeMirrorBlocks Class", function () {
 
         // not sure how to handle trackChange
         // it('should blur whitespace you are editing on enter', async function() {
-        //   whiteSpaceEl.dispatchEvent(dblclick());
+        //   fireEvent(whiteSpaceEl, dblclick());
         //   let quarantine = trackSetQuarantine.calls.mostRecent().returnValue;
         //   await finishRender();
-        //   quarantine.dispatchEvent(keydown(ENTER));
+        //   fireEvent(quarantine, keydown(ENTER));
         //   expect(trackHandleChange).toHaveBeenCalled();
         // });
 
         xdescribe('when "saving" bad whitepspace inputs,', function () {
           // beforeEach(async function () {
-          // whiteSpaceEl.dispatchEvent(dblclick());
+          // fireEvent(whiteSpaceEl, dblclick());
           // await finishRender();
           // quarantine = trackSetQuarantine.calls.mostRecent().returnValue;
           // quarantine.appendChild(document.createTextNode('"moo'));
-          // quarantine.dispatchEvent(blur());
+          // fireEvent(quarantine, blur());
           // });
           // fails nondeterministically - figure out how to avoid
           // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
