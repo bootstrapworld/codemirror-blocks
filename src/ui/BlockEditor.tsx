@@ -179,7 +179,6 @@ class BlockEditor extends Component<BlockEditorProps> {
     options: {} as Options,
   };
 
-
   /**
    * @internal
    * Used for reproducing/debugging (see ToggleEditor::loadLoggedActions)
@@ -748,9 +747,14 @@ class BlockEditor extends Component<BlockEditorProps> {
           const node = focusId
             ? ast.getNodeByIdOrThrow(focusId)
             : ast.getFirstRootNode();
-          this.props.activateByNid(editor, this.props.search, node && node.nid, {
-            allowMove: true,
-          });
+          this.props.activateByNid(
+            editor,
+            this.props.search,
+            node && node.nid,
+            {
+              allowMove: true,
+            }
+          );
         });
       });
     };
