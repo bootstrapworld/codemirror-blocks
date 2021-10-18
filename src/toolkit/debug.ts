@@ -136,7 +136,7 @@ export function createDebuggingInterface(language: Language, value: string) {
     ] as HTMLElement[];
     entries.forEach((c) => (c.style.background = "none"));
     entries[currentAction].style.background = "lightblue";
-    editor.executeAction(history[currentAction]);
+    //editor.executeAction(history[currentAction]);
     currentAction++;
     if (currentAction == lastAction) {
       nextButton.value = "Done";

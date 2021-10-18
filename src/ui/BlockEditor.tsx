@@ -74,7 +74,11 @@ const unsupportedAPIs = [
  * Override CM's native getCursor method, restricting it to the semantics
  * that make sense in a block editor
  */
-const getCursor = (ed: CodeMirrorFacade, where = "from", dispatch) => {
+const getCursor = (
+  ed: CodeMirrorFacade,
+  where = "from",
+  dispatch: AppDispatch
+) => {
   const { focusId, ast } = dispatch((_, getState) => getState());
   if (focusId && document.activeElement?.id.match(/block-node/)) {
     const node = ast.getNodeByIdOrThrow(focusId);
@@ -100,7 +104,7 @@ const markText = (
   from: CodeMirror.Position,
   to: CodeMirror.Position,
   options: CodeMirror.TextMarkerOptions = {},
-  dispatch
+  dispatch: AppDispatch
 ) => {
   const { ast } = dispatch((_, getState) => getState());
   const node = ast.getNodeAt(from, to);
@@ -137,7 +141,7 @@ const markText = (
  * Override CM's native listSelections method, using the selection
  * state from the block editor
  */
-const listSelections = (ed: CodeMirrorFacade, dispatch) => {
+const listSelections = (ed: CodeMirrorFacade, dispatch: AppDispatch) => {
   const { selections, ast } = dispatch((_, getState) => getState());
   let tmpCM = getTempCM(ed);
   // write all the ranges for all selected nodes
@@ -160,9 +164,9 @@ const listSelections = (ed: CodeMirrorFacade, dispatch) => {
 const setSelections = (
   ed: CodeMirrorFacade,
   ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
+  dispatch: AppDispatch,
   primary?: number,
   options?: { bias?: number; origin?: string; scroll?: boolean },
-  dispatch,
   replace = true
 ) => {
   const { ast } = dispatch((_, getState) => getState());
@@ -204,9 +208,9 @@ const setSelections = (
 const extendSelections = (
   ed: CodeMirrorFacade,
   heads: CodeMirror.Position[],
+  dispatch: AppDispatch,
   opts?: SelectionOptions,
-  to?: CodeMirror.Position,
-  dispatch
+  to?: CodeMirror.Position
 ) => {
   let tmpCM: CodeMirror.Editor = getTempCM(ed);
   tmpCM.setSelections(listSelections(ed, dispatch));
@@ -216,7 +220,7 @@ const extendSelections = (
     tmpCM.extendSelection(heads[0], to, opts);
   }
   // if one of the ranges is invalid, setSelections will raise an error
-  setSelections(ed, tmpCM.listSelections(), undefined, opts, dispatch);
+  setSelections(ed, tmpCM.listSelections(), dispatch, undefined, opts);
 };
 
 /**
@@ -226,9 +230,9 @@ const extendSelections = (
 const replaceSelections = (
   ed: CodeMirrorFacade,
   replacements: string[],
-  select?: "around" | "start",
-  dispatch,
-  search: Search
+  dispatch: AppDispatch,
+  search: Search,
+  select?: "around" | "start"
 ) => {
   let tmpCM: CodeMirror.Editor = getTempCM(ed);
   tmpCM.setSelections(listSelections(ed, dispatch));
@@ -236,7 +240,7 @@ const replaceSelections = (
   ed.setValue(tmpCM.getValue());
   // if one of the ranges is invalid, setSelections will raise an error
   if (select == "around") {
-    setSelections(ed, tmpCM.listSelections(), undefined, undefined, dispatch);
+    setSelections(ed, tmpCM.listSelections(), dispatch, undefined, undefined);
   }
   if (select == "start") {
     dispatch(setCursor(ed, tmpCM.listSelections().pop()?.head ?? null, search));
@@ -253,7 +257,7 @@ const replaceSelections = (
  */
 const buildAPI = (
   editor: CodeMirrorFacade,
-  dispatch,
+  dispatch: AppDispatch,
   search: Search
 ): BuiltAPI => {
   const withState = <F extends (state: RootState) => any>(func: F) =>
@@ -285,9 +289,9 @@ const buildAPI = (
       from: CodeMirror.Position,
       to: CodeMirror.Position,
       opts?: SelectionOptions
-    ) => extendSelections(editor, [from], opts, to, dispatch),
+    ) => extendSelections(editor, [from], dispatch, opts, to),
     extendSelections: (heads, opts) =>
-      extendSelections(editor, heads, opts, undefined, dispatch),
+      extendSelections(editor, heads, dispatch, opts, undefined),
     extendSelectionsBy: (
       f: (range: CodeMirror.Range) => CodeMirror.Position,
       opts?: SelectionOptions
@@ -295,9 +299,9 @@ const buildAPI = (
       extendSelections(
         editor,
         listSelections(editor, dispatch).map(f),
+        dispatch,
         opts,
-        undefined,
-        dispatch
+        undefined
       ),
     getSelections: (sep?: string) =>
       listSelections(editor, dispatch).map((s) =>
@@ -314,33 +318,33 @@ const buildAPI = (
         editor.codemirror.replaceRange(text, from, to, origin);
       }),
     setSelections: (ranges, primary, opts) =>
-      setSelections(editor, ranges, primary, opts, dispatch),
+      setSelections(editor, ranges, dispatch, primary, opts),
     setSelection: (anchor, head = anchor, opts) =>
       setSelections(
         editor,
         [{ anchor: anchor, head: head }],
+        dispatch,
         undefined,
-        opts,
-        dispatch
+        opts
       ),
     addSelection: (anchor, head) =>
       setSelections(
         editor,
         [{ anchor: anchor, head: head ?? anchor }],
-        undefined,
-        undefined,
         dispatch,
+        undefined,
+        undefined,
         false
       ),
     replaceSelections: (rStrings, select?: "around" | "start") =>
-      replaceSelections(editor, rStrings, select, dispatch, search),
+      replaceSelections(editor, rStrings, dispatch, search, select),
     replaceSelection: (rString, select?: "around" | "start") =>
       replaceSelections(
         editor,
         Array(listSelections(editor, dispatch).length).fill(rString),
-        select,
         dispatch,
-        search
+        search,
+        select
       ),
     // If a node is active, return the start. Otherwise return the cursor as-is
     getCursor: (where) => getCursor(editor, where, dispatch),
@@ -437,7 +441,7 @@ type BlockEditorAPI = {
   /**
    * @internal
    */
-  executeAction(activity: Activity): void;
+  //executeAction(activity: Activity): void;
 };
 
 export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
