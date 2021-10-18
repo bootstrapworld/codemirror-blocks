@@ -70,6 +70,353 @@ const unsupportedAPIs = [
   //'extendSelectionsBy'
 ] as const;
 
+/**
+ * Override CM's native getCursor method, restricting it to the semantics
+ * that make sense in a block editor
+ */
+const getCursor = (ed: CodeMirrorFacade, where = "from", dispatch) => {
+  const { focusId, ast } = dispatch((_, getState) => getState());
+  if (focusId && document.activeElement?.id.match(/block-node/)) {
+    const node = ast.getNodeByIdOrThrow(focusId);
+    if (where == "from") return node.from;
+    if (where == "to") return node.to;
+    else
+      throw new BlockError(
+        `getCursor() with ${where} is not supported on a focused block`,
+        `API Error`
+      );
+  } else {
+    return ed.codemirror.getCursor(where);
+  }
+};
+
+/**
+ * Override CM's native markText method, restricting it to the semantics
+ * that make sense in a block editor (fewer options, restricted to node
+ * boundaries)
+ */
+const markText = (
+  ed: CodeMirrorFacade,
+  from: CodeMirror.Position,
+  to: CodeMirror.Position,
+  options: CodeMirror.TextMarkerOptions = {},
+  dispatch
+) => {
+  const { ast } = dispatch((_, getState) => getState());
+  const node = ast.getNodeAt(from, to);
+  if (!node) {
+    throw new BlockError(
+      `Could not create TextMarker: there is no AST node at [${from}, ${to},]`,
+      "API Error"
+    );
+  }
+  let supportedOptions = ["css", "className", "title"];
+  for (let opt in options) {
+    if (!supportedOptions.includes(opt))
+      throw new BlockError(
+        `markText: option "${opt}" is not supported in block mode`,
+        `API Error`
+      );
+  }
+  let mark = ed.codemirror.markText(from, to, options); // keep CM in sync
+  const _clear = mark.clear.bind(mark);
+  mark.clear = () => {
+    _clear();
+    dispatch({ type: "CLEAR_MARK", id: node.id });
+  };
+  mark.find = () => {
+    let { from, to } = ast.getNodeByIdOrThrow(node.id);
+    return { from, to };
+  };
+  mark.options = options;
+  dispatch({ type: "ADD_MARK", id: node.id, mark: mark });
+  return mark;
+};
+
+/**
+ * Override CM's native listSelections method, using the selection
+ * state from the block editor
+ */
+const listSelections = (ed: CodeMirrorFacade, dispatch) => {
+  const { selections, ast } = dispatch((_, getState) => getState());
+  let tmpCM = getTempCM(ed);
+  // write all the ranges for all selected nodes
+  selections.forEach((id) => {
+    const node = ast.getNodeByIdOrThrow(id);
+    tmpCM.addSelection(node.from, node.to);
+  });
+  // write all the existing selection ranges
+  ed.codemirror
+    .listSelections()
+    .map((s) => tmpCM.addSelection(s.anchor, s.head));
+  // return all the selections
+  return tmpCM.listSelections();
+};
+
+/**
+ * Override CM's native setSelections method, restricting it to the semantics
+ * that make sense in a block editor (must include only valid node ranges)
+ */
+const setSelections = (
+  ed: CodeMirrorFacade,
+  ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
+  primary?: number,
+  options?: { bias?: number; origin?: string; scroll?: boolean },
+  dispatch,
+  replace = true
+) => {
+  const { ast } = dispatch((_, getState) => getState());
+  let tmpCM = getTempCM(ed);
+  tmpCM.setSelections(ranges, primary, options);
+  const textRanges: {
+    anchor: CodeMirror.Position;
+    head: CodeMirror.Position;
+  }[] = [];
+  const nodes: string[] = [];
+  try {
+    validateRanges(ranges, ast);
+  } catch (e) {
+    throw new BlockError(e, "API Error");
+  }
+  // process the selection ranges into an array of ranges and nodes
+  tmpCM.listSelections().forEach(({ anchor, head }) => {
+    const c1 = minpos(anchor, head);
+    const c2 = maxpos(anchor, head);
+    const node = ast.getNodeAt(c1, c2);
+    if (node) {
+      nodes.push(node.id);
+    } else textRanges.push({ anchor: anchor, head: head });
+  });
+  if (textRanges.length) {
+    if (replace) {
+      ed.codemirror.setSelections(textRanges, primary, options);
+    } else {
+      ed.codemirror.addSelection(textRanges[0].anchor, textRanges[0].head);
+    }
+  }
+  dispatch({ type: "SET_SELECTIONS", selections: nodes });
+};
+
+/**
+ * Override CM's native extendSelections method, restricting it to the semantics
+ * that make sense in a block editor (must include only valid node ranges)
+ */
+const extendSelections = (
+  ed: CodeMirrorFacade,
+  heads: CodeMirror.Position[],
+  opts?: SelectionOptions,
+  to?: CodeMirror.Position,
+  dispatch
+) => {
+  let tmpCM: CodeMirror.Editor = getTempCM(ed);
+  tmpCM.setSelections(listSelections(ed, dispatch));
+  if (to) {
+    tmpCM.extendSelections(heads, opts);
+  } else {
+    tmpCM.extendSelection(heads[0], to, opts);
+  }
+  // if one of the ranges is invalid, setSelections will raise an error
+  setSelections(ed, tmpCM.listSelections(), undefined, opts, dispatch);
+};
+
+/**
+ * Override CM's native replaceSelections method, restricting it to the semantics
+ * that make sense in a block editor (must include only valid node ranges)
+ */
+const replaceSelections = (
+  ed: CodeMirrorFacade,
+  replacements: string[],
+  select?: "around" | "start",
+  dispatch,
+  search: Search
+) => {
+  let tmpCM: CodeMirror.Editor = getTempCM(ed);
+  tmpCM.setSelections(listSelections(ed, dispatch));
+  tmpCM.replaceSelections(replacements, select);
+  ed.setValue(tmpCM.getValue());
+  // if one of the ranges is invalid, setSelections will raise an error
+  if (select == "around") {
+    setSelections(ed, tmpCM.listSelections(), undefined, undefined, dispatch);
+  }
+  if (select == "start") {
+    dispatch(setCursor(ed, tmpCM.listSelections().pop()?.head ?? null, search));
+  } else {
+    dispatch(
+      setCursor(ed, tmpCM.listSelections().pop()?.anchor ?? null, search)
+    );
+  }
+};
+
+
+
+/**
+ * Build the API for a block editor, restricting or modifying APIs
+ * that are incompatible with our toggleable block editor
+ */
+const buildAPI = (editor: CodeMirrorFacade, dispatch, search: Search): BuiltAPI => {
+  const withState = <F extends (state: RootState) => any>(func: F) =>
+    dispatch((_, getState) => func(getState()));
+
+  const api: BuiltAPI = {
+    /*****************************************************************
+     * CM APIs WE WANT TO OVERRIDE
+     */
+    findMarks: (from, to) =>
+      editor.codemirror
+        .findMarks(from, to)
+        .filter((m) => !isBlockNodeMarker(m)),
+    findMarksAt: (pos) =>
+      editor.codemirror.findMarksAt(pos).filter((m) => !isBlockNodeMarker(m)),
+    getAllMarks: () =>
+      editor.codemirror.getAllMarks().filter((m) => !isBlockNodeMarker(m)),
+    markText: (from, to, opts) => markText(editor, from, to, opts, dispatch),
+    // Something is selected if CM has a selection OR a block is selected
+    somethingSelected: () =>
+      withState(({ selections }) =>
+        Boolean(editor.codemirror.somethingSelected() || selections.length)
+      ),
+    // CMB has focus if CM has focus OR a block is active
+    hasFocus: () =>
+      editor.codemirror.hasFocus() ||
+      Boolean(document.activeElement?.id.match(/block-node/)),
+    extendSelection: (
+      from: CodeMirror.Position,
+      to: CodeMirror.Position,
+      opts?: SelectionOptions
+    ) => extendSelections(editor, [from], opts, to, dispatch),
+    extendSelections: (heads, opts) =>
+      extendSelections(editor, heads, opts, undefined, dispatch),
+    extendSelectionsBy: (
+      f: (range: CodeMirror.Range) => CodeMirror.Position,
+      opts?: SelectionOptions
+    ) =>
+      extendSelections(
+        editor,
+        listSelections(editor, dispatch).map(f),
+        opts,
+        undefined,
+        dispatch
+      ),
+    getSelections: (sep?: string) =>
+      listSelections(editor, dispatch).map((s) =>
+        editor.codemirror.getRange(s.anchor, s.head, sep)
+      ),
+    getSelection: (sep?: string) =>
+      listSelections(editor, dispatch)
+        .map((s) => editor.codemirror.getRange(s.anchor, s.head, sep))
+        .join(sep),
+    listSelections: () => listSelections(editor, dispatch),
+    replaceRange: (text, from, to, origin) =>
+      withState(({ ast }) => {
+        validateRanges([{ anchor: from, head: to }], ast);
+        editor.codemirror.replaceRange(text, from, to, origin);
+      }),
+    setSelections: (ranges, primary, opts) =>
+      setSelections(editor, ranges, primary, opts, dispatch),
+    setSelection: (anchor, head = anchor, opts) =>
+      setSelections(
+        editor,
+        [{ anchor: anchor, head: head }],
+        undefined,
+        opts,
+        dispatch
+      ),
+    addSelection: (anchor, head) =>
+      setSelections(
+        editor,
+        [{ anchor: anchor, head: head ?? anchor }],
+        undefined,
+        undefined,
+        dispatch,
+        false
+      ),
+    replaceSelections: (rStrings, select?: "around" | "start") =>
+      replaceSelections(
+        editor,
+        rStrings,
+        select,
+        dispatch,
+        search
+      ),
+    replaceSelection: (rString, select?: "around" | "start") =>
+      replaceSelections(
+        editor,
+        Array(listSelections(editor, dispatch).length).fill(rString),
+        select,
+        dispatch,
+        search
+      ),
+    // If a node is active, return the start. Otherwise return the cursor as-is
+    getCursor: (where) => getCursor(editor, where, dispatch),
+    // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
+    setCursor: (curOrLine, ch, options) =>
+      withState(({ ast }) => {
+        ch = ch ?? 0;
+        let cur =
+          typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
+        const node = ast.getNodeContaining(cur);
+        if (node) {
+          dispatch(
+            activateByNid(editor, search, node.nid, {
+              record: false,
+              allowMove: true,
+            })
+          );
+        }
+        dispatch(setCursor(editor, cur, search));
+      }),
+    // As long as widget isn't defined, we're good to go
+    setBookmark: (pos, opts) => {
+      if (opts?.widget) {
+        throw new BlockError(
+          "setBookmark() with a widget is not supported in Block Mode",
+          "API Error"
+        );
+      }
+      return editor.codemirror.setBookmark(pos, opts);
+    },
+
+    /*****************************************************************
+     * APIs THAT ARE UNIQUE TO CODEMIRROR-BLOCKS
+     */
+    getAst: () => withState((state) => state.ast),
+    // activation-test.js expects undefined
+    getFocusedNode: () =>
+      withState(({ focusId, ast }) =>
+        focusId ? ast.getNodeById(focusId) : undefined
+      ),
+    getSelectedNodes: () =>
+      withState(({ selections, ast }) =>
+        selections.map((id) => ast.getNodeById(id))
+      ),
+
+    /*****************************************************************
+     * APIs FOR TESTING
+     */
+    getQuarantine: () => withState(({ quarantine }) => quarantine),
+    setQuarantine: (start, end, text) =>
+      dispatch({
+        type: "SET_QUARANTINE",
+        start: start,
+        end: end,
+        text: text,
+      }),
+// TODO(Emmanuel): does it make sense to move executeAction out of BlockEditor?      
+//    executeAction: (action) => executeAction(action),
+  };
+  // show which APIs are unsupported
+  unsupportedAPIs.forEach(
+    (f) =>
+      ((api as any)[f] = () => {
+        throw new BlockError(
+          `The CM API '${f}' is not supported in the block editor`,
+          "API Error"
+        );
+      })
+  );
+  return api;
+}
+
 type CodeMirrorAPI = Omit<CodeMirror.Editor, typeof unsupportedAPIs[number]>;
 
 type BlockEditorAPI = {
@@ -208,338 +555,6 @@ class BlockEditor extends Component<BlockEditorProps> {
       action = activity;
     }
     this.props.dispatch(action);
-  }
-
-  /**
-   * @internal
-   * Build the API for a block editor, restricting or modifying APIs
-   * that are incompatible with our toggleable block editor
-   */
-  private buildAPI(editor: CodeMirrorFacade): BuiltAPI {
-    const withState = <F extends (state: RootState) => any>(func: F) =>
-      this.props.dispatch((_, getState) => func(getState()));
-
-    const api: BuiltAPI = {
-      /*****************************************************************
-       * CM APIs WE WANT TO OVERRIDE
-       */
-      findMarks: (from, to) =>
-        editor.codemirror
-          .findMarks(from, to)
-          .filter((m) => !isBlockNodeMarker(m)),
-      findMarksAt: (pos) =>
-        editor.codemirror.findMarksAt(pos).filter((m) => !isBlockNodeMarker(m)),
-      getAllMarks: () =>
-        editor.codemirror.getAllMarks().filter((m) => !isBlockNodeMarker(m)),
-      markText: (from, to, opts) => this.markText(editor, from, to, opts),
-      // Something is selected if CM has a selection OR a block is selected
-      somethingSelected: () =>
-        withState(({ selections }) =>
-          Boolean(editor.codemirror.somethingSelected() || selections.length)
-        ),
-      // CMB has focus if CM has focus OR a block is active
-      hasFocus: () =>
-        editor.codemirror.hasFocus() ||
-        Boolean(document.activeElement?.id.match(/block-node/)),
-      extendSelection: (
-        from: CodeMirror.Position,
-        to: CodeMirror.Position,
-        opts?: SelectionOptions
-      ) => this.extendSelections(editor, [from], opts, to),
-      extendSelections: (heads, opts) =>
-        this.extendSelections(editor, heads, opts),
-      extendSelectionsBy: (
-        f: (range: CodeMirror.Range) => CodeMirror.Position,
-        opts?: SelectionOptions
-      ) =>
-        this.extendSelections(editor, this.listSelections(editor).map(f), opts),
-      getSelections: (sep?: string) =>
-        this.listSelections(editor).map((s) =>
-          editor.codemirror.getRange(s.anchor, s.head, sep)
-        ),
-      getSelection: (sep?: string) =>
-        this.listSelections(editor)
-          .map((s) => editor.codemirror.getRange(s.anchor, s.head, sep))
-          .join(sep),
-      listSelections: () => this.listSelections(editor),
-      replaceRange: (text, from, to, origin) =>
-        withState(({ ast }) => {
-          validateRanges([{ anchor: from, head: to }], ast);
-          editor.codemirror.replaceRange(text, from, to, origin);
-        }),
-      setSelections: (ranges, primary, opts) =>
-        this.setSelections(editor, ranges, primary, opts),
-      setSelection: (anchor, head = anchor, opts) =>
-        this.setSelections(
-          editor,
-          [{ anchor: anchor, head: head }],
-          undefined,
-          opts
-        ),
-      addSelection: (anchor, head) =>
-        this.setSelections(
-          editor,
-          [{ anchor: anchor, head: head ?? anchor }],
-          undefined,
-          undefined,
-          false
-        ),
-      replaceSelections: (rStrings, select?: "around" | "start") =>
-        this.replaceSelections(editor, rStrings, select),
-      replaceSelection: (rString, select?: "around" | "start") =>
-        this.replaceSelections(
-          editor,
-          Array(this.listSelections(editor).length).fill(rString),
-          select
-        ),
-      // If a node is active, return the start. Otherwise return the cursor as-is
-      getCursor: (where) => this.getCursor(editor, where),
-      // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
-      setCursor: (curOrLine, ch, options) =>
-        withState(({ ast }) => {
-          ch = ch ?? 0;
-          let cur =
-            typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
-          const node = ast.getNodeContaining(cur);
-          if (node) {
-            this.props.dispatch(
-              activateByNid(editor, this.props.search, node.nid, {
-                record: false,
-                allowMove: true,
-              })
-            );
-          }
-          this.props.dispatch(setCursor(editor, cur, this.props.search));
-        }),
-      // As long as widget isn't defined, we're good to go
-      setBookmark: (pos, opts) => {
-        if (opts?.widget) {
-          throw new BlockError(
-            "setBookmark() with a widget is not supported in Block Mode",
-            "API Error"
-          );
-        }
-        return editor.codemirror.setBookmark(pos, opts);
-      },
-
-      /*****************************************************************
-       * APIs THAT ARE UNIQUE TO CODEMIRROR-BLOCKS
-       */
-      getAst: () => withState((state) => state.ast),
-      // activation-test.js expects undefined
-      getFocusedNode: () =>
-        withState(({ focusId, ast }) =>
-          focusId ? ast.getNodeById(focusId) : undefined
-        ),
-      getSelectedNodes: () =>
-        withState(({ selections, ast }) =>
-          selections.map((id) => ast.getNodeById(id))
-        ),
-
-      /*****************************************************************
-       * APIs FOR TESTING
-       */
-      getQuarantine: () => withState(({ quarantine }) => quarantine),
-      setQuarantine: (start, end, text) =>
-        this.props.dispatch({
-          type: "SET_QUARANTINE",
-          start: start,
-          end: end,
-          text: text,
-        }),
-      executeAction: (action) => this.executeAction(action),
-    };
-    // show which APIs are unsupported
-    unsupportedAPIs.forEach(
-      (f) =>
-        ((api as any)[f] = () => {
-          throw new BlockError(
-            `The CM API '${f}' is not supported in the block editor`,
-            "API Error"
-          );
-        })
-    );
-    return api;
-  }
-
-  /**
-   * Override CM's native markText method, restricting it to the semantics
-   * that make sense in a block editor (fewer options, restricted to node
-   * boundaries)
-   */
-  private markText(
-    ed: CodeMirrorFacade,
-    from: CodeMirror.Position,
-    to: CodeMirror.Position,
-    options: CodeMirror.TextMarkerOptions = {}
-  ) {
-    const node = this.props.ast.getNodeAt(from, to);
-    if (!node) {
-      throw new BlockError(
-        `Could not create TextMarker: there is no AST node at [${from}, ${to},]`,
-        "API Error"
-      );
-    }
-    let supportedOptions = ["css", "className", "title"];
-    for (let opt in options) {
-      if (!supportedOptions.includes(opt))
-        throw new BlockError(
-          `markText: option "${opt}" is not supported in block mode`,
-          `API Error`
-        );
-    }
-    let mark = ed.codemirror.markText(from, to, options); // keep CM in sync
-    const _clear = mark.clear.bind(mark);
-    mark.clear = () => {
-      _clear();
-      this.props.dispatch({ type: "CLEAR_MARK", id: node.id });
-    };
-    mark.find = () => {
-      let { from, to } = this.props.ast.getNodeByIdOrThrow(node.id);
-      return { from, to };
-    };
-    mark.options = options;
-    this.props.dispatch({ type: "ADD_MARK", id: node.id, mark: mark });
-    return mark;
-  }
-
-  /**
-   * Override CM's native getCursor method, restricting it to the semantics
-   * that make sense in a block editor
-   */
-  private getCursor(editor: CodeMirrorFacade, where = "from") {
-    const dispatch = this.props.dispatch;
-    const { focusId, ast } = dispatch((_, getState) => getState());
-    if (focusId && document.activeElement?.id.match(/block-node/)) {
-      const node = ast.getNodeByIdOrThrow(focusId);
-      if (where == "from") return node.from;
-      if (where == "to") return node.to;
-      else
-        throw new BlockError(
-          `getCursor() with ${where} is not supported on a focused block`,
-          `API Error`
-        );
-    } else {
-      return editor.codemirror.getCursor(where);
-    }
-  }
-  /**
-   * Override CM's native listSelections method, using the selection
-   * state from the block editor
-   */
-  private listSelections(editor: CodeMirrorFacade) {
-    const dispatch = this.props.dispatch;
-    const { selections, ast } = dispatch((_, getState) => getState());
-    let tmpCM = getTempCM(editor);
-    // write all the ranges for all selected nodes
-    selections.forEach((id) => {
-      const node = ast.getNodeByIdOrThrow(id);
-      tmpCM.addSelection(node.from, node.to);
-    });
-    // write all the existing selection ranges
-    editor.codemirror
-      .listSelections()
-      .map((s) => tmpCM.addSelection(s.anchor, s.head));
-    // return all the selections
-    return tmpCM.listSelections();
-  }
-  /**
-   * Override CM's native setSelections method, restricting it to the semantics
-   * that make sense in a block editor (must include only valid node ranges)
-   */
-  private setSelections(
-    ed: CodeMirrorFacade,
-    ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
-    primary?: number,
-    options?: { bias?: number; origin?: string; scroll?: boolean },
-    replace = true
-  ) {
-    const dispatch = this.props.dispatch;
-    const { ast } = dispatch((_, getState) => getState());
-    let tmpCM = getTempCM(ed);
-    tmpCM.setSelections(ranges, primary, options);
-    const textRanges: {
-      anchor: CodeMirror.Position;
-      head: CodeMirror.Position;
-    }[] = [];
-    const nodes: string[] = [];
-    try {
-      validateRanges(ranges, ast);
-    } catch (e) {
-      throw new BlockError(e, "API Error");
-    }
-    // process the selection ranges into an array of ranges and nodes
-    tmpCM.listSelections().forEach(({ anchor, head }) => {
-      const c1 = minpos(anchor, head);
-      const c2 = maxpos(anchor, head);
-      const node = ast.getNodeAt(c1, c2);
-      if (node) {
-        nodes.push(node.id);
-      } else textRanges.push({ anchor: anchor, head: head });
-    });
-    if (textRanges.length) {
-      if (replace) {
-        ed.codemirror.setSelections(textRanges, primary, options);
-      } else {
-        ed.codemirror.addSelection(textRanges[0].anchor, textRanges[0].head);
-      }
-    }
-    dispatch({ type: "SET_SELECTIONS", selections: nodes });
-  }
-  /**
-   * Override CM's native extendSelections method, restricting it to the semantics
-   * that make sense in a block editor (must include only valid node ranges)
-   */
-  private extendSelections(
-    ed: CodeMirrorFacade,
-    heads: CodeMirror.Position[],
-    opts?: SelectionOptions,
-    to?: CodeMirror.Position
-  ) {
-    let tmpCM: CodeMirror.Editor = getTempCM(ed);
-    tmpCM.setSelections(this.listSelections(ed));
-    if (to) {
-      tmpCM.extendSelections(heads, opts);
-    } else {
-      tmpCM.extendSelection(heads[0], to, opts);
-    }
-    // if one of the ranges is invalid, setSelections will raise an error
-    this.setSelections(ed, tmpCM.listSelections(), undefined, opts);
-  }
-  /**
-   * Override CM's native replaceSelections method, restricting it to the semantics
-   * that make sense in a block editor (must include only valid node ranges)
-   */
-  private replaceSelections(
-    editor: CodeMirrorFacade,
-    replacements: string[],
-    select?: "around" | "start"
-  ) {
-    let tmpCM: CodeMirror.Editor = getTempCM(editor);
-    tmpCM.setSelections(this.listSelections(editor));
-    tmpCM.replaceSelections(replacements, select);
-    this.getEditorOrThrow().setValue(tmpCM.getValue());
-    // if one of the ranges is invalid, setSelections will raise an error
-    if (select == "around") {
-      this.setSelections(editor, tmpCM.listSelections());
-    }
-    if (select == "start") {
-      this.props.dispatch(
-        setCursor(
-          editor,
-          tmpCM.listSelections().pop()?.head ?? null,
-          this.props.search
-        )
-      );
-    } else {
-      this.props.dispatch(
-        setCursor(
-          editor,
-          tmpCM.listSelections().pop()?.anchor ?? null,
-          this.props.search
-        )
-      );
-    }
   }
 
   componentWillUnmount() {
@@ -741,7 +756,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       wrapper.setAttribute("tabIndex", "-1");
 
       // pass the block-mode CM editor, API, and current AST
-      onMount(editor, this.buildAPI(editor), passedAST);
+      onMount(editor, buildAPI(editor, dispatch, search), passedAST);
     };
 
     /**
