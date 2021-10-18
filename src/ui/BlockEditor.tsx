@@ -713,11 +713,14 @@ class BlockEditor extends Component<BlockEditorProps> {
     cancelAfterDOMUpdate(this.pendingTimeout);
     this.pendingTimeout = setAfterDOMUpdate(() => {
       this.props.dispatch((_, getState) => {
-        const {cur, focusId, ast} = getState();
+        const { cur, focusId, ast } = getState();
         if (cur != null) return; // if we already have a cursor, bail
-        let nid = focusId && ast.getNodeById(focusId)?.nid;
-        if(!nid) nid = 0;
-        this.props.activateByNid(editor, this.props.search, nid, { allowMove: true });
+        const node = focusId
+          ? ast.getNodeByIdOrThrow(focusId)
+          : ast.getFirstRootNode();
+        this.props.activateByNid(editor, this.props.search, node && node.nid, {
+          allowMove: true,
+        });
       });
     });
   };
