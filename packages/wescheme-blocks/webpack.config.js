@@ -42,14 +42,14 @@ bundleConfig.externals = {
   codemirror: "codemirror",
   "codemirror/addon/search/search": "codemirror",
   "codemirror/addon/search/searchcursor": "codemirror",
-  jsnums: "jsnums",
-  lex: {
+  "wescheme-js/src/runtime/js-numbers": "jsnums",
+  "wescheme-js/src/lex": {
     commonjs: "plt.compiler",
     commonjs2: "plt.compiler",
     root: ["plt", "compiler"],
   },
-  types: "types",
-  structs: {
+  "wescheme-js/src/runtime/types": "types",
+  "wescheme-js/src/structures": {
     commonjs: "plt.compiler",
     commonjs2: "plt.compiler",
     root: ["plt", "compiler"],
