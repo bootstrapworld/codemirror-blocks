@@ -247,13 +247,15 @@ const replaceSelections = (
   }
 };
 
-
-
 /**
  * Build the API for a block editor, restricting or modifying APIs
  * that are incompatible with our toggleable block editor
  */
-const buildAPI = (editor: CodeMirrorFacade, dispatch, search: Search): BuiltAPI => {
+const buildAPI = (
+  editor: CodeMirrorFacade,
+  dispatch,
+  search: Search
+): BuiltAPI => {
   const withState = <F extends (state: RootState) => any>(func: F) =>
     dispatch((_, getState) => func(getState()));
 
@@ -331,13 +333,7 @@ const buildAPI = (editor: CodeMirrorFacade, dispatch, search: Search): BuiltAPI 
         false
       ),
     replaceSelections: (rStrings, select?: "around" | "start") =>
-      replaceSelections(
-        editor,
-        rStrings,
-        select,
-        dispatch,
-        search
-      ),
+      replaceSelections(editor, rStrings, select, dispatch, search),
     replaceSelection: (rString, select?: "around" | "start") =>
       replaceSelections(
         editor,
@@ -401,8 +397,8 @@ const buildAPI = (editor: CodeMirrorFacade, dispatch, search: Search): BuiltAPI 
         end: end,
         text: text,
       }),
-// TODO(Emmanuel): does it make sense to move executeAction out of BlockEditor?      
-//    executeAction: (action) => executeAction(action),
+    // TODO(Emmanuel): does it make sense to move executeAction out of BlockEditor?
+    //    executeAction: (action) => executeAction(action),
   };
   // show which APIs are unsupported
   unsupportedAPIs.forEach(
@@ -415,7 +411,7 @@ const buildAPI = (editor: CodeMirrorFacade, dispatch, search: Search): BuiltAPI 
       })
   );
   return api;
-}
+};
 
 type CodeMirrorAPI = Omit<CodeMirror.Editor, typeof unsupportedAPIs[number]>;
 
