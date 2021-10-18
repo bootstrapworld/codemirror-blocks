@@ -18,15 +18,17 @@ const {
 } = Nodes;
 import { LetLikeExpr, WhenUnless, Sequence } from "./ast";
 import PRIMITIVES_CONFIG from "./primitives-config";
-import { lex } from "lex";
-import {
-  isString,
-  isChar,
-  isVector as isNativeVector,
-  TRUE,
-  FALSE,
-} from "types";
-import * as structures from "structs";
+
+import { lex } from "wescheme-js/src/lex";
+const types = require("wescheme-js/src/runtime/types");
+const structures = require("wescheme-js/src/structures");
+
+// TODO(pcardune): figure out why these imports were being done like this
+// import { lex } from "lex";
+// import * as types from "types";
+// import * as structures from "structs";
+
+const { isString, isChar, isVector: isNativeVector, TRUE, FALSE } = types;
 
 let symbolMap = new Map();
 symbolMap.set("*", "multiply");

@@ -9,5 +9,9 @@
   "workspaces": [
     "packages/codemirror-blocks",
     "packages/wescheme-blocks"
-  ]
+  ],
+  "scripts": {
+    "test": "jest",
+    "test-watch": "jest --watch"
+  }
 }

@@ -91,8 +91,6 @@
   },
   "scripts": {
     "prepare": "npm run build && npm run build-types",
-    "test": "jest",
-    "test-watch": "jest watch",
     "start": "webpack serve --config webpack/example.config.js",
     "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\"",
     "build-watch": "npm run build -- --watch",
