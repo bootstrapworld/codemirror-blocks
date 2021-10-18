@@ -577,10 +577,26 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   render() {
+
+    const {
+      codemirrorOptions,
+      keyDownHelpers,
+      language,
+      dispatch,
+      search,
+      passedAST, 
+      setAST, 
+      setQuarantine,
+      activateByNid,
+      options,
+      value,
+      onMount,
+    } = this.props;
+
     /**
      * Anything that didn't come from CMB itself must be speculatively
      * checked. NOTE: this only checks the *first change* in a changeset!
-     * This is hooked up to CodeMirror's onBeforeChange event
+     * This is hooked up to CodeMirror's onBeforeChange; event
      */
     const handleBeforeChange = (
       editor: CodeMirrorFacade,
@@ -589,7 +605,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       if (!isChangeObject(change)) {
         const result = speculateChanges(
           [change],
-          this.props.language.parse,
+          language.parse,
           editor.getValue()
         );
         // Successful! Let's save all the hard work we did to build the new AST
@@ -615,7 +631,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       editor: ReadonlyCMBEditor,
       changes: CodeMirror.EditorChange[]
     ) => {
-      this.props.dispatch((dispatch, getState) => {
+      dispatch((dispatch, getState) => {
         if (!changes.every(isChangeObject)) {
           // These changes did not originate from us. However, they've all
           // passed the `handleBeforeChange` function, so they must be valid edits.
@@ -634,9 +650,9 @@ class BlockEditor extends Component<BlockEditorProps> {
                   : newAST.getNodeByNId(actionFocus.oldFocusNId);
               dispatch(
                 commitChanges(
-                  this.props.search,
+                  search,
                   changes.map(makeChangeObject),
-                  this.props.language.parse,
+                  language.parse,
                   editor,
                   true,
                   focusHint,
@@ -653,9 +669,9 @@ class BlockEditor extends Component<BlockEditorProps> {
                 newFocusNId === null ? null : newAST.getNodeByNId(newFocusNId);
               dispatch(
                 commitChanges(
-                  this.props.search,
+                  search,
                   changes.map(makeChangeObject),
-                  this.props.language.parse,
+                  language.parse,
                   editor,
                   true,
                   focusHint,
@@ -682,9 +698,9 @@ class BlockEditor extends Component<BlockEditorProps> {
             getState().undoableAction = annt; //?
             dispatch(
               commitChanges(
-                this.props.search,
+                search,
                 changes.map(makeChangeObject),
-                this.props.language.parse,
+                language.parse,
                 editor,
                 false,
                 -1,
@@ -702,7 +718,8 @@ class BlockEditor extends Component<BlockEditorProps> {
      */
     const handleEditorDidMount = (editor: CodeMirrorFacade) => {
       this.setState({ editor });
-      const { passedAST: ast, setAST, search, options } = this.props;
+      // TODO(Emmanuel): are these needed? 
+      // can't we set them in the component constructor?
       editor.codemirror.on("beforeChange", (ed, change) =>
         handleBeforeChange(editor, change)
       );
@@ -710,17 +727,17 @@ class BlockEditor extends Component<BlockEditorProps> {
         handleChanges(editor, changes)
       );
 
-      // set AST and searchg properties and collapse preferences
-      setAST(ast);
+      // set AST and search properties and collapse preferences
+      setAST(passedAST);
       search.setCM(editor);
       if (options.collapseAll) {
-        this.props.dispatch({ type: "COLLAPSE_ALL" });
+        dispatch({ type: "COLLAPSE_ALL" });
       }
 
       // When the editor receives focus, select the first root (if it exists)
-      const firstRoot = ast.getFirstRootNode();
+      const firstRoot = passedAST.getFirstRootNode();
       if (firstRoot) {
-        this.props.dispatch({ type: "SET_FOCUS", focusId: firstRoot.id });
+        dispatch({ type: "SET_FOCUS", focusId: firstRoot.id });
       }
 
       // Set extra aria attributes
@@ -730,7 +747,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       wrapper.setAttribute("tabIndex", "-1");
 
       // pass the block-mode CM editor, API, and current AST
-      this.props.onMount(editor, this.buildAPI(editor), ast);
+      onMount(editor, this.buildAPI(editor), passedAST);
     };
 
     /**
@@ -741,15 +758,15 @@ class BlockEditor extends Component<BlockEditorProps> {
     const handleTopLevelFocus = (editor: CodeMirrorFacade) => {
       cancelAfterDOMUpdate(this.pendingTimeout);
       this.pendingTimeout = setAfterDOMUpdate(() => {
-        this.props.dispatch((_, getState) => {
+        dispatch((_, getState) => {
           const { cur, focusId, ast } = getState();
           if (cur != null) return; // if we already have a cursor, bail
           const node = focusId
             ? ast.getNodeByIdOrThrow(focusId)
             : ast.getFirstRootNode();
-          this.props.activateByNid(
+          activateByNid(
             editor,
-            this.props.search,
+            search,
             node && node.nid,
             {
               allowMove: true,
@@ -773,7 +790,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       e.preventDefault();
       const start = ed.getCursor(true as $TSFixMe);
       const end = ed.getCursor(false as $TSFixMe);
-      this.props.setQuarantine(start, end, text);
+      setQuarantine(start, end, text);
     };
 
     /**
@@ -788,7 +805,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       if (text) {
         const start = editor.codemirror.getCursor(true as $TSFixMe);
         const end = editor.codemirror.getCursor(false as $TSFixMe);
-        this.props.setQuarantine(start, end, text);
+        setQuarantine(start, end, text);
       }
     };
 
@@ -801,27 +818,27 @@ class BlockEditor extends Component<BlockEditorProps> {
         editor.codemirror.getSelection().length > 0
           ? null
           : editor.codemirror.getCursor();
-      this.props.dispatch(setCursor(editor, cur, this.props.search));
+      dispatch(setCursor(editor, cur, search));
     };
 
     return (
-      <LanguageContext.Provider value={this.props.language}>
+      <LanguageContext.Provider value={language}>
         <DragAndDropEditor
-          options={this.props.codemirrorOptions}
-          className={`blocks-language-${this.props.language.id}`}
-          value={this.props.value}
+          options={codemirrorOptions}
+          className={`blocks-language-${language.id}`}
+          value={value}
           onBeforeChange={this.props.onBeforeChange}
           onKeyPress={handleTopLevelKeyPress}
           onFocus={handleTopLevelFocus}
           onPaste={handleTopLevelPaste}
           onKeyDown={(editor, e) => {
-            this.props.dispatch(
+            dispatch(
               keyDown(e, {
-                search: this.props.search,
-                language: this.props.language,
+                search: search,
+                language: language,
                 editor,
                 isNodeEnv: false,
-                appHelpers: this.props.keyDownHelpers,
+                appHelpers: keyDownHelpers,
               })
             );
           }}
