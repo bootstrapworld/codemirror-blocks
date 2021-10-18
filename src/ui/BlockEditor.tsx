@@ -179,164 +179,6 @@ class BlockEditor extends Component<BlockEditorProps> {
     options: {} as Options,
   };
 
-  /**
-   * @internal
-   * Anything that didn't come from CMB itself must be speculatively
-   * checked. NOTE: this only checks the *first change* in a changeset!
-   * This is hooked up to CodeMirror's onBeforeChange event
-   */
-  private handleBeforeChange = (
-    editor: CodeMirrorFacade,
-    change: CodeMirror.EditorChangeCancellable
-  ) => {
-    if (!isChangeObject(change)) {
-      const result = speculateChanges(
-        [change],
-        this.props.language.parse,
-        editor.getValue()
-      );
-      // Successful! Let's save all the hard work we did to build the new AST
-      if (result.successful) {
-        this.newAST = result.value;
-      }
-      // Error! Cancel the change and report the error
-      else {
-        change.cancel();
-        throw new BlockError(
-          "An invalid change was rejected",
-          "Invalid Edit",
-          change
-        );
-      }
-    }
-  };
-
-  /**
-   * @internal
-   * Given a CM Change Event, manually handle our own undo and focus stack
-   */
-  private handleChanges = (
-    editor: ReadonlyCMBEditor,
-    changes: CodeMirror.EditorChange[]
-  ) => {
-    this.props.dispatch((dispatch, getState) => {
-      if (!changes.every(isChangeObject)) {
-        // These changes did not originate from us. However, they've all
-        // passed the `handleBeforeChange` function, so they must be valid edits.
-        // (There's almost certainly just one edit here; I (Justin) am not
-        // convinced this will always work if there is more than one edit here.)
-        // Since the edit(s) is valid, commit it without calling speculateChanges.
-
-        // Turn undo and redo into cmb actions, update the focusStack, and
-        // provide a focusHint
-        if (changes[0].origin === "undo") {
-          const { actionFocus } = getState();
-          if (actionFocus) {
-            const focusHint: FocusHint = (newAST) =>
-              actionFocus.oldFocusNId === null
-                ? null
-                : newAST.getNodeByNId(actionFocus.oldFocusNId);
-            dispatch(
-              commitChanges(
-                this.props.search,
-                changes.map(makeChangeObject),
-                this.props.language.parse,
-                editor,
-                true,
-                focusHint,
-                this.newAST
-              )
-            );
-            dispatch({ type: "UNDO", editor: editor });
-          }
-        } else if (changes[0].origin === "redo") {
-          const { actionFocus } = getState();
-          if (actionFocus) {
-            const { newFocusNId } = actionFocus;
-            const focusHint = (newAST: AST) =>
-              newFocusNId === null ? null : newAST.getNodeByNId(newFocusNId);
-            dispatch(
-              commitChanges(
-                this.props.search,
-                changes.map(makeChangeObject),
-                this.props.language.parse,
-                editor,
-                true,
-                focusHint,
-                this.newAST
-              )
-            );
-            dispatch({ type: "REDO", editor });
-          }
-        } else {
-          // This (valid) changeset is coming from outside of the editor, but we
-          // don't know anything else about it. Apply the change, set the focusHint
-          // to the top of the tree (-1), and provide an astHint so we don't need
-          // to reparse and rebuild the tree
-          let annt = "";
-          for (let i = changes.length - 1; i >= 0; i--) {
-            annt = annt + changes[i].origin;
-            if (i !== 0) {
-              annt = " and " + annt;
-            }
-          }
-          if (annt === "") {
-            annt = "change";
-          }
-          getState().undoableAction = annt; //?
-          dispatch(
-            commitChanges(
-              this.props.search,
-              changes.map(makeChangeObject),
-              this.props.language.parse,
-              editor,
-              false,
-              -1,
-              this.newAST
-            )
-          );
-        }
-      }
-    });
-  };
-
-  /**
-   * @internal
-   * When the editor mounts, (1) set change event handlers and AST,
-   * (2) set the focus, (3) set aria attributes, and (4) build the API
-   */
-  private handleEditorDidMount = (editor: CodeMirrorFacade) => {
-    this.setState({ editor });
-    const { passedAST: ast, setAST, search, options } = this.props;
-    editor.codemirror.on("beforeChange", (ed, change) =>
-      this.handleBeforeChange(editor, change)
-    );
-    editor.codemirror.on("changes", (ed, changes) =>
-      this.handleChanges(editor, changes)
-    );
-
-    // set AST and searchg properties and collapse preferences
-    setAST(ast);
-    search.setCM(editor);
-    if (options.collapseAll) {
-      this.props.dispatch({ type: "COLLAPSE_ALL" });
-    }
-
-    // When the editor receives focus, select the first root (if it exists)
-    const firstRoot = ast.getFirstRootNode();
-    if (firstRoot) {
-      this.props.dispatch({ type: "SET_FOCUS", focusId: firstRoot.id });
-    }
-
-    // Set extra aria attributes
-    const wrapper = editor.codemirror.getWrapperElement();
-    wrapper.setAttribute("role", "tree");
-    wrapper.setAttribute("aria-multiselectable", "true");
-    wrapper.setAttribute("tabIndex", "-1");
-
-    // pass the block-mode CM editor, API, and current AST
-    this.props.onMount(editor, this.buildAPI(editor), ast);
-  };
 
   /**
    * @internal
@@ -703,76 +545,6 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
   }
 
-  /**
-   * @internal
-   * When the CM instance receives focus...
-   * If we have a CM cursor, let CM handle it (no-op)
-   * Otherwise grab the focusId, compute NId, and activate
-   */
-  private handleTopLevelFocus = (editor: CodeMirrorFacade) => {
-    cancelAfterDOMUpdate(this.pendingTimeout);
-    this.pendingTimeout = setAfterDOMUpdate(() => {
-      this.props.dispatch((_, getState) => {
-        const { cur, focusId, ast } = getState();
-        if (cur != null) return; // if we already have a cursor, bail
-        const node = focusId
-          ? ast.getNodeByIdOrThrow(focusId)
-          : ast.getFirstRootNode();
-        this.props.activateByNid(editor, this.props.search, node && node.nid, {
-          allowMove: true,
-        });
-      });
-    });
-  };
-
-  /**
-   * @internal
-   * When the CM instance receives a keypress...start a quarantine if it's
-   * not a modifier
-   */
-  private handleTopLevelKeyPress = (
-    ed: CodeMirror.Editor,
-    e: React.KeyboardEvent
-  ) => {
-    const text = e.key;
-    // let CM handle kbd shortcuts or whitespace insertion
-    if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
-    e.preventDefault();
-    const start = ed.getCursor(true as $TSFixMe);
-    const end = ed.getCursor(false as $TSFixMe);
-    this.props.setQuarantine(start, end, text);
-  };
-
-  /**
-   * @internal
-   * When the CM instance receives a paste event...start a quarantine
-   */
-  private handleTopLevelPaste = (
-    editor: CodeMirrorFacade,
-    e: ClipboardEvent
-  ) => {
-    e.preventDefault();
-    const text = e.clipboardData?.getData("text/plain");
-    if (text) {
-      const start = editor.codemirror.getCursor(true as $TSFixMe);
-      const end = editor.codemirror.getCursor(false as $TSFixMe);
-      this.props.setQuarantine(start, end, text);
-    }
-  };
-
-  /**
-   * @internal
-   * When the CM instance receives cursor activity...
-   * If there are selections, pass null. Otherwise pass the cursor.
-   */
-  private handleTopLevelCursorActivity = (editor: CodeMirrorFacade) => {
-    let cur =
-      editor.codemirror.getSelection().length > 0
-        ? null
-        : editor.codemirror.getCursor();
-    this.props.dispatch(setCursor(editor, cur, this.props.search));
-  };
-
   componentWillUnmount() {
     cancelAfterDOMUpdate(this.pendingTimeout);
   }
@@ -806,6 +578,228 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   render() {
+    /**
+     * Anything that didn't come from CMB itself must be speculatively
+     * checked. NOTE: this only checks the *first change* in a changeset!
+     * This is hooked up to CodeMirror's onBeforeChange event
+     */
+    const handleBeforeChange = (
+      editor: CodeMirrorFacade,
+      change: CodeMirror.EditorChangeCancellable
+    ) => {
+      if (!isChangeObject(change)) {
+        const result = speculateChanges(
+          [change],
+          this.props.language.parse,
+          editor.getValue()
+        );
+        // Successful! Let's save all the hard work we did to build the new AST
+        if (result.successful) {
+          this.newAST = result.value;
+        }
+        // Error! Cancel the change and report the error
+        else {
+          change.cancel();
+          throw new BlockError(
+            "An invalid change was rejected",
+            "Invalid Edit",
+            change
+          );
+        }
+      }
+    };
+
+    /**
+     * Given a CM Change Event, manually handle our own undo and focus stack
+     */
+    const handleChanges = (
+      editor: ReadonlyCMBEditor,
+      changes: CodeMirror.EditorChange[]
+    ) => {
+      this.props.dispatch((dispatch, getState) => {
+        if (!changes.every(isChangeObject)) {
+          // These changes did not originate from us. However, they've all
+          // passed the `handleBeforeChange` function, so they must be valid edits.
+          // (There's almost certainly just one edit here; I (Justin) am not
+          // convinced this will always work if there is more than one edit here.)
+          // Since the edit(s) is valid, commit it without calling speculateChanges.
+
+          // Turn undo and redo into cmb actions, update the focusStack, and
+          // provide a focusHint
+          if (changes[0].origin === "undo") {
+            const { actionFocus } = getState();
+            if (actionFocus) {
+              const focusHint: FocusHint = (newAST) =>
+                actionFocus.oldFocusNId === null
+                  ? null
+                  : newAST.getNodeByNId(actionFocus.oldFocusNId);
+              dispatch(
+                commitChanges(
+                  this.props.search,
+                  changes.map(makeChangeObject),
+                  this.props.language.parse,
+                  editor,
+                  true,
+                  focusHint,
+                  this.newAST
+                )
+              );
+              dispatch({ type: "UNDO", editor: editor });
+            }
+          } else if (changes[0].origin === "redo") {
+            const { actionFocus } = getState();
+            if (actionFocus) {
+              const { newFocusNId } = actionFocus;
+              const focusHint = (newAST: AST) =>
+                newFocusNId === null ? null : newAST.getNodeByNId(newFocusNId);
+              dispatch(
+                commitChanges(
+                  this.props.search,
+                  changes.map(makeChangeObject),
+                  this.props.language.parse,
+                  editor,
+                  true,
+                  focusHint,
+                  this.newAST
+                )
+              );
+              dispatch({ type: "REDO", editor });
+            }
+          } else {
+            // This (valid) changeset is coming from outside of the editor, but we
+            // don't know anything else about it. Apply the change, set the focusHint
+            // to the top of the tree (-1), and provide an astHint so we don't need
+            // to reparse and rebuild the tree
+            let annt = "";
+            for (let i = changes.length - 1; i >= 0; i--) {
+              annt = annt + changes[i].origin;
+              if (i !== 0) {
+                annt = " and " + annt;
+              }
+            }
+            if (annt === "") {
+              annt = "change";
+            }
+            getState().undoableAction = annt; //?
+            dispatch(
+              commitChanges(
+                this.props.search,
+                changes.map(makeChangeObject),
+                this.props.language.parse,
+                editor,
+                false,
+                -1,
+                this.newAST
+              )
+            );
+          }
+        }
+      });
+    };
+
+    /**
+     * When the editor mounts, (1) set change event handlers and AST,
+     * (2) set the focus, (3) set aria attributes, and (4) build the API
+     */
+    const handleEditorDidMount = (editor: CodeMirrorFacade) => {
+      this.setState({ editor });
+      const { passedAST: ast, setAST, search, options } = this.props;
+      editor.codemirror.on("beforeChange", (ed, change) =>
+        handleBeforeChange(editor, change)
+      );
+      editor.codemirror.on("changes", (ed, changes) =>
+        handleChanges(editor, changes)
+      );
+
+      // set AST and searchg properties and collapse preferences
+      setAST(ast);
+      search.setCM(editor);
+      if (options.collapseAll) {
+        this.props.dispatch({ type: "COLLAPSE_ALL" });
+      }
+
+      // When the editor receives focus, select the first root (if it exists)
+      const firstRoot = ast.getFirstRootNode();
+      if (firstRoot) {
+        this.props.dispatch({ type: "SET_FOCUS", focusId: firstRoot.id });
+      }
+
+      // Set extra aria attributes
+      const wrapper = editor.codemirror.getWrapperElement();
+      wrapper.setAttribute("role", "tree");
+      wrapper.setAttribute("aria-multiselectable", "true");
+      wrapper.setAttribute("tabIndex", "-1");
+
+      // pass the block-mode CM editor, API, and current AST
+      this.props.onMount(editor, this.buildAPI(editor), ast);
+    };
+
+    /**
+     * When the CM instance receives focus...
+     * If we have a CM cursor, let CM handle it (no-op)
+     * Otherwise grab the focusId, compute NId, and activate
+     */
+    const handleTopLevelFocus = (editor: CodeMirrorFacade) => {
+      cancelAfterDOMUpdate(this.pendingTimeout);
+      this.pendingTimeout = setAfterDOMUpdate(() => {
+        this.props.dispatch((_, getState) => {
+          const { cur, focusId, ast } = getState();
+          if (cur != null) return; // if we already have a cursor, bail
+          const node = focusId
+            ? ast.getNodeByIdOrThrow(focusId)
+            : ast.getFirstRootNode();
+          this.props.activateByNid(editor, this.props.search, node && node.nid, {
+            allowMove: true,
+          });
+        });
+      });
+    };
+
+    /**
+     * When the CM instance receives a keypress...start a quarantine if it's
+     * not a modifier
+     */
+    const handleTopLevelKeyPress = (
+      ed: CodeMirror.Editor,
+      e: React.KeyboardEvent
+    ) => {
+      const text = e.key;
+      // let CM handle kbd shortcuts or whitespace insertion
+      if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
+      e.preventDefault();
+      const start = ed.getCursor(true as $TSFixMe);
+      const end = ed.getCursor(false as $TSFixMe);
+      this.props.setQuarantine(start, end, text);
+    };
+
+    /**
+     * When the CM instance receives a paste event...start a quarantine
+     */
+    const handleTopLevelPaste = (
+      editor: CodeMirrorFacade,
+      e: ClipboardEvent
+    ) => {
+      e.preventDefault();
+      const text = e.clipboardData?.getData("text/plain");
+      if (text) {
+        const start = editor.codemirror.getCursor(true as $TSFixMe);
+        const end = editor.codemirror.getCursor(false as $TSFixMe);
+        this.props.setQuarantine(start, end, text);
+      }
+    };
+
+    /**
+     * When the CM instance receives cursor activity...
+     * If there are selections, pass null. Otherwise pass the cursor.
+     */
+    const handleTopLevelCursorActivity = (editor: CodeMirrorFacade) => {
+      let cur =
+        editor.codemirror.getSelection().length > 0
+          ? null
+          : editor.codemirror.getCursor();
+      this.props.dispatch(setCursor(editor, cur, this.props.search));
+    };
+
     return (
       <LanguageContext.Provider value={this.props.language}>
         <DragAndDropEditor
@@ -813,9 +807,9 @@ class BlockEditor extends Component<BlockEditorProps> {
           className={`blocks-language-${this.props.language.id}`}
           value={this.props.value}
           onBeforeChange={this.props.onBeforeChange}
-          onKeyPress={this.handleTopLevelKeyPress}
-          onFocus={this.handleTopLevelFocus}
-          onPaste={this.handleTopLevelPaste}
+          onKeyPress={handleTopLevelKeyPress}
+          onFocus={handleTopLevelFocus}
+          onPaste={handleTopLevelPaste}
           onKeyDown={(editor, e) => {
             this.props.dispatch(
               keyDown(e, {
@@ -827,8 +821,8 @@ class BlockEditor extends Component<BlockEditorProps> {
               })
             );
           }}
-          onCursorActivity={this.handleTopLevelCursorActivity}
-          editorDidMount={this.handleEditorDidMount}
+          onCursorActivity={handleTopLevelCursorActivity}
+          editorDidMount={handleEditorDidMount}
         />
         {this.renderPortals()}
       </LanguageContext.Provider>
