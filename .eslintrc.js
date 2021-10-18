@@ -14,6 +14,8 @@ module.exports = {
     "no-unused-vars": 0,
     "no-undef": 0,
     "react/display-name": 0,
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
   },
   env: {
     es6: true,
@@ -28,7 +30,7 @@ module.exports = {
     // "plugin:@typescript-eslint/recommended",
     "prettier",
   ],
-  plugins: ["react", "@typescript-eslint"],
+  plugins: ["react", "react-hooks", "@typescript-eslint"],
   settings: {
     react: {
       version: "17.0.2",
