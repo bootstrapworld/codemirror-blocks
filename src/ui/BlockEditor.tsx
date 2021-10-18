@@ -106,17 +106,6 @@ const mapStateToProps = ({ ast, cur, quarantine }: RootState) => ({
 });
 const mapDispatchToProps = (dispatch: AppDispatch) => ({
   dispatch,
-  setAST: (ast: AST) => dispatch({ type: "SET_AST", ast }),
-  clearFocus: () => {
-    return dispatch({ type: "SET_FOCUS", focusId: null });
-  },
-  setQuarantine: (
-    start: CodeMirror.Position,
-    end: CodeMirror.Position,
-    text: string
-  ) => dispatch({ type: "SET_QUARANTINE", start, end, text }),
-  activateByNid: (...args: Parameters<typeof activateByNid>) =>
-    dispatch(activateByNid(...args)),
 });
 
 const blockEditorConnector = connect(mapStateToProps, mapDispatchToProps);
@@ -204,14 +193,14 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
     // convert nid to node id, and use activate to generate the action
     else if (activity.type == "SET_FOCUS") {
-      this.props.activateByNid(
+      this.props.dispatch(activateByNid(
         this.getEditorOrThrow(),
         this.props.search,
         activity.nid,
         {
           allowMove: true,
         }
-      );
+      ));
       return;
     } else {
       action = activity;
@@ -311,10 +300,10 @@ class BlockEditor extends Component<BlockEditorProps> {
             typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
           const node = ast.getNodeContaining(cur);
           if (node) {
-            this.props.activateByNid(editor, this.props.search, node.nid, {
+            this.props.dispatch(activateByNid(editor, this.props.search, node.nid, {
               record: false,
               allowMove: true,
-            });
+            }));
           }
           this.props.dispatch(setCursor(editor, cur, this.props.search));
         }),
@@ -347,8 +336,13 @@ class BlockEditor extends Component<BlockEditorProps> {
        * APIs FOR TESTING
        */
       getQuarantine: () => withState(({ quarantine }) => quarantine),
-      setQuarantine: (start, end, txt) =>
-        this.props.setQuarantine(start, end, txt),
+      setQuarantine: (start, end, text) =>
+        this.props.dispatch({
+          type: "SET_QUARANTINE",
+          start: start, 
+          end: end, 
+          text: text,
+        }),
       executeAction: (action) => this.executeAction(action),
     };
     // show which APIs are unsupported
@@ -577,17 +571,13 @@ class BlockEditor extends Component<BlockEditorProps> {
   }
 
   render() {
-
     const {
       codemirrorOptions,
       keyDownHelpers,
       language,
       dispatch,
       search,
-      passedAST, 
-      setAST, 
-      setQuarantine,
-      activateByNid,
+      passedAST,
       options,
       value,
       onMount,
@@ -718,7 +708,7 @@ class BlockEditor extends Component<BlockEditorProps> {
      */
     const handleEditorDidMount = (editor: CodeMirrorFacade) => {
       this.setState({ editor });
-      // TODO(Emmanuel): are these needed? 
+      // TODO(Emmanuel): are these needed?
       // can't we set them in the component constructor?
       editor.codemirror.on("beforeChange", (ed, change) =>
         handleBeforeChange(editor, change)
@@ -728,7 +718,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       );
 
       // set AST and search properties and collapse preferences
-      setAST(passedAST);
+      dispatch({ type: "SET_AST", ast: passedAST });
       search.setCM(editor);
       if (options.collapseAll) {
         dispatch({ type: "COLLAPSE_ALL" });
@@ -764,14 +754,9 @@ class BlockEditor extends Component<BlockEditorProps> {
           const node = focusId
             ? ast.getNodeByIdOrThrow(focusId)
             : ast.getFirstRootNode();
-          activateByNid(
-            editor,
-            search,
-            node && node.nid,
-            {
-              allowMove: true,
-            }
-          );
+          activateByNid(editor, search, node && node.nid, {
+            allowMove: true,
+          });
         });
       });
     };
@@ -788,9 +773,14 @@ class BlockEditor extends Component<BlockEditorProps> {
       // let CM handle kbd shortcuts or whitespace insertion
       if (e.ctrlKey || e.metaKey || text.match(/\s+/)) return;
       e.preventDefault();
-      const start = ed.getCursor(true as $TSFixMe);
-      const end = ed.getCursor(false as $TSFixMe);
-      setQuarantine(start, end, text);
+      const start = ed.getCursor("from");
+      const end = ed.getCursor("to");
+      this.props.dispatch({
+          type: "SET_QUARANTINE",
+          start: start, 
+          end: end, 
+          text: text,
+        });
     };
 
     /**
@@ -805,7 +795,12 @@ class BlockEditor extends Component<BlockEditorProps> {
       if (text) {
         const start = editor.codemirror.getCursor(true as $TSFixMe);
         const end = editor.codemirror.getCursor(false as $TSFixMe);
-        setQuarantine(start, end, text);
+        this.props.dispatch({
+          type: "SET_QUARANTINE",
+          start: start, 
+          end: end, 
+          text: text,
+        });
       }
     };
 
@@ -827,7 +822,6 @@ class BlockEditor extends Component<BlockEditorProps> {
           options={codemirrorOptions}
           className={`blocks-language-${language.id}`}
           value={value}
-          onBeforeChange={this.props.onBeforeChange}
           onKeyPress={handleTopLevelKeyPress}
           onFocus={handleTopLevelFocus}
           onPaste={handleTopLevelPaste}
