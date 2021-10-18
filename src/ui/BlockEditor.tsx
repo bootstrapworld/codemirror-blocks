@@ -193,14 +193,16 @@ class BlockEditor extends Component<BlockEditorProps> {
     }
     // convert nid to node id, and use activate to generate the action
     else if (activity.type == "SET_FOCUS") {
-      this.props.dispatch(activateByNid(
-        this.getEditorOrThrow(),
-        this.props.search,
-        activity.nid,
-        {
-          allowMove: true,
-        }
-      ));
+      this.props.dispatch(
+        activateByNid(
+          this.getEditorOrThrow(),
+          this.props.search,
+          activity.nid,
+          {
+            allowMove: true,
+          }
+        )
+      );
       return;
     } else {
       action = activity;
@@ -300,10 +302,12 @@ class BlockEditor extends Component<BlockEditorProps> {
             typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
           const node = ast.getNodeContaining(cur);
           if (node) {
-            this.props.dispatch(activateByNid(editor, this.props.search, node.nid, {
-              record: false,
-              allowMove: true,
-            }));
+            this.props.dispatch(
+              activateByNid(editor, this.props.search, node.nid, {
+                record: false,
+                allowMove: true,
+              })
+            );
           }
           this.props.dispatch(setCursor(editor, cur, this.props.search));
         }),
@@ -339,8 +343,8 @@ class BlockEditor extends Component<BlockEditorProps> {
       setQuarantine: (start, end, text) =>
         this.props.dispatch({
           type: "SET_QUARANTINE",
-          start: start, 
-          end: end, 
+          start: start,
+          end: end,
           text: text,
         }),
       executeAction: (action) => this.executeAction(action),
@@ -776,11 +780,11 @@ class BlockEditor extends Component<BlockEditorProps> {
       const start = ed.getCursor("from");
       const end = ed.getCursor("to");
       this.props.dispatch({
-          type: "SET_QUARANTINE",
-          start: start, 
-          end: end, 
-          text: text,
-        });
+        type: "SET_QUARANTINE",
+        start: start,
+        end: end,
+        text: text,
+      });
     };
 
     /**
@@ -797,8 +801,8 @@ class BlockEditor extends Component<BlockEditorProps> {
         const end = editor.codemirror.getCursor(false as $TSFixMe);
         this.props.dispatch({
           type: "SET_QUARANTINE",
-          start: start, 
-          end: end, 
+          start: start,
+          end: end,
           text: text,
         });
       }
