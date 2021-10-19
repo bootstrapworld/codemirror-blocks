@@ -13,7 +13,7 @@ Object.assign(window, t);
 const exampleCode = bigExampleCode;
 //const exampleCode = hugeExampleCode;
 
-const editor = createDebuggingInterface(wescheme, exampleCode);
+const editor = createDebuggingInterface(wescheme, '(+ 1 2)\ny');
 
 // for debugging purposes
 window.editor = editor;

@@ -1,4 +1,10 @@
-import React, { Component, createRef, ReactElement } from "react";
+import React, {
+  ReactElement,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import BlockEditor, { Search } from "./BlockEditor";
 import TextEditor from "./TextEditor";
 import Dialog from "../components/Dialog";
@@ -11,9 +17,8 @@ import { mountAnnouncer, say } from "../announcer";
 import TrashCan from "./TrashCan";
 import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
-import CodeMirror, { MarkerRange, Position, TextMarker } from "codemirror";
-import { setAfterDOMUpdate, cancelAfterDOMUpdate, debugLog } from "../utils";
-import type { afterDOMUpdateHandle } from "../utils";
+import CodeMirror from "codemirror";
+import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 
 const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
@@ -132,17 +137,17 @@ type ToggleEditorAPI = {
 };
 
 function isTextMarkerRange(
-  marker: TextMarker<MarkerRange | Position>
-): marker is TextMarker<MarkerRange> {
+  marker: CodeMirror.TextMarker<CodeMirror.MarkerRange | CodeMirror.Position>
+): marker is CodeMirror.TextMarker<CodeMirror.MarkerRange> {
   return marker.type !== "bookmark";
 }
 
 import type { BuiltAPI as BlockEditorAPIExtensions } from "../actions";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
-import { AppContext, AppHelpers } from "../components/Context";
+import { AppContext } from "../components/Context";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
-export type ToggleEditorProps = typeof ToggleEditor["defaultProps"] & {
+export type ToggleEditorProps = {
   initialCode?: string;
   codemirrorOptions?: CodeMirror.EditorConfiguration;
   language: Language;
@@ -161,166 +166,59 @@ type ToggleEditorState = {
   editor: CMBEditor | null;
 };
 
-class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
-  state: ToggleEditorState = {
-    blockMode: false,
-    dialog: null,
-    code: "",
-    editor: null,
-  };
-
-  pendingTimeout?: afterDOMUpdateHandle;
-
-  static defaultProps = {
-    debuggingLog: {},
-    codemirrorOptions: {},
-    initialCode: "",
-  };
-
-  codemirrorOptions: CodeMirror.EditorConfiguration;
-  options: Options;
-  eventHandlers: Record<string, Function[]> = {};
-  ast?: AST;
-  newAST?: AST;
-
-  private recordedMarks: Map<
-    number,
-    {
-      from: CodeMirror.Position;
-      to: CodeMirror.Position;
-      options: CodeMirror.TextMarkerOptions;
-    }
-  > = new Map();
-
-  constructor(props: ToggleEditorProps) {
-    super(props);
-
-    this.state.code = props.initialCode;
-  }
+function ToggleEditor(props: ToggleEditorProps) {
+  const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
+  const [blockMode, setBlockMode] = useState(false);
+  const [code, setCode] = useState(props.initialCode ?? "");
+  const [dialog, setDialog] = useState<null | {
+    title: string;
+    content: ReactElement;
+  }>(null);
+  const [ast, setAST] = useState(new AST([]));
+  const [search, setSearch] = useState<Search>({
+    search: () => {
+      throw new Error("Search not ready yet");
+    },
+    onSearch: () => {
+      throw new Error("Search not ready yet");
+    },
+    setCursor: () => {
+      throw new Error("Search not ready yet");
+    },
+    setCM: () => {
+      throw new Error("Search not ready yet");
+    },
+  });
+  const [recordedMarks, setRecordedMarks] = useState<
+    Map<
+      number,
+      {
+        from: CodeMirror.Position;
+        to: CodeMirror.Position;
+        options: CodeMirror.TextMarkerOptions;
+      }
+    >
+  >(new Map());
 
   /**
-   * @internal
-   * Imports a json log of interactions and sets appropriate state
-   * used for debugging and isolating cases
-   */
-  loadLoggedActions = (jsonLog: {
-    startingSource: string;
-    history?: unknown;
-  }) => {
-    debugLog("log is", jsonLog);
-    this.setState({ debuggingLog: jsonLog });
-    this.state.editor?.setValue(jsonLog.startingSource);
-  };
-
-  /**
-   * @internal
-   * Populate a base object with mode-agnostic methods we wish to expose
-   */
-  buildAPI(ed: CodeMirror.Editor): ToggleEditorAPI & Partial<CodeMirrorAPI> {
-    const base: Partial<CodeMirrorAPI> = {};
-    // any CodeMirror function that we can call directly should be passed-through.
-    // TextEditor and BlockEditor can add their own, or override them
-    codeMirrorAPI.forEach((funcName) => {
-      // Some functions that we want to proxy (like phrase) are not on the codemirror
-      // editor object when this code executes, so we have to do the lookup inside the
-      // wrapper function. Hopefully by the time the wrapper function is called,
-      // the function it proxies to has been added to the editor instance.
-      base[funcName] = (...args: any[]) => (ed as any)[funcName](...args);
-    });
-
-    const api: ToggleEditorAPI = {
-      // custom CMB methods
-      getBlockMode: () => this.state.blockMode,
-      setBlockMode: this.handleToggle,
-      getCM: () => ed,
-      on: (...args: Parameters<CodeMirror.Editor["on"]>) => {
-        const [type, fn] = args;
-        if (!this.eventHandlers[type]) {
-          this.eventHandlers[type] = [fn];
-        } else {
-          this.eventHandlers[type].push(fn);
-        }
-        ed.on(type, fn);
-      },
-      off: (...args: Parameters<CodeMirror.Editor["on"]>) => {
-        const [type, fn] = args;
-        this.eventHandlers[type]?.filter((h) => h !== fn);
-        ed.off(type, fn);
-      },
-      runMode: () => {
-        throw "runMode is not supported in CodeMirror-blocks";
-      },
-    };
-    return { ...base, ...api };
-  }
-
-  /**
-   * @internal
-   * This is an internal function that is passed down into mode-
-   * specific components. After a mode switch, (1) rebuild the
-   * API with mode-specific versions, (2) re-assign event handlers,
-   * and (3) re-render any TextMarkers.
-   */
-  handleEditorMounted = (editor: CodeMirrorFacade, api: API, ast: AST) => {
-    // set CM aria attributes, and mount announcer
-    const mode = this.state.blockMode ? "Block" : "Text";
-    const wrapper = editor.codemirror.getWrapperElement();
-    editor.codemirror.getScrollerElement().setAttribute("role", "presentation");
-    wrapper.setAttribute("aria-label", mode + " Editor");
-    mountAnnouncer(wrapper);
-    // Rebuild the API and assign re-events
-    this.props.onMount({ ...this.buildAPI(editor.codemirror), ...api });
-    Object.keys(this.eventHandlers).forEach((type) => {
-      this.eventHandlers[type].forEach((h) =>
-        editor.codemirror.on(type as any, h)
-      );
-    });
-    // once the DOM has loaded, reconstitute any marks and render them
-    // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-    this.pendingTimeout = setAfterDOMUpdate(() => {
-      this.recordedMarks.forEach(
-        (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
-          let node = ast.getNodeByNId(k);
-          if (node) {
-            editor.codemirror.markText(node.from, node.to, m.options);
-          }
-        }
-      );
-    });
-    // save the editor, and announce completed mode switch
-    this.setState({ editor: editor });
-    say(mode + " Mode Enabled", 500);
-  };
-
-  // Teardown any pending timeouts
-  componentWillUnmount() {
-    this.pendingTimeout && cancelAfterDOMUpdate(this.pendingTimeout);
-  }
-
-  /**
-   * @internal
    * When the mode is toggled, (1) parse the value of the editor,
    * (2) pretty-print and re-parse to canonicalize the text,
    * (3) record TextMarkers and update editor state
    */
-  handleToggle = (blockMode: boolean) => {
-    this.setState((state) => {
-      if (!state.editor) {
-        // editor hasn't mounted yet, so can't toggle.
-        return state;
-      }
+  const handleToggle =
+    (editor: CMBEditor, language: Language) => (blockMode: boolean) => {
       let oldAst, WS, code;
       try {
         try {
-          let oldCode = state.editor.getValue();
+          const oldCode = editor.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
-          oldAst = new AST(this.props.language.parse(oldCode)); // parse the code (WITH annotations)
+          oldAst = new AST(language.parse(oldCode)); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
           let message = "";
-          if (this.props.language.getExceptionMessage) {
+          if (language.getExceptionMessage) {
             try {
-              message = this.props.language.getExceptionMessage(err);
+              message = language.getExceptionMessage(err);
             } catch (e) {
               message =
                 "The parser failed, and the error could not be retrieved";
@@ -330,144 +228,212 @@ class ToggleEditor extends Component<ToggleEditorProps, ToggleEditorState> {
         }
         try {
           code = oldAst.toString() + (WS ? WS[0] : ""); // pretty-print and restore whitespace
-          this.ast = new AST(this.props.language.parse(code)); // parse the pretty-printed (PP) code
+          setAST(new AST(language.parse(code))); // parse the pretty-printed (PP) code
         } catch (e) {
           console.error("COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n", oldAst);
           console.error("PRETTY-PRINTED CODE WAS", oldAst.toString());
           throw `An error occured in the language module: 
-          the pretty-printer probably produced invalid code.
-          See the JS console for more detailed reporting.`;
+        the pretty-printer probably produced invalid code.
+        See the JS console for more detailed reporting.`;
         }
-        this.recordedMarks = recordMarks(state.editor, oldAst, this.newAST); // Preserve old TextMarkers
-        return { ...state, blockMode: blockMode, code: code }; // Success! Set the state
+        // Preserve old TextMarkers
+        setRecordedMarks(recordMarks(editor, oldAst, undefined));
+        // Success! Set the state
+        setBlockMode(blockMode);
+        setCode(code);
       } catch (e) {
         // Failure! Set the dialog state
         console.error(e);
-        return {
-          ...state,
-          dialog: {
-            title: "Could not convert to Blocks",
-            content: e.toString(),
-          },
-        };
+        setDialog({
+          title: "Could not convert to Blocks",
+          content: e.toString(),
+        });
       }
+    };
+
+  const eventHandlersRef = useRef<Record<string, Function[]>>({});
+  /**
+   * @internal
+   * Populate a base object with mode-agnostic methods we wish to expose
+   */
+  const buildAPI = (
+    ed: CodeMirrorFacade
+  ): ToggleEditorAPI & Partial<CodeMirrorAPI> => {
+    const base: Partial<CodeMirrorAPI> = {};
+    // any CodeMirror function that we can call directly should be passed-through.
+    // TextEditor and BlockEditor can add their own, or override them
+    codeMirrorAPI.forEach((funcName) => {
+      // Some functions that we want to proxy (like phrase) are not on the codemirror
+      // editor object when this code executes, so we have to do the lookup inside the
+      // wrapper function. Hopefully by the time the wrapper function is called,
+      // the function it proxies to has been added to the editor instance.
+      base[funcName] = (...args: any[]) =>
+        (ed.codemirror as any)[funcName](...args);
     });
+
+    const api: ToggleEditorAPI = {
+      // custom CMB methods
+      getBlockMode: () => blockMode,
+      setBlockMode: handleToggle(ed, props.language),
+      getCM: () => ed.codemirror,
+      on: (...args: Parameters<CodeMirror.Editor["on"]>) => {
+        const [type, fn] = args;
+        const eventHandlers = eventHandlersRef.current;
+        if (!eventHandlers[type]) {
+          eventHandlers[type] = [fn];
+        } else {
+          eventHandlers[type].push(fn);
+        }
+        ed.codemirror.on(type, fn);
+      },
+      off: (...args: Parameters<CodeMirror.Editor["on"]>) => {
+        const [type, fn] = args;
+        eventHandlersRef.current[type]?.filter((h) => h !== fn);
+        ed.codemirror.off(type, fn);
+      },
+      runMode: () => {
+        throw "runMode is not supported in CodeMirror-blocks";
+      },
+    };
+    return { ...base, ...api };
   };
 
-  private toolbarRef = React.createRef<HTMLInputElement>();
-  private appContext: AppHelpers = {
-    showDialog: (contents: ToggleEditorState["dialog"]) =>
-      this.setState(() => ({ dialog: contents })),
-    focusToolbar: () => this.toolbarRef.current?.focus(),
-    search: {
-      search: () => {
-        throw new Error("Search not ready yet");
-      },
-      onSearch: () => {
-        throw new Error("Search not ready yet");
-      },
-      setCursor: () => {
-        throw new Error("Search not ready yet");
-      },
-      setCM: () => {
-        throw new Error("Search not ready yet");
-      },
-    },
+  /**
+   * This is an internal function that is passed down into mode-
+   * specific components. After a mode switch, (1) rebuild the
+   * API with mode-specific versions, (2) re-assign event handlers,
+   * and (3) re-render any TextMarkers.
+   */
+  const handleEditorMounted = (editor: CodeMirrorFacade, api: API) => {
+    // set CM aria attributes, and mount announcer
+    const mode = blockMode ? "Block" : "Text";
+    const wrapper = editor.codemirror.getWrapperElement();
+    editor.codemirror.getScrollerElement().setAttribute("role", "presentation");
+    wrapper.setAttribute("aria-label", mode + " Editor");
+    mountAnnouncer(wrapper);
+    // Rebuild the API and assign re-events
+    props.onMount({ ...buildAPI(editor), ...api });
+    for (const [type, handlers] of Object.entries(eventHandlersRef.current)) {
+      handlers.forEach((h) => editor.codemirror.on(type as any, h));
+    }
+    // save the editor, and announce completed mode switch
+    setEditor(editor);
+    say(mode + " Mode Enabled", 500);
   };
 
-  render() {
-    const classes = "Editor " + (this.state.blockMode ? "blocks" : "text");
-    return (
-      <AppContext.Provider value={this.appContext}>
-        <div className={classes}>
-          {this.state.blockMode ? <BugButton /> : null}
-          <ToggleButton
-            setBlockMode={this.handleToggle}
-            blockMode={this.state.blockMode}
-          />
-          {this.state.blockMode && this.state.editor ? (
-            <TrashCan
-              language={this.props.language}
-              editor={this.state.editor}
-            />
-          ) : null}
-          <div
-            className={"col-xs-3 toolbar-pane"}
-            tabIndex={-1}
-            aria-hidden={!this.state.blockMode}
-          >
-            <Toolbar
-              primitives={
-                this.props.language.primitivesFn
-                  ? this.props.language.primitivesFn()
-                  : undefined
-              }
-              languageId={this.props.language.id}
-              blockMode={this.state.blockMode}
-              toolbarRef={this.toolbarRef}
-            />
-          </div>
-          <div className="col-xs-9 codemirror-pane">
-            {this.state.blockMode ? this.renderBlocks() : this.renderCode()}
-          </div>
-        </div>
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+    // once the DOM has loaded, reconstitute any marks and render them
+    // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
+    const pending = setAfterDOMUpdate(() => {
+      recordedMarks.forEach(
+        (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
+          let node = ast.getNodeByNId(k);
+          if (node) {
+            editor.codemirror.markText(node.from, node.to, m.options);
+          }
+        }
+      );
+    });
+    return () => cancelAfterDOMUpdate(pending);
+  }, [recordedMarks, editor, ast]);
 
-        <div role="application" aria-roledescription="Stand by">
-          <a
-            id="SR_fix_for_slow_dom"
-            href="#"
-            aria-roledescription=":"
-            aria-label=""
-          ></a>
-        </div>
-
-        <Dialog
-          isOpen={!!this.state.dialog}
-          body={this.state.dialog}
-          closeFn={() => this.setState({ dialog: null })}
-        />
-      </AppContext.Provider>
-    );
-  }
-
-  renderCode() {
-    return (
-      <TextEditor
-        codemirrorOptions={{
-          ...defaultCmOptions,
-          ...this.props.codemirrorOptions,
-        }}
-        value={this.state.code}
-        onMount={this.handleEditorMounted}
-        passedAST={this.ast}
-      />
-    );
-  }
-  renderBlocks() {
+  const renderBlocks = () => {
     let defaultOptions = {
-      parse: this.props.language.parse,
+      parse: props.language.parse,
       incrementalRendering: true,
       collapseAll: true,
     };
     return (
       <UpgradedBlockEditor
-        onSearchMounted={(search) => {
-          this.appContext = { ...this.appContext, search };
-        }}
+        onSearchMounted={setSearch}
         codemirrorOptions={{
           ...defaultCmOptions,
-          ...this.props.codemirrorOptions,
+          ...props.codemirrorOptions,
         }}
-        value={this.state.code}
-        onMount={this.handleEditorMounted}
-        passedAST={this.ast || new AST([])}
+        value={code}
+        onMount={handleEditorMounted}
+        passedAST={ast}
         // the props below are unique to the BlockEditor
-        language={this.props.language}
-        options={{ ...defaultOptions, ...this.props.options }}
-        keyDownHelpers={this.appContext}
+        language={props.language}
+        options={{ ...defaultOptions, ...props.options }}
+        keyDownHelpers={appHelpers}
       />
     );
-  }
+  };
+  const renderCode = () => (
+    <TextEditor
+      codemirrorOptions={{
+        ...defaultCmOptions,
+        ...props.codemirrorOptions,
+      }}
+      value={code}
+      onMount={handleEditorMounted}
+      passedAST={ast}
+    />
+  );
+
+  const toolbarRef = useRef<HTMLInputElement>(null);
+
+  const appHelpers = useMemo(
+    () => ({
+      showDialog: (contents: typeof dialog) => setDialog(contents),
+      focusToolbar: () => toolbarRef.current?.focus(),
+      search,
+    }),
+    [setDialog, toolbarRef, search]
+  );
+
+  const classes = "Editor " + (blockMode ? "blocks" : "text");
+
+  return (
+    <AppContext.Provider value={appHelpers}>
+      <div className={classes}>
+        {blockMode ? <BugButton /> : null}
+        <ToggleButton
+          setBlockMode={
+            editor ? handleToggle(editor, props.language) : () => {}
+          }
+          blockMode={blockMode}
+        />
+        {blockMode && editor ? (
+          <TrashCan language={props.language} editor={editor} />
+        ) : null}
+        <div
+          className={"col-xs-3 toolbar-pane"}
+          tabIndex={-1}
+          aria-hidden={!blockMode}
+        >
+          <Toolbar
+            primitives={
+              props.language.primitivesFn
+                ? props.language.primitivesFn()
+                : undefined
+            }
+            languageId={props.language.id}
+            blockMode={blockMode}
+            toolbarRef={toolbarRef}
+          />
+        </div>
+        <div className="col-xs-9 codemirror-pane">
+          {blockMode ? renderBlocks() : renderCode()}
+        </div>
+      </div>
+
+      <div role="application" aria-roledescription="Stand by">
+        <a
+          id="SR_fix_for_slow_dom"
+          href="#"
+          aria-roledescription=":"
+          aria-label=""
+        ></a>
+      </div>
+
+      <Dialog isOpen={!!dialog} body={dialog} closeFn={() => setDialog(null)} />
+    </AppContext.Provider>
+  );
 }
 
 export default ToggleEditor;

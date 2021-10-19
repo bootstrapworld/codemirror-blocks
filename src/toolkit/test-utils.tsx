@@ -1,5 +1,5 @@
 import { API, CodeMirrorBlocksComponent, Language } from "../CodeMirrorBlocks";
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
 import type { ASTNode } from "../ast";
 import React from "react";
@@ -78,7 +78,10 @@ export async function mountCMB(language: Language): Promise<API> {
     <CodeMirrorBlocksComponent
       language={language}
       onMount={(newAPI) => {
-        Object.assign(cmb, newAPI);
+        Object.assign(cmb, newAPI, {
+          setBlockMode: (blockMode: boolean) =>
+            act(() => newAPI.setBlockMode(blockMode)),
+        });
       }}
       options={{ collapseAll: false, value: "", incrementalRendering: false }}
       codemirrorOptions={codemirrorOptions}
