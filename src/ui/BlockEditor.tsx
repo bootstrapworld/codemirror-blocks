@@ -21,7 +21,7 @@ import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { SelectionOptions } from "codemirror";
 import type { Options, API, Language } from "../CodeMirrorBlocks";
-import type { AppDispatch } from "../store";
+import type { AppDispatch, AppThunk } from "../store";
 import type { Activity, AppAction, Quarantine, RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext, LanguageContext } from "../components/Context";
@@ -161,95 +161,96 @@ const listSelections = (ed: CodeMirrorFacade, dispatch: AppDispatch) => {
  * Override CM's native setSelections method, restricting it to the semantics
  * that make sense in a block editor (must include only valid node ranges)
  */
-const setSelections = (
-  ed: CodeMirrorFacade,
-  ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
-  dispatch: AppDispatch,
-  primary?: number,
-  options?: { bias?: number; origin?: string; scroll?: boolean },
-  replace = true
-) => {
-  const { ast } = dispatch((_, getState) => getState());
-  let tmpCM = getTempCM(ed);
-  tmpCM.setSelections(ranges, primary, options);
-  const textRanges: {
-    anchor: CodeMirror.Position;
-    head: CodeMirror.Position;
-  }[] = [];
-  const nodes: string[] = [];
-  try {
-    validateRanges(ranges, ast);
-  } catch (e) {
-    throw new BlockError(e, "API Error");
-  }
-  // process the selection ranges into an array of ranges and nodes
-  tmpCM.listSelections().forEach(({ anchor, head }) => {
-    const c1 = minpos(anchor, head);
-    const c2 = maxpos(anchor, head);
-    const node = ast.getNodeAt(c1, c2);
-    if (node) {
-      nodes.push(node.id);
-    } else textRanges.push({ anchor: anchor, head: head });
-  });
-  if (textRanges.length) {
-    if (replace) {
-      ed.codemirror.setSelections(textRanges, primary, options);
-    } else {
-      ed.codemirror.addSelection(textRanges[0].anchor, textRanges[0].head);
+const setSelections =
+  (
+    ed: CodeMirrorFacade,
+    ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
+    primary?: number,
+    options?: { bias?: number; origin?: string; scroll?: boolean },
+    replace = true
+  ): AppThunk =>
+  (dispatch, getState) => {
+    const { ast } = getState();
+    let tmpCM = getTempCM(ed);
+    tmpCM.setSelections(ranges, primary, options);
+    const textRanges: {
+      anchor: CodeMirror.Position;
+      head: CodeMirror.Position;
+    }[] = [];
+    const nodes: string[] = [];
+    try {
+      validateRanges(ranges, ast);
+    } catch (e) {
+      throw new BlockError(e, "API Error");
     }
-  }
-  dispatch({ type: "SET_SELECTIONS", selections: nodes });
-};
+    // process the selection ranges into an array of ranges and nodes
+    tmpCM.listSelections().forEach(({ anchor, head }) => {
+      const c1 = minpos(anchor, head);
+      const c2 = maxpos(anchor, head);
+      const node = ast.getNodeAt(c1, c2);
+      if (node) {
+        nodes.push(node.id);
+      } else textRanges.push({ anchor: anchor, head: head });
+    });
+    if (textRanges.length) {
+      if (replace) {
+        ed.codemirror.setSelections(textRanges, primary, options);
+      } else {
+        ed.codemirror.addSelection(textRanges[0].anchor, textRanges[0].head);
+      }
+    }
+    dispatch({ type: "SET_SELECTIONS", selections: nodes });
+  };
 
 /**
  * Override CM's native extendSelections method, restricting it to the semantics
  * that make sense in a block editor (must include only valid node ranges)
  */
-const extendSelections = (
-  ed: CodeMirrorFacade,
-  heads: CodeMirror.Position[],
-  dispatch: AppDispatch,
-  opts?: SelectionOptions,
-  to?: CodeMirror.Position
-) => {
-  let tmpCM: CodeMirror.Editor = getTempCM(ed);
-  tmpCM.setSelections(listSelections(ed, dispatch));
-  if (to) {
-    tmpCM.extendSelections(heads, opts);
-  } else {
-    tmpCM.extendSelection(heads[0], to, opts);
-  }
-  // if one of the ranges is invalid, setSelections will raise an error
-  setSelections(ed, tmpCM.listSelections(), dispatch, undefined, opts);
-};
+const extendSelections =
+  (
+    ed: CodeMirrorFacade,
+    heads: CodeMirror.Position[],
+    opts?: SelectionOptions,
+    to?: CodeMirror.Position
+  ): AppThunk =>
+  (dispatch, getState) => {
+    let tmpCM: CodeMirror.Editor = getTempCM(ed);
+    tmpCM.setSelections(listSelections(ed, dispatch));
+    if (to) {
+      tmpCM.extendSelections(heads, opts);
+    } else {
+      tmpCM.extendSelection(heads[0], to, opts);
+    }
+    // if one of the ranges is invalid, setSelections will raise an error
+    dispatch(setSelections(ed, tmpCM.listSelections(), undefined, opts));
+  };
 
 /**
  * Override CM's native replaceSelections method, restricting it to the semantics
  * that make sense in a block editor (must include only valid node ranges)
  */
-const replaceSelections = (
-  ed: CodeMirrorFacade,
-  replacements: string[],
-  dispatch: AppDispatch,
-  search: Search,
-  select?: "around" | "start"
-) => {
-  let tmpCM: CodeMirror.Editor = getTempCM(ed);
-  tmpCM.setSelections(listSelections(ed, dispatch));
-  tmpCM.replaceSelections(replacements, select);
-  ed.setValue(tmpCM.getValue());
-  // if one of the ranges is invalid, setSelections will raise an error
-  if (select == "around") {
-    setSelections(ed, tmpCM.listSelections(), dispatch, undefined, undefined);
-  }
-  if (select == "start") {
-    dispatch(setCursor(ed, tmpCM.listSelections().pop()?.head ?? null, search));
-  } else {
-    dispatch(
-      setCursor(ed, tmpCM.listSelections().pop()?.anchor ?? null, search)
-    );
-  }
-};
+const replaceSelections =
+  (
+    ed: CodeMirrorFacade,
+    replacements: string[],
+    search: Search,
+    select?: "around" | "start"
+  ): AppThunk =>
+  (dispatch, getState) => {
+    let tmpCM: CodeMirror.Editor = getTempCM(ed);
+    tmpCM.setSelections(listSelections(ed, dispatch));
+    tmpCM.replaceSelections(replacements, select);
+    ed.setValue(tmpCM.getValue());
+    // if one of the ranges is invalid, setSelections will raise an error
+    if (select == "around") {
+      setSelections(ed, tmpCM.listSelections(), undefined, undefined);
+    }
+    const cur =
+      select == "start"
+        ? tmpCM.listSelections().pop()?.head
+        : tmpCM.listSelections().pop()?.anchor;
+    setCursor(ed, cur ?? null, search);
+  };
 
 /**
  * Build the API for a block editor, restricting or modifying APIs
@@ -289,20 +290,19 @@ const buildAPI = (
       from: CodeMirror.Position,
       to: CodeMirror.Position,
       opts?: SelectionOptions
-    ) => extendSelections(editor, [from], dispatch, opts, to),
+    ) => dispatch(extendSelections(editor, [from], opts, to)),
     extendSelections: (heads, opts) =>
-      extendSelections(editor, heads, dispatch, opts, undefined),
+      dispatch(extendSelections(editor, heads, opts, undefined)),
     extendSelectionsBy: (
       f: (range: CodeMirror.Range) => CodeMirror.Position,
       opts?: SelectionOptions
     ) =>
-      extendSelections(
+      dispatch(extendSelections(
         editor,
         listSelections(editor, dispatch).map(f),
-        dispatch,
         opts,
         undefined
-      ),
+      )),
     getSelections: (sep?: string) =>
       listSelections(editor, dispatch).map((s) =>
         editor.codemirror.getRange(s.anchor, s.head, sep)
@@ -318,34 +318,31 @@ const buildAPI = (
         editor.codemirror.replaceRange(text, from, to, origin);
       }),
     setSelections: (ranges, primary, opts) =>
-      setSelections(editor, ranges, dispatch, primary, opts),
+      dispatch(setSelections(editor, ranges, primary, opts)),
     setSelection: (anchor, head = anchor, opts) =>
-      setSelections(
+      dispatch(setSelections(
         editor,
         [{ anchor: anchor, head: head }],
-        dispatch,
         undefined,
         opts
-      ),
+      )),
     addSelection: (anchor, head) =>
-      setSelections(
+      dispatch(setSelections(
         editor,
         [{ anchor: anchor, head: head ?? anchor }],
-        dispatch,
         undefined,
         undefined,
         false
-      ),
+      )),
     replaceSelections: (rStrings, select?: "around" | "start") =>
-      replaceSelections(editor, rStrings, dispatch, search, select),
+      dispatch(replaceSelections(editor, rStrings, search, select)),
     replaceSelection: (rString, select?: "around" | "start") =>
-      replaceSelections(
+      dispatch(replaceSelections(
         editor,
         Array(listSelections(editor, dispatch).length).fill(rString),
-        dispatch,
         search,
         select
-      ),
+      )),
     // If a node is active, return the start. Otherwise return the cursor as-is
     getCursor: (where) => getCursor(editor, where, dispatch),
     // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
