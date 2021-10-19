@@ -401,7 +401,7 @@ const buildAPI = (
         end: end,
         text: text,
       }),
-    // TODO(Emmanuel): does it make sense to move executeAction out of BlockEditor?
+    // see https://github.com/bootstrapworld/codemirror-blocks/issues/488
     //    executeAction: (action) => executeAction(action),
   };
   // show which APIs are unsupported
@@ -441,6 +441,7 @@ type BlockEditorAPI = {
   /**
    * @internal
    */
+  // see https://github.com/bootstrapworld/codemirror-blocks/issues/488
   //executeAction(activity: Activity): void;
 };
 
