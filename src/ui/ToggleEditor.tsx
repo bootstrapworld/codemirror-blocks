@@ -142,7 +142,7 @@ function isTextMarkerRange(
   return marker.type !== "bookmark";
 }
 
-import type { BuiltAPI as BlockEditorAPIExtensions } from "../actions";
+import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
 import { AppContext } from "../components/Context";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
