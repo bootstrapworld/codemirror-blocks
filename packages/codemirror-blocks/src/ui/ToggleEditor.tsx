@@ -136,6 +136,12 @@ type ToggleEditorAPI = {
   runMode(): never;
 };
 
+function isTextMarkerRange(
+  marker: CodeMirror.TextMarker<CodeMirror.MarkerRange | CodeMirror.Position>
+): marker is CodeMirror.TextMarker<CodeMirror.MarkerRange> {
+  return marker.type !== "bookmark";
+}
+
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
 import { AppContext } from "../components/Context";

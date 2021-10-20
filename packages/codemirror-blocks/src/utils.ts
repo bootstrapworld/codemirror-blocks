@@ -1,5 +1,6 @@
 import objToStableString from "fast-json-stable-stringify";
-import type { EditorChange } from "codemirror";
+import CodeMirror, { EditorChange } from "codemirror";
+import { CodeMirrorFacade } from "./editor";
 import type { RootState } from "./reducers";
 import type { AST, ASTNode, Pos, Range } from "./ast";
 
@@ -148,6 +149,18 @@ export function afterAllDOMUpdates(): Promise<void> {
     setAfterDOMUpdate(() => {});
   });
   return promise;
+}
+
+/**
+ * @internal
+ * Create a dummy CM instance, matching relevant state
+ * from a passed CodeMirrorFacade
+ */
+const tmpDiv = document.createElement("div");
+export function getTempCM(editor: CodeMirrorFacade) {
+  const tmpCM = CodeMirror(tmpDiv, { value: editor.getValue() });
+  tmpCM.setCursor(editor.codemirror.getCursor());
+  return tmpCM;
 }
 
 // make sure we never assign the same ID to two nodes in ANY active

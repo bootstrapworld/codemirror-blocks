@@ -1,4 +1,14 @@
-import { poscmp, srcRangeIncludes, warn, setAfterDOMUpdate } from "./utils";
+import {
+  poscmp,
+  srcRangeIncludes,
+  warn,
+  setAfterDOMUpdate,
+  getTempCM,
+  minpos,
+  maxpos,
+  validateRanges,
+  BlockError,
+} from "./utils";
 import { say, cancelAnnouncement } from "./announcer";
 import { AppDispatch, AppStore, AppThunk } from "./store";
 import {
@@ -11,7 +21,13 @@ import {
 } from "./edits/performEdits";
 import { AST, ASTNode, Pos } from "./ast";
 import { AppAction, RootState } from "./reducers";
-import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "./editor";
+import {
+  CodeMirrorFacade,
+  CMBEditor,
+  ReadonlyCMBEditor,
+  ReadonlyRangedText,
+} from "./editor";
+import { SelectionOptions } from "codemirror";
 import { useDispatch, useStore } from "react-redux";
 import type { Language } from "./CodeMirrorBlocks";
 import { useLanguageOrThrow, useSearchOrThrow } from "./hooks";
@@ -344,6 +360,121 @@ function pasteFromClipboard(done: (value: string) => void) {
     done(buffer.value);
   }, 50);
 }
+
+/**
+ * Override CM's native setSelections method, restricting it to the semantics
+ * that make sense in a block editor (must include only valid node ranges)
+ */
+export const setSelections =
+  (
+    ed: CodeMirrorFacade,
+    ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
+    primary?: number,
+    options?: { bias?: number; origin?: string; scroll?: boolean },
+    replace = true
+  ): AppThunk =>
+  (dispatch, getState) => {
+    const { ast } = getState();
+    let tmpCM = getTempCM(ed);
+    tmpCM.setSelections(ranges, primary, options);
+    const textRanges: {
+      anchor: CodeMirror.Position;
+      head: CodeMirror.Position;
+    }[] = [];
+    const nodes: string[] = [];
+    try {
+      validateRanges(ranges, ast);
+    } catch (e) {
+      throw new BlockError(e, "API Error");
+    }
+    // process the selection ranges into an array of ranges and nodes
+    tmpCM.listSelections().forEach(({ anchor, head }) => {
+      const c1 = minpos(anchor, head);
+      const c2 = maxpos(anchor, head);
+      const node = ast.getNodeAt(c1, c2);
+      if (node) {
+        nodes.push(node.id);
+      } else textRanges.push({ anchor: anchor, head: head });
+    });
+    if (textRanges.length) {
+      if (replace) {
+        ed.codemirror.setSelections(textRanges, primary, options);
+      } else {
+        ed.codemirror.addSelection(textRanges[0].anchor, textRanges[0].head);
+      }
+    }
+    dispatch({ type: "SET_SELECTIONS", selections: nodes });
+  };
+
+/**
+ * Override CM's native extendSelections method, restricting it to the semantics
+ * that make sense in a block editor (must include only valid node ranges)
+ */
+export const extendSelections =
+  (
+    ed: CodeMirrorFacade,
+    heads: CodeMirror.Position[],
+    opts?: SelectionOptions,
+    to?: CodeMirror.Position
+  ): AppThunk =>
+  (dispatch, getState) => {
+    let tmpCM: CodeMirror.Editor = getTempCM(ed);
+    tmpCM.setSelections(listSelections(ed, dispatch));
+    if (to) {
+      tmpCM.extendSelections(heads, opts);
+    } else {
+      tmpCM.extendSelection(heads[0], to, opts);
+    }
+    // if one of the ranges is invalid, setSelections will raise an error
+    setSelections(ed, tmpCM.listSelections(), undefined, opts);
+  };
+
+/**
+ * Override CM's native replaceSelections method, restricting it to the semantics
+ * that make sense in a block editor (must include only valid node ranges)
+ */
+export const replaceSelections =
+  (
+    ed: CodeMirrorFacade,
+    replacements: string[],
+    search: Search,
+    select?: "around" | "start"
+  ): AppThunk =>
+  (dispatch, getState) => {
+    let tmpCM: CodeMirror.Editor = getTempCM(ed);
+    tmpCM.setSelections(listSelections(ed, dispatch));
+    tmpCM.replaceSelections(replacements, select);
+    ed.setValue(tmpCM.getValue());
+    // if one of the ranges is invalid, setSelections will raise an error
+    if (select == "around") {
+      setSelections(ed, tmpCM.listSelections(), undefined, undefined);
+    }
+    const cur =
+      select == "start"
+        ? tmpCM.listSelections().pop()?.head
+        : tmpCM.listSelections().pop()?.anchor;
+    setCursor(ed, cur ?? null, search);
+  };
+
+/**
+ * Override CM's native listSelections method, using the selection
+ * state from the block editor
+ */
+export const listSelections = (ed: CodeMirrorFacade, dispatch: AppDispatch) => {
+  const { selections, ast } = dispatch((_, getState) => getState());
+  let tmpCM = getTempCM(ed);
+  // write all the ranges for all selected nodes
+  selections.forEach((id) => {
+    const node = ast.getNodeByIdOrThrow(id);
+    tmpCM.addSelection(node.from, node.to);
+  });
+  // write all the existing selection ranges
+  ed.codemirror
+    .listSelections()
+    .map((s) => tmpCM.addSelection(s.anchor, s.head));
+  // return all the selections
+  return tmpCM.listSelections();
+};
 
 // The class of all targets.
 export abstract class Target {
