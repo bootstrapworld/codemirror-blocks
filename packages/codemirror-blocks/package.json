@@ -87,7 +87,7 @@
     "codemirror": "^5.61.1"
   },
   "optionalDependencies": {
-    "wescheme-js": "^0.0.4"
+    "wescheme-js": "^0.0.5"
   },
   "scripts": {
     "prepare": "npm run build && npm run build-types",
