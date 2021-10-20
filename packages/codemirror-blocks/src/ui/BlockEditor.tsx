@@ -297,7 +297,6 @@ export const buildAPI = (
   );
   return api;
 };
-
 type $TSFixMe = any;
 
 export type Search = {
