@@ -124,7 +124,7 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(cmb.getValue()).toEqual('9');
     })
     */
-    it("should not allow required blanks to be deleted", async function () {
+    xit("should not allow required blanks to be deleted", async function () {
       cmb.setValue("()");
       await finishRender();
       cmb.getValue("(...)"); // blank should be inserted by parser, as '...'

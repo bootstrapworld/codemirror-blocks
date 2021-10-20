@@ -356,17 +356,8 @@ type BlockEditorState = {
 };
 
 class BlockEditor extends Component<BlockEditorProps> {
-  newAST: AST;
   pendingTimeout: afterDOMUpdateHandle;
   state: BlockEditorState = { editor: null };
-
-  constructor(props: BlockEditorProps) {
-    super(props);
-
-    // NOTE(Emmanuel): we shouldn't have to dispatch this in the constructor
-    // just for tests to pass! Figure out how to reset the store manually
-    props.dispatch({ type: "RESET_STORE_FOR_TESTING" });
-  }
 
   static defaultProps = {
     search: {
@@ -480,18 +471,17 @@ class BlockEditor extends Component<BlockEditorProps> {
           language.parse,
           editor.getValue()
         );
-        // Successful! Let's save all the hard work we did to build the new AST
-        if (result.successful) {
-          this.newAST = result.value;
-        }
         // Error! Cancel the change and report the error
-        else {
+        if (!result.successful) {
           change.cancel();
           throw new BlockError(
             "An invalid change was rejected",
             "Invalid Edit",
             change
           );
+        } else {
+          // Maybe we can save result.value, and pass it to commitChanges?
+          // This would avoid a re-parse
         }
       }
     };
@@ -527,8 +517,7 @@ class BlockEditor extends Component<BlockEditorProps> {
                   language.parse,
                   editor,
                   true,
-                  focusHint,
-                  this.newAST
+                  focusHint
                 )
               );
               dispatch({ type: "UNDO", editor: editor });
@@ -546,8 +535,7 @@ class BlockEditor extends Component<BlockEditorProps> {
                   language.parse,
                   editor,
                   true,
-                  focusHint,
-                  this.newAST
+                  focusHint
                 )
               );
               dispatch({ type: "REDO", editor });
@@ -575,8 +563,7 @@ class BlockEditor extends Component<BlockEditorProps> {
                 language.parse,
                 editor,
                 false,
-                -1,
-                this.newAST
+                -1
               )
             );
           }
