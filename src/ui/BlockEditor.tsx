@@ -356,14 +356,12 @@ type BlockEditorState = {
 };
 
 class BlockEditor extends Component<BlockEditorProps> {
-  mouseUsed: boolean;
   newAST: AST;
   pendingTimeout: afterDOMUpdateHandle;
   state: BlockEditorState = { editor: null };
 
   constructor(props: BlockEditorProps) {
     super(props);
-    this.mouseUsed = false;
 
     // NOTE(Emmanuel): we shouldn't have to dispatch this in the constructor
     // just for tests to pass! Figure out how to reset the store manually
@@ -659,7 +657,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       e.preventDefault();
       const start = ed.getCursor("from");
       const end = ed.getCursor("to");
-      this.props.dispatch({
+      dispatch({
         type: "SET_QUARANTINE",
         start: start,
         end: end,
@@ -679,7 +677,7 @@ class BlockEditor extends Component<BlockEditorProps> {
       if (text) {
         const start = editor.codemirror.getCursor(true as $TSFixMe);
         const end = editor.codemirror.getCursor(false as $TSFixMe);
-        this.props.dispatch({
+        dispatch({
           type: "SET_QUARANTINE",
           start: start,
           end: end,
@@ -698,6 +696,28 @@ class BlockEditor extends Component<BlockEditorProps> {
           ? null
           : editor.codemirror.getCursor();
       dispatch(setCursor(editor, cur, search));
+    };
+
+    const renderPortals = () => {
+      const incrementalRendering = options.incrementalRendering ?? false;
+      let portals;
+      const { editor } = this.state;
+      if (editor && this.props.ast) {
+        // Render all the top-level nodes
+        portals = [...this.props.ast.children()].map((r) => (
+          <EditorContext.Provider value={editor} key={r.id}>
+            <ToplevelBlock
+              node={r}
+              incrementalRendering={incrementalRendering}
+              editor={editor}
+            />
+          </EditorContext.Provider>
+        ));
+        if (this.props.hasQuarantine) {
+          portals.push(<ToplevelBlockEditable editor={editor} key="-1" />);
+        }
+      }
+      return portals;
     };
 
     return (
@@ -723,34 +743,12 @@ class BlockEditor extends Component<BlockEditorProps> {
           onCursorActivity={handleTopLevelCursorActivity}
           editorDidMount={handleEditorDidMount}
         />
-        {this.renderPortals()}
+        {renderPortals()}
       </LanguageContext.Provider>
     );
   }
-
-  private renderPortals = () => {
-    const incrementalRendering =
-      this.props.options.incrementalRendering ?? false;
-    let portals;
-    const { editor } = this.state;
-    if (editor && this.props.ast) {
-      // Render all the top-level nodes
-      portals = [...this.props.ast.children()].map((r) => (
-        <EditorContext.Provider value={editor} key={r.id}>
-          <ToplevelBlock
-            node={r}
-            incrementalRendering={incrementalRendering}
-            editor={editor}
-          />
-        </EditorContext.Provider>
-      ));
-      if (this.props.hasQuarantine) {
-        portals.push(<ToplevelBlockEditable editor={editor} key="-1" />);
-      }
-    }
-    return portals;
-  };
 }
+
 export type { BlockEditor };
 const ConnectedBlockEditor = blockEditorConnector(BlockEditor);
 export type BlockEditorComponentClass = typeof ConnectedBlockEditor;
