@@ -362,30 +362,6 @@ function pasteFromClipboard(done: (value: string) => void) {
 }
 
 /**
- * Override CM's native getCursor method, restricting it to the semantics
- * that make sense in a block editor
- */
-export const getCursor = (
-  ed: CodeMirrorFacade,
-  where = "from",
-  dispatch: AppDispatch
-) => {
-  const { focusId, ast } = dispatch((_, getState) => getState());
-  if (focusId && document.activeElement?.id.match(/block-node/)) {
-    const node = ast.getNodeByIdOrThrow(focusId);
-    if (where == "from") return node.from;
-    if (where == "to") return node.to;
-    else
-      throw new BlockError(
-        `getCursor() with ${where} is not supported on a focused block`,
-        `API Error`
-      );
-  } else {
-    return ed.codemirror.getCursor(where);
-  }
-};
-
-/**
  * Override CM's native setSelections method, restricting it to the semantics
  * that make sense in a block editor (must include only valid node ranges)
  */
@@ -450,7 +426,7 @@ export const extendSelections =
       tmpCM.extendSelection(heads[0], to, opts);
     }
     // if one of the ranges is invalid, setSelections will raise an error
-    dispatch(setSelections(ed, tmpCM.listSelections(), undefined, opts));
+    setSelections(ed, tmpCM.listSelections(), undefined, opts);
   };
 
 /**

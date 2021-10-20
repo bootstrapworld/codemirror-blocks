@@ -5,7 +5,6 @@ import "./Editor.less";
 import { connect, ConnectedProps } from "react-redux";
 import {
   activateByNid,
-  getCursor,
   setCursor,
   setSelections,
   extendSelections,
@@ -125,11 +124,8 @@ export const buildAPI = (
       editor.codemirror.findMarksAt(pos).filter((m) => !isBlockNodeMarker(m)),
     getAllMarks: () =>
       editor.codemirror.getAllMarks().filter((m) => !isBlockNodeMarker(m)),
-    /**
-     * Override CM's native markText method, restricting it to the semantics
-     * that make sense in a block editor (fewer options, restricted to node
-     * boundaries)
-     */
+    // Restrict CM's markText method to block editor semantics:
+    // fewer options, restricted to node boundaries
     markText: (from, to, opts: CodeMirror.TextMarkerOptions = {}) => {
       const { ast } = dispatch((_, getState) => getState());
       const node = ast.getNodeAt(from, to);
@@ -166,7 +162,7 @@ export const buildAPI = (
       withState(({ selections }) =>
         Boolean(editor.codemirror.somethingSelected() || selections.length)
       ),
-    // CMB has focus if CM has focus OR a block is active
+    // CMB has focus if top-level CM has focus OR a block is active
     hasFocus: () =>
       editor.codemirror.hasFocus() ||
       Boolean(document.activeElement?.id.match(/block-node/)),
@@ -230,8 +226,22 @@ export const buildAPI = (
           select
         )
       ),
-    // If a node is active, return the start. Otherwise return the cursor as-is
-    getCursor: (where) => getCursor(editor, where, dispatch),
+    // Restrict CM's getCursor() to  block editor semantics
+    getCursor: (where) => {
+      const { focusId, ast } = dispatch((_, getState) => getState());
+      if (focusId && document.activeElement?.id.match(/block-node/)) {
+        const node = ast.getNodeByIdOrThrow(focusId);
+        if (where == "from" || where == undefined) return node.from;
+        if (where == "to") return node.to;
+        else
+          throw new BlockError(
+            `getCursor() with ${where} is not supported on a focused block`,
+            `API Error`
+          );
+      } else {
+        return editor.codemirror.getCursor(where);
+      }
+    },
     // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
     setCursor: (curOrLine, ch, options) =>
       withState(({ ast }) => {
