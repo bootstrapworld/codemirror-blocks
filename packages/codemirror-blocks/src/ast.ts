@@ -10,7 +10,6 @@ import * as P from "pretty-fast-pretty-printer";
 import type { Comment } from "./nodes";
 import type { NodeSpec } from "./nodeSpec";
 import type React from "react";
-import type { BlockNodeMarker } from "./editor";
 
 /**
  * @internal
@@ -28,7 +27,7 @@ export function enumerateList(lst: ASTNode[], level: number) {
  * given a noun and an array, generate a (possibly-plural)
  * version of that noun
  */
-export function pluralize(noun: string, set: any[]) {
+export function pluralize(noun: string, set: unknown[]) {
   return set.length + " " + noun + (set.length != 1 ? "s" : "");
 }
 
@@ -76,6 +75,7 @@ function validateNode(node: ASTNode) {
     "mark",
   ];
   const invalidProp = newFieldNames.find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (field) => field in node && (node as any)[field] !== undefined
   );
   if (!node.__alreadyValidated && invalidProp) {
@@ -235,10 +235,10 @@ export class AST {
    * Pretty-print each rootNode on its own line, prepending whitespace
    */
   toString() {
-    let lines: string[] = [];
+    const lines: string[] = [];
     let prevNode: ASTNode | null = null;
-    for (let node of this.rootNodes) {
-      let numBlankLines = prevNode
+    for (const node of this.rootNodes) {
+      const numBlankLines = prevNode
         ? Math.max(
             0,
             node.srcRange().from.line - prevNode.srcRange().to.line - 1
@@ -255,12 +255,7 @@ export class AST {
    * Print out all the immediate "children" of the AST (root nodes)
    */
   children() {
-    const that = this;
-    return {
-      *[Symbol.iterator]() {
-        yield* that.rootNodes;
-      },
-    };
+    return this.rootNodes;
   }
 
   /**
@@ -268,6 +263,7 @@ export class AST {
    * Print out ALL the descendents (all generations) of each root node
    */
   descendants() {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const that = this;
     return {
       *[Symbol.iterator]() {
@@ -363,14 +359,14 @@ export class AST {
       nodes: Readonly<ASTNode[]>,
       parentFallback: ASTNode | null
     ): ASTNode | null {
-      let n = nodes.find((n) => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
+      const n = nodes.find((n) => poscmp(n.to, cur) > 0); // find the 1st node that ends after cur
       if (!n) {
         return parentFallback;
       } // return null if there's no node after the cursor
       if (poscmp(n.from, cur) >= 0) {
         return n;
       } // if the node *starts* after the cursor too, we're done
-      let children = [...n.children()]; // if *contains* cur, drill down into the children
+      const children = [...n.children()]; // if *contains* cur, drill down into the children
       return children.length == 0 ? n : loop(children, n);
     }
     return loop(this.rootNodes, null);
@@ -386,14 +382,14 @@ export class AST {
       parentFallback: ASTNode | null
     ): ASTNode | null {
       // find the last node that begins before cur
-      let n = nodes
+      const n = nodes
         .slice(0)
         .reverse()
         .find((n) => poscmp(n.from, cur) < 0);
       if (!n) {
         return parentFallback;
       } // return null if there's no node before the cursor
-      let children = [...n.children()]; // if it contains cur, drill down into the children
+      const children = [...n.children()]; // if it contains cur, drill down into the children
       return children.length == 0 ? n : loop(children, n);
     }
     return loop(this.rootNodes, null);
@@ -412,7 +408,7 @@ export class AST {
    * Find the node that most tightly-encloses a given cursor
    */
   getNodeContaining(cursor: Pos, nodes = this.rootNodes): ASTNode | undefined {
-    let n = nodes.find(
+    const n = nodes.find(
       (node) =>
         posWithinNode(cursor, node) || nodeCommentContaining(cursor, node)
     );
@@ -430,8 +426,8 @@ export class AST {
    * srcRange matches those locations. If none exists, return undefined
    */
   getNodeAt(from: Pos, to: Pos) {
-    let n = [...this.nodeIdMap.values()].find((n) => {
-      let { from: srcFrom, to: srcTo } = n.srcRange();
+    const n = [...this.nodeIdMap.values()].find((n) => {
+      const { from: srcFrom, to: srcTo } = n.srcRange();
       // happens when node is an ABlank
       if (n.from == null || n.to == null) return undefined;
       return (
@@ -461,7 +457,7 @@ export class AST {
     searchFn: (node: ASTNode) => ASTNode | undefined,
     testFn: (node: ASTNode) => boolean,
     start: ASTNode,
-    inclusive: boolean = false
+    inclusive = false
   ) {
     let node = inclusive ? start : searchFn(start);
     while (node && testFn(node)) {
@@ -536,10 +532,7 @@ export type NodeOptions = {
  * Every node in the AST must inherit from the `ASTNode` class, which is used
  * to house some common attributes.
  */
-export abstract class ASTNode<
-  Opt extends NodeOptions = NodeOptions,
-  Props = {}
-> {
+export abstract class ASTNode<Opt extends NodeOptions = NodeOptions> {
   /**
    * @internal
    * Every node must have a Starting and Ending position, represented as
@@ -596,7 +589,7 @@ export abstract class ASTNode<
    * Used to keep track of which nodes have had their properties
    * validated by {@link AST.validateNode}
    */
-  __alreadyValidated: boolean = false;
+  __alreadyValidated = false;
 
   constructor(from: Pos, to: Pos, type: string, options: Opt) {
     this.from = from;
@@ -610,6 +603,7 @@ export abstract class ASTNode<
     }
 
     // Make the spec more easily available.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.spec = (this.constructor as any).spec;
 
     this.isLockedP = false;
@@ -630,7 +624,7 @@ export abstract class ASTNode<
 
   // the long description is node-specific, detailed, and must be
   // implemented by the ASTNode itself
-  longDescription(level: number): string | undefined {
+  longDescription(_level: number): string | undefined {
     throw new Error("ASTNodes must implement `.longDescription()`");
   }
 
@@ -664,7 +658,7 @@ export abstract class ASTNode<
   }
 
   // Create a React _element_ (an instantiated component) for this node.
-  reactElement(props?: Props): React.ReactElement {
+  reactElement(props?: Record<string, unknown>): React.ReactElement {
     return renderASTNode({ node: this, ...props });
   }
 
@@ -672,11 +666,11 @@ export abstract class ASTNode<
   // the ASTNode itself
   abstract pretty(): P.Doc;
 
-  abstract render(props: Props): React.ReactElement | void;
+  abstract render(props: { node: ASTNode }): React.ReactElement | void;
 }
 
 function renderASTNode(props: { node: ASTNode }) {
-  let node = props.node;
+  const node = props.node;
   if (typeof node.render === "function") {
     return node.render.bind(node)(props);
   } else {
@@ -692,8 +686,8 @@ class DescendantsIterator {
 
   *[Symbol.iterator]() {
     yield this.node;
-    for (let child of this.node.children()) {
-      for (let descendant of child.descendants()) {
+    for (const child of this.node.children()) {
+      for (const descendant of child.descendants()) {
         yield descendant;
       }
     }

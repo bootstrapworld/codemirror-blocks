@@ -47,7 +47,7 @@ type Props = Omit<ContentEditableProps, "value"> & {
   value?: string | null;
   onChange: (e: string | null) => void;
   onDisableEditable: () => void;
-  contentEditableProps?: {};
+  contentEditableProps?: ContentEditableProps;
   extraClasses?: ClassNamesArgument;
   editor: CMBEditor;
 };
@@ -81,6 +81,7 @@ const NodeEditable = (props: Props) => {
     say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
     dispatch({ type: "SET_SELECTIONS", selections: [] });
     return () => cancelAfterDOMUpdate(pendingTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setErrorId = (errorId: string) =>
@@ -105,7 +106,7 @@ const NodeEditable = (props: Props) => {
         return;
       }
 
-      let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
+      const annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
       const result = dispatch(
         insert(value, target, props.editor, language.parse, annt)
       );

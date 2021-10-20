@@ -13,7 +13,7 @@ type Props = {
 };
 
 const Dialog = (props: Props) => {
-  const { isOpen, closeFn, keyUp, body } = props;
+  const { isOpen, closeFn, keyUp } = props;
   const headerRef = useRef<HTMLHeadingElement>(null);
   const focusTitle = useCallback(() => headerRef.current?.focus(), []);
 

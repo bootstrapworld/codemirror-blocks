@@ -18,8 +18,8 @@ require("./PrimitiveList.less");
 type BasePrimitiveProps = {
   primitive: LanguagePrimitive;
   className: string;
-  onFocus: Function;
-  onKeyDown: Function;
+  onFocus: (primitive: LanguagePrimitive) => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
 };
 
 export const Primitive = (props: BasePrimitiveProps) => {
@@ -72,8 +72,8 @@ export const Primitive = (props: BasePrimitiveProps) => {
 };
 
 type PrimitiveGroupProps = {
-  onFocus: Function;
-  onKeyDown: Function;
+  onFocus: BasePrimitiveProps["onFocus"];
+  onKeyDown: BasePrimitiveProps["onKeyDown"];
   selected?: string; // to start, no primitive is selected
   group?: PrimitiveGroupModel;
 };
@@ -106,8 +106,8 @@ export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
 };
 
 type PrimitiveListProps = {
-  onFocus: Function;
-  onKeyDown: Function;
+  onFocus: BasePrimitiveProps["onFocus"];
+  onKeyDown: BasePrimitiveProps["onKeyDown"];
   selected?: string;
   primitives?: LanguagePrimitive[];
   searchString?: string;

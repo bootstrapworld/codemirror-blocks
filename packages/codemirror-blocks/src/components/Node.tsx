@@ -1,4 +1,4 @@
-import React, { HTMLAttributes, useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { AST, ASTNode } from "../ast";
 import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
@@ -47,6 +47,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     // codemirror by calling marker.changed() on the rootNode
     // marker object, in case the widget's height has changed.
     rootNode.marker?.changed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateProps.isCollapsed]);
 
   const [editable, setEditable] = useState(false);
@@ -146,17 +147,17 @@ const Node = ({ expandable = true, ...props }: Props) => {
 
   const handleMouseDragRelated = (e: React.MouseEvent<HTMLSpanElement>) => {
     if (e.type === "dragstart") {
-      let dt = new DataTransfer();
+      const dt = new DataTransfer();
       dt.setData("text/plain", (e.target as HTMLSpanElement).textContent || "");
     }
   };
   const { ...passingProps } = props;
 
-  let comment = props.node.options.comment;
+  const comment = props.node.options.comment;
   if (comment) comment.id = `block-node-${props.node.id}-comment`;
   const locked = isLocked();
 
-  const contentEditableProps: HTMLAttributes<HTMLSpanElement> = {
+  const contentEditableProps = {
     id: `block-node-${props.node.id}`,
     tabIndex: -1,
     "aria-selected": stateProps.isSelected,
@@ -164,7 +165,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     "aria-labelledby": `block-node-${props.node.id} ${
       comment ? comment.id : ""
     }`,
-    "aria-disabled": locked ? "true" : undefined,
+    "aria-disabled": locked ? true : undefined,
     "aria-expanded":
       expandable && !locked ? !stateProps.isCollapsed : undefined,
     "aria-setsize": props.node["aria-setsize"],
@@ -249,6 +250,9 @@ const Node = ({ expandable = true, ...props }: Props) => {
             cssText: stateProps.textMarker
               ? stateProps.textMarker.options.css
               : null,
+            // TODO(pcardune): figure out what cssText is supposed to be
+            // as it doesn't typecheck.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any
         }
         title={stateProps.textMarker?.options.title}

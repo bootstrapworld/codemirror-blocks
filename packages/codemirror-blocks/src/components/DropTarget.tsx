@@ -23,20 +23,20 @@ export function findAdjacentDropTargetId(
   onLeft: boolean
 ) {
   let prevDropTargetId: string | null = null;
-  let targetId = `block-node-${child.id}`;
+  const targetId = `block-node-${child.id}`;
 
   function findDT(elem: Element): string | null {
     if (!elem.children) {
       return null;
     }
     // Convert array-like object into an Array.
-    let children = [...elem.children];
+    const children = [...elem.children];
     // If we want the drop-target to the right, iterate in reverse
     if (!onLeft) {
       children.reverse();
     }
 
-    for (let sibling of children) {
+    for (const sibling of children) {
       if (sibling.id?.startsWith("block-drop-target-")) {
         // We've hit a drop-target. Remember its id, in case it's adjacent to the node.
         prevDropTargetId = sibling.id.substring(18); // skip "block-drop-target-"
@@ -47,7 +47,7 @@ export function findAdjacentDropTargetId(
         // It's a different node. Skip it.
       } else if (sibling.children) {
         // We're... somewhere else. If it has children, traverse them to look for the node.
-        let result = findDT(sibling);
+        const result = findDT(sibling);
         if (result !== null) {
           return result; // node found.
         }
@@ -72,7 +72,7 @@ const getLocation = ({
   context: { node: ASTNode; field: string };
 }) => {
   let prevNodeId: string | null = null;
-  let targetId = `block-drop-target-${id}`;
+  const targetId = `block-drop-target-${id}`;
   let dropTargetWasFirst = false;
 
   function findLoc(elem: Element | null): Pos | null {
@@ -84,7 +84,7 @@ const getLocation = ({
     if (elem.id?.startsWith("block-node-")) {
       prevNodeId = elem.id.substring(11); // skip "block-node-"
     }
-    for (let sibling of elem.children) {
+    for (const sibling of elem.children) {
       if (sibling.id?.startsWith("block-node-")) {
         // We've hit an ASTNode. Remember its id, in case it's the node just before the drop target.
         prevNodeId = sibling.id.substring(11); // skip "block-node-"
@@ -105,7 +105,7 @@ const getLocation = ({
         // It's a different drop target. Skip it.
       } else if (sibling.children) {
         // We're... somewhere else. If it has children, traverse them to look for the drop target.
-        let result = findLoc(sibling);
+        const result = findLoc(sibling);
         if (result !== null) {
           return result; // drop target found.
         }
@@ -216,11 +216,11 @@ field declared. The node was:`,
   };
 
   const contentEditableProps = {
-    tabIndex: "-1",
+    tabIndex: -1,
     role: "textbox",
-    "aria-setsize": "1",
-    "aria-posinset": "1",
-    "aria-level": "1",
+    "aria-setsize": 1,
+    "aria-posinset": 1,
+    "aria-level": 1,
     id: `block-drop-target-${id}`,
   };
 

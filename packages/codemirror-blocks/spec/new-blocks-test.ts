@@ -148,7 +148,6 @@ describe("The CodeMirrorBlocks Class", function () {
     it("should blur the node being edited on enter", async function () {
       click(literal);
       await finishRender();
-      let quarantine = document.activeElement;
       keyDown("Enter");
       await finishRender();
       expect(document.activeElement).not.toBe(undefined);
@@ -189,7 +188,6 @@ describe("The CodeMirrorBlocks Class", function () {
       let firstArg!: ASTNode;
       let whiteSpaceEl!: Element;
       let blank!: FunctionApp;
-      let blankWS!: Element;
 
       beforeEach(async function () {
         cmb.setValue("(+ 1 2) (+)");
@@ -199,13 +197,12 @@ describe("The CodeMirrorBlocks Class", function () {
         firstArg = (ast.rootNodes[0] as FunctionApp).args[0];
         whiteSpaceEl = firstArg.element!.nextElementSibling!;
         blank = ast.rootNodes[1] as FunctionApp;
-        blankWS = blank.element!.querySelectorAll(".blocks-white-space")[0];
       });
 
       it("Ctrl-[ should jump to the left of a top-level node", function () {
         mouseDown(firstRoot.element!);
         keyDown("[", { ctrlKey: true }, firstRoot.element!);
-        let cursor = cmb.getCursor();
+        const cursor = cmb.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(0);
       });
@@ -213,7 +210,7 @@ describe("The CodeMirrorBlocks Class", function () {
       it("Ctrl-] should jump to the right of a top-level node", function () {
         mouseDown(firstRoot.element!);
         keyDown("]", { ctrlKey: true }, firstRoot.element!);
-        let cursor = cmb.getCursor();
+        const cursor = cmb.getCursor();
         expect(cursor.line).toBe(0);
         expect(cursor.ch).toBe(7);
       });
@@ -249,7 +246,6 @@ describe("The CodeMirrorBlocks Class", function () {
       describe("in corner-cases with no arguments,", function () {
         let ast!: AST;
         let firstRoot!: ASTNode;
-        let func!: ASTNode;
         let argWS!: ChildNode;
 
         beforeEach(async function () {
@@ -257,7 +253,6 @@ describe("The CodeMirrorBlocks Class", function () {
           await finishRender();
           ast = cmb.getAst();
           firstRoot = ast.rootNodes[0];
-          func = (ast.rootNodes[0] as FunctionApp).func;
           argWS =
             firstRoot.element!.getElementsByClassName("blocks-args")[0]
               .firstChild!;

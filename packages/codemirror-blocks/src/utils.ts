@@ -4,8 +4,6 @@ import { CodeMirrorFacade } from "./editor";
 import type { RootState } from "./reducers";
 import type { AST, ASTNode, Pos, Range } from "./ast";
 
-type $TSFixMe = any;
-
 /**************************************************************
  * Compute which platform we're on
  */
@@ -37,7 +35,7 @@ export type afterDOMUpdateHandle = {
 const uncompletedDOMUpdates: Set<afterDOMUpdateHandle> = new Set();
 let afterAllDOMUpdateCallbacks: {
   resolve: () => void;
-  reject: (e: any) => void;
+  reject: (e: unknown) => void;
 }[] = [];
 
 function markDOMUpdateCompleted(handle: afterDOMUpdateHandle) {
@@ -56,7 +54,7 @@ function markDOMUpdateCompleted(handle: afterDOMUpdateHandle) {
   }
 }
 
-function markDOMUpdateFailed(handle: afterDOMUpdateHandle, e: any) {
+function markDOMUpdateFailed(handle: afterDOMUpdateHandle, e: unknown) {
   // remove the handle from the set of uncompleted handles
   uncompletedDOMUpdates.delete(handle);
 
@@ -144,8 +142,9 @@ export function cancelAllDOMUpdates() {
  * @internal
  */
 export function afterAllDOMUpdates(): Promise<void> {
-  let promise: Promise<void> = new Promise((resolve, reject) => {
+  const promise: Promise<void> = new Promise((resolve, reject) => {
     afterAllDOMUpdateCallbacks.push({ resolve, reject });
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAfterDOMUpdate(() => {});
   });
   return promise;
@@ -189,9 +188,9 @@ export function resetUniqueIdGenerator() {
 // then hash the string so we don't have giant "hashes" eating memory
 // (see https://stackoverflow.com/a/7616484/12026982 and
 // https://anchortagdev.com/consistent-object-hashing-using-stable-stringification/ )
-export function hashObject(obj: any) {
+export function hashObject(obj: unknown) {
   const str = objToStableString(obj);
-  var hash = 0,
+  let hash = 0,
     i,
     chr;
   if (str.length === 0) return hash;
@@ -419,7 +418,7 @@ export function waitUntilReady() {
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
 export function changeEnd({ from, to, text }: EditorChange) {
   if (!text) return to;
-  let lastLine = text[text.length - 1];
+  const lastLine = text[text.length - 1];
   return {
     line: from.line + text.length - 1,
     ch: lastLine.length + (text.length == 1 ? from.ch : 0),
@@ -432,9 +431,9 @@ export function adjustForChange(pos: Pos, change: EditorChange, from: boolean) {
   if (poscmp(pos, change.from) < 0) return pos;
   if (poscmp(pos, change.from) == 0 && from) return pos; // if node.from==change.from, no change
   if (poscmp(pos, change.to) <= 0) return changeEnd(change);
-  let line =
-      pos.line + change.text.length - (change.to.line - change.from.line) - 1,
-    ch = pos.ch;
+  const line =
+    pos.line + change.text.length - (change.to.line - change.from.line) - 1;
+  let ch = pos.ch;
   if (pos.line == change.to.line) ch += changeEnd(change).ch - change.to.ch;
   return { line: line, ch: ch };
 }
@@ -477,8 +476,8 @@ export function minimizeChange({
 
 // display the actual exception, and try to log it
 export function logResults(
-  history: any,
-  exception: any,
+  history: unknown,
+  exception: unknown,
   description = "Crash Log"
 ) {
   debugLog(exception, history);
@@ -488,7 +487,7 @@ export function logResults(
     (document.getElementById("history") as HTMLTextAreaElement).value =
       JSON.stringify(history);
     (document.getElementById("exception") as HTMLTextAreaElement).value =
-      exception;
+      String(exception);
     (document.getElementById("errorLogForm") as HTMLFormElement).submit();
   } catch (e) {
     debugLog("LOGGING FAILED.", e, history);
@@ -525,8 +524,8 @@ export function validateRanges(
 
 export class BlockError extends Error {
   type: string;
-  data: $TSFixMe;
-  constructor(message: string, type: string, data?: $TSFixMe) {
+  data: unknown;
+  constructor(message: string, type: string, data?: unknown) {
     super(message);
     this.type = type;
     this.data = data;
@@ -558,7 +557,6 @@ class CustomAudio extends Audio {
 import beepSound from "./ui/beep.mp3";
 export const BEEP = new CustomAudio(beepSound);
 import wrapSound from "./ui/wrap.mp3";
-import { say } from "./announcer";
 export const WRAP = new CustomAudio(wrapSound);
 
 export function playSound(sound: CustomAudio) {
@@ -566,18 +564,10 @@ export function playSound(sound: CustomAudio) {
   debugLog("BEEP!");
   if (!(sound.paused && !sound.isPlaying)) return;
   if (sound.readyState > 0) sound.currentTime = 0;
-  // Promise handling from: https://goo.gl/xX8pDD
-  // In browsers that don’t yet support this functionality,
-  // playPromise won’t be defined.
-  var playPromise = sound.play();
-  if (playPromise !== undefined) {
-    playPromise
-      .then(() => {}) // Automatic playback started!
-      .catch(() => {}); // Automatic playback failed.
-  }
+  sound.play();
 }
 
-export function debugLog(...args: any[]) {
+export function debugLog(...args: unknown[]) {
   if (global?.process?.env?.DEBUG) {
     console.log(...args);
   }

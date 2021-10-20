@@ -21,10 +21,10 @@ export function speculateChanges(
   text: string
 ): Result<AST> {
   tmpRangedText.setValue(text);
-  for (let c of changeArr) {
+  for (const c of changeArr) {
     tmpRangedText.replaceRange(c.text, c.from, c.to, c.origin);
   }
-  let newText = tmpRangedText.getValue();
+  const newText = tmpRangedText.getValue();
   try {
     return ok(new AST(parse(newText)));
   } catch (exception) {

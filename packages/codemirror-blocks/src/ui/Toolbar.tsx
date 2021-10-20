@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react";
+import React, { useState } from "react";
 import classNames from "classnames";
 import PrimitiveList from "./PrimitiveList";
 import { Primitive, PrimitiveGroup } from "../parsers/primitives";
@@ -29,7 +29,7 @@ const Toolbar = (props: Props) => {
 
   // Set selectedPrimitive state, depending on whether we go up or down
   const move = (dir: "Up" | "Down") => {
-    let primitives = getPrimitives();
+    const primitives = getPrimitives();
     if (!selectedPrimitive || primitives.length == 0) {
       return; // Nothing to select. Bail.
     }

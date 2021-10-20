@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { skipWhile, getNodeContainingBiased } from "../../utils";
-import { AST, ASTNode, Pos } from "../../ast";
+import { AST, ASTNode } from "../../ast";
 import { Searcher } from "./Searcher";
 
 function getAllNodeTypes(ast: AST) {

@@ -26,7 +26,6 @@ describe("when testing CM apis,", () => {
   const currentFocusNId = () => cmb.getFocusedNode()!.nid;
   const roots = () => cmb.getAst().rootNodes;
   const currentFirstRoot = () => roots()[0];
-  const currentSecondRoot = () => roots()[1];
   const currentThirdRoot = () => roots()[2];
 
   beforeEach(async () => {

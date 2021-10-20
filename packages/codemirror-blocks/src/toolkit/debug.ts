@@ -35,6 +35,7 @@ export function createDebuggingInterface(language: Language, value: string) {
 </div>
   `;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const container = document.getElementById("cmb-editor")!;
   // grab the load-from-log button
   const loadLogButton = document.getElementById(
@@ -64,12 +65,12 @@ export function createDebuggingInterface(language: Language, value: string) {
   let currentAction = 0;
 
   downloadLogButton.onclick = () => {
-    let json: JSONLog = {
+    const json: JSONLog = {
       history: getReducerActivities(),
       exception: "DUMMY",
     };
 
-    var element = document.createElement("a");
+    const element = document.createElement("a");
     element.setAttribute(
       "href",
       "data:text/plain;charset=utf-8," +
@@ -89,8 +90,8 @@ export function createDebuggingInterface(language: Language, value: string) {
     if (!files) {
       throw new Error("loadLogButton should be a file input");
     }
-    let file = files[0];
-    let reader = new FileReader();
+    const file = files[0];
+    const reader = new FileReader();
     reader.readAsText(file, "UTF-8");
     // parse the string, draw the actions, and set up counters
     // and UI for replaying them
@@ -115,7 +116,7 @@ export function createDebuggingInterface(language: Language, value: string) {
       resetUniqueIdGenerator();
       history = log.history;
       history.forEach((entry) => {
-        let LI = document.createElement("LI");
+        const LI = document.createElement("LI");
         LI.className = "logEntry";
         LI.innerHTML = JSON.stringify(entry);
         document.getElementById("entries")?.appendChild(LI);
@@ -131,7 +132,7 @@ export function createDebuggingInterface(language: Language, value: string) {
   nextButton.onclick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    let entries = [
+    const entries = [
       ...(document.getElementById("entries")?.children ?? []),
     ] as HTMLElement[];
     entries.forEach((c) => (c.style.background = "none"));

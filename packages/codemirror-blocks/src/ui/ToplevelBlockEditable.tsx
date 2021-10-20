@@ -50,12 +50,12 @@ const ToplevelBlockEditable = (props: Props) => {
     // right away, making it immediately focusable/selectable.
     // SHARED.editor.endOperation();
     return { container, marker };
-  }, []);
+  }, [props.editor, start, end]);
   // make sure to clear the marker from codemirror
   // when the component unmounts
   useEffect(() => {
     return () => marker.clear();
-  }, []);
+  }, [marker]);
 
   return ReactDOM.createPortal(
     <NodeEditable
@@ -64,11 +64,11 @@ const ToplevelBlockEditable = (props: Props) => {
       value={value}
       onChange={onChange}
       contentEditableProps={{
-        tabIndex: "-1",
+        tabIndex: -1,
         role: "text box",
-        "aria-setsize": "1",
-        "aria-posinset": "1",
-        "aria-level": "1",
+        "aria-setsize": 1,
+        "aria-posinset": 1,
+        "aria-level": 1,
       }}
       isInsertion={true}
       extraClasses={[]}

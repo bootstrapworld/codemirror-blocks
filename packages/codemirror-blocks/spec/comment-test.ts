@@ -2,37 +2,13 @@ import { ASTNode } from "../src/ast";
 import { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
 
-/*eslint no-unused-vars: "off"*/
 import {
-  mac,
-  cmd_ctrl,
   wait,
   teardown,
   click,
-  mouseDown,
-  mouseenter,
-  mouseover,
-  mouseleave,
-  doubleClick,
-  blur,
-  paste,
-  cut,
-  dragstart,
-  dragover,
-  drop,
-  dragenter,
-  dragenterSeq,
-  dragend,
-  dragleave,
-  keyDown,
-  keyPress,
-  insertText,
   finishRender,
   mountCMB,
 } from "../src/toolkit/test-utils";
-import { debugLog } from "../src/utils";
-
-debugLog("Doing comment-test.js");
 
 const QUARANTINE_DELAY = 2000;
 
@@ -48,8 +24,6 @@ describe("When editing and moving commented nodes", function () {
 
   describe("inserting comments", function () {
     let expr0!: ASTNode;
-    let expr1!: ASTNode;
-    let expr2!: ASTNode;
 
     beforeEach(async function () {
       cmb.setValue(`
@@ -59,10 +33,8 @@ describe("When editing and moving commented nodes", function () {
 2`);
       cmb.setBlockMode(true);
       await finishRender();
-      let ast = cmb.getAst();
+      const ast = cmb.getAst();
       expr0 = ast.rootNodes[0];
-      expr1 = ast.rootNodes[1];
-      expr2 = ast.rootNodes[2];
     });
 
     it("when the mode is toggled, it should reformat all comments as block comments", async function () {

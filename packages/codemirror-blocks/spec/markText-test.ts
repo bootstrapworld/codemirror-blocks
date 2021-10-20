@@ -13,7 +13,6 @@ describe("The CodeMirrorBlocks Class", function () {
     let cmb!: API;
     let ast!: AST;
     let literal1!: ASTNode;
-    let literal2!: ASTNode;
     let expression!: ASTNode & { args: ASTNode[] };
     beforeEach(async function () {
       cmb = await mountCMB(wescheme);
@@ -22,7 +21,6 @@ describe("The CodeMirrorBlocks Class", function () {
       cmb.getAllMarks().forEach((m) => m.clear());
       ast = cmb.getAst();
       literal1 = ast.rootNodes[0];
-      literal2 = ast.rootNodes[1];
       expression = ast.rootNodes[2] as ASTNode & { args: ASTNode[] };
     });
 
@@ -45,7 +43,7 @@ describe("The CodeMirrorBlocks Class", function () {
     });
 
     it("it should allow you to set a className on a child node", function () {
-      let child = expression.args[2];
+      const child = expression.args[2];
       cmb.markText(child.from, child.to, { className: "error" });
       expect(child.element!.className).toMatch(/error/);
       expect(expression.element!.className).not.toMatch(/error/);
@@ -76,12 +74,12 @@ describe("The CodeMirrorBlocks Class", function () {
       });
 
       it("should return marks with findMarksAt", function () {
-        let marks = cmb.findMarksAt(literal1.from);
+        const marks = cmb.findMarksAt(literal1.from);
         expect(marks.length).toBe(1);
       });
 
       it("should return all marks with getAllMarks", function () {
-        let marks = cmb.getAllMarks();
+        const marks = cmb.getAllMarks();
         expect(marks.length).toBe(2);
       });
     });

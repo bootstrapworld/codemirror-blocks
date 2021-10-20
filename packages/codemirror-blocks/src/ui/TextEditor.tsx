@@ -16,6 +16,7 @@ const buildAPI = () => {
   // show which APIs are unsupported
   unsupportedAPIs.forEach(
     (f) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ((api as any)[f] = () => {
         throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
       })
@@ -24,7 +25,7 @@ const buildAPI = () => {
 };
 
 type Props = {
-  codemirrorOptions?: {};
+  codemirrorOptions?: CodeMirror.EditorConfiguration;
   value: string;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: (ed: CodeMirrorFacade, api: API, ast: AST | undefined) => void;

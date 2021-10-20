@@ -37,13 +37,13 @@ export function paste(
   pastedString: string,
   node: ElementLike = getActiveElementOrThrow()
 ) {
-  var dT = null;
+  let dT = null;
   try {
     dT = new DataTransfer();
   } catch (e) {
     console.error("ERR in paste()");
   }
-  var pasteEvent = new ClipboardEvent("paste", { clipboardData: dT });
+  const pasteEvent = new ClipboardEvent("paste", { clipboardData: dT });
   pasteEvent.clipboardData?.setData("text/plain", pastedString);
   fireEvent(toElement(node), pasteEvent);
   //userEvent.paste(toElement(node), pastedString);
@@ -59,12 +59,12 @@ function createBubbledEvent(type: string, props = {}) {
 }
 
 export function drop() {
-  let ans = createBubbledEvent("drop");
+  const ans = createBubbledEvent("drop");
   return ans;
 }
 
 export function dragstart() {
-  let ans = createBubbledEvent("dragstart");
+  const ans = createBubbledEvent("dragstart");
   return ans;
 }
 
@@ -102,7 +102,7 @@ export function dragend() {
   return createBubbledEvent("dragend");
 }
 
-class CustomKeydownEvent extends CustomEvent<any> {
+class CustomKeydownEvent extends CustomEvent<unknown> {
   which: number;
   keyCode: number;
   constructor(key: string) {
@@ -121,7 +121,7 @@ export function keyDown(
   node = toElement(node);
   // NOTE(Emmanuel): if it's a textarea, use native browser events
   if (node.nodeName == "TEXTAREA") {
-    let event = new CustomKeydownEvent(key);
+    const event = new CustomKeydownEvent(key);
     Object.assign(event, props);
     fireEvent(node, event);
   } else {
@@ -153,9 +153,12 @@ export function insertText(text: string) {
 
 // Given a key name (like "Enter"), fill out the props properties that a key
 // event should have (like `.keyCode=13`).
-function makeKeyEvent<T extends {}>(key: string, props: T) {
-  let keyCode = getKeyCode(key);
-  let eventProps = {
+function makeKeyEvent<T extends Record<string, unknown>>(
+  key: string,
+  props: T
+) {
+  const keyCode = getKeyCode(key);
+  const eventProps = {
     which: keyCode, // deprecated
     keyCode: keyCode, // deprecated
     key: key, // Good!

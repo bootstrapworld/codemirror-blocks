@@ -218,7 +218,9 @@ function ToggleEditor(props: ToggleEditorProps) {
       }
     };
 
-  const eventHandlersRef = useRef<Record<string, Function[]>>({});
+  const eventHandlersRef = useRef<
+    Record<string, ((...args: unknown[]) => void)[]>
+  >({});
   /**
    * @internal
    * Populate a base object with mode-agnostic methods we wish to expose
@@ -234,7 +236,8 @@ function ToggleEditor(props: ToggleEditorProps) {
       // editor object when this code executes, so we have to do the lookup inside the
       // wrapper function. Hopefully by the time the wrapper function is called,
       // the function it proxies to has been added to the editor instance.
-      base[funcName] = (...args: any[]) =>
+      base[funcName] = (...args: unknown[]) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (ed.codemirror as any)[funcName](...args);
     });
 
@@ -281,6 +284,7 @@ function ToggleEditor(props: ToggleEditorProps) {
     // Rebuild the API and assign re-events
     props.onMount({ ...buildAPI(editor), ...api });
     for (const [type, handlers] of Object.entries(eventHandlersRef.current)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       handlers.forEach((h) => editor.codemirror.on(type as any, h));
     }
     // save the editor, and announce completed mode switch
@@ -297,7 +301,7 @@ function ToggleEditor(props: ToggleEditorProps) {
     const pending = setAfterDOMUpdate(() => {
       recordedMarks.forEach(
         (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
-          let node = ast.getNodeByNId(k);
+          const node = ast.getNodeByNId(k);
           if (node) {
             editor.codemirror.markText(node.from, node.to, m.options);
           }
@@ -325,7 +329,13 @@ function ToggleEditor(props: ToggleEditorProps) {
         {blockMode ? <BugButton /> : null}
         <ToggleButton
           setBlockMode={
-            editor ? handleToggle(editor, props.language) : () => {}
+            editor
+              ? handleToggle(editor, props.language)
+              : () => {
+                  console.warn(
+                    "Attempting to set block mode before eidtor available"
+                  );
+                }
           }
           blockMode={blockMode}
         />

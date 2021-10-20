@@ -91,9 +91,9 @@ export const insert =
  */
 function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
   nodes.sort((a, b) => poscmp(a.from, b.from)); // speak first-to-last
-  let annt =
-    editWord + " " + nodes.map((node) => node.shortDescription()).join(" and ");
-  return annt;
+  return (
+    editWord + " " + nodes.map((node) => node.shortDescription()).join(" and ")
+  );
 }
 
 // Delete the given nodes.
@@ -140,8 +140,8 @@ export function copy(
   }
   let text = "";
   let postfix = "";
-  for (let node of nodes) {
-    let prefix = node.options && node.options.comment ? "\n" : postfix;
+  for (const node of nodes) {
+    const prefix = node.options && node.options.comment ? "\n" : postfix;
     text = text + prefix + node.toString();
     postfix = node.options && node.options.comment ? "\n" : " ";
   }
@@ -180,7 +180,8 @@ export function useDropAction() {
     checkTarget(target);
     const { id: srcId, content: srcContent } = src;
     const state = store.getState();
-    let { ast, collapsedList } = state; // get the AST, and which nodes are collapsed
+    const { collapsedList } = state;
+    let { ast } = state; // get the AST, and which nodes are collapsed
     const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
     const content = srcNode ? srcNode.toString() : srcContent;
 
@@ -189,7 +190,7 @@ export function useDropAction() {
       return;
     }
 
-    let edits = [];
+    const edits = [];
     let droppedHash: unknown;
 
     // Assuming it did not come from the toolbar...
@@ -236,7 +237,7 @@ export function activateByNid(
 ): AppThunk {
   return (dispatch, getState) => {
     options = { ...options, allowMove: true, record: true };
-    let { ast, focusId, collapsedList } = getState();
+    const { ast, focusId, collapsedList } = getState();
 
     // If nid is null, try to get it from the focusId
     if (nid === null && focusId) {
@@ -355,7 +356,7 @@ export const setSelections =
   ): AppThunk =>
   (dispatch, getState) => {
     const { ast } = getState();
-    let tmpCM = getTempCM(ed);
+    const tmpCM = getTempCM(ed);
     tmpCM.setSelections(ranges, primary, options);
     const textRanges: {
       anchor: CodeMirror.Position;
@@ -397,8 +398,8 @@ export const extendSelections =
     opts?: SelectionOptions,
     to?: CodeMirror.Position
   ): AppThunk =>
-  (dispatch, getState) => {
-    let tmpCM: CodeMirror.Editor = getTempCM(ed);
+  (dispatch) => {
+    const tmpCM: CodeMirror.Editor = getTempCM(ed);
     tmpCM.setSelections(listSelections(ed, dispatch));
     if (to) {
       tmpCM.extendSelections(heads, opts);
@@ -419,8 +420,8 @@ export const replaceSelections =
     replacements: string[],
     select?: "around" | "start"
   ): AppThunk =>
-  (dispatch, getState) => {
-    let tmpCM: CodeMirror.Editor = getTempCM(ed);
+  (dispatch) => {
+    const tmpCM: CodeMirror.Editor = getTempCM(ed);
     tmpCM.setSelections(listSelections(ed, dispatch));
     tmpCM.replaceSelections(replacements, select);
     ed.setValue(tmpCM.getValue());
@@ -441,7 +442,7 @@ export const replaceSelections =
  */
 export const listSelections = (ed: CodeMirrorFacade, dispatch: AppDispatch) => {
   const { selections, ast } = dispatch((_, getState) => getState());
-  let tmpCM = getTempCM(ed);
+  const tmpCM = getTempCM(ed);
   // write all the ranges for all selected nodes
   selections.forEach((id) => {
     const node = ast.getNodeByIdOrThrow(id);

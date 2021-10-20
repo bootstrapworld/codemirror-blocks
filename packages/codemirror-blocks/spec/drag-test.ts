@@ -28,18 +28,14 @@ describe("Drag and drop", () => {
   afterEach(teardown);
 
   describe("when drag existing node and drop on existing node,", () => {
-    let funcSymbol: ASTNode;
     let firstArg: ASTNode;
     let secondArg: ASTNode;
-    let thirdArg: ASTNode;
     let dropTargetEls: NodeListOf<Element>;
 
     const retrieve = () => {
       const funcApp = cmb.getAst().rootNodes[0] as FunctionApp;
-      funcSymbol = funcApp.func;
       firstArg = funcApp.args[0];
       secondArg = funcApp.args[1];
-      thirdArg = funcApp.args[2];
       dropTargetEls = cmb
         .getAst()
         .rootNodes[0].element!.querySelectorAll(".blocks-drop-target");
@@ -53,7 +49,7 @@ describe("Drag and drop", () => {
 
     it("should override nodes 1", () => {
       expect(secondArg.element!.textContent).toBe("2");
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(firstArg.element!, dragEvent);
       fireEvent(secondArg.element!, drop());
       retrieve();
@@ -61,43 +57,43 @@ describe("Drag and drop", () => {
     });
 
     it("should set the right css class on dragenter 2", () => {
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(firstArg.element!, dragEvent);
-      let elt = dropTargetEls[3];
+      const elt = dropTargetEls[3];
       expect(elt.classList).toContain("blocks-drop-target");
       dragenterSeq(elt);
       expect(elt.classList).toContain("blocks-over-target");
     });
 
     it("should set the right css class on dragenter 2’", () => {
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(firstArg.element!, dragEvent);
-      let elt = secondArg;
+      const elt = secondArg;
       dragenterSeq(elt);
     });
 
     it("should set the right css class on dragleave 3", () => {
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(firstArg.element!, dragEvent);
-      let elt = dropTargetEls[3];
+      const elt = dropTargetEls[3];
       dragenter();
       dragleave();
       expect(elt.classList).not.toContain("blocks-over-target");
     });
 
     it("should do nothing when dragging over a non-drop target 4", () => {
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(firstArg.element!, dragEvent);
-      let nonDT = cmb.getAst().rootNodes[0].element!;
+      const nonDT = cmb.getAst().rootNodes[0].element!;
       dragenterSeq(nonDT);
       expect(secondArg.element!.classList).not.toContain("blocks-over-target");
     });
 
     it("should do nothing when dropping onto a non-drop target 5", () => {
-      let initialValue = cmb.getValue();
-      let dragEvent = dragstart();
+      const initialValue = cmb.getValue();
+      const dragEvent = dragstart();
       fireEvent(firstArg.element!, dragEvent);
-      let nonDT = cmb.getAst().rootNodes[0].element!;
+      const nonDT = cmb.getAst().rootNodes[0].element!;
       fireEvent(nonDT, drop());
       expect(cmb.getValue()).toBe(initialValue);
     });
@@ -105,14 +101,14 @@ describe("Drag and drop", () => {
     it("should update the text on drop to a later point in the file 6", () => {
       expect(dropTargetEls[3].classList).toContain("blocks-drop-target");
       // drag the first arg to the drop target
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(firstArg.element!, dragEvent);
       fireEvent(dropTargetEls[3], drop());
       expect(cmb.getValue().replace(/\s+/, " ")).toBe("(+ 2 3 1)");
     });
 
     it("should update the text on drop to an earlier point in the file 7", () => {
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(secondArg.element!, dragEvent);
       fireEvent(dropTargetEls[0], drop());
       expect(cmb.getValue().replace("  ", " ")).toBe("(+ 2 1 3)");
@@ -136,7 +132,7 @@ describe("Drag and drop", () => {
     */
 
     it("should replace a literal that you drag onto 9", () => {
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(firstArg.element!, dragEvent);
       fireEvent(secondArg.element!, drop());
       expect(cmb.getValue().replace(/\s+/, " ")).toBe("(+ 1 3)");
@@ -182,7 +178,7 @@ describe("Drag and drop", () => {
       await finishRender();
       let firstRoot!: ASTNode;
       let lastDropTarget!: Element;
-      let retrieve = () => {
+      const retrieve = () => {
         firstRoot = cmb.getAst().rootNodes[0];
         lastDropTarget = document.querySelectorAll(".blocks-drop-target")[4];
       };
@@ -192,13 +188,13 @@ describe("Drag and drop", () => {
       keyDown("ArrowLeft", {}, firstRoot); // collapse it
       expect(firstRoot.element!.getAttribute("aria-expanded")).toBe("false");
       expect(firstRoot.nid).toBe(0);
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(firstRoot.element!, dragEvent); // drag to the last droptarget
       fireEvent(lastDropTarget, drop());
       await finishRender();
       retrieve();
-      let newFirstRoot = cmb.getAst().rootNodes[0] as FunctionApp;
-      let newLastChild = newFirstRoot.args[2];
+      const newFirstRoot = cmb.getAst().rootNodes[0] as FunctionApp;
+      const newLastChild = newFirstRoot.args[2];
       expect(cmb.getValue()).toBe("\n(+ 1 2 (collapse me))");
       expect(newFirstRoot.element!.getAttribute("aria-expanded")).toBe("true");
       expect(newLastChild.element!.getAttribute("aria-expanded")).toBe("false");
@@ -228,7 +224,7 @@ describe("Drag and drop", () => {
 
     // TODO(pcardune) reenable
     xit("regression test for unstable block IDs", async () => {
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(source.element!, dragEvent); // drag to the last droptarget
       fireEvent(target1, drop());
       await finishRender();
@@ -236,7 +232,7 @@ describe("Drag and drop", () => {
 
     // TODO(pcardune) reenable
     xit("regression test for empty identifierLists returning a null location", async () => {
-      let dragEvent = dragstart();
+      const dragEvent = dragstart();
       fireEvent(source.element!, dragEvent); // drag to the last droptarget
       fireEvent(target2, drop());
       await finishRender();

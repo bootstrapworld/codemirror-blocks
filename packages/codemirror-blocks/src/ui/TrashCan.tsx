@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import { ItemTypes } from "../dnd";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
@@ -7,7 +7,6 @@ import { edit_delete, performEdits } from "../edits/performEdits";
 import { AppDispatch } from "../store";
 import { CMBEditor } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
-import { AppContext } from "../components/Context";
 require("./TrashCan.less");
 
 const TrashCan = (props: { editor: CMBEditor; language: Language }) => {

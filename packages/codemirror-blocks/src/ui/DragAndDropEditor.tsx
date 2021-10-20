@@ -89,14 +89,22 @@ const DragAndDropEditor = (props: Props) => {
         {...props}
         editorDidMount={onEditorMounted}
         onCursorActivity={() =>
-          props.onCursorActivity && props.onCursorActivity(editorRef.current!)
+          editorRef.current &&
+          props.onCursorActivity &&
+          props.onCursorActivity(editorRef.current)
         }
-        onFocus={() => props.onFocus && props.onFocus(editorRef.current!)}
+        onFocus={() =>
+          editorRef.current && props.onFocus && props.onFocus(editorRef.current)
+        }
         onPaste={(ed, e) =>
-          props.onPaste && props.onPaste(editorRef.current!, e)
+          editorRef.current &&
+          props.onPaste &&
+          props.onPaste(editorRef.current, e)
         }
         onKeyDown={(ed, e) =>
-          props.onKeyDown && props.onKeyDown(editorRef.current!, e)
+          editorRef.current &&
+          props.onKeyDown &&
+          props.onKeyDown(editorRef.current, e)
         }
       />
       {/* 

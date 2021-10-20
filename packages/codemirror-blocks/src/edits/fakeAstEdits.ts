@@ -66,7 +66,7 @@ export class FakeAstInsertion {
     const list = spec.getField(parent);
     // ideally, we'd use for(i in list) {...} here, but some badly-behaved
     // IDEs monkeypatch the Array prototype, causing that to fail
-    for (var i = 0; i < list.length; i++) {
+    for (let i = 0; i < list.length; i++) {
       if (poscmp(pos, list[i].srcRange().from) <= 0) {
         this.index = i;
         return;
@@ -187,11 +187,11 @@ class FakeInsertNode extends ASTNode {
   }
 
   pretty() {
-    let lines = this.text.split("\n");
+    const lines = this.text.split("\n");
     return P.vertArray(lines.map(P.txt));
   }
 
-  render(_props: {}) {
+  render(_props: { node: ASTNode }) {
     warn("fakeAstEdits", "FakeInsertNode didn't expect to be rendered!");
   }
 }
@@ -210,7 +210,7 @@ class FakeBlankNode extends ASTNode {
     return P.txt("...");
   }
 
-  render(_props: {}) {
+  render(_props: { node: ASTNode }) {
     warn("fakeAstEdits", "FakeBlankNode didn't expect to be rendered!");
   }
 }
@@ -243,7 +243,7 @@ export class ClonedASTNode extends ASTNode {
     this.spec = oldNode.spec;
     this.pretty = oldNode.pretty;
   }
-  render(_props: {}) {
+  render(_props: { node: ASTNode }) {
     warn("fakeAstEdits", "ClonedASTNode didn't expect to be rendered!");
   }
   pretty(): P.Doc {

@@ -1,7 +1,7 @@
 import ExampleParser from "./ExampleParser";
 import { addLanguage } from "../../languages/";
 
-let parser = new ExampleParser();
+const parser = new ExampleParser();
 
 require("./style.less");
 export default addLanguage({

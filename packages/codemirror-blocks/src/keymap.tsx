@@ -140,7 +140,7 @@ const punctuation: KeyMap = {
 // verbalizes punctuation and key names
 function prounounce(keys: string[]) {
   const match = new RegExp("Esc|Ctrl|Cmd|Alt|[.,/#!$%^&*;:{}=_`~()]", "gi");
-  let ws = keys.map((k) => k.replace(match, (m) => punctuation[m]));
+  const ws = keys.map((k) => k.replace(match, (m) => punctuation[m]));
   return ws.length < 3
     ? ws.join(" or ")
     : ws
@@ -208,7 +208,7 @@ const commandMap: {
 } = {
   "Shift Focus": (env, e) => {
     e.preventDefault();
-    env.appHelpers.focusToolbar!();
+    env.appHelpers.focusToolbar && env.appHelpers.focusToolbar();
   },
   // NAVIGATION
   "Previous Block": (env, e) => (dispatch, getState) => {
@@ -238,7 +238,7 @@ const commandMap: {
     e.preventDefault();
     if (env.isNodeEnv) {
       const { ast } = getState();
-      let next = env.fastSkip((node) => ast.getNodeAfter(node) || undefined);
+      const next = env.fastSkip((node) => ast.getNodeAfter(node) || undefined);
       if (next) {
         return dispatch(activateByNid(env.editor, next.nid));
       } else {
@@ -335,8 +335,8 @@ const commandMap: {
     if (!ast.getNodeParent(env.node) && (env.isCollapsed || !env.expandable)) {
       playSound(BEEP);
     } else {
-      let root = getRoot(ast, env.node);
-      let descendants = [...root.descendants()];
+      const root = getRoot(ast, env.node);
+      const descendants = [...root.descendants()];
       descendants.forEach(
         (d) => env.isNodeEnv && dispatch({ type: "COLLAPSE", id: d.id })
       );
@@ -348,7 +348,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    let root = getRoot(getState().ast, env.node);
+    const root = getRoot(getState().ast, env.node);
     [...root.descendants()].forEach(
       (d) => env.isNodeEnv && dispatch({ type: "UNCOLLAPSE", id: d.id })
     );
@@ -430,7 +430,7 @@ const commandMap: {
     } else {
       const isContained = (id: string) => ast.isAncestor(node.id, id);
       const doesContain = (id: string) => ast.isAncestor(id, node.id);
-      let [removed, newSelections] = partition(selections, isContained);
+      const [removed, newSelections] = partition(selections, isContained);
       for (const _r of removed) {
         // TODO(Emmanuel): announce removal
       }
@@ -439,10 +439,9 @@ const commandMap: {
         say("This node is already has a selected ancestor");
       } else {
         // TODO(Emmanuel): announce addition
-        newSelections = newSelections.concat(descendantIds(node));
         dispatch({
           type: "SET_SELECTIONS",
-          selections: newSelections,
+          selections: newSelections.concat(descendantIds(node)),
         });
       }
     }

@@ -2,7 +2,7 @@ import { addLanguage, removeLanguage } from "../../src/languages";
 import { Primitive, PrimitiveGroup } from "../../src/parsers/primitives";
 
 describe("The primitives module", () => {
-  const parse = (code: string) => [];
+  const parse = (_code: string) => [];
   beforeEach(() => {
     addLanguage({
       id: "my-lang",
@@ -17,7 +17,7 @@ describe("The primitives module", () => {
   describe("The Primitive Class's", () => {
     describe("constructor,", () => {
       it("should take a language id and a name", () => {
-        let primitive = new Primitive("my-lang", "add");
+        const primitive = new Primitive("my-lang", "add");
         expect(primitive.languageId).toBe("my-lang");
         expect(primitive.name).toBe("add");
 
@@ -26,7 +26,7 @@ describe("The primitives module", () => {
       });
 
       it("should optionally take a config object with argumentTypes and returnType", () => {
-        let primitive = new Primitive("my-lang", "add", {
+        const primitive = new Primitive("my-lang", "add", {
           argumentTypes: ["int", "int"],
           returnType: "int",
         });
@@ -35,7 +35,7 @@ describe("The primitives module", () => {
       });
 
       it("should also have a fromConfig static method for construction", () => {
-        let primitive = Primitive.fromConfig("my-lang", {
+        const primitive = Primitive.fromConfig("my-lang", {
           name: "add",
           argumentTypes: ["int", "int"],
           returnType: "int",
@@ -125,14 +125,14 @@ describe("The primitives module", () => {
 
     describe("filter method", () => {
       it("should filter out the primitives that do not match the search string", () => {
-        let filteredGroup = group.filter("add");
+        const filteredGroup = group.filter("add");
         expect(filteredGroup.name).toEqual(group.name);
         expect(filteredGroup.primitives.length).toEqual(1);
         expect(filteredGroup.primitives[0].name).toBe("add");
       });
 
       it("should include groups whose primitives matches the search string", () => {
-        let filteredGroup = group.filter("con");
+        const filteredGroup = group.filter("con");
         expect(filteredGroup.primitives.length).toEqual(1);
         const subGroup = filteredGroup.primitives[0] as PrimitiveGroup;
         expect(subGroup.name).toBe("String Manipulation");
@@ -141,7 +141,7 @@ describe("The primitives module", () => {
       });
 
       it("should include groups whose name matches the search string", () => {
-        let filteredGroup = group.filter("str");
+        const filteredGroup = group.filter("str");
         expect(filteredGroup.primitives.length).toEqual(1);
         const subGroup = filteredGroup.primitives[0] as PrimitiveGroup;
         expect(subGroup.name).toBe("String Manipulation");
@@ -155,7 +155,7 @@ describe("The primitives module", () => {
 
     describe("flatPrimitivesIter", () => {
       it("should return a left recursive iterator over the Primitive instances in the group", () => {
-        let onlyPrimitives = [...group.flatPrimitivesIter()];
+        const onlyPrimitives = [...group.flatPrimitivesIter()];
         expect(onlyPrimitives.map((p) => p.name)).toEqual([
           "add",
           "subtract",

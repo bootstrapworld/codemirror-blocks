@@ -96,7 +96,7 @@
     "build-watch": "npm run build -- --watch",
     "build-types": "npx tsc",
     "build-types-watch": "npx tsc --watch",
-    "lint": "eslint --ignore-path .gitignore . --ext .js,.jsx,.ts,.tsx || true",
+    "lint": "eslint --ignore-path ../../.gitignore . --ext .js,.jsx,.ts,.tsx",
     "upgrade-interactive": "npm-check --update"
   },
   "author": "The Bootstrap Team",

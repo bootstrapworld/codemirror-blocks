@@ -1,8 +1,8 @@
-import React, { Component, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
-import { connect, ConnectedProps, useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   activateByNid,
   setCursor,
@@ -19,7 +19,7 @@ import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { SelectionOptions } from "codemirror";
-import type { Options, API, Language } from "../CodeMirrorBlocks";
+import type { Options, Language } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
 import type { Activity, AppAction, RootState, Quarantine } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
@@ -98,6 +98,7 @@ export const buildAPI = (
   editor: CodeMirrorFacade,
   dispatch: AppDispatch
 ): BuiltAPI => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const withState = <F extends (state: RootState) => any>(func: F) =>
     dispatch((_, getState) => func(getState()));
 
@@ -124,22 +125,22 @@ export const buildAPI = (
           "API Error"
         );
       }
-      let supportedOptions = ["css", "className", "title"];
-      for (let opt in opts) {
+      const supportedOptions = ["css", "className", "title"];
+      for (const opt in opts) {
         if (!supportedOptions.includes(opt))
           throw new BlockError(
             `markText: option "${opt}" is not supported in block mode`,
             `API Error`
           );
       }
-      let mark = editor.codemirror.markText(from, to, opts); // keep CM in sync
+      const mark = editor.codemirror.markText(from, to, opts); // keep CM in sync
       const _clear = mark.clear.bind(mark);
       mark.clear = () => {
         _clear();
         dispatch({ type: "CLEAR_MARK", id: node.id });
       };
       mark.find = () => {
-        let { from, to } = ast.getNodeByIdOrThrow(node.id);
+        const { from, to } = ast.getNodeByIdOrThrow(node.id);
         return { from, to };
       };
       mark.options = opts;
@@ -228,10 +229,10 @@ export const buildAPI = (
       }
     },
     // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
-    setCursor: (curOrLine, ch, options) =>
+    setCursor: (curOrLine, ch, _options) =>
       withState(({ ast }) => {
         ch = ch ?? 0;
-        let cur =
+        const cur =
           typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
         const node = ast.getNodeContaining(cur);
         if (node) {
@@ -286,6 +287,7 @@ export const buildAPI = (
   // show which APIs are unsupported
   unsupportedAPIs.forEach(
     (f) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ((api as any)[f] = () => {
         throw new BlockError(
           `The CM API '${f}' is not supported in the block editor`,
@@ -313,9 +315,10 @@ export type BlockEditorProps = {
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language, passedAST } = props;
   const dispatch: AppDispatch = useDispatch();
-  const { ast, cur, quarantine } = useSelector(
-    ({ ast, cur, quarantine }: RootState) => ({ ast, cur, quarantine })
-  );
+  const { ast, quarantine } = useSelector(({ ast, quarantine }: RootState) => ({
+    ast,
+    quarantine,
+  }));
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
 
   // only refresh if there is no active quarantine
@@ -331,7 +334,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
    * Filter/Tweak logged history actions before dispatching them to
    * be executed.
    */
-  const executeAction = (activity: Activity) => {
+  const _executeAction = (activity: Activity) => {
     // ignore certain logged actions that are already
     // handled by the BlockEditor constructor
     const ignoreActions = ["RESET_STORE_FOR_TESTING"];
@@ -352,8 +355,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     // the action to use the resulting AST, and delete code
     if (activity.type == "SET_AST") {
       getEditorOrThrow().setValue(activity.code);
-      const { code, ...toCopy } = activity;
-      action = { ...toCopy, ast: ast };
+      action = { ...activity, ast: ast };
     }
     // convert nid to node id, and use activate to generate the action
     else if (activity.type == "SET_FOCUS") {
@@ -443,7 +445,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         // This (valid) change is coming from outside of the editor, but we
         // don't know anything else about it. Apply the change, and set the focusHint
         // to the top of the tree (-1)
-        let annt = change.origin || "change";
+        const annt = change.origin || "change";
         getState().undoableAction = annt; //?
         dispatch(
           commitChanges(
@@ -559,7 +561,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
    * If there are selections, pass null. Otherwise pass the cursor.
    */
   const handleTopLevelCursorActivity = (editor: CodeMirrorFacade) => {
-    let cur =
+    const cur =
       editor.codemirror.getSelection().length > 0
         ? null
         : editor.codemirror.getCursor();
