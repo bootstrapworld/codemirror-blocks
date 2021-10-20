@@ -12,7 +12,6 @@ require("./TrashCan.less");
 
 const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { search } = useContext(AppContext);
 
   const { ast } = useSelector(({ ast }: RootState) => ({ ast }));
   const [{ isOver }, drop] = useDrop(
@@ -21,12 +20,9 @@ const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
       drop: (item: { id: string }) => {
         const srcNode = item.id ? ast.getNodeById(item.id) : null; // null if dragged from toolbar
         if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
-        let edits = [edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id))];
-        if (!search) {
-          throw new Error(`Can't perform edits before search has mounted`);
-        }
+        const edits = [edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id))];
         return dispatch(
-          performEdits(search, edits, props.language.parse, props.editor)
+          performEdits(edits, props.language.parse, props.editor)
         );
       },
       collect: (monitor) => ({ isOver: monitor.isOver() }),

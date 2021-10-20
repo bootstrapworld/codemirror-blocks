@@ -96,8 +96,7 @@ export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
  */
 export const buildAPI = (
   editor: CodeMirrorFacade,
-  dispatch: AppDispatch,
-  search: Search
+  dispatch: AppDispatch
 ): BuiltAPI => {
   const withState = <F extends (state: RootState) => any>(func: F) =>
     dispatch((_, getState) => func(getState()));
@@ -203,13 +202,12 @@ export const buildAPI = (
         )
       ),
     replaceSelections: (rStrings, select?: "around" | "start") =>
-      dispatch(replaceSelections(editor, rStrings, search, select)),
+      dispatch(replaceSelections(editor, rStrings, select)),
     replaceSelection: (rString, select?: "around" | "start") =>
       dispatch(
         replaceSelections(
           editor,
           Array(listSelections(editor, dispatch).length).fill(rString),
-          search,
           select
         )
       ),
@@ -238,13 +236,13 @@ export const buildAPI = (
         const node = ast.getNodeContaining(cur);
         if (node) {
           dispatch(
-            activateByNid(editor, search, node.nid, {
+            activateByNid(editor, node.nid, {
               record: false,
               allowMove: true,
             })
           );
         }
-        dispatch(setCursor(editor, cur, search));
+        dispatch(setCursor(editor, cur));
       }),
     // As long as widget isn't defined, we're good to go
     setBookmark: (pos, opts) => {
@@ -297,18 +295,6 @@ export const buildAPI = (
   );
   return api;
 };
-type $TSFixMe = any;
-
-export type Search = {
-  search: (
-    forward: boolean,
-    cmbState: RootState,
-    overrideCur?: null | Pos
-  ) => ASTNode | null;
-  onSearch: (done: () => void, searchForward: () => void) => void;
-  setCursor: (cursor: Pos) => void;
-  setCM: (editor: ReadonlyCMBEditor) => void;
-};
 
 export type BlockEditorProps = {
   value: string;
@@ -318,23 +304,13 @@ export type BlockEditorProps = {
    * language being used
    */
   language: Language;
-  search?: Search;
   keyDownHelpers: AppHelpers;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
   passedAST: AST;
 };
 
-const BlockEditor = ({
-  options = {},
-  search = {
-    search: () => null,
-    onSearch: () => {},
-    setCursor: () => {},
-    setCM: () => {},
-  },
-  ...props
-}: BlockEditorProps) => {
+const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language, passedAST } = props;
   const dispatch: AppDispatch = useDispatch();
   const { ast, cur, quarantine } = useSelector(
@@ -344,7 +320,7 @@ const BlockEditor = ({
 
   // only refresh if there is no active quarantine
   useEffect(() => {
-    if (!!quarantine) {
+    if (quarantine) {
       editor?.refresh();
     }
   });
@@ -382,7 +358,7 @@ const BlockEditor = ({
     // convert nid to node id, and use activate to generate the action
     else if (activity.type == "SET_FOCUS") {
       dispatch(
-        activateByNid(getEditorOrThrow(), search, activity.nid, {
+        activateByNid(getEditorOrThrow(), activity.nid, {
           allowMove: true,
         })
       );
@@ -453,7 +429,6 @@ const BlockEditor = ({
             nextNId === null ? null : newAST.getNodeByNId(nextNId);
           dispatch(
             commitChanges(
-              search,
               [makeChangeObject(change)],
               language.parse,
               editor,
@@ -472,7 +447,6 @@ const BlockEditor = ({
         getState().undoableAction = annt; //?
         dispatch(
           commitChanges(
-            search,
             [makeChangeObject(change)],
             language.parse,
             editor,
@@ -500,7 +474,6 @@ const BlockEditor = ({
 
     // set AST and search properties and collapse preferences
     dispatch({ type: "SET_AST", ast: passedAST });
-    search.setCM(editor);
     if (options.collapseAll) {
       dispatch({ type: "COLLAPSE_ALL" });
     }
@@ -518,7 +491,7 @@ const BlockEditor = ({
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    props.onMount(editor, buildAPI(editor, dispatch, search), passedAST);
+    props.onMount(editor, buildAPI(editor, dispatch), passedAST);
   };
 
   /**
@@ -534,7 +507,7 @@ const BlockEditor = ({
         const node = focusId
           ? ast.getNodeByIdOrThrow(focusId)
           : ast.getFirstRootNode();
-        activateByNid(editor, search, node && node.nid, {
+        activateByNid(editor, node && node.nid, {
           allowMove: true,
         });
       });
@@ -590,7 +563,7 @@ const BlockEditor = ({
       editor.codemirror.getSelection().length > 0
         ? null
         : editor.codemirror.getCursor();
-    dispatch(setCursor(editor, cur, search));
+    dispatch(setCursor(editor, cur));
   };
 
   const renderPortals = () => {
@@ -607,7 +580,7 @@ const BlockEditor = ({
           />
         </EditorContext.Provider>
       ));
-      if (!!quarantine) {
+      if (quarantine) {
         portals.push(<ToplevelBlockEditable editor={editor} key="-1" />);
       }
     }
@@ -626,7 +599,6 @@ const BlockEditor = ({
         onKeyDown={(editor, e) => {
           dispatch(
             keyDown(e, {
-              search: search,
               language: language,
               editor,
               isNodeEnv: false,

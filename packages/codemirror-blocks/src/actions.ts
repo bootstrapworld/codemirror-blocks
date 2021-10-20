@@ -30,8 +30,7 @@ import {
 import { SelectionOptions } from "codemirror";
 import { useDispatch, useStore } from "react-redux";
 import type { Language } from "./CodeMirrorBlocks";
-import { useLanguageOrThrow, useSearchOrThrow } from "./hooks";
-import { Search } from "./ui/BlockEditor";
+import { useLanguageOrThrow } from "./hooks";
 import { Result } from "./edits/result";
 
 // All editing actions are defined here.
@@ -69,7 +68,6 @@ import { Result } from "./edits/result";
 // See the comment at the top of the file for what kinds of `target` there are.
 export const insert =
   (
-    search: Search,
     text: string,
     target: Target,
     editor: CMBEditor,
@@ -79,7 +77,7 @@ export const insert =
   (dispatch, getState) => {
     checkTarget(target);
     const edits = [target.toEdit(getState().ast, text)];
-    return dispatch(performEdits(search, edits, parse, editor, annt));
+    return dispatch(performEdits(edits, parse, editor, annt));
   };
 
 /**
@@ -102,7 +100,6 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 // 'delete' is a reserved word, hence the trailing underscore
 export const delete_ =
   (
-    search: Search,
     editor: CMBEditor,
     nodes: ASTNode[],
     parse: Language["parse"],
@@ -120,7 +117,7 @@ export const delete_ =
       annt = createEditAnnouncement(nodes, editWord);
       say(annt);
     }
-    dispatch(performEdits(search, edits, parse, editor, annt));
+    dispatch(performEdits(edits, parse, editor, annt));
     dispatch({ type: "SET_SELECTIONS", selections: [] });
   };
 
@@ -159,17 +156,12 @@ export function copy(
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export const paste =
-  (
-    editor: CMBEditor,
-    search: Search,
-    target: Target,
-    parse: Language["parse"]
-  ): AppThunk =>
+  (editor: CMBEditor, target: Target, parse: Language["parse"]): AppThunk =>
   (dispatch, getState) => {
     checkTarget(target);
     pasteFromClipboard((text) => {
       const edits = [target.toEdit(getState().ast, text)];
-      dispatch(performEdits(search, edits, parse, editor));
+      dispatch(performEdits(edits, parse, editor));
       dispatch({ type: "SET_SELECTIONS", selections: [] });
     });
   };
@@ -180,7 +172,6 @@ export function useDropAction() {
   const store: AppStore = useStore();
   const dispatch: AppDispatch = useDispatch();
   const language = useLanguageOrThrow();
-  const search = useSearchOrThrow();
   return function drop(
     editor: CMBEditor,
     src: { id: string; content: string },
@@ -213,9 +204,7 @@ export function useDropAction() {
     // Insert or replace at the drop location, depending on what we dropped it on.
     edits.push(target.toEdit(ast, content));
     // Perform the edits.
-    const editResult = dispatch(
-      performEdits(search, edits, language.parse, editor)
-    );
+    const editResult = dispatch(performEdits(edits, language.parse, editor));
 
     // Assuming it did not come from the toolbar, and the srcNode was collapsed...
     // Find the matching node in the new tree and collapse it
@@ -231,14 +220,9 @@ export function useDropAction() {
 }
 
 // Set the cursor position.
-export const setCursor = (
-  editor: CMBEditor,
-  cur: Pos | null,
-  search: Search
-): AppAction => {
+export const setCursor = (editor: CMBEditor, cur: Pos | null): AppAction => {
   if (editor && cur) {
     editor.focus();
-    search.setCursor(cur);
     editor.setCursor(cur);
   }
   return { type: "SET_CURSOR", cur };
@@ -247,7 +231,6 @@ export const setCursor = (
 // Activate the node with the given `nid`.
 export function activateByNid(
   editor: ReadonlyCMBEditor,
-  search: Search,
   nid: number | null,
   options: { allowMove?: boolean; record?: boolean } = {}
 ): AppThunk {
@@ -308,9 +291,6 @@ export function activateByNid(
     setAfterDOMUpdate(() => {
       dispatch({ type: "SET_FOCUS", focusId: newNode.id });
 
-      if (options.record && search) {
-        search.setCursor(newNode.from);
-      }
       // if this timeout fires after the node has been torn down, don't bother
       if (newNode.element) {
         if (options.allowMove) {
@@ -437,7 +417,6 @@ export const replaceSelections =
   (
     ed: CodeMirrorFacade,
     replacements: string[],
-    search: Search,
     select?: "around" | "start"
   ): AppThunk =>
   (dispatch, getState) => {
@@ -453,7 +432,7 @@ export const replaceSelections =
       select == "start"
         ? tmpCM.listSelections().pop()?.head
         : tmpCM.listSelections().pop()?.anchor;
-    setCursor(ed, cur ?? null, search);
+    setCursor(ed, cur ?? null);
   };
 
 /**
