@@ -427,12 +427,12 @@ const BlockEditor = ({
   /**
    * Given a CM Change Event, manually handle our own undo and focus stack
    */
-  const handleChanges = (
+  const handleChange = (
     editor: ReadonlyCMBEditor,
-    changes: CodeMirror.EditorChange[]
+    change: CodeMirror.EditorChange
   ) => {
     dispatch((dispatch, getState) => {
-      if (!changes.every(isChangeObject)) {
+      if (!isChangeObject(change)) {
         // These changes did not originate from us. However, they've all
         // passed the `handleBeforeChange` function, so they must be valid edits.
         // (There's almost certainly just one edit here; I (Justin) am not
@@ -441,7 +441,7 @@ const BlockEditor = ({
 
         // Turn undo and redo into cmb actions, update the focusStack, and
         // provide a focusHint
-        if (changes[0].origin === "undo") {
+        if (change.origin === "undo") {
           const { actionFocus } = getState();
           if (actionFocus) {
             const focusHint: FocusHint = (newAST) =>
@@ -451,7 +451,7 @@ const BlockEditor = ({
             dispatch(
               commitChanges(
                 search,
-                changes.map(makeChangeObject),
+                [makeChangeObject(change)],
                 language.parse,
                 editor,
                 true,
@@ -460,7 +460,7 @@ const BlockEditor = ({
             );
             dispatch({ type: "UNDO", editor: editor });
           }
-        } else if (changes[0].origin === "redo") {
+        } else if (change.origin === "redo") {
           const { actionFocus } = getState();
           if (actionFocus) {
             const { newFocusNId } = actionFocus;
@@ -469,7 +469,7 @@ const BlockEditor = ({
             dispatch(
               commitChanges(
                 search,
-                changes.map(makeChangeObject),
+                [makeChangeObject(change)],
                 language.parse,
                 editor,
                 true,
@@ -483,21 +483,12 @@ const BlockEditor = ({
           // don't know anything else about it. Apply the change, set the focusHint
           // to the top of the tree (-1), and provide an astHint so we don't need
           // to reparse and rebuild the tree
-          let annt = "";
-          for (let i = changes.length - 1; i >= 0; i--) {
-            annt = annt + changes[i].origin;
-            if (i !== 0) {
-              annt = " and " + annt;
-            }
-          }
-          if (annt === "") {
-            annt = "change";
-          }
+          let annt = change.origin || "change";
           getState().undoableAction = annt; //?
           dispatch(
             commitChanges(
               search,
-              changes.map(makeChangeObject),
+              [makeChangeObject(change)],
               language.parse,
               editor,
               false,
@@ -520,8 +511,8 @@ const BlockEditor = ({
     editor.codemirror.on("beforeChange", (ed, change) =>
       handleBeforeChange(editor, change)
     );
-    editor.codemirror.on("changes", (ed, changes) =>
-      handleChanges(editor, changes)
+    editor.codemirror.on("change", (ed, change) =>
+      handleChange(editor, change)
     );
 
     // set AST and search properties and collapse preferences
