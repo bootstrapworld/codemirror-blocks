@@ -404,7 +404,6 @@ function parseNode(node, i) {
         comment: comment,
       }
     );
-    console.log(unknown);
     return unknown;
   } else if (node instanceof structures.requireExpr) {
     return new FunctionApp(
