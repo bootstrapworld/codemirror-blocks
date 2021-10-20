@@ -17,7 +17,7 @@ import { ASTNode } from "../../ast";
 function getQueryFromSettings(state: SearchSettings) {
   let query = state.searchString;
   let isRegex = state.isRegex;
-  let isExactMatch = state.isExactMatch;
+  const isExactMatch = state.isExactMatch;
   if (isExactMatch && !isRegex) {
     query = query.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");
     isRegex = true;

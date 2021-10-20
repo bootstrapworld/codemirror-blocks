@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import wescheme from "../lib/languages/wescheme";
 import bigExampleCode from "./ast-test.rkt"; // eslint-disable-line no-unused-vars
 import hugeExampleCode from "./huge-code.rkt"; // eslint-disable-line no-unused-vars

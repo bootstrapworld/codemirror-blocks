@@ -6,7 +6,7 @@ describe("addLanguage function,", () => {
     addLanguage({
       id: "foo",
       name: "foo",
-      parse(code: string) {
+      parse(_code: string) {
         return [];
       },
     });

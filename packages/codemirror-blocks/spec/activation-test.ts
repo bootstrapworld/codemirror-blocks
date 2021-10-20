@@ -25,7 +25,7 @@ describe("when dealing with node activation,", () => {
     cmb = await mountCMB(wescheme);
     cmb.setValue("11\n54");
     await finishRender();
-    let ast = cmb.getAst();
+    const ast = cmb.getAst();
     literal1 = ast.rootNodes[0];
     literal2 = ast.rootNodes[1];
   });
@@ -154,7 +154,7 @@ describe("cut/copy/paste", () => {
 
     cmb.setValue("11\n54");
     await finishRender();
-    let ast = cmb.getAst();
+    const ast = cmb.getAst();
     literal1 = ast.rootNodes[0];
     literal2 = ast.rootNodes[1];
   });
@@ -197,8 +197,6 @@ describe("tree navigation", () => {
   let secondRoot: ASTNode;
   let thirdRoot: FunctionApp;
   let funcSymbol: ASTNode;
-  let firstArg: ASTNode;
-  let secondArg: ASTNode;
   let thirdArg: ASTNode;
   let nestedExpr: FunctionApp;
   let lastNode: ASTNode;
@@ -207,13 +205,11 @@ describe("tree navigation", () => {
     cmb = await mountCMB(wescheme);
 
     cmb.setValue("(+ 1 2 3) 99 (* 7 (* 1 2))");
-    let ast = cmb.getAst();
+    const ast = cmb.getAst();
     firstRoot = ast.rootNodes[0] as FunctionApp;
     secondRoot = ast.rootNodes[1];
     thirdRoot = ast.rootNodes[2] as FunctionApp;
     funcSymbol = firstRoot.func;
-    firstArg = firstRoot.args[0];
-    secondArg = firstRoot.args[1];
     thirdArg = firstRoot.args[2];
     nestedExpr = thirdRoot.args[1] as FunctionApp;
     lastNode = nestedExpr.args[1];
@@ -383,7 +379,7 @@ describe("when dealing with node selection, ", () => {
     cmb = await mountCMB(wescheme);
 
     cmb.setValue("11\n54\n(+ 1 2)");
-    let ast = cmb.getAst();
+    const ast = cmb.getAst();
     literal1 = ast.rootNodes[0];
     literal2 = ast.rootNodes[1];
     expr = ast.rootNodes[2] as FunctionApp;

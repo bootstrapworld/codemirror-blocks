@@ -238,7 +238,7 @@ export class VariableDefinition extends ASTNode {
   static spec = Spec.nodeSpec([Spec.required("name"), Spec.required("body")]);
 
   longDescription(level: number) {
-    let insert = ["literal", "blank"].includes(this.body.type)
+    const insert = ["literal", "blank"].includes(this.body.type)
       ? ""
       : "the result of:";
     return `define ${this.name} to be ${insert} ${this.body.describe(level)}`;
@@ -349,9 +349,9 @@ export class FunctionDefinition extends ASTNode {
   }
 
   render(props: NodeProps) {
-    let params = this.params.reactElement();
-    let body = this.body.reactElement();
-    let name = this.name.reactElement();
+    const params = this.params.reactElement();
+    const body = this.body.reactElement();
+    const name = this.name.reactElement();
     return (
       <Node {...props}>
         <span className="blocks-operator">
@@ -516,13 +516,13 @@ export class IfExpression extends ASTNode {
 }
 
 export class Literal extends ASTNode {
-  value: any;
-  dataType: any;
+  value: string;
+  dataType: string;
   constructor(
     from: Pos,
     to: Pos,
-    value: any,
-    dataType: any = "unknown",
+    value: string,
+    dataType = "unknown",
     options = {}
   ) {
     super(from, to, "literal", options);
@@ -543,9 +543,7 @@ export class Literal extends ASTNode {
   render(props: NodeProps) {
     return (
       <Node {...props} normallyEditable={true} expandable={false}>
-        <span className={`blocks-literal-${this.dataType}`}>
-          {this.value.toString()}
-        </span>
+        <span className={`blocks-literal-${this.dataType}`}>{this.value}</span>
       </Node>
     );
   }
@@ -566,13 +564,13 @@ export class Comment extends ASTNode {
   }
 
   pretty(): P.Doc {
-    let words = this.comment.trim().split(/\s+/);
-    let wrapped = P.wrap(words);
+    const words = this.comment.trim().split(/\s+/);
+    const wrapped = P.wrap(words);
     // Normalize all comments to block comments
     return P.concat("#| ", wrapped, " |#");
   }
 
-  render(props: NodeProps) {
+  render() {
     // eslint-disable-line no-unused-vars
     return (
       <span className="blocks-comment" id={this.id} aria-hidden="true">
@@ -584,13 +582,13 @@ export class Comment extends ASTNode {
 }
 
 export class Blank extends ASTNode {
-  value: any;
-  dataType: any;
+  value: string;
+  dataType: string;
   constructor(
     from: Pos,
     to: Pos,
-    value: any,
-    dataType: any = "blank",
+    value: string,
+    dataType = "blank",
     options = {}
   ) {
     super(from, to, "blank", options);

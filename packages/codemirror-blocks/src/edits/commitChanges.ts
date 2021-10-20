@@ -35,18 +35,18 @@ export const commitChanges =
     changes: ChangeObject[],
     parse: Language["parse"],
     editor: ReadonlyCMBEditor,
-    isUndoOrRedo: boolean = false,
+    isUndoOrRedo = false,
     focusHint?: FocusHint | -1,
     astHint?: AST,
     annt?: string | false
   ): AppThunk<Result<{ newAST: AST; focusId?: string }>> =>
   (dispatch, getState) => {
     try {
-      let { ast: oldAST, focusId: oldFocusId } = getState();
+      const { ast: oldAST, focusId: oldFocusId } = getState();
       let oldFocusNId = null;
       if (!isUndoOrRedo) {
         // Remember the previous focus. See the next `!isUndoOrRedo` block.
-        let oldFocus = oldFocusId && oldAST.getNodeById(oldFocusId);
+        const oldFocus = oldFocusId && oldAST.getNodeById(oldFocusId);
         oldFocusNId = oldFocus ? oldFocus.nid : null;
       }
       // If we haven't already parsed the AST during speculateChanges, parse it now.
@@ -57,7 +57,7 @@ export const commitChanges =
       const newAST = new AST(patch([...oldAST.rootNodes], newNodes));
       dispatch({ type: "SET_AST", ast: newAST });
       // Try to set the focus using hinting data. If that fails, use the first root
-      let focusId =
+      const focusId =
         dispatch(setFocus(editor, changes, focusHint, newAST)) ||
         newAST.getFirstRootNode()?.id;
       if (!isUndoOrRedo) {
@@ -67,8 +67,8 @@ export const commitChanges =
         if (focusId) {
           newFocus = newAST.getNodeById(focusId);
         }
-        let newFocusNId = newFocus?.nid || null;
-        let topmostAction = editor.getTopmostAction("undo");
+        const newFocusNId = newFocus?.nid || null;
+        const topmostAction = editor.getTopmostAction("undo");
         topmostAction.undoableAction = annt || undefined;
         topmostAction.actionFocus = { oldFocusNId, newFocusNId };
         dispatch({ type: "DO", focusId: focusId || null });
@@ -119,8 +119,8 @@ const setFocus =
       dispatch(activateByNid(editor, focusNId));
     }
 
-    let focusNode2 = focusNId && newAST.getNodeByNId(focusNId);
-    let focusId = focusNode2 && focusNode2.id;
+    const focusNode2 = focusNId && newAST.getNodeByNId(focusNId);
+    const focusId = focusNode2 && focusNode2.id;
 
     return focusId;
   };
@@ -140,7 +140,7 @@ function computeFocusNodeFromChanges(
   newAST: AST
 ) {
   let insertion = false as EditorChange | false;
-  let startLocs = changes.map((change) => {
+  const startLocs = changes.map((change) => {
     let { removed } = change;
     if (!removed) {
       removed = text.getRange(change.from, change.to).split("\n");
@@ -154,12 +154,12 @@ function computeFocusNodeFromChanges(
   if (insertion) {
     // Case A: grab the inserted node, *or* the node that ends in
     // insertion's ending srcLoc (won't ever be null post-insertion)
-    let insertedNode = newAST.getNodeAt(insertion.from, insertion.to);
-    let lastNodeInserted = newAST.getNodeBeforeCur(insertion.to);
+    const insertedNode = newAST.getNodeAt(insertion.from, insertion.to);
+    const lastNodeInserted = newAST.getNodeBeforeCur(insertion.to);
     return insertedNode || lastNodeInserted;
   } else {
     startLocs.sort(poscmp); // sort the deleted ranges
-    let focusNode = newAST.getNodeBeforeCur(startLocs[0]); // grab the node before the first
+    const focusNode = newAST.getNodeBeforeCur(startLocs[0]); // grab the node before the first
     // Case B: If the node exists, use the Id.
     // Case C: If not, use the first node...unless...
     // Case D: the tree is empty, so return null

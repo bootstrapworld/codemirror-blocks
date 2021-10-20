@@ -355,7 +355,7 @@ a + b;`,
 describe("lambda parser test suite", () => {
   testData.slice(0, 12).forEach((data) => {
     it("testing" + " " + data.input, () => {
-      var prog = parseToIntermediateAST(data.input).prog;
+      let prog = parseToIntermediateAST(data.input).prog;
       if (prog.length == 1) {
         prog = prog[0];
       }

@@ -24,7 +24,10 @@ export type Search = {
 
 export default function attachSearch(
   Editor: typeof BlockEditor,
-  searchModes: Searcher<any, any>[]
+  searchModes: Searcher<
+    unknown,
+    { setting: unknown; onChange: unknown; firstTime: unknown }
+  >[]
 ) {
   const settings = searchModes.reduce((acc, searchMode, i) => {
     acc[i] = searchMode.setting;
@@ -207,7 +210,7 @@ export default function attachSearch(
         </>
       );
 
-      const { onSearchMounted, ...editorProps } = this.props;
+      const { ...editorProps } = this.props;
 
       return (
         <>

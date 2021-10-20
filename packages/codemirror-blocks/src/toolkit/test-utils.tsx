@@ -45,7 +45,7 @@ export function teardown() {
   const textareas = document.getElementsByTagName("textarea");
   while (textareas[0]) {
     const current = textareas[0];
-    current.parentNode!.removeChild(current);
+    current.parentNode?.removeChild(current);
   }
 }
 
@@ -70,10 +70,11 @@ export type TestContext = {
  */
 export async function mountCMB(language: Language): Promise<API> {
   document.body.insertAdjacentHTML("afterbegin", fixture);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const container = document.getElementById("cmb-editor")!;
   const codemirrorOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
 
-  const cmb: API = {} as any;
+  const cmb: API = {} as API;
   render(
     <CodeMirrorBlocksComponent
       language={language}

@@ -2,7 +2,7 @@ import WeschemeParser from "./WeschemeParser";
 import { addLanguage } from "../../languages/";
 require("./style.less");
 
-let parser = new WeschemeParser();
+const parser = new WeschemeParser();
 
 export default addLanguage({
   id: "wescheme",
@@ -13,7 +13,7 @@ export default addLanguage({
   getASTNodeForPrimitive: parser.getASTNodeForPrimitive,
   getLiteralNodeForPrimitive: parser.getLiteralNodeForPrimitive,
   primitivesFn() {
-    let x = parser.primitivesFn();
+    const x = parser.primitivesFn();
     return x;
   },
 });

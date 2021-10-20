@@ -60,6 +60,7 @@ export type Language = {
    * A function for generating a human readable error message
    * from any exceptions that are thrown by a call to parse()
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getExceptionMessage?(e: any): string;
 
   /**
@@ -121,7 +122,7 @@ function CodeMirrorBlocks(
   language: Language,
   codemirrorOptions: CodeMirror.EditorConfiguration = {}
 ): API {
-  let apiBox: API = {} as any;
+  const apiBox: API = {} as API;
   ReactDOM.render(
     <CodeMirrorBlocksComponent
       language={language}

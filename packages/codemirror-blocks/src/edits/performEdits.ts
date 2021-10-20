@@ -302,13 +302,13 @@ class OverwriteEdit extends Edit {
   }
 
   toChangeObject(ast: AST) {
-    let { from, to, text } = this;
+    let { text } = this;
     // if this root starts or ends on the same line as another, insert a newline
     const nodeBefore = ast.rootNodes.find(
-      (r) => r.to.line == from.line && r.to.ch <= from.ch
+      (r) => r.to.line == this.from.line && r.to.ch <= this.from.ch
     );
     const nodeAfter = ast.rootNodes.find(
-      (r) => r.from.line == to.line && to.ch <= r.from.ch
+      (r) => r.from.line == this.to.line && this.to.ch <= r.from.ch
     );
     if (nodeBefore) {
       text = "\n" + text;
@@ -345,7 +345,7 @@ class OverwriteEdit extends Edit {
 
 class DeleteRootEdit extends Edit {
   constructor(node: ASTNode) {
-    let range = node.srcRange();
+    const range = node.srcRange();
     super(range.from, range.to);
     this.node = node;
   }
@@ -368,7 +368,7 @@ class ReplaceRootEdit extends Edit {
   text: string;
   node: ASTNode;
   constructor(text: string, node: ASTNode) {
-    let range = node.srcRange();
+    const range = node.srcRange();
     super(range.from, range.to);
     this.text = text;
     this.node = node;
@@ -429,7 +429,7 @@ class InsertChildEdit extends AstEdit {
   }
 
   makeAstEdit(clonedAncestor: ClonedASTNode) {
-    let clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
+    const clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstInsertion.insertChild(clonedParent, this.text);
   }
 
@@ -447,7 +447,7 @@ class DeleteChildEdit extends AstEdit {
   private prevId?: string;
   fakeAstReplacement: FakeAstReplacement;
   constructor(node: ASTNode, parent: ASTNode, prev: ASTNode | null) {
-    let range = node.srcRange();
+    const range = node.srcRange();
     super(range.from, range.to, parent);
     this.node = node;
     this.prevId = prev?.id;
@@ -474,7 +474,7 @@ class ReplaceChildEdit extends AstEdit {
   fakeAstReplacement: FakeAstReplacement;
 
   constructor(text: string, node: ASTNode, parent: ASTNode) {
-    let range = node.srcRange();
+    const range = node.srcRange();
     super(range.from, range.to, parent);
     this.text = text;
     this.node = node;
@@ -482,7 +482,7 @@ class ReplaceChildEdit extends AstEdit {
   }
 
   makeAstEdit(clonedAncestor: ClonedASTNode) {
-    let clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
+    const clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstReplacement.replaceChild(clonedParent, this.text);
   }
 
@@ -519,14 +519,14 @@ class EditGroup {
 
   toChangeObject(): ChangeObject {
     // Perform the edits on a copy of the shared ancestor node.
-    let range = this.ancestor.srcRange();
-    let clonedAncestor = cloneNode(this.ancestor);
+    const range = this.ancestor.srcRange();
+    const clonedAncestor = cloneNode(this.ancestor);
     for (const edit of this.edits) {
       edit.makeAstEdit(clonedAncestor);
     }
     // Pretty-print to determine the new text.
-    let width = prettyPrintingWidth - range.from.ch;
-    let newText = clonedAncestor.pretty().display(width);
+    const width = prettyPrintingWidth - range.from.ch;
+    const newText = clonedAncestor.pretty().display(width);
     return makeChangeObject({
       from: range.from,
       to: range.to,
@@ -569,7 +569,7 @@ function groupEditsByAncestor(edits: AstEdit[]) {
   }
   // Associate each Edit with the parent EditGroup
   for (const edit of edits) {
-    let group = editToEditGroup.get(edit);
+    const group = editToEditGroup.get(edit);
     if (group) {
       group.edits.push(edit);
     }
@@ -582,8 +582,8 @@ function groupEditsByAncestor(edits: AstEdit[]) {
  * When deleting a root, don't leave behind excessive whitespace
  */
 function removeWhitespace(from: Pos, to: Pos, text: ReadonlyRangedText) {
-  let prevChar = text.getRange({ line: from.line, ch: from.ch - 1 }, from);
-  let nextChar = text.getRange(to, { line: to.line, ch: to.ch + 1 });
+  const prevChar = text.getRange({ line: from.line, ch: from.ch - 1 }, from);
+  const nextChar = text.getRange(to, { line: to.line, ch: to.ch + 1 });
   if (prevChar == " " && (nextChar == " " || nextChar == "")) {
     // Delete an excess space.
     return { from: { line: from.line, ch: from.ch - 1 }, to: to };

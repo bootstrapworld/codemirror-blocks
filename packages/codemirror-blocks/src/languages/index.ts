@@ -3,7 +3,7 @@ import type { Language } from "../CodeMirrorBlocks";
 export const LANGUAGES: Record<string, Language> = {};
 
 export function addLanguage(languageDefinition: Language) {
-  var id = languageDefinition.id;
+  const id = languageDefinition.id;
   if (!id) {
     throw new Error(`language definition missing an 'id' attribute`);
   }

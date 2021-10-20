@@ -20,8 +20,8 @@ import { PrimitiveGroup } from "../../parsers/primitives";
 import PRIMITIVES_CONFIG from "./primitives-config";
 
 import { lex } from "wescheme-js/src/lex";
-const types = require("wescheme-js/src/runtime/types");
-const structures = require("wescheme-js/src/structures");
+import * as types from "wescheme-js/src/runtime/types";
+import * as structures from "wescheme-js/src/structures";
 
 let symbolMap = new Map();
 symbolMap.set("*", "multiply");

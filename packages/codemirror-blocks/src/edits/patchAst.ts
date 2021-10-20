@@ -1,4 +1,3 @@
-import { AST } from "../ast";
 import { ASTNode } from "../ast";
 import { assert } from "../utils";
 

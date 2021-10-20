@@ -31,7 +31,7 @@ export default class ExampleParser {
   lineIndex: number;
   colIndex: number;
   getch() {
-    let ch = this.code[this.charIndex];
+    const ch = this.code[this.charIndex];
     this.charIndex++;
     this.colIndex++;
     if (ch == "\n") {
@@ -41,8 +41,8 @@ export default class ExampleParser {
     return ch;
   }
 
-  getExceptionMessage(e: any) {
-    return e || "Parser error";
+  getExceptionMessage(e: unknown) {
+    return String(e) || "Parser error";
   }
 
   getToken(): Token {
@@ -56,7 +56,7 @@ export default class ExampleParser {
       );
     }
     if (this.code[this.charIndex] == "(") {
-      let token = new Token(
+      const token = new Token(
         { line: this.lineIndex, ch: this.colIndex },
         { line: this.lineIndex, ch: this.colIndex + 1 },
         TOKENS.OPEN_PAREN,
@@ -65,7 +65,7 @@ export default class ExampleParser {
       this.getch();
       return token;
     } else if (this.code[this.charIndex] == ")") {
-      let token = new Token(
+      const token = new Token(
         { line: this.lineIndex, ch: this.colIndex },
         { line: this.lineIndex, ch: this.colIndex + 1 },
         TOKENS.CLOSE_PAREN,
@@ -82,7 +82,7 @@ export default class ExampleParser {
       this.code[this.charIndex] >= "0" &&
       this.code[this.charIndex] <= "9"
     ) {
-      let startIndex = this.colIndex;
+      const startIndex = this.colIndex;
       let number = "";
       while (
         this.code[this.charIndex] >= "0" &&
@@ -98,7 +98,7 @@ export default class ExampleParser {
       );
     } else if (this.code[this.charIndex].match(IDENTIFIER_RE)) {
       let identifier = "";
-      let startIndex = this.colIndex;
+      const startIndex = this.colIndex;
       while (this.code[this.charIndex].match(IDENTIFIER_RE)) {
         identifier += this.getch();
       }
@@ -117,10 +117,10 @@ export default class ExampleParser {
   }
 
   peekToken() {
-    let oldCharIndex = this.charIndex;
-    let oldLineIndex = this.lineIndex;
-    let oldColIndex = this.colIndex;
-    let token = this.getToken();
+    const oldCharIndex = this.charIndex;
+    const oldLineIndex = this.lineIndex;
+    const oldColIndex = this.colIndex;
+    const token = this.getToken();
     this.charIndex = oldCharIndex;
     this.lineIndex = oldLineIndex;
     this.colIndex = oldColIndex;
@@ -137,7 +137,7 @@ export default class ExampleParser {
     this.lineIndex = 0;
     this.colIndex = 0;
 
-    let rootNodes = [];
+    const rootNodes = [];
     while (this.peekToken().token != TOKENS.EOF) {
       rootNodes.push(this.parseNextToken());
     }
@@ -156,29 +156,29 @@ export default class ExampleParser {
   }
 
   parseLiteral() {
-    var literalToken = this.getToken();
+    const literalToken = this.getToken();
     return new Literal(
       literalToken.from,
       literalToken.to,
-      parseInt(literalToken.text),
+      literalToken.text,
       "number"
     );
   }
 
   parseExpression() {
-    let token = this.getToken();
+    const token = this.getToken();
     if (token.token != TOKENS.OPEN_PAREN) {
       throw new Error("Expected an open paren");
     }
     if (this.peekToken().token != TOKENS.IDENTIFIER) {
       throw new Error("Expected an identifier");
     }
-    let identifierToken = this.getToken();
-    var args = [];
+    const identifierToken = this.getToken();
+    const args = [];
     while (this.peekToken().token != TOKENS.CLOSE_PAREN) {
       args.push(this.parseNextToken());
     }
-    let closeParenToken = this.getToken();
+    const closeParenToken = this.getToken();
     return new FunctionApp(
       token.from,
       closeParenToken.to,

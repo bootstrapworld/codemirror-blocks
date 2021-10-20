@@ -2,7 +2,7 @@ import CodeMirror from "codemirror";
 import type { Action } from "redux";
 import { AST } from "./ast";
 import { ReadonlyCMBEditor } from "./editor";
-import { debugLog, setAfterDOMUpdate } from "./utils";
+import { debugLog } from "./utils";
 
 /**
  * An Activity is a shallow-clone of a reducer action, except that
@@ -212,7 +212,7 @@ function reduce(state = initialState(), action: AppAction): RootState {
     case "RESET_STORE_FOR_TESTING":
       return initialState();
     default:
-      debugLog("unprocessed action type=", (action as Action<any>).type);
+      debugLog("unprocessed action type=", (action as Action<unknown>).type);
       return state;
   }
 }
@@ -222,7 +222,7 @@ export const reducer = (
   action: AppAction
 ): RootState => {
   debugLog(action);
-  let result = reduce(state, action);
+  const result = reduce(state, action);
   loggerDebug(action, result.ast);
   return result;
 };

@@ -66,13 +66,13 @@ describe("ContentEditable", () => {
       paste("pasted content");
       expect(ref.current).toHaveTextContent("pasted content");
 
-      selectNodeRange(ref.current?.firstChild!, 0, 6);
+      selectNodeRange(ref.current!.firstChild!, 0, 6);
       paste("new");
       expect(ref.current).toHaveTextContent("new content");
     });
 
     it("inserts pasted text at the carat position", () => {
-      selectNodeRange(ref.current?.firstChild!, 4, 4);
+      selectNodeRange(ref.current!.firstChild!, 4, 4);
       paste(" new");
       expect(ref.current).toHaveTextContent("some new text");
     });

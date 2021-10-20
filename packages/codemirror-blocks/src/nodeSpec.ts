@@ -61,7 +61,7 @@ export class NodeSpec {
   }
 
   hash(node: ASTNode) {
-    let hashes = new HashIterator(node, this);
+    const hashes = new HashIterator(node, this);
     return hashObject([node.type, [...hashes], node.options.comment?.comment]);
   }
 
@@ -83,13 +83,13 @@ class ChildrenIterator {
   }
 
   *[Symbol.iterator]() {
-    for (let spec of this.nodeSpec.childSpecs) {
+    for (const spec of this.nodeSpec.childSpecs) {
       if (spec instanceof Value) continue;
-      let field = spec.getField(this.parent);
+      const field = spec.getField(this.parent);
       if (field instanceof ASTNode) {
         yield field;
       } else if (field instanceof Array) {
-        for (let elem of field) {
+        for (const elem of field) {
           yield elem;
         }
       }
@@ -106,12 +106,12 @@ class HashIterator {
   }
 
   *[Symbol.iterator]() {
-    for (let spec of this.nodeSpec.childSpecs) {
-      let field = spec.getField(this.parent);
+    for (const spec of this.nodeSpec.childSpecs) {
+      const field = spec.getField(this.parent);
       if (spec instanceof Value) {
         yield hashObject(field);
       } else if (spec instanceof List) {
-        for (let elem of field) {
+        for (const elem of field) {
           yield elem.hash;
         }
       } else {
@@ -150,6 +150,7 @@ abstract class ChildSpec {
    * @internal
    */
   getField<N extends ASTNode>(node: N) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (node as any)[this.fieldName];
   }
 
@@ -160,6 +161,7 @@ abstract class ChildSpec {
    * @param value the new value for the field
    */
   setField<N extends ASTNode>(node: N, value: ASTNode | null) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (node as any)[this.fieldName] = value;
   }
 
@@ -178,7 +180,7 @@ export class Required extends ChildSpec {
 
 export class Optional extends ChildSpec {
   validate(parent: ASTNode) {
-    let child = this.getField(parent);
+    const child = this.getField(parent);
     if (child !== null && !(child instanceof ASTNode)) {
       throw new Error(
         `Expected the optional field '${this.fieldName}' of '${parent.type}' to contain an ASTNode or null.`
@@ -189,7 +191,7 @@ export class Optional extends ChildSpec {
 
 export class List extends ChildSpec {
   validate(parent: ASTNode) {
-    let array = this.getField(parent);
+    const array = this.getField(parent);
     let valid = true;
     if (array instanceof Array) {
       for (const elem of array) {

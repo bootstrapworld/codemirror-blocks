@@ -36,17 +36,17 @@ class MockDataTransfer implements DataTransfer {
   files: FileList;
   items: DataTransferItemList;
   types: readonly string[];
-  clearData(format?: string): void {
+  clearData(_format?: string): void {
     throw new Error("Method not implemented.");
   }
   private data: string;
-  getData(format: string): string {
+  getData(_format: string): string {
     return this.data;
   }
   setData(format: string, data: string): void {
     this.data = data;
   }
-  setDragImage(image: Element, x: number, y: number): void {
+  setDragImage(_image: Element, _x: number, _y: number): void {
     throw new Error("Method not implemented.");
   }
 }
