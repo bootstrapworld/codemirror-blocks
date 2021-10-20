@@ -1,0 +1,47 @@
+.blocks-language-wescheme {
+  // Import the default style, using the parameters set below.
+  // Yes, the parameters below here really get passed into the style file imported above them.
+  @import "../../less/default-style.less";
+  // Set border parameters for default-style.less:
+  @border-radius: 5px;
+  @border-width: 2px;
+  // Color parameters:
+  @comment-color: #ddd;
+  @comment-background-color: #444;
+  @border-color: black;
+  @editing-border-color: orange;
+  @error-border-color: red;
+  @border-hint: rgba(255, 165, 0, 0.3);
+  @drag-drop-background-color: lightblue;
+  @drag-replace-background-color: red;
+
+  // Settings for _this_ file:
+  @large-border-radius: 15px;
+  @literal-number-color: blue;
+  @literal-string-color: green;
+  @literal-char-color: orange;
+  @literal-boolean-color: darkred;
+  @literal-symbol-color: steelblue;
+
+  .blocks-literal {
+    .blocks-literal-number {
+      color: @literal-number-color;
+    }
+    .blocks-literal-string {
+      white-space: pre;
+      color: @literal-string-color;
+    }
+    .blocks-literal-char {
+      color: @literal-char-color;
+    }
+    .blocks-literal-boolean {
+      color: @literal-boolean-color;
+    }
+    .blocks-literal-symbol {
+      color: @literal-symbol-color;
+    }
+    .blocks-lambdaExpression {
+      border-radius: @large-border-radius @large-border-radius 0px 0px;
+    }
+  }
+}

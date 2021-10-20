@@ -1,0 +1,20 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "browsers": [
+            "Firefox >= 57",
+            "Safari >= 10",
+            "Chrome >= 68",
+            "IE >= 12",
+            "Edge >= 14"
+          ]
+        }
+      }
+    ],
+    "@babel/preset-react"
+  ],
+  "sourceMaps": true
+}
