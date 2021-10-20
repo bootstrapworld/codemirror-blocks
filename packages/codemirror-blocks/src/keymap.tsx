@@ -26,7 +26,6 @@ import type { AppThunk } from "./store";
 import type { AST, ASTNode } from "./ast";
 import { CMBEditor } from "./editor";
 import { Language } from "./CodeMirrorBlocks";
-import type { Search } from "./ui/BlockEditor";
 import type { AppHelpers } from "./components/Context";
 
 type BlockEditorEnv = {
@@ -34,7 +33,6 @@ type BlockEditorEnv = {
   appHelpers: AppHelpers;
   editor: CMBEditor;
   language: Language;
-  search: Search;
 };
 
 type NodeEnv = {
@@ -42,7 +40,6 @@ type NodeEnv = {
 
   appHelpers: AppHelpers;
 
-  search: Search;
   editor: CMBEditor;
   language: Language;
   isLocked: () => boolean;
@@ -170,12 +167,7 @@ const pasteHandler =
     // Case 1: Overwriting selected nodes
     if (selections.includes(env.node.id)) {
       dispatch(
-        paste(
-          env.editor,
-          env.search,
-          new ReplaceNodeTarget(env.node),
-          env.language.parse
-        )
+        paste(env.editor, new ReplaceNodeTarget(env.node), env.language.parse)
       );
     }
     // Case 2: Inserting to the left or right of the root
@@ -183,7 +175,7 @@ const pasteHandler =
       dispatch(
         paste(
           env.editor,
-          env.search,
+
           new OverwriteTarget(pos, pos),
           env.language.parse
         )
@@ -199,7 +191,7 @@ const pasteHandler =
         dispatch(
           paste(
             env.editor,
-            env.search,
+
             new InsertTarget(parent, DTnode.dataset.field, pos),
             env.language.parse
           )
@@ -227,7 +219,7 @@ const commandMap: {
         (node) => state.ast.getNodeBefore(node) || undefined
       );
       if (prev) {
-        return dispatch(activateByNid(env.editor, env.search, prev.nid));
+        return dispatch(activateByNid(env.editor, prev.nid));
       } else {
         return playSound(BEEP);
       }
@@ -235,7 +227,7 @@ const commandMap: {
     const prevNode = state.cur && state.ast.getNodeBeforeCur(state.cur);
     return prevNode
       ? dispatch(
-          activateByNid(env.editor, env.search, prevNode.nid, {
+          activateByNid(env.editor, prevNode.nid, {
             allowMove: true,
           })
         )
@@ -248,7 +240,7 @@ const commandMap: {
       const { ast } = getState();
       let next = env.fastSkip((node) => ast.getNodeAfter(node) || undefined);
       if (next) {
-        return dispatch(activateByNid(env.editor, env.search, next.nid));
+        return dispatch(activateByNid(env.editor, next.nid));
       } else {
         return playSound(BEEP);
       }
@@ -257,7 +249,7 @@ const commandMap: {
     const nextNode = cur && ast.getNodeAfterCur(cur);
     return nextNode
       ? dispatch(
-          activateByNid(env.editor, env.search, nextNode.nid, {
+          activateByNid(env.editor, nextNode.nid, {
             allowMove: true,
           })
         )
@@ -268,7 +260,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    return activateByNid(env.editor, env.search, 0, { allowMove: true });
+    return activateByNid(env.editor, 0, { allowMove: true });
   },
 
   "Last Visible Block": (env, _) => (dispatch, getState) => {
@@ -276,8 +268,7 @@ const commandMap: {
       return;
     } else {
       const lastVisible = getLastVisibleNode(getState());
-      lastVisible &&
-        dispatch(activateByNid(env.editor, env.search, lastVisible.nid));
+      lastVisible && dispatch(activateByNid(env.editor, lastVisible.nid));
     }
   },
 
@@ -291,7 +282,7 @@ const commandMap: {
     if (env.expandable && !env.isCollapsed && !env.isLocked()) {
       dispatch({ type: "COLLAPSE", id: env.node.id });
     } else if (parent) {
-      dispatch(activateByNid(env.editor, env.search, parent.nid));
+      dispatch(activateByNid(env.editor, parent.nid));
     } else {
       playSound(BEEP);
     }
@@ -308,7 +299,7 @@ const commandMap: {
     if (env.expandable && env.isCollapsed && !env.isLocked()) {
       dispatch({ type: "UNCOLLAPSE", id: node.id });
     } else if (nextNode && ast.getNodeParent(nextNode) === node) {
-      dispatch(activateByNid(env.editor, env.search, nextNode.nid));
+      dispatch(activateByNid(env.editor, nextNode.nid));
     } else {
       playSound(BEEP);
     }
@@ -322,7 +313,7 @@ const commandMap: {
     dispatch(
       activateByNid(
         env.editor,
-        env.search,
+
         getRoot(getState().ast, env.node).nid
       )
     );
@@ -349,7 +340,7 @@ const commandMap: {
       descendants.forEach(
         (d) => env.isNodeEnv && dispatch({ type: "COLLAPSE", id: d.id })
       );
-      dispatch(activateByNid(env.editor, env.search, root.nid));
+      dispatch(activateByNid(env.editor, root.nid));
     }
   },
 
@@ -361,7 +352,7 @@ const commandMap: {
     [...root.descendants()].forEach(
       (d) => env.isNodeEnv && dispatch({ type: "UNCOLLAPSE", id: d.id })
     );
-    dispatch(activateByNid(env.editor, env.search, root.nid));
+    dispatch(activateByNid(env.editor, root.nid));
   },
 
   "Jump to Root": (env, _) => (dispatch, getState) => {
@@ -371,7 +362,7 @@ const commandMap: {
       return dispatch(
         activateByNid(
           env.editor,
-          env.search,
+
           getRoot(getState().ast, env.node).nid
         )
       );
@@ -499,15 +490,7 @@ const commandMap: {
       return say("Nothing selected");
     }
     const nodesToDelete = selections.map(ast.getNodeByIdOrThrow);
-    dispatch(
-      delete_(
-        env.search,
-        env.editor,
-        nodesToDelete,
-        env.language.parse,
-        "deleted"
-      )
-    );
+    dispatch(delete_(env.editor, nodesToDelete, env.language.parse, "deleted"));
   },
 
   // use the srcRange() to insert before/after the node *and*
@@ -517,7 +500,7 @@ const commandMap: {
       return;
     }
     if (!env.setRight(getState().ast)) {
-      dispatch(setCursor(env.editor, env.node.srcRange().to, env.search));
+      dispatch(setCursor(env.editor, env.node.srcRange().to));
     }
   },
   "Insert Left": (env, _) => (dispatch, getState) => {
@@ -525,7 +508,7 @@ const commandMap: {
       return;
     }
     if (!env.setLeft(getState().ast)) {
-      dispatch(setCursor(env.editor, env.node.srcRange().from, env.search));
+      dispatch(setCursor(env.editor, env.node.srcRange().from));
     }
   },
 
@@ -539,7 +522,7 @@ const commandMap: {
     }
     const nodesToCut = selections.map(ast.getNodeByIdOrThrow);
     copy(getState(), nodesToCut, "cut");
-    dispatch(delete_(env.search, env.editor, nodesToCut, env.language.parse));
+    dispatch(delete_(env.editor, nodesToCut, env.language.parse));
   },
 
   Copy: (env, _) => (dispatch, getState) => {
@@ -556,23 +539,25 @@ const commandMap: {
   Paste: pasteHandler,
   "Paste Before": pasteHandler,
 
-  "Activate Search Dialog": (env, _) => (dispatch, getState) => {
-    env.search.onSearch(
-      () => {},
-      () =>
-        env.activateNoRecord(env.search.search(true, getState()) ?? undefined)
-    );
-  },
+  // Search is disabled for now. We will revisit it in https://github.com/bootstrapworld/codemirror-blocks/issues/485
+  //
+  // "Activate Search Dialog": (env, _) => (dispatch, getState) => {
+  //   env.search.onSearch(
+  //     () => {},
+  //     () =>
+  //       env.activateNoRecord(env.search.search(true, getState()) ?? undefined)
+  //   );
+  // },
 
-  "Search Previous": (env, e) => (dispatch, getState) => {
-    e.preventDefault();
-    env.activateNoRecord(env.search.search(false, getState()) ?? undefined);
-  },
+  // "Search Previous": (env, e) => (dispatch, getState) => {
+  //   e.preventDefault();
+  //   env.activateNoRecord(env.search.search(false, getState()) ?? undefined);
+  // },
 
-  "Search Next": (env, e) => (dispatch, getState) => {
-    e.preventDefault();
-    env.activateNoRecord(env.search.search(true, getState()) ?? undefined);
-  },
+  // "Search Next": (env, e) => (dispatch, getState) => {
+  //   e.preventDefault();
+  //   env.activateNoRecord(env.search.search(true, getState()) ?? undefined);
+  // },
 
   Undo: (env, e) => doTopmostAction(env, e, "undo"),
 
@@ -630,7 +615,7 @@ export const keyDown =
               return playSound(BEEP);
             } // nothing to activate
             dispatch(
-              activateByNid(env.editor, env.search, node.nid, {
+              activateByNid(env.editor, node.nid, {
                 record: false,
                 allowMove: true,
               })

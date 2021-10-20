@@ -5,12 +5,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import BlockEditor, { Search } from "./BlockEditor";
+import BlockEditor from "./BlockEditor";
 import TextEditor from "./TextEditor";
 import Dialog from "../components/Dialog";
-import ByString from "./searchers/ByString";
-import ByBlock from "./searchers/ByBlock";
-import attachSearch from "./Search";
 import Toolbar from "./Toolbar";
 import { ToggleButton, BugButton } from "./EditorButtons";
 import { mountAnnouncer, say } from "../announcer";
@@ -19,8 +16,6 @@ import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror from "codemirror";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
-
-const UpgradedBlockEditor = attachSearch(BlockEditor, [ByString, ByBlock]);
 
 const defaultCmOptions: CodeMirror.EditorConfiguration = {
   lineNumbers: true,
@@ -136,12 +131,6 @@ type ToggleEditorAPI = {
   runMode(): never;
 };
 
-function isTextMarkerRange(
-  marker: CodeMirror.TextMarker<CodeMirror.MarkerRange | CodeMirror.Position>
-): marker is CodeMirror.TextMarker<CodeMirror.MarkerRange> {
-  return marker.type !== "bookmark";
-}
-
 import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
 import { AppContext } from "../components/Context";
@@ -158,14 +147,6 @@ export type ToggleEditorProps = {
   };
 };
 
-type ToggleEditorState = {
-  blockMode: boolean;
-  code: string;
-  dialog: null | { title: string; content: ReactElement };
-  debuggingLog?: ToggleEditorProps["debuggingLog"];
-  editor: CMBEditor | null;
-};
-
 function ToggleEditor(props: ToggleEditorProps) {
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const [blockMode, setBlockMode] = useState(false);
@@ -175,20 +156,6 @@ function ToggleEditor(props: ToggleEditorProps) {
     content: ReactElement;
   }>(null);
   const [ast, setAST] = useState(new AST([]));
-  const [search, setSearch] = useState<Search>({
-    search: () => {
-      throw new Error("Search not ready yet");
-    },
-    onSearch: () => {
-      throw new Error("Search not ready yet");
-    },
-    setCursor: () => {
-      throw new Error("Search not ready yet");
-    },
-    setCM: () => {
-      throw new Error("Search not ready yet");
-    },
-  });
   const [recordedMarks, setRecordedMarks] = useState<
     Map<
       number,
@@ -340,50 +307,14 @@ function ToggleEditor(props: ToggleEditorProps) {
     return () => cancelAfterDOMUpdate(pending);
   }, [recordedMarks, editor, ast]);
 
-  const renderBlocks = () => {
-    let defaultOptions = {
-      parse: props.language.parse,
-      incrementalRendering: true,
-      collapseAll: true,
-    };
-    return (
-      <UpgradedBlockEditor
-        onSearchMounted={setSearch}
-        codemirrorOptions={{
-          ...defaultCmOptions,
-          ...props.codemirrorOptions,
-        }}
-        value={code}
-        onMount={handleEditorMounted}
-        passedAST={ast}
-        // the props below are unique to the BlockEditor
-        language={props.language}
-        options={{ ...defaultOptions, ...props.options }}
-        keyDownHelpers={appHelpers}
-      />
-    );
-  };
-  const renderCode = () => (
-    <TextEditor
-      codemirrorOptions={{
-        ...defaultCmOptions,
-        ...props.codemirrorOptions,
-      }}
-      value={code}
-      onMount={handleEditorMounted}
-      passedAST={ast}
-    />
-  );
-
   const toolbarRef = useRef<HTMLInputElement>(null);
 
   const appHelpers = useMemo(
     () => ({
       showDialog: (contents: typeof dialog) => setDialog(contents),
       focusToolbar: () => toolbarRef.current?.focus(),
-      search,
     }),
-    [setDialog, toolbarRef, search]
+    [setDialog, toolbarRef]
   );
 
   const classes = "Editor " + (blockMode ? "blocks" : "text");
@@ -418,7 +349,35 @@ function ToggleEditor(props: ToggleEditorProps) {
           />
         </div>
         <div className="col-xs-9 codemirror-pane">
-          {blockMode ? renderBlocks() : renderCode()}
+          {blockMode ? (
+            <BlockEditor
+              codemirrorOptions={{
+                ...defaultCmOptions,
+                ...props.codemirrorOptions,
+              }}
+              value={code}
+              onMount={handleEditorMounted}
+              passedAST={ast}
+              // the props below are unique to the BlockEditor
+              language={props.language}
+              options={{
+                incrementalRendering: true,
+                collapseAll: true,
+                ...props.options,
+              }}
+              keyDownHelpers={appHelpers}
+            />
+          ) : (
+            <TextEditor
+              codemirrorOptions={{
+                ...defaultCmOptions,
+                ...props.codemirrorOptions,
+              }}
+              value={code}
+              onMount={handleEditorMounted}
+              passedAST={ast}
+            />
+          )}
         </div>
       </div>
 

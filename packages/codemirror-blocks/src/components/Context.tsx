@@ -5,7 +5,6 @@ import { Provider } from "react-redux";
 import type { Language } from "../CodeMirrorBlocks";
 import { CMBEditor } from "../editor";
 import type { AppStore } from "../store";
-import { Search } from "../ui/BlockEditor";
 
 export const EditorContext = React.createContext<CMBEditor | null>(null);
 export const LanguageContext = React.createContext<Language | null>(null);
@@ -23,7 +22,6 @@ export type AppHelpers = {
     contents: null | { title: string; content: React.ReactElement }
   ) => void;
   focusToolbar?: () => void;
-  search?: Search;
 };
 
 export const AppContext = React.createContext<AppHelpers>({});

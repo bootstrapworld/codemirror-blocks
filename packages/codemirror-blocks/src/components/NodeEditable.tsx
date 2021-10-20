@@ -11,7 +11,7 @@ import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
 import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 import { CMBEditor } from "../editor";
-import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
+import { useLanguageOrThrow } from "../hooks";
 
 function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
@@ -56,7 +56,6 @@ const NodeEditable = (props: Props) => {
   const element = useRef<HTMLElement>(null);
   const dispatch: AppDispatch = useDispatch();
   const language = useLanguageOrThrow();
-  const search = useSearchOrThrow();
 
   const { initialValue, isErrored } = useSelector((state: RootState) => {
     const nodeId = props.target.node ? props.target.node.id : "editing";
@@ -102,18 +101,16 @@ const NodeEditable = (props: Props) => {
         props.onDisableEditable();
         const focusNode = focusId ? ast.getNodeById(focusId) || null : null;
         const nid = focusNode && focusNode.nid;
-        dispatch(activateByNid(props.editor, search, nid));
+        dispatch(activateByNid(props.editor, nid));
         return;
       }
 
       let annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
       const result = dispatch(
-        insert(search, value, target, props.editor, language.parse, annt)
+        insert(value, target, props.editor, language.parse, annt)
       );
       if (result.successful) {
-        dispatch(
-          activateByNid(props.editor, search, null, { allowMove: false })
-        );
+        dispatch(activateByNid(props.editor, null, { allowMove: false }));
         props.onChange(null);
         props.onDisableEditable();
         setErrorId("");
@@ -145,9 +142,7 @@ const NodeEditable = (props: Props) => {
         // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
         // and then figure out how to get rid of it altogether.
         setAfterDOMUpdate(() => {
-          dispatch(
-            activateByNid(props.editor, search, null, { allowMove: false })
-          );
+          dispatch(activateByNid(props.editor, null, { allowMove: false }));
         });
         return;
     }

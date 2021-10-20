@@ -161,7 +161,7 @@ foo
 
 describe("performEdits", () => {
   const perform = (edits: EditInterface[]) =>
-    performEdits({} as any, edits, wescheme.parse, editor);
+    performEdits(edits, wescheme.parse, editor);
 
   let store!: AppStore;
 

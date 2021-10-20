@@ -4,12 +4,23 @@ import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import "react-tabs/style/react-tabs.less";
 import { playSound, WRAP } from "../utils";
 import { say } from "../announcer";
-import BlockEditor, { Search } from "./BlockEditor";
+import BlockEditor from "./BlockEditor";
 import { Searcher } from "./searchers/Searcher";
 import { GetProps } from "react-redux";
 import { ASTNode, Pos } from "../ast";
 import { RootState } from "../reducers";
 import { ReadonlyCMBEditor } from "../editor";
+
+export type Search = {
+  search: (
+    forward: boolean,
+    cmbState: RootState,
+    overrideCur?: null | Pos
+  ) => ASTNode | null;
+  onSearch: (done: () => void, searchForward: () => void) => void;
+  setCursor: (cursor: Pos) => void;
+  setCM: (editor: ReadonlyCMBEditor) => void;
+};
 
 export default function attachSearch(
   Editor: typeof BlockEditor,
@@ -200,7 +211,7 @@ export default function attachSearch(
 
       return (
         <>
-          <Editor {...editorProps} search={this.search} />
+          <Editor {...editorProps} />
 
           <Dialog
             isOpen={this.state.showSearchDialog}

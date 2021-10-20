@@ -18,7 +18,6 @@ import type { AppThunk } from "../store";
 import { getReducerActivities } from "../reducers";
 import { err, ok, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
-import { Search } from "../ui/BlockEditor";
 import CodeMirror from "codemirror";
 import { Language } from "../CodeMirrorBlocks";
 
@@ -207,7 +206,6 @@ export function applyEdits(
  */
 export const performEdits =
   (
-    search: Search,
     edits: EditInterface[],
     parse: Language["parse"],
     editor: CMBEditor,
@@ -221,7 +219,6 @@ export const performEdits =
         // update the ast.
         const changeResult = dispatch(
           commitChanges(
-            search,
             result.value.changeObjects,
             parse,
             editor,

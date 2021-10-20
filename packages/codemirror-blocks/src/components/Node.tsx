@@ -12,7 +12,7 @@ import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
 import { AppContext, EditorContext } from "./Context";
-import { useLanguageOrThrow, useSearchOrThrow } from "../hooks";
+import { useLanguageOrThrow } from "../hooks";
 import { RootNodeContext } from "../ui/ToplevelBlock";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
@@ -59,7 +59,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const dispatch: AppDispatch = useDispatch();
   const store: AppStore = useStore();
   const language = useLanguageOrThrow();
-  const search = useSearchOrThrow();
   const appHelpers = useContext(AppContext);
   const isErrorFree = () => store.getState().errorId === "";
 
@@ -81,7 +80,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
         node: props.node,
         editor: editor,
         language: language,
-        search: search,
         appHelpers: appHelpers,
 
         isLocked,
@@ -133,9 +131,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       return;
     }
     const currentNode = ast.getNodeByIdOrThrow(props.node.id);
-    dispatch(
-      activateByNid(editor, search, currentNode.nid, { allowMove: false })
-    );
+    dispatch(activateByNid(editor, currentNode.nid, { allowMove: false }));
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
