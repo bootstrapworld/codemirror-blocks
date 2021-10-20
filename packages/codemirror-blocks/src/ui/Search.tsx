@@ -4,7 +4,7 @@ import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import "react-tabs/style/react-tabs.less";
 import { playSound, WRAP } from "../utils";
 import { say } from "../announcer";
-import { BlockEditorComponentClass, Search } from "./BlockEditor";
+import BlockEditor, { Search } from "./BlockEditor";
 import { Searcher } from "./searchers/Searcher";
 import { GetProps } from "react-redux";
 import { ASTNode, Pos } from "../ast";
@@ -12,7 +12,7 @@ import { RootState } from "../reducers";
 import { ReadonlyCMBEditor } from "../editor";
 
 export default function attachSearch(
-  Editor: BlockEditorComponentClass,
+  Editor: typeof BlockEditor,
   searchModes: Searcher<any, any>[]
 ) {
   const settings = searchModes.reduce((acc, searchMode, i) => {
@@ -20,7 +20,7 @@ export default function attachSearch(
     return acc;
   }, {} as { [index: number]: unknown });
 
-  type Props = GetProps<BlockEditorComponentClass> & {
+  type Props = GetProps<typeof BlockEditor> & {
     onSearchMounted: (search: Search) => void;
   };
 
