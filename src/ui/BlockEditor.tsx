@@ -14,28 +14,18 @@ import {
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
-import {
-  minpos,
-  maxpos,
-  validateRanges,
-  BlockError,
-  setAfterDOMUpdate,
-  cancelAfterDOMUpdate,
-  getTempCM,
-} from "../utils";
-import type { afterDOMUpdateHandle } from "../utils";
+import { validateRanges, BlockError, setAfterDOMUpdate } from "../utils";
 import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { SelectionOptions } from "codemirror";
 import type { Options, API, Language } from "../CodeMirrorBlocks";
-import type { AppDispatch, AppThunk } from "../store";
+import type { AppDispatch } from "../store";
 import type { Activity, AppAction, RootState, Quarantine } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext, LanguageContext } from "../components/Context";
 import {
   CodeMirrorFacade,
-  CMBEditor,
   ReadonlyCMBEditor,
   isBlockNodeMarker,
 } from "../editor";
@@ -166,15 +156,12 @@ export const buildAPI = (
     hasFocus: () =>
       editor.codemirror.hasFocus() ||
       Boolean(document.activeElement?.id.match(/block-node/)),
-    extendSelection: (
-      from: CodeMirror.Position,
-      to: CodeMirror.Position,
-      opts?: SelectionOptions
-    ) => dispatch(extendSelections(editor, [from], opts, to)),
+    extendSelection: (from: Pos, to: Pos, opts?: SelectionOptions) =>
+      dispatch(extendSelections(editor, [from], opts, to)),
     extendSelections: (heads, opts) =>
       dispatch(extendSelections(editor, heads, opts, undefined)),
     extendSelectionsBy: (
-      f: (range: CodeMirror.Range) => CodeMirror.Position,
+      f: (range: CodeMirror.Range) => Pos,
       opts?: SelectionOptions
     ) =>
       dispatch(
@@ -325,22 +312,22 @@ export type Search = {
 };
 
 export type BlockEditorProps = {
-    value: string;
-    options?: Options;
-    codemirrorOptions?: CodeMirror.EditorConfiguration;
-    /**
-     * language being used
-     */
-    language: Language;
-    search?: Search;
-    keyDownHelpers: AppHelpers;
-    onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
-    onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
-    passedAST: AST;
-  };
+  value: string;
+  options?: Options;
+  codemirrorOptions?: CodeMirror.EditorConfiguration;
+  /**
+   * language being used
+   */
+  language: Language;
+  search?: Search;
+  keyDownHelpers: AppHelpers;
+  onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
+  onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
+  passedAST: AST;
+};
 
 const BlockEditor = ({
-  options = {}, 
+  options = {},
   search = {
     search: () => null,
     onSearch: () => {},
@@ -352,14 +339,16 @@ const BlockEditor = ({
   const { language, passedAST } = props;
   const dispatch: AppDispatch = useDispatch();
   const { ast, cur, quarantine } = useSelector(
-    ({ ast, cur, quarantine }: RootState) => ({ast, cur, quarantine})
-    );
+    ({ ast, cur, quarantine }: RootState) => ({ ast, cur, quarantine })
+  );
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
 
   // only refresh if there is no active quarantine
   useEffect(() => {
-    if (!!quarantine) { editor?.refresh(); }
-   });
+    if (!!quarantine) {
+      editor?.refresh();
+    }
+  });
 
   /**
    * @internal
@@ -603,10 +592,7 @@ const BlockEditor = ({
   /**
    * When the CM instance receives a paste event...start a quarantine
    */
-  const handleTopLevelPaste = (
-    editor: CodeMirrorFacade,
-    e: ClipboardEvent
-  ) => {
+  const handleTopLevelPaste = (editor: CodeMirrorFacade, e: ClipboardEvent) => {
     e.preventDefault();
     const text = e.clipboardData?.getData("text/plain");
     if (text) {
@@ -680,5 +666,5 @@ const BlockEditor = ({
       {renderPortals()}
     </LanguageContext.Provider>
   );
-}
+};
 export default BlockEditor;
