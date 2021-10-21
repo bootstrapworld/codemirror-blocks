@@ -65,7 +65,6 @@ export class WhenUnless extends ASTNode {
     super(from, to, "whenUnlessExpr", options);
     this.form = form;
     this.predicate = predicate;
-    console.log("predicate is", predicate);
     this.exprs = exprs;
   }
 

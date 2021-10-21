@@ -407,7 +407,6 @@ function parseNode(node, i) {
       { "aria-label": "require " + node.spec.val, comment: comment }
     );
   }
-  console.log("!! No translator for", node);
   return null;
 }
 
