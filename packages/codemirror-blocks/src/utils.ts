@@ -569,6 +569,7 @@ export function playSound(sound: CustomAudio) {
 
 export function debugLog(...args: unknown[]) {
   if (global?.process?.env?.DEBUG) {
+    // eslint-disable-next-line no-console
     console.log(...args);
   }
 }

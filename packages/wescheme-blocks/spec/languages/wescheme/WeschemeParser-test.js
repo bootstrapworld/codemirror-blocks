@@ -351,7 +351,6 @@ describe("The WeScheme Parser,", function () {
     });
     it("should ignore caseExpr", function () {
       this.ast = this.parser.parse('(case 9 [(1) "a"])');
-      console.log(this.ast[0]);
       expect(this.ast.length).toBe(0);
     });
     it("should ignore provide", function () {
