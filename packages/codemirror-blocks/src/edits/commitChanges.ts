@@ -12,7 +12,7 @@ import { Language } from "../CodeMirrorBlocks";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
-//   Changes, bool, FocusHint|undefined, AST|undefined
+//   Changes, Parser, Editor, bool, FocusHint|undefined, AST|undefined, String|undefined
 //   -> {newAST, focusId}
 //
 // Commit a set of text changes to CodeMirror. This can only be called if you

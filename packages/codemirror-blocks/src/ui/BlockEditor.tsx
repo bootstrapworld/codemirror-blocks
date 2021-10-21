@@ -320,6 +320,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     quarantine,
   }));
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
+  const [newAST, setNewAST] = useState<AST | undefined>();
 
   // only refresh if there is no active quarantine
   useEffect(() => {
@@ -386,17 +387,16 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         language.parse,
         editor.getValue()
       );
-      // Error! Cancel the change and report the error
-      if (!result.successful) {
+      // Success! Save the parsed AST for handleChange
+      if (result.successful) {
+        setNewAST(result.value);
+      } else {
         change.cancel();
         throw new BlockError(
           "An invalid change was rejected",
           "Invalid Edit",
           change
-        );
-      } else {
-        // Maybe we can save result.value, and pass it to commitChanges?
-        // This would avoid a re-parse
+        );        
       }
     }
   };
@@ -415,47 +415,39 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     // `handleBeforeChange` function so it must be valid.
     // Therefore we can commit it without calling speculateChanges.
     dispatch((dispatch, getState) => {
-      const { actionFocus } = getState();
-      let isUndoOrRedo = false;
-      let focusHint = -1 as -1 | FocusHint;
-
-      // Turn undo and redo into cmb actions, update the focusStack, and
-      // provide a focusHint
-      if (change.origin && ["undo", "redo"].includes(change.origin)) {
-        isUndoOrRedo = true;
-        if (actionFocus) {
-          // if actionFocus is defined, it will either contain an old OR new focusId
-          const { oldFocusNId, newFocusNId } = actionFocus;
-          const nextNId = (oldFocusNId || newFocusNId) as number;
-          focusHint = (newAST: AST) =>
-            nextNId === null ? null : newAST.getNodeByNId(nextNId);
-          dispatch(
-            commitChanges(
-              [makeChangeObject(change)],
-              language.parse,
-              editor,
-              isUndoOrRedo,
-              focusHint
-            )
-          );
-          const actionType = change.origin.toUpperCase() as "UNDO" | "REDO";
-          dispatch({ type: actionType, editor: editor });
-        }
-      } else {
-        // This (valid) change is coming from outside of the editor, but we
-        // don't know anything else about it. Apply the change, and set the focusHint
-        // to the top of the tree (-1)
-        const annt = change.origin || "change";
-        getState().undoableAction = annt; //?
+      let isUndoOrRedo = ["undo", "redo"].includes(change.origin as string);
+      let focusHint = -1 as -1 | FocusHint; // Assume CM will choose focus
+      const annt = change.origin || "change"; // Default annotation
+      // Do the actual change
+      function doChange(hint: -1 | FocusHint) {
         dispatch(
           commitChanges(
             [makeChangeObject(change)],
             language.parse,
             editor,
             isUndoOrRedo,
-            focusHint
+            focusHint,
+            newAST,
+            annt,
           )
         );
+      }
+
+      if (isUndoOrRedo) {
+        const { actionFocus } = getState();
+        if (actionFocus) {
+          // actionFocus will either contain an old OR new focusId
+          const { oldFocusNId, newFocusNId } = actionFocus;
+          const nextNId = (oldFocusNId || newFocusNId) as number;
+          focusHint = (newAST: AST) =>
+            nextNId === null ? null : newAST.getNodeByNId(nextNId);
+          doChange(focusHint);
+          const actionType = change.origin!.toUpperCase() as "UNDO" | "REDO";
+          dispatch({ type: actionType, editor: editor });
+        }
+      } else {
+        getState().undoableAction = annt; //?
+        doChange(focusHint);
       }
     });
   };
