@@ -13,8 +13,6 @@ type Props = {
 };
 
 const Toolbar = (props: Props) => {
-  const { primitives, languageId, blockMode, toolbarRef } = props;
-
   const [search, setSearch] = useState("");
   const [selectedPrimitive, setSelectedPrimitive] = useState<
     Primitive | undefined
@@ -25,7 +23,7 @@ const Toolbar = (props: Props) => {
 
   // Get a flat array of all primitives matching 'search'
   const getPrimitives = () =>
-    (primitives?.filter(search).primitives || []) as Primitive[];
+    (props.primitives?.filter(search).primitives || []) as Primitive[];
 
   // Set selectedPrimitive state, depending on whether we go up or down
   const move = (dir: "Up" | "Down") => {
@@ -58,7 +56,7 @@ const Toolbar = (props: Props) => {
         move(keyName);
         return;
       case "Esc":
-        toolbarRef.current?.focus(); // focus, then fall-through
+        props.toolbarRef.current?.focus(); // focus, then fall-through
         break;
     }
     event.stopPropagation();
@@ -88,11 +86,11 @@ const Toolbar = (props: Props) => {
           type="search"
           id="search_box"
           placeholder="Search functions"
-          disabled={!blockMode}
+          disabled={!props.blockMode}
           className="form-control"
           value={search}
           onKeyDown={handleKeyDown}
-          ref={toolbarRef}
+          ref={props.toolbarRef}
           onChange={changeSearch}
         />
         {search ? (
@@ -115,7 +113,7 @@ const Toolbar = (props: Props) => {
       <div
         className={classNames(
           "selected-primitive",
-          `blocks-language-${languageId}`
+          `blocks-language-${props.languageId}`
         )}
       >
         <div className="block-header">Block</div>

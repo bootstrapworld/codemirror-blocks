@@ -11,8 +11,7 @@ import { useDrag, useDrop } from "react-dnd";
 import { RootState } from "../reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
-import { AppContext, EditorContext } from "./Context";
-import { useLanguageOrThrow } from "../hooks";
+import { AppContext, EditorContext, LanguageContext } from "./Context";
 import { RootNodeContext } from "../ui/ToplevelBlock";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
@@ -59,7 +58,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
 
   const dispatch: AppDispatch = useDispatch();
   const store: AppStore = useStore();
-  const language = useLanguageOrThrow();
+  const language = useContext(LanguageContext);
   const appHelpers = useContext(AppContext);
   const isErrorFree = () => store.getState().errorId === "";
 
@@ -74,6 +73,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
     if (!editor) {
       // codemirror hasn't mounted yet, do nothing.
       return;
+    }
+    if (!language) {
+      throw new Error(
+        `Can't handle keyDown events outside of a language context`
+      );
     }
     dispatch(
       keyDown(e, {

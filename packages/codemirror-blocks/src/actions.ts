@@ -30,8 +30,9 @@ import {
 import { SelectionOptions } from "codemirror";
 import { useDispatch, useStore } from "react-redux";
 import type { Language } from "./CodeMirrorBlocks";
-import { useLanguageOrThrow } from "./hooks";
 import { Result } from "./edits/result";
+import { useContext } from "react";
+import { LanguageContext } from "./components/Context";
 
 // All editing actions are defined here.
 //
@@ -171,12 +172,15 @@ export function useDropAction() {
   // See the comment at the top of the file for what kinds of `target` there are.
   const store: AppStore = useStore();
   const dispatch: AppDispatch = useDispatch();
-  const language = useLanguageOrThrow();
+  const language = useContext(LanguageContext);
   return function drop(
     editor: CMBEditor,
     src: { id: string; content: string },
     target: Target
   ) {
+    if (!language) {
+      throw new Error(`Can't use dropAction outside of a language context`);
+    }
     checkTarget(target);
     const { id: srcId, content: srcContent } = src;
     const state = store.getState();
