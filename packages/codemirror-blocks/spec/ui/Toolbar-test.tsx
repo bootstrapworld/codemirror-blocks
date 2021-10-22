@@ -1,4 +1,5 @@
 import { render, fireEvent, cleanup, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React from "react";
 import Context from "../../src/components/Context";
 import { addLanguage } from "../../src/languages";
@@ -73,10 +74,41 @@ fdescribe("Toolbar", () => {
     renderWithContext(
       <Toolbar toolbarRef={React.createRef()} primitives={primitives} />
     );
-    const fooPrimitive = screen.getByText("star");
-    expect(fooPrimitive).not.toHaveClass("selected");
-    fireEvent.focus(fooPrimitive);
-    expect(fooPrimitive).toHaveClass("selected");
+    const star = screen.getByText("star");
+    expect(star).not.toHaveClass("selected");
+    star.focus();
+    expect(star).toHaveClass("selected");
+  });
+
+  describe("Navigating between primitives", () => {
+    const selectPrimitive = (name: string) => {
+      const primitiveEl = screen.getByText(name);
+      expect(primitiveEl).not.toHaveClass("selected");
+      primitiveEl.focus();
+      expect(primitiveEl).toHaveClass("selected");
+      return primitiveEl;
+    };
+
+    beforeEach(() => {
+      renderWithContext(
+        <Toolbar toolbarRef={React.createRef()} primitives={primitives} />
+      );
+    });
+
+    it("selects the next primitive when down is pressed", () => {
+      const starEl = selectPrimitive("star");
+      userEvent.keyboard("{ArrowDown}");
+      expect(starEl).not.toHaveClass("selected");
+      expect(document.activeElement).toHaveTextContent("square");
+      expect(document.activeElement).toHaveClass("selected");
+    });
+    it("selects the previous primitive when up is pressed", () => {
+      const squareEl = selectPrimitive("square");
+      userEvent.keyboard("{ArrowUp}");
+      expect(squareEl).not.toHaveClass("selected");
+      expect(document.activeElement).toHaveTextContent("star");
+      expect(document.activeElement).toHaveClass("selected");
+    });
   });
 
   describe("Searching", () => {
@@ -90,8 +122,9 @@ fdescribe("Toolbar", () => {
       ) as HTMLInputElement;
     });
 
-    const searchFor = (text: string) =>
+    const searchFor = (text: string) => {
       fireEvent.change(searchInput, { target: { value: text } });
+    };
 
     it("should render a search box", () => {
       expect(searchInput).toMatchInlineSnapshot(`
