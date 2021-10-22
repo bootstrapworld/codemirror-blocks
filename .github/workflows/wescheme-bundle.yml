@@ -1,0 +1,37 @@
+name: Wescheme.org Bundling
+
+# Only run this workflow when triggered manually.
+# See https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#manual-events
+on: workflow_dispatch
+
+jobs:
+  build:
+    name: Bundle and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # Install Node
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+
+      - name: Install NPM 7
+        run: npm install -g npm@7
+
+      - name: Install packages
+        run: npm install
+
+      - name: Build codemirror-blocks
+        run: npm run prepare --workspace=codemirror-blocks
+
+      - name: Build wescheme-blocks
+        run: npm run build --workspace=wescheme-blocks
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./packages/wescheme-blocks/dist
+          destination_dir: builds/wescheme.org/
