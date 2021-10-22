@@ -316,15 +316,23 @@ function checkTarget(target: Target) {
   }
 }
 
-// create a hidden buffer, for use with copy/cut/paste
-const buffer = document.createElement("textarea");
-buffer.ariaHidden = "true";
-buffer.tabIndex = -1;
-buffer.style.opacity = "0";
-buffer.style.height = "1px";
-document.body.appendChild(buffer);
+// lazily create a hidden buffer, for use with copy/cut/paste
+let _buffer: HTMLTextAreaElement;
+function getCopyPasteBuffer() {
+  if (_buffer) {
+    return _buffer;
+  }
+  _buffer = document.createElement("textarea");
+  _buffer.ariaHidden = "true";
+  _buffer.tabIndex = -1;
+  _buffer.style.opacity = "0";
+  _buffer.style.height = "1px";
+  document.body.appendChild(_buffer);
+  return _buffer;
+}
 
 function copyToClipboard(text: string) {
+  const buffer = getCopyPasteBuffer();
   buffer.value = text;
   buffer.select();
   if (navigator.clipboard) {
@@ -339,6 +347,7 @@ function copyToClipboard(text: string) {
 }
 
 function pasteFromClipboard(done: (value: string) => void) {
+  const buffer = getCopyPasteBuffer();
   buffer.value = "";
   buffer.focus();
   setTimeout(() => {
