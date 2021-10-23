@@ -4,7 +4,7 @@ import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import "react-tabs/style/react-tabs.less";
 import { playSound, WRAP } from "../utils";
 import { say } from "../announcer";
-import BlockEditor from "./BlockEditor";
+import { BlockEditorComponentClass } from "./BlockEditor";
 import { Searcher } from "./searchers/Searcher";
 import { GetProps } from "react-redux";
 import { ASTNode, Pos } from "../ast";
@@ -23,18 +23,15 @@ export type Search = {
 };
 
 export default function attachSearch(
-  Editor: typeof BlockEditor,
-  searchModes: Searcher<
-    unknown,
-    { setting: unknown; onChange: unknown; firstTime: unknown }
-  >[]
+  Editor: BlockEditorComponentClass,
+  searchModes: Searcher<any, any>[]
 ) {
   const settings = searchModes.reduce((acc, searchMode, i) => {
     acc[i] = searchMode.setting;
     return acc;
   }, {} as { [index: number]: unknown });
 
-  type Props = GetProps<typeof BlockEditor> & {
+  type Props = GetProps<BlockEditorComponentClass> & {
     onSearchMounted: (search: Search) => void;
   };
 
