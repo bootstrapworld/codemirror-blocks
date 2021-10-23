@@ -396,7 +396,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
           "An invalid change was rejected",
           "Invalid Edit",
           change
-        );        
+        );
       }
     }
   };
@@ -428,7 +428,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
             isUndoOrRedo,
             focusHint,
             newASTRef.current,
-            annt,
+            annt
           )
         );
       }
