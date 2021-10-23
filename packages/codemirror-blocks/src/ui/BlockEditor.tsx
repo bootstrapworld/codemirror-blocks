@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
@@ -320,7 +320,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     quarantine,
   }));
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
-  const [newAST, setNewAST] = useState<AST | undefined>();
+  const newASTRef = useRef<AST | undefined>();
 
   // only refresh if there is no active quarantine
   useEffect(() => {
@@ -389,7 +389,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       );
       // Success! Save the parsed AST for handleChange
       if (result.successful) {
-        setNewAST(result.value);
+        newASTRef.current = result.value;
       } else {
         change.cancel();
         throw new BlockError(
@@ -427,7 +427,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
             editor,
             isUndoOrRedo,
             focusHint,
-            newAST,
+            newASTRef.current,
             annt,
           )
         );
