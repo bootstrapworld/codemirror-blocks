@@ -22,7 +22,7 @@ export const ToggleButton = (props: ToggleButtonProps) => {
       tabIndex={0}
     >
       <span aria-hidden="true">{buttonIcon}</span>
-      <span className="btn-title">{buttonAria}</span>
+      <span className="btn-title screenreader-only">{buttonAria}</span>
     </button>
   );
 };
@@ -41,7 +41,7 @@ export const BugButton = () => {
       tabIndex={0}
     >
       <span aria-hidden="true">&#128030;</span>
-      <span className="btn-title">Report a Bug</span>
+      <span className="btn-title screenreader-only">Report a Bug</span>
     </button>
   );
 };

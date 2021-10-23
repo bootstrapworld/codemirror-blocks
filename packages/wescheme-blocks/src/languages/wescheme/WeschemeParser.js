@@ -20,8 +20,8 @@ import { LetLikeExpr, WhenUnless, Sequence } from "./ast";
 import PRIMITIVES_CONFIG from "./primitives-config";
 
 import { lex } from "wescheme-js/src/lex";
-const types = require("wescheme-js/src/runtime/types");
-const structures = require("wescheme-js/src/structures");
+import * as types from "wescheme-js/src/runtime/types";
+import * as structures from "wescheme-js/src/structures";
 
 // TODO(pcardune): figure out why these imports were being done like this
 // import { lex } from "lex";
@@ -414,7 +414,6 @@ function parseNode(node, i) {
       { "aria-label": "require " + node.spec.val, comment: comment }
     );
   }
-  console.log("!! No translator for", node);
   return null;
 }
 
