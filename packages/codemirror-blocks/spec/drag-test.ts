@@ -34,8 +34,8 @@ describe("Drag and drop", () => {
 
     const retrieve = () => {
       const funcApp = cmb.getAst().rootNodes[0] as FunctionApp;
-      firstArg = funcApp.args[0];
-      secondArg = funcApp.args[1];
+      firstArg = funcApp.fields.args[0];
+      secondArg = funcApp.fields.args[1];
       dropTargetEls = cmb
         .getAst()
         .rootNodes[0].element!.querySelectorAll(".blocks-drop-target");
@@ -194,7 +194,7 @@ describe("Drag and drop", () => {
       await finishRender();
       retrieve();
       const newFirstRoot = cmb.getAst().rootNodes[0] as FunctionApp;
-      const newLastChild = newFirstRoot.args[2];
+      const newLastChild = newFirstRoot.fields.args[2];
       expect(cmb.getValue()).toBe("\n(+ 1 2 (collapse me))");
       expect(newFirstRoot.element!.getAttribute("aria-expanded")).toBe("true");
       expect(newLastChild.element!.getAttribute("aria-expanded")).toBe("false");

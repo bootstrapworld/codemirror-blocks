@@ -13,7 +13,7 @@ describe("The CodeMirrorBlocks Class", function () {
     let cmb!: API;
     let ast!: AST;
     let literal1!: ASTNode;
-    let expression!: ASTNode & { args: ASTNode[] };
+    let expression!: ASTNode<{ args: ASTNode[] }>;
     beforeEach(async function () {
       cmb = await mountCMB(wescheme);
       cmb.setValue("11\n12\n(+ 3 4 5)");
@@ -21,7 +21,7 @@ describe("The CodeMirrorBlocks Class", function () {
       cmb.getAllMarks().forEach((m) => m.clear());
       ast = cmb.getAst();
       literal1 = ast.rootNodes[0];
-      expression = ast.rootNodes[2] as ASTNode & { args: ASTNode[] };
+      expression = ast.rootNodes[2] as ASTNode<{ args: ASTNode[] }>;
     });
 
     afterEach(function () {
@@ -43,7 +43,7 @@ describe("The CodeMirrorBlocks Class", function () {
     });
 
     it("it should allow you to set a className on a child node", function () {
-      const child = expression.args[2];
+      const child = expression.fields.args[2];
       cmb.markText(child.from, child.to, { className: "error" });
       expect(child.element!.className).toMatch(/error/);
       expect(expression.element!.className).not.toMatch(/error/);

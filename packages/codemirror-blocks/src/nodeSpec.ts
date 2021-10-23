@@ -11,6 +11,8 @@ import { hashObject } from "./utils";
 // - list: an array of ASTNodes.
 // - value: an ordinary value that does not contain an ASTNode.
 
+export type ChildSpec = Required | Optional | List | Value;
+
 // nodeSpec :: Array<ChildSpec> -> NodeSpec
 export function nodeSpec(childSpecs: ChildSpec[]) {
   return new NodeSpec(childSpecs);
@@ -45,7 +47,7 @@ export class NodeSpec {
       );
     }
     for (const childSpec of childSpecs) {
-      if (!(childSpec instanceof ChildSpec)) {
+      if (!(childSpec instanceof BaseSpec)) {
         throw new Error(
           "NodeSpec: all child specs must be created by one of the functions: required/optional/list."
         );
@@ -62,7 +64,11 @@ export class NodeSpec {
 
   hash(node: ASTNode) {
     const hashes = new HashIterator(node, this);
-    return hashObject([node.type, [...hashes], node.options.comment?.comment]);
+    return hashObject([
+      node.type,
+      [...hashes],
+      node.options.comment && node.options.comment.fields.comment,
+    ]);
   }
 
   children(node: ASTNode): Iterable<ASTNode> {
@@ -107,21 +113,21 @@ class HashIterator {
 
   *[Symbol.iterator]() {
     for (const spec of this.nodeSpec.childSpecs) {
-      const field = spec.getField(this.parent);
       if (spec instanceof Value) {
-        yield hashObject(field);
+        yield hashObject(spec.getField(this.parent));
       } else if (spec instanceof List) {
-        for (const elem of field) {
+        for (const elem of spec.getField(this.parent)) {
           yield elem.hash;
         }
       } else {
+        const field = spec.getField(this.parent);
         yield field == null ? hashObject(null) : field.hash;
       }
     }
   }
 }
 
-abstract class ChildSpec {
+abstract class BaseSpec<FieldType> {
   fieldName: string;
 
   constructor(fieldName: string) {
@@ -149,9 +155,8 @@ abstract class ChildSpec {
    *
    * @internal
    */
-  getField<N extends ASTNode>(node: N) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (node as any)[this.fieldName];
+  getField<N extends ASTNode>(node: N): FieldType {
+    return node.fields[this.fieldName] as FieldType;
   }
 
   /**
@@ -160,15 +165,14 @@ abstract class ChildSpec {
    * @param node ASTNode on which to set the field
    * @param value the new value for the field
    */
-  setField<N extends ASTNode>(node: N, value: ASTNode | null) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (node as any)[this.fieldName] = value;
+  setField<N extends ASTNode>(node: N, value: FieldType) {
+    node.fields[this.fieldName] = value;
   }
 
   abstract validate(parent: ASTNode): void;
 }
 
-export class Required extends ChildSpec {
+export class Required extends BaseSpec<ASTNode> {
   validate(parent: ASTNode) {
     if (!(this.getField(parent) instanceof ASTNode)) {
       throw new Error(
@@ -178,7 +182,7 @@ export class Required extends ChildSpec {
   }
 }
 
-export class Optional extends ChildSpec {
+export class Optional extends BaseSpec<ASTNode | null> {
   validate(parent: ASTNode) {
     const child = this.getField(parent);
     if (child !== null && !(child instanceof ASTNode)) {
@@ -189,7 +193,7 @@ export class Optional extends ChildSpec {
   }
 }
 
-export class List extends ChildSpec {
+export class List extends BaseSpec<ASTNode[]> {
   validate(parent: ASTNode) {
     const array = this.getField(parent);
     let valid = true;
@@ -208,7 +212,8 @@ export class List extends ChildSpec {
   }
 }
 
-export class Value extends ChildSpec {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class Value extends BaseSpec<any> {
   validate(_parent: ASTNode) {
     // Any value is valid, even `undefined`, so there's nothing to check.
   }

@@ -1,7 +1,7 @@
 import * as P from "pretty-fast-pretty-printer";
 import { warn, poscmp } from "../utils";
 import { Required, Optional, List, Value } from "../nodeSpec";
-import { ASTNode } from "../ast";
+import { ASTNode, NodeFields, UnknownFields } from "../ast";
 import type { AST, Pos } from "../ast";
 import { playSound, BEEP } from "../utils";
 
@@ -105,27 +105,24 @@ export class FakeAstReplacement {
   parent: ASTNode;
   child: ASTNode;
   spec: Required | Optional | List;
-  index?: string;
+  index: number;
   constructor(parent: ASTNode, child: ASTNode) {
     this.parent = parent;
     this.child = child;
     for (const spec of parent.spec.childSpecs) {
-      const field: ASTNode | ASTNode[] = spec.getField(parent);
-      if (!(field instanceof Array)) {
-        if (spec instanceof Required && field.id === child.id) {
-          this.spec = spec;
-          return;
-        } else if (spec instanceof Optional && field && field.id === child.id) {
-          this.spec = spec;
-          return;
-        }
-      } else if (spec instanceof List) {
-        for (const i in field) {
+      if (spec instanceof List) {
+        const field = spec.getField(parent);
+        for (const i of field.keys()) {
           if (field[i].id === child.id) {
             this.spec = spec;
             this.index = i;
             return;
           }
+        }
+      } else if (spec instanceof Required || spec instanceof Optional) {
+        if (spec.getField(parent)?.id === child.id) {
+          this.spec = spec;
+          return;
         }
       }
     }
@@ -141,7 +138,7 @@ export class FakeAstReplacement {
       this.child.to,
       text
     );
-    if (this.index) {
+    if (this.spec instanceof List) {
       this.spec.getField(clonedParent)[this.index] = newChildNode;
     } else {
       this.spec.setField(clonedParent, newChildNode);
@@ -149,7 +146,7 @@ export class FakeAstReplacement {
   }
 
   deleteChild(clonedParent: ClonedASTNode) {
-    if (this.index) {
+    if (this.spec instanceof List) {
       this.spec.getField(clonedParent).splice(this.index, 1); // Remove the i'th element.
     } else if (this.spec instanceof Optional) {
       this.spec.setField(clonedParent, null);
@@ -166,7 +163,7 @@ export class FakeAstReplacement {
   findChild(newAST: AST) {
     const newParent = newAST.getNodeById(this.parent.id);
     if (!newParent) return null;
-    if (this.index) {
+    if (this.spec instanceof List) {
       return this.spec.getField(this.parent)[this.index];
     } else {
       return this.spec.getField(this.parent);
@@ -175,11 +172,9 @@ export class FakeAstReplacement {
 }
 
 // A fake ASTNode that just prints itself with the given text.
-class FakeInsertNode extends ASTNode {
-  text: string;
+class FakeInsertNode extends ASTNode<{ text: string }> {
   constructor(from: Pos, to: Pos, text: string, options = {}) {
-    super(from, to, "fakeInsertNode", options);
-    this.text = text;
+    super(from, to, "fakeInsertNode", { text }, options);
   }
 
   toDescription(_level: number) {
@@ -187,7 +182,7 @@ class FakeInsertNode extends ASTNode {
   }
 
   pretty() {
-    const lines = this.text.split("\n");
+    const lines = this.fields.text.split("\n");
     return P.vertArray(lines.map(P.txt));
   }
 
@@ -199,7 +194,7 @@ class FakeInsertNode extends ASTNode {
 // A fake ASTNode that just prints itself like a Blank.
 class FakeBlankNode extends ASTNode {
   constructor(from: Pos, to: Pos, options = {}) {
-    super(from, to, "fakeBlankNode", options);
+    super(from, to, "fakeBlankNode", {}, options);
   }
 
   toDescription(_level: number) {
@@ -218,16 +213,27 @@ class FakeBlankNode extends ASTNode {
 /**
  * An ASTNode that is a clone of another ASTNode.
  */
-export class ClonedASTNode extends ASTNode {
+export class ClonedASTNode<
+  Fields extends NodeFields = UnknownFields
+> extends ASTNode<Fields> {
   // Make a copy of a node, to perform fake edits on (so that the fake edits don't
   // show up in the real AST). This copy will be deep over the ASTNodes, but
   // shallow over the non-ASTNode values they contain.
-  constructor(oldNode: ASTNode) {
-    super(oldNode.from, oldNode.to, oldNode.type, oldNode.options);
+  constructor(oldNode: ASTNode<Fields>) {
+    super(
+      oldNode.from,
+      oldNode.to,
+      oldNode.type,
+      {} as Fields, // TODO(pcardune): construct this properly before calling super using the code below
+      oldNode.options
+    );
     for (const spec of oldNode.spec.childSpecs) {
-      if (spec instanceof Required || spec instanceof Optional) {
-        if (spec.getField(oldNode)) {
-          spec.setField(this, cloneNode(spec.getField(oldNode)));
+      if (spec instanceof Required) {
+        spec.setField(this, cloneNode(spec.getField(oldNode)));
+      } else if (spec instanceof Optional) {
+        const field = spec.getField(oldNode);
+        if (field) {
+          spec.setField(this, cloneNode(field));
         } else {
           spec.setField(this, null);
         }
@@ -254,6 +260,8 @@ export class ClonedASTNode extends ASTNode {
 // Make a copy of a node, to perform fake edits on (so that the fake edits don't
 // show up in the real AST). This copy will be deep over the ASTNodes, but
 // shallow over the non-ASTNode values they contain.
-export function cloneNode(oldNode: ASTNode): ClonedASTNode {
+export function cloneNode<F extends NodeFields>(
+  oldNode: ASTNode<F>
+): ClonedASTNode<F> {
   return new ClonedASTNode(oldNode);
 }

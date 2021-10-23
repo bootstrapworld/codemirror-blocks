@@ -4,13 +4,12 @@ describe("The WeScheme Parser,", function () {
   beforeEach(function () {
     this.parser = new WeschemeParser();
   });
-
   it("should set the appropriate data type for literals", function () {
-    expect(this.parser.parse("#t")[0].dataType).toBe("boolean");
-    expect(this.parser.parse("1")[0].dataType).toBe("number");
-    expect(this.parser.parse('"hello"')[0].dataType).toBe("string");
-    expect(this.parser.parse("#\\m")[0].dataType).toBe("character");
-    expect(this.parser.parse("foo")[0].dataType).toBe("symbol");
+    expect(this.parser.parse("#t")[0].fields.dataType).toBe("boolean");
+    expect(this.parser.parse("1")[0].fields.dataType).toBe("number");
+    expect(this.parser.parse('"hello"')[0].fields.dataType).toBe("string");
+    expect(this.parser.parse("#\\m")[0].fields.dataType).toBe("character");
+    expect(this.parser.parse("foo")[0].fields.dataType).toBe("symbol");
   });
 
   it("should treat vector literals like expressions", function () {
@@ -37,15 +36,15 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should convert the function symbol to a literal", function () {
-      expect(this.ast[0].func.type).toBe("literal");
-      expect(this.ast[0].func.dataType).toBe("symbol");
+      expect(this.ast[0].fields.func.type).toBe("literal");
+      expect(this.ast[0].fields.func.fields.dataType).toBe("symbol");
     });
 
     it("should support empty expressions by generating a placeholder literal", function () {
       this.ast = this.parser.parse("()");
       expect(this.ast[0].type).toBe("functionApp");
-      expect(this.ast[0].func.value).toBe("...");
-      expect(this.ast[0].func.dataType).toBe("blank");
+      expect(this.ast[0].fields.func.fields.value).toBe("...");
+      expect(this.ast[0].fields.func.fields.dataType).toBe("blank");
     });
   });
 
@@ -60,12 +59,12 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should convert the function symbol to a literal", function () {
-      expect(this.ast[0].func.type).toBe("literal");
-      expect(this.ast[1].func.type).toBe("literal");
-      expect(this.ast[0].func.dataType).toBe("symbol");
-      expect(this.ast[1].func.dataType).toBe("symbol");
-      expect(this.ast[0].func.value).toBe("or");
-      expect(this.ast[1].func.value).toBe("and");
+      expect(this.ast[0].fields.func.type).toBe("literal");
+      expect(this.ast[1].fields.func.type).toBe("literal");
+      expect(this.ast[0].fields.func.fields.dataType).toBe("symbol");
+      expect(this.ast[1].fields.func.fields.dataType).toBe("symbol");
+      expect(this.ast[0].fields.func.fields.value).toBe("or");
+      expect(this.ast[1].fields.func.fields.value).toBe("and");
     });
   });
 
@@ -76,8 +75,8 @@ describe("The WeScheme Parser,", function () {
 
     it("should convert defVar expressions to variableDef", function () {
       expect(this.ast[0].type).toBe("variableDefinition");
-      expect(this.ast[0].name.value).toBe("foo");
-      expect(this.ast[0].body.type).toBe("literal");
+      expect(this.ast[0].fields.name.fields.value).toBe("foo");
+      expect(this.ast[0].fields.body.type).toBe("literal");
     });
   });
 
@@ -92,7 +91,9 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should keep track of the text of the comment", function () {
-      expect(this.ast[0].options.comment.comment).toBe("this is a comment");
+      expect(this.ast[0].options.comment.fields.comment).toBe(
+        "this is a comment"
+      );
     });
   });
 
@@ -106,13 +107,13 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should convert the struct name correctly", function () {
-      expect(this.ast[0].name.value).toBe("3d-point");
+      expect(this.ast[0].fields.name.fields.value).toBe("3d-point");
     });
 
     it("should parse fields correctly", function () {
-      expect(this.ast[0].fields.ids.length).toBe(3);
-      expect(this.ast[0].fields.ids[0].value).toBe("x");
-      expect(this.ast[0].fields.ids[2].value).toBe("z");
+      expect(this.ast[0].fields.fields.fields.ids.length).toBe(3);
+      expect(this.ast[0].fields.fields.fields.ids[0].fields.value).toBe("x");
+      expect(this.ast[0].fields.fields.fields.ids[2].fields.value).toBe("z");
     });
   });
 
@@ -126,16 +127,16 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should convert the function name correctly", function () {
-      expect(this.ast[0].name.value).toBe("add2");
+      expect(this.ast[0].fields.name.fields.value).toBe("add2");
     });
 
     it("should convert the function argument correctly", function () {
-      expect(this.ast[0].params.ids.length).toBe(1);
-      expect(this.ast[0].params.ids[0].value).toBe("x");
+      expect(this.ast[0].fields.params.fields.ids.length).toBe(1);
+      expect(this.ast[0].fields.params.fields.ids[0].fields.value).toBe("x");
     });
 
     it("should convert the function body correctly", function () {
-      expect(this.ast[0].body.type).toBe("functionApp");
+      expect(this.ast[0].fields.body.type).toBe("functionApp");
     });
   });
 
@@ -149,13 +150,13 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should convert the arguments correctly", function () {
-      expect(this.ast[0].args.ids.length).toBe(2);
-      expect(this.ast[0].args.ids[0].value).toBe("x");
-      expect(this.ast[0].args.ids[1].value).toBe("y");
+      expect(this.ast[0].fields.args.fields.ids.length).toBe(2);
+      expect(this.ast[0].fields.args.fields.ids[0].fields.value).toBe("x");
+      expect(this.ast[0].fields.args.fields.ids[1].fields.value).toBe("y");
     });
 
     it("should convert the body correctly", function () {
-      expect(this.ast[0].body.type).toBe("functionApp");
+      expect(this.ast[0].fields.body.type).toBe("functionApp");
     });
   });
 
@@ -174,7 +175,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should convert the clauses correctly", function () {
-      const clauses = this.ast[0].clauses;
+      const clauses = this.ast[0].fields.clauses;
       expect(clauses.length).toBe(3);
       expect(clauses[0].type).toBe("condClause");
     });
@@ -199,19 +200,19 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should convert the test expression correctly", function () {
-      expect(this.ast[0].testExpr.type).toBe("functionApp");
+      expect(this.ast[0].fields.testExpr.type).toBe("functionApp");
     });
 
     it("should convert the then expression correctly", function () {
-      expect(this.ast[0].thenExpr.type).toBe("literal");
-      expect(this.ast[0].thenExpr.dataType).toBe("symbol");
-      expect(this.ast[0].thenExpr.value).toBe("x");
+      expect(this.ast[0].fields.thenExpr.type).toBe("literal");
+      expect(this.ast[0].fields.thenExpr.fields.dataType).toBe("symbol");
+      expect(this.ast[0].fields.thenExpr.fields.value).toBe("x");
     });
 
     it("should convert the else expression correctly", function () {
-      expect(this.ast[0].elseExpr.type).toBe("literal");
-      expect(this.ast[0].elseExpr.dataType).toBe("symbol");
-      expect(this.ast[0].elseExpr.value).toBe("y");
+      expect(this.ast[0].fields.elseExpr.type).toBe("literal");
+      expect(this.ast[0].fields.elseExpr.fields.dataType).toBe("symbol");
+      expect(this.ast[0].fields.elseExpr.fields.value).toBe("y");
     });
   });
 
@@ -225,24 +226,26 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should get the correct name of the sequence", function () {
-      expect(this.ast[0].name.value).toBe("begin");
+      expect(this.ast[0].fields.name.fields.value).toBe("begin");
     });
 
     it("should convert the sequence's expressions correctly", function () {
-      expect(this.ast[0].exprs[0].type).toBe("functionApp");
-      expect(this.ast[0].exprs[1].type).toBe("functionApp");
+      expect(this.ast[0].fields.exprs[0].type).toBe("functionApp");
+      expect(this.ast[0].fields.exprs[1].type).toBe("functionApp");
     });
 
     it("should leave the expressions in the order that they appeared in the sequence", function () {
-      expect(this.ast[0].exprs[0].func.value).toBe("-");
-      expect(this.ast[0].exprs[1].func.value).toBe("print");
+      expect(this.ast[0].fields.exprs[0].fields.func.fields.value).toBe("-");
+      expect(this.ast[0].fields.exprs[1].fields.func.fields.value).toBe(
+        "print"
+      );
     });
 
     it("should preserve nested expressions in the sequence", function () {
-      var firstExpression = this.ast[0].exprs[0];
-      expect(firstExpression.func.value).toBe("-");
-      expect(firstExpression.args[0].type).toBe("functionApp");
-      expect(firstExpression.args[1].type).toBe("literal");
+      var firstExpression = this.ast[0].fields.exprs[0];
+      expect(firstExpression.fields.func.fields.value).toBe("-");
+      expect(firstExpression.fields.args[0].type).toBe("functionApp");
+      expect(firstExpression.fields.args[1].type).toBe("literal");
     });
   });
 
@@ -258,7 +261,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should get the correct form of the letLikeExpr", function () {
-      expect(this.ast[0].form).toBe("let*");
+      expect(this.ast[0].fields.form).toBe("let*");
     });
 
     it("should get the correct aria-label", function () {
@@ -268,20 +271,32 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should convert the bindings to a sequence, correctly", function () {
-      expect(this.ast[0].bindings.type).toBe("sequence");
-      expect(this.ast[0].bindings.name).toBe("bindings");
-      expect(this.ast[0].bindings.exprs.length).toBe(3);
-      expect(this.ast[0].bindings.exprs[0].type).toBe("variableDefinition");
-      expect(this.ast[0].bindings.exprs[0].name.value).toBe("x");
-      expect(this.ast[0].bindings.exprs[1].type).toBe("variableDefinition");
-      expect(this.ast[0].bindings.exprs[1].name.value).toBe("y");
-      expect(this.ast[0].bindings.exprs[2].type).toBe("variableDefinition");
-      expect(this.ast[0].bindings.exprs[2].name.value).toBe("z");
+      expect(this.ast[0].fields.bindings.type).toBe("sequence");
+      expect(this.ast[0].fields.bindings.fields.name).toBe("bindings");
+      expect(this.ast[0].fields.bindings.fields.exprs.length).toBe(3);
+      expect(this.ast[0].fields.bindings.fields.exprs[0].type).toBe(
+        "variableDefinition"
+      );
+      expect(
+        this.ast[0].fields.bindings.fields.exprs[0].fields.name.fields.value
+      ).toBe("x");
+      expect(this.ast[0].fields.bindings.fields.exprs[1].type).toBe(
+        "variableDefinition"
+      );
+      expect(
+        this.ast[0].fields.bindings.fields.exprs[1].fields.name.fields.value
+      ).toBe("y");
+      expect(this.ast[0].fields.bindings.fields.exprs[2].type).toBe(
+        "variableDefinition"
+      );
+      expect(
+        this.ast[0].fields.bindings.fields.exprs[2].fields.name.fields.value
+      ).toBe("z");
     });
 
     it("should convert the let-body properly", function () {
-      expect(this.ast[0].expr.type).toBe("functionApp");
-      expect(this.ast[0].expr.func.value).toBe("*");
+      expect(this.ast[0].fields.expr.type).toBe("functionApp");
+      expect(this.ast[0].fields.expr.fields.func.fields.value).toBe("*");
     });
   });
 
@@ -295,7 +310,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should get the correct form of the WhenUnlessExpr", function () {
-      expect(this.ast[0].form).toBe("when");
+      expect(this.ast[0].fields.form).toBe("when");
     });
 
     it("should get the correct aria-label", function () {
@@ -303,20 +318,20 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should convert the predicate properly", function () {
-      expect(this.ast[0].predicate.type).toBe("functionApp");
-      expect(this.ast[0].predicate.func.value).toBe(">");
+      expect(this.ast[0].fields.predicate.type).toBe("functionApp");
+      expect(this.ast[0].fields.predicate.fields.func.fields.value).toBe(">");
     });
 
     it("should convert the exprs to a sequence, correctly", function () {
-      expect(this.ast[0].exprs.type).toBe("sequence");
-      expect(this.ast[0].exprs.name).toBe("begin");
-      expect(this.ast[0].exprs.exprs.length).toBe(3);
-      expect(this.ast[0].exprs.exprs[0].type).toBe("literal");
-      expect(this.ast[0].exprs.exprs[0].value).toBe("x");
-      expect(this.ast[0].exprs.exprs[1].type).toBe("literal");
-      expect(this.ast[0].exprs.exprs[1].value).toBe("y");
-      expect(this.ast[0].exprs.exprs[2].type).toBe("literal");
-      expect(this.ast[0].exprs.exprs[2].value).toBe("z");
+      expect(this.ast[0].fields.exprs.type).toBe("sequence");
+      expect(this.ast[0].fields.exprs.fields.name).toBe("begin");
+      expect(this.ast[0].fields.exprs.fields.exprs.length).toBe(3);
+      expect(this.ast[0].fields.exprs.fields.exprs[0].type).toBe("literal");
+      expect(this.ast[0].fields.exprs.fields.exprs[0].fields.value).toBe("x");
+      expect(this.ast[0].fields.exprs.fields.exprs[1].type).toBe("literal");
+      expect(this.ast[0].fields.exprs.fields.exprs[1].fields.value).toBe("y");
+      expect(this.ast[0].fields.exprs.fields.exprs[2].type).toBe("literal");
+      expect(this.ast[0].fields.exprs.fields.exprs[2].fields.value).toBe("z");
     });
   });
 
@@ -424,160 +439,160 @@ describe("The WeScheme Parser,", function () {
     it("parse malformed defVar (define a)", function () {
       this.ast = this.parser.parse("(define a)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("define");
-      expect(this.ast[0].elts.length).toBe(2);
-      expect(this.ast[0].elts[1].value).toBe("a");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("define");
+      expect(this.ast[0].fields.elts.length).toBe(2);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
     });
 
     it("parse malformed defVars (define-values a)", function () {
       this.ast = this.parser.parse("(define-values a)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("define-values");
-      expect(this.ast[0].elts.length).toBe(2);
-      expect(this.ast[0].elts[1].value).toBe("a");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("define-values");
+      expect(this.ast[0].fields.elts.length).toBe(2);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
     });
 
     it("parse malformed defFun (define (a)", function () {
       this.ast = this.parser.parse("(define (a))");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("define");
-      expect(this.ast[0].elts.length).toBe(2);
-      expect(this.ast[0].elts[1].type).toBe("functionApp");
-      expect(this.ast[0].elts[1].func.value).toBe("a");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("define");
+      expect(this.ast[0].fields.elts.length).toBe(2);
+      expect(this.ast[0].fields.elts[1].type).toBe("functionApp");
+      expect(this.ast[0].fields.elts[1].fields.func.fields.value).toBe("a");
     });
 
     it("parse malformed defStruct (define-struct a (a b c) d)", function () {
       this.ast = this.parser.parse("(define-struct a (a b c) d)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("define-struct");
-      expect(this.ast[0].elts.length).toBe(4);
-      expect(this.ast[0].elts[1].type).toBe("literal");
-      expect(this.ast[0].elts[2].type).toBe("functionApp");
-      expect(this.ast[0].elts[3].value).toBe("d");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("define-struct");
+      expect(this.ast[0].fields.elts.length).toBe(4);
+      expect(this.ast[0].fields.elts[1].type).toBe("literal");
+      expect(this.ast[0].fields.elts[2].type).toBe("functionApp");
+      expect(this.ast[0].fields.elts[3].fields.value).toBe("d");
     });
 
     it("parse malformed ifExpression (if)", function () {
       this.ast = this.parser.parse("(if)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("if");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("if");
     });
 
     it("parse malformed ifExpression (if a)", function () {
       this.ast = this.parser.parse("(if a)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].type).toBe("literal");
-      expect(this.ast[0].elts[0].value).toBe("if");
-      expect(this.ast[0].elts.length).toBe(2);
-      expect(this.ast[0].elts[1].value).toBe("a");
+      expect(this.ast[0].fields.elts[0].type).toBe("literal");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("if");
+      expect(this.ast[0].fields.elts.length).toBe(2);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
     });
 
     it("parse malformed ifExpression (if a b)", function () {
       this.ast = this.parser.parse("(if a b)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].type).toBe("literal");
-      expect(this.ast[0].elts[0].value).toBe("if");
-      expect(this.ast[0].elts.length).toBe(3);
-      expect(this.ast[0].elts[1].value).toBe("a");
-      expect(this.ast[0].elts[2].value).toBe("b");
+      expect(this.ast[0].fields.elts[0].type).toBe("literal");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("if");
+      expect(this.ast[0].fields.elts.length).toBe(3);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
+      expect(this.ast[0].fields.elts[2].fields.value).toBe("b");
     });
 
     it("parse malformed condExpression (cond)", function () {
       this.ast = this.parser.parse("(cond)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].type).toBe("literal");
-      expect(this.ast[0].elts[0].value).toBe("cond");
+      expect(this.ast[0].fields.elts[0].type).toBe("literal");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("cond");
     });
 
     it("parse malformed condExpression (cond (a))", function () {
       this.ast = this.parser.parse("(cond (a))");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].type).toBe("literal");
-      expect(this.ast[0].elts[0].value).toBe("cond");
-      expect(this.ast[0].elts[1].type).toBe("functionApp");
-      expect(this.ast[0].elts[1].func.value).toBe("a");
+      expect(this.ast[0].fields.elts[0].type).toBe("literal");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("cond");
+      expect(this.ast[0].fields.elts[1].type).toBe("functionApp");
+      expect(this.ast[0].fields.elts[1].fields.func.fields.value).toBe("a");
     });
 
     it("parse malformed andExpression (and)", function () {
       this.ast = this.parser.parse("(and)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("and");
-      expect(this.ast[0].elts.length).toBe(1);
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("and");
+      expect(this.ast[0].fields.elts.length).toBe(1);
     });
 
     it("parse malformed orExpression (or a)", function () {
       this.ast = this.parser.parse("(or a)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].type).toBe("literal");
-      expect(this.ast[0].elts[0].value).toBe("or");
-      expect(this.ast[0].elts.length).toBe(2);
-      expect(this.ast[0].elts[1].value).toBe("a");
+      expect(this.ast[0].fields.elts[0].type).toBe("literal");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("or");
+      expect(this.ast[0].fields.elts.length).toBe(2);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
     });
 
     it("parse malformed lambdaExpression (lambda a b)", function () {
       this.ast = this.parser.parse("(lambda a b)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].type).toBe("literal");
-      expect(this.ast[0].elts[0].value).toBe("lambda");
-      expect(this.ast[0].elts.length).toBe(3);
-      expect(this.ast[0].elts[1].value).toBe("a");
-      expect(this.ast[0].elts[2].value).toBe("b");
+      expect(this.ast[0].fields.elts[0].type).toBe("literal");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("lambda");
+      expect(this.ast[0].fields.elts.length).toBe(3);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
+      expect(this.ast[0].fields.elts[2].fields.value).toBe("b");
     });
 
     it("parse malformed localExpression (local a b)", function () {
       this.ast = this.parser.parse("(local a b)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("local");
-      expect(this.ast[0].elts.length).toBe(3);
-      expect(this.ast[0].elts[1].value).toBe("a");
-      expect(this.ast[0].elts[2].value).toBe("b");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("local");
+      expect(this.ast[0].fields.elts.length).toBe(3);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
+      expect(this.ast[0].fields.elts[2].fields.value).toBe("b");
     });
 
     it("parse malformed letrecExpression (letrec a b)", function () {
       this.ast = this.parser.parse("(letrec a b)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("letrec");
-      expect(this.ast[0].elts.length).toBe(3);
-      expect(this.ast[0].elts[1].value).toBe("a");
-      expect(this.ast[0].elts[2].value).toBe("b");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("letrec");
+      expect(this.ast[0].fields.elts.length).toBe(3);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
+      expect(this.ast[0].fields.elts[2].fields.value).toBe("b");
     });
 
     it("parse malformed letExpression (let a b)", function () {
       this.ast = this.parser.parse("(let a b)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("let");
-      expect(this.ast[0].elts.length).toBe(3);
-      expect(this.ast[0].elts[1].value).toBe("a");
-      expect(this.ast[0].elts[2].value).toBe("b");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("let");
+      expect(this.ast[0].fields.elts.length).toBe(3);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
+      expect(this.ast[0].fields.elts[2].fields.value).toBe("b");
     });
 
     it("parse malformed letStarExpression (let* a b)", function () {
       this.ast = this.parser.parse("(let* a b)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("let*");
-      expect(this.ast[0].elts.length).toBe(3);
-      expect(this.ast[0].elts[1].value).toBe("a");
-      expect(this.ast[0].elts[2].value).toBe("b");
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("let*");
+      expect(this.ast[0].fields.elts.length).toBe(3);
+      expect(this.ast[0].fields.elts[1].fields.value).toBe("a");
+      expect(this.ast[0].fields.elts[2].fields.value).toBe("b");
     });
 
     it("parse malformed beginExpression (begin)", function () {
       this.ast = this.parser.parse("(begin)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("begin");
-      expect(this.ast[0].elts.length).toBe(1);
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("begin");
+      expect(this.ast[0].fields.elts.length).toBe(1);
     });
 
     it("parse malformed requireExpression (requre)", function () {
       this.ast = this.parser.parse("(require)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("require");
-      expect(this.ast[0].elts.length).toBe(1);
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("require");
+      expect(this.ast[0].fields.elts.length).toBe(1);
     });
 
     it("parse malformed else (else)", function () {
       this.ast = this.parser.parse("(else)");
       expect(this.ast[0].type).toBe("unknown");
-      expect(this.ast[0].elts[0].value).toBe("else");
-      expect(this.ast[0].elts.length).toBe(1);
+      expect(this.ast[0].fields.elts[0].fields.value).toBe("else");
+      expect(this.ast[0].fields.elts.length).toBe(1);
     });
   });
 });
