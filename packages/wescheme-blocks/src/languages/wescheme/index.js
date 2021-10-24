@@ -1,5 +1,5 @@
 import WeschemeParser from "./WeschemeParser";
-import { CodeMirrorBlocks, Languages } from "codemirror-blocks";
+import { Languages } from "codemirror-blocks";
 require("./style.less");
 
 let parser = new WeschemeParser();
@@ -25,7 +25,3 @@ export const WeScheme = Languages.addLanguage({
     };
   },
 });
-
-const constructor = (container, options) =>
-  new CodeMirrorBlocks(container, options, WeScheme);
-export default constructor;
