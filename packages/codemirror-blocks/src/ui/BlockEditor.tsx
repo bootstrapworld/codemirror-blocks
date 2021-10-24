@@ -324,7 +324,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
 
   // only refresh if there is no active quarantine
   useEffect(() => {
-    if (quarantine) {
+    if (!quarantine) {
       editor?.refresh();
     }
   });
