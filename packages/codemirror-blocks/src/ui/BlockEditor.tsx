@@ -415,39 +415,36 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     // `handleBeforeChange` function so it must be valid.
     // Therefore we can commit it without calling speculateChanges.
     dispatch((dispatch, getState) => {
-      let isUndoOrRedo = ["undo", "redo"].includes(change.origin as string);
-      let focusHint = -1 as -1 | FocusHint; // Assume CM will choose focus
+      const isUndoOrRedo = ["undo", "redo"].includes(change.origin as string);
       const annt = change.origin || "change"; // Default annotation
-      // Do the actual change
-      function doChange(hint: -1 | FocusHint) {
+      const doChange = (hint: -1 | FocusHint) =>
         dispatch(
           commitChanges(
             [makeChangeObject(change)],
             language.parse,
             editor,
             isUndoOrRedo,
-            focusHint,
+            hint,
             newASTRef.current,
             annt
           )
         );
-      }
 
-      if (isUndoOrRedo) {
+      if (change.origin && isUndoOrRedo) {
         const { actionFocus } = getState();
         if (actionFocus) {
           // actionFocus will either contain an old OR new focusId
           const { oldFocusNId, newFocusNId } = actionFocus;
           const nextNId = (oldFocusNId || newFocusNId) as number;
-          focusHint = (newAST: AST) =>
+          const focusHint = (newAST: AST) =>
             nextNId === null ? null : newAST.getNodeByNId(nextNId);
           doChange(focusHint);
-          const actionType = change.origin!.toUpperCase() as "UNDO" | "REDO";
+          const actionType = change.origin.toUpperCase() as "UNDO" | "REDO";
           dispatch({ type: actionType, editor: editor });
         }
       } else {
         getState().undoableAction = annt; //?
-        doChange(focusHint);
+        doChange(-1); // use -1 to allow CM to set focus
       }
     });
   };
