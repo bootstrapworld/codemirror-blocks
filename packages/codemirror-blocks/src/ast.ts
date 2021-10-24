@@ -57,6 +57,7 @@ function validateNode(node: ASTNode) {
     "from",
     "to",
     "type",
+    "fields",
     "options",
     "spec",
     "isLockedP",
@@ -528,11 +529,14 @@ export type NodeOptions = {
   "aria-label"?: string;
 };
 
+export type UnknownFields = { [fieldName: string]: unknown };
+export type NodeField = ASTNode | ASTNode[] | unknown;
+export type NodeFields = { [fieldName: string]: NodeField };
 /**
  * Every node in the AST must inherit from the `ASTNode` class, which is used
  * to house some common attributes.
  */
-export abstract class ASTNode<Opt extends NodeOptions = NodeOptions> {
+export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
   /**
    * @internal
    * Every node must have a Starting and Ending position, represented as
@@ -551,12 +555,14 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions> {
   "aria-setsize": number;
   "aria-posinset": number;
 
+  fields: Fields;
+
   /**
    * @internal
    * the options object always contains the aria-label, but can also
    * include other values
    */
-  options: Opt;
+  options: NodeOptions;
 
   /**
    * @internal
@@ -591,11 +597,18 @@ export abstract class ASTNode<Opt extends NodeOptions = NodeOptions> {
    */
   __alreadyValidated = false;
 
-  constructor(from: Pos, to: Pos, type: string, options: Opt) {
+  constructor(
+    from: Pos,
+    to: Pos,
+    type: string,
+    fields: Fields,
+    options: NodeOptions
+  ) {
     this.from = from;
     this.to = to;
     this.type = type;
     this.options = options;
+    this.fields = fields;
 
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {

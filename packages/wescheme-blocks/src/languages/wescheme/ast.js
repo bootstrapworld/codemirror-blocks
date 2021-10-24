@@ -20,16 +20,13 @@ function pluralize(noun, set) {
  */
 export class Sequence extends Nodes.Sequence {
   pretty() {
-    return P.standardSexpr(this.name, this.exprs);
+    return P.standardSexpr(this.fields.name, this.fields.exprs);
   }
 }
 
 export class LetLikeExpr extends ASTNode {
   constructor(from, to, form, bindings, expr, options = {}) {
-    super(from, to, "letLikeExpr", options);
-    this.form = form;
-    this.bindings = bindings;
-    this.expr = expr;
+    super(from, to, "letLikeExpr", { form, bindings, expr }, options);
   }
 
   static spec = Spec.nodeSpec([
@@ -39,20 +36,24 @@ export class LetLikeExpr extends ASTNode {
   ]);
 
   longDescription(_level) {
-    return `a ${this.form} expression with ${pluralize(
+    return `a ${this.fields.form} expression with ${pluralize(
       "binding",
       this.bindings.exprs
     )}`;
   }
 
   pretty() {
-    return P.lambdaLikeSexpr(this.form, P.brackets(this.bindings), this.expr);
+    return P.lambdaLikeSexpr(
+      this.fields.form,
+      P.brackets(this.bindings),
+      this.expr
+    );
   }
 
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{this.form}</span>
+        <span className="blocks-operator">{this.fields.form}</span>
         {this.bindings.reactElement()}
         {this.expr.reactElement()}
       </Node>
@@ -62,10 +63,7 @@ export class LetLikeExpr extends ASTNode {
 
 export class WhenUnless extends ASTNode {
   constructor(from, to, form, predicate, exprs, options = {}) {
-    super(from, to, "whenUnlessExpr", options);
-    this.form = form;
-    this.predicate = predicate;
-    this.exprs = exprs;
+    super(from, to, "whenUnlessExpr", { form, predicate, exprs }, options);
   }
 
   static spec = Spec.nodeSpec([
@@ -75,21 +73,26 @@ export class WhenUnless extends ASTNode {
   ]);
 
   longDescription(level) {
-    return `a ${this.form} expression: ${this.form} ${this.predicate.describe(
+    return `a ${this.fields.form} expression: ${
+      this.fields.form
+    } ${this.fields.predicate.describe(level)}, ${this.fields.exprs.describe(
       level
-    )}, ${this.exprs.describe(level)}`;
+    )}`;
   }
 
   pretty() {
-    return P.standardSexpr(this.form, [this.predicate, this.exprs]);
+    return P.standardSexpr(this.fields.form, [
+      this.fields.predicate,
+      this.fields.exprs,
+    ]);
   }
 
   render(props) {
     return (
       <Node node={this} {...props}>
-        <span className="blocks-operator">{this.form}</span>
-        {this.predicate.reactElement()}
-        {this.exprs.reactElement()}
+        <span className="blocks-operator">{this.fields.form}</span>
+        {this.fields.predicate.reactElement()}
+        {this.fields.exprs.reactElement()}
       </Node>
     );
   }

@@ -173,6 +173,9 @@ describe("performEdits", () => {
   it("applies edits to the editor and the ast, updating the redux store.", () => {
     const edit = edit_replace("foo", ast, [...ast.rootNodes[1].children()][1]);
     const result = store.dispatch(perform([edit]));
+    if (!result.successful) {
+      throw result.exception;
+    }
     expect(result.successful).toBe(true);
     expect(editor.getValue()).toEqual(`
 (doWhatever)
