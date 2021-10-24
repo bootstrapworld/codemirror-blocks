@@ -76,7 +76,7 @@ export const commitChanges =
       return ok({ newAST, focusId });
     } catch (e) {
       logResults(getReducerActivities(), e);
-      throw e;
+      return err(e);
     }
   };
 
