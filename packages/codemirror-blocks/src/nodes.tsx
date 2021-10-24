@@ -32,20 +32,17 @@ function withComment(
   }
 }
 
-export class Unknown extends ASTNode {
-  elts: ASTNode[];
-
+export class Unknown extends ASTNode<{ elts: ASTNode[] }> {
   constructor(from: Pos, to: Pos, elts: ASTNode[], options: NodeOptions = {}) {
-    super(from, to, "unknown", options);
-    this.elts = elts;
+    super(from, to, "unknown", { elts }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.list("elts")]);
 
   longDescription(level: number) {
     return (
-      `an unknown expression with ${pluralize("children", this.elts)} ` +
-      this.elts
+      `an unknown expression with ${pluralize("children", this.fields.elts)} ` +
+      this.fields.elts
         .map(
           (e, i, elts) =>
             (elts.length > 1 ? i + 1 + ": " : "") + e.describe(level)
@@ -56,15 +53,15 @@ export class Unknown extends ASTNode {
 
   pretty(): P.Doc {
     return withComment(
-      P.standardSexpr(this.elts[0], this.elts.slice(1)),
+      P.standardSexpr(this.fields.elts[0], this.fields.elts.slice(1)),
       this.options.comment,
       this
     );
   }
 
   render(props: NodeProps) {
-    const firstElt = this.elts[0].reactElement();
-    const restElts = this.elts.slice(1);
+    const firstElt = this.fields.elts[0].reactElement();
+    const restElts = this.fields.elts.slice(1);
     return (
       <Node {...props}>
         <span className="blocks-operator">{firstElt}</span>
@@ -76,10 +73,7 @@ export class Unknown extends ASTNode {
   }
 }
 
-export class FunctionApp extends ASTNode {
-  func: ASTNode;
-  args: ASTNode[];
-
+export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
   constructor(
     from: Pos,
     to: Pos,
@@ -87,9 +81,7 @@ export class FunctionApp extends ASTNode {
     args: ASTNode[],
     options: NodeOptions = {}
   ) {
-    super(from, to, "functionApp", options);
-    this.func = func;
-    this.args = args;
+    super(from, to, "functionApp", { func, args }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.required("func"), Spec.list("args")]);
@@ -98,11 +90,10 @@ export class FunctionApp extends ASTNode {
     // if it's the top level, enumerate the args
     if (this.level - level == 0) {
       return (
-        `applying the function ${this.func.describe(level)} to ${pluralize(
-          "argument",
-          this.args
-        )} ` +
-        this.args
+        `applying the function ${this.fields.func.describe(
+          level
+        )} to ${pluralize("argument", this.fields.args)} ` +
+        this.fields.args
           .map(
             (a, i, args) =>
               (args.length > 1 ? i + 1 + ": " : "") + a.describe(level)
@@ -113,14 +104,14 @@ export class FunctionApp extends ASTNode {
     // if we're lower than that (but not so low that `.shortDescription()` is used), use "f of A, B, C" format
     else
       return (
-        `${this.func.describe(level)} of ` +
-        this.args.map((a) => a.describe(level)).join(", ")
+        `${this.fields.func.describe(level)} of ` +
+        this.fields.args.map((a) => a.describe(level)).join(", ")
       );
   }
 
   pretty(): P.Doc {
     return withComment(
-      P.standardSexpr(this.func, this.args),
+      P.standardSexpr(this.fields.func, this.fields.args),
       this.options.comment,
       this
     );
@@ -129,19 +120,18 @@ export class FunctionApp extends ASTNode {
   render(props: NodeProps) {
     return (
       <Node {...props}>
-        <span className="blocks-operator">{this.func.reactElement()}</span>
+        <span className="blocks-operator">
+          {this.fields.func.reactElement()}
+        </span>
         <span className="blocks-args">
-          <Args field="args">{this.args}</Args>
+          <Args field="args">{this.fields.args}</Args>
         </span>
       </Node>
     );
   }
 }
 
-export class IdentifierList extends ASTNode {
-  kind: string;
-  ids: ASTNode[];
-
+export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
   constructor(
     from: Pos,
     to: Pos,
@@ -149,35 +139,38 @@ export class IdentifierList extends ASTNode {
     ids: ASTNode[],
     options: NodeOptions = {}
   ) {
-    super(from, to, "identifierList", options);
-    this.kind = kind;
-    this.ids = ids;
+    super(from, to, "identifierList", { kind, ids }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]);
 
   longDescription(level: number) {
-    return enumerateList(this.ids, level);
+    return enumerateList(this.fields.ids, level);
   }
 
   pretty(): P.Doc {
-    return withComment(P.sepBy(this.ids, " "), this.options.comment, this);
+    return withComment(
+      P.sepBy(this.fields.ids, " "),
+      this.options.comment,
+      this
+    );
   }
 
   render(props: NodeProps) {
     return (
       <Node {...props}>
         <span className="blocks-args">
-          <Args field="ids">{this.ids}</Args>
+          <Args field="ids">{this.fields.ids}</Args>
         </span>
       </Node>
     );
   }
 }
 
-export class StructDefinition extends ASTNode {
+export class StructDefinition extends ASTNode<{
   name: ASTNode;
   fields: ASTNode;
+}> {
   constructor(
     from: Pos,
     to: Pos,
@@ -185,25 +178,23 @@ export class StructDefinition extends ASTNode {
     fields: ASTNode,
     options: NodeOptions = {}
   ) {
-    super(from, to, "structDefinition", options);
-    this.name = name;
-    this.fields = fields;
+    super(from, to, "structDefinition", { name, fields }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.value("name"), Spec.required("fields")]);
 
   longDescription(level: number) {
-    return `define ${this.name.describe(
+    return `define ${this.fields.name.describe(
       level
-    )} to be a structure with ${this.fields.describe(level)}`;
+    )} to be a structure with ${this.fields.fields.describe(level)}`;
   }
 
   pretty(): P.Doc {
     return withComment(
       P.lambdaLikeSexpr(
         "define-struct",
-        this.name,
-        P.horz("(", this.fields, ")")
+        this.fields.name,
+        P.horz("(", this.fields.fields, ")")
       ),
       this.options.comment,
       this
@@ -211,8 +202,8 @@ export class StructDefinition extends ASTNode {
   }
 
   render(props: NodeProps) {
-    const name = this.name.reactElement();
-    const fields = this.fields.reactElement();
+    const name = this.fields.name.reactElement();
+    const fields = this.fields.fields.reactElement();
     return (
       <Node {...props}>
         <span className="blocks-operator">
@@ -225,36 +216,36 @@ export class StructDefinition extends ASTNode {
   }
 }
 
-export class VariableDefinition extends ASTNode {
+export class VariableDefinition extends ASTNode<{
   name: ASTNode;
   body: ASTNode;
-
+}> {
   constructor(from: Pos, to: Pos, name: ASTNode, body: ASTNode, options = {}) {
-    super(from, to, "variableDefinition", options);
-    this.name = name;
-    this.body = body;
+    super(from, to, "variableDefinition", { name, body }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.required("name"), Spec.required("body")]);
 
   longDescription(level: number) {
-    const insert = ["literal", "blank"].includes(this.body.type)
+    const insert = ["literal", "blank"].includes(this.fields.body.type)
       ? ""
       : "the result of:";
-    return `define ${this.name} to be ${insert} ${this.body.describe(level)}`;
+    return `define ${
+      this.fields.name
+    } to be ${insert} ${this.fields.body.describe(level)}`;
   }
 
   pretty(): P.Doc {
     return withComment(
-      P.lambdaLikeSexpr("define", this.name, this.body),
+      P.lambdaLikeSexpr("define", this.fields.name, this.fields.body),
       this.options.comment,
       this
     );
   }
 
   render(props: NodeProps) {
-    const body = this.body.reactElement();
-    const name = this.name.reactElement();
+    const body = this.fields.body.reactElement();
+    const name = this.fields.name.reactElement();
     return (
       <Node {...props}>
         <span className="blocks-operator">
@@ -267,9 +258,10 @@ export class VariableDefinition extends ASTNode {
   }
 }
 
-export class LambdaExpression extends ASTNode {
+export class LambdaExpression extends ASTNode<{
   body: ASTNode;
   args: IdentifierList;
+}> {
   constructor(
     from: Pos,
     to: Pos,
@@ -277,26 +269,31 @@ export class LambdaExpression extends ASTNode {
     body: ASTNode,
     options = {}
   ) {
-    super(from, to, "lambdaExpression", options);
-    this.args = args;
-    this.body = body;
+    super(from, to, "lambdaExpression", { body, args }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.required("args"), Spec.required("body")]);
 
   longDescription(level: number) {
-    return `an anonymous function of ${pluralize("argument", this.args.ids)}: 
-            ${this.args.describe(level)}, with body:
-            ${this.body.describe(level)}`;
+    return `an anonymous function of ${pluralize(
+      "argument",
+      this.fields.args.fields.ids
+    )}: 
+            ${this.fields.args.describe(level)}, with body:
+            ${this.fields.body.describe(level)}`;
   }
 
   pretty(): P.Doc {
-    return P.lambdaLikeSexpr("lambda(", P.horz("(", this.args, ")"), this.body);
+    return P.lambdaLikeSexpr(
+      "lambda(",
+      P.horz("(", this.fields.args, ")"),
+      this.fields.body
+    );
   }
 
   render(props: NodeProps) {
-    const args = this.args.reactElement();
-    const body = this.body.reactElement();
+    const args = this.fields.args.reactElement();
+    const body = this.fields.body.reactElement();
     return (
       <Node {...props}>
         <span className="blocks-operator">&lambda; ({args})</span>
@@ -306,10 +303,11 @@ export class LambdaExpression extends ASTNode {
   }
 }
 
-export class FunctionDefinition extends ASTNode {
+export class FunctionDefinition extends ASTNode<{
   name: ASTNode;
   params: ASTNode;
   body: ASTNode;
+}> {
   constructor(
     from: Pos,
     to: Pos,
@@ -318,10 +316,7 @@ export class FunctionDefinition extends ASTNode {
     body: ASTNode,
     options = {}
   ) {
-    super(from, to, "functionDefinition", options);
-    this.name = name;
-    this.params = params;
-    this.body = body;
+    super(from, to, "functionDefinition", { name, params, body }, options);
   }
 
   static spec = Spec.nodeSpec([
@@ -331,17 +326,17 @@ export class FunctionDefinition extends ASTNode {
   ]);
 
   longDescription(level: number) {
-    return `define ${this.name} to be a function of 
-            ${this.params.describe(level)}, with body:
-            ${this.body.describe(level)}`;
+    return `define ${this.fields.name} to be a function of 
+            ${this.fields.params.describe(level)}, with body:
+            ${this.fields.body.describe(level)}`;
   }
 
   pretty(): P.Doc {
     return withComment(
       P.lambdaLikeSexpr(
         "define",
-        P.standardSexpr(this.name, [this.params]),
-        this.body
+        P.standardSexpr(this.fields.name, [this.fields.params]),
+        this.fields.body
       ),
       this.options.comment,
       this
@@ -349,9 +344,9 @@ export class FunctionDefinition extends ASTNode {
   }
 
   render(props: NodeProps) {
-    const params = this.params.reactElement();
-    const body = this.body.reactElement();
-    const name = this.name.reactElement();
+    const params = this.fields.params.reactElement();
+    const body = this.fields.body.reactElement();
+    const name = this.fields.name.reactElement();
     return (
       <Node {...props}>
         <span className="blocks-operator">
@@ -363,9 +358,10 @@ export class FunctionDefinition extends ASTNode {
   }
 }
 
-export class CondClause extends ASTNode {
+export class CondClause extends ASTNode<{
   testExpr: ASTNode;
   thenExprs: ASTNode[];
+}> {
   constructor(
     from: Pos,
     to: Pos,
@@ -373,9 +369,7 @@ export class CondClause extends ASTNode {
     thenExprs: ASTNode[],
     options = {}
   ) {
-    super(from, to, "condClause", options);
-    this.testExpr = testExpr;
-    this.thenExprs = thenExprs;
+    super(from, to, "condClause", { testExpr, thenExprs }, options);
   }
 
   static spec = Spec.nodeSpec([
@@ -384,27 +378,27 @@ export class CondClause extends ASTNode {
   ]);
 
   longDescription(level: number) {
-    return `condition: if ${this.testExpr.describe(
+    return `condition: if ${this.fields.testExpr.describe(
       level
-    )}, then, ${this.thenExprs.map((te) => te.describe(level))}`;
+    )}, then, ${this.fields.thenExprs.map((te) => te.describe(level))}`;
   }
 
   pretty(): P.Doc {
     return P.horz(
       "[",
-      P.sepBy([this.testExpr].concat(this.thenExprs), " "),
+      P.sepBy([this.fields.testExpr].concat(this.fields.thenExprs), " "),
       "]"
     );
   }
 
   render(props: NodeProps) {
-    const testExpr = this.testExpr.reactElement();
+    const testExpr = this.fields.testExpr.reactElement();
     return (
       <Node {...props}>
         <div className="blocks-cond-row">
           <div className="blocks-cond-predicate">{testExpr}</div>
           <div className="blocks-cond-result">
-            {this.thenExprs.map((thenExpr, index) => (
+            {this.fields.thenExprs.map((thenExpr, index) => (
               <span key={index}>
                 <DropTarget field="thenExprs" />
                 {thenExpr.reactElement()}
@@ -418,11 +412,9 @@ export class CondClause extends ASTNode {
   }
 }
 
-export class CondExpression extends ASTNode {
-  clauses: ASTNode[];
+export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
   constructor(from: Pos, to: Pos, clauses: ASTNode[], options = {}) {
-    super(from, to, "condExpression", options);
-    this.clauses = clauses;
+    super(from, to, "condExpression", { clauses }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.list("clauses")]);
@@ -430,17 +422,17 @@ export class CondExpression extends ASTNode {
   longDescription(level: number) {
     return `a conditional expression with ${pluralize(
       "condition",
-      this.clauses
+      this.fields.clauses
     )}: 
-            ${this.clauses.map((c) => c.describe(level))}`;
+            ${this.fields.clauses.map((c) => c.describe(level))}`;
   }
 
   pretty(): P.Doc {
-    return P.beginLikeSexpr("cond", this.clauses);
+    return P.beginLikeSexpr("cond", this.fields.clauses);
   }
 
   render(props: NodeProps) {
-    const clauses = this.clauses.map((clause, index) =>
+    const clauses = this.fields.clauses.map((clause, index) =>
       clause.reactElement({ key: index })
     );
     return (
@@ -452,10 +444,11 @@ export class CondExpression extends ASTNode {
   }
 }
 
-export class IfExpression extends ASTNode {
+export class IfExpression extends ASTNode<{
   testExpr: ASTNode;
   thenExpr: ASTNode;
   elseExpr: ASTNode;
+}> {
   constructor(
     from: Pos,
     to: Pos,
@@ -464,10 +457,7 @@ export class IfExpression extends ASTNode {
     elseExpr: ASTNode,
     options = {}
   ) {
-    super(from, to, "ifExpression", options);
-    this.testExpr = testExpr;
-    this.thenExpr = thenExpr;
-    this.elseExpr = elseExpr;
+    super(from, to, "ifExpression", { testExpr, thenExpr, elseExpr }, options);
   }
 
   static spec = Spec.nodeSpec([
@@ -478,25 +468,29 @@ export class IfExpression extends ASTNode {
 
   longDescription(level: number) {
     return (
-      `an if expression: if ${this.testExpr.describe(
+      `an if expression: if ${this.fields.testExpr.describe(
         level
-      )}, then ${this.thenExpr.describe(level)} ` +
-      `else ${this.elseExpr.describe(level)}`
+      )}, then ${this.fields.thenExpr.describe(level)} ` +
+      `else ${this.fields.elseExpr.describe(level)}`
     );
   }
 
   pretty(): P.Doc {
     return withComment(
-      P.standardSexpr("if", [this.testExpr, this.thenExpr, this.elseExpr]),
+      P.standardSexpr("if", [
+        this.fields.testExpr,
+        this.fields.thenExpr,
+        this.fields.elseExpr,
+      ]),
       this.options.comment,
       this
     );
   }
 
   render(props: NodeProps) {
-    const testExpr = this.testExpr.reactElement();
-    const thenExpr = this.thenExpr.reactElement();
-    const elseExpr = this.elseExpr.reactElement();
+    const testExpr = this.fields.testExpr.reactElement();
+    const thenExpr = this.fields.thenExpr.reactElement();
+    const elseExpr = this.fields.elseExpr.reactElement();
     return (
       <Node {...props}>
         <span className="blocks-operator">if</span>
@@ -515,9 +509,7 @@ export class IfExpression extends ASTNode {
   }
 }
 
-export class Literal extends ASTNode {
-  value: string;
-  dataType: string;
+export class Literal extends ASTNode<{ value: string; dataType: string }> {
   constructor(
     from: Pos,
     to: Pos,
@@ -525,9 +517,7 @@ export class Literal extends ASTNode {
     dataType = "unknown",
     options = {}
   ) {
-    super(from, to, "literal", options);
-    this.value = value;
-    this.dataType = dataType;
+    super(from, to, "literal", { value, dataType }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]);
@@ -537,23 +527,23 @@ export class Literal extends ASTNode {
   }
 
   pretty(): P.Doc {
-    return withComment(P.txt(this.value), this.options.comment, this);
+    return withComment(P.txt(this.fields.value), this.options.comment, this);
   }
 
   render(props: NodeProps) {
     return (
       <Node {...props} normallyEditable={true} expandable={false}>
-        <span className={`blocks-literal-${this.dataType}`}>{this.value}</span>
+        <span className={`blocks-literal-${this.fields.dataType}`}>
+          {this.fields.value}
+        </span>
       </Node>
     );
   }
 }
 
-export class Comment extends ASTNode {
-  comment: string;
+export class Comment extends ASTNode<{ comment: string }> {
   constructor(from: Pos, to: Pos, comment: string, options = {}) {
-    super(from, to, "comment", options);
-    this.comment = comment;
+    super(from, to, "comment", { comment }, options);
     this.isLockedP = true;
   }
 
@@ -564,7 +554,7 @@ export class Comment extends ASTNode {
   }
 
   pretty(): P.Doc {
-    const words = this.comment.trim().split(/\s+/);
+    const words = this.fields.comment.trim().split(/\s+/);
     const wrapped = P.wrap(words);
     // Normalize all comments to block comments
     return P.concat("#| ", wrapped, " |#");
@@ -575,15 +565,13 @@ export class Comment extends ASTNode {
     return (
       <span className="blocks-comment" id={this.id} aria-hidden="true">
         <span className="screenreader-only">Has comment,</span>{" "}
-        <span>{this.comment.toString()}</span>
+        <span>{this.fields.comment.toString()}</span>
       </span>
     );
   }
 }
 
-export class Blank extends ASTNode {
-  value: string;
-  dataType: string;
+export class Blank extends ASTNode<{ value: string; dataType: string }> {
   constructor(
     from: Pos,
     to: Pos,
@@ -591,9 +579,7 @@ export class Blank extends ASTNode {
     dataType = "blank",
     options = {}
   ) {
-    super(from, to, "blank", options);
-    this.value = value || "...";
-    this.dataType = dataType;
+    super(from, to, "blank", { value: value || "...", dataType }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]);
@@ -603,7 +589,7 @@ export class Blank extends ASTNode {
   }
 
   pretty(): P.Doc {
-    return P.txt(this.value);
+    return P.txt(this.fields.value);
   }
 
   render(props: NodeProps) {
@@ -615,9 +601,7 @@ export class Blank extends ASTNode {
   }
 }
 
-export class Sequence extends ASTNode {
-  name: ASTNode;
-  exprs: ASTNode[];
+export class Sequence extends ASTNode<{ name: ASTNode; exprs: ASTNode[] }> {
   constructor(
     from: Pos,
     to: Pos,
@@ -625,27 +609,27 @@ export class Sequence extends ASTNode {
     name: ASTNode,
     options = {}
   ) {
-    super(from, to, "sequence", options);
-    this.name = name;
-    this.exprs = exprs;
+    super(from, to, "sequence", { name, exprs }, options);
   }
 
   static spec = Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]);
 
   longDescription(level: number) {
-    return `a sequence containing ${enumerateList(this.exprs, level)}`;
+    return `a sequence containing ${enumerateList(this.fields.exprs, level)}`;
   }
 
   pretty(): P.Doc {
-    return P.vert(this.name, ...this.exprs);
+    return P.vert(this.fields.name, ...this.fields.exprs);
   }
 
   render(props: NodeProps) {
     return (
       <Node {...props}>
-        <span className="blocks-operator">{this.name.reactElement()}</span>
+        <span className="blocks-operator">
+          {this.fields.name.reactElement()}
+        </span>
         <span className="blocks-sequence-exprs">
-          <Args field="exprs">{this.exprs}</Args>
+          <Args field="exprs">{this.fields.exprs}</Args>
         </span>
       </Node>
     );

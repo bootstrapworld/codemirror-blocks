@@ -209,10 +209,10 @@ describe("tree navigation", () => {
     firstRoot = ast.rootNodes[0] as FunctionApp;
     secondRoot = ast.rootNodes[1];
     thirdRoot = ast.rootNodes[2] as FunctionApp;
-    funcSymbol = firstRoot.func;
-    thirdArg = firstRoot.args[2];
-    nestedExpr = thirdRoot.args[1] as FunctionApp;
-    lastNode = nestedExpr.args[1];
+    funcSymbol = firstRoot.fields.func;
+    thirdArg = firstRoot.fields.args[2];
+    nestedExpr = thirdRoot.fields.args[1] as FunctionApp;
+    lastNode = nestedExpr.fields.args[1];
     await finishRender();
   });
 
@@ -240,19 +240,19 @@ describe("tree navigation", () => {
   it("down-arrow should navigate to the next sibling, but not beyond the tree", async () => {
     mouseDown(firstRoot);
     keyDown("ArrowLeft", {}, firstRoot); // collapse that root
-    mouseDown(nestedExpr.args[0]);
+    mouseDown(nestedExpr.fields.args[0]);
     await finishRender();
-    expect(cmb.getFocusedNode()).toBe(nestedExpr.args[0]);
+    expect(cmb.getFocusedNode()).toBe(nestedExpr.fields.args[0]);
 
     keyDown("ArrowDown");
     await finishRender();
-    expect(cmb.getFocusedNode()).toBe(nestedExpr.args[1]);
-    expect(activeAriaId(cmb)).toBe(nestedExpr.args[1].element!.id);
+    expect(cmb.getFocusedNode()).toBe(nestedExpr.fields.args[1]);
+    expect(activeAriaId(cmb)).toBe(nestedExpr.fields.args[1].element!.id);
 
     keyDown("ArrowDown");
     await finishRender();
-    expect(cmb.getFocusedNode()).toBe(nestedExpr.args[1]);
-    expect(activeAriaId(cmb)).toBe(nestedExpr.args[1].element!.id);
+    expect(cmb.getFocusedNode()).toBe(nestedExpr.fields.args[1]);
+    expect(activeAriaId(cmb)).toBe(nestedExpr.fields.args[1].element!.id);
   });
 
   it("left-arrow should collapse a block, if it can be", async () => {
@@ -316,8 +316,8 @@ describe("tree navigation", () => {
   });
 
   it("less-than should activate root without collapsing", async () => {
-    mouseDown(nestedExpr.args[1]);
-    keyDown("<", { shiftKey: true }, nestedExpr.args[1]);
+    mouseDown(nestedExpr.fields.args[1]);
+    keyDown("<", { shiftKey: true }, nestedExpr.fields.args[1]);
     await finishRender();
     expect(thirdRoot.element!.getAttribute("aria-expanded")).toBe("true");
     expect(cmb.getFocusedNode()).toBe(thirdRoot);
@@ -468,27 +468,35 @@ describe("when dealing with node selection, ", () => {
     await finishRender();
     keyDown("ArrowDown");
     await finishRender();
-    keyDown(" ", {}, expr.func);
+    keyDown(" ", {}, expr.fields.func);
     await finishRender();
     expect(expr.element!.getAttribute("aria-selected")).toBe("false");
-    expect(expr.func.element!.getAttribute("aria-selected")).toBe("false");
-    expect(expr.args[0].element!.getAttribute("aria-selected")).toBe("true");
-    expect(expr.args[1].element!.getAttribute("aria-selected")).toBe("true");
-    expect(cmb.getFocusedNode()).toBe(expr.func);
+    expect(expr.fields.func.element!.getAttribute("aria-selected")).toBe(
+      "false"
+    );
+    expect(expr.fields.args[0].element!.getAttribute("aria-selected")).toBe(
+      "true"
+    );
+    expect(expr.fields.args[1].element!.getAttribute("aria-selected")).toBe(
+      "true"
+    );
+    expect(cmb.getFocusedNode()).toBe(expr.fields.func);
     expect(cmb.getSelectedNodes().length).toBe(2);
-    expect(cmb.getSelectedNodes()[0]).toBe(expr.args[0]);
+    expect(cmb.getSelectedNodes()[0]).toBe(expr.fields.args[0]);
   });
 
   it("selecting a child, then parent should select all children as well ", async () => {
-    mouseDown(expr.func);
-    keyDown(" ", {}, expr.func);
+    mouseDown(expr.fields.func);
+    keyDown(" ", {}, expr.fields.func);
     await finishRender();
     keyDown("ArrowUp");
     await finishRender();
     keyDown(" ", {}, expr);
     await finishRender();
     expect(expr.element!.getAttribute("aria-selected")).toBe("true");
-    expect(expr.func.element!.getAttribute("aria-selected")).toBe("true");
+    expect(expr.fields.func.element!.getAttribute("aria-selected")).toBe(
+      "true"
+    );
     expect(cmb.getFocusedNode()).toBe(expr);
     expect(cmb.getSelectedNodes().length).toBe(4);
     expect(cmb.getSelectedNodes()[0]).toBe(expr);

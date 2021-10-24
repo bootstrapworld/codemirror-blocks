@@ -128,7 +128,7 @@ describe("The CodeMirrorBlocks Class", function () {
       cmb.setValue("()");
       await finishRender();
       cmb.getValue("(...)"); // blank should be inserted by parser, as '...'
-      const blank = (cmb.getAst().rootNodes[0] as FunctionApp).func;
+      const blank = (cmb.getAst().rootNodes[0] as FunctionApp).fields.func;
       click(blank.element!);
       await finishRender();
       expect(blank.isEditable()).toBe(true);
@@ -194,7 +194,7 @@ describe("The CodeMirrorBlocks Class", function () {
         await finishRender();
         ast = cmb.getAst();
         firstRoot = ast.rootNodes[0];
-        firstArg = (ast.rootNodes[0] as FunctionApp).args[0];
+        firstArg = (ast.rootNodes[0] as FunctionApp).fields.args[0];
         whiteSpaceEl = firstArg.element!.nextElementSibling!;
         blank = ast.rootNodes[1] as FunctionApp;
       });
@@ -230,9 +230,9 @@ describe("The CodeMirrorBlocks Class", function () {
       });
 
       it("Ctrl-] should activate a quarantine in the first arg position", async function () {
-        mouseDown(blank.func.element!);
+        mouseDown(blank.fields.func.element!);
         await finishRender();
-        keyDown("]", { ctrlKey: true }, blank.func.element!);
+        keyDown("]", { ctrlKey: true }, blank.fields.func.element!);
         await finishRender();
         //expect(cmb.setQuarantine).toHaveBeenCalled();
       });

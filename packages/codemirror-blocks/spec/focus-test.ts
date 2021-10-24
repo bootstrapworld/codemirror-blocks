@@ -30,10 +30,10 @@ describe("focusing,", () => {
     cmb.setValue("(+ 1 2 3)");
     await finishRender();
     expression = cmb.getAst().rootNodes[0] as FunctionApp;
-    func = expression.func;
-    literal1 = expression.args[0];
-    literal2 = expression.args[1];
-    literal3 = expression.args[2];
+    func = expression.fields.func;
+    literal1 = expression.fields.args[0];
+    literal2 = expression.fields.args[1];
+    literal3 = expression.fields.args[2];
   });
 
   afterEach(teardown);
@@ -102,7 +102,7 @@ describe("focusing,", () => {
     // there's an extra space inserted after 99
     expect(cmb.getValue()).toBe("(+ 1 99 2 3)");
     // TODO(Emmanuel): does getFocusedNode().value always return strings?
-    expect((cmb.getFocusedNode() as Literal).value).toBe("99");
+    expect((cmb.getFocusedNode() as Literal).fields.value).toBe("99");
   });
 
   it("inserting multiple nodes should put focus on the last of the new nodes", async () => {
@@ -115,6 +115,6 @@ describe("focusing,", () => {
     await finishRender();
     expect(cmb.getValue()).toBe("(+ 1 99 88 77 2 3)");
     // TODO(Emmanuel): does getFocusedNode().value always return strings?
-    expect((cmb.getFocusedNode() as Literal).value).toBe("77");
+    expect((cmb.getFocusedNode() as Literal).fields.value).toBe("77");
   });
 });
