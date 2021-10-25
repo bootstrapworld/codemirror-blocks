@@ -174,7 +174,7 @@ export class FakeAstReplacement {
 // A fake ASTNode that just prints itself with the given text.
 class FakeInsertNode extends ASTNode<{ text: string }> {
   constructor(from: Pos, to: Pos, text: string, options = {}) {
-    super(from, to, "fakeInsertNode", { text }, options);
+    super({ from, to, type: "fakeInsertNode", fields: { text }, options });
   }
 
   toDescription(_level: number) {
@@ -194,7 +194,7 @@ class FakeInsertNode extends ASTNode<{ text: string }> {
 // A fake ASTNode that just prints itself like a Blank.
 class FakeBlankNode extends ASTNode {
   constructor(from: Pos, to: Pos, options = {}) {
-    super(from, to, "fakeBlankNode", {}, options);
+    super({ from, to, type: "fakeBlankNode", fields: {}, options });
   }
 
   toDescription(_level: number) {
@@ -220,13 +220,13 @@ export class ClonedASTNode<
   // show up in the real AST). This copy will be deep over the ASTNodes, but
   // shallow over the non-ASTNode values they contain.
   constructor(oldNode: ASTNode<Fields>) {
-    super(
-      oldNode.from,
-      oldNode.to,
-      oldNode.type,
-      {} as Fields, // TODO(pcardune): construct this properly before calling super using the code below
-      oldNode.options
-    );
+    super({
+      from: oldNode.from,
+      to: oldNode.to,
+      type: oldNode.type,
+      fields: {} as Fields, // TODO(pcardune): construct this properly before calling super using the code below
+      options: oldNode.options,
+    });
     for (const spec of oldNode.spec.childSpecs) {
       if (spec instanceof Required) {
         spec.setField(this, cloneNode(spec.getField(oldNode)));

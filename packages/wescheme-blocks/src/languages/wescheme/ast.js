@@ -26,7 +26,13 @@ export class Sequence extends Nodes.Sequence {
 
 export class LetLikeExpr extends ASTNode {
   constructor(from, to, form, bindings, expr, options = {}) {
-    super(from, to, "letLikeExpr", { form, bindings, expr }, options);
+    super({
+      from,
+      to,
+      type: "letLikeExpr",
+      fields: { form, bindings, expr },
+      options,
+    });
   }
 
   static spec = Spec.nodeSpec([
@@ -63,7 +69,13 @@ export class LetLikeExpr extends ASTNode {
 
 export class WhenUnless extends ASTNode {
   constructor(from, to, form, predicate, exprs, options = {}) {
-    super(from, to, "whenUnlessExpr", { form, predicate, exprs }, options);
+    super({
+      from,
+      to,
+      type: "whenUnlessExpr",
+      fields: { form, predicate, exprs },
+      options,
+    });
   }
 
   static spec = Spec.nodeSpec([

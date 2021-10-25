@@ -597,13 +597,19 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
    */
   __alreadyValidated = false;
 
-  constructor(
-    from: Pos,
-    to: Pos,
-    type: string,
-    fields: Fields,
-    options: NodeOptions
-  ) {
+  constructor({
+    from,
+    to,
+    type,
+    fields,
+    options,
+  }: {
+    from: Pos;
+    to: Pos;
+    type: string;
+    fields: Fields;
+    options: NodeOptions;
+  }) {
     this.from = from;
     this.to = to;
     this.type = type;

@@ -34,7 +34,7 @@ function withComment(
 
 export class Unknown extends ASTNode<{ elts: ASTNode[] }> {
   constructor(from: Pos, to: Pos, elts: ASTNode[], options: NodeOptions = {}) {
-    super(from, to, "unknown", { elts }, options);
+    super({ from, to, type: "unknown", fields: { elts }, options });
   }
 
   static spec = Spec.nodeSpec([Spec.list("elts")]);
@@ -81,7 +81,7 @@ export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
     args: ASTNode[],
     options: NodeOptions = {}
   ) {
-    super(from, to, "functionApp", { func, args }, options);
+    super({ from, to, type: "functionApp", fields: { func, args }, options });
   }
 
   static spec = Spec.nodeSpec([Spec.required("func"), Spec.list("args")]);
@@ -139,7 +139,7 @@ export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
     ids: ASTNode[],
     options: NodeOptions = {}
   ) {
-    super(from, to, "identifierList", { kind, ids }, options);
+    super({ from, to, type: "identifierList", fields: { kind, ids }, options });
   }
 
   static spec = Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]);
@@ -178,7 +178,13 @@ export class StructDefinition extends ASTNode<{
     fields: ASTNode,
     options: NodeOptions = {}
   ) {
-    super(from, to, "structDefinition", { name, fields }, options);
+    super({
+      from,
+      to,
+      type: "structDefinition",
+      fields: { name, fields },
+      options,
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.value("name"), Spec.required("fields")]);
@@ -221,7 +227,13 @@ export class VariableDefinition extends ASTNode<{
   body: ASTNode;
 }> {
   constructor(from: Pos, to: Pos, name: ASTNode, body: ASTNode, options = {}) {
-    super(from, to, "variableDefinition", { name, body }, options);
+    super({
+      from,
+      to,
+      type: "variableDefinition",
+      fields: { name, body },
+      options,
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.required("name"), Spec.required("body")]);
@@ -269,7 +281,13 @@ export class LambdaExpression extends ASTNode<{
     body: ASTNode,
     options = {}
   ) {
-    super(from, to, "lambdaExpression", { body, args }, options);
+    super({
+      from,
+      to,
+      type: "lambdaExpression",
+      fields: { body, args },
+      options,
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.required("args"), Spec.required("body")]);
@@ -316,7 +334,13 @@ export class FunctionDefinition extends ASTNode<{
     body: ASTNode,
     options = {}
   ) {
-    super(from, to, "functionDefinition", { name, params, body }, options);
+    super({
+      from,
+      to,
+      type: "functionDefinition",
+      fields: { name, params, body },
+      options,
+    });
   }
 
   static spec = Spec.nodeSpec([
@@ -369,7 +393,13 @@ export class CondClause extends ASTNode<{
     thenExprs: ASTNode[],
     options = {}
   ) {
-    super(from, to, "condClause", { testExpr, thenExprs }, options);
+    super({
+      from,
+      to,
+      type: "condClause",
+      fields: { testExpr, thenExprs },
+      options,
+    });
   }
 
   static spec = Spec.nodeSpec([
@@ -414,7 +444,7 @@ export class CondClause extends ASTNode<{
 
 export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
   constructor(from: Pos, to: Pos, clauses: ASTNode[], options = {}) {
-    super(from, to, "condExpression", { clauses }, options);
+    super({ from, to, type: "condExpression", fields: { clauses }, options });
   }
 
   static spec = Spec.nodeSpec([Spec.list("clauses")]);
@@ -457,7 +487,13 @@ export class IfExpression extends ASTNode<{
     elseExpr: ASTNode,
     options = {}
   ) {
-    super(from, to, "ifExpression", { testExpr, thenExpr, elseExpr }, options);
+    super({
+      from,
+      to,
+      type: "ifExpression",
+      fields: { testExpr, thenExpr, elseExpr },
+      options,
+    });
   }
 
   static spec = Spec.nodeSpec([
@@ -517,7 +553,7 @@ export class Literal extends ASTNode<{ value: string; dataType: string }> {
     dataType = "unknown",
     options = {}
   ) {
-    super(from, to, "literal", { value, dataType }, options);
+    super({ from, to, type: "literal", fields: { value, dataType }, options });
   }
 
   static spec = Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]);
@@ -543,7 +579,7 @@ export class Literal extends ASTNode<{ value: string; dataType: string }> {
 
 export class Comment extends ASTNode<{ comment: string }> {
   constructor(from: Pos, to: Pos, comment: string, options = {}) {
-    super(from, to, "comment", { comment }, options);
+    super({ from, to, type: "comment", fields: { comment }, options });
     this.isLockedP = true;
   }
 
@@ -579,7 +615,13 @@ export class Blank extends ASTNode<{ value: string; dataType: string }> {
     dataType = "blank",
     options = {}
   ) {
-    super(from, to, "blank", { value: value || "...", dataType }, options);
+    super({
+      from,
+      to,
+      type: "blank",
+      fields: { value: value || "...", dataType },
+      options,
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]);
@@ -609,7 +651,7 @@ export class Sequence extends ASTNode<{ name: ASTNode; exprs: ASTNode[] }> {
     name: ASTNode,
     options = {}
   ) {
-    super(from, to, "sequence", { name, exprs }, options);
+    super({ from, to, type: "sequence", fields: { name, exprs }, options });
   }
 
   static spec = Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]);
