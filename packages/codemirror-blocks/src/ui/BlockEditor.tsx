@@ -569,7 +569,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
           />
         </EditorContext.Provider>
       ));
-      if (!!quarantine) {
+      if (quarantine) {
         portals.push(<ToplevelBlockEditable editor={editor} key="-1" />);
       }
     }
