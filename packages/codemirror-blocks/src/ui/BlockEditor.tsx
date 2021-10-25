@@ -315,19 +315,17 @@ export type BlockEditorProps = {
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language, passedAST } = props;
   const dispatch: AppDispatch = useDispatch();
-  const { ast, quarantine } = useSelector(({ ast, quarantine }: RootState) => ({
-    ast,
-    quarantine,
-  }));
+  const ast = useSelector((state: RootState) => state.ast);
+  const quarantine = useSelector((state: RootState) => state.quarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const newASTRef = useRef<AST | undefined>();
 
   // only refresh if there is no active quarantine
   useEffect(() => {
-    if (quarantine) {
+    if (!quarantine) {
       editor?.refresh();
     }
-  });
+  }, [quarantine]);
 
   /**
    * @internal
@@ -403,7 +401,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
 
   /**
    * Given a CM Change Event, manually handle our own undo and focus stack
-   * TODO(Emmanuel): use a single dispatch call here
+   * This is hooked up to CodeMirror's onChange; event
    */
   const handleChange = (
     editor: ReadonlyCMBEditor,
