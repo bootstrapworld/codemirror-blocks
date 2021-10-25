@@ -15,7 +15,6 @@ import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
 import { validateRanges, BlockError, setAfterDOMUpdate } from "../utils";
-import type { afterDOMUpdateHandle } from "../utils";
 import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
@@ -287,7 +286,6 @@ export const buildAPI = (
   // show which APIs are unsupported
   unsupportedAPIs.forEach(
     (f) =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ((api as any)[f] = () => {
         throw new BlockError(
           `The CM API '${f}' is not supported in the block editor`,
@@ -328,6 +326,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       editor?.refresh();
     }
   });
+
   /**
    * @internal
    * Used for reproducing/debugging (see ToggleEditor::loadLoggedActions)
@@ -603,5 +602,4 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     </LanguageContext.Provider>
   );
 };
-
 export default BlockEditor;
