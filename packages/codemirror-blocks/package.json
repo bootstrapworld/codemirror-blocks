@@ -19,7 +19,7 @@
     "babel-loader": "^8.2.2",
     "classnames": "^2.3.1",
     "codemirror": "^5.61.1",
-    "core-js": "^3.18.3",
+    "core-js": "^3.19.0",
     "css-loader": "^6.4.0",
     "fast-json-stable-stringify": "^2.1.0",
     "file-loader": "^6.2.0",
