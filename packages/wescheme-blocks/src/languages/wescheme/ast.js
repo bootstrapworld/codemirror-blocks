@@ -32,6 +32,13 @@ export class LetLikeExpr extends ASTNode {
       type: "letLikeExpr",
       fields: { form, bindings, expr },
       options,
+      pretty(node) {
+        return P.lambdaLikeSexpr(
+          node.fields.form,
+          P.brackets(node.bindings),
+          node.expr
+        );
+      },
     });
   }
 
@@ -46,14 +53,6 @@ export class LetLikeExpr extends ASTNode {
       "binding",
       this.bindings.exprs
     )}`;
-  }
-
-  pretty() {
-    return P.lambdaLikeSexpr(
-      this.fields.form,
-      P.brackets(this.bindings),
-      this.expr
-    );
   }
 
   render(props) {
@@ -75,6 +74,12 @@ export class WhenUnless extends ASTNode {
       type: "whenUnlessExpr",
       fields: { form, predicate, exprs },
       options,
+      pretty(node) {
+        return P.standardSexpr(node.fields.form, [
+          node.fields.predicate,
+          node.fields.exprs,
+        ]);
+      },
     });
   }
 
@@ -90,13 +95,6 @@ export class WhenUnless extends ASTNode {
     } ${this.fields.predicate.describe(level)}, ${this.fields.exprs.describe(
       level
     )}`;
-  }
-
-  pretty() {
-    return P.standardSexpr(this.fields.form, [
-      this.fields.predicate,
-      this.fields.exprs,
-    ]);
   }
 
   render(props) {

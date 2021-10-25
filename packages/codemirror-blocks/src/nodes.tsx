@@ -34,7 +34,19 @@ function withComment(
 
 export class Unknown extends ASTNode<{ elts: ASTNode[] }> {
   constructor(from: Pos, to: Pos, elts: ASTNode[], options: NodeOptions = {}) {
-    super({ from, to, type: "unknown", fields: { elts }, options });
+    super({
+      from,
+      to,
+      type: "unknown",
+      fields: { elts },
+      options,
+      pretty: (node) =>
+        withComment(
+          P.standardSexpr(node.fields.elts[0], node.fields.elts.slice(1)),
+          node.options.comment,
+          node
+        ),
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.list("elts")]);
@@ -48,14 +60,6 @@ export class Unknown extends ASTNode<{ elts: ASTNode[] }> {
             (elts.length > 1 ? i + 1 + ": " : "") + e.describe(level)
         )
         .join(", ")
-    );
-  }
-
-  pretty(): P.Doc {
-    return withComment(
-      P.standardSexpr(this.fields.elts[0], this.fields.elts.slice(1)),
-      this.options.comment,
-      this
     );
   }
 
@@ -81,7 +85,19 @@ export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
     args: ASTNode[],
     options: NodeOptions = {}
   ) {
-    super({ from, to, type: "functionApp", fields: { func, args }, options });
+    super({
+      from,
+      to,
+      type: "functionApp",
+      fields: { func, args },
+      options,
+      pretty: (node) =>
+        withComment(
+          P.standardSexpr(node.fields.func, node.fields.args),
+          node.options.comment,
+          node
+        ),
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.required("func"), Spec.list("args")]);
@@ -109,14 +125,6 @@ export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
       );
   }
 
-  pretty(): P.Doc {
-    return withComment(
-      P.standardSexpr(this.fields.func, this.fields.args),
-      this.options.comment,
-      this
-    );
-  }
-
   render(props: NodeProps) {
     return (
       <Node {...props}>
@@ -139,21 +147,21 @@ export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
     ids: ASTNode[],
     options: NodeOptions = {}
   ) {
-    super({ from, to, type: "identifierList", fields: { kind, ids }, options });
+    super({
+      from,
+      to,
+      type: "identifierList",
+      fields: { kind, ids },
+      options,
+      pretty: (node) =>
+        withComment(P.sepBy(node.fields.ids, " "), node.options.comment, node),
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]);
 
   longDescription(level: number) {
     return enumerateList(this.fields.ids, level);
-  }
-
-  pretty(): P.Doc {
-    return withComment(
-      P.sepBy(this.fields.ids, " "),
-      this.options.comment,
-      this
-    );
   }
 
   render(props: NodeProps) {
@@ -184,6 +192,16 @@ export class StructDefinition extends ASTNode<{
       type: "structDefinition",
       fields: { name, fields },
       options,
+      pretty: (node) =>
+        withComment(
+          P.lambdaLikeSexpr(
+            "define-struct",
+            node.fields.name,
+            P.horz("(", node.fields.fields, ")")
+          ),
+          node.options.comment,
+          node
+        ),
     });
   }
 
@@ -193,18 +211,6 @@ export class StructDefinition extends ASTNode<{
     return `define ${this.fields.name.describe(
       level
     )} to be a structure with ${this.fields.fields.describe(level)}`;
-  }
-
-  pretty(): P.Doc {
-    return withComment(
-      P.lambdaLikeSexpr(
-        "define-struct",
-        this.fields.name,
-        P.horz("(", this.fields.fields, ")")
-      ),
-      this.options.comment,
-      this
-    );
   }
 
   render(props: NodeProps) {
@@ -233,6 +239,12 @@ export class VariableDefinition extends ASTNode<{
       type: "variableDefinition",
       fields: { name, body },
       options,
+      pretty: (node) =>
+        withComment(
+          P.lambdaLikeSexpr("define", node.fields.name, node.fields.body),
+          node.options.comment,
+          node
+        ),
     });
   }
 
@@ -245,14 +257,6 @@ export class VariableDefinition extends ASTNode<{
     return `define ${
       this.fields.name
     } to be ${insert} ${this.fields.body.describe(level)}`;
-  }
-
-  pretty(): P.Doc {
-    return withComment(
-      P.lambdaLikeSexpr("define", this.fields.name, this.fields.body),
-      this.options.comment,
-      this
-    );
   }
 
   render(props: NodeProps) {
@@ -287,6 +291,12 @@ export class LambdaExpression extends ASTNode<{
       type: "lambdaExpression",
       fields: { body, args },
       options,
+      pretty: (node) =>
+        P.lambdaLikeSexpr(
+          "lambda(",
+          P.horz("(", node.fields.args, ")"),
+          node.fields.body
+        ),
     });
   }
 
@@ -299,14 +309,6 @@ export class LambdaExpression extends ASTNode<{
     )}: 
             ${this.fields.args.describe(level)}, with body:
             ${this.fields.body.describe(level)}`;
-  }
-
-  pretty(): P.Doc {
-    return P.lambdaLikeSexpr(
-      "lambda(",
-      P.horz("(", this.fields.args, ")"),
-      this.fields.body
-    );
   }
 
   render(props: NodeProps) {
@@ -340,6 +342,16 @@ export class FunctionDefinition extends ASTNode<{
       type: "functionDefinition",
       fields: { name, params, body },
       options,
+      pretty: (node) =>
+        withComment(
+          P.lambdaLikeSexpr(
+            "define",
+            P.standardSexpr(node.fields.name, [node.fields.params]),
+            node.fields.body
+          ),
+          node.options.comment,
+          node
+        ),
     });
   }
 
@@ -353,18 +365,6 @@ export class FunctionDefinition extends ASTNode<{
     return `define ${this.fields.name} to be a function of 
             ${this.fields.params.describe(level)}, with body:
             ${this.fields.body.describe(level)}`;
-  }
-
-  pretty(): P.Doc {
-    return withComment(
-      P.lambdaLikeSexpr(
-        "define",
-        P.standardSexpr(this.fields.name, [this.fields.params]),
-        this.fields.body
-      ),
-      this.options.comment,
-      this
-    );
   }
 
   render(props: NodeProps) {
@@ -399,6 +399,12 @@ export class CondClause extends ASTNode<{
       type: "condClause",
       fields: { testExpr, thenExprs },
       options,
+      pretty: (node) =>
+        P.horz(
+          "[",
+          P.sepBy([node.fields.testExpr].concat(node.fields.thenExprs), " "),
+          "]"
+        ),
     });
   }
 
@@ -411,14 +417,6 @@ export class CondClause extends ASTNode<{
     return `condition: if ${this.fields.testExpr.describe(
       level
     )}, then, ${this.fields.thenExprs.map((te) => te.describe(level))}`;
-  }
-
-  pretty(): P.Doc {
-    return P.horz(
-      "[",
-      P.sepBy([this.fields.testExpr].concat(this.fields.thenExprs), " "),
-      "]"
-    );
   }
 
   render(props: NodeProps) {
@@ -444,7 +442,14 @@ export class CondClause extends ASTNode<{
 
 export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
   constructor(from: Pos, to: Pos, clauses: ASTNode[], options = {}) {
-    super({ from, to, type: "condExpression", fields: { clauses }, options });
+    super({
+      from,
+      to,
+      type: "condExpression",
+      fields: { clauses },
+      options,
+      pretty: (node) => P.beginLikeSexpr("cond", node.fields.clauses),
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.list("clauses")]);
@@ -455,10 +460,6 @@ export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
       this.fields.clauses
     )}: 
             ${this.fields.clauses.map((c) => c.describe(level))}`;
-  }
-
-  pretty(): P.Doc {
-    return P.beginLikeSexpr("cond", this.fields.clauses);
   }
 
   render(props: NodeProps) {
@@ -493,6 +494,16 @@ export class IfExpression extends ASTNode<{
       type: "ifExpression",
       fields: { testExpr, thenExpr, elseExpr },
       options,
+      pretty: (node) =>
+        withComment(
+          P.standardSexpr("if", [
+            node.fields.testExpr,
+            node.fields.thenExpr,
+            node.fields.elseExpr,
+          ]),
+          node.options.comment,
+          node
+        ),
     });
   }
 
@@ -508,18 +519,6 @@ export class IfExpression extends ASTNode<{
         level
       )}, then ${this.fields.thenExpr.describe(level)} ` +
       `else ${this.fields.elseExpr.describe(level)}`
-    );
-  }
-
-  pretty(): P.Doc {
-    return withComment(
-      P.standardSexpr("if", [
-        this.fields.testExpr,
-        this.fields.thenExpr,
-        this.fields.elseExpr,
-      ]),
-      this.options.comment,
-      this
     );
   }
 
@@ -553,17 +552,21 @@ export class Literal extends ASTNode<{ value: string; dataType: string }> {
     dataType = "unknown",
     options = {}
   ) {
-    super({ from, to, type: "literal", fields: { value, dataType }, options });
+    super({
+      from,
+      to,
+      type: "literal",
+      fields: { value, dataType },
+      options,
+      pretty: (node) =>
+        withComment(P.txt(node.fields.value), node.options.comment, node),
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]);
 
   describe() {
     return this.options["aria-label"];
-  }
-
-  pretty(): P.Doc {
-    return withComment(P.txt(this.fields.value), this.options.comment, this);
   }
 
   render(props: NodeProps) {
@@ -579,7 +582,19 @@ export class Literal extends ASTNode<{ value: string; dataType: string }> {
 
 export class Comment extends ASTNode<{ comment: string }> {
   constructor(from: Pos, to: Pos, comment: string, options = {}) {
-    super({ from, to, type: "comment", fields: { comment }, options });
+    super({
+      from,
+      to,
+      type: "comment",
+      fields: { comment },
+      options,
+      pretty: (node) => {
+        const words = node.fields.comment.trim().split(/\s+/);
+        const wrapped = P.wrap(words);
+        // Normalize all comments to block comments
+        return P.concat("#| ", wrapped, " |#");
+      },
+    });
     this.isLockedP = true;
   }
 
@@ -587,13 +602,6 @@ export class Comment extends ASTNode<{ comment: string }> {
 
   describe(): string | undefined {
     return this.options["aria-label"];
-  }
-
-  pretty(): P.Doc {
-    const words = this.fields.comment.trim().split(/\s+/);
-    const wrapped = P.wrap(words);
-    // Normalize all comments to block comments
-    return P.concat("#| ", wrapped, " |#");
   }
 
   render() {
@@ -621,6 +629,7 @@ export class Blank extends ASTNode<{ value: string; dataType: string }> {
       type: "blank",
       fields: { value: value || "...", dataType },
       options,
+      pretty: (node) => P.txt(node.fields.value),
     });
   }
 
@@ -628,10 +637,6 @@ export class Blank extends ASTNode<{ value: string; dataType: string }> {
 
   describe() {
     return this.options["aria-label"];
-  }
-
-  pretty(): P.Doc {
-    return P.txt(this.fields.value);
   }
 
   render(props: NodeProps) {
@@ -651,17 +656,20 @@ export class Sequence extends ASTNode<{ name: ASTNode; exprs: ASTNode[] }> {
     name: ASTNode,
     options = {}
   ) {
-    super({ from, to, type: "sequence", fields: { name, exprs }, options });
+    super({
+      from,
+      to,
+      type: "sequence",
+      fields: { name, exprs },
+      options,
+      pretty: (node) => P.vert(node.fields.name, ...node.fields.exprs),
+    });
   }
 
   static spec = Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]);
 
   longDescription(level: number) {
     return `a sequence containing ${enumerateList(this.fields.exprs, level)}`;
-  }
-
-  pretty(): P.Doc {
-    return P.vert(this.fields.name, ...this.fields.exprs);
   }
 
   render(props: NodeProps) {
