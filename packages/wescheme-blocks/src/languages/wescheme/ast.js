@@ -54,14 +54,13 @@ export class LetLikeExpr extends ASTNode {
           node.bindings.exprs
         )}`;
       },
+      spec: Spec.nodeSpec([
+        Spec.value("form"),
+        Spec.required("bindings"),
+        Spec.required("expr"),
+      ]),
     });
   }
-
-  static spec = Spec.nodeSpec([
-    Spec.value("form"),
-    Spec.required("bindings"),
-    Spec.required("expr"),
-  ]);
 }
 
 export class WhenUnless extends ASTNode {
@@ -94,12 +93,11 @@ export class WhenUnless extends ASTNode {
           level
         )}, ${node.fields.exprs.describe(level)}`;
       },
+      spec: Spec.nodeSpec([
+        Spec.value("form"),
+        Spec.required("predicate"),
+        Spec.required("exprs"),
+      ]),
     });
   }
-
-  static spec = Spec.nodeSpec([
-    Spec.value("form"),
-    Spec.required("predicate"),
-    Spec.required("exprs"),
-  ]);
 }

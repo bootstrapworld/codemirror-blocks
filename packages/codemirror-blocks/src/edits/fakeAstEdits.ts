@@ -1,6 +1,6 @@
 import * as P from "pretty-fast-pretty-printer";
 import { warn, poscmp } from "../utils";
-import { Required, Optional, List, Value } from "../nodeSpec";
+import { Required, Optional, List, Value, nodeSpec } from "../nodeSpec";
 import { ASTNode, NodeFields, UnknownFields } from "../ast";
 import type { AST, Pos } from "../ast";
 import { playSound, BEEP } from "../utils";
@@ -187,6 +187,7 @@ class FakeInsertNode extends ASTNode<{ text: string }> {
       render() {
         warn("fakeAstEdits", "FakeInsertNode didn't expect to be rendered!");
       },
+      spec: nodeSpec([]),
     });
   }
 }
@@ -204,6 +205,7 @@ class FakeBlankNode extends ASTNode {
       render() {
         warn("fakeAstEdits", "FakeBlankNode didn't expect to be rendered!");
       },
+      spec: nodeSpec([]),
     });
   }
 }
@@ -228,6 +230,7 @@ export class ClonedASTNode<
       render(_props: { node: ASTNode }) {
         warn("fakeAstEdits", "ClonedASTNode didn't expect to be rendered!");
       },
+      spec: oldNode.spec,
     });
     for (const spec of oldNode.spec.childSpecs) {
       if (spec instanceof Required) {
@@ -248,7 +251,6 @@ export class ClonedASTNode<
     this.type = oldNode.type;
     this.id = oldNode.id;
     this.hash = oldNode.hash;
-    this.spec = oldNode.spec;
   }
 }
 

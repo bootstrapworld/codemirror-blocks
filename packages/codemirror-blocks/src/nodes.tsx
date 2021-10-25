@@ -72,10 +72,9 @@ export class Unknown extends ASTNode<{ elts: ASTNode[] }> {
             .join(", ")
         );
       },
+      spec: Spec.nodeSpec([Spec.list("elts")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.list("elts")]);
 }
 
 export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
@@ -132,10 +131,9 @@ export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
             node.fields.args.map((a) => a.describe(level)).join(", ")
           );
       },
+      spec: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.required("func"), Spec.list("args")]);
 }
 
 export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
@@ -166,10 +164,9 @@ export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
       longDescription(node, level) {
         return enumerateList(node.fields.ids, level);
       },
+      spec: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]);
 }
 
 export class StructDefinition extends ASTNode<{
@@ -217,10 +214,9 @@ export class StructDefinition extends ASTNode<{
           level
         )} to be a structure with ${node.fields.fields.describe(level)}`;
       },
+      spec: Spec.nodeSpec([Spec.value("name"), Spec.required("fields")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.value("name"), Spec.required("fields")]);
 }
 
 export class VariableDefinition extends ASTNode<{
@@ -261,10 +257,9 @@ export class VariableDefinition extends ASTNode<{
           node.fields.name
         } to be ${insert} ${node.fields.body.describe(level)}`;
       },
+      spec: Spec.nodeSpec([Spec.required("name"), Spec.required("body")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.required("name"), Spec.required("body")]);
 }
 
 export class LambdaExpression extends ASTNode<{
@@ -308,10 +303,9 @@ export class LambdaExpression extends ASTNode<{
                 ${node.fields.args.describe(level)}, with body:
                 ${node.fields.body.describe(level)}`;
       },
+      spec: Spec.nodeSpec([Spec.required("args"), Spec.required("body")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.required("args"), Spec.required("body")]);
 }
 
 export class FunctionDefinition extends ASTNode<{
@@ -361,14 +355,13 @@ export class FunctionDefinition extends ASTNode<{
                 ${node.fields.params.describe(level)}, with body:
                 ${node.fields.body.describe(level)}`;
       },
+      spec: Spec.nodeSpec([
+        Spec.required("name"),
+        Spec.required("params"),
+        Spec.required("body"),
+      ]),
     });
   }
-
-  static spec = Spec.nodeSpec([
-    Spec.required("name"),
-    Spec.required("params"),
-    Spec.required("body"),
-  ]);
 }
 
 export class CondClause extends ASTNode<{
@@ -418,13 +411,9 @@ export class CondClause extends ASTNode<{
           level
         )}, then, ${node.fields.thenExprs.map((te) => te.describe(level))}`;
       },
+      spec: Spec.nodeSpec([Spec.required("testExpr"), Spec.list("thenExprs")]),
     });
   }
-
-  static spec = Spec.nodeSpec([
-    Spec.required("testExpr"),
-    Spec.list("thenExprs"),
-  ]);
 }
 
 export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
@@ -454,10 +443,9 @@ export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
         )}: 
                 ${node.fields.clauses.map((c) => c.describe(level))}`;
       },
+      spec: Spec.nodeSpec([Spec.list("clauses")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.list("clauses")]);
 }
 
 export class IfExpression extends ASTNode<{
@@ -519,14 +507,13 @@ export class IfExpression extends ASTNode<{
           `else ${node.fields.elseExpr.describe(level)}`
         );
       },
+      spec: Spec.nodeSpec([
+        Spec.required("testExpr"),
+        Spec.required("thenExpr"),
+        Spec.required("elseExpr"),
+      ]),
     });
   }
-
-  static spec = Spec.nodeSpec([
-    Spec.required("testExpr"),
-    Spec.required("thenExpr"),
-    Spec.required("elseExpr"),
-  ]);
 }
 
 export class Literal extends ASTNode<{ value: string; dataType: string }> {
@@ -554,10 +541,9 @@ export class Literal extends ASTNode<{ value: string; dataType: string }> {
           </Node>
         );
       },
+      spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]);
 }
 
 export class Comment extends ASTNode<{ comment: string }> {
@@ -587,11 +573,10 @@ export class Comment extends ASTNode<{ comment: string }> {
           </span>
         );
       },
+      spec: Spec.nodeSpec([Spec.value("comment")]),
     });
     this.isLockedP = true;
   }
-
-  static spec = Spec.nodeSpec([Spec.value("comment")]);
 }
 
 export class Blank extends ASTNode<{ value: string; dataType: string }> {
@@ -616,10 +601,9 @@ export class Blank extends ASTNode<{ value: string; dataType: string }> {
           </Node>
         );
       },
+      spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]);
 }
 
 export class Sequence extends ASTNode<{ name: ASTNode; exprs: ASTNode[] }> {
@@ -655,8 +639,7 @@ export class Sequence extends ASTNode<{ name: ASTNode; exprs: ASTNode[] }> {
           level
         )}`;
       },
+      spec: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
     });
   }
-
-  static spec = Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]);
 }

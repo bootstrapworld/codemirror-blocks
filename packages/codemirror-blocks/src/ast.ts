@@ -537,7 +537,7 @@ export type NodeFields = { [fieldName: string]: NodeField };
  * Every node in the AST must inherit from the `ASTNode` class, which is used
  * to house some common attributes.
  */
-export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
+export class ASTNode<Fields extends NodeFields = UnknownFields> {
   /**
    * @internal
    * Every node must have a Starting and Ending position, represented as
@@ -568,9 +568,7 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
   /**
    * @internal
    * nodeSpec, which specifies node requirements (see nodeSpec.ts)
-   * NOTE(pcardune): can we import the NodeSpec type here?
    */
-  public static spec: NodeSpec;
   spec: NodeSpec;
 
   /**
@@ -602,7 +600,7 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
   readonly render: (props: {
     node: ASTNode<Fields>;
   }) => React.ReactElement | void;
-  longDescription?: (
+  readonly longDescription?: (
     node: ASTNode<Fields>,
     _level: number
   ) => string | undefined;
@@ -616,6 +614,7 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     pretty,
     render,
     longDescription,
+    spec,
   }: {
     from: Pos;
     to: Pos;
@@ -637,6 +636,7 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
       node: ASTNode<Fields>,
       _level: number
     ) => string | undefined;
+    spec: NodeSpec;
   }) {
     this.from = from;
     this.to = to;
@@ -646,15 +646,12 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     this._pretty = pretty;
     this.longDescription = longDescription;
     this.render = render;
+    this.spec = spec;
 
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
       options.comment.id = "block-node-" + this.id + "-comment";
     }
-
-    // Make the spec more easily available.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.spec = (this.constructor as any).spec;
 
     this.isLockedP = false;
   }
