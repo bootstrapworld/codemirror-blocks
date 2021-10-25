@@ -27,7 +27,7 @@
     "html-webpack-plugin": "^5.3.2",
     "less": "^4.1.2",
     "less-loader": "^10.2.0",
-    "mini-css-extract-plugin": "^2.4.2",
+    "mini-css-extract-plugin": "^2.4.3",
     "npm": "^7.24.2",
     "pretty-fast-pretty-printer": "^0.10.0",
     "prop-types": "^15.7.2",
