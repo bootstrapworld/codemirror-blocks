@@ -98,6 +98,7 @@ export const buildAPI = (
   editor: CodeMirrorFacade,
   dispatch: AppDispatch
 ): BuiltAPI => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const withState = <F extends (state: RootState) => any>(func: F) =>
     dispatch((_, getState) => func(getState()));
 
@@ -286,6 +287,7 @@ export const buildAPI = (
   // show which APIs are unsupported
   unsupportedAPIs.forEach(
     (f) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ((api as any)[f] = () => {
         throw new BlockError(
           `The CM API '${f}' is not supported in the block editor`,
@@ -327,6 +329,13 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     }
   });
 
+  const getEditorOrThrow = () => {
+    if (!editor) {
+      throw new Error(`Expected codemirror to have mounted by now`);
+    }
+    return editor;
+  };
+
   /**
    * @internal
    * Used for reproducing/debugging (see ToggleEditor::loadLoggedActions)
@@ -361,13 +370,6 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       action = activity;
     }
     dispatch(action);
-  };
-
-  const getEditorOrThrow = () => {
-    if (!editor) {
-      throw new Error(`Expected codemirror to have mounted by now`);
-    }
-    return editor;
   };
 
   /**
