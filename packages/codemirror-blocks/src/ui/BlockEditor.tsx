@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
-import { connect, ConnectedProps, useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   activateByNid,
   setCursor,
@@ -14,28 +14,19 @@ import {
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
-import {
-  minpos,
-  maxpos,
-  validateRanges,
-  BlockError,
-  setAfterDOMUpdate,
-  cancelAfterDOMUpdate,
-  getTempCM,
-} from "../utils";
+import { validateRanges, BlockError, setAfterDOMUpdate } from "../utils";
 import type { afterDOMUpdateHandle } from "../utils";
 import { keyDown } from "../keymap";
 import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { SelectionOptions } from "codemirror";
-import type { Options, API, Language } from "../CodeMirrorBlocks";
-import type { AppDispatch, AppThunk } from "../store";
+import type { Options, Language } from "../CodeMirrorBlocks";
+import type { AppDispatch } from "../store";
 import type { Activity, AppAction, RootState, Quarantine } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext, LanguageContext } from "../components/Context";
 import {
   CodeMirrorFacade,
-  CMBEditor,
   ReadonlyCMBEditor,
   isBlockNodeMarker,
 } from "../editor";
@@ -106,8 +97,7 @@ export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
  */
 export const buildAPI = (
   editor: CodeMirrorFacade,
-  dispatch: AppDispatch,
-  search: Search
+  dispatch: AppDispatch
 ): BuiltAPI => {
   const withState = <F extends (state: RootState) => any>(func: F) =>
     dispatch((_, getState) => func(getState()));
@@ -135,22 +125,22 @@ export const buildAPI = (
           "API Error"
         );
       }
-      let supportedOptions = ["css", "className", "title"];
-      for (let opt in opts) {
+      const supportedOptions = ["css", "className", "title"];
+      for (const opt in opts) {
         if (!supportedOptions.includes(opt))
           throw new BlockError(
             `markText: option "${opt}" is not supported in block mode`,
             `API Error`
           );
       }
-      let mark = editor.codemirror.markText(from, to, opts); // keep CM in sync
+      const mark = editor.codemirror.markText(from, to, opts); // keep CM in sync
       const _clear = mark.clear.bind(mark);
       mark.clear = () => {
         _clear();
         dispatch({ type: "CLEAR_MARK", id: node.id });
       };
       mark.find = () => {
-        let { from, to } = ast.getNodeByIdOrThrow(node.id);
+        const { from, to } = ast.getNodeByIdOrThrow(node.id);
         return { from, to };
       };
       mark.options = opts;
@@ -166,15 +156,12 @@ export const buildAPI = (
     hasFocus: () =>
       editor.codemirror.hasFocus() ||
       Boolean(document.activeElement?.id.match(/block-node/)),
-    extendSelection: (
-      from: CodeMirror.Position,
-      to: CodeMirror.Position,
-      opts?: SelectionOptions
-    ) => dispatch(extendSelections(editor, [from], opts, to)),
+    extendSelection: (from: Pos, to: Pos, opts?: SelectionOptions) =>
+      dispatch(extendSelections(editor, [from], opts, to)),
     extendSelections: (heads, opts) =>
       dispatch(extendSelections(editor, heads, opts, undefined)),
     extendSelectionsBy: (
-      f: (range: CodeMirror.Range) => CodeMirror.Position,
+      f: (range: CodeMirror.Range) => Pos,
       opts?: SelectionOptions
     ) =>
       dispatch(
@@ -242,10 +229,10 @@ export const buildAPI = (
       }
     },
     // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
-    setCursor: (curOrLine, ch, options) =>
+    setCursor: (curOrLine, ch, _options) =>
       withState(({ ast }) => {
         ch = ch ?? 0;
-        let cur =
+        const cur =
           typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
         const node = ast.getNodeContaining(cur);
         if (node) {
@@ -300,6 +287,7 @@ export const buildAPI = (
   // show which APIs are unsupported
   unsupportedAPIs.forEach(
     (f) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ((api as any)[f] = () => {
         throw new BlockError(
           `The CM API '${f}' is not supported in the block editor`,
@@ -310,19 +298,6 @@ export const buildAPI = (
   return api;
 };
 
-type $TSFixMe = any;
-
-export type Search = {
-  search: (
-    forward: boolean,
-    cmbState: RootState,
-    overrideCur?: null | Pos
-  ) => ASTNode | null;
-  onSearch: (done: () => void, searchForward: () => void) => void;
-  setCursor: (cursor: Pos) => void;
-  setCM: (editor: ReadonlyCMBEditor) => void;
-};
-
 export type BlockEditorProps = {
   value: string;
   options?: Options;
@@ -331,28 +306,19 @@ export type BlockEditorProps = {
    * language being used
    */
   language: Language;
-  search?: Search;
   keyDownHelpers: AppHelpers;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
   passedAST: AST;
 };
 
-const BlockEditor = ({
-  options = {},
-  search = {
-    search: () => null,
-    onSearch: () => {},
-    setCursor: () => {},
-    setCM: () => {},
-  },
-  ...props
-}: BlockEditorProps) => {
+const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language, passedAST } = props;
   const dispatch: AppDispatch = useDispatch();
-  const { ast, cur, quarantine } = useSelector(
-    ({ ast, cur, quarantine }: RootState) => ({ ast, cur, quarantine })
-  );
+  const { ast, quarantine } = useSelector(({ ast, quarantine }: RootState) => ({
+    ast,
+    quarantine,
+  }));
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const newASTRef = useRef<AST | undefined>();
 
@@ -368,7 +334,7 @@ const BlockEditor = ({
    * Filter/Tweak logged history actions before dispatching them to
    * be executed.
    */
-  const executeAction = (activity: Activity) => {
+  const _executeAction = (activity: Activity) => {
     // ignore certain logged actions that are already
     // handled by the BlockEditor constructor
     const ignoreActions = ["RESET_STORE_FOR_TESTING"];
@@ -382,8 +348,7 @@ const BlockEditor = ({
     // the action to use the resulting AST, and delete code
     if (activity.type == "SET_AST") {
       getEditorOrThrow().setValue(activity.code);
-      const { code, ...toCopy } = activity;
-      action = { ...toCopy, ast: ast };
+      action = { ...activity, ast: ast };
     }
     // convert nid to node id, and use activate to generate the action
     else if (activity.type == "SET_FOCUS") {
@@ -489,8 +454,7 @@ const BlockEditor = ({
    */
   const handleEditorDidMount = (editor: CodeMirrorFacade) => {
     setEditor(editor);
-    // TODO(Emmanuel): are these needed?
-    // can't we set them in the component constructor?
+    // TODO(Emmanuel): Try to set them in the component constructor
     editor.codemirror.on("beforeChange", (ed, change) =>
       handleBeforeChange(editor, change)
     );
@@ -500,7 +464,6 @@ const BlockEditor = ({
 
     // set AST and search properties and collapse preferences
     dispatch({ type: "SET_AST", ast: passedAST });
-    search.setCM(editor);
     if (options.collapseAll) {
       dispatch({ type: "COLLAPSE_ALL" });
     }
@@ -518,7 +481,7 @@ const BlockEditor = ({
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    props.onMount(editor, buildAPI(editor, dispatch, search), passedAST);
+    props.onMount(editor, buildAPI(editor, dispatch), passedAST);
   };
 
   /**
@@ -586,7 +549,7 @@ const BlockEditor = ({
    * If there are selections, pass null. Otherwise pass the cursor.
    */
   const handleTopLevelCursorActivity = (editor: CodeMirrorFacade) => {
-    let cur =
+    const cur =
       editor.codemirror.getSelection().length > 0
         ? null
         : editor.codemirror.getCursor();
