@@ -48,6 +48,12 @@ export class LetLikeExpr extends ASTNode {
           </Node>
         );
       },
+      longDescription(node, _level) {
+        return `a ${node.fields.form} expression with ${pluralize(
+          "binding",
+          node.bindings.exprs
+        )}`;
+      },
     });
   }
 
@@ -56,13 +62,6 @@ export class LetLikeExpr extends ASTNode {
     Spec.required("bindings"),
     Spec.required("expr"),
   ]);
-
-  longDescription(_level) {
-    return `a ${this.fields.form} expression with ${pluralize(
-      "binding",
-      this.bindings.exprs
-    )}`;
-  }
 }
 
 export class WhenUnless extends ASTNode {
@@ -88,6 +87,13 @@ export class WhenUnless extends ASTNode {
           </Node>
         );
       },
+      longDescription(node, level) {
+        return `a ${node.fields.form} expression: ${
+          node.fields.form
+        } ${node.fields.predicate.describe(
+          level
+        )}, ${node.fields.exprs.describe(level)}`;
+      },
     });
   }
 
@@ -96,12 +102,4 @@ export class WhenUnless extends ASTNode {
     Spec.required("predicate"),
     Spec.required("exprs"),
   ]);
-
-  longDescription(level) {
-    return `a ${this.fields.form} expression: ${
-      this.fields.form
-    } ${this.fields.predicate.describe(level)}, ${this.fields.exprs.describe(
-      level
-    )}`;
-  }
 }

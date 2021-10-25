@@ -189,10 +189,6 @@ class FakeInsertNode extends ASTNode<{ text: string }> {
       },
     });
   }
-
-  toDescription(_level: number) {
-    return "";
-  }
 }
 
 // A fake ASTNode that just prints itself like a Blank.
@@ -209,10 +205,6 @@ class FakeBlankNode extends ASTNode {
         warn("fakeAstEdits", "FakeBlankNode didn't expect to be rendered!");
       },
     });
-  }
-
-  toDescription(_level: number) {
-    return "";
   }
 }
 

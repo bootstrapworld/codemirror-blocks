@@ -602,6 +602,10 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
   readonly render: (props: {
     node: ASTNode<Fields>;
   }) => React.ReactElement | void;
+  longDescription?: (
+    node: ASTNode<Fields>,
+    _level: number
+  ) => string | undefined;
 
   constructor({
     from,
@@ -611,6 +615,7 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     options,
     pretty,
     render,
+    longDescription,
   }: {
     from: Pos;
     to: Pos;
@@ -625,6 +630,13 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     render: (
       props: NodeProps & { node: ASTNode<Fields> }
     ) => React.ReactElement | void;
+
+    // the long description is node-specific, detailed, and must be
+    // implemented by the ASTNode itself
+    longDescription?: (
+      node: ASTNode<Fields>,
+      _level: number
+    ) => string | undefined;
   }) {
     this.from = from;
     this.to = to;
@@ -632,6 +644,7 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     this.options = options;
     this.fields = fields;
     this._pretty = pretty;
+    this.longDescription = longDescription;
     this.render = render;
 
     // If this node is commented, give its comment an id based on this node's id.
@@ -655,18 +668,14 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     if (this.level - level >= descDepth) {
       return this.shortDescription();
     } else {
-      return this.longDescription(level);
+      return this.longDescription
+        ? this.longDescription(this, level)
+        : this.shortDescription();
     }
   }
   // the short description is literally the ARIA label
   shortDescription(): string {
     return this.options["aria-label"] || "";
-  }
-
-  // the long description is node-specific, detailed, and must be
-  // implemented by the ASTNode itself
-  longDescription(_level: number): string | undefined {
-    throw new Error("ASTNodes must implement `.longDescription()`");
   }
 
   // Pretty-print the node and its children, based on the pp-width

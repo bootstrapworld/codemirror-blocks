@@ -58,22 +58,24 @@ export class Unknown extends ASTNode<{ elts: ASTNode[] }> {
           </Node>
         );
       },
+      longDescription(node, level) {
+        return (
+          `an unknown expression with ${pluralize(
+            "children",
+            node.fields.elts
+          )} ` +
+          node.fields.elts
+            .map(
+              (e, i, elts) =>
+                (elts.length > 1 ? i + 1 + ": " : "") + e.describe(level)
+            )
+            .join(", ")
+        );
+      },
     });
   }
 
   static spec = Spec.nodeSpec([Spec.list("elts")]);
-
-  longDescription(level: number) {
-    return (
-      `an unknown expression with ${pluralize("children", this.fields.elts)} ` +
-      this.fields.elts
-        .map(
-          (e, i, elts) =>
-            (elts.length > 1 ? i + 1 + ": " : "") + e.describe(level)
-        )
-        .join(", ")
-    );
-  }
 }
 
 export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
@@ -108,33 +110,32 @@ export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
           </Node>
         );
       },
+      longDescription(node, level) {
+        // if it's the top level, enumerate the args
+        if (node.level - level == 0) {
+          return (
+            `applying the function ${node.fields.func.describe(
+              level
+            )} to ${pluralize("argument", node.fields.args)} ` +
+            node.fields.args
+              .map(
+                (a, i, args) =>
+                  (args.length > 1 ? i + 1 + ": " : "") + a.describe(level)
+              )
+              .join(", ")
+          );
+        }
+        // if we're lower than that (but not so low that `.shortDescription()` is used), use "f of A, B, C" format
+        else
+          return (
+            `${node.fields.func.describe(level)} of ` +
+            node.fields.args.map((a) => a.describe(level)).join(", ")
+          );
+      },
     });
   }
 
   static spec = Spec.nodeSpec([Spec.required("func"), Spec.list("args")]);
-
-  override longDescription(level: number) {
-    // if it's the top level, enumerate the args
-    if (this.level - level == 0) {
-      return (
-        `applying the function ${this.fields.func.describe(
-          level
-        )} to ${pluralize("argument", this.fields.args)} ` +
-        this.fields.args
-          .map(
-            (a, i, args) =>
-              (args.length > 1 ? i + 1 + ": " : "") + a.describe(level)
-          )
-          .join(", ")
-      );
-    }
-    // if we're lower than that (but not so low that `.shortDescription()` is used), use "f of A, B, C" format
-    else
-      return (
-        `${this.fields.func.describe(level)} of ` +
-        this.fields.args.map((a) => a.describe(level)).join(", ")
-      );
-  }
 }
 
 export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
@@ -162,14 +163,13 @@ export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
           </Node>
         );
       },
+      longDescription(node, level) {
+        return enumerateList(node.fields.ids, level);
+      },
     });
   }
 
   static spec = Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]);
-
-  longDescription(level: number) {
-    return enumerateList(this.fields.ids, level);
-  }
 }
 
 export class StructDefinition extends ASTNode<{
@@ -212,16 +212,15 @@ export class StructDefinition extends ASTNode<{
           </Node>
         );
       },
+      longDescription(node, level) {
+        return `define ${node.fields.name.describe(
+          level
+        )} to be a structure with ${node.fields.fields.describe(level)}`;
+      },
     });
   }
 
   static spec = Spec.nodeSpec([Spec.value("name"), Spec.required("fields")]);
-
-  longDescription(level: number) {
-    return `define ${this.fields.name.describe(
-      level
-    )} to be a structure with ${this.fields.fields.describe(level)}`;
-  }
 }
 
 export class VariableDefinition extends ASTNode<{
@@ -254,19 +253,18 @@ export class VariableDefinition extends ASTNode<{
           </Node>
         );
       },
+      longDescription(node, level) {
+        const insert = ["literal", "blank"].includes(node.fields.body.type)
+          ? ""
+          : "the result of:";
+        return `define ${
+          node.fields.name
+        } to be ${insert} ${node.fields.body.describe(level)}`;
+      },
     });
   }
 
   static spec = Spec.nodeSpec([Spec.required("name"), Spec.required("body")]);
-
-  longDescription(level: number) {
-    const insert = ["literal", "blank"].includes(this.fields.body.type)
-      ? ""
-      : "the result of:";
-    return `define ${
-      this.fields.name
-    } to be ${insert} ${this.fields.body.describe(level)}`;
-  }
 }
 
 export class LambdaExpression extends ASTNode<{
@@ -302,19 +300,18 @@ export class LambdaExpression extends ASTNode<{
           </Node>
         );
       },
+      longDescription(node, level) {
+        return `an anonymous function of ${pluralize(
+          "argument",
+          node.fields.args.fields.ids
+        )}: 
+                ${node.fields.args.describe(level)}, with body:
+                ${node.fields.body.describe(level)}`;
+      },
     });
   }
 
   static spec = Spec.nodeSpec([Spec.required("args"), Spec.required("body")]);
-
-  longDescription(level: number) {
-    return `an anonymous function of ${pluralize(
-      "argument",
-      this.fields.args.fields.ids
-    )}: 
-            ${this.fields.args.describe(level)}, with body:
-            ${this.fields.body.describe(level)}`;
-  }
 }
 
 export class FunctionDefinition extends ASTNode<{
@@ -359,6 +356,11 @@ export class FunctionDefinition extends ASTNode<{
           </Node>
         );
       },
+      longDescription(node, level) {
+        return `define ${node.fields.name} to be a function of 
+                ${node.fields.params.describe(level)}, with body:
+                ${node.fields.body.describe(level)}`;
+      },
     });
   }
 
@@ -367,12 +369,6 @@ export class FunctionDefinition extends ASTNode<{
     Spec.required("params"),
     Spec.required("body"),
   ]);
-
-  longDescription(level: number) {
-    return `define ${this.fields.name} to be a function of 
-            ${this.fields.params.describe(level)}, with body:
-            ${this.fields.body.describe(level)}`;
-  }
 }
 
 export class CondClause extends ASTNode<{
@@ -417,6 +413,11 @@ export class CondClause extends ASTNode<{
           </Node>
         );
       },
+      longDescription(node, level) {
+        return `condition: if ${node.fields.testExpr.describe(
+          level
+        )}, then, ${node.fields.thenExprs.map((te) => te.describe(level))}`;
+      },
     });
   }
 
@@ -424,12 +425,6 @@ export class CondClause extends ASTNode<{
     Spec.required("testExpr"),
     Spec.list("thenExprs"),
   ]);
-
-  longDescription(level: number) {
-    return `condition: if ${this.fields.testExpr.describe(
-      level
-    )}, then, ${this.fields.thenExprs.map((te) => te.describe(level))}`;
-  }
 }
 
 export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
@@ -452,18 +447,17 @@ export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
           </Node>
         );
       },
+      longDescription(node, level) {
+        return `a conditional expression with ${pluralize(
+          "condition",
+          node.fields.clauses
+        )}: 
+                ${node.fields.clauses.map((c) => c.describe(level))}`;
+      },
     });
   }
 
   static spec = Spec.nodeSpec([Spec.list("clauses")]);
-
-  longDescription(level: number) {
-    return `a conditional expression with ${pluralize(
-      "condition",
-      this.fields.clauses
-    )}: 
-            ${this.fields.clauses.map((c) => c.describe(level))}`;
-  }
 }
 
 export class IfExpression extends ASTNode<{
@@ -517,6 +511,14 @@ export class IfExpression extends ASTNode<{
           </Node>
         );
       },
+      longDescription(node, level) {
+        return (
+          `an if expression: if ${node.fields.testExpr.describe(
+            level
+          )}, then ${node.fields.thenExpr.describe(level)} ` +
+          `else ${node.fields.elseExpr.describe(level)}`
+        );
+      },
     });
   }
 
@@ -525,15 +527,6 @@ export class IfExpression extends ASTNode<{
     Spec.required("thenExpr"),
     Spec.required("elseExpr"),
   ]);
-
-  longDescription(level: number) {
-    return (
-      `an if expression: if ${this.fields.testExpr.describe(
-        level
-      )}, then ${this.fields.thenExpr.describe(level)} ` +
-      `else ${this.fields.elseExpr.describe(level)}`
-    );
-  }
 }
 
 export class Literal extends ASTNode<{ value: string; dataType: string }> {
@@ -565,10 +558,6 @@ export class Literal extends ASTNode<{ value: string; dataType: string }> {
   }
 
   static spec = Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]);
-
-  describe() {
-    return this.options["aria-label"];
-  }
 }
 
 export class Comment extends ASTNode<{ comment: string }> {
@@ -603,10 +592,6 @@ export class Comment extends ASTNode<{ comment: string }> {
   }
 
   static spec = Spec.nodeSpec([Spec.value("comment")]);
-
-  describe(): string | undefined {
-    return this.options["aria-label"];
-  }
 }
 
 export class Blank extends ASTNode<{ value: string; dataType: string }> {
@@ -635,10 +620,6 @@ export class Blank extends ASTNode<{ value: string; dataType: string }> {
   }
 
   static spec = Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]);
-
-  describe() {
-    return this.options["aria-label"];
-  }
 }
 
 export class Sequence extends ASTNode<{ name: ASTNode; exprs: ASTNode[] }> {
@@ -668,12 +649,14 @@ export class Sequence extends ASTNode<{ name: ASTNode; exprs: ASTNode[] }> {
           </Node>
         );
       },
+      longDescription(node, level) {
+        return `a sequence containing ${enumerateList(
+          node.fields.exprs,
+          level
+        )}`;
+      },
     });
   }
 
   static spec = Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]);
-
-  longDescription(level: number) {
-    return `a sequence containing ${enumerateList(this.fields.exprs, level)}`;
-  }
 }
