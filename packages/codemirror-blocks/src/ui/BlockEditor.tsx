@@ -403,7 +403,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
 
   /**
    * Given a CM Change Event, manually handle our own undo and focus stack
-   * TODO(Emmanuel): use a single dispatch call here
+   * This is hooked up to CodeMirror's onChange; event
    */
   const handleChange = (
     editor: ReadonlyCMBEditor,

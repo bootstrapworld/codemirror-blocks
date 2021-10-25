@@ -206,8 +206,8 @@ function ToggleEditor(props: ToggleEditorProps) {
         // Preserve old TextMarkers
         setRecordedMarks(recordMarks(editor, oldAst, undefined));
         // Success! Set the state
-        setBlockMode(blockMode);
         setCode(code);
+        setBlockMode(blockMode);
       } catch (e) {
         // Failure! Set the dialog state
         console.error(e);
