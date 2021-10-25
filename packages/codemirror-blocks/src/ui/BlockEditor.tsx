@@ -324,7 +324,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
 
   // only refresh if there is no active quarantine
   useEffect(() => {
-    if (!quarantine) {
+    if (!!quarantine) {
       editor?.refresh();
     }
   });
@@ -571,7 +571,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
           />
         </EditorContext.Provider>
       ));
-      if (quarantine) {
+      if (!!quarantine) {
         portals.push(<ToplevelBlockEditable editor={editor} key="-1" />);
       }
     }
