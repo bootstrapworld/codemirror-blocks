@@ -12,7 +12,19 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 14
+
+      # only needed while we are using a node
+      # version below 15
+      - name: Install NPM 7
+        run: npm install -g npm@7
+
       - run: npm ci
 
       # Run tests
-      - run: npm run test
+      - run: npx jest --coverage
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: "./.coverage/lcov.info"

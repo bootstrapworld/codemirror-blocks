@@ -1,0 +1,83 @@
+.Editor {
+  border: 1px solid #ddd;
+  height: 100%;
+  position: absolute;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  user-select: none;
+  -webkit-user-select: none;
+  .glyphicon {
+    font-family: "Glyphicons Halflings";
+  }
+  .glyphicon-pencil {
+    &:before {
+      content: "\270f";
+    }
+  }
+  .glyphicon-align-left {
+    &:before {
+      content: "\e052";
+    }
+  }
+  .react-codemirror2 {
+    width: 100%;
+  }
+
+  > .toolbar-pane {
+    border-right: 1px solid #ddd;
+    padding-left: 0px;
+    padding-right: 0px;
+    height: 100%;
+    position: relative;
+
+    // This should be reenable when we can get it to look
+    // right. Tracked in https://github.com/bootstrapworld/codemirror-blocks/issues/483
+    // transition: width 2s, min-width 2s;
+    min-width: 200px;
+    max-width: 200px;
+  }
+
+  > .codemirror-pane {
+    padding: 0px 0px;
+    width: calc(~"100% - 200px");
+  }
+
+  > .Toolbar {
+    height: 100%;
+    opacity: 1;
+  }
+  /* in text mode, the toolbar should have a width of 0 */
+  &.text {
+    > .toolbar-pane {
+      border: none;
+      width: 0px;
+      min-width: 0px;
+    }
+    > .codemirror-pane {
+      width: 100%;
+    }
+  }
+
+  .blocks-toggle-btn,
+  .bug-btn {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+    height: 34px;
+    width: 34px;
+    border-radius: 3px;
+    font-size: 18pt;
+    padding: 0px;
+    transition: width 0.25s linear;
+    box-shadow: 2px 2px 2px black, 4px 4px 4px white;
+    padding: 0px 4px;
+    outline: 0;
+  }
+  .bug-btn {
+    right: 64px;
+  }
+}

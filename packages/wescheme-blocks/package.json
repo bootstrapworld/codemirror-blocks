@@ -1,0 +1,46 @@
+{
+  "name": "wescheme-blocks",
+  "version": "0.1.2",
+  "description": "WeScheme blocks language",
+  "private": true,
+  "main": "src/languages/wescheme/index.js",
+  "engines": {
+    "node": ">=10.x",
+    "npm": ">=7.x"
+  },
+  "dependencies": {
+    "codemirror-blocks": "*"
+  },
+  "devDependencies": {
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.14.7",
+    "@babel/preset-react": "^7.14.5",
+    "@testing-library/react": "^12.0.0",
+    "babel-eslint": "^10.1.0",
+    "eslint-plugin-react": "^7.24.0",
+    "webpack-cli": "^4.7.2"
+  },
+  "peerDependencies": {
+    "codemirror": "^5.61.0"
+  },
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "start": "webpack serve --config-name=devServer",
+    "build": "webpack --mode production --config-name=bundle",
+    "build-debug": "webpack --mode development --config-name=bundle",
+    "build-watch": "webpack --watch --mode development --config-name=bundle",
+    "lint": "eslint src spec --ext .js || true"
+  },
+  "author": "The Bootstrap Team",
+  "contributors": [
+    "Paul Carduner",
+    "Zachary Espiritu",
+    "Aleksey Kliger",
+    "Justin Pombrio",
+    "Sorawee Porncharoenwase",
+    "Emmanuel Schanzer",
+    "Dorai Sitaram",
+    "Preston Tunnell Wilson"
+  ],
+  "license": "MIT License"
+}
