@@ -11,7 +11,6 @@ import {
   performEdits,
 } from "../src/edits/performEdits";
 import wescheme from "../src/languages/wescheme";
-import { FunctionApp } from "../src/nodes";
 import { AppStore, createAppStore } from "../src/store";
 
 let editor!: CodeMirrorFacade;
@@ -106,7 +105,7 @@ foo
 
   it("InsertChildEdit replaces a node with some text", () => {
     const node = [...ast.rootNodes[1].children()][1];
-    expect(node).toBeInstanceOf(FunctionApp);
+    expect(node.type).toBe("functionApp");
 
     const edit = edit_insert("foo", node, "args", { line: 2, ch: 19 });
     expect(edit.toString()).toEqual("InsertChild 2:19-2:19");
@@ -122,7 +121,7 @@ foo
   it("Combines multiple edits together", () => {
     const children = [...ast.rootNodes[1].children()];
     const node = children[1];
-    expect(node).toBeInstanceOf(FunctionApp);
+    expect(node.type).toBe("functionApp");
 
     const edits = [
       edit_insert("foo", node, "args", { line: 2, ch: 19 }),

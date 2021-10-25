@@ -157,7 +157,7 @@ export default class ExampleParser {
 
   parseLiteral() {
     const literalToken = this.getToken();
-    return new Literal(
+    return Literal(
       literalToken.from,
       literalToken.to,
       literalToken.text,
@@ -179,10 +179,10 @@ export default class ExampleParser {
       args.push(this.parseNextToken());
     }
     const closeParenToken = this.getToken();
-    return new FunctionApp(
+    return FunctionApp(
       token.from,
       closeParenToken.to,
-      new Literal(
+      Literal(
         identifierToken.from,
         identifierToken.to,
         identifierToken.text,

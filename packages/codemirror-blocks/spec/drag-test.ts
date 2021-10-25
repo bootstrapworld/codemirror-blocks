@@ -16,7 +16,7 @@ import {
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
-import { FunctionApp } from "../src/nodes";
+import { FunctionAppNode } from "../src/nodes";
 import { fireEvent } from "@testing-library/react";
 
 describe("Drag and drop", () => {
@@ -33,7 +33,7 @@ describe("Drag and drop", () => {
     let dropTargetEls: NodeListOf<Element>;
 
     const retrieve = () => {
-      const funcApp = cmb.getAst().rootNodes[0] as FunctionApp;
+      const funcApp = cmb.getAst().rootNodes[0] as FunctionAppNode;
       firstArg = funcApp.fields.args[0];
       secondArg = funcApp.fields.args[1];
       dropTargetEls = cmb
@@ -193,7 +193,7 @@ describe("Drag and drop", () => {
       fireEvent(lastDropTarget, drop());
       await finishRender();
       retrieve();
-      const newFirstRoot = cmb.getAst().rootNodes[0] as FunctionApp;
+      const newFirstRoot = cmb.getAst().rootNodes[0] as FunctionAppNode;
       const newLastChild = newFirstRoot.fields.args[2];
       expect(cmb.getValue()).toBe("\n(+ 1 2 (collapse me))");
       expect(newFirstRoot.element!.getAttribute("aria-expanded")).toBe("true");

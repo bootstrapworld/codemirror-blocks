@@ -7,7 +7,6 @@ import {
   genUniqueId,
 } from "./utils";
 import * as P from "pretty-fast-pretty-printer";
-import type { Comment } from "./nodes";
 import type { NodeSpec } from "./nodeSpec";
 import type React from "react";
 import type { Props as NodeProps } from "./components/Node";
@@ -526,7 +525,7 @@ export type Range = {
 };
 
 export type NodeOptions = {
-  comment?: Comment;
+  comment?: ASTNode<{ comment: string }>;
   "aria-label"?: string;
   /**
    * A predicate, which prevents the node from being edited

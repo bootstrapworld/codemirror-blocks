@@ -12,7 +12,7 @@ import {
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
-import { FunctionApp } from "../src/nodes";
+import { FunctionAppNode } from "../src/nodes";
 
 const activeAriaId = (cmb: API) =>
   cmb.getScrollerElement().getAttribute("aria-activedescendent");
@@ -193,12 +193,12 @@ describe("cut/copy/paste", () => {
 
 describe("tree navigation", () => {
   let cmb!: API;
-  let firstRoot: FunctionApp;
+  let firstRoot: FunctionAppNode;
   let secondRoot: ASTNode;
-  let thirdRoot: FunctionApp;
+  let thirdRoot: FunctionAppNode;
   let funcSymbol: ASTNode;
   let thirdArg: ASTNode;
-  let nestedExpr: FunctionApp;
+  let nestedExpr: FunctionAppNode;
   let lastNode: ASTNode;
 
   beforeEach(async () => {
@@ -206,12 +206,12 @@ describe("tree navigation", () => {
 
     cmb.setValue("(+ 1 2 3) 99 (* 7 (* 1 2))");
     const ast = cmb.getAst();
-    firstRoot = ast.rootNodes[0] as FunctionApp;
+    firstRoot = ast.rootNodes[0] as FunctionAppNode;
     secondRoot = ast.rootNodes[1];
-    thirdRoot = ast.rootNodes[2] as FunctionApp;
+    thirdRoot = ast.rootNodes[2] as FunctionAppNode;
     funcSymbol = firstRoot.fields.func;
     thirdArg = firstRoot.fields.args[2];
-    nestedExpr = thirdRoot.fields.args[1] as FunctionApp;
+    nestedExpr = thirdRoot.fields.args[1] as FunctionAppNode;
     lastNode = nestedExpr.fields.args[1];
     await finishRender();
   });
@@ -374,7 +374,7 @@ describe("when dealing with node selection, ", () => {
   let cmb!: API;
   let literal1!: ASTNode;
   let literal2!: ASTNode;
-  let expr!: FunctionApp;
+  let expr!: FunctionAppNode;
   beforeEach(async () => {
     cmb = await mountCMB(wescheme);
 
@@ -382,7 +382,7 @@ describe("when dealing with node selection, ", () => {
     const ast = cmb.getAst();
     literal1 = ast.rootNodes[0];
     literal2 = ast.rootNodes[1];
-    expr = ast.rootNodes[2] as FunctionApp;
+    expr = ast.rootNodes[2] as FunctionAppNode;
     await finishRender();
   });
 

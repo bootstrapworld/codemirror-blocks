@@ -71,7 +71,9 @@ export type Language = {
   /**
    * A function for generating a Literal ast node from a Primitive
    */
-  getLiteralNodeForPrimitive?: (primitive: Primitive) => Literal;
+  getLiteralNodeForPrimitive?: (
+    primitive: Primitive
+  ) => ReturnType<typeof Literal>;
 
   /**
    * Returns a list of language primitives that will be displayed
