@@ -325,7 +325,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     if (!quarantine) {
       editor?.refresh();
     }
-  });
+  }, [quarantine]);
 
   /**
    * @internal
