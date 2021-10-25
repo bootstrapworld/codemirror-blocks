@@ -528,6 +528,10 @@ export type Range = {
 export type NodeOptions = {
   comment?: Comment;
   "aria-label"?: string;
+  /**
+   * A predicate, which prevents the node from being edited
+   */
+  isLockedP?: boolean;
 };
 
 export type UnknownFields = { [fieldName: string]: unknown };
@@ -570,12 +574,6 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
    * nodeSpec, which specifies node requirements (see nodeSpec.ts)
    */
   spec: NodeSpec;
-
-  /**
-   * @internal
-   * A predicate, which prevents the node from being edited
-   */
-  isLockedP: boolean;
 
   /**
    * @internal
@@ -652,8 +650,6 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
     if (options.comment) {
       options.comment.id = "block-node-" + this.id + "-comment";
     }
-
-    this.isLockedP = false;
   }
 
   pretty() {

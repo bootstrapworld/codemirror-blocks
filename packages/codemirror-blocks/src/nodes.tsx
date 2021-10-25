@@ -553,7 +553,7 @@ export class Comment extends ASTNode<{ comment: string }> {
       to,
       type: "comment",
       fields: { comment },
-      options,
+      options: { isLockedP: true, ...options },
       pretty: (node) => {
         const words = node.fields.comment.trim().split(/\s+/);
         const wrapped = P.wrap(words);
@@ -575,7 +575,6 @@ export class Comment extends ASTNode<{ comment: string }> {
       },
       spec: Spec.nodeSpec([Spec.value("comment")]),
     });
-    this.isLockedP = true;
   }
 }
 
