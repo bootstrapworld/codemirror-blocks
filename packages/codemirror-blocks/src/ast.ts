@@ -10,6 +10,7 @@ import * as P from "pretty-fast-pretty-printer";
 import type { Comment } from "./nodes";
 import type { NodeSpec } from "./nodeSpec";
 import type React from "react";
+import type { Props as NodeProps } from "./components/Node";
 
 /**
  * @internal
@@ -598,6 +599,9 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
   __alreadyValidated = false;
 
   readonly _pretty: (node: ASTNode<Fields>) => P.Doc;
+  readonly render: (props: {
+    node: ASTNode<Fields>;
+  }) => React.ReactElement | void;
 
   constructor({
     from,
@@ -606,6 +610,7 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     fields,
     options,
     pretty,
+    render,
   }: {
     from: Pos;
     to: Pos;
@@ -616,6 +621,10 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     // Pretty-printing is node-specific, and must be implemented by
     // the ASTNode itself
     pretty: (node: ASTNode<Fields>) => P.Doc;
+
+    render: (
+      props: NodeProps & { node: ASTNode<Fields> }
+    ) => React.ReactElement | void;
   }) {
     this.from = from;
     this.to = to;
@@ -623,6 +632,7 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     this.options = options;
     this.fields = fields;
     this._pretty = pretty;
+    this.render = render;
 
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
@@ -692,8 +702,6 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
   reactElement(props?: Record<string, unknown>): React.ReactElement {
     return renderASTNode({ node: this, ...props });
   }
-
-  abstract render(props: { node: ASTNode }): React.ReactElement | void;
 }
 
 function renderASTNode(props: { node: ASTNode }) {

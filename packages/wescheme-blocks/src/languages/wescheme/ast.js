@@ -39,6 +39,15 @@ export class LetLikeExpr extends ASTNode {
           node.expr
         );
       },
+      render(props) {
+        return (
+          <Node node={this} {...props}>
+            <span className="blocks-operator">{props.node.fields.form}</span>
+            {props.node.bindings.reactElement()}
+            {props.node.expr.reactElement()}
+          </Node>
+        );
+      },
     });
   }
 
@@ -53,16 +62,6 @@ export class LetLikeExpr extends ASTNode {
       "binding",
       this.bindings.exprs
     )}`;
-  }
-
-  render(props) {
-    return (
-      <Node node={this} {...props}>
-        <span className="blocks-operator">{this.fields.form}</span>
-        {this.bindings.reactElement()}
-        {this.expr.reactElement()}
-      </Node>
-    );
   }
 }
 
@@ -80,6 +79,15 @@ export class WhenUnless extends ASTNode {
           node.fields.exprs,
         ]);
       },
+      render(props) {
+        return (
+          <Node node={this} {...props}>
+            <span className="blocks-operator">{props.node.fields.form}</span>
+            {props.node.fields.predicate.reactElement()}
+            {props.node.fields.exprs.reactElement()}
+          </Node>
+        );
+      },
     });
   }
 
@@ -95,15 +103,5 @@ export class WhenUnless extends ASTNode {
     } ${this.fields.predicate.describe(level)}, ${this.fields.exprs.describe(
       level
     )}`;
-  }
-
-  render(props) {
-    return (
-      <Node node={this} {...props}>
-        <span className="blocks-operator">{this.fields.form}</span>
-        {this.fields.predicate.reactElement()}
-        {this.fields.exprs.reactElement()}
-      </Node>
-    );
   }
 }

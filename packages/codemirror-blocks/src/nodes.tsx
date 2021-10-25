@@ -1,7 +1,7 @@
 import * as P from "pretty-fast-pretty-printer";
 import React from "react";
 import { ASTNode, enumerateList, NodeOptions, pluralize, Pos } from "./ast";
-import Node, { Props as NodeProps } from "./components/Node";
+import Node from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
 import * as Spec from "./nodeSpec";
@@ -46,6 +46,18 @@ export class Unknown extends ASTNode<{ elts: ASTNode[] }> {
           node.options.comment,
           node
         ),
+      render(props) {
+        const firstElt = props.node.fields.elts[0].reactElement();
+        const restElts = props.node.fields.elts.slice(1);
+        return (
+          <Node {...props}>
+            <span className="blocks-operator">{firstElt}</span>
+            <span className="blocks-args">
+              <Args field="elts">{restElts}</Args>
+            </span>
+          </Node>
+        );
+      },
     });
   }
 
@@ -60,19 +72,6 @@ export class Unknown extends ASTNode<{ elts: ASTNode[] }> {
             (elts.length > 1 ? i + 1 + ": " : "") + e.describe(level)
         )
         .join(", ")
-    );
-  }
-
-  render(props: NodeProps) {
-    const firstElt = this.fields.elts[0].reactElement();
-    const restElts = this.fields.elts.slice(1);
-    return (
-      <Node {...props}>
-        <span className="blocks-operator">{firstElt}</span>
-        <span className="blocks-args">
-          <Args field="elts">{restElts}</Args>
-        </span>
-      </Node>
     );
   }
 }
@@ -97,6 +96,18 @@ export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
           node.options.comment,
           node
         ),
+      render(props) {
+        return (
+          <Node {...props}>
+            <span className="blocks-operator">
+              {props.node.fields.func.reactElement()}
+            </span>
+            <span className="blocks-args">
+              <Args field="args">{props.node.fields.args}</Args>
+            </span>
+          </Node>
+        );
+      },
     });
   }
 
@@ -124,19 +135,6 @@ export class FunctionApp extends ASTNode<{ func: ASTNode; args: ASTNode[] }> {
         this.fields.args.map((a) => a.describe(level)).join(", ")
       );
   }
-
-  render(props: NodeProps) {
-    return (
-      <Node {...props}>
-        <span className="blocks-operator">
-          {this.fields.func.reactElement()}
-        </span>
-        <span className="blocks-args">
-          <Args field="args">{this.fields.args}</Args>
-        </span>
-      </Node>
-    );
-  }
 }
 
 export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
@@ -155,6 +153,15 @@ export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
       options,
       pretty: (node) =>
         withComment(P.sepBy(node.fields.ids, " "), node.options.comment, node),
+      render(props) {
+        return (
+          <Node {...props}>
+            <span className="blocks-args">
+              <Args field="ids">{props.node.fields.ids}</Args>
+            </span>
+          </Node>
+        );
+      },
     });
   }
 
@@ -162,16 +169,6 @@ export class IdentifierList extends ASTNode<{ kind: string; ids: ASTNode[] }> {
 
   longDescription(level: number) {
     return enumerateList(this.fields.ids, level);
-  }
-
-  render(props: NodeProps) {
-    return (
-      <Node {...props}>
-        <span className="blocks-args">
-          <Args field="ids">{this.fields.ids}</Args>
-        </span>
-      </Node>
-    );
   }
 }
 
@@ -202,6 +199,19 @@ export class StructDefinition extends ASTNode<{
           node.options.comment,
           node
         ),
+      render(props) {
+        const name = props.node.fields.name.reactElement();
+        const fields = props.node.fields.fields.reactElement();
+        return (
+          <Node {...props}>
+            <span className="blocks-operator">
+              define-struct
+              {name}
+            </span>
+            {fields}
+          </Node>
+        );
+      },
     });
   }
 
@@ -211,20 +221,6 @@ export class StructDefinition extends ASTNode<{
     return `define ${this.fields.name.describe(
       level
     )} to be a structure with ${this.fields.fields.describe(level)}`;
-  }
-
-  render(props: NodeProps) {
-    const name = this.fields.name.reactElement();
-    const fields = this.fields.fields.reactElement();
-    return (
-      <Node {...props}>
-        <span className="blocks-operator">
-          define-struct
-          {name}
-        </span>
-        {fields}
-      </Node>
-    );
   }
 }
 
@@ -245,6 +241,19 @@ export class VariableDefinition extends ASTNode<{
           node.options.comment,
           node
         ),
+      render(props) {
+        const body = props.node.fields.body.reactElement();
+        const name = props.node.fields.name.reactElement();
+        return (
+          <Node {...props}>
+            <span className="blocks-operator">
+              define
+              {name}
+            </span>
+            <span className="blocks-args">{body}</span>
+          </Node>
+        );
+      },
     });
   }
 
@@ -257,20 +266,6 @@ export class VariableDefinition extends ASTNode<{
     return `define ${
       this.fields.name
     } to be ${insert} ${this.fields.body.describe(level)}`;
-  }
-
-  render(props: NodeProps) {
-    const body = this.fields.body.reactElement();
-    const name = this.fields.name.reactElement();
-    return (
-      <Node {...props}>
-        <span className="blocks-operator">
-          define
-          {name}
-        </span>
-        <span className="blocks-args">{body}</span>
-      </Node>
-    );
   }
 }
 
@@ -297,6 +292,16 @@ export class LambdaExpression extends ASTNode<{
           P.horz("(", node.fields.args, ")"),
           node.fields.body
         ),
+      render(props) {
+        const args = props.node.fields.args.reactElement();
+        const body = props.node.fields.body.reactElement();
+        return (
+          <Node {...props}>
+            <span className="blocks-operator">&lambda; ({args})</span>
+            <span className="blocks-args">{body}</span>
+          </Node>
+        );
+      },
     });
   }
 
@@ -309,17 +314,6 @@ export class LambdaExpression extends ASTNode<{
     )}: 
             ${this.fields.args.describe(level)}, with body:
             ${this.fields.body.describe(level)}`;
-  }
-
-  render(props: NodeProps) {
-    const args = this.fields.args.reactElement();
-    const body = this.fields.body.reactElement();
-    return (
-      <Node {...props}>
-        <span className="blocks-operator">&lambda; ({args})</span>
-        <span className="blocks-args">{body}</span>
-      </Node>
-    );
   }
 }
 
@@ -352,6 +346,19 @@ export class FunctionDefinition extends ASTNode<{
           node.options.comment,
           node
         ),
+      render(props) {
+        const params = props.node.fields.params.reactElement();
+        const body = props.node.fields.body.reactElement();
+        const name = props.node.fields.name.reactElement();
+        return (
+          <Node {...props}>
+            <span className="blocks-operator">
+              define ({name} {params})
+            </span>
+            <span className="blocks-args">{body}</span>
+          </Node>
+        );
+      },
     });
   }
 
@@ -365,20 +372,6 @@ export class FunctionDefinition extends ASTNode<{
     return `define ${this.fields.name} to be a function of 
             ${this.fields.params.describe(level)}, with body:
             ${this.fields.body.describe(level)}`;
-  }
-
-  render(props: NodeProps) {
-    const params = this.fields.params.reactElement();
-    const body = this.fields.body.reactElement();
-    const name = this.fields.name.reactElement();
-    return (
-      <Node {...props}>
-        <span className="blocks-operator">
-          define ({name} {params})
-        </span>
-        <span className="blocks-args">{body}</span>
-      </Node>
-    );
   }
 }
 
@@ -405,6 +398,25 @@ export class CondClause extends ASTNode<{
           P.sepBy([node.fields.testExpr].concat(node.fields.thenExprs), " "),
           "]"
         ),
+      render(props) {
+        const testExpr = props.node.fields.testExpr.reactElement();
+        return (
+          <Node {...props}>
+            <div className="blocks-cond-row">
+              <div className="blocks-cond-predicate">{testExpr}</div>
+              <div className="blocks-cond-result">
+                {props.node.fields.thenExprs.map((thenExpr, index) => (
+                  <span key={index}>
+                    <DropTarget field="thenExprs" />
+                    {thenExpr.reactElement()}
+                  </span>
+                ))}
+                <DropTarget field="thenExprs" />
+              </div>
+            </div>
+          </Node>
+        );
+      },
     });
   }
 
@@ -418,26 +430,6 @@ export class CondClause extends ASTNode<{
       level
     )}, then, ${this.fields.thenExprs.map((te) => te.describe(level))}`;
   }
-
-  render(props: NodeProps) {
-    const testExpr = this.fields.testExpr.reactElement();
-    return (
-      <Node {...props}>
-        <div className="blocks-cond-row">
-          <div className="blocks-cond-predicate">{testExpr}</div>
-          <div className="blocks-cond-result">
-            {this.fields.thenExprs.map((thenExpr, index) => (
-              <span key={index}>
-                <DropTarget field="thenExprs" />
-                {thenExpr.reactElement()}
-              </span>
-            ))}
-            <DropTarget field="thenExprs" />
-          </div>
-        </div>
-      </Node>
-    );
-  }
 }
 
 export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
@@ -449,6 +441,17 @@ export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
       fields: { clauses },
       options,
       pretty: (node) => P.beginLikeSexpr("cond", node.fields.clauses),
+      render(props) {
+        const clauses = props.node.fields.clauses.map((clause, index) =>
+          clause.reactElement({ key: index })
+        );
+        return (
+          <Node {...props}>
+            <span className="blocks-operator">cond</span>
+            <div className="blocks-cond-table">{clauses}</div>
+          </Node>
+        );
+      },
     });
   }
 
@@ -460,18 +463,6 @@ export class CondExpression extends ASTNode<{ clauses: ASTNode[] }> {
       this.fields.clauses
     )}: 
             ${this.fields.clauses.map((c) => c.describe(level))}`;
-  }
-
-  render(props: NodeProps) {
-    const clauses = this.fields.clauses.map((clause, index) =>
-      clause.reactElement({ key: index })
-    );
-    return (
-      <Node {...props}>
-        <span className="blocks-operator">cond</span>
-        <div className="blocks-cond-table">{clauses}</div>
-      </Node>
-    );
   }
 }
 
@@ -504,6 +495,28 @@ export class IfExpression extends ASTNode<{
           node.options.comment,
           node
         ),
+      render(props) {
+        const testExpr = props.node.fields.testExpr.reactElement();
+        const thenExpr = props.node.fields.thenExpr.reactElement();
+        const elseExpr = props.node.fields.elseExpr.reactElement();
+        return (
+          <Node {...props}>
+            <span className="blocks-operator">if</span>
+            <div className="blocks-cond-table">
+              <div className="blocks-cond-row">
+                <div className="blocks-cond-predicate">{testExpr}</div>
+                <div className="blocks-cond-result">{thenExpr}</div>
+              </div>
+              <div className="blocks-cond-row">
+                <div className="blocks-cond-predicate blocks-cond-else">
+                  else
+                </div>
+                <div className="blocks-cond-result">{elseExpr}</div>
+              </div>
+            </div>
+          </Node>
+        );
+      },
     });
   }
 
@@ -519,27 +532,6 @@ export class IfExpression extends ASTNode<{
         level
       )}, then ${this.fields.thenExpr.describe(level)} ` +
       `else ${this.fields.elseExpr.describe(level)}`
-    );
-  }
-
-  render(props: NodeProps) {
-    const testExpr = this.fields.testExpr.reactElement();
-    const thenExpr = this.fields.thenExpr.reactElement();
-    const elseExpr = this.fields.elseExpr.reactElement();
-    return (
-      <Node {...props}>
-        <span className="blocks-operator">if</span>
-        <div className="blocks-cond-table">
-          <div className="blocks-cond-row">
-            <div className="blocks-cond-predicate">{testExpr}</div>
-            <div className="blocks-cond-result">{thenExpr}</div>
-          </div>
-          <div className="blocks-cond-row">
-            <div className="blocks-cond-predicate blocks-cond-else">else</div>
-            <div className="blocks-cond-result">{elseExpr}</div>
-          </div>
-        </div>
-      </Node>
     );
   }
 }
@@ -560,6 +552,15 @@ export class Literal extends ASTNode<{ value: string; dataType: string }> {
       options,
       pretty: (node) =>
         withComment(P.txt(node.fields.value), node.options.comment, node),
+      render(props) {
+        return (
+          <Node {...props} normallyEditable={true} expandable={false}>
+            <span className={`blocks-literal-${props.node.fields.dataType}`}>
+              {props.node.fields.value}
+            </span>
+          </Node>
+        );
+      },
     });
   }
 
@@ -567,16 +568,6 @@ export class Literal extends ASTNode<{ value: string; dataType: string }> {
 
   describe() {
     return this.options["aria-label"];
-  }
-
-  render(props: NodeProps) {
-    return (
-      <Node {...props} normallyEditable={true} expandable={false}>
-        <span className={`blocks-literal-${this.fields.dataType}`}>
-          {this.fields.value}
-        </span>
-      </Node>
-    );
   }
 }
 
@@ -594,6 +585,19 @@ export class Comment extends ASTNode<{ comment: string }> {
         // Normalize all comments to block comments
         return P.concat("#| ", wrapped, " |#");
       },
+      render(props) {
+        // eslint-disable-line no-unused-vars
+        return (
+          <span
+            className="blocks-comment"
+            id={props.node.id}
+            aria-hidden="true"
+          >
+            <span className="screenreader-only">Has comment,</span>{" "}
+            <span>{props.node.fields.comment.toString()}</span>
+          </span>
+        );
+      },
     });
     this.isLockedP = true;
   }
@@ -602,16 +606,6 @@ export class Comment extends ASTNode<{ comment: string }> {
 
   describe(): string | undefined {
     return this.options["aria-label"];
-  }
-
-  render() {
-    // eslint-disable-line no-unused-vars
-    return (
-      <span className="blocks-comment" id={this.id} aria-hidden="true">
-        <span className="screenreader-only">Has comment,</span>{" "}
-        <span>{this.fields.comment.toString()}</span>
-      </span>
-    );
   }
 }
 
@@ -630,6 +624,13 @@ export class Blank extends ASTNode<{ value: string; dataType: string }> {
       fields: { value: value || "...", dataType },
       options,
       pretty: (node) => P.txt(node.fields.value),
+      render(props) {
+        return (
+          <Node {...props} normallyEditable={true} expandable={false}>
+            <span className="blocks-literal-symbol" />
+          </Node>
+        );
+      },
     });
   }
 
@@ -637,14 +638,6 @@ export class Blank extends ASTNode<{ value: string; dataType: string }> {
 
   describe() {
     return this.options["aria-label"];
-  }
-
-  render(props: NodeProps) {
-    return (
-      <Node {...props} normallyEditable={true} expandable={false}>
-        <span className="blocks-literal-symbol" />
-      </Node>
-    );
   }
 }
 
@@ -663,6 +656,18 @@ export class Sequence extends ASTNode<{ name: ASTNode; exprs: ASTNode[] }> {
       fields: { name, exprs },
       options,
       pretty: (node) => P.vert(node.fields.name, ...node.fields.exprs),
+      render(props) {
+        return (
+          <Node {...props}>
+            <span className="blocks-operator">
+              {props.node.fields.name.reactElement()}
+            </span>
+            <span className="blocks-sequence-exprs">
+              <Args field="exprs">{props.node.fields.exprs}</Args>
+            </span>
+          </Node>
+        );
+      },
     });
   }
 
@@ -670,18 +675,5 @@ export class Sequence extends ASTNode<{ name: ASTNode; exprs: ASTNode[] }> {
 
   longDescription(level: number) {
     return `a sequence containing ${enumerateList(this.fields.exprs, level)}`;
-  }
-
-  render(props: NodeProps) {
-    return (
-      <Node {...props}>
-        <span className="blocks-operator">
-          {this.fields.name.reactElement()}
-        </span>
-        <span className="blocks-sequence-exprs">
-          <Args field="exprs">{this.fields.exprs}</Args>
-        </span>
-      </Node>
-    );
   }
 }

@@ -184,15 +184,14 @@ class FakeInsertNode extends ASTNode<{ text: string }> {
         const lines = node.fields.text.split("\n");
         return P.vertArray(lines.map(P.txt));
       },
+      render() {
+        warn("fakeAstEdits", "FakeInsertNode didn't expect to be rendered!");
+      },
     });
   }
 
   toDescription(_level: number) {
     return "";
-  }
-
-  render(_props: { node: ASTNode }) {
-    warn("fakeAstEdits", "FakeInsertNode didn't expect to be rendered!");
   }
 }
 
@@ -206,15 +205,14 @@ class FakeBlankNode extends ASTNode {
       fields: {},
       options,
       pretty: () => P.txt("..."),
+      render() {
+        warn("fakeAstEdits", "FakeBlankNode didn't expect to be rendered!");
+      },
     });
   }
 
   toDescription(_level: number) {
     return "";
-  }
-
-  render(_props: { node: ASTNode }) {
-    warn("fakeAstEdits", "FakeBlankNode didn't expect to be rendered!");
   }
 }
 
@@ -235,6 +233,9 @@ export class ClonedASTNode<
       fields: {} as Fields, // TODO(pcardune): construct this properly before calling super using the code below
       options: oldNode.options,
       pretty: oldNode._pretty,
+      render(_props: { node: ASTNode }) {
+        warn("fakeAstEdits", "ClonedASTNode didn't expect to be rendered!");
+      },
     });
     for (const spec of oldNode.spec.childSpecs) {
       if (spec instanceof Required) {
@@ -256,9 +257,6 @@ export class ClonedASTNode<
     this.id = oldNode.id;
     this.hash = oldNode.hash;
     this.spec = oldNode.spec;
-  }
-  render(_props: { node: ASTNode }) {
-    warn("fakeAstEdits", "ClonedASTNode didn't expect to be rendered!");
   }
 }
 
