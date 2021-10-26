@@ -54,7 +54,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
 
   const [value, setValue] = useState<string | null | undefined>();
   const editor = useContext(EditorContext);
-  const isLocked = () => props.node.isLockedP;
+  const isLocked = () => Boolean(props.node.options.isLockedP);
 
   const dispatch: AppDispatch = useDispatch();
   const store: AppStore = useStore();

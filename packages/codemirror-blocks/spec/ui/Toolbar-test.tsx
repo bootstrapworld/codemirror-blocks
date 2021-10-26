@@ -16,11 +16,7 @@ fdescribe("Toolbar", () => {
       name: "some lang",
       parse: jest.fn(),
       getASTNodeForPrimitive: (primitive: Primitive) => {
-        return new Literal(
-          { line: 0, ch: 0 },
-          { line: 0, ch: 0 },
-          primitive.name
-        );
+        return Literal({ line: 0, ch: 0 }, { line: 0, ch: 0 }, primitive.name);
       },
     });
     primitives = PrimitiveGroup.fromConfig("some-lang-id", {

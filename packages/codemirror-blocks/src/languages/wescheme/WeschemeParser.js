@@ -387,7 +387,7 @@ function parseNode(node, i) {
     );
   } else if (node instanceof structures.unsupportedExpr) {
     if (node.val.constructor !== Array) return null;
-    let unknown = new Unknown(
+    let unknown = Unknown(
       from,
       to,
       node.val.map(parseNode).filter((item) => item !== null),

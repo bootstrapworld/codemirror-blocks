@@ -1,7 +1,7 @@
 import { ASTNode } from "../src/ast";
 import { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
-import { FunctionApp, Literal } from "../src/nodes";
+import type { FunctionAppNode, LiteralNode } from "../src/nodes";
 
 /*eslint no-unused-vars: "off"*/
 import {
@@ -19,7 +19,7 @@ debugLog("Doing focus-test.js");
 describe("focusing,", () => {
   let cmb!: API;
 
-  let expression!: FunctionApp;
+  let expression!: FunctionAppNode;
   let func!: ASTNode;
   let literal1!: ASTNode;
   let literal2!: ASTNode;
@@ -29,7 +29,7 @@ describe("focusing,", () => {
     cmb = await mountCMB(wescheme);
     cmb.setValue("(+ 1 2 3)");
     await finishRender();
-    expression = cmb.getAst().rootNodes[0] as FunctionApp;
+    expression = cmb.getAst().rootNodes[0] as FunctionAppNode;
     func = expression.fields.func;
     literal1 = expression.fields.args[0];
     literal2 = expression.fields.args[1];
@@ -102,7 +102,7 @@ describe("focusing,", () => {
     // there's an extra space inserted after 99
     expect(cmb.getValue()).toBe("(+ 1 99 2 3)");
     // TODO(Emmanuel): does getFocusedNode().value always return strings?
-    expect((cmb.getFocusedNode() as Literal).fields.value).toBe("99");
+    expect((cmb.getFocusedNode() as LiteralNode).fields.value).toBe("99");
   });
 
   it("inserting multiple nodes should put focus on the last of the new nodes", async () => {
@@ -115,6 +115,6 @@ describe("focusing,", () => {
     await finishRender();
     expect(cmb.getValue()).toBe("(+ 1 99 88 77 2 3)");
     // TODO(Emmanuel): does getFocusedNode().value always return strings?
-    expect((cmb.getFocusedNode() as Literal).fields.value).toBe("77");
+    expect((cmb.getFocusedNode() as LiteralNode).fields.value).toBe("77");
   });
 });

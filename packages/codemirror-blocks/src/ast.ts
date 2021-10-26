@@ -7,9 +7,9 @@ import {
   genUniqueId,
 } from "./utils";
 import * as P from "pretty-fast-pretty-printer";
-import type { Comment } from "./nodes";
 import type { NodeSpec } from "./nodeSpec";
 import type React from "react";
+import type { Props as NodeProps } from "./components/Node";
 
 /**
  * @internal
@@ -53,18 +53,18 @@ type Edges = { parentId?: string; nextId?: string; prevId?: string };
  * Raise an exception if a Node has is invalid
  */
 function validateNode(node: ASTNode) {
-  const astFieldNames = [
-    "from",
-    "to",
-    "type",
-    "fields",
-    "options",
-    "spec",
-    "isLockedP",
-    "__alreadyValidated",
-    "element",
-    "isEditable",
-  ];
+  // const astFieldNames = [
+  //   "from",
+  //   "to",
+  //   "type",
+  //   "fields",
+  //   "options",
+  //   "spec",
+  //   "isLockedP",
+  //   "__alreadyValidated",
+  //   "element",
+  //   "isEditable",
+  // ];
   // Check that the node doesn't define any of the fields we're going to add to it.
   const newFieldNames = [
     "id",
@@ -107,7 +107,7 @@ function validateNode(node: ASTNode) {
       `ASTNode.from and .to are required and must have the form {line: number, to: number} (they are source locations). This rule was broken by ${node.type}.`
     );
   }
-  if (typeof node.pretty !== "function") {
+  if (typeof node._pretty !== "function") {
     throw new Error(
       `ASTNode ${node.type} needs to have a pretty() method, but does not.`
     );
@@ -126,17 +126,17 @@ function validateNode(node: ASTNode) {
   node.spec.validate(node);
   // Check that the node doesn't contain any extraneous data.
   // (If it does, its hash is probably wrong. All data should be declared in the spec.)
-  const expectedFieldNames = node.spec
-    .fieldNames()
-    .concat(newFieldNames, astFieldNames);
-  const undeclaredField = Object.getOwnPropertyNames(node).find(
-    (p) => !expectedFieldNames.includes(p)
-  );
-  if (undeclaredField) {
-    throw new Error(
-      `An ASTNode ${node.type} contains a field called '${undeclaredField}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`
-    );
-  }
+  // const expectedFieldNames = node.spec
+  //   .fieldNames()
+  //   .concat(newFieldNames, astFieldNames);
+  // const undeclaredField = Object.getOwnPropertyNames(node).find(
+  //   (p) => !expectedFieldNames.includes(p)
+  // );
+  // if (undeclaredField) {
+  //   throw new Error(
+  //     `An ASTNode ${node.type} contains a field called '${undeclaredField}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`
+  //   );
+  // }
 }
 
 /**
@@ -525,8 +525,12 @@ export type Range = {
 };
 
 export type NodeOptions = {
-  comment?: Comment;
+  comment?: ASTNode<{ comment: string }>;
   "aria-label"?: string;
+  /**
+   * A predicate, which prevents the node from being edited
+   */
+  isLockedP?: boolean;
 };
 
 export type UnknownFields = { [fieldName: string]: unknown };
@@ -536,7 +540,7 @@ export type NodeFields = { [fieldName: string]: NodeField };
  * Every node in the AST must inherit from the `ASTNode` class, which is used
  * to house some common attributes.
  */
-export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
+export class ASTNode<Fields extends NodeFields = UnknownFields> {
   /**
    * @internal
    * Every node must have a Starting and Ending position, represented as
@@ -567,16 +571,8 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
   /**
    * @internal
    * nodeSpec, which specifies node requirements (see nodeSpec.ts)
-   * NOTE(pcardune): can we import the NodeSpec type here?
    */
-  public static spec: NodeSpec;
   spec: NodeSpec;
-
-  /**
-   * @internal
-   * A predicate, which prevents the node from being edited
-   */
-  isLockedP: boolean;
 
   /**
    * @internal
@@ -597,29 +593,66 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
    */
   __alreadyValidated = false;
 
-  constructor(
-    from: Pos,
-    to: Pos,
-    type: string,
-    fields: Fields,
-    options: NodeOptions
-  ) {
+  readonly _pretty: (node: ASTNode<Fields>) => P.Doc;
+  readonly render: (props: {
+    node: ASTNode<Fields>;
+  }) => React.ReactElement | void;
+  readonly longDescription?: (
+    node: ASTNode<Fields>,
+    _level: number
+  ) => string | undefined;
+
+  constructor({
+    from,
+    to,
+    type,
+    fields,
+    options,
+    pretty,
+    render,
+    longDescription,
+    spec,
+  }: {
+    from: Pos;
+    to: Pos;
+    type: string;
+    fields: Fields;
+    options: NodeOptions;
+
+    // Pretty-printing is node-specific, and must be implemented by
+    // the ASTNode itself
+    pretty: (node: ASTNode<Fields>) => P.Doc;
+
+    render: (
+      props: NodeProps & { node: ASTNode<Fields> }
+    ) => React.ReactElement | void;
+
+    // the long description is node-specific, detailed, and must be
+    // implemented by the ASTNode itself
+    longDescription?: (
+      node: ASTNode<Fields>,
+      _level: number
+    ) => string | undefined;
+    spec: NodeSpec;
+  }) {
     this.from = from;
     this.to = to;
     this.type = type;
     this.options = options;
     this.fields = fields;
+    this._pretty = pretty;
+    this.longDescription = longDescription;
+    this.render = render;
+    this.spec = spec;
 
     // If this node is commented, give its comment an id based on this node's id.
     if (options.comment) {
       options.comment.id = "block-node-" + this.id + "-comment";
     }
+  }
 
-    // Make the spec more easily available.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.spec = (this.constructor as any).spec;
-
-    this.isLockedP = false;
+  pretty() {
+    return this._pretty(this);
   }
 
   // based on the depth level, choose short v. long descriptions
@@ -627,7 +660,9 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     if (this.level - level >= descDepth) {
       return this.shortDescription();
     } else {
-      return this.longDescription(level);
+      return this.longDescription
+        ? this.longDescription(this, level)
+        : this.shortDescription();
     }
   }
   // the short description is literally the ARIA label
@@ -635,15 +670,9 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
     return this.options["aria-label"] || "";
   }
 
-  // the long description is node-specific, detailed, and must be
-  // implemented by the ASTNode itself
-  longDescription(_level: number): string | undefined {
-    throw new Error("ASTNodes must implement `.longDescription()`");
-  }
-
   // Pretty-print the node and its children, based on the pp-width
   toString() {
-    return this.pretty().display(prettyPrintingWidth).join("\n");
+    return this._pretty(this).display(prettyPrintingWidth).join("\n");
   }
 
   // Produces an iterator over the children of this node.
@@ -674,12 +703,6 @@ export abstract class ASTNode<Fields extends NodeFields = UnknownFields> {
   reactElement(props?: Record<string, unknown>): React.ReactElement {
     return renderASTNode({ node: this, ...props });
   }
-
-  // Pretty-printing is node-specific, and must be implemented by
-  // the ASTNode itself
-  abstract pretty(): P.Doc;
-
-  abstract render(props: { node: ASTNode }): React.ReactElement | void;
 }
 
 function renderASTNode(props: { node: ASTNode }) {

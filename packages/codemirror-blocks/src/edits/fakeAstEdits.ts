@@ -1,6 +1,6 @@
 import * as P from "pretty-fast-pretty-printer";
 import { warn, poscmp } from "../utils";
-import { Required, Optional, List, Value } from "../nodeSpec";
+import { Required, Optional, List, Value, nodeSpec } from "../nodeSpec";
 import { ASTNode, NodeFields, UnknownFields } from "../ast";
 import type { AST, Pos } from "../ast";
 import { playSound, BEEP } from "../utils";
@@ -174,39 +174,39 @@ export class FakeAstReplacement {
 // A fake ASTNode that just prints itself with the given text.
 class FakeInsertNode extends ASTNode<{ text: string }> {
   constructor(from: Pos, to: Pos, text: string, options = {}) {
-    super(from, to, "fakeInsertNode", { text }, options);
-  }
-
-  toDescription(_level: number) {
-    return "";
-  }
-
-  pretty() {
-    const lines = this.fields.text.split("\n");
-    return P.vertArray(lines.map(P.txt));
-  }
-
-  render(_props: { node: ASTNode }) {
-    warn("fakeAstEdits", "FakeInsertNode didn't expect to be rendered!");
+    super({
+      from,
+      to,
+      type: "fakeInsertNode",
+      fields: { text },
+      options,
+      pretty: (node) => {
+        const lines = node.fields.text.split("\n");
+        return P.vertArray(lines.map(P.txt));
+      },
+      render() {
+        warn("fakeAstEdits", "FakeInsertNode didn't expect to be rendered!");
+      },
+      spec: nodeSpec([]),
+    });
   }
 }
 
 // A fake ASTNode that just prints itself like a Blank.
 class FakeBlankNode extends ASTNode {
   constructor(from: Pos, to: Pos, options = {}) {
-    super(from, to, "fakeBlankNode", {}, options);
-  }
-
-  toDescription(_level: number) {
-    return "";
-  }
-
-  pretty() {
-    return P.txt("...");
-  }
-
-  render(_props: { node: ASTNode }) {
-    warn("fakeAstEdits", "FakeBlankNode didn't expect to be rendered!");
+    super({
+      from,
+      to,
+      type: "fakeBlankNode",
+      fields: {},
+      options,
+      pretty: () => P.txt("..."),
+      render() {
+        warn("fakeAstEdits", "FakeBlankNode didn't expect to be rendered!");
+      },
+      spec: nodeSpec([]),
+    });
   }
 }
 
@@ -220,13 +220,18 @@ export class ClonedASTNode<
   // show up in the real AST). This copy will be deep over the ASTNodes, but
   // shallow over the non-ASTNode values they contain.
   constructor(oldNode: ASTNode<Fields>) {
-    super(
-      oldNode.from,
-      oldNode.to,
-      oldNode.type,
-      {} as Fields, // TODO(pcardune): construct this properly before calling super using the code below
-      oldNode.options
-    );
+    super({
+      from: oldNode.from,
+      to: oldNode.to,
+      type: oldNode.type,
+      fields: {} as Fields, // TODO(pcardune): construct this properly before calling super using the code below
+      options: oldNode.options,
+      pretty: oldNode._pretty,
+      render(_props: { node: ASTNode }) {
+        warn("fakeAstEdits", "ClonedASTNode didn't expect to be rendered!");
+      },
+      spec: oldNode.spec,
+    });
     for (const spec of oldNode.spec.childSpecs) {
       if (spec instanceof Required) {
         spec.setField(this, cloneNode(spec.getField(oldNode)));
@@ -246,14 +251,6 @@ export class ClonedASTNode<
     this.type = oldNode.type;
     this.id = oldNode.id;
     this.hash = oldNode.hash;
-    this.spec = oldNode.spec;
-    this.pretty = oldNode.pretty;
-  }
-  render(_props: { node: ASTNode }) {
-    warn("fakeAstEdits", "ClonedASTNode didn't expect to be rendered!");
-  }
-  pretty(): P.Doc {
-    throw new Error("ClonedASTNode didn't expect to be prettied!");
   }
 }
 

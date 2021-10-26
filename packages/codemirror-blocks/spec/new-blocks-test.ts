@@ -2,7 +2,7 @@ import CodeMirror from "codemirror";
 import { AST, ASTNode } from "../src/ast";
 import type { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
-import { FunctionApp } from "../src/nodes";
+import { FunctionAppNode } from "../src/nodes";
 
 import {
   teardown,
@@ -128,7 +128,7 @@ describe("The CodeMirrorBlocks Class", function () {
       cmb.setValue("()");
       await finishRender();
       cmb.getValue("(...)"); // blank should be inserted by parser, as '...'
-      const blank = (cmb.getAst().rootNodes[0] as FunctionApp).fields.func;
+      const blank = (cmb.getAst().rootNodes[0] as FunctionAppNode).fields.func;
       click(blank.element!);
       await finishRender();
       expect(blank.isEditable()).toBe(true);
@@ -187,16 +187,16 @@ describe("The CodeMirrorBlocks Class", function () {
       let firstRoot!: ASTNode;
       let firstArg!: ASTNode;
       let whiteSpaceEl!: Element;
-      let blank!: FunctionApp;
+      let blank!: FunctionAppNode;
 
       beforeEach(async function () {
         cmb.setValue("(+ 1 2) (+)");
         await finishRender();
         ast = cmb.getAst();
         firstRoot = ast.rootNodes[0];
-        firstArg = (ast.rootNodes[0] as FunctionApp).fields.args[0];
+        firstArg = (ast.rootNodes[0] as FunctionAppNode).fields.args[0];
         whiteSpaceEl = firstArg.element!.nextElementSibling!;
-        blank = ast.rootNodes[1] as FunctionApp;
+        blank = ast.rootNodes[1] as FunctionAppNode;
       });
 
       it("Ctrl-[ should jump to the left of a top-level node", function () {

@@ -1,12 +1,20 @@
 import CodeMirror from "codemirror";
 import { AST } from "../src/ast";
-import { FunctionApp, Literal, Sequence, Comment } from "../src/nodes";
+import {
+  FunctionApp,
+  Literal,
+  Sequence,
+  Comment,
+  FunctionAppNode,
+  LiteralNode,
+  SequenceNode,
+} from "../src/nodes";
 
 describe("The Literal Class", () => {
   it("should be constructed with a value and data type", () => {
     const from = { line: 0, ch: 0 };
     const to = { line: 0, ch: 2 };
-    const literal = new Literal(from, to, "11", "number");
+    const literal = Literal(from, to, "11", "number");
     expect(literal.from).toBe(from);
     expect(literal.to).toBe(to);
     expect(literal.fields.value).toBe("11");
@@ -15,17 +23,17 @@ describe("The Literal Class", () => {
   });
 
   it("should set a default data type of unknown if one isn't provided", () => {
-    const literal = new Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11");
+    const literal = Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11");
     expect(literal.fields.dataType).toBe("unknown");
   });
 
   it("should only return itself when iterated over", () => {
-    const literal = new Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11");
+    const literal = Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11");
     expect([...literal.descendants()]).toEqual([literal]);
   });
 
   it("should take an optional options parameter in its constructor", () => {
-    const literal = new Literal(
+    const literal = Literal(
       { line: 0, ch: 0 },
       { line: 0, ch: 2 },
       "11",
@@ -37,27 +45,27 @@ describe("The Literal Class", () => {
 });
 
 describe("The Sequence Class", () => {
-  let sequence: Sequence;
-  let expression1: FunctionApp;
-  let expression2: FunctionApp;
+  let sequence: SequenceNode;
+  let expression1: FunctionAppNode;
+  let expression2: FunctionAppNode;
   let from: CodeMirror.Position;
   let to: CodeMirror.Position;
-  let name: Literal;
-  let exprs: FunctionApp[];
+  let name: LiteralNode;
+  let exprs: FunctionAppNode[];
 
   beforeEach(() => {
     // (+ 1 2)
-    const func1 = new Literal(
+    const func1 = Literal(
       { line: 0, ch: 8 },
       { line: 0, ch: 9 },
       "+",
       "symbol"
     );
     const args1 = [
-      new Literal({ line: 0, ch: 10 }, { line: 0, ch: 11 }, "1"),
-      new Literal({ line: 0, ch: 12 }, { line: 0, ch: 13 }, "2"),
+      Literal({ line: 0, ch: 10 }, { line: 0, ch: 11 }, "1"),
+      Literal({ line: 0, ch: 12 }, { line: 0, ch: 13 }, "2"),
     ];
-    expression1 = new FunctionApp(
+    expression1 = FunctionApp(
       { line: 0, ch: 7 },
       { line: 0, ch: 14 },
       func1,
@@ -66,17 +74,17 @@ describe("The Sequence Class", () => {
     );
 
     // (- 2 3)
-    const func2 = new Literal(
+    const func2 = Literal(
       { line: 0, ch: 16 },
       { line: 0, ch: 17 },
       "-",
       "symbol"
     );
     const args2 = [
-      new Literal({ line: 0, ch: 18 }, { line: 0, ch: 19 }, "2"),
-      new Literal({ line: 0, ch: 20 }, { line: 0, ch: 21 }, "3"),
+      Literal({ line: 0, ch: 18 }, { line: 0, ch: 19 }, "2"),
+      Literal({ line: 0, ch: 20 }, { line: 0, ch: 21 }, "3"),
     ];
-    expression2 = new FunctionApp(
+    expression2 = FunctionApp(
       { line: 0, ch: 15 },
       { line: 0, ch: 22 },
       func2,
@@ -87,14 +95,9 @@ describe("The Sequence Class", () => {
     // (begin (+ 1 2) (- 2 3))
     from = { line: 0, ch: 0 };
     to = { line: 0, ch: 23 };
-    name = new Literal(
-      { line: 0, ch: 1 },
-      { line: 0, ch: 6 },
-      "begin",
-      "symbol"
-    );
+    name = Literal({ line: 0, ch: 1 }, { line: 0, ch: 6 }, "begin", "symbol");
     exprs = [expression1, expression2];
-    sequence = new Sequence(from, to, exprs, name);
+    sequence = Sequence(from, to, exprs, name);
   });
 
   it("should be constructed with a list of expressions", () => {
@@ -106,25 +109,25 @@ describe("The Sequence Class", () => {
 
   it("should take an optional options parameter in its constructor", () => {
     const options = { "aria-label": "sequence" };
-    const newSequence = new Sequence(from, to, exprs, name, options);
+    const newSequence = Sequence(from, to, exprs, name, options);
     expect(newSequence.options).toEqual(options);
   });
 });
 
 describe("The FunctionApp Class", () => {
-  let expression: FunctionApp;
-  let func: Literal;
-  let args: Literal[];
-  let nestedExpression: FunctionApp;
+  let expression: FunctionAppNode;
+  let func: LiteralNode;
+  let args: LiteralNode[];
+  let nestedExpression: FunctionAppNode;
   let ast: AST;
   beforeEach(() => {
-    func = new Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol");
+    func = Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol");
     args = [
-      new Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-      new Literal({ line: 1, ch: 6 }, { line: 0, ch: 8 }, "22"),
+      Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
+      Literal({ line: 1, ch: 6 }, { line: 0, ch: 8 }, "22"),
     ];
     // (+ 11 22)
-    expression = new FunctionApp(
+    expression = FunctionApp(
       { line: 1, ch: 0 },
       { line: 1, ch: 9 },
       func,
@@ -132,19 +135,19 @@ describe("The FunctionApp Class", () => {
       { "aria-label": "+ expression" }
     );
     // (+ 11 (- 15 35))
-    nestedExpression = new FunctionApp(
+    nestedExpression = FunctionApp(
       { line: 1, ch: 0 },
       { line: 1, ch: 9 },
-      new Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
+      Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
       [
-        new Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-        new FunctionApp(
+        Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
+        FunctionApp(
           { line: 1, ch: 0 },
           { line: 1, ch: 9 },
-          new Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "-", "symbol"),
+          Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "-", "symbol"),
           [
-            new Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "15"),
-            new Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "35"),
+            Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "15"),
+            Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "35"),
           ]
         ),
       ]
@@ -191,24 +194,24 @@ describe("The FunctionApp Class", () => {
 
 describe("The AST Class", () => {
   it("should take a set of root nodes in its constructor", () => {
-    const nodes = [new Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11")];
+    const nodes = [Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11")];
     const ast = new AST(nodes);
     expect(ast.rootNodes).toBe(nodes);
   });
 
   it("should add every node to a node map for quick lookup", () => {
     const nodes = [
-      new Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11"),
-      new FunctionApp(
+      Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11"),
+      FunctionApp(
         { line: 1, ch: 0 },
         { line: 1, ch: 9 },
-        new Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
+        Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
         [
-          new Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-          new Literal({ line: 1, ch: 6 }, { line: 0, ch: 8 }, "22"),
+          Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
+          Literal({ line: 1, ch: 6 }, { line: 0, ch: 8 }, "22"),
         ]
       ),
-    ] as [Literal, FunctionApp];
+    ] as [LiteralNode, FunctionAppNode];
     const ast = new AST(nodes);
     expect(ast.getNodeById(nodes[0].id)).toBe(nodes[0]);
     expect(ast.getNodeById(nodes[1].id)).toBe(nodes[1]);
@@ -222,26 +225,26 @@ describe("The AST Class", () => {
 
   it("idential subtrees should have the same hash", () => {
     const nodes1 = [
-      new Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11"),
-      new FunctionApp(
+      Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11"),
+      FunctionApp(
         { line: 1, ch: 0 },
         { line: 1, ch: 9 },
-        new Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
+        Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
         [
-          new Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-          new Literal({ line: 1, ch: 6 }, { line: 1, ch: 8 }, "22"),
+          Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
+          Literal({ line: 1, ch: 6 }, { line: 1, ch: 8 }, "22"),
         ]
       ),
     ];
     const nodes2 = [
-      new Literal({ line: 1, ch: 0 }, { line: 1, ch: 2 }, "11"),
-      new FunctionApp(
+      Literal({ line: 1, ch: 0 }, { line: 1, ch: 2 }, "11"),
+      FunctionApp(
         { line: 2, ch: 0 },
         { line: 2, ch: 9 },
-        new Literal({ line: 2, ch: 1 }, { line: 2, ch: 2 }, "+", "symbol"),
+        Literal({ line: 2, ch: 1 }, { line: 2, ch: 2 }, "+", "symbol"),
         [
-          new Literal({ line: 2, ch: 3 }, { line: 2, ch: 5 }, "11"),
-          new Literal({ line: 2, ch: 6 }, { line: 2, ch: 8 }, "22"),
+          Literal({ line: 2, ch: 3 }, { line: 2, ch: 5 }, "11"),
+          Literal({ line: 2, ch: 6 }, { line: 2, ch: 8 }, "22"),
         ]
       ),
     ];
@@ -252,28 +255,28 @@ describe("The AST Class", () => {
 
   it("idential subtrees with different comments should have different hashes", () => {
     const nodes1 = [
-      new Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11", "Number", {
-        comment: new Comment({ line: 0, ch: 4 }, { line: 0, ch: 7 }, "moo"),
+      Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11", "Number", {
+        comment: Comment({ line: 0, ch: 4 }, { line: 0, ch: 7 }, "moo"),
       }),
-      new FunctionApp(
+      FunctionApp(
         { line: 1, ch: 0 },
         { line: 1, ch: 9 },
-        new Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
+        Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
         [
-          new Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-          new Literal({ line: 1, ch: 6 }, { line: 1, ch: 8 }, "22"),
+          Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
+          Literal({ line: 1, ch: 6 }, { line: 1, ch: 8 }, "22"),
         ]
       ),
     ];
     const nodes2 = [
-      new Literal({ line: 1, ch: 0 }, { line: 1, ch: 2 }, "11"),
-      new FunctionApp(
+      Literal({ line: 1, ch: 0 }, { line: 1, ch: 2 }, "11"),
+      FunctionApp(
         { line: 2, ch: 0 },
         { line: 2, ch: 9 },
-        new Literal({ line: 2, ch: 1 }, { line: 2, ch: 2 }, "+", "symbol"),
+        Literal({ line: 2, ch: 1 }, { line: 2, ch: 2 }, "+", "symbol"),
         [
-          new Literal({ line: 2, ch: 3 }, { line: 2, ch: 5 }, "11"),
-          new Literal({ line: 2, ch: 6 }, { line: 2, ch: 8 }, "22"),
+          Literal({ line: 2, ch: 3 }, { line: 2, ch: 5 }, "11"),
+          Literal({ line: 2, ch: 6 }, { line: 2, ch: 8 }, "22"),
         ]
       ),
     ];
