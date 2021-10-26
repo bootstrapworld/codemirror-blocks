@@ -189,6 +189,28 @@ function annotateNodes(nodes: Readonly<ASTNode[]>): {
   return { nodeIdMap, nodeNIdMap, edgeIdMap };
 }
 
+export class NodeRef {
+  private readonly ast: AST;
+  readonly id: string;
+  constructor(ast: AST, nodeId: string) {
+    this.ast = ast;
+    this.id = nodeId;
+  }
+  get node() {
+    return this.ast.getNodeByIdOrThrow(this.id);
+  }
+  get parent(): NodeRef | null {
+    const parentId = this.ast.edgeIdMap[this.id].parentId;
+    return parentId ? new NodeRef(this.ast, parentId) : null;
+  }
+  reactElement() {
+    return this.node.reactElement();
+  }
+  srcRange() {
+    return this.node.srcRange();
+  }
+}
+
 /**
  * This is the the *Abstract Syntax Tree*. Parser implementations
  * are required to spit out an `AST` instance.
@@ -215,7 +237,7 @@ export class AST {
    * Used for {@link getNodeBefore}, {@link getNodeAfter}, and
    * {@link getNodeParent}
    */
-  private readonly edgeIdMap: Record<string, Readonly<Edges>> = {};
+  readonly edgeIdMap: Record<string, Readonly<Edges>> = {};
 
   constructor(rootNodes: Readonly<ASTNode[]>, annotate = true) {
     this.rootNodes = rootNodes;
@@ -252,11 +274,11 @@ export class AST {
   }
 
   /**
-   * children : -> ASTNode[]
-   * Print out all the immediate "children" of the AST (root nodes)
+   * Returns refs all the immediate "children" of the AST (root nodes)
+   * @returns NodeRef[]
    */
-  children() {
-    return this.rootNodes;
+  children(): NodeRef[] {
+    return this.rootNodes.map((node) => new NodeRef(this, node.id));
   }
 
   /**

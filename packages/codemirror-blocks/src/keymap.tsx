@@ -23,7 +23,7 @@ import { say } from "./announcer";
 import { findAdjacentDropTargetId as getDTid } from "./components/DropTarget";
 
 import type { AppThunk } from "./store";
-import type { AST, ASTNode } from "./ast";
+import type { AST, ASTNode, NodeRef } from "./ast";
 import { CMBEditor } from "./editor";
 import { Language } from "./CodeMirrorBlocks";
 import type { AppHelpers } from "./components/Context";
@@ -50,7 +50,7 @@ type NodeEnv = {
   isCollapsed: boolean;
   expandable: boolean;
   normallyEditable: boolean;
-  node: ASTNode;
+  nodeRef: NodeRef;
 };
 
 export type InputEnv = BlockEditorEnv | NodeEnv;
@@ -161,13 +161,19 @@ const pasteHandler =
       return;
     }
     const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
-    const pos = before ? env.node.srcRange().from : env.node.srcRange().to;
+    const pos = before
+      ? env.nodeRef.srcRange().from
+      : env.nodeRef.srcRange().to;
     const { selections, ast } = getState();
-    const parent = ast.getNodeParent(env.node);
+    const parent = env.nodeRef.parent?.node;
     // Case 1: Overwriting selected nodes
-    if (selections.includes(env.node.id)) {
+    if (selections.includes(env.nodeRef.id)) {
       dispatch(
-        paste(env.editor, new ReplaceNodeTarget(env.node), env.language.parse)
+        paste(
+          env.editor,
+          new ReplaceNodeTarget(env.nodeRef.node),
+          env.language.parse
+        )
       );
     }
     // Case 2: Inserting to the left or right of the root
@@ -184,7 +190,7 @@ const pasteHandler =
     // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
     else {
       const DTnode = document.getElementById(
-        "block-drop-target-" + getDTid(ast, env.node, before)
+        "block-drop-target-" + getDTid(ast, env.nodeRef.node, before)
       );
       if (DTnode?.dataset?.field) {
         // We're somewhere valid in the AST. Initiate paste on the target field!
@@ -272,15 +278,14 @@ const commandMap: {
     }
   },
 
-  "Collapse or Focus Parent": (env, e) => (dispatch, getState) => {
+  "Collapse or Focus Parent": (env, e) => (dispatch) => {
     e.preventDefault();
     if (!env.isNodeEnv) {
       return;
     }
-    const { ast } = getState();
-    const parent = ast.getNodeParent(env.node);
+    const parent = env.nodeRef.parent?.node;
     if (env.expandable && !env.isCollapsed && !env.isLocked()) {
-      dispatch({ type: "COLLAPSE", id: env.node.id });
+      dispatch({ type: "COLLAPSE", id: env.nodeRef.id });
     } else if (parent) {
       dispatch(activateByNid(env.editor, parent.nid));
     } else {
@@ -292,7 +297,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    const node = env.node;
+    const node = env.nodeRef.node;
     const { ast } = getState();
     const nextNode = ast.getNodeAfter(node);
     e.preventDefault();
@@ -314,7 +319,7 @@ const commandMap: {
       activateByNid(
         env.editor,
 
-        getRoot(getState().ast, env.node).nid
+        getRoot(getState().ast, env.nodeRef.node).nid
       )
     );
   },
@@ -332,10 +337,10 @@ const commandMap: {
       return;
     }
     const ast = getState().ast;
-    if (!ast.getNodeParent(env.node) && (env.isCollapsed || !env.expandable)) {
+    if (!env.nodeRef.parent?.node && (env.isCollapsed || !env.expandable)) {
       playSound(BEEP);
     } else {
-      const root = getRoot(ast, env.node);
+      const root = getRoot(ast, env.nodeRef.node);
       const descendants = [...root.descendants()];
       descendants.forEach(
         (d) => env.isNodeEnv && dispatch({ type: "COLLAPSE", id: d.id })
@@ -348,7 +353,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    const root = getRoot(getState().ast, env.node);
+    const root = getRoot(getState().ast, env.nodeRef.node);
     [...root.descendants()].forEach(
       (d) => env.isNodeEnv && dispatch({ type: "UNCOLLAPSE", id: d.id })
     );
@@ -363,22 +368,23 @@ const commandMap: {
         activateByNid(
           env.editor,
 
-          getRoot(getState().ast, env.node).nid
+          getRoot(getState().ast, env.nodeRef.node).nid
         )
       );
     }
   },
 
-  "Read Ancestors": (env, _) => (dispatch, getState) => {
+  "Read Ancestors": (env, _) => () => {
     if (!env.isNodeEnv) {
       return;
     }
-    const parents = [env.node.shortDescription()];
-    const { ast } = getState();
-    let next = ast.getNodeParent(env.node);
+    const parents = [env.nodeRef.node.shortDescription()];
+    let next = env.nodeRef.parent;
     while (next) {
-      parents.push(next.shortDescription() + ", at level " + next.level);
-      next = ast.getNodeParent(next);
+      parents.push(
+        next.node.shortDescription() + ", at level " + next.node.level
+      );
+      next = next.parent;
     }
     if (parents.length > 1) {
       say(parents.join(", inside "));
@@ -391,7 +397,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     } else {
-      const description = env.node.describe(env.node.level);
+      const description = env.nodeRef.node.describe(env.nodeRef.node.level);
       description && say(description);
     }
   },
@@ -403,33 +409,32 @@ const commandMap: {
     }
     e.preventDefault();
     const { selections, ast } = getState();
-    const node = env.node;
     const descendantIds = (node: ASTNode) =>
       [...node.descendants()].map((d) => d.id);
-    const ancestorIds = (node: ASTNode) => {
+    const ancestorIds = (node: NodeRef) => {
       const ancestors = [];
-      let next = ast.getNodeParent(node);
+      let next = node.parent;
       while (next) {
         ancestors.push(next.id);
-        next = ast.getNodeParent(next);
+        next = next.parent;
       }
       return ancestors;
     };
 
     // if the node is already selected, remove it, its descendants
     // and any ancestor
-    if (selections.includes(env.node.id)) {
+    if (selections.includes(env.nodeRef.id)) {
       const prunedSelection = selections
-        .filter((s) => !descendantIds(node).includes(s))
-        .filter((s) => !ancestorIds(node).includes(s));
+        .filter((s) => !descendantIds(env.nodeRef.node).includes(s))
+        .filter((s) => !ancestorIds(env.nodeRef).includes(s));
       dispatch({
         type: "SET_SELECTIONS",
         selections: prunedSelection,
       });
       // TODO(Emmanuel): announce removal
     } else {
-      const isContained = (id: string) => ast.isAncestor(node.id, id);
-      const doesContain = (id: string) => ast.isAncestor(id, node.id);
+      const isContained = (id: string) => ast.isAncestor(env.nodeRef.id, id);
+      const doesContain = (id: string) => ast.isAncestor(id, env.nodeRef.id);
       const [removed, newSelections] = partition(selections, isContained);
       for (const _r of removed) {
         // TODO(Emmanuel): announce removal
@@ -441,7 +446,7 @@ const commandMap: {
         // TODO(Emmanuel): announce addition
         dispatch({
           type: "SET_SELECTIONS",
-          selections: newSelections.concat(descendantIds(node)),
+          selections: newSelections.concat(descendantIds(env.nodeRef.node)),
         });
       }
     }
@@ -456,9 +461,9 @@ const commandMap: {
       e.preventDefault();
     } else if (env.expandable && !env.isLocked()) {
       if (env.isCollapsed) {
-        dispatch({ type: "UNCOLLAPSE", id: env.node.id });
+        dispatch({ type: "UNCOLLAPSE", id: env.nodeRef.id });
       } else {
-        dispatch({ type: "COLLAPSE", id: env.node.id });
+        dispatch({ type: "COLLAPSE", id: env.nodeRef.id });
       }
     } else {
       playSound(BEEP);
@@ -499,7 +504,7 @@ const commandMap: {
       return;
     }
     if (!env.setRight(getState().ast)) {
-      dispatch(setCursor(env.editor, env.node.srcRange().to));
+      dispatch(setCursor(env.editor, env.nodeRef.srcRange().to));
     }
   },
   "Insert Left": (env, _) => (dispatch, getState) => {
@@ -507,7 +512,7 @@ const commandMap: {
       return;
     }
     if (!env.setLeft(getState().ast)) {
-      dispatch(setCursor(env.editor, env.node.srcRange().from));
+      dispatch(setCursor(env.editor, env.nodeRef.srcRange().from));
     }
   },
 
@@ -530,7 +535,7 @@ const commandMap: {
     }
     // if no nodes are selected, do it on focused node's id instead
     const { selections, ast } = getState();
-    const nodeIds = !selections.length ? [env.node.id] : selections;
+    const nodeIds = !selections.length ? [env.nodeRef.id] : selections;
     const nodesToCopy = nodeIds.map(ast.getNodeByIdOrThrow);
     copy(getState(), nodesToCopy, "copied");
   },
@@ -608,7 +613,9 @@ export const keyDown =
           ...inputEnv,
           // add convenience methods
           fastSkip: (next: (node: ASTNode) => ASTNode) =>
-            env.isNodeEnv ? skipCollapsed(env.node, next, state) : undefined,
+            env.isNodeEnv
+              ? skipCollapsed(env.nodeRef.node, next, state)
+              : undefined,
           activateNoRecord: (node?: ASTNode) => {
             if (!node) {
               return playSound(BEEP);
@@ -622,11 +629,11 @@ export const keyDown =
           },
         };
         // If there's a node, make sure it's fresh
-        if (env.isNodeEnv) {
-          const updatedNode = state.ast.getNodeByIdOrThrow(env.node.id);
-          env.node =
-            updatedNode && state.ast.getNodeByNIdOrThrow(updatedNode.nid);
-        }
+        // if (env.isNodeEnv) {
+        //   const updatedNode = state.ast.getNodeByIdOrThrow(env.node.id);
+        //   env.node.node =
+        //     updatedNode && state.ast.getNodeByNIdOrThrow(updatedNode.nid);
+        // }
         const action = handler(env, e);
         if (action) {
           dispatch(action);

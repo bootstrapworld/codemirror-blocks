@@ -1,12 +1,12 @@
 import React, { createContext, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { poscmp, setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
-import { ASTNode } from "../ast";
+import { ASTNode, NodeRef } from "../ast";
 import { BlockNodeMarker, CMBEditor } from "../editor";
 
 type Props = {
   incrementalRendering: boolean;
-  node: ASTNode;
+  node: NodeRef;
   editor: CMBEditor;
 };
 
@@ -77,5 +77,5 @@ export default React.memo(
   (prevProps: Props, nextProps: Props) =>
     nextProps.incrementalRendering === prevProps.incrementalRendering &&
     nextProps.editor === prevProps.editor &&
-    areNodesEqualish(prevProps.node, nextProps.node) // didn't change
+    areNodesEqualish(prevProps.node.node, nextProps.node.node) // didn't change
 );

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
-import { AST, ASTNode } from "../ast";
+import { AST, ASTNode, NodeRef } from "../ast";
 import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
@@ -58,6 +58,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
 
   const dispatch: AppDispatch = useDispatch();
   const store: AppStore = useStore();
+  const ast = useSelector((state: RootState) => state.ast);
   const language = useContext(LanguageContext);
   const appHelpers = useContext(AppContext);
   const isErrorFree = () => store.getState().errorId === "";
@@ -82,7 +83,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     dispatch(
       keyDown(e, {
         isNodeEnv: true,
-        node: props.node,
+        nodeRef: new NodeRef(ast, props.node.id),
         editor: editor,
         language: language,
         appHelpers: appHelpers,
