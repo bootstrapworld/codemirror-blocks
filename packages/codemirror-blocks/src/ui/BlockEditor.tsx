@@ -496,9 +496,11 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         const node = focusId
           ? ast.getNodeByIdOrThrow(focusId)
           : ast.getFirstRootNode();
-        activateByNid(editor, node && node.nid, {
-          allowMove: true,
-        });
+        dispatch(
+          activateByNid(editor, node && node.nid, {
+            allowMove: true,
+          })
+        );
       });
     });
   };
