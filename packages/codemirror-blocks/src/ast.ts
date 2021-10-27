@@ -70,7 +70,6 @@ function validateNode(node: ASTNode) {
     "id",
     "level",
     "nid",
-    "hash",
     "aria-setsize",
     "aria-posinset",
     "mark",
@@ -182,7 +181,6 @@ function annotateNodes(nodes: Readonly<ASTNode[]>): {
       nodeNIdMap.set(node.nid, node);
       lastNode = node;
       processChildren([...node.children()], node, level + 1);
-      node.hash = node.spec.hash(node); // Relies on child hashes; must be bottom-up
     });
   };
   processChildren(nodes, undefined, 1);
@@ -555,7 +553,6 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
   id!: string;
   nid: number;
   level: number;
-  hash: number;
   "aria-setsize": number;
   "aria-posinset": number;
 
@@ -584,7 +581,7 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
    * @internal
    * Used for unit testing only
    */
-  isEditable: () => boolean;
+  isEditable?: () => boolean;
 
   /**
    * @internal
@@ -649,6 +646,37 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
     if (options.comment) {
       options.comment.id = "block-node-" + this.id + "-comment";
     }
+  }
+
+  private _hash: number | undefined;
+
+  /**
+   * A hash of the ast node and its children, which can
+   * be used to quickly test whether two subtrees of the
+   * AST are the same. Note that this only considers
+   * a subset of the properties of the AST node.
+   *
+   * See {@link NodeSpec.hash} for more details.
+   */
+  get hash(): number {
+    if (this._hash === undefined) {
+      this._hash = this.spec.hash(this);
+    }
+    return this._hash;
+  }
+
+  /**
+   * Manually set the hash value for this ast node.
+   *
+   * Hashing is used to quickly compare subtrees of the ast
+   * and without traversing all the nodes. Setting the hash
+   * to some other value may break expected behaviors.
+   *
+   * Only use this if you know what you are doing.
+   * @param hash The new hash value to set.
+   */
+  _dangerouslySetHash(hash: number) {
+    this._hash = hash;
   }
 
   pretty() {

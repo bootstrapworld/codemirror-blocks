@@ -247,7 +247,7 @@ export class ClonedASTNode<
     }
     this.type = oldNode.type;
     this.id = oldNode.id;
-    this.hash = oldNode.hash;
+    this._dangerouslySetHash(oldNode.hash);
   }
 }
 
