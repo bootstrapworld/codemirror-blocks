@@ -167,8 +167,8 @@ function annotateNodes(nodes: Readonly<ASTNode[]>): {
         node.id = genUniqueId();
       }
       node.level = level;
-      node["aria-setsize"] = nodes.length;
-      node["aria-posinset"] = i + 1;
+      node.ariaSetSize = nodes.length;
+      node.ariaPosInset = i + 1;
       node.nid = nid++;
       if (lastNode) {
         edgeIdMap[lastNode.id].nextId = node.id;
@@ -553,8 +553,8 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
   id!: string;
   nid: number;
   level: number;
-  "aria-setsize": number;
-  "aria-posinset": number;
+  ariaSetSize: number;
+  ariaPosInset: number;
 
   fields: Fields;
 

@@ -172,8 +172,8 @@ const Node = ({ expandable = true, ...props }: Props) => {
     "aria-disabled": locked ? true : undefined,
     "aria-expanded":
       expandable && !locked ? !stateProps.isCollapsed : undefined,
-    "aria-setsize": props.node["aria-setsize"],
-    "aria-posinset": props.node["aria-posinset"],
+    "aria-setsize": props.node.ariaSetSize,
+    "aria-posinset": props.node.ariaPosInset,
     "aria-level": props.node.level,
   };
 
