@@ -49,95 +49,50 @@ export const prettyPrintingWidth = 80;
 type Edges = { parentId?: string; nextId?: string; prevId?: string };
 
 /**
- * validateNode : ASTNode -> Void
- * Raise an exception if a Node has is invalid
+ * Checks to see if the objects passed to the ASTNode constructor
+ * has all the required properties.
+ * Raise an exception if any properties are missing or of the wrong type.
  */
-function validateNode(node: ASTNode) {
-  // const astFieldNames = [
-  //   "from",
-  //   "to",
-  //   "type",
-  //   "fields",
-  //   "options",
-  //   "spec",
-  //   "isLockedP",
-  //   "__alreadyValidated",
-  //   "element",
-  //   "isEditable",
-  // ];
-  // Check that the node doesn't define any of the fields we're going to add to it.
-  const newFieldNames = [
-    "id",
-    "level",
-    "nid",
-    "aria-setsize",
-    "aria-posinset",
-    "mark",
-  ];
-  const invalidProp = newFieldNames.find(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (field) => field in node && (node as any)[field] !== undefined
-  );
-  if (!node.__alreadyValidated && invalidProp) {
-    throw new Error(
-      `The property ${invalidProp} is used by ASTNode, and should not be overridden in subclasses.`
-    );
-  }
-
-  node.__alreadyValidated = true;
+function validateNodeProps(props: ASTNodeProps) {
   // Check that the node declares all of the required fields and methods.
-  if (typeof node.type !== "string") {
+  if (typeof props.type !== "string") {
     throw new Error(
       `ASTNodes must each have a fixed 'type', which must be a string.`
     );
   }
-  if (typeof node.options !== "object") {
+  if (typeof props.options !== "object") {
     throw new Error(
-      `ASTNode.options is optional, but if provided it must be an object. This rule was broken by ${node.type}.`
+      `ASTNode.options is optional, but if provided it must be an object. This rule was broken by ${props.type}.`
     );
   }
   // Check that the Pos objects are correctly-formatted
   if (
-    [node.from?.line, node.from?.ch, node.to?.line, node.to?.ch].some(
+    [props.from?.line, props.from?.ch, props.to?.line, props.to?.ch].some(
       (v) => typeof v !== "number"
     )
   ) {
     throw new Error(
-      `ASTNode.from and .to are required and must have the form {line: number, to: number} (they are source locations). This rule was broken by ${node.type}.`
+      `ASTNode.from and .to are required and must have the form {line: number, to: number} (they are source locations). This rule was broken by ${props.type}.`
     );
   }
-  if (typeof node._pretty !== "function") {
+  if (typeof props.pretty !== "function") {
     throw new Error(
-      `ASTNode ${node.type} needs to have a pretty() method, but does not.`
+      `ASTNode ${props.type} needs to have a pretty() method, but does not.`
     );
   }
-  if (typeof node.render !== "function") {
+  if (typeof props.render !== "function") {
     throw new Error(
-      `ASTNode ${node.type} needs to have a render() method, but does not.`
+      `ASTNode ${props.type} needs to have a render() method, but does not.`
     );
   }
   // Check that the node obeys its own spec.
-  if (!node.spec) {
+  if (!props.spec) {
     throw new Error(
-      `ASTNode ${node.type} needs to have a static 'spec' of type NodeSpec, declaring the types of its fields.`
+      `ASTNode ${props.type} needs to have a static 'spec' of type NodeSpec, declaring the types of its fields.`
     );
   }
-  node.spec.validate(node);
-  // Check that the node doesn't contain any extraneous data.
-  // (If it does, its hash is probably wrong. All data should be declared in the spec.)
-  // const expectedFieldNames = node.spec
-  //   .fieldNames()
-  //   .concat(newFieldNames, astFieldNames);
-  // const undeclaredField = Object.getOwnPropertyNames(node).find(
-  //   (p) => !expectedFieldNames.includes(p)
-  // );
-  // if (undeclaredField) {
-  //   throw new Error(
-  //     `An ASTNode ${node.type} contains a field called '${undeclaredField}' that was not declared in its spec. All ASTNode fields must be mentioned in their spec.`
-  //   );
-  // }
+  props.spec.validate(props);
 }
-
 /**
  * annotateNodes : ASTNodes ASTNode -> Void
  * walk through the siblings, assigning aria-* attributes
@@ -161,9 +116,8 @@ function annotateNodes(nodes: Readonly<ASTNode[]>): {
     level: number
   ) => {
     nodes.forEach((node, i) => {
-      validateNode(node);
       // Undefined if this DID NOT come from a patched AST.
-      if (node.id === undefined) {
+      if (node.id === "uninitialized") {
         node.id = genUniqueId();
       }
       node.level = level;
@@ -534,6 +488,31 @@ export type NodeOptions = {
 export type UnknownFields = { [fieldName: string]: unknown };
 export type NodeField = ASTNode | ASTNode[] | unknown;
 export type NodeFields = { [fieldName: string]: NodeField };
+
+type ASTNodeProps<Fields extends NodeFields = UnknownFields> = {
+  from: Pos;
+  to: Pos;
+  type: string;
+  fields: Fields;
+  options: NodeOptions;
+
+  // Pretty-printing is node-specific, and must be implemented by
+  // the ASTNode itself
+  pretty: (node: ASTNode<Fields>) => P.Doc;
+
+  render: (
+    props: NodeProps & { node: ASTNode<Fields> }
+  ) => React.ReactElement | void;
+
+  // the long description is node-specific, detailed, and must be
+  // implemented by the ASTNode itself
+  longDescription?: (
+    node: ASTNode<Fields>,
+    _level: number
+  ) => string | undefined;
+  spec: NodeSpec;
+};
+
 /**
  * Every node in the AST must inherit from the `ASTNode` class, which is used
  * to house some common attributes.
@@ -550,11 +529,11 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
   from: Pos;
   to: Pos;
   type: string;
-  id!: string;
-  nid: number;
-  level: number;
-  ariaSetSize: number;
-  ariaPosInset: number;
+  id = "uninitialized";
+  nid = -1;
+  level = -1;
+  ariaSetSize = -1;
+  ariaPosInset = -1;
 
   fields: Fields;
 
@@ -583,13 +562,6 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
    */
   isEditable?: () => boolean;
 
-  /**
-   * @internal
-   * Used to keep track of which nodes have had their properties
-   * validated by {@link AST.validateNode}
-   */
-  __alreadyValidated = false;
-
   readonly _pretty: (node: ASTNode<Fields>) => P.Doc;
   readonly render: (props: {
     node: ASTNode<Fields>;
@@ -599,52 +571,21 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
     _level: number
   ) => string | undefined;
 
-  constructor({
-    from,
-    to,
-    type,
-    fields,
-    options,
-    pretty,
-    render,
-    longDescription,
-    spec,
-  }: {
-    from: Pos;
-    to: Pos;
-    type: string;
-    fields: Fields;
-    options: NodeOptions;
-
-    // Pretty-printing is node-specific, and must be implemented by
-    // the ASTNode itself
-    pretty: (node: ASTNode<Fields>) => P.Doc;
-
-    render: (
-      props: NodeProps & { node: ASTNode<Fields> }
-    ) => React.ReactElement | void;
-
-    // the long description is node-specific, detailed, and must be
-    // implemented by the ASTNode itself
-    longDescription?: (
-      node: ASTNode<Fields>,
-      _level: number
-    ) => string | undefined;
-    spec: NodeSpec;
-  }) {
-    this.from = from;
-    this.to = to;
-    this.type = type;
-    this.options = options;
-    this.fields = fields;
-    this._pretty = pretty;
-    this.longDescription = longDescription;
-    this.render = render;
-    this.spec = spec;
+  constructor(props: ASTNodeProps<Fields>) {
+    validateNodeProps(props);
+    this.from = props.from;
+    this.to = props.to;
+    this.type = props.type;
+    this.options = props.options;
+    this.fields = props.fields;
+    this._pretty = props.pretty;
+    this.longDescription = props.longDescription;
+    this.render = props.render;
+    this.spec = props.spec;
 
     // If this node is commented, give its comment an id based on this node's id.
-    if (options.comment) {
-      options.comment.id = "block-node-" + this.id + "-comment";
+    if (this.options.comment) {
+      this.options.comment.id = "block-node-" + this.id + "-comment";
     }
   }
 
@@ -709,8 +650,11 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
   }
 
   // Produces an iterator over all descendants of this node, including itself.
-  descendants(): Iterable<ASTNode> {
-    return new DescendantsIterator(this);
+  *descendants(): Iterable<ASTNode> {
+    yield this;
+    for (const child of this.children()) {
+      yield* child.descendants();
+    }
   }
 
   // srcRange :: -> {from: {line, ch}, to: {line, ch}}
@@ -739,21 +683,5 @@ function renderASTNode(props: { node: ASTNode }) {
     return node.render.bind(node)(props);
   } else {
     throw new Error("Don't know how to render node of type: " + node.type);
-  }
-}
-
-class DescendantsIterator {
-  node: ASTNode;
-  constructor(node: ASTNode) {
-    this.node = node;
-  }
-
-  *[Symbol.iterator]() {
-    yield this.node;
-    for (const child of this.node.children()) {
-      for (const descendant of child.descendants()) {
-        yield descendant;
-      }
-    }
   }
 }

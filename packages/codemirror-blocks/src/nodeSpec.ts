@@ -1,4 +1,4 @@
-import { ASTNode } from "./ast";
+import { ASTNode, NodeFields } from "./ast";
 import { hashObject } from "./utils";
 
 // A NodeSpec declares the types of the fields of an ASTNode.
@@ -38,6 +38,11 @@ export function value(fieldName: string) {
   return new Value(fieldName);
 }
 
+type NodeLike = {
+  fields: NodeFields;
+  type: string;
+};
+
 export class NodeSpec {
   childSpecs: ChildSpec[];
   constructor(childSpecs: ChildSpec[]) {
@@ -56,7 +61,7 @@ export class NodeSpec {
     this.childSpecs = childSpecs;
   }
 
-  validate(node: ASTNode) {
+  validate(node: NodeLike) {
     for (const childSpec of this.childSpecs) {
       childSpec.validate(node);
     }
@@ -155,7 +160,7 @@ abstract class BaseSpec<FieldType> {
    *
    * @internal
    */
-  getField<N extends ASTNode>(node: N): FieldType {
+  getField<N extends NodeLike>(node: N): FieldType {
     return node.fields[this.fieldName] as FieldType;
   }
 
@@ -165,7 +170,7 @@ abstract class BaseSpec<FieldType> {
    * @param node ASTNode on which to set the field
    * @param value the new value for the field
    */
-  setField<N extends ASTNode>(node: N, value: FieldType) {
+  setField<N extends NodeLike>(node: N, value: FieldType) {
     node.fields[this.fieldName] = value;
   }
 
@@ -173,7 +178,7 @@ abstract class BaseSpec<FieldType> {
 }
 
 export class Required extends BaseSpec<ASTNode> {
-  validate(parent: ASTNode) {
+  validate(parent: NodeLike) {
     if (!(this.getField(parent) instanceof ASTNode)) {
       throw new Error(
         `Expected the required field '${this.fieldName}' of '${parent.type}' to contain an ASTNode.`
@@ -183,7 +188,7 @@ export class Required extends BaseSpec<ASTNode> {
 }
 
 export class Optional extends BaseSpec<ASTNode | null> {
-  validate(parent: ASTNode) {
+  validate(parent: NodeLike) {
     const child = this.getField(parent);
     if (child !== null && !(child instanceof ASTNode)) {
       throw new Error(
@@ -194,7 +199,7 @@ export class Optional extends BaseSpec<ASTNode | null> {
 }
 
 export class List extends BaseSpec<ASTNode[]> {
-  validate(parent: ASTNode) {
+  validate(parent: NodeLike) {
     const array = this.getField(parent);
     let valid = true;
     if (array instanceof Array) {
@@ -214,7 +219,7 @@ export class List extends BaseSpec<ASTNode[]> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class Value extends BaseSpec<any> {
-  validate(_parent: ASTNode) {
+  validate(_parent: NodeLike) {
     // Any value is valid, even `undefined`, so there's nothing to check.
   }
 }

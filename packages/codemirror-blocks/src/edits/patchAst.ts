@@ -1,18 +1,4 @@
 import { ASTNode } from "../ast";
-import { assert } from "../utils";
-
-// defaultdict with empty list
-function addIndex<V>(
-  container: Record<string | number, V[]>,
-  k: string | number,
-  v: V
-) {
-  if (container[k]) {
-    container[k].push(v);
-  } else {
-    container[k] = [v];
-  }
-}
 
 function copyAllIds(oldTree: ASTNode, newTree: ASTNode) {
   const oldIter = oldTree.descendants()[Symbol.iterator]();
@@ -20,7 +6,11 @@ function copyAllIds(oldTree: ASTNode, newTree: ASTNode) {
   let oldPtr = oldIter.next();
   let newPtr = newIter.next();
   while (!oldPtr.done) {
-    assert(!newPtr.done);
+    if (newPtr.done) {
+      throw new Error(
+        `expected newTree to have at least as many descendants as oldTree.`
+      );
+    }
     newPtr.value.id = oldPtr.value.id;
     newPtr.value.element = oldPtr.value.element;
     oldPtr = oldIter.next();
@@ -28,7 +18,7 @@ function copyAllIds(oldTree: ASTNode, newTree: ASTNode) {
   }
 }
 
-export default function unify(oldTree: ASTNode[], newTree: ASTNode[]) {
+export default function patchAst(oldTree: ASTNode[], newTree: ASTNode[]) {
   function children(node: ASTNode | ASTNode[]): ASTNode[] {
     if (node instanceof ASTNode) {
       return [...node.children()];
@@ -42,10 +32,11 @@ export default function unify(oldTree: ASTNode[], newTree: ASTNode[]) {
     }
     const index: { [key: string]: ASTNode[] } = {};
     for (const oldNode of children(oldTree)) {
-      addIndex(index, oldNode.hash, oldNode);
-    }
-    for (const key in index) {
-      index[key].reverse();
+      if (index[oldNode.hash]) {
+        index[oldNode.hash].push(oldNode);
+      } else {
+        index[oldNode.hash] = [oldNode];
+      }
     }
 
     const processed = new Set();
@@ -53,7 +44,7 @@ export default function unify(oldTree: ASTNode[], newTree: ASTNode[]) {
     let partiallySuccess = false;
     const newLeftover = children(newTree).filter((newNode) => {
       if (index[newNode.hash]?.length > 0) {
-        const oldNode = index[newNode.hash].pop();
+        const oldNode = index[newNode.hash].shift();
         if (oldNode) {
           copyAllIds(oldNode, newNode);
           partiallySuccess = true;

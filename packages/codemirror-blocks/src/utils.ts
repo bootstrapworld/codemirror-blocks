@@ -248,12 +248,6 @@ export function skipWhile<T>(
   return now;
 }
 
-export function assert(x: boolean) {
-  if (!x) {
-    throw new Error("assertion fails");
-  }
-}
-
 export function warn(origin: string, message: string) {
   console.warn(`CodeMirrorBlocks - ${origin} - ${message}`);
 }
