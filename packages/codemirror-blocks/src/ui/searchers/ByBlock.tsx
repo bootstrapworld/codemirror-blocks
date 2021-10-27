@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { skipWhile, getNodeContainingBiased } from "../../utils";
-import { AST, ASTNode } from "../../ast";
+import { AST, NodeRef } from "../../ast";
 import { Searcher } from "./Searcher";
 
 function getAllNodeTypes(ast: AST) {
@@ -73,38 +73,35 @@ const ByBlock: Searcher<SearchSettings, Props> = {
     }
   },
   search: (cur, settings, editor, { ast, collapsedList }, forward) => {
-    let startingNode = getNodeContainingBiased(cur, ast);
-    if (!startingNode) {
-      startingNode = forward
-        ? ast.getNodeAfterCur(cur)
-        : ast.getNodeBeforeCur(cur);
-    }
-
-    // handle the cursor before first / after last block
-    if (!startingNode) {
-      // TODO(Oak)
+    let startingNodeRef = getNodeContainingBiased(cur, ast);
+    if (!startingNodeRef) {
+      startingNodeRef = forward
+        ? ast.getNodeRefAfterCur(cur)
+        : ast.getNodeRefBeforeCur(cur);
     }
 
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
-    const next = (node: ASTNode | null) =>
-      node && (forward ? ast.getNodeAfter(node) : ast.getNodeBefore(node));
+    const next = (nodeRef: NodeRef | null) =>
+      nodeRef && (forward ? nodeRef.prev : nodeRef.next);
 
     // NOTE(Oak): if this is too slow, consider adding a
     // next/prevSibling attribute to short circuit navigation
     const result = skipWhile(
-      (node) => {
+      (nodeRef) => {
         return (
-          node &&
+          nodeRef &&
           (collapsedNodeList.some(
-            (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
+            (collapsed) => collapsed && ast.isAncestor(collapsed.id, nodeRef.id)
           ) ||
-            node.type !== settings.blockType)
+            nodeRef.node.type !== settings.blockType)
         );
       },
-      next(startingNode),
+      next(startingNodeRef),
       next
     );
-    if (result) return { node: result, cursor: result.from };
+    if (result) {
+      return { node: result.node, cursor: result.node.from };
+    }
     return null;
   },
 };

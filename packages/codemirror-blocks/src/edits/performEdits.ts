@@ -5,7 +5,7 @@ import {
   changeEnd,
   logResults,
 } from "../utils";
-import { AST, ASTNode, Pos, prettyPrintingWidth } from "../ast";
+import { AST, ASTNode, NodeRef, Pos, prettyPrintingWidth } from "../ast";
 import { commitChanges } from "./commitChanges";
 import { speculateChanges } from "./speculateChanges";
 import {
@@ -70,29 +70,25 @@ export function edit_overwrite(
   return new OverwriteEdit(text, from, to);
 }
 
-export function edit_delete(ast: AST, node: ASTNode): EditInterface {
-  const parent = ast.getNodeParent(node);
+export function edit_delete(nodeRef: NodeRef): EditInterface {
+  const parent = nodeRef.parent;
   if (parent) {
-    return new DeleteChildEdit(node, parent, ast.getNodeBefore(node));
+    return new DeleteChildEdit(nodeRef.node, parent.node, nodeRef.prev?.node);
   } else {
-    return new DeleteRootEdit(node);
+    return new DeleteRootEdit(nodeRef.node);
   }
 }
 
-export function edit_replace(
-  text: string,
-  ast: AST,
-  node: ASTNode
-): EditInterface {
-  const parent = ast.getNodeParent(node);
+export function edit_replace(text: string, nodeRef: NodeRef): EditInterface {
+  const parent = nodeRef.parent;
   if (parent) {
     // if the text is the empty string, return a Deletion instead
     if (text === "") {
-      return new DeleteChildEdit(node, parent, ast.getNodeBefore(node));
+      return new DeleteChildEdit(nodeRef.node, parent.node, nodeRef.prev?.node);
     }
-    return new ReplaceChildEdit(text, node, parent);
+    return new ReplaceChildEdit(text, nodeRef.node, parent.node);
   } else {
-    return new ReplaceRootEdit(text, node);
+    return new ReplaceRootEdit(text, nodeRef.node);
   }
 }
 
@@ -280,10 +276,10 @@ abstract class Edit implements EditInterface {
   toChangeObject?(ast: AST, text: ReadonlyRangedText): ChangeObject;
 
   // The default behavior for most edits
-  focusHint(newAST: AST) {
+  focusHint(newAST: AST): ASTNode | "fallback" {
     if (this.node) {
       const newNode = newAST.getNodeById(this.node.id);
-      return (newNode && newAST.getNodeBefore(newNode)) || "fallback";
+      return (newNode && newAST.refFor(newNode).prev?.node) || "fallback";
     }
     return newAST.getFirstRootNode() || "fallback";
   }
@@ -446,7 +442,11 @@ class DeleteChildEdit extends AstEdit {
   node: ASTNode;
   private prevId?: string;
   fakeAstReplacement: FakeAstReplacement;
-  constructor(node: ASTNode, parent: ASTNode, prev: ASTNode | null) {
+  constructor(
+    node: ASTNode,
+    parent: ASTNode,
+    prev: ASTNode | null | undefined
+  ) {
     const range = node.srcRange();
     super(range.from, range.to, parent);
     this.node = node;

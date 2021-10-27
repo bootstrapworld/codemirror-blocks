@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
-import { AST, ASTNode, NodeRef } from "../ast";
+import { ASTNode } from "../ast";
 import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
@@ -80,25 +80,26 @@ const Node = ({ expandable = true, ...props }: Props) => {
         `Can't handle keyDown events outside of a language context`
       );
     }
+    const nodeRef = ast.refFor(props.node);
     dispatch(
       keyDown(e, {
         isNodeEnv: true,
-        nodeRef: new NodeRef(ast, props.node.id),
+        nodeRef,
         editor: editor,
         language: language,
         appHelpers: appHelpers,
 
         isLocked,
         handleMakeEditable,
-        setLeft: (ast: AST) => {
-          const dropTargetId = findAdjacentDropTargetId(ast, props.node, true);
+        setLeft: () => {
+          const dropTargetId = findAdjacentDropTargetId(nodeRef, true);
           if (dropTargetId) {
             dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
           }
           return !!dropTargetId;
         },
-        setRight: (ast: AST) => {
-          const dropTargetId = findAdjacentDropTargetId(ast, props.node, false);
+        setRight: () => {
+          const dropTargetId = findAdjacentDropTargetId(nodeRef, false);
           if (dropTargetId) {
             dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
           }

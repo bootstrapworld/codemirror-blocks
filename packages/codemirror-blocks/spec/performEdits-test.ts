@@ -38,11 +38,7 @@ afterEach(() => {
 
 describe("applyEdits", () => {
   it("ReplaceRootEdit replaces a root node in the ast with some text", () => {
-    const edit = edit_replace(
-      "(doAnotherThing otherParam)",
-      ast,
-      ast.rootNodes[1]
-    );
+    const edit = edit_replace("(doAnotherThing otherParam)", ast.children()[1]);
     expect(edit.toString()).toEqual(
       `ReplaceRoot 2:0-2:34="(doAnotherThing otherParam)"`
     );
@@ -57,7 +53,7 @@ describe("applyEdits", () => {
   });
 
   it("DeleteRootEdit removes a root node in the ast", () => {
-    const edit = edit_delete(ast, ast.rootNodes[1]);
+    const edit = edit_delete(ast.refFor(ast.rootNodes[1]));
     expect(edit.toString()).toEqual("DeleteRoot 2:0-2:34");
     const result = apply([edit]);
     expect(result.successful).toBe(true);
@@ -80,7 +76,7 @@ foo
   });
 
   it("DeleteChildEdit removes a node from its parent", () => {
-    const edit = edit_delete(ast, [...ast.rootNodes[1].children()][1]);
+    const edit = edit_delete([...ast.children()[1].children()][1]);
     expect(edit.toString()).toEqual("DeleteChild 2:13-2:26");
     const result = apply([edit]);
     expect(result.successful).toBe(true);
@@ -92,7 +88,7 @@ foo
   });
 
   it("ReplaceChildEdit replaces a node with some text", () => {
-    const edit = edit_replace("foo", ast, [...ast.rootNodes[1].children()][1]);
+    const edit = edit_replace("foo", [...ast.children()[1].children()][1]);
     expect(edit.toString()).toEqual(`ReplaceChild 2:13-2:26="foo"`);
     const result = apply([edit]);
     expect(result.successful).toBe(true);
@@ -104,7 +100,7 @@ foo
   });
 
   it("InsertChildEdit replaces a node with some text", () => {
-    const node = [...ast.rootNodes[1].children()][1];
+    const node = [...ast.children()[1].children()][1].node;
     expect(node.type).toBe("functionApp");
 
     const edit = edit_insert("foo", node, "args", { line: 2, ch: 19 });
@@ -119,14 +115,14 @@ foo
   });
 
   it("Combines multiple edits together", () => {
-    const children = [...ast.rootNodes[1].children()];
-    const node = children[1];
+    const children = [...ast.children()[1].children()];
+    const node = children[1].node;
     expect(node.type).toBe("functionApp");
 
     const edits = [
       edit_insert("foo", node, "args", { line: 2, ch: 19 }),
-      edit_replace("bar", ast, children[2]),
-      edit_delete(ast, ast.rootNodes[0]),
+      edit_replace("bar", children[2]),
+      edit_delete(ast.children()[0]),
     ];
     const result = apply(edits);
     expect(result.successful).toBe(true);
@@ -170,7 +166,7 @@ describe("performEdits", () => {
   });
 
   it("applies edits to the editor and the ast, updating the redux store.", () => {
-    const edit = edit_replace("foo", ast, [...ast.rootNodes[1].children()][1]);
+    const edit = edit_replace("foo", [...ast.children()[1].children()][1]);
     const result = store.dispatch(perform([edit]));
     if (!result.successful) {
       throw result.exception;
@@ -189,8 +185,7 @@ describe("performEdits", () => {
   it("returns an error result if something goes while applying the change", () => {
     const edit = edit_replace(
       "(foo won't parse",
-      ast,
-      [...ast.rootNodes[1].children()][1]
+      [...ast.children()[1].children()][1]
     );
     const result = store.dispatch(perform([edit]));
     expect(result.successful).toBe(false);

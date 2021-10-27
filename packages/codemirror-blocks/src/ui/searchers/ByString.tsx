@@ -7,7 +7,7 @@ import {
 } from "../../utils";
 import { SearchCursor } from "codemirror";
 import { Searcher } from "./Searcher";
-import { ASTNode } from "../../ast";
+import { NodeRef } from "../../ast";
 
 /**
  * Returns a query from settings. If the query is a regex but is invalid (indicating
@@ -173,21 +173,27 @@ const ByString: Searcher<SearchSettings, Props> = {
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
     if (settings.searchString === "") {
-      let node: ASTNode | null | undefined = getNodeContainingBiased(cur, ast);
-      if (node) {
-        node = skipCollapsed(
-          node,
-          (node) =>
-            (node &&
-              (forward ? ast.getNodeAfter(node) : ast.getNodeBefore(node))) ||
-            undefined,
+      let nodeRef: NodeRef | null | undefined = getNodeContainingBiased(
+        cur,
+        ast
+      );
+      if (nodeRef) {
+        nodeRef = skipCollapsed(
+          nodeRef,
+          (node) => (node && (forward ? node.next : node.prev)) || undefined,
           state
         );
-        if (node) return { node, cursor: node.from };
+        if (nodeRef) {
+          return { node: nodeRef.node, cursor: nodeRef.node.from };
+        }
         return null;
       }
-      node = forward ? ast.getNodeAfterCur(cur) : ast.getNodeBeforeCur(cur);
-      if (node) return { node, cursor: node.from };
+      nodeRef = forward
+        ? ast.getNodeRefAfterCur(cur)
+        : ast.getNodeRefBeforeCur(cur);
+      if (nodeRef) {
+        return { node: nodeRef.node, cursor: nodeRef.node.from };
+      }
       return null;
     }
 
@@ -207,11 +213,11 @@ const ByString: Searcher<SearchSettings, Props> = {
     const newSearchCur = skipWhile(
       (searchCur) => {
         if (!searchCur) return false;
-        const node = getNodeContainingBiased(searchCur.from(), ast);
+        const nodeRef = getNodeContainingBiased(searchCur.from(), ast);
         return (
-          !!node &&
+          !!nodeRef &&
           collapsedNodeList.some(
-            (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
+            (collapsed) => collapsed && ast.isAncestor(collapsed.id, nodeRef.id)
           )
         );
       },
@@ -219,8 +225,10 @@ const ByString: Searcher<SearchSettings, Props> = {
       next
     );
     if (newSearchCur) {
-      const node = getNodeContainingBiased(newSearchCur.from(), ast);
-      if (node) return { node, cursor: newSearchCur.from() };
+      const nodeRef = getNodeContainingBiased(newSearchCur.from(), ast);
+      if (nodeRef) {
+        return { node: nodeRef.node, cursor: newSearchCur.from() };
+      }
     }
     return null;
   },

@@ -189,25 +189,56 @@ function annotateNodes(nodes: Readonly<ASTNode[]>): {
   return { nodeIdMap, nodeNIdMap, edgeIdMap };
 }
 
-export class NodeRef {
+export type { NodeRef };
+
+/**
+ * A reference to a node in the ast, created via {@link AST.refFor}
+ */
+class NodeRef<Node extends ASTNode = ASTNode> {
   private readonly ast: AST;
   readonly id: string;
   constructor(ast: AST, nodeId: string) {
     this.ast = ast;
     this.id = nodeId;
   }
-  get node() {
-    return this.ast.getNodeByIdOrThrow(this.id);
+  /**
+   * The actual ASTNode this ref is pointing to
+   */
+  get node(): Node {
+    return this.ast.getNodeByIdOrThrow(this.id) as Node;
   }
+
+  /**
+   * A reference to the parent of this node, or null if there is none
+   */
   get parent(): NodeRef | null {
     const parentId = this.ast.edgeIdMap[this.id].parentId;
     return parentId ? new NodeRef(this.ast, parentId) : null;
   }
-  reactElement() {
-    return this.node.reactElement();
+
+  /**
+   * A reference to the next node in the tree, which may be a sibling
+   * or a descendent.
+   */
+  get next(): NodeRef | null {
+    const nextId = this.ast.edgeIdMap[this.id].nextId;
+    return nextId ? new NodeRef(this.ast, nextId) : null;
   }
-  srcRange() {
-    return this.node.srcRange();
+
+  /**
+   * A reference to the previous node in the tree, which may be a sibling
+   * or a parent.
+   */
+  get prev(): NodeRef | null {
+    const nextId = this.ast.edgeIdMap[this.id].prevId;
+    return nextId ? new NodeRef(this.ast, nextId) : null;
+  }
+
+  // Produces an iterator over the children of this node.
+  children(): Iterable<NodeRef> {
+    return [...this.node.spec.children(this.node)].map(
+      (node) => new NodeRef(this.ast, node.id)
+    );
   }
 }
 
@@ -278,7 +309,7 @@ export class AST {
    * @returns NodeRef[]
    */
   children(): NodeRef[] {
-    return this.rootNodes.map((node) => new NodeRef(this, node.id));
+    return this.rootNodes.map((node) => this.refFor(node));
   }
 
   /**
@@ -336,38 +367,18 @@ export class AST {
    * throws an exception if either isn't found
    */
   isAncestor = (uid: string, vid: string) => {
-    let v: ASTNode | null = this.getNodeByIdOrThrow(vid);
-    const u = this.getNodeByIdOrThrow(uid);
-    v = this.getNodeParent(v);
-    while (v && v.level > u.level) {
-      v = this.getNodeParent(v);
+    let v: NodeRef | null = new NodeRef(this, vid);
+    const u = new NodeRef(this, uid);
+    v = v.parent;
+    while (v && v.node.level > u.node.level) {
+      v = v.parent;
     }
-    return u === v;
+    return u.node === v?.node;
   };
 
-  /**
-   * getNodeAfter : ASTNode -> ASTNode
-   * Returns the next node or null
-   */
-  getNodeAfter = (selection: ASTNode) => {
-    const nextId = this.edgeIdMap[selection.id].nextId;
-    if (nextId) {
-      return this.getNodeByIdOrThrow(nextId);
-    }
-    return null;
-  };
+  refFor = (node: ASTNode) => new NodeRef(this, node.id);
 
-  /**
-   * getNodeBefore : ASTNode -> ASTNode
-   * Returns the previous node or null
-   */
-  getNodeBefore = (selection: ASTNode) => {
-    const prevId = this.edgeIdMap[selection.id].prevId;
-    if (prevId) {
-      return this.getNodeByIdOrThrow(prevId);
-    }
-    return null;
-  };
+  refForId = (id: string) => new NodeRef(this, id);
 
   // NOTE: If we have x|y where | indicates the cursor, the position of the cursor
   // is the same as the position of y's `from`. Hence, going forward requires ">= 0"
@@ -395,6 +406,11 @@ export class AST {
     return loop(this.rootNodes, null);
   };
 
+  getNodeRefAfterCur = (cur: Pos) => {
+    const node = this.getNodeAfterCur(cur);
+    return node && this.refFor(node);
+  };
+
   /**
    * getNodeBeforeCur : Cur -> ASTNode
    * Returns the previous node or null
@@ -418,6 +434,11 @@ export class AST {
     return loop(this.rootNodes, null);
   };
 
+  getNodeRefBeforeCur = (cur: Pos) => {
+    const node = this.getNodeBeforeCur(cur);
+    return node && this.refFor(node);
+  };
+
   /**
    * getFirstRootNode : -> ASTNode
    * Return the first (in source code order) root node, or `null` if there are none.
@@ -430,17 +451,20 @@ export class AST {
    * getNodeContaining : CMCursor, ASTNodes[] -> ASTNode
    * Find the node that most tightly-encloses a given cursor
    */
-  getNodeContaining(cursor: Pos, nodes = this.rootNodes): ASTNode | undefined {
-    const n = nodes.find(
-      (node) =>
-        posWithinNode(cursor, node) || nodeCommentContaining(cursor, node)
-    );
-    return (
-      n &&
-      ([...n.children()].length === 0
-        ? n
-        : this.getNodeContaining(cursor, [...n.children()]) || n)
-    );
+  getNodeRefContaining(cursor: Pos): NodeRef | undefined {
+    const traverse = (nodes: NodeRef[]): NodeRef | undefined => {
+      const n = nodes.find(
+        (node) =>
+          posWithinNode(cursor, node.node) ||
+          nodeCommentContaining(cursor, node.node)
+      );
+      return (
+        n &&
+        ([...n.children()].length === 0 ? n : traverse([...n.children()]) || n)
+      );
+    };
+
+    return traverse(this.children());
   }
 
   /**
@@ -460,15 +484,6 @@ export class AST {
     });
     return n || undefined;
   }
-
-  /**
-   * getNodeParent : ASTNode -> ASTNode | Boolean
-   * return the parent or null
-   */
-  getNodeParent = (node: ASTNode) => {
-    const parentId = this.edgeIdMap[node.id].parentId;
-    return parentId ? this.getNodeByIdOrThrow(parentId) : null;
-  };
 
   /**
    * getNextMatchingNode : (ASTNode->ASTNode?) (ASTNode->Bool) ASTNode [Bool] -> ASTNode?
@@ -697,7 +712,10 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
     return this._pretty(this).display(prettyPrintingWidth).join("\n");
   }
 
-  // Produces an iterator over the children of this node.
+  /**
+   * Produces an iterator over the children of this node.
+   * @deprecated use NodeRef to traverse the ast instead
+   */
   children(): Iterable<ASTNode> {
     return this.spec.children(this);
   }

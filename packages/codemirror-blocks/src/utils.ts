@@ -2,7 +2,7 @@ import objToStableString from "fast-json-stable-stringify";
 import CodeMirror, { EditorChange } from "codemirror";
 import { CodeMirrorFacade } from "./editor";
 import type { RootState } from "./reducers";
-import type { AST, ASTNode, Pos, Range } from "./ast";
+import type { AST, ASTNode, NodeRef, Pos, Range } from "./ast";
 
 /**************************************************************
  * Compute which platform we're on
@@ -284,8 +284,8 @@ export function partition<T>(arr: Readonly<T[]>, f: (i: T) => boolean) {
 // }
 
 export function skipCollapsed(
-  node: ASTNode,
-  next: (node: ASTNode | undefined) => ASTNode | undefined,
+  node: NodeRef,
+  next: (node: NodeRef | undefined) => NodeRef | undefined,
   state: RootState
 ) {
   const { collapsedList, ast } = state;
@@ -304,41 +304,41 @@ export function skipCollapsed(
   );
 }
 
-export function getRoot(ast: AST, node: ASTNode) {
+export function getRoot(node: NodeRef) {
   let next = node;
   // keep going until there's no next parent
   while (next) {
-    const parent = ast.getNodeParent(next);
+    const parent = next.parent;
     if (parent) {
       next = parent;
     } else {
       break;
     }
   }
-  return next;
+  return next.node;
 }
 
 export function getLastVisibleNode(state: RootState) {
   const { collapsedList, ast } = state;
   const collapsedNodeList = collapsedList.map(ast.getNodeByIdOrThrow);
-  const lastNode = ast.getNodeBeforeCur(
+  const lastNode = ast.getNodeRefBeforeCur(
     ast.rootNodes[ast.rootNodes.length - 1].to
   );
   return skipWhile(
-    (node: ASTNode | null) => {
+    (node: NodeRef | null) => {
       if (node) {
-        const parent = ast.getNodeParent(node);
+        const parent = node.parent;
         if (parent) {
           return collapsedNodeList.some(
-            (collapsed) => collapsed.id === parent?.id
+            (collapsed) => collapsed.id === parent.id
           );
         }
       }
       return null;
     },
     lastNode,
-    (n) => n && ast.getNodeParent(n)
-  );
+    (nodeRef) => nodeRef && nodeRef.parent
+  )?.node;
 }
 
 export function posWithinNode(pos: Pos, node: ASTNode) {
@@ -356,11 +356,12 @@ export function nodeCommentContaining(pos: Pos, node: ASTNode) {
   return node.options.comment && posWithinNode(pos, node.options.comment);
 }
 
-export function getNodeContainingBiased(cursor: Pos, ast: AST) {
-  function iter(nodes: Readonly<ASTNode[]>): ASTNode | null {
+export function getNodeContainingBiased(cursor: Pos, ast: AST): NodeRef | null {
+  function iter(nodes: Readonly<NodeRef[]>): NodeRef | null {
     const node = nodes.find(
       (node) =>
-        posWithinNodeBiased(cursor, node) || nodeCommentContaining(cursor, node)
+        posWithinNodeBiased(cursor, node.node) ||
+        nodeCommentContaining(cursor, node.node)
     );
     if (node) {
       const children = [...node.children()];
@@ -374,7 +375,7 @@ export function getNodeContainingBiased(cursor: Pos, ast: AST) {
       return null;
     }
   }
-  return iter(ast.rootNodes);
+  return iter(ast.children());
 }
 
 export const dummyPos = { line: -1, ch: 0 };
@@ -503,14 +504,14 @@ export function validateRanges(
     const c2 = head ? maxpos(anchor, head) : anchor;
     if (ast.getNodeAt(c1, c2)) return; // if there's a node, it's a valid range
     // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
-    const N1 = ast.getNodeContaining(c1); // get node containing c1
-    const N2 = ast.getNodeContaining(c2); // get node containing c2
+    const N1 = ast.getNodeRefContaining(c1); // get node containing c1
+    const N2 = ast.getNodeRefContaining(c2); // get node containing c2
     const c1IsTopLevel =
       !N1 ||
-      (!ast.getNodeParent(N1) && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
+      (!N1.parent && (!poscmp(c1, N1.node.from) || !poscmp(c1, N1.node.to)));
     const c2IsTopLevel =
       !N2 ||
-      (!ast.getNodeParent(N2) && (!poscmp(c2, N2.from) || !poscmp(c2, N2.to)));
+      (!N2.parent && (!poscmp(c2, N2.node.from) || !poscmp(c2, N2.node.to)));
 
     // If they're both top-level, it's a valid text range
     if (c1IsTopLevel && c2IsTopLevel) return;

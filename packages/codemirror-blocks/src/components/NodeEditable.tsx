@@ -58,7 +58,7 @@ const NodeEditable = (props: Props) => {
   const language = useLanguageOrThrow();
 
   const { initialValue, isErrored } = useSelector((state: RootState) => {
-    const nodeId = props.target.node ? props.target.node.id : "editing";
+    const nodeId = props.target.nodeId || "editing";
     const isErrored = state.errorId == nodeId;
 
     const initialValue =
@@ -118,7 +118,7 @@ const NodeEditable = (props: Props) => {
         say(annt);
       } else {
         console.error(result.exception);
-        setErrorId(target.node ? target.node.id : "editing");
+        setErrorId(target.nodeId || "editing");
         if (element.current) {
           selectElement(element.current, false);
         }

@@ -104,9 +104,9 @@ const setFocus =
         : focusNodeOrFallback;
     let focusNId = focusNode ? focusNode.nid : null;
     while (focusNode) {
-      const parent = newAST.getNodeParent(focusNode);
+      const parent = newAST.refFor(focusNode).parent;
       if (parent) {
-        focusNode = parent;
+        focusNode = parent.node;
       } else {
         break;
       }

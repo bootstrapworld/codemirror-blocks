@@ -17,9 +17,11 @@ const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
     () => ({
       accept: ItemTypes.NODE,
       drop: (item: { id: string }) => {
-        const srcNode = item.id ? ast.getNodeById(item.id) : null; // null if dragged from toolbar
-        if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
-        const edits = [edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id))];
+        const srcNodeRef = item.id ? ast.refForId(item.id) : null; // null if dragged from toolbar
+        if (!srcNodeRef || !srcNodeRef.node) {
+          return; // Someone dragged from the toolbar to the trash can.
+        }
+        const edits = [edit_delete(srcNodeRef)];
         return dispatch(
           performEdits(edits, props.language.parse, props.editor)
         );

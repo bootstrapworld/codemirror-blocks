@@ -1,5 +1,5 @@
 import CodeMirror from "codemirror";
-import { AST } from "../src/ast";
+import { AST, NodeRef } from "../src/ast";
 import {
   FunctionApp,
   Literal,
@@ -116,6 +116,7 @@ describe("The Sequence Class", () => {
 
 describe("The FunctionApp Class", () => {
   let expression: FunctionAppNode;
+  let expressionRef: NodeRef<FunctionAppNode>;
   let func: LiteralNode;
   let args: LiteralNode[];
   let nestedExpression: FunctionAppNode;
@@ -154,6 +155,7 @@ describe("The FunctionApp Class", () => {
     );
     // build the AST, thereby assigning parent/child/sibling relationships
     ast = new AST([expression]);
+    expressionRef = ast.children()[0] as NodeRef<FunctionAppNode>;
   });
 
   it("should take a function name and list of args in its constructor", () => {
@@ -172,23 +174,27 @@ describe("The FunctionApp Class", () => {
   });
 
   it("should have all navigation pointers and aria attributes set", () => {
-    expect(ast.getNodeAfter(expression)).toEqual(expression.fields.func);
-    expect(ast.getNodeParent(expression.fields.func)).toEqual(expression);
-    expect(ast.getNodeAfter(expression.fields.func)).toEqual(
+    expect(expressionRef.next?.node).toEqual(expression.fields.func);
+    expect(ast.refFor(expression.fields.func).parent?.node).toEqual(expression);
+    expect(ast.refFor(expression.fields.func).next?.node).toEqual(
       expression.fields.args[0]
     );
-    expect(ast.getNodeParent(expression.fields.args[0])).toEqual(expression);
-    expect(ast.getNodeBefore(expression.fields.args[0])).toEqual(
+    expect(ast.refFor(expression.fields.args[0]).parent?.node).toEqual(
+      expression
+    );
+    expect(ast.refFor(expression.fields.args[0]).prev?.node).toEqual(
       expression.fields.func
     );
-    expect(ast.getNodeAfter(expression.fields.args[0])).toEqual(
+    expect(ast.refFor(expression.fields.args[0]).next?.node).toEqual(
       expression.fields.args[1]
     );
-    expect(ast.getNodeParent(expression.fields.args[1])).toEqual(expression);
-    expect(ast.getNodeBefore(expression.fields.args[1])).toEqual(
+    expect(ast.refFor(expression.fields.args[1]).parent?.node).toEqual(
+      expression
+    );
+    expect(ast.refFor(expression.fields.args[1]).prev?.node).toEqual(
       expression.fields.args[0]
     );
-    expect(ast.getNodeAfter(expression.fields.args[1])).toBeNull();
+    expect(ast.refFor(expression.fields.args[1]).next).toBeNull();
   });
 });
 

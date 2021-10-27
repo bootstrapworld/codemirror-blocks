@@ -19,7 +19,7 @@ import {
   edit_overwrite,
   EditInterface,
 } from "./edits/performEdits";
-import { AST, ASTNode, Pos } from "./ast";
+import { AST, ASTNode, NodeRef, Pos } from "./ast";
 import { AppAction, RootState } from "./reducers";
 import {
   CodeMirrorFacade,
@@ -102,20 +102,22 @@ function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
 export const delete_ =
   (
     editor: CMBEditor,
-    nodes: ASTNode[],
+    nodeRefs: NodeRef[],
     parse: Language["parse"],
     editWord?: string
   ): AppThunk =>
-  (dispatch, getState) => {
-    if (nodes.length === 0) {
+  (dispatch) => {
+    if (nodeRefs.length === 0) {
       return;
     }
-    nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
-    const { ast } = getState();
-    const edits = nodes.map((node) => edit_delete(ast, node));
+    nodeRefs.sort((a, b) => poscmp(b.node.from, a.node.from)); // To focus before first deletion
+    const edits = nodeRefs.map((node) => edit_delete(node));
     let annt: string | undefined = undefined;
     if (editWord) {
-      annt = createEditAnnouncement(nodes, editWord);
+      annt = createEditAnnouncement(
+        nodeRefs.map((nodeRef) => nodeRef.node),
+        editWord
+      );
       say(annt);
     }
     dispatch(performEdits(edits, parse, editor, annt));
@@ -200,9 +202,7 @@ export function useDropAction() {
     // Assuming it did not come from the toolbar...
     // (1) Delete the text of the dragged node, (2) and save the id and hash
     if (srcNode) {
-      edits.push(
-        edit_delete(state.ast, state.ast.getNodeByIdOrThrow(srcNode.id))
-      );
+      edits.push(edit_delete(state.ast.refFor(srcNode)));
       droppedHash = ast.getNodeByIdOrThrow(srcNode.id).hash;
     }
 
@@ -464,7 +464,7 @@ export const listSelections = (ed: CodeMirrorFacade, dispatch: AppDispatch) => {
 export abstract class Target {
   from: Pos;
   to: Pos;
-  node?: ASTNode;
+  nodeId?: string;
 
   constructor(from: Pos, to: Pos) {
     this.from = from;
@@ -501,21 +501,21 @@ export class InsertTarget extends Target {
 
 // Target an ASTNode. This will replace the node.
 export class ReplaceNodeTarget extends Target {
-  node: ASTNode;
+  nodeId: string;
 
   constructor(node: ASTNode) {
     const range = node.srcRange();
     super(range.from, range.to);
-    this.node = node;
+    this.nodeId = node.id;
   }
 
   getText(ast: AST, text: ReadonlyRangedText) {
-    const { from, to } = ast.getNodeByIdOrThrow(this.node.id);
+    const { from, to } = ast.getNodeByIdOrThrow(this.nodeId);
     return text.getRange(from, to);
   }
 
   toEdit(ast: AST, text: string): EditInterface {
-    return edit_replace(text, ast, this.node);
+    return edit_replace(text, ast.refForId(this.nodeId));
   }
 }
 

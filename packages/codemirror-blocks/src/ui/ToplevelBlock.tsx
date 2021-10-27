@@ -6,7 +6,7 @@ import { BlockNodeMarker, CMBEditor } from "../editor";
 
 type Props = {
   incrementalRendering: boolean;
-  node: NodeRef;
+  nodeRef: NodeRef;
   editor: CMBEditor;
 };
 
@@ -40,7 +40,7 @@ const ToplevelBlock = (props: Props) => {
   }, []);
 
   // make a new block marker, and fill it with the portal
-  const { from, to } = props.node.srcRange(); // includes the node's comment, if any
+  const { from, to } = props.nodeRef.node.srcRange(); // includes the node's comment, if any
   const mark = props.editor.replaceMarkerWidget(from, to, container);
 
   // set elt to a cheap placeholder, OR render the entire rootNode
@@ -48,7 +48,7 @@ const ToplevelBlock = (props: Props) => {
     <div />
   ) : (
     <RootNodeContext.Provider value={{ marker: mark }}>
-      {props.node.reactElement()}
+      {props.nodeRef.node.reactElement()}
     </RootNodeContext.Provider>
   );
 
@@ -77,5 +77,5 @@ export default React.memo(
   (prevProps: Props, nextProps: Props) =>
     nextProps.incrementalRendering === prevProps.incrementalRendering &&
     nextProps.editor === prevProps.editor &&
-    areNodesEqualish(prevProps.node.node, nextProps.node.node) // didn't change
+    areNodesEqualish(prevProps.nodeRef.node, nextProps.nodeRef.node) // didn't change
 );

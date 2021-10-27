@@ -234,10 +234,10 @@ export const buildAPI = (
         ch = ch ?? 0;
         const cur =
           typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
-        const node = ast.getNodeContaining(cur);
-        if (node) {
+        const nodeRef = ast.getNodeRefContaining(cur);
+        if (nodeRef) {
           dispatch(
-            activateByNid(editor, node.nid, {
+            activateByNid(editor, nodeRef.node.nid, {
               record: false,
               allowMove: true,
             })
@@ -565,7 +565,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       portals = [...ast.children()].map((r) => (
         <EditorContext.Provider value={editor} key={r.id}>
           <ToplevelBlock
-            node={r}
+            nodeRef={r}
             incrementalRendering={incrementalRendering}
             editor={editor}
           />
