@@ -55,8 +55,8 @@ export default function attachSearch(
       settings: settings,
       firstTime: true,
     };
-    editor: ReadonlyCMBEditor;
-    callback: () => void;
+    editor!: ReadonlyCMBEditor;
+    callback!: () => void;
 
     displayName = "Search Component";
 

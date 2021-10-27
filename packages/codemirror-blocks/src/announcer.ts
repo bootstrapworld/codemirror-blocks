@@ -1,9 +1,9 @@
 import { debugLog } from "./utils";
 
 class Announcer {
-  private queuedAnnouncement: ReturnType<typeof setTimeout>;
+  private queuedAnnouncement: ReturnType<typeof setTimeout> | undefined;
   private announcerElement: HTMLElement;
-  muted: boolean;
+  muted = false;
 
   constructor(mountPoint: HTMLElement) {
     this.announcerElement = document.createElement("div");
@@ -27,7 +27,7 @@ class Announcer {
     }
     const announcement = document.createTextNode(text);
 
-    clearTimeout(this.queuedAnnouncement); // clear anything overrideable
+    this.queuedAnnouncement && clearTimeout(this.queuedAnnouncement); // clear anything overrideable
 
     if (allowOverride) {
       // enqueue overrideable announcements
@@ -49,7 +49,7 @@ class Announcer {
    * @internal
    */
   cancelAnnouncement() {
-    clearTimeout(this.queuedAnnouncement);
+    this.queuedAnnouncement && clearTimeout(this.queuedAnnouncement);
   }
 }
 let announcerSingleton: Announcer;

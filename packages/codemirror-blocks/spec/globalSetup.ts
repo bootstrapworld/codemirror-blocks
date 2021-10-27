@@ -22,7 +22,7 @@ document.createRange = () => {
 };
 
 class MockDataTransfer implements DataTransfer {
-  dropEffect: "none" | "copy" | "link" | "move";
+  dropEffect!: "none" | "copy" | "link" | "move";
   effectAllowed:
     | "none"
     | "copy"
@@ -32,14 +32,14 @@ class MockDataTransfer implements DataTransfer {
     | "copyMove"
     | "linkMove"
     | "all"
-    | "uninitialized";
-  files: FileList;
-  items: DataTransferItemList;
-  types: readonly string[];
+    | "uninitialized" = "uninitialized";
+  files!: FileList;
+  items!: DataTransferItemList;
+  types: readonly string[] = [];
   clearData(_format?: string): void {
     throw new Error("Method not implemented.");
   }
-  private data: string;
+  private data = "";
   getData(_format: string): string {
     return this.data;
   }

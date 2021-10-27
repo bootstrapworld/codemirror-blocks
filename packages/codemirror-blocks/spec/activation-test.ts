@@ -104,11 +104,11 @@ describe("when dealing with node activation,", () => {
     mouseDown(literal1);
     await finishRender();
     expect(cmb.getFocusedNode()).toBe(literal1);
-    expect(literal1.isEditable()).toBe(false);
+    expect(literal1.isEditable!()).toBe(false);
 
     keyDown("Enter");
     await finishRender();
-    expect(literal1.isEditable()).toBe(true);
+    expect(literal1.isEditable!()).toBe(true);
   });
 
   it("should cancel the editability of activated node when Esc is pressed", async () => {
@@ -118,12 +118,12 @@ describe("when dealing with node activation,", () => {
 
     keyDown("Enter");
     await finishRender();
-    expect(literal1.isEditable()).toBe(true);
+    expect(literal1.isEditable!()).toBe(true);
     insertText("sugarPlums");
 
     keyDown("Escape");
     await finishRender();
-    expect(literal1.isEditable()).toBe(false);
+    expect(literal1.isEditable!()).toBe(false);
     expect(cmb.getValue()).toBe("11\n54");
   });
 
@@ -134,12 +134,12 @@ describe("when dealing with node activation,", () => {
 
     keyDown("Enter");
     await finishRender();
-    expect(literal1.isEditable()).toBe(true);
+    expect(literal1.isEditable!()).toBe(true);
     insertText("sugarPlums");
 
     keyDown("Q", { altKey: true });
     await finishRender();
-    expect(literal1.isEditable()).toBe(false);
+    expect(literal1.isEditable!()).toBe(false);
     expect(cmb.getValue()).toBe("11\n54");
   });
 });

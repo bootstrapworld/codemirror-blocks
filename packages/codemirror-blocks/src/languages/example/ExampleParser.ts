@@ -26,10 +26,10 @@ class Token {
 }
 
 export default class ExampleParser {
-  code: string;
-  charIndex: number;
-  lineIndex: number;
-  colIndex: number;
+  code = "";
+  charIndex = 0;
+  lineIndex = 0;
+  colIndex = 0;
   getch() {
     const ch = this.code[this.charIndex];
     this.charIndex++;
