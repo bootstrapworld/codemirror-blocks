@@ -27,11 +27,6 @@ describe("The Literal Class", () => {
     expect(literal.fields.dataType).toBe("unknown");
   });
 
-  it("should only return itself when iterated over", () => {
-    const literal = Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11");
-    expect([...literal.descendants()]).toEqual([literal]);
-  });
-
   it("should take an optional options parameter in its constructor", () => {
     const literal = Literal(
       { line: 0, ch: 0 },
@@ -119,7 +114,6 @@ describe("The FunctionApp Class", () => {
   let expressionRef: NodeRef<FunctionAppNode>;
   let func: LiteralNode;
   let args: LiteralNode[];
-  let nestedExpression: FunctionAppNode;
   let ast: AST;
   beforeEach(() => {
     func = Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol");
@@ -135,8 +129,20 @@ describe("The FunctionApp Class", () => {
       args,
       { "aria-label": "+ expression" }
     );
+    // build the AST, thereby assigning parent/child/sibling relationships
+    ast = new AST([expression]);
+    expressionRef = ast.children()[0] as NodeRef<FunctionAppNode>;
+  });
+
+  it("should take a function name and list of args in its constructor", () => {
+    expect(expression.fields.args).toBe(args);
+    expect(expression.fields.func).toBe(func);
+    expect(expression.options).toEqual({ "aria-label": "+ expression" });
+  });
+
+  it("should return itself and its descendants when iterated over", () => {
     // (+ 11 (- 15 35))
-    nestedExpression = FunctionApp(
+    const nestedExpression = FunctionApp(
       { line: 1, ch: 0 },
       { line: 1, ch: 9 },
       Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
@@ -153,23 +159,16 @@ describe("The FunctionApp Class", () => {
         ),
       ]
     );
-    // build the AST, thereby assigning parent/child/sibling relationships
-    ast = new AST([expression]);
-    expressionRef = ast.children()[0] as NodeRef<FunctionAppNode>;
-  });
-
-  it("should take a function name and list of args in its constructor", () => {
-    expect(expression.fields.args).toBe(args);
-    expect(expression.fields.func).toBe(func);
-    expect(expression.options).toEqual({ "aria-label": "+ expression" });
-  });
-
-  it("should return itself and its descendants when iterated over", () => {
-    expect([...nestedExpression.descendants()]).toEqual([
+    const ast = new AST([nestedExpression]);
+    expect(
+      [...ast.refFor(nestedExpression).descendants()].map((ref) => ref.node)
+    ).toEqual([
       nestedExpression,
       nestedExpression.fields.func,
       nestedExpression.fields.args[0],
-      ...nestedExpression.fields.args[1].descendants(),
+      ...[...ast.refFor(nestedExpression.fields.args[1]).descendants()].map(
+        (ref) => ref.node
+      ),
     ]);
   });
 

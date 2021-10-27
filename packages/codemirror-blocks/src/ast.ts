@@ -234,11 +234,23 @@ class NodeRef<Node extends ASTNode = ASTNode> {
     return nextId ? new NodeRef(this.ast, nextId) : null;
   }
 
-  // Produces an iterator over the children of this node.
-  children(): Iterable<NodeRef> {
-    return [...this.node.spec.children(this.node)].map(
-      (node) => new NodeRef(this.ast, node.id)
-    );
+  /**
+   * Produces an iterator over the children of this node.
+   */
+  *children(): Iterable<NodeRef> {
+    for (const child of this.node.spec.children(this.node)) {
+      yield new NodeRef(this.ast, child.id);
+    }
+  }
+
+  /**
+   * Produces an iterator over all the descendants of this node, including itself.
+   */
+  *descendants(): Iterable<NodeRef> {
+    yield this;
+    for (const child of this.children()) {
+      yield* child.descendants();
+    }
   }
 }
 
@@ -310,22 +322,6 @@ export class AST {
    */
   children(): NodeRef[] {
     return this.rootNodes.map((node) => this.refFor(node));
-  }
-
-  /**
-   * descendants : -> ASTNode[]
-   * Print out ALL the descendents (all generations) of each root node
-   */
-  descendants() {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const that = this;
-    return {
-      *[Symbol.iterator]() {
-        for (const node of that.rootNodes) {
-          yield* node.descendants();
-        }
-      },
-    };
   }
 
   /**
@@ -714,15 +710,21 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
 
   /**
    * Produces an iterator over the children of this node.
-   * @deprecated use NodeRef to traverse the ast instead
+   * @deprecated use {@link NodeRef} to traverse the ast instead
    */
   children(): Iterable<ASTNode> {
     return this.spec.children(this);
   }
 
-  // Produces an iterator over all descendants of this node, including itself.
-  descendants(): Iterable<ASTNode> {
-    return new DescendantsIterator(this);
+  /**
+   * Produces an iterator over all descendants of this node, including itself.
+   * @deprecated use {@link NodeRef} to traverse the ast instead
+   */
+  *descendants(): Iterable<ASTNode> {
+    yield this;
+    for (const child of this.children()) {
+      yield* child.descendants();
+    }
   }
 
   // srcRange :: -> {from: {line, ch}, to: {line, ch}}
@@ -751,21 +753,5 @@ function renderASTNode(props: { node: ASTNode }) {
     return node.render.bind(node)(props);
   } else {
     throw new Error("Don't know how to render node of type: " + node.type);
-  }
-}
-
-class DescendantsIterator {
-  node: ASTNode;
-  constructor(node: ASTNode) {
-    this.node = node;
-  }
-
-  *[Symbol.iterator]() {
-    yield this.node;
-    for (const child of this.node.children()) {
-      for (const descendant of child.descendants()) {
-        yield descendant;
-      }
-    }
   }
 }

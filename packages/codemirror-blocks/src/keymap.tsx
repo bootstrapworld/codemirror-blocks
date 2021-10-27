@@ -23,7 +23,7 @@ import { say } from "./announcer";
 import { findAdjacentDropTargetId as getDTid } from "./components/DropTarget";
 
 import type { AppThunk } from "./store";
-import type { ASTNode, NodeRef } from "./ast";
+import type { NodeRef } from "./ast";
 import { CMBEditor } from "./editor";
 import { Language } from "./CodeMirrorBlocks";
 import type { AppHelpers } from "./components/Context";
@@ -311,13 +311,7 @@ const commandMap: {
       return;
     }
     dispatch({ type: "COLLAPSE_ALL" });
-    dispatch(
-      activateByNid(
-        env.editor,
-
-        getRoot(env.nodeRef).nid
-      )
-    );
+    dispatch(activateByNid(env.editor, getRoot(env.nodeRef).node.nid));
   },
 
   "Expand All": (env, _) => {
@@ -340,7 +334,7 @@ const commandMap: {
       descendants.forEach(
         (d) => env.isNodeEnv && dispatch({ type: "COLLAPSE", id: d.id })
       );
-      dispatch(activateByNid(env.editor, root.nid));
+      dispatch(activateByNid(env.editor, root.node.nid));
     }
   },
 
@@ -352,7 +346,7 @@ const commandMap: {
     [...root.descendants()].forEach(
       (d) => env.isNodeEnv && dispatch({ type: "UNCOLLAPSE", id: d.id })
     );
-    dispatch(activateByNid(env.editor, root.nid));
+    dispatch(activateByNid(env.editor, root.node.nid));
   },
 
   "Jump to Root": (env, _) => (dispatch) => {
@@ -363,7 +357,7 @@ const commandMap: {
         activateByNid(
           env.editor,
 
-          getRoot(env.nodeRef).nid
+          getRoot(env.nodeRef).node.nid
         )
       );
     }
@@ -404,8 +398,8 @@ const commandMap: {
     }
     e.preventDefault();
     const { selections, ast } = getState();
-    const descendantIds = (node: ASTNode) =>
-      [...node.descendants()].map((d) => d.id);
+    const descendantIds = (nodeRef: NodeRef) =>
+      [...nodeRef.descendants()].map((d) => d.id);
     const ancestorIds = (node: NodeRef) => {
       const ancestors = [];
       let next = node.parent;
@@ -420,7 +414,7 @@ const commandMap: {
     // and any ancestor
     if (selections.includes(env.nodeRef.id)) {
       const prunedSelection = selections
-        .filter((s) => !descendantIds(env.nodeRef.node).includes(s))
+        .filter((s) => !descendantIds(env.nodeRef).includes(s))
         .filter((s) => !ancestorIds(env.nodeRef).includes(s));
       dispatch({
         type: "SET_SELECTIONS",
@@ -441,7 +435,7 @@ const commandMap: {
         // TODO(Emmanuel): announce addition
         dispatch({
           type: "SET_SELECTIONS",
-          selections: newSelections.concat(descendantIds(env.nodeRef.node)),
+          selections: newSelections.concat(descendantIds(env.nodeRef)),
         });
       }
     }

@@ -298,7 +298,7 @@ export function skipCollapsed(
   );
 }
 
-export function getRoot(node: NodeRef) {
+export function getRoot(node: NodeRef): NodeRef {
   let next = node;
   // keep going until there's no next parent
   while (next) {
@@ -309,7 +309,7 @@ export function getRoot(node: NodeRef) {
       break;
     }
   }
-  return next.node;
+  return next;
 }
 
 export function getLastVisibleNode(state: RootState) {
