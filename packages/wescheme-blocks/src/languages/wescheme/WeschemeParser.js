@@ -79,7 +79,7 @@ function makeComment(node) {
     line: (node.comment || node).location.endRow - 1,
     ch: (node.comment || node).location.endCol,
   };
-  return new Comment(from, to, node.comment.txt);
+  return Comment(from, to, node.comment.txt);
 }
 
 // enumerateIdentifierList : [Literals] -> String
@@ -111,7 +111,7 @@ function parseNode(node, i) {
     let loc = locationFromNode(b);
     let name = parseNode(b.first);
     let val = parseNode(b.second);
-    return new VariableDefinition(loc.from, loc.to, name, val, {
+    return VariableDefinition(loc.from, loc.to, name, val, {
       "aria-label":
         symbolAria(b.first.val) + " bound to " + val.options["aria-label"],
       comment: comment,
@@ -126,7 +126,7 @@ function parseNode(node, i) {
       label,
       children = node.args.map(parseNode).filter((item) => item !== null);
     if (!node.func) {
-      func = new Blank(
+      func = Blank(
         { line: from.line, ch: from.ch + 1 },
         { line: from.line, ch: from.ch + 1 },
         "...",
@@ -145,16 +145,16 @@ function parseNode(node, i) {
         );
       }
     }
-    return new FunctionApp(from, to, func, children, {
+    return FunctionApp(from, to, func, children, {
       "aria-label": label,
       comment: comment,
     });
   } else if (node instanceof structures.andExpr) {
     let comment = node.comment ? makeComment(node) : false;
-    return new FunctionApp(
+    return FunctionApp(
       from,
       to,
-      new Literal(
+      Literal(
         { line: from.line, ch: from.ch + 1 },
         { line: from.line, ch: from.ch + 4 },
         "and",
@@ -166,10 +166,10 @@ function parseNode(node, i) {
     );
   } else if (node instanceof structures.orExpr) {
     let comment = node.comment ? makeComment(node) : false;
-    return new FunctionApp(
+    return FunctionApp(
       from,
       to,
-      new Literal(
+      Literal(
         { line: from.line, ch: from.ch + 1 },
         { line: from.line, ch: from.ch + 3 },
         "or",
@@ -180,7 +180,7 @@ function parseNode(node, i) {
       { "aria-label": expressionAria("or", node.exprs), comment: comment }
     );
   } else if (node instanceof structures.defVar) {
-    return new VariableDefinition(
+    return VariableDefinition(
       from,
       to,
       parseNode(node.name),
@@ -192,7 +192,7 @@ function parseNode(node, i) {
     );
   } else if (node instanceof structures.defStruct) {
     let fieldsLoc = locationFromNode(node.fields);
-    let fields = new IdentifierList(
+    let fields = IdentifierList(
       fieldsLoc.from,
       fieldsLoc.to,
       "fields",
@@ -205,7 +205,7 @@ function parseNode(node, i) {
         comment: node.fields.comment ? makeComment(node.fields) : false,
       }
     );
-    return new StructDefinition(from, to, parseNode(node.name), fields, {
+    return StructDefinition(from, to, parseNode(node.name), fields, {
       "aria-label":
         symbolAria(node.name.val) +
         ": structure definition with " +
@@ -216,7 +216,7 @@ function parseNode(node, i) {
     });
   } else if (node instanceof structures.defFunc) {
     let argsLoc = locationFromNode(node.args);
-    let args = new IdentifierList(
+    let args = IdentifierList(
       argsLoc.from,
       argsLoc.to,
       "arguments:",
@@ -229,7 +229,7 @@ function parseNode(node, i) {
         comment: node.args.comment ? makeComment(node.args) : false,
       }
     );
-    return new FunctionDefinition(
+    return FunctionDefinition(
       from,
       to,
       parseNode(node.name),
@@ -247,7 +247,7 @@ function parseNode(node, i) {
     );
   } else if (node instanceof structures.lambdaExpr) {
     let argsLoc = locationFromNode(node.args);
-    let args = new IdentifierList(
+    let args = IdentifierList(
       argsLoc.from,
       argsLoc.to,
       "arguments",
@@ -260,7 +260,7 @@ function parseNode(node, i) {
         comment: node.args.comment ? makeComment(node.args) : false,
       }
     );
-    return new LambdaExpression(from, to, args, parseNode(node.body), {
+    return LambdaExpression(from, to, args, parseNode(node.body), {
       "aria-label":
         "anonymous function with " +
         pluralize("argument", node.args) +
@@ -268,12 +268,12 @@ function parseNode(node, i) {
         enumerateIdentifierList(node.args),
     });
   } else if (node instanceof structures.condExpr) {
-    return new CondExpression(from, to, node.clauses.map(parseNode), {
+    return CondExpression(from, to, node.clauses.map(parseNode), {
       "aria-label":
         "conditional expression with " + pluralize("clause", node.clauses),
     });
   } else if (node instanceof structures.couple) {
-    return new CondClause(
+    return CondClause(
       from,
       to,
       parseNode(node.first),
@@ -290,20 +290,20 @@ function parseNode(node, i) {
     predicate.options["aria-label"] = "if, " + predLabel;
     consequence.options["aria-label"] = "then, " + conLabel;
     alternative.options["aria-label"] = "else, " + altLabel;
-    return new IfExpression(from, to, predicate, consequence, alternative, {
+    return IfExpression(from, to, predicate, consequence, alternative, {
       "aria-label": "if-then-else expression",
       comment: comment,
     });
   } else if (node instanceof structures.symbolExpr) {
     if (node.val == "...") {
-      return new Blank(from, to, node.val, "symbol", { "aria-label": "blank" });
+      return Blank(from, to, node.val, "symbol", { "aria-label": "blank" });
     } else if (["true", "false"].includes(node.val)) {
-      return new Literal(from, to, node.val, "boolean", {
+      return Literal(from, to, node.val, "boolean", {
         "aria-label": symbolAria(node.val) + ", a Boolean",
         comment: comment,
       });
     } else {
-      return new Literal(from, to, node.val, "symbol", {
+      return Literal(from, to, node.val, "symbol", {
         "aria-label": symbolAria(node.val),
         comment: comment,
       });
@@ -328,18 +328,18 @@ function parseNode(node, i) {
         node.val.denominator()
       )}, a Rational`;
     }
-    return new Literal(from, to, value, dataType, {
+    return Literal(from, to, value, dataType, {
       "aria-label": aria,
       comment: comment,
     });
   } else if (node instanceof structures.comment) {
-    return new Comment(from, to, node.txt);
+    return Comment(from, to, node.txt);
   } else if (node instanceof structures.beginExpr) {
-    return new Sequence(
+    return Sequence(
       from,
       to,
       node.exprs.map(parseNode),
-      new Literal(
+      Literal(
         { line: from.line, ch: from.ch + 1 },
         { line: from.line, ch: from.ch + 6 },
         "begin",
@@ -360,17 +360,13 @@ function parseNode(node, i) {
   ) {
     let loc = locationFromNode(node.bindings),
       form = node.stx[0].val;
-    return new LetLikeExpr(
+    return LetLikeExpr(
       from,
       to,
       form,
-      new Sequence(
-        loc.from,
-        loc.to,
-        node.bindings.map(parseBinding),
-        "bindings",
-        { "aria-label": `${pluralize("binding", node.bindings)}` }
-      ),
+      Sequence(loc.from, loc.to, node.bindings.map(parseBinding), "bindings", {
+        "aria-label": `${pluralize("binding", node.bindings)}`,
+      }),
       parseNode(node.body),
       {
         "aria-label": `${symbolAria(form)} expression with ${pluralize(
@@ -382,19 +378,19 @@ function parseNode(node, i) {
   } else if (node instanceof structures.whenUnlessExpr) {
     let loc = locationFromNode(node.exprs),
       form = node.stx.val;
-    return new WhenUnless(
+    return WhenUnless(
       from,
       to,
       form,
       parseNode(node.predicate),
-      new Sequence(loc.from, loc.to, node.exprs.map(parseNode), "begin", {
+      Sequence(loc.from, loc.to, node.exprs.map(parseNode), "begin", {
         "aria-label": `${pluralize("expression", node.exprs)}`,
       }),
       { "aria-label": `${symbolAria(form)} expression` }
     );
   } else if (node instanceof structures.unsupportedExpr) {
     if (node.val.constructor !== Array) return null;
-    let unknown = new Unknown(
+    let unknown = Unknown(
       from,
       to,
       node.val.map(parseNode).filter((item) => item !== null),
@@ -406,13 +402,10 @@ function parseNode(node, i) {
     );
     return unknown;
   } else if (node instanceof structures.requireExpr) {
-    return new FunctionApp(
-      from,
-      to,
-      parseNode(node.stx),
-      [parseNode(node.spec)],
-      { "aria-label": "require " + node.spec.val, comment: comment }
-    );
+    return FunctionApp(from, to, parseNode(node.stx), [parseNode(node.spec)], {
+      "aria-label": "require " + node.spec.val,
+      comment: comment,
+    });
   }
   return null;
 }
@@ -421,17 +414,17 @@ const dummyLoc = { line: -1, ch: 0 };
 
 class WeschemeParser {
   getASTNodeForPrimitive(primitive) {
-    return new FunctionApp(
+    return FunctionApp(
       dummyLoc,
       dummyLoc,
-      new Literal(dummyLoc, dummyLoc, primitive.name, "symbol"),
-      primitive.argumentTypes.map(() => new Blank(dummyLoc, dummyLoc, "")),
+      Literal(dummyLoc, dummyLoc, primitive.name, "symbol"),
+      primitive.argumentTypes.map(() => Blank(dummyLoc, dummyLoc, "")),
       { "aria-label": primitive.name + " expression" }
     );
   }
 
   getLiteralNodeForPrimitive(primitive) {
-    return new Literal(dummyLoc, dummyLoc, primitive.name, "symbol", {
+    return Literal(dummyLoc, dummyLoc, primitive.name, "symbol", {
       "aria-label": primitive.name,
     });
   }

@@ -571,7 +571,27 @@ export function Blank(
   });
 }
 
-export type SequenceNode = ReturnType<typeof Sequence>;
+export type SequenceNode = ASTNode<{ name: ASTNode; exprs: ASTNode[] }>;
+export const SequenceProps = {
+  pretty: (node: SequenceNode) =>
+    P.vert(node.fields.name, ...node.fields.exprs),
+  render(props: { node: SequenceNode }) {
+    return (
+      <Node {...props}>
+        <span className="blocks-operator">
+          {props.node.fields.name.reactElement()}
+        </span>
+        <span className="blocks-sequence-exprs">
+          <Args field="exprs">{props.node.fields.exprs}</Args>
+        </span>
+      </Node>
+    );
+  },
+  longDescription(node: SequenceNode, level: number) {
+    return `a sequence containing ${enumerateList(node.fields.exprs, level)}`;
+  },
+  spec: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
+};
 export function Sequence(
   from: Pos,
   to: Pos,
@@ -585,22 +605,6 @@ export function Sequence(
     type: "sequence",
     fields: { name, exprs },
     options,
-    pretty: (node) => P.vert(node.fields.name, ...node.fields.exprs),
-    render(props) {
-      return (
-        <Node {...props}>
-          <span className="blocks-operator">
-            {props.node.fields.name.reactElement()}
-          </span>
-          <span className="blocks-sequence-exprs">
-            <Args field="exprs">{props.node.fields.exprs}</Args>
-          </span>
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      return `a sequence containing ${enumerateList(node.fields.exprs, level)}`;
-    },
-    spec: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
+    ...SequenceProps,
   });
 }
