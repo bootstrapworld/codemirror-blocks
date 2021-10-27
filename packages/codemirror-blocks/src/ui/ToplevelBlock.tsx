@@ -65,8 +65,8 @@ const ToplevelBlock = (props: Props) => {
 function areNodesEqualish(prevNode: ASTNode, nextNode: ASTNode) {
   return (
     nextNode.hash === prevNode.hash &&
-    nextNode["aria-setsize"] === prevNode["aria-setsize"] &&
-    nextNode["aria-posinset"] === prevNode["aria-posinset"] &&
+    nextNode.ariaSetSize === prevNode.ariaSetSize &&
+    nextNode.ariaPosInset === prevNode.ariaPosInset &&
     poscmp(prevNode.from, nextNode.from) === 0 && // didn't move
     poscmp(prevNode.to, nextNode.to) === 0 // didn't resize
   );

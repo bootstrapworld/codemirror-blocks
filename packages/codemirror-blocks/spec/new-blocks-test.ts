@@ -131,7 +131,7 @@ describe("The CodeMirrorBlocks Class", function () {
       const blank = (cmb.getAst().rootNodes[0] as FunctionAppNode).fields.func;
       click(blank.element!);
       await finishRender();
-      expect(blank.isEditable()).toBe(true);
+      expect(blank.isEditable!()).toBe(true);
       keyDown("Delete");
       await finishRender();
       cmb.getValue("(...)"); // deleting the blank should be a no-op

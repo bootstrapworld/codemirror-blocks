@@ -105,7 +105,7 @@ export class FakeAstReplacement {
   parent: ASTNode;
   child: ASTNode;
   spec: Required | Optional | List;
-  index: number;
+  index = 0;
   constructor(parent: ASTNode, child: ASTNode) {
     this.parent = parent;
     this.child = child;
@@ -126,10 +126,7 @@ export class FakeAstReplacement {
         }
       }
     }
-    warn(
-      "new ReplacementPoint",
-      "Failed to find child to be replaced/deleted."
-    );
+    throw new Error(`Failed to find child to be replaced/deleted.`);
   }
 
   replaceChild(clonedParent: ClonedASTNode, text: string) {
@@ -250,7 +247,7 @@ export class ClonedASTNode<
     }
     this.type = oldNode.type;
     this.id = oldNode.id;
-    this.hash = oldNode.hash;
+    this._dangerouslySetHash(oldNode.hash);
   }
 }
 
