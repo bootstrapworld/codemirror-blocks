@@ -11,7 +11,7 @@ import userEvent from "@testing-library/user-event";
 //   (You can also just look at the table in the source code below.)
 // - `props` sets other properties on the event (whatever you like).
 
-type ElementLike = Node | Element | { element: Element };
+type ElementLike = Node | Element | { element?: Element | Node | null };
 
 function getActiveElementOrThrow() {
   if (!document.activeElement) {
