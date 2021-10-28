@@ -8,7 +8,7 @@ import { Primitive, PrimitiveGroup } from "../../src/parsers/primitives";
 import { AppStore, createAppStore } from "../../src/store";
 import Toolbar from "../../src/ui/Toolbar";
 
-fdescribe("Toolbar", () => {
+describe("Toolbar", () => {
   let primitives!: PrimitiveGroup;
   beforeAll(() => {
     addLanguage({
