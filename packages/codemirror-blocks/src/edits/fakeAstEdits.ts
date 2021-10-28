@@ -217,11 +217,28 @@ export class ClonedASTNode<
   // show up in the real AST). This copy will be deep over the ASTNodes, but
   // shallow over the non-ASTNode values they contain.
   constructor(oldNode: ASTNode<Fields>) {
+    const nodeLike = { type: oldNode.type, fields: {} as Fields };
+    for (const spec of oldNode.spec.childSpecs) {
+      if (spec instanceof Required) {
+        spec.setField(nodeLike, cloneNode(spec.getField(oldNode)));
+      } else if (spec instanceof Optional) {
+        const field = spec.getField(oldNode);
+        if (field) {
+          spec.setField(nodeLike, cloneNode(field));
+        } else {
+          spec.setField(nodeLike, null);
+        }
+      } else if (spec instanceof Value) {
+        spec.setField(nodeLike, spec.getField(oldNode));
+      } else if (spec instanceof List) {
+        spec.setField(nodeLike, spec.getField(oldNode).map(cloneNode));
+      }
+    }
+
     super({
       from: oldNode.from,
       to: oldNode.to,
-      type: oldNode.type,
-      fields: {} as Fields, // TODO(pcardune): construct this properly before calling super using the code below
+      ...nodeLike,
       options: oldNode.options,
       pretty: oldNode._pretty,
       render(_props: { node: ASTNode }) {
@@ -229,22 +246,6 @@ export class ClonedASTNode<
       },
       spec: oldNode.spec,
     });
-    for (const spec of oldNode.spec.childSpecs) {
-      if (spec instanceof Required) {
-        spec.setField(this, cloneNode(spec.getField(oldNode)));
-      } else if (spec instanceof Optional) {
-        const field = spec.getField(oldNode);
-        if (field) {
-          spec.setField(this, cloneNode(field));
-        } else {
-          spec.setField(this, null);
-        }
-      } else if (spec instanceof Value) {
-        spec.setField(this, spec.getField(oldNode));
-      } else if (spec instanceof List) {
-        spec.setField(this, spec.getField(oldNode).map(cloneNode));
-      }
-    }
     this.type = oldNode.type;
     this.id = oldNode.id;
     this._dangerouslySetHash(oldNode.hash);
