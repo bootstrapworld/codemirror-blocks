@@ -137,8 +137,7 @@ export function createDebuggingInterface(language: Language, value: string) {
     ] as HTMLElement[];
     entries.forEach((c) => (c.style.background = "none"));
     entries[currentAction].style.background = "lightblue";
-    // see https://github.com/bootstrapworld/codemirror-blocks/issues/488
-    //editor.executeAction(history[currentAction]);
+    editor.executeAction && editor.executeAction(history[currentAction]);
     currentAction++;
     if (currentAction == lastAction) {
       nextButton.value = "Done";

@@ -83,8 +83,7 @@ export type BlockEditorAPI = {
   /**
    * @internal
    */
-  // see https://github.com/bootstrapworld/codemirror-blocks/issues/488
-  //executeAction(activity: Activity): void;
+  executeAction?(activity: Activity): void;
 };
 
 type CodeMirrorAPI = Omit<CodeMirror.Editor, typeof unsupportedAPIs[number]>;
@@ -281,8 +280,6 @@ export const buildAPI = (
         end: end,
         text: text,
       }),
-    // see https://github.com/bootstrapworld/codemirror-blocks/issues/488
-    //    executeAction: (action) => executeAction(action),
   };
   // show which APIs are unsupported
   unsupportedAPIs.forEach(
@@ -333,7 +330,8 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
    * Filter/Tweak logged history actions before dispatching them to
    * be executed.
    */
-  const _executeAction = (activity: Activity) => {
+  const executeAction = (activity: Activity) => {
+    console.log('executing', activity,'editor is', editor);
     // ignore certain logged actions that are already
     // handled by the BlockEditor constructor
     const ignoreActions = ["RESET_STORE_FOR_TESTING"];
@@ -480,7 +478,9 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    props.onMount(editor, buildAPI(editor, dispatch), passedAST);
+    const api = buildAPI(editor, dispatch);
+    api.executeAction = executeAction; // add internal method 
+    props.onMount(editor, api, passedAST);
   };
 
   /**
