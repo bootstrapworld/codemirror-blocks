@@ -298,6 +298,12 @@ describe("The WeScheme Parser,", function () {
       expect(this.ast[0].fields.expr.type).toBe("functionApp");
       expect(this.ast[0].fields.expr.fields.func.fields.value).toBe("*");
     });
+
+    it("should pretty print", function () {
+      expect(this.ast[0].pretty().display(80).join("\n")).toMatchInlineSnapshot(
+        `"(let* (bindings (define x 1) (define y 2) (define z (+ x y))) (* x y z))"`
+      );
+    });
   });
 
   describe("when parsing whenUnless expressions,", function () {

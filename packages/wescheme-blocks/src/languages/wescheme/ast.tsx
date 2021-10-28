@@ -6,19 +6,26 @@ import {
   Nodes,
   NodeSpec as Spec,
 } from "codemirror-blocks";
+import { Pos } from "codemirror-blocks/lib/ast";
 
 /**
  * given a noun and an array, generate a (possibly-plural)
  * version of that noun
  */
-function pluralize(noun, set) {
+function pluralize(noun: string, set: unknown[]) {
   return set.length + " " + noun + (set.length != 1 ? "s" : "");
 }
 
 /* Override the default pretty printer for Sequences,
  * so that they print as s-expressions
  */
-export function Sequence(from, to, exprs, name, options = {}) {
+export function Sequence(
+  from: Pos,
+  to: Pos,
+  exprs: ASTNode[],
+  name: ASTNode,
+  options = {}
+) {
   return new ASTNode({
     from,
     to,
@@ -31,7 +38,14 @@ export function Sequence(from, to, exprs, name, options = {}) {
   });
 }
 
-export function LetLikeExpr(from, to, form, bindings, expr, options = {}) {
+export function LetLikeExpr(
+  from: Pos,
+  to: Pos,
+  form: string,
+  bindings: ASTNode<{ exprs: ASTNode[] }>,
+  expr: ASTNode,
+  options = {}
+) {
   return new ASTNode({
     from,
     to,
@@ -41,23 +55,23 @@ export function LetLikeExpr(from, to, form, bindings, expr, options = {}) {
     pretty(node) {
       return P.lambdaLikeSexpr(
         node.fields.form,
-        P.brackets(node.bindings),
-        node.expr
+        node.fields.bindings,
+        node.fields.expr
       );
     },
     render(props) {
       return (
         <Node {...props}>
           <span className="blocks-operator">{props.node.fields.form}</span>
-          {props.node.bindings.reactElement()}
-          {props.node.expr.reactElement()}
+          {props.node.fields.bindings.reactElement()}
+          {props.node.fields.expr.reactElement()}
         </Node>
       );
     },
     longDescription(node, _level) {
       return `a ${node.fields.form} expression with ${pluralize(
         "binding",
-        node.bindings.exprs
+        node.fields.bindings.fields.exprs
       )}`;
     },
     spec: Spec.nodeSpec([
@@ -67,8 +81,14 @@ export function LetLikeExpr(from, to, form, bindings, expr, options = {}) {
     ]),
   });
 }
-
-export function WhenUnless(from, to, form, predicate, exprs, options = {}) {
+export function WhenUnless(
+  from: Pos,
+  to: Pos,
+  form: string,
+  predicate: ASTNode,
+  exprs: ASTNode,
+  options = {}
+) {
   return new ASTNode({
     from,
     to,

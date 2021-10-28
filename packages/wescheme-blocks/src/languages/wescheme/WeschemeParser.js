@@ -1,5 +1,3 @@
-/*eslint indent: "off"*/
-
 import { Nodes, PrimitiveGroup } from "codemirror-blocks";
 const {
   Blank,
