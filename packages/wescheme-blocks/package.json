@@ -15,6 +15,7 @@
     "@babel/polyfill": "^7.12.1",
     "@babel/preset-env": "^7.14.7",
     "@babel/preset-react": "^7.14.5",
+    "@bootstrapworld/cmb-toolkit": "*",
     "@testing-library/react": "^12.0.0",
     "babel-eslint": "^10.1.0",
     "eslint-plugin-react": "^7.24.0",
