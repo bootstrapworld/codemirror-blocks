@@ -84,4 +84,27 @@ describe("NodeEditable", () => {
       });
     });
   });
+
+  describe("when inserting text (isInsertion=true)", () => {
+    beforeEach(() => {
+      const target = new OverwriteTarget(
+        { line: 0, ch: 0 },
+        { line: 0, ch: 1 }
+      );
+      renderWithContext(
+        <NodeEditable
+          {...defaultProps()}
+          value="someVar"
+          isInsertion={true}
+          target={target}
+        />
+      );
+    });
+    it("announces to the user that they are inserting text", () => {
+      expect(say).toHaveBeenCalledTimes(1);
+      expect(say).toHaveBeenCalledWith(
+        "inserting someVar.  Use Enter to save, and Alt-Q to cancel"
+      );
+    });
+  });
 });
