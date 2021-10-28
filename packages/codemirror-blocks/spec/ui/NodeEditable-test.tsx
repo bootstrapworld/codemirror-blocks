@@ -9,7 +9,6 @@ import { CodeMirrorFacade } from "../../src/editor";
 import Context, { LanguageContext } from "../../src/components/Context";
 import { Language } from "../../src/CodeMirrorBlocks";
 import { addLanguage } from "../../src/languages";
-import { finishRender } from "../../src/toolkit/test-utils";
 
 jest.mock("../../src/announcer");
 
@@ -77,7 +76,6 @@ describe("NodeEditable", () => {
       });
 
       it("selects the text being edited", async () => {
-        await finishRender();
         expect(document.getSelection()?.toString()).toEqual("someVar");
       });
 
