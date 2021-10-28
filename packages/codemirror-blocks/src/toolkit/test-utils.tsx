@@ -1,10 +1,9 @@
 import { API, CodeMirrorBlocksComponent, Language } from "../CodeMirrorBlocks";
 import { act, cleanup, render } from "@testing-library/react";
 import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
-import type { ASTNode } from "../ast";
 import React from "react";
 // pass along all the simulated events
-export * from "./simulate";
+export * from "@bootstrapworld/cmb-toolkit/lib/simulate";
 
 // figure out what platform we're running on
 const userAgent = navigator.userAgent;
@@ -55,13 +54,6 @@ const fixture = `
   </div>
 `;
 
-export type TestContext = {
-  cmb: API;
-  activeNode: () => ASTNode | undefined;
-  activeAriaId: () => string | null;
-  selectedNodes: () => ASTNode[];
-};
-
 /**
  * Helper function for tests which constructs and mounts an instance of codemirror blocks
  * into a DOM tree with block mode enabled and some other helpful default settings.
@@ -93,23 +85,4 @@ export async function mountCMB(language: Language): Promise<API> {
   cmb.setBlockMode(true);
   await finishRender();
   return cmb;
-}
-
-/**
- * Setup, be sure to use with `apply` (`activationSetup.apply(this, [pyret])`)
- * or `call` (`await activationSetup.call(this, pyret)`)
- * so that `this` is scoped correctly!
- *
- * @deprecated use mountCMB() instead
- */
-export async function activationSetup(
-  this: TestContext,
-  language: Language
-): Promise<void> {
-  const cmb = await mountCMB(language);
-  this.cmb = cmb;
-  this.activeNode = () => this.cmb.getFocusedNode();
-  this.activeAriaId = () =>
-    this.cmb.getScrollerElement().getAttribute("aria-activedescendent");
-  this.selectedNodes = () => this.cmb.getSelectedNodes();
 }

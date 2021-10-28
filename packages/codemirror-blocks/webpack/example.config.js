@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require("path");
-
-const { getWebpackDevServerConfig } = require("../lib/toolkit/webpack");
+const {
+  getWebpackDevServerConfig,
+} = require("@bootstrapworld/cmb-toolkit/lib/webpack");
 const config = getWebpackDevServerConfig({
   entry: "./editor-example.js",
   context: path.resolve(__dirname, "..", "example"),

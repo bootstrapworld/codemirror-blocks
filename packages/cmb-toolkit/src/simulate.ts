@@ -1,6 +1,5 @@
 import { fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ASTNode } from "../ast";
 
 // These exported functions simulate browser events for testing.
 // They use React's test utilities whenever possible.
@@ -12,7 +11,7 @@ import { ASTNode } from "../ast";
 //   (You can also just look at the table in the source code below.)
 // - `props` sets other properties on the event (whatever you like).
 
-type ElementLike = Node | Element | ASTNode;
+type ElementLike = Node | Element | { element: Element };
 
 function getActiveElementOrThrow() {
   if (!document.activeElement) {

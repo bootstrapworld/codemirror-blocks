@@ -3,7 +3,7 @@ const path = require("path");
 const {
   getWebpackDevServerConfig,
   getBaseConfig,
-} = require("codemirror-blocks/lib/toolkit/webpack");
+} = require("@bootstrapworld/cmb-toolkit/lib/webpack");
 
 const devServerConfig = getWebpackDevServerConfig({
   context: path.resolve(__dirname, "dev-server"),
