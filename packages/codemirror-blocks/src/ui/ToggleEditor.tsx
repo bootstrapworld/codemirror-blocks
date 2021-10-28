@@ -342,11 +342,7 @@ function ToggleEditor(props: ToggleEditorProps) {
         {blockMode && editor ? (
           <TrashCan language={props.language} editor={editor} />
         ) : null}
-        <div
-          className={"toolbar-pane"}
-          tabIndex={-1}
-          aria-hidden={!blockMode}
-        >
+        <div className={"toolbar-pane"} tabIndex={-1} aria-hidden={!blockMode}>
           <Toolbar
             primitives={
               props.language.primitivesFn
