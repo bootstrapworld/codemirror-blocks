@@ -195,7 +195,7 @@ function recursively, which is too much detail.
 
 Instead, you should use `ASTNode.describe(level)`. This will automatically
 use a shorter description for deeply nested nodes. (Specifically, it will use
-`node.options["aria-label"]`.)
+`node.options[ariaLabel]`.)
 
 ### Rendering as Text
 

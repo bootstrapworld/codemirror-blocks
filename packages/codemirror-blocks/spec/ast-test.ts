@@ -38,9 +38,9 @@ describe("The Literal Class", () => {
       { line: 0, ch: 2 },
       "11",
       "number",
-      { "aria-label": "11" }
+      { ariaLabel: "11" }
     );
-    expect(literal.options).toEqual({ "aria-label": "11" });
+    expect(literal.options).toEqual({ ariaLabel: "11" });
   });
 });
 
@@ -70,7 +70,7 @@ describe("The Sequence Class", () => {
       { line: 0, ch: 14 },
       func1,
       args1,
-      { "aria-label": "+ expression" }
+      { ariaLabel: "+ expression" }
     );
 
     // (- 2 3)
@@ -89,7 +89,7 @@ describe("The Sequence Class", () => {
       { line: 0, ch: 22 },
       func2,
       args2,
-      { "aria-label": "+ expression" }
+      { ariaLabel: "+ expression" }
     );
 
     // (begin (+ 1 2) (- 2 3))
@@ -108,7 +108,7 @@ describe("The Sequence Class", () => {
   });
 
   it("should take an optional options parameter in its constructor", () => {
-    const options = { "aria-label": "sequence" };
+    const options = { ariaLabel: "sequence" };
     const newSequence = Sequence(from, to, exprs, name, options);
     expect(newSequence.options).toEqual(options);
   });
@@ -132,7 +132,7 @@ describe("The FunctionApp Class", () => {
       { line: 1, ch: 9 },
       func,
       args,
-      { "aria-label": "+ expression" }
+      { ariaLabel: "+ expression" }
     );
     // (+ 11 (- 15 35))
     nestedExpression = FunctionApp(
@@ -159,7 +159,7 @@ describe("The FunctionApp Class", () => {
   it("should take a function name and list of args in its constructor", () => {
     expect(expression.fields.args).toBe(args);
     expect(expression.fields.func).toBe(func);
-    expect(expression.options).toEqual({ "aria-label": "+ expression" });
+    expect(expression.options).toEqual({ ariaLabel: "+ expression" });
   });
 
   it("should return itself and its descendants when iterated over", () => {
