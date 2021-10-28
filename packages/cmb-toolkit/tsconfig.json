@@ -2,7 +2,7 @@
   "include": ["src/**/*"],
   "compilerOptions": {
     "esModuleInterop": true,
-    "target": "es5",
+    "target": "es6",
     "module": "commonjs",
     "jsx": "react",
     "moduleResolution": "node",

@@ -1,8 +1,5 @@
 module.exports = {
-  plugins: [
-    "react-hot-loader/babel",
-    "@babel/plugin-transform-modules-commonjs",
-  ],
+  plugins: ["@babel/plugin-transform-modules-commonjs"],
   exclude: ["/\bcore-js\b/"],
   presets: [
     [
