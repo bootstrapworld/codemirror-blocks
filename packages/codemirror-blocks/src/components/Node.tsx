@@ -26,6 +26,18 @@ export type Props = {
   children?: React.ReactNode | React.ReactElement;
 };
 
+/**
+ * Returns the string id that should be used for the dom element
+ * that renders the given ast node.
+ *
+ * The id is based on the node's id, which is theoretically going
+ * to be unique across multiple instances of CodeMirrorBlocks because
+ * the ast node ids are generated with {@link genUniqueId}.
+ */
+function getNodeElementId(node: ASTNode) {
+  return `block-node-${node.id}`;
+}
+
 const Node = ({ expandable = true, ...props }: Props) => {
   const stateProps = useSelector(
     ({ selections, collapsedList, markedMap }: RootState) => {
@@ -54,7 +66,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
 
   const [value, setValue] = useState<string | null | undefined>();
   const editor = useContext(EditorContext);
-  const isLocked = () => Boolean(props.node.options.isNotEditable);
 
   const dispatch: AppDispatch = useDispatch();
   const store: AppStore = useStore();
@@ -86,8 +97,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
         editor: editor,
         language: language,
         appHelpers: appHelpers,
-
-        isLocked,
         handleMakeEditable,
         setLeft: (ast: AST) => {
           const dropTargetId = findAdjacentDropTargetId(ast, props.node, true);
@@ -112,8 +121,12 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const handleClick = (e: React.MouseEvent) => {
     const { inToolbar, normallyEditable } = props;
     e.stopPropagation();
-    if (inToolbar) return;
-    if (normallyEditable) handleMakeEditable();
+    if (inToolbar) {
+      return;
+    }
+    if (normallyEditable) {
+      handleMakeEditable();
+    }
   };
 
   // nid can be stale!! Always obtain a fresh copy of the node
@@ -141,7 +154,9 @@ const Node = ({ expandable = true, ...props }: Props) => {
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (props.inToolbar) return;
+    if (props.inToolbar) {
+      return;
+    }
     if (stateProps.isCollapsed) {
       dispatch({ type: "UNCOLLAPSE", id: props.node.id });
     } else {
@@ -158,17 +173,16 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const { ...passingProps } = props;
 
   const comment = props.node.options.comment;
-  if (comment) comment.id = `block-node-${props.node.id}-comment`;
-  const locked = isLocked();
+  const commentElemId = comment ? getNodeElementId(comment) : "";
+  const nodeElemId = getNodeElementId(props.node);
+  const locked = props.node.options.isNotEditable;
 
   const contentEditableProps = {
-    id: `block-node-${props.node.id}`,
+    id: nodeElemId,
     tabIndex: -1,
     "aria-selected": stateProps.isSelected,
     "aria-label": props.node.shortDescription() + ",",
-    "aria-labelledby": `block-node-${props.node.id} ${
-      comment ? comment.id : ""
-    }`,
+    "aria-labelledby": `${nodeElemId} ${commentElemId}`,
     "aria-disabled": locked ? true : undefined,
     "aria-expanded":
       expandable && !locked ? !stateProps.isCollapsed : undefined,
@@ -269,7 +283,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
         onKeyDown={handleKeyDown}
       >
         {props.children}
-        {comment && comment.reactElement()}
+        {comment && comment.reactElement({ id: commentElemId })}
       </span>
     );
     if (props.normallyEditable) {

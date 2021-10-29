@@ -42,7 +42,6 @@ type NodeEnv = {
 
   editor: CMBEditor;
   language: Language;
-  isLocked: () => boolean;
   handleMakeEditable: (e?: React.KeyboardEvent) => void;
   setRight: (ast: AST) => boolean;
   setLeft: (ast: AST) => boolean;
@@ -279,7 +278,7 @@ const commandMap: {
     }
     const { ast } = getState();
     const parent = ast.getNodeParent(env.node);
-    if (env.expandable && !env.isCollapsed && !env.isLocked()) {
+    if (env.expandable && !env.isCollapsed && !env.node.options.isNotEditable) {
       dispatch({ type: "COLLAPSE", id: env.node.id });
     } else if (parent) {
       dispatch(activateByNid(env.editor, parent.nid));
@@ -296,7 +295,7 @@ const commandMap: {
     const { ast } = getState();
     const nextNode = ast.getNodeAfter(node);
     e.preventDefault();
-    if (env.expandable && env.isCollapsed && !env.isLocked()) {
+    if (env.expandable && env.isCollapsed && !env.node.options.isNotEditable) {
       dispatch({ type: "UNCOLLAPSE", id: node.id });
     } else if (nextNode && ast.getNodeParent(nextNode) === node) {
       dispatch(activateByNid(env.editor, nextNode.nid));
@@ -454,7 +453,7 @@ const commandMap: {
     if (env.normallyEditable) {
       env.handleMakeEditable(e);
       e.preventDefault();
-    } else if (env.expandable && !env.isLocked()) {
+    } else if (env.expandable && !env.node.options.isNotEditable) {
       if (env.isCollapsed) {
         dispatch({ type: "UNCOLLAPSE", id: env.node.id });
       } else {

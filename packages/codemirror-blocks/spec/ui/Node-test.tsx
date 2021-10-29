@@ -4,7 +4,7 @@ import { AST } from "../../src/ast";
 import { Language } from "../../src/CodeMirrorBlocks";
 import Context, { LanguageContext } from "../../src/components/Context";
 import Node from "../../src/components/Node";
-import { Literal } from "../../src/nodes";
+import { Comment, Literal } from "../../src/nodes";
 import { AppStore, createAppStore } from "../../src/store";
 
 let store!: AppStore;
@@ -31,9 +31,8 @@ it("renders a draggable span with various aria properties", () => {
       ariaLabel: "the someVar variable",
     }),
   ]);
-  const node = ast.rootNodes[0];
   const result = renderWithContext(
-    <Node node={node}>This is a literal for someVar</Node>
+    <Node node={ast.rootNodes[0]}>This is a literal for someVar</Node>
   );
   expect(result.container).toMatchInlineSnapshot(`
     <div>
@@ -53,6 +52,54 @@ it("renders a draggable span with various aria properties", () => {
         tabindex="-1"
       >
         This is a literal for someVar
+      </span>
+    </div>
+  `);
+});
+
+it("renders a comment that is associated with a node", () => {
+  const ast = new AST([
+    Literal({ line: 0, ch: 0 }, { line: 0, ch: 1 }, "someVar", "symbol", {
+      ariaLabel: "the someVar variable",
+      comment: Comment({ line: 0, ch: 2 }, { line: 0, ch: 7 }, "hello"),
+    }),
+  ]);
+  const result = renderWithContext(
+    <Node node={ast.rootNodes[0]}>This is a literal for someVar</Node>
+  );
+  expect(result.container).toMatchInlineSnapshot(`
+    <div>
+      <span
+        aria-expanded="true"
+        aria-label="the someVar variable,"
+        aria-labelledby="block-node-1 block-node-1-comment"
+        aria-level="1"
+        aria-posinset="1"
+        aria-selected="false"
+        aria-setsize="1"
+        class="blocks-literal blocks-node"
+        draggable="true"
+        id="block-node-1"
+        role="treeitem"
+        style=""
+        tabindex="-1"
+      >
+        This is a literal for someVar
+        <span
+          aria-hidden="true"
+          class="blocks-comment"
+          id="block-node-1-comment"
+        >
+          <span
+            class="screenreader-only"
+          >
+            Has comment,
+          </span>
+           
+          <span>
+            hello
+          </span>
+        </span>
       </span>
     </div>
   `);
