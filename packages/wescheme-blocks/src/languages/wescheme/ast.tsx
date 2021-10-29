@@ -34,7 +34,6 @@ export function Sequence(
     options,
     ...Nodes.SequenceProps,
     pretty: (node) => P.standardSexpr(node.fields.name, node.fields.exprs),
-    spec: Spec.nodeSpec([Spec.value("name"), Spec.list("exprs")]),
   });
 }
 

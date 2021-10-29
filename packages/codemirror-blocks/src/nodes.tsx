@@ -210,7 +210,7 @@ export function StructDefinition(
         level
       )} to be a structure with ${node.fields.fields.describe(level)}`;
     },
-    spec: Spec.nodeSpec([Spec.value("name"), Spec.required("fields")]),
+    spec: Spec.nodeSpec([Spec.required("name"), Spec.required("fields")]),
   });
 }
 
