@@ -526,7 +526,7 @@ export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
     to,
     type: "comment",
     fields: { comment },
-    options: { isLockedP: true, ...options },
+    options: { isNotEditable: true, ...options },
     pretty: (node) => {
       const words = node.fields.comment.trim().split(/\s+/);
       const wrapped = P.wrap(words);

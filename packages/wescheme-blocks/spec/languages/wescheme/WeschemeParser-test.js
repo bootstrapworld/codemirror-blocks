@@ -265,7 +265,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should get the correct aria-label", function () {
-      expect(this.ast[0].options["aria-label"]).toBe(
+      expect(this.ast[0].options.ariaLabel).toBe(
         "let-star expression with 3 bindings"
       );
     });
@@ -314,7 +314,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should get the correct aria-label", function () {
-      expect(this.ast[0].options["aria-label"]).toBe("when expression");
+      expect(this.ast[0].options.ariaLabel).toBe("when expression");
     });
 
     it("should convert the predicate properly", function () {
@@ -376,56 +376,54 @@ describe("The WeScheme Parser,", function () {
 
   describe("when setting aria-labels", function () {
     it("should make symbols, and numbers be set to themselves", function () {
-      expect(this.parser.parse("1")[0].options["aria-label"]).toBe("1");
-      expect(this.parser.parse("symbol")[0].options["aria-label"]).toBe(
-        "symbol"
-      );
+      expect(this.parser.parse("1")[0].options.ariaLabel).toBe("1");
+      expect(this.parser.parse("symbol")[0].options.ariaLabel).toBe("symbol");
     });
 
     it("should make boolean values be set to 'true' or 'false'", function () {
-      expect(this.parser.parse("#t")[0].options["aria-label"]).toBe(
+      expect(this.parser.parse("#t")[0].options.ariaLabel).toBe(
         "true, a Boolean"
       );
     });
 
     it("should make string values be set to 'string '+the contents of the string", function () {
-      expect(this.parser.parse('"hello"')[0].options["aria-label"]).toBe(
+      expect(this.parser.parse('"hello"')[0].options.ariaLabel).toBe(
         "hello, a String"
       );
     });
 
     it("should make expression (print 'hello') into 'print expression, 1 input'", function () {
+      expect(this.parser.parse('(print "hello")')[0].options.ariaLabel).toBe(
+        "print expression, 1 input"
+      );
       expect(
-        this.parser.parse('(print "hello")')[0].options["aria-label"]
-      ).toBe("print expression, 1 input");
-      expect(
-        this.parser.parse('(print "hello" "world")')[0].options["aria-label"]
+        this.parser.parse('(print "hello" "world")')[0].options.ariaLabel
       ).toBe("print expression, 2 inputs");
     });
 
     it("should make and/or expressions just like regular expressions", function () {
-      expect(
-        this.parser.parse("(and true true)")[0].options["aria-label"]
-      ).toBe("and expression, 2 inputs");
-      expect(
-        this.parser.parse("(or false true)")[0].options["aria-label"]
-      ).toBe("or expression, 2 inputs");
+      expect(this.parser.parse("(and true true)")[0].options.ariaLabel).toBe(
+        "and expression, 2 inputs"
+      );
+      expect(this.parser.parse("(or false true)")[0].options.ariaLabel).toBe(
+        "or expression, 2 inputs"
+      );
     });
 
     it("should turn symbols into readable words", function () {
-      expect(this.parser.parse("(* 1 2)")[0].options["aria-label"]).toBe(
+      expect(this.parser.parse("(* 1 2)")[0].options.ariaLabel).toBe(
         "multiply expression, 2 inputs"
       );
-      expect(this.parser.parse("(/ 1 2)")[0].options["aria-label"]).toBe(
+      expect(this.parser.parse("(/ 1 2)")[0].options.ariaLabel).toBe(
         "divide expression, 2 inputs"
       );
-      expect(this.parser.parse("(foo? 0)")[0].options["aria-label"]).toBe(
+      expect(this.parser.parse("(foo? 0)")[0].options.ariaLabel).toBe(
         "foo-huh expression, 1 input"
       );
-      expect(this.parser.parse("(set! x 2)")[0].options["aria-label"]).toBe(
+      expect(this.parser.parse("(set! x 2)")[0].options.ariaLabel).toBe(
         "set-bang expression, 2 inputs"
       );
-      expect(this.parser.parse("#(1 2)")[0].options["aria-label"]).toBe(
+      expect(this.parser.parse("#(1 2)")[0].options.ariaLabel).toBe(
         "vector expression, 2 inputs"
       );
     });

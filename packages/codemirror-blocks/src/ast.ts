@@ -478,11 +478,16 @@ export type Range = {
 
 export type NodeOptions = {
   comment?: ASTNode<{ comment: string }>;
-  "aria-label"?: string;
+
+  /**
+   * The aria label for the node
+   */
+  ariaLabel?: string;
+
   /**
    * A predicate, which prevents the node from being edited
    */
-  isLockedP?: boolean;
+  isNotEditable?: boolean;
 };
 
 export type UnknownFields = { [fieldName: string]: unknown };
@@ -636,7 +641,7 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
   }
   // the short description is literally the ARIA label
   shortDescription(): string {
-    return this.options["aria-label"] || "";
+    return this.options["ariaLabel"] || "";
   }
 
   // Pretty-print the node and its children, based on the pp-width
