@@ -1,34 +1,31 @@
-import WeschemeParser from "../../../src/languages/wescheme/WeschemeParser";
+import { parse } from "../../../src/languages/wescheme/WeschemeParser";
 
 describe("The WeScheme Parser,", function () {
-  beforeEach(function () {
-    this.parser = new WeschemeParser();
-  });
   it("should set the appropriate data type for literals", function () {
-    expect(this.parser.parse("#t")[0].fields.dataType).toBe("boolean");
-    expect(this.parser.parse("1")[0].fields.dataType).toBe("number");
-    expect(this.parser.parse('"hello"')[0].fields.dataType).toBe("string");
-    expect(this.parser.parse("#\\m")[0].fields.dataType).toBe("character");
-    expect(this.parser.parse("foo")[0].fields.dataType).toBe("symbol");
+    expect(parse("#t")[0].fields.dataType).toBe("boolean");
+    expect(parse("1")[0].fields.dataType).toBe("number");
+    expect(parse('"hello"')[0].fields.dataType).toBe("string");
+    expect(parse("#\\m")[0].fields.dataType).toBe("character");
+    expect(parse("foo")[0].fields.dataType).toBe("symbol");
   });
 
   it("should treat vector literals like expressions", function () {
-    let ast = this.parser.parse("#(1 3)");
+    let ast = parse("#(1 3)");
     expect(ast[0].type).toBe("functionApp");
-    ast = this.parser.parse("#9(#f)");
+    ast = parse("#9(#f)");
     expect(ast[0].type).toBe("functionApp");
   });
 
   it("should treat booleans expression like regular expressions", function () {
-    let ast = this.parser.parse("(or #t #f)");
+    let ast = parse("(or #t #f)");
     expect(ast[0].type).toBe("functionApp");
-    ast = this.parser.parse("(and #t #f)");
+    ast = parse("(and #t #f)");
     expect(ast[0].type).toBe("functionApp");
   });
 
   describe("when parsing callExpressions,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse("(sum 1 2 3)");
+      this.ast = parse("(sum 1 2 3)");
     });
 
     it("should convert callExpresssions to expressions", function () {
@@ -41,7 +38,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should support empty expressions by generating a placeholder literal", function () {
-      this.ast = this.parser.parse("()");
+      this.ast = parse("()");
       expect(this.ast[0].type).toBe("functionApp");
       expect(this.ast[0].fields.func.fields.value).toBe("...");
       expect(this.ast[0].fields.func.fields.dataType).toBe("blank");
@@ -50,7 +47,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing andExpressions and orExpression,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse("(or true true) (and true true)");
+      this.ast = parse("(or true true) (and true true)");
     });
 
     it("should convert and/or expressions to expressions", function () {
@@ -70,7 +67,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing variable definitions,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse('(define foo "bar")');
+      this.ast = parse('(define foo "bar")');
     });
 
     it("should convert defVar expressions to variableDef", function () {
@@ -82,7 +79,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing comments,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse(";this is a comment\n3");
+      this.ast = parse(";this is a comment\n3");
     });
 
     it("should convert comments to codemirror-blocks comments", function () {
@@ -99,7 +96,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing struct definitions,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse("(define-struct 3d-point (x y z))");
+      this.ast = parse("(define-struct 3d-point (x y z))");
     });
 
     it("should convert defStruct to struct", function () {
@@ -119,7 +116,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing function definitions,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse("(define (add2 x) (+ x 2))");
+      this.ast = parse("(define (add2 x) (+ x 2))");
     });
 
     it("should convert defFunc to functionDefinition", function () {
@@ -142,7 +139,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing lambda expressions,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse(`(lambda (x y) (+ x y))`);
+      this.ast = parse(`(lambda (x y) (+ x y))`);
     });
 
     it("should convert lambdaExpr to lambdaExpression", function () {
@@ -162,7 +159,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing cond expressions,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse(
+      this.ast = parse(
         `(cond
   [(positive? -5) (error "doesn't get here")]
   [(zero? -5) (error "doesn't get here, either")]
@@ -192,7 +189,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing if definitions,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse("(if (> 0 1) x y)");
+      this.ast = parse("(if (> 0 1) x y)");
     });
 
     it("should convert ifExpr to ifExpression", function () {
@@ -218,7 +215,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing sequences,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse('(begin (- (+ 1 2) 5) (print "hello"))');
+      this.ast = parse('(begin (- (+ 1 2) 5) (print "hello"))');
     });
 
     it("should convert beginExpr to a sequence", function () {
@@ -251,9 +248,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing let-like expressions,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse(
-        "(let* ((x 1) (y 2) (z (+ x y))) (* x y z))"
-      );
+      this.ast = parse("(let* ((x 1) (y 2) (z (+ x y))) (* x y z))");
     });
 
     it("should convert letExpr to a letLikeExpr", function () {
@@ -308,7 +303,7 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing whenUnless expressions,", function () {
     beforeEach(function () {
-      this.ast = this.parser.parse("(when (> a b) x y z)");
+      this.ast = parse("(when (> a b) x y z)");
     });
 
     it("should convert WhenUnless to a WhenUnlessExpr node", function () {
@@ -343,93 +338,89 @@ describe("The WeScheme Parser,", function () {
 
   describe("when parsing expressions that are unsupported in the block language,", function () {
     it("should ignore defVars", function () {
-      this.ast = this.parser.parse("(define-values (a b c) (1 2 3))");
+      this.ast = parse("(define-values (a b c) (1 2 3))");
       expect(this.ast.length).toBe(0);
     });
     it("should ignore localExpr", function () {
-      this.ast = this.parser.parse("(local [(define x 2)] x)");
+      this.ast = parse("(local [(define x 2)] x)");
       expect(this.ast.length).toBe(0);
     });
     it("should ignore quotedExpr", function () {
-      this.ast = this.parser.parse("'(+ 4 2)");
+      this.ast = parse("'(+ 4 2)");
       expect(this.ast.length).toBe(0);
     });
     it("should ignore unquotedExpr", function () {
-      this.ast = this.parser.parse("',(42 43 44)");
+      this.ast = parse("',(42 43 44)");
       expect(this.ast.length).toBe(0);
-      this.ast = this.parser.parse("`(1 `,(+ 1 ,(+ 2 3)) 4)");
+      this.ast = parse("`(1 `,(+ 1 ,(+ 2 3)) 4)");
       expect(this.ast.length).toBe(0);
     });
     it("should ignore quasiquotedExpr", function () {
-      this.ast = this.parser.parse("`42");
+      this.ast = parse("`42");
       expect(this.ast.length).toBe(0);
-      this.ast = this.parser.parse("`(1 ```,,@,,@(list (+ 1 2)) 4)");
+      this.ast = parse("`(1 ```,,@,,@(list (+ 1 2)) 4)");
       expect(this.ast.length).toBe(0);
     });
     it("should ignore unquoteSplice", function () {
-      this.ast = this.parser.parse("`#(1 ,@(list 1 '2) 4)");
+      this.ast = parse("`#(1 ,@(list 1 '2) 4)");
       expect(this.ast.length).toBe(0);
     });
     it("should ignore caseExpr", function () {
-      this.ast = this.parser.parse('(case 9 [(1) "a"])');
+      this.ast = parse('(case 9 [(1) "a"])');
       expect(this.ast.length).toBe(0);
     });
     it("should ignore provide", function () {
-      this.ast = this.parser.parse("(provide nori)");
+      this.ast = parse("(provide nori)");
       expect(this.ast.length).toBe(0);
     });
   });
 
   describe("when setting aria-labels", function () {
     it("should make symbols, and numbers be set to themselves", function () {
-      expect(this.parser.parse("1")[0].options.ariaLabel).toBe("1");
-      expect(this.parser.parse("symbol")[0].options.ariaLabel).toBe("symbol");
+      expect(parse("1")[0].options.ariaLabel).toBe("1");
+      expect(parse("symbol")[0].options.ariaLabel).toBe("symbol");
     });
 
     it("should make boolean values be set to 'true' or 'false'", function () {
-      expect(this.parser.parse("#t")[0].options.ariaLabel).toBe(
-        "true, a Boolean"
-      );
+      expect(parse("#t")[0].options.ariaLabel).toBe("true, a Boolean");
     });
 
     it("should make string values be set to 'string '+the contents of the string", function () {
-      expect(this.parser.parse('"hello"')[0].options.ariaLabel).toBe(
-        "hello, a String"
-      );
+      expect(parse('"hello"')[0].options.ariaLabel).toBe("hello, a String");
     });
 
     it("should make expression (print 'hello') into 'print expression, 1 input'", function () {
-      expect(this.parser.parse('(print "hello")')[0].options.ariaLabel).toBe(
+      expect(parse('(print "hello")')[0].options.ariaLabel).toBe(
         "print expression, 1 input"
       );
-      expect(
-        this.parser.parse('(print "hello" "world")')[0].options.ariaLabel
-      ).toBe("print expression, 2 inputs");
+      expect(parse('(print "hello" "world")')[0].options.ariaLabel).toBe(
+        "print expression, 2 inputs"
+      );
     });
 
     it("should make and/or expressions just like regular expressions", function () {
-      expect(this.parser.parse("(and true true)")[0].options.ariaLabel).toBe(
+      expect(parse("(and true true)")[0].options.ariaLabel).toBe(
         "and expression, 2 inputs"
       );
-      expect(this.parser.parse("(or false true)")[0].options.ariaLabel).toBe(
+      expect(parse("(or false true)")[0].options.ariaLabel).toBe(
         "or expression, 2 inputs"
       );
     });
 
     it("should turn symbols into readable words", function () {
-      expect(this.parser.parse("(* 1 2)")[0].options.ariaLabel).toBe(
+      expect(parse("(* 1 2)")[0].options.ariaLabel).toBe(
         "multiply expression, 2 inputs"
       );
-      expect(this.parser.parse("(/ 1 2)")[0].options.ariaLabel).toBe(
+      expect(parse("(/ 1 2)")[0].options.ariaLabel).toBe(
         "divide expression, 2 inputs"
       );
-      expect(this.parser.parse("(foo? 0)")[0].options.ariaLabel).toBe(
+      expect(parse("(foo? 0)")[0].options.ariaLabel).toBe(
         "foo-huh expression, 1 input"
       );
-      expect(this.parser.parse("(set! x 2)")[0].options.ariaLabel).toBe(
+      expect(parse("(set! x 2)")[0].options.ariaLabel).toBe(
         "set-bang expression, 2 inputs"
       );
-      expect(this.parser.parse("#(1 2)")[0].options.ariaLabel).toBe(
+      expect(parse("#(1 2)")[0].options.ariaLabel).toBe(
         "vector expression, 2 inputs"
       );
     });
@@ -441,7 +432,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed defVar (define a)", function () {
-      this.ast = this.parser.parse("(define a)");
+      this.ast = parse("(define a)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("define");
       expect(this.ast[0].fields.elts.length).toBe(2);
@@ -449,7 +440,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed defVars (define-values a)", function () {
-      this.ast = this.parser.parse("(define-values a)");
+      this.ast = parse("(define-values a)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("define-values");
       expect(this.ast[0].fields.elts.length).toBe(2);
@@ -457,7 +448,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed defFun (define (a)", function () {
-      this.ast = this.parser.parse("(define (a))");
+      this.ast = parse("(define (a))");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("define");
       expect(this.ast[0].fields.elts.length).toBe(2);
@@ -466,7 +457,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed defStruct (define-struct a (a b c) d)", function () {
-      this.ast = this.parser.parse("(define-struct a (a b c) d)");
+      this.ast = parse("(define-struct a (a b c) d)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("define-struct");
       expect(this.ast[0].fields.elts.length).toBe(4);
@@ -476,13 +467,13 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed ifExpression (if)", function () {
-      this.ast = this.parser.parse("(if)");
+      this.ast = parse("(if)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("if");
     });
 
     it("parse malformed ifExpression (if a)", function () {
-      this.ast = this.parser.parse("(if a)");
+      this.ast = parse("(if a)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].type).toBe("literal");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("if");
@@ -491,7 +482,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed ifExpression (if a b)", function () {
-      this.ast = this.parser.parse("(if a b)");
+      this.ast = parse("(if a b)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].type).toBe("literal");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("if");
@@ -501,14 +492,14 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed condExpression (cond)", function () {
-      this.ast = this.parser.parse("(cond)");
+      this.ast = parse("(cond)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].type).toBe("literal");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("cond");
     });
 
     it("parse malformed condExpression (cond (a))", function () {
-      this.ast = this.parser.parse("(cond (a))");
+      this.ast = parse("(cond (a))");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].type).toBe("literal");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("cond");
@@ -517,14 +508,14 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed andExpression (and)", function () {
-      this.ast = this.parser.parse("(and)");
+      this.ast = parse("(and)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("and");
       expect(this.ast[0].fields.elts.length).toBe(1);
     });
 
     it("parse malformed orExpression (or a)", function () {
-      this.ast = this.parser.parse("(or a)");
+      this.ast = parse("(or a)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].type).toBe("literal");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("or");
@@ -533,7 +524,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed lambdaExpression (lambda a b)", function () {
-      this.ast = this.parser.parse("(lambda a b)");
+      this.ast = parse("(lambda a b)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].type).toBe("literal");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("lambda");
@@ -543,7 +534,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed localExpression (local a b)", function () {
-      this.ast = this.parser.parse("(local a b)");
+      this.ast = parse("(local a b)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("local");
       expect(this.ast[0].fields.elts.length).toBe(3);
@@ -552,7 +543,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed letrecExpression (letrec a b)", function () {
-      this.ast = this.parser.parse("(letrec a b)");
+      this.ast = parse("(letrec a b)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("letrec");
       expect(this.ast[0].fields.elts.length).toBe(3);
@@ -561,7 +552,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed letExpression (let a b)", function () {
-      this.ast = this.parser.parse("(let a b)");
+      this.ast = parse("(let a b)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("let");
       expect(this.ast[0].fields.elts.length).toBe(3);
@@ -570,7 +561,7 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed letStarExpression (let* a b)", function () {
-      this.ast = this.parser.parse("(let* a b)");
+      this.ast = parse("(let* a b)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("let*");
       expect(this.ast[0].fields.elts.length).toBe(3);
@@ -579,21 +570,21 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("parse malformed beginExpression (begin)", function () {
-      this.ast = this.parser.parse("(begin)");
+      this.ast = parse("(begin)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("begin");
       expect(this.ast[0].fields.elts.length).toBe(1);
     });
 
     it("parse malformed requireExpression (requre)", function () {
-      this.ast = this.parser.parse("(require)");
+      this.ast = parse("(require)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("require");
       expect(this.ast[0].fields.elts.length).toBe(1);
     });
 
     it("parse malformed else (else)", function () {
-      this.ast = this.parser.parse("(else)");
+      this.ast = parse("(else)");
       expect(this.ast[0].type).toBe("unknown");
       expect(this.ast[0].fields.elts[0].fields.value).toBe("else");
       expect(this.ast[0].fields.elts.length).toBe(1);

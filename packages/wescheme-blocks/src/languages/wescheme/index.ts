@@ -1,8 +1,6 @@
-import WeschemeParser from "./WeschemeParser";
+import * as parser from "./WeschemeParser";
 import { Languages } from "codemirror-blocks";
 require("./style.less");
-
-const parser = WeschemeParser();
 
 export const WeScheme = Languages.addLanguage({
   id: "wescheme",
