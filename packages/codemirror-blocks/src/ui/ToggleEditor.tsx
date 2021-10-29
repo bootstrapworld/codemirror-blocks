@@ -342,11 +342,7 @@ function ToggleEditor(props: ToggleEditorProps) {
         {blockMode && editor ? (
           <TrashCan language={props.language} editor={editor} />
         ) : null}
-        <div
-          className={"col-xs-3 toolbar-pane"}
-          tabIndex={-1}
-          aria-hidden={!blockMode}
-        >
+        <div className={"toolbar-pane"} tabIndex={-1} aria-hidden={!blockMode}>
           <Toolbar
             primitives={
               props.language.primitivesFn
@@ -358,7 +354,7 @@ function ToggleEditor(props: ToggleEditorProps) {
             toolbarRef={toolbarRef}
           />
         </div>
-        <div className="col-xs-9 codemirror-pane">
+        <div className="codemirror-pane">
           {blockMode ? (
             <BlockEditor
               codemirrorOptions={{

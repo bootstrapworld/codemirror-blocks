@@ -30,21 +30,18 @@
     padding-right: 0px;
     height: 100%;
     position: relative;
-
-    // This should be reenable when we can get it to look
-    // right. Tracked in https://github.com/bootstrapworld/codemirror-blocks/issues/483
-    // transition: width 2s, min-width 2s;
-    min-width: 200px;
-    max-width: 200px;
+    transition: width 0.5s, opacity 0.5s;
+    width: 200px;
   }
 
   > .codemirror-pane {
     padding: 0px 0px;
-    width: calc(~"100% - 200px");
+    flex-grow: 1;
   }
 
   > .Toolbar {
     height: 100%;
+    width: 200px;
     opacity: 1;
   }
   /* in text mode, the toolbar should have a width of 0 */
@@ -52,10 +49,10 @@
     > .toolbar-pane {
       border: none;
       width: 0px;
-      min-width: 0px;
+      opacity: 0;
     }
     > .codemirror-pane {
-      width: 100%;
+      flex-grow: 1;
     }
   }
 
