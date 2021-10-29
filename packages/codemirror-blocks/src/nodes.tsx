@@ -533,12 +533,11 @@ export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
       // Normalize all comments to block comments
       return P.concat("#| ", wrapped, " |#");
     },
-    render(props) {
-      // eslint-disable-line no-unused-vars
+    render({ node, ...props }) {
       return (
-        <span className="blocks-comment" id={props.node.id} aria-hidden="true">
+        <span className="blocks-comment" aria-hidden="true" {...props}>
           <span className="screenreader-only">Has comment,</span>{" "}
-          <span>{props.node.fields.comment.toString()}</span>
+          <span>{node.fields.comment.toString()}</span>
         </span>
       );
     },

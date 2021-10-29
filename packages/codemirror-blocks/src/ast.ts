@@ -120,6 +120,10 @@ function annotateNodes(nodes: Readonly<ASTNode[]>): {
       if (node.id === "uninitialized") {
         node.id = genUniqueId();
       }
+      if (node.options.comment) {
+        // If this node is commented, give its comment an id based on this node's id.
+        node.options.comment.id = node.id + "-comment";
+      }
       node.level = level;
       node.ariaSetSize = nodes.length;
       node.ariaPosInset = i + 1;
@@ -587,11 +591,6 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
     this.longDescription = props.longDescription;
     this.render = props.render;
     this.spec = props.spec;
-
-    // If this node is commented, give its comment an id based on this node's id.
-    if (this.options.comment) {
-      this.options.comment.id = "block-node-" + this.id + "-comment";
-    }
   }
 
   private _hash: number | undefined;
