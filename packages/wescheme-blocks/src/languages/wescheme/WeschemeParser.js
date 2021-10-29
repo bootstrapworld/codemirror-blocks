@@ -21,14 +21,9 @@ import { lex } from "wescheme-js/src/lex";
 import * as types from "wescheme-js/src/runtime/types";
 import * as structures from "wescheme-js/src/structures";
 
-// TODO(pcardune): figure out why these imports were being done like this
-// import { lex } from "lex";
-// import * as types from "types";
-// import * as structures from "structs";
-
 const { isString, isChar, isVector: isNativeVector, TRUE, FALSE } = types;
 
-let symbolMap = new Map();
+const symbolMap = new Map();
 symbolMap.set("*", "multiply");
 symbolMap.set("-", "subtract");
 symbolMap.set("/", "divide");
@@ -1206,7 +1201,7 @@ class WeschemeParser {
 }
 
 export default lex
-  ? WeschemeParser
+  ? () => new WeschemeParser()
   : () => {
       throw new Error(
         "wescheme-js must be installed to use the wescheme blocks parser"
