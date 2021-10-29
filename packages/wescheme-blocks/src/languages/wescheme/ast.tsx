@@ -42,7 +42,7 @@ export function LetLikeExpr(
   from: Pos,
   to: Pos,
   form: string,
-  bindings: ASTNode<{ exprs: ASTNode[] }>,
+  bindings: ASTNode<{ exprs: ASTNode<{ name: ASTNode; body: ASTNode }>[] }>,
   expr: ASTNode,
   options = {}
 ) {
@@ -55,7 +55,16 @@ export function LetLikeExpr(
     pretty(node) {
       return P.lambdaLikeSexpr(
         node.fields.form,
-        node.fields.bindings,
+        P.horz(
+          "(",
+          P.sepBy(
+            node.fields.bindings.fields.exprs.map((expr) =>
+              P.standardSexpr(expr.fields.name, [expr.fields.body])
+            ),
+            " "
+          ),
+          ")"
+        ),
         node.fields.expr
       );
     },

@@ -300,8 +300,8 @@ describe("The WeScheme Parser,", function () {
     });
 
     it("should pretty print", function () {
-      expect(this.ast[0].pretty().display(80).join("\n")).toMatchInlineSnapshot(
-        `"(let* (bindings (define x 1) (define y 2) (define z (+ x y))) (* x y z))"`
+      expect(this.ast[0].pretty().display(80).join("\n")).toEqual(
+        "(let* ((x 1) (y 2) (z (+ x y))) (* x y z))"
       );
     });
   });
