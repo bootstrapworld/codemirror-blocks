@@ -9,7 +9,7 @@ import { say } from "../announcer";
 import CodeMirror from "codemirror";
 import { AppDispatch } from "../store";
 import { RootState } from "../reducers";
-import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
+import { setAfterDOMUpdate } from "../utils";
 import { CMBEditor } from "../editor";
 import { useLanguageOrThrow } from "../hooks";
 
@@ -67,20 +67,21 @@ const NodeEditable = (props: Props) => {
     return { isErrored, initialValue };
   });
 
+  // select and focus the element on mount
   useEffect(() => {
-    const pendingTimeout = setAfterDOMUpdate(() => {
-      const currentEl = element.current;
-      if (!currentEl) {
-        // element has been unmounted already, nothing to do.
-        return;
-      }
-      selectElement(currentEl, props.isInsertion);
-    });
+    const currentEl = element.current;
+    if (!currentEl) {
+      // element has been unmounted already, nothing to do.
+      return;
+    }
+    selectElement(currentEl, props.isInsertion);
+  }, [props.isInsertion]);
+
+  useEffect(() => {
     const text = props.value || initialValue || "";
     const annt = (props.isInsertion ? "inserting" : "editing") + ` ${text}`;
     say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
     dispatch({ type: "SET_SELECTIONS", selections: [] });
-    return () => cancelAfterDOMUpdate(pendingTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
