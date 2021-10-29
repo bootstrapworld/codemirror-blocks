@@ -28,7 +28,7 @@ const renderWithContext = (el: React.ReactElement) =>
 it("renders a draggable span with various aria properties", () => {
   const ast = new AST([
     Literal({ line: 0, ch: 0 }, { line: 0, ch: 1 }, "someVar", "symbol", {
-      "aria-label": "the someVar variable",
+      ariaLabel: "the someVar variable",
     }),
   ]);
   const node = ast.rootNodes[0];
