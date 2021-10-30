@@ -43,7 +43,8 @@ type NodeLike = {
   type: string;
 };
 
-export class NodeSpec {
+export type { NodeSpec };
+class NodeSpec {
   childSpecs: ChildSpec[];
   constructor(childSpecs: ChildSpec[]) {
     if (!(childSpecs instanceof Array)) {
@@ -204,7 +205,10 @@ export class List extends BaseSpec<ASTNode[]> {
     let valid = true;
     if (array instanceof Array) {
       for (const elem of array) {
-        if (!(elem instanceof ASTNode)) valid = false;
+        if (!(elem instanceof ASTNode)) {
+          valid = false;
+          break;
+        }
       }
     } else {
       valid = false;
@@ -217,9 +221,23 @@ export class List extends BaseSpec<ASTNode[]> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class Value extends BaseSpec<any> {
-  validate(_parent: NodeLike) {
-    // Any value is valid, even `undefined`, so there's nothing to check.
+export class Value<V = unknown> extends BaseSpec<V> {
+  validate(node: NodeLike) {
+    const value = this.getField(node);
+    if (value instanceof ASTNode) {
+      throw new Error(
+        `Expected value field '${this.fieldName}' of '${node.type}' to be something other than an ASTNode, Did you mean to use required() or optional() instead?`
+      );
+    }
+    if (value instanceof Array) {
+      for (const elem of value) {
+        if (elem instanceof ASTNode) {
+          throw new Error(
+            `Expected listy field '${this.fieldName}' of '${node.type}' to contain things other than ASTNodes. Did you mean to use list() instead?`
+          );
+        }
+      }
+    }
+    // Any other value is valid, even `undefined`, so there's nothing else to check.
   }
 }

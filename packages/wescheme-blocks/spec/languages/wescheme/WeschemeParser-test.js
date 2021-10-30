@@ -267,7 +267,9 @@ describe("The WeScheme Parser,", function () {
 
     it("should convert the bindings to a sequence, correctly", function () {
       expect(this.ast[0].fields.bindings.type).toBe("sequence");
-      expect(this.ast[0].fields.bindings.fields.name).toBe("bindings");
+      expect(this.ast[0].fields.bindings.fields.name.toString()).toBe(
+        "bindings"
+      );
       expect(this.ast[0].fields.bindings.fields.exprs.length).toBe(3);
       expect(this.ast[0].fields.bindings.fields.exprs[0].type).toBe(
         "variableDefinition"
@@ -325,7 +327,7 @@ describe("The WeScheme Parser,", function () {
 
     it("should convert the exprs to a sequence, correctly", function () {
       expect(this.ast[0].fields.exprs.type).toBe("sequence");
-      expect(this.ast[0].fields.exprs.fields.name).toBe("begin");
+      expect(this.ast[0].fields.exprs.fields.name.toString()).toBe("begin");
       expect(this.ast[0].fields.exprs.fields.exprs.length).toBe(3);
       expect(this.ast[0].fields.exprs.fields.exprs[0].type).toBe("literal");
       expect(this.ast[0].fields.exprs.fields.exprs[0].fields.value).toBe("x");

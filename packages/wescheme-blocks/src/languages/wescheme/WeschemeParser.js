@@ -324,9 +324,21 @@ function parseNode(node, i) {
       from,
       to,
       form,
-      Sequence(loc.from, loc.to, node.bindings.map(parseBinding), "bindings", {
-        ariaLabel: `${pluralize("binding", node.bindings)}`,
-      }),
+      Sequence(
+        loc.from,
+        loc.to,
+        node.bindings.map(parseBinding),
+        Literal(
+          { line: from.line, ch: from.ch + 1 },
+          { line: from.line, ch: from.ch + 9 },
+          "bindings",
+          "symbol",
+          { ariaLabel: "bindings" }
+        ),
+        {
+          ariaLabel: `${pluralize("binding", node.bindings)}`,
+        }
+      ),
       parseNode(node.body),
       {
         ariaLabel: `${symbolAria(form)} expression with ${pluralize(
@@ -343,9 +355,21 @@ function parseNode(node, i) {
       to,
       form,
       parseNode(node.predicate),
-      Sequence(loc.from, loc.to, node.exprs.map(parseNode), "begin", {
-        ariaLabel: `${pluralize("expression", node.exprs)}`,
-      }),
+      Sequence(
+        loc.from,
+        loc.to,
+        node.exprs.map(parseNode),
+        Literal(
+          { line: from.line, ch: from.ch + 1 },
+          { line: from.line, ch: from.ch + 6 },
+          "begin",
+          "symbol",
+          { ariaLabel: "begin" }
+        ),
+        {
+          ariaLabel: `${pluralize("expression", node.exprs)}`,
+        }
+      ),
       { ariaLabel: `${symbolAria(form)} expression` }
     );
   } else if (node instanceof structures.unsupportedExpr) {
