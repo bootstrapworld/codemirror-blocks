@@ -19,10 +19,10 @@ function pluralize(noun: string, set: unknown[]) {
 /* Override the default pretty printer for Sequences,
  * so that they print as s-expressions
  */
-export function Sequence(
+export function Sequence<Expr extends ASTNode = ASTNode>(
   from: Pos,
   to: Pos,
-  exprs: ASTNode[],
+  exprs: Expr[],
   name: ASTNode,
   options = {}
 ) {
