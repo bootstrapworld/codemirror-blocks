@@ -1,6 +1,6 @@
 import "./index.less";
 import CodeMirrorBlocks from "codemirror-blocks";
-import { WeScheme } from "../src/languages/wescheme";
+import { WeScheme } from "../src/index";
 import bigExampleCode from "./ast-test.rkt";
 
 const smallExampleCode = `(+ 1 2) ;comment\n(+ 3 4)`;

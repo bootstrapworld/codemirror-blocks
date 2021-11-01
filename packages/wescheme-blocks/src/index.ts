@@ -3,7 +3,7 @@ import { Languages, Nodes, PrimitiveGroup } from "codemirror-blocks";
 import PRIMITIVES_CONFIG from "./primitives-config";
 import type { Primitive } from "codemirror-blocks/lib/parsers/primitives";
 import { symbolAria } from "./parser";
-require("./style.less");
+import "./style.less";
 
 const dummyLoc = { line: -1, ch: 0 };
 
