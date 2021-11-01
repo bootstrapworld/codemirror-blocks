@@ -305,10 +305,14 @@ class OverwriteEdit extends Edit {
     let { text } = this;
     // if this root starts or ends on the same line as another, insert a newline
     const nodeBefore = ast.rootNodes.find(
-      (r) => r.to.line == this.from.line && r.to.ch <= this.from.ch
+      (node) =>
+        node.srcRange().to.line == this.from.line &&
+        node.srcRange().to.ch <= this.from.ch
     );
     const nodeAfter = ast.rootNodes.find(
-      (r) => r.from.line == this.to.line && this.to.ch <= r.from.ch
+      (node) =>
+        node.srcRange().from.line == this.to.line &&
+        this.to.ch <= node.srcRange().from.ch
     );
     if (nodeBefore) {
       text = "\n" + text;
