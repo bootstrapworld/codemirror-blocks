@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@babel/polyfill": "^7.12.1",
-    "@babel/preset-env": "^7.14.7",
+    "@babel/preset-env": "^7.16.0",
     "@babel/preset-react": "^7.14.5",
     "@bootstrapworld/cmb-toolkit": "*",
     "@testing-library/react": "^12.0.0",
