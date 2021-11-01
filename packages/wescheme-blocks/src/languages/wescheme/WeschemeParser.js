@@ -1,35 +1,10 @@
-import { Nodes, PrimitiveGroup } from "codemirror-blocks";
-const { Blank, Literal, FunctionApp } = Nodes;
-import PRIMITIVES_CONFIG from "./primitives-config";
-import { symbolAria, parseNode } from "./parser";
+import { parseNode } from "./parser";
 
 import { lex } from "wescheme-js/src/lex";
 import * as types from "wescheme-js/src/runtime/types";
 import * as structures from "wescheme-js/src/structures";
 
 const { isVector: isNativeVector } = types;
-
-const dummyLoc = { line: -1, ch: 0 };
-
-export function getASTNodeForPrimitive(primitive) {
-  return FunctionApp(
-    dummyLoc,
-    dummyLoc,
-    Literal(dummyLoc, dummyLoc, primitive.name, "symbol"),
-    primitive.argumentTypes.map(() => Blank(dummyLoc, dummyLoc, "")),
-    { ariaLabel: primitive.name + " expression" }
-  );
-}
-
-export function getLiteralNodeForPrimitive(primitive) {
-  return Literal(dummyLoc, dummyLoc, primitive.name, "symbol", {
-    ariaLabel: primitive.name,
-  });
-}
-
-export function primitivesFn() {
-  return PrimitiveGroup.fromConfig("wescheme", PRIMITIVES_CONFIG);
-}
 
 export function parse(code) {
   function fallback(sexp) {
@@ -786,16 +761,4 @@ export function parse(code) {
 
   let ast = parseStar(lex(code));
   return ast.map(parseNode).filter((item) => item !== null);
-}
-
-export function getExceptionMessage(e) {
-  // TODO: Using JSON.parse is not safe. Sometimes it could result in a parsing error.
-  console.error(e);
-  let msg = JSON.parse(e)["dom-message"][2].slice(2);
-  let txt = msg.every((element) => typeof element === "string")
-    ? msg
-    : msg[0] instanceof Array
-    ? msg[0][2].substring(msg[0][2].indexOf("read: ") + 6)
-    : "Check your quotation marks, or any other symbols you've used";
-  return symbolAria(txt);
 }
