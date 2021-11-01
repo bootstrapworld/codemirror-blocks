@@ -22,14 +22,15 @@ const initialCode = `
 (doOtherThing param3)
 `;
 
+const setCode = (code: string) => {
+  editor.setValue(code);
+  ast = new AST(wescheme.parse(editor.getValue()));
+};
 const apply = (edits: EditInterface[]) =>
   applyEdits(edits, ast, editor, wescheme.parse);
 
 beforeEach(() => {
-  editor = new CodeMirrorFacade(
-    CodeMirror(document.body, { value: initialCode })
-  );
-  ast = new AST(wescheme.parse(editor.getValue()));
+  editor = new CodeMirrorFacade(CodeMirror(document.body, { value: "" }));
 });
 
 afterEach(() => {
@@ -37,6 +38,9 @@ afterEach(() => {
 });
 
 describe("applyEdits", () => {
+  beforeEach(() => {
+    setCode(initialCode);
+  });
   it("ReplaceRootEdit replaces a root node in the ast with some text", () => {
     const edit = edit_replace(
       "(doAnotherThing otherParam)",
@@ -68,15 +72,70 @@ describe("applyEdits", () => {
 `);
   });
 
-  it("OverwriteEdit replaces a range of text", () => {
-    const edit = edit_overwrite("foo", { line: 1, ch: 0 }, { line: 3, ch: 0 });
-    expect(edit.toString()).toEqual("Overwrite 1:0-3:0");
-    const result = apply([edit]);
-    expect(result.successful).toBe(true);
-    expect(editor.getValue()).toEqual(`
+  describe("OverwriteEdit", () => {
+    it("replaces a range of text", () => {
+      const edit = edit_overwrite(
+        "foo",
+        { line: 1, ch: 0 },
+        { line: 3, ch: 0 }
+      );
+      expect(edit.toString()).toEqual("Overwrite 1:0-3:0");
+      const result = apply([edit]);
+      expect(result.successful).toBe(true);
+      expect(editor.getValue()).toEqual(`
 foo
 (doOtherThing param3)
 `);
+    });
+    it("inserts a newline when inserting at the beginning of a line that another node occupies", () => {
+      const edit = edit_overwrite(
+        "foo",
+        ast.rootNodes[1].from,
+        ast.rootNodes[1].from
+      );
+      const result = apply([edit]);
+      expect(result.successful).toBe(true);
+      expect(editor.getValue()).toEqual(`
+(doWhatever)
+foo
+(doSomething (add 34 5234) param2)
+(doOtherThing param3)
+`);
+    });
+    it("inserts a newline when inserting at the end of a line that another node occupies", () => {
+      const edit = edit_overwrite(
+        "foo",
+        ast.rootNodes[1].to,
+        ast.rootNodes[1].to
+      );
+      const result = apply([edit]);
+      expect(result.successful).toBe(true);
+      expect(editor.getValue()).toEqual(`
+(doWhatever)
+(doSomething (add 34 5234) param2)
+foo
+(doOtherThing param3)
+`);
+    });
+
+    it("takes comments into account when inserting newlines", () => {
+      setCode(`
+#| this node is commented |#
+(+ 1 #| this is a nested comment |# 2)      
+`);
+      const edit = edit_overwrite(
+        "foo",
+        { line: 1, ch: 0 },
+        { line: 1, ch: 0 }
+      );
+      const result = apply([edit]);
+      expect(result.successful).toBe(true);
+      expect(editor.getValue()).toEqual(`
+foo
+#| this node is commented |#
+(+ 1 #| this is a nested comment |# 2)      
+`);
+    });
   });
 
   it("DeleteChildEdit removes a node from its parent", () => {
@@ -165,6 +224,7 @@ describe("performEdits", () => {
   let store!: AppStore;
 
   beforeEach(() => {
+    setCode(initialCode);
     store = createAppStore();
     store.dispatch({ type: "SET_AST", ast });
   });
@@ -186,7 +246,7 @@ describe("performEdits", () => {
     ).toEqual(`(doSomething foo param2)`);
   });
 
-  it("returns an error result if something goes while applying the change", () => {
+  it("returns an error result if something goes wrong while applying the change", () => {
     const edit = edit_replace(
       "(foo won't parse",
       ast,
