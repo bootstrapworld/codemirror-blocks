@@ -2,7 +2,7 @@ import * as parser from "./WeschemeParser";
 import { Languages, Nodes, PrimitiveGroup } from "codemirror-blocks";
 import PRIMITIVES_CONFIG from "./primitives-config";
 import type { Primitive } from "codemirror-blocks/lib/parsers/primitives";
-import { symbolAria } from "./parser";
+import { symbolAria } from "./parseNode";
 import "./style.less";
 
 const dummyLoc = { line: -1, ch: 0 };

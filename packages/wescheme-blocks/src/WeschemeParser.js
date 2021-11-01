@@ -1,4 +1,4 @@
-import { parseNode } from "./parser";
+import { parseNode } from "./parseNode";
 
 import { lex } from "wescheme-js/src/lex";
 import * as types from "wescheme-js/src/runtime/types";
