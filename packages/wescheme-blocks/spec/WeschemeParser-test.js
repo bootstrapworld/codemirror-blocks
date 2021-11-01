@@ -1,4 +1,4 @@
-import { parse } from "../../../src/languages/wescheme/WeschemeParser";
+import { parse } from "../src/WeschemeParser";
 
 describe("The WeScheme Parser,", function () {
   it("should set the appropriate data type for literals", function () {
