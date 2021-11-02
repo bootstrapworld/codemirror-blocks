@@ -13,6 +13,7 @@ import {
 import wescheme from "../src/languages/wescheme";
 import { AppStore, createAppStore } from "../src/state/store";
 import * as actions from "../src/state/actions";
+import * as selectors from "../src/state/selectors";
 
 let editor!: CodeMirrorFacade;
 let ast!: AST;
@@ -25,7 +26,7 @@ const initialCode = `
 
 const setCode = (code: string) => {
   editor.setValue(code);
-  ast = new AST(wescheme.parse(editor.getValue()));
+  ast = AST.from(wescheme.parse(editor.getValue()));
 };
 const apply = (edits: EditInterface[]) =>
   applyEdits(edits, ast, editor, wescheme.parse);
@@ -243,7 +244,11 @@ describe("performEdits", () => {
 (doOtherThing param3)
 `);
     expect(
-      store.getState().ast.rootNodes[1].pretty().display(80).join("\n")
+      selectors
+        .selectAST(store.getState())
+        .rootNodes[1].pretty()
+        .display(80)
+        .join("\n")
     ).toEqual(`(doSomething foo param2)`);
   });
 

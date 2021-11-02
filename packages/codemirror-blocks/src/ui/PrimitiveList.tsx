@@ -7,6 +7,7 @@ import {
 import { ItemTypes } from "../dnd";
 import { say } from "../announcer";
 import { copy } from "../state/actions";
+import * as selectors from "../state/selectors";
 import CodeMirror from "codemirror";
 import { defaultKeyMap } from "../keymap";
 import { useSelector } from "react-redux";
@@ -25,10 +26,8 @@ type BasePrimitiveProps = {
 export const Primitive = (props: BasePrimitiveProps) => {
   const { primitive, className, onFocus, onKeyDown } = props;
 
-  const { ast, focusId } = useSelector(({ ast, focusId }: RootState) => ({
-    ast,
-    focusId,
-  }));
+  const ast = useSelector(selectors.selectAST);
+  const focusId = useSelector(({ focusId }: RootState) => focusId);
 
   const [_, connectDragSource, connectDragPreview] = useDrag({
     type: ItemTypes.NODE,

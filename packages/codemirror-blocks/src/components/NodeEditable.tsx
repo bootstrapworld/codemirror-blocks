@@ -12,6 +12,7 @@ import { RootState } from "../state/reducers";
 import { setAfterDOMUpdate } from "../utils";
 import { CMBEditor } from "../editor";
 import { useLanguageOrThrow } from "../hooks";
+import * as selectors from "../state/selectors";
 
 function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
@@ -57,12 +58,14 @@ const NodeEditable = (props: Props) => {
   const dispatch: AppDispatch = useDispatch();
   const language = useLanguageOrThrow();
 
+  const ast = useSelector(selectors.selectAST);
+
   const { initialValue, isErrored } = useSelector((state: RootState) => {
     const nodeId = props.target.node ? props.target.node.id : "editing";
     const isErrored = state.errorId == nodeId;
 
     const initialValue =
-      props.value === null ? props.target.getText(state.ast, props.editor) : "";
+      props.value === null ? props.target.getText(ast, props.editor) : "";
 
     return { isErrored, initialValue };
   });
@@ -96,7 +99,9 @@ const NodeEditable = (props: Props) => {
       // to deal with this issue:
       // https://github.com/lovasoa/react-contenteditable/issues/161
       const value = element.current?.textContent;
-      const { focusId, ast } = getState();
+      const state = getState();
+      const ast = selectors.selectAST(state);
+      const { focusId } = state;
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
       if (value === initialValue || !value) {

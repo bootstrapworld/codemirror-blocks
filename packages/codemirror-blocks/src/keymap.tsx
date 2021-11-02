@@ -162,7 +162,9 @@ const pasteHandler =
     }
     const before = e.shiftKey; // shiftKey=down => we paste BEFORE the active node
     const pos = before ? env.node.srcRange().from : env.node.srcRange().to;
-    const { selections, ast } = getState();
+    const state = getState();
+    const ast = selectors.selectAST(state);
+    const { selections } = state;
     const parent = ast.getNodeParent(env.node);
     // Case 1: Overwriting selected nodes
     if (selections.includes(env.node.id)) {
@@ -213,18 +215,17 @@ const commandMap: {
   // NAVIGATION
   "Previous Block": (env, e) => (dispatch, getState) => {
     const state = getState();
+    const ast = selectors.selectAST(state);
     e.preventDefault();
     if (env.isNodeEnv) {
-      const prev = env.fastSkip(
-        (node) => state.ast.getNodeBefore(node) || undefined
-      );
+      const prev = env.fastSkip((node) => ast.getNodeBefore(node) || undefined);
       if (prev) {
         return dispatch(activateByNid(env.editor, prev.nid));
       } else {
         return playSound(BEEP);
       }
     }
-    const prevNode = state.cur && state.ast.getNodeBeforeCur(state.cur);
+    const prevNode = state.cur && ast.getNodeBeforeCur(state.cur);
     return prevNode
       ? dispatch(
           activateByNid(env.editor, prevNode.nid, {
@@ -236,8 +237,8 @@ const commandMap: {
 
   "Next Block": (env, e) => (dispatch, getState) => {
     e.preventDefault();
+    const ast = selectors.selectAST(getState());
     if (env.isNodeEnv) {
-      const { ast } = getState();
       const next = env.fastSkip((node) => ast.getNodeAfter(node) || undefined);
       if (next) {
         return dispatch(activateByNid(env.editor, next.nid));
@@ -245,7 +246,7 @@ const commandMap: {
         return playSound(BEEP);
       }
     }
-    const { cur, ast } = getState();
+    const { cur } = getState();
     const nextNode = cur && ast.getNodeAfterCur(cur);
     return nextNode
       ? dispatch(
@@ -316,7 +317,7 @@ const commandMap: {
       activateByNid(
         env.editor,
 
-        getRoot(getState().ast, env.node).nid
+        getRoot(selectors.selectAST(getState()), env.node).nid
       )
     );
   },
@@ -333,8 +334,8 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    const ast = getState().ast;
     const state = getState();
+    const ast = selectors.selectAST(state);
     const parent = selectors.getNodeParent(state, env.node);
     const isCollapsed = selectors.isCollapsed(state, env.node);
     if (!parent && (isCollapsed || !env.expandable)) {
@@ -353,7 +354,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    const root = getRoot(getState().ast, env.node);
+    const root = getRoot(selectors.selectAST(getState()), env.node);
     [...root.descendants()].forEach(
       (d) => env.isNodeEnv && dispatch(actions.uncollapseNode(d))
     );
@@ -368,7 +369,7 @@ const commandMap: {
         activateByNid(
           env.editor,
 
-          getRoot(getState().ast, env.node).nid
+          getRoot(selectors.selectAST(getState()), env.node).nid
         )
       );
     }
@@ -379,7 +380,7 @@ const commandMap: {
       return;
     }
     const parents = [env.node.shortDescription()];
-    const { ast } = getState();
+    const ast = selectors.selectAST(getState());
     let next = ast.getNodeParent(env.node);
     while (next) {
       parents.push(next.shortDescription() + ", at level " + next.level);
@@ -407,7 +408,9 @@ const commandMap: {
       return;
     }
     e.preventDefault();
-    const { selections, ast } = getState();
+    const state = getState();
+    const ast = selectors.selectAST(state);
+    const selections = selectors.selectSelections(state);
     const node = env.node;
     const descendantIds = (node: ASTNode) =>
       [...node.descendants()].map((d) => d.id);
@@ -489,7 +492,9 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    const { selections, ast } = getState();
+    const state = getState();
+    const ast = selectors.selectAST(state);
+    const selections = selectors.selectSelections(state);
     if (!selections.length) {
       return say("Nothing selected");
     }
@@ -503,7 +508,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    if (!env.setRight(getState().ast)) {
+    if (!env.setRight(selectors.selectAST(getState()))) {
       dispatch(setCursor(env.editor, env.node.srcRange().to));
     }
   },
@@ -511,7 +516,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    if (!env.setLeft(getState().ast)) {
+    if (!env.setLeft(selectors.selectAST(getState()))) {
       dispatch(setCursor(env.editor, env.node.srcRange().from));
     }
   },
@@ -520,12 +525,14 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    const { selections, ast } = getState();
+    const state = getState();
+    const ast = selectors.selectAST(state);
+    const selections = selectors.selectSelections(state);
     if (!selections.length) {
       return say("Nothing selected");
     }
     const nodesToCut = selections.map(ast.getNodeByIdOrThrow);
-    copy(getState(), nodesToCut, "cut");
+    copy({ ast, focusId: state.focusId }, nodesToCut, "cut");
     dispatch(delete_(env.editor, nodesToCut, env.language.parse));
   },
 
@@ -534,10 +541,12 @@ const commandMap: {
       return;
     }
     // if no nodes are selected, do it on focused node's id instead
-    const { selections, ast } = getState();
+    const state = getState();
+    const ast = selectors.selectAST(state);
+    const selections = selectors.selectSelections(state);
     const nodeIds = !selections.length ? [env.node.id] : selections;
     const nodesToCopy = nodeIds.map(ast.getNodeByIdOrThrow);
-    copy(getState(), nodesToCopy, "copied");
+    copy({ ast, focusId: state.focusId }, nodesToCopy, "copied");
   },
 
   Paste: pasteHandler,
@@ -628,9 +637,9 @@ export const keyDown =
         };
         // If there's a node, make sure it's fresh
         if (env.isNodeEnv) {
-          const updatedNode = state.ast.getNodeByIdOrThrow(env.node.id);
-          env.node =
-            updatedNode && state.ast.getNodeByNIdOrThrow(updatedNode.nid);
+          const ast = selectors.selectAST(state);
+          const updatedNode = ast.getNodeByIdOrThrow(env.node.id);
+          env.node = updatedNode && ast.getNodeByNIdOrThrow(updatedNode.nid);
         }
         const action = handler(env, e);
         if (action) {

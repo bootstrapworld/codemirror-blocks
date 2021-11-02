@@ -1,5 +1,5 @@
 import { createSelector } from "reselect";
-import { ASTNode } from "../ast";
+import { AST, ASTNode } from "../ast";
 import { RootState } from "./reducers";
 
 const selectNode = (state: RootState, node: ASTNode) => node;
@@ -16,7 +16,7 @@ export const isCollapsed = createSelector(
   (collapsedList, node) => collapsedList.includes(node.id)
 );
 
-const selectSelections = (state: RootState) => state.selections;
+export const selectSelections = (state: RootState) => state.selections;
 
 /**
  * Returns whether or not the given node is selected.
@@ -34,7 +34,7 @@ export const getTextMarker = createSelector(
   (markedMap, node) => markedMap[node.id]
 );
 
-export const selectAST = (state: RootState) => state.ast;
+export const selectAST = (state: RootState) => new AST(state.astData);
 
 /**
  * Returns the parent node for the given node

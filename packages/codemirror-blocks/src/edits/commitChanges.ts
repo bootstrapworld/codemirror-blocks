@@ -10,6 +10,7 @@ import { ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { ChangeObject } from "./performEdits";
 import { Language } from "../CodeMirrorBlocks";
 import * as actions from "../state/actions";
+import * as selectors from "../state/selectors";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
@@ -43,7 +44,8 @@ export const commitChanges =
   ): AppThunk<Result<{ newAST: AST; focusId?: string }>> =>
   (dispatch, getState) => {
     try {
-      const { ast: oldAST, focusId: oldFocusId } = getState();
+      const oldAST = selectors.selectAST(getState());
+      const { focusId: oldFocusId } = getState();
       let oldFocusNId = null;
       if (!isUndoOrRedo) {
         // Remember the previous focus. See the next `!isUndoOrRedo` block.
@@ -55,7 +57,7 @@ export const commitChanges =
         ? [...astHint.rootNodes]
         : parse(editor.getValue());
       // Patch the tree and set the state
-      const newAST = new AST(patch([...oldAST.rootNodes], newNodes));
+      const newAST = AST.from(patch([...oldAST.rootNodes], newNodes));
       dispatch(actions.setAST(newAST));
       // Try to set the focus using hinting data. If that fails, use the first root
       const focusId =

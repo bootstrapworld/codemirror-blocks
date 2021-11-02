@@ -17,20 +17,8 @@ describe("createAppStore()", () => {
     expect(getState()).toMatchInlineSnapshot(`
       Object {
         "actionFocus": undefined,
-        "ast": AST {
+        "astData": Object {
           "edgeIdMap": Object {},
-          "getAllNodeIds": [Function],
-          "getAllNodes": [Function],
-          "getNodeAfter": [Function],
-          "getNodeAfterCur": [Function],
-          "getNodeBefore": [Function],
-          "getNodeBeforeCur": [Function],
-          "getNodeById": [Function],
-          "getNodeByIdOrThrow": [Function],
-          "getNodeByNId": [Function],
-          "getNodeByNIdOrThrow": [Function],
-          "getNodeParent": [Function],
-          "isAncestor": [Function],
           "nodeIdMap": Map {},
           "nodeNIdMap": Map {},
           "rootNodes": Array [],
@@ -54,16 +42,16 @@ describe("ast", () => {
     expect(selectors.selectAST(getState()).rootNodes.length).toBe(0);
   });
   it("setAST will set the ast being used", () => {
-    const newAST = new AST([]);
+    const newAST = AST.from([]);
     dispatch(actions.setAST(newAST));
-    expect(selectors.selectAST(getState())).toBe(newAST);
+    expect(selectors.selectAST(getState()).data).toBe(newAST.data);
   });
 });
 
 describe("collapse state", () => {
   let ast: AST;
   beforeEach(() => {
-    ast = new AST(
+    ast = AST.from(
       wescheme.parse(`
       (define x 1)
       (define y 2)

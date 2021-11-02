@@ -147,7 +147,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       // prevent ancestors from stealing focus
       e.stopPropagation();
     }
-    const { ast } = store.getState();
+    const ast = selectors.selectAST(store.getState());
     if (!isErrorFree()) {
       // TODO(Oak): is this the best way?
       return;
@@ -209,7 +209,9 @@ const Node = ({ expandable = true, ...props }: Props) => {
       if (monitor.didDrop()) {
         return;
       }
-      const node = store.getState().ast.getNodeByIdOrThrow(props.node.id);
+      const node = selectors
+        .selectAST(store.getState())
+        .getNodeByIdOrThrow(props.node.id);
       return drop(editor, monitor.getItem(), new ReplaceNodeTarget(node));
     },
     collect: (monitor) => {

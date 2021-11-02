@@ -26,7 +26,7 @@ const renderWithContext = (el: React.ReactElement) =>
   );
 
 it("renders a draggable span with various aria properties", () => {
-  const ast = new AST([
+  const ast = AST.from([
     Literal({ line: 0, ch: 0 }, { line: 0, ch: 1 }, "someVar", "symbol", {
       ariaLabel: "the someVar variable",
     }),
@@ -58,7 +58,7 @@ it("renders a draggable span with various aria properties", () => {
 });
 
 it("renders a comment that is associated with a node", () => {
-  const ast = new AST([
+  const ast = AST.from([
     Literal({ line: 0, ch: 0 }, { line: 0, ch: 1 }, "someVar", "symbol", {
       ariaLabel: "the someVar variable",
       comment: Comment({ line: 0, ch: 2 }, { line: 0, ch: 7 }, "hello"),

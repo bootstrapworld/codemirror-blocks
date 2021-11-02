@@ -155,7 +155,7 @@ function ToggleEditor(props: ToggleEditorProps) {
     title: string;
     content: ReactElement;
   }>(null);
-  const [ast, setAST] = useState(new AST([]));
+  const [ast, setAST] = useState(AST.from([]));
   const [recordedMarks, setRecordedMarks] = useState<
     Map<
       number,
@@ -179,7 +179,7 @@ function ToggleEditor(props: ToggleEditorProps) {
         try {
           const oldCode = editor.getValue();
           oldCode.match(/\s+$/); // match ending whitespace
-          oldAst = new AST(language.parse(oldCode)); // parse the code (WITH annotations)
+          oldAst = AST.from(language.parse(oldCode)); // parse the code (WITH annotations)
         } catch (err) {
           console.error(err);
           let message = "";
@@ -195,7 +195,7 @@ function ToggleEditor(props: ToggleEditorProps) {
         }
         try {
           code = oldAst.toString() + (WS ? WS[0] : ""); // pretty-print and restore whitespace
-          setAST(new AST(language.parse(code))); // parse the pretty-printed (PP) code
+          setAST(AST.from(language.parse(code))); // parse the pretty-printed (PP) code
         } catch (e) {
           console.error("COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n", oldAst);
           console.error("PRETTY-PRINTED CODE WAS", oldAst.toString());

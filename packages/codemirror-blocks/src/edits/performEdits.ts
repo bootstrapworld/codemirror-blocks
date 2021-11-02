@@ -16,6 +16,7 @@ import {
 } from "./fakeAstEdits";
 import type { AppThunk } from "../state/store";
 import { getReducerActivities } from "../state/reducers";
+import * as selectors from "../state/selectors";
 import { err, ok, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
 import CodeMirror from "codemirror";
@@ -213,7 +214,12 @@ export const performEdits =
   ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
   (dispatch, getState) => {
     // Perform the text edits, and update the ast.
-    const result = applyEdits(edits, getState().ast, editor, parse);
+    const result = applyEdits(
+      edits,
+      selectors.selectAST(getState()),
+      editor,
+      parse
+    );
     if (result.successful) {
       try {
         // update the ast.

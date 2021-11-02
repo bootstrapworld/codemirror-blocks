@@ -153,7 +153,7 @@ describe("The FunctionApp Class", () => {
       ]
     );
     // build the AST, thereby assigning parent/child/sibling relationships
-    ast = new AST([expression]);
+    ast = AST.from([expression]);
   });
 
   it("should take a function name and list of args in its constructor", () => {
@@ -195,7 +195,7 @@ describe("The FunctionApp Class", () => {
 describe("The AST Class", () => {
   it("should take a set of root nodes in its constructor", () => {
     const nodes = [Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11")];
-    const ast = new AST(nodes);
+    const ast = AST.from(nodes);
     expect(ast.rootNodes).toBe(nodes);
   });
 
@@ -212,7 +212,7 @@ describe("The AST Class", () => {
         ]
       ),
     ] as [LiteralNode, FunctionAppNode];
-    const ast = new AST(nodes);
+    const ast = AST.from(nodes);
     expect(ast.getNodeById(nodes[0].id)).toBe(nodes[0]);
     expect(ast.getNodeById(nodes[1].id)).toBe(nodes[1]);
     expect(ast.getNodeById(nodes[1].fields.args[0].id)).toBe(
@@ -248,8 +248,8 @@ describe("The AST Class", () => {
         ]
       ),
     ];
-    const ast1 = new AST(nodes1);
-    const ast2 = new AST(nodes2);
+    const ast1 = AST.from(nodes1);
+    const ast2 = AST.from(nodes2);
     expect(ast1.rootNodes[0].hash).toBe(ast2.rootNodes[0].hash);
   });
 
@@ -280,8 +280,8 @@ describe("The AST Class", () => {
         ]
       ),
     ];
-    const ast1 = new AST(nodes1);
-    const ast2 = new AST(nodes2);
+    const ast1 = AST.from(nodes1);
+    const ast2 = AST.from(nodes2);
     expect(ast1.rootNodes[0].hash).not.toBe(ast2.rootNodes[0].hash);
   });
 });

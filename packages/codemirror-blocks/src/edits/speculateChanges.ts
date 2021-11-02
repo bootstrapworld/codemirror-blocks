@@ -26,7 +26,7 @@ export function speculateChanges(
   }
   const newText = tmpRangedText.getValue();
   try {
-    return ok(new AST(parse(newText)));
+    return ok(AST.from(parse(newText)));
   } catch (exception) {
     return err(exception);
   }

@@ -2,6 +2,7 @@ import objToStableString from "fast-json-stable-stringify";
 import CodeMirror, { EditorChange } from "codemirror";
 import { CodeMirrorFacade } from "./editor";
 import type { RootState } from "./state/reducers";
+import * as selectors from "./state/selectors";
 import type { AST, ASTNode, Pos, Range } from "./ast";
 
 /**************************************************************
@@ -282,7 +283,8 @@ export function skipCollapsed(
   next: (node: ASTNode | undefined) => ASTNode | undefined,
   state: RootState
 ) {
-  const { collapsedList, ast } = state;
+  const { collapsedList } = state;
+  const ast = selectors.selectAST(state);
   const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
   // NOTE(Oak): if this is too slow, consider adding a
@@ -313,7 +315,8 @@ export function getRoot(ast: AST, node: ASTNode) {
 }
 
 export function getLastVisibleNode(state: RootState) {
-  const { collapsedList, ast } = state;
+  const ast = selectors.selectAST(state);
+  const { collapsedList } = state;
   const collapsedNodeList = collapsedList.map(ast.getNodeByIdOrThrow);
   const lastNode = ast.getNodeBeforeCur(
     ast.rootNodes[ast.rootNodes.length - 1].to

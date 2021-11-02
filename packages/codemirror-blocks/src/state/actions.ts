@@ -20,7 +20,7 @@ import {
   EditInterface,
 } from "../edits/performEdits";
 import { AST, ASTNode, Pos } from "../ast";
-import { AppAction, RootState } from "./reducers";
+import { AppAction } from "./reducers";
 import {
   CodeMirrorFacade,
   CMBEditor,
@@ -33,8 +33,12 @@ import type { Language } from "../CodeMirrorBlocks";
 import { Result } from "../edits/result";
 import { useContext } from "react";
 import { LanguageContext } from "../components/Context";
+import * as selectors from "./selectors";
 
-export const setAST = (ast: AST) => ({ type: "SET_AST" as const, ast });
+export const setAST = (ast: AST) => ({
+  type: "SET_AST" as const,
+  ast,
+});
 
 export const collapseNode = (node: ASTNode) => ({
   type: "COLLAPSE" as const,
@@ -92,7 +96,7 @@ export const insert =
   ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
   (dispatch, getState) => {
     checkTarget(target);
-    const edits = [target.toEdit(getState().ast, text)];
+    const edits = [target.toEdit(selectors.selectAST(getState()), text)];
     return dispatch(performEdits(edits, parse, editor, annt));
   };
 
@@ -126,7 +130,7 @@ export const delete_ =
       return;
     }
     nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
-    const { ast } = getState();
+    const ast = selectors.selectAST(getState());
     const edits = nodes.map((node) => edit_delete(ast, node));
     let annt: string | undefined = undefined;
     if (editWord) {
@@ -139,12 +143,13 @@ export const delete_ =
 
 // Copy the given nodes onto the clipboard.
 export function copy(
-  state: Pick<RootState, "ast" | "focusId">,
+  { ast, focusId }: { ast: AST; focusId: string | null },
   nodes: ASTNode[],
   editWord?: string
 ) {
-  if (nodes.length === 0) return;
-  const { ast, focusId } = state;
+  if (nodes.length === 0) {
+    return;
+  }
   // Pretty-print each copied node. Join them with spaces, or newlines for
   // commented nodes (to prevent a comment from attaching itself to a
   // different node after pasting).
@@ -176,7 +181,7 @@ export const paste =
   (dispatch, getState) => {
     checkTarget(target);
     pasteFromClipboard((text) => {
-      const edits = [target.toEdit(getState().ast, text)];
+      const edits = [target.toEdit(selectors.selectAST(getState()), text)];
       dispatch(performEdits(edits, parse, editor));
       dispatch({ type: "SET_SELECTIONS", selections: [] });
     });
@@ -200,7 +205,7 @@ export function useDropAction() {
     const { id: srcId, content: srcContent } = src;
     const state = store.getState();
     const { collapsedList } = state;
-    let { ast } = state; // get the AST, and which nodes are collapsed
+    let ast = selectors.selectAST(state); // get the AST, and which nodes are collapsed
     const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
     const content = srcNode ? srcNode.toString() : srcContent;
 
@@ -215,9 +220,7 @@ export function useDropAction() {
     // Assuming it did not come from the toolbar...
     // (1) Delete the text of the dragged node, (2) and save the id and hash
     if (srcNode) {
-      edits.push(
-        edit_delete(state.ast, state.ast.getNodeByIdOrThrow(srcNode.id))
-      );
+      edits.push(edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id)));
       droppedHash = ast.getNodeByIdOrThrow(srcNode.id).hash;
     }
 
@@ -256,7 +259,9 @@ export function activateByNid(
 ): AppThunk {
   return (dispatch, getState) => {
     options = { ...options, allowMove: true, record: true };
-    const { ast, focusId, collapsedList } = getState();
+    const state = getState();
+    const ast = selectors.selectAST(state);
+    const { focusId, collapsedList } = state;
 
     // If nid is null, try to get it from the focusId
     if (nid === null && focusId) {
@@ -374,7 +379,7 @@ export const setSelections =
     replace = true
   ): AppThunk =>
   (dispatch, getState) => {
-    const { ast } = getState();
+    const ast = selectors.selectAST(getState());
     const tmpCM = getTempCM(ed);
     tmpCM.setSelections(ranges, primary, options);
     const textRanges: {
@@ -460,7 +465,12 @@ export const replaceSelections =
  * state from the block editor
  */
 export const listSelections = (ed: CodeMirrorFacade, dispatch: AppDispatch) => {
-  const { selections, ast } = dispatch((_, getState) => getState());
+  const { selections, ast } = dispatch((_, getState) => {
+    return {
+      selections: selectors.selectSelections(getState()),
+      ast: selectors.selectAST(getState()),
+    };
+  });
   const tmpCM = getTempCM(ed);
   // write all the ranges for all selected nodes
   selections.forEach((id) => {

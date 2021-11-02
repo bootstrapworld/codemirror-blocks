@@ -2,17 +2,16 @@ import React from "react";
 import { ItemTypes } from "../dnd";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../state/reducers";
 import { edit_delete, performEdits } from "../edits/performEdits";
 import { AppDispatch } from "../state/store";
+import * as selectors from "../state/selectors";
 import { CMBEditor } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
 require("./TrashCan.less");
 
 const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
   const dispatch: AppDispatch = useDispatch();
-
-  const { ast } = useSelector(({ ast }: RootState) => ({ ast }));
+  const ast = useSelector(selectors.selectAST);
   const [{ isOver }, drop] = useDrop(
     () => ({
       accept: ItemTypes.NODE,

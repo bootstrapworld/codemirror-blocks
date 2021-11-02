@@ -6,6 +6,7 @@ import classNames from "classnames";
 import { AppDispatch, AppStore } from "../state/store";
 import { genUniqueId } from "../utils";
 import { useDropAction, InsertTarget } from "../state/actions";
+import * as selectors from "../state/selectors";
 import type { ASTNode, AST, Pos } from "../ast";
 import { RootState } from "../state/reducers";
 import { ItemTypes } from "../dnd";
@@ -146,8 +147,9 @@ field declared. The node was:`,
   const [mouseOver, setMouseOver] = useState(false);
 
   const dispatch: AppDispatch = useDispatch();
-  const { ast, isEditable } = useSelector((state: RootState) => {
-    return { ast: state.ast, isEditable: state.editable[id] ?? false };
+  const ast = useSelector(selectors.selectAST);
+  const { isEditable } = useSelector((state: RootState) => {
+    return { isEditable: state.editable[id] ?? false };
   });
   // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
   // check to see whether an adjacent DropTarget is being edited, or, for when the

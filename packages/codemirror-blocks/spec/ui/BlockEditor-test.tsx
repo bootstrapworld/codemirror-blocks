@@ -35,7 +35,7 @@ xdescribe("on first render", () => {
         value=""
         onMount={onMount}
         keyDownHelpers={{}}
-        passedAST={new AST([])}
+        passedAST={AST.from([])}
         language={testLanguage}
       />
     );
