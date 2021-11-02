@@ -45,7 +45,7 @@ function copyToClipboard(text: string) {
  * Copy the given nodes onto the clipboard.
  */
 export function copy(
-  { ast, focusId }: { ast: AST; focusId: string | null },
+  { focusedNode }: { focusedNode: ASTNode | null },
   nodes: ASTNode[],
   editWord?: string
 ) {
@@ -71,7 +71,9 @@ export function copy(
   copyToClipboard(text);
   // Copy steals focus. Force it back to the node's DOM element
   // without announcing via activateByNid().
-  if (focusId) {
-    ast.getNodeByIdOrThrow(focusId).element?.focus();
+  // TODO(pcardune): it would be better to focus on whatever the
+  // previously focused element was, not or not.
+  if (focusedNode) {
+    focusedNode.element?.focus();
   }
 }

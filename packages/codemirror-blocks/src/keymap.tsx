@@ -528,11 +528,12 @@ const commandMap: {
     const state = getState();
     const ast = selectors.selectAST(state);
     const selections = selectors.selectSelections(state);
+    const focusedNode = selectors.getFocusedNode(state);
     if (!selections.length) {
       return say("Nothing selected");
     }
     const nodesToCut = selections.map(ast.getNodeByIdOrThrow);
-    copy({ ast, focusId: state.focusId }, nodesToCut, "cut");
+    copy({ focusedNode }, nodesToCut, "cut");
     dispatch(delete_(env.editor, nodesToCut, env.language.parse));
   },
 
@@ -544,9 +545,10 @@ const commandMap: {
     const state = getState();
     const ast = selectors.selectAST(state);
     const selections = selectors.selectSelections(state);
+    const focusedNode = selectors.getFocusedNode(state);
     const nodeIds = !selections.length ? [env.node.id] : selections;
     const nodesToCopy = nodeIds.map(ast.getNodeByIdOrThrow);
-    copy({ ast, focusId: state.focusId }, nodesToCopy, "copied");
+    copy({ focusedNode }, nodesToCopy, "copied");
   },
 
   Paste: pasteHandler,

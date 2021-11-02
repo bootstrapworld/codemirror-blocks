@@ -45,11 +45,10 @@ export const commitChanges =
   (dispatch, getState) => {
     try {
       const oldAST = selectors.selectAST(getState());
-      const { focusId: oldFocusId } = getState();
+      const oldFocus = selectors.getFocusedNode(getState());
       let oldFocusNId = null;
       if (!isUndoOrRedo) {
         // Remember the previous focus. See the next `!isUndoOrRedo` block.
-        const oldFocus = oldFocusId && oldAST.getNodeById(oldFocusId);
         oldFocusNId = oldFocus ? oldFocus.nid : null;
       }
       // If we haven't already parsed the AST during speculateChanges, parse it now.

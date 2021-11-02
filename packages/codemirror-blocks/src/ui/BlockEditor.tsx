@@ -224,17 +224,21 @@ export const buildAPI = (
       ),
     // Restrict CM's getCursor() to  block editor semantics
     getCursor: (where) => {
-      const ast = dispatch((_, getState) => selectors.selectAST(getState()));
-      const { focusId } = dispatch((_, getState) => getState());
-      if (focusId && document.activeElement?.id.match(/block-node/)) {
-        const node = ast.getNodeByIdOrThrow(focusId);
-        if (where == "from" || where == undefined) return node.from;
-        if (where == "to") return node.to;
-        else
+      const node = dispatch((_, getState) =>
+        selectors.getFocusedNode(getState())
+      );
+      if (node && document.activeElement?.id.match(/block-node/)) {
+        if (where == "from" || where == undefined) {
+          return node.from;
+        }
+        if (where == "to") {
+          return node.to;
+        } else {
           throw new BlockError(
             `getCursor() with ${where} is not supported on a focused block`,
             `API Error`
           );
+        }
       } else {
         return editor.codemirror.getCursor(where);
       }
@@ -273,12 +277,9 @@ export const buildAPI = (
      */
     getAst: () => withState((state) => selectors.selectAST(state)),
     // activation-test.js expects undefined
+    // TODO(pcardune): choose null or undefined everywhere.
     getFocusedNode: () =>
-      withState((state) =>
-        state.focusId
-          ? selectors.selectAST(state).getNodeById(state.focusId)
-          : undefined
-      ),
+      withState((state) => selectors.getFocusedNode(state) ?? undefined),
     getSelectedNodes: () =>
       withState((state) => {
         const ast = selectors.selectAST(state);
@@ -485,7 +486,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     // When the editor receives focus, select the first root (if it exists)
     const firstRoot = passedAST.getFirstRootNode();
     if (firstRoot) {
-      dispatch({ type: "SET_FOCUS", focusId: firstRoot.id });
+      dispatch(actions.setFocusedNode(firstRoot));
     }
 
     // Set extra aria attributes
@@ -507,11 +508,12 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     setAfterDOMUpdate(() => {
       dispatch((_, getState) => {
         const ast = selectors.selectAST(getState());
-        const { cur, focusId } = getState();
-        if (cur != null) return; // if we already have a cursor, bail
-        const node = focusId
-          ? ast.getNodeByIdOrThrow(focusId)
-          : ast.getFirstRootNode();
+        const focusedNode = selectors.getFocusedNode(getState());
+        const { cur } = getState();
+        if (cur != null) {
+          return; // if we already have a cursor, bail
+        }
+        const node = focusedNode || ast.getFirstRootNode();
         dispatch(
           activateByNid(editor, node && node.nid, {
             allowMove: true,

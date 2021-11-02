@@ -65,6 +65,11 @@ export const clearError = () => ({
   errorId: "",
 });
 
+export const setFocusedNode = (node: ASTNode) => ({
+  type: "SET_FOCUS" as const,
+  focusId: node.id,
+});
+
 // All editing actions are defined here.
 //
 // Many actions take a Target as an option. A Target may be constructed by any
@@ -227,11 +232,12 @@ export function activateByNid(
     options = { ...options, allowMove: true, record: true };
     const state = getState();
     const ast = selectors.selectAST(state);
-    const { focusId, collapsedList } = state;
+    const focusedNode = selectors.getFocusedNode(state);
+    const { collapsedList } = state;
 
     // If nid is null, try to get it from the focusId
-    if (nid === null && focusId) {
-      nid = ast.getNodeById(focusId)?.nid ?? null;
+    if (nid === null && focusedNode) {
+      nid = focusedNode.nid ?? null;
     }
 
     // Get the new node from the nid
@@ -271,7 +277,7 @@ export function activateByNid(
     }
 
     setAfterDOMUpdate(() => {
-      dispatch({ type: "SET_FOCUS", focusId: newNode.id });
+      dispatch(setFocusedNode(newNode));
 
       // if this timeout fires after the node has been torn down, don't bother
       if (newNode.element) {

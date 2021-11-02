@@ -103,3 +103,26 @@ describe("error state", () => {
     expect(selectors.getErrorId(getState())).toBe("");
   });
 });
+
+describe("focus state", () => {
+  let ast: AST;
+  beforeEach(() => {
+    ast = AST.from(
+      wescheme.parse(`
+      (define x 1)
+      (define y 2)
+      (define z 3)
+    `)
+    );
+    dispatch(actions.setAST(ast));
+  });
+
+  it("starts with no node focused", () => {
+    expect(selectors.getFocusedNode(getState())).toBe(null);
+  });
+
+  it("setFocusedNode() will set the focused node", () => {
+    dispatch(actions.setFocusedNode(ast.rootNodes[0]));
+    expect(selectors.getFocusedNode(getState())).toBe(ast.rootNodes[0]);
+  });
+});

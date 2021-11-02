@@ -57,3 +57,11 @@ export const isErrorFree = createSelector(
   [getErrorId],
   (errorId) => errorId === ""
 );
+
+/**
+ * @returns The currently focused node, or null if there is none.
+ */
+export const getFocusedNode = createSelector(
+  [selectAST, (state: RootState) => state.focusId],
+  (ast, focusId) => (focusId ? ast.getNodeById(focusId) ?? null : null)
+);

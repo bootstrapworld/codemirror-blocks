@@ -97,15 +97,12 @@ const NodeEditable = (props: Props) => {
       // to deal with this issue:
       // https://github.com/lovasoa/react-contenteditable/issues/161
       const value = element.current?.textContent;
-      const state = getState();
-      const ast = selectors.selectAST(state);
-      const { focusId } = state;
+      const focusedNode = selectors.getFocusedNode(getState());
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
       if (value === initialValue || !value) {
         props.onDisableEditable();
-        const focusNode = focusId ? ast.getNodeById(focusId) || null : null;
-        const nid = focusNode && focusNode.nid;
+        const nid = focusedNode && focusedNode.nid;
         dispatch(activateByNid(props.editor, nid));
         return;
       }
