@@ -76,10 +76,10 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const store: AppStore = useStore();
   const language = useContext(LanguageContext);
   const appHelpers = useContext(AppContext);
-  const isErrorFree = () => store.getState().errorId === "";
+  const isErrorFree = useSelector(selectors.isErrorFree);
 
   const handleMakeEditable = () => {
-    if (!isErrorFree() || props.inToolbar) {
+    if (!isErrorFree || props.inToolbar) {
       return;
     }
     setEditable(true);
@@ -148,7 +148,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       e.stopPropagation();
     }
     const ast = selectors.selectAST(store.getState());
-    if (!isErrorFree()) {
+    if (!isErrorFree) {
       // TODO(Oak): is this the best way?
       return;
     }

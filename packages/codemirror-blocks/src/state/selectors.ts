@@ -51,3 +51,9 @@ export const getNodeAfter = createSelector(
   [selectAST, selectNode],
   (ast, node) => ast.getNodeAfter(node)
 );
+
+export const getErrorId = (state: RootState) => state.errorId;
+export const isErrorFree = createSelector(
+  [getErrorId],
+  (errorId) => errorId === ""
+);

@@ -53,6 +53,16 @@ export const uncollapseNode = (node: ASTNode) => ({
 export const collapseAll = () => ({ type: "COLLAPSE_ALL" as const });
 export const uncollapseAll = () => ({ type: "UNCOLLAPSE_ALL" as const });
 
+export const setErrorId = (errorId: string) => ({
+  type: "SET_ERROR_ID" as const,
+  errorId,
+});
+
+export const clearError = () => ({
+  type: "SET_ERROR_ID" as const,
+  errorId: "",
+});
+
 // All editing actions are defined here.
 //
 // Many actions take a Target as an option. A Target may be constructed by any

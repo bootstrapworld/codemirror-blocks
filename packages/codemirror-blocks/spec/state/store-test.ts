@@ -83,3 +83,23 @@ describe("collapse state", () => {
     expect(selectors.isCollapsed(getState(), ast.rootNodes[2])).toBe(false);
   });
 });
+
+describe("error state", () => {
+  it("starts out as error free", () => {
+    expect(selectors.getErrorId(getState())).toBe("");
+    expect(selectors.isErrorFree(getState())).toBe(true);
+  });
+
+  it("setErrorId() will set the error id", () => {
+    dispatch(actions.setErrorId("error-id"));
+    expect(selectors.isErrorFree(getState())).toBe(false);
+    expect(selectors.getErrorId(getState())).toBe("error-id");
+  });
+
+  it("clearError() will clear the error state", () => {
+    dispatch(actions.setErrorId("error-id"));
+    dispatch(actions.clearError());
+    expect(selectors.isErrorFree(getState())).toBe(true);
+    expect(selectors.getErrorId(getState())).toBe("");
+  });
+});

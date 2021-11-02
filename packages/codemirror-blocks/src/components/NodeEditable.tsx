@@ -13,6 +13,7 @@ import { setAfterDOMUpdate } from "../utils";
 import { CMBEditor } from "../editor";
 import { useLanguageOrThrow } from "../hooks";
 import * as selectors from "../state/selectors";
+import * as actions from "../state/actions";
 
 function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
@@ -62,7 +63,7 @@ const NodeEditable = (props: Props) => {
 
   const { initialValue, isErrored } = useSelector((state: RootState) => {
     const nodeId = props.target.node ? props.target.node.id : "editing";
-    const isErrored = state.errorId == nodeId;
+    const isErrored = selectors.getErrorId(state) == nodeId;
 
     const initialValue =
       props.value === null ? props.target.getText(ast, props.editor) : "";
@@ -87,9 +88,6 @@ const NodeEditable = (props: Props) => {
     dispatch({ type: "SET_SELECTIONS", selections: [] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const setErrorId = (errorId: string) =>
-    dispatch({ type: "SET_ERROR_ID", errorId });
 
   const onBlur = (e: React.SyntheticEvent) => {
     e.stopPropagation();
@@ -120,11 +118,11 @@ const NodeEditable = (props: Props) => {
         dispatch(activateByNid(props.editor, null, { allowMove: false }));
         props.onChange(null);
         props.onDisableEditable();
-        setErrorId("");
+        dispatch(actions.clearError());
         say(annt);
       } else {
         console.error(result.exception);
-        setErrorId(target.node ? target.node.id : "editing");
+        dispatch(actions.setErrorId(target.node ? target.node.id : "editing"));
         if (element.current) {
           selectElement(element.current, false);
         }
@@ -145,7 +143,7 @@ const NodeEditable = (props: Props) => {
         e.stopPropagation();
         props.onChange(null);
         props.onDisableEditable();
-        setErrorId("");
+        dispatch(actions.clearError());
         // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
         // and then figure out how to get rid of it altogether.
         setAfterDOMUpdate(() => {

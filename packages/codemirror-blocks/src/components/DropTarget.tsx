@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "react-dnd";
 import classNames from "classnames";
-import { AppDispatch, AppStore } from "../state/store";
+import { AppDispatch } from "../state/store";
 import { genUniqueId } from "../utils";
 import { useDropAction, InsertTarget } from "../state/actions";
 import * as selectors from "../state/selectors";
@@ -128,8 +128,7 @@ export const DropTarget = (props: { field: string }) => {
   }
   const editor = useContext(EditorContext);
 
-  const store: AppStore = useStore();
-  const isErrorFree = () => store.getState().errorId === "";
+  const isErrorFree = useSelector(selectors.isErrorFree);
 
   // ensure that the field property is set
   if (!props.field) {
@@ -193,7 +192,7 @@ field declared. The node was:`,
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isErrorFree()) {
+    if (!isErrorFree) {
       // TODO(Oak): is this the best way to handle this?
       return;
     }
