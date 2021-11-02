@@ -113,7 +113,7 @@ export const insert =
   ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
   (dispatch, getState) => {
     checkTarget(target);
-    const edits = [target.toEdit(selectors.selectAST(getState()), text)];
+    const edits = [target.toEdit(selectors.getAST(getState()), text)];
     return dispatch(performEdits(edits, parse, editor, annt));
   };
 
@@ -131,7 +131,7 @@ export const delete_ =
       return;
     }
     nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
-    const ast = selectors.selectAST(getState());
+    const ast = selectors.getAST(getState());
     const edits = nodes.map((node) => edit_delete(ast, node));
     let annt: string | undefined = undefined;
     if (editWord) {
@@ -149,7 +149,7 @@ export const paste =
   (dispatch, getState) => {
     checkTarget(target);
     pasteFromClipboard((text) => {
-      const edits = [target.toEdit(selectors.selectAST(getState()), text)];
+      const edits = [target.toEdit(selectors.getAST(getState()), text)];
       dispatch(performEdits(edits, parse, editor));
       dispatch({ type: "SET_SELECTIONS", selections: [] });
     });
@@ -173,7 +173,7 @@ export function useDropAction() {
     dispatch((dispatch, getState) => {
       const state = getState();
       const { collapsedList } = state;
-      let ast = selectors.selectAST(state); // get the AST, and which nodes are collapsed
+      let ast = selectors.getAST(state); // get the AST, and which nodes are collapsed
       const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
       const content = srcNode ? srcNode.toString() : srcContent;
 
@@ -231,7 +231,7 @@ export function activateByNid(
   return (dispatch, getState) => {
     options = { ...options, allowMove: true, record: true };
     const state = getState();
-    const ast = selectors.selectAST(state);
+    const ast = selectors.getAST(state);
     const focusedNode = selectors.getFocusedNode(state);
     const { collapsedList } = state;
 
@@ -312,7 +312,7 @@ export const setSelections =
     replace = true
   ): AppThunk =>
   (dispatch, getState) => {
-    const ast = selectors.selectAST(getState());
+    const ast = selectors.getAST(getState());
     const tmpCM = getTempCM(ed);
     tmpCM.setSelections(ranges, primary, options);
     const textRanges: {
@@ -400,8 +400,8 @@ export const replaceSelections =
 export const listSelections = (ed: CodeMirrorFacade, dispatch: AppDispatch) => {
   const { selections, ast } = dispatch((_, getState) => {
     return {
-      selections: selectors.selectSelections(getState()),
-      ast: selectors.selectAST(getState()),
+      selections: selectors.getSelections(getState()),
+      ast: selectors.getAST(getState()),
     };
   });
   const tmpCM = getTempCM(ed);

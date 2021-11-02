@@ -11,7 +11,7 @@ require("./TrashCan.less");
 
 const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
   const dispatch: AppDispatch = useDispatch();
-  const ast = useSelector(selectors.selectAST);
+  const ast = useSelector(selectors.getAST);
   const [{ isOver }, drop] = useDrop(
     () => ({
       accept: ItemTypes.NODE,

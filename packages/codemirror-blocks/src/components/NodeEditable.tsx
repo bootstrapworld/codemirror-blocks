@@ -59,7 +59,7 @@ const NodeEditable = (props: Props) => {
   const dispatch: AppDispatch = useDispatch();
   const language = useLanguageOrThrow();
 
-  const ast = useSelector(selectors.selectAST);
+  const ast = useSelector(selectors.getAST);
 
   const { initialValue, isErrored } = useSelector((state: RootState) => {
     const nodeId = props.target.node ? props.target.node.id : "editing";

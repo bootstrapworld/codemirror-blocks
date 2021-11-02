@@ -44,7 +44,7 @@ export const commitChanges =
   ): AppThunk<Result<{ newAST: AST; focusId?: string }>> =>
   (dispatch, getState) => {
     try {
-      const oldAST = selectors.selectAST(getState());
+      const oldAST = selectors.getAST(getState());
       const oldFocus = selectors.getFocusedNode(getState());
       let oldFocusNId = null;
       if (!isUndoOrRedo) {

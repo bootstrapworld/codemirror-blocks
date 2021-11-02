@@ -170,7 +170,7 @@ const ByString: Searcher<SearchSettings, Props> = {
     }
   },
   search: (cur, settings, editor, state, forward) => {
-    const ast = selectors.selectAST(state);
+    const ast = selectors.getAST(state);
     const { collapsedList } = state;
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
 

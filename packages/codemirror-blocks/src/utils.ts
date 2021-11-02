@@ -284,7 +284,7 @@ export function skipCollapsed(
   state: RootState
 ) {
   const { collapsedList } = state;
-  const ast = selectors.selectAST(state);
+  const ast = selectors.getAST(state);
   const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
   // NOTE(Oak): if this is too slow, consider adding a
@@ -315,7 +315,7 @@ export function getRoot(ast: AST, node: ASTNode) {
 }
 
 export function getLastVisibleNode(state: RootState) {
-  const ast = selectors.selectAST(state);
+  const ast = selectors.getAST(state);
   const { collapsedList } = state;
   const collapsedNodeList = collapsedList.map(ast.getNodeByIdOrThrow);
   const lastNode = ast.getNodeBeforeCur(

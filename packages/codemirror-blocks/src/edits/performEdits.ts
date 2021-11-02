@@ -216,7 +216,7 @@ export const performEdits =
     // Perform the text edits, and update the ast.
     const result = applyEdits(
       edits,
-      selectors.selectAST(getState()),
+      selectors.getAST(getState()),
       editor,
       parse
     );

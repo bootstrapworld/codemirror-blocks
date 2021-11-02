@@ -245,7 +245,7 @@ describe("performEdits", () => {
 `);
     expect(
       selectors
-        .selectAST(store.getState())
+        .getAST(store.getState())
         .rootNodes[1].pretty()
         .display(80)
         .join("\n")

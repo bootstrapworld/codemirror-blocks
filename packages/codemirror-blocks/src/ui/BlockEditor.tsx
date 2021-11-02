@@ -124,7 +124,7 @@ export const buildAPI = (
     // Restrict CM's markText method to block editor semantics:
     // fewer options, restricted to node boundaries
     markText: (from, to, opts: CodeMirror.TextMarkerOptions = {}) => {
-      const ast = dispatch((_, getState) => selectors.selectAST(getState()));
+      const ast = dispatch((_, getState) => selectors.getAST(getState()));
       const node = ast.getNodeAt(from, to);
       if (!node) {
         throw new BlockError(
@@ -190,10 +190,7 @@ export const buildAPI = (
     listSelections: () => listSelections(editor, dispatch),
     replaceRange: (text, from, to, origin) =>
       withState((state) => {
-        validateRanges(
-          [{ anchor: from, head: to }],
-          selectors.selectAST(state)
-        );
+        validateRanges([{ anchor: from, head: to }], selectors.getAST(state));
         editor.codemirror.replaceRange(text, from, to, origin);
       }),
     setSelections: (ranges, primary, opts) =>
@@ -246,7 +243,7 @@ export const buildAPI = (
     // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
     setCursor: (curOrLine, ch, _options) =>
       withState((state) => {
-        const ast = selectors.selectAST(state);
+        const ast = selectors.getAST(state);
         ch = ch ?? 0;
         const cur =
           typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
@@ -275,14 +272,14 @@ export const buildAPI = (
     /*****************************************************************
      * APIs THAT ARE UNIQUE TO CODEMIRROR-BLOCKS
      */
-    getAst: () => withState((state) => selectors.selectAST(state)),
+    getAst: () => withState((state) => selectors.getAST(state)),
     // activation-test.js expects undefined
     // TODO(pcardune): choose null or undefined everywhere.
     getFocusedNode: () =>
       withState((state) => selectors.getFocusedNode(state) ?? undefined),
     getSelectedNodes: () =>
       withState((state) => {
-        const ast = selectors.selectAST(state);
+        const ast = selectors.getAST(state);
         return state.selections.map((id) => ast.getNodeById(id));
       }),
 
@@ -331,7 +328,7 @@ export type BlockEditorProps = {
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language, passedAST } = props;
   const dispatch: AppDispatch = useDispatch();
-  const ast = useSelector(selectors.selectAST);
+  const ast = useSelector(selectors.getAST);
   const quarantine = useSelector((state: RootState) => state.quarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const newASTRef = useRef<AST | undefined>();
@@ -507,7 +504,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const handleTopLevelFocus = (editor: CodeMirrorFacade) => {
     setAfterDOMUpdate(() => {
       dispatch((_, getState) => {
-        const ast = selectors.selectAST(getState());
+        const ast = selectors.getAST(getState());
         const focusedNode = selectors.getFocusedNode(getState());
         const { cur } = getState();
         if (cur != null) {

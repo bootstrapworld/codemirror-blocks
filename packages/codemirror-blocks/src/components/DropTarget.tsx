@@ -146,7 +146,7 @@ field declared. The node was:`,
   const [mouseOver, setMouseOver] = useState(false);
 
   const dispatch: AppDispatch = useDispatch();
-  const ast = useSelector(selectors.selectAST);
+  const ast = useSelector(selectors.getAST);
   const { isEditable } = useSelector((state: RootState) => {
     return { isEditable: state.editable[id] ?? false };
   });

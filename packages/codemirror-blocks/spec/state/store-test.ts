@@ -39,12 +39,12 @@ describe("createAppStore()", () => {
 
 describe("ast", () => {
   it("starts with an empty ast", () => {
-    expect(selectors.selectAST(getState()).rootNodes.length).toBe(0);
+    expect(selectors.getAST(getState()).rootNodes.length).toBe(0);
   });
   it("setAST will set the ast being used", () => {
     const newAST = AST.from([]);
     dispatch(actions.setAST(newAST));
-    expect(selectors.selectAST(getState()).data).toBe(newAST.data);
+    expect(selectors.getAST(getState()).data).toBe(newAST.data);
   });
 });
 
@@ -61,8 +61,9 @@ describe("collapse state", () => {
     dispatch(actions.setAST(ast));
   });
   it("starts with an empty collapse list", () => {
-    expect(selectors.selectCollapsedList(getState())).toEqual([]);
     expect(selectors.isCollapsed(getState(), ast.rootNodes[0])).toBe(false);
+    expect(selectors.isCollapsed(getState(), ast.rootNodes[1])).toBe(false);
+    expect(selectors.isCollapsed(getState(), ast.rootNodes[2])).toBe(false);
   });
   it("collapseNode()/uncollapseNode() will toggle the collapsed state", () => {
     dispatch(actions.collapseNode(ast.rootNodes[0]));

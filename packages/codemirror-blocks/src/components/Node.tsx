@@ -55,7 +55,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const textMarker = useSelector((state: RootState) =>
     selectors.getTextMarker(state, props.node)
   );
-  const ast = useSelector(selectors.selectAST);
+  const ast = useSelector(selectors.getAST);
 
   const rootNode = useContext(RootNodeContext);
   useEffect(() => {
