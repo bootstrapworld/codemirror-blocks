@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { AST, ASTNode } from "../ast";
 import {
   useDropAction,
@@ -10,7 +10,7 @@ import {
 import * as actions from "../state/actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
-import { AppDispatch, AppStore } from "../state/store";
+import { AppDispatch } from "../state/store";
 import { ItemTypes } from "../dnd";
 import classNames from "classnames";
 import { useDrag, useDrop } from "react-dnd";
@@ -55,6 +55,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const textMarker = useSelector((state: RootState) =>
     selectors.getTextMarker(state, props.node)
   );
+  const ast = useSelector(selectors.selectAST);
 
   const rootNode = useContext(RootNodeContext);
   useEffect(() => {
@@ -73,7 +74,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const editor = useContext(EditorContext);
 
   const dispatch: AppDispatch = useDispatch();
-  const store: AppStore = useStore();
   const language = useContext(LanguageContext);
   const appHelpers = useContext(AppContext);
   const isErrorFree = useSelector(selectors.isErrorFree);
@@ -147,7 +147,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
       // prevent ancestors from stealing focus
       e.stopPropagation();
     }
-    const ast = selectors.selectAST(store.getState());
     if (!isErrorFree) {
       // TODO(Oak): is this the best way?
       return;
@@ -209,9 +208,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       if (monitor.didDrop()) {
         return;
       }
-      const node = selectors
-        .selectAST(store.getState())
-        .getNodeByIdOrThrow(props.node.id);
+      const node = ast.getNodeByIdOrThrow(props.node.id);
       return drop(editor, monitor.getItem(), new ReplaceNodeTarget(node));
     },
     collect: (monitor) => {
