@@ -398,18 +398,12 @@ export const replaceSelections =
  * state from the block editor
  */
 export const listSelections = (ed: CodeMirrorFacade, dispatch: AppDispatch) => {
-  const { selections, ast } = dispatch((_, getState) => {
-    return {
-      selections: selectors.getSelections(getState()),
-      ast: selectors.getAST(getState()),
-    };
-  });
+  const selections = dispatch((_, getState) =>
+    selectors.getSelectedNodes(getState())
+  );
   const tmpCM = getTempCM(ed);
   // write all the ranges for all selected nodes
-  selections.forEach((id) => {
-    const node = ast.getNodeByIdOrThrow(id);
-    tmpCM.addSelection(node.from, node.to);
-  });
+  selections.forEach((node) => tmpCM.addSelection(node.from, node.to));
   // write all the existing selection ranges
   ed.codemirror
     .listSelections()

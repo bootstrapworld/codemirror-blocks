@@ -6,6 +6,11 @@ import { RootState } from "./reducers";
 const getNode = (state: RootState, node: ASTNode) => node;
 
 /**
+ * Get an AST object using data from the store
+ */
+export const getAST = (state: RootState) => new AST(state.astData);
+
+/**
  * Get the entire list of collapsed nodes.
  */
 const getCollapsedList = (state: RootState) => state.collapsedList;
@@ -19,15 +24,29 @@ export const isCollapsed: (state: RootState, node: ASTNode) => boolean =
     collapsedList.includes(node.id)
   );
 
-export const getSelections = (state: RootState) => state.selections;
+/**
+ * @returns all selected node ids
+ */
+export const getSelectedNodeIds = (state: RootState) => state.selections;
 
+/**
+ * Note, this will throw if the node ids in the the state
+ * are not consistent across the ast and the selection list.
+ *
+ * @returns the selected ASTNode instances
+ */
+export const getSelectedNodes: (state: RootState) => ASTNode[] = createSelector(
+  [getAST, getSelectedNodeIds],
+  (ast, selections) =>
+    selections.map((selection) => ast.getNodeByIdOrThrow(selection))
+);
 /**
  * Returns whether or not the given node is selected.
  * @param node The node to check.
  * @returns The selection state for the given node.
  */
 export const isSelected: (state: RootState, node: ASTNode) => boolean =
-  createSelector([getSelections, getNode], (selections, node) =>
+  createSelector([getSelectedNodeIds, getNode], (selections, node) =>
     selections.includes(node.id)
   );
 
@@ -41,11 +60,6 @@ export const getTextMarker: (state: RootState, node: ASTNode) => TextMarker =
     [getMarkedMap, getNode],
     (markedMap, node) => markedMap[node.id]
   );
-
-/**
- * Get an AST object using data from the store
- */
-export const getAST = (state: RootState) => new AST(state.astData);
 
 /**
  * Returns the parent node for the given node

@@ -1,5 +1,5 @@
 import { say } from "./announcer";
-import { AST, ASTNode } from "./ast";
+import { ASTNode } from "./ast";
 import { createEditAnnouncement, poscmp } from "./utils";
 
 // lazily create a hidden buffer, for use with copy/cut/paste

@@ -410,7 +410,7 @@ const commandMap: {
     e.preventDefault();
     const state = getState();
     const ast = selectors.getAST(state);
-    const selections = selectors.getSelections(state);
+    const selections = selectors.getSelectedNodeIds(state);
     const node = env.node;
     const descendantIds = (node: ASTNode) =>
       [...node.descendants()].map((d) => d.id);
@@ -493,12 +493,10 @@ const commandMap: {
       return;
     }
     const state = getState();
-    const ast = selectors.getAST(state);
-    const selections = selectors.getSelections(state);
-    if (!selections.length) {
+    const nodesToDelete = selectors.getSelectedNodes(state);
+    if (!nodesToDelete.length) {
       return say("Nothing selected");
     }
-    const nodesToDelete = selections.map(ast.getNodeByIdOrThrow);
     dispatch(delete_(env.editor, nodesToDelete, env.language.parse, "deleted"));
   },
 
@@ -526,13 +524,11 @@ const commandMap: {
       return;
     }
     const state = getState();
-    const ast = selectors.getAST(state);
-    const selections = selectors.getSelections(state);
+    const nodesToCut = selectors.getSelectedNodes(state);
     const focusedNode = selectors.getFocusedNode(state);
-    if (!selections.length) {
+    if (!nodesToCut.length) {
       return say("Nothing selected");
     }
-    const nodesToCut = selections.map(ast.getNodeByIdOrThrow);
     copy({ focusedNode }, nodesToCut, "cut");
     dispatch(delete_(env.editor, nodesToCut, env.language.parse));
   },
@@ -543,11 +539,9 @@ const commandMap: {
     }
     // if no nodes are selected, do it on focused node's id instead
     const state = getState();
-    const ast = selectors.getAST(state);
-    const selections = selectors.getSelections(state);
+    const selections = selectors.getSelectedNodes(state);
     const focusedNode = selectors.getFocusedNode(state);
-    const nodeIds = !selections.length ? [env.node.id] : selections;
-    const nodesToCopy = nodeIds.map(ast.getNodeByIdOrThrow);
+    const nodesToCopy = selections.length === 0 ? [env.node] : selections;
     copy({ focusedNode }, nodesToCopy, "copied");
   },
 
