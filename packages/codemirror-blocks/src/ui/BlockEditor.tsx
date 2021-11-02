@@ -165,7 +165,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    props.onMount(editor, buildAPI(editor, dispatch), passedAST);
+    props.onMount(editor, buildAPI(editor, dispatch, language), passedAST);
   };
 
   /**
