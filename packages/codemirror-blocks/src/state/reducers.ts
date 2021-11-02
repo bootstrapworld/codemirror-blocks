@@ -1,8 +1,8 @@
 import CodeMirror from "codemirror";
 import type { Action } from "redux";
-import { AST } from "./ast";
-import { ReadonlyCMBEditor } from "./editor";
-import { debugLog } from "./utils";
+import { AST } from "../ast";
+import { ReadonlyCMBEditor } from "../editor";
+import { debugLog } from "../utils";
 
 /**
  * An Activity is a shallow-clone of a reducer action, except that

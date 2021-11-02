@@ -14,8 +14,8 @@ import {
   cloneNode,
   ClonedASTNode,
 } from "./fakeAstEdits";
-import type { AppThunk } from "../store";
-import { getReducerActivities } from "../reducers";
+import type { AppThunk } from "../state/store";
+import { getReducerActivities } from "../state/reducers";
 import { err, ok, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
 import CodeMirror from "codemirror";

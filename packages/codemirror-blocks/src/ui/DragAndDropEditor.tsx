@@ -5,7 +5,7 @@ import {
 } from "react-codemirror2";
 import React, { useRef } from "react";
 import { ItemTypes } from "../dnd";
-import { OverwriteTarget, useDropAction } from "../actions";
+import { OverwriteTarget, useDropAction } from "../state/actions";
 import { playSound, BEEP } from "../utils";
 import { useDrop } from "react-dnd";
 import { CodeMirrorFacade } from "../editor";

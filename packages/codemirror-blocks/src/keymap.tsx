@@ -9,7 +9,7 @@ import {
   OverwriteTarget,
   activateByNid,
   setCursor,
-} from "./actions";
+} from "./state/actions";
 import {
   partition,
   getRoot,
@@ -22,11 +22,12 @@ import {
 import { say } from "./announcer";
 import { findAdjacentDropTargetId as getDTid } from "./components/DropTarget";
 
-import type { AppThunk } from "./store";
+import type { AppThunk } from "./state/store";
 import type { AST, ASTNode } from "./ast";
 import { CMBEditor } from "./editor";
 import { Language } from "./CodeMirrorBlocks";
 import type { AppHelpers } from "./components/Context";
+import * as selectors from "./state/selectors";
 
 type BlockEditorEnv = {
   isNodeEnv: false;
@@ -46,7 +47,6 @@ type NodeEnv = {
   setRight: (ast: AST) => boolean;
   setLeft: (ast: AST) => boolean;
 
-  isCollapsed: boolean;
   expandable: boolean;
   normallyEditable: boolean;
   node: ASTNode;
@@ -276,9 +276,10 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    const { ast } = getState();
-    const parent = ast.getNodeParent(env.node);
-    if (env.expandable && !env.isCollapsed && !env.node.options.isNotEditable) {
+    const state = getState();
+    const parent = selectors.getNodeParent(state, env.node);
+    const isCollapsed = selectors.isCollapsed(state, env.node.id);
+    if (env.expandable && !isCollapsed && !env.node.options.isNotEditable) {
       dispatch({ type: "COLLAPSE", id: env.node.id });
     } else if (parent) {
       dispatch(activateByNid(env.editor, parent.nid));
@@ -292,12 +293,13 @@ const commandMap: {
       return;
     }
     const node = env.node;
-    const { ast } = getState();
-    const nextNode = ast.getNodeAfter(node);
+    const state = getState();
+    const isCollapsed = selectors.isCollapsed(state, node.id);
+    const nextNode = selectors.getNodeAfter(state, node);
     e.preventDefault();
-    if (env.expandable && env.isCollapsed && !env.node.options.isNotEditable) {
+    if (env.expandable && isCollapsed && !env.node.options.isNotEditable) {
       dispatch({ type: "UNCOLLAPSE", id: node.id });
-    } else if (nextNode && ast.getNodeParent(nextNode) === node) {
+    } else if (nextNode && selectors.getNodeParent(state, nextNode) === node) {
       dispatch(activateByNid(env.editor, nextNode.nid));
     } else {
       playSound(BEEP);
@@ -331,7 +333,10 @@ const commandMap: {
       return;
     }
     const ast = getState().ast;
-    if (!ast.getNodeParent(env.node) && (env.isCollapsed || !env.expandable)) {
+    const state = getState();
+    const parent = selectors.getNodeParent(state, env.node);
+    const isCollapsed = selectors.isCollapsed(state, env.node.id);
+    if (!parent && (isCollapsed || !env.expandable)) {
       playSound(BEEP);
     } else {
       const root = getRoot(ast, env.node);
@@ -446,7 +451,7 @@ const commandMap: {
     }
   },
 
-  Edit: (env, e) => (dispatch) => {
+  Edit: (env, e) => (dispatch, getState) => {
     if (!env.isNodeEnv) {
       return;
     }
@@ -454,7 +459,7 @@ const commandMap: {
       env.handleMakeEditable(e);
       e.preventDefault();
     } else if (env.expandable && !env.node.options.isNotEditable) {
-      if (env.isCollapsed) {
+      if (selectors.isCollapsed(getState(), env.node.id)) {
         dispatch({ type: "UNCOLLAPSE", id: env.node.id });
       } else {
         dispatch({ type: "COLLAPSE", id: env.node.id });

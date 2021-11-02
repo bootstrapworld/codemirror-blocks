@@ -6,11 +6,11 @@ import {
 } from "../parsers/primitives";
 import { ItemTypes } from "../dnd";
 import { say } from "../announcer";
-import { copy } from "../actions";
+import { copy } from "../state/actions";
 import CodeMirror from "codemirror";
 import { defaultKeyMap } from "../keymap";
 import { useSelector } from "react-redux";
-import { RootState } from "../reducers";
+import { RootState } from "../state/reducers";
 import { useDrag } from "react-dnd";
 
 require("./PrimitiveList.less");

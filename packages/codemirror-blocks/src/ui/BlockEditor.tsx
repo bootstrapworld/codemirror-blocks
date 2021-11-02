@@ -10,7 +10,7 @@ import {
   extendSelections,
   replaceSelections,
   listSelections,
-} from "../actions";
+} from "../state/actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
@@ -20,8 +20,13 @@ import { ASTNode, Pos } from "../ast";
 import type { AST } from "../ast";
 import CodeMirror, { SelectionOptions } from "codemirror";
 import type { Options, Language } from "../CodeMirrorBlocks";
-import type { AppDispatch } from "../store";
-import type { Activity, AppAction, RootState, Quarantine } from "../reducers";
+import type { AppDispatch } from "../state/store";
+import type {
+  Activity,
+  AppAction,
+  RootState,
+  Quarantine,
+} from "../state/reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext, LanguageContext } from "../components/Context";
 import {

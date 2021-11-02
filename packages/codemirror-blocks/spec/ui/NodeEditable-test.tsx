@@ -1,9 +1,9 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import CodeMirror from "codemirror";
 import React from "react";
-import { OverwriteTarget } from "../../src/actions";
+import { OverwriteTarget } from "../../src/state/actions";
 import NodeEditable from "../../src/components/NodeEditable";
-import { AppStore, createAppStore } from "../../src/store";
+import { AppStore, createAppStore } from "../../src/state/store";
 import { say } from "../../src/announcer";
 import { CodeMirrorFacade } from "../../src/editor";
 import Context, { LanguageContext } from "../../src/components/Context";

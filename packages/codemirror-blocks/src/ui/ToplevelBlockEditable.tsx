@@ -2,9 +2,9 @@ import React, { useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
 import NodeEditable from "../components/NodeEditable";
-import { OverwriteTarget } from "../actions";
-import type { AppDispatch } from "../store";
-import type { RootState } from "../reducers";
+import { OverwriteTarget } from "../state/actions";
+import type { AppDispatch } from "../state/store";
+import type { RootState } from "../state/reducers";
 import type { CMBEditor } from "../editor";
 
 type Props = {

@@ -4,11 +4,11 @@ import ContentEditable, {
   Props as ContentEditableProps,
 } from "./ContentEditable";
 import classNames, { Argument as ClassNamesArgument } from "classnames";
-import { insert, activateByNid, Target } from "../actions";
+import { insert, activateByNid, Target } from "../state/actions";
 import { say } from "../announcer";
 import CodeMirror from "codemirror";
-import { AppDispatch } from "../store";
-import { RootState } from "../reducers";
+import { AppDispatch } from "../state/store";
+import { RootState } from "../state/reducers";
 import { setAfterDOMUpdate } from "../utils";
 import { CMBEditor } from "../editor";
 import { useLanguageOrThrow } from "../hooks";

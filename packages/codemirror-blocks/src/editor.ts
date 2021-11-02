@@ -1,5 +1,5 @@
 import type { ASTNode } from "./ast";
-import type { ActionFocus } from "./reducers";
+import type { ActionFocus } from "./state/reducers";
 import { poscmp } from "./utils";
 
 /**

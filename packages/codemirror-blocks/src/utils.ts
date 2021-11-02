@@ -1,7 +1,7 @@
 import objToStableString from "fast-json-stable-stringify";
 import CodeMirror, { EditorChange } from "codemirror";
 import { CodeMirrorFacade } from "./editor";
-import type { RootState } from "./reducers";
+import type { RootState } from "./state/reducers";
 import type { AST, ASTNode, Pos, Range } from "./ast";
 
 /**************************************************************

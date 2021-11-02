@@ -3,11 +3,11 @@ import { useDispatch, useSelector, useStore } from "react-redux";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "react-dnd";
 import classNames from "classnames";
-import { AppDispatch, AppStore } from "../store";
+import { AppDispatch, AppStore } from "../state/store";
 import { genUniqueId } from "../utils";
-import { useDropAction, InsertTarget } from "../actions";
+import { useDropAction, InsertTarget } from "../state/actions";
 import type { ASTNode, AST, Pos } from "../ast";
-import { RootState } from "../reducers";
+import { RootState } from "../state/reducers";
 import { ItemTypes } from "../dnd";
 import { EditorContext } from "./Context";
 

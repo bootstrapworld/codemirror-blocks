@@ -1,7 +1,7 @@
 import { ComponentClass } from "react";
 import { ASTNode, Pos } from "../../ast";
 import { ReadonlyCMBEditor } from "../../editor";
-import { RootState } from "../../reducers";
+import { RootState } from "../../state/reducers";
 
 export type Searcher<Setting, Props> = {
   label: string;

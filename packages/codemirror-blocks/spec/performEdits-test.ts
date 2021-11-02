@@ -11,7 +11,7 @@ import {
   performEdits,
 } from "../src/edits/performEdits";
 import wescheme from "../src/languages/wescheme";
-import { AppStore, createAppStore } from "../src/store";
+import { AppStore, createAppStore } from "../src/state/store";
 
 let editor!: CodeMirrorFacade;
 let ast!: AST;

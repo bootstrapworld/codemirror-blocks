@@ -15,7 +15,7 @@ import { PrimitiveGroup } from "./parsers/primitives";
 import type { Primitive } from "./parsers/primitives";
 import type { API } from "./ui/ToggleEditor";
 import Context from "./components/Context";
-import { createAppStore } from "./store";
+import { createAppStore } from "./state/store";
 export type { API } from "./ui/ToggleEditor";
 
 /**

@@ -5,7 +5,7 @@ import { Language } from "../../src/CodeMirrorBlocks";
 import Context, { LanguageContext } from "../../src/components/Context";
 import Node from "../../src/components/Node";
 import { Comment, Literal } from "../../src/nodes";
-import { AppStore, createAppStore } from "../../src/store";
+import { AppStore, createAppStore } from "../../src/state/store";
 
 let store!: AppStore;
 beforeEach(() => {

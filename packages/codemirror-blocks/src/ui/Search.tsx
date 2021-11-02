@@ -8,7 +8,7 @@ import BlockEditor from "./BlockEditor";
 import { Searcher } from "./searchers/Searcher";
 import { GetProps } from "react-redux";
 import { ASTNode, Pos } from "../ast";
-import { RootState } from "../reducers";
+import { RootState } from "../state/reducers";
 import { ReadonlyCMBEditor } from "../editor";
 
 export type Search = {

@@ -1,10 +1,10 @@
-import { AppThunk } from "../store";
+import { AppThunk } from "../state/store";
 import { poscmp, adjustForChange, minimizeChange, logResults } from "../utils";
-import { activateByNid } from "../actions";
+import { activateByNid } from "../state/actions";
 import patch from "./patchAst";
 import { AST, ASTNode } from "../ast";
 import type { EditorChange } from "codemirror";
-import { getReducerActivities } from "../reducers";
+import { getReducerActivities } from "../state/reducers";
 import { err, ok, Result } from "./result";
 import { ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { ChangeObject } from "./performEdits";

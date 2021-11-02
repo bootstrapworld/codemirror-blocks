@@ -1,18 +1,23 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { AST, ASTNode } from "../ast";
-import { useDropAction, activateByNid, ReplaceNodeTarget } from "../actions";
+import {
+  useDropAction,
+  activateByNid,
+  ReplaceNodeTarget,
+} from "../state/actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
-import { AppDispatch, AppStore } from "../store";
+import { AppDispatch, AppStore } from "../state/store";
 import { ItemTypes } from "../dnd";
 import classNames from "classnames";
 import { useDrag, useDrop } from "react-dnd";
-import { RootState } from "../reducers";
+import { RootState } from "../state/reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
 import { AppContext, EditorContext, LanguageContext } from "./Context";
 import { RootNodeContext } from "../ui/ToplevelBlock";
+import * as selectors from "../state/selectors";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -39,16 +44,14 @@ function getNodeElementId(node: ASTNode) {
 }
 
 const Node = ({ expandable = true, ...props }: Props) => {
-  const stateProps = useSelector(
-    ({ selections, collapsedList, markedMap }: RootState) => {
-      // be careful here. Only node's id is accurate. Use getNodeById
-      // to access accurate info
-      return {
-        isSelected: selections.includes(props.node.id),
-        isCollapsed: collapsedList.includes(props.node.id),
-        textMarker: markedMap[props.node.id],
-      };
-    }
+  const isCollapsed = useSelector((state: RootState) =>
+    selectors.isCollapsed(state, props.node.id)
+  );
+  const isSelected = useSelector((state: RootState) =>
+    selectors.isSelected(state, props.node)
+  );
+  const textMarker = useSelector((state: RootState) =>
+    selectors.getTextMarker(state, props.node)
   );
 
   const rootNode = useContext(RootNodeContext);
@@ -59,7 +62,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     // marker object, in case the widget's height has changed.
     rootNode.marker?.changed();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stateProps.isCollapsed]);
+  }, [isCollapsed]);
 
   const [editable, setEditable] = useState(false);
   props.node.isEditable = () => editable;
@@ -114,7 +117,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
         },
         normallyEditable: Boolean(props.normallyEditable),
         expandable,
-        isCollapsed: stateProps.isCollapsed,
       })
     );
   };
@@ -157,7 +159,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     if (props.inToolbar) {
       return;
     }
-    if (stateProps.isCollapsed) {
+    if (isCollapsed) {
       dispatch({ type: "UNCOLLAPSE", id: props.node.id });
     } else {
       dispatch({ type: "COLLAPSE", id: props.node.id });
@@ -180,12 +182,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const contentEditableProps = {
     id: nodeElemId,
     tabIndex: -1,
-    "aria-selected": stateProps.isSelected,
+    "aria-selected": isSelected,
     "aria-label": props.node.shortDescription() + ",",
     "aria-labelledby": `${nodeElemId} ${commentElemId}`,
     "aria-disabled": locked ? true : undefined,
-    "aria-expanded":
-      expandable && !locked ? !stateProps.isCollapsed : undefined,
+    "aria-expanded": expandable && !locked ? !isCollapsed : undefined,
     "aria-setsize": props.node.ariaSetSize,
     "aria-posinset": props.node.ariaPosInset,
     "aria-level": props.node.level,
@@ -253,8 +254,8 @@ const Node = ({ expandable = true, ...props }: Props) => {
     );
   } else {
     classes.push({ "blocks-over-target": isOver, "blocks-node": true });
-    if (stateProps.textMarker?.options.className) {
-      classes.push(stateProps.textMarker.options.className);
+    if (textMarker?.options.className) {
+      classes.push(textMarker.options.className);
     }
     let result: React.ReactElement | null = (
       <span
@@ -265,15 +266,13 @@ const Node = ({ expandable = true, ...props }: Props) => {
         style={
           {
             opacity: isDragging ? 0.5 : 1,
-            cssText: stateProps.textMarker
-              ? stateProps.textMarker.options.css
-              : null,
+            cssText: textMarker ? textMarker.options.css : null,
             // TODO(pcardune): figure out what cssText is supposed to be
             // as it doesn't typecheck.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any
         }
-        title={stateProps.textMarker?.options.title}
+        title={textMarker?.options.title}
         onMouseDown={handleMouseDown}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}

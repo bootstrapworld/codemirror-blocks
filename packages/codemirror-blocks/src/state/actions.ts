@@ -8,8 +8,8 @@ import {
   maxpos,
   validateRanges,
   BlockError,
-} from "./utils";
-import { say, cancelAnnouncement } from "./announcer";
+} from "../utils";
+import { say, cancelAnnouncement } from "../announcer";
 import { AppDispatch, AppStore, AppThunk } from "./store";
 import {
   performEdits,
@@ -18,21 +18,21 @@ import {
   edit_replace,
   edit_overwrite,
   EditInterface,
-} from "./edits/performEdits";
-import { AST, ASTNode, Pos } from "./ast";
+} from "../edits/performEdits";
+import { AST, ASTNode, Pos } from "../ast";
 import { AppAction, RootState } from "./reducers";
 import {
   CodeMirrorFacade,
   CMBEditor,
   ReadonlyCMBEditor,
   ReadonlyRangedText,
-} from "./editor";
+} from "../editor";
 import { SelectionOptions } from "codemirror";
 import { useDispatch, useStore } from "react-redux";
-import type { Language } from "./CodeMirrorBlocks";
-import { Result } from "./edits/result";
+import type { Language } from "../CodeMirrorBlocks";
+import { Result } from "../edits/result";
 import { useContext } from "react";
-import { LanguageContext } from "./components/Context";
+import { LanguageContext } from "../components/Context";
 
 // All editing actions are defined here.
 //
