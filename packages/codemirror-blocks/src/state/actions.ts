@@ -8,6 +8,7 @@ import {
   maxpos,
   validateRanges,
   BlockError,
+  createEditAnnouncement,
 } from "../utils";
 import { say, cancelAnnouncement } from "../announcer";
 import { AppDispatch, AppThunk } from "./store";
@@ -34,6 +35,7 @@ import { Result } from "../edits/result";
 import { useContext } from "react";
 import { LanguageContext } from "../components/Context";
 import * as selectors from "./selectors";
+import { pasteFromClipboard } from "../copypaste";
 
 export const setAST = (ast: AST) => ({
   type: "SET_AST" as const,
@@ -110,22 +112,6 @@ export const insert =
     return dispatch(performEdits(edits, parse, editor, annt));
   };
 
-/**
- * Generates a description of an edit involving certain nodes
- * that can be announced to the user.
- *
- * @param nodes the ast nodes that are involved
- * @param editWord a word describing the edit like "copied"
- * @returns the human readable description of the edit
- * @internal
- */
-function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
-  nodes.sort((a, b) => poscmp(a.from, b.from)); // speak first-to-last
-  return (
-    editWord + " " + nodes.map((node) => node.shortDescription()).join(" and ")
-  );
-}
-
 // Delete the given nodes.
 // 'delete' is a reserved word, hence the trailing underscore
 export const delete_ =
@@ -150,39 +136,6 @@ export const delete_ =
     dispatch(performEdits(edits, parse, editor, annt));
     dispatch({ type: "SET_SELECTIONS", selections: [] });
   };
-
-// Copy the given nodes onto the clipboard.
-export function copy(
-  { ast, focusId }: { ast: AST; focusId: string | null },
-  nodes: ASTNode[],
-  editWord?: string
-) {
-  if (nodes.length === 0) {
-    return;
-  }
-  // Pretty-print each copied node. Join them with spaces, or newlines for
-  // commented nodes (to prevent a comment from attaching itself to a
-  // different node after pasting).
-  nodes.sort((a, b) => poscmp(a.from, b.from));
-  let annt: string;
-  if (editWord) {
-    annt = createEditAnnouncement(nodes, editWord);
-    say(annt);
-  }
-  let text = "";
-  let postfix = "";
-  for (const node of nodes) {
-    const prefix = node.options && node.options.comment ? "\n" : postfix;
-    text = text + prefix + node.toString();
-    postfix = node.options && node.options.comment ? "\n" : " ";
-  }
-  copyToClipboard(text);
-  // Copy steals focus. Force it back to the node's DOM element
-  // without announcing via activateByNid().
-  if (focusId) {
-    ast.getNodeByIdOrThrow(focusId).element?.focus();
-  }
-}
 
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
@@ -338,45 +291,6 @@ function checkTarget(target: Target) {
       `Expected target ${target} to be an instance of the Target class.`
     );
   }
-}
-
-// lazily create a hidden buffer, for use with copy/cut/paste
-let _buffer: HTMLTextAreaElement;
-function getCopyPasteBuffer() {
-  if (_buffer) {
-    return _buffer;
-  }
-  _buffer = document.createElement("textarea");
-  _buffer.ariaHidden = "true";
-  _buffer.tabIndex = -1;
-  _buffer.style.opacity = "0";
-  _buffer.style.height = "1px";
-  document.body.appendChild(_buffer);
-  return _buffer;
-}
-
-function copyToClipboard(text: string) {
-  const buffer = getCopyPasteBuffer();
-  buffer.value = text;
-  buffer.select();
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).catch((e) => {
-      console.error("Failed copying to clipboard: ", e);
-      // lets try using the deprecated API:
-      document.execCommand("copy");
-    });
-  } else if (document.execCommand) {
-    document.execCommand("copy");
-  }
-}
-
-function pasteFromClipboard(done: (value: string) => void) {
-  const buffer = getCopyPasteBuffer();
-  buffer.value = "";
-  buffer.focus();
-  setTimeout(() => {
-    done(buffer.value);
-  }, 50);
 }
 
 /**

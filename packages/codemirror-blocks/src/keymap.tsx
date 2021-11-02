@@ -2,7 +2,6 @@ import React from "react";
 import CodeMirror from "codemirror";
 import {
   delete_,
-  copy,
   paste,
   InsertTarget,
   ReplaceNodeTarget,
@@ -29,6 +28,7 @@ import { CMBEditor } from "./editor";
 import { Language } from "./CodeMirrorBlocks";
 import type { AppHelpers } from "./components/Context";
 import * as selectors from "./state/selectors";
+import { copy } from "./copypaste";
 
 type BlockEditorEnv = {
   isNodeEnv: false;

@@ -519,6 +519,21 @@ export function validateRanges(
   return true;
 }
 
+/**
+ * Generates a description of an edit involving certain nodes
+ * that can be announced to the user.
+ *
+ * @param nodes the ast nodes that are involved
+ * @param editWord a word describing the edit like "copied"
+ * @returns the human readable description of the edit
+ * @internal
+ */
+export function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
+  nodes.sort((a, b) => poscmp(a.from, b.from)); // speak first-to-last
+  return (
+    editWord + " " + nodes.map((node) => node.shortDescription()).join(" and ")
+  );
+}
 export class BlockError extends Error {
   type: string;
   data: unknown;
