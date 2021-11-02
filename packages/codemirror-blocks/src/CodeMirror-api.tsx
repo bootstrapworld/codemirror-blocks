@@ -273,9 +273,9 @@ export const buildAPI = (
 
         let action: AppAction;
         // SET_AST actions have been serialized to printed code.
-        // Set the value of the editor to that code, then 
+        // Set the value of the editor to that code, then
         // reconstruct the AST and pass it to the reducer
-        console.log(activity)
+        console.log(activity);
         if (activity.type == "SET_AST") {
           editor.setValue(activity.code);
           const newAST = new AST(language.parse(activity.code));
@@ -292,8 +292,8 @@ export const buildAPI = (
         } else {
           action = activity;
         }
-        console.log('about to dispatch');
-        dispatch(action);        
+        console.log("about to dispatch");
+        dispatch(action);
       });
     },
   };

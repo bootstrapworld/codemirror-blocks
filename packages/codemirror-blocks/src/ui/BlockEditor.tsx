@@ -3,10 +3,7 @@ import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  activateByNid,
-  setCursor,
-} from "../actions";
+import { activateByNid, setCursor } from "../actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
