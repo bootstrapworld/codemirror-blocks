@@ -12,6 +12,7 @@ import {
 } from "../src/edits/performEdits";
 import wescheme from "../src/languages/wescheme";
 import { AppStore, createAppStore } from "../src/state/store";
+import * as actions from "../src/state/actions";
 
 let editor!: CodeMirrorFacade;
 let ast!: AST;
@@ -226,7 +227,7 @@ describe("performEdits", () => {
   beforeEach(() => {
     setCode(initialCode);
     store = createAppStore();
-    store.dispatch({ type: "SET_AST", ast });
+    store.dispatch(actions.setAST(ast));
   });
 
   it("applies edits to the editor and the ast, updating the redux store.", () => {

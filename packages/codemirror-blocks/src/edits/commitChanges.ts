@@ -9,6 +9,7 @@ import { err, ok, Result } from "./result";
 import { ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { ChangeObject } from "./performEdits";
 import { Language } from "../CodeMirrorBlocks";
+import * as actions from "../state/actions";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
@@ -55,7 +56,7 @@ export const commitChanges =
         : parse(editor.getValue());
       // Patch the tree and set the state
       const newAST = new AST(patch([...oldAST.rootNodes], newNodes));
-      dispatch({ type: "SET_AST", ast: newAST });
+      dispatch(actions.setAST(newAST));
       // Try to set the focus using hinting data. If that fails, use the first root
       const focusId =
         dispatch(setFocus(editor, changes, focusHint, newAST)) ||

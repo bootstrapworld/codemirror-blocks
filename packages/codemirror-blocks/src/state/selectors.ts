@@ -4,13 +4,25 @@ import { RootState } from "./reducers";
 
 const selectNode = (state: RootState, node: ASTNode) => node;
 
-const selectCollapsedList = (state: RootState) => state.collapsedList;
+export const selectCollapsedList = (state: RootState) => state.collapsedList;
+
+/**
+ * Returns whether or not the given node is collapsed.
+ * @param node The node to check.
+ * @returns Whether or not the given node is collapsed.
+ */
 export const isCollapsed = createSelector(
-  [selectCollapsedList, (state: RootState, nodeId: string) => nodeId],
-  (collapsedList, nodeId) => collapsedList.includes(nodeId)
+  [selectCollapsedList, selectNode],
+  (collapsedList, node) => collapsedList.includes(node.id)
 );
 
 const selectSelections = (state: RootState) => state.selections;
+
+/**
+ * Returns whether or not the given node is selected.
+ * @param node The node to check.
+ * @returns The selection state for the given node.
+ */
 export const isSelected = createSelector(
   [selectSelections, selectNode],
   (selections, node) => selections.includes(node.id)
@@ -24,11 +36,17 @@ export const getTextMarker = createSelector(
 
 export const selectAST = (state: RootState) => state.ast;
 
+/**
+ * Returns the parent node for the given node
+ */
 export const getNodeParent = createSelector(
   [selectAST, selectNode],
   (ast, node) => ast.getNodeParent(node)
 );
 
+/**
+ * Returns the next node in the AST from the given node
+ */
 export const getNodeAfter = createSelector(
   [selectAST, selectNode],
   (ast, node) => ast.getNodeAfter(node)

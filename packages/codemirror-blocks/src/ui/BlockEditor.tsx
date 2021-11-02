@@ -11,6 +11,7 @@ import {
   replaceSelections,
   listSelections,
 } from "../state/actions";
+import * as actions from "../state/actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
@@ -359,7 +360,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     // the action to use the resulting AST, and delete code
     if (activity.type == "SET_AST") {
       getEditorOrThrow().setValue(activity.code);
-      action = { ...activity, ast: ast };
+      action = actions.setAST(ast);
     }
     // convert nid to node id, and use activate to generate the action
     else if (activity.type == "SET_FOCUS") {
@@ -467,9 +468,9 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     );
 
     // set AST and search properties and collapse preferences
-    dispatch({ type: "SET_AST", ast: passedAST });
+    dispatch(actions.setAST(passedAST));
     if (options.collapseAll) {
-      dispatch({ type: "COLLAPSE_ALL" });
+      dispatch(actions.collapseAll());
     }
 
     // When the editor receives focus, select the first root (if it exists)

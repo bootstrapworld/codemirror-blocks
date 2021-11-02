@@ -10,6 +10,7 @@ import {
   activateByNid,
   setCursor,
 } from "./state/actions";
+import * as actions from "./state/actions";
 import {
   partition,
   getRoot,
@@ -278,9 +279,9 @@ const commandMap: {
     }
     const state = getState();
     const parent = selectors.getNodeParent(state, env.node);
-    const isCollapsed = selectors.isCollapsed(state, env.node.id);
+    const isCollapsed = selectors.isCollapsed(state, env.node);
     if (env.expandable && !isCollapsed && !env.node.options.isNotEditable) {
-      dispatch({ type: "COLLAPSE", id: env.node.id });
+      dispatch(actions.collapseNode(env.node));
     } else if (parent) {
       dispatch(activateByNid(env.editor, parent.nid));
     } else {
@@ -294,11 +295,11 @@ const commandMap: {
     }
     const node = env.node;
     const state = getState();
-    const isCollapsed = selectors.isCollapsed(state, node.id);
+    const isCollapsed = selectors.isCollapsed(state, node);
     const nextNode = selectors.getNodeAfter(state, node);
     e.preventDefault();
     if (env.expandable && isCollapsed && !env.node.options.isNotEditable) {
-      dispatch({ type: "UNCOLLAPSE", id: node.id });
+      dispatch(actions.uncollapseNode(node));
     } else if (nextNode && selectors.getNodeParent(state, nextNode) === node) {
       dispatch(activateByNid(env.editor, nextNode.nid));
     } else {
@@ -310,7 +311,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    dispatch({ type: "COLLAPSE_ALL" });
+    dispatch(actions.collapseAll());
     dispatch(
       activateByNid(
         env.editor,
@@ -324,7 +325,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     } else {
-      return (dispatch) => dispatch({ type: "UNCOLLAPSE_ALL" });
+      return (dispatch) => dispatch(actions.uncollapseAll());
     }
   },
 
@@ -335,14 +336,14 @@ const commandMap: {
     const ast = getState().ast;
     const state = getState();
     const parent = selectors.getNodeParent(state, env.node);
-    const isCollapsed = selectors.isCollapsed(state, env.node.id);
+    const isCollapsed = selectors.isCollapsed(state, env.node);
     if (!parent && (isCollapsed || !env.expandable)) {
       playSound(BEEP);
     } else {
       const root = getRoot(ast, env.node);
       const descendants = [...root.descendants()];
       descendants.forEach(
-        (d) => env.isNodeEnv && dispatch({ type: "COLLAPSE", id: d.id })
+        (d) => env.isNodeEnv && dispatch(actions.collapseNode(d))
       );
       dispatch(activateByNid(env.editor, root.nid));
     }
@@ -354,7 +355,7 @@ const commandMap: {
     }
     const root = getRoot(getState().ast, env.node);
     [...root.descendants()].forEach(
-      (d) => env.isNodeEnv && dispatch({ type: "UNCOLLAPSE", id: d.id })
+      (d) => env.isNodeEnv && dispatch(actions.uncollapseNode(d))
     );
     dispatch(activateByNid(env.editor, root.nid));
   },
@@ -459,10 +460,10 @@ const commandMap: {
       env.handleMakeEditable(e);
       e.preventDefault();
     } else if (env.expandable && !env.node.options.isNotEditable) {
-      if (selectors.isCollapsed(getState(), env.node.id)) {
-        dispatch({ type: "UNCOLLAPSE", id: env.node.id });
+      if (selectors.isCollapsed(getState(), env.node)) {
+        dispatch(actions.uncollapseNode(env.node));
       } else {
-        dispatch({ type: "COLLAPSE", id: env.node.id });
+        dispatch(actions.collapseNode(env.node));
       }
     } else {
       playSound(BEEP);

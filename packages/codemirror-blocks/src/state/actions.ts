@@ -34,6 +34,21 @@ import { Result } from "../edits/result";
 import { useContext } from "react";
 import { LanguageContext } from "../components/Context";
 
+export const setAST = (ast: AST) => ({ type: "SET_AST" as const, ast });
+
+export const collapseNode = (node: ASTNode) => ({
+  type: "COLLAPSE" as const,
+  id: node.id,
+});
+
+export const uncollapseNode = (node: ASTNode) => ({
+  type: "UNCOLLAPSE" as const,
+  id: node.id,
+});
+
+export const collapseAll = () => ({ type: "COLLAPSE_ALL" as const });
+export const uncollapseAll = () => ({ type: "UNCOLLAPSE_ALL" as const });
+
 // All editing actions are defined here.
 //
 // Many actions take a Target as an option. A Target may be constructed by any
@@ -218,8 +233,8 @@ export function useDropAction() {
         ast = editResult.value.newAST;
       }
       const newNode = [...ast.getAllNodes()].find((n) => n.hash == droppedHash);
-      newNode && dispatch({ type: "COLLAPSE", id: newNode.id });
-      dispatch({ type: "UNCOLLAPSE", id: srcNode.id });
+      newNode && dispatch(collapseNode(newNode));
+      dispatch(uncollapseNode(srcNode));
     }
   };
 }

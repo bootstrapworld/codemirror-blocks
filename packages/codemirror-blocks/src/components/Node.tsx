@@ -5,7 +5,9 @@ import {
   useDropAction,
   activateByNid,
   ReplaceNodeTarget,
+  collapseNode,
 } from "../state/actions";
+import * as actions from "../state/actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch, AppStore } from "../state/store";
@@ -45,7 +47,7 @@ function getNodeElementId(node: ASTNode) {
 
 const Node = ({ expandable = true, ...props }: Props) => {
   const isCollapsed = useSelector((state: RootState) =>
-    selectors.isCollapsed(state, props.node.id)
+    selectors.isCollapsed(state, props.node)
   );
   const isSelected = useSelector((state: RootState) =>
     selectors.isSelected(state, props.node)
@@ -160,9 +162,9 @@ const Node = ({ expandable = true, ...props }: Props) => {
       return;
     }
     if (isCollapsed) {
-      dispatch({ type: "UNCOLLAPSE", id: props.node.id });
+      dispatch(actions.uncollapseNode(props.node));
     } else {
-      dispatch({ type: "COLLAPSE", id: props.node.id });
+      dispatch(collapseNode(props.node));
     }
   };
 
