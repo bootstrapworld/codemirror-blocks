@@ -208,9 +208,7 @@ foo
     const result = apply([edit]);
     expect(result.successful).toBe(false);
     if (!result.successful) {
-      const msg =
-        wescheme.getExceptionMessage &&
-        wescheme.getExceptionMessage(result.exception);
+      const msg = wescheme.getExceptionMessage(result.exception);
       expect(msg).toMatchInlineSnapshot(
         `[Error: Your program could not be parsed]`
       );
