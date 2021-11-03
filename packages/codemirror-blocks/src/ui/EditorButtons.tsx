@@ -1,5 +1,4 @@
 import React from "react";
-import { logResults } from "../utils";
 
 type ToggleButtonProps = {
   setBlockMode: (blockMode: boolean) => void;
@@ -27,15 +26,53 @@ export const ToggleButton = (props: ToggleButtonProps) => {
 };
 
 export const BugButton = () => {
-  const handleBugReport = () => {
-    const description = prompt("Briefly describe what happened");
-    logResults("user-generated bug report", description || undefined);
-  };
+  const openBugWindow = () => {
+    const url = new URL(
+      "https://github.com/bootstrapworld/codemirror-blocks/issues/new"
+    );
+    url.searchParams.set("labels", "bug, User Submitted");
+    url.searchParams.set("template", "bug_report.md");
+    url.searchParams.set("title", "[BUG]");
 
+    url.searchParams.set(
+      "body",
+      `**Describe the bug**
+A clear and concise description of what the bug is.
+
+**To Reproduce**
+Steps to reproduce the behavior:
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
+
+**Expected behavior**
+A clear and concise description of what you expected to happen.
+
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
+
+**Additional context**
+Add any other context about the problem here.
+
+
+<details>
+
+<summary>Additional information for developers</summary>
+
+userAgent: ${navigator.userAgent}
+
+</details>
+
+`
+    );
+
+    window.open(url, "_blank");
+  };
   return (
     <button
       className="bug-btn btn btn-default btn-sm"
-      onClick={handleBugReport}
+      onClick={openBugWindow}
       tabIndex={0}
     >
       <span aria-hidden="true">&#128030;</span>
