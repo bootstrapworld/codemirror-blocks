@@ -11,30 +11,36 @@ import { hashObject } from "./utils";
 // - list: an array of ASTNodes.
 // - value: an ordinary value that does not contain an ASTNode.
 
-export type ChildSpec = Required | Optional | List | Value;
+export type ChildSpec<FieldName extends string> =
+  | Required<FieldName>
+  | Optional<FieldName>
+  | List<FieldName>
+  | Value<FieldName>;
 
 // nodeSpec :: Array<ChildSpec> -> NodeSpec
-export function nodeSpec(childSpecs: ChildSpec[]) {
+export function nodeSpec<FieldName extends string>(
+  childSpecs: ChildSpec<FieldName>[]
+) {
   return new NodeSpec(childSpecs);
 }
 
 // required :: String -> ChildSpec
-export function required(fieldName: string) {
+export function required<FieldName extends string>(fieldName: FieldName) {
   return new Required(fieldName);
 }
 
 // optional :: String -> ChildSpec
-export function optional(fieldName: string) {
+export function optional<FieldName extends string>(fieldName: FieldName) {
   return new Optional(fieldName);
 }
 
 // list :: String -> ChildSpec
-export function list(fieldName: string) {
+export function list<FieldName extends string>(fieldName: FieldName) {
   return new List(fieldName);
 }
 
 // value :: any -> ChildSpec
-export function value(fieldName: string) {
+export function value<FieldName extends string>(fieldName: FieldName) {
   return new Value(fieldName);
 }
 
@@ -44,9 +50,9 @@ type NodeLike = {
 };
 
 export type { NodeSpec };
-class NodeSpec {
-  childSpecs: ChildSpec[];
-  constructor(childSpecs: ChildSpec[]) {
+class NodeSpec<FieldName extends string = string> {
+  childSpecs: ChildSpec<FieldName>[];
+  constructor(childSpecs: ChildSpec<FieldName>[]) {
     if (!(childSpecs instanceof Array)) {
       throw new Error(
         "NodeSpec: expected to receive an array of required/optional/list specs."
@@ -69,7 +75,7 @@ class NodeSpec {
   }
 
   hash(node: ASTNode) {
-    const hashes = new HashIterator(node, this);
+    const hashes: HashIterator = new HashIterator(node, this);
     return hashObject([
       node.type,
       [...hashes],
@@ -87,9 +93,9 @@ class NodeSpec {
 }
 
 class ChildrenIterator {
-  nodeSpec: NodeSpec;
+  nodeSpec: NodeSpec<string>;
   parent: ASTNode;
-  constructor(parent: ASTNode, nodeSpec: NodeSpec) {
+  constructor(parent: ASTNode, nodeSpec: NodeSpec<string>) {
     this.parent = parent;
     this.nodeSpec = nodeSpec;
   }
@@ -110,9 +116,9 @@ class ChildrenIterator {
 }
 
 class HashIterator {
-  nodeSpec: NodeSpec;
+  nodeSpec: NodeSpec<string>;
   parent: ASTNode;
-  constructor(parent: ASTNode, nodeSpec: NodeSpec) {
+  constructor(parent: ASTNode, nodeSpec: NodeSpec<string>) {
     this.parent = parent;
     this.nodeSpec = nodeSpec;
   }
@@ -133,10 +139,10 @@ class HashIterator {
   }
 }
 
-abstract class BaseSpec<FieldType> {
-  fieldName: string;
+abstract class BaseSpec<FieldName extends string, FieldType> {
+  fieldName: FieldName;
 
-  constructor(fieldName: string) {
+  constructor(fieldName: FieldName) {
     this.fieldName = fieldName;
   }
 
@@ -178,7 +184,10 @@ abstract class BaseSpec<FieldType> {
   abstract validate(parent: ASTNode): void;
 }
 
-export class Required extends BaseSpec<ASTNode> {
+export class Required<FieldName extends string = string> extends BaseSpec<
+  FieldName,
+  ASTNode
+> {
   validate(parent: NodeLike) {
     if (!(this.getField(parent) instanceof ASTNode)) {
       throw new Error(
@@ -188,7 +197,10 @@ export class Required extends BaseSpec<ASTNode> {
   }
 }
 
-export class Optional extends BaseSpec<ASTNode | null> {
+export class Optional<FieldName extends string = string> extends BaseSpec<
+  FieldName,
+  ASTNode | null
+> {
   validate(parent: NodeLike) {
     const child = this.getField(parent);
     if (child !== null && !(child instanceof ASTNode)) {
@@ -199,7 +211,10 @@ export class Optional extends BaseSpec<ASTNode | null> {
   }
 }
 
-export class List extends BaseSpec<ASTNode[]> {
+export class List<FieldName extends string = string> extends BaseSpec<
+  FieldName,
+  ASTNode[]
+> {
   validate(parent: NodeLike) {
     const array = this.getField(parent);
     let valid = true;
@@ -221,7 +236,10 @@ export class List extends BaseSpec<ASTNode[]> {
   }
 }
 
-export class Value<V = unknown> extends BaseSpec<V> {
+export class Value<
+  FieldName extends string = string,
+  V = unknown
+> extends BaseSpec<FieldName, V> {
   validate(node: NodeLike) {
     const value = this.getField(node);
     if (value instanceof ASTNode) {
