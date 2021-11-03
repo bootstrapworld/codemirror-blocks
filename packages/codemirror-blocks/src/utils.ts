@@ -1,7 +1,8 @@
 import objToStableString from "fast-json-stable-stringify";
 import CodeMirror, { EditorChange } from "codemirror";
 import { CodeMirrorFacade } from "./editor";
-import type { RootState } from "./reducers";
+import type { RootState } from "./state/reducers";
+import * as selectors from "./state/selectors";
 import type { AST, ASTNode, Pos, Range } from "./ast";
 
 /**************************************************************
@@ -282,7 +283,8 @@ export function skipCollapsed(
   next: (node: ASTNode | undefined) => ASTNode | undefined,
   state: RootState
 ) {
-  const { collapsedList, ast } = state;
+  const { collapsedList } = state;
+  const ast = selectors.getAST(state);
   const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
   // NOTE(Oak): if this is too slow, consider adding a
@@ -313,7 +315,8 @@ export function getRoot(ast: AST, node: ASTNode) {
 }
 
 export function getLastVisibleNode(state: RootState) {
-  const { collapsedList, ast } = state;
+  const ast = selectors.getAST(state);
+  const { collapsedList } = state;
   const collapsedNodeList = collapsedList.map(ast.getNodeByIdOrThrow);
   const lastNode = ast.getNodeBeforeCur(
     ast.rootNodes[ast.rootNodes.length - 1].to
@@ -516,6 +519,21 @@ export function validateRanges(
   return true;
 }
 
+/**
+ * Generates a description of an edit involving certain nodes
+ * that can be announced to the user.
+ *
+ * @param nodes the ast nodes that are involved
+ * @param editWord a word describing the edit like "copied"
+ * @returns the human readable description of the edit
+ * @internal
+ */
+export function createEditAnnouncement(nodes: ASTNode[], editWord: string) {
+  nodes.sort((a, b) => poscmp(a.from, b.from)); // speak first-to-last
+  return (
+    editWord + " " + nodes.map((node) => node.shortDescription()).join(" and ")
+  );
+}
 export class BlockError extends Error {
   type: string;
   data: unknown;

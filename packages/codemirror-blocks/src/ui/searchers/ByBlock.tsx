@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { skipWhile, getNodeContainingBiased } from "../../utils";
 import { AST, ASTNode } from "../../ast";
+import * as selectors from "../../state/selectors";
 import { Searcher } from "./Searcher";
 
 function getAllNodeTypes(ast: AST) {
@@ -72,7 +73,9 @@ const ByBlock: Searcher<SearchSettings, Props> = {
       );
     }
   },
-  search: (cur, settings, editor, { ast, collapsedList }, forward) => {
+  search: (cur, settings, editor, state, forward) => {
+    const ast = selectors.getAST(state);
+    const { collapsedList } = state;
     let startingNode = getNodeContainingBiased(cur, ast);
     if (!startingNode) {
       startingNode = forward

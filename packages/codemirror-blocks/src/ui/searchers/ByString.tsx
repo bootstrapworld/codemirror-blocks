@@ -8,6 +8,7 @@ import {
 import { SearchCursor } from "codemirror";
 import { Searcher } from "./Searcher";
 import { ASTNode } from "../../ast";
+import * as selectors from "../../state/selectors";
 
 /**
  * Returns a query from settings. If the query is a regex but is invalid (indicating
@@ -169,7 +170,8 @@ const ByString: Searcher<SearchSettings, Props> = {
     }
   },
   search: (cur, settings, editor, state, forward) => {
-    const { ast, collapsedList } = state;
+    const ast = selectors.getAST(state);
+    const { collapsedList } = state;
     const collapsedNodeList = collapsedList.map(ast.getNodeById);
 
     if (settings.searchString === "") {

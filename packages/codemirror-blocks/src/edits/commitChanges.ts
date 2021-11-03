@@ -1,14 +1,16 @@
-import { AppThunk } from "../store";
+import { AppThunk } from "../state/store";
 import { poscmp, adjustForChange, minimizeChange, logResults } from "../utils";
-import { activateByNid } from "../actions";
+import { activateByNid } from "../state/actions";
 import patch from "./patchAst";
 import { AST, ASTNode } from "../ast";
 import type { EditorChange } from "codemirror";
-import { getReducerActivities } from "../reducers";
+import { getReducerActivities } from "../state/reducers";
 import { err, ok, Result } from "./result";
 import { ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { ChangeObject } from "./performEdits";
 import { Language } from "../CodeMirrorBlocks";
+import * as actions from "../state/actions";
+import * as selectors from "../state/selectors";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | null | "fallback";
 // commitChanges :
@@ -42,11 +44,11 @@ export const commitChanges =
   ): AppThunk<Result<{ newAST: AST; focusId?: string }>> =>
   (dispatch, getState) => {
     try {
-      const { ast: oldAST, focusId: oldFocusId } = getState();
+      const oldAST = selectors.getAST(getState());
+      const oldFocus = selectors.getFocusedNode(getState());
       let oldFocusNId = null;
       if (!isUndoOrRedo) {
         // Remember the previous focus. See the next `!isUndoOrRedo` block.
-        const oldFocus = oldFocusId && oldAST.getNodeById(oldFocusId);
         oldFocusNId = oldFocus ? oldFocus.nid : null;
       }
       // If we haven't already parsed the AST during speculateChanges, parse it now.
@@ -54,8 +56,8 @@ export const commitChanges =
         ? [...astHint.rootNodes]
         : parse(editor.getValue());
       // Patch the tree and set the state
-      const newAST = new AST(patch([...oldAST.rootNodes], newNodes));
-      dispatch({ type: "SET_AST", ast: newAST });
+      const newAST = AST.from(patch([...oldAST.rootNodes], newNodes));
+      dispatch(actions.setAST(newAST));
       // Try to set the focus using hinting data. If that fails, use the first root
       const focusId =
         dispatch(setFocus(editor, changes, focusHint, newAST)) ||

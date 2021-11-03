@@ -1,5 +1,5 @@
 import React from "react";
-import { getReducerActivities } from "../reducers";
+import { getReducerActivities } from "../state/reducers";
 import { logResults } from "../utils";
 
 type ToggleButtonProps = {

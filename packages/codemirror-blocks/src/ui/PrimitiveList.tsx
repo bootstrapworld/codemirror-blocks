@@ -6,12 +6,12 @@ import {
 } from "../parsers/primitives";
 import { ItemTypes } from "../dnd";
 import { say } from "../announcer";
-import { copy } from "../actions";
+import * as selectors from "../state/selectors";
 import CodeMirror from "codemirror";
 import { defaultKeyMap } from "../keymap";
 import { useSelector } from "react-redux";
-import { RootState } from "../reducers";
 import { useDrag } from "react-dnd";
+import { copy } from "../copypaste";
 
 require("./PrimitiveList.less");
 
@@ -25,10 +25,7 @@ type BasePrimitiveProps = {
 export const Primitive = (props: BasePrimitiveProps) => {
   const { primitive, className, onFocus, onKeyDown } = props;
 
-  const { ast, focusId } = useSelector(({ ast, focusId }: RootState) => ({
-    ast,
-    focusId,
-  }));
+  const focusedNode = useSelector(selectors.getFocusedNode);
 
   const [_, connectDragSource, connectDragPreview] = useDrag({
     type: ItemTypes.NODE,
@@ -40,7 +37,7 @@ export const Primitive = (props: BasePrimitiveProps) => {
       case "Copy": {
         e.preventDefault();
         const node = primitive.getASTNode();
-        copy({ ast, focusId }, [node]);
+        copy({ focusedNode }, [node]);
         say("copied " + primitive.toString());
         primitive.element?.focus(); // restore focus
         return;

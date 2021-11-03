@@ -13,7 +13,7 @@ import { Prog, Assignment, Binary, Conditional } from "./ast";
 /* -----[ the parser ]----- */
 
 export default function parseString(code) {
-  return new AST([convertAST(parse(tokenStream(inputStream(code))))]);
+  return AST.from([convertAST(parse(tokenStream(inputStream(code))))]);
 }
 
 export function parseToIntermediateAST(code) {

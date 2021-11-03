@@ -93,16 +93,38 @@ function validateNodeProps(props: ASTNodeProps) {
   }
   props.spec.validate(props);
 }
+
+export type ASTData = Readonly<{
+  /**
+   * the `rootNodes` attribute simply contains a list of the top level nodes
+   * that were parsed, in srcLoc order
+   */
+  rootNodes: Readonly<ASTNode[]>;
+
+  /**
+   * *Unique* ID for every newly-parsed node. No ID is ever re-used.
+   */
+  nodeIdMap: ReadonlyMap<string, ASTNode>;
+
+  /**
+   * Index of each node (in-order walk). NIds always start at 0
+   */
+  nodeNIdMap: ReadonlyMap<number, ASTNode>;
+
+  /**
+   * Mapping from node id to other node ids through various edges.
+   * Used for {@link getNodeBefore}, {@link getNodeAfter}, and
+   * {@link getNodeParent}
+   */
+  edgeIdMap: Readonly<{ [id: string]: Readonly<Edges> }>;
+}>;
+
 /**
  * annotateNodes : ASTNodes ASTNode -> Void
  * walk through the siblings, assigning aria-* attributes
  * and populating various maps for tree navigation
  */
-function annotateNodes(nodes: Readonly<ASTNode[]>): {
-  nodeIdMap: ReadonlyMap<string, ASTNode>;
-  nodeNIdMap: ReadonlyMap<number, ASTNode>;
-  edgeIdMap: Readonly<{ [id: string]: Readonly<Edges> }>;
-} {
+function annotateNodes(nodes: Readonly<ASTNode[]>): ASTData {
   const nodeIdMap = new Map<string, ASTNode>();
   const nodeNIdMap = new Map<number, ASTNode>();
   const edgeIdMap: Record<string, Edges> = {};
@@ -142,7 +164,7 @@ function annotateNodes(nodes: Readonly<ASTNode[]>): {
     });
   };
   processChildren(nodes, undefined, 1);
-  return { nodeIdMap, nodeNIdMap, edgeIdMap };
+  return { rootNodes: nodes, nodeIdMap, nodeNIdMap, edgeIdMap };
 }
 
 /**
@@ -150,41 +172,27 @@ function annotateNodes(nodes: Readonly<ASTNode[]>): {
  * are required to spit out an `AST` instance.
  */
 export class AST {
-  /**
-   * the `rootNodes` attribute simply contains a list of the top level nodes
-   * that were parsed, in srcLoc order
-   */
-  readonly rootNodes: Readonly<ASTNode[]>;
+  get rootNodes() {
+    return this.data.rootNodes;
+  }
+  get nodeIdMap() {
+    return this.data.nodeIdMap;
+  }
+  get nodeNIdMap() {
+    return this.data.nodeNIdMap;
+  }
+  get edgeIdMap() {
+    return this.data.edgeIdMap;
+  }
 
-  /**
-   * *Unique* ID for every newly-parsed node. No ID is ever re-used.
-   */
-  private readonly nodeIdMap: ReadonlyMap<string, ASTNode> = new Map();
+  readonly data: ASTData;
 
-  /**
-   * Index of each node (in-order walk). NIds always start at 0
-   */
-  private readonly nodeNIdMap: ReadonlyMap<number, ASTNode> = new Map();
+  constructor(data: ASTData) {
+    this.data = data;
+  }
 
-  /**
-   * Mapping from node id to other node ids through various edges.
-   * Used for {@link getNodeBefore}, {@link getNodeAfter}, and
-   * {@link getNodeParent}
-   */
-  private readonly edgeIdMap: Record<string, Readonly<Edges>> = {};
-
-  constructor(rootNodes: Readonly<ASTNode[]>, annotate = true) {
-    this.rootNodes = rootNodes;
-
-    // When an AST is to be used by CMB, it must be annotated.
-    // This step is computationally intensive, and in certain instances
-    // unecessary
-    if (annotate) {
-      const annotations = annotateNodes(this.rootNodes);
-      this.nodeIdMap = annotations.nodeIdMap;
-      this.edgeIdMap = annotations.edgeIdMap;
-      this.nodeNIdMap = annotations.nodeNIdMap;
-    }
+  static from(rootNodes: Readonly<ASTNode[]>) {
+    return new AST(annotateNodes(rootNodes));
   }
 
   /**

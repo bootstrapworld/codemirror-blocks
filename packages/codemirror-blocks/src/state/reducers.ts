@@ -1,8 +1,8 @@
 import CodeMirror from "codemirror";
 import type { Action } from "redux";
-import { AST } from "./ast";
-import { ReadonlyCMBEditor } from "./editor";
-import { debugLog } from "./utils";
+import { AST, ASTData } from "../ast";
+import { ReadonlyCMBEditor } from "../editor";
+import { debugLog } from "../utils";
 
 /**
  * An Activity is a shallow-clone of a reducer action, except that
@@ -24,7 +24,7 @@ const reducerActivities: Activity[] = [];
 export const getReducerActivities = (): ReadonlyArray<Activity> =>
   reducerActivities;
 
-function loggerDebug(action: AppAction, ast: AST) {
+function loggerDebug(action: AppAction, ast: ASTData) {
   // Shallow-clone the action, removing the AST.
   // Then replace the AST with the source code.
   // We'll reconstruct it when replaying the log.
@@ -32,12 +32,14 @@ function loggerDebug(action: AppAction, ast: AST) {
   let activity: Activity;
   switch (action.type) {
     case "SET_AST":
-      activity = { type: action.type, code: ast.toString() };
+      activity = { type: action.type, code: new AST(ast).toString() };
       break;
     case "SET_FOCUS":
       activity = {
         type: action.type,
-        nid: action.focusId ? ast.getNodeByIdOrThrow(action.focusId).nid : null,
+        nid: action.focusId
+          ? new AST(ast).getNodeByIdOrThrow(action.focusId).nid
+          : null,
       };
       break;
     default:
@@ -64,7 +66,7 @@ export type RootState = {
    * that node is currently editable.
    */
   readonly editable: Readonly<{ [nid: string]: boolean }>;
-  readonly ast: AST;
+  readonly astData: ASTData;
   readonly focusId: string | null;
   readonly collapsedList: ReadonlyArray<string>;
   readonly errorId: string;
@@ -105,7 +107,12 @@ export type AppAction =
 const initialState: () => RootState = () => ({
   selections: [],
   editable: {},
-  ast: new AST([]),
+  astData: {
+    rootNodes: [],
+    nodeIdMap: new Map(),
+    nodeNIdMap: new Map(),
+    edgeIdMap: {},
+  },
   focusId: null,
   collapsedList: [],
   markedMap: {},
@@ -123,7 +130,7 @@ function reduce(state = initialState(), action: AppAction): RootState {
     case "SET_AST":
       return {
         ...state,
-        ast: action.ast,
+        astData: action.ast.data,
         collapsedList: state.collapsedList.filter(action.ast.getNodeById),
       };
     case "SET_SELECTIONS":
@@ -146,7 +153,10 @@ function reduce(state = initialState(), action: AppAction): RootState {
         collapsedList: state.collapsedList.filter((e) => e !== action.id),
       };
     case "COLLAPSE_ALL":
-      return { ...state, collapsedList: [...state.ast.getAllNodeIds()] };
+      return {
+        ...state,
+        collapsedList: [...new AST(state.astData).getAllNodeIds()],
+      };
     case "UNCOLLAPSE_ALL":
       return { ...state, collapsedList: [] };
     case "SET_CURSOR":
@@ -223,6 +233,6 @@ export const reducer = (
 ): RootState => {
   debugLog(action);
   const result = reduce(state, action);
-  loggerDebug(action, result.ast);
+  loggerDebug(action, result.astData);
   return result;
 };

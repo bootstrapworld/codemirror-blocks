@@ -4,14 +4,16 @@ import ContentEditable, {
   Props as ContentEditableProps,
 } from "./ContentEditable";
 import classNames, { Argument as ClassNamesArgument } from "classnames";
-import { insert, activateByNid, Target } from "../actions";
+import { insert, activateByNid, Target } from "../state/actions";
 import { say } from "../announcer";
 import CodeMirror from "codemirror";
-import { AppDispatch } from "../store";
-import { RootState } from "../reducers";
+import { AppDispatch } from "../state/store";
+import { RootState } from "../state/reducers";
 import { setAfterDOMUpdate } from "../utils";
 import { CMBEditor } from "../editor";
 import { useLanguageOrThrow } from "../hooks";
+import * as selectors from "../state/selectors";
+import * as actions from "../state/actions";
 
 function suppressEvent(e: React.SyntheticEvent) {
   e.stopPropagation();
@@ -57,12 +59,14 @@ const NodeEditable = (props: Props) => {
   const dispatch: AppDispatch = useDispatch();
   const language = useLanguageOrThrow();
 
+  const ast = useSelector(selectors.getAST);
+
   const { initialValue, isErrored } = useSelector((state: RootState) => {
     const nodeId = props.target.node ? props.target.node.id : "editing";
-    const isErrored = state.errorId == nodeId;
+    const isErrored = selectors.getErrorId(state) == nodeId;
 
     const initialValue =
-      props.value === null ? props.target.getText(state.ast, props.editor) : "";
+      props.value === null ? props.target.getText(ast, props.editor) : "";
 
     return { isErrored, initialValue };
   });
@@ -85,9 +89,6 @@ const NodeEditable = (props: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setErrorId = (errorId: string) =>
-    dispatch({ type: "SET_ERROR_ID", errorId });
-
   const onBlur = (e: React.SyntheticEvent) => {
     e.stopPropagation();
     const { target } = props;
@@ -96,13 +97,12 @@ const NodeEditable = (props: Props) => {
       // to deal with this issue:
       // https://github.com/lovasoa/react-contenteditable/issues/161
       const value = element.current?.textContent;
-      const { focusId, ast } = getState();
+      const focusedNode = selectors.getFocusedNode(getState());
       // if there's no insertion value, or the new value is the same as the
       // old one, preserve focus on original node and return silently
       if (value === initialValue || !value) {
         props.onDisableEditable();
-        const focusNode = focusId ? ast.getNodeById(focusId) || null : null;
-        const nid = focusNode && focusNode.nid;
+        const nid = focusedNode && focusedNode.nid;
         dispatch(activateByNid(props.editor, nid));
         return;
       }
@@ -115,11 +115,11 @@ const NodeEditable = (props: Props) => {
         dispatch(activateByNid(props.editor, null, { allowMove: false }));
         props.onChange(null);
         props.onDisableEditable();
-        setErrorId("");
+        dispatch(actions.clearError());
         say(annt);
       } else {
         console.error(result.exception);
-        setErrorId(target.node ? target.node.id : "editing");
+        dispatch(actions.setErrorId(target.node ? target.node.id : "editing"));
         if (element.current) {
           selectElement(element.current, false);
         }
@@ -140,7 +140,7 @@ const NodeEditable = (props: Props) => {
         e.stopPropagation();
         props.onChange(null);
         props.onDisableEditable();
-        setErrorId("");
+        dispatch(actions.clearError());
         // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
         // and then figure out how to get rid of it altogether.
         setAfterDOMUpdate(() => {

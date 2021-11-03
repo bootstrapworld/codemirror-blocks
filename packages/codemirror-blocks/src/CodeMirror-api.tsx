@@ -1,7 +1,13 @@
-import type { Activity, AppAction, RootState, Quarantine } from "./reducers";
+import type {
+  Activity,
+  AppAction,
+  RootState,
+  Quarantine,
+} from "./state/reducers";
 import { ASTNode, Pos } from "./ast";
 import { CodeMirrorFacade, isBlockNodeMarker } from "./editor";
-import type { AppDispatch } from "./store";
+import type { AppDispatch } from "./state/store";
+import * as selectors from "./state/selectors";
 import { BlockError, validateRanges } from "./utils";
 import CodeMirror, { SelectionOptions } from "codemirror";
 import {
@@ -11,12 +17,12 @@ import {
   extendSelections,
   replaceSelections,
   listSelections,
-} from "./actions";
+} from "./state/actions";
 import type { Language } from "./CodeMirrorBlocks";
 import { AST } from "./ast";
 
 export type BlockEditorAPI = {
-  getAst(): RootState["ast"];
+  getAst(): AST;
   getFocusedNode(): ASTNode | undefined;
   getSelectedNodes(): ASTNode[];
 
@@ -91,7 +97,7 @@ export const buildAPI = (
     // Restrict CM's markText method to block editor semantics:
     // fewer options, restricted to node boundaries
     markText: (from, to, opts: CodeMirror.TextMarkerOptions = {}) => {
-      const { ast } = dispatch((_, getState) => getState());
+      const ast = dispatch((_, getState) => selectors.getAST(getState()));
       const node = ast.getNodeAt(from, to);
       if (!node) {
         throw new BlockError(
@@ -156,8 +162,8 @@ export const buildAPI = (
         .join(sep),
     listSelections: () => listSelections(editor, dispatch),
     replaceRange: (text, from, to, origin) =>
-      withState(({ ast }) => {
-        validateRanges([{ anchor: from, head: to }], ast);
+      withState((state) => {
+        validateRanges([{ anchor: from, head: to }], selectors.getAST(state));
         editor.codemirror.replaceRange(text, from, to, origin);
       }),
     setSelections: (ranges, primary, opts) =>
@@ -188,23 +194,29 @@ export const buildAPI = (
       ),
     // Restrict CM's getCursor() to  block editor semantics
     getCursor: (where) => {
-      const { focusId, ast } = dispatch((_, getState) => getState());
-      if (focusId && document.activeElement?.id.match(/block-node/)) {
-        const node = ast.getNodeByIdOrThrow(focusId);
-        if (where == "from" || where == undefined) return node.from;
-        if (where == "to") return node.to;
-        else
+      const node = dispatch((_, getState) =>
+        selectors.getFocusedNode(getState())
+      );
+      if (node && document.activeElement?.id.match(/block-node/)) {
+        if (where == "from" || where == undefined) {
+          return node.from;
+        }
+        if (where == "to") {
+          return node.to;
+        } else {
           throw new BlockError(
             `getCursor() with ${where} is not supported on a focused block`,
             `API Error`
           );
+        }
       } else {
         return editor.codemirror.getCursor(where);
       }
     },
     // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
     setCursor: (curOrLine, ch, _options) =>
-      withState(({ ast }) => {
+      withState((state) => {
+        const ast = selectors.getAST(state);
         ch = ch ?? 0;
         const cur =
           typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
@@ -233,16 +245,16 @@ export const buildAPI = (
     /*****************************************************************
      * APIs THAT ARE UNIQUE TO CODEMIRROR-BLOCKS
      */
-    getAst: () => withState(({ ast }) => ast),
+    getAst: () => withState((state) => selectors.getAST(state)),
     // activation-test.js expects undefined
+    // TODO(pcardune): choose null or undefined everywhere.
     getFocusedNode: () =>
-      withState(({ focusId, ast }) =>
-        focusId ? ast.getNodeById(focusId) : undefined
-      ),
+      withState((state) => selectors.getFocusedNode(state) ?? undefined),
     getSelectedNodes: () =>
-      withState(({ selections, ast }) =>
-        selections.map((id) => ast.getNodeById(id))
-      ),
+      withState((state) => {
+        const ast = selectors.getAST(state);
+        return state.selections.map((id) => ast.getNodeById(id));
+      }),
 
     /*****************************************************************
      * APIs FOR TESTING
@@ -276,7 +288,7 @@ export const buildAPI = (
       // reconstruct the AST and pass it to the reducer
       if (activity.type == "SET_AST") {
         editor.setValue(activity.code);
-        const newAST = new AST(language.parse(activity.code));
+        const newAST = AST.from(language.parse(activity.code));
         action = { ...activity, ast: newAST };
       }
       // convert nid to node id, and use activate to generate the action

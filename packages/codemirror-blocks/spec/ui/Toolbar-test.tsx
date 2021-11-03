@@ -5,7 +5,7 @@ import Context from "../../src/components/Context";
 import { addLanguage } from "../../src/languages";
 import { Literal } from "../../src/nodes";
 import { Primitive, PrimitiveGroup } from "../../src/parsers/primitives";
-import { AppStore, createAppStore } from "../../src/store";
+import { AppStore, createAppStore } from "../../src/state/store";
 import Toolbar from "../../src/ui/Toolbar";
 
 describe("Toolbar", () => {

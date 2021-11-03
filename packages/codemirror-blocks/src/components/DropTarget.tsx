@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "react-dnd";
 import classNames from "classnames";
-import { AppDispatch, AppStore } from "../store";
+import { AppDispatch } from "../state/store";
 import { genUniqueId } from "../utils";
-import { useDropAction, InsertTarget } from "../actions";
+import { useDropAction, InsertTarget } from "../state/actions";
+import * as selectors from "../state/selectors";
 import type { ASTNode, AST, Pos } from "../ast";
-import { RootState } from "../reducers";
+import { RootState } from "../state/reducers";
 import { ItemTypes } from "../dnd";
 import { EditorContext } from "./Context";
 
@@ -127,8 +128,7 @@ export const DropTarget = (props: { field: string }) => {
   }
   const editor = useContext(EditorContext);
 
-  const store: AppStore = useStore();
-  const isErrorFree = () => store.getState().errorId === "";
+  const isErrorFree = useSelector(selectors.isErrorFree);
 
   // ensure that the field property is set
   if (!props.field) {
@@ -146,8 +146,9 @@ field declared. The node was:`,
   const [mouseOver, setMouseOver] = useState(false);
 
   const dispatch: AppDispatch = useDispatch();
-  const { ast, isEditable } = useSelector((state: RootState) => {
-    return { ast: state.ast, isEditable: state.editable[id] ?? false };
+  const ast = useSelector(selectors.getAST);
+  const { isEditable } = useSelector((state: RootState) => {
+    return { isEditable: state.editable[id] ?? false };
   });
   // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
   // check to see whether an adjacent DropTarget is being edited, or, for when the
@@ -191,7 +192,7 @@ field declared. The node was:`,
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isErrorFree()) {
+    if (!isErrorFree) {
       // TODO(Oak): is this the best way to handle this?
       return;
     }

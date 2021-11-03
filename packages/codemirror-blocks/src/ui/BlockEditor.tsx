@@ -3,7 +3,7 @@ import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
 import { useDispatch, useSelector } from "react-redux";
-import { activateByNid, setCursor } from "../actions";
+import { activateByNid, setCursor } from "../state/actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
@@ -12,8 +12,10 @@ import { keyDown } from "../keymap";
 import type { AST } from "../ast";
 import CodeMirror from "codemirror";
 import type { Options, Language } from "../CodeMirrorBlocks";
-import type { AppDispatch } from "../store";
-import type { RootState } from "../reducers";
+import type { AppDispatch } from "../state/store";
+import type { RootState } from "../state/reducers";
+import * as selectors from "../state/selectors";
+import * as actions from "../state/actions";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext, LanguageContext } from "../components/Context";
 import { CodeMirrorFacade, ReadonlyCMBEditor } from "../editor";
@@ -40,7 +42,7 @@ export type BlockEditorProps = {
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language, passedAST } = props;
   const dispatch: AppDispatch = useDispatch();
-  const ast = useSelector((state: RootState) => state.ast);
+  const ast = useSelector(selectors.getAST);
   const quarantine = useSelector((state: RootState) => state.quarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const newASTRef = useRef<AST | undefined>();
@@ -144,15 +146,15 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     );
 
     // set AST and search properties and collapse preferences
-    dispatch({ type: "SET_AST", ast: passedAST });
+    dispatch(actions.setAST(passedAST));
     if (options.collapseAll) {
-      dispatch({ type: "COLLAPSE_ALL" });
+      dispatch(actions.collapseAll());
     }
 
     // When the editor receives focus, select the first root (if it exists)
     const firstRoot = passedAST.getFirstRootNode();
     if (firstRoot) {
-      dispatch({ type: "SET_FOCUS", focusId: firstRoot.id });
+      dispatch(actions.setFocusedNode(firstRoot));
     }
 
     // Set extra aria attributes
@@ -173,11 +175,13 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const handleTopLevelFocus = (editor: ReadonlyCMBEditor) => {
     setAfterDOMUpdate(() => {
       dispatch((_, getState) => {
-        const { cur, focusId, ast } = getState();
-        if (cur != null) return; // if we already have a cursor, bail
-        const node = focusId
-          ? ast.getNodeByIdOrThrow(focusId)
-          : ast.getFirstRootNode();
+        const ast = selectors.getAST(getState());
+        const focusedNode = selectors.getFocusedNode(getState());
+        const { cur } = getState();
+        if (cur != null) {
+          return; // if we already have a cursor, bail
+        }
+        const node = focusedNode || ast.getFirstRootNode();
         dispatch(
           activateByNid(editor, node && node.nid, {
             allowMove: true,
