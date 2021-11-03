@@ -1,11 +1,9 @@
 import { AppThunk } from "../state/store";
-import { poscmp, adjustForChange, minimizeChange, logResults } from "../utils";
+import { poscmp, adjustForChange, minimizeChange } from "../utils";
 import { activateByNid } from "../state/actions";
 import patch from "./patchAst";
 import { AST, ASTNode } from "../ast";
 import type { EditorChange } from "codemirror";
-import { getReducerActivities } from "../state/reducers";
-import { err, ok, Result } from "./result";
 import { ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { ChangeObject } from "./performEdits";
 import { Language } from "../CodeMirrorBlocks";
@@ -41,45 +39,40 @@ export const commitChanges =
     focusHint?: FocusHint | -1,
     astHint?: AST,
     annt?: string | false
-  ): AppThunk<Result<{ newAST: AST; focusId?: string }>> =>
+  ): AppThunk<{ newAST: AST; focusId?: string }> =>
   (dispatch, getState) => {
-    try {
-      const oldAST = selectors.getAST(getState());
-      const oldFocus = selectors.getFocusedNode(getState());
-      let oldFocusNId = null;
-      if (!isUndoOrRedo) {
-        // Remember the previous focus. See the next `!isUndoOrRedo` block.
-        oldFocusNId = oldFocus ? oldFocus.nid : null;
-      }
-      // If we haven't already parsed the AST during speculateChanges, parse it now.
-      const newNodes: ASTNode[] = astHint
-        ? [...astHint.rootNodes]
-        : parse(editor.getValue());
-      // Patch the tree and set the state
-      const newAST = AST.from(patch([...oldAST.rootNodes], newNodes));
-      dispatch(actions.setAST(newAST));
-      // Try to set the focus using hinting data. If that fails, use the first root
-      const focusId =
-        dispatch(setFocus(editor, changes, focusHint, newAST)) ||
-        newAST.getFirstRootNode()?.id;
-      if (!isUndoOrRedo) {
-        // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
-        // this is what populates our undo stack.
-        let newFocus = null;
-        if (focusId) {
-          newFocus = newAST.getNodeById(focusId);
-        }
-        const newFocusNId = newFocus?.nid || null;
-        const topmostAction = editor.getTopmostAction("undo");
-        topmostAction.undoableAction = annt || undefined;
-        topmostAction.actionFocus = { oldFocusNId, newFocusNId };
-        dispatch({ type: "DO", focusId: focusId || null });
-      }
-      return ok({ newAST, focusId });
-    } catch (e) {
-      logResults(getReducerActivities(), e);
-      throw err(e);
+    const oldAST = selectors.getAST(getState());
+    const oldFocus = selectors.getFocusedNode(getState());
+    let oldFocusNId = null;
+    if (!isUndoOrRedo) {
+      // Remember the previous focus. See the next `!isUndoOrRedo` block.
+      oldFocusNId = oldFocus ? oldFocus.nid : null;
     }
+    // If we haven't already parsed the AST during speculateChanges, parse it now.
+    const newNodes: ASTNode[] = astHint
+      ? [...astHint.rootNodes]
+      : parse(editor.getValue());
+    // Patch the tree and set the state
+    const newAST = AST.from(patch([...oldAST.rootNodes], newNodes));
+    dispatch(actions.setAST(newAST));
+    // Try to set the focus using hinting data. If that fails, use the first root
+    const focusId =
+      dispatch(setFocus(editor, changes, focusHint, newAST)) ||
+      newAST.getFirstRootNode()?.id;
+    if (!isUndoOrRedo) {
+      // `DO` must be dispatched every time _any_ edit happens on CodeMirror:
+      // this is what populates our undo stack.
+      let newFocus = null;
+      if (focusId) {
+        newFocus = newAST.getNodeById(focusId);
+      }
+      const newFocusNId = newFocus?.nid || null;
+      const topmostAction = editor.getTopmostAction("undo");
+      topmostAction.undoableAction = annt || undefined;
+      topmostAction.actionFocus = { oldFocusNId, newFocusNId };
+      dispatch({ type: "DO", focusId: focusId || null });
+    }
+    return { newAST, focusId };
   };
 
 // Use the focus hint to determine focus, unless:

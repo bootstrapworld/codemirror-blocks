@@ -107,41 +107,6 @@ const DragAndDropEditor = (props: Props) => {
           props.onKeyDown(editorRef.current, e)
         }
       />
-      {/* 
-          Invisible form for error logging
-          NOTE(Emmanuel) we should re-evaluate this when dealing 
-          with pages that have multiple block editors 
-        */}
-      <iframe
-        name="hidden_iframe"
-        id="hidden_iframe"
-        style={{ display: "none" }}
-      ></iframe>
-      <form
-        method="post"
-        action="https://docs.google.com/forms/d/e/1FAIpQLScJMw-00Kl3bxqp9NhCjijn0I8okCtVeX3VrwT7M1uTsYqBkw/formResponse"
-        name="theForm"
-        id="errorLogForm"
-        target="hidden_iframe"
-        style={{ display: "none" }}
-      >
-        <textarea
-          name="entry.1311696515"
-          id="description"
-          defaultValue="Auto-Generated Crash Log"
-        />
-        <textarea
-          name="entry.1568521986"
-          id="history"
-          defaultValue="default_history"
-        />
-        <textarea
-          name="entry.785063835"
-          id="exception"
-          defaultValue="default_exception"
-        />
-        <input type="button" value="Submit" className="submit" />
-      </form>
     </div>
   );
 };
