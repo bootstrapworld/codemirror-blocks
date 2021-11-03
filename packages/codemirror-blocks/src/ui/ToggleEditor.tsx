@@ -134,7 +134,36 @@ type ToggleEditorAPI = {
 import type { BuiltAPI as BlockEditorAPIExtensions } from "../CodeMirror-api";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
 import { AppContext } from "../components/Context";
+import { err, ok } from "../edits/result";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
+
+function checkASTParity(oldCode: string, language: Language) {
+  let oldAst: AST;
+  try {
+    oldAst = AST.from(language.parse(oldCode)); // parse the code (WITH annotations)
+  } catch (e) {
+    console.error(e);
+    if (language.getExceptionMessage) {
+      try {
+        return err(language.getExceptionMessage(e));
+      } catch (e) {
+        // fall through to the default error message
+      }
+    }
+    return err("The parser failed, and the error could not be retrieved");
+  }
+  try {
+    const code = oldAst.toString();
+    const newAst = AST.from(language.parse(code));
+    return ok({ oldAst, code, newAst });
+  } catch (e) {
+    console.error("COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n", oldAst);
+    console.error("PRETTY-PRINTED CODE WAS", oldAst.toString());
+    return err(`An error occured in the language module: 
+          the pretty-printer probably produced invalid code.
+          See the JS console for more detailed reporting.`);
+  }
+}
 
 export type ToggleEditorProps = {
   initialCode?: string;
@@ -153,7 +182,7 @@ function ToggleEditor(props: ToggleEditorProps) {
   const [code, setCode] = useState(props.initialCode ?? "");
   const [dialog, setDialog] = useState<null | {
     title: string;
-    content: ReactElement;
+    content: ReactElement | string;
   }>(null);
   const [ast, setAST] = useState(AST.from([]));
   const [recordedMarks, setRecordedMarks] = useState<
@@ -174,48 +203,22 @@ function ToggleEditor(props: ToggleEditorProps) {
    */
   const handleToggle =
     (editor: CMBEditor, language: Language) => (blockMode: boolean) => {
-      let oldAst, WS, code;
-      try {
-        try {
-          const oldCode = editor.getValue();
-          oldCode.match(/\s+$/); // match ending whitespace
-          oldAst = AST.from(language.parse(oldCode)); // parse the code (WITH annotations)
-        } catch (err) {
-          console.error(err);
-          let message = "";
-          if (language.getExceptionMessage) {
-            try {
-              message = language.getExceptionMessage(err);
-            } catch (e) {
-              message =
-                "The parser failed, and the error could not be retrieved";
-            }
-          }
-          throw message;
-        }
-        try {
-          code = oldAst.toString() + (WS ? WS[0] : ""); // pretty-print and restore whitespace
-          setAST(AST.from(language.parse(code))); // parse the pretty-printed (PP) code
-        } catch (e) {
-          console.error("COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n", oldAst);
-          console.error("PRETTY-PRINTED CODE WAS", oldAst.toString());
-          throw `An error occured in the language module: 
-        the pretty-printer probably produced invalid code.
-        See the JS console for more detailed reporting.`;
-        }
-        // Preserve old TextMarkers
-        setRecordedMarks(recordMarks(editor, oldAst, undefined));
-        // Success! Set the state
-        setCode(code);
-        setBlockMode(blockMode);
-      } catch (e) {
-        // Failure! Set the dialog state
-        console.error(e);
+      const result = checkASTParity(editor.getValue(), language);
+      if (!result.successful) {
+        console.error(result.exception);
         setDialog({
           title: "Could not convert to Blocks",
-          content: e.toString(),
+          content: result.exception,
         });
+        return;
       }
+      const oldAst = result.value.oldAst;
+      setAST(result.value.newAst);
+      // Preserve old TextMarkers
+      setRecordedMarks(recordMarks(editor, oldAst, undefined));
+      // Success! Set the state
+      setCode(result.value.code);
+      setBlockMode(blockMode);
     };
 
   const eventHandlersRef = useRef<
@@ -381,7 +384,6 @@ function ToggleEditor(props: ToggleEditorProps) {
               }}
               value={code}
               onMount={handleEditorMounted}
-              passedAST={ast}
             />
           )}
         </div>

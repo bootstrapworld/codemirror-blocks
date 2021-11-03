@@ -7,7 +7,7 @@ type Props = {
   isOpen: boolean;
   body: {
     title: string;
-    content: ReactElement;
+    content: ReactElement | string;
   } | null;
   keyUp?: React.KeyboardEventHandler<HTMLDivElement>;
 };

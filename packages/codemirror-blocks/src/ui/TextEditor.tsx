@@ -4,7 +4,6 @@ import {
   UnControlled as CodeMirror,
 } from "react-codemirror2";
 import { API } from "./ToggleEditor";
-import { AST } from "../ast";
 import { CodeMirrorFacade } from "../editor";
 
 // CodeMirror APIs that we need to disallow
@@ -28,17 +27,13 @@ type Props = {
   codemirrorOptions?: CodeMirror.EditorConfiguration;
   value: string;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
-  onMount: (ed: CodeMirrorFacade, api: API, ast: AST | undefined) => void;
-  passedAST?: AST;
+  onMount: (ed: CodeMirrorFacade, api: API) => void;
 };
 
 const TextEditor = (props: Props) => {
-  const { onMount, passedAST, value, onBeforeChange, codemirrorOptions } =
-    props;
-
   // build the API on mount
   const handleEditorDidMount = (ed: CodeMirror.Editor) => {
-    onMount(new CodeMirrorFacade(ed), buildAPI(), passedAST);
+    props.onMount(new CodeMirrorFacade(ed), buildAPI());
   };
 
   // Build the API for a text editor, restricting APIs that are
@@ -48,9 +43,9 @@ const TextEditor = (props: Props) => {
     // see DragAndDropEditor.js for why the DND context needs a wrapper
     <div>
       <CodeMirror
-        value={value}
-        onBeforeChange={onBeforeChange}
-        options={codemirrorOptions}
+        value={props.value}
+        onBeforeChange={props.onBeforeChange}
+        options={props.codemirrorOptions}
         editorDidMount={handleEditorDidMount}
       />
     </div>
