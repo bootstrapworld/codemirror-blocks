@@ -23,7 +23,7 @@ export function addLanguage(languageDefinition: Language) {
 
   if (!languageDefinition.getExceptionMessage) {
     languageDefinition.getExceptionMessage = function (e) {
-      return e || "Parser error";
+      return String(e) || "Parser error";
     };
   }
 
