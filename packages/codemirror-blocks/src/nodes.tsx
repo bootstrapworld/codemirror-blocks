@@ -32,6 +32,43 @@ function withComment(
   }
 }
 
+const specs = {
+  unknown: Spec.nodeSpec([Spec.list("elts")]),
+  functionApp: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
+  identifierList: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
+  structDefinition: Spec.nodeSpec([
+    Spec.required("name"),
+    Spec.required("fields"),
+  ]),
+  variableDefinition: Spec.nodeSpec([
+    Spec.required("name"),
+    Spec.required("body"),
+  ]),
+  lambdaExpression: Spec.nodeSpec([
+    Spec.required("args"),
+    Spec.required("body"),
+  ]),
+  functionDefinition: Spec.nodeSpec([
+    Spec.required("name"),
+    Spec.required("params"),
+    Spec.required("body"),
+  ]),
+  condClause: Spec.nodeSpec([
+    Spec.required("testExpr"),
+    Spec.list("thenExprs"),
+  ]),
+  condExpression: Spec.nodeSpec([Spec.list("clauses")]),
+  ifExpression: Spec.nodeSpec([
+    Spec.required("testExpr"),
+    Spec.required("thenExpr"),
+    Spec.required("elseExpr"),
+  ]),
+  literal: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
+  comment: Spec.nodeSpec([Spec.value("comment")]),
+  blank: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
+  sequence: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
+};
+
 export function Unknown(
   from: Pos,
   to: Pos,
@@ -42,6 +79,7 @@ export function Unknown(
     from,
     to,
     type: "unknown",
+    spec: specs.unknown,
     fields: { elts },
     options,
     pretty: (node) =>
@@ -76,7 +114,6 @@ export function Unknown(
           .join(", ")
       );
     },
-    spec: Spec.nodeSpec([Spec.list("elts")]),
   });
 }
 
@@ -92,6 +129,7 @@ export function FunctionApp(
     from,
     to,
     type: "functionApp",
+    spec: specs.functionApp,
     fields: { func, args },
     options,
     pretty: (node) =>
@@ -134,7 +172,6 @@ export function FunctionApp(
           node.fields.args.map((a) => a.describe(level)).join(", ")
         );
     },
-    spec: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
   });
 }
 
@@ -149,6 +186,7 @@ export function IdentifierList(
     from,
     to,
     type: "identifierList",
+    spec: specs.identifierList,
     fields: { kind, ids },
     options,
     pretty: (node) =>
@@ -165,7 +203,6 @@ export function IdentifierList(
     longDescription(node, level) {
       return enumerateList(node.fields.ids, level);
     },
-    spec: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
   });
 }
 
@@ -180,6 +217,7 @@ export function StructDefinition(
     from,
     to,
     type: "structDefinition",
+    spec: specs.structDefinition,
     fields: { name, fields },
     options,
     pretty: (node) =>
@@ -210,7 +248,6 @@ export function StructDefinition(
         level
       )} to be a structure with ${node.fields.fields.describe(level)}`;
     },
-    spec: Spec.nodeSpec([Spec.required("name"), Spec.required("fields")]),
   });
 }
 
@@ -225,6 +262,7 @@ export function VariableDefinition(
     from,
     to,
     type: "variableDefinition",
+    spec: specs.variableDefinition,
     fields: { name, body },
     options,
     pretty: (node) =>
@@ -254,7 +292,6 @@ export function VariableDefinition(
         node.fields.name
       } to be ${insert} ${node.fields.body.describe(level)}`;
     },
-    spec: Spec.nodeSpec([Spec.required("name"), Spec.required("body")]),
   });
 }
 
@@ -269,6 +306,7 @@ export function LambdaExpression(
     from,
     to,
     type: "lambdaExpression",
+    spec: specs.lambdaExpression,
     fields: { body, args },
     options,
     pretty: (node) =>
@@ -295,7 +333,6 @@ export function LambdaExpression(
                 ${node.fields.args.describe(level)}, with body:
                 ${node.fields.body.describe(level)}`;
     },
-    spec: Spec.nodeSpec([Spec.required("args"), Spec.required("body")]),
   });
 }
 
@@ -311,6 +348,7 @@ export function FunctionDefinition(
     from,
     to,
     type: "functionDefinition",
+    spec: specs.functionDefinition,
     fields: { name, params, body },
     options,
     pretty: (node) =>
@@ -341,11 +379,6 @@ export function FunctionDefinition(
                 ${node.fields.params.describe(level)}, with body:
                 ${node.fields.body.describe(level)}`;
     },
-    spec: Spec.nodeSpec([
-      Spec.required("name"),
-      Spec.required("params"),
-      Spec.required("body"),
-    ]),
   });
 }
 
@@ -360,6 +393,7 @@ export function CondClause(
     from,
     to,
     type: "condClause",
+    spec: specs.condClause,
     fields: { testExpr, thenExprs },
     options,
     pretty: (node) =>
@@ -392,7 +426,6 @@ export function CondClause(
         level
       )}, then, ${node.fields.thenExprs.map((te) => te.describe(level))}`;
     },
-    spec: Spec.nodeSpec([Spec.required("testExpr"), Spec.list("thenExprs")]),
   });
 }
 
@@ -406,6 +439,7 @@ export function CondExpression(
     from,
     to,
     type: "condExpression",
+    spec: specs.condExpression,
     fields: { clauses },
     options,
     pretty: (node) => P.beginLikeSexpr("cond", node.fields.clauses),
@@ -427,7 +461,6 @@ export function CondExpression(
       )}: 
                 ${node.fields.clauses.map((c) => c.describe(level))}`;
     },
-    spec: Spec.nodeSpec([Spec.list("clauses")]),
   });
 }
 
@@ -443,6 +476,7 @@ export function IfExpression(
     from,
     to,
     type: "ifExpression",
+    spec: specs.ifExpression,
     fields: { testExpr, thenExpr, elseExpr },
     options,
     pretty: (node) =>
@@ -483,11 +517,6 @@ export function IfExpression(
         `else ${node.fields.elseExpr.describe(level)}`
       );
     },
-    spec: Spec.nodeSpec([
-      Spec.required("testExpr"),
-      Spec.required("thenExpr"),
-      Spec.required("elseExpr"),
-    ]),
   });
 }
 
@@ -503,6 +532,7 @@ export function Literal(
     from,
     to,
     type: "literal",
+    spec: specs.literal,
     fields: { value, dataType },
     options,
     pretty: (node) =>
@@ -516,7 +546,6 @@ export function Literal(
         </Node>
       );
     },
-    spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
   });
 }
 
@@ -525,6 +554,7 @@ export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
     from,
     to,
     type: "comment",
+    spec: specs.comment,
     fields: { comment },
     options: { isNotEditable: true, ...options },
     pretty: (node) => {
@@ -541,7 +571,6 @@ export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
         </span>
       );
     },
-    spec: Spec.nodeSpec([Spec.value("comment")]),
   });
 }
 
@@ -556,6 +585,7 @@ export function Blank(
     from,
     to,
     type: "blank",
+    spec: specs.blank,
     fields: { value: value || "...", dataType },
     options,
     pretty: (node) => P.txt(node.fields.value),
@@ -566,12 +596,12 @@ export function Blank(
         </Node>
       );
     },
-    spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
   });
 }
 
 export type SequenceNode = ASTNode<{ name: ASTNode; exprs: ASTNode[] }>;
 export const SequenceProps = {
+  spec: specs.sequence,
   pretty: (node: SequenceNode) =>
     P.vert(node.fields.name, ...node.fields.exprs),
   render(props: { node: SequenceNode }) {
@@ -589,7 +619,6 @@ export const SequenceProps = {
   longDescription(node: SequenceNode, level: number) {
     return `a sequence containing ${enumerateList(node.fields.exprs, level)}`;
   },
-  spec: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
 };
 export function Sequence(
   from: Pos,
