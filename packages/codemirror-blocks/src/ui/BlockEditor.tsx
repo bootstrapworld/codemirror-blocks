@@ -13,7 +13,7 @@ import type { AST } from "../ast";
 import CodeMirror from "codemirror";
 import type { Options, Language } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../store";
-import type { AppAction, RootState } from "../reducers";
+import type { RootState } from "../reducers";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext, LanguageContext } from "../components/Context";
 import { CodeMirrorFacade, ReadonlyCMBEditor } from "../editor";
