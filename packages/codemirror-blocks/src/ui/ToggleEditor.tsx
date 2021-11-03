@@ -131,7 +131,7 @@ type ToggleEditorAPI = {
   runMode(): never;
 };
 
-import type { BuiltAPI as BlockEditorAPIExtensions } from "./BlockEditor";
+import type { BuiltAPI as BlockEditorAPIExtensions } from "../CodeMirror-api";
 import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
 import { AppContext } from "../components/Context";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
