@@ -12,7 +12,7 @@ import {
   replaceSelections,
   listSelections,
 } from "./actions";
-import type { Options, Language } from "./CodeMirrorBlocks";
+import type { Language } from "./CodeMirrorBlocks";
 import { AST } from "./ast";
 
 export type BlockEditorAPI = {
@@ -257,44 +257,36 @@ export const buildAPI = (
       }),
     /**
      * @internal
-     * Used for reproducing/debugging (see ToggleEditor::loadLoggedActions)
+     * Used for reproducing/debugging prior interactions
+     * see toolkit/debug::loadLogButton.onchange()
      * Filter/Tweak logged history actions before dispatching them to
      * be executed.
      */
     executeAction: (activity) => {
-      console.log(activity);
-      withState(({ ast }) => {
-        // ignore certain logged actions that are already
-        // handled by the BlockEditor constructor
-        const ignoreActions = ["RESET_STORE_FOR_TESTING"];
-        if (ignoreActions.includes(activity.type)) {
-          return;
-        }
+      // ignore certain logged actions that are already
+      // handled by the BlockEditor constructor
+      const ignoreActions = ["RESET_STORE_FOR_TESTING"];
+      if (ignoreActions.includes(activity.type)) {
+        return;
+      }
 
-        let action: AppAction;
-        // SET_AST actions have been serialized to printed code.
-        // Set the value of the editor to that code, then
-        // reconstruct the AST and pass it to the reducer
-        console.log(activity);
-        if (activity.type == "SET_AST") {
-          editor.setValue(activity.code);
-          const newAST = new AST(language.parse(activity.code));
-          action = { ...activity, ast: newAST };
-        }
-        // convert nid to node id, and use activate to generate the action
-        else if (activity.type == "SET_FOCUS") {
-          dispatch(
-            activateByNid(editor, activity.nid, {
-              allowMove: true,
-            })
-          );
-          return;
-        } else {
-          action = activity;
-        }
-        console.log("about to dispatch");
-        dispatch(action);
-      });
+      let action: AppAction;
+      // SET_AST actions have been serialized to printed code.
+      // Set the value of the editor to that code, then
+      // reconstruct the AST and pass it to the reducer
+      if (activity.type == "SET_AST") {
+        editor.setValue(activity.code);
+        const newAST = new AST(language.parse(activity.code));
+        action = { ...activity, ast: newAST };
+      }
+      // convert nid to node id, and use activate to generate the action
+      else if (activity.type == "SET_FOCUS") {
+        dispatch(activateByNid(editor, activity.nid, { allowMove: true }));
+        return;
+      } else {
+        action = activity;
+      }
+      dispatch(action);
     },
   };
   // show which APIs are unsupported
