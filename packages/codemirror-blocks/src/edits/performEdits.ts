@@ -15,7 +15,6 @@ import {
   ClonedASTNode,
 } from "./fakeAstEdits";
 import type { AppThunk } from "../state/store";
-import { getReducerActivities } from "../state/reducers";
 import * as selectors from "../state/selectors";
 import { err, ok, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
@@ -235,9 +234,9 @@ export const performEdits =
             annt
           )
         );
-        return changeResult;
+        return ok(changeResult);
       } catch (e) {
-        logResults(getReducerActivities(), e);
+        logResults(e);
         return err(e);
       }
     } else {

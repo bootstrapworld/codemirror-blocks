@@ -1,7 +1,7 @@
 import objToStableString from "fast-json-stable-stringify";
 import CodeMirror, { EditorChange } from "codemirror";
 import { CodeMirrorFacade } from "./editor";
-import type { RootState } from "./state/reducers";
+import { Activity, getReducerActivities, RootState } from "./state/reducers";
 import * as selectors from "./state/selectors";
 import type { AST, ASTNode, Pos, Range } from "./ast";
 
@@ -471,21 +471,38 @@ export function minimizeChange({
     : { from, to, text, removed };
 }
 
-// display the actual exception, and try to log it
-export function logResults(
-  history: unknown,
+let logReporter: (
+  history: readonly Activity[],
   exception: unknown,
-  description = "Crash Log"
-) {
-  debugLog(exception, history);
+  description: string
+) => void = (history, exception, description) => {
+  debugLog(exception, history, description);
+};
+
+/**
+ * Sets the global logReporter callback function.
+ *
+ * @param reporter function to call when there is some kind of error
+ *   or the user submits a bug report. The function will be called with
+ *   the following parameters:
+ *     - `history`: a json serializable object representing all the actions
+ *       the user took up to this point since the page loaded
+ *     - `exception`: some type of error object, could be anything.
+ *     - `description`: a string description of what happened
+ *       (possible entered by the user)
+ *
+ * Note that this function will be used for all instances of codemirror-blocks
+ * on a page.
+ */
+export function setLogReporter(reporter: typeof logReporter) {
+  logReporter = reporter;
+}
+
+// display the actual exception, and try to log it
+export function logResults(exception: unknown, description = "Crash Log") {
+  const history = getReducerActivities();
   try {
-    (document.getElementById("description") as HTMLTextAreaElement).value =
-      description;
-    (document.getElementById("history") as HTMLTextAreaElement).value =
-      JSON.stringify(history);
-    (document.getElementById("exception") as HTMLTextAreaElement).value =
-      String(exception);
-    (document.getElementById("errorLogForm") as HTMLFormElement).submit();
+    logReporter(history, exception, description);
   } catch (e) {
     debugLog("LOGGING FAILED.", e, history);
   }

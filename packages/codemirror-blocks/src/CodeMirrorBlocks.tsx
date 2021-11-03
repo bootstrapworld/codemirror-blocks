@@ -140,6 +140,7 @@ function CodeMirrorBlocks(
   Modal.setAppElement(container);
   return apiBox;
 }
+export { setLogReporter } from "./utils";
 
 export {
   CodeMirrorBlocks,

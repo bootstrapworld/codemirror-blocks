@@ -1,5 +1,4 @@
 import React from "react";
-import { getReducerActivities } from "../state/reducers";
 import { logResults } from "../utils";
 
 type ToggleButtonProps = {
@@ -29,9 +28,8 @@ export const ToggleButton = (props: ToggleButtonProps) => {
 
 export const BugButton = () => {
   const handleBugReport = () => {
-    const history = JSON.stringify(getReducerActivities());
     const description = prompt("Briefly describe what happened");
-    logResults(history, "user-generated bug report", description || undefined);
+    logResults("user-generated bug report", description || undefined);
   };
 
   return (
