@@ -46,6 +46,12 @@ Steps to reproduce the behavior:
 3. Scroll down to '....'
 4. See error
 
+Collapsing or uncollapsing a node, changing focus, selecting and
+unselecting may not seem like actions worth reporting,
+but they all affect the state of the app and may be important when
+trying to reproduce the bug.
+Please be as detailed as you can!
+
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
@@ -54,7 +60,6 @@ If applicable, add screenshots to help explain your problem.
 
 **Additional context**
 Add any other context about the problem here.
-
 
 <details>
 
