@@ -41,50 +41,66 @@ function withComment(
   }
 }
 
-export const specs = {
-  unknown: Spec.nodeSpec([Spec.list("elts")]),
-  functionApp: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
-  identifierList: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
-  structDefinition: Spec.nodeSpec([
-    Spec.required("name"),
-    Spec.required("fields"),
-  ]),
-  variableDefinition: Spec.nodeSpec([
-    Spec.required("name"),
-    Spec.required("body"),
-  ]),
-  lambdaExpression: Spec.nodeSpec([
-    Spec.required("args"),
-    Spec.required("body"),
-  ]),
-  functionDefinition: Spec.nodeSpec([
-    Spec.required("name"),
-    Spec.required("params"),
-    Spec.required("body"),
-  ]),
-  condClause: Spec.nodeSpec([
-    Spec.required("testExpr"),
-    Spec.list("thenExprs"),
-  ]),
-  condExpression: Spec.nodeSpec([Spec.list("clauses")]),
-  ifExpression: Spec.nodeSpec([
-    Spec.required("testExpr"),
-    Spec.required("thenExpr"),
-    Spec.required("elseExpr"),
-  ]),
-  literal: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
-  comment: Spec.nodeSpec([Spec.value("comment")]),
-  blank: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
-  sequence: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
+type ASTSpecConfig = { [key: string]: { spec: Spec.NodeSpec } };
+
+function createASTSpec<NodeSpecs extends ASTSpecConfig>(config: NodeSpecs) {
+  return {
+    makeNode<Fields extends NodeFields = UnknownFields>(
+      props: Omit<ASTNodeProps<Fields>, "spec"> & {
+        type: keyof NodeSpecs;
+      }
+    ): ASTNode<Fields> {
+      return new ASTNode({ ...props, spec: config[props.type].spec });
+    },
+  };
+}
+
+const specs: ASTSpecConfig = {
+  unknown: { spec: Spec.nodeSpec([Spec.list("elts")]) },
+  functionApp: {
+    spec: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
+  },
+  identifierList: {
+    spec: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
+  },
+  structDefinition: {
+    spec: Spec.nodeSpec([Spec.required("name"), Spec.required("fields")]),
+  },
+  variableDefinition: {
+    spec: Spec.nodeSpec([Spec.required("name"), Spec.required("body")]),
+  },
+  lambdaExpression: {
+    spec: Spec.nodeSpec([Spec.required("args"), Spec.required("body")]),
+  },
+  functionDefinition: {
+    spec: Spec.nodeSpec([
+      Spec.required("name"),
+      Spec.required("params"),
+      Spec.required("body"),
+    ]),
+  },
+  condClause: {
+    spec: Spec.nodeSpec([Spec.required("testExpr"), Spec.list("thenExprs")]),
+  },
+  condExpression: { spec: Spec.nodeSpec([Spec.list("clauses")]) },
+  ifExpression: {
+    spec: Spec.nodeSpec([
+      Spec.required("testExpr"),
+      Spec.required("thenExpr"),
+      Spec.required("elseExpr"),
+    ]),
+  },
+  literal: {
+    spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
+  },
+  comment: { spec: Spec.nodeSpec([Spec.value("comment")]) },
+  blank: { spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]) },
+  sequence: {
+    spec: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
+  },
 };
 
-function makeNode<Fields extends NodeFields = UnknownFields>(
-  props: Omit<ASTNodeProps<Fields>, "spec"> & {
-    type: keyof typeof specs;
-  }
-): ASTNode<Fields> {
-  return new ASTNode({ ...props, spec: specs[props.type] });
-}
+const makeNode = createASTSpec(specs).makeNode;
 
 export function Unknown(
   from: Pos,
