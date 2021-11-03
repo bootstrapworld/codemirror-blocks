@@ -61,7 +61,7 @@ export type Language = {
    * from any exceptions that are thrown by a call to parse()
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getExceptionMessage?(e: any): string;
+  getExceptionMessage?(e: unknown): string;
 
   /**
    * A function for generating ASTNodes from Primitives
