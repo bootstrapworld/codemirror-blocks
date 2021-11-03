@@ -1,6 +1,15 @@
 import * as P from "pretty-fast-pretty-printer";
 import React from "react";
-import { ASTNode, enumerateList, NodeOptions, pluralize, Pos } from "./ast";
+import {
+  ASTNode,
+  ASTNodeProps,
+  enumerateList,
+  NodeFields,
+  NodeOptions,
+  pluralize,
+  Pos,
+  UnknownFields,
+} from "./ast";
 import Node from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
@@ -32,7 +41,7 @@ function withComment(
   }
 }
 
-const specs = {
+export const specs = {
   unknown: Spec.nodeSpec([Spec.list("elts")]),
   functionApp: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
   identifierList: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
@@ -69,17 +78,24 @@ const specs = {
   sequence: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
 };
 
+function makeNode<Fields extends NodeFields = UnknownFields>(
+  props: Omit<ASTNodeProps<Fields>, "spec"> & {
+    type: keyof typeof specs;
+  }
+): ASTNode<Fields> {
+  return new ASTNode({ ...props, spec: specs[props.type] });
+}
+
 export function Unknown(
   from: Pos,
   to: Pos,
   elts: ASTNode[],
   options: NodeOptions = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "unknown",
-    spec: specs.unknown,
     fields: { elts },
     options,
     pretty: (node) =>
@@ -125,11 +141,10 @@ export function FunctionApp(
   args: ASTNode[],
   options: NodeOptions = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "functionApp",
-    spec: specs.functionApp,
     fields: { func, args },
     options,
     pretty: (node) =>
@@ -182,11 +197,10 @@ export function IdentifierList(
   ids: ASTNode[],
   options: NodeOptions = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "identifierList",
-    spec: specs.identifierList,
     fields: { kind, ids },
     options,
     pretty: (node) =>
@@ -213,11 +227,10 @@ export function StructDefinition(
   fields: ASTNode,
   options: NodeOptions = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "structDefinition",
-    spec: specs.structDefinition,
     fields: { name, fields },
     options,
     pretty: (node) =>
@@ -258,11 +271,10 @@ export function VariableDefinition(
   body: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "variableDefinition",
-    spec: specs.variableDefinition,
     fields: { name, body },
     options,
     pretty: (node) =>
@@ -302,11 +314,10 @@ export function LambdaExpression(
   body: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "lambdaExpression",
-    spec: specs.lambdaExpression,
     fields: { body, args },
     options,
     pretty: (node) =>
@@ -344,11 +355,10 @@ export function FunctionDefinition(
   body: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "functionDefinition",
-    spec: specs.functionDefinition,
     fields: { name, params, body },
     options,
     pretty: (node) =>
@@ -389,11 +399,10 @@ export function CondClause(
   thenExprs: ASTNode[],
   options = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "condClause",
-    spec: specs.condClause,
     fields: { testExpr, thenExprs },
     options,
     pretty: (node) =>
@@ -435,11 +444,10 @@ export function CondExpression(
   clauses: ASTNode[],
   options = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "condExpression",
-    spec: specs.condExpression,
     fields: { clauses },
     options,
     pretty: (node) => P.beginLikeSexpr("cond", node.fields.clauses),
@@ -472,11 +480,10 @@ export function IfExpression(
   elseExpr: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "ifExpression",
-    spec: specs.ifExpression,
     fields: { testExpr, thenExpr, elseExpr },
     options,
     pretty: (node) =>
@@ -528,11 +535,10 @@ export function Literal(
   dataType = "unknown",
   options = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "literal",
-    spec: specs.literal,
     fields: { value, dataType },
     options,
     pretty: (node) =>
@@ -550,11 +556,10 @@ export function Literal(
 }
 
 export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "comment",
-    spec: specs.comment,
     fields: { comment },
     options: { isNotEditable: true, ...options },
     pretty: (node) => {
@@ -581,11 +586,10 @@ export function Blank(
   dataType = "blank",
   options = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "blank",
-    spec: specs.blank,
     fields: { value: value || "...", dataType },
     options,
     pretty: (node) => P.txt(node.fields.value),
@@ -627,7 +631,7 @@ export function Sequence(
   name: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return makeNode({
     from,
     to,
     type: "sequence",

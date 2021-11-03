@@ -506,7 +506,7 @@ export type UnknownFields = { [fieldName: string]: unknown };
 export type NodeField = ASTNode | ASTNode[] | unknown;
 export type NodeFields = { [fieldName: string]: NodeField };
 
-type ASTNodeProps<Fields extends NodeFields = UnknownFields> = {
+export type ASTNodeProps<Fields extends NodeFields = UnknownFields> = {
   from: Pos;
   to: Pos;
   type: string;
