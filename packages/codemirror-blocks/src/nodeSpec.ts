@@ -105,7 +105,7 @@ export function list<FieldName extends string>(fieldName: FieldName) {
 }
 
 // value :: any -> ChildSpec
-export function value<FieldType, FieldName extends string = string>(
+export function value<FieldType, FieldName extends string>(
   fieldName: FieldName
 ) {
   return new Value<FieldName, FieldType>(fieldName);

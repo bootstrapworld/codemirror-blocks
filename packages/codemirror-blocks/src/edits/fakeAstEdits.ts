@@ -168,7 +168,7 @@ export class FakeAstReplacement {
   }
 }
 
-const fakeNodeSpec = nodeSpec([value<string>("text")]);
+const fakeNodeSpec = nodeSpec([value<string, "text">("text")]);
 // A fake ASTNode that just prints itself with the given text.
 class FakeInsertNode extends ASTNode<typeof fakeNodeSpec> {
   constructor(from: Pos, to: Pos, text: string, options = {}) {

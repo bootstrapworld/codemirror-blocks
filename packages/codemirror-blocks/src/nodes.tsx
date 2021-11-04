@@ -25,7 +25,7 @@ import * as Spec from "./nodeSpec";
 //   previous line.
 function withComment(
   doc: P.Doc,
-  comment: NodeForSpec | undefined,
+  comment: ASTNode | undefined,
   container: NodeForSpec
 ): P.Doc {
   if (comment) {
@@ -117,11 +117,17 @@ const specs = {
     ]),
   },
   literal: {
-    spec: Spec.nodeSpec([Spec.value<string>("value"), Spec.value("dataType")]),
+    spec: Spec.nodeSpec([
+      Spec.value<string, "value">("value"),
+      Spec.value("dataType"),
+    ]),
   },
-  comment: { spec: Spec.nodeSpec([Spec.value<string>("comment")]) },
+  comment: { spec: Spec.nodeSpec([Spec.value<string, "comment">("comment")]) },
   blank: {
-    spec: Spec.nodeSpec([Spec.value<string>("value"), Spec.value("dataType")]),
+    spec: Spec.nodeSpec([
+      Spec.value<string, "value">("value"),
+      Spec.value("dataType"),
+    ]),
   },
   sequence: {
     spec: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),

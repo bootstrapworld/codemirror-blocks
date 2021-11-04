@@ -489,7 +489,7 @@ export type Range = {
 };
 
 export type NodeOptions = {
-  comment?: NodeForSpec;
+  comment?: ASTNode;
 
   /**
    * The aria label for the node
