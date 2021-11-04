@@ -4,11 +4,10 @@ import {
   ASTNode,
   ASTNodeProps,
   enumerateList,
-  NodeFields,
+  NodeForSpec,
   NodeOptions,
   pluralize,
   Pos,
-  UnknownFields,
 } from "./ast";
 import Node from "./components/Node";
 import Args from "./components/Args";
@@ -26,8 +25,8 @@ import * as Spec from "./nodeSpec";
 //   previous line.
 function withComment(
   doc: P.Doc,
-  comment: ASTNode | undefined,
-  container: ASTNode
+  comment: NodeForSpec | undefined,
+  container: NodeForSpec
 ): P.Doc {
   if (comment) {
     // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
@@ -45,17 +44,18 @@ type ASTSpecConfig = { [key: string]: { spec: Spec.NodeSpec } };
 
 function createASTSpec<NodeSpecs extends ASTSpecConfig>(config: NodeSpecs) {
   return {
-    makeNode<Fields extends NodeFields = UnknownFields>(
-      props: Omit<ASTNodeProps<Fields>, "spec"> & {
-        type: keyof NodeSpecs;
+    makeNode<T extends keyof NodeSpecs>(
+      props: Omit<ASTNodeProps<NodeSpecs[T]["spec"]>, "spec"> & {
+        type: T;
       }
-    ): ASTNode<Fields> {
-      return new ASTNode({ ...props, spec: config[props.type].spec });
+    ): ASTNode<NodeSpecs[T]["spec"], Spec.FieldsForSpec<NodeSpecs[T]["spec"]>> {
+      const spec = config[props.type].spec;
+      return new ASTNode({ ...props, spec });
     },
   };
 }
 
-const specs: ASTSpecConfig = {
+const specs = {
   unknown: { spec: Spec.nodeSpec([Spec.list("elts")]) },
   functionApp: {
     spec: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
@@ -91,10 +91,12 @@ const specs: ASTSpecConfig = {
     ]),
   },
   literal: {
-    spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
+    spec: Spec.nodeSpec([Spec.value<string>("value"), Spec.value("dataType")]),
   },
-  comment: { spec: Spec.nodeSpec([Spec.value("comment")]) },
-  blank: { spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]) },
+  comment: { spec: Spec.nodeSpec([Spec.value<string>("comment")]) },
+  blank: {
+    spec: Spec.nodeSpec([Spec.value<string>("value"), Spec.value("dataType")]),
+  },
   sequence: {
     spec: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
   },
@@ -355,7 +357,9 @@ export function LambdaExpression(
     longDescription(node, level) {
       return `an anonymous function of ${pluralize(
         "argument",
-        node.fields.args.fields.ids
+        // TODO(pcardune): figure out how to describe node specs
+        // where a child must be a node of a particular type
+        node.fields.args.fields.ids as unknown[]
       )}: 
                 ${node.fields.args.describe(level)}, with body:
                 ${node.fields.body.describe(level)}`;
@@ -619,16 +623,17 @@ export function Blank(
   });
 }
 
-export type SequenceNode = ASTNode<{ name: ASTNode; exprs: ASTNode[] }>;
+export type SequenceNode = ReturnType<typeof Sequence>;
+export type NodeForSequenceSpec = NodeForSpec<typeof specs["sequence"]["spec"]>;
 export const SequenceProps = {
-  spec: specs.sequence,
-  pretty: (node: SequenceNode) =>
-    P.vert(node.fields.name, ...node.fields.exprs),
-  render(props: { node: SequenceNode }) {
+  spec: specs.sequence.spec,
+  pretty: (node: NodeForSequenceSpec) =>
+    P.vert(node.fields.name || "", ...node.fields.exprs),
+  render(props: { node: NodeForSequenceSpec }) {
     return (
       <Node {...props}>
         <span className="blocks-operator">
-          {props.node.fields.name.reactElement()}
+          {props.node.fields.name?.reactElement()}
         </span>
         <span className="blocks-sequence-exprs">
           <Args field="exprs">{props.node.fields.exprs}</Args>
@@ -636,7 +641,7 @@ export const SequenceProps = {
       </Node>
     );
   },
-  longDescription(node: SequenceNode, level: number) {
+  longDescription(node: NodeForSequenceSpec, level: number) {
     return `a sequence containing ${enumerateList(node.fields.exprs, level)}`;
   },
 };

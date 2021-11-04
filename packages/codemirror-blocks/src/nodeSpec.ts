@@ -11,6 +11,71 @@ import { hashObject } from "./utils";
 // - list: an array of ASTNodes.
 // - value: an ordinary value that does not contain an ASTNode.
 
+/**
+ * Converts a union type to an intersection type. For example:
+ * ```
+ * type Foo = UnionToIntersection<{a:number} | {b:string} | {c:boolean}>;
+ * ```
+ * is equivalent to
+ * ```
+ * type Foo = {a:number} & {b:string} & {c:boolean}
+ * ```
+ * which is equivalent to
+ * ```
+ * type Foo = {a:number, b:string, c:boolean}
+ * ```
+ *
+ * See https://stackoverflow.com/questions/50374908/transform-union-type-to-intersection-type
+ * for an explanation of this voodoo.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+  k: infer I
+) => void
+  ? I
+  : never;
+
+/**
+ * Converts the type of a BaseSpec (i.e. Required/Optional/List/Value) into an object type
+ * containing a single property (the field name) and the value type of that property.
+ *
+ * Usage looks like this:
+ * ```
+ * const myRequiredField = required("someField");
+ * type ObjWithMyField = AsObj<typeof myRequiredField>
+ * ```
+ * The `ObjWithMyField` type will be equivalent to:
+ * ```
+ * type ObjWithMyField = {someField: ASTNode};
+ * ```
+ */
+type AsObj<Spec> = Spec extends BaseSpec<infer FieldName, infer FieldType>
+  ? Record<FieldName, FieldType>
+  : never;
+
+/**
+ * This type lets you go from a NodeSpec type to an object of fields. Usage looks like:
+ *
+ * ```
+ * const myNodeSpec = nodeSpec([required("foo"), optional("bar")]);
+ * type MyNodeFields = FieldsForSpec<typeof myNodeSpec>;
+ * ```
+ *
+ * The `MyNodeFields` type will be equivalent to:
+ *
+ * ```
+ * type MyNodeFields = {
+ *   foo: ASTNode,
+ *   bar: ASTNode | null,
+ * };
+ * ```
+ */
+export type FieldsForSpec<NodeSpecType> = NodeSpecType extends NodeSpec<
+  infer ChildSpecType
+>
+  ? UnionToIntersection<AsObj<ChildSpecType>>
+  : never;
+
 export type ChildSpec<FieldName extends string> =
   | Required<FieldName>
   | Optional<FieldName>
@@ -18,8 +83,8 @@ export type ChildSpec<FieldName extends string> =
   | Value<FieldName>;
 
 // nodeSpec :: Array<ChildSpec> -> NodeSpec
-export function nodeSpec<FieldName extends string>(
-  childSpecs: ChildSpec<FieldName>[]
+export function nodeSpec<S extends ChildSpec<string>>(
+  childSpecs: readonly S[]
 ) {
   return new NodeSpec(childSpecs);
 }
@@ -40,19 +105,21 @@ export function list<FieldName extends string>(fieldName: FieldName) {
 }
 
 // value :: any -> ChildSpec
-export function value<FieldName extends string>(fieldName: FieldName) {
-  return new Value(fieldName);
+export function value<FieldType, FieldName extends string = string>(
+  fieldName: FieldName
+) {
+  return new Value<FieldName, FieldType>(fieldName);
 }
 
 type NodeLike = {
-  fields: NodeFields;
+  fields: NodeFields<string>;
   type: string;
 };
 
 export type { NodeSpec };
-class NodeSpec<FieldName extends string = string> {
-  childSpecs: ChildSpec<FieldName>[];
-  constructor(childSpecs: ChildSpec<FieldName>[]) {
+class NodeSpec<Specs extends ChildSpec<string> = ChildSpec<string>> {
+  readonly childSpecs: Specs[];
+  constructor(childSpecs: readonly Specs[]) {
     if (!(childSpecs instanceof Array)) {
       throw new Error(
         "NodeSpec: expected to receive an array of required/optional/list specs."
@@ -74,7 +141,7 @@ class NodeSpec<FieldName extends string = string> {
     }
   }
 
-  hash(node: ASTNode) {
+  hash(node: ASTNode): number {
     const hashes: HashIterator = new HashIterator(node, this);
     return hashObject([
       node.type,
@@ -93,9 +160,9 @@ class NodeSpec<FieldName extends string = string> {
 }
 
 class ChildrenIterator {
-  nodeSpec: NodeSpec<string>;
+  nodeSpec: NodeSpec;
   parent: ASTNode;
-  constructor(parent: ASTNode, nodeSpec: NodeSpec<string>) {
+  constructor(parent: ASTNode, nodeSpec: NodeSpec) {
     this.parent = parent;
     this.nodeSpec = nodeSpec;
   }
@@ -116,14 +183,14 @@ class ChildrenIterator {
 }
 
 class HashIterator {
-  nodeSpec: NodeSpec<string>;
+  nodeSpec: NodeSpec;
   parent: ASTNode;
-  constructor(parent: ASTNode, nodeSpec: NodeSpec<string>) {
+  constructor(parent: ASTNode, nodeSpec: NodeSpec) {
     this.parent = parent;
     this.nodeSpec = nodeSpec;
   }
 
-  *[Symbol.iterator]() {
+  *[Symbol.iterator](): Iterator<number> {
     for (const spec of this.nodeSpec.childSpecs) {
       if (spec instanceof Value) {
         yield hashObject(spec.getField(this.parent));

@@ -1,7 +1,7 @@
 import * as P from "pretty-fast-pretty-printer";
 import { warn, poscmp } from "../utils";
-import { Required, Optional, List, Value, nodeSpec } from "../nodeSpec";
-import { ASTNode, NodeFields, UnknownFields } from "../ast";
+import { Required, Optional, List, Value, nodeSpec, value } from "../nodeSpec";
+import { ASTNode } from "../ast";
 import type { AST, Pos } from "../ast";
 import { playSound, BEEP } from "../utils";
 
@@ -168,8 +168,9 @@ export class FakeAstReplacement {
   }
 }
 
+const fakeNodeSpec = nodeSpec([value<string>("text")]);
 // A fake ASTNode that just prints itself with the given text.
-class FakeInsertNode extends ASTNode<{ text: string }> {
+class FakeInsertNode extends ASTNode<typeof fakeNodeSpec> {
   constructor(from: Pos, to: Pos, text: string, options = {}) {
     super({
       from,
@@ -184,7 +185,7 @@ class FakeInsertNode extends ASTNode<{ text: string }> {
       render() {
         warn("fakeAstEdits", "FakeInsertNode didn't expect to be rendered!");
       },
-      spec: nodeSpec([]),
+      spec: fakeNodeSpec,
     });
   }
 }
@@ -210,14 +211,12 @@ class FakeBlankNode extends ASTNode {
 /**
  * An ASTNode that is a clone of another ASTNode.
  */
-export class ClonedASTNode<
-  Fields extends NodeFields = UnknownFields
-> extends ASTNode<Fields> {
+export class ClonedASTNode extends ASTNode {
   // Make a copy of a node, to perform fake edits on (so that the fake edits don't
   // show up in the real AST). This copy will be deep over the ASTNodes, but
   // shallow over the non-ASTNode values they contain.
-  constructor(oldNode: ASTNode<Fields>) {
-    const nodeLike = { type: oldNode.type, fields: {} as Fields };
+  constructor(oldNode: ASTNode) {
+    const nodeLike = { type: oldNode.type, fields: {} as any };
     for (const spec of oldNode.spec.childSpecs) {
       if (spec instanceof Required) {
         spec.setField(nodeLike, cloneNode(spec.getField(oldNode)));
@@ -255,8 +254,6 @@ export class ClonedASTNode<
 // Make a copy of a node, to perform fake edits on (so that the fake edits don't
 // show up in the real AST). This copy will be deep over the ASTNodes, but
 // shallow over the non-ASTNode values they contain.
-export function cloneNode<F extends NodeFields>(
-  oldNode: ASTNode<F>
-): ClonedASTNode<F> {
+export function cloneNode(oldNode: ASTNode): ClonedASTNode {
   return new ClonedASTNode(oldNode);
 }

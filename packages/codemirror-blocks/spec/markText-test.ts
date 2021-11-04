@@ -5,6 +5,7 @@ import { API } from "../src/CodeMirrorBlocks";
 import { AST, ASTNode } from "../src/ast";
 import { MarkerRange, TextMarker } from "codemirror";
 import { debugLog } from "../src/utils";
+import { FunctionAppNode } from "../src/nodes";
 
 debugLog("Doing markText-test.js");
 
@@ -13,7 +14,7 @@ describe("The CodeMirrorBlocks Class", function () {
     let cmb!: API;
     let ast!: AST;
     let literal1!: ASTNode;
-    let expression!: ASTNode<{ args: ASTNode[] }>;
+    let expression!: FunctionAppNode;
     beforeEach(async function () {
       cmb = await mountCMB(wescheme);
       cmb.setValue("11\n12\n(+ 3 4 5)");
@@ -21,7 +22,7 @@ describe("The CodeMirrorBlocks Class", function () {
       cmb.getAllMarks().forEach((m) => m.clear());
       ast = cmb.getAst();
       literal1 = ast.rootNodes[0];
-      expression = ast.rootNodes[2] as ASTNode<{ args: ASTNode[] }>;
+      expression = ast.rootNodes[2] as typeof expression;
     });
 
     afterEach(function () {
