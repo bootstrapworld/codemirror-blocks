@@ -42,14 +42,40 @@ function withComment(
 
 type ASTSpecConfig = { [key: string]: { spec: Spec.NodeSpec } };
 
-function createASTSpec<NodeSpecs extends ASTSpecConfig>(config: NodeSpecs) {
+export function createASTSpec<NodeSpecs extends ASTSpecConfig>(
+  config: NodeSpecs = {} as NodeSpecs
+) {
   return {
+    config,
+
+    /**
+     * Checks whether the given node is of the given type.
+     *
+     * This is a typeguard that can be used for type narrowing
+     * @param type The type of node you want to check against
+     * @param node The ASTNode instance to check
+     * @returns
+     */
+    isNodeOfType<T extends keyof NodeSpecs>(
+      node: ASTNode,
+      type: T
+    ): node is ASTNode<
+      NodeSpecs[T]["spec"],
+      Spec.FieldsForSpec<NodeSpecs[T]["spec"]>
+    > {
+      return node.type === type;
+    },
+
+    /**
+     * Create a node that conforms to the specification for this AST.
+     */
     makeNode<T extends keyof NodeSpecs>(
       props: Omit<ASTNodeProps<NodeSpecs[T]["spec"]>, "spec"> & {
         type: T;
       }
     ): ASTNode<NodeSpecs[T]["spec"], Spec.FieldsForSpec<NodeSpecs[T]["spec"]>> {
-      const spec = config[props.type].spec;
+      const nodeTypeConfig = config[props.type];
+      const spec = nodeTypeConfig.spec;
       return new ASTNode({ ...props, spec });
     },
   };
@@ -102,7 +128,7 @@ const specs = {
   },
 };
 
-const makeNode = createASTSpec(specs).makeNode;
+export const CoreAST = createASTSpec(specs);
 
 export function Unknown(
   from: Pos,
@@ -110,7 +136,7 @@ export function Unknown(
   elts: ASTNode[],
   options: NodeOptions = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "unknown",
@@ -159,7 +185,7 @@ export function FunctionApp(
   args: ASTNode[],
   options: NodeOptions = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "functionApp",
@@ -215,7 +241,7 @@ export function IdentifierList(
   ids: ASTNode[],
   options: NodeOptions = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "identifierList",
@@ -245,7 +271,7 @@ export function StructDefinition(
   fields: ASTNode,
   options: NodeOptions = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "structDefinition",
@@ -289,7 +315,7 @@ export function VariableDefinition(
   body: ASTNode,
   options = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "variableDefinition",
@@ -332,7 +358,7 @@ export function LambdaExpression(
   body: ASTNode,
   options = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "lambdaExpression",
@@ -355,14 +381,14 @@ export function LambdaExpression(
       );
     },
     longDescription(node, level) {
-      return `an anonymous function of ${pluralize(
-        "argument",
-        // TODO(pcardune): figure out how to describe node specs
-        // where a child must be a node of a particular type
-        node.fields.args.fields.ids as unknown[]
-      )}: 
-                ${node.fields.args.describe(level)}, with body:
-                ${node.fields.body.describe(level)}`;
+      if (CoreAST.isNodeOfType(node.fields.args, "identifierList")) {
+        return `an anonymous function of ${pluralize(
+          "argument",
+          node.fields.args.fields.ids
+        )}: 
+            ${node.fields.args.describe(level)}, with body:
+            ${node.fields.body.describe(level)}`;
+      }
     },
   });
 }
@@ -375,7 +401,7 @@ export function FunctionDefinition(
   body: ASTNode,
   options = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "functionDefinition",
@@ -419,7 +445,7 @@ export function CondClause(
   thenExprs: ASTNode[],
   options = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "condClause",
@@ -464,7 +490,7 @@ export function CondExpression(
   clauses: ASTNode[],
   options = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "condExpression",
@@ -500,7 +526,7 @@ export function IfExpression(
   elseExpr: ASTNode,
   options = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "ifExpression",
@@ -555,7 +581,7 @@ export function Literal(
   dataType = "unknown",
   options = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "literal",
@@ -576,7 +602,7 @@ export function Literal(
 }
 
 export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "comment",
@@ -606,7 +632,7 @@ export function Blank(
   dataType = "blank",
   options = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "blank",
@@ -652,7 +678,7 @@ export function Sequence(
   name: ASTNode,
   options = {}
 ) {
-  return makeNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "sequence",
