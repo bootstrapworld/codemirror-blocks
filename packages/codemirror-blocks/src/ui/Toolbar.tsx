@@ -104,7 +104,7 @@ const Toolbar = (props: Props) => {
       <div className="primitives-box">
         <PrimitiveList
           primitives={getPrimitives()}
-          onFocus={setSelectedPrimitive}
+          setSelectedPrimitive={setSelectedPrimitive}
           onKeyDown={handleKeyDown}
           selected={selectedPrimitive && selectedPrimitive.name}
           searchString={search}

@@ -18,7 +18,7 @@ require("./PrimitiveList.less");
 type BasePrimitiveProps = {
   primitive: LanguagePrimitive;
   className: string;
-  onFocus: (primitive: LanguagePrimitive) => void;
+  onFocus: (e: React.FocusEvent) => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
 };
 
@@ -53,7 +53,7 @@ export const Primitive = (props: BasePrimitiveProps) => {
     <span
       tabIndex={-1}
       onKeyDown={handleKeyDown}
-      onFocus={() => onFocus(primitive)}
+      onFocus={onFocus}
       // NOTE(Emmanuel): is this still appropriate style for using refs?
       ref={(elem) => (primitive.element = elem)}
       className={classNames(className, "Primitive list-group-item")}
@@ -69,14 +69,14 @@ export const Primitive = (props: BasePrimitiveProps) => {
 };
 
 type PrimitiveGroupProps = {
-  onFocus: BasePrimitiveProps["onFocus"];
+  setSelectedPrimitive: (primitive: LanguagePrimitive) => void;
   onKeyDown: BasePrimitiveProps["onKeyDown"];
   selected?: string; // to start, no primitive is selected
   group?: PrimitiveGroupModel;
 };
 
 export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
-  const { onFocus, onKeyDown, selected } = props;
+  const { setSelectedPrimitive, onKeyDown, selected } = props;
   const group = props.group ?? new PrimitiveGroupModel("", "", []);
   const [expanded, setExpanded] = useState(false);
   const toggleExpanded = () => setExpanded(!expanded);
@@ -93,7 +93,7 @@ export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
       {expanded ? (
         <PrimitiveList
           primitives={[...group.flatPrimitivesIter()]}
-          onFocus={onFocus}
+          setSelectedPrimitive={setSelectedPrimitive}
           onKeyDown={onKeyDown}
           selected={selected}
         />
@@ -103,19 +103,19 @@ export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
 };
 
 type PrimitiveListProps = {
-  onFocus: BasePrimitiveProps["onFocus"];
+  setSelectedPrimitive: (primitive: LanguagePrimitive) => void;
   onKeyDown: BasePrimitiveProps["onKeyDown"];
   selected?: string;
   primitives?: LanguagePrimitive[];
   searchString?: string;
 };
 export const PrimitiveList = (props: PrimitiveListProps) => {
-  const { primitives = [], selected, onFocus, onKeyDown, searchString } = props;
+  const { primitives = [], selected, setSelectedPrimitive, onKeyDown, searchString } = props;
   const renderGroup = (g: PrimitiveGroupModel) => (
     <PrimitiveGroup
       key={g.name}
       group={g}
-      onFocus={onFocus}
+      setSelectedPrimitive={setSelectedPrimitive}
       onKeyDown={onKeyDown}
       selected={selected}
     />
@@ -124,7 +124,7 @@ export const PrimitiveList = (props: PrimitiveListProps) => {
     <Primitive
       key={p.name}
       primitive={p}
-      onFocus={onFocus}
+      onFocus={() => setSelectedPrimitive(p)}
       onKeyDown={onKeyDown}
       className={selected == p.name ? "selected" : ""}
     />
