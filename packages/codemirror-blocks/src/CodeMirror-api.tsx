@@ -8,7 +8,7 @@ import { ASTNode, Pos } from "./ast";
 import { CodeMirrorFacade, isBlockNodeMarker } from "./editor";
 import type { AppDispatch } from "./state/store";
 import * as selectors from "./state/selectors";
-import { BlockError, getTempCM, maxpos, minpos, validateRanges } from "./utils";
+import { BlockError, getTempCM, maxpos, minpos, poscmp } from "./utils";
 import CodeMirror, { SelectionOptions } from "codemirror";
 import * as actions from "./state/actions";
 import type { Language } from "./CodeMirrorBlocks";
@@ -410,7 +410,7 @@ export const buildAPI = (
 const validateSelectionRanges = (
   state: RootState,
   editor: CodeMirrorFacade,
-  ranges: Array<{ anchor: CodeMirror.Position; head: CodeMirror.Position }>,
+  ranges: { anchor: Pos; head: Pos }[],
   primary?: number,
   options?: { bias?: number; origin?: string; scroll?: boolean }
 ) => {
@@ -418,8 +418,8 @@ const validateSelectionRanges = (
   const tmpCM = getTempCM(editor);
   tmpCM.setSelections(ranges, primary, options);
   const textRanges: {
-    anchor: CodeMirror.Position;
-    head: CodeMirror.Position;
+    anchor: Pos;
+    head: Pos;
   }[] = [];
   const nodeIds: string[] = [];
   try {
@@ -440,3 +440,31 @@ const validateSelectionRanges = (
   });
   return { nodeIds, textRanges };
 };
+
+function validateRanges(ranges: { anchor: Pos; head?: Pos }[], ast: AST) {
+  ranges.forEach(({ anchor, head }) => {
+    const c1 = head ? minpos(anchor, head) : anchor;
+    const c2 = head ? maxpos(anchor, head) : anchor;
+    if (ast.getNodeAt(c1, c2)) {
+      return; // if there's a node, it's a valid range
+    }
+    // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
+    const N1 = ast.getNodeContaining(c1); // get node containing c1
+    const N2 = ast.getNodeContaining(c2); // get node containing c2
+    const c1IsTopLevel =
+      !N1 ||
+      (!ast.getNodeParent(N1) && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
+    const c2IsTopLevel =
+      !N2 ||
+      (!ast.getNodeParent(N2) && (!poscmp(c2, N2.from) || !poscmp(c2, N2.to)));
+
+    // If they're both top-level, it's a valid text range
+    if (c1IsTopLevel && c2IsTopLevel) {
+      return;
+    }
+
+    // Otherwise, the range is neither toplevel OR falls neatly on a node boundary
+    throw `The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
+      ch:${c2.ch}} partially covers a node, which is not allowed`;
+  });
+}

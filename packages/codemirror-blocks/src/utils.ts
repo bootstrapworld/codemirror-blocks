@@ -508,34 +508,6 @@ export function logResults(exception: unknown, description = "Crash Log") {
   }
 }
 
-export function validateRanges(
-  ranges: { anchor: Pos; head?: Pos }[],
-  ast: AST
-) {
-  ranges.forEach(({ anchor, head }) => {
-    const c1 = head ? minpos(anchor, head) : anchor;
-    const c2 = head ? maxpos(anchor, head) : anchor;
-    if (ast.getNodeAt(c1, c2)) return; // if there's a node, it's a valid range
-    // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
-    const N1 = ast.getNodeContaining(c1); // get node containing c1
-    const N2 = ast.getNodeContaining(c2); // get node containing c2
-    const c1IsTopLevel =
-      !N1 ||
-      (!ast.getNodeParent(N1) && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
-    const c2IsTopLevel =
-      !N2 ||
-      (!ast.getNodeParent(N2) && (!poscmp(c2, N2.from) || !poscmp(c2, N2.to)));
-
-    // If they're both top-level, it's a valid text range
-    if (c1IsTopLevel && c2IsTopLevel) return;
-
-    // Otherwise, the range is neither toplevel OR falls neatly on a node boundary
-    throw `The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
-      ch:${c2.ch}} partially covers a node, which is not allowed`;
-  });
-  return true;
-}
-
 /**
  * Generates a description of an edit involving certain nodes
  * that can be announced to the user.
