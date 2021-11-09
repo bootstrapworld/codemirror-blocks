@@ -85,7 +85,7 @@ const NodeEditable = (props: Props) => {
     const text = props.value || initialValue || "";
     const annt = (props.isInsertion ? "inserting" : "editing") + ` ${text}`;
     say(annt + `.  Use Enter to save, and Alt-Q to cancel`);
-    dispatch({ type: "SET_SELECTIONS", selections: [] });
+    dispatch(actions.setSelectedNodeIds([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
