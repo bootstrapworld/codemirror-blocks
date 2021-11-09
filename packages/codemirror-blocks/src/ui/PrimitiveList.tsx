@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import classNames from "classnames";
 import {
   PrimitiveGroup as PrimitiveGroupModel,
@@ -26,6 +26,7 @@ export const Primitive = (props: BasePrimitiveProps) => {
   const { primitive, className, onFocus, onKeyDown } = props;
 
   const focusedNode = useSelector(selectors.getFocusedNode);
+  const primitiveElt = useRef<HTMLSpanElement>(null);
 
   const [_, connectDragSource, connectDragPreview] = useDrag({
     type: ItemTypes.NODE,
@@ -39,7 +40,7 @@ export const Primitive = (props: BasePrimitiveProps) => {
         const node = primitive.getASTNode();
         copy({ focusedNode }, [node]);
         say("copied " + primitive.toString());
-        primitive.element?.focus(); // restore focus
+        primitiveElt.current?.focus(); // restore focus
         return;
       }
       default:
@@ -48,14 +49,13 @@ export const Primitive = (props: BasePrimitiveProps) => {
     }
   };
 
-  // Build the primitive block and return it inside a list item
   const elem = (
     <span
       tabIndex={-1}
+      id={"toolbar-" + primitive.name}
       onKeyDown={handleKeyDown}
       onFocus={onFocus}
-      // NOTE(Emmanuel): is this still appropriate style for using refs?
-      ref={(elem) => (primitive.element = elem)}
+      ref={primitiveElt}
       className={classNames(className, "Primitive list-group-item")}
     >
       {primitive.name}
@@ -110,7 +110,13 @@ type PrimitiveListProps = {
   searchString?: string;
 };
 export const PrimitiveList = (props: PrimitiveListProps) => {
-  const { primitives = [], selected, setSelectedPrimitive, onKeyDown, searchString } = props;
+  const {
+    primitives = [],
+    selected,
+    setSelectedPrimitive,
+    onKeyDown,
+    searchString,
+  } = props;
   const renderGroup = (g: PrimitiveGroupModel) => (
     <PrimitiveGroup
       key={g.name}

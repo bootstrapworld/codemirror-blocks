@@ -4,6 +4,7 @@ import PrimitiveList from "./PrimitiveList";
 import { Primitive, PrimitiveGroup } from "../parsers/primitives";
 import CodeMirror from "codemirror";
 import "./Toolbar.less";
+import { err } from "../edits/result";
 
 type Props = {
   primitives?: PrimitiveGroup;
@@ -31,17 +32,21 @@ const Toolbar = (props: Props) => {
     if (!selectedPrimitive || primitives.length == 0) {
       return; // Nothing to select. Bail.
     }
+
+    // compute the index of the newly-selected primitive
     let i = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
     if (dir == "Down") {
       i = Math.min(i + 1, primitives.length - 1);
     } else {
       i = Math.max(i - 1, 0);
     }
-    const el = primitives[i]?.element;
-    if (el) {
-      el.focus(); // should *not* apply useCallback, correct?
+
+    //
+    const elt = document.getElementById("toolbar-" + primitives[i].name);
+    if (elt) {
+      elt.focus();
     } else {
-      setSelectedPrimitive(primitives[i]);
+      return err("No DOM node was created for " + primitives[i].name);
     }
   };
 

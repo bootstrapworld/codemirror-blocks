@@ -47,6 +47,7 @@ describe("Toolbar", () => {
       <span
         class="Primitive list-group-item"
         draggable="true"
+        id="toolbar-star"
         tabindex="-1"
       >
         star
@@ -56,6 +57,7 @@ describe("Toolbar", () => {
       <span
         class="Primitive list-group-item"
         draggable="true"
+        id="toolbar-square"
         tabindex="-1"
       >
         square
