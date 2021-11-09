@@ -7,7 +7,6 @@ import {
   ReplaceNodeTarget,
   OverwriteTarget,
   activateByNid,
-  setCursor,
 } from "./state/actions";
 import * as actions from "./state/actions";
 import {
@@ -506,7 +505,8 @@ const commandMap: {
       return;
     }
     if (!env.setRight(selectors.getAST(getState()))) {
-      setCursor(env.editor, env.node.srcRange().to);
+      env.editor.focus();
+      env.editor.setCursor(env.node.srcRange().to);
     }
   },
   "Insert Left": (env, _) => (dispatch, getState) => {
@@ -514,7 +514,8 @@ const commandMap: {
       return;
     }
     if (!env.setLeft(selectors.getAST(getState()))) {
-      setCursor(env.editor, env.node.srcRange().from);
+      env.editor.focus();
+      env.editor.setCursor(env.node.srcRange().from);
     }
   },
 

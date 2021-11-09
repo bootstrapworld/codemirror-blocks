@@ -12,7 +12,6 @@ import { BlockError, validateRanges } from "./utils";
 import CodeMirror, { SelectionOptions } from "codemirror";
 import {
   activateByNid,
-  setCursor,
   setSelections,
   extendSelections,
   replaceSelections,
@@ -229,7 +228,7 @@ export const buildAPI = (
             })
           );
         }
-        setCursor(editor, cur);
+        editor.setCursor(cur);
       }),
     // As long as widget isn't defined, we're good to go
     setBookmark: (pos, opts) => {

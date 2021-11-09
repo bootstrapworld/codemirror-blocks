@@ -212,16 +212,6 @@ export function useDropAction() {
   };
 }
 
-// Set the cursor position.
-// TODO(pcardune): move this out of actions. since it
-// doesn't do anything with the state.
-export const setCursor = (editor: CMBEditor, cur: Pos | null): void => {
-  if (cur) {
-    editor.focus();
-    editor.setCursor(cur);
-  }
-};
-
 // Activate the node with the given `nid`.
 export function activateByNid(
   editor: ReadonlyCMBEditor,
@@ -390,7 +380,7 @@ export const replaceSelections =
       select == "start"
         ? tmpCM.listSelections().pop()?.head
         : tmpCM.listSelections().pop()?.anchor;
-    setCursor(ed, cur ?? null);
+    cur && ed.setCursor(cur);
   };
 
 /**

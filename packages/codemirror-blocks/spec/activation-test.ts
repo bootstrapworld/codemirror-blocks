@@ -73,7 +73,7 @@ describe("when dealing with node activation,", () => {
   });
 
   it("should activate the next node when down is pressed", async () => {
-    keyDown("ArrowDown");
+    mouseDown(literal1.element!);
     await finishRender();
     keyDown("ArrowDown");
     await finishRender();
@@ -84,6 +84,7 @@ describe("when dealing with node activation,", () => {
 
   it("should activate the node after the cursor when down is pressed", async () => {
     cmb.setCursor({ line: 0, ch: 2 });
+    cmb.focus();
     keyDown("ArrowDown");
     await finishRender();
     expect(cmb.getFocusedNode()).not.toBe(literal1);

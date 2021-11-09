@@ -3,7 +3,6 @@ import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
 import { useDispatch, useSelector } from "react-redux";
-import { setCursor } from "../state/actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
@@ -213,10 +212,8 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
    */
   const handleTopLevelCursorActivity = (editor: CodeMirrorFacade) => {
     const cur =
-      editor.codemirror.getSelection().length > 0
-        ? null
-        : editor.codemirror.getCursor();
-    setCursor(editor, cur);
+      editor.codemirror.getSelection().length > 0 ? null : editor.getCursor();
+    cur && editor.setCursor(cur);
   };
 
   const renderPortals = () => {
