@@ -21,7 +21,6 @@ import {
   EditInterface,
 } from "../edits/performEdits";
 import { AST, ASTNode, Pos } from "../ast";
-import { AppAction } from "./reducers";
 import {
   CodeMirrorFacade,
   CMBEditor,
@@ -214,12 +213,13 @@ export function useDropAction() {
 }
 
 // Set the cursor position.
-export const setCursor = (editor: CMBEditor, cur: Pos | null): AppAction => {
-  if (editor && cur) {
+// TODO(pcardune): move this out of actions. since it
+// doesn't do anything with the state.
+export const setCursor = (editor: CMBEditor, cur: Pos | null): void => {
+  if (cur) {
     editor.focus();
     editor.setCursor(cur);
   }
-  return { type: "SET_CURSOR", cur };
 };
 
 // Activate the node with the given `nid`.

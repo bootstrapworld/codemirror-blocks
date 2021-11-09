@@ -229,7 +229,7 @@ export const buildAPI = (
             })
           );
         }
-        dispatch(setCursor(editor, cur));
+        setCursor(editor, cur);
       }),
     // As long as widget isn't defined, we're good to go
     setBookmark: (pos, opts) => {

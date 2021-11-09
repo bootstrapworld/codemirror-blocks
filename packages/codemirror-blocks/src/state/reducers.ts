@@ -70,7 +70,6 @@ export type RootState = {
   readonly focusId: string | null;
   readonly collapsedList: ReadonlyArray<string>;
   readonly errorId: string;
-  readonly cur: CodeMirror.Position | null;
   readonly quarantine: Quarantine | null;
   readonly markedMap: Readonly<{ [key: string]: CodeMirror.TextMarker }>;
 
@@ -89,7 +88,6 @@ export type AppAction =
   | (Action<"UNCOLLAPSE"> & { id: string })
   | Action<"COLLAPSE_ALL">
   | Action<"UNCOLLAPSE_ALL">
-  | (Action<"SET_CURSOR"> & { cur: CodeMirror.Position | null })
   | Action<"DISABLE_QUARANTINE">
   | (Action<"CHANGE_QUARANTINE"> & { text: string })
   | (Action<"SET_QUARANTINE"> & {
@@ -119,7 +117,6 @@ const initialState: () => RootState = () => ({
   undoableAction: undefined,
   actionFocus: undefined,
   errorId: "",
-  cur: null,
   quarantine: null,
 });
 
@@ -159,8 +156,6 @@ function reduce(state = initialState(), action: AppAction): RootState {
       };
     case "UNCOLLAPSE_ALL":
       return { ...state, collapsedList: [] };
-    case "SET_CURSOR":
-      return { ...state, cur: action.cur };
     case "DISABLE_QUARANTINE":
       return { ...state, quarantine: null };
     case "CHANGE_QUARANTINE":
