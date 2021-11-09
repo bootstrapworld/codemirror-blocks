@@ -70,6 +70,11 @@ export const setFocusedNode = (node: ASTNode) => ({
   focusId: node.id,
 });
 
+export const setSelectedNodeIds = (ids: string[]) => ({
+  type: "SET_SELECTIONS" as const,
+  selections: ids,
+});
+
 // All editing actions are defined here.
 //
 // Many actions take a Target as an option. A Target may be constructed by any
@@ -139,7 +144,7 @@ export const delete_ =
       say(annt);
     }
     dispatch(performEdits(edits, parse, editor, annt));
-    dispatch({ type: "SET_SELECTIONS", selections: [] });
+    dispatch(setSelectedNodeIds([]));
   };
 
 // Paste from the clipboard at the given `target`.
@@ -151,7 +156,7 @@ export const paste =
     pasteFromClipboard((text) => {
       const edits = [target.toEdit(selectors.getAST(getState()), text)];
       dispatch(performEdits(edits, parse, editor));
-      dispatch({ type: "SET_SELECTIONS", selections: [] });
+      dispatch(setSelectedNodeIds([]));
     });
   };
 
@@ -319,7 +324,7 @@ export const setSelections =
       anchor: CodeMirror.Position;
       head: CodeMirror.Position;
     }[] = [];
-    const nodes: string[] = [];
+    const nodeIds: string[] = [];
     try {
       validateRanges(ranges, ast);
     } catch (e) {
@@ -331,7 +336,7 @@ export const setSelections =
       const c2 = maxpos(anchor, head);
       const node = ast.getNodeAt(c1, c2);
       if (node) {
-        nodes.push(node.id);
+        nodeIds.push(node.id);
       } else textRanges.push({ anchor: anchor, head: head });
     });
     if (textRanges.length) {
@@ -341,7 +346,7 @@ export const setSelections =
         ed.codemirror.addSelection(textRanges[0].anchor, textRanges[0].head);
       }
     }
-    dispatch({ type: "SET_SELECTIONS", selections: nodes });
+    dispatch(setSelectedNodeIds(nodeIds));
   };
 
 /**
@@ -364,7 +369,7 @@ export const extendSelections =
       tmpCM.extendSelection(heads[0], to, opts);
     }
     // if one of the ranges is invalid, setSelections will raise an error
-    setSelections(ed, tmpCM.listSelections(), undefined, opts);
+    dispatch(setSelections(ed, tmpCM.listSelections(), undefined, opts));
   };
 
 /**
@@ -384,7 +389,7 @@ export const replaceSelections =
     ed.setValue(tmpCM.getValue());
     // if one of the ranges is invalid, setSelections will raise an error
     if (select == "around") {
-      setSelections(ed, tmpCM.listSelections(), undefined, undefined);
+      dispatch(setSelections(ed, tmpCM.listSelections(), undefined, undefined));
     }
     const cur =
       select == "start"
