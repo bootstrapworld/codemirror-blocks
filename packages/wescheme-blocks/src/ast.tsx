@@ -19,20 +19,16 @@ function pluralize(noun: string, set: unknown[]) {
 
 const WeSchemeAST = createASTSpec({
   ...CoreAST.config,
-  letLikeExpr: {
-    spec: Spec.nodeSpec([
-      Spec.value<string, "form">("form"),
-      Spec.required("bindings"),
-      Spec.required("expr"),
-    ]),
-  },
-  whenUnlessExpr: {
-    spec: Spec.nodeSpec([
-      Spec.value<string, "form">("form"),
-      Spec.required("predicate"),
-      Spec.required("exprs"),
-    ]),
-  },
+  letLikeExpr: Spec.nodeSpec([
+    Spec.value<string, "form">("form"),
+    Spec.required("bindings"),
+    Spec.required("expr"),
+  ]),
+  whenUnlessExpr: Spec.nodeSpec([
+    Spec.value<string, "form">("form"),
+    Spec.required("predicate"),
+    Spec.required("exprs"),
+  ]),
 });
 
 /* Override the default pretty printer for Sequences,

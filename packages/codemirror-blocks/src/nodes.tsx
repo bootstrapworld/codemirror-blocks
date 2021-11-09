@@ -40,98 +40,96 @@ function withComment(
   }
 }
 
-type ASTSpecConfig = { [key: string]: { spec: Spec.NodeSpec } };
+type ASTSpecConfig = { [key: string]: Spec.NodeSpec };
+
+type ASTSpec<NodeSpecs extends ASTSpecConfig> = {
+  config: NodeSpecs;
+
+  /**
+   * Checks whether the given node is of the given type.
+   *
+   * This is a typeguard that can be used for type narrowing
+   * @param type The type of node you want to check against
+   * @param node The ASTNode instance to check
+   * @returns
+   */
+  isNodeOfType<T extends keyof NodeSpecs>(
+    node: ASTNode,
+    type: T
+  ): node is ASTNode<NodeSpecs[T], Spec.FieldsForSpec<NodeSpecs[T]>>;
+
+  /**
+   * Create a node that conforms to the specification for this AST.
+   */
+  makeNode<T extends keyof NodeSpecs>(
+    props: Omit<ASTNodeProps<NodeSpecs[T]>, "spec"> & {
+      type: T;
+    }
+  ): ASTNode<NodeSpecs[T], Spec.FieldsForSpec<NodeSpecs[T]>>;
+};
 
 export function createASTSpec<NodeSpecs extends ASTSpecConfig>(
   config: NodeSpecs = {} as NodeSpecs
-) {
+): ASTSpec<NodeSpecs> {
   return {
     config,
-
-    /**
-     * Checks whether the given node is of the given type.
-     *
-     * This is a typeguard that can be used for type narrowing
-     * @param type The type of node you want to check against
-     * @param node The ASTNode instance to check
-     * @returns
-     */
     isNodeOfType<T extends keyof NodeSpecs>(
       node: ASTNode,
       type: T
-    ): node is ASTNode<
-      NodeSpecs[T]["spec"],
-      Spec.FieldsForSpec<NodeSpecs[T]["spec"]>
-    > {
+    ): node is ASTNode<NodeSpecs[T], Spec.FieldsForSpec<NodeSpecs[T]>> {
       return node.type === type;
     },
-
-    /**
-     * Create a node that conforms to the specification for this AST.
-     */
     makeNode<T extends keyof NodeSpecs>(
-      props: Omit<ASTNodeProps<NodeSpecs[T]["spec"]>, "spec"> & {
+      props: Omit<ASTNodeProps<NodeSpecs[T]>, "spec"> & {
         type: T;
       }
-    ): ASTNode<NodeSpecs[T]["spec"], Spec.FieldsForSpec<NodeSpecs[T]["spec"]>> {
-      const nodeTypeConfig = config[props.type];
-      const spec = nodeTypeConfig.spec;
-      return new ASTNode({ ...props, spec });
+    ): ASTNode<NodeSpecs[T], Spec.FieldsForSpec<NodeSpecs[T]>> {
+      return new ASTNode({ ...props, spec: config[props.type] });
     },
   };
 }
 
 const specs = {
-  unknown: { spec: Spec.nodeSpec([Spec.list("elts")]) },
-  functionApp: {
-    spec: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
-  },
-  identifierList: {
-    spec: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
-  },
-  structDefinition: {
-    spec: Spec.nodeSpec([Spec.required("name"), Spec.required("fields")]),
-  },
-  variableDefinition: {
-    spec: Spec.nodeSpec([Spec.required("name"), Spec.required("body")]),
-  },
-  lambdaExpression: {
-    spec: Spec.nodeSpec([Spec.required("args"), Spec.required("body")]),
-  },
-  functionDefinition: {
-    spec: Spec.nodeSpec([
-      Spec.required("name"),
-      Spec.required("params"),
-      Spec.required("body"),
-    ]),
-  },
-  condClause: {
-    spec: Spec.nodeSpec([Spec.required("testExpr"), Spec.list("thenExprs")]),
-  },
-  condExpression: { spec: Spec.nodeSpec([Spec.list("clauses")]) },
-  ifExpression: {
-    spec: Spec.nodeSpec([
-      Spec.required("testExpr"),
-      Spec.required("thenExpr"),
-      Spec.required("elseExpr"),
-    ]),
-  },
-  literal: {
-    spec: Spec.nodeSpec([
-      Spec.value<string, "value">("value"),
-      Spec.value("dataType"),
-    ]),
-  },
-  comment: { spec: Spec.nodeSpec([Spec.value<string, "comment">("comment")]) },
-  blank: {
-    spec: Spec.nodeSpec([
-      Spec.value<string, "value">("value"),
-      Spec.value("dataType"),
-    ]),
-  },
-  sequence: {
-    spec: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
-  },
+  unknown: Spec.nodeSpec([Spec.list("elts")]),
+  functionApp: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
+  identifierList: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
+  structDefinition: Spec.nodeSpec([
+    Spec.required("name"),
+    Spec.required("fields"),
+  ]),
+  variableDefinition: Spec.nodeSpec([
+    Spec.required("name"),
+    Spec.required("body"),
+  ]),
+  lambdaExpression: Spec.nodeSpec([
+    Spec.required("args"),
+    Spec.required("body"),
+  ]),
+  functionDefinition: Spec.nodeSpec([
+    Spec.required("name"),
+    Spec.required("params"),
+    Spec.required("body"),
+  ]),
+  condClause: Spec.nodeSpec([
+    Spec.required("testExpr"),
+    Spec.list("thenExprs"),
+  ]),
+  condExpression: Spec.nodeSpec([Spec.list("clauses")]),
+  ifExpression: Spec.nodeSpec([
+    Spec.required("testExpr"),
+    Spec.required("thenExpr"),
+    Spec.required("elseExpr"),
+  ]),
+  literal: Spec.nodeSpec([
+    Spec.value<string, "value">("value"),
+    Spec.value("dataType"),
+  ]),
+  comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")]),
+  blank: Spec.nodeSpec([
+    Spec.value<string, "value">("value"),
+    Spec.value("dataType"),
+  ]),
+  sequence: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
 };
 
 export const CoreAST = createASTSpec(specs);
@@ -656,9 +654,8 @@ export function Blank(
 }
 
 export type SequenceNode = ReturnType<typeof Sequence>;
-export type NodeForSequenceSpec = NodeForSpec<typeof specs["sequence"]["spec"]>;
+export type NodeForSequenceSpec = NodeForSpec<typeof specs["sequence"]>;
 export const SequenceProps = {
-  spec: specs.sequence.spec,
   pretty: (node: NodeForSequenceSpec) =>
     P.vert(node.fields.name || "", ...node.fields.exprs),
   render(props: { node: NodeForSequenceSpec }) {
