@@ -425,7 +425,9 @@ describe("when testing CM apis,", () => {
     );
   });
 
-  it("setCursor should work as-is for text, or activate the containing block", async () => {
+  // TODO(pcardune): reenable or rewrite this test, which was passing by accident
+  // due to activateByNid being async and not waiting for it.
+  xit("setCursor should work as-is for text, or activate the containing block", async () => {
     cmb.setBlockMode(true);
     await finishRender();
     cmb.setCursor({ line: 1, ch: 1 });

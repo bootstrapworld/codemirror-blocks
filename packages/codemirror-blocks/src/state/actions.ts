@@ -276,9 +276,8 @@ export function activateByNid(
       say("Use enter to edit", 1250, true); // wait 1.25s, and allow to be overridden
     }
 
+    dispatch(setFocusedNode(newNode));
     setAfterDOMUpdate(() => {
-      dispatch(setFocusedNode(newNode));
-
       // if this timeout fires after the node has been torn down, don't bother
       if (newNode.element) {
         if (options.allowMove) {
