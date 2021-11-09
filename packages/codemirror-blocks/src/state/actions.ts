@@ -21,7 +21,7 @@ import {
   EditInterface,
 } from "../edits/performEdits";
 import { AST, ASTNode, Pos } from "../ast";
-import { AppAction } from "./reducers";
+import { AppAction, RootState } from "./reducers";
 import {
   CodeMirrorFacade,
   CMBEditor,
@@ -360,9 +360,9 @@ export const extendSelections =
     opts?: SelectionOptions,
     to?: CodeMirror.Position
   ): AppThunk =>
-  (dispatch) => {
+  (dispatch, getState) => {
     const tmpCM: CodeMirror.Editor = getTempCM(ed);
-    tmpCM.setSelections(listSelections(ed, dispatch));
+    tmpCM.setSelections(listSelections(ed, getState()));
     if (to) {
       tmpCM.extendSelections(heads, opts);
     } else {
@@ -382,9 +382,9 @@ export const replaceSelections =
     replacements: string[],
     select?: "around" | "start"
   ): AppThunk =>
-  (dispatch) => {
+  (dispatch, getState) => {
     const tmpCM: CodeMirror.Editor = getTempCM(ed);
-    tmpCM.setSelections(listSelections(ed, dispatch));
+    tmpCM.setSelections(listSelections(ed, getState()));
     tmpCM.replaceSelections(replacements, select);
     ed.setValue(tmpCM.getValue());
     // if one of the ranges is invalid, setSelections will raise an error
@@ -402,10 +402,8 @@ export const replaceSelections =
  * Override CM's native listSelections method, using the selection
  * state from the block editor
  */
-export const listSelections = (ed: CodeMirrorFacade, dispatch: AppDispatch) => {
-  const selections = dispatch((_, getState) =>
-    selectors.getSelectedNodes(getState())
-  );
+export const listSelections = (ed: CodeMirrorFacade, state: RootState) => {
+  const selections = selectors.getSelectedNodes(state);
   const tmpCM = getTempCM(ed);
   // write all the ranges for all selected nodes
   selections.forEach((node) => tmpCM.addSelection(node.from, node.to));

@@ -82,7 +82,7 @@ export const buildAPI = (
   const withState = <F extends (state: RootState) => any>(func: F) =>
     dispatch((_, getState) => func(getState()));
 
-  const api: BuiltAPI = {
+  const api: BuiltAPI & Pick<CodeMirrorAPI, "listSelections"> = {
     /*****************************************************************
      * CM APIs WE WANT TO OVERRIDE
      */
@@ -145,22 +145,20 @@ export const buildAPI = (
       opts?: SelectionOptions
     ) =>
       dispatch(
-        extendSelections(
-          editor,
-          listSelections(editor, dispatch).map(f),
-          opts,
-          undefined
-        )
+        extendSelections(editor, api.listSelections().map(f), opts, undefined)
       ),
     getSelections: (sep?: string) =>
-      listSelections(editor, dispatch).map((s) =>
-        editor.codemirror.getRange(s.anchor, s.head, sep)
+      withState((state) =>
+        listSelections(editor, state).map((s) =>
+          editor.codemirror.getRange(s.anchor, s.head, sep)
+        )
       ),
     getSelection: (sep?: string) =>
-      listSelections(editor, dispatch)
+      api
+        .listSelections()
         .map((s) => editor.codemirror.getRange(s.anchor, s.head, sep))
         .join(sep),
-    listSelections: () => listSelections(editor, dispatch),
+    listSelections: () => withState((state) => listSelections(editor, state)),
     replaceRange: (text, from, to, origin) =>
       withState((state) => {
         validateRanges([{ anchor: from, head: to }], selectors.getAST(state));
@@ -188,7 +186,7 @@ export const buildAPI = (
       dispatch(
         replaceSelections(
           editor,
-          Array(listSelections(editor, dispatch).length).fill(rString),
+          Array(api.listSelections().length).fill(rString),
           select
         )
       ),
