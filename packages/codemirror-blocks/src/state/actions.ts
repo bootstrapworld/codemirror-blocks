@@ -2,7 +2,6 @@ import {
   poscmp,
   srcRangeIncludes,
   warn,
-  setAfterDOMUpdate,
   getTempCM,
   minpos,
   maxpos,
@@ -277,15 +276,12 @@ export function activateByNid(
     }
 
     dispatch(setFocusedNode(newNode));
-    setAfterDOMUpdate(() => {
-      // if this timeout fires after the node has been torn down, don't bother
-      if (newNode.element) {
-        if (options.allowMove) {
-          editor.scrollASTNodeIntoView(newNode);
-        }
-        newNode.element.focus();
+    if (newNode.element) {
+      if (options.allowMove) {
+        editor.scrollASTNodeIntoView(newNode);
       }
-    });
+      newNode.element.focus();
+    }
   };
 }
 

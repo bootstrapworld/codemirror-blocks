@@ -73,7 +73,7 @@ describe("when dealing with node activation,", () => {
   });
 
   it("should activate the next node when down is pressed", async () => {
-    keyDown("ArrowDown");
+    mouseDown(literal1.element!);
     await finishRender();
     keyDown("ArrowDown");
     await finishRender();
