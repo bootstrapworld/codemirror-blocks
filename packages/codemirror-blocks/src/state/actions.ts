@@ -79,6 +79,11 @@ export const disableQuarantine = () => ({
   type: "DISABLE_QUARANTINE" as const,
 });
 
+export const setBlockMode = (enabled: boolean) => ({
+  type: "SET_BLOCK_MODE" as const,
+  enabled,
+});
+
 // All editing actions are defined here.
 //
 // Many actions take a Target as an option. A Target may be constructed by any

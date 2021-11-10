@@ -103,3 +103,8 @@ export const getFocusedNode: (state: RootState) => ASTNode | null =
  * @returns the current quarantine if there is one.
  */
 export const getQuarantine = (state: RootState) => state.quarantine;
+
+/**
+ * @returns whether or not block mode is enabled
+ */
+export const isBlockModeEnabled = (state: RootState) => state.blockMode;

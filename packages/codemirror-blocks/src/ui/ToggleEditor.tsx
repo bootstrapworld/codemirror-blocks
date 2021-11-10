@@ -15,6 +15,13 @@ import TrashCan from "./TrashCan";
 import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror from "codemirror";
+import type { BuiltAPI as BlockEditorAPIExtensions } from "../CodeMirror-api";
+import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
+import { AppContext } from "../components/Context";
+import { err, ok, Result } from "../edits/result";
+import { useDispatch, useSelector } from "react-redux";
+import * as selectors from "../state/selectors";
+import * as actions from "../state/actions";
 
 const defaultCmOptions: CodeMirror.EditorConfiguration = {
   lineNumbers: true,
@@ -130,10 +137,6 @@ type ToggleEditorAPI = {
   runMode(): never;
 };
 
-import type { BuiltAPI as BlockEditorAPIExtensions } from "../CodeMirror-api";
-import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
-import { AppContext } from "../components/Context";
-import { err, ok, Result } from "../edits/result";
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
 
 /**
@@ -191,7 +194,8 @@ export type ToggleEditorProps = {
 
 function ToggleEditor(props: ToggleEditorProps) {
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
-  const [blockMode, setBlockMode] = useState(false);
+  const blockMode = useSelector(selectors.isBlockModeEnabled);
+  const dispatch = useDispatch();
   const [code, setCode] = useState(props.initialCode ?? "");
   const [dialog, setDialog] = useState<null | {
     title: string;
@@ -230,7 +234,7 @@ function ToggleEditor(props: ToggleEditorProps) {
       setRecordedMarks(recordMarks(editor, result.value.oldAst, undefined));
       // Success! Set the state
       setCode(result.value.newCode);
-      setBlockMode(blockMode);
+      dispatch(actions.setBlockMode(blockMode));
     };
 
   const eventHandlersRef = useRef<

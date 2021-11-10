@@ -50,7 +50,6 @@ describe("The CodeMirrorBlocks Class", function () {
     let literal!: ASTNode;
     beforeEach(async function () {
       cmb.setValue("11");
-      cmb.setBlockMode(true);
       literal = cmb.getAst().rootNodes[0];
     });
 

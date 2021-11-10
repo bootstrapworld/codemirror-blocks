@@ -57,6 +57,11 @@ export type ActionFocus = Readonly<{
 }>;
 
 export type RootState = {
+  /**
+   * Whether or not block mode is enabled.
+   */
+  readonly blockMode: boolean;
+
   readonly selections: ReadonlyArray<string>;
 
   /**
@@ -78,6 +83,7 @@ export type RootState = {
 };
 
 export type AppAction =
+  | (Action<"SET_BLOCK_MODE"> & { enabled: boolean })
   | (Action<"SET_FOCUS"> & { focusId: string | null })
   | (Action<"SET_AST"> & { ast: AST })
   | (Action<"SET_SELECTIONS"> & { selections: string[] })
@@ -103,6 +109,7 @@ export type AppAction =
   | Action<"RESET_STORE_FOR_TESTING">;
 
 const initialState: () => RootState = () => ({
+  blockMode: false,
   selections: [],
   editable: {},
   astData: {
@@ -123,6 +130,8 @@ const initialState: () => RootState = () => ({
 
 function reduce(state = initialState(), action: AppAction): RootState {
   switch (action.type) {
+    case "SET_BLOCK_MODE":
+      return { ...state, blockMode: action.enabled };
     case "SET_FOCUS":
       return { ...state, focusId: action.focusId };
     case "SET_AST":
