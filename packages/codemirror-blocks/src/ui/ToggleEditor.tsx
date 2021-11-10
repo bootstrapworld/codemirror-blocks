@@ -9,7 +9,7 @@ import TrashCan from "./TrashCan";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror from "codemirror";
 import type { BuiltAPI as BlockEditorAPIExtensions } from "../CodeMirror-api";
-import { CodeMirrorFacade, CMBEditor } from "../editor";
+import { CodeMirrorFacade } from "../editor";
 import { AppContext } from "../components/Context";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import * as selectors from "../state/selectors";
@@ -137,14 +137,10 @@ export type API = ToggleEditorAPI & CodeMirrorAPI & BlockEditorAPIExtensions;
  * Populate a base object with mode-agnostic methods we wish to expose
  */
 const buildAPI = (
-  ed: CodeMirrorFacade,
+  editor: CodeMirrorFacade,
   store: AppStore,
   language: Language,
-  eventHandlers: Record<string, ((...args: unknown[]) => void)[]>,
-  handleToggle: (
-    ed: CodeMirrorFacade,
-    language: Language
-  ) => (blockMode: boolean) => void
+  eventHandlers: Record<string, ((...args: unknown[]) => void)[]>
 ): ToggleEditorAPI & Partial<CodeMirrorAPI> => {
   const base: Partial<CodeMirrorAPI> = {};
   // any CodeMirror function that we can call directly should be passed-through.
@@ -156,14 +152,16 @@ const buildAPI = (
     // the function it proxies to has been added to the editor instance.
     base[funcName] = (...args: unknown[]) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (ed.codemirror as any)[funcName](...args);
+      (editor.codemirror as any)[funcName](...args);
   });
 
   const api: ToggleEditorAPI = {
     // custom CMB methods
     getBlockMode: () => selectors.isBlockModeEnabled(store.getState()),
-    setBlockMode: handleToggle(ed, language),
-    getCM: () => ed.codemirror,
+    setBlockMode: (blockMode: boolean) => {
+      store.dispatch(actions.setBlockMode(blockMode, editor, language));
+    },
+    getCM: () => editor.codemirror,
     on: (...args: Parameters<CodeMirror.Editor["on"]>) => {
       const [type, fn] = args;
       if (!eventHandlers[type]) {
@@ -171,12 +169,12 @@ const buildAPI = (
       } else {
         eventHandlers[type].push(fn);
       }
-      ed.codemirror.on(type, fn);
+      editor.codemirror.on(type, fn);
     },
     off: (...args: Parameters<CodeMirror.Editor["on"]>) => {
       const [type, fn] = args;
       eventHandlers[type]?.filter((h) => h !== fn);
-      ed.codemirror.off(type, fn);
+      editor.codemirror.off(type, fn);
     },
     runMode: () => {
       throw "runMode is not supported in CodeMirror-blocks";
@@ -210,20 +208,22 @@ function ToggleEditor(props: ToggleEditorProps) {
    * (2) pretty-print and re-parse to canonicalize the text,
    * (3) record TextMarkers and update editor state
    */
-  const handleToggle =
-    (editor: CMBEditor, language: Language) => (blockMode: boolean) => {
-      const result = dispatch(
-        actions.setBlockMode(blockMode, editor, language)
-      );
-      if (!result.successful) {
-        // console.error(result.exception);
-        setDialog({
-          title: "Could not convert to Blocks",
-          content: <p>{String(result.exception)}</p>,
-        });
-        return;
-      }
-    };
+  const handleToggle = (blockMode: boolean) => {
+    if (!editor) {
+      return; // editor hasn't mounted yet, do nothing.
+    }
+    const result = dispatch(
+      actions.setBlockMode(blockMode, editor, props.language)
+    );
+    if (!result.successful) {
+      // console.error(result.exception);
+      setDialog({
+        title: "Could not convert to Blocks",
+        content: <p>{String(result.exception)}</p>,
+      });
+      return;
+    }
+  };
 
   const eventHandlersRef = useRef<
     Record<string, ((...args: unknown[]) => void)[]>
@@ -245,13 +245,7 @@ function ToggleEditor(props: ToggleEditorProps) {
     mountAnnouncer(wrapper);
     // Rebuild the API and assign re-events
     props.onMount({
-      ...buildAPI(
-        editor,
-        store,
-        props.language,
-        eventHandlersRef.current,
-        handleToggle
-      ),
+      ...buildAPI(editor, store, props.language, eventHandlersRef.current),
       ...api,
     });
     for (const [type, handlers] of Object.entries(eventHandlersRef.current)) {
@@ -279,18 +273,7 @@ function ToggleEditor(props: ToggleEditorProps) {
     <AppContext.Provider value={appHelpers}>
       <div className={classes}>
         {blockMode ? <BugButton /> : null}
-        <ToggleButton
-          setBlockMode={
-            editor
-              ? handleToggle(editor, props.language)
-              : () => {
-                  console.warn(
-                    "Attempting to set block mode before editor available"
-                  );
-                }
-          }
-          blockMode={blockMode}
-        />
+        <ToggleButton setBlockMode={handleToggle} blockMode={blockMode} />
         {blockMode && editor ? (
           <TrashCan language={props.language} editor={editor} />
         ) : null}
