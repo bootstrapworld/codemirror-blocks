@@ -3,18 +3,13 @@ import { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
 import type { FunctionAppNode, LiteralNode } from "../src/nodes";
 
-/*eslint no-unused-vars: "off"*/
 import {
   teardown,
   mouseDown,
   keyDown,
   insertText,
-  finishRender,
   mountCMB,
 } from "../src/toolkit/test-utils";
-import { debugLog } from "../src/utils";
-
-debugLog("Doing focus-test.js");
 
 describe("focusing,", () => {
   let cmb!: API;
@@ -28,7 +23,6 @@ describe("focusing,", () => {
   beforeEach(async () => {
     cmb = await mountCMB(wescheme);
     cmb.setValue("(+ 1 2 3)");
-    await finishRender();
     expression = cmb.getAst().rootNodes[0] as FunctionAppNode;
     func = expression.fields.func;
     literal1 = expression.fields.args[0];
@@ -45,59 +39,47 @@ describe("focusing,", () => {
 
   it("deleting the last node should shift focus to the next-to-last", async () => {
     mouseDown(literal3);
-    await finishRender();
     expect(document.activeElement).toBe(literal3.element);
     keyDown(" ");
     keyDown("Delete");
-    await finishRender();
     expect(cmb.getValue()).toBe("(+ 1 2)");
     expect(cmb.getFocusedNode()!.id).toBe(literal2.id);
   });
 
   it("deleting the first node should shift focus to the parent", async () => {
     mouseDown(literal1);
-    await finishRender();
     expect(document.activeElement).toBe(literal1.element);
     keyDown(" ");
     keyDown("Delete");
-    await finishRender();
     expect(cmb.getValue()).toBe("(+ 2 3)");
     expect(cmb.getFocusedNode()!.id).toBe(func.id);
   });
 
   it("deleting the nth node should shift focus to n-1", async () => {
     mouseDown(literal2);
-    await finishRender();
     expect(document.activeElement).toBe(literal2.element);
     keyDown(" ");
     keyDown("Delete");
-    await finishRender();
     expect(cmb.getValue()).toBe("(+ 1 3)");
     expect(cmb.getFocusedNode()!.id).toBe(literal1.id);
   });
 
   it("deleting multiple nodes should shift focus to the one before", async () => {
     mouseDown(literal2);
-    await finishRender();
     keyDown(" ");
     keyDown("ArrowDown");
     keyDown(" ", {}, literal3);
-    await finishRender();
     expect(cmb.getSelectedNodes().length).toBe(2);
     keyDown("Delete");
-    await finishRender();
     expect(cmb.getValue()).toBe("(+ 1)");
     expect(cmb.getFocusedNode()!.id).toBe(literal1.id);
   });
 
   it("inserting a node should put focus on the new node", async () => {
     mouseDown(literal1);
-    await finishRender();
     keyDown("]", { ctrlKey: true });
-    await finishRender();
     insertText("99"); // in place of 2x keydown
     keyDown("Enter");
-    await finishRender();
     // extra WS is removed when we switch back to text, but in blockmode
     // there's an extra space inserted after 99
     expect(cmb.getValue()).toBe("(+ 1 99 2 3)");
@@ -107,12 +89,9 @@ describe("focusing,", () => {
 
   it("inserting multiple nodes should put focus on the last of the new nodes", async () => {
     mouseDown(literal1);
-    await finishRender();
     keyDown("]", { ctrlKey: true });
-    await finishRender();
     insertText("99 88 77");
     keyDown("Enter");
-    await finishRender();
     expect(cmb.getValue()).toBe("(+ 1 99 88 77 2 3)");
     // TODO(Emmanuel): does getFocusedNode().value always return strings?
     expect((cmb.getFocusedNode() as LiteralNode).fields.value).toBe("77");

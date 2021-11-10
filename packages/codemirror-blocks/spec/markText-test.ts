@@ -1,12 +1,9 @@
 import wescheme from "../src/languages/wescheme";
 
-import { teardown, finishRender, mountCMB } from "../src/toolkit/test-utils";
+import { teardown, mountCMB } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { AST, ASTNode } from "../src/ast";
 import { MarkerRange, TextMarker } from "codemirror";
-import { debugLog } from "../src/utils";
-
-debugLog("Doing markText-test.js");
 
 describe("The CodeMirrorBlocks Class", function () {
   describe("text marking api,", function () {
@@ -17,7 +14,6 @@ describe("The CodeMirrorBlocks Class", function () {
     beforeEach(async function () {
       cmb = await mountCMB(wescheme);
       cmb.setValue("11\n12\n(+ 3 4 5)");
-      await finishRender(); // give the editor a chance to re-render
       cmb.getAllMarks().forEach((m) => m.clear());
       ast = cmb.getAst();
       literal1 = ast.rootNodes[0];
@@ -116,7 +112,6 @@ describe("The CodeMirrorBlocks Class", function () {
             expect(cmb.getAllMarks().length).toBe(1); 
             expect(literal1.element.style.background).toBe('red');
             cmb.setBlockMode(false);
-            await finishRender();
             debugLog(cmb.getAllMarks());
             expect(cmb.getAllMarks().length).toBe(1);
           });

@@ -1,6 +1,6 @@
 import { API, CodeMirrorBlocksComponent, Language } from "../CodeMirrorBlocks";
 import { act, cleanup, render } from "@testing-library/react";
-import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
+// import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
 import React from "react";
 // pass along all the simulated events
 export * from "@bootstrapworld/cmb-toolkit/lib/simulate";
@@ -23,14 +23,7 @@ export async function wait(ms: number) {
   });
 }
 
-// wait for the editor to finish rendering and for any
-// other async DOM tasks to finish
-export function finishRender() {
-  return afterAllDOMUpdates();
-}
-
 export function teardown() {
-  cancelAllDOMUpdates();
   cleanup();
   const rootNode = document.getElementById("root");
   if (rootNode) {
@@ -81,8 +74,6 @@ export async function mountCMB(language: Language): Promise<API> {
     />,
     { container }
   );
-  await finishRender();
   cmb.setBlockMode(true);
-  await finishRender();
   return cmb;
 }
