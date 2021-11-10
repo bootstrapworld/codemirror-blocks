@@ -573,12 +573,6 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
    */
   element: HTMLElement | null = null;
 
-  /**
-   * @internal
-   * Used for unit testing only
-   */
-  isEditable?: () => boolean;
-
   readonly _pretty: (node: ASTNode<Fields>) => P.Doc;
   readonly render: (props: {
     node: ASTNode<Fields>;

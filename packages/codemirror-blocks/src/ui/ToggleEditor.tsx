@@ -15,7 +15,6 @@ import TrashCan from "./TrashCan";
 import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror from "codemirror";
-import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 
 const defaultCmOptions: CodeMirror.EditorConfiguration = {
   lineNumbers: true,
@@ -314,17 +313,14 @@ function ToggleEditor(props: ToggleEditorProps) {
     }
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-    const pending = setAfterDOMUpdate(() => {
-      recordedMarks.forEach(
-        (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
-          const node = ast.getNodeByNId(k);
-          if (node) {
-            editor.codemirror.markText(node.from, node.to, m.options);
-          }
+    recordedMarks.forEach(
+      (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
+        const node = ast.getNodeByNId(k);
+        if (node) {
+          editor.codemirror.markText(node.from, node.to, m.options);
         }
-      );
-    });
-    return () => cancelAfterDOMUpdate(pending);
+      }
+    );
   }, [recordedMarks, editor, ast]);
 
   const toolbarRef = useRef<HTMLInputElement>(null);
