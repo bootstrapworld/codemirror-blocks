@@ -63,6 +63,22 @@ export const setSelectedNodeIds = (ids: string[]) => ({
   selections: ids,
 });
 
+export const setQuarantine = (start: Pos, end: Pos, text: string) => ({
+  type: "SET_QUARANTINE" as const,
+  start,
+  end,
+  text,
+});
+
+export const changeQuarantine = (newValue: string) => ({
+  type: "CHANGE_QUARANTINE" as const,
+  text: newValue,
+});
+
+export const disableQuarantine = () => ({
+  type: "DISABLE_QUARANTINE" as const,
+});
+
 // All editing actions are defined here.
 //
 // Many actions take a Target as an option. A Target may be constructed by any

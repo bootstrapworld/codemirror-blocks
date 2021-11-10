@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { useDispatch } from "react-redux";
 import NodeEditable from "../components/NodeEditable";
-import { OverwriteTarget } from "../state/actions";
+import * as actions from "../state/actions";
 import type { AppDispatch } from "../state/store";
 import type { CMBEditor } from "../editor";
 import { Quarantine } from "../state/reducers";
@@ -22,9 +22,8 @@ type Props = {
  */
 const ToplevelBlockEditable = (props: Props) => {
   const dispatch: AppDispatch = useDispatch();
-  const onDisableEditable = () => dispatch({ type: "DISABLE_QUARANTINE" });
-  const onChange = (text: string) =>
-    dispatch({ type: "CHANGE_QUARANTINE", text });
+  const onDisableEditable = () => dispatch(actions.disableQuarantine());
+  const onChange = (text: string) => dispatch(actions.changeQuarantine(text));
   const { from, to, value } = props.quarantine;
 
   // add a marker to codemirror, with an empty "widget" into which
@@ -50,7 +49,7 @@ const ToplevelBlockEditable = (props: Props) => {
   return ReactDOM.createPortal(
     <NodeEditable
       editor={props.editor}
-      target={new OverwriteTarget(from, to)}
+      target={new actions.OverwriteTarget(from, to)}
       value={value}
       onChange={onChange}
       contentEditableProps={{

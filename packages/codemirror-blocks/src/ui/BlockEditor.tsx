@@ -13,7 +13,6 @@ import type { AST } from "../ast";
 import CodeMirror from "codemirror";
 import type { Options, Language } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../state/store";
-import type { RootState } from "../state/reducers";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
@@ -43,7 +42,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language, passedAST } = props;
   const dispatch: AppDispatch = useDispatch();
   const ast = useSelector(selectors.getAST);
-  const quarantine = useSelector((state: RootState) => state.quarantine);
+  const quarantine = useSelector(selectors.getQuarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const newASTRef = useRef<AST | undefined>();
 
@@ -203,12 +202,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     e.preventDefault();
     const start = ed.getCursor("from");
     const end = ed.getCursor("to");
-    dispatch({
-      type: "SET_QUARANTINE",
-      start: start,
-      end: end,
-      text: text,
-    });
+    dispatch(actions.setQuarantine(start, end, text));
   };
 
   /**
@@ -220,12 +214,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     if (text) {
       const start = editor.codemirror.getCursor("from");
       const end = editor.codemirror.getCursor("to");
-      dispatch({
-        type: "SET_QUARANTINE",
-        start: start,
-        end: end,
-        text: text,
-      });
+      dispatch(actions.setQuarantine(start, end, text));
     }
   };
 

@@ -98,3 +98,8 @@ export const getFocusedNode: (state: RootState) => ASTNode | null =
     [getAST, (state: RootState) => state.focusId],
     (ast, focusId) => (focusId ? ast.getNodeById(focusId) ?? null : null)
   );
+
+/**
+ * @returns the current quarantine if there is one.
+ */
+export const getQuarantine = (state: RootState) => state.quarantine;
