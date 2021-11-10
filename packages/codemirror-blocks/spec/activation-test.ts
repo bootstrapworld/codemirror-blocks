@@ -17,6 +17,10 @@ import { FunctionAppNode } from "../src/nodes";
 const activeAriaId = (cmb: API) =>
   cmb.getScrollerElement().getAttribute("aria-activedescendent");
 
+// TODO(pcardune): replace the element property on an ASTNode with this function
+const elementForNode = (node: ASTNode) =>
+  document.getElementById(`block-node-${node.id}`);
+
 describe("when dealing with node activation,", () => {
   let cmb!: API;
   let literal1!: ASTNode;
@@ -118,12 +122,18 @@ describe("when dealing with node activation,", () => {
 
     keyDown("Enter");
     await finishRender();
-    expect(literal1.isEditable!()).toBe(true);
+    expect(document.activeElement).toBe(elementForNode(literal1));
+    expect(elementForNode(literal1)).toHaveAttribute("contenteditable", "true");
+
     insertText("sugarPlums");
+    expect(elementForNode(literal1)).toHaveTextContent("sugarPlums");
 
     keyDown("Escape");
     await finishRender();
-    expect(literal1.isEditable!()).toBe(false);
+    expect(elementForNode(literal1)).not.toHaveAttribute(
+      "contenteditable",
+      "true"
+    );
     expect(cmb.getValue()).toBe("11\n54");
   });
 
