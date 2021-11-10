@@ -27,11 +27,7 @@ export type BlockEditorAPI = {
   /**
    * @internal
    */
-  setQuarantine(
-    start: Quarantine[0],
-    end: Quarantine[1],
-    txt: Quarantine[2]
-  ): void;
+  setQuarantine(start: Pos, end: Pos, txt: string): void;
   executeAction(activity: Activity): void;
 };
 

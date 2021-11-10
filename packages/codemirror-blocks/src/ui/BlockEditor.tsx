@@ -256,7 +256,13 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         </EditorContext.Provider>
       ));
       if (quarantine) {
-        portals.push(<ToplevelBlockEditable editor={editor} key="-1" />);
+        portals.push(
+          <ToplevelBlockEditable
+            editor={editor}
+            quarantine={quarantine}
+            key="-1"
+          />
+        );
       }
     }
     return portals;

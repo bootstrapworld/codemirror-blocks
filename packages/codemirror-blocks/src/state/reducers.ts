@@ -1,7 +1,7 @@
 import CodeMirror from "codemirror";
 import type { Action } from "redux";
 import { AST, ASTData } from "../ast";
-import { ReadonlyCMBEditor } from "../editor";
+import { Pos, ReadonlyCMBEditor } from "../editor";
 import { debugLog } from "../utils";
 
 /**
@@ -49,9 +49,7 @@ function loggerDebug(action: AppAction, ast: ASTData) {
   reducerActivities.push(activity);
 }
 
-export type Quarantine = Readonly<
-  [CodeMirror.Position, CodeMirror.Position, string]
->;
+export type Quarantine = Readonly<{ from: Pos; to: Pos; value: string }>;
 
 export type ActionFocus = Readonly<{
   oldFocusNId: number | null;
@@ -169,16 +167,19 @@ function reduce(state = initialState(), action: AppAction): RootState {
       }
       return {
         ...state,
-        quarantine: [
-          state.quarantine[0],
-          state.quarantine[1],
-          action.text,
-        ] as Quarantine,
+        quarantine: {
+          ...state.quarantine,
+          value: action.text,
+        },
       };
     case "SET_QUARANTINE":
       return {
         ...state,
-        quarantine: [action.start, action.end, action.text] as Quarantine,
+        quarantine: {
+          from: action.start,
+          to: action.end,
+          value: action.text,
+        },
       };
     case "ADD_MARK":
       return {
