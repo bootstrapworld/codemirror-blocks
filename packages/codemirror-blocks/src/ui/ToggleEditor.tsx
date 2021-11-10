@@ -1,10 +1,4 @@
-import React, {
-  ReactElement,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { ReactElement, useMemo, useRef, useState } from "react";
 import BlockEditor from "./BlockEditor";
 import TextEditor from "./TextEditor";
 import Dialog from "../components/Dialog";
@@ -12,11 +6,10 @@ import Toolbar from "./Toolbar";
 import { ToggleButton, BugButton } from "./EditorButtons";
 import { mountAnnouncer, say } from "../announcer";
 import TrashCan from "./TrashCan";
-import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror from "codemirror";
 import type { BuiltAPI as BlockEditorAPIExtensions } from "../CodeMirror-api";
-import { CodeMirrorFacade, CMBEditor, ReadonlyCMBEditor } from "../editor";
+import { CodeMirrorFacade, CMBEditor } from "../editor";
 import { AppContext } from "../components/Context";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import * as selectors from "../state/selectors";
@@ -212,17 +205,6 @@ function ToggleEditor(props: ToggleEditorProps) {
     title: string;
     content: ReactElement | string;
   }>(null);
-  const ast = useSelector(selectors.getAST);
-  const [recordedMarks, setRecordedMarks] = useState<
-    Map<
-      number,
-      {
-        from: CodeMirror.Position;
-        to: CodeMirror.Position;
-        options: CodeMirror.TextMarkerOptions;
-      }
-    >
-  >(new Map());
 
   /**
    * When the mode is toggled, (1) parse the value of the editor,
@@ -242,8 +224,6 @@ function ToggleEditor(props: ToggleEditorProps) {
         });
         return;
       }
-      // Preserve old TextMarkers
-      setRecordedMarks(recordMarks(editor, result.value.oldAst, undefined));
       // Success! Set the state
       setCode(result.value.newCode);
     };
@@ -285,22 +265,6 @@ function ToggleEditor(props: ToggleEditorProps) {
     setEditor(editor);
     say(mode + " Mode Enabled", 500);
   };
-
-  useEffect(() => {
-    if (!editor) {
-      return;
-    }
-    // once the DOM has loaded, reconstitute any marks and render them
-    // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-    recordedMarks.forEach(
-      (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
-        const node = ast.getNodeByNId(k);
-        if (node) {
-          editor.codemirror.markText(node.from, node.to, m.options);
-        }
-      }
-    );
-  }, [recordedMarks, editor, ast]);
 
   const toolbarRef = useRef<HTMLInputElement>(null);
 
@@ -391,53 +355,3 @@ function ToggleEditor(props: ToggleEditorProps) {
 }
 
 export default ToggleEditor;
-
-/**
- * Get all TextMarkers that are (a) not bookmarks and (b) still
- * in the document. This record is used to reconstitute them after
- * the editor mounts.
- */
-function recordMarks(
-  editor: ReadonlyCMBEditor,
-  oldAST: AST,
-  newAST: AST | undefined
-) {
-  const recordedMarks: Map<
-    number,
-    {
-      from: CodeMirror.Position;
-      to: CodeMirror.Position;
-      options: CodeMirror.TextMarkerOptions;
-    }
-  > = new Map();
-  for (const mark of editor.getAllTextMarkers()) {
-    const markRange = mark.find();
-    if (!markRange) {
-      // marker is no longer in the document, bail
-      continue;
-    }
-    const oldNode = oldAST.getNodeAt(markRange.from, markRange.to); // find the node for the mark
-    if (!oldNode) {
-      // bail on non-node markers
-      console.error(
-        `Removed TextMarker at [{line:${markRange.from.line}, ch:${markRange.from.ch}},` +
-          `{line:${markRange.to.line}, ch:${markRange.to.ch}}], since that range does not correspond to a node boundary`
-      );
-      continue;
-    }
-    const newNode = newAST?.getNodeByNId(oldNode.nid); // use the NID to look node up srcLoc post-PP
-    if (!newNode) {
-      throw new Error("Could not find node " + oldNode.nid + " in new AST");
-    }
-    recordedMarks.set(oldNode.nid, {
-      from: newNode.from,
-      to: newNode.to,
-      options: {
-        css: mark.css,
-        title: mark.title,
-        className: mark.className,
-      },
-    });
-  }
-  return recordedMarks;
-}
