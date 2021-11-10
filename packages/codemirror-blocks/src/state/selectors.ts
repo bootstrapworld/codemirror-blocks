@@ -108,3 +108,8 @@ export const getQuarantine = (state: RootState) => state.quarantine;
  * @returns whether or not block mode is enabled
  */
 export const isBlockModeEnabled = (state: RootState) => state.blockMode;
+
+/**
+ * @returns a string representation of the code.
+ */
+export const getCode = (state: RootState) => state.code;

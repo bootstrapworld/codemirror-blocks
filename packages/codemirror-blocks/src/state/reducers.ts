@@ -62,6 +62,13 @@ export type RootState = {
    */
   readonly blockMode: boolean;
 
+  /**
+   * The code in the editor. Ideally this should be normalized
+   * with astData, which represents the same thing when in block
+   * mode
+   */
+  readonly code: string;
+
   readonly selections: ReadonlyArray<string>;
 
   /**
@@ -86,6 +93,7 @@ export type AppAction =
   | (Action<"SET_BLOCK_MODE"> & { enabled: boolean })
   | (Action<"SET_FOCUS"> & { focusId: string | null })
   | (Action<"SET_AST"> & { ast: AST })
+  | (Action<"SET_CODE"> & { code: string })
   | (Action<"SET_SELECTIONS"> & { selections: string[] })
   | (Action<"SET_EDITABLE"> & { id: string; bool: boolean })
   | (Action<"SET_ERROR_ID"> & { errorId: string })
@@ -110,6 +118,7 @@ export type AppAction =
 
 const initialState: () => RootState = () => ({
   blockMode: false,
+  code: "",
   selections: [],
   editable: {},
   astData: {
@@ -130,6 +139,8 @@ const initialState: () => RootState = () => ({
 
 function reduce(state = initialState(), action: AppAction): RootState {
   switch (action.type) {
+    case "SET_CODE":
+      return { ...state, code: action.code };
     case "SET_BLOCK_MODE":
       return { ...state, blockMode: action.enabled };
     case "SET_FOCUS":

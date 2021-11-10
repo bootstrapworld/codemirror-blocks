@@ -79,6 +79,8 @@ export const disableQuarantine = () => ({
   type: "DISABLE_QUARANTINE" as const,
 });
 
+export const setCode = (code: string) => ({ type: "SET_CODE" as const, code });
+
 export const setBlockMode =
   (
     enabled: boolean,
@@ -93,6 +95,7 @@ export const setBlockMode =
         enabled,
       });
       dispatch(setAST(result.value.newAst));
+      dispatch(setCode(result.value.newCode));
     }
     return result;
   };

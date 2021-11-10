@@ -186,7 +186,6 @@ const buildAPI = (
 };
 
 export type ToggleEditorProps = {
-  initialCode?: string;
   codemirrorOptions?: CodeMirror.EditorConfiguration;
   language: Language;
   options?: Options;
@@ -200,7 +199,7 @@ function ToggleEditor(props: ToggleEditorProps) {
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const blockMode = useSelector(selectors.isBlockModeEnabled);
   const dispatch: AppDispatch = useDispatch();
-  const [code, setCode] = useState(props.initialCode ?? "");
+  const code = useSelector(selectors.getCode);
   const [dialog, setDialog] = useState<null | {
     title: string;
     content: ReactElement | string;
@@ -224,8 +223,6 @@ function ToggleEditor(props: ToggleEditorProps) {
         });
         return;
       }
-      // Success! Set the state
-      setCode(result.value.newCode);
     };
 
   const eventHandlersRef = useRef<

@@ -24,6 +24,7 @@ describe("createAppStore()", () => {
           "rootNodes": Array [],
         },
         "blockMode": false,
+        "code": "",
         "collapsedList": Array [],
         "cur": null,
         "editable": Object {},

@@ -95,10 +95,9 @@ export const CodeMirrorBlocksComponent = ({
   codemirrorOptions = {},
 }: Props) => {
   return (
-    <Context store={createAppStore()}>
+    <Context store={createAppStore(options.value)}>
       <ToggleEditor
         language={language}
-        initialCode={options.value ?? ""}
         onMount={onMount}
         options={options}
         codemirrorOptions={codemirrorOptions}
