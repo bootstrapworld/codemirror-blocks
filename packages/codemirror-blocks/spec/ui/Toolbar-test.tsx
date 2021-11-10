@@ -127,6 +127,7 @@ describe("Toolbar", () => {
     it("should render a search box", () => {
       expect(searchInput).toMatchInlineSnapshot(`
         <input
+          autocomplete="off"
           class="form-control"
           disabled=""
           id="search_box"

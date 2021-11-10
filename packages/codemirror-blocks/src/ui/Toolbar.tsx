@@ -40,13 +40,12 @@ const Toolbar = (props: Props) => {
     event
   ) => {
     const keyName = CodeMirror.keyName(event);
-    console.log(keyName);
     switch (keyName) {
       case "Down":
         primitiveListRef.current?.focus();
-    return;
+        return;
     }
-  }
+  };
 
   return (
     <div

@@ -113,118 +113,119 @@ type PrimitiveListProps = {
 };
 export const PrimitiveList = React.forwardRef(
   (props: PrimitiveListProps, ref: React.MutableRefObject<HTMLElement>) => {
-  const {
-    primitives = [],
-    selected,
-    setSelectedPrimitive,
-    selectedPrimitive,
-    toolbarRef,
-    searchString,
-  } = props;
+    const {
+      primitives = [],
+      selected,
+      setSelectedPrimitive,
+      selectedPrimitive,
+      toolbarRef,
+      searchString,
+    } = props;
 
-  // @pcardune - typing this array has been a challenge
-  // JSX.Element doesn't work, even though that's the
-  // recommendation I'm seeing online
-  const primitiveRefs = useRef<any[]>([]);
+    // @pcardune - typing this array has been a challenge
+    // JSX.Element doesn't work, even though that's the
+    // recommendation I'm seeing online
+    const primitiveRefs = useRef<any[]>([]);
 
-  const renderGroup = (g: PrimitiveGroupModel) => (
-    <PrimitiveGroup
-      key={g.name}
-      group={g}
-      selected={selected}
-      selectedPrimitive={selectedPrimitive}
-      toolbarRef={toolbarRef}
-      setSelectedPrimitive={setSelectedPrimitive}
-    />
-  );
-
-  const renderPrimitive = (p: LanguagePrimitive, i: number) => {
-    const primRef = React.createRef<HTMLElement>();
-    const prim = (
-      <Primitive
-        key={p.name}
-        primitive={p}
-        onFocus={() => setSelectedPrimitive(p)}
-        className={selected == p.name ? "selected" : ""}
-        ref={primRef}
+    const renderGroup = (g: PrimitiveGroupModel) => (
+      <PrimitiveGroup
+        key={g.name}
+        group={g}
+        selected={selected}
+        selectedPrimitive={selectedPrimitive}
+        toolbarRef={toolbarRef}
+        setSelectedPrimitive={setSelectedPrimitive}
       />
     );
-    primitiveRefs.current[i] = prim;
-    return prim;
-  };
 
-  // Set selectedPrimitive state, depending on whether we go up or down
-  const move = (event: React.KeyboardEvent, dir: "Up" | "Down") => {
-    if (!selectedPrimitive || primitives.length == 0) {
-      return; // Nothing to select. Bail.
-    }
+    const renderPrimitive = (p: LanguagePrimitive, i: number) => {
+      const primRef = React.createRef<HTMLElement>();
+      const prim = (
+        <Primitive
+          key={p.name}
+          primitive={p}
+          onFocus={() => setSelectedPrimitive(p)}
+          className={selected == p.name ? "selected" : ""}
+          ref={primRef}
+        />
+      );
+      primitiveRefs.current[i] = prim;
+      return prim;
+    };
 
-    // compute the index of the newly-selected primitive, and get the Element
-    let newIndex;
-    const prevIndex = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
-    if (dir == "Down") {
-      newIndex = Math.min(prevIndex + 1, primitives.length - 1);
-    } else {
-      newIndex = Math.max(prevIndex - 1, 0);
-    }
-    const newPrimitiveElt = primitiveRefs.current[newIndex];
+    // Set selectedPrimitive state, depending on whether we go up or down
+    const move = (event: React.KeyboardEvent, dir: "Up" | "Down") => {
+      if (!selectedPrimitive || primitives.length == 0) {
+        return; // Nothing to select. Bail.
+      }
 
-    // @pcardune - is it safe to assume this will always exist, and ditch the check?
-    if (newPrimitiveElt) {
-      newPrimitiveElt.ref.current.focus();
-    } else {
-      return err("No DOM node was created for " + primitives[newIndex].name);
-    }
-    // if the index was changed, do not bubble
-    if (newIndex !== prevIndex) {
-      event.stopPropagation();
-    }
-  };
+      // compute the index of the newly-selected primitive, and get the Element
+      let newIndex;
+      const prevIndex = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
+      if (dir == "Down") {
+        newIndex = Math.min(prevIndex + 1, primitives.length - 1);
+      } else {
+        newIndex = Math.max(prevIndex - 1, 0);
+      }
+      const newPrimitiveElt = primitiveRefs.current[newIndex];
 
-  const handleKeyDown: React.KeyboardEventHandler<HTMLUListElement> = (
-    event
-  ) => {
-    const keyName = CodeMirror.keyName(event);
-    switch (keyName) {
-      case "Down":
-      case "Up":
-        event.preventDefault();
-        move(event, keyName);
-        return;
-      case "Esc":
-        props.toolbarRef.current?.focus(); // focus, then fall-through
-        break;
-    }
-  };
+      // @pcardune - is it safe to assume this will always exist, and ditch the check?
+      if (newPrimitiveElt) {
+        newPrimitiveElt.ref.current.focus();
+      } else {
+        return err("No DOM node was created for " + primitives[newIndex].name);
+      }
+      // if the index was changed, do not bubble
+      if (newIndex !== prevIndex) {
+        event.stopPropagation();
+      }
+    };
 
-  const text = searchString
-    ? (primitives.length == 0 ? "No" : primitives.length) + " blocks found"
-    : "blocks";
+    const handleKeyDown: React.KeyboardEventHandler<HTMLUListElement> = (
+      event
+    ) => {
+      const keyName = CodeMirror.keyName(event);
+      switch (keyName) {
+        case "Down":
+        case "Up":
+          event.preventDefault();
+          move(event, keyName);
+          return;
+        case "Esc":
+          props.toolbarRef.current?.focus(); // focus, then fall-through
+          break;
+      }
+    };
 
-  return (
-    <div>
-      <h3
-        id="toolbar_heading"
-        className="screenreader-only"
-        aria-live="assertive"
-        aria-atomic="true"
-      >
-        {text}
-      </h3>
-      <ul
-        className="PrimitiveList list-group"
-        aria-labelledby="toolbar_heading"
-        onKeyDown={handleKeyDown}
-        ref={ref as React.Ref<HTMLUListElement>}
-      >
-        {primitives.map((item, i) =>
-          item instanceof PrimitiveGroupModel
-            ? renderGroup(item)
-            : renderPrimitive(item, i)
-        )}
-      </ul>
-    </div>
-  );
-});
+    const text = searchString
+      ? (primitives.length == 0 ? "No" : primitives.length) + " blocks found"
+      : "blocks";
+
+    return (
+      <div>
+        <h3
+          id="toolbar_heading"
+          className="screenreader-only"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          {text}
+        </h3>
+        <ul
+          className="PrimitiveList list-group"
+          aria-labelledby="toolbar_heading"
+          onKeyDown={handleKeyDown}
+          ref={ref as React.Ref<HTMLUListElement>}
+        >
+          {primitives.map((item, i) =>
+            item instanceof PrimitiveGroupModel
+              ? renderGroup(item)
+              : renderPrimitive(item, i)
+          )}
+        </ul>
+      </div>
+    );
+  }
+);
 
 export default PrimitiveList;
