@@ -8,6 +8,8 @@ import {
   keyDown,
   insertText,
   mountCMB,
+  isNodeEditable,
+  elementForNode,
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
@@ -15,10 +17,6 @@ import { FunctionAppNode } from "../src/nodes";
 
 const activeAriaId = (cmb: API) =>
   cmb.getScrollerElement().getAttribute("aria-activedescendent");
-
-// TODO(pcardune): replace the element property on an ASTNode with this function
-const elementForNode = (node: ASTNode) =>
-  document.getElementById(`block-node-${node.id}`);
 
 describe("when dealing with node activation,", () => {
   let cmb!: API;
@@ -93,10 +91,10 @@ describe("when dealing with node activation,", () => {
   it("should toggle the editability of activated node when Enter is pressed", async () => {
     mouseDown(literal1);
     expect(cmb.getFocusedNode()).toBe(literal1);
-    expect(literal1.isEditable!()).toBe(false);
+    expect(isNodeEditable(literal1)).toBe(false);
 
     keyDown("Enter");
-    expect(literal1.isEditable!()).toBe(true);
+    expect(isNodeEditable(literal1)).toBe(true);
   });
 
   it("should cancel the editability of activated node when Esc is pressed", async () => {
@@ -123,11 +121,11 @@ describe("when dealing with node activation,", () => {
     expect(cmb.getFocusedNode()).toBe(literal1);
 
     keyDown("Enter");
-    expect(literal1.isEditable!()).toBe(true);
+    expect(isNodeEditable(literal1)).toBe(true);
     insertText("sugarPlums");
 
     keyDown("Q", { altKey: true });
-    expect(literal1.isEditable!()).toBe(false);
+    expect(isNodeEditable(literal1)).toBe(false);
     expect(cmb.getValue()).toBe("11\n54");
   });
 });

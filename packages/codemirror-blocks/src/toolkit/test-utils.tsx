@@ -1,6 +1,10 @@
-import { API, CodeMirrorBlocksComponent, Language } from "../CodeMirrorBlocks";
+import {
+  API,
+  ASTNode,
+  CodeMirrorBlocksComponent,
+  Language,
+} from "../CodeMirrorBlocks";
 import { act, cleanup, render } from "@testing-library/react";
-// import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
 import React from "react";
 // pass along all the simulated events
 export * from "@bootstrapworld/cmb-toolkit/lib/simulate";
@@ -77,3 +81,10 @@ export async function mountCMB(language: Language): Promise<API> {
   cmb.setBlockMode(true);
   return cmb;
 }
+
+// TODO(pcardune): replace the element property on an ASTNode with this function
+export const elementForNode = (node: ASTNode) =>
+  document.getElementById(`block-node-${node.id}`);
+
+export const isNodeEditable = (node: ASTNode) =>
+  elementForNode(node)?.getAttribute("contenteditable") === "true";

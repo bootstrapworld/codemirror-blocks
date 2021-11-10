@@ -11,6 +11,7 @@ import {
   mouseDown,
   keyDown,
   mountCMB,
+  isNodeEditable,
 } from "../src/toolkit/test-utils";
 
 describe("The CodeMirrorBlocks Class", function () {
@@ -125,7 +126,7 @@ describe("The CodeMirrorBlocks Class", function () {
       cmb.getValue("(...)"); // blank should be inserted by parser, as '...'
       const blank = (cmb.getAst().rootNodes[0] as FunctionAppNode).fields.func;
       click(blank.element!);
-      expect(blank.isEditable!()).toBe(true);
+      expect(isNodeEditable(blank)).toBe(true);
       keyDown("Delete");
       cmb.getValue("(...)"); // deleting the blank should be a no-op
     });
