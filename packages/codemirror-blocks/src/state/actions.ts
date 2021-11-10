@@ -2,7 +2,6 @@ import {
   poscmp,
   srcRangeIncludes,
   warn,
-  setAfterDOMUpdate,
   createEditAnnouncement,
 } from "../utils";
 import { say, cancelAnnouncement } from "../announcer";
@@ -270,17 +269,13 @@ export function activateByNid(
       say("Use enter to edit", 1250, true); // wait 1.25s, and allow to be overridden
     }
 
-    setAfterDOMUpdate(() => {
-      dispatch(setFocusedNode(newNode));
-
-      // if this timeout fires after the node has been torn down, don't bother
-      if (newNode.element) {
-        if (options.allowMove) {
-          editor.scrollASTNodeIntoView(newNode);
-        }
-        newNode.element.focus();
+    dispatch(setFocusedNode(newNode));
+    if (newNode.element) {
+      if (options.allowMove) {
+        editor.scrollASTNodeIntoView(newNode);
       }
-    });
+      newNode.element.focus();
+    }
   };
 }
 

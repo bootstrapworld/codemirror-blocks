@@ -426,16 +426,19 @@ describe("when testing CM apis,", () => {
   });
 
   it("setCursor should work as-is for text, or activate the containing block", async () => {
-    cmb.setBlockMode(true);
-    await finishRender();
+    // first test setCursor in text mode
     cmb.setCursor({ line: 1, ch: 1 });
     expect(simpleCursor(cmb.getCursor())).toEqual({ line: 1, ch: 1 });
+
+    // now test setCursor in block mode
+    cmb.setBlockMode(true);
+    await finishRender();
+
     expect(currentFocusNId()).toBe(0);
     cmb.setCursor({ line: 0, ch: 1 });
-    expect(currentFocusNId()).toBe(0);
+    expect(cmb.getFocusedNode()!.nid).toBe(1);
     // activating the first block should return a cursor at its end
     expect(simpleCursor(cmb.getCursor())).toEqual({ line: 0, ch: 7 });
-    await finishRender();
   });
 
   it("setSelection", async () => {
