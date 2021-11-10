@@ -92,6 +92,7 @@ export const setBlockMode =
         type: "SET_BLOCK_MODE" as const,
         enabled,
       });
+      dispatch(setAST(result.value.newAst));
     }
     return result;
   };

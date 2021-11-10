@@ -212,7 +212,7 @@ function ToggleEditor(props: ToggleEditorProps) {
     title: string;
     content: ReactElement | string;
   }>(null);
-  const [ast, setAST] = useState(AST.from([]));
+  const ast = useSelector(selectors.getAST);
   const [recordedMarks, setRecordedMarks] = useState<
     Map<
       number,
@@ -242,8 +242,6 @@ function ToggleEditor(props: ToggleEditorProps) {
         });
         return;
       }
-      dispatch(actions.setAST(result.value.newAst));
-      setAST(result.value.newAst);
       // Preserve old TextMarkers
       setRecordedMarks(recordMarks(editor, result.value.oldAst, undefined));
       // Success! Set the state
