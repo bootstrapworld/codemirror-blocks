@@ -68,7 +68,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
   }, [isCollapsed]);
 
   const [editable, setEditable] = useState(false);
-  props.node.isEditable = () => editable;
 
   const [value, setValue] = useState<string | null | undefined>();
   const editor = useContext(EditorContext);
