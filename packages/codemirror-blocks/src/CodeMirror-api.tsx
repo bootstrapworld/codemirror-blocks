@@ -8,16 +8,9 @@ import { ASTNode, Pos } from "./ast";
 import { CodeMirrorFacade, isBlockNodeMarker } from "./editor";
 import type { AppDispatch } from "./state/store";
 import * as selectors from "./state/selectors";
-import { BlockError, validateRanges } from "./utils";
+import { BlockError, getTempCM, maxpos, minpos, poscmp } from "./utils";
 import CodeMirror, { SelectionOptions } from "codemirror";
-import {
-  activateByNid,
-  setCursor,
-  setSelections,
-  extendSelections,
-  replaceSelections,
-  listSelections,
-} from "./state/actions";
+import * as actions from "./state/actions";
 import type { Language } from "./CodeMirrorBlocks";
 import { AST } from "./ast";
 
@@ -82,7 +75,11 @@ export const buildAPI = (
   const withState = <F extends (state: RootState) => any>(func: F) =>
     dispatch((_, getState) => func(getState()));
 
-  const api: BuiltAPI = {
+  const api: BuiltAPI &
+    Pick<
+      CodeMirrorAPI,
+      "listSelections" | "setSelections" | "replaceSelections"
+    > = {
     /*****************************************************************
      * CM APIs WE WANT TO OVERRIDE
      */
@@ -137,60 +134,149 @@ export const buildAPI = (
       editor.codemirror.hasFocus() ||
       Boolean(document.activeElement?.id.match(/block-node/)),
     extendSelection: (from: Pos, to: Pos, opts?: SelectionOptions) =>
-      dispatch(extendSelections(editor, [from], opts, to)),
+      withState((state) => {
+        const tmpCM = getTempCM(editor);
+        tmpCM.setSelections(api.listSelections());
+        tmpCM.extendSelections([from], opts);
+        const { nodeIds, textRanges } = validateSelectionRanges(
+          state,
+          editor,
+          tmpCM.listSelections(),
+          undefined,
+          opts
+        );
+        editor.codemirror.setSelections(textRanges, undefined, opts);
+        dispatch(actions.setSelectedNodeIds(nodeIds));
+      }),
+
+    /**
+     * Override CM's native extendSelections method, restricting it to the semantics
+     * that make sense in a block editor (must include only valid node ranges)
+     */
     extendSelections: (heads, opts) =>
-      dispatch(extendSelections(editor, heads, opts, undefined)),
+      withState((state) => {
+        const tmpCM = getTempCM(editor);
+        tmpCM.setSelections(api.listSelections());
+        tmpCM.extendSelection(heads[0], undefined, opts);
+        // if one of the ranges is invalid, changeSelections will raise an error
+        const { nodeIds, textRanges } = validateSelectionRanges(
+          state,
+          editor,
+          tmpCM.listSelections(),
+          undefined,
+          opts
+        );
+        editor.codemirror.setSelections(textRanges, undefined, opts);
+        dispatch(actions.setSelectedNodeIds(nodeIds));
+      }),
     extendSelectionsBy: (
       f: (range: CodeMirror.Range) => Pos,
       opts?: SelectionOptions
     ) =>
-      dispatch(
-        extendSelections(
+      withState((state) => {
+        const tmpCM = getTempCM(editor);
+        tmpCM.setSelections(api.listSelections());
+        tmpCM.extendSelection(api.listSelections().map(f)[0], undefined, opts);
+        // if one of the ranges is invalid, validateSelectionRanges will raise an error
+        const { nodeIds, textRanges } = validateSelectionRanges(
+          state,
           editor,
-          listSelections(editor, dispatch).map(f),
-          opts,
-          undefined
-        )
-      ),
+          tmpCM.listSelections(),
+          undefined,
+          opts
+        );
+        editor.codemirror.setSelections(textRanges, undefined, opts);
+        dispatch(actions.setSelectedNodeIds(nodeIds));
+      }),
     getSelections: (sep?: string) =>
-      listSelections(editor, dispatch).map((s) =>
-        editor.codemirror.getRange(s.anchor, s.head, sep)
-      ),
+      api
+        .listSelections()
+        .map((s) => editor.codemirror.getRange(s.anchor, s.head, sep)),
     getSelection: (sep?: string) =>
-      listSelections(editor, dispatch)
+      api
+        .listSelections()
         .map((s) => editor.codemirror.getRange(s.anchor, s.head, sep))
         .join(sep),
-    listSelections: () => listSelections(editor, dispatch),
+    /**
+     * Override CM's native listSelections method, using the selection
+     * state from the block editor
+     */
+    listSelections: () =>
+      withState((state) => {
+        const selections = selectors.getSelectedNodes(state);
+        const tmpCM = getTempCM(editor);
+        // write all the ranges for all selected nodes
+        selections.forEach((node) => tmpCM.addSelection(node.from, node.to));
+        // write all the existing selection ranges
+        editor.codemirror
+          .listSelections()
+          .map((s) => tmpCM.addSelection(s.anchor, s.head));
+        // return all the selections
+        return tmpCM.listSelections();
+      }),
     replaceRange: (text, from, to, origin) =>
       withState((state) => {
         validateRanges([{ anchor: from, head: to }], selectors.getAST(state));
         editor.codemirror.replaceRange(text, from, to, origin);
       }),
     setSelections: (ranges, primary, opts) =>
-      dispatch(setSelections(editor, ranges, primary, opts)),
+      withState((state) => {
+        const { nodeIds, textRanges } = validateSelectionRanges(
+          state,
+          editor,
+          ranges,
+          primary,
+          opts
+        );
+        editor.codemirror.setSelections(textRanges, primary, opts);
+        dispatch(actions.setSelectedNodeIds(nodeIds));
+      }),
     setSelection: (anchor, head = anchor, opts) =>
-      dispatch(
-        setSelections(editor, [{ anchor: anchor, head: head }], undefined, opts)
-      ),
+      api.setSelections([{ anchor: anchor, head: head }], undefined, opts),
     addSelection: (anchor, head) =>
-      dispatch(
-        setSelections(
-          editor,
-          [{ anchor: anchor, head: head ?? anchor }],
-          undefined,
-          undefined,
-          false
-        )
-      ),
+      withState((state) => {
+        const { nodeIds, textRanges } = validateSelectionRanges(state, editor, [
+          { anchor: anchor, head: head ?? anchor },
+        ]);
+        if (textRanges.length) {
+          editor.codemirror.addSelection(
+            textRanges[0].anchor,
+            textRanges[0].head
+          );
+        }
+        dispatch(actions.setSelectedNodeIds(nodeIds));
+      }),
+
+    /**
+     * Override CM's native replaceSelections method, restricting it to the semantics
+     * that make sense in a block editor (must include only valid node ranges)
+     */
     replaceSelections: (rStrings, select?: "around" | "start") =>
-      dispatch(replaceSelections(editor, rStrings, select)),
+      withState((state) => {
+        const tmpCM: CodeMirror.Editor = getTempCM(editor);
+        tmpCM.setSelections(api.listSelections());
+        tmpCM.replaceSelections(rStrings, select);
+        editor.setValue(tmpCM.getValue());
+        if (select == "around") {
+          // if one of the ranges is invalid, validateSelectionRanges will raise an error
+          const { nodeIds, textRanges } = validateSelectionRanges(
+            state,
+            editor,
+            tmpCM.listSelections()
+          );
+          editor.codemirror.setSelections(textRanges);
+          dispatch(actions.setSelectedNodeIds(nodeIds));
+        }
+        const cur =
+          select == "start"
+            ? tmpCM.listSelections().pop()?.head
+            : tmpCM.listSelections().pop()?.anchor;
+        actions.setCursor(editor, cur ?? null);
+      }),
     replaceSelection: (rString, select?: "around" | "start") =>
-      dispatch(
-        replaceSelections(
-          editor,
-          Array(listSelections(editor, dispatch).length).fill(rString),
-          select
-        )
+      api.replaceSelections(
+        Array(api.listSelections().length).fill(rString),
+        select
       ),
     // Restrict CM's getCursor() to  block editor semantics
     getCursor: (where) => {
@@ -223,13 +309,13 @@ export const buildAPI = (
         const node = ast.getNodeContaining(cur);
         if (node) {
           dispatch(
-            activateByNid(editor, node.nid, {
+            actions.activateByNid(editor, node.nid, {
               record: false,
               allowMove: true,
             })
           );
         }
-        dispatch(setCursor(editor, cur));
+        dispatch(actions.setCursor(editor, cur));
       }),
     // As long as widget isn't defined, we're good to go
     setBookmark: (pos, opts) => {
@@ -293,7 +379,9 @@ export const buildAPI = (
       }
       // convert nid to node id, and use activate to generate the action
       else if (activity.type == "SET_FOCUS") {
-        dispatch(activateByNid(editor, activity.nid, { allowMove: true }));
+        dispatch(
+          actions.activateByNid(editor, activity.nid, { allowMove: true })
+        );
         return;
       } else {
         action = activity;
@@ -314,3 +402,69 @@ export const buildAPI = (
   );
   return api;
 };
+
+/**
+ * Validate and modify selection ranges to match the semantics
+ * that make sense in a block editor (must include only valid node ranges)
+ */
+const validateSelectionRanges = (
+  state: RootState,
+  editor: CodeMirrorFacade,
+  ranges: { anchor: Pos; head: Pos }[],
+  primary?: number,
+  options?: { bias?: number; origin?: string; scroll?: boolean }
+) => {
+  const ast = selectors.getAST(state);
+  const tmpCM = getTempCM(editor);
+  tmpCM.setSelections(ranges, primary, options);
+  const textRanges: {
+    anchor: Pos;
+    head: Pos;
+  }[] = [];
+  const nodeIds: string[] = [];
+  try {
+    validateRanges(ranges, ast);
+  } catch (e) {
+    throw new BlockError(e, "API Error");
+  }
+  // process the selection ranges into an array of ranges and nodes
+  tmpCM.listSelections().forEach(({ anchor, head }) => {
+    const c1 = minpos(anchor, head);
+    const c2 = maxpos(anchor, head);
+    const node = ast.getNodeAt(c1, c2);
+    if (node) {
+      nodeIds.push(node.id);
+    } else {
+      textRanges.push({ anchor: anchor, head: head });
+    }
+  });
+  return { nodeIds, textRanges };
+};
+
+function validateRanges(ranges: { anchor: Pos; head?: Pos }[], ast: AST) {
+  ranges.forEach(({ anchor, head }) => {
+    const c1 = head ? minpos(anchor, head) : anchor;
+    const c2 = head ? maxpos(anchor, head) : anchor;
+    if (ast.getNodeAt(c1, c2)) {
+      return; // if there's a node, it's a valid range
+    }
+    // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
+    const N1 = ast.getNodeContaining(c1); // get node containing c1
+    const N2 = ast.getNodeContaining(c2); // get node containing c2
+    const c1IsTopLevel =
+      !N1 ||
+      (!ast.getNodeParent(N1) && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
+    const c2IsTopLevel =
+      !N2 ||
+      (!ast.getNodeParent(N2) && (!poscmp(c2, N2.from) || !poscmp(c2, N2.to)));
+
+    // If they're both top-level, it's a valid text range
+    if (c1IsTopLevel && c2IsTopLevel) {
+      return;
+    }
+
+    // Otherwise, the range is neither toplevel OR falls neatly on a node boundary
+    throw `The range {line:${c1.line}, ch:${c1.ch}}, {line:${c2.line}, 
+      ch:${c2.ch}} partially covers a node, which is not allowed`;
+  });
+}
