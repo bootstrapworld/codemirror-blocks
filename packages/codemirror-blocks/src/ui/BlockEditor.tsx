@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { activateByNid, setCursor } from "../state/actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
@@ -12,7 +12,7 @@ import { keyDown } from "../keymap";
 import type { AST } from "../ast";
 import CodeMirror from "codemirror";
 import type { Options, Language } from "../CodeMirrorBlocks";
-import type { AppDispatch } from "../state/store";
+import type { AppDispatch, AppStore } from "../state/store";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
@@ -41,6 +41,7 @@ export type BlockEditorProps = {
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language, passedAST } = props;
   const dispatch: AppDispatch = useDispatch();
+  const store: AppStore = useStore();
   const ast = useSelector(selectors.getAST);
   const quarantine = useSelector(selectors.getQuarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
@@ -163,7 +164,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    props.onMount(editor, buildAPI(editor, dispatch, language), passedAST);
+    props.onMount(editor, buildAPI(editor, store, language), passedAST);
   };
 
   /**
