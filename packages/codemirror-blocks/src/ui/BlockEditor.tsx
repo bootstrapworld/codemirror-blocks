@@ -35,11 +35,10 @@ export type BlockEditorProps = {
   keyDownHelpers: AppHelpers;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
-  passedAST: AST;
 };
 
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
-  const { language, passedAST } = props;
+  const { language } = props;
   const dispatch: AppDispatch = useDispatch();
   const store: AppStore = useStore();
   const ast = useSelector(selectors.getAST);
@@ -146,13 +145,12 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     );
 
     // set AST and search properties and collapse preferences
-    dispatch(actions.setAST(passedAST));
     if (options.collapseAll) {
       dispatch(actions.collapseAll());
     }
 
     // When the editor receives focus, select the first root (if it exists)
-    const firstRoot = passedAST.getFirstRootNode();
+    const firstRoot = ast.getFirstRootNode();
     if (firstRoot) {
       dispatch(actions.setFocusedNode(firstRoot));
     }
@@ -164,7 +162,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    props.onMount(editor, buildAPI(editor, store, language), passedAST);
+    props.onMount(editor, buildAPI(editor, store, language), ast);
   };
 
   /**

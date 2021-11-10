@@ -242,6 +242,7 @@ function ToggleEditor(props: ToggleEditorProps) {
         });
         return;
       }
+      dispatch(actions.setAST(result.value.newAst));
       setAST(result.value.newAst);
       // Preserve old TextMarkers
       setRecordedMarks(recordMarks(editor, result.value.oldAst, undefined));
@@ -355,7 +356,6 @@ function ToggleEditor(props: ToggleEditorProps) {
               }}
               value={code}
               onMount={handleEditorMounted}
-              passedAST={ast}
               // the props below are unique to the BlockEditor
               language={props.language}
               options={{
