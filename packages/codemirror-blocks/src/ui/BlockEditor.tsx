@@ -7,7 +7,7 @@ import { activateByNid, setCursor } from "../state/actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
-import { BlockError, setAfterDOMUpdate } from "../utils";
+import { BlockError } from "../utils";
 import { keyDown } from "../keymap";
 import type { AST } from "../ast";
 import CodeMirror from "codemirror";
@@ -173,21 +173,19 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
    * Otherwise grab the focusId, compute NId, and activate
    */
   const handleTopLevelFocus = (editor: ReadonlyCMBEditor) => {
-    setAfterDOMUpdate(() => {
-      dispatch((_, getState) => {
-        const ast = selectors.getAST(getState());
-        const focusedNode = selectors.getFocusedNode(getState());
-        const { cur } = getState();
-        if (cur != null) {
-          return; // if we already have a cursor, bail
-        }
-        const node = focusedNode || ast.getFirstRootNode();
-        dispatch(
-          activateByNid(editor, node && node.nid, {
-            allowMove: true,
-          })
-        );
-      });
+    dispatch((_, getState) => {
+      const ast = selectors.getAST(getState());
+      const focusedNode = selectors.getFocusedNode(getState());
+      const { cur } = getState();
+      if (cur != null) {
+        return; // if we already have a cursor, bail
+      }
+      const node = focusedNode || ast.getFirstRootNode();
+      dispatch(
+        activateByNid(editor, node && node.nid, {
+          allowMove: true,
+        })
+      );
     });
   };
 
