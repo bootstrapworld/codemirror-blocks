@@ -23,7 +23,7 @@ describe("when dealing with node activation,", () => {
   let literal1!: ASTNode;
   let literal2!: ASTNode;
   beforeEach(async () => {
-    cmb = await mountCMB(wescheme);
+    cmb = mountCMB(wescheme).cmb;
     cmb.setValue("11\n54");
     const ast = cmb.getAst();
     literal1 = ast.rootNodes[0];
@@ -136,7 +136,7 @@ describe("cut/copy/paste", () => {
   let literal2!: ASTNode;
 
   beforeEach(async () => {
-    cmb = await mountCMB(wescheme);
+    cmb = mountCMB(wescheme).cmb;
 
     cmb.setValue("11\n54");
     const ast = cmb.getAst();
@@ -181,7 +181,7 @@ describe("tree navigation", () => {
   let lastNode: ASTNode;
 
   beforeEach(async () => {
-    cmb = await mountCMB(wescheme);
+    cmb = mountCMB(wescheme).cmb;
 
     cmb.setValue("(+ 1 2 3) 99 (* 7 (* 1 2))");
     const ast = cmb.getAst();
@@ -332,7 +332,7 @@ describe("when dealing with node selection, ", () => {
   let literal2!: ASTNode;
   let expr!: FunctionAppNode;
   beforeEach(async () => {
-    cmb = await mountCMB(wescheme);
+    cmb = mountCMB(wescheme).cmb;
 
     cmb.setValue("11\n54\n(+ 1 2)");
     const ast = cmb.getAst();

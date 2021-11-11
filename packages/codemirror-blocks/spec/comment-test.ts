@@ -1,6 +1,10 @@
+import { act } from "@testing-library/react";
 import { ASTNode } from "../src/ast";
 import { API } from "../src/CodeMirrorBlocks";
+import { Pos } from "../src/editor";
 import wescheme from "../src/languages/wescheme";
+import * as actions from "../src/state/actions";
+import { AppStore } from "../src/state/store";
 
 import { wait, teardown, click, mountCMB } from "../src/toolkit/test-utils";
 
@@ -8,8 +12,15 @@ const QUARANTINE_DELAY = 2000;
 
 describe("When editing and moving commented nodes", function () {
   let cmb!: API;
-  beforeEach(async function () {
-    cmb = await mountCMB(wescheme);
+  let store!: AppStore;
+  const setQuarantine = (start: Pos, end: Pos, text: string) =>
+    act(() => {
+      store.dispatch(actions.setQuarantine(start, end, text));
+    });
+  beforeEach(() => {
+    const mounted = mountCMB(wescheme);
+    cmb = mounted.cmb;
+    store = mounted.store;
   });
 
   afterEach(function () {
@@ -41,11 +52,7 @@ describe("When editing and moving commented nodes", function () {
 
     // TODO(pcardune) reenable
     xit("you should be able to insert a commented node after a commented node", async function () {
-      cmb.setQuarantine(
-        { line: 3, ch: 1 },
-        { line: 3, ch: 1 },
-        "1 #| comment1 |#"
-      );
+      setQuarantine({ line: 3, ch: 1 }, { line: 3, ch: 1 }, "1 #| comment1 |#");
       await wait(QUARANTINE_DELAY);
       click(expr0);
       expect(cmb.getValue()).toBe(`(comment free)
@@ -57,7 +64,7 @@ describe("When editing and moving commented nodes", function () {
 
     // TODO(pcardune) reenable
     xit("you should be able to insert a commented node after an uncommented node", async function () {
-      cmb.setQuarantine(
+      setQuarantine(
         { line: 0, ch: 14 },
         { line: 0, ch: 14 },
         "1 #| comment1 |#"

@@ -12,7 +12,7 @@ describe("The CodeMirrorBlocks Class", function () {
     let literal1!: ASTNode;
     let expression!: ASTNode<{ args: ASTNode[] }>;
     beforeEach(async function () {
-      cmb = await mountCMB(wescheme);
+      cmb = mountCMB(wescheme).cmb;
       cmb.setValue("11\n12\n(+ 3 4 5)");
       cmb.getAllMarks().forEach((m) => m.clear());
       ast = cmb.getAst();

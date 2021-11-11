@@ -21,7 +21,7 @@ describe("focusing,", () => {
   let literal3!: ASTNode;
 
   beforeEach(async () => {
-    cmb = await mountCMB(wescheme);
+    cmb = mountCMB(wescheme).cmb;
     cmb.setValue("(+ 1 2 3)");
     expression = cmb.getAst().rootNodes[0] as FunctionAppNode;
     func = expression.fields.func;

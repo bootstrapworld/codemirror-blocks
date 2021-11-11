@@ -1,9 +1,4 @@
-import type {
-  Activity,
-  AppAction,
-  RootState,
-  Quarantine,
-} from "./state/reducers";
+import type { Activity, AppAction, RootState } from "./state/reducers";
 import { ASTNode, Pos } from "./ast";
 import { CodeMirrorFacade, isBlockNodeMarker } from "./editor";
 import type { AppStore } from "./state/store";
@@ -144,12 +139,6 @@ type BlockModeAPI = {
   /**
    * @internal
    */
-  getQuarantine(): Quarantine | null;
-
-  /**
-   * @internal
-   */
-  setQuarantine(start: Pos, end: Pos, txt: string): void;
   executeAction(activity: Activity): void;
 } & Partial<Omit<CodeMirror.Editor, typeof unsupportedAPIs[number]>>;
 
@@ -498,14 +487,6 @@ const buildBlockModeAPI = (
     /*****************************************************************
      * APIs FOR TESTING
      */
-    getQuarantine: () => selectors.getQuarantine(store.getState()),
-    setQuarantine: (start, end, text) =>
-      store.dispatch({
-        type: "SET_QUARANTINE",
-        start: start,
-        end: end,
-        text: text,
-      }),
     /**
      * @internal
      * Used for reproducing/debugging prior interactions

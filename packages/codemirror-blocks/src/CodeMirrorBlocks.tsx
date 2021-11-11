@@ -14,7 +14,7 @@ import * as Pretty from "pretty-fast-pretty-printer";
 import { PrimitiveGroup } from "./parsers/primitives";
 import type { Primitive } from "./parsers/primitives";
 import Context from "./components/Context";
-import { createAppStore } from "./state/store";
+import { AppStore, createAppStore } from "./state/store";
 import { API, buildAPI } from "./CodeMirror-api";
 export type { API };
 
@@ -87,14 +87,15 @@ type Props = {
   options?: Options;
   language: Language;
   codemirrorOptions?: CodeMirror.EditorConfiguration;
+  store?: AppStore;
 };
 export const CodeMirrorBlocksComponent = ({
   onMount,
   options = {},
   language,
   codemirrorOptions = {},
+  store = createAppStore(options.value),
 }: Props) => {
-  const store = createAppStore(options.value);
   return (
     <Context store={store}>
       <ToggleEditor

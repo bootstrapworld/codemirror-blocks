@@ -28,7 +28,7 @@ describe("when testing CM apis,", () => {
   const currentThirdRoot = () => roots()[2];
 
   beforeEach(async () => {
-    cmb = await mountCMB(wescheme);
+    cmb = mountCMB(wescheme).cmb;
     cmb.setBlockMode(false);
     cmb.setValue(`(+ 1 2)\ny`);
   });
