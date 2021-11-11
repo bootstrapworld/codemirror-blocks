@@ -23,7 +23,7 @@ type BasePrimitiveProps = {
 
 // @pcardune - I still needed to cast the ref here, in order to satisfy TS
 export const Primitive = React.forwardRef<HTMLElement, BasePrimitiveProps>(
-  (props, ref: React.RefObject<HTMLElement>) => {
+  (props, ref) => {
     const { primitive, className, onFocus } = props;
     const [_, connectDragSource, connectDragPreview] = useDrag({
       type: ItemTypes.NODE,
@@ -31,7 +31,6 @@ export const Primitive = React.forwardRef<HTMLElement, BasePrimitiveProps>(
     });
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      console.log(e, primitive);
       switch (defaultKeyMap[CodeMirror.keyName(e)]) {
         case "Copy": {
           e.preventDefault();
