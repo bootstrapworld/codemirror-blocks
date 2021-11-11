@@ -1,6 +1,14 @@
 import * as P from "pretty-fast-pretty-printer";
 import React from "react";
-import { ASTNode, enumerateList, NodeOptions, pluralize, Pos } from "./ast";
+import {
+  ASTNode,
+  ASTNodeProps,
+  enumerateList,
+  NodeForSpec,
+  NodeOptions,
+  pluralize,
+  Pos,
+} from "./ast";
 import Node from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
@@ -18,7 +26,7 @@ import * as Spec from "./nodeSpec";
 function withComment(
   doc: P.Doc,
   comment: ASTNode | undefined,
-  container: ASTNode
+  container: NodeForSpec
 ): P.Doc {
   if (comment) {
     // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
@@ -32,13 +40,107 @@ function withComment(
   }
 }
 
+type ASTSpecConfig = { [key: string]: Spec.NodeSpec };
+
+type ASTSpec<NodeSpecs extends ASTSpecConfig> = {
+  config: NodeSpecs;
+
+  /**
+   * Checks whether the given node is of the given type.
+   *
+   * This is a typeguard that can be used for type narrowing
+   * @param type The type of node you want to check against
+   * @param node The ASTNode instance to check
+   * @returns
+   */
+  isNodeOfType<T extends keyof NodeSpecs>(
+    node: ASTNode,
+    type: T
+  ): node is ASTNode<NodeSpecs[T], Spec.FieldsForSpec<NodeSpecs[T]>>;
+
+  /**
+   * Create a node that conforms to the specification for this AST.
+   */
+  makeNode<T extends keyof NodeSpecs>(
+    props: Omit<ASTNodeProps<NodeSpecs[T]>, "spec"> & {
+      type: T;
+    }
+  ): ASTNode<NodeSpecs[T], Spec.FieldsForSpec<NodeSpecs[T]>>;
+};
+
+export function createASTSpec<NodeSpecs extends ASTSpecConfig>(
+  config: NodeSpecs = {} as NodeSpecs
+): ASTSpec<NodeSpecs> {
+  return {
+    config,
+    isNodeOfType<T extends keyof NodeSpecs>(
+      node: ASTNode,
+      type: T
+    ): node is ASTNode<NodeSpecs[T], Spec.FieldsForSpec<NodeSpecs[T]>> {
+      return node.type === type;
+    },
+    makeNode<T extends keyof NodeSpecs>(
+      props: Omit<ASTNodeProps<NodeSpecs[T]>, "spec"> & {
+        type: T;
+      }
+    ): ASTNode<NodeSpecs[T], Spec.FieldsForSpec<NodeSpecs[T]>> {
+      return new ASTNode({ ...props, spec: config[props.type] });
+    },
+  };
+}
+
+const specs = {
+  unknown: Spec.nodeSpec([Spec.list("elts")]),
+  functionApp: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
+  identifierList: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
+  structDefinition: Spec.nodeSpec([
+    Spec.required("name"),
+    Spec.required("fields"),
+  ]),
+  variableDefinition: Spec.nodeSpec([
+    Spec.required("name"),
+    Spec.required("body"),
+  ]),
+  lambdaExpression: Spec.nodeSpec([
+    Spec.required("args"),
+    Spec.required("body"),
+  ]),
+  functionDefinition: Spec.nodeSpec([
+    Spec.required("name"),
+    Spec.required("params"),
+    Spec.required("body"),
+  ]),
+  condClause: Spec.nodeSpec([
+    Spec.required("testExpr"),
+    Spec.list("thenExprs"),
+  ]),
+  condExpression: Spec.nodeSpec([Spec.list("clauses")]),
+  ifExpression: Spec.nodeSpec([
+    Spec.required("testExpr"),
+    Spec.required("thenExpr"),
+    Spec.required("elseExpr"),
+  ]),
+  literal: Spec.nodeSpec([
+    Spec.value<string, "value">("value"),
+    Spec.value("dataType"),
+  ]),
+  comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")]),
+  blank: Spec.nodeSpec([
+    Spec.value<string, "value">("value"),
+    Spec.value("dataType"),
+  ]),
+  sequence: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
+};
+
+export const CoreAST = createASTSpec(specs);
+
 export function Unknown(
   from: Pos,
   to: Pos,
   elts: ASTNode[],
   options: NodeOptions = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "unknown",
@@ -76,7 +178,6 @@ export function Unknown(
           .join(", ")
       );
     },
-    spec: Spec.nodeSpec([Spec.list("elts")]),
   });
 }
 
@@ -88,7 +189,7 @@ export function FunctionApp(
   args: ASTNode[],
   options: NodeOptions = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "functionApp",
@@ -134,7 +235,6 @@ export function FunctionApp(
           node.fields.args.map((a) => a.describe(level)).join(", ")
         );
     },
-    spec: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
   });
 }
 
@@ -145,7 +245,7 @@ export function IdentifierList(
   ids: ASTNode[],
   options: NodeOptions = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "identifierList",
@@ -165,7 +265,6 @@ export function IdentifierList(
     longDescription(node, level) {
       return enumerateList(node.fields.ids, level);
     },
-    spec: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
   });
 }
 
@@ -176,7 +275,7 @@ export function StructDefinition(
   fields: ASTNode,
   options: NodeOptions = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "structDefinition",
@@ -210,7 +309,6 @@ export function StructDefinition(
         level
       )} to be a structure with ${node.fields.fields.describe(level)}`;
     },
-    spec: Spec.nodeSpec([Spec.required("name"), Spec.required("fields")]),
   });
 }
 
@@ -221,7 +319,7 @@ export function VariableDefinition(
   body: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "variableDefinition",
@@ -254,7 +352,6 @@ export function VariableDefinition(
         node.fields.name
       } to be ${insert} ${node.fields.body.describe(level)}`;
     },
-    spec: Spec.nodeSpec([Spec.required("name"), Spec.required("body")]),
   });
 }
 
@@ -265,7 +362,7 @@ export function LambdaExpression(
   body: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "lambdaExpression",
@@ -288,14 +385,15 @@ export function LambdaExpression(
       );
     },
     longDescription(node, level) {
-      return `an anonymous function of ${pluralize(
-        "argument",
-        node.fields.args.fields.ids
-      )}: 
-                ${node.fields.args.describe(level)}, with body:
-                ${node.fields.body.describe(level)}`;
+      if (CoreAST.isNodeOfType(node.fields.args, "identifierList")) {
+        return `an anonymous function of ${pluralize(
+          "argument",
+          node.fields.args.fields.ids
+        )}: 
+            ${node.fields.args.describe(level)}, with body:
+            ${node.fields.body.describe(level)}`;
+      }
     },
-    spec: Spec.nodeSpec([Spec.required("args"), Spec.required("body")]),
   });
 }
 
@@ -307,7 +405,7 @@ export function FunctionDefinition(
   body: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "functionDefinition",
@@ -341,11 +439,6 @@ export function FunctionDefinition(
                 ${node.fields.params.describe(level)}, with body:
                 ${node.fields.body.describe(level)}`;
     },
-    spec: Spec.nodeSpec([
-      Spec.required("name"),
-      Spec.required("params"),
-      Spec.required("body"),
-    ]),
   });
 }
 
@@ -356,7 +449,7 @@ export function CondClause(
   thenExprs: ASTNode[],
   options = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "condClause",
@@ -392,7 +485,6 @@ export function CondClause(
         level
       )}, then, ${node.fields.thenExprs.map((te) => te.describe(level))}`;
     },
-    spec: Spec.nodeSpec([Spec.required("testExpr"), Spec.list("thenExprs")]),
   });
 }
 
@@ -402,7 +494,7 @@ export function CondExpression(
   clauses: ASTNode[],
   options = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "condExpression",
@@ -427,7 +519,6 @@ export function CondExpression(
       )}: 
                 ${node.fields.clauses.map((c) => c.describe(level))}`;
     },
-    spec: Spec.nodeSpec([Spec.list("clauses")]),
   });
 }
 
@@ -439,7 +530,7 @@ export function IfExpression(
   elseExpr: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "ifExpression",
@@ -483,11 +574,6 @@ export function IfExpression(
         `else ${node.fields.elseExpr.describe(level)}`
       );
     },
-    spec: Spec.nodeSpec([
-      Spec.required("testExpr"),
-      Spec.required("thenExpr"),
-      Spec.required("elseExpr"),
-    ]),
   });
 }
 
@@ -499,7 +585,7 @@ export function Literal(
   dataType = "unknown",
   options = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "literal",
@@ -516,12 +602,11 @@ export function Literal(
         </Node>
       );
     },
-    spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
   });
 }
 
 export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "comment",
@@ -541,7 +626,6 @@ export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
         </span>
       );
     },
-    spec: Spec.nodeSpec([Spec.value("comment")]),
   });
 }
 
@@ -552,7 +636,7 @@ export function Blank(
   dataType = "blank",
   options = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "blank",
@@ -566,19 +650,19 @@ export function Blank(
         </Node>
       );
     },
-    spec: Spec.nodeSpec([Spec.value("value"), Spec.value("dataType")]),
   });
 }
 
-export type SequenceNode = ASTNode<{ name: ASTNode; exprs: ASTNode[] }>;
+export type SequenceNode = ReturnType<typeof Sequence>;
+export type NodeForSequenceSpec = NodeForSpec<typeof specs["sequence"]>;
 export const SequenceProps = {
-  pretty: (node: SequenceNode) =>
-    P.vert(node.fields.name, ...node.fields.exprs),
-  render(props: { node: SequenceNode }) {
+  pretty: (node: NodeForSequenceSpec) =>
+    P.vert(node.fields.name || "", ...node.fields.exprs),
+  render(props: { node: NodeForSequenceSpec }) {
     return (
       <Node {...props}>
         <span className="blocks-operator">
-          {props.node.fields.name.reactElement()}
+          {props.node.fields.name?.reactElement()}
         </span>
         <span className="blocks-sequence-exprs">
           <Args field="exprs">{props.node.fields.exprs}</Args>
@@ -586,10 +670,9 @@ export const SequenceProps = {
       </Node>
     );
   },
-  longDescription(node: SequenceNode, level: number) {
+  longDescription(node: NodeForSequenceSpec, level: number) {
     return `a sequence containing ${enumerateList(node.fields.exprs, level)}`;
   },
-  spec: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
 };
 export function Sequence(
   from: Pos,
@@ -598,7 +681,7 @@ export function Sequence(
   name: ASTNode,
   options = {}
 ) {
-  return new ASTNode({
+  return CoreAST.makeNode({
     from,
     to,
     type: "sequence",
