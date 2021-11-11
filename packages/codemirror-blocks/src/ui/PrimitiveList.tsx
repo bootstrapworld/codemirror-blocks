@@ -49,7 +49,6 @@ export const Primitive = React.forwardRef(
     const elem = (
       <span
         tabIndex={-1}
-        id={"toolbar-" + primitive.name}
         onKeyDown={handleKeyDown}
         onFocus={onFocus}
         ref={ref as React.Ref<HTMLSpanElement>}
