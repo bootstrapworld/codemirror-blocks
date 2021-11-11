@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import classNames from "classnames";
 import PrimitiveList from "./PrimitiveList";
 import { Primitive, PrimitiveGroup } from "../parsers/primitives";
@@ -20,7 +20,7 @@ const Toolbar = (props: Props) => {
   const clearSearch = () => setSearch("");
   const changeSearch: React.ChangeEventHandler<HTMLInputElement> = (event) =>
     setSearch(event.target.value);
-  const primitiveListRef = React.createRef<HTMLElement>();
+  const primitiveListRef = useRef<HTMLUListElement>(null);
 
   // Get a flat array of all primitives matching 'search'
   const getPrimitives = () =>

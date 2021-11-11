@@ -110,108 +110,109 @@ type PrimitiveListProps = {
   primitives?: LanguagePrimitive[];
   searchString?: string;
 };
-export const PrimitiveList = React.forwardRef<HTMLElement, PrimitiveListProps>(
-  (props: PrimitiveListProps, ref) => {
-    const {
-      primitives = [],
-      selected,
-      setSelectedPrimitive,
-      selectedPrimitive,
-      toolbarRef,
-      searchString,
-    } = props;
+export const PrimitiveList = React.forwardRef<
+  HTMLUListElement,
+  PrimitiveListProps
+>((props: PrimitiveListProps, ref) => {
+  const {
+    primitives = [],
+    selected,
+    setSelectedPrimitive,
+    selectedPrimitive,
+    toolbarRef,
+    searchString,
+  } = props;
 
-    const primitiveRefs = primitives.map(() => useRef<HTMLSpanElement>(null));
+  const primitiveRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
-    const renderGroup = (g: PrimitiveGroupModel, i: number) => (
-      <PrimitiveGroup
-        key={g.name}
-        group={g}
-        selected={selected}
-        selectedPrimitive={selectedPrimitive}
-        toolbarRef={toolbarRef}
-        setSelectedPrimitive={setSelectedPrimitive}
-      />
-    );
+  const renderGroup = (g: PrimitiveGroupModel, _i: number) => (
+    <PrimitiveGroup
+      key={g.name}
+      group={g}
+      selected={selected}
+      selectedPrimitive={selectedPrimitive}
+      toolbarRef={toolbarRef}
+      setSelectedPrimitive={setSelectedPrimitive}
+    />
+  );
 
-    const renderPrimitive = (p: LanguagePrimitive, i: number) => (
-      <Primitive
-        key={p.name}
-        primitive={p}
-        onFocus={() => setSelectedPrimitive(p)}
-        className={selected == p.name ? "selected" : ""}
-        ref={primitiveRefs[i]}
-      />
-    );
+  const renderPrimitive = (p: LanguagePrimitive, i: number) => (
+    <Primitive
+      key={p.name}
+      primitive={p}
+      onFocus={() => setSelectedPrimitive(p)}
+      className={selected == p.name ? "selected" : ""}
+      ref={(el) => (primitiveRefs.current[i] = el)}
+    />
+  );
 
-    // Set selectedPrimitive state, depending on whether we go up or down
-    const move = (event: React.KeyboardEvent, dir: "Up" | "Down") => {
-      if (!selectedPrimitive || primitives.length == 0) {
-        return; // Nothing to select. Bail.
-      }
+  // Set selectedPrimitive state, depending on whether we go up or down
+  const move = (event: React.KeyboardEvent, dir: "Up" | "Down") => {
+    if (!selectedPrimitive || primitives.length == 0) {
+      return; // Nothing to select. Bail.
+    }
 
-      // compute the index of the newly-selected primitive
-      let newIndex;
-      const prevIndex = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
-      if (dir == "Down") {
-        newIndex = Math.min(prevIndex + 1, primitives.length - 1);
-      } else {
-        newIndex = Math.max(prevIndex - 1, 0);
-      }
+    // compute the index of the newly-selected primitive
+    let newIndex;
+    const prevIndex = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
+    if (dir == "Down") {
+      newIndex = Math.min(prevIndex + 1, primitives.length - 1);
+    } else {
+      newIndex = Math.max(prevIndex - 1, 0);
+    }
 
-      // focus on the new DOM node
-      primitiveRefs[newIndex].current?.focus();
+    // focus on the new DOM node
+    primitiveRefs.current[newIndex]?.focus();
 
-      // if the index was changed, the event is handled. Do not bubble.
-      if (newIndex !== prevIndex) {
-        event.stopPropagation();
-      }
-    };
+    // if the index was changed, the event is handled. Do not bubble.
+    if (newIndex !== prevIndex) {
+      event.stopPropagation();
+    }
+  };
 
-    const handleKeyDown: React.KeyboardEventHandler<HTMLUListElement> = (
-      event
-    ) => {
-      const keyName = CodeMirror.keyName(event);
-      switch (keyName) {
-        case "Down":
-        case "Up":
-          event.preventDefault();
-          move(event, keyName);
-          return;
-        case "Esc":
-          props.toolbarRef.current?.focus(); // focus, then fall-through
-          break;
-      }
-    };
+  const handleKeyDown: React.KeyboardEventHandler<HTMLUListElement> = (
+    event
+  ) => {
+    const keyName = CodeMirror.keyName(event);
+    switch (keyName) {
+      case "Down":
+      case "Up":
+        event.preventDefault();
+        move(event, keyName);
+        return;
+      case "Esc":
+        props.toolbarRef.current?.focus(); // focus, then fall-through
+        break;
+    }
+  };
 
-    const text = searchString
-      ? (primitives.length == 0 ? "No" : primitives.length) + " blocks found"
-      : "blocks";
-    return (
-      <div>
-        <h3
-          id="toolbar_heading"
-          className="screenreader-only"
-          aria-live="assertive"
-          aria-atomic="true"
-        >
-          {text}
-        </h3>
-        <ul
-          className="PrimitiveList list-group"
-          aria-labelledby="toolbar_heading"
-          onKeyDown={handleKeyDown}
-          ref={ref as React.Ref<HTMLUListElement>}
-        >
-          {primitives.map((item, i) =>
-            item instanceof PrimitiveGroupModel
-              ? renderGroup(item, i)
-              : renderPrimitive(item, i)
-          )}
-        </ul>
-      </div>
-    );
-  }
-);
+  const text = searchString
+    ? (primitives.length == 0 ? "No" : primitives.length) + " blocks found"
+    : "blocks";
+  return (
+    <div>
+      <h3
+        id="toolbar_heading"
+        className="screenreader-only"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        {text}
+      </h3>
+      <ul
+        className="PrimitiveList list-group"
+        aria-labelledby="toolbar_heading"
+        onKeyDown={handleKeyDown}
+        ref={ref}
+      >
+        {primitives.map((item, i) =>
+          item instanceof PrimitiveGroupModel
+            ? renderGroup(item, i)
+            : renderPrimitive(item, i)
+        )}
+      </ul>
+    </div>
+  );
+});
 
 export default PrimitiveList;
