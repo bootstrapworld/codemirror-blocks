@@ -64,10 +64,6 @@ function ToggleEditor(props: ToggleEditorProps) {
     }
   };
 
-  const eventHandlersRef = useRef<
-    Record<string, ((...args: unknown[]) => void)[]>
-  >({});
-
   const store = useStore();
   /**
    * This is an internal function that is passed down into mode-
@@ -83,13 +79,7 @@ function ToggleEditor(props: ToggleEditorProps) {
     wrapper.setAttribute("aria-label", mode + " Editor");
     mountAnnouncer(wrapper);
     // Rebuild the API and assign re-events
-    props.onMount(
-      buildAPI(editor, store, props.language, eventHandlersRef.current)
-    );
-    for (const [type, handlers] of Object.entries(eventHandlersRef.current)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      handlers.forEach((h) => editor.codemirror.on(type as any, h));
-    }
+    props.onMount(buildAPI(editor, store, props.language));
     // save the editor, and announce completed mode switch
     setEditor(editor);
     say(mode + " Mode Enabled", 500);

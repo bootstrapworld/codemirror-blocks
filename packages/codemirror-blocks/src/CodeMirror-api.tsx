@@ -157,8 +157,6 @@ type ToggleEditorAPI = {
   getBlockMode(): boolean;
   setBlockMode(blockMode: boolean): void;
   getCM(): CodeMirror.Editor;
-  on: CodeMirror.Editor["on"];
-  off: CodeMirror.Editor["off"];
   runMode(): never;
 };
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockModeAPI;
@@ -170,8 +168,7 @@ export type API = ToggleEditorAPI & CodeMirrorAPI & BlockModeAPI;
 export const buildAPI = (
   editor: CodeMirrorFacade,
   store: AppStore,
-  language: Language,
-  eventHandlers: Record<string, ((...args: unknown[]) => void)[]>
+  language: Language
 ) => {
   const base = {} as CodeMirrorAPI;
   // any CodeMirror function that we can call directly should be passed-through.
@@ -193,20 +190,6 @@ export const buildAPI = (
       store.dispatch(actions.setBlockMode(blockMode, editor, language));
     },
     getCM: () => editor.codemirror,
-    on: (...args: Parameters<CodeMirror.Editor["on"]>) => {
-      const [type, fn] = args;
-      if (!eventHandlers[type]) {
-        eventHandlers[type] = [fn];
-      } else {
-        eventHandlers[type].push(fn);
-      }
-      editor.codemirror.on(type, fn);
-    },
-    off: (...args: Parameters<CodeMirror.Editor["on"]>) => {
-      const [type, fn] = args;
-      eventHandlers[type]?.filter((h) => h !== fn);
-      editor.codemirror.off(type, fn);
-    },
     runMode: () => {
       throw "runMode is not supported in CodeMirror-blocks";
     },
