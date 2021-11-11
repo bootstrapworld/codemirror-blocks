@@ -430,10 +430,7 @@ const commandMap: {
       const prunedSelection = selections
         .filter((s) => !descendantIds(node).includes(s))
         .filter((s) => !ancestorIds(node).includes(s));
-      dispatch({
-        type: "SET_SELECTIONS",
-        selections: prunedSelection,
-      });
+      dispatch(actions.setSelectedNodeIds(prunedSelection));
       // TODO(Emmanuel): announce removal
     } else {
       const isContained = (id: string) => ast.isAncestor(node.id, id);
@@ -447,10 +444,9 @@ const commandMap: {
         say("This node is already has a selected ancestor");
       } else {
         // TODO(Emmanuel): announce addition
-        dispatch({
-          type: "SET_SELECTIONS",
-          selections: newSelections.concat(descendantIds(node)),
-        });
+        dispatch(
+          actions.setSelectedNodeIds(newSelections.concat(descendantIds(node)))
+        );
       }
     }
   },

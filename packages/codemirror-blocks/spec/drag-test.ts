@@ -1,7 +1,6 @@
 import wescheme from "../src/languages/wescheme";
 import "codemirror/addon/search/searchcursor.js";
 
-/*eslint no-unused-vars: "off"*/
 import {
   teardown,
   mouseDown,
@@ -11,7 +10,6 @@ import {
   dragenterSeq,
   dragleave,
   keyDown,
-  finishRender,
   mountCMB,
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
@@ -43,7 +41,6 @@ describe("Drag and drop", () => {
 
     beforeEach(async () => {
       cmb.setValue("(+ 1 2 3)");
-      await finishRender();
       retrieve();
     });
 
@@ -175,7 +172,6 @@ describe("Drag and drop", () => {
     // TODO(pcardune) reenable
     xit("save collapsed state when dragging root to be the last child of the next root", async () => {
       cmb.setValue("(collapse me)\n(+ 1 2)");
-      await finishRender();
       let firstRoot!: ASTNode;
       let lastDropTarget!: Element;
       const retrieve = () => {
@@ -191,7 +187,6 @@ describe("Drag and drop", () => {
       const dragEvent = dragstart();
       fireEvent(firstRoot.element!, dragEvent); // drag to the last droptarget
       fireEvent(lastDropTarget, drop());
-      await finishRender();
       retrieve();
       const newFirstRoot = cmb.getAst().rootNodes[0] as FunctionAppNode;
       const newLastChild = newFirstRoot.fields.args[2];
@@ -214,7 +209,6 @@ describe("Drag and drop", () => {
 
     beforeEach(async () => {
       cmb.setValue(";comment\n(a)\n(c)\n(define-struct e ())\ng");
-      await finishRender();
       retrieve();
     });
 
@@ -227,7 +221,6 @@ describe("Drag and drop", () => {
       const dragEvent = dragstart();
       fireEvent(source.element!, dragEvent); // drag to the last droptarget
       fireEvent(target1, drop());
-      await finishRender();
     });
 
     // TODO(pcardune) reenable
@@ -235,7 +228,6 @@ describe("Drag and drop", () => {
       const dragEvent = dragstart();
       fireEvent(source.element!, dragEvent); // drag to the last droptarget
       fireEvent(target2, drop());
-      await finishRender();
     });
   });
 });

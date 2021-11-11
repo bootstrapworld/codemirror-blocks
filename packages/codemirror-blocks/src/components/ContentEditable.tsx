@@ -41,7 +41,7 @@ export type Props = Omit<
   | "ref"
 > & {
   onChange?: (e: string) => void;
-  onKeyDown?: (e: React.KeyboardEvent) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   value?: string;
 };
 
@@ -63,7 +63,7 @@ function OneLineContentEditable(
     onChange && onChange(event.target.value);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.keyCode === 13 && !e.shiftKey) {
       // ENTER
       e.preventDefault();

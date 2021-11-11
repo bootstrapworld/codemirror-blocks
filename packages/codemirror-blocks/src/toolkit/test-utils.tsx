@@ -1,6 +1,10 @@
-import { API, CodeMirrorBlocksComponent, Language } from "../CodeMirrorBlocks";
+import {
+  API,
+  ASTNode,
+  CodeMirrorBlocksComponent,
+  Language,
+} from "../CodeMirrorBlocks";
 import { act, cleanup, render } from "@testing-library/react";
-import { afterAllDOMUpdates, cancelAllDOMUpdates } from "../utils";
 import React from "react";
 // pass along all the simulated events
 export * from "@bootstrapworld/cmb-toolkit/lib/simulate";
@@ -23,14 +27,7 @@ export async function wait(ms: number) {
   });
 }
 
-// wait for the editor to finish rendering and for any
-// other async DOM tasks to finish
-export function finishRender() {
-  return afterAllDOMUpdates();
-}
-
 export function teardown() {
-  cancelAllDOMUpdates();
   cleanup();
   const rootNode = document.getElementById("root");
   if (rootNode) {
@@ -81,8 +78,13 @@ export async function mountCMB(language: Language): Promise<API> {
     />,
     { container }
   );
-  await finishRender();
   cmb.setBlockMode(true);
-  await finishRender();
   return cmb;
 }
+
+// TODO(pcardune): replace the element property on an ASTNode with this function
+export const elementForNode = (node: ASTNode) =>
+  document.getElementById(`block-node-${node.id}`);
+
+export const isNodeEditable = (node: ASTNode) =>
+  elementForNode(node)?.getAttribute("contenteditable") === "true";

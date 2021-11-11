@@ -15,14 +15,16 @@ export const getAST = (state: RootState) => new AST(state.astData);
  */
 const getCollapsedList = (state: RootState) => state.collapsedList;
 
+type NodeSelector<T> = (state: RootState, node: ASTNode) => T;
+
 /**
  * @param node The node to check.
  * @returns Whether or not the given node is collapsed.
  */
-export const isCollapsed: (state: RootState, node: ASTNode) => boolean =
-  createSelector([getCollapsedList, getNode], (collapsedList, node) =>
-    collapsedList.includes(node.id)
-  );
+export const isCollapsed: NodeSelector<boolean> = createSelector(
+  [getCollapsedList, getNode],
+  (collapsedList, node) => collapsedList.includes(node.id)
+);
 
 /**
  * @returns all selected node ids
@@ -45,34 +47,35 @@ export const getSelectedNodes: (state: RootState) => ASTNode[] = createSelector(
  * @param node The node to check.
  * @returns The selection state for the given node.
  */
-export const isSelected: (state: RootState, node: ASTNode) => boolean =
-  createSelector([getSelectedNodeIds, getNode], (selections, node) =>
-    selections.includes(node.id)
-  );
+export const isSelected: NodeSelector<boolean> = createSelector(
+  [getSelectedNodeIds, getNode],
+  (selections, node) => selections.includes(node.id)
+);
 
 const getMarkedMap = (state: RootState) => state.markedMap;
 
 /**
  * Get the codemirror TextMarker for the given node.
  */
-export const getTextMarker: (state: RootState, node: ASTNode) => TextMarker =
-  createSelector(
-    [getMarkedMap, getNode],
-    (markedMap, node) => markedMap[node.id]
-  );
+export const getTextMarker: NodeSelector<TextMarker> = createSelector(
+  [getMarkedMap, getNode],
+  (markedMap, node) => markedMap[node.id]
+);
 
 /**
  * Returns the parent node for the given node
  */
-export const getNodeParent = createSelector([getAST, getNode], (ast, node) =>
-  ast.getNodeParent(node)
+export const getNodeParent: NodeSelector<ASTNode | null> = createSelector(
+  [getAST, getNode],
+  (ast, node) => ast.getNodeParent(node)
 );
 
 /**
  * Returns the next node in the AST from the given node
  */
-export const getNodeAfter = createSelector([getAST, getNode], (ast, node) =>
-  ast.getNodeAfter(node)
+export const getNodeAfter: NodeSelector<ASTNode | null> = createSelector(
+  [getAST, getNode],
+  (ast, node) => ast.getNodeAfter(node)
 );
 
 /**

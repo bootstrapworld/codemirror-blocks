@@ -620,12 +620,6 @@ export class ASTNode<
    */
   element: HTMLElement | null = null;
 
-  /**
-   * @internal
-   * Used for unit testing only
-   */
-  isEditable?: () => boolean;
-
   readonly _pretty: ASTNodeProps["pretty"];
   readonly render: ASTNodeProps["render"];
   readonly longDescription?: ASTNodeProps["longDescription"];
