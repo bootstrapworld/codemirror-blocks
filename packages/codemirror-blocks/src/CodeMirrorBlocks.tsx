@@ -15,7 +15,7 @@ import { PrimitiveGroup } from "./parsers/primitives";
 import type { Primitive } from "./parsers/primitives";
 import Context from "./components/Context";
 import { createAppStore } from "./state/store";
-import { API } from "./CodeMirror-api";
+import { API, buildAPI } from "./CodeMirror-api";
 export type { API };
 
 /**
@@ -94,11 +94,12 @@ export const CodeMirrorBlocksComponent = ({
   language,
   codemirrorOptions = {},
 }: Props) => {
+  const store = createAppStore(options.value);
   return (
-    <Context store={createAppStore(options.value)}>
+    <Context store={store}>
       <ToggleEditor
         language={language}
-        onMount={onMount}
+        onMount={(editor) => onMount(buildAPI(editor, store, language))}
         options={options}
         codemirrorOptions={codemirrorOptions}
       />

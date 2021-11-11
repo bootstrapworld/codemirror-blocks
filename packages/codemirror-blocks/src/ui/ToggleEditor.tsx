@@ -8,10 +8,9 @@ import { mountAnnouncer, say } from "../announcer";
 import TrashCan from "./TrashCan";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror from "codemirror";
-import { buildAPI, API } from "../CodeMirror-api";
 import { CodeMirrorFacade } from "../editor";
 import { AppContext } from "../components/Context";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import { AppDispatch } from "../state/store";
@@ -26,7 +25,7 @@ export type ToggleEditorProps = {
   codemirrorOptions?: CodeMirror.EditorConfiguration;
   language: Language;
   options?: Options;
-  onMount: (api: API) => void;
+  onMount: (editor: CodeMirrorFacade) => void;
   debuggingLog?: {
     history?: unknown;
   };
@@ -64,7 +63,6 @@ function ToggleEditor(props: ToggleEditorProps) {
     }
   };
 
-  const store = useStore();
   /**
    * This is an internal function that is passed down into mode-
    * specific components. After a mode switch, (1) rebuild the
@@ -79,7 +77,7 @@ function ToggleEditor(props: ToggleEditorProps) {
     wrapper.setAttribute("aria-label", mode + " Editor");
     mountAnnouncer(wrapper);
     // Rebuild the API and assign re-events
-    props.onMount(buildAPI(editor, store, props.language));
+    props.onMount(editor);
     // save the editor, and announce completed mode switch
     setEditor(editor);
     say(mode + " Mode Enabled", 500);
