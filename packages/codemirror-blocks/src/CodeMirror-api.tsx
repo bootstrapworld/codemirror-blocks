@@ -14,22 +14,103 @@ import * as actions from "./state/actions";
 import type { Language } from "./CodeMirrorBlocks";
 import { AST } from "./ast";
 
-export type BlockEditorAPI = {
-  getAst(): AST;
-  getFocusedNode(): ASTNode | undefined;
-  getSelectedNodes(): ASTNode[];
+// This is the complete list of methods exposed by the CodeMirror object
+// SOME of them we override, but many can be exposed directly
+const codeMirrorAPI = [
+  "getValue",
+  "setValue",
+  "getRange",
+  "replaceRange",
+  "getLine",
+  "lineCount",
+  "firstLine",
+  "lastLine",
+  "getLineHandle",
+  "getLineNumber",
+  "eachLine",
+  "markClean",
+  "changeGeneration",
+  "isClean",
+  "getSelection",
+  "getSelections",
+  "replaceSelection",
+  "replaceSelections",
+  "getCursor",
+  "listSelections",
+  "somethingSelected",
+  "setCursor",
+  "setSelection",
+  "setSelections",
+  "addSelection",
+  "extendSelection",
+  "extendSelections",
+  "extendSelectionsBy",
+  "setExtending",
+  "getExtending",
+  "hasFocus",
+  "findPosH",
+  "findPosV",
+  "findWordAt",
+  "setOption",
+  "getOption",
+  "addKeyMap",
+  "removeKeyMap",
+  "addOverlay",
+  "removeOverlay",
+  "on",
+  "off",
+  "undo",
+  "redo",
+  "undoSelection",
+  "redoSelection",
+  "historySize",
+  "clearHistory",
+  "getHistory",
+  "setHistory",
+  "markText",
+  "setBookmark",
+  "findMarks",
+  "findMarksAt",
+  "getAllMarks",
+  "setGutterMarker",
+  "clearGutter",
+  "addLineClass",
+  "removeLineClass",
+  "lineInfo",
+  "addWidget",
+  "addLineWidget",
+  "setSize",
+  "scrollTo",
+  "getScrollInfo",
+  "scrollIntoView",
+  "cursorCoords",
+  "charCoords",
+  "coordsChar",
+  "lineAtHeight",
+  "heightAtLine",
+  "defaultTextHeight",
+  "defaultCharWidth",
+  "getViewport",
+  "refresh",
+  "operation",
+  "startOperation",
+  "endOperation",
+  "indentLine",
+  "toggleOverwrite",
+  "isReadOnly",
+  "lineSeparator",
+  "execCommand",
+  "posFromIndex",
+  "indexFromPos",
+  "focus",
+  "phrase",
+  "getInputField",
+  "getWrapperElement",
+  "getScrollerElement",
+  "getGutterElement",
+] as const;
 
-  /**
-   * @internal
-   */
-  getQuarantine(): Quarantine | null;
-
-  /**
-   * @internal
-   */
-  setQuarantine(start: Pos, end: Pos, txt: string): void;
-  executeAction(activity: Activity): void;
-};
+type CodeMirrorAPI = Pick<CodeMirror.Editor, typeof codeMirrorAPI[number]>;
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = [
@@ -55,19 +136,116 @@ const unsupportedAPIs = [
   //'on', 'off',
 ] as const;
 
-type CodeMirrorAPI = Omit<CodeMirror.Editor, typeof unsupportedAPIs[number]>;
-export type BuiltAPI = BlockEditorAPI & Partial<CodeMirrorAPI>;
+type BlockModeAPI = {
+  getAst(): AST;
+  getFocusedNode(): ASTNode | undefined;
+  getSelectedNodes(): ASTNode[];
+
+  /**
+   * @internal
+   */
+  getQuarantine(): Quarantine | null;
+
+  /**
+   * @internal
+   */
+  setQuarantine(start: Pos, end: Pos, txt: string): void;
+  executeAction(activity: Activity): void;
+} & Partial<Omit<CodeMirror.Editor, typeof unsupportedAPIs[number]>>;
+
+type ToggleEditorAPI = {
+  getBlockMode(): boolean;
+  setBlockMode(blockMode: boolean): void;
+  getCM(): CodeMirror.Editor;
+  on: CodeMirror.Editor["on"];
+  off: CodeMirror.Editor["off"];
+  runMode(): never;
+};
+export type API = ToggleEditorAPI & CodeMirrorAPI & BlockModeAPI;
+
+/**
+ * @internal
+ * Populate a base object with mode-agnostic methods we wish to expose
+ */
+export const buildAPI = (
+  editor: CodeMirrorFacade,
+  store: AppStore,
+  language: Language,
+  eventHandlers: Record<string, ((...args: unknown[]) => void)[]>
+) => {
+  const base = {} as CodeMirrorAPI;
+  // any CodeMirror function that we can call directly should be passed-through.
+  // TextEditor and BlockEditor can add their own, or override them
+  codeMirrorAPI.forEach((funcName) => {
+    // Some functions that we want to proxy (like phrase) are not on the codemirror
+    // editor object when this code executes, so we have to do the lookup inside the
+    // wrapper function. Hopefully by the time the wrapper function is called,
+    // the function it proxies to has been added to the editor instance.
+    base[funcName] = (...args: unknown[]) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (editor.codemirror as any)[funcName](...args);
+  });
+
+  const api: ToggleEditorAPI = {
+    // custom CMB methods
+    getBlockMode: () => selectors.isBlockModeEnabled(store.getState()),
+    setBlockMode: (blockMode: boolean) => {
+      store.dispatch(actions.setBlockMode(blockMode, editor, language));
+    },
+    getCM: () => editor.codemirror,
+    on: (...args: Parameters<CodeMirror.Editor["on"]>) => {
+      const [type, fn] = args;
+      if (!eventHandlers[type]) {
+        eventHandlers[type] = [fn];
+      } else {
+        eventHandlers[type].push(fn);
+      }
+      editor.codemirror.on(type, fn);
+    },
+    off: (...args: Parameters<CodeMirror.Editor["on"]>) => {
+      const [type, fn] = args;
+      eventHandlers[type]?.filter((h) => h !== fn);
+      editor.codemirror.off(type, fn);
+    },
+    runMode: () => {
+      throw "runMode is not supported in CodeMirror-blocks";
+    },
+  };
+  const textModeApi = buildTextModeAPI();
+  const blockModeApi = buildBlockModeAPI(editor, store, language);
+  if (store.getState().blockMode) {
+    return { ...base, ...api, ...textModeApi, ...blockModeApi };
+  }
+  return { ...base, ...api, ...textModeApi };
+};
+
+export const buildTextModeAPI = () => {
+  // CodeMirror APIs that we need to disallow
+  // NOTE(Emmanuel): we should probably block 'on' and 'off'...
+  const unsupportedAPIs = ["startOperation", "endOperation", "operation"];
+
+  const api = {} as API;
+  // show which APIs are unsupported
+  unsupportedAPIs.forEach(
+    (f) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ((api as any)[f] = () => {
+        throw `The CM API '${f}' is not supported in CodeMirrorBlocks`;
+      })
+  );
+  return api;
+};
 
 /**
  * Build the API for a block editor, restricting or modifying APIs
  * that are incompatible with our toggleable block editor
  */
-export const buildAPI = (
+export const buildBlockModeAPI = (
   editor: CodeMirrorFacade,
   store: AppStore,
   language: Language
-): BuiltAPI => {
-  const api: BuiltAPI &
+): BlockModeAPI => {
+  const api: BlockModeAPI &
     Pick<
       CodeMirrorAPI,
       "listSelections" | "setSelections" | "replaceSelections"

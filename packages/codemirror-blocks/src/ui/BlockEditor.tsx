@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { activateByNid, setCursor } from "../state/actions";
 import { commitChanges, FocusHint } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
@@ -12,13 +12,12 @@ import { keyDown } from "../keymap";
 import type { AST } from "../ast";
 import CodeMirror from "codemirror";
 import type { Options, Language } from "../CodeMirrorBlocks";
-import type { AppDispatch, AppStore } from "../state/store";
+import type { AppDispatch } from "../state/store";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext, LanguageContext } from "../components/Context";
 import { CodeMirrorFacade, ReadonlyCMBEditor } from "../editor";
-import { BuiltAPI, buildAPI } from "../CodeMirror-api";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
 import ToplevelBlock from "./ToplevelBlock";
@@ -34,13 +33,12 @@ export type BlockEditorProps = {
   language: Language;
   keyDownHelpers: AppHelpers;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
-  onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
+  onMount: (editor: CodeMirrorFacade) => void;
 };
 
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language } = props;
   const dispatch: AppDispatch = useDispatch();
-  const store: AppStore = useStore();
   const ast = useSelector(selectors.getAST);
   const quarantine = useSelector(selectors.getQuarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
@@ -162,7 +160,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    props.onMount(editor, buildAPI(editor, store, language), ast);
+    props.onMount(editor);
   };
 
   /**

@@ -13,10 +13,10 @@ import * as Languages from "./languages";
 import * as Pretty from "pretty-fast-pretty-printer";
 import { PrimitiveGroup } from "./parsers/primitives";
 import type { Primitive } from "./parsers/primitives";
-import type { API } from "./ui/ToggleEditor";
 import Context from "./components/Context";
 import { createAppStore } from "./state/store";
-export type { API } from "./ui/ToggleEditor";
+import { API } from "./CodeMirror-api";
+export type { API };
 
 /**
  * Options for CodeMirrorBlocks
