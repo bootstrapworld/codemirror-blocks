@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
-import { poscmp, setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
+import { poscmp } from "../utils";
 import { ASTNode } from "../ast";
 import { BlockNodeMarker, CMBEditor } from "../editor";
 
@@ -28,8 +28,8 @@ const ToplevelBlock = (props: Props) => {
     if (renderPlaceholder) {
       // if we've rendered a placeholder, then wait 250ms and switch to rendering
       // the full element.
-      const timeout = setAfterDOMUpdate(() => setRenderPlaceholder(false), 250);
-      return () => cancelAfterDOMUpdate(timeout);
+      const timeout = setTimeout(() => setRenderPlaceholder(false), 250);
+      return () => clearTimeout(timeout);
     }
   }, [renderPlaceholder]);
 

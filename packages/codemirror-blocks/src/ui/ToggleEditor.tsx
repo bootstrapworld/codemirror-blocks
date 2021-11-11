@@ -15,7 +15,6 @@ import TrashCan from "./TrashCan";
 import { AST } from "../ast";
 import type { Language, Options } from "../CodeMirrorBlocks";
 import CodeMirror from "codemirror";
-import { setAfterDOMUpdate, cancelAfterDOMUpdate } from "../utils";
 
 const defaultCmOptions: CodeMirror.EditorConfiguration = {
   lineNumbers: true,
@@ -156,13 +155,10 @@ function checkASTRoundtripConversion(
   try {
     oldAst = AST.from(language.parse(oldCode)); // parse the code (WITH annotations)
   } catch (e) {
-    // console.error(e);
-    if (language.getExceptionMessage) {
-      try {
-        return err(language.getExceptionMessage(e));
-      } catch (e) {
-        // fall through to the default error message
-      }
+    try {
+      return err(language.getExceptionMessage(e));
+    } catch (e) {
+      // fall through to the default error message
     }
     return err("The parser failed, and the error could not be retrieved");
   }
@@ -314,17 +310,14 @@ function ToggleEditor(props: ToggleEditorProps) {
     }
     // once the DOM has loaded, reconstitute any marks and render them
     // see https://stackoverflow.com/questions/26556436/react-after-render-code/28748160#28748160
-    const pending = setAfterDOMUpdate(() => {
-      recordedMarks.forEach(
-        (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
-          const node = ast.getNodeByNId(k);
-          if (node) {
-            editor.codemirror.markText(node.from, node.to, m.options);
-          }
+    recordedMarks.forEach(
+      (m: { options: CodeMirror.TextMarkerOptions }, k: number) => {
+        const node = ast.getNodeByNId(k);
+        if (node) {
+          editor.codemirror.markText(node.from, node.to, m.options);
         }
-      );
-    });
-    return () => cancelAfterDOMUpdate(pending);
+      }
+    );
   }, [recordedMarks, editor, ast]);
 
   const toolbarRef = useRef<HTMLInputElement>(null);

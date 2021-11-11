@@ -9,7 +9,6 @@ import { say } from "../announcer";
 import CodeMirror from "codemirror";
 import { AppDispatch } from "../state/store";
 import { RootState } from "../state/reducers";
-import { setAfterDOMUpdate } from "../utils";
 import { CMBEditor } from "../editor";
 import { useLanguageOrThrow } from "../hooks";
 import * as selectors from "../state/selectors";
@@ -127,7 +126,8 @@ const NodeEditable = (props: Props) => {
     });
   };
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const el = e.target as HTMLDivElement;
     switch (CodeMirror.keyName(e)) {
       case "Enter": {
         // blur the element to trigger handleBlur
@@ -136,17 +136,15 @@ const NodeEditable = (props: Props) => {
         return;
       }
       case "Alt-Q":
-      case "Esc":
+      case "Esc": {
+        el.innerHTML = initialValue;
         e.stopPropagation();
         props.onChange(null);
         props.onDisableEditable();
         dispatch(actions.clearError());
-        // TODO(pcardune): move this setAfterDOMUpdate into activateByNid
-        // and then figure out how to get rid of it altogether.
-        setAfterDOMUpdate(() => {
-          dispatch(activateByNid(props.editor, null, { allowMove: false }));
-        });
+        dispatch(activateByNid(props.editor, null, { allowMove: false }));
         return;
+      }
     }
   };
 
