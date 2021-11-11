@@ -21,8 +21,9 @@ type BasePrimitiveProps = {
   onFocus: (e: React.FocusEvent) => void;
 };
 
-export const Primitive = React.forwardRef<HTMLSpanElement, BasePrimitiveProps>(
-  (props, ref) => {
+// @pcardune - I still needed to cast the ref here, in order to satisfy TS
+export const Primitive = React.forwardRef<HTMLElement, BasePrimitiveProps>(
+  (props, ref: React.RefObject<HTMLElement>) => {
     const { primitive, className, onFocus } = props;
     const focusedNode = useSelector(selectors.getFocusedNode);
     const [_, connectDragSource, connectDragPreview] = useDrag({
@@ -37,7 +38,7 @@ export const Primitive = React.forwardRef<HTMLSpanElement, BasePrimitiveProps>(
           const node = primitive.getASTNode();
           copy({ focusedNode }, [node]);
           say("copied " + primitive.toString());
-          ref.current.focus(); // restore focus
+          ref.current?.focus(); // restore focus
           return;
         }
         default:
@@ -50,7 +51,7 @@ export const Primitive = React.forwardRef<HTMLSpanElement, BasePrimitiveProps>(
         tabIndex={-1}
         onKeyDown={handleKeyDown}
         onFocus={onFocus}
-        ref={ref as React.Ref<HTMLSpanElement>}
+        ref={ref}
         className={classNames(className, "Primitive list-group-item")}
       >
         {primitive.name}
@@ -109,8 +110,8 @@ type PrimitiveListProps = {
   primitives?: LanguagePrimitive[];
   searchString?: string;
 };
-export const PrimitiveList = React.forwardRef(
-  (props: PrimitiveListProps, ref: React.MutableRefObject<HTMLElement>) => {
+export const PrimitiveList = React.forwardRef<HTMLElement, PrimitiveListProps>(
+  (props: PrimitiveListProps, ref) => {
     const {
       primitives = [],
       selected,
@@ -120,12 +121,9 @@ export const PrimitiveList = React.forwardRef(
       searchString,
     } = props;
 
-    // @pcardune - typing this array has been a challenge
-    // JSX.Element doesn't work, even though that's the
-    // recommendation I'm seeing online
-    const primitiveRefs = useRef<any[]>([]);
+    const primitiveRefs = primitives.map(() => useRef<HTMLSpanElement>(null));
 
-    const renderGroup = (g: PrimitiveGroupModel) => (
+    const renderGroup = (g: PrimitiveGroupModel, i: number) => (
       <PrimitiveGroup
         key={g.name}
         group={g}
@@ -136,20 +134,15 @@ export const PrimitiveList = React.forwardRef(
       />
     );
 
-    const renderPrimitive = (p: LanguagePrimitive, i: number) => {
-      const primRef = React.createRef<HTMLElement>();
-      const prim = (
-        <Primitive
-          key={p.name}
-          primitive={p}
-          onFocus={() => setSelectedPrimitive(p)}
-          className={selected == p.name ? "selected" : ""}
-          ref={primRef}
-        />
-      );
-      primitiveRefs.current[i] = prim;
-      return prim;
-    };
+    const renderPrimitive = (p: LanguagePrimitive, i: number) => (
+      <Primitive
+        key={p.name}
+        primitive={p}
+        onFocus={() => setSelectedPrimitive(p)}
+        className={selected == p.name ? "selected" : ""}
+        ref={primitiveRefs[i]}
+      />
+    );
 
     // Set selectedPrimitive state, depending on whether we go up or down
     const move = (event: React.KeyboardEvent, dir: "Up" | "Down") => {
@@ -167,8 +160,7 @@ export const PrimitiveList = React.forwardRef(
       }
 
       // focus on the new DOM node
-      const newPrimitiveElt = primitiveRefs.current[newIndex];
-      newPrimitiveElt.ref.current.focus();
+      primitiveRefs[newIndex].current?.focus();
 
       // if the index was changed, the event is handled. Do not bubble.
       if (newIndex !== prevIndex) {
@@ -195,7 +187,6 @@ export const PrimitiveList = React.forwardRef(
     const text = searchString
       ? (primitives.length == 0 ? "No" : primitives.length) + " blocks found"
       : "blocks";
-
     return (
       <div>
         <h3
@@ -214,7 +205,7 @@ export const PrimitiveList = React.forwardRef(
         >
           {primitives.map((item, i) =>
             item instanceof PrimitiveGroupModel
-              ? renderGroup(item)
+              ? renderGroup(item, i)
               : renderPrimitive(item, i)
           )}
         </ul>
