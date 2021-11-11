@@ -521,11 +521,10 @@ const commandMap: {
     }
     const state = getState();
     const nodesToCut = selectors.getSelectedNodes(state);
-    const focusedNode = selectors.getFocusedNode(state);
     if (!nodesToCut.length) {
       return say("Nothing selected");
     }
-    copy({ focusedNode }, nodesToCut, "cut");
+    copy(nodesToCut, "cut");
     dispatch(delete_(env.editor, nodesToCut, env.language.parse));
   },
 
@@ -536,9 +535,8 @@ const commandMap: {
     // if no nodes are selected, do it on focused node's id instead
     const state = getState();
     const selections = selectors.getSelectedNodes(state);
-    const focusedNode = selectors.getFocusedNode(state);
     const nodesToCopy = selections.length === 0 ? [env.node] : selections;
-    copy({ focusedNode }, nodesToCopy, "copied");
+    copy(nodesToCopy, "copied");
   },
 
   Paste: pasteHandler,

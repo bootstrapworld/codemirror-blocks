@@ -25,21 +25,20 @@ type BasePrimitiveProps = {
 export const Primitive = React.forwardRef<HTMLElement, BasePrimitiveProps>(
   (props, ref: React.RefObject<HTMLElement>) => {
     const { primitive, className, onFocus } = props;
-    const focusedNode = useSelector(selectors.getFocusedNode);
     const [_, connectDragSource, connectDragPreview] = useDrag({
       type: ItemTypes.NODE,
       item: { content: primitive.name },
     });
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
+      console.log(e, primitive);
       switch (defaultKeyMap[CodeMirror.keyName(e)]) {
         case "Copy": {
           e.preventDefault();
+          // TODO(Emmanuel): this should really just return the literal,
+          // not the whole expression
           const node = primitive.getASTNode();
-          copy({ focusedNode }, [node]);
-          say("copied " + primitive.toString());
-          ref.current?.focus(); // restore focus
-          return;
+          copy([node], "copied");
         }
         default:
           return;
