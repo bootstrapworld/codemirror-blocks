@@ -25,7 +25,7 @@ export type ToggleEditorProps = {
   codemirrorOptions?: CodeMirror.EditorConfiguration;
   language: Language;
   options?: Options;
-  onMount: (editor: CodeMirrorFacade) => void;
+  onMount: (codemirror: CodeMirror.Editor) => void;
   debuggingLog?: {
     history?: unknown;
   };
@@ -69,17 +69,17 @@ function ToggleEditor(props: ToggleEditorProps) {
    * API with mode-specific versions, (2) re-assign event handlers,
    * and (3) re-render any TextMarkers.
    */
-  const handleEditorMounted = (editor: CodeMirrorFacade) => {
+  const handleEditorMounted = (codemirror: CodeMirror.Editor) => {
     // set CM aria attributes, and mount announcer
     const mode = blockMode ? "Block" : "Text";
-    const wrapper = editor.codemirror.getWrapperElement();
-    editor.codemirror.getScrollerElement().setAttribute("role", "presentation");
+    const wrapper = codemirror.getWrapperElement();
+    codemirror.getScrollerElement().setAttribute("role", "presentation");
     wrapper.setAttribute("aria-label", mode + " Editor");
     mountAnnouncer(wrapper);
     // Rebuild the API and assign re-events
-    props.onMount(editor);
+    props.onMount(codemirror);
     // save the editor, and announce completed mode switch
-    setEditor(editor);
+    setEditor(new CodeMirrorFacade(codemirror));
     say(mode + " Mode Enabled", 500);
   };
 

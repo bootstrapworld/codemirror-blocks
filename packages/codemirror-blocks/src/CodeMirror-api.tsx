@@ -8,7 +8,7 @@ import { ASTNode, Pos } from "./ast";
 import { CodeMirrorFacade, isBlockNodeMarker } from "./editor";
 import type { AppStore } from "./state/store";
 import * as selectors from "./state/selectors";
-import { BlockError, getTempCM, maxpos, minpos, poscmp } from "./utils";
+import { BlockError, maxpos, minpos, poscmp } from "./utils";
 import CodeMirror, { SelectionOptions } from "codemirror";
 import * as actions from "./state/actions";
 import type { Language } from "./CodeMirrorBlocks";
@@ -166,7 +166,7 @@ export type API = ToggleEditorAPI & CodeMirrorAPI & BlockModeAPI;
  * Populate a base object with mode-agnostic methods we wish to expose
  */
 export const buildAPI = (
-  editor: CodeMirrorFacade,
+  codemirror: CodeMirror.Editor,
   store: AppStore,
   language: Language
 ) => {
@@ -180,29 +180,35 @@ export const buildAPI = (
     // the function it proxies to has been added to the editor instance.
     base[funcName] = (...args: unknown[]) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor.codemirror as any)[funcName](...args);
+      (codemirror as any)[funcName](...args);
   });
 
   const api: ToggleEditorAPI = {
     // custom CMB methods
     getBlockMode: () => selectors.isBlockModeEnabled(store.getState()),
     setBlockMode: (blockMode: boolean) => {
-      store.dispatch(actions.setBlockMode(blockMode, editor, language));
+      store.dispatch(
+        actions.setBlockMode(
+          blockMode,
+          new CodeMirrorFacade(codemirror),
+          language
+        )
+      );
     },
-    getCM: () => editor.codemirror,
+    getCM: () => codemirror,
     runMode: () => {
       throw "runMode is not supported in CodeMirror-blocks";
     },
   };
   const textModeApi = buildTextModeAPI();
-  const blockModeApi = buildBlockModeAPI(editor, store, language);
+  const blockModeApi = buildBlockModeAPI(codemirror, store, language);
   if (store.getState().blockMode) {
     return { ...base, ...api, ...textModeApi, ...blockModeApi };
   }
   return { ...base, ...api, ...textModeApi };
 };
 
-export const buildTextModeAPI = () => {
+const buildTextModeAPI = () => {
   // CodeMirror APIs that we need to disallow
   // NOTE(Emmanuel): we should probably block 'on' and 'off'...
   const unsupportedAPIs = ["startOperation", "endOperation", "operation"];
@@ -223,8 +229,8 @@ export const buildTextModeAPI = () => {
  * Build the API for a block editor, restricting or modifying APIs
  * that are incompatible with our toggleable block editor
  */
-export const buildBlockModeAPI = (
-  editor: CodeMirrorFacade,
+const buildBlockModeAPI = (
+  codemirror: CodeMirror.Editor,
   store: AppStore,
   language: Language
 ): BlockModeAPI => {
@@ -237,13 +243,11 @@ export const buildBlockModeAPI = (
      * CM APIs WE WANT TO OVERRIDE
      */
     findMarks: (from, to) =>
-      editor.codemirror
-        .findMarks(from, to)
-        .filter((m) => !isBlockNodeMarker(m)),
+      codemirror.findMarks(from, to).filter((m) => !isBlockNodeMarker(m)),
     findMarksAt: (pos) =>
-      editor.codemirror.findMarksAt(pos).filter((m) => !isBlockNodeMarker(m)),
+      codemirror.findMarksAt(pos).filter((m) => !isBlockNodeMarker(m)),
     getAllMarks: () =>
-      editor.codemirror.getAllMarks().filter((m) => !isBlockNodeMarker(m)),
+      codemirror.getAllMarks().filter((m) => !isBlockNodeMarker(m)),
     // Restrict CM's markText method to block editor semantics:
     // fewer options, restricted to node boundaries
     markText: (from, to, opts: CodeMirror.TextMarkerOptions = {}) => {
@@ -263,7 +267,7 @@ export const buildBlockModeAPI = (
             `API Error`
           );
       }
-      const mark = editor.codemirror.markText(from, to, opts); // keep CM in sync
+      const mark = codemirror.markText(from, to, opts); // keep CM in sync
       const _clear = mark.clear.bind(mark);
       mark.clear = () => {
         _clear();
@@ -280,26 +284,25 @@ export const buildBlockModeAPI = (
     // Something is selected if CM has a selection OR a block is selected
     somethingSelected: () => {
       return Boolean(
-        editor.codemirror.somethingSelected() ||
-          store.getState().selections.length
+        codemirror.somethingSelected() || store.getState().selections.length
       );
     },
     // CMB has focus if top-level CM has focus OR a block is active
     hasFocus: () =>
-      editor.codemirror.hasFocus() ||
+      codemirror.hasFocus() ||
       Boolean(document.activeElement?.id.match(/block-node/)),
     extendSelection: (from: Pos, to: Pos, opts?: SelectionOptions) => {
-      const tmpCM = getTempCM(editor);
+      const tmpCM = getTempCM(codemirror);
       tmpCM.setSelections(api.listSelections());
       tmpCM.extendSelections([from], opts);
       const { nodeIds, textRanges } = validateSelectionRanges(
         store.getState(),
-        editor,
+        codemirror,
         tmpCM.listSelections(),
         undefined,
         opts
       );
-      editor.codemirror.setSelections(textRanges, undefined, opts);
+      codemirror.setSelections(textRanges, undefined, opts);
       store.dispatch(actions.setSelectedNodeIds(nodeIds));
     },
 
@@ -308,46 +311,46 @@ export const buildBlockModeAPI = (
      * that make sense in a block editor (must include only valid node ranges)
      */
     extendSelections: (heads, opts) => {
-      const tmpCM = getTempCM(editor);
+      const tmpCM = getTempCM(codemirror);
       tmpCM.setSelections(api.listSelections());
       tmpCM.extendSelection(heads[0], undefined, opts);
       // if one of the ranges is invalid, changeSelections will raise an error
       const { nodeIds, textRanges } = validateSelectionRanges(
         store.getState(),
-        editor,
+        codemirror,
         tmpCM.listSelections(),
         undefined,
         opts
       );
-      editor.codemirror.setSelections(textRanges, undefined, opts);
+      codemirror.setSelections(textRanges, undefined, opts);
       store.dispatch(actions.setSelectedNodeIds(nodeIds));
     },
     extendSelectionsBy: (
       f: (range: CodeMirror.Range) => Pos,
       opts?: SelectionOptions
     ) => {
-      const tmpCM = getTempCM(editor);
+      const tmpCM = getTempCM(codemirror);
       tmpCM.setSelections(api.listSelections());
       tmpCM.extendSelection(api.listSelections().map(f)[0], undefined, opts);
       // if one of the ranges is invalid, validateSelectionRanges will raise an error
       const { nodeIds, textRanges } = validateSelectionRanges(
         store.getState(),
-        editor,
+        codemirror,
         tmpCM.listSelections(),
         undefined,
         opts
       );
-      editor.codemirror.setSelections(textRanges, undefined, opts);
+      codemirror.setSelections(textRanges, undefined, opts);
       store.dispatch(actions.setSelectedNodeIds(nodeIds));
     },
     getSelections: (sep?: string) =>
       api
         .listSelections()
-        .map((s) => editor.codemirror.getRange(s.anchor, s.head, sep)),
+        .map((s) => codemirror.getRange(s.anchor, s.head, sep)),
     getSelection: (sep?: string) =>
       api
         .listSelections()
-        .map((s) => editor.codemirror.getRange(s.anchor, s.head, sep))
+        .map((s) => codemirror.getRange(s.anchor, s.head, sep))
         .join(sep),
     /**
      * Override CM's native listSelections method, using the selection
@@ -355,11 +358,11 @@ export const buildBlockModeAPI = (
      */
     listSelections: () => {
       const selections = selectors.getSelectedNodes(store.getState());
-      const tmpCM = getTempCM(editor);
+      const tmpCM = getTempCM(codemirror);
       // write all the ranges for all selected nodes
       selections.forEach((node) => tmpCM.addSelection(node.from, node.to));
       // write all the existing selection ranges
-      editor.codemirror
+      codemirror
         .listSelections()
         .map((s) => tmpCM.addSelection(s.anchor, s.head));
       // return all the selections
@@ -370,17 +373,17 @@ export const buildBlockModeAPI = (
         [{ anchor: from, head: to }],
         selectors.getAST(store.getState())
       );
-      editor.codemirror.replaceRange(text, from, to, origin);
+      codemirror.replaceRange(text, from, to, origin);
     },
     setSelections: (ranges, primary, opts) => {
       const { nodeIds, textRanges } = validateSelectionRanges(
         store.getState(),
-        editor,
+        codemirror,
         ranges,
         primary,
         opts
       );
-      editor.codemirror.setSelections(textRanges, primary, opts);
+      codemirror.setSelections(textRanges, primary, opts);
       store.dispatch(actions.setSelectedNodeIds(nodeIds));
     },
     setSelection: (anchor, head = anchor, opts) =>
@@ -388,14 +391,11 @@ export const buildBlockModeAPI = (
     addSelection: (anchor, head) => {
       const { nodeIds, textRanges } = validateSelectionRanges(
         store.getState(),
-        editor,
+        codemirror,
         [{ anchor: anchor, head: head ?? anchor }]
       );
       if (textRanges.length) {
-        editor.codemirror.addSelection(
-          textRanges[0].anchor,
-          textRanges[0].head
-        );
+        codemirror.addSelection(textRanges[0].anchor, textRanges[0].head);
       }
       store.dispatch(actions.setSelectedNodeIds(nodeIds));
     },
@@ -405,25 +405,25 @@ export const buildBlockModeAPI = (
      * that make sense in a block editor (must include only valid node ranges)
      */
     replaceSelections: (rStrings, select?: "around" | "start") => {
-      const tmpCM: CodeMirror.Editor = getTempCM(editor);
+      const tmpCM: CodeMirror.Editor = getTempCM(codemirror);
       tmpCM.setSelections(api.listSelections());
       tmpCM.replaceSelections(rStrings, select);
-      editor.setValue(tmpCM.getValue());
+      codemirror.setValue(tmpCM.getValue());
       if (select == "around") {
         // if one of the ranges is invalid, validateSelectionRanges will raise an error
         const { nodeIds, textRanges } = validateSelectionRanges(
           store.getState(),
-          editor,
+          codemirror,
           tmpCM.listSelections()
         );
-        editor.codemirror.setSelections(textRanges);
+        codemirror.setSelections(textRanges);
         store.dispatch(actions.setSelectedNodeIds(nodeIds));
       }
       const cur =
         select == "start"
           ? tmpCM.listSelections().pop()?.head
           : tmpCM.listSelections().pop()?.anchor;
-      actions.setCursor(editor, cur ?? null);
+      actions.setCursor(new CodeMirrorFacade(codemirror), cur ?? null);
     },
     replaceSelection: (rString, select?: "around" | "start") =>
       api.replaceSelections(
@@ -448,7 +448,7 @@ export const buildBlockModeAPI = (
           );
         }
       } else {
-        return editor.codemirror.getCursor(where);
+        return codemirror.getCursor(where);
       }
     },
     // If the cursor falls in a node, activate it. Otherwise set the cursor as-is
@@ -458,6 +458,7 @@ export const buildBlockModeAPI = (
       const cur =
         typeof curOrLine === "number" ? { line: curOrLine, ch } : curOrLine;
       const node = ast.getNodeContaining(cur);
+      const editor = new CodeMirrorFacade(codemirror);
       if (node) {
         store.dispatch(
           actions.activateByNid(editor, node.nid, {
@@ -476,7 +477,7 @@ export const buildBlockModeAPI = (
           "API Error"
         );
       }
-      return editor.codemirror.setBookmark(pos, opts);
+      return codemirror.setBookmark(pos, opts);
     },
 
     /*****************************************************************
@@ -525,14 +526,18 @@ export const buildBlockModeAPI = (
       // Set the value of the editor to that code, then
       // reconstruct the AST and pass it to the reducer
       if (activity.type == "SET_AST") {
-        editor.setValue(activity.code);
+        codemirror.setValue(activity.code);
         const newAST = AST.from(language.parse(activity.code));
         action = { ...activity, ast: newAST };
       }
       // convert nid to node id, and use activate to generate the action
       else if (activity.type == "SET_FOCUS") {
         store.dispatch(
-          actions.activateByNid(editor, activity.nid, { allowMove: true })
+          actions.activateByNid(
+            new CodeMirrorFacade(codemirror),
+            activity.nid,
+            { allowMove: true }
+          )
         );
         return;
       } else {
@@ -556,18 +561,29 @@ export const buildBlockModeAPI = (
 };
 
 /**
+ * Create a dummy CM instance, matching relevant state
+ * from a passed CodeMirrorFacade
+ */
+const tmpDiv = document.createElement("div");
+function getTempCM(codemirror: CodeMirror.Editor) {
+  const tmpCM = CodeMirror(tmpDiv, { value: codemirror.getValue() });
+  tmpCM.setCursor(codemirror.getCursor());
+  return tmpCM;
+}
+
+/**
  * Validate and modify selection ranges to match the semantics
  * that make sense in a block editor (must include only valid node ranges)
  */
 const validateSelectionRanges = (
   state: RootState,
-  editor: CodeMirrorFacade,
+  codemirror: CodeMirror.Editor,
   ranges: { anchor: Pos; head: Pos }[],
   primary?: number,
   options?: { bias?: number; origin?: string; scroll?: boolean }
 ) => {
   const ast = selectors.getAST(state);
-  const tmpCM = getTempCM(editor);
+  const tmpCM = getTempCM(codemirror);
   tmpCM.setSelections(ranges, primary, options);
   const textRanges: {
     anchor: Pos;

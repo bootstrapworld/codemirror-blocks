@@ -99,7 +99,7 @@ export const CodeMirrorBlocksComponent = ({
     <Context store={store}>
       <ToggleEditor
         language={language}
-        onMount={(editor) => onMount(buildAPI(editor, store, language))}
+        onMount={(codemirror) => onMount(buildAPI(codemirror, store, language))}
         options={options}
         codemirrorOptions={codemirrorOptions}
       />

@@ -33,7 +33,7 @@ export type BlockEditorProps = {
   language: Language;
   keyDownHelpers: AppHelpers;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
-  onMount: (editor: CodeMirrorFacade) => void;
+  onMount: (editor: CodeMirror.Editor) => void;
 };
 
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
@@ -132,15 +132,14 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
    * When the editor mounts, (1) set change event handlers and AST,
    * (2) set the focus, (3) set aria attributes, and (4) build the API
    */
-  const handleEditorDidMount = (editor: CodeMirrorFacade) => {
+  const handleEditorDidMount = (codemirror: CodeMirror.Editor) => {
+    const editor = new CodeMirrorFacade(codemirror);
     setEditor(editor);
     // TODO(Emmanuel): Try to set them in the component constructor
-    editor.codemirror.on("beforeChange", (ed, change) =>
+    codemirror.on("beforeChange", (ed, change) =>
       handleBeforeChange(editor, change)
     );
-    editor.codemirror.on("change", (ed, change) =>
-      handleChange(editor, change)
-    );
+    codemirror.on("change", (ed, change) => handleChange(editor, change));
 
     // set AST and search properties and collapse preferences
     if (options.collapseAll) {
@@ -154,13 +153,13 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     }
 
     // Set extra aria attributes
-    const wrapper = editor.codemirror.getWrapperElement();
+    const wrapper = codemirror.getWrapperElement();
     wrapper.setAttribute("role", "tree");
     wrapper.setAttribute("aria-multiselectable", "true");
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    props.onMount(editor);
+    props.onMount(codemirror);
   };
 
   /**
