@@ -167,6 +167,24 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   };
 
   /**
+   * When the CM instance receives focus...
+   * If we have a CM cursor, let CM handle it (no-op)
+   * Otherwise grab the focusId, compute NId, and activate
+   */
+  const handleTopLevelFocus = (editor: ReadonlyCMBEditor) => {
+    dispatch((_, getState) => {
+      const ast = selectors.getAST(getState());
+      const focusedNode = selectors.getFocusedNode(getState());
+      const node = focusedNode || ast.getFirstRootNode();
+      dispatch(
+        actions.activateByNid(editor, node && node.nid, {
+          allowMove: true,
+        })
+      );
+    });
+  };
+
+  /**
    * When the CM instance receives a keypress...start a quarantine if it's
    * not a modifier
    */
@@ -213,7 +231,9 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const handleTopLevelCursorActivity = (editor: CodeMirrorFacade) => {
     const cur =
       editor.codemirror.getSelection().length > 0 ? null : editor.getCursor();
-    cur && editor.setCursor(cur);
+    if (cur) {
+      cur && editor.setCursor(cur);
+    }
   };
 
   const renderPortals = () => {
@@ -244,6 +264,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         className={`blocks-language-${language.id}`}
         value={props.value}
         onKeyPress={handleTopLevelKeyPress}
+        onFocus={handleTopLevelFocus}
         onPaste={handleTopLevelPaste}
         onKeyDown={(editor, e) => {
           dispatch(
