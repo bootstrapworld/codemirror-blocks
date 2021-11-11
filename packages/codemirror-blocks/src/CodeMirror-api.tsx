@@ -315,6 +315,7 @@ export const buildAPI = (
             })
           );
         }
+        editor.focus();
         editor.setCursor(cur);
       }),
     // As long as widget isn't defined, we're good to go
