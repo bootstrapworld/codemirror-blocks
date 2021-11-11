@@ -12,7 +12,6 @@ import { defaultKeyMap } from "../keymap";
 import { useSelector } from "react-redux";
 import { useDrag } from "react-dnd";
 import { copy } from "../copypaste";
-import { err } from "../edits/result";
 
 require("./PrimitiveList.less");
 
@@ -22,8 +21,8 @@ type BasePrimitiveProps = {
   onFocus: (e: React.FocusEvent) => void;
 };
 
-export const Primitive = React.forwardRef(
-  (props: BasePrimitiveProps, ref: React.MutableRefObject<HTMLSpanElement>) => {
+export const Primitive = React.forwardRef<HTMLSpanElement, BasePrimitiveProps>(
+  (props, ref) => {
     const { primitive, className, onFocus } = props;
     const focusedNode = useSelector(selectors.getFocusedNode);
     const [_, connectDragSource, connectDragPreview] = useDrag({
@@ -67,7 +66,7 @@ export const Primitive = React.forwardRef(
 
 type PrimitiveGroupProps = {
   setSelectedPrimitive: (primitive: LanguagePrimitive) => void;
-  selectedPrimitive: LanguagePrimitive | undefined;
+  selectedPrimitive?: LanguagePrimitive;
   selected?: string; // to start, no primitive is selected
   group?: PrimitiveGroupModel;
   toolbarRef: React.RefObject<HTMLInputElement>;
@@ -104,7 +103,7 @@ export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
 
 type PrimitiveListProps = {
   setSelectedPrimitive: (primitive: LanguagePrimitive) => void;
-  selectedPrimitive: LanguagePrimitive | undefined;
+  selectedPrimitive?: LanguagePrimitive;
   toolbarRef: React.RefObject<HTMLInputElement>;
   selected?: string;
   primitives?: LanguagePrimitive[];
@@ -158,7 +157,7 @@ export const PrimitiveList = React.forwardRef(
         return; // Nothing to select. Bail.
       }
 
-      // compute the index of the newly-selected primitive, and get the Element
+      // compute the index of the newly-selected primitive
       let newIndex;
       const prevIndex = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
       if (dir == "Down") {
@@ -166,15 +165,12 @@ export const PrimitiveList = React.forwardRef(
       } else {
         newIndex = Math.max(prevIndex - 1, 0);
       }
-      const newPrimitiveElt = primitiveRefs.current[newIndex];
 
-      // @pcardune - is it safe to assume this will always exist, and ditch the check?
-      if (newPrimitiveElt) {
-        newPrimitiveElt.ref.current.focus();
-      } else {
-        return err("No DOM node was created for " + primitives[newIndex].name);
-      }
-      // if the index was changed, do not bubble
+      // focus on the new DOM node
+      const newPrimitiveElt = primitiveRefs.current[newIndex];
+      newPrimitiveElt.ref.current.focus();
+
+      // if the index was changed, the event is handled. Do not bubble.
       if (newIndex !== prevIndex) {
         event.stopPropagation();
       }
