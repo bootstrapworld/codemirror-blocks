@@ -7,7 +7,6 @@ import {
   ReplaceNodeTarget,
   OverwriteTarget,
   activateByNid,
-  setCursor,
 } from "./state/actions";
 import * as actions from "./state/actions";
 import {
@@ -225,7 +224,7 @@ const commandMap: {
         return playSound(BEEP);
       }
     }
-    const prevNode = state.cur && ast.getNodeBeforeCur(state.cur);
+    const prevNode = ast.getNodeBeforeCur(env.editor.getCursor());
     return prevNode
       ? dispatch(
           activateByNid(env.editor, prevNode.nid, {
@@ -246,8 +245,7 @@ const commandMap: {
         return playSound(BEEP);
       }
     }
-    const { cur } = getState();
-    const nextNode = cur && ast.getNodeAfterCur(cur);
+    const nextNode = ast.getNodeAfterCur(env.editor.getCursor());
     return nextNode
       ? dispatch(
           activateByNid(env.editor, nextNode.nid, {
@@ -503,7 +501,8 @@ const commandMap: {
       return;
     }
     if (!env.setRight(selectors.getAST(getState()))) {
-      dispatch(setCursor(env.editor, env.node.srcRange().to));
+      env.editor.focus();
+      env.editor.setCursor(env.node.srcRange().to);
     }
   },
   "Insert Left": (env, _) => (dispatch, getState) => {
@@ -511,7 +510,8 @@ const commandMap: {
       return;
     }
     if (!env.setLeft(selectors.getAST(getState()))) {
-      dispatch(setCursor(env.editor, env.node.srcRange().from));
+      env.editor.focus();
+      env.editor.setCursor(env.node.srcRange().from);
     }
   },
 

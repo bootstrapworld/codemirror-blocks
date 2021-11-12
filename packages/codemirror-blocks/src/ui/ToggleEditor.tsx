@@ -155,13 +155,10 @@ function checkASTRoundtripConversion(
   try {
     oldAst = AST.from(language.parse(oldCode)); // parse the code (WITH annotations)
   } catch (e) {
-    // console.error(e);
-    if (language.getExceptionMessage) {
-      try {
-        return err(language.getExceptionMessage(e));
-      } catch (e) {
-        // fall through to the default error message
-      }
+    try {
+      return err(language.getExceptionMessage(e));
+    } catch (e) {
+      // fall through to the default error message
     }
     return err("The parser failed, and the error could not be retrieved");
   }
