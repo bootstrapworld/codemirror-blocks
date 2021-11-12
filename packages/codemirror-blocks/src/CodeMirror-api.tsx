@@ -271,7 +271,7 @@ export const buildAPI = (
           select == "start"
             ? tmpCM.listSelections().pop()?.head
             : tmpCM.listSelections().pop()?.anchor;
-        actions.setCursor(editor, cur ?? null);
+        cur && editor.setCursor(cur);
       }),
     replaceSelection: (rString, select?: "around" | "start") =>
       api.replaceSelections(
@@ -315,7 +315,8 @@ export const buildAPI = (
             })
           );
         }
-        dispatch(actions.setCursor(editor, cur));
+        editor.focus();
+        editor.setCursor(cur);
       }),
     // As long as widget isn't defined, we're good to go
     setBookmark: (pos, opts) => {

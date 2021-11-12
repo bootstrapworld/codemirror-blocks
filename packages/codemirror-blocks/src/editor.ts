@@ -128,7 +128,7 @@ export interface ReadonlyCMBEditor extends ReadonlyRangedText {
 
   getAllBlockNodeMarkers(): BlockNodeMarker[];
   getAllTextMarkers(): CodeMirror.TextMarker<CodeMirror.MarkerRange>[];
-
+  getCursor(): Pos;
   getSearchCursor(
     query: string | RegExp,
     start: Pos,
@@ -231,6 +231,9 @@ export class CodeMirrorFacade implements CMBEditor {
   }
   focus(): void {
     this.codemirror.focus();
+  }
+  getCursor(): Pos {
+    return this.codemirror.getCursor();
   }
   setCursor(cur: Pos): void {
     this.codemirror.setCursor(cur);
