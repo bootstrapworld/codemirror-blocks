@@ -5,11 +5,8 @@ import {
   Primitive as LanguagePrimitive,
 } from "../parsers/primitives";
 import { ItemTypes } from "../dnd";
-import { say } from "../announcer";
-import * as selectors from "../state/selectors";
 import CodeMirror from "codemirror";
 import { defaultKeyMap } from "../keymap";
-import { useSelector } from "react-redux";
 import { useDrag } from "react-dnd";
 import { copy } from "../copypaste";
 
@@ -38,6 +35,7 @@ export const Primitive = React.forwardRef<HTMLElement, BasePrimitiveProps>(
           // not the whole expression
           const node = primitive.getASTNode();
           copy([node], "copied");
+          break;
         }
         default:
           return;
