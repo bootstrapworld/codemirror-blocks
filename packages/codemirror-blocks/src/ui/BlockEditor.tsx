@@ -17,7 +17,7 @@ import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext, LanguageContext } from "../components/Context";
-import { CodeMirrorFacade, ReadonlyCMBEditor } from "../editor";
+import { CodeMirrorFacade, Pos, ReadonlyCMBEditor } from "../editor";
 import { BuiltAPI, buildAPI } from "../CodeMirror-api";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
@@ -166,6 +166,13 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     props.onMount(editor, buildAPI(editor, dispatch, language), passedAST);
   };
 
+  // we have use a ref here instead of useState
+  // because handleTopLevelFocus gets passed down to
+  // react-codemirror2's UnControlled component which
+  // does not update event handlers on the uncontrolled
+  // codemirror instance...
+  const lastCursor = useRef<Pos | null>(null);
+
   /**
    * When the CM instance receives focus...
    * If we have a CM cursor, let CM handle it (no-op)
@@ -175,6 +182,10 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     dispatch((_, getState) => {
       const ast = selectors.getAST(getState());
       const focusedNode = selectors.getFocusedNode(getState());
+      const { current: cur } = lastCursor;
+      if (cur != null) {
+        return; // if we already have a cursor, bail
+      }
       const node = focusedNode || ast.getFirstRootNode();
       dispatch(
         actions.activateByNid(editor, node && node.nid, {
@@ -231,8 +242,10 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const handleTopLevelCursorActivity = (editor: CodeMirrorFacade) => {
     const cur =
       editor.codemirror.getSelection().length > 0 ? null : editor.getCursor();
+    lastCursor.current = cur;
     if (cur) {
-      cur && editor.setCursor(cur);
+      editor.setCursor(cur);
+      editor.focus();
     }
   };
 
