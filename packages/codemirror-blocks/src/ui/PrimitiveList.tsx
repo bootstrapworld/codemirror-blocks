@@ -1,15 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import classNames from "classnames";
 import {
   PrimitiveGroup as PrimitiveGroupModel,
   Primitive as LanguagePrimitive,
 } from "../parsers/primitives";
 import { ItemTypes } from "../dnd";
-import { say } from "../announcer";
-import * as selectors from "../state/selectors";
 import CodeMirror from "codemirror";
 import { defaultKeyMap } from "../keymap";
-import { useSelector } from "react-redux";
 import { useDrag } from "react-dnd";
 import { copy } from "../copypaste";
 
@@ -18,65 +15,63 @@ require("./PrimitiveList.less");
 type BasePrimitiveProps = {
   primitive: LanguagePrimitive;
   className: string;
-  onFocus: (primitive: LanguagePrimitive) => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
+  onFocus: (e: React.FocusEvent) => void;
 };
 
-export const Primitive = (props: BasePrimitiveProps) => {
-  const { primitive, className, onFocus, onKeyDown } = props;
+// @pcardune - I still needed to cast the ref here, in order to satisfy TS
+export const Primitive = React.forwardRef<HTMLElement, BasePrimitiveProps>(
+  (props, ref) => {
+    const { primitive, className, onFocus } = props;
+    const [_, connectDragSource, connectDragPreview] = useDrag({
+      type: ItemTypes.NODE,
+      item: { content: primitive.name },
+    });
 
-  const focusedNode = useSelector(selectors.getFocusedNode);
-
-  const [_, connectDragSource, connectDragPreview] = useDrag({
-    type: ItemTypes.NODE,
-    item: { content: primitive.name },
-  });
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    switch (defaultKeyMap[CodeMirror.keyName(e)]) {
-      case "Copy": {
-        e.preventDefault();
-        const node = primitive.getASTNode();
-        copy({ focusedNode }, [node]);
-        say("copied " + primitive.toString());
-        primitive.element?.focus(); // restore focus
-        return;
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      switch (defaultKeyMap[CodeMirror.keyName(e)]) {
+        case "Copy": {
+          e.preventDefault();
+          // TODO(Emmanuel): this should really just return the literal,
+          // not the whole expression
+          const node = primitive.getASTNode();
+          copy([node], "copied");
+          break;
+        }
+        default:
+          return;
       }
-      default:
-        onKeyDown(e);
-        return;
-    }
-  };
+    };
 
-  // Build the primitive block and return it inside a list item
-  const elem = (
-    <span
-      tabIndex={-1}
-      onKeyDown={handleKeyDown}
-      onFocus={() => onFocus(primitive)}
-      // NOTE(Emmanuel): is this still appropriate style for using refs?
-      ref={(elem) => (primitive.element = elem)}
-      className={classNames(className, "Primitive list-group-item")}
-    >
-      {primitive.name}
-    </span>
-  );
-  const draggableElem = connectDragPreview(connectDragSource(elem), {
-    offsetX: 1,
-    offsetY: 1,
-  });
-  return <li>{draggableElem}</li>;
-};
+    const elem = (
+      <span
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        onFocus={onFocus}
+        ref={ref}
+        className={classNames(className, "Primitive list-group-item")}
+      >
+        {primitive.name}
+      </span>
+    );
+    const draggableElem = connectDragPreview(connectDragSource(elem), {
+      offsetX: 1,
+      offsetY: 1,
+    });
+    return <li>{draggableElem}</li>;
+  }
+);
 
 type PrimitiveGroupProps = {
-  onFocus: BasePrimitiveProps["onFocus"];
-  onKeyDown: BasePrimitiveProps["onKeyDown"];
+  setSelectedPrimitive: (primitive: LanguagePrimitive) => void;
+  selectedPrimitive?: LanguagePrimitive;
   selected?: string; // to start, no primitive is selected
   group?: PrimitiveGroupModel;
+  toolbarRef: React.RefObject<HTMLInputElement>;
 };
 
 export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
-  const { onFocus, onKeyDown, selected } = props;
+  const { setSelectedPrimitive, selected, toolbarRef, selectedPrimitive } =
+    props;
   const group = props.group ?? new PrimitiveGroupModel("", "", []);
   const [expanded, setExpanded] = useState(false);
   const toggleExpanded = () => setExpanded(!expanded);
@@ -93,9 +88,10 @@ export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
       {expanded ? (
         <PrimitiveList
           primitives={[...group.flatPrimitivesIter()]}
-          onFocus={onFocus}
-          onKeyDown={onKeyDown}
           selected={selected}
+          selectedPrimitive={selectedPrimitive}
+          toolbarRef={toolbarRef}
+          setSelectedPrimitive={setSelectedPrimitive}
         />
       ) : null}
     </li>
@@ -103,37 +99,92 @@ export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
 };
 
 type PrimitiveListProps = {
-  onFocus: BasePrimitiveProps["onFocus"];
-  onKeyDown: BasePrimitiveProps["onKeyDown"];
+  setSelectedPrimitive: (primitive: LanguagePrimitive) => void;
+  selectedPrimitive?: LanguagePrimitive;
+  toolbarRef: React.RefObject<HTMLInputElement>;
   selected?: string;
   primitives?: LanguagePrimitive[];
   searchString?: string;
 };
-export const PrimitiveList = (props: PrimitiveListProps) => {
-  const { primitives = [], selected, onFocus, onKeyDown, searchString } = props;
-  const renderGroup = (g: PrimitiveGroupModel) => (
+export const PrimitiveList = React.forwardRef<
+  HTMLUListElement,
+  PrimitiveListProps
+>((props: PrimitiveListProps, ref) => {
+  const {
+    primitives = [],
+    selected,
+    setSelectedPrimitive,
+    selectedPrimitive,
+    toolbarRef,
+    searchString,
+  } = props;
+
+  const primitiveRefs = useRef<(HTMLSpanElement | null)[]>([]);
+
+  const renderGroup = (g: PrimitiveGroupModel, _i: number) => (
     <PrimitiveGroup
       key={g.name}
       group={g}
-      onFocus={onFocus}
-      onKeyDown={onKeyDown}
       selected={selected}
+      selectedPrimitive={selectedPrimitive}
+      toolbarRef={toolbarRef}
+      setSelectedPrimitive={setSelectedPrimitive}
     />
   );
-  const renderPrimitive = (p: LanguagePrimitive) => (
+
+  const renderPrimitive = (p: LanguagePrimitive, i: number) => (
     <Primitive
       key={p.name}
       primitive={p}
-      onFocus={onFocus}
-      onKeyDown={onKeyDown}
+      onFocus={() => setSelectedPrimitive(p)}
       className={selected == p.name ? "selected" : ""}
+      ref={(el) => (primitiveRefs.current[i] = el)}
     />
   );
+
+  // Set selectedPrimitive state, depending on whether we go up or down
+  const move = (event: React.KeyboardEvent, dir: "Up" | "Down") => {
+    if (!selectedPrimitive || primitives.length == 0) {
+      return; // Nothing to select. Bail.
+    }
+
+    // compute the index of the newly-selected primitive
+    let newIndex;
+    const prevIndex = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
+    if (dir == "Down") {
+      newIndex = Math.min(prevIndex + 1, primitives.length - 1);
+    } else {
+      newIndex = Math.max(prevIndex - 1, 0);
+    }
+
+    // focus on the new DOM node
+    primitiveRefs.current[newIndex]?.focus();
+
+    // if the index was changed, the event is handled. Do not bubble.
+    if (newIndex !== prevIndex) {
+      event.stopPropagation();
+    }
+  };
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLUListElement> = (
+    event
+  ) => {
+    const keyName = CodeMirror.keyName(event);
+    switch (keyName) {
+      case "Down":
+      case "Up":
+        event.preventDefault();
+        move(event, keyName);
+        return;
+      case "Esc":
+        props.toolbarRef.current?.focus(); // focus, then fall-through
+        break;
+    }
+  };
 
   const text = searchString
     ? (primitives.length == 0 ? "No" : primitives.length) + " blocks found"
     : "blocks";
-
   return (
     <div>
       <h3
@@ -147,15 +198,17 @@ export const PrimitiveList = (props: PrimitiveListProps) => {
       <ul
         className="PrimitiveList list-group"
         aria-labelledby="toolbar_heading"
+        onKeyDown={handleKeyDown}
+        ref={ref}
       >
-        {primitives.map((item) =>
+        {primitives.map((item, i) =>
           item instanceof PrimitiveGroupModel
-            ? renderGroup(item)
-            : renderPrimitive(item)
+            ? renderGroup(item, i)
+            : renderPrimitive(item, i)
         )}
       </ul>
     </div>
   );
-};
+});
 
 export default PrimitiveList;

@@ -44,11 +44,8 @@ function copyToClipboard(text: string) {
 /**
  * Copy the given nodes onto the clipboard.
  */
-export function copy(
-  { focusedNode }: { focusedNode: ASTNode | null },
-  nodes: ASTNode[],
-  editWord?: string
-) {
+export function copy(nodes: ASTNode[], editWord?: string) {
+  const previouslyFocusedElement = document.activeElement;
   if (nodes.length === 0) {
     return;
   }
@@ -68,12 +65,11 @@ export function copy(
     text = text + prefix + node.toString();
     postfix = node.options && node.options.comment ? "\n" : " ";
   }
+  // do the actual copy, then restore focus
   copyToClipboard(text);
-  // Copy steals focus. Force it back to the node's DOM element
-  // without announcing via activateByNid().
-  // TODO(pcardune): it would be better to focus on whatever the
-  // previously focused element was, not or not.
-  if (focusedNode) {
-    focusedNode.element?.focus();
+  if (previouslyFocusedElement) {
+    (previouslyFocusedElement as HTMLElement).focus();
+  } else {
+    throw "copy was initiated, but no node was focused";
   }
 }
