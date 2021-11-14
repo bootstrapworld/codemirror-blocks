@@ -18,7 +18,6 @@ type BasePrimitiveProps = {
   onFocus: (e: React.FocusEvent) => void;
 };
 
-// @pcardune - I still needed to cast the ref here, in order to satisfy TS
 export const Primitive = React.forwardRef<HTMLElement, BasePrimitiveProps>(
   (props, ref) => {
     const { primitive, className, onFocus } = props;
