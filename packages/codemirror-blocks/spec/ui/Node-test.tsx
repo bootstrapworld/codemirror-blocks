@@ -1,9 +1,9 @@
 import { render } from "@testing-library/react";
 import React from "react";
 import { AST } from "../../src/ast";
-import { Language } from "../../src/CodeMirrorBlocks";
 import Context, { LanguageContext } from "../../src/components/Context";
 import Node from "../../src/components/Node";
+import { addLanguage } from "../../src/languages";
 import { Comment, Literal } from "../../src/nodes";
 import { AppStore, createAppStore } from "../../src/state/store";
 
@@ -12,11 +12,11 @@ beforeEach(() => {
   store = createAppStore();
 });
 
-const testLang: Language = {
+const testLang = addLanguage({
   id: "some-lang-id",
   name: "some lang",
   parse: jest.fn(),
-};
+});
 
 const renderWithContext = (el: React.ReactElement) =>
   render(

@@ -412,7 +412,7 @@ const buildBlockModeAPI = (
         select == "start"
           ? tmpCM.listSelections().pop()?.head
           : tmpCM.listSelections().pop()?.anchor;
-      actions.setCursor(new CodeMirrorFacade(codemirror), cur ?? null);
+      cur && codemirror.setCursor(cur);
     },
     replaceSelection: (rString, select?: "around" | "start") =>
       api.replaceSelections(
@@ -456,7 +456,8 @@ const buildBlockModeAPI = (
           })
         );
       }
-      store.dispatch(actions.setCursor(editor, cur));
+      codemirror.focus();
+      codemirror.setCursor(cur);
     },
     // As long as widget isn't defined, we're good to go
     setBookmark: (pos, opts) => {

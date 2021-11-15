@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import classNames from "classnames";
 import PrimitiveList from "./PrimitiveList";
 import { Primitive, PrimitiveGroup } from "../parsers/primitives";
@@ -20,47 +20,11 @@ const Toolbar = (props: Props) => {
   const clearSearch = () => setSearch("");
   const changeSearch: React.ChangeEventHandler<HTMLInputElement> = (event) =>
     setSearch(event.target.value);
+  const primitiveListRef = useRef<HTMLUListElement>(null);
 
   // Get a flat array of all primitives matching 'search'
   const getPrimitives = () =>
     (props.primitives?.filter(search).primitives || []) as Primitive[];
-
-  // Set selectedPrimitive state, depending on whether we go up or down
-  const move = (dir: "Up" | "Down") => {
-    const primitives = getPrimitives();
-    if (!selectedPrimitive || primitives.length == 0) {
-      return; // Nothing to select. Bail.
-    }
-    let i = primitives.indexOf(selectedPrimitive); // -1 if nothing selected
-    if (dir == "Down") {
-      i = Math.min(i + 1, primitives.length - 1);
-    } else {
-      i = Math.max(i - 1, 0);
-    }
-    const el = primitives[i]?.element;
-    if (el) {
-      el.focus(); // should *not* apply useCallback, correct?
-    } else {
-      setSelectedPrimitive(primitives[i]);
-    }
-  };
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (
-    event
-  ) => {
-    const keyName = CodeMirror.keyName(event);
-    switch (keyName) {
-      case "Down":
-      case "Up":
-        event.preventDefault();
-        move(keyName);
-        return;
-      case "Esc":
-        props.toolbarRef.current?.focus(); // focus, then fall-through
-        break;
-    }
-    event.stopPropagation();
-  };
 
   // if a primitive is selected, make a block node for it
   const primitiveNode = selectedPrimitive?.getASTNode();
@@ -71,6 +35,17 @@ const Toolbar = (props: Props) => {
   ) : (
     ""
   );
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (
+    event
+  ) => {
+    const keyName = CodeMirror.keyName(event);
+    switch (keyName) {
+      case "Down":
+        primitiveListRef.current?.focus();
+        return;
+    }
+  };
 
   return (
     <div
@@ -86,6 +61,7 @@ const Toolbar = (props: Props) => {
           type="search"
           id="search_box"
           placeholder="Search functions"
+          autoComplete="off"
           disabled={!props.blockMode}
           className="form-control"
           value={search}
@@ -104,10 +80,12 @@ const Toolbar = (props: Props) => {
       <div className="primitives-box">
         <PrimitiveList
           primitives={getPrimitives()}
-          onFocus={setSelectedPrimitive}
-          onKeyDown={handleKeyDown}
+          selectedPrimitive={selectedPrimitive}
+          toolbarRef={props.toolbarRef}
+          setSelectedPrimitive={setSelectedPrimitive}
           selected={selectedPrimitive && selectedPrimitive.name}
           searchString={search}
+          ref={primitiveListRef}
         />
       </div>
       <div

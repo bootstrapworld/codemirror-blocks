@@ -15,7 +15,6 @@ import {
   EditInterface,
 } from "../edits/performEdits";
 import { AST, ASTNode, Pos } from "../ast";
-import { AppAction } from "./reducers";
 import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { useDispatch } from "react-redux";
 import type { Language } from "../CodeMirrorBlocks";
@@ -284,15 +283,6 @@ export function useDropAction() {
     });
   };
 }
-
-// Set the cursor position.
-export const setCursor = (editor: CMBEditor, cur: Pos | null): AppAction => {
-  if (editor && cur) {
-    editor.focus();
-    editor.setCursor(cur);
-  }
-  return { type: "SET_CURSOR", cur };
-};
 
 // Activate the node with the given `nid`.
 export function activateByNid(

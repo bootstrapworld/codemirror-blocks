@@ -1,8 +1,67 @@
-import type { Language } from "../CodeMirrorBlocks";
+import { ASTNode } from "../ast";
+import type { PrimitiveGroup } from "../CodeMirrorBlocks";
+import { Literal } from "../nodes";
+import { Primitive } from "../parsers/primitives";
 
 export const LANGUAGES: Record<string, Language> = {};
 
-export function addLanguage(languageDefinition: Language) {
+export type Language = LanguageConfig & {
+  /**
+   * A function for generating a human readable error message
+   * from any exceptions that are thrown by a call to parse()
+   */
+  getExceptionMessage(e: unknown): string;
+};
+
+export type LanguageConfig = {
+  /**
+   * A unique id for the language
+   */
+  id: string;
+
+  /**
+   * The name of the language
+   */
+  name: string;
+
+  /**
+   * Optional description of the language
+   */
+  description?: string;
+
+  /**
+   * A function for generating an AST from source code
+   * @param code source code for the program
+   * @returns The ast that codemirror-blocks will render
+   */
+  parse(code: string): ASTNode[];
+
+  /**
+   * A function for generating a human readable error message
+   * from any exceptions that are thrown by a call to parse()
+   */
+  getExceptionMessage?(e: unknown): string;
+
+  /**
+   * A function for generating ASTNodes from Primitives
+   */
+  getASTNodeForPrimitive?: (primitive: Primitive) => ASTNode;
+
+  /**
+   * A function for generating a Literal ast node from a Primitive
+   */
+  getLiteralNodeForPrimitive?: (
+    primitive: Primitive
+  ) => ReturnType<typeof Literal>;
+
+  /**
+   * Returns a list of language primitives that will be displayed
+   * in the search bar.
+   */
+  primitivesFn?: () => PrimitiveGroup;
+};
+
+export function addLanguage(languageDefinition: LanguageConfig) {
   const id = languageDefinition.id;
   if (!id) {
     throw new Error(`language definition missing an 'id' attribute`);
@@ -21,14 +80,12 @@ export function addLanguage(languageDefinition: Language) {
     );
   }
 
-  if (!languageDefinition.getExceptionMessage) {
-    languageDefinition.getExceptionMessage = function (e) {
-      return String(e) || "Parser error";
-    };
-  }
-
-  LANGUAGES[id] = languageDefinition;
-  return languageDefinition;
+  const language: Language = {
+    getExceptionMessage: (e: unknown) => String(e) || "Parser error",
+    ...languageDefinition,
+  };
+  LANGUAGES[id] = language;
+  return language;
 }
 
 export function getLanguage(languageId: string) {

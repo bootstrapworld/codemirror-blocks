@@ -7,12 +7,10 @@ import * as DropTarget from "./components/DropTarget";
 import Node from "./components/Node";
 import { ASTNode } from "./ast";
 import * as Nodes from "./nodes";
-import type { Literal } from "./nodes";
 import * as NodeSpec from "./nodeSpec";
 import * as Languages from "./languages";
 import * as Pretty from "pretty-fast-pretty-printer";
 import { PrimitiveGroup } from "./parsers/primitives";
-import type { Primitive } from "./parsers/primitives";
 import Context from "./components/Context";
 import { AppStore, createAppStore } from "./state/store";
 import { API, buildAPI } from "./CodeMirror-api";
@@ -30,57 +28,8 @@ export type Options = {
   incrementalRendering?: boolean;
 };
 
-/**
- * A language definition object
- */
-export type Language = {
-  /**
-   * A unique id for the language
-   */
-  id: string;
-
-  /**
-   * The name of the language
-   */
-  name: string;
-
-  /**
-   * Optional description of the language
-   */
-  description?: string;
-
-  /**
-   * A function for generating an AST from source code
-   * @param code source code for the program
-   * @returns The ast that codemirror-blocks will render
-   */
-  parse(code: string): ASTNode[];
-
-  /**
-   * A function for generating a human readable error message
-   * from any exceptions that are thrown by a call to parse()
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getExceptionMessage?(e: unknown): string;
-
-  /**
-   * A function for generating ASTNodes from Primitives
-   */
-  getASTNodeForPrimitive?: (primitive: Primitive) => ASTNode;
-
-  /**
-   * A function for generating a Literal ast node from a Primitive
-   */
-  getLiteralNodeForPrimitive?: (
-    primitive: Primitive
-  ) => ReturnType<typeof Literal>;
-
-  /**
-   * Returns a list of language primitives that will be displayed
-   * in the search bar.
-   */
-  primitivesFn?: () => PrimitiveGroup;
-};
+import type { Language } from "./languages";
+export type { Language };
 
 type Props = {
   onMount: (api: API) => void;

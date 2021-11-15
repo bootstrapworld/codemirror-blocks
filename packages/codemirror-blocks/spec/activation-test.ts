@@ -74,6 +74,7 @@ describe("when dealing with node activation,", () => {
 
   it("should activate the node after the cursor when down is pressed", async () => {
     cmb.setCursor({ line: 0, ch: 2 });
+    cmb.focus();
     keyDown("ArrowDown");
     expect(cmb.getFocusedNode()).not.toBe(literal1);
     expect(cmb.getFocusedNode()).toBe(literal2);

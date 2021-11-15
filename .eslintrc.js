@@ -12,6 +12,7 @@ module.exports = {
     ],
     "no-undef": 0,
     "react/display-name": 0,
+    "react/prop-types": 0, // handled by typescript
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
     "@typescript-eslint/explicit-module-boundary-types": 0,

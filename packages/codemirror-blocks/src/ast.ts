@@ -7,7 +7,7 @@ import {
   genUniqueId,
 } from "./utils";
 import * as P from "pretty-fast-pretty-printer";
-import type { NodeSpec } from "./nodeSpec";
+import type { FieldsForSpec, NodeSpec } from "./nodeSpec";
 import type React from "react";
 import type { Props as NodeProps } from "./components/Node";
 
@@ -489,7 +489,7 @@ export type Range = {
 };
 
 export type NodeOptions = {
-  comment?: ASTNode<{ comment: string }>;
+  comment?: ASTNode;
 
   /**
    * The aria label for the node
@@ -502,39 +502,86 @@ export type NodeOptions = {
   isNotEditable?: boolean;
 };
 
-export type UnknownFields = { [fieldName: string]: unknown };
+export type UnknownFields<FieldName extends string> = Record<
+  FieldName,
+  unknown
+>;
 export type NodeField = ASTNode | ASTNode[] | unknown;
-export type NodeFields = { [fieldName: string]: NodeField };
+export type NodeFields<FieldName extends string> = Record<FieldName, NodeField>;
 
-type ASTNodeProps<Fields extends NodeFields = UnknownFields> = {
+export type ASTNodeProps<Spec extends NodeSpec = NodeSpec> = {
   from: Pos;
   to: Pos;
   type: string;
-  fields: Fields;
+  fields: FieldsForSpec<Spec>;
   options: NodeOptions;
 
   // Pretty-printing is node-specific, and must be implemented by
   // the ASTNode itself
-  pretty: (node: ASTNode<Fields>) => P.Doc;
+  pretty: (node: NodeForSpec<Spec>) => P.Doc;
 
   render: (
-    props: NodeProps & { node: ASTNode<Fields> }
+    props: Omit<NodeProps, "node"> & { node: NodeForSpec<Spec> }
   ) => React.ReactElement | void;
 
   // the long description is node-specific, detailed, and must be
   // implemented by the ASTNode itself
   longDescription?: (
-    node: ASTNode<Fields>,
+    node: NodeForSpec<Spec>,
     _level: number
   ) => string | undefined;
-  spec: NodeSpec;
+  spec: Spec;
 };
+
+// TODO(pcardune): figure out how to get rid of the duplication
+// between this interface, and the ASTNode class definition
+export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
+  from: Pos;
+  to: Pos;
+  type: string;
+  id: string;
+  nid: number;
+  level: number;
+  ariaSetSize: number;
+  ariaPosInset: number;
+
+  fields: FieldsForSpec<Spec>;
+  options: NodeOptions;
+  pretty: () => P.Doc;
+  spec: Spec;
+
+  element: HTMLElement | null;
+
+  /**
+   * @internal
+   * Used for unit testing only
+   */
+  isEditable?: () => boolean;
+
+  readonly _pretty: ASTNodeProps["pretty"];
+  readonly render: ASTNodeProps["render"];
+  readonly longDescription?: ASTNodeProps["longDescription"];
+
+  _hash: number | undefined;
+  hash: number;
+  _dangerouslySetHash(hash: number): void;
+  describe(level: number): string | undefined;
+  shortDescription(): string;
+  toString(): string;
+  children(): Iterable<ASTNode>;
+  descendants(): Iterable<ASTNode>;
+  srcRange(): { from: Pos; to: Pos };
+  reactElement(props?: Record<string, unknown>): React.ReactElement;
+}
 
 /**
  * Every node in the AST must inherit from the `ASTNode` class, which is used
  * to house some common attributes.
  */
-export class ASTNode<Fields extends NodeFields = UnknownFields> {
+export class ASTNode<
+  Spec extends NodeSpec = NodeSpec,
+  Fields extends NodeFields<string> = NodeFields<string>
+> {
   /**
    * @internal
    * Every node must have a Starting and Ending position, represented as
@@ -573,29 +620,25 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
    */
   element: HTMLElement | null = null;
 
-  readonly _pretty: (node: ASTNode<Fields>) => P.Doc;
-  readonly render: (props: {
-    node: ASTNode<Fields>;
-  }) => React.ReactElement | void;
-  readonly longDescription?: (
-    node: ASTNode<Fields>,
-    _level: number
-  ) => string | undefined;
+  readonly _pretty: ASTNodeProps["pretty"];
+  readonly render: ASTNodeProps["render"];
+  readonly longDescription?: ASTNodeProps["longDescription"];
 
-  constructor(props: ASTNodeProps<Fields>) {
+  constructor(props: ASTNodeProps<Spec>) {
     validateNodeProps(props);
     this.from = props.from;
     this.to = props.to;
     this.type = props.type;
     this.options = props.options;
-    this.fields = props.fields;
+    this.fields = props.fields as Fields;
     this._pretty = props.pretty;
     this.longDescription = props.longDescription;
     this.render = props.render;
     this.spec = props.spec;
   }
 
-  private _hash: number | undefined;
+  // TODO(pcardune): make this private again
+  _hash: number | undefined;
 
   /**
    * A hash of the ast node and its children, which can
@@ -626,8 +669,8 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
     this._hash = hash;
   }
 
-  pretty() {
-    return this._pretty(this);
+  pretty(): P.Doc {
+    return this._pretty(this as NodeForSpec);
   }
 
   // based on the depth level, choose short v. long descriptions
@@ -636,7 +679,7 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
       return this.shortDescription();
     } else {
       return this.longDescription
-        ? this.longDescription(this, level)
+        ? this.longDescription(this as NodeForSpec, level)
         : this.shortDescription();
     }
   }
@@ -646,8 +689,10 @@ export class ASTNode<Fields extends NodeFields = UnknownFields> {
   }
 
   // Pretty-print the node and its children, based on the pp-width
-  toString() {
-    return this._pretty(this).display(prettyPrintingWidth).join("\n");
+  toString(): string {
+    return this._pretty(this as NodeForSpec)
+      .display(prettyPrintingWidth)
+      .join("\n");
   }
 
   // Produces an iterator over the children of this node.
