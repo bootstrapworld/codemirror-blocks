@@ -43,6 +43,9 @@ function copyToClipboard(text: string) {
 
 /**
  * Copy the given nodes onto the clipboard.
+ * This function is called from keymap.tsx and PrimitiveList.tsx
+ * In both places, the call site checks to ensure the copy
+ * event is fired when a DOM node is active.
  */
 export function copy(nodes: ASTNode[], editWord?: string) {
   const previouslyFocusedElement = document.activeElement;
@@ -67,9 +70,5 @@ export function copy(nodes: ASTNode[], editWord?: string) {
   }
   // do the actual copy, then restore focus
   copyToClipboard(text);
-  if (previouslyFocusedElement) {
-    (previouslyFocusedElement as HTMLElement).focus();
-  } else {
-    throw "copy was initiated, but no node was focused";
-  }
+  (previouslyFocusedElement as HTMLElement).focus();
 }
