@@ -12,13 +12,11 @@ import type { AST } from "../ast";
 import CodeMirror from "codemirror";
 import type { Options, Language } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../state/store";
-import type { RootState } from "../state/reducers";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext, LanguageContext } from "../components/Context";
 import { CodeMirrorFacade, Pos, ReadonlyCMBEditor } from "../editor";
-import { BuiltAPI, buildAPI } from "../CodeMirror-api";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
 import ToplevelBlock from "./ToplevelBlock";
@@ -34,15 +32,14 @@ export type BlockEditorProps = {
   language: Language;
   keyDownHelpers: AppHelpers;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
-  onMount: (editor: CodeMirrorFacade, api: BuiltAPI, passedAST: AST) => void;
-  passedAST: AST;
+  onMount: (editor: CodeMirror.Editor) => void;
 };
 
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
-  const { language, passedAST } = props;
+  const { language } = props;
   const dispatch: AppDispatch = useDispatch();
   const ast = useSelector(selectors.getAST);
-  const quarantine = useSelector((state: RootState) => state.quarantine);
+  const quarantine = useSelector(selectors.getQuarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const newASTRef = useRef<AST | undefined>();
 
@@ -134,36 +131,34 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
    * When the editor mounts, (1) set change event handlers and AST,
    * (2) set the focus, (3) set aria attributes, and (4) build the API
    */
-  const handleEditorDidMount = (editor: CodeMirrorFacade) => {
+  const handleEditorDidMount = (codemirror: CodeMirror.Editor) => {
+    const editor = new CodeMirrorFacade(codemirror);
     setEditor(editor);
     // TODO(Emmanuel): Try to set them in the component constructor
-    editor.codemirror.on("beforeChange", (ed, change) =>
+    codemirror.on("beforeChange", (ed, change) =>
       handleBeforeChange(editor, change)
     );
-    editor.codemirror.on("change", (ed, change) =>
-      handleChange(editor, change)
-    );
+    codemirror.on("change", (ed, change) => handleChange(editor, change));
 
     // set AST and search properties and collapse preferences
-    dispatch(actions.setAST(passedAST));
     if (options.collapseAll) {
       dispatch(actions.collapseAll());
     }
 
     // When the editor receives focus, select the first root (if it exists)
-    const firstRoot = passedAST.getFirstRootNode();
+    const firstRoot = ast.getFirstRootNode();
     if (firstRoot) {
       dispatch(actions.setFocusedNode(firstRoot));
     }
 
     // Set extra aria attributes
-    const wrapper = editor.codemirror.getWrapperElement();
+    const wrapper = codemirror.getWrapperElement();
     wrapper.setAttribute("role", "tree");
     wrapper.setAttribute("aria-multiselectable", "true");
     wrapper.setAttribute("tabIndex", "-1");
 
     // pass the block-mode CM editor, API, and current AST
-    props.onMount(editor, buildAPI(editor, dispatch, language), passedAST);
+    props.onMount(codemirror);
   };
 
   // we have use a ref here instead of useState
@@ -209,12 +204,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     e.preventDefault();
     const start = ed.getCursor("from");
     const end = ed.getCursor("to");
-    dispatch({
-      type: "SET_QUARANTINE",
-      start: start,
-      end: end,
-      text: text,
-    });
+    dispatch(actions.setQuarantine(start, end, text));
   };
 
   /**
@@ -226,12 +216,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     if (text) {
       const start = editor.codemirror.getCursor("from");
       const end = editor.codemirror.getCursor("to");
-      dispatch({
-        type: "SET_QUARANTINE",
-        start: start,
-        end: end,
-        text: text,
-      });
+      dispatch(actions.setQuarantine(start, end, text));
     }
   };
 
@@ -264,7 +249,13 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         </EditorContext.Provider>
       ));
       if (quarantine) {
-        portals.push(<ToplevelBlockEditable editor={editor} key="-1" />);
+        portals.push(
+          <ToplevelBlockEditable
+            editor={editor}
+            quarantine={quarantine}
+            key="-1"
+          />
+        );
       }
     }
     return portals;

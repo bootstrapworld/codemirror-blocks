@@ -1,6 +1,5 @@
 import { cleanup, render } from "@testing-library/react";
 import React from "react";
-import { AST } from "../../src/ast";
 import { Language } from "../../src/CodeMirrorBlocks";
 import Context from "../../src/components/Context";
 import { addLanguage } from "../../src/languages";
@@ -35,7 +34,6 @@ xdescribe("on first render", () => {
         value=""
         onMount={onMount}
         keyDownHelpers={{}}
-        passedAST={AST.from([])}
         language={testLanguage}
       />
     );

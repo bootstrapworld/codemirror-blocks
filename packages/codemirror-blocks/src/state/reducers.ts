@@ -1,7 +1,7 @@
 import CodeMirror from "codemirror";
 import type { Action } from "redux";
 import { AST, ASTData } from "../ast";
-import { ReadonlyCMBEditor } from "../editor";
+import { Pos, ReadonlyCMBEditor } from "../editor";
 import { debugLog } from "../utils";
 
 /**
@@ -49,9 +49,7 @@ function loggerDebug(action: AppAction, ast: ASTData) {
   reducerActivities.push(activity);
 }
 
-export type Quarantine = Readonly<
-  [CodeMirror.Position, CodeMirror.Position, string]
->;
+export type Quarantine = Readonly<{ from: Pos; to: Pos; value: string }>;
 
 export type ActionFocus = Readonly<{
   oldFocusNId: number | null;
@@ -59,6 +57,18 @@ export type ActionFocus = Readonly<{
 }>;
 
 export type RootState = {
+  /**
+   * Whether or not block mode is enabled.
+   */
+  readonly blockMode: boolean;
+
+  /**
+   * The code in the editor. Ideally this should be normalized
+   * with astData, which represents the same thing when in block
+   * mode
+   */
+  readonly code: string;
+
   readonly selections: ReadonlyArray<string>;
 
   /**
@@ -79,8 +89,10 @@ export type RootState = {
 };
 
 export type AppAction =
+  | (Action<"SET_BLOCK_MODE"> & { enabled: boolean })
   | (Action<"SET_FOCUS"> & { focusId: string | null })
   | (Action<"SET_AST"> & { ast: AST })
+  | (Action<"SET_CODE"> & { code: string })
   | (Action<"SET_SELECTIONS"> & { selections: string[] })
   | (Action<"SET_EDITABLE"> & { id: string; bool: boolean })
   | (Action<"SET_ERROR_ID"> & { errorId: string })
@@ -103,6 +115,8 @@ export type AppAction =
   | Action<"RESET_STORE_FOR_TESTING">;
 
 const initialState: () => RootState = () => ({
+  blockMode: false,
+  code: "",
   selections: [],
   editable: {},
   astData: {
@@ -122,6 +136,10 @@ const initialState: () => RootState = () => ({
 
 function reduce(state = initialState(), action: AppAction): RootState {
   switch (action.type) {
+    case "SET_CODE":
+      return { ...state, code: action.code };
+    case "SET_BLOCK_MODE":
+      return { ...state, blockMode: action.enabled };
     case "SET_FOCUS":
       return { ...state, focusId: action.focusId };
     case "SET_AST":
@@ -164,16 +182,19 @@ function reduce(state = initialState(), action: AppAction): RootState {
       }
       return {
         ...state,
-        quarantine: [
-          state.quarantine[0],
-          state.quarantine[1],
-          action.text,
-        ] as Quarantine,
+        quarantine: {
+          ...state.quarantine,
+          value: action.text,
+        },
       };
     case "SET_QUARANTINE":
       return {
         ...state,
-        quarantine: [action.start, action.end, action.text] as Quarantine,
+        quarantine: {
+          from: action.start,
+          to: action.end,
+          value: action.text,
+        },
       };
     case "ADD_MARK":
       return {

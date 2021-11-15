@@ -6,6 +6,7 @@ import {
 } from "../CodeMirrorBlocks";
 import { act, cleanup, render } from "@testing-library/react";
 import React from "react";
+import { createAppStore } from "../state/store";
 // pass along all the simulated events
 export * from "@bootstrapworld/cmb-toolkit/lib/simulate";
 
@@ -57,15 +58,17 @@ const fixture = `
  *
  * @param language the language spec to use
  */
-export async function mountCMB(language: Language): Promise<API> {
+export function mountCMB(language: Language) {
   document.body.insertAdjacentHTML("afterbegin", fixture);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const container = document.getElementById("cmb-editor")!;
   const codemirrorOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
 
-  const cmb: API = {} as API;
+  const cmb = {} as API;
+  const store = createAppStore();
   render(
     <CodeMirrorBlocksComponent
+      store={store}
       language={language}
       onMount={(newAPI) => {
         Object.assign(cmb, newAPI, {
@@ -79,7 +82,7 @@ export async function mountCMB(language: Language): Promise<API> {
     { container }
   );
   cmb.setBlockMode(true);
-  return cmb;
+  return { cmb, store };
 }
 
 // TODO(pcardune): replace the element property on an ASTNode with this function

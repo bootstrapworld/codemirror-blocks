@@ -4,15 +4,20 @@ import thunk, {
   ThunkDispatch,
   ThunkMiddleware,
 } from "redux-thunk";
+import * as actions from "./actions";
 import { reducer } from "./reducers";
 import type { RootState, AppAction } from "./reducers";
 
-export function createAppStore() {
-  return createStore(
+export function createAppStore(code?: string) {
+  const store = createStore(
     reducer,
     undefined,
     applyMiddleware(thunk as ThunkMiddleware<RootState, AppAction>)
   );
+  if (code !== undefined) {
+    store.dispatch(actions.setCode(code));
+  }
+  return store;
 }
 
 export type AppStore = ReturnType<typeof createAppStore>;

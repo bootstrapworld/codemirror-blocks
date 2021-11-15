@@ -23,6 +23,8 @@ describe("createAppStore()", () => {
           "nodeNIdMap": Map {},
           "rootNodes": Array [],
         },
+        "blockMode": false,
+        "code": "",
         "collapsedList": Array [],
         "editable": Object {},
         "errorId": "",

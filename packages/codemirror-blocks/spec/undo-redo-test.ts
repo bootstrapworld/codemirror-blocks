@@ -27,7 +27,7 @@ describe("when testing undo/redo,", () => {
   };
 
   beforeEach(async () => {
-    cmb = await mountCMB(wescheme);
+    cmb = mountCMB(wescheme).cmb;
   });
 
   afterEach(teardown);

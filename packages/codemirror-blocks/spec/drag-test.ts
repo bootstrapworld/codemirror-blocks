@@ -19,8 +19,8 @@ import { fireEvent } from "@testing-library/react";
 
 describe("Drag and drop", () => {
   let cmb!: API;
-  beforeEach(async () => {
-    cmb = await mountCMB(wescheme);
+  beforeEach(() => {
+    cmb = mountCMB(wescheme).cmb;
   });
 
   afterEach(teardown);

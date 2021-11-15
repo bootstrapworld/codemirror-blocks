@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import NodeEditable from "../components/NodeEditable";
-import { OverwriteTarget } from "../state/actions";
+import * as actions from "../state/actions";
 import type { AppDispatch } from "../state/store";
-import type { RootState } from "../state/reducers";
 import type { CMBEditor } from "../editor";
+import { Quarantine } from "../state/reducers";
 
 type Props = {
   editor: CMBEditor;
+  quarantine: Quarantine;
 };
 
 /**
@@ -21,21 +22,9 @@ type Props = {
  */
 const ToplevelBlockEditable = (props: Props) => {
   const dispatch: AppDispatch = useDispatch();
-  const onDisableEditable = () => dispatch({ type: "DISABLE_QUARANTINE" });
-  const onChange = (text: string) =>
-    dispatch({ type: "CHANGE_QUARANTINE", text });
-  const [start, end, value] = useSelector(({ quarantine }: RootState) => {
-    if (!quarantine) {
-      // TODO(pcardune): instead of grabbing the quarantine out of state,
-      // make it a prop that gets passed in. Then the type system will force
-      // the parent component to do this check and we won't have unexpected
-      // runtime errors.
-      throw new Error(
-        "ToplevelBlockEditable should only be rendered when there's a quarantine"
-      );
-    }
-    return quarantine;
-  });
+  const onDisableEditable = () => dispatch(actions.disableQuarantine());
+  const onChange = (text: string) => dispatch(actions.changeQuarantine(text));
+  const { from, to, value } = props.quarantine;
 
   // add a marker to codemirror, with an empty "widget" into which
   // the react component will be rendered.
@@ -44,13 +33,13 @@ const ToplevelBlockEditable = (props: Props) => {
   const { container, marker } = useMemo(() => {
     const container = document.createElement("span");
     container.classList.add("react-container");
-    const marker = props.editor.replaceMarkerWidget(start, end, container);
+    const marker = props.editor.replaceMarkerWidget(from, to, container);
     // call endOperation to flush all buffered updates
     // forcing codemirror to put the marker into the document's DOM
     // right away, making it immediately focusable/selectable.
     // SHARED.editor.endOperation();
     return { container, marker };
-  }, [props.editor, start, end]);
+  }, [props.editor, from, to]);
   // make sure to clear the marker from codemirror
   // when the component unmounts
   useEffect(() => {
@@ -60,7 +49,7 @@ const ToplevelBlockEditable = (props: Props) => {
   return ReactDOM.createPortal(
     <NodeEditable
       editor={props.editor}
-      target={new OverwriteTarget(start, end)}
+      target={new actions.OverwriteTarget(from, to)}
       value={value}
       onChange={onChange}
       contentEditableProps={{

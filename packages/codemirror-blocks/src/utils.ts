@@ -1,6 +1,5 @@
 import objToStableString from "fast-json-stable-stringify";
-import CodeMirror, { EditorChange } from "codemirror";
-import { CodeMirrorFacade } from "./editor";
+import { EditorChange } from "codemirror";
 import { Activity, getReducerActivities, RootState } from "./state/reducers";
 import * as selectors from "./state/selectors";
 import type { AST, ASTNode, Pos, Range } from "./ast";
@@ -18,18 +17,6 @@ export const mac = ios || /Mac/.test(platform);
 /**************************************************************
  * Utility functions used in one or more files
  */
-
-/**
- * @internal
- * Create a dummy CM instance, matching relevant state
- * from a passed CodeMirrorFacade
- */
-const tmpDiv = document.createElement("div");
-export function getTempCM(editor: CodeMirrorFacade) {
-  const tmpCM = CodeMirror(tmpDiv, { value: editor.getValue() });
-  tmpCM.setCursor(editor.codemirror.getCursor());
-  return tmpCM;
-}
 
 // make sure we never assign the same ID to two nodes in ANY active
 // program at ANY point in time.

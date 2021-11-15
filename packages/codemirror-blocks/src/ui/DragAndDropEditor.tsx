@@ -11,7 +11,7 @@ import { useDrop } from "react-dnd";
 import { CodeMirrorFacade } from "../editor";
 
 type OurProps = {
-  editorDidMount?: (ed: CodeMirrorFacade) => void;
+  editorDidMount?: (ed: CodeMirror.Editor) => void;
   onFocus?: (ed: CodeMirrorFacade) => void;
   onPaste?: (ed: CodeMirrorFacade, e: ClipboardEvent) => void;
   onKeyDown?: (ed: CodeMirrorFacade, e: React.KeyboardEvent) => void;
@@ -66,7 +66,7 @@ const DragAndDropEditor = (props: Props) => {
 
   const onEditorMounted = (ed: CodeMirror.Editor) => {
     const editor = new CodeMirrorFacade(ed);
-    props.editorDidMount && props.editorDidMount(editor);
+    props.editorDidMount && props.editorDidMount(ed);
     editorRef.current = editor;
   };
 

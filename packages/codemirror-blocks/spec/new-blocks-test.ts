@@ -4,6 +4,8 @@ import { AST, ASTNode } from "../src/ast";
 import type { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
 import { FunctionAppNode } from "../src/nodes";
+import { AppStore } from "../src/state/store";
+import * as actions from "../src/state/actions";
 
 import {
   teardown,
@@ -13,11 +15,19 @@ import {
   mountCMB,
   isNodeEditable,
 } from "../src/toolkit/test-utils";
+import { Pos } from "../src/editor";
 
 describe("The CodeMirrorBlocks Class", function () {
   let cmb!: API;
-  beforeEach(async function () {
-    cmb = await mountCMB(wescheme);
+  let store!: AppStore;
+  const setQuarantine = (start: Pos, end: Pos, text: string) =>
+    act(() => {
+      store.dispatch(actions.setQuarantine(start, end, text));
+    });
+  beforeEach(() => {
+    const mounted = mountCMB(wescheme);
+    cmb = mounted.cmb;
+    store = mounted.store;
   });
 
   afterEach(function () {
@@ -50,7 +60,6 @@ describe("The CodeMirrorBlocks Class", function () {
     let literal!: ASTNode;
     beforeEach(async function () {
       cmb.setValue("11");
-      cmb.setBlockMode(true);
       literal = cmb.getAst().rootNodes[0];
     });
 
@@ -60,7 +69,7 @@ describe("The CodeMirrorBlocks Class", function () {
       });
       it("typing at the end of a line", async function () {
         act(() => {
-          cmb.setQuarantine(
+          setQuarantine(
             {
               line: 0,
               ch: 2,
@@ -80,24 +89,20 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toEqual("42\n9\n11");
       });
       it("typing at the beginning of a line", async function () {
-        act(() => {
-          cmb.setQuarantine(
-            { line: 0, ch: 0, xRel: 0 } as CodeMirror.Position,
-            { line: 0, ch: 0, xRel: 0 } as CodeMirror.Position,
-            "9"
-          );
-        });
+        setQuarantine(
+          { line: 0, ch: 0, xRel: 0 } as CodeMirror.Position,
+          { line: 0, ch: 0, xRel: 0 } as CodeMirror.Position,
+          "9"
+        );
         keyDown("Enter");
         expect(cmb.getValue()).toEqual("9\n42\n11");
       });
       it("typing between two blocks on a line", async function () {
-        act(() => {
-          cmb.setQuarantine(
-            { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
-            { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
-            "9"
-          );
-        });
+        setQuarantine(
+          { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
+          { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
+          "9"
+        );
         keyDown("Enter");
         expect(cmb.getValue()).toEqual("42\n9\n11");
       });

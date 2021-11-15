@@ -11,10 +11,10 @@ import * as NodeSpec from "./nodeSpec";
 import * as Languages from "./languages";
 import * as Pretty from "pretty-fast-pretty-printer";
 import { PrimitiveGroup } from "./parsers/primitives";
-import type { API } from "./ui/ToggleEditor";
 import Context from "./components/Context";
-import { createAppStore } from "./state/store";
-export type { API } from "./ui/ToggleEditor";
+import { AppStore, createAppStore } from "./state/store";
+import { API, buildAPI } from "./CodeMirror-api";
+export type { API };
 
 /**
  * Options for CodeMirrorBlocks
@@ -36,19 +36,20 @@ type Props = {
   options?: Options;
   language: Language;
   codemirrorOptions?: CodeMirror.EditorConfiguration;
+  store?: AppStore;
 };
 export const CodeMirrorBlocksComponent = ({
   onMount,
   options = {},
   language,
   codemirrorOptions = {},
+  store = createAppStore(options.value),
 }: Props) => {
   return (
-    <Context store={createAppStore()}>
+    <Context store={store}>
       <ToggleEditor
         language={language}
-        initialCode={options.value ?? ""}
-        onMount={onMount}
+        onMount={(codemirror) => onMount(buildAPI(codemirror, store, language))}
         options={options}
         codemirrorOptions={codemirrorOptions}
       />
