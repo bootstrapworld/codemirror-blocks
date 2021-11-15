@@ -32,6 +32,7 @@ const bundleConfig = {
       export: "default",
     },
   },
+  devtool: "source-map",
 };
 
 // TODO(pcardune): figure out what needs to be part of the bundle
