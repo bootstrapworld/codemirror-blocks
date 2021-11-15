@@ -128,3 +128,63 @@ describe("focus state", () => {
     expect(selectors.getFocusedNode(getState())).toBe(ast.rootNodes[0]);
   });
 });
+
+describe("block mode", () => {
+  it("starts out disabled", () => {
+    expect(selectors.isBlockModeEnabled(getState())).toBe(false);
+  });
+
+  describe("after calling setBlockMode(true, ...)", () => {
+    it("will enable block mode and set the AST and code", () => {
+      // initially the ast and code are both empty
+      expect(selectors.getCode(getState())).toBe("");
+      expect(selectors.getAST(getState()).rootNodes.length).toBe(0);
+
+      // now we enable block mode
+      dispatch(actions.setBlockMode(true, "(define x 1)", wescheme));
+
+      // and block mode is enabled, and the code/ast is set
+      expect(selectors.isBlockModeEnabled(getState())).toBe(true);
+      expect(selectors.getCode(getState())).toBe("(define x 1)");
+      expect(selectors.getAST(getState()).rootNodes.length).toBe(1);
+    });
+
+    it("will update the code and AST if called multiple times", () => {
+      dispatch(actions.setBlockMode(true, "(define x 1)", wescheme));
+      dispatch(actions.setBlockMode(true, "(define y 2)", wescheme));
+      dispatch(actions.setBlockMode(true, "(define z 3)", wescheme));
+      expect(selectors.getCode(getState())).toBe("(define z 3)");
+      expect(selectors.getAST(getState()).toString()).toBe("(define z 3)");
+    });
+
+    it("will make the code conform to what the language's pretty printer generates", () => {
+      dispatch(
+        actions.setBlockMode(
+          true,
+          `(  
+           define
+            x 
+              1  )`,
+          wescheme
+        )
+      );
+
+      expect(selectors.getCode(getState())).toBe("(define x 1)");
+    });
+
+    it("will not change anything if parsing fails, and return an error result", () => {
+      const result = dispatch(
+        actions.setBlockMode(true, `(define x 1`, wescheme)
+      );
+      expect(selectors.getCode(getState())).toBe("");
+      expect(selectors.getAST(getState()).rootNodes.length).toBe(0);
+      expect(selectors.isBlockModeEnabled(getState())).toBe(false);
+      if (result.successful) {
+        fail("expected an error result");
+      }
+      expect(result.exception).toMatchInlineSnapshot(
+        `[Error: Your program could not be parsed]`
+      );
+    });
+  });
+});

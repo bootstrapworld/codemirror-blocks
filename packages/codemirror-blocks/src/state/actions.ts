@@ -83,11 +83,11 @@ export const setCode = (code: string) => ({ type: "SET_CODE" as const, code });
 export const setBlockMode =
   (
     enabled: boolean,
-    editor: ReadonlyRangedText,
+    code: string,
     language: Language
   ): AppThunk<ReturnType<typeof checkASTRoundtripConversion>> =>
   (dispatch) => {
-    const result = checkASTRoundtripConversion(editor.getValue(), language);
+    const result = checkASTRoundtripConversion(code, language);
     if (result.successful) {
       dispatch({
         type: "SET_BLOCK_MODE" as const,
