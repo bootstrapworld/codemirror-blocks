@@ -2,9 +2,9 @@ import React from "react";
 import { ItemTypes } from "../dnd";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
-import { edit_delete, performEdits } from "../edits/performEdits";
 import { AppDispatch } from "../state/store";
 import * as selectors from "../state/selectors";
+import * as actions from "../state/actions";
 import { CMBEditor } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
 require("./TrashCan.less");
@@ -16,16 +16,17 @@ const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
     () => ({
       accept: ItemTypes.NODE,
       drop: (item: { id: string }) => {
-        const srcNode = item.id ? ast.getNodeById(item.id) : null; // null if dragged from toolbar
-        if (!srcNode) return; // Someone dragged from the toolbar to the trash can.
-        const edits = [edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id))];
+        const srcNode = item.id ? ast.getNodeByIdOrThrow(item.id) : null; // null if dragged from toolbar
+        if (!srcNode) {
+          return; // Someone dragged from the toolbar to the trash can.
+        }
         return dispatch(
-          performEdits(edits, props.language.parse, props.editor)
+          actions.deleteASTNode(props.language, props.editor, srcNode.id)
         );
       },
       collect: (monitor) => ({ isOver: monitor.isOver() }),
     }),
-    [performEdits, ast]
+    [ast]
   );
 
   const classNames = "TrashCan" + (isOver ? " over" : "");

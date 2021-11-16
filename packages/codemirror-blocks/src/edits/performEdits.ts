@@ -194,6 +194,11 @@ export function applyEdits(
   return err(result.exception);
 }
 
+export type PerformEditsResult = Result<{
+  newAST: AST;
+  focusId?: string | undefined;
+}>;
+
 /**
  * performEdits : String, AST, Array<Edit>, Callback?, Callback? -> Void
  *
@@ -209,7 +214,7 @@ export const performEdits =
     parse: Language["parse"],
     editor: CMBEditor,
     annt?: string
-  ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
+  ): AppThunk<PerformEditsResult> =>
   (dispatch, getState) => {
     // Perform the text edits, and update the ast.
     const result = applyEdits(
