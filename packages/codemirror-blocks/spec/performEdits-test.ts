@@ -26,7 +26,7 @@ const initialCode = `
 
 const setCode = (code: string) => {
   editor.setValue(code);
-  ast = AST.from(wescheme.id, wescheme.parse(editor.getValue()));
+  ast = wescheme.buildAST(editor.getValue());
 };
 const apply = (edits: EditInterface[]) => applyEdits(edits, ast, editor);
 

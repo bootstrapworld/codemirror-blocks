@@ -53,14 +53,11 @@ describe("ast", () => {
 describe("collapse state", () => {
   let ast: AST;
   beforeEach(() => {
-    ast = AST.from(
-      wescheme.id,
-      wescheme.parse(`
+    ast = wescheme.buildAST(`
       (define x 1)
       (define y 2)
       (define z 3)
-    `)
-    );
+    `);
     dispatch(actions.setAST(ast));
   });
   it("starts with an empty collapse list", () => {
@@ -111,14 +108,11 @@ describe("error state", () => {
 describe("focus state", () => {
   let ast: AST;
   beforeEach(() => {
-    ast = AST.from(
-      wescheme.id,
-      wescheme.parse(`
+    ast = wescheme.buildAST(`
       (define x 1)
       (define y 2)
       (define z 3)
-    `)
-    );
+    `);
     dispatch(actions.setAST(ast));
   });
 

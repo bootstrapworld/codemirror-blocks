@@ -116,7 +116,7 @@ function checkASTRoundtripConversion(
 ): Result<{ oldAst: AST; newAst: AST; newCode: string }, string> {
   let oldAst: AST;
   try {
-    oldAst = AST.from(language.id, language.parse(oldCode)); // parse the code (WITH annotations)
+    oldAst = language.buildAST(oldCode); // parse the code (WITH annotations)
   } catch (e) {
     // console.error(e);
     if (language.getExceptionMessage) {
@@ -130,7 +130,7 @@ function checkASTRoundtripConversion(
   }
   try {
     const newCode = oldAst.toString();
-    const newAst = AST.from(language.id, language.parse(newCode));
+    const newAst = language.buildAST(newCode);
     return ok({ oldAst, newCode, newAst });
   } catch (e) {
     // console.error("COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n", oldAst);
