@@ -19,6 +19,7 @@ describe("createAppStore()", () => {
         "actionFocus": undefined,
         "astData": Object {
           "edgeIdMap": Object {},
+          "languageId": "",
           "nodeIdMap": Map {},
           "nodeNIdMap": Map {},
           "rootNodes": Array [],
@@ -43,7 +44,7 @@ describe("ast", () => {
     expect(selectors.getAST(getState()).rootNodes.length).toBe(0);
   });
   it("setAST will set the ast being used", () => {
-    const newAST = AST.from([]);
+    const newAST = AST.from(wescheme.id, []);
     dispatch(actions.setAST(newAST));
     expect(selectors.getAST(getState()).data).toBe(newAST.data);
   });
@@ -52,13 +53,11 @@ describe("ast", () => {
 describe("collapse state", () => {
   let ast: AST;
   beforeEach(() => {
-    ast = AST.from(
-      wescheme.parse(`
+    ast = wescheme.buildAST(`
       (define x 1)
       (define y 2)
       (define z 3)
-    `)
-    );
+    `);
     dispatch(actions.setAST(ast));
   });
   it("starts with an empty collapse list", () => {
@@ -109,13 +108,11 @@ describe("error state", () => {
 describe("focus state", () => {
   let ast: AST;
   beforeEach(() => {
-    ast = AST.from(
-      wescheme.parse(`
+    ast = wescheme.buildAST(`
       (define x 1)
       (define y 2)
       (define z 3)
-    `)
-    );
+    `);
     dispatch(actions.setAST(ast));
   });
 

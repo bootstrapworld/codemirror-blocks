@@ -60,11 +60,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     change: CodeMirror.EditorChangeCancellable
   ) => {
     if (!isChangeObject(change)) {
-      const result = speculateChanges(
-        [change],
-        language.parse,
-        editor.getValue()
-      );
+      const result = speculateChanges([change], language, editor.getValue());
       // Success! Save the parsed AST for handleChange
       if (result.successful) {
         newASTRef.current = result.value;
@@ -99,7 +95,6 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         dispatch(
           commitChanges(
             [makeChangeObject(change)],
-            language.parse,
             editor,
             isUndoOrRedo,
             hint,

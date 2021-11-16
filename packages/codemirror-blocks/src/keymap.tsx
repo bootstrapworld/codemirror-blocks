@@ -167,20 +167,11 @@ const pasteHandler =
     const parent = ast.getNodeParent(env.node);
     // Case 1: Overwriting selected nodes
     if (selections.includes(env.node.id)) {
-      dispatch(
-        paste(env.editor, new ReplaceNodeTarget(env.node), env.language.parse)
-      );
+      dispatch(paste(env.editor, new ReplaceNodeTarget(env.node)));
     }
     // Case 2: Inserting to the left or right of the root
     else if (!parent) {
-      dispatch(
-        paste(
-          env.editor,
-
-          new OverwriteTarget(pos, pos),
-          env.language.parse
-        )
-      );
+      dispatch(paste(env.editor, new OverwriteTarget(pos, pos)));
     }
     // Case 3: Pasting to an adjacent dropTarget. Make sure it's a valid field!
     else {
@@ -190,12 +181,7 @@ const pasteHandler =
       if (DTnode?.dataset?.field) {
         // We're somewhere valid in the AST. Initiate paste on the target field!
         dispatch(
-          paste(
-            env.editor,
-
-            new InsertTarget(parent, DTnode.dataset.field, pos),
-            env.language.parse
-          )
+          paste(env.editor, new InsertTarget(parent, DTnode.dataset.field, pos))
         );
       } else {
         playSound(BEEP);
@@ -491,7 +477,7 @@ const commandMap: {
     if (!nodesToDelete.length) {
       return say("Nothing selected");
     }
-    dispatch(delete_(env.editor, nodesToDelete, env.language.parse, "deleted"));
+    dispatch(delete_(env.editor, nodesToDelete, "deleted"));
   },
 
   // use the srcRange() to insert before/after the node *and*
@@ -525,7 +511,7 @@ const commandMap: {
       return say("Nothing selected");
     }
     copy(nodesToCut, "cut");
-    dispatch(delete_(env.editor, nodesToCut, env.language.parse));
+    dispatch(delete_(env.editor, nodesToCut));
   },
 
   Copy: (env, _) => (dispatch, getState) => {

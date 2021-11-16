@@ -505,7 +505,7 @@ const buildBlockModeAPI = (
       // reconstruct the AST and pass it to the reducer
       if (activity.type == "SET_AST") {
         codemirror.setValue(activity.code);
-        const newAST = AST.from(language.parse(activity.code));
+        const newAST = language.buildAST(activity.code);
         action = { ...activity, ast: newAST };
       }
       // convert nid to node id, and use activate to generate the action

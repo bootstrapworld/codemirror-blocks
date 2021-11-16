@@ -1,4 +1,4 @@
-import { ASTNode } from "../ast";
+import { AST, ASTNode } from "../ast";
 import type { PrimitiveGroup } from "../CodeMirrorBlocks";
 import { Literal } from "../nodes";
 import { Primitive } from "../parsers/primitives";
@@ -11,6 +11,8 @@ export type Language = LanguageConfig & {
    * from any exceptions that are thrown by a call to parse()
    */
   getExceptionMessage(e: unknown): string;
+
+  buildAST(code: string): AST;
 };
 
 export type LanguageConfig = {
@@ -83,6 +85,9 @@ export function addLanguage(languageDefinition: LanguageConfig) {
   const language: Language = {
     getExceptionMessage: (e: unknown) => String(e) || "Parser error",
     ...languageDefinition,
+    buildAST: (code: string) => {
+      return AST.from(id, languageDefinition.parse(code));
+    },
   };
   LANGUAGES[id] = language;
   return language;

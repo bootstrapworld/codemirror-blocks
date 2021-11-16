@@ -10,6 +10,7 @@ import * as P from "pretty-fast-pretty-printer";
 import type { FieldsForSpec, NodeSpec } from "./nodeSpec";
 import type React from "react";
 import type { Props as NodeProps } from "./components/Node";
+import { getLanguage } from "./languages";
 
 /**
  * @internal
@@ -96,27 +97,32 @@ function validateNodeProps(props: ASTNodeProps) {
 
 export type ASTData = Readonly<{
   /**
+   * Id of the language used to construct this AST
+   */
+  readonly languageId: string;
+
+  /**
    * the `rootNodes` attribute simply contains a list of the top level nodes
    * that were parsed, in srcLoc order
    */
-  rootNodes: Readonly<ASTNode[]>;
+  readonly rootNodes: Readonly<ASTNode[]>;
 
   /**
    * *Unique* ID for every newly-parsed node. No ID is ever re-used.
    */
-  nodeIdMap: ReadonlyMap<string, ASTNode>;
+  readonly nodeIdMap: ReadonlyMap<string, ASTNode>;
 
   /**
    * Index of each node (in-order walk). NIds always start at 0
    */
-  nodeNIdMap: ReadonlyMap<number, ASTNode>;
+  readonly nodeNIdMap: ReadonlyMap<number, ASTNode>;
 
   /**
    * Mapping from node id to other node ids through various edges.
    * Used for {@link getNodeBefore}, {@link getNodeAfter}, and
    * {@link getNodeParent}
    */
-  edgeIdMap: Readonly<{ [id: string]: Readonly<Edges> }>;
+  readonly edgeIdMap: Readonly<{ [id: string]: Readonly<Edges> }>;
 }>;
 
 /**
@@ -124,7 +130,9 @@ export type ASTData = Readonly<{
  * walk through the siblings, assigning aria-* attributes
  * and populating various maps for tree navigation
  */
-function annotateNodes(nodes: Readonly<ASTNode[]>): ASTData {
+function annotateNodes(
+  nodes: Readonly<ASTNode[]>
+): Omit<ASTData, "languageId"> {
   const nodeIdMap = new Map<string, ASTNode>();
   const nodeNIdMap = new Map<number, ASTNode>();
   const edgeIdMap: Record<string, Edges> = {};
@@ -185,14 +193,21 @@ export class AST {
     return this.data.edgeIdMap;
   }
 
+  get language() {
+    return getLanguage(this.data.languageId);
+  }
+
   readonly data: ASTData;
 
   constructor(data: ASTData) {
     this.data = data;
   }
 
-  static from(rootNodes: Readonly<ASTNode[]>) {
-    return new AST(annotateNodes(rootNodes));
+  static from(languageId: string, rootNodes: Readonly<ASTNode[]>) {
+    return new AST({
+      languageId,
+      ...annotateNodes(rootNodes),
+    });
   }
 
   /**

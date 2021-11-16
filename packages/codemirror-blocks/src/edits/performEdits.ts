@@ -18,7 +18,6 @@ import * as selectors from "../state/selectors";
 import { err, ok, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
 import CodeMirror from "codemirror";
-import { Language } from "../CodeMirrorBlocks";
 
 /**
  *
@@ -178,15 +177,18 @@ function editsToChange(
 export function applyEdits(
   edits: EditInterface[],
   ast: AST,
-  editor: CMBEditor,
-  parse: Language["parse"]
+  editor: CMBEditor
 ): Result<{
   newAST: AST;
   changeObjects: ChangeObject[];
 }> {
   const changeObjects = editsToChange(edits, ast, editor);
   // Validate the text edits.
-  const result = speculateChanges(changeObjects, parse, editor.getValue());
+  const result = speculateChanges(
+    changeObjects,
+    ast.language,
+    editor.getValue()
+  );
   if (result.successful) {
     editor.applyChanges(changeObjects);
     return ok({ newAST: result.value, changeObjects });
@@ -211,25 +213,18 @@ export type PerformEditsResult = Result<{
 export const performEdits =
   (
     edits: EditInterface[],
-    parse: Language["parse"],
     editor: CMBEditor,
     annt?: string
   ): AppThunk<PerformEditsResult> =>
   (dispatch, getState) => {
     // Perform the text edits, and update the ast.
-    const result = applyEdits(
-      edits,
-      selectors.getAST(getState()),
-      editor,
-      parse
-    );
+    const result = applyEdits(edits, selectors.getAST(getState()), editor);
     if (result.successful) {
       try {
         // update the ast.
         const changeResult = dispatch(
           commitChanges(
             result.value.changeObjects,
-            parse,
             editor,
             false,
             // Use the focus hint from the last edit provided.

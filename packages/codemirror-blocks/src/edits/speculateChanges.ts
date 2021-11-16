@@ -17,7 +17,7 @@ const tmpRangedText: RangedText = new CodeMirrorFacade(
  */
 export function speculateChanges(
   changeArr: EditorChange[],
-  parse: Language["parse"],
+  language: Language,
   text: string
 ): Result<AST> {
   tmpRangedText.setValue(text);
@@ -26,7 +26,7 @@ export function speculateChanges(
   }
   const newText = tmpRangedText.getValue();
   try {
-    return ok(AST.from(parse(newText)));
+    return ok(language.buildAST(newText));
   } catch (exception) {
     return err(exception);
   }

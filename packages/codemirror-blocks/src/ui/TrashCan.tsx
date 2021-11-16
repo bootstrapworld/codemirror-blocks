@@ -20,9 +20,7 @@ const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
         if (!srcNode) {
           return; // Someone dragged from the toolbar to the trash can.
         }
-        return dispatch(
-          actions.deleteASTNode(props.language, props.editor, srcNode.id)
-        );
+        return dispatch(actions.deleteASTNode(props.editor, srcNode.id));
       },
       collect: (monitor) => ({ isOver: monitor.isOver() }),
     }),

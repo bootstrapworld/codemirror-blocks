@@ -104,15 +104,11 @@ export const setBlockMode =
  * Deletes a single node from the AST
  */
 export const deleteASTNode =
-  (
-    language: Language,
-    editor: CMBEditor,
-    srcNodeId: string
-  ): AppThunk<PerformEditsResult> =>
+  (editor: CMBEditor, srcNodeId: string): AppThunk<PerformEditsResult> =>
   (dispatch, getState) => {
     const ast = selectors.getAST(getState());
     const edits = [edit_delete(ast, ast.getNodeByIdOrThrow(srcNodeId))];
-    return dispatch(performEdits(edits, language.parse, editor));
+    return dispatch(performEdits(edits, editor));
   };
 
 /**
@@ -132,7 +128,7 @@ function checkASTRoundtripConversion(
 ): Result<{ oldAst: AST; newAst: AST; newCode: string }, string> {
   let oldAst: AST;
   try {
-    oldAst = AST.from(language.parse(oldCode)); // parse the code (WITH annotations)
+    oldAst = language.buildAST(oldCode); // parse the code (WITH annotations)
   } catch (e) {
     // console.error(e);
     if (language.getExceptionMessage) {
@@ -146,7 +142,7 @@ function checkASTRoundtripConversion(
   }
   try {
     const newCode = oldAst.toString();
-    const newAst = AST.from(language.parse(newCode));
+    const newAst = language.buildAST(newCode);
     return ok({ oldAst, newCode, newAst });
   } catch (e) {
     // console.error("COULD NOT PARSE PRETTY-PRINTED CODE FROM:\n", oldAst);
@@ -195,24 +191,18 @@ export const insert =
     text: string,
     target: Target,
     editor: CMBEditor,
-    parse: Language["parse"],
     annt?: string
   ): AppThunk<Result<{ newAST: AST; focusId?: string | undefined }>> =>
   (dispatch, getState) => {
     checkTarget(target);
     const edits = [target.toEdit(selectors.getAST(getState()), text)];
-    return dispatch(performEdits(edits, parse, editor, annt));
+    return dispatch(performEdits(edits, editor, annt));
   };
 
 // Delete the given nodes.
 // 'delete' is a reserved word, hence the trailing underscore
 export const delete_ =
-  (
-    editor: CMBEditor,
-    nodes: ASTNode[],
-    parse: Language["parse"],
-    editWord?: string
-  ): AppThunk =>
+  (editor: CMBEditor, nodes: ASTNode[], editWord?: string): AppThunk =>
   (dispatch, getState) => {
     if (nodes.length === 0) {
       return;
@@ -225,19 +215,19 @@ export const delete_ =
       annt = createEditAnnouncement(nodes, editWord);
       say(annt);
     }
-    dispatch(performEdits(edits, parse, editor, annt));
+    dispatch(performEdits(edits, editor, annt));
     dispatch(setSelectedNodeIds([]));
   };
 
 // Paste from the clipboard at the given `target`.
 // See the comment at the top of the file for what kinds of `target` there are.
 export const paste =
-  (editor: CMBEditor, target: Target, parse: Language["parse"]): AppThunk =>
+  (editor: CMBEditor, target: Target): AppThunk =>
   (dispatch, getState) => {
     checkTarget(target);
     pasteFromClipboard((text) => {
       const edits = [target.toEdit(selectors.getAST(getState()), text)];
-      dispatch(performEdits(edits, parse, editor));
+      dispatch(performEdits(edits, editor));
       dispatch(setSelectedNodeIds([]));
     });
   };
@@ -282,7 +272,7 @@ export function useDropAction() {
       // Insert or replace at the drop location, depending on what we dropped it on.
       edits.push(target.toEdit(ast, content));
       // Perform the edits.
-      const editResult = dispatch(performEdits(edits, language.parse, editor));
+      const editResult = dispatch(performEdits(edits, editor));
 
       // Assuming it did not come from the toolbar, and the srcNode was collapsed...
       // Find the matching node in the new tree and collapse it
