@@ -10,7 +10,6 @@ import CodeMirror from "codemirror";
 import { AppDispatch } from "../state/store";
 import { RootState } from "../state/reducers";
 import { CMBEditor } from "../editor";
-import { useLanguageOrThrow } from "../hooks";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 
@@ -56,7 +55,6 @@ type Props = Omit<ContentEditableProps, "value"> & {
 const NodeEditable = (props: Props) => {
   const element = useRef<HTMLElement>(null);
   const dispatch: AppDispatch = useDispatch();
-  const language = useLanguageOrThrow();
 
   const ast = useSelector(selectors.getAST);
 
@@ -107,9 +105,7 @@ const NodeEditable = (props: Props) => {
       }
 
       const annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
-      const result = dispatch(
-        insert(value, target, props.editor, language.parse, annt)
-      );
+      const result = dispatch(insert(value, target, props.editor, annt));
       if (result.successful) {
         dispatch(activateByNid(props.editor, null, { allowMove: false }));
         props.onChange(null);

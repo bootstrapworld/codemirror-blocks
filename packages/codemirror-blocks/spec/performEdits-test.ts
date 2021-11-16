@@ -26,10 +26,9 @@ const initialCode = `
 
 const setCode = (code: string) => {
   editor.setValue(code);
-  ast = AST.from(wescheme.parse(editor.getValue()));
+  ast = AST.from(wescheme.id, wescheme.parse(editor.getValue()));
 };
-const apply = (edits: EditInterface[]) =>
-  applyEdits(edits, ast, editor, wescheme.parse);
+const apply = (edits: EditInterface[]) => applyEdits(edits, ast, editor);
 
 beforeEach(() => {
   editor = new CodeMirrorFacade(CodeMirror(document.body, { value: "" }));
@@ -218,8 +217,7 @@ foo
 });
 
 describe("performEdits", () => {
-  const perform = (edits: EditInterface[]) =>
-    performEdits(edits, wescheme.parse, editor);
+  const perform = (edits: EditInterface[]) => performEdits(edits, editor);
 
   let store!: AppStore;
 

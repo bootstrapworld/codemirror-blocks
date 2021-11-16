@@ -120,6 +120,7 @@ const initialState: () => RootState = () => ({
   selections: [],
   editable: {},
   astData: {
+    languageId: "",
     rootNodes: [],
     nodeIdMap: new Map(),
     nodeNIdMap: new Map(),
