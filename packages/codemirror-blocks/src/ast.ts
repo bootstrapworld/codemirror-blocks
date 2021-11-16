@@ -536,34 +536,28 @@ export type ASTNodeProps<Spec extends NodeSpec = NodeSpec> = {
 // TODO(pcardune): figure out how to get rid of the duplication
 // between this interface, and the ASTNode class definition
 export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
-  from: Pos;
-  to: Pos;
-  type: string;
-  id: string;
-  nid: number;
-  level: number;
-  ariaSetSize: number;
-  ariaPosInset: number;
+  readonly from: Pos;
+  readonly to: Pos;
+  readonly type: string;
+  readonly id: string;
+  readonly nid: number;
+  readonly level: number;
+  readonly ariaSetSize: number;
+  readonly ariaPosInset: number;
 
-  fields: FieldsForSpec<Spec>;
-  options: NodeOptions;
-  pretty: () => P.Doc;
-  spec: Spec;
+  readonly fields: FieldsForSpec<Spec>;
+  readonly options: NodeOptions;
+  pretty(): P.Doc;
+  readonly spec: Spec;
 
-  element: HTMLElement | null;
-
-  /**
-   * @internal
-   * Used for unit testing only
-   */
-  isEditable?: () => boolean;
+  readonly element: HTMLElement | null;
 
   readonly _pretty: ASTNodeProps["pretty"];
   readonly render: ASTNodeProps["render"];
   readonly longDescription?: ASTNodeProps["longDescription"];
 
   _hash: number | undefined;
-  hash: number;
+  readonly hash: number;
   _dangerouslySetHash(hash: number): void;
   describe(level: number): string | undefined;
   shortDescription(): string;
@@ -573,6 +567,21 @@ export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
   srcRange(): { from: Pos; to: Pos };
   reactElement(props?: Record<string, unknown>): React.ReactElement;
 }
+
+/**
+ * @internal
+ *
+ * A mapping from node id to the HTMLElement representation of that node.
+ *
+ * This is more or less equivalent to what you could get with
+ * `document.getElementById()` except that it will still work for
+ * dom elements that are not (yet) in the document because codemirror
+ * has chosen not to render them since they are outside the field of
+ * view.
+ *
+ * This mapping is populated by Node.tsx
+ */
+export const nodeElementMap = new Map<string, HTMLElement>();
 
 /**
  * Every node in the AST must inherit from the `ASTNode` class, which is used
@@ -590,35 +599,37 @@ export class ASTNode<
    * in the tree, hash for quick comparisons, and aria properties for
    * set size and position in set (for screenreaders)
    */
-  from: Pos;
-  to: Pos;
-  type: string;
+  readonly from: Pos;
+  readonly to: Pos;
+  readonly type: string;
   id = "uninitialized";
   nid = -1;
   level = -1;
   ariaSetSize = -1;
   ariaPosInset = -1;
 
-  fields: Fields;
+  readonly fields: Fields;
 
   /**
    * @internal
    * the options object always contains the aria-label, but can also
    * include other values
    */
-  options: NodeOptions;
+  readonly options: NodeOptions;
 
   /**
    * @internal
    * nodeSpec, which specifies node requirements (see nodeSpec.ts)
    */
-  spec: NodeSpec;
+  readonly spec: NodeSpec;
 
   /**
    * @internal
    * Stores the html element that this ast node was rendered into.
    */
-  element: HTMLElement | null = null;
+  get element(): HTMLElement | null {
+    return nodeElementMap.get(this.id) ?? null;
+  }
 
   readonly _pretty: ASTNodeProps["pretty"];
   readonly render: ASTNodeProps["render"];

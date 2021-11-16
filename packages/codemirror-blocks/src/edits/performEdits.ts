@@ -12,7 +12,6 @@ import {
   FakeAstInsertion,
   FakeAstReplacement,
   cloneNode,
-  ClonedASTNode,
 } from "./fakeAstEdits";
 import type { AppThunk } from "../state/store";
 import * as selectors from "../state/selectors";
@@ -423,7 +422,7 @@ abstract class AstEdit extends Edit {
     super(from, to);
     this.parent = parent;
   }
-  abstract makeAstEdit(clonedAncestor: ClonedASTNode): void;
+  abstract makeAstEdit(clonedAncestor: ASTNode): void;
 }
 
 class InsertChildEdit extends AstEdit {
@@ -437,7 +436,7 @@ class InsertChildEdit extends AstEdit {
     this.fakeAstInsertion = new FakeAstInsertion(this.parent, field, pos);
   }
 
-  makeAstEdit(clonedAncestor: ClonedASTNode) {
+  makeAstEdit(clonedAncestor: ASTNode) {
     const clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstInsertion.insertChild(clonedParent, this.text);
   }
@@ -467,7 +466,7 @@ class DeleteChildEdit extends AstEdit {
     return (this.prevId && newAST.getNodeById(this.prevId)) || "fallback";
   }
 
-  makeAstEdit(clonedAncestor: ClonedASTNode) {
+  makeAstEdit(clonedAncestor: ASTNode) {
     const clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstReplacement.deleteChild(clonedParent);
   }
@@ -490,7 +489,7 @@ class ReplaceChildEdit extends AstEdit {
     this.fakeAstReplacement = new FakeAstReplacement(parent, node);
   }
 
-  makeAstEdit(clonedAncestor: ClonedASTNode) {
+  makeAstEdit(clonedAncestor: ASTNode) {
     const clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstReplacement.replaceChild(clonedParent, this.text);
   }

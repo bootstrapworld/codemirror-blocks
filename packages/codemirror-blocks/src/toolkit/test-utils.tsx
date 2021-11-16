@@ -86,6 +86,9 @@ export function mountCMB(language: Language) {
         Object.assign(cmb, newAPI, {
           setBlockMode: (blockMode: boolean) =>
             act(() => newAPI.setBlockMode(blockMode)),
+          setValue: (value: string) => {
+            act(() => newAPI.setValue(value));
+          },
         });
       }}
       options={{ collapseAll: false, value: "", incrementalRendering: false }}
