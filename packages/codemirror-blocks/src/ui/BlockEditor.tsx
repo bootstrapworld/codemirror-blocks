@@ -83,7 +83,9 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     editor: ReadonlyCMBEditor,
     change: CodeMirror.EditorChange
   ) => {
-    if (isChangeObject(change)) return; // trust our own changeObjects
+    if (isChangeObject(change)) {
+      return; // trust our own changeObjects
+    }
 
     // This change did NOT originate from us, but it passed the
     // `handleBeforeChange` function so it must be valid.
@@ -91,13 +93,13 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     dispatch((dispatch, getState) => {
       const isUndoOrRedo = ["undo", "redo"].includes(change.origin as string);
       const annt = change.origin || "change"; // Default annotation
-      const doChange = (hint: -1 | FocusHint) =>
+      const doChange = (focusHint?: FocusHint) =>
         dispatch(
           commitChanges(
             [makeChangeObject(change)],
             editor,
             isUndoOrRedo,
-            hint,
+            focusHint,
             newASTRef.current,
             annt
           )
@@ -108,16 +110,18 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         if (actionFocus) {
           // actionFocus will either contain an old OR new focusId
           const { oldFocusNId, newFocusNId } = actionFocus;
-          const nextNId = (oldFocusNId || newFocusNId) as number;
+          const nextNId = oldFocusNId || newFocusNId;
           const focusHint = (newAST: AST) =>
-            nextNId === null ? null : newAST.getNodeByNId(nextNId);
+            typeof nextNId === "number"
+              ? newAST.getNodeByNId(nextNId)
+              : undefined;
           doChange(focusHint);
           const actionType = change.origin.toUpperCase() as "UNDO" | "REDO";
           dispatch({ type: actionType, editor: editor });
         }
       } else {
         getState().undoableAction = annt; //?
-        doChange(-1); // use -1 to allow CM to set focus
+        doChange();
       }
     });
   };

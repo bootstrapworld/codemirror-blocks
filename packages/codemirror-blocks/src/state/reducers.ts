@@ -52,8 +52,8 @@ function loggerDebug(action: AppAction, ast: ASTData) {
 export type Quarantine = Readonly<{ from: Pos; to: Pos; value: string }>;
 
 export type ActionFocus = Readonly<{
-  oldFocusNId: number | null;
-  newFocusNId: number | null;
+  oldFocusNId?: number;
+  newFocusNId?: number;
 }>;
 
 export type RootState = {
@@ -77,7 +77,7 @@ export type RootState = {
    */
   readonly editable: Readonly<{ [nid: string]: boolean }>;
   readonly astData: ASTData;
-  readonly focusId: string | null;
+  readonly focusId?: string;
   readonly collapsedList: ReadonlyArray<string>;
   readonly errorId: string;
   readonly quarantine: Quarantine | null;
@@ -90,7 +90,7 @@ export type RootState = {
 
 export type AppAction =
   | (Action<"SET_BLOCK_MODE"> & { enabled: boolean })
-  | (Action<"SET_FOCUS"> & { focusId: string | null })
+  | (Action<"SET_FOCUS"> & { focusId: string | undefined })
   | (Action<"SET_AST"> & { ast: AST })
   | (Action<"SET_CODE"> & { code: string })
   | (Action<"SET_SELECTIONS"> & { selections: string[] })
@@ -109,7 +109,6 @@ export type AppAction =
     })
   | (Action<"ADD_MARK"> & { id: string; mark: CodeMirror.TextMarker })
   | (Action<"CLEAR_MARK"> & { id: string })
-  | (Action<"DO"> & { focusId: RootState["focusId"] })
   | (Action<"UNDO"> & { editor: ReadonlyCMBEditor })
   | (Action<"REDO"> & { editor: ReadonlyCMBEditor })
   | Action<"RESET_STORE_FOR_TESTING">;
@@ -126,7 +125,7 @@ const initialState: () => RootState = () => ({
     nodeNIdMap: new Map(),
     edgeIdMap: {},
   },
-  focusId: null,
+  focusId: undefined,
   collapsedList: [],
   markedMap: {},
   undoableAction: undefined,
@@ -142,7 +141,10 @@ function reduce(state = initialState(), action: AppAction): RootState {
     case "SET_BLOCK_MODE":
       return { ...state, blockMode: action.enabled };
     case "SET_FOCUS":
-      return { ...state, focusId: action.focusId };
+      if (state.focusId !== action.focusId) {
+        return { ...state, focusId: action.focusId };
+      }
+      return state;
     case "SET_AST":
       return {
         ...state,
@@ -210,11 +212,6 @@ function reduce(state = initialState(), action: AppAction): RootState {
       delete markedMap[action.id];
       return { ...state, markedMap };
     }
-    case "DO":
-      if (state.focusId !== action.focusId) {
-        return { ...state, focusId: action.focusId };
-      }
-      return state;
     case "UNDO": {
       const historyItem = action.editor.getTopmostAction("redo");
 

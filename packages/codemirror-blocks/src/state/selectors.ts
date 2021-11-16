@@ -13,7 +13,7 @@ export const getAST = (state: RootState) => new AST(state.astData);
 /**
  * Get the entire list of collapsed nodes.
  */
-const getCollapsedList = (state: RootState) => state.collapsedList;
+export const getCollapsedList = (state: RootState) => state.collapsedList;
 
 type NodeSelector<T> = (state: RootState, node: ASTNode) => T;
 

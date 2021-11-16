@@ -53,9 +53,15 @@ export const clearError = () => ({
   errorId: "",
 });
 
-export const setFocusedNode = (node: ASTNode) => ({
+/**
+ * Set the currently focused node. If no node is provided,
+ * then the existing focused node will no longer be focused.
+ *
+ * @param node The node to focus, or undefined to clear the focus
+ */
+export const setFocusedNode = (node: ASTNode | undefined) => ({
   type: "SET_FOCUS" as const,
-  focusId: node.id,
+  focusId: node?.id,
 });
 
 export const setSelectedNodeIds = (ids: string[]) => ({
