@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { AST, ASTNode } from "../ast";
+import { AST, ASTNode, nodeElementMap } from "../ast";
 import {
   useDropAction,
   activateByNid,
@@ -229,6 +229,17 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }),
   });
 
+  const nodeElementRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (nodeElementRef.current) {
+      nodeElementMap.set(props.node.id, nodeElementRef.current);
+      return () => {
+        nodeElementMap.delete(props.node.id);
+      };
+    }
+  }, [props.node.id]);
+
   if (editable) {
     if (!editor) {
       throw new Error("can't edit nodes before codemirror has mounted");
@@ -261,7 +272,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       <span
         {...contentEditableProps}
         className={classNames(classes)}
-        ref={(el) => (props.node.element = el)}
+        ref={nodeElementRef}
         role={props.inToolbar ? "listitem" : "treeitem"}
         style={
           {

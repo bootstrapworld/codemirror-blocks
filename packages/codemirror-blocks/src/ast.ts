@@ -550,13 +550,7 @@ export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
   pretty: () => P.Doc;
   spec: Spec;
 
-  element: HTMLElement | null;
-
-  /**
-   * @internal
-   * Used for unit testing only
-   */
-  isEditable?: () => boolean;
+  readonly element: HTMLElement | null;
 
   readonly _pretty: ASTNodeProps["pretty"];
   readonly render: ASTNodeProps["render"];
@@ -573,6 +567,21 @@ export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
   srcRange(): { from: Pos; to: Pos };
   reactElement(props?: Record<string, unknown>): React.ReactElement;
 }
+
+/**
+ * @internal
+ *
+ * A mapping from node id to the HTMLElement representation of that node.
+ *
+ * This is more or less equivalent to what you could get with
+ * `document.getElementById()` except that it will still work for
+ * dom elements that are not (yet) in the document because codemirror
+ * has chosen not to render them since they are outside the field of
+ * view.
+ *
+ * This mapping is populated by Node.tsx
+ */
+export const nodeElementMap = new Map<string, HTMLElement>();
 
 /**
  * Every node in the AST must inherit from the `ASTNode` class, which is used
@@ -618,7 +627,9 @@ export class ASTNode<
    * @internal
    * Stores the html element that this ast node was rendered into.
    */
-  element: HTMLElement | null = null;
+  get element(): HTMLElement | null {
+    return nodeElementMap.get(this.id) ?? null;
+  }
 
   readonly _pretty: ASTNodeProps["pretty"];
   readonly render: ASTNodeProps["render"];

@@ -12,7 +12,6 @@ function copyAllIds(oldTree: ASTNode, newTree: ASTNode) {
       );
     }
     newPtr.value.id = oldPtr.value.id;
-    newPtr.value.element = oldPtr.value.element;
     oldPtr = oldIter.next();
     newPtr = newIter.next();
   }
