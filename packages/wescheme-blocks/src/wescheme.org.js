@@ -41,7 +41,7 @@ errorForm.innerHTML = `<iframe
 
 export default function WeschemeBlocks(container, options) {
   if (!document.contains(errorForm)) {
-    document.appendChild(errorForm);
+    document.body.appendChild(errorForm);
   }
 
   setLogReporter((history, exception, description) => {
