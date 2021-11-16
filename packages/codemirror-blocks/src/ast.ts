@@ -536,8 +536,8 @@ export type ASTNodeProps<Spec extends NodeSpec = NodeSpec> = {
 // TODO(pcardune): figure out how to get rid of the duplication
 // between this interface, and the ASTNode class definition
 export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
-  from: Pos;
-  to: Pos;
+  readonly from: Pos;
+  readonly to: Pos;
   type: string;
   id: string;
   nid: number;
@@ -546,9 +546,9 @@ export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
   ariaPosInset: number;
 
   fields: FieldsForSpec<Spec>;
-  options: NodeOptions;
+  readonly options: NodeOptions;
   pretty: () => P.Doc;
-  spec: Spec;
+  readonly spec: Spec;
 
   readonly element: HTMLElement | null;
 
@@ -599,8 +599,8 @@ export class ASTNode<
    * in the tree, hash for quick comparisons, and aria properties for
    * set size and position in set (for screenreaders)
    */
-  from: Pos;
-  to: Pos;
+  readonly from: Pos;
+  readonly to: Pos;
   type: string;
   id = "uninitialized";
   nid = -1;
@@ -615,13 +615,13 @@ export class ASTNode<
    * the options object always contains the aria-label, but can also
    * include other values
    */
-  options: NodeOptions;
+  readonly options: NodeOptions;
 
   /**
    * @internal
    * nodeSpec, which specifies node requirements (see nodeSpec.ts)
    */
-  spec: NodeSpec;
+  readonly spec: NodeSpec;
 
   /**
    * @internal
