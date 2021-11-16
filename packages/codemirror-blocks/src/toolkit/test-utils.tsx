@@ -71,6 +71,18 @@ export function mountCMB(language: Language) {
       store={store}
       language={language}
       onMount={(newAPI) => {
+        // override various properties of the codemirror wrapper element
+        // that are used to determine the visible area of the editor
+        // which in turn determines what elements are actually attached
+        // to the document and not ellided by codemirror. We have to do
+        // this instead of relying on css because JSDOM doesn't support
+        // css.
+        const wrapper = newAPI.getCM().getWrapperElement();
+        jest.spyOn(wrapper, "offsetHeight", "get").mockReturnValue(1000);
+        jest.spyOn(wrapper, "offsetWidth", "get").mockReturnValue(1000);
+        jest.spyOn(wrapper, "clientHeight", "get").mockReturnValue(1000);
+        jest.spyOn(wrapper, "clientWidth", "get").mockReturnValue(1000);
+
         Object.assign(cmb, newAPI, {
           setBlockMode: (blockMode: boolean) =>
             act(() => newAPI.setBlockMode(blockMode)),
