@@ -177,11 +177,7 @@ export const buildAPI = (
     getBlockMode: () => selectors.isBlockModeEnabled(store.getState()),
     setBlockMode: (blockMode: boolean) => {
       store.dispatch(
-        actions.setBlockMode(
-          blockMode,
-          new CodeMirrorFacade(codemirror),
-          language
-        )
+        actions.setBlockMode(blockMode, codemirror.getValue(), language)
       );
     },
     getCM: () => codemirror,

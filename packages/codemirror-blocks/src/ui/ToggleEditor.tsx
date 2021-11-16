@@ -51,10 +51,9 @@ function ToggleEditor(props: ToggleEditorProps) {
       return; // editor hasn't mounted yet, do nothing.
     }
     const result = dispatch(
-      actions.setBlockMode(blockMode, editor, props.language)
+      actions.setBlockMode(blockMode, editor.getValue(), props.language)
     );
     if (!result.successful) {
-      // console.error(result.exception);
       setDialog({
         title: "Could not convert to Blocks",
         content: <p>{String(result.exception)}</p>,
