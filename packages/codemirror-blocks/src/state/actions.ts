@@ -13,6 +13,7 @@ import {
   edit_replace,
   edit_overwrite,
   EditInterface,
+  PerformEditsResult,
 } from "../edits/performEdits";
 import { AST, ASTNode, Pos } from "../ast";
 import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
@@ -97,6 +98,17 @@ export const setBlockMode =
       dispatch(setCode(result.value.newCode));
     }
     return result;
+  };
+
+/**
+ * Deletes a single node from the AST
+ */
+export const deleteASTNode =
+  (editor: CMBEditor, srcNodeId: string): AppThunk<PerformEditsResult> =>
+  (dispatch, getState) => {
+    const ast = selectors.getAST(getState());
+    const edits = [edit_delete(ast, ast.getNodeByIdOrThrow(srcNodeId))];
+    return dispatch(performEdits(edits, editor));
   };
 
 /**

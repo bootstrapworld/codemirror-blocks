@@ -205,7 +205,9 @@ export class CodeMirrorFacade implements CMBEditor {
         return items[i];
       }
     }
-    throw new Error(`No undoable found`);
+    // TODO(pcardune): Make it ok to return "undefined" when there is no
+    // topmost action. See https://github.com/bootstrapworld/codemirror-blocks/issues/586.
+    return {};
   }
   getAllBlockNodeMarkers(): BlockNodeMarker[] {
     return this.codemirror
