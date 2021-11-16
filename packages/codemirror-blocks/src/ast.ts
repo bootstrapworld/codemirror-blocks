@@ -538,16 +538,16 @@ export type ASTNodeProps<Spec extends NodeSpec = NodeSpec> = {
 export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
   readonly from: Pos;
   readonly to: Pos;
-  type: string;
-  id: string;
-  nid: number;
-  level: number;
-  ariaSetSize: number;
-  ariaPosInset: number;
+  readonly type: string;
+  readonly id: string;
+  readonly nid: number;
+  readonly level: number;
+  readonly ariaSetSize: number;
+  readonly ariaPosInset: number;
 
-  fields: FieldsForSpec<Spec>;
+  readonly fields: FieldsForSpec<Spec>;
   readonly options: NodeOptions;
-  pretty: () => P.Doc;
+  pretty(): P.Doc;
   readonly spec: Spec;
 
   readonly element: HTMLElement | null;
@@ -557,7 +557,7 @@ export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
   readonly longDescription?: ASTNodeProps["longDescription"];
 
   _hash: number | undefined;
-  hash: number;
+  readonly hash: number;
   _dangerouslySetHash(hash: number): void;
   describe(level: number): string | undefined;
   shortDescription(): string;
@@ -601,14 +601,14 @@ export class ASTNode<
    */
   readonly from: Pos;
   readonly to: Pos;
-  type: string;
+  readonly type: string;
   id = "uninitialized";
   nid = -1;
   level = -1;
   ariaSetSize = -1;
   ariaPosInset = -1;
 
-  fields: Fields;
+  readonly fields: Fields;
 
   /**
    * @internal
