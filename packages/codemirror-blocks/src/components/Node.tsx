@@ -240,6 +240,15 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   }, [props.node.id]);
 
+  // If this is the currently focused node, then focus the node element
+  // as soon as we finish rendering.
+  const focusedNode = useSelector(selectors.getFocusedNode);
+  useEffect(() => {
+    if (nodeElementRef.current && focusedNode?.id === props.node.id) {
+      nodeElementRef.current?.focus();
+    }
+  }, [focusedNode?.id, props.node.id]);
+
   if (editable) {
     if (!editor) {
       throw new Error("can't edit nodes before codemirror has mounted");
