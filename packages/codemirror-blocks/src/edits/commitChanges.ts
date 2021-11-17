@@ -11,26 +11,27 @@ import * as selectors from "../state/selectors";
 import { RootState } from "../state/reducers";
 
 export type FocusHint = (ast: AST) => ASTNode | undefined | "fallback";
-// commitChanges :
-//   Changes, Parser, Editor, bool, FocusHint|undefined, AST|undefined, String|undefined
-//   -> {newAST, focusId}
-//
-// Commit a set of text changes to CodeMirror. This can only be called if you
-// _know_ that the changes are valid (will parse successfully); to determine
-// this, call `speculateChanges()`.
-//
-// Returns {newAST, focusId};
-//
-// - Changes has the form:
-//     [{text: Array<string>, from: Pos, to: Pos, origin: string}]
-// - isUndoOrRedo must be `true` iff these changes originated from an undo or
-//   redo event.
-// - FocusHint is a function of type:
-//     ast -> ASTNode|null|"fallback"
-//   (If null, remove focus. If "fallback", fall back on computeFocusNodeFromChanges.)
-// - astHint is the AST you get from parsing the result of these changes (which
-//   you may know from a call to `speculateChanges()`).
-// Note: a focusHint of -1 means "let CodeMirror set the focus"
+
+/**
+ * Commit a set of text changes to CodeMirror. This can only be called if you
+ * _know_ that the changes are valid (will parse successfully); to determine
+ * this, call {@link speculateChanges}.
+ *
+ * @param changes The array of change objects to commit.
+ * @param editor a ReadonlyCMBEditor instance containing the text that will be changed.
+ * @param isUndoOrRedo must be `true` iff these changes originated from
+ *   an undo or redo event.
+ * @param focusHint an optional function that returns an ASTNode to focus on. If it
+ *   returns `"fallback"`, then the focus will be computed from the changes using
+ *   {@link computeFocusNodeFromChanges}. If no focus hint is given, then no node will
+ *   be focused.
+ * @param astHint the AST you get from parsing the result of these changes (which
+ *   you may know from a call to `speculateChanges()`).
+ * @param annt
+ *
+ * @returns the new AST constructed from the changes and the id of the node that was
+ *   focused (if one was found)
+ */
 export const commitChanges =
   (
     changes: ChangeObject[],
