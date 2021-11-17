@@ -143,7 +143,7 @@ export function insertText(text: string) {
     // See https://github.com/testing-library/dom-testing-library/pull/235
     // for some discussion about this.
     fireEvent.input(activeEl, {
-      target: { innerHTML: text },
+      target: { innerHTML: activeEl.innerHTML + text },
     });
   }
 }
@@ -171,7 +171,7 @@ function makeKeyEvent<T extends Record<string, unknown>>(
 // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
 function getKeyCode(key: string): number {
   // The key code for an (uppercase) letter is that letter's ascii value.
-  if (key.match(/^[A-Z]$/)) {
+  if (key.match(/^[A-Za-z0-9]$/)) {
     return key.charCodeAt(0);
   }
   // The key code for a digit is that digit's ascii value.

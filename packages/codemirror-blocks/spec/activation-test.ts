@@ -1,6 +1,5 @@
 import wescheme from "../src/languages/wescheme";
-import "codemirror/addon/search/searchcursor.js";
-
+import { screen } from "@testing-library/react";
 import {
   cmd_ctrl,
   teardown,
@@ -10,6 +9,7 @@ import {
   mountCMB,
   isNodeEditable,
   elementForNode,
+  keyPress,
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
@@ -128,6 +128,27 @@ describe("when dealing with node activation,", () => {
     keyDown("Q", { altKey: true });
     expect(isNodeEditable(literal1)).toBe(false);
     expect(cmb.getValue()).toBe("11\n54");
+  });
+});
+
+describe("inserting a new node", () => {
+  let cmb: API;
+  beforeEach(() => {
+    cmb = mountCMB(wescheme).cmb;
+  });
+  it("should focus the node that was just inserted", () => {
+    cmb.focus();
+    // start inserting a new node
+    keyPress("a");
+    insertText("BrandNewLiteral");
+    // confirm the insertion by pressing Enter
+    keyDown("Enter");
+    // confirm that the new new was saved to the ast and focused
+    expect(cmb.getAst().toString()).toBe("aBrandNewLiteral");
+    expect(cmb.getValue()).toEqual("aBrandNewLiteral");
+    expect(document.activeElement!.id).toEqual(
+      screen.getByRole("treeitem", { name: /aBrandNewLiteral/ }).id
+    );
   });
 });
 
