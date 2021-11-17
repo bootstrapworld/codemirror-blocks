@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom";
 import { useDispatch } from "react-redux";
-import NodeEditable from "../components/NodeEditable";
+import NodeEditable, { NodeEditableHandle } from "../components/NodeEditable";
 import * as actions from "../state/actions";
 import type { AppDispatch } from "../state/store";
-import type { CMBEditor } from "../editor";
+import { CMBEditor } from "../editor";
 import { Quarantine } from "../state/reducers";
 
 type Props = {
@@ -26,28 +26,37 @@ const ToplevelBlockEditable = (props: Props) => {
   const onChange = (text: string) => dispatch(actions.changeQuarantine(text));
   const { from, to, value } = props.quarantine;
 
-  // add a marker to codemirror, with an empty "widget" into which
-  // the react component will be rendered.
-  // We use useMemo to make sure this marker only gets added the first
-  // time this component is rendered.
-  const { container, marker } = useMemo(() => {
+  // create an empty container element to hold the rendered react
+  // component. We use useMemo to make sure this element only gets
+  // created the first time this component is rendered.
+  const { container } = useMemo(() => {
     const container = document.createElement("span");
     container.classList.add("react-container");
-    const marker = props.editor.replaceMarkerWidget(from, to, container);
-    // call endOperation to flush all buffered updates
-    // forcing codemirror to put the marker into the document's DOM
-    // right away, making it immediately focusable/selectable.
-    // SHARED.editor.endOperation();
-    return { container, marker };
-  }, [props.editor, from, to]);
-  // make sure to clear the marker from codemirror
-  // when the component unmounts
+    return { container };
+  }, []);
+
+  const nodeEditableHandle = useRef<NodeEditableHandle>(null);
+
+  // after react has finished rendering, attach the container to codemirror
+  // as a marker widget and select its contents.
+  //
+  // This has to happen after react finishes rendering because codemirror
+  // calls focus() when you call CodeMirror.setBookmark, which triggers
+  // this cryptic react warning: unstable_flushDiscreteUpdates: Cannot
+  // flush updates when React is already rendering
+  // See https://stackoverflow.com/questions/58123011/cryptic-react-error-unstable-flushdiscreteupdates-cannot-flush-updates-when-re
+  // and https://github.com/facebook/react/issues/20141 for more info.
   useEffect(() => {
+    const marker = props.editor.replaceMarkerWidget(from, to, container);
+    nodeEditableHandle.current?.select();
+    // make sure to clear the marker from codemirror
+    // when the component unmounts
     return () => marker.clear();
-  }, [marker]);
+  }, [container, props.editor, from, to]);
 
   return ReactDOM.createPortal(
     <NodeEditable
+      ref={nodeEditableHandle}
       editor={props.editor}
       target={new actions.OverwriteTarget(from, to)}
       value={value}
