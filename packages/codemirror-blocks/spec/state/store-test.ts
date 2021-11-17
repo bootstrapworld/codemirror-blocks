@@ -29,7 +29,7 @@ describe("createAppStore()", () => {
         "collapsedList": Array [],
         "editable": Object {},
         "errorId": "",
-        "focusId": null,
+        "focusId": undefined,
         "markedMap": Object {},
         "quarantine": null,
         "selections": Array [],
