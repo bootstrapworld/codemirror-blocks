@@ -15,7 +15,7 @@ import type { AppDispatch } from "../state/store";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
-import { EditorContext, LanguageContext } from "../components/Context";
+import { EditorContext } from "../components/Context";
 import { CodeMirrorFacade, Pos, ReadonlyCMBEditor } from "../editor";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
@@ -261,7 +261,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   };
 
   return (
-    <LanguageContext.Provider value={language}>
+    <>
       <DragAndDropEditor
         options={props.codemirrorOptions}
         className={`blocks-language-${language.id}`}
@@ -272,7 +272,6 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         onKeyDown={(editor, e) => {
           dispatch(
             keyDown(e, {
-              language: language,
               editor,
               isNodeEnv: false,
               appHelpers: props.keyDownHelpers,
@@ -283,7 +282,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         editorDidMount={handleEditorDidMount}
       />
       {renderPortals()}
-    </LanguageContext.Provider>
+    </>
   );
 };
 export default BlockEditor;

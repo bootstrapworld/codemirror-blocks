@@ -16,7 +16,7 @@ import { useDrag, useDrop } from "react-dnd";
 import { RootState } from "../state/reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
-import { AppContext, EditorContext, LanguageContext } from "./Context";
+import { AppContext, EditorContext } from "./Context";
 import { RootNodeContext } from "../ui/ToplevelBlock";
 import * as selectors from "../state/selectors";
 
@@ -70,7 +70,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const editor = useContext(EditorContext);
 
   const dispatch: AppDispatch = useDispatch();
-  const language = useContext(LanguageContext);
   const appHelpers = useContext(AppContext);
   const isErrorFree = useSelector(selectors.isErrorFree);
 
@@ -86,17 +85,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
       // codemirror hasn't mounted yet, do nothing.
       return;
     }
-    if (!language) {
-      throw new Error(
-        `Can't handle keyDown events outside of a language context`
-      );
-    }
     dispatch(
       keyDown(e, {
         isNodeEnv: true,
         node: props.node,
         editor: editor,
-        language: language,
         appHelpers: appHelpers,
         handleMakeEditable,
         setLeft: (ast: AST) => {

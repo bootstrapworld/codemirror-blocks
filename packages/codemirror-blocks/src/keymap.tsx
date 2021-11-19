@@ -24,7 +24,6 @@ import { findAdjacentDropTargetId as getDTid } from "./components/DropTarget";
 import type { AppThunk } from "./state/store";
 import type { AST, ASTNode } from "./ast";
 import { CMBEditor } from "./editor";
-import { Language } from "./CodeMirrorBlocks";
 import type { AppHelpers } from "./components/Context";
 import * as selectors from "./state/selectors";
 import { copy } from "./copypaste";
@@ -33,7 +32,6 @@ type BlockEditorEnv = {
   isNodeEnv: false;
   appHelpers: AppHelpers;
   editor: CMBEditor;
-  language: Language;
 };
 
 type NodeEnv = {
@@ -42,7 +40,6 @@ type NodeEnv = {
   appHelpers: AppHelpers;
 
   editor: CMBEditor;
-  language: Language;
   handleMakeEditable: (e?: React.KeyboardEvent) => void;
   setRight: (ast: AST) => boolean;
   setLeft: (ast: AST) => boolean;

@@ -6,20 +6,9 @@ import NodeEditable from "../../src/components/NodeEditable";
 import { AppStore, createAppStore } from "../../src/state/store";
 import { say } from "../../src/announcer";
 import { CodeMirrorFacade } from "../../src/editor";
-import Context, { LanguageContext } from "../../src/components/Context";
-import { Language } from "../../src/CodeMirrorBlocks";
-import { addLanguage } from "../../src/languages";
+import Context from "../../src/components/Context";
 
 jest.mock("../../src/announcer");
-
-let testLang!: Language;
-beforeAll(() => {
-  testLang = addLanguage({
-    id: "some-lang-id",
-    name: "some lang",
-    parse: jest.fn(),
-  });
-});
 
 afterEach(cleanup);
 
@@ -43,13 +32,7 @@ describe("NodeEditable", () => {
     editor.codemirror.getWrapperElement().remove();
   });
   const renderWithContext = (el: React.ReactElement) =>
-    render(
-      <Context store={store}>
-        <LanguageContext.Provider value={testLang}>
-          {el}
-        </LanguageContext.Provider>
-      </Context>
-    );
+    render(<Context store={store}>{el}</Context>);
 
   describe("when editing text (isInsertion=false)", () => {
     describe("after first mount", () => {

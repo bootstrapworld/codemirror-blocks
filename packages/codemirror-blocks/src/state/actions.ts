@@ -20,8 +20,6 @@ import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { useDispatch } from "react-redux";
 import type { Language } from "../CodeMirrorBlocks";
 import { err, ok, Result } from "../edits/result";
-import { useContext } from "react";
-import { LanguageContext } from "../components/Context";
 import * as selectors from "./selectors";
 import { pasteFromClipboard } from "../copypaste";
 
@@ -242,15 +240,11 @@ export function useDropAction() {
   // Drag from `src` (which should be a d&d monitor thing) to `target`.
   // See the comment at the top of the file for what kinds of `target` there are.
   const dispatch: AppDispatch = useDispatch();
-  const language = useContext(LanguageContext);
   return function drop(
     editor: CMBEditor,
     src: { id: string; content: string },
     target: Target
   ) {
-    if (!language) {
-      throw new Error(`Can't use dropAction outside of a language context`);
-    }
     checkTarget(target);
     const { id: srcId, content: srcContent } = src;
     dispatch((dispatch, getState) => {
