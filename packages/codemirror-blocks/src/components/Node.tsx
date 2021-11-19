@@ -179,7 +179,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
     { "blocks-locked": locked },
     `blocks-${props.node.type}`,
   ];
-  const ast = useSelector(selectors.getAST);
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_item, monitor) => {
@@ -190,10 +189,13 @@ const Node = ({ expandable = true, ...props }: Props) => {
       if (monitor.didDrop()) {
         return;
       }
-      const node = ast.getNodeByIdOrThrow(props.node.id);
-      return dispatch(
-        actions.drop(editor, monitor.getItem(), new ReplaceNodeTarget(node))
-      );
+      return dispatch((dispatch, getState) => {
+        const ast = selectors.getAST(getState());
+        const node = ast.getNodeByIdOrThrow(props.node.id);
+        return dispatch(
+          actions.drop(editor, monitor.getItem(), new ReplaceNodeTarget(node))
+        );
+      });
     },
     collect: (monitor) => {
       return {
