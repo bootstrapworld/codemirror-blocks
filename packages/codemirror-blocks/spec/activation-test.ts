@@ -10,6 +10,7 @@ import {
   isNodeEditable,
   elementForNode,
   keyPress,
+  click,
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
@@ -146,9 +147,28 @@ describe("inserting a new node", () => {
     // confirm that the new new was saved to the ast and focused
     expect(cmb.getAst().toString()).toBe("aBrandNewLiteral");
     expect(cmb.getValue()).toEqual("aBrandNewLiteral");
-    expect(document.activeElement!.id).toEqual(
-      screen.getByRole("treeitem", { name: /aBrandNewLiteral/ }).id
-    );
+    expect(
+      screen.getByRole("treeitem", { name: /aBrandNewLiteral/ })
+    ).toHaveFocus();
+  });
+});
+
+describe("switching to block mode", () => {
+  let cmb: API;
+  beforeEach(() => {
+    cmb = mountCMB(wescheme).cmb;
+    cmb.setBlockMode(false);
+    cmb.setValue("foo bar");
+  });
+
+  it("should not change the focused element", () => {
+    const blockModeBtn = screen.getByRole("button", {
+      name: /Switch to blocks mode/,
+    });
+    blockModeBtn.focus();
+    expect(blockModeBtn).toHaveFocus();
+    click(blockModeBtn);
+    expect(blockModeBtn).toHaveFocus();
   });
 });
 

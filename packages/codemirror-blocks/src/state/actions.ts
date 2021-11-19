@@ -330,7 +330,7 @@ export function activateByNid(
     // which confuses the screenreader. In these situations, we focus on
     // a dummy element that just says "stand by" (see ToggleEditor.js).
     // When the new node is available, focus will shift automatically.
-    if (!document.contains(newNode.element)) {
+    if (newNode.element && !document.contains(newNode.element)) {
       const sr = document.getElementById("SR_fix_for_slow_dom");
       // In the event that everything has been unmounted,
       // for example in a unit test, then neither newNode.element nor

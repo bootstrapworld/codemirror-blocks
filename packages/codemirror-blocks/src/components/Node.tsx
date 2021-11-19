@@ -244,10 +244,14 @@ const Node = ({ expandable = true, ...props }: Props) => {
   // as soon as we finish rendering.
   const focusedNode = useSelector(selectors.getFocusedNode);
   useEffect(() => {
-    if (nodeElementRef.current && focusedNode?.id === props.node.id) {
+    if (
+      editor?.hasFocus() &&
+      nodeElementRef.current &&
+      focusedNode?.id === props.node.id
+    ) {
       nodeElementRef.current?.focus();
     }
-  }, [focusedNode?.id, props.node.id]);
+  }, [editor, focusedNode?.id, props.node.id]);
 
   if (editable) {
     if (!editor) {

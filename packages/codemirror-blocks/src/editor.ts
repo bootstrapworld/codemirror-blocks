@@ -134,6 +134,11 @@ export interface ReadonlyCMBEditor extends ReadonlyRangedText {
     start: Pos,
     options: { caseFold: boolean }
   ): CodeMirror.SearchCursor;
+
+  /**
+   * Whether or not the editor currently has focus
+   */
+  hasFocus(): boolean;
 }
 
 export interface RangedText extends ReadonlyRangedText {
@@ -230,6 +235,9 @@ export class CodeMirrorFacade implements CMBEditor {
     origin: string | undefined
   ): void {
     this.codemirror.replaceRange(replacement, from, to, origin);
+  }
+  hasFocus(): boolean {
+    return this.codemirror.hasFocus();
   }
   focus(): void {
     this.codemirror.focus();
