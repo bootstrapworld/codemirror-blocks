@@ -116,3 +116,5 @@ export const isBlockModeEnabled = (state: RootState) => state.blockMode;
  * @returns a string representation of the code.
  */
 export const getCode = (state: RootState) => state.code;
+
+export const getEditable = (state: RootState) => state.editable;

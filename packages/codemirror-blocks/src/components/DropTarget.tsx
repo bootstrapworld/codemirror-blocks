@@ -8,7 +8,6 @@ import { genUniqueId } from "../utils";
 import { useDropAction, InsertTarget } from "../state/actions";
 import * as selectors from "../state/selectors";
 import type { ASTNode, AST, Pos } from "../ast";
-import { RootState } from "../state/reducers";
 import { ItemTypes } from "../dnd";
 import { EditorContext } from "./Context";
 
@@ -147,9 +146,7 @@ field declared. The node was:`,
 
   const dispatch: AppDispatch = useDispatch();
   const ast = useSelector(selectors.getAST);
-  const { isEditable } = useSelector((state: RootState) => {
-    return { isEditable: state.editable[id] ?? false };
-  });
+  const isEditable = useSelector(selectors.getEditable)[id] ?? false;
   // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
   // check to see whether an adjacent DropTarget is being edited, or, for when the
   // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
