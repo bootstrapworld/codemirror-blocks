@@ -296,11 +296,29 @@ export function useDropAction() {
   };
 }
 
+type ActivateOptions = { allowMove?: boolean; record?: boolean };
+
+export function activateNode(
+  editor: ReadonlyCMBEditor,
+  node: ASTNode,
+  options: ActivateOptions
+): AppThunk {
+  return (dispatch, getState) => {
+    const ast = selectors.getAST(getState());
+    // nid can be stale!! Always obtain a fresh copy of the node
+    // from getState() before calling activateByNid
+    // TODO(pcardune): figure out why this is the case and make it
+    // not the case.
+    const currentNode = ast.getNodeByIdOrThrow(node.id);
+    dispatch(activateByNid(editor, currentNode.nid, options));
+  };
+}
+
 // Activate the node with the given `nid`.
 export function activateByNid(
   editor: ReadonlyCMBEditor,
   nid: number | null,
-  options: { allowMove?: boolean; record?: boolean } = {}
+  options: ActivateOptions = {}
 ): AppThunk {
   return (dispatch, getState) => {
     options = { ...options, allowMove: true, record: true };

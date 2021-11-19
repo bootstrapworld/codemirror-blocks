@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { AST, ASTNode, nodeElementMap } from "../ast";
 import {
   useDropAction,
-  activateByNid,
   ReplaceNodeTarget,
   collapseNode,
 } from "../state/actions";
@@ -55,8 +54,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const textMarker = useSelector((state: RootState) =>
     selectors.getTextMarker(state, props.node)
   );
-  const ast = useSelector(selectors.getAST);
-
   const rootNode = useContext(RootNodeContext);
   useEffect(() => {
     // Whenever a node gets rerendered because it's collapsed state has changed,
@@ -132,8 +129,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   };
 
-  // nid can be stale!! Always obtain a fresh copy of the node
-  // from getState() before calling activateByNid
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!editor) {
       // codemirror hasn't mounted yet, do nothing
@@ -150,8 +145,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       // TODO(Oak): is this the best way?
       return;
     }
-    const currentNode = ast.getNodeByIdOrThrow(props.node.id);
-    dispatch(activateByNid(editor, currentNode.nid, { allowMove: false }));
+    dispatch(actions.activateNode(editor, props.node, { allowMove: false }));
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -197,6 +191,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     `blocks-${props.node.type}`,
   ];
   const drop = useDropAction();
+  const ast = useSelector(selectors.getAST);
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_item, monitor) => {
