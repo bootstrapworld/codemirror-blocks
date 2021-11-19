@@ -5,7 +5,7 @@ import {
   createEditAnnouncement,
 } from "../utils";
 import { say, cancelAnnouncement } from "../announcer";
-import { AppDispatch, AppThunk } from "./store";
+import { AppThunk } from "./store";
 import {
   performEdits,
   edit_insert,
@@ -17,7 +17,6 @@ import {
 } from "../edits/performEdits";
 import { AST, ASTNode, Pos } from "../ast";
 import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
-import { useDispatch } from "react-redux";
 import type { Language } from "../CodeMirrorBlocks";
 import { err, ok, Result } from "../edits/result";
 import * as selectors from "./selectors";
@@ -236,57 +235,50 @@ export const paste =
     });
   };
 
-export function useDropAction() {
-  // Drag from `src` (which should be a d&d monitor thing) to `target`.
-  // See the comment at the top of the file for what kinds of `target` there are.
-  const dispatch: AppDispatch = useDispatch();
-  return function drop(
-    editor: CMBEditor,
-    src: { id: string; content: string },
-    target: Target
-  ) {
+export function drop(
+  editor: CMBEditor,
+  src: { id: string; content: string },
+  target: Target
+): AppThunk {
+  return (dispatch, getState) => {
     checkTarget(target);
     const { id: srcId, content: srcContent } = src;
-    dispatch((dispatch, getState) => {
-      const state = getState();
-      const { collapsedList } = state;
-      let ast = selectors.getAST(state); // get the AST, and which nodes are collapsed
-      const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
-      const content = srcNode ? srcNode.toString() : srcContent;
+    const state = getState();
+    const { collapsedList } = state;
+    let ast = selectors.getAST(state); // get the AST, and which nodes are collapsed
+    const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
+    const content = srcNode ? srcNode.toString() : srcContent;
 
-      // If we dropped the node _inside_ where we dragged it from, do nothing.
-      if (srcNode && srcRangeIncludes(srcNode.srcRange(), target.srcRange())) {
-        return;
+    // If we dropped the node _inside_ where we dragged it from, do nothing.
+    if (srcNode && srcRangeIncludes(srcNode.srcRange(), target.srcRange())) {
+      return;
+    }
+
+    const edits = [];
+    let droppedHash: unknown;
+
+    // Assuming it did not come from the toolbar...
+    // (1) Delete the text of the dragged node, (2) and save the id and hash
+    if (srcNode) {
+      edits.push(edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id)));
+      droppedHash = ast.getNodeByIdOrThrow(srcNode.id).hash;
+    }
+
+    // Insert or replace at the drop location, depending on what we dropped it on.
+    edits.push(target.toEdit(ast, content));
+    // Perform the edits.
+    const editResult = dispatch(performEdits(edits, editor));
+
+    // Assuming it did not come from the toolbar, and the srcNode was collapsed...
+    // Find the matching node in the new tree and collapse it
+    if (srcNode && collapsedList.find((id) => id == srcNode.id)) {
+      if (editResult.successful) {
+        ast = editResult.value.newAST;
       }
-
-      const edits = [];
-      let droppedHash: unknown;
-
-      // Assuming it did not come from the toolbar...
-      // (1) Delete the text of the dragged node, (2) and save the id and hash
-      if (srcNode) {
-        edits.push(edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id)));
-        droppedHash = ast.getNodeByIdOrThrow(srcNode.id).hash;
-      }
-
-      // Insert or replace at the drop location, depending on what we dropped it on.
-      edits.push(target.toEdit(ast, content));
-      // Perform the edits.
-      const editResult = dispatch(performEdits(edits, editor));
-
-      // Assuming it did not come from the toolbar, and the srcNode was collapsed...
-      // Find the matching node in the new tree and collapse it
-      if (srcNode && collapsedList.find((id) => id == srcNode.id)) {
-        if (editResult.successful) {
-          ast = editResult.value.newAST;
-        }
-        const newNode = [...ast.getAllNodes()].find(
-          (n) => n.hash == droppedHash
-        );
-        newNode && dispatch(collapseNode(newNode));
-        dispatch(uncollapseNode(srcNode));
-      }
-    });
+      const newNode = [...ast.getAllNodes()].find((n) => n.hash == droppedHash);
+      newNode && dispatch(collapseNode(newNode));
+      dispatch(uncollapseNode(srcNode));
+    }
   };
 }
 

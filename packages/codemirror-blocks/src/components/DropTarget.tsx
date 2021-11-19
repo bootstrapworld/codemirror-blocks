@@ -5,7 +5,7 @@ import { useDrop } from "react-dnd";
 import classNames from "classnames";
 import { AppDispatch } from "../state/store";
 import { genUniqueId } from "../utils";
-import { useDropAction, InsertTarget } from "../state/actions";
+import * as actions from "../state/actions";
 import * as selectors from "../state/selectors";
 import type { ASTNode, AST, Pos } from "../ast";
 import { ItemTypes } from "../dnd";
@@ -166,10 +166,9 @@ field declared. The node was:`,
     if (!pos) {
       throw new Error(`Can't determine location for InsertTarget`);
     }
-    return new InsertTarget(node, props.field, pos);
+    return new actions.InsertTarget(node, props.field, pos);
   };
 
-  const drop = useDropAction();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (item: { id: string; content: string }, monitor) => {
@@ -180,7 +179,7 @@ field declared. The node was:`,
       if (monitor.didDrop()) {
         return;
       }
-      return drop(editor, item, createTarget());
+      return dispatch(actions.drop(editor, item, createTarget()));
     },
     collect: (monitor) => {
       return { isOver: monitor.isOver({ shallow: true }) };

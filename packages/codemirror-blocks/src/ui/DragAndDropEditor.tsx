@@ -5,10 +5,11 @@ import {
 } from "react-codemirror2";
 import React, { useRef } from "react";
 import { ItemTypes } from "../dnd";
-import { OverwriteTarget, useDropAction } from "../state/actions";
+import * as actions from "../state/actions";
 import { playSound, BEEP } from "../utils";
 import { useDrop } from "react-dnd";
 import { CodeMirrorFacade } from "../editor";
+import { useDispatch } from "react-redux";
 
 type OurProps = {
   editorDidMount?: (ed: CodeMirror.Editor) => void;
@@ -21,8 +22,7 @@ type Props = Omit<IUnControlledCodeMirror, keyof OurProps> & OurProps;
 
 const DragAndDropEditor = (props: Props) => {
   const editorRef = useRef<CodeMirrorFacade>();
-  const drop = useDropAction();
-
+  const dispatch = useDispatch();
   const [_, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_, monitor) => {
@@ -50,10 +50,12 @@ const DragAndDropEditor = (props: Props) => {
         // If it's in a valid part of CM whitespace, translate to "insert at loc" edit
         if (isDroppedOnWhitespace) {
           const loc = editorRef.current.codemirror.coordsChar({ left, top });
-          drop(
-            editorRef.current,
-            monitor.getItem(),
-            new OverwriteTarget(loc, loc)
+          dispatch(
+            actions.drop(
+              editorRef.current,
+              monitor.getItem(),
+              new actions.OverwriteTarget(loc, loc)
+            )
           );
           // Or else beep and make it a no-op
         } else {

@@ -1,11 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AST, ASTNode, nodeElementMap } from "../ast";
-import {
-  useDropAction,
-  ReplaceNodeTarget,
-  collapseNode,
-} from "../state/actions";
+import { ReplaceNodeTarget, collapseNode } from "../state/actions";
 import * as actions from "../state/actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
@@ -183,7 +179,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
     { "blocks-locked": locked },
     `blocks-${props.node.type}`,
   ];
-  const drop = useDropAction();
   const ast = useSelector(selectors.getAST);
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
@@ -196,7 +191,9 @@ const Node = ({ expandable = true, ...props }: Props) => {
         return;
       }
       const node = ast.getNodeByIdOrThrow(props.node.id);
-      return drop(editor, monitor.getItem(), new ReplaceNodeTarget(node));
+      return dispatch(
+        actions.drop(editor, monitor.getItem(), new ReplaceNodeTarget(node))
+      );
     },
     collect: (monitor) => {
       return {
