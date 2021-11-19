@@ -8,7 +8,10 @@ const getNode = (state: RootState, node: ASTNode) => node;
 /**
  * Get an AST object using data from the store
  */
-export const getAST = (state: RootState) => new AST(state.astData);
+export const getAST: (state: RootState) => AST = createSelector(
+  [(state: RootState) => state.astData],
+  (astData) => new AST(astData)
+);
 
 /**
  * Get the entire list of collapsed nodes.
