@@ -1,6 +1,5 @@
 import wescheme from "../src/languages/wescheme";
-import "codemirror/addon/search/searchcursor.js";
-
+import { screen } from "@testing-library/react";
 import {
   cmd_ctrl,
   teardown,
@@ -10,6 +9,8 @@ import {
   mountCMB,
   isNodeEditable,
   elementForNode,
+  keyPress,
+  click,
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
@@ -128,6 +129,78 @@ describe("when dealing with node activation,", () => {
     keyDown("Q", { altKey: true });
     expect(isNodeEditable(literal1)).toBe(false);
     expect(cmb.getValue()).toBe("11\n54");
+  });
+});
+
+describe("inserting a new node", () => {
+  let cmb: API;
+  beforeEach(() => {
+    cmb = mountCMB(wescheme).cmb;
+  });
+  it("should focus the node that was just inserted", () => {
+    cmb.focus();
+    // start inserting a new node
+    keyPress("a");
+    insertText("BrandNewLiteral");
+    // confirm the insertion by pressing Enter
+    keyDown("Enter");
+    // confirm that the new new was saved to the ast and focused
+    expect(cmb.getAst().toString()).toBe("aBrandNewLiteral");
+    expect(cmb.getValue()).toEqual("aBrandNewLiteral");
+    expect(
+      screen.getByRole("treeitem", { name: /aBrandNewLiteral/ })
+    ).toHaveFocus();
+  });
+});
+
+describe("switching to block mode", () => {
+  let cmb: API;
+  beforeEach(() => {
+    cmb = mountCMB(wescheme).cmb;
+    cmb.setBlockMode(false);
+    cmb.setValue("foo bar");
+  });
+
+  it("should not change the focused element", () => {
+    const blockModeBtn = screen.getByRole("button", {
+      name: /Switch to blocks mode/,
+    });
+    blockModeBtn.focus();
+    expect(blockModeBtn).toHaveFocus();
+    click(blockModeBtn);
+    expect(blockModeBtn).toHaveFocus();
+  });
+});
+
+describe("deleting a node", () => {
+  let cmb: API;
+  beforeEach(() => {
+    cmb = mountCMB(wescheme).cmb;
+  });
+  it("should focus on the previous node when a top-level node is deleted", () => {
+    cmb.setValue("firstLiteral\nsecondLiteral\nthirdLiteral");
+    mouseDown(screen.getByRole("treeitem", { name: /thirdLiteral/ }));
+    keyDown(" ");
+    keyDown("Delete");
+    expect(cmb.getValue()).toBe("firstLiteral\nsecondLiteral\n");
+    expect(
+      screen.getByRole("treeitem", { name: /secondLiteral/ })
+    ).toHaveFocus();
+    expect(cmb.getCursor()).toMatchInlineSnapshot(`
+      Object {
+        "ch": 0,
+        "line": 1,
+      }
+    `);
+  });
+
+  it("should focus on the previous child node when a child node is deleted", () => {
+    cmb.setValue("(someFunc firstArg secondArg)");
+    mouseDown(screen.getByRole("treeitem", { name: /secondArg/ }));
+    keyDown(" ");
+    keyDown("Delete");
+    expect(cmb.getValue()).toBe("(someFunc firstArg)");
+    expect(screen.getByRole("treeitem", { name: /firstArg/ })).toHaveFocus();
   });
 });
 
