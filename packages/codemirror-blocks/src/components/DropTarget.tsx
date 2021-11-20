@@ -1,16 +1,22 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "react-dnd";
 import classNames from "classnames";
 import { AppDispatch } from "../state/store";
 import { genUniqueId } from "../utils";
-import { useDropAction, InsertTarget } from "../state/actions";
+import * as actions from "../state/actions";
 import * as selectors from "../state/selectors";
 import type { ASTNode, AST, Pos } from "../ast";
-import { RootState } from "../state/reducers";
 import { ItemTypes } from "../dnd";
 import { EditorContext } from "./Context";
+import { createSelector } from "reselect";
 
 // Provided by `Node`
 export const NodeContext = createContext<{ node: ASTNode | null }>({
@@ -114,7 +120,11 @@ const getLocation = ({
     }
     return null;
   }
-  return findLoc(context.node.element);
+  const loc = findLoc(context.node.element);
+  if (!loc) {
+    throw new Error(`Can't determine location for InsertTarget`);
+  }
+  return loc;
 };
 
 export const DropTarget = (props: { field: string }) => {
@@ -146,10 +156,39 @@ field declared. The node was:`,
   const [mouseOver, setMouseOver] = useState(false);
 
   const dispatch: AppDispatch = useDispatch();
-  const ast = useSelector(selectors.getAST);
-  const { isEditable } = useSelector((state: RootState) => {
-    return { isEditable: state.editable[id] ?? false };
-  });
+
+  const createTarget = useCallback(
+    (ast: AST) =>
+      new actions.InsertTarget(
+        node,
+        props.field,
+        getLocation({
+          id,
+          ast,
+          context: {
+            field: props.field,
+            node,
+          },
+        })
+      ),
+    [id, node, props.field]
+  );
+
+  // create and use a new insertTarget selector for evey
+  // DropTarget instance to avoid re-rerendering every
+  // drop target when any other drop target's editable
+  // state changes. The insertTarget will be null if
+  // the node is not editable.
+  const insertTarget = useSelector(
+    useMemo(
+      () =>
+        createSelector(
+          [selectors.getAST, selectors.getEditable],
+          (ast, editable) => (editable[id] ? createTarget(ast) : null)
+        ),
+      [id, createTarget]
+    )
+  );
   // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
   // check to see whether an adjacent DropTarget is being edited, or, for when the
   // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
@@ -157,22 +196,6 @@ field declared. The node was:`,
   const setEditable = (bool: boolean) =>
     dispatch({ type: "SET_EDITABLE", id: id, bool });
 
-  const createTarget = () => {
-    const pos = getLocation({
-      id: id,
-      ast,
-      context: {
-        field: props.field,
-        node,
-      },
-    });
-    if (!pos) {
-      throw new Error(`Can't determine location for InsertTarget`);
-    }
-    return new InsertTarget(node, props.field, pos);
-  };
-
-  const drop = useDropAction();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (item: { id: string; content: string }, monitor) => {
@@ -183,7 +206,10 @@ field declared. The node was:`,
       if (monitor.didDrop()) {
         return;
       }
-      return drop(editor, item, createTarget());
+      return dispatch((dispatch, getState) => {
+        const ast = selectors.getAST(getState());
+        return dispatch(actions.drop(editor, item, createTarget(ast)));
+      });
     },
     collect: (monitor) => {
       return { isOver: monitor.isOver({ shallow: true }) };
@@ -225,7 +251,7 @@ field declared. The node was:`,
     id: `block-drop-target-${id}`,
   };
 
-  if (isEditable) {
+  if (insertTarget) {
     if (!editor) {
       throw new Error("can't edit a DropTarget before codemirror has mounted");
     }
@@ -233,7 +259,7 @@ field declared. The node was:`,
     return (
       <NodeEditable
         editor={editor}
-        target={createTarget()}
+        target={insertTarget}
         value={value}
         onChange={handleChange}
         onMouseEnter={handleMouseEnterRelated}

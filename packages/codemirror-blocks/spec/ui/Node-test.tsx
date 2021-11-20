@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import React from "react";
 import { AST } from "../../src/ast";
-import Context, { LanguageContext } from "../../src/components/Context";
+import Context from "../../src/components/Context";
 import Node from "../../src/components/Node";
 import { addLanguage } from "../../src/languages";
 import { Comment, Literal } from "../../src/nodes";
@@ -19,11 +19,7 @@ const testLang = addLanguage({
 });
 
 const renderWithContext = (el: React.ReactElement) =>
-  render(
-    <Context store={store}>
-      <LanguageContext.Provider value={testLang}>{el}</LanguageContext.Provider>
-    </Context>
-  );
+  render(<Context store={store}>{el}</Context>);
 
 it("renders a draggable span with various aria properties", () => {
   const ast = AST.from(testLang.id, [

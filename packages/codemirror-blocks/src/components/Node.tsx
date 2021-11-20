@@ -1,12 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AST, ASTNode, nodeElementMap } from "../ast";
-import {
-  useDropAction,
-  activateByNid,
-  ReplaceNodeTarget,
-  collapseNode,
-} from "../state/actions";
+import { ReplaceNodeTarget, collapseNode } from "../state/actions";
 import * as actions from "../state/actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
@@ -17,7 +12,7 @@ import { useDrag, useDrop } from "react-dnd";
 import { RootState } from "../state/reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
-import { AppContext, EditorContext, LanguageContext } from "./Context";
+import { AppContext, EditorContext } from "./Context";
 import { RootNodeContext } from "../ui/ToplevelBlock";
 import * as selectors from "../state/selectors";
 
@@ -55,8 +50,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const textMarker = useSelector((state: RootState) =>
     selectors.getTextMarker(state, props.node)
   );
-  const ast = useSelector(selectors.getAST);
-
   const rootNode = useContext(RootNodeContext);
   useEffect(() => {
     // Whenever a node gets rerendered because it's collapsed state has changed,
@@ -73,7 +66,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const editor = useContext(EditorContext);
 
   const dispatch: AppDispatch = useDispatch();
-  const language = useContext(LanguageContext);
   const appHelpers = useContext(AppContext);
   const isErrorFree = useSelector(selectors.isErrorFree);
 
@@ -89,17 +81,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
       // codemirror hasn't mounted yet, do nothing.
       return;
     }
-    if (!language) {
-      throw new Error(
-        `Can't handle keyDown events outside of a language context`
-      );
-    }
     dispatch(
       keyDown(e, {
         isNodeEnv: true,
         node: props.node,
         editor: editor,
-        language: language,
         appHelpers: appHelpers,
         handleMakeEditable,
         setLeft: (ast: AST) => {
@@ -132,8 +118,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   };
 
-  // nid can be stale!! Always obtain a fresh copy of the node
-  // from getState() before calling activateByNid
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!editor) {
       // codemirror hasn't mounted yet, do nothing
@@ -150,8 +134,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       // TODO(Oak): is this the best way?
       return;
     }
-    const currentNode = ast.getNodeByIdOrThrow(props.node.id);
-    dispatch(activateByNid(editor, currentNode.nid, { allowMove: false }));
+    dispatch(actions.activateNode(editor, props.node, { allowMove: false }));
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -196,7 +179,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
     { "blocks-locked": locked },
     `blocks-${props.node.type}`,
   ];
-  const drop = useDropAction();
   const [{ isOver }, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_item, monitor) => {
@@ -207,8 +189,13 @@ const Node = ({ expandable = true, ...props }: Props) => {
       if (monitor.didDrop()) {
         return;
       }
-      const node = ast.getNodeByIdOrThrow(props.node.id);
-      return drop(editor, monitor.getItem(), new ReplaceNodeTarget(node));
+      return dispatch((dispatch, getState) => {
+        const ast = selectors.getAST(getState());
+        const node = ast.getNodeByIdOrThrow(props.node.id);
+        return dispatch(
+          actions.drop(editor, monitor.getItem(), new ReplaceNodeTarget(node))
+        );
+      });
     },
     collect: (monitor) => {
       return {
