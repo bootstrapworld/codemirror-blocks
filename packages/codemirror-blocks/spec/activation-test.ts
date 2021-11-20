@@ -172,12 +172,12 @@ describe("switching to block mode", () => {
   });
 });
 
-describe("deleting a top-level node", () => {
+describe("deleting a node", () => {
   let cmb: API;
   beforeEach(() => {
     cmb = mountCMB(wescheme).cmb;
   });
-  it("should focus on the previous node", () => {
+  it("should focus on the previous node when a top-level node is deleted", () => {
     cmb.setValue("firstLiteral\nsecondLiteral\nthirdLiteral");
     mouseDown(screen.getByRole("treeitem", { name: /thirdLiteral/ }));
     keyDown(" ");
@@ -192,6 +192,15 @@ describe("deleting a top-level node", () => {
         "line": 1,
       }
     `);
+  });
+
+  it("should focus on the previous child node when a child node is deleted", () => {
+    cmb.setValue("(someFunc firstArg secondArg)");
+    mouseDown(screen.getByRole("treeitem", { name: /secondArg/ }));
+    keyDown(" ");
+    keyDown("Delete");
+    expect(cmb.getValue()).toBe("(someFunc firstArg)");
+    expect(screen.getByRole("treeitem", { name: /firstArg/ })).toHaveFocus();
   });
 });
 

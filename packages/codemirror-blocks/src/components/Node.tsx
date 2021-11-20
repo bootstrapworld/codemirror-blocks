@@ -247,7 +247,8 @@ const Node = ({ expandable = true, ...props }: Props) => {
     if (
       !editor?.hasFocus() &&
       document.activeElement !== document.body &&
-      document.activeElement !== null
+      document.activeElement !== null &&
+      document.activeElement.id !== "SR_fix_for_slow_dom"
     ) {
       // If the editor doesn't have focus, then we don't want to steal
       // focus from something else.
