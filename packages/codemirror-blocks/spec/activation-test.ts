@@ -172,6 +172,29 @@ describe("switching to block mode", () => {
   });
 });
 
+describe("deleting a top-level node", () => {
+  let cmb: API;
+  beforeEach(() => {
+    cmb = mountCMB(wescheme).cmb;
+  });
+  it("should focus on the previous node", () => {
+    cmb.setValue("firstLiteral\nsecondLiteral\nthirdLiteral");
+    mouseDown(screen.getByRole("treeitem", { name: /thirdLiteral/ }));
+    keyDown(" ");
+    keyDown("Delete");
+    expect(cmb.getValue()).toBe("firstLiteral\nsecondLiteral\n");
+    expect(
+      screen.getByRole("treeitem", { name: /secondLiteral/ })
+    ).toHaveFocus();
+    expect(cmb.getCursor()).toMatchInlineSnapshot(`
+      Object {
+        "ch": 0,
+        "line": 1,
+      }
+    `);
+  });
+});
+
 describe("cut/copy/paste", () => {
   let cmb!: API;
   let literal1!: ASTNode;

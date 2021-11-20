@@ -245,10 +245,15 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const focusedNode = useSelector(selectors.getFocusedNode);
   useEffect(() => {
     if (
-      editor?.hasFocus() &&
-      nodeElementRef.current &&
-      focusedNode?.id === props.node.id
+      !editor?.hasFocus() &&
+      document.activeElement !== document.body &&
+      document.activeElement !== null
     ) {
+      // If the editor doesn't have focus, then we don't want to steal
+      // focus from something else.
+      return;
+    }
+    if (nodeElementRef.current && focusedNode?.id === props.node.id) {
       nodeElementRef.current?.focus();
     }
   }, [editor, focusedNode?.id, props.node.id]);
