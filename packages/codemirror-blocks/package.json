@@ -21,7 +21,7 @@
     "react-dnd": "^14.0.4",
     "react-dnd-html5-backend": "^14.0.2",
     "react-dom": "^17.0.2",
-    "react-modal": "^3.14.3",
+    "react-modal": "^3.14.4",
     "react-redux": "^7.2.5",
     "react-tabs": "^3.2.2",
     "redux": "^4.1.2",
