@@ -13,7 +13,7 @@ import {
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
 import { FunctionAppNode } from "../src/nodes";
-import { fireEvent } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 
 let cmb!: API;
 beforeEach(() => {
@@ -21,6 +21,42 @@ beforeEach(() => {
 });
 
 afterEach(teardown);
+
+const drag = (node: HTMLElement) => {
+  fireEvent.mouseDown(node);
+  fireEvent.dragStart(node);
+  return {
+    dropOnto: (node: HTMLElement) => {
+      fireEvent.dragEnter(node);
+      fireEvent.mouseOver(node);
+      fireEvent.drop(node);
+    },
+  };
+};
+
+describe("when dragging a node onto a node in a different subtree", () => {
+  it("should replace the node that it's dropped onto and focus on the new node", () => {
+    cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
+    drag(screen.getByRole("treeitem", { name: /firstVar/ })).dropOnto(
+      screen.getByRole("treeitem", { name: /fifthVar/ })
+    );
+    expect(cmb.getValue()).toEqual("(add secondVar) (sub fourthVar firstVar)");
+    expect(screen.getByRole("treeitem", { name: /firstVar/ })).toHaveFocus();
+  });
+
+  it("should focus the nth child of the node that was just dropped", () => {
+    cmb.setValue(
+      `(divide 1 2) (add firstVar secondVar) (sub fourthVar fifthVar)`
+    );
+    drag(screen.getByRole("treeitem", { name: /add expression/ })).dropOnto(
+      screen.getByRole("treeitem", { name: /fifthVar/ })
+    );
+    expect(cmb.getValue()).toEqual(
+      `(divide 1 2) (sub fourthVar (add firstVar secondVar))`
+    );
+    expect(screen.getByRole("treeitem", { name: /secondVar/ })).toHaveFocus();
+  });
+});
 
 describe("when drag existing node and drop on existing node,", () => {
   let firstArg: ASTNode;
@@ -39,15 +75,6 @@ describe("when drag existing node and drop on existing node,", () => {
   beforeEach(() => {
     cmb.setValue("(+ 1 2 3)");
     retrieve();
-  });
-
-  it("should override nodes 1", () => {
-    expect(secondArg.element!.textContent).toBe("2");
-    const dragEvent = dragstart();
-    fireEvent(firstArg.element!, dragEvent);
-    fireEvent(secondArg.element!, drop());
-    retrieve();
-    expect(secondArg.element!.textContent).toBe("3");
   });
 
   it("should set the right css class on dragenter 2", () => {
