@@ -1,19 +1,9 @@
 import wescheme from "../src/languages/wescheme";
-import {
-  teardown,
-  mouseDown,
-  dragstart,
-  drop,
-  dragenter,
-  dragenterSeq,
-  dragleave,
-  keyDown,
-  mountCMB,
-} from "../src/toolkit/test-utils";
+import { teardown, keyDown, mountCMB } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
-import { FunctionAppNode } from "../src/nodes";
 import { fireEvent, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 let cmb!: API;
 beforeEach(() => {
@@ -22,195 +12,142 @@ beforeEach(() => {
 
 afterEach(teardown);
 
-const drag = (node: HTMLElement) => {
-  fireEvent.mouseDown(node);
-  fireEvent.dragStart(node);
-  return {
-    dropOnto: (node: HTMLElement) => {
-      fireEvent.dragEnter(node);
-      fireEvent.mouseOver(node);
-      fireEvent.drop(node);
+/**
+ * Helper function to simulate dragging an element onto another element.
+ *
+ * @param srcNode the element to start dragging
+ * @returns additional functions you can call to simulate dragging/dropping the element
+ * over/onto another element.
+ */
+const drag = (srcNode: Element) => {
+  fireEvent.mouseDown(srcNode);
+  fireEvent.dragStart(srcNode);
+  const next = {
+    dragOver: (overNode: Element) => {
+      fireEvent.dragEnter(overNode);
+      fireEvent.mouseOver(overNode);
+      return {
+        dragLeave: () => {
+          fireEvent.dragLeave(overNode);
+          fireEvent.mouseOut(overNode);
+        },
+      };
+    },
+    dropOnto: (ontoNode: Element) => {
+      next.dragOver(ontoNode);
+      fireEvent.drop(ontoNode);
     },
   };
+  return next;
 };
+
+/**
+ * Get the element for a given ast node using it's aria-label
+ * @param label string or regex to match the aria label
+ * @returns the node, or throws if there is none.
+ */
+const getNodeLabeled = (label: string | RegExp) =>
+  screen.getByRole("treeitem", { name: label });
 
 describe("when dragging a node onto a node in a different subtree", () => {
   it("should replace the node that it's dropped onto and focus on the new node", () => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
-    drag(screen.getByRole("treeitem", { name: /firstVar/ })).dropOnto(
-      screen.getByRole("treeitem", { name: /fifthVar/ })
-    );
+    drag(getNodeLabeled(/firstVar/)).dropOnto(getNodeLabeled(/fifthVar/));
     expect(cmb.getValue()).toEqual("(add secondVar) (sub fourthVar firstVar)");
-    expect(screen.getByRole("treeitem", { name: /firstVar/ })).toHaveFocus();
+    expect(getNodeLabeled(/firstVar/)).toHaveFocus();
   });
 
   it("should focus the nth child of the node that was just dropped", () => {
     cmb.setValue(
       `(divide 1 2) (add firstVar secondVar) (sub fourthVar fifthVar)`
     );
-    drag(screen.getByRole("treeitem", { name: /add expression/ })).dropOnto(
-      screen.getByRole("treeitem", { name: /fifthVar/ })
-    );
+    drag(getNodeLabeled(/add expression/)).dropOnto(getNodeLabeled(/fifthVar/));
     expect(cmb.getValue()).toEqual(
       `(divide 1 2) (sub fourthVar (add firstVar secondVar))`
     );
-    expect(screen.getByRole("treeitem", { name: /secondVar/ })).toHaveFocus();
+    expect(getNodeLabeled(/secondVar/)).toHaveFocus();
   });
 });
 
-describe("when drag existing node and drop on existing node,", () => {
-  let firstArg: ASTNode;
-  let secondArg: ASTNode;
-  let dropTargetEls: NodeListOf<Element>;
-
-  const retrieve = () => {
-    const funcApp = cmb.getAst().rootNodes[0] as FunctionAppNode;
-    firstArg = funcApp.fields.args[0];
-    secondArg = funcApp.fields.args[1];
-    dropTargetEls = cmb
-      .getAst()
-      .rootNodes[0].element!.querySelectorAll(".blocks-drop-target");
-  };
-
+describe("when dragging a node onto a node that can't be dropped onto", () => {
+  let addExprEl: Element;
   beforeEach(() => {
-    cmb.setValue("(+ 1 2 3)");
-    retrieve();
+    cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
+    addExprEl = getNodeLabeled(/add expression/);
+  });
+  it("should not add the blocks-over-target css class", () => {
+    drag(getNodeLabeled(/fifthVar/)).dragOver(addExprEl);
+    expect(addExprEl).not.toHaveClass("blocks-over-target");
   });
 
-  it("should set the right css class on dragenter 2", () => {
-    const dragEvent = dragstart();
-    fireEvent(firstArg.element!, dragEvent);
-    const elt = dropTargetEls[3];
-    expect(elt.classList).toContain("blocks-drop-target");
-    dragenterSeq(elt);
-    expect(elt.classList).toContain("blocks-over-target");
+  it("should not change the document when dropped onto a node that can't be dropped onto", () => {
+    drag(getNodeLabeled(/fifthVar/)).dropOnto(addExprEl);
+    expect(cmb.getValue()).toEqual(
+      `(add firstVar secondVar) (sub fourthVar fifthVar)`
+    );
+  });
+});
+
+describe("when dragging a node over a drop target", () => {
+  let subDropTargets: NodeListOf<Element>;
+  let addDropTargets: NodeListOf<Element>;
+  beforeEach(() => {
+    cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
+    subDropTargets = screen
+      .getByRole("treeitem", { name: /sub expression/ })
+      .querySelectorAll(".blocks-drop-target");
+    addDropTargets = screen
+      .getByRole("treeitem", { name: /add expression/ })
+      .querySelectorAll(".blocks-drop-target");
   });
 
-  it("should set the right css class on dragleave 3", () => {
-    const dragEvent = dragstart();
-    fireEvent(firstArg.element!, dragEvent);
-    const elt = dropTargetEls[3];
-    dragenter();
-    dragleave();
-    expect(elt.classList).not.toContain("blocks-over-target");
+  it("should add the blocks-over-target css class to the drop target", () => {
+    expect(subDropTargets[0]).not.toHaveClass("blocks-over-target");
+    drag(getNodeLabeled(/firstVar/)).dragOver(subDropTargets[0]);
+    expect(subDropTargets[0]).toHaveClass("blocks-over-target");
   });
 
-  it("should do nothing when dragging over a non-drop target 4", () => {
-    const dragEvent = dragstart();
-    fireEvent(firstArg.element!, dragEvent);
-    const nonDT = cmb.getAst().rootNodes[0].element!;
-    dragenterSeq(nonDT);
-    expect(secondArg.element!.classList).not.toContain("blocks-over-target");
+  it("should remove the blocks-over-target css class when leaving the drop target", () => {
+    drag(getNodeLabeled(/firstVar/))
+      .dragOver(subDropTargets[0])
+      .dragLeave();
+    expect(subDropTargets[0]).not.toHaveClass("blocks-over-target");
   });
 
-  it("should do nothing when dropping onto a non-drop target 5", () => {
-    const initialValue = cmb.getValue();
-    const dragEvent = dragstart();
-    fireEvent(firstArg.element!, dragEvent);
-    const nonDT = cmb.getAst().rootNodes[0].element!;
-    fireEvent(nonDT, drop());
-    expect(cmb.getValue()).toBe(initialValue);
+  it("should insert the node where the drop target was (lower down in the file)", () => {
+    drag(getNodeLabeled(/firstVar/)).dropOnto(subDropTargets[0]);
+    expect(cmb.getValue()).toEqual(
+      `(add secondVar) (sub firstVar fourthVar fifthVar)`
+    );
   });
 
-  it("should update the text on drop to a later point in the file 6", () => {
-    expect(dropTargetEls[3].classList).toContain("blocks-drop-target");
-    // drag the first arg to the drop target
-    const dragEvent = dragstart();
-    fireEvent(firstArg.element!, dragEvent);
-    fireEvent(dropTargetEls[3], drop());
-    expect(cmb.getValue().replace(/\s+/, " ")).toBe("(+ 2 3 1)");
+  it("should insert the node where the drop target was (higher up in the file)", () => {
+    drag(getNodeLabeled(/fifthVar/)).dropOnto(addDropTargets[0]);
+    expect(cmb.getValue()).toEqual(
+      `(add fifthVar firstVar secondVar) (sub fourthVar)`
+    );
   });
+});
 
-  it("should update the text on drop to an earlier point in the file 7", () => {
-    const dragEvent = dragstart();
-    fireEvent(secondArg.element!, dragEvent);
-    fireEvent(dropTargetEls[0], drop());
-    expect(cmb.getValue().replace("  ", " ")).toBe("(+ 2 1 3)");
-  });
+it("saves collapsed state when dragging a root node to be the last child of the next root node", () => {
+  cmb.setValue("(collapse me)\n(add 1 2)");
+  const firstRootEl = getNodeLabeled(/collapse expression/);
+  userEvent.click(firstRootEl);
+  keyDown("ArrowLeft", {}, firstRootEl); // collapse it
+  expect(firstRootEl).toHaveAttribute("aria-expanded", "false");
+  drag(firstRootEl).dropOnto(
+    document.querySelectorAll(".blocks-drop-target")[4]
+  );
 
-  /*
-    it('should move an item to the top level when dragged outside a node 8', function() {
-      debugLog('################ 8');
-      let dragEvent = dragstart();
-      fireEvent(secondArg.element,dragEvent);
-      let dropEvent = drop(dragEvent.dataTransfer);
-      let nodeEl = cmb.getAst().rootNodes[0].element;
-      let wrapperEl = cmb.getWrapperElement();
-      // These two show up as undefined in monitor.getClientOffset ?
-      dropEvent.pageX = wrapperEl.offsetLeft + wrapperEl.offsetWidth - 10;
-      dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
-      fireEvent(nodeEl.parentElement,dropEvent);
-      expect(cmb.getValue().replace('  ', ' ')).toBe('(+ 1 3) 2');
-      debugLog('%%%%%%%%%%%%%%%% 8');
-    });
-    */
-
-  it("should replace a literal that you drag onto 9", () => {
-    const dragEvent = dragstart();
-    fireEvent(firstArg.element!, dragEvent);
-    fireEvent(secondArg.element!, drop());
-    expect(cmb.getValue().replace(/\s+/, " ")).toBe("(+ 1 3)");
-  });
-
-  // these two tests seem to fail because dragend is not called.
-  // see https://github.com/react-dnd/react-dnd/issues/455 for more info
-
-  /*
-    it('should support dragging plain text to replace a literal 10', function() {
-      debugLog('################ 10');
-      let elt1 = firstArg.element;
-      let dragEvent = dragstart();
-      fireEvent(elt1,dragEvent);
-      dragEvent.dataTransfer = new DataTransfer();
-      dragEvent.dataTransfer.setData('text/plain', '5000');
-      fireEvent(elt1,dragend());
-      fireEvent(firstArg.element,drop(dragEvent.dataTransfer));
-      //expect(cmb.getValue().replace(/\s+/, ' ')).toBe('(+ 5000 2 3)');
-      debugLog('%%%%%%%%%%%%%%%% 10');
-    });
-    */
-
-  /*
-    it('should support dragging plain text onto some whitespace 11', function() {
-      debugLog('################ 11');
-      let dragEvent = dragstart();
-      dragEvent.dataTransfer = new DataTransfer();
-      dragEvent.dataTransfer.setData('text/plain', '5000');
-      let dropEvent = drop(dragEvent.dataTransfer);
-      let nodeEl = cmb.getAst().rootNodes[0].element;
-      let wrapperEl = cmb.getWrapperElement();
-      dropEvent.pageX = wrapperEl.offsetLeft + wrapperEl.offsetWidth - 10;
-      dropEvent.pageY = nodeEl.offsetTop + wrapperEl.offsetHeight - 10;
-      fireEvent(nodeEl.parentElement,dropEvent);
-      expect(cmb.getValue().replace('  ', ' ')).toBe('(+ 1 2 3)\n5000');
-      debugLog('%%%%%%%%%%%%%%%% 11');
-    });
-    */
-  // TODO(pcardune) reenable
-  xit("save collapsed state when dragging root to be the last child of the next root", async () => {
-    cmb.setValue("(collapse me)\n(+ 1 2)");
-    let firstRoot!: ASTNode;
-    let lastDropTarget!: Element;
-    const retrieve = () => {
-      firstRoot = cmb.getAst().rootNodes[0];
-      lastDropTarget = document.querySelectorAll(".blocks-drop-target")[4];
-    };
-    retrieve();
-
-    mouseDown(firstRoot); // click the root
-    keyDown("ArrowLeft", {}, firstRoot); // collapse it
-    expect(firstRoot.element!.getAttribute("aria-expanded")).toBe("false");
-    expect(firstRoot.nid).toBe(0);
-    const dragEvent = dragstart();
-    fireEvent(firstRoot.element!, dragEvent); // drag to the last droptarget
-    fireEvent(lastDropTarget, drop());
-    retrieve();
-    const newFirstRoot = cmb.getAst().rootNodes[0] as FunctionAppNode;
-    const newLastChild = newFirstRoot.fields.args[2];
-    expect(cmb.getValue()).toBe("\n(+ 1 2 (collapse me))");
-    expect(newFirstRoot.element!.getAttribute("aria-expanded")).toBe("true");
-    expect(newLastChild.element!.getAttribute("aria-expanded")).toBe("false");
-  });
+  expect(cmb.getValue()).toBe("\n(add 1 2 (collapse me))");
+  expect(getNodeLabeled(/add expression/)).toHaveAttribute(
+    "aria-expanded",
+    "true"
+  );
+  expect(getNodeLabeled(/collapse expression/)).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
 });
 
 describe("corner cases", () => {
@@ -218,32 +155,18 @@ describe("corner cases", () => {
   let target1!: Element;
   let target2!: Element;
 
-  const retrieve = () => {
+  beforeEach(() => {
+    cmb.setValue(";comment\n(a)\n(c)\n(define-struct e ())\ng");
     source = cmb.getAst().rootNodes[0];
     target1 = document.querySelectorAll(".blocks-drop-target")[1];
     target2 = document.querySelectorAll(".blocks-drop-target")[2];
-  };
-
-  beforeEach(async () => {
-    cmb.setValue(";comment\n(a)\n(c)\n(define-struct e ())\ng");
-    retrieve();
   });
 
-  afterEach(() => {
-    teardown();
+  it("regression test for unstable block IDs", () => {
+    drag(source.element!).dropOnto(target1);
   });
 
-  // TODO(pcardune) reenable
-  xit("regression test for unstable block IDs", async () => {
-    const dragEvent = dragstart();
-    fireEvent(source.element!, dragEvent); // drag to the last droptarget
-    fireEvent(target1, drop());
-  });
-
-  // TODO(pcardune) reenable
-  xit("regression test for empty identifierLists returning a null location", async () => {
-    const dragEvent = dragstart();
-    fireEvent(source.element!, dragEvent); // drag to the last droptarget
-    fireEvent(target2, drop());
+  it("regression test for empty identifierLists returning a null location", () => {
+    drag(source.element!).dropOnto(target2); // drag to the last droptarget
   });
 });
