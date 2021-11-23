@@ -19,19 +19,21 @@ import { FunctionAppNode } from "../src/nodes";
 const activeAriaId = (cmb: API) =>
   cmb.getScrollerElement().getAttribute("aria-activedescendent");
 
+let cmb: API;
+beforeEach(() => {
+  cmb = mountCMB(wescheme).cmb;
+});
+afterEach(teardown);
+
 describe("when dealing with node activation,", () => {
-  let cmb!: API;
   let literal1!: ASTNode;
   let literal2!: ASTNode;
   beforeEach(async () => {
-    cmb = mountCMB(wescheme).cmb;
     cmb.setValue("11\n54");
     const ast = cmb.getAst();
     literal1 = ast.rootNodes[0];
     literal2 = ast.rootNodes[1];
   });
-
-  afterEach(teardown);
 
   it("should only allow one node to be active at a time", async () => {
     mouseDown(literal1);
@@ -133,10 +135,6 @@ describe("when dealing with node activation,", () => {
 });
 
 describe("inserting a new node", () => {
-  let cmb: API;
-  beforeEach(() => {
-    cmb = mountCMB(wescheme).cmb;
-  });
   it("should focus the node that was just inserted", () => {
     cmb.focus();
     // start inserting a new node
@@ -154,9 +152,7 @@ describe("inserting a new node", () => {
 });
 
 describe("switching to block mode", () => {
-  let cmb: API;
   beforeEach(() => {
-    cmb = mountCMB(wescheme).cmb;
     cmb.setBlockMode(false);
     cmb.setValue("foo bar");
   });
@@ -173,10 +169,6 @@ describe("switching to block mode", () => {
 });
 
 describe("deleting a node", () => {
-  let cmb: API;
-  beforeEach(() => {
-    cmb = mountCMB(wescheme).cmb;
-  });
   it("should focus on the previous node when a top-level node is deleted", () => {
     cmb.setValue("firstLiteral\nsecondLiteral\nthirdLiteral");
     mouseDown(screen.getByRole("treeitem", { name: /thirdLiteral/ }));
@@ -205,20 +197,15 @@ describe("deleting a node", () => {
 });
 
 describe("cut/copy/paste", () => {
-  let cmb!: API;
   let literal1!: ASTNode;
   let literal2!: ASTNode;
 
   beforeEach(async () => {
-    cmb = mountCMB(wescheme).cmb;
-
     cmb.setValue("11\n54");
     const ast = cmb.getAst();
     literal1 = ast.rootNodes[0];
     literal2 = ast.rootNodes[1];
   });
-
-  afterEach(teardown);
 
   it("should remove selected nodes on cut", async () => {
     mouseDown(literal1);
@@ -245,7 +232,6 @@ describe("cut/copy/paste", () => {
 });
 
 describe("tree navigation", () => {
-  let cmb!: API;
   let firstRoot: FunctionAppNode;
   let secondRoot: ASTNode;
   let thirdRoot: FunctionAppNode;
@@ -255,8 +241,6 @@ describe("tree navigation", () => {
   let lastNode: ASTNode;
 
   beforeEach(async () => {
-    cmb = mountCMB(wescheme).cmb;
-
     cmb.setValue("(+ 1 2 3) 99 (* 7 (* 1 2))");
     const ast = cmb.getAst();
     firstRoot = ast.rootNodes[0] as FunctionAppNode;
@@ -267,8 +251,6 @@ describe("tree navigation", () => {
     nestedExpr = thirdRoot.fields.args[1] as FunctionAppNode;
     lastNode = nestedExpr.fields.args[1];
   });
-
-  afterEach(teardown);
 
   it("up-arrow should navigate to the previous visible node, but not beyond the tree", async () => {
     mouseDown(firstRoot);
@@ -401,21 +383,16 @@ describe("tree navigation", () => {
 });
 
 describe("when dealing with node selection, ", () => {
-  let cmb!: API;
   let literal1!: ASTNode;
   let literal2!: ASTNode;
   let expr!: FunctionAppNode;
   beforeEach(async () => {
-    cmb = mountCMB(wescheme).cmb;
-
     cmb.setValue("11\n54\n(+ 1 2)");
     const ast = cmb.getAst();
     literal1 = ast.rootNodes[0];
     literal2 = ast.rootNodes[1];
     expr = ast.rootNodes[2] as FunctionAppNode;
   });
-
-  afterEach(teardown);
 
   it("space key toggles selection on and off", async () => {
     mouseDown(literal1);
