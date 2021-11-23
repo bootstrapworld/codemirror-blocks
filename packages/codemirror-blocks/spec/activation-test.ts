@@ -1,5 +1,6 @@
 import wescheme from "../src/languages/wescheme";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {
   cmd_ctrl,
   teardown,
@@ -193,6 +194,17 @@ describe("deleting a node", () => {
     keyDown("Delete");
     expect(cmb.getValue()).toBe("(someFunc firstArg)");
     expect(screen.getByRole("treeitem", { name: /firstArg/ })).toHaveFocus();
+  });
+});
+
+describe("Editing a node", () => {
+  it("should restore focus to the node after its edited", () => {
+    cmb.setValue("firstLiteral secondLiteral thirdLiteral");
+    userEvent.click(screen.getByRole("treeitem", { name: /secondLiteral/ }));
+    insertText("newLiteral");
+    keyDown("Enter");
+    expect(cmb.getValue()).toBe("firstLiteral newLiteral thirdLiteral");
+    expect(screen.getByRole("treeitem", { name: /newLiteral/ })).toHaveFocus();
   });
 });
 

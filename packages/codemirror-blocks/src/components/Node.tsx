@@ -244,7 +244,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     if (nodeElementRef.current && focusedNode?.id === props.node.id) {
       nodeElementRef.current?.focus();
     }
-  }, [editor, focusedNode?.id, props.node.id]);
+  }, [editor, focusedNode?.id, props.node.id, editable]);
 
   if (editable) {
     if (!editor) {
