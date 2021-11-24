@@ -355,7 +355,7 @@ export function activateByNid(
     }
 
     dispatch(setFocusedNode(newNode));
-    if (newNode.element) {
+    if (newNode.element && document.contains(newNode.element)) {
       if (options.allowMove) {
         editor.scrollASTNodeIntoView(newNode);
       }
