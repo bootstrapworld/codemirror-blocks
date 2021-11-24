@@ -4,7 +4,6 @@
   position: absolute;
   width: 100%;
   display: flex;
-  flex-wrap: wrap;
   user-select: none;
   -webkit-user-select: none;
   .glyphicon {
@@ -22,6 +21,7 @@
   }
   .react-codemirror2 {
     width: 100%;
+    height: 100%;
   }
 
   > .toolbar-pane {
@@ -37,6 +37,10 @@
   > .codemirror-pane {
     padding: 0px 0px;
     flex-grow: 1;
+    > div {
+      width: 100%;
+      height: 100%;
+    }
   }
 
   > .Toolbar {
