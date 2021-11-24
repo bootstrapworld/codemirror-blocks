@@ -142,22 +142,23 @@ export function isChangeObject(
  * Converts an array of Edit objects into an array of change objects
  */
 function editsToChange(
-  edits: EditInterface[],
+  edits: readonly EditInterface[],
   ast: AST,
   text: ReadonlyRangedText
 ): ChangeObject[] {
   // Sort the edits from last to first, so that they don't interfere with
   // each other's source locations or indices.
-  edits.sort((a, b) => poscmp(b.from, a.from));
+  const sortedEdits = [...edits];
+  sortedEdits.sort((a, b) => poscmp(b.from, a.from));
   // Group edits by shared ancestor, so that edits so grouped can be made with a
   // single textual edit.
   const editToEditGroup = groupEditsByAncestor(
-    edits.filter((edit): edit is AstEdit => edit instanceof AstEdit)
+    sortedEdits.filter((edit): edit is AstEdit => edit instanceof AstEdit)
   );
   // Convert the edits into CodeMirror-style change objects
   // (with `from`, `to`, and `text`, but not `removed` or `origin`).
   const changeObjects: ChangeObject[] = [];
-  for (const edit of edits) {
+  for (const edit of sortedEdits) {
     const group = edit instanceof AstEdit && editToEditGroup.get(edit);
     if (group) {
       // Convert the group into a text edit.
@@ -175,7 +176,7 @@ function editsToChange(
 }
 
 export function applyEdits(
-  edits: EditInterface[],
+  edits: readonly EditInterface[],
   ast: AST,
   editor: CMBEditor
 ): Result<{
@@ -212,7 +213,7 @@ export type PerformEditsResult = Result<{
  */
 export const performEdits =
   (
-    edits: EditInterface[],
+    edits: readonly EditInterface[],
     editor: CMBEditor,
     annt?: string
   ): AppThunk<PerformEditsResult> =>
