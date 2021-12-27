@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.16.3",
-    "@babel/preset-env": "^7.16.4",
+    "@babel/preset-env": "^7.16.5",
     "@babel/preset-react": "^7.16.5",
     "@bootstrapworld/cmb-toolkit": "*",
     "@testing-library/react": "^12.0.0",
