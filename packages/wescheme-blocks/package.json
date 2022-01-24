@@ -17,7 +17,7 @@
     "@babel/preset-react": "^7.16.5",
     "@bootstrapworld/cmb-toolkit": "*",
     "@testing-library/react": "^12.0.0",
-    "eslint-plugin-react": "^7.24.0",
+    "eslint-plugin-react": "^7.28.0",
     "webpack-cli": "^4.9.1"
   },
   "peerDependencies": {
