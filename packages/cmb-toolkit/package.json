@@ -33,7 +33,7 @@
     "@types/webpack": "^5.28.0",
     "@types/webpack-bundle-analyzer": "^4.4.1",
     "@types/webpack-dev-server": "^4.7.2",
-    "typescript": "^4.5.4"
+    "typescript": "^4.6.2"
   },
   "scripts": {
     "prepare": "npx tsc"
