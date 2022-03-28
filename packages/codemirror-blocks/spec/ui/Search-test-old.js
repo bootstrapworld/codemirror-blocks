@@ -7,7 +7,7 @@ import { PGUP, PGDN, F3 } from "codemirror-blocks/keycode";
 const DELAY = 500;
 
 // be sure to call with `apply` or `call`
-let setup = function () {
+let setup = async function () {
   await activationSetup.call(this, example);
 };
 
