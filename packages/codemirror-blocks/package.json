@@ -48,7 +48,7 @@
     "@types/react-dom": "^17.0.14",
     "@types/react-modal": "^3.13.1",
     "@types/react-tabs": "^2.3.4",
-    "@types/react": "^17.0.39",
+    "@types/react": "^17.0.44",
     "@types/webpack-bundle-analyzer": "^4.4.1",
     "@types/webpack-dev-server": "^4.7.2",
     "@types/webpack": "^5.28.0",
