@@ -16,7 +16,7 @@
     "@babel/preset-env": "^7.16.11",
     "@babel/preset-react": "^7.16.7",
     "@bootstrapworld/cmb-toolkit": "*",
-    "@testing-library/react": "^12.1.4",
+    "@testing-library/react": "^12.1.5",
     "eslint-plugin-react": "^7.29.4",
     "webpack-cli": "^4.9.2"
   },
