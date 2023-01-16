@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "babel-loader": "^8.2.5",
-    "css-loader": "^6.7.1",
+    "css-loader": "^6.7.3",
     "file-loader": "^6.2.0",
     "html-webpack-inject-attributes-plugin": "^1.0.6",
     "html-webpack-plugin": "^5.5.0",
