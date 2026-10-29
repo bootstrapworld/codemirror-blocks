@@ -153,13 +153,7 @@ export function parseNodeOrNull(
       // special case for Unit Tests
     } else {
       func = parseNode(node.func);
-      // NOTE: block nodes keep their value in `fields`, so this lookup has been
-      // undefined (and this branch dead) since nodes stopped being classes.
-      // The behavior is preserved as-is; use `func.fields.value` to revive it.
-      if (
-        (func as unknown as { value?: unknown }).value == "check-expect" &&
-        node.args[0].func
-      ) {
+      if (func.fields.value == "check-expect" && node.args[0].func) {
         label = "Unit Test for " + symbolAria(node.args[0].func.val);
       } else {
         label = expressionAria(

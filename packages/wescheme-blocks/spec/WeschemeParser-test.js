@@ -9,6 +9,15 @@ describe("The WeScheme Parser,", function () {
     expect(parse("foo")[0].fields.dataType).toBe("symbol");
   });
 
+  it("should label check-expect as a unit test of the function under test", function () {
+    expect(parse("(check-expect (f 1) 2)")[0].options.ariaLabel).toBe(
+      "Unit Test for f"
+    );
+    expect(parse("(check-expect 1 1)")[0].options.ariaLabel).toBe(
+      "check-expect expression, 2 inputs"
+    );
+  });
+
   it("should treat vector literals like expressions", function () {
     let ast = parse("#(1 3)");
     expect(ast[0].type).toBe("functionApp");
