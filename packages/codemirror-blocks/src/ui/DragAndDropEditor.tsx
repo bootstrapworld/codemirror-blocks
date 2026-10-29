@@ -10,6 +10,7 @@ import { playSound, BEEP } from "../utils";
 import { useDrop } from "react-dnd";
 import { CodeMirrorFacade } from "../editor";
 import { useDispatch } from "react-redux";
+import type { AppDispatch } from "../state/store";
 
 type OurProps = {
   editorDidMount?: (ed: CodeMirror.Editor) => void;
@@ -22,7 +23,7 @@ type Props = Omit<IUnControlledCodeMirror, keyof OurProps> & OurProps;
 
 const DragAndDropEditor = (props: Props) => {
   const editorRef = useRef<CodeMirrorFacade>();
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const [_, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
     drop: (_, monitor) => {

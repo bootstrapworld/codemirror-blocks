@@ -1,11 +1,17 @@
-import { render, fireEvent, cleanup, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import {
+  act,
+  render,
+  fireEvent,
+  cleanup,
+  screen,
+} from "@testing-library/react";
 import React from "react";
 import Context from "../../src/components/Context";
 import { addLanguage } from "../../src/languages";
 import { Literal } from "../../src/nodes";
 import { Primitive, PrimitiveGroup } from "../../src/parsers/primitives";
 import { AppStore, createAppStore } from "../../src/state/store";
+import { keyDown } from "../../src/toolkit/test-utils";
 import Toolbar from "../../src/ui/Toolbar";
 
 describe("Toolbar", () => {
@@ -72,7 +78,7 @@ describe("Toolbar", () => {
     );
     const star = screen.getByText("star");
     expect(star).not.toHaveClass("selected");
-    star.focus();
+    act(() => star.focus());
     expect(star).toHaveClass("selected");
   });
 
@@ -80,7 +86,7 @@ describe("Toolbar", () => {
     const selectPrimitive = (name: string) => {
       const primitiveEl = screen.getByText(name);
       expect(primitiveEl).not.toHaveClass("selected");
-      primitiveEl.focus();
+      act(() => primitiveEl.focus());
       expect(primitiveEl).toHaveClass("selected");
       return primitiveEl;
     };
@@ -93,14 +99,14 @@ describe("Toolbar", () => {
 
     it("selects the next primitive when down is pressed", () => {
       const starEl = selectPrimitive("star");
-      userEvent.keyboard("{ArrowDown}");
+      keyDown("ArrowDown");
       expect(starEl).not.toHaveClass("selected");
       expect(document.activeElement).toHaveTextContent("square");
       expect(document.activeElement).toHaveClass("selected");
     });
     it("selects the previous primitive when up is pressed", () => {
       const squareEl = selectPrimitive("square");
-      userEvent.keyboard("{ArrowUp}");
+      keyDown("ArrowUp");
       expect(squareEl).not.toHaveClass("selected");
       expect(document.activeElement).toHaveTextContent("star");
       expect(document.activeElement).toHaveClass("selected");

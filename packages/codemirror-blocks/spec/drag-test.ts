@@ -129,10 +129,10 @@ describe("when dragging a node over a drop target", () => {
   });
 });
 
-it("saves collapsed state when dragging a root node to be the last child of the next root node", () => {
+it("saves collapsed state when dragging a root node to be the last child of the next root node", async () => {
   cmb.setValue("(collapse me)\n(add 1 2)");
   const firstRootEl = getNodeLabeled(/collapse expression/);
-  userEvent.click(firstRootEl);
+  await userEvent.click(firstRootEl);
   keyDown("ArrowLeft", {}, firstRootEl); // collapse it
   expect(firstRootEl).toHaveAttribute("aria-expanded", "false");
   drag(firstRootEl).dropOnto(

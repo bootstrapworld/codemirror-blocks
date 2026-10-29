@@ -1,5 +1,7 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import Modal from "react-modal";
 import ToggleEditor from "./ui/ToggleEditor";
 import Args from "./components/Args";
@@ -68,6 +70,10 @@ export const CodeMirrorBlocksComponent = ({
  * @returns An object-representation of CMB, allowing for
  *  integration with external (non-react) code
  */
+// Calling CodeMirrorBlocks() again with the same container re-renders into
+// the existing root, rather than trying to create a second one.
+const roots = new WeakMap<HTMLElement, Root>();
+
 function CodeMirrorBlocks(
   container: HTMLElement,
   options: Options = {},
@@ -75,15 +81,24 @@ function CodeMirrorBlocks(
   codemirrorOptions: CodeMirror.EditorConfiguration = {}
 ): API {
   const apiBox: API = {} as API;
-  ReactDOM.render(
-    <CodeMirrorBlocksComponent
-      language={language}
-      onMount={(api) => Object.assign(apiBox, api)}
-      options={options}
-      codemirrorOptions={codemirrorOptions}
-    />,
-    container
-  );
+  let root = roots.get(container);
+  if (!root) {
+    root = createRoot(container);
+    roots.set(container, root);
+  }
+  // Render synchronously, so that the API object has been filled in (by
+  // `onMount`) by the time this function returns.
+  const mountedRoot = root;
+  flushSync(() => {
+    mountedRoot.render(
+      <CodeMirrorBlocksComponent
+        language={language}
+        onMount={(api) => Object.assign(apiBox, api)}
+        options={options}
+        codemirrorOptions={codemirrorOptions}
+      />
+    );
+  });
   // See http://reactcommunity.org/react-modal/examples/set_app_element/
   // Used to hide the application from screen readers while a modal
   // is open.

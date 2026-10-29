@@ -1,5 +1,5 @@
 import CodeMirror from "codemirror";
-import { act } from "react-dom/test-utils";
+import { act } from "@testing-library/react";
 import { AST, ASTNode } from "../src/ast";
 import type { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";

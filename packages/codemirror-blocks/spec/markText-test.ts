@@ -1,3 +1,4 @@
+import { act } from "@testing-library/react";
 import wescheme from "../src/languages/wescheme";
 
 import { teardown, mountCMB } from "../src/toolkit/test-utils";
@@ -90,7 +91,7 @@ describe("The CodeMirrorBlocks Class", function () {
       });
 
       it("should expose a clear function to remove the mark", function () {
-        mark.clear();
+        act(() => mark.clear());
         expect(literal1.element!.style.color).toBeFalsy();
         expect(cmb.getAllMarks().length).toBe(0);
       });

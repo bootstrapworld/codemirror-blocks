@@ -401,8 +401,9 @@ describe("when testing CM apis,", () => {
     expect(currentFocusNId()).toBe(0);
     cmb.setCursor({ line: 0, ch: 1 });
     expect(cmb.getFocusedNode()!.nid).toBe(1);
-    // activating the first block should return a cursor at its end
-    expect(simpleCursor(cmb.getCursor())).toEqual({ line: 0, ch: 7 });
+    // once the activation has settled, the active block holds the focus, and
+    // the cursor of a focused block is the start of that block
+    expect(simpleCursor(cmb.getCursor())).toEqual({ line: 0, ch: 1 });
   });
 
   it("setSelection", async () => {

@@ -83,13 +83,23 @@ export function mountCMB(language: Language) {
         jest.spyOn(wrapper, "clientHeight", "get").mockReturnValue(1000);
         jest.spyOn(wrapper, "clientWidth", "get").mockReturnValue(1000);
 
-        Object.assign(cmb, newAPI, {
-          setBlockMode: (blockMode: boolean) =>
-            act(() => newAPI.setBlockMode(blockMode)),
-          setValue: (value: string) => {
-            act(() => newAPI.setValue(value));
-          },
-        });
+        Object.assign(cmb, newAPI);
+        // React 18 batches updates that happen outside of event handlers,
+        // so API calls that update the store need to be wrapped in act() for
+        // the DOM to be up to date by the time they return.
+        for (const [name, value] of Object.entries(newAPI)) {
+          if (typeof value === "function") {
+            (cmb as unknown as Record<string, unknown>)[name] = (
+              ...args: unknown[]
+            ) => {
+              let result: unknown;
+              act(() => {
+                result = value.apply(newAPI, args);
+              });
+              return result;
+            };
+          }
+        }
       }}
       options={{ collapseAll: false, value: "", incrementalRendering: false }}
       codemirrorOptions={codemirrorOptions}

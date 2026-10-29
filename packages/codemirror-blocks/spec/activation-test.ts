@@ -198,9 +198,11 @@ describe("deleting a node", () => {
 });
 
 describe("Editing a node", () => {
-  it("should restore focus to the node after its edited", () => {
+  it("should restore focus to the node after its edited", async () => {
     cmb.setValue("firstLiteral secondLiteral thirdLiteral");
-    userEvent.click(screen.getByRole("treeitem", { name: /secondLiteral/ }));
+    await userEvent.click(
+      screen.getByRole("treeitem", { name: /secondLiteral/ })
+    );
     insertText("newLiteral");
     keyDown("Enter");
     expect(cmb.getValue()).toBe("firstLiteral newLiteral thirdLiteral");
