@@ -99,7 +99,7 @@ export const isErrorFree: (state: RootState) => boolean = createSelector(
 export const getFocusedNode: (state: RootState) => ASTNode | null =
   createSelector(
     [getAST, (state: RootState) => state.focusId],
-    (ast, focusId) => (focusId ? ast.getNodeById(focusId) ?? null : null)
+    (ast, focusId) => (focusId ? (ast.getNodeById(focusId) ?? null) : null)
   );
 
 /**

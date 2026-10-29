@@ -6,7 +6,7 @@ import type { ReadonlyCMBEditor } from "../../src/editor";
 const fakeEditor = (item: Record<string, unknown> = {}) =>
   ({
     getTopmostAction: jest.fn(() => item),
-  } as unknown as ReadonlyCMBEditor);
+  }) as unknown as ReadonlyCMBEditor;
 
 describe("undo/redo bookkeeping in the store", () => {
   it("stores the pending action and focus", () => {

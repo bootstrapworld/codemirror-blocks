@@ -15,24 +15,24 @@ beforeEach(() => {
 describe("createAppStore()", () => {
   it("should create a store with some empty state", () => {
     expect(getState()).toMatchInlineSnapshot(`
-      Object {
+      {
         "actionFocus": undefined,
-        "astData": Object {
-          "edgeIdMap": Object {},
+        "astData": {
+          "edgeIdMap": {},
           "languageId": "",
           "nodeIdMap": Map {},
           "nodeNIdMap": Map {},
-          "rootNodes": Array [],
+          "rootNodes": [],
         },
         "blockMode": false,
         "code": "",
-        "collapsedList": Array [],
-        "editable": Object {},
+        "collapsedList": [],
+        "editable": {},
         "errorId": "",
         "focusId": undefined,
-        "markedMap": Object {},
+        "markedMap": {},
         "quarantine": null,
-        "selections": Array [],
+        "selections": [],
         "undoableAction": undefined,
       }
     `);

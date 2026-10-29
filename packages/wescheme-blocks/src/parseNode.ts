@@ -66,7 +66,7 @@ function enumerateIdentifierList(lst: structures.Program[]) {
     return "";
   }
   lst = [...lst];
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   const last = lst.pop()!;
   return lst.length == 0
     ? last.toString()

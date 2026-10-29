@@ -604,7 +604,7 @@ export const nodeElementMap = new Map<string, HTMLElement>();
  */
 export class ASTNode<
   Spec extends NodeSpec = NodeSpec,
-  Fields extends NodeFields<string> = NodeFields<string>
+  Fields extends NodeFields<string> = NodeFields<string>,
 > {
   /**
    * @internal

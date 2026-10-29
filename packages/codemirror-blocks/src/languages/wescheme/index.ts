@@ -33,8 +33,8 @@ function getExceptionMessage(e: unknown) {
     const txt = msg.every((element: unknown) => typeof element === "string")
       ? msg
       : msg[0] instanceof Array
-      ? msg[0][2].substring(msg[0][2].indexOf("read: ") + 6)
-      : "Check your quotation marks, or any other symbols you've used";
+        ? msg[0][2].substring(msg[0][2].indexOf("read: ") + 6)
+        : "Check your quotation marks, or any other symbols you've used";
     return new BlockError("Your program could not be parsed", symbolAria(txt));
   } catch (clearlyNotAWeSchemeError) {
     return new BlockError("Parser Failure", "Failure", e); // return the original error

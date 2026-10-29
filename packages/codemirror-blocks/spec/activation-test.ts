@@ -180,7 +180,7 @@ describe("deleting a node", () => {
       screen.getByRole("treeitem", { name: /secondLiteral/ })
     ).toHaveFocus();
     expect(cmb.getCursor()).toMatchInlineSnapshot(`
-      Object {
+      {
         "ch": 0,
         "line": 1,
       }

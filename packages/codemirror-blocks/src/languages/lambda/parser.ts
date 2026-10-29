@@ -346,8 +346,12 @@ function inputStream(input: string): InputStream {
   };
   function next() {
     const ch = input.charAt(pos++);
-    if (ch == "\n") ln++, (col = 0);
-    else col++;
+    if (ch == "\n") {
+      ln++;
+      col = 0;
+    } else {
+      col++;
+    }
     return ch;
   }
   function peek() {

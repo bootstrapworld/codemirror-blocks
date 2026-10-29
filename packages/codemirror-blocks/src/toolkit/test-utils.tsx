@@ -60,7 +60,7 @@ const fixture = `
  */
 export function mountCMB(language: Language) {
   document.body.insertAdjacentHTML("afterbegin", fixture);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   const container = document.getElementById("cmb-editor")!;
   const codemirrorOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
 

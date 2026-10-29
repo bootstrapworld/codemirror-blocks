@@ -70,16 +70,16 @@ export function parse(code: string) {
       const p = isComment(sexp)
         ? sexp
         : isDefinition(sexp)
-        ? parseDefinition(sexp)
-        : isExpr(sexp)
-        ? parseExpr(sexp)
-        : isRequire(sexp)
-        ? parseRequire(sexp)
-        : isProvide(sexp)
-        ? parseProvide(sexp)
-        : throwError(
-            `ASSERTION: Something was lexed that is not in the language:\n ${sexp}`
-          );
+          ? parseDefinition(sexp)
+          : isExpr(sexp)
+            ? parseExpr(sexp)
+            : isRequire(sexp)
+              ? parseRequire(sexp)
+              : isProvide(sexp)
+                ? parseProvide(sexp)
+                : throwError(
+                    `ASSERTION: Something was lexed that is not in the language:\n ${sexp}`
+                  );
       p.comment = sexp.comment;
       return p;
     }
@@ -91,8 +91,8 @@ export function parse(code: string) {
     return sexp.length === 0
       ? []
       : !isCons(sexp)
-      ? fallback(sexp)
-      : parseStar(sexp);
+        ? fallback(sexp)
+        : parseStar(sexp);
   }
 
   //////////////////////////////////////// DEFINITION PARSING ////////////////////////////////
@@ -216,10 +216,10 @@ export function parse(code: string) {
     const def = isStructDefinition(sexp)
       ? parseDefStruct(sexp)
       : isValueDefinition(sexp)
-      ? parseDef(sexp)
-      : isMultiValueDefinition(sexp)
-      ? parseMultiDef(sexp)
-      : fallback(sexp);
+        ? parseDef(sexp)
+        : isMultiValueDefinition(sexp)
+          ? parseMultiDef(sexp)
+          : fallback(sexp);
     def.location = sexp.location;
     return def;
   }
@@ -366,8 +366,8 @@ export function parse(code: string) {
         return isCons(sexp)
           ? sexp.map(parseQuotedItem)
           : sexp instanceof Array && sexp.length === 0
-          ? sexp // the empty list is allowed inside quotes
-          : /* else */ parseExprSingleton(sexp);
+            ? sexp // the empty list is allowed inside quotes
+            : /* else */ parseExprSingleton(sexp);
       }
       // quote must have exactly one argument
       if (sexp.length !== 2) {
@@ -381,42 +381,45 @@ export function parse(code: string) {
       const expr = !isSymbol(peek)
         ? parseFuncCall(sexp)
         : isSymbolEqualTo("λ", peek)
-        ? parseLambdaExpr(sexp)
-        : isSymbolEqualTo("lambda", peek)
-        ? parseLambdaExpr(sexp)
-        : isSymbolEqualTo("local", peek)
-        ? parseLocalExpr(sexp)
-        : isSymbolEqualTo("letrec", peek)
-        ? parseLetrecExpr(sexp)
-        : isSymbolEqualTo("let", peek)
-        ? parseLetExpr(sexp)
-        : isSymbolEqualTo("let*", peek)
-        ? parseLetStarExpr(sexp)
-        : isSymbolEqualTo("cond", peek)
-        ? parseCondExpr(sexp)
-        : isSymbolEqualTo("case", peek)
-        ? parseCaseExpr(sexp)
-        : isSymbolEqualTo("if", peek)
-        ? parseIfExpr(sexp)
-        : isSymbolEqualTo("begin", peek)
-        ? parseBeginExpr(sexp)
-        : isSymbolEqualTo("and", peek)
-        ? parseAndExpr(sexp)
-        : isSymbolEqualTo("or", peek)
-        ? parseOrExpr(sexp)
-        : isSymbolEqualTo("when", peek)
-        ? parseWhenUnlessExpr(sexp)
-        : isSymbolEqualTo("unless", peek)
-        ? parseWhenUnlessExpr(sexp)
-        : isSymbolEqualTo("quote", peek)
-        ? parseQuotedExpr(sexp)
-        : isSymbolEqualTo("quasiquote", peek)
-        ? parseQuasiQuotedExpr(sexp)
-        : isSymbolEqualTo("unquote", peek)
-        ? parseUnquoteExpr(sexp)
-        : isSymbolEqualTo("unquote-splicing", peek)
-        ? parseUnquoteSplicingExpr(sexp)
-        : parseFuncCall(sexp);
+          ? parseLambdaExpr(sexp)
+          : isSymbolEqualTo("lambda", peek)
+            ? parseLambdaExpr(sexp)
+            : isSymbolEqualTo("local", peek)
+              ? parseLocalExpr(sexp)
+              : isSymbolEqualTo("letrec", peek)
+                ? parseLetrecExpr(sexp)
+                : isSymbolEqualTo("let", peek)
+                  ? parseLetExpr(sexp)
+                  : isSymbolEqualTo("let*", peek)
+                    ? parseLetStarExpr(sexp)
+                    : isSymbolEqualTo("cond", peek)
+                      ? parseCondExpr(sexp)
+                      : isSymbolEqualTo("case", peek)
+                        ? parseCaseExpr(sexp)
+                        : isSymbolEqualTo("if", peek)
+                          ? parseIfExpr(sexp)
+                          : isSymbolEqualTo("begin", peek)
+                            ? parseBeginExpr(sexp)
+                            : isSymbolEqualTo("and", peek)
+                              ? parseAndExpr(sexp)
+                              : isSymbolEqualTo("or", peek)
+                                ? parseOrExpr(sexp)
+                                : isSymbolEqualTo("when", peek)
+                                  ? parseWhenUnlessExpr(sexp)
+                                  : isSymbolEqualTo("unless", peek)
+                                    ? parseWhenUnlessExpr(sexp)
+                                    : isSymbolEqualTo("quote", peek)
+                                      ? parseQuotedExpr(sexp)
+                                      : isSymbolEqualTo("quasiquote", peek)
+                                        ? parseQuasiQuotedExpr(sexp)
+                                        : isSymbolEqualTo("unquote", peek)
+                                          ? parseUnquoteExpr(sexp)
+                                          : isSymbolEqualTo(
+                                                "unquote-splicing",
+                                                peek
+                                              )
+                                            ? parseUnquoteSplicingExpr(sexp)
+                                            : parseFuncCall(sexp);
       expr.location = sexp.location;
       return expr;
     })();
@@ -683,18 +686,21 @@ export function parse(code: string) {
     const singleton = isComment(sexp)
       ? sexp
       : isUnsupported(sexp)
-      ? sexp
-      : isVector(sexp)
-      ? parseVector(sexp)
-      : isSymbol(sexp)
-      ? sexp
-      : isLiteral(sexp)
-      ? sexp
-      : isSymbolEqualTo("quote", sexp)
-      ? new structures.quotedExpr(sexp)
-      : isSymbolEqualTo("empty", sexp)
-      ? new structures.callExpr(new structures.symbolExpr("list"), [])
-      : new structures.callExpr(null, []);
+        ? sexp
+        : isVector(sexp)
+          ? parseVector(sexp)
+          : isSymbol(sexp)
+            ? sexp
+            : isLiteral(sexp)
+              ? sexp
+              : isSymbolEqualTo("quote", sexp)
+                ? new structures.quotedExpr(sexp)
+                : isSymbolEqualTo("empty", sexp)
+                  ? new structures.callExpr(
+                      new structures.symbolExpr("list"),
+                      []
+                    )
+                  : new structures.callExpr(null, []);
     singleton.location = sexp.location;
     if (!isComment(sexp)) singleton.comment = sexp.comment;
     return singleton;

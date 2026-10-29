@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import wescheme from "../lib/languages/wescheme";
-import bigExampleCode from "./ast-test.rkt"; // eslint-disable-line no-unused-vars
-import hugeExampleCode from "./huge-code.rkt"; // eslint-disable-line no-unused-vars
-const smallExampleCode = `(collapse me)\n(+ 1 2)`; // eslint-disable-line no-unused-vars
+import bigExampleCode from "./ast-test.rkt";
+import hugeExampleCode from "./huge-code.rkt";
+const smallExampleCode = `(collapse me)\n(+ 1 2)`;
 import { createDebuggingInterface } from "../lib/toolkit/debug";
 
 // HACK: expose ALL test utilities, events, etc

@@ -35,7 +35,6 @@ export function createDebuggingInterface(language: Language, value: string) {
 </div>
   `;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const container = document.getElementById("cmb-editor")!;
   // grab the load-from-log button
   const loadLogButton = document.getElementById(

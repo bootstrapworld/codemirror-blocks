@@ -29,10 +29,13 @@ export default function attachSearch(
     { setting: unknown; onChange: unknown; firstTime: unknown }
   >[]
 ) {
-  const settings = searchModes.reduce((acc, searchMode, i) => {
-    acc[i] = searchMode.setting;
-    return acc;
-  }, {} as { [index: number]: unknown });
+  const settings = searchModes.reduce(
+    (acc, searchMode, i) => {
+      acc[i] = searchMode.setting;
+      return acc;
+    },
+    {} as { [index: number]: unknown }
+  );
 
   type Props = GetProps<typeof BlockEditor> & {
     onSearchMounted: (search: Search) => void;
