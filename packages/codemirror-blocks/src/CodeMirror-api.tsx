@@ -571,7 +571,7 @@ const validateSelectionRanges = (
   try {
     validateRanges(ranges, ast);
   } catch (e) {
-    throw new BlockError(e, "API Error");
+    throw new BlockError(String(e), "API Error");
   }
   // process the selection ranges into an array of ranges and nodes
   tmpCM.listSelections().forEach(({ anchor, head }) => {

@@ -83,7 +83,7 @@ export default function attachSearch(
     handleSearch = (
       forward: boolean,
       cmbState: RootState,
-      overrideCur: State["cursor"]
+      overrideCur?: State["cursor"]
     ): ASTNode | null => {
       if (this.state.searchEngine == null) {
         say("No search settings have been selected");
@@ -146,13 +146,10 @@ export default function attachSearch(
     };
 
     // Override default: only allow tab switching via left/right, NOT up/down
-    handleTab = (
-      searchEngine: number | null,
-      lastTabIdx: number,
-      event: KeyboardEvent
-    ) => {
+    handleTab = (searchEngine: number, lastTabIdx: number, event: Event) => {
       this.setState({ firstTime: false });
-      if (["ArrowDown", "ArrowUp"].includes(event.key)) return false;
+      if (["ArrowDown", "ArrowUp"].includes((event as KeyboardEvent).key))
+        return false;
       return this.setState({ searchEngine });
     };
 

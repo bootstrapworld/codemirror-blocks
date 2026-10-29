@@ -594,7 +594,7 @@ export const keyDown =
         const env: Env = {
           ...inputEnv,
           // add convenience methods
-          fastSkip: (next: (node: ASTNode) => ASTNode) =>
+          fastSkip: (next: (node: ASTNode) => ASTNode | undefined) =>
             env.isNodeEnv ? skipCollapsed(env.node, next, state) : undefined,
           activateNoRecord: (node?: ASTNode) => {
             if (!node) {

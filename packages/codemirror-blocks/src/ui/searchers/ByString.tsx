@@ -208,7 +208,6 @@ const ByString: Searcher<SearchSettings, Props> = {
     }
     const newSearchCur = skipWhile(
       (searchCur) => {
-        if (!searchCur) return false;
         const node = getNodeContainingBiased(searchCur.from(), ast);
         return (
           !!node &&

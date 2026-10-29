@@ -2,7 +2,7 @@
   "include": ["src/**/*"],
   "compilerOptions": {
     "esModuleInterop": true, // needed for fast-object-stringify
-    "target": "es6",
+    "target": "es2019",
     "jsx": "react",
     "moduleResolution": "node",
     "sourceMap": true,
@@ -17,9 +17,6 @@
     // Ensure that Babel can safely transpile files in the TypeScript project
     "isolatedModules": true,
     "outDir": "lib",
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "strictPropertyInitialization": true,
-    "strictNullChecks": true
+    "strict": true
   }
 }

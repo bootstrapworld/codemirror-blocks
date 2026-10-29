@@ -93,12 +93,12 @@ export function srcRangeContains(range: Range, pos: Pos) {
 }
 
 export function skipWhile<T>(
-  skipper: (i: T | undefined) => boolean | null | undefined,
-  start: T,
-  next: (i: T | undefined) => T | undefined
+  skipper: (i: T) => boolean | null | undefined,
+  start: T | null | undefined,
+  next: (i: T) => T | null | undefined
 ) {
-  let now: T | undefined = start;
-  while (skipper(now)) {
+  let now = start;
+  while (now != null && skipper(now)) {
     now = next(now);
   }
   return now;
@@ -135,7 +135,7 @@ export function partition<T>(arr: Readonly<T[]>, f: (i: T) => boolean) {
 
 export function skipCollapsed(
   node: ASTNode,
-  next: (node: ASTNode | undefined) => ASTNode | undefined,
+  next: (node: ASTNode) => ASTNode | undefined,
   state: RootState
 ) {
   const { collapsedList } = state;
@@ -144,14 +144,15 @@ export function skipCollapsed(
 
   // NOTE(Oak): if this is too slow, consider adding a
   // next/prevSibling attribute to short circuit navigation
-  return skipWhile(
-    (node) =>
-      node &&
-      collapsedNodeList.some(
-        (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
-      ),
-    next(node),
-    next
+  return (
+    skipWhile(
+      (node) =>
+        collapsedNodeList.some(
+          (collapsed) => collapsed && ast.isAncestor(collapsed.id, node.id)
+        ),
+      next(node),
+      next
+    ) ?? undefined
   );
 }
 
@@ -177,19 +178,17 @@ export function getLastVisibleNode(state: RootState) {
     ast.rootNodes[ast.rootNodes.length - 1].to
   );
   return skipWhile(
-    (node: ASTNode | null) => {
-      if (node) {
-        const parent = ast.getNodeParent(node);
-        if (parent) {
-          return collapsedNodeList.some(
-            (collapsed) => collapsed.id === parent?.id
-          );
-        }
+    (node: ASTNode) => {
+      const parent = ast.getNodeParent(node);
+      if (parent) {
+        return collapsedNodeList.some(
+          (collapsed) => collapsed.id === parent.id
+        );
       }
       return null;
     },
     lastNode,
-    (n) => n && ast.getNodeParent(n)
+    (n) => ast.getNodeParent(n)
   );
 }
 

@@ -210,7 +210,7 @@ function fakeBlankNode(from: Pos, to: Pos, options = {}): ASTNode {
  * shallow over the non-ASTNode values they contain.
  */
 export function cloneNode(oldNode: ASTNode): ASTNode {
-  const nodeLike = { type: oldNode.type, fields: {} as any };
+  const nodeLike = { type: oldNode.type, fields: {} as Record<string, never> };
   for (const spec of oldNode.spec.childSpecs) {
     if (spec instanceof Required) {
       spec.setField(nodeLike, cloneNode(spec.getField(oldNode)));

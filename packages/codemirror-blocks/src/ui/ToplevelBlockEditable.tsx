@@ -23,7 +23,8 @@ type Props = {
 const ToplevelBlockEditable = (props: Props) => {
   const dispatch: AppDispatch = useDispatch();
   const onDisableEditable = () => dispatch(actions.disableQuarantine());
-  const onChange = (text: string) => dispatch(actions.changeQuarantine(text));
+  const onChange = (text: string | null) =>
+    dispatch(actions.changeQuarantine(text ?? ""));
   const { from, to, value } = props.quarantine;
 
   // create an empty container element to hold the rendered react
