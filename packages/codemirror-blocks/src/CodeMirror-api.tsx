@@ -105,7 +105,7 @@ const codeMirrorAPI = [
   "getGutterElement",
 ] as const;
 
-type CodeMirrorAPI = Pick<CodeMirror.Editor, typeof codeMirrorAPI[number]>;
+type CodeMirrorAPI = Pick<CodeMirror.Editor, (typeof codeMirrorAPI)[number]>;
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = [
@@ -140,7 +140,7 @@ type BlockModeAPI = {
    * @internal
    */
   executeAction(activity: Activity): void;
-} & Partial<Omit<CodeMirror.Editor, typeof unsupportedAPIs[number]>>;
+} & Partial<Omit<CodeMirror.Editor, (typeof unsupportedAPIs)[number]>>;
 
 type ToggleEditorAPI = {
   getBlockMode(): boolean;

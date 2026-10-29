@@ -118,7 +118,7 @@ type NodeLike = {
 
 export type { NodeSpec };
 class NodeSpec<Specs extends ChildSpec<string> = ChildSpec<string>> {
-  readonly childSpecs: Specs[];
+  readonly childSpecs: readonly Specs[];
   constructor(childSpecs: readonly Specs[]) {
     if (!(childSpecs instanceof Array)) {
       throw new Error(

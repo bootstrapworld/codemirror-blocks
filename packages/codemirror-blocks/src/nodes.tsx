@@ -654,7 +654,7 @@ export function Blank(
 }
 
 export type SequenceNode = ReturnType<typeof Sequence>;
-export type NodeForSequenceSpec = NodeForSpec<typeof specs["sequence"]>;
+export type NodeForSequenceSpec = NodeForSpec<(typeof specs)["sequence"]>;
 export const SequenceProps = {
   pretty: (node: NodeForSequenceSpec) =>
     P.vert(node.fields.name || "", ...node.fields.exprs),

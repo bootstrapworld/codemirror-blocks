@@ -3,8 +3,8 @@
   "description": "Workspace for codemirror-blocks related packaged",
   "private": "true",
   "engines": {
-    "node": ">=14.x",
-    "npm": ">=7.x"
+    "node": ">=18.x",
+    "npm": ">=8.x"
   },
   "workspaces": [
     "packages/cmb-toolkit",
@@ -13,6 +13,12 @@
   ],
   "scripts": {
     "test": "jest",
-    "test-watch": "jest --watch"
+    "test-watch": "jest --watch",
+    "lint": "npm run lint --workspace=codemirror-blocks",
+    "typecheck": "npm run typecheck --workspace=codemirror-blocks",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43"
   }
 }

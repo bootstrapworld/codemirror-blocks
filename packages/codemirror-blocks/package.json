@@ -7,8 +7,8 @@
     "/lib"
   ],
   "engines": {
-    "node": ">=10.x",
-    "npm": ">=7.x"
+    "node": ">=18.x",
+    "npm": ">=8.x"
   },
   "dependencies": {
     "classnames": "^2.3.1",
@@ -52,7 +52,7 @@
     "@types/webpack-bundle-analyzer": "^4.4.1",
     "@types/webpack-dev-server": "^4.7.2",
     "@types/webpack": "^5.28.0",
-    "@typescript-eslint/eslint-plugin": "^4.33.0",
+    "@typescript-eslint/eslint-plugin": "^5.30.7",
     "@typescript-eslint/parser": "^5.30.7",
     "babel-jest": "^27.5.1",
     "babel-loader": "^8.2.5",
@@ -78,6 +78,7 @@
     "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\"",
     "build-watch": "npm run build -- --watch",
     "build-types": "npx tsc",
+    "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit",
     "build-types-watch": "npx tsc --watch",
     "lint": "eslint --ignore-path ../../.gitignore . --ext .js,.jsx,.ts,.tsx",
     "upgrade-interactive": "npm-check --update"
