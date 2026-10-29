@@ -1,6 +1,7 @@
 import objToStableString from "fast-json-stable-stringify";
 import { EditorChange } from "codemirror";
-import { Activity, getReducerActivities, RootState } from "./state/reducers";
+import { Activity, getReducerActivities } from "./state/activityLog";
+import type { RootState } from "./state/reducers";
 import * as selectors from "./state/selectors";
 import type { AST, ASTNode, Pos, Range } from "./ast";
 

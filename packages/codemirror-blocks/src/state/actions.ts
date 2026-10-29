@@ -20,6 +20,7 @@ import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
 import { err, ok, Result } from "../edits/result";
 import * as selectors from "./selectors";
+import type { ActionFocus } from "./reducers";
 import { pasteFromClipboard } from "../copypaste";
 
 export const setAST = (ast: AST) => ({
@@ -81,6 +82,52 @@ export const changeQuarantine = (newValue: string) => ({
 export const disableQuarantine = () => ({
   type: "DISABLE_QUARANTINE" as const,
 });
+
+export const setUndoableAction = (undoableAction: string | undefined) => ({
+  type: "SET_UNDOABLE_ACTION" as const,
+  undoableAction,
+});
+
+export const setActionFocus = (actionFocus: ActionFocus | undefined) => ({
+  type: "SET_ACTION_FOCUS" as const,
+  actionFocus,
+});
+
+/**
+ * Perform an undo or redo in `editor`, remembering the description and focus
+ * of the action being undone/redone so that it can be restored later.
+ */
+export const undoOrRedo =
+  (which: "undo" | "redo", editor: CMBEditor): AppThunk =>
+  (dispatch) => {
+    const topmostAction = editor.getTopmostAction(which);
+    dispatch(setUndoableAction(topmostAction.undoableAction));
+    dispatch(setActionFocus(topmostAction.actionFocus));
+    if (which === "undo") {
+      say(`UNDID: ${topmostAction.undoableAction}`);
+      editor.undo();
+    } else {
+      say(`REDID: ${topmostAction.undoableAction}`);
+      editor.redo();
+    }
+  };
+
+/**
+ * Once codemirror has finished an undo or redo, move the pending description
+ * and focus onto the history item that now sits on the opposite stack, and
+ * clear them from the store.
+ */
+export const finishUndoOrRedo =
+  (which: "undo" | "redo", editor: ReadonlyCMBEditor): AppThunk =>
+  (dispatch, getState) => {
+    const { undoableAction, actionFocus } = getState();
+    const historyItem = editor.getTopmostAction(
+      which === "undo" ? "redo" : "undo"
+    );
+    historyItem.undoableAction = undoableAction;
+    historyItem.actionFocus = actionFocus;
+    dispatch({ type: which === "undo" ? "UNDO" : "REDO" });
+  };
 
 export const setCode = (code: string) => ({ type: "SET_CODE" as const, code });
 

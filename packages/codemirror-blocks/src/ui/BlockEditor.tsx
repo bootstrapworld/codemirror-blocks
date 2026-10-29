@@ -116,11 +116,12 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
               ? newAST.getNodeByNId(nextNId)
               : undefined;
           doChange(focusHint);
-          const actionType = change.origin.toUpperCase() as "UNDO" | "REDO";
-          dispatch({ type: actionType, editor: editor });
+          dispatch(
+            actions.finishUndoOrRedo(change.origin as "undo" | "redo", editor)
+          );
         }
       } else {
-        getState().undoableAction = annt; //?
+        dispatch(actions.setUndoableAction(annt));
         doChange();
       }
     });

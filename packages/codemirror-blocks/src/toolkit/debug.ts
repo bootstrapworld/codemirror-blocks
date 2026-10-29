@@ -3,7 +3,7 @@ import "./debug-page.less";
 import type { Language } from "../CodeMirrorBlocks";
 import CodeMirrorBlocks from "../CodeMirrorBlocks";
 import { resetUniqueIdGenerator } from "../utils";
-import { getReducerActivities } from "../state/reducers";
+import { getReducerActivities } from "../state/activityLog";
 
 /**
  * Renders the codemirror blocks editor to the page along with some

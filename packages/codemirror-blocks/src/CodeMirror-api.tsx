@@ -1,4 +1,5 @@
-import type { Activity, AppAction, RootState } from "./state/reducers";
+import type { Activity } from "./state/activityLog";
+import type { AppAction, RootState } from "./state/reducers";
 import { ASTNode, Pos } from "./ast";
 import { CodeMirrorFacade, isBlockNodeMarker } from "./editor";
 import type { AppStore } from "./state/store";

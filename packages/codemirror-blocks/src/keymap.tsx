@@ -564,19 +564,9 @@ const commandMap: {
 
 const doTopmostAction =
   ({ editor }: Env, e: React.KeyboardEvent, which: "undo" | "redo"): AppThunk =>
-  (dispatch, getState) => {
+  (dispatch) => {
     e.preventDefault();
-    const topmostAction = editor.getTopmostAction(which);
-    const state = getState();
-    state.undoableAction = topmostAction.undoableAction;
-    state.actionFocus = topmostAction.actionFocus;
-    if (which === "undo") {
-      say(`UNDID: ${topmostAction.undoableAction}`);
-      editor.undo();
-    } else {
-      say(`REDID: ${topmostAction.undoableAction}`);
-      editor.redo();
-    }
+    dispatch(actions.undoOrRedo(which, editor));
   };
 
 // Recieves the key event, an environment (BlockEditor or Node), and the

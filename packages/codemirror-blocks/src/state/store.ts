@@ -6,13 +6,17 @@ import thunk, {
 } from "redux-thunk";
 import * as actions from "./actions";
 import { reducer } from "./reducers";
+import { activityLogger } from "./activityLog";
 import type { RootState, AppAction } from "./reducers";
 
 export function createAppStore(code?: string) {
   const store = createStore(
     reducer,
     undefined,
-    applyMiddleware(thunk as ThunkMiddleware<RootState, AppAction>)
+    applyMiddleware(
+      thunk as ThunkMiddleware<RootState, AppAction>,
+      activityLogger
+    )
   );
   if (code !== undefined) {
     store.dispatch(actions.setCode(code));
