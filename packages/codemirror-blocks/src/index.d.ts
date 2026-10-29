@@ -1,5 +1,5 @@
 /**
- * Modules ending with .mp3 are loaded by webpack's url-loader,
+ * Modules ending with .mp3 are loaded by webpack's asset modules,
  * which generates a url string as the modules default export.
  */
 declare module "*.mp3" {

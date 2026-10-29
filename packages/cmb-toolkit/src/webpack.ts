@@ -12,13 +12,10 @@ export function getBaseConfig(): WebpackConfiguration {
     module: {
       rules: [
         {
-          test: /.mp3$/,
-          use: [
-            {
-              loader: "url-loader",
-              options: { limit: 10000, esModule: false },
-            },
-          ],
+          // inline small audio files as data URLs, emit the rest as files
+          test: /\.mp3$/,
+          type: "asset",
+          parser: { dataUrlCondition: { maxSize: 10000 } },
         },
         {
           test: /\.less$|.css$/,
@@ -55,6 +52,9 @@ export function getBaseConfig(): WebpackConfiguration {
         path.resolve(__dirname, "..", "..", "node_modules"),
       ],
     },
+    // TypeScript is compiled by ts-loader (above). Newer versions of webpack
+    // can also strip types natively, but that doesn't handle .tsx files.
+    experiments: { typescript: false },
     devtool: "cheap-module-source-map",
     plugins: [],
   };

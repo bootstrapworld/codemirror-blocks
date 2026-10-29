@@ -10,7 +10,7 @@ const devServerConfig = getWebpackDevServerConfig({
 });
 devServerConfig.module.rules.push({
   test: /\.rkt$/,
-  use: [{ loader: "raw-loader" }],
+  type: "asset/source",
 });
 
 const baseConfig = getBaseConfig();

@@ -9,7 +9,7 @@ const config = getWebpackDevServerConfig({
 
 config.module.rules.push({
   test: /\.rkt$/,
-  use: [{ loader: "raw-loader" }],
+  type: "asset/source",
 });
 
 module.exports = config;
