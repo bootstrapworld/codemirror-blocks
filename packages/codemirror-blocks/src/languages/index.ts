@@ -10,7 +10,7 @@ export type Language = LanguageConfig & {
    * A function for generating a human readable error message
    * from any exceptions that are thrown by a call to parse()
    */
-  getExceptionMessage(e: unknown): string;
+  getExceptionMessage(e: unknown): string | Error;
 
   buildAST(code: string): AST;
 };
@@ -42,7 +42,7 @@ export type LanguageConfig = {
    * A function for generating a human readable error message
    * from any exceptions that are thrown by a call to parse()
    */
-  getExceptionMessage?(e: unknown): string;
+  getExceptionMessage?(e: unknown): string | Error;
 
   /**
    * A function for generating ASTNodes from Primitives

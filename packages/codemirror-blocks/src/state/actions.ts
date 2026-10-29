@@ -128,7 +128,7 @@ export const deleteASTNode =
 function checkASTRoundtripConversion(
   oldCode: string,
   language: Language
-): Result<{ oldAst: AST; newAst: AST; newCode: string }, string> {
+): Result<{ oldAst: AST; newAst: AST; newCode: string }, string | Error> {
   let oldAst: AST;
   try {
     oldAst = language.buildAST(oldCode); // parse the code (WITH annotations)
