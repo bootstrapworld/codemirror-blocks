@@ -37,51 +37,54 @@ Make a repo (e.g. - `YourFavLang-blocks`), and include CMB as a dependency:
 
 Then add folders for your parser (`src/languages/YourFavLang`) and test cases (`spec/languages/YourFavLang`).
 
+CMB requires Node 18 or later, React 18, and CodeMirror 5 (which your IDE provides). It ships its own TypeScript declarations, so your language module can be written in TypeScript.
+
 ### Provide a Parser
 
-Write a parser for your language that produces an Abstract Syntax Tree composed of [CMB's node types](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodes.jsx).
+Write a parser for your language that produces an array of top-level nodes, composed of [CMB's node types](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/nodes.tsx).
 
-CMB's AST nodes all have constructors that take arguments specifying (1) the `from` and `to` position of the node (in CodeMirror's `{line, ch}` format), (2) the fields that define the node, and (3) an `options` object.
+CMB's nodes are created with constructor functions that take arguments specifying (1) the `from` and `to` position of the node (in CodeMirror's `{line, ch}` format), (2) the fields that define the node, and (3) an `options` object.
 
-The `options` object is used for a number of CMB-internal purposes, but there are two (language-dependant) fields that your parser will need to set. First, you'll want to set `options[aria-label]` to a short, descriptive string for how that node should be vocalized by a screenreader (e.g. - "v: a value definition"). Your parser will also be responsible for associating block- and line-comments with the node they describe. For example:
+The `options` object is used for a number of CMB-internal purposes, but there are two (language-dependent) fields that your parser will need to set. First, you'll want to set `options.ariaLabel` to a short, descriptive string for how that node should be vocalized by a screenreader (e.g. - "v: a value definition"). Your parser will also be responsible for associating block- and line-comments with the node they describe, using `options.comment`. For example:
 
-        if (node instanceof structures.defVar) {
-           var name = parseNode(node.name);
-           var expr = parseNode(node.expr);
-           var cmnt = new Comment(cmntFrom, cmtTo, cmtText);
-           return new VariableDefinition(
-              from,
-              to,
-              name,
-              expr,
-              {'aria-label': node.name.val+': a value definition', 'comment' : comment}
-           );
-        }
+```ts
+if (node instanceof structures.defVar) {
+  const name = parseNode(node.name);
+  const expr = parseNode(node.expr);
+  const comment = Nodes.Comment(cmntFrom, cmntTo, cmntText);
+  return Nodes.VariableDefinition(from, to, name, expr, {
+    ariaLabel: node.name.val + ": a value definition",
+    comment,
+  });
+}
+```
 
 #### _Defining your own AST Nodes_
 
-You can also provide your own AST nodes, by extending the built-in `AST.ASTNode` class. [Here is one example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/ast.js) of a language defining custom AST nodes.
+You can also define your own node types. A node type is described by a spec that lists the fields of the node, and a node is created by `makeNode`, which takes the functions that say how the node is pretty-printed, rendered as a block, and described to a screenreader. [Here is one example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/wescheme-blocks/src/ast.tsx) of a language defining custom nodes.
 
-Your subclassed Node _**must**_ contain:
+Every node type **must** have:
 
-1. `constructor` - Consumes the `from` and `to` locations, all required child fields, and an `options` object initialized to `{}`.
-2. `spec` - A static field, which defines specifications for all fields of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/nodeSpec.js). Note: failing to properly list all the fields of the node can leave the editor in an unstable state, and result in unspecified behavior.
-3. `longDescription()` - a method that dynamically computes a detailed description of the node (optionally referring to its children, for example), and produces a string that will be read aloud to the user.
-4. `pretty()` - A method that describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer).
-5. `render()` - A method that produces the node (usually in JSX) to be rendered. Note: all DropTargets in a node's `render()` method must declare a `field` property, corresponding to one of the fields of the node that are defined in `spec`. This tells CMB what part of the node is modified when the DropTarget is edited.
+1. A spec, declared with `Nodes.createASTSpec`, which defines the type of every field of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/nodeSpec.ts). Note: failing to properly list all the fields of the node can leave the editor in an unstable state, and result in unspecified behavior.
+2. `pretty()` - A function that describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer).
+3. `render()` - A function that produces the node (usually in JSX) to be rendered. Note: all DropTargets in a node's `render()` function must declare a `field` property, corresponding to one of the list fields of the node that are defined in the spec. This tells CMB what part of the node is modified when the DropTarget is edited.
+
+and, optionally, `longDescription()` - a function that dynamically computes a detailed description of the node (optionally referring to its children, for example), and produces a string that will be read aloud to the user.
+
+See the [language guide](../../doc/language.md) for a complete walkthrough.
 
 ### Tell CMB about the Language
 
-Create an index.js [see this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/src/languages/wescheme/index.js) file that hooks up your language to the CMB library.
+Create an `index.ts` file ([see this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/wescheme-blocks/src/index.ts)) that hooks up your language to the CMB library by calling `Languages.addLanguage({id, name, parse, ...})`.
 
 ### Style Your Blocks
 
-CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS.
+CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS.
 
 Obviously, if you've added new AST node types, you'll have to provide the styling for those yourself!
 
 ### Write Your Tests
 
-In `spec/languages/YourFavLang`, add some unit tests for your parser! Make sure you test all the fields, but _especially_ the `aria-label` and `longDescription()` return values.
+In `spec/languages/YourFavLang`, add some unit tests for your parser! Make sure you test all the fields, but _especially_ the `ariaLabel` option and the `longDescription()` return values.
 
-You may find it useful to check out [this example](https://github.com/bootstrapworld/wescheme-blocks/blob/master/spec/languages/wescheme/WeschemeParser-test.js).
+You may find it useful to check out [this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/wescheme-blocks/spec/WeschemeParser-test.js).
