@@ -3,6 +3,36 @@
   "version": "0.8.6",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "./lib/CodeMirrorBlocks.js",
+  "types": "./lib/CodeMirrorBlocks.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/CodeMirrorBlocks.d.ts",
+      "default": "./lib/CodeMirrorBlocks.js"
+    },
+    "./lib/*.less": "./lib/*.less",
+    "./lib/*.mp3": "./lib/*.mp3",
+    "./lib/languages": {
+      "types": "./lib/languages/index.d.ts",
+      "default": "./lib/languages/index.js"
+    },
+    "./lib/languages/example": {
+      "types": "./lib/languages/example/index.d.ts",
+      "default": "./lib/languages/example/index.js"
+    },
+    "./lib/languages/lambda": {
+      "types": "./lib/languages/lambda/index.d.ts",
+      "default": "./lib/languages/lambda/index.js"
+    },
+    "./lib/languages/wescheme": {
+      "types": "./lib/languages/wescheme/index.d.ts",
+      "default": "./lib/languages/wescheme/index.js"
+    },
+    "./lib/*": {
+      "types": "./lib/*.d.ts",
+      "default": "./lib/*.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "/lib"
   ],
@@ -70,8 +100,7 @@
     "build-types": "npx tsc",
     "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit",
     "build-types-watch": "npx tsc --watch",
-    "lint": "eslint .",
-    "upgrade-interactive": "npm-check --update"
+    "lint": "eslint ."
   },
   "author": "The Bootstrap Team",
   "repository": "github:bootstrapworld/codemirror-blocks",

@@ -4,12 +4,13 @@
   "version": "0.0.1",
   "description": "Toolkit for developing codemirror-blocks language modules",
   "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "files": [
     "/lib"
   ],
   "engines": {
-    "node": ">=14.x",
-    "npm": ">=7.x"
+    "node": ">=18.x",
+    "npm": ">=8.x"
   },
   "dependencies": {
     "babel-loader": "^10.1.1",
