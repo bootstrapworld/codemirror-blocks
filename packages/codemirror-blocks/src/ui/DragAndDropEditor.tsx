@@ -22,7 +22,7 @@ type OurProps = {
 type Props = Omit<IUnControlledCodeMirror, keyof OurProps> & OurProps;
 
 const DragAndDropEditor = (props: Props) => {
-  const editorRef = useRef<CodeMirrorFacade>();
+  const editorRef = useRef<CodeMirrorFacade | undefined>(undefined);
   const dispatch: AppDispatch = useDispatch();
   const [_, connectDropTarget] = useDrop({
     accept: ItemTypes.NODE,
@@ -84,8 +84,12 @@ const DragAndDropEditor = (props: Props) => {
     // has the access to the information whether we drop at the right place :(
   };
 
-  return connectDropTarget(
-    <div>
+  return (
+    <div
+      ref={(el) => {
+        connectDropTarget(el);
+      }}
+    >
       <CodeMirror
         onDrop={handleDrop}
         onDragOver={handleDragOver}

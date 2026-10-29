@@ -184,7 +184,7 @@ function reduce(state = initialState(), action: AppAction): RootState {
     case "RESET_STORE_FOR_TESTING":
       return initialState();
     default:
-      debugLog("unprocessed action type=", (action as Action<unknown>).type);
+      debugLog("unprocessed action type=", (action as Action<string>).type);
       return state;
   }
 }

@@ -281,8 +281,11 @@ field declared. The node was:`,
     "blocks-white-space",
     { "blocks-over-target": isOver || mouseOver },
   ];
-  return connectDropTarget(
+  return (
     <span
+      ref={(el) => {
+        connectDropTarget(el);
+      }}
       id={`block-drop-target-${id}`}
       className={classNames(classes)}
       onMouseEnter={handleMouseEnterRelated}

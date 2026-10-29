@@ -9,7 +9,7 @@ type Props = {
   primitives?: PrimitiveGroup;
   languageId?: string; // used to find the .blocks-language-{languageId} CSS class
   blockMode?: boolean;
-  toolbarRef: React.RefObject<HTMLInputElement>;
+  toolbarRef: React.RefObject<HTMLInputElement | null>;
 };
 
 const Toolbar = (props: Props) => {

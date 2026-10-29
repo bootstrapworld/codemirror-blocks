@@ -29,7 +29,13 @@ const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
 
   const classNames = "TrashCan" + (isOver ? " over" : "");
   return (
-    <div ref={drop} className={classNames} aria-hidden={true}>
+    <div
+      ref={(el) => {
+        drop(el);
+      }}
+      className={classNames}
+      aria-hidden={true}
+    >
       🗑️
     </div>
   );

@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AST, ASTNode, nodeElementMap } from "../ast";
 import { ReplaceNodeTarget, collapseNode } from "../state/actions";
@@ -216,7 +222,23 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }),
   });
 
-  const nodeElementRef = useRef<HTMLSpanElement>(null);
+  const nodeElementRef = useRef<HTMLSpanElement | null>(null);
+
+  // The node's element is a drag source (and its own drag preview), maybe a
+  // drop target, and is remembered in nodeElementRef. These callbacks are
+  // stable across renders, so that react-dnd doesn't reconnect on every one.
+  const normallyEditable = Boolean(props.normallyEditable);
+  const setNodeElement = useCallback(
+    (el: HTMLSpanElement | null) => {
+      nodeElementRef.current = el;
+      if (normallyEditable) {
+        connectDropTarget(el);
+      }
+      connectDragSource(el);
+      connectDragPreview(el, { offsetX: 1, offsetY: 1 });
+    },
+    [normallyEditable, connectDropTarget, connectDragSource, connectDragPreview]
+  );
 
   useEffect(() => {
     if (nodeElementRef.current) {
@@ -260,7 +282,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
         isInsertion={false}
         target={new ReplaceNodeTarget(props.node)}
         value={value}
-        onChange={(value) => setValue(value)}
+        onChange={(value: string | null) => setValue(value)}
         onDragStart={handleMouseDragRelated}
         onDragEnd={handleMouseDragRelated}
         onDrop={handleMouseDragRelated}
@@ -274,11 +296,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
     if (textMarker?.options.className) {
       classes.push(textMarker.options.className);
     }
-    let result: React.ReactElement | null = (
+    const result = (
       <span
         {...contentEditableProps}
         className={classNames(classes)}
-        ref={nodeElementRef}
+        ref={setNodeElement}
         role={props.inToolbar ? "listitem" : "treeitem"}
         style={
           {
@@ -302,19 +324,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
         {comment && comment.reactElement({ id: commentElemId })}
       </span>
     );
-    if (props.normallyEditable) {
-      result = connectDropTarget(result);
-    }
-    result = connectDragPreview(connectDragSource(result), {
-      offsetX: 1,
-      offsetY: 1,
-    });
-    result = (
+    return (
       <NodeContext.Provider value={{ node: props.node }}>
         {result}
       </NodeContext.Provider>
     );
-    return result;
   }
 };
 

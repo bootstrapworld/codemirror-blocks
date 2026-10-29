@@ -41,7 +41,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const ast = useSelector(selectors.getAST);
   const quarantine = useSelector(selectors.getQuarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
-  const newASTRef = useRef<AST | undefined>();
+  const newASTRef = useRef<AST | undefined>(undefined);
 
   // only refresh if there is no active quarantine
   useEffect(() => {
