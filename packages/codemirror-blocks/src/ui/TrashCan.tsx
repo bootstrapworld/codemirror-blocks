@@ -1,9 +1,8 @@
 import React from "react";
 import { ItemTypes } from "../dnd";
 import { useDrop } from "react-dnd";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { AppDispatch } from "../state/store";
-import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import { CMBEditor } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
@@ -11,20 +10,22 @@ require("./TrashCan.less");
 
 const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
   const dispatch: AppDispatch = useDispatch();
-  const ast = useSelector(selectors.getAST);
+  const { editor } = props;
   const [{ isOver }, drop] = useDrop(
     () => ({
       accept: ItemTypes.NODE,
-      drop: (item: { id: string }) => {
-        const srcNode = item.id ? ast.getNodeByIdOrThrow(item.id) : null; // null if dragged from toolbar
-        if (!srcNode) {
+      drop: (item: { id?: string }) => {
+        if (!item.id) {
           return; // Someone dragged from the toolbar to the trash can.
         }
-        return dispatch(actions.deleteASTNode(props.editor, srcNode.id));
+        // deleteASTNode reads the current AST itself, so a stale handler can't
+        // look the node up in an old tree. The editor, however, is captured
+        // here and changes when the mode is toggled, so it must be a dep.
+        return dispatch(actions.deleteASTNode(editor, item.id));
       },
       collect: (monitor) => ({ isOver: monitor.isOver() }),
     }),
-    [ast]
+    [editor, dispatch]
   );
 
   const classNames = "TrashCan" + (isOver ? " over" : "");
