@@ -46,6 +46,7 @@ into CodeMirror.
 | Focus hint per edit type                                             | ✅ `focus-test`, `undo-matrix-test`        |
 | Invalid result is rejected: text and AST both left unchanged         | ✅ `performEdits-test`, `edit-errors-test` |
 | Required blank filled, then deleted again                            | ✅ `new-blocks-test`                       |
+| `edit_insert("")` (nothing in the editor does this)                  | ✅ pinned: leaves a stray space            |
 
 ## 3. Drag-and-drop matrix
 
@@ -67,8 +68,11 @@ carried over, and undo. Also:
 
 Coverage: `drag-test` (node onto node and onto drop targets), `drop-targets-test`
 (whitespace, toolbar, self and subtree drops, cancelled drags, comments) and
-`TrashCan-test`. Not covered: locked nodes, dragging while a quarantine is open,
-and multi-node selections.
+`TrashCan-test`. `edge-cases-test` covers dragging while a quarantine is open (the
+typing is committed first, then the drop: two undo steps) and dragging one of
+several selected blocks (only the grabbed block moves; the rest of the selection
+stays put). Not covered: locked nodes (only comments are locked, and they have
+no interaction).
 
 ## 4. Keyboard commands
 
@@ -157,8 +161,24 @@ fallback runs, and toolbar copy.
 
 Coverage: `undo-matrix-test` runs every edit type of section 1 through undo, redo,
 API undo, a new edit after undo, and focus after undo; `undo-redo-test`,
-`undo-state-test` and `editor-history-test` cover the machinery. Not covered:
-undo after a mode toggle, and the exact node chosen for focus afterwards.
+`undo-state-test` and `editor-history-test` cover the machinery.
+`undo-focus-test` pins which block gets focus afterwards (the heuristic: the
+saved block number from the history item, else the block nearest the change,
+climbing to a collapsed ancestor; the editor itself when no block is left).
+`edge-cases-test` covers undo after a mode toggle (switching replaces the
+CodeMirror editor, so the history starts empty).
+**Known bugs, pinned in `undo-focus-test` and not fixed.** A block number is a
+position in one particular document, but `BlockEditor.handleChange` uses
+`oldFocusNId || newFocusNId` for both directions: a redo focuses whatever block
+now sits at the pre-edit position (redoing the delete of `x` in `(f x y)` focuses
+`y`, not `f`), and `0 ||` skips the first block. When CodeMirror merges quick
+`+`-origin changes into one history item, undo applies two changes, the first
+uses up the saved focus, and focus falls back to a guess. The obvious fix (undo
+by the "before" number, redo by the "after" one, with `??`) passes every jsdom
+spec but is **not safe**: it makes undo and redo of top-level edits throw
+`IndexSizeError` from CodeMirror's `restoreSelection` in a real browser (focus
+moves inside CodeMirror's own undo operation, before it redraws), which
+`matrix.e2e.ts` catches. A fix has to move focus after the operation.
 
 ## 9. Collapse, comments, other structure
 
@@ -195,8 +215,9 @@ mode, text-mode edits, repeated switching, two editors on one page, unmounting,
 stable pretty-printing of the example programs, mount options),
 `edit-errors-test` (failed mode switch) and `undo-matrix-test`, which runs every
 edit again after a mode switch. `big-expression.rkt` is skipped: 537 bytes but
-~8s to pretty-print. Not covered: unmounting with an open quarantine, re-mounting
-with a different language, and the `primitivesFn`-less toolbar beyond a render.
+~8s to pretty-print. `edge-cases-test` covers unmounting with an open quarantine
+or edit, and re-mounting with a different language (the lambda language, which
+also has no `primitivesFn`: its toolbar is empty but works).
 
 ## 11. Toolbar
 
@@ -209,11 +230,35 @@ the list, Escape back to the search box, filtering, disabled in text mode),
 
 **Status:** implemented in `spec/helpers/invariants.ts` and run after every test
 that uses `mountCMB` (see `spec/globalSetup.ts`). Property 8 is enforced for
-`console.error` in every test. Randomized operation sequences are not written
-yet.
+`console.error` in every test. Randomized operation sequences are in
+`spec/random-sequences-test.ts` (jsdom) and `e2e/random.e2e.ts` (browser).
 
-Candidates for a model-based or randomized test that runs a sequence of random
-operations and checks these at each step.
+The jsdom spec generates seeded sequences of the operations in section 1 plus
+collapsing and mode switches, checks 1 to 6 and 8 after every step, then undoes
+everything (the text must be the starting text, or the text after the last mode
+switch, which starts a new history) and redoes everything (the final text). A
+failure prints the seed, a shrunk sequence with the text after each step, and a
+`CMB_RANDOM_REPLAY=...` command. The default run is 12 sequences of 25 steps
+(about 6 seconds); set `CMB_RANDOM_RUNS`, `CMB_RANDOM_STEPS` and
+`CMB_RANDOM_SEED` for more, with `NODE_OPTIONS=--max-old-space-size=8192` (each
+sequence leaves about 40 MB behind in jsdom). The invariants only expect blocks
+for roots inside CodeMirror's viewport (a 10-line window in jsdom). The browser
+spec runs 9 steps of real input per seed (`CMB_E2E_SEEDS` picks the seeds).
+
+Bugs these runs found, all fixed with regression specs: Delete, Cut and Copy
+acted on a selected block's children as well as the block (so `(f x y)` in
+`(f x y) z` took `z` with it, a `define` could not be deleted, and copying gave
+`(f x y) f x y`); a root whose text was rewritten to something that parses the
+same lost its block for good; `Node` kept a stale element after an in-place edit
+(focus could end up on the "stand by" placeholder); the focus hint after
+replacing a block looked in the old parent and threw after the text had changed.
+Open, pinned and not fixed: the undo/redo saved-focus problem in section 8, and
+a browser-only one (`e2e/random.e2e.ts`, seed 11, marked as an expected
+failure): after a real-mouse drag of a block to the trash can, focus is left on
+CodeMirror's scroller and every later Ctrl-Z is ignored. It fails the same way
+on the code from before these fixes.
+
+Properties to check after every operation:
 
 1. The document text re-parses to exactly the AST in the store.
 2. There is one text mark per root block, and each has a connected widget.
@@ -246,6 +291,8 @@ keyboard focus, and focus falling to the page body when the last block goes.
 - `matrix.e2e.ts`: the same 16 edit types as `undo-matrix-test.ts`, done with real
   clicks, keys, drops and the real clipboard, each then undone and redone by
   keyboard. A failure here with a passing jsdom twin means jsdom hid a bug.
+- `random.e2e.ts`: short seeded sequences of real input (see section 12), with
+  uncaught page errors counted as failures. One seed is a pinned known bug.
 - `delete-undo.e2e.ts`, `trash-can.e2e.ts`, `typing.e2e.ts`: the specific
   regressions, long documents, and real typing at the top level (including
   typing over a selection).
