@@ -166,10 +166,9 @@ export function Unknown(
     },
     longDescription(node, level) {
       return (
-        `an unknown expression with ${pluralize(
-          "children",
-          node.fields.elts
-        )} ` +
+        `an unknown expression with ${node.fields.elts.length} ${
+          node.fields.elts.length === 1 ? "child" : "children"
+        } ` +
         node.fields.elts
           .map(
             (e, i, elts) =>
