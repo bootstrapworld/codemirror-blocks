@@ -290,7 +290,7 @@ const buildBlockModeAPI = (
     extendSelection: (from: Pos, to: Pos, opts?: SelectionOptions) => {
       const tmpCM = getTempCM(codemirror);
       tmpCM.setSelections(api.listSelections());
-      tmpCM.extendSelections([from], opts);
+      tmpCM.extendSelection(from, to, opts);
       const { nodeIds, textRanges } = validateSelectionRanges(
         store.getState(),
         codemirror,
