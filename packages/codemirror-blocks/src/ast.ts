@@ -47,6 +47,13 @@ const descDepth = 1;
  */
 export const prettyPrintingWidth = 80;
 
+// The printer asks a node for its Doc more than once (it builds both the
+// one-line and the broken layout of a list from the same children), so a node
+// nested n deep used to be printed 2^n times: eight levels took seconds. While
+// one print is under way each node makes its Doc once and shares it. Nodes are
+// edited between prints (see fakeAstEdits), so nothing is kept after.
+let sharedDocs: Map<object, P.Doc> | null = null;
+
 type Edges = { parentId?: string; nextId?: string; prevId?: string };
 
 /**
@@ -699,7 +706,20 @@ export class ASTNode<
   }
 
   pretty(): P.Doc {
-    return this._pretty(this as NodeForSpec);
+    if (sharedDocs) {
+      let doc = sharedDocs.get(this);
+      if (!doc) {
+        doc = this._pretty(this as NodeForSpec);
+        sharedDocs.set(this, doc);
+      }
+      return doc;
+    }
+    sharedDocs = new Map();
+    try {
+      return this._pretty(this as NodeForSpec);
+    } finally {
+      sharedDocs = null;
+    }
   }
 
   // based on the depth level, choose short v. long descriptions
@@ -719,9 +739,7 @@ export class ASTNode<
 
   // Pretty-print the node and its children, based on the pp-width
   toString(): string {
-    return this._pretty(this as NodeForSpec)
-      .display(prettyPrintingWidth)
-      .join("\n");
+    return this.pretty().display(prettyPrintingWidth).join("\n");
   }
 
   // Produces an iterator over the children of this node.

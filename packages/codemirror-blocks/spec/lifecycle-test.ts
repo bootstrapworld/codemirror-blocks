@@ -87,13 +87,25 @@ describe("switching between text and block mode", () => {
 describe("pretty-printing real programs", () => {
   const examples = fs
     .readdirSync(path.join(__dirname, "../example"))
-    // big-expression.rkt is 537 bytes but takes ~8s to pretty-print (deeply
-    // nested), which would triple the suite's run time
-    .filter((f) => f.endsWith(".rkt") && f !== "big-expression.rkt")
+    .filter((f) => f.endsWith(".rkt"))
     .map((f) => [
       f,
       fs.readFileSync(path.join(__dirname, "../example", f), "utf8"),
     ]);
+
+  // big-expression.rkt is 537 bytes of deeply nested code. The printer asks a
+  // node for its layout more than once, so printing used to take 2^depth steps
+  // (about 4 seconds for this file); a node's layout is now made once per print.
+  it("pretty-prints big-expression.rkt in well under a second", () => {
+    const code = fs.readFileSync(
+      path.join(__dirname, "../example/big-expression.rkt"),
+      "utf8"
+    );
+    const ast = wescheme.buildAST(code);
+    const start = Date.now();
+    ast.toString();
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
 
   it.each(examples)(
     "%s survives text -> blocks -> text -> blocks",

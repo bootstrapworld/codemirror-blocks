@@ -70,6 +70,10 @@ http://keepachangelog.com/
 
 ### Fixed
 
+- Pretty-printing deeply nested code no longer takes exponential time: a
+  537-byte expression in the examples took about 4 seconds to print (on every
+  mode switch, edit and paste that reached it) and now takes under a
+  millisecond, with the same output.
 - WeScheme: `check-expect` blocks are announced as "Unit Test for <function>".
 - The lambda lexer reports "Unexpected end of input" instead of throwing a
   `TypeError`.

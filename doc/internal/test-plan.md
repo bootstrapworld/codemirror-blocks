@@ -227,8 +227,9 @@ Coverage: `lifecycle-test` (mode round trips, blocks and toolbar only in block
 mode, text-mode edits, repeated switching, two editors on one page, unmounting,
 stable pretty-printing of the example programs, mount options),
 `edit-errors-test` (failed mode switch) and `undo-matrix-test`, which runs every
-edit again after a mode switch. `big-expression.rkt` is skipped: 537 bytes but
-~8s to pretty-print. `edge-cases-test` covers unmounting with an open quarantine
+edit again after a mode switch. `big-expression.rkt` (537 bytes of deeply nested
+code) is included, with a check that it prints in under a second: it took about 4
+seconds until a node's layout was made once per print instead of once per use. `edge-cases-test` covers unmounting with an open quarantine
 or edit, and re-mounting with a different language (the lambda language, which
 also has no `primitivesFn`: its toolbar is empty but works).
 
