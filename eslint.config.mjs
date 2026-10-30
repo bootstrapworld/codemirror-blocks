@@ -1,6 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import react from "eslint-plugin-react";
+import eslintReact from "@eslint-react/eslint-plugin";
 import reactHooks from "eslint-plugin-react-hooks";
 import prettier from "eslint-config-prettier";
 import globals from "globals";
@@ -17,14 +17,15 @@ export default tseslint.config(
   },
   js.configs.recommended,
   tseslint.configs.recommended,
-  react.configs.flat.recommended,
+  eslintReact.configs["recommended-typescript"],
+  // the hooks rules come from eslint-plugin-react-hooks below
+  eslintReact.configs["disable-conflict-eslint-plugin-react-hooks"],
   prettier,
   {
     plugins: { "react-hooks": reactHooks },
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
     },
-    settings: { react: { version: "detect" } },
     rules: {
       "no-console": ["warn", { allow: ["warn", "error"] }],
       semi: ["error", "always"],
@@ -44,8 +45,16 @@ export default tseslint.config(
       // stylesheets get pulled in (TypeScript doesn't know about .less files)
       "@typescript-eslint/no-require-imports": 0,
       "no-undef": 0,
-      "react/display-name": 0,
-      "react/prop-types": 0, // handled by typescript
+      // style rules of eslint-react that eslint-plugin-react never had; the
+      // code is not written to them (and some, like forwardRef and
+      // <Context.Provider>, would be React 19 cleanups of their own)
+      "@eslint-react/exhaustive-deps": 0, // react-hooks has it
+      "@eslint-react/naming-convention-ref-name": 0,
+      "@eslint-react/no-array-index-key": 0,
+      "@eslint-react/no-context-provider": 0,
+      "@eslint-react/no-forward-ref": 0,
+      "@eslint-react/no-use-context": 0,
+      "@eslint-react/no-unused-class-component-members": 0,
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
     },

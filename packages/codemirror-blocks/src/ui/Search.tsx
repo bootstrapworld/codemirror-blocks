@@ -64,10 +64,10 @@ export default function attachSearch(
     displayName = "Search Component";
 
     handleChangeSetting = (i: number) => (setting: unknown) => {
-      this.setState({
-        settings: { ...this.state.settings, [i]: setting },
+      this.setState((state) => ({
+        settings: { ...state.settings, [i]: setting },
         searchEngine: i,
-      });
+      }));
     };
     handleActivateSearch = (
       done: () => void,

@@ -46,7 +46,7 @@ into CodeMirror.
 | Focus hint per edit type                                             | ✅ `focus-test`, `undo-matrix-test`        |
 | Invalid result is rejected: text and AST both left unchanged         | ✅ `performEdits-test`, `edit-errors-test` |
 | Required blank filled, then deleted again                            | ✅ `new-blocks-test`                       |
-| `edit_insert("")` (nothing in the editor does this)                  | ✅ pinned: leaves a stray space            |
+| `edit_insert("")` (nothing in the editor does this)                  | ✅ changes nothing                         |
 
 ## 3. Drag-and-drop matrix
 

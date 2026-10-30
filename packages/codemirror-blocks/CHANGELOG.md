@@ -32,6 +32,9 @@ http://keepachangelog.com/
   stopped working) after cancelling the typing box at the top level when no
   block is left, after clicking CodeMirror's scroller, or after dragging a
   block from the toolbar into the editor.
+- `cmb.undo()` and `cmb.redo()` in block mode focus the same blocks as Ctrl-Z
+  and Ctrl-Y (they used to guess from the change), and `edit_insert` with an
+  empty or blank string no longer leaves a stray space.
 - Delete, Cut and Copy act on the blocks you selected, not on their children as
   well: deleting `(f x y)` from `(f x y) z` no longer deletes `z`, a `define`
   can be deleted, and copying `(f x y)` no longer gives `(f x y) f x y`.
@@ -40,9 +43,11 @@ http://keepachangelog.com/
   again instead of vanishing, and cancelling an edit no longer leaves focus on
   the screenreader placeholder.
 - Development uses Node 24 (`.nvmrc`), Jest 30,
-  TypeScript 6, webpack-cli 7, webpack-dev-server 6, webpack-bundle-analyzer 5
-  and less-loader 13. Editor invariants are checked after every jsdom test, and
-  seeded random sequences of edits are run and then undone and redone.
+  TypeScript 6, webpack-cli 7, webpack-dev-server 6, webpack-bundle-analyzer 5,
+  less-loader 13 and ESLint 10 (with `@eslint-react/eslint-plugin`, since
+  `eslint-plugin-react` does not support ESLint 10 yet). Editor invariants are
+  checked after every jsdom test, and seeded random sequences of edits are run
+  and then undone and redone.
 - Added a browser test suite (`npm run test:e2e`, Playwright; 72 tests, run in
   CI).
 - `Language.getExceptionMessage` may return a `string` or an `Error`.

@@ -89,6 +89,7 @@ function CodeMirrorBlocks(
   // Render synchronously, so that the API object has been filled in (by
   // `onMount`) by the time this function returns.
   const mountedRoot = root;
+  // eslint-disable-next-line @eslint-react/dom-no-flush-sync
   flushSync(() => {
     mountedRoot.render(
       <CodeMirrorBlocksComponent

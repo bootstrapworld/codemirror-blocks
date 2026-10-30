@@ -190,7 +190,8 @@ async function runSequence(page: Page, seed: number) {
     expect((await expectConsistent(page)).text).toBe(end);
   } catch (e) {
     throw new Error(
-      `seed ${seed} failed after ${log.length} steps:\n  ${log.join("\n  ")}\n\n${e}`
+      `seed ${seed} failed after ${log.length} steps:\n  ${log.join("\n  ")}\n\n${e}`,
+      { cause: e }
     );
   }
 }
