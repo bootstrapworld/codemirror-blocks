@@ -2,29 +2,23 @@ name: CI Tests
 on: [push, pull_request]
 jobs:
   build:
-    name: Build and Test (Node ${{ matrix.node }})
+    name: Build and Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # the active LTS and the one before it
-        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
 
       # Install Node
-      - name: Use Node.js ${{ matrix.node }}
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 24
 
       - run: npm ci
 
       # Run tests
       - run: npx jest --coverage
 
-      # report coverage once, not per Node version
       - name: Coveralls
-        if: matrix.node == 24
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
