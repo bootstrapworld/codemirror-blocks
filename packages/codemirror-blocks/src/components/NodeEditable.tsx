@@ -25,6 +25,9 @@ function suppressEvent(e: React.SyntheticEvent) {
  *        to collapse the selection to the end of the elements range.
  */
 function selectElement(element: HTMLElement, shouldCollapse: boolean) {
+  // Focus first: focusing can reset the selection in some browsers, so the
+  // selection has to be made after it.
+  element.focus();
   const range = document.createRange();
   range.selectNodeContents(element);
   if (shouldCollapse) {
@@ -37,7 +40,6 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
     selection.removeAllRanges();
     selection.addRange(range);
   }
-  element.focus();
 }
 
 type Props = Omit<ContentEditableProps, "value"> & {
