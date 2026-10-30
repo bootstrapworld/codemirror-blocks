@@ -5,8 +5,8 @@
   "private": true,
   "main": "./src/index.ts",
   "engines": {
-    "node": ">=20",
-    "npm": ">=8.x"
+    "node": ">=24",
+    "npm": ">=11"
   },
   "dependencies": {
     "codemirror-blocks": "*"

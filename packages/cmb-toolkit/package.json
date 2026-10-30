@@ -9,8 +9,8 @@
     "/lib"
   ],
   "engines": {
-    "node": ">=22.15",
-    "npm": ">=8.x"
+    "node": ">=24",
+    "npm": ">=11"
   },
   "dependencies": {
     "babel-loader": "^10.1.1",

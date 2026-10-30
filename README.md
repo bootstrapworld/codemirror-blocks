@@ -26,7 +26,7 @@ To get your dev environment up and running, follow these steps.
 
 1. Clone the repository onto your local machine
 
-1. Use Node 22.15 or later (the dev server and webpack loaders need it) (`.nvmrc` pins the version that CI uses: with [nvm](https://github.com/nvm-sh/nvm), run `nvm use`)
+1. Use Node 24 or later (`.nvmrc` pins the version that CI uses: with [nvm](https://github.com/nvm-sh/nvm), run `nvm use`)
 
 1. Install dependencies with `npm`
 

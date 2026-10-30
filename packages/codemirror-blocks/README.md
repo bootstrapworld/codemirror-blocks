@@ -37,7 +37,7 @@ Make a repo (e.g. - `YourFavLang-blocks`), and include CMB as a dependency:
 
 Then add folders for your parser (`src/languages/YourFavLang`) and test cases (`spec/languages/YourFavLang`).
 
-CMB requires Node 20 or later, React 19, and CodeMirror 5 (which your IDE provides). It ships its own TypeScript declarations, so your language module can be written in TypeScript.
+CMB requires Node 24 or later, React 19, and CodeMirror 5 (which your IDE provides). It ships its own TypeScript declarations, so your language module can be written in TypeScript.
 
 ### Provide a Parser
 

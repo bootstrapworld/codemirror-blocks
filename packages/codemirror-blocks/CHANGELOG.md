@@ -3,11 +3,11 @@
 How to Update:
 http://keepachangelog.com/
 
-## Unreleased
+## 0.9.0 - 2026-10-30
 
 ### Changed
 
-- **Requires Node 20+ and npm 8+, and React 19.** `CodeMirrorBlocks()` now
+- **Requires Node 24+ and npm 11+, and React 19.** `CodeMirrorBlocks()` now
   renders with `createRoot`; the returned API object is still filled in before
   the call returns. The dependencies on `react-redux` (9), `redux` (5),
   `redux-thunk` (3), `reselect` (5), `react-tabs` (6) and `react-codemirror2`
@@ -39,7 +39,7 @@ http://keepachangelog.com/
   drag that lands where the block was, deleting a `...` placeholder) is drawn
   again instead of vanishing, and cancelling an edit no longer leaves focus on
   the screenreader placeholder.
-- Development uses Node 24 (`.nvmrc`; Node 22.15 or later works), Jest 30,
+- Development uses Node 24 (`.nvmrc`), Jest 30,
   TypeScript 6, webpack-cli 7, webpack-dev-server 6, webpack-bundle-analyzer 5
   and less-loader 13. Editor invariants are checked after every jsdom test, and
   seeded random sequences of edits are run and then undone and redone.
