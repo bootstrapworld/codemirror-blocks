@@ -53,7 +53,9 @@ export function getBaseConfig(): WebpackConfiguration {
     resolveLoader: {
       modules: [
         "node_modules",
-        path.resolve(__dirname, "..", "..", "node_modules"),
+        // the workspace root, where npm hoists the loaders (this file is in
+        // packages/cmb-toolkit/src, and compiled into packages/cmb-toolkit/lib)
+        path.resolve(__dirname, "..", "..", "..", "node_modules"),
       ],
     },
     // TypeScript is compiled by ts-loader (above). Newer versions of webpack

@@ -35,16 +35,20 @@ export function paste(
   pastedString: string,
   node: ElementLike = getActiveElementOrThrow()
 ) {
-  let dT = null;
+  // (jsdom has no ClipboardEvent, so let testing-library make the event)
+  let clipboardData: Pick<DataTransfer, "getData" | "types">;
   try {
-    dT = new DataTransfer();
+    const dT = new DataTransfer();
+    dT.setData("text/plain", pastedString);
+    clipboardData = dT;
   } catch (e) {
-    console.error("ERR in paste()");
+    clipboardData = {
+      getData: (format: string) =>
+        format === "text/plain" ? pastedString : "",
+      types: ["text/plain"],
+    };
   }
-  const pasteEvent = new ClipboardEvent("paste", { clipboardData: dT });
-  pasteEvent.clipboardData?.setData("text/plain", pastedString);
-  fireEvent(toElement(node), pasteEvent);
-  //userEvent.paste(toElement(node), pastedString);
+  fireEvent.paste(toElement(node), { clipboardData });
 }
 export function cut(node: ElementLike = getActiveElementOrThrow()) {
   fireEvent.cut(toElement(node));
@@ -135,7 +139,8 @@ export function keyPress(
 }
 export function insertText(text: string) {
   const activeEl = getActiveElementOrThrow();
-  if (activeEl.tagName == "textarea" || activeEl.tagName == "input") {
+  const tagName = activeEl.tagName.toLowerCase();
+  if (tagName == "textarea" || tagName == "input") {
     fireEvent.input(activeEl, {
       target: {
         value:

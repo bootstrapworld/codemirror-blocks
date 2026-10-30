@@ -154,7 +154,19 @@ export default {
         "**/__tests__/**/*.[jt]s?(x)",
         "**/?(*.)+(spec|test).[tj]s?(x)",
         "<rootDir>/packages/codemirror-blocks/**/?(*-)+(spec|test).[tj]s?(x)",
+        "<rootDir>/packages/cmb-toolkit/**/?(*-)+(spec|test).[tj]s?(x)",
       ],
+      // (runs in Node, below)
+      testPathIgnorePatterns: ["/node_modules/", "/cmb-toolkit/spec/webpack-"],
+    },
+    {
+      // the webpack configurations are for Node, and webpack needs APIs that
+      // jsdom does not have, so no browser environment and no DOM setup
+      ...sharedConfig,
+      displayName: "toolkit-webpack",
+      testEnvironment: "node",
+      setupFilesAfterEnv: [],
+      testMatch: ["<rootDir>/packages/cmb-toolkit/spec/webpack-test.ts"],
     },
     {
       ...sharedConfig,

@@ -29,7 +29,8 @@
     "typescript": "^6.0.3"
   },
   "scripts": {
-    "prepare": "npx tsc"
+    "prepare": "npx tsc",
+    "typecheck": "tsc -p . --noEmit && tsc -p spec --noEmit"
   },
   "author": "The Bootstrap Team",
   "repository": "github:bootstrapworld/codemirror-blocks",
