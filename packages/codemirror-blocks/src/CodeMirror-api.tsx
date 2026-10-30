@@ -353,15 +353,24 @@ const buildBlockModeAPI = (
      * state from the block editor
      */
     listSelections: () => {
-      const selections = selectors.getSelectedNodes(store.getState());
-      const tmpCM = getTempCM(codemirror);
-      // write all the ranges for all selected nodes
-      selections.forEach((node) => tmpCM.addSelection(node.from, node.to));
-      // write all the existing selection ranges
-      codemirror
+      const nodes = selectors.getSelectedNodes(store.getState());
+      // Selecting a block does not move the text editor's own cursor, which is
+      // left wherever it was (CodeMirror refuses an empty list of ranges). With
+      // blocks selected that cursor is not a selection, so leave it out: it
+      // would be replaced along with the block, and read as an empty range.
+      // Text that is really selected (between blocks) stays.
+      const textRanges = codemirror
         .listSelections()
-        .map((s) => tmpCM.addSelection(s.anchor, s.head));
-      // return all the selections
+        .filter((s) => !nodes.length || poscmp(s.anchor, s.head) !== 0);
+      const ranges = [
+        ...nodes.map((node) => ({ anchor: node.from, head: node.to })),
+        ...textRanges.map((s) => ({ anchor: s.anchor, head: s.head })),
+      ];
+      if (!ranges.length) {
+        return codemirror.listSelections();
+      }
+      const tmpCM = getTempCM(codemirror);
+      tmpCM.setSelections(ranges);
       return tmpCM.listSelections();
     },
     replaceRange: (text, from, to, origin) => {

@@ -19,6 +19,8 @@ const selected = (cmb: API) => cmb.getSelectedNodes().map(String);
 let cmb: API;
 beforeEach(() => {
   cmb = mountCMB(wescheme).cmb;
+  // loaded in text mode and then switched to blocks, which leaves the cursor
+  // at the end of the document
   cmb.setValue("(+ 1 2)\n\n(- 3 4)\nx");
   cmb.setBlockMode(true);
 });
@@ -49,13 +51,59 @@ describe("marking text", () => {
   });
 });
 
-// (a block selection in this editor also keeps a cursor, at the end of the
-// document, so these tests look at the block and not at how many ranges there are)
+describe("selecting a block", () => {
+  it("makes the block the only selection, not one of two with the cursor", () => {
+    // the cursor is at the end of the document; selecting a block used to
+    // leave it in the list as a second, empty range
+    expect(simple(cmb.getCM().getCursor())).toEqual(pos(3, 1));
+    cmb.setSelection(pos(0, 0), pos(0, 7));
+    expect(ranges(cmb)).toEqual([{ anchor: pos(0, 0), head: pos(0, 7) }]);
+    expect(cmb.getSelections()).toEqual(["(+ 1 2)"]);
+    expect(selected(cmb)).toEqual(["(+ 1 2)"]);
+  });
+
+  it("makes several blocks several selections, and nothing else", () => {
+    cmb.setSelections([
+      { anchor: pos(0, 0), head: pos(0, 7) },
+      { anchor: pos(2, 0), head: pos(2, 7) },
+    ]);
+    expect(ranges(cmb)).toEqual([
+      { anchor: pos(0, 0), head: pos(0, 7) },
+      { anchor: pos(2, 0), head: pos(2, 7) },
+    ]);
+    expect(cmb.getSelections()).toEqual(["(+ 1 2)", "(- 3 4)"]);
+  });
+
+  it("replaceSelection replaces the block and inserts nothing at the cursor", () => {
+    cmb.setSelection(pos(0, 0), pos(0, 7));
+    cmb.replaceSelection("(* 5 6)");
+    expect(cmb.getValue()).toBe("(* 5 6)\n\n(- 3 4)\nx");
+  });
+
+  it("keeps the cursor as the selection when no block is selected", () => {
+    cmb.setCursor(pos(1, 0));
+    expect(ranges(cmb)).toEqual([{ anchor: pos(1, 0), head: pos(1, 0) }]);
+  });
+
+  it("keeps text that is selected between blocks, next to a selected block", () => {
+    // the text from the end of the first block to the start of the empty line
+    cmb.setSelections([
+      { anchor: pos(2, 0), head: pos(2, 7) },
+      { anchor: pos(0, 7), head: pos(1, 0) },
+    ]);
+    expect(ranges(cmb)).toEqual([
+      { anchor: pos(0, 7), head: pos(1, 0) },
+      { anchor: pos(2, 0), head: pos(2, 7) },
+    ]);
+    expect(selected(cmb)).toEqual(["(- 3 4)"]);
+  });
+});
+
 describe("extending a selection", () => {
   beforeEach(() => {
     cmb.setValue("(+ 1 2)\n\n(- 3 4)");
     cmb.setSelection(pos(0, 0), pos(0, 7));
-    // a second range: the block selection often comes with a cursor
+    // a second range, which CodeMirror needs the extension to cope with
     cmb.addSelection(pos(2, 7));
   });
 

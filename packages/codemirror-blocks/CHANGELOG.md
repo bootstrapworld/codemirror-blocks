@@ -70,6 +70,12 @@ http://keepachangelog.com/
 
 ### Fixed
 
+- In block mode, the text editor's own cursor is no longer reported as a second
+  selection next to a selected block. `listSelections()` and `getSelections()`
+  used to return an extra empty range (and `getSelection()` a trailing
+  separator), and `replaceSelection()` also inserted the new text at the
+  cursor. `extendSelection()` no longer throws when the selection has more than
+  one range.
 - Pretty-printing deeply nested code no longer takes exponential time: a
   537-byte expression in the examples took about 4 seconds to print (on every
   mode switch, edit and paste that reached it) and now takes under a
