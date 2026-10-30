@@ -98,9 +98,10 @@
     "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\"",
     "build-watch": "npm run build -- --watch",
     "build-types": "npx tsc",
-    "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit",
+    "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit && tsc -p e2e --noEmit",
     "build-types-watch": "npx tsc --watch",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:e2e": "playwright test"
   },
   "author": "The Bootstrap Team",
   "repository": "github:bootstrapworld/codemirror-blocks",

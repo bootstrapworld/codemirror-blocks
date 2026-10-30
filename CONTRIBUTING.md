@@ -12,5 +12,9 @@ can discuss it there.
 2. Write new unit tests for your change and make sure it covers
    your modified code by running `npm test -- --coverage` and looking
    at the output in `.coverage/lcov-report/index.html`
-3. If you are adding a feature, make sure it is documented in the relevant `README.md` file (or in `doc/`).
-4. Update the `CHANGELOG.md` file to reflect your change.
+3. If your change touches focus, scrolling, drag and drop, the clipboard or
+   typing, also run the browser tests with `npm run test:e2e`. The first time,
+   install the browser with `npx playwright install chromium`. jsdom (used by
+   `npm test`) can't reproduce these; see `doc/internal/test-plan.md`.
+4. If you are adding a feature, make sure it is documented in the relevant `README.md` file (or in `doc/`).
+5. Update the `CHANGELOG.md` file to reflect your change.

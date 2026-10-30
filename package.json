@@ -16,10 +16,12 @@
     "test-watch": "jest --watch",
     "lint": "eslint .",
     "typecheck": "npm run typecheck --workspace=codemirror-blocks",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:e2e": "npm run test:e2e --workspace=codemirror-blocks"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^20.19.43",
     "eslint": "^9.39.0",
     "eslint-config-prettier": "^10.1.8",

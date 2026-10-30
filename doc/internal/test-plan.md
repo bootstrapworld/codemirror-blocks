@@ -230,11 +230,30 @@ the trash can using a stale editor) would each have been caught by 1, 3 or 5.
 
 ## 13. What jsdom can't cover
 
-Scrolling, CodeMirror's viewport virtualization, and real drag events. Some bugs
-need a long document in a real browser. A small browser-driven suite (Playwright
-or similar) against the example page should cover: real drag to the trash,
-delete then undo in a long document, mode toggle then edit, and typing at top
-level. Everything else can stay in jest.
+**Status:** implemented as a Playwright suite in `packages/codemirror-blocks/e2e`
+(`npm run test:e2e`, Chromium, driving the example page; its CI job is
+`.github/workflows/e2e.yml`).
+
+jsdom has no layout (so CodeMirror never scrolls or drops lines from the page),
+reports focus loosely, has no native drag and drop, no real clipboard and no
+real selections, and its key and input events are synthetic. The jsdom specs
+work around that with mocks (the viewport size, `elementFromPoint`,
+`coordsChar`, the clipboard, `hasFocus`), and every mock is a place a spec can
+pass without testing the real mechanism. Bugs this found that jsdom could not:
+focus and scroll after undoing a delete, the hidden paste buffer keeping
+keyboard focus, and focus falling to the page body when the last block goes.
+
+- `matrix.e2e.ts`: the same 16 edit types as `undo-matrix-test.ts`, done with real
+  clicks, keys, drops and the real clipboard, each then undone and redone by
+  keyboard. A failure here with a passing jsdom twin means jsdom hid a bug.
+- `delete-undo.e2e.ts`, `trash-can.e2e.ts`, `typing.e2e.ts`: the specific
+  regressions, long documents, and real typing at the top level (including
+  typing over a selection).
+
+Drags: Playwright's native drag emulation is reliable for the trash can
+(`dragWithMouse`) but not for small blocks, so those use `dragWithEvents`, which
+dispatches real DOM drag events in the page against the real layout. Not
+covered: Firefox and WebKit, touch input, and IME.
 
 ## Suggested order
 

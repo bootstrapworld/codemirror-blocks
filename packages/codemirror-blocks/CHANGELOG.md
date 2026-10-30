@@ -20,6 +20,13 @@ http://keepachangelog.com/
   `lib/languages/lambda`, `lib/languages/example`) are exported; other paths
   can no longer be imported.
 - TypeScript is now checked with `strict` enabled.
+- Fixed several keyboard and focus bugs: after undoing a delete the view no
+  longer jumps and focus stays on a block; after pasting, focus returns to where
+  it was instead of staying in a hidden text area (which broke undo); focus no
+  longer falls to the page when the last block is removed; undo and redo keep the
+  AST in step with the text; and the trash can no longer edits a stale editor
+  after a mode switch.
+- Added a browser test suite (`npm run test:e2e`, Playwright).
 - `Language.getExceptionMessage` may return a `string` or an `Error`.
 - The store is updated purely: `undoableAction` and `actionFocus` are readonly and
   change through the new `SET_UNDOABLE_ACTION` / `SET_ACTION_FOCUS` actions.
