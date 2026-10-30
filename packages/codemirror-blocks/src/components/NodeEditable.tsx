@@ -66,15 +66,13 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
 
     const ast = useSelector(selectors.getAST);
 
-    const { initialValue, isErrored } = useSelector((state: RootState) => {
-      const nodeId = props.target.node ? props.target.node.id : "editing";
-      const isErrored = selectors.getErrorId(state) == nodeId;
-
-      const initialValue =
-        props.value === null ? props.target.getText(ast, props.editor) : "";
-
-      return { isErrored, initialValue };
-    });
+    // select a primitive so that react-redux can tell when it hasn't changed
+    const nodeId = props.target.node ? props.target.node.id : "editing";
+    const isErrored = useSelector(
+      (state: RootState) => selectors.getErrorId(state) == nodeId
+    );
+    const initialValue =
+      props.value === null ? props.target.getText(ast, props.editor) : "";
 
     // select and focus the element on mount
     useEffect(() => {
