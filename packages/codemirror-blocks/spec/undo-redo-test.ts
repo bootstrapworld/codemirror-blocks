@@ -10,6 +10,7 @@ import {
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
 import { fireEvent } from "@testing-library/react";
+import CodeMirror from "codemirror";
 
 let cmb: API;
 
@@ -130,5 +131,27 @@ describe("the AST stays in sync with the text", () => {
     redo(currentFirstRoot());
     expect(cmb.getValue()).toEqual("\nB\n");
     expect(astText()).toEqual("B");
+  });
+});
+
+describe("when the text editor does not have focus", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it("doesn't reclaim it (and scroll away) after deleting a block", () => {
+    cmb.setValue(`A\nB\n`);
+    cmb.clearHistory();
+    const first = currentFirstRoot();
+    mouseDown(first);
+    keyDown(" ", {}, first);
+
+    // Deleting moves the parked cursor. Taking focus for the text editor in
+    // response scrolls the view to that cursor, which can virtualize away the
+    // focused block and strand keys like Cmd-Z.
+    jest.spyOn(CodeMirror.prototype, "hasFocus").mockReturnValue(false);
+    const focus = jest.spyOn(CodeMirror.prototype, "focus");
+    keyDown("Delete", {}, first);
+
+    expect(cmb.getValue()).toEqual("\nB\n");
+    expect(focus).not.toHaveBeenCalled();
   });
 });
