@@ -268,6 +268,21 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   }, [editor, focusedNode?.id, props.node.id, editable]);
 
+  // An edit can re-create this node's codemirror widget without changing its
+  // id (e.g. dropping a node elsewhere). The browser then drops focus, and
+  // since the focused id didn't change, the effect above doesn't rerun. If
+  // focus is stranded on the body or the screenreader placeholder, take it back.
+  useEffect(() => {
+    const active = document.activeElement;
+    const stranded =
+      !active ||
+      active === document.body ||
+      active.id === "SR_fix_for_slow_dom";
+    if (stranded && focusedNode?.id === props.node.id) {
+      nodeElementRef.current?.focus();
+    }
+  });
+
   if (editable) {
     if (!editor) {
       throw new Error("can't edit nodes before codemirror has mounted");

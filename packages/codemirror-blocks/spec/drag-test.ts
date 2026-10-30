@@ -148,6 +148,9 @@ it("saves collapsed state when dragging a root node to be the last child of the 
     "aria-expanded",
     "false"
   );
+  // the dropped node's widget was re-created; keyboard focus must stay on a
+  // block, not be stranded on the body or the screenreader placeholder
+  expect(document.activeElement).toHaveAttribute("role", "treeitem");
 });
 
 describe("corner cases", () => {

@@ -6,7 +6,7 @@ import {
 } from "../CodeMirrorBlocks";
 import { act, cleanup, render } from "@testing-library/react";
 import React from "react";
-import { createAppStore } from "../state/store";
+import { AppStore, createAppStore } from "../state/store";
 // pass along all the simulated events
 export * from "@bootstrapworld/cmb-toolkit/lib/simulate";
 
@@ -28,7 +28,15 @@ export async function wait(ms: number) {
   });
 }
 
+let mounted: { cmb: API; store: AppStore } | undefined;
+
+/**
+ * The editor most recently created by {@link mountCMB} and not yet torn down.
+ */
+export const getMountedCMB = () => mounted;
+
 export function teardown() {
+  mounted = undefined;
   cleanup();
   const rootNode = document.getElementById("root");
   if (rootNode) {
@@ -107,6 +115,7 @@ export function mountCMB(language: Language) {
     { container }
   );
   cmb.setBlockMode(true);
+  mounted = { cmb, store };
   return { cmb, store };
 }
 

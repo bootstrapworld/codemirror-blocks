@@ -55,3 +55,43 @@ window.DataTransfer = MockDataTransfer as typeof window.DataTransfer;
 
 window.HTMLMediaElement.prototype.play = jest.fn();
 window.HTMLMediaElement.prototype.pause = jest.fn();
+
+// After every test that mounts an editor, check the properties that must hold
+// whatever the test did. Tests that deliberately leave the editor in an
+// unusual state can call `skipInvariants()`.
+let invariantsSkipped = false;
+export const skipInvariants = () => {
+  invariantsSkipped = true;
+};
+
+afterEach(() => {
+  const skipped = invariantsSkipped;
+  invariantsSkipped = false;
+  // only editors created by mountCMB() are checked
+  if (!skipped && document.getElementById("cmb-editor")) {
+    // required lazily: importing the editor must wait until the DOM mocks
+    // above are in place
+    const { findInvariantViolations } = require("./helpers/invariants");
+    expect(findInvariantViolations()).toEqual([]);
+  }
+});
+
+// Fail any test that makes React (or the editor) log an error. React reports
+// most misuse (bad keys, setState during render, act() warnings) this way.
+// Tests that expect errors can call `allowConsoleErrors()`.
+let consoleErrorsAllowed = false;
+export const allowConsoleErrors = () => {
+  consoleErrorsAllowed = true;
+};
+let errorSpy: jest.SpyInstance;
+beforeEach(() => {
+  consoleErrorsAllowed = false;
+  errorSpy = jest.spyOn(console, "error");
+});
+afterEach(() => {
+  const calls = errorSpy.mock.calls.map((args) => args.map(String).join(" "));
+  errorSpy.mockRestore();
+  if (!consoleErrorsAllowed) {
+    expect(calls).toEqual([]);
+  }
+});

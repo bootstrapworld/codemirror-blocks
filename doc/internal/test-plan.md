@@ -180,6 +180,11 @@ the editor. Coverage: `Toolbar-test` 🟡; drag out ❌.
 
 ## 12. Properties that should hold after every operation
 
+**Status:** implemented in `spec/helpers/invariants.ts` and run after every test
+that uses `mountCMB` (see `spec/globalSetup.ts`). Property 8 is enforced for
+`console.error` in every test. Randomized operation sequences are not written
+yet.
+
 Candidates for a model-based or randomized test that runs a sequence of random
 operations and checks these at each step.
 
