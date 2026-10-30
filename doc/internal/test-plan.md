@@ -1,0 +1,214 @@
+# Test plan: interactions to cover
+
+An inventory of every way a user (or the API) can change the document or the
+editor state, with what the test suite covers today. It was built from the
+source (`keymap.tsx`, `edits/performEdits.ts`, `state/actions.ts`, the
+components, `copypaste.ts` and the API). Coverage comes from existing spec names
+and keyword searches, not from reading every test body, so treat it as a first
+pass and correct it as specs are written.
+
+Legend: ✅ covered, 🟡 partial, ❌ none.
+
+## 1. Every way the document can change
+
+Each of these is a separate path into `performEdits`/`commitChanges`, or straight
+into CodeMirror.
+
+| #   | Entry point                                                                  | Edit used                                                                | Coverage                       |
+| --- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------ |
+| 1   | Delete/Backspace on selected nodes                                           | `edit_delete` per node, root or child                                    | 🟡 a few cases in `focus-test` |
+| 2   | Cut (Ctrl/Cmd-X)                                                             | copy, then `edit_delete`                                                 | 🟡 only "removes selected"     |
+| 3   | Paste (Ctrl/Cmd-V) on a node, three cases                                    | replace selected node; overwrite beside a root; insert into parent field | ❌                             |
+| 4   | Paste Before (Shift-Ctrl/Cmd-V)                                              | same three cases, before the node                                        | ❌                             |
+| 5   | Edit an existing node (Enter, click, double-click, Cmd-Enter)                | `ReplaceNodeTarget`                                                      | 🟡                             |
+| 6   | Insert via Ctrl-[ / Ctrl-] into an adjacent drop target                      | `InsertTarget`                                                           | 🟡                             |
+| 7   | Type at top level (whitespace)                                               | quarantine, then `OverwriteTarget`                                       | 🟡                             |
+| 8   | Paste at top level (text-editor paste event)                                 | quarantine with pasted text                                              | ❌                             |
+| 9   | Drag a node onto another node                                                | delete source plus `ReplaceNodeTarget`                                   | 🟡                             |
+| 10  | Drag a node onto a drop target                                               | delete source plus `InsertTarget`                                        | ❌                             |
+| 11  | Drag a node onto editor whitespace                                           | delete source plus `OverwriteTarget`                                     | ❌                             |
+| 12  | Drag a toolbar primitive onto the same three targets                         | insert only                                                              | ❌                             |
+| 13  | Drag a node to the trash can                                                 | `deleteASTNode`                                                          | 🟡 `TrashCan-test`             |
+| 14  | Undo / redo                                                                  | CodeMirror history plus AST re-commit                                    | 🟡                             |
+| 15  | Public API: `setValue`, `replaceRange`, `replaceSelection(s)`, `undo`/`redo` | direct CodeMirror changes                                                | 🟡 `api-test`                  |
+| 16  | Plain text edits in text mode, then toggling to blocks                       | `setBlockMode` re-parse                                                  | 🟡                             |
+
+## 2. Edit primitives (`performEdits.ts`)
+
+| Case                                                                 | Coverage               |
+| -------------------------------------------------------------------- | ---------------------- |
+| Insert, overwrite, delete and replace on a root node                 | 🟡 `performEdits-test` |
+| Insert, delete and replace on a child node                           | 🟡                     |
+| Several edits grouped under one ancestor become one text change      | ❌                     |
+| Several edits at once, sorted last to first                          | ❌                     |
+| Whitespace removal around a deleted node (first, middle, last, only) | ❌                     |
+| Nodes with a leading comment, edited or deleted                      | 🟡 `comment-test`      |
+| Focus hint per edit type                                             | 🟡 `focus-test`        |
+| Invalid result is rejected: text and AST both left unchanged         | ❌                     |
+| Required blank filled, then deleted again                            | 🟡                     |
+
+## 3. Drag-and-drop matrix
+
+Sources: root block, child block, collapsed block, block with a comment,
+multi-node selection, toolbar primitive.
+
+Targets: another node, a drop target between children, empty-argument drop
+target, editor whitespace, trash can, outside the editor.
+
+Test each pair for the result text, the AST, focus afterwards, collapsed state
+carried over, and undo. Also:
+
+- Drop inside the source's own subtree (should do nothing).
+- Drop on itself.
+- Drop onto a locked (non-editable) node.
+- Drag cancelled with no drop (Esc, or release elsewhere).
+- Dragging while in text mode, or while a quarantine is active.
+- `blocks-over-target` class on enter and leave.
+
+Coverage today: `drag-test` (11 tests, mostly node-onto-node) and `TrashCan-test`.
+The drop-target, whitespace and toolbar rows are untested.
+
+## 4. Keyboard commands
+
+| Group         | Commands                                                                                           | Coverage                                             |
+| ------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Navigation    | Down, Up, Home, End, Left, Right, Shift-Left/Right, Shift-Alt-Left/Right, `Shift-,` (Jump to Root) | ✅ mostly                                            |
+| Reading aloud | `\` (Read Ancestors), `Shift-\` (Read Children)                                                    | ❌                                                   |
+| Focus         | Shift-Tab to the toolbar                                                                           | ❌                                                   |
+| Editing       | Enter, Cmd-Enter (Edit Anything), Ctrl-[ / Ctrl-]                                                  | 🟡                                                   |
+| Selection     | Space, Esc, Ctrl-Esc, Alt-Q                                                                        | ✅                                                   |
+| Delete        | Delete, Backspace                                                                                  | 🟡 Backspace untested                                |
+| Clipboard     | Copy, Cut, Paste, Paste Before                                                                     | 🟡 only Cut                                          |
+| History       | Undo, Redo (Cmd-Y, Shift-Cmd-Z, Ctrl-Y variants)                                                   | 🟡                                                   |
+| Help          | Shift-Ctrl-/                                                                                       | ❌                                                   |
+| Search        | PageUp/PageDown, F3, Ctrl-F                                                                        | search is disabled; one test that the keys are inert |
+
+Each command should also be tested at top level (no node focus, `isNodeEnv`
+false), where most do nothing.
+
+## 5. Editing UI
+
+- **Existing node edit:** commit on Enter, blur, and click-away. Cancel on Esc or
+  Alt-Q. An unchanged or empty value restores the original. Invalid input sets
+  the error id and stays editable. A later valid value clears the error.
+- **Top-level quarantine:** typing into empty space, between blocks, at the line
+  start and end, on an empty document, with a selection active, and with a
+  modifier key pressed. Then commit, cancel and invalid input.
+- **Insertion inside an empty node** (`(f)`) and inside empty argument lists.
+- **Drop-target editing:** double-click or Ctrl-[ / Ctrl-] activates it, and
+  Enter inserts.
+- **ContentEditable specifics:** paste of rich text, newlines in the value, a very
+  long value, IME input.
+
+Coverage: `new-blocks-test`, `NodeEditable-test` and `ContentEditable-test` cover
+the basic flows. Error recovery and the empty-document and selection-active
+cases are ❌.
+
+## 6. Focus and selection
+
+This area has produced the most bugs.
+
+- Focus after every edit type: delete first, last, only, nth; insert; replace;
+  drop; undo; redo.
+- Focus when the focused block is virtualized out of view by CodeMirror, then
+  comes back.
+- Focus is never left on `SR_fix_for_slow_dom`; keys always reach a handler.
+- Cursor and scroll don't jump after an edit made from a block.
+- Mouse click on a block, a literal (enters edit mode), the editor whitespace,
+  and a collapsed block.
+- Selection pruning when selected nodes are deleted, replaced or undone.
+- Toolbar focus and return.
+
+Coverage: `focus-test` (7 tests), `activation-test` (35). Virtualization and long
+documents ❌.
+
+## 7. Clipboard
+
+- **Copy:** single node, selection, no selection (copies the focused node),
+  ordering by position, joining with a space, newline joining around commented
+  nodes.
+- **Cut:** same as copy plus deletion, and the announcement text.
+- **Paste:** replacing a selected node, beside a root, into a valid field, into an
+  invalid field (beep and message), pasted text that is invalid, multiple
+  expressions, empty clipboard, and `navigator.clipboard` missing or failing so
+  the `execCommand` fallback runs.
+- **Toolbar copy** from `PrimitiveList`.
+
+Coverage: effectively only cut.
+
+## 8. Undo and redo
+
+- Per edit type (rows 1 to 13 above), undo then redo restores text, AST, focus,
+  collapsed state and marks.
+- Multi-step sequences, undo past the beginning, redo after a new edit (redo stack
+  cleared), and undo after a mode toggle.
+- Annotation persistence on the real history.
+- Undo from a block and from the text editor; undo with focus on a block that no
+  longer exists.
+
+Coverage: `undo-redo-test`, `undo-state-test`, `editor-history-test`.
+
+## 9. Collapse, comments, other structure
+
+- Collapse and expand: single block, all, current root, via Left and Right keys,
+  double-click, and via drag.
+- Collapsed state across edits and undo.
+- `collapseAll` and `incrementalRendering` options.
+- Comments: attached to a node, nested in a child, edited, deleted with the node,
+  moved with a drag.
+- Locked (`isNotEditable`) nodes: every edit path should refuse.
+
+Coverage: collapse is ✅ for keys and 🟡 elsewhere. Comments are 🟡 (`comment-test`).
+
+## 10. Mode, lifecycle and API
+
+- Toggle text to blocks and back, with valid code, unparseable code, and a
+  quarantine open.
+- After a toggle: text, marks, AST, focus, toolbar, trash can, and the editor
+  handle used by every handler (a stale handle caused a trash can bug).
+- Mount and unmount, multiple editors on a page, re-mounting with a different
+  language.
+- Public API surface in block mode vs text mode (`api-test`): `getAst`,
+  `setBlockMode`, `getBlockMode`, `getCM`, `runMode`.
+- Language hooks: `parse` errors, `getExceptionMessage`, `primitivesFn`,
+  pretty-printing round-trip.
+
+## 11. Toolbar
+
+Search filter, arrow-key navigation, Esc, copy, drag out, and focus handoff to
+the editor. Coverage: `Toolbar-test` 🟡; drag out ❌.
+
+## 12. Properties that should hold after every operation
+
+Candidates for a model-based or randomized test that runs a sequence of random
+operations and checks these at each step.
+
+1. The document text re-parses to exactly the AST in the store.
+2. There is one text mark per root block, and each has a connected widget.
+3. Rendered blocks equal the AST's nodes (no stale or missing blocks).
+4. Node ids are unique and `nid`s are consistent.
+5. The focused node exists in the AST and its element is in the DOM.
+6. Selections only contain existing nodes.
+7. Undoing then redoing any operation returns the same state; undoing everything
+   returns the original document.
+8. No console errors or React warnings.
+
+The bugs found while modernizing (stale AST after undo, focus lost after delete,
+the trash can using a stale editor) would each have been caught by 1, 3 or 5.
+
+## 13. What jsdom can't cover
+
+Scrolling, CodeMirror's viewport virtualization, and real drag events. Some bugs
+need a long document in a real browser. A small browser-driven suite (Playwright
+or similar) against the example page should cover: real drag to the trash,
+delete then undo in a long document, mode toggle then edit, and typing at top
+level. Everything else can stay in jest.
+
+## Suggested order
+
+1. The invariant harness (section 12), run after each operation in the existing
+   specs.
+2. The untested entry points: paste (rows 3, 4, 8), drag to drop target and
+   whitespace (10, 11), toolbar drag (12).
+3. Keyboard commands with no test, and error recovery (invalid edits).
+4. The browser suite for section 13.
