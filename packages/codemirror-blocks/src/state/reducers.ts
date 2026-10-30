@@ -107,12 +107,18 @@ function reduce(state = initialState(), action: AppAction): RootState {
         return { ...state, focusId: action.focusId };
       }
       return state;
-    case "SET_AST":
+    case "SET_AST": {
+      // forget everything that points at nodes the new AST no longer has
+      const exists = (id: string) => !!action.ast.getNodeById(id);
       return {
         ...state,
         astData: action.ast.data,
-        collapsedList: state.collapsedList.filter(action.ast.getNodeById),
+        collapsedList: state.collapsedList.filter(exists),
+        selections: state.selections.filter(exists),
+        focusId:
+          state.focusId && exists(state.focusId) ? state.focusId : undefined,
       };
+    }
     case "SET_SELECTIONS":
       return { ...state, selections: action.selections };
     case "SET_EDITABLE":

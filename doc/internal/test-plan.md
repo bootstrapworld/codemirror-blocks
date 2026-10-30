@@ -14,38 +14,38 @@ Legend: ✅ covered, 🟡 partial, ❌ none.
 Each of these is a separate path into `performEdits`/`commitChanges`, or straight
 into CodeMirror.
 
-| #   | Entry point                                                                  | Edit used                                                                | Coverage                    |
-| --- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------- |
-| 1   | Delete/Backspace on selected nodes                                           | `edit_delete` per node, root or child                                    | ✅ `keyboard-commands-test` |
-| 2   | Cut (Ctrl/Cmd-X)                                                             | copy, then `edit_delete`                                                 | 🟡 only "removes selected"  |
-| 3   | Paste (Ctrl/Cmd-V) on a node, three cases                                    | replace selected node; overwrite beside a root; insert into parent field | ✅ `paste-test`             |
-| 4   | Paste Before (Shift-Ctrl/Cmd-V)                                              | same three cases, before the node                                        | ✅ `paste-test`             |
-| 5   | Edit an existing node (Enter, click, double-click, Cmd-Enter)                | `ReplaceNodeTarget`                                                      | ✅ `edit-errors-test`       |
-| 6   | Insert via Ctrl-[ / Ctrl-] into an adjacent drop target                      | `InsertTarget`                                                           | ✅ `edit-errors-test`       |
-| 7   | Type at top level (whitespace)                                               | quarantine, then `OverwriteTarget`                                       | ✅ `toplevel-input-test`    |
-| 8   | Paste at top level (text-editor paste event)                                 | quarantine with pasted text                                              | ✅ `toplevel-input-test`    |
-| 9   | Drag a node onto another node                                                | delete source plus `ReplaceNodeTarget`                                   | 🟡                          |
-| 10  | Drag a node onto a drop target                                               | delete source plus `InsertTarget`                                        | ✅ `drag-test`              |
-| 11  | Drag a node onto editor whitespace                                           | delete source plus `OverwriteTarget`                                     | ✅ `drop-targets-test`      |
-| 12  | Drag a toolbar primitive onto the same three targets                         | insert only                                                              | ✅ `drop-targets-test`      |
-| 13  | Drag a node to the trash can                                                 | `deleteASTNode`                                                          | 🟡 `TrashCan-test`          |
-| 14  | Undo / redo                                                                  | CodeMirror history plus AST re-commit                                    | 🟡                          |
-| 15  | Public API: `setValue`, `replaceRange`, `replaceSelection(s)`, `undo`/`redo` | direct CodeMirror changes                                                | 🟡 `api-test`               |
-| 16  | Plain text edits in text mode, then toggling to blocks                       | `setBlockMode` re-parse                                                  | 🟡                          |
+| #   | Entry point                                                                  | Edit used                                                                | Coverage                            |
+| --- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------- |
+| 1   | Delete/Backspace on selected nodes                                           | `edit_delete` per node, root or child                                    | ✅ `keyboard-commands-test`         |
+| 2   | Cut (Ctrl/Cmd-X)                                                             | copy, then `edit_delete`                                                 | ✅ `paste-test`, `undo-matrix-test` |
+| 3   | Paste (Ctrl/Cmd-V) on a node, three cases                                    | replace selected node; overwrite beside a root; insert into parent field | ✅ `paste-test`                     |
+| 4   | Paste Before (Shift-Ctrl/Cmd-V)                                              | same three cases, before the node                                        | ✅ `paste-test`                     |
+| 5   | Edit an existing node (Enter, click, double-click, Cmd-Enter)                | `ReplaceNodeTarget`                                                      | ✅ `edit-errors-test`               |
+| 6   | Insert via Ctrl-[ / Ctrl-] into an adjacent drop target                      | `InsertTarget`                                                           | ✅ `edit-errors-test`               |
+| 7   | Type at top level (whitespace)                                               | quarantine, then `OverwriteTarget`                                       | ✅ `toplevel-input-test`            |
+| 8   | Paste at top level (text-editor paste event)                                 | quarantine with pasted text                                              | ✅ `toplevel-input-test`            |
+| 9   | Drag a node onto another node                                                | delete source plus `ReplaceNodeTarget`                                   | 🟡                                  |
+| 10  | Drag a node onto a drop target                                               | delete source plus `InsertTarget`                                        | ✅ `drag-test`                      |
+| 11  | Drag a node onto editor whitespace                                           | delete source plus `OverwriteTarget`                                     | ✅ `drop-targets-test`              |
+| 12  | Drag a toolbar primitive onto the same three targets                         | insert only                                                              | ✅ `drop-targets-test`              |
+| 13  | Drag a node to the trash can                                                 | `deleteASTNode`                                                          | 🟡 `TrashCan-test`                  |
+| 14  | Undo / redo                                                                  | CodeMirror history plus AST re-commit                                    | ✅ `undo-matrix-test`               |
+| 15  | Public API: `setValue`, `replaceRange`, `replaceSelection(s)`, `undo`/`redo` | direct CodeMirror changes                                                | 🟡 `api-test`                       |
+| 16  | Plain text edits in text mode, then toggling to blocks                       | `setBlockMode` re-parse                                                  | 🟡                                  |
 
 ## 2. Edit primitives (`performEdits.ts`)
 
-| Case                                                                 | Coverage                    |
-| -------------------------------------------------------------------- | --------------------------- |
-| Insert, overwrite, delete and replace on a root node                 | 🟡 `performEdits-test`      |
-| Insert, delete and replace on a child node                           | 🟡                          |
-| Several edits grouped under one ancestor become one text change      | ❌                          |
-| Several edits at once, sorted last to first                          | ❌                          |
-| Whitespace removal around a deleted node (first, middle, last, only) | ❌                          |
-| Nodes with a leading comment, edited or deleted                      | 🟡 `comment-test`           |
-| Focus hint per edit type                                             | ✅ `keyboard-commands-test` |
-| Invalid result is rejected: text and AST both left unchanged         | ❌                          |
-| Required blank filled, then deleted again                            | 🟡                          |
+| Case                                                                 | Coverage                                   |
+| -------------------------------------------------------------------- | ------------------------------------------ |
+| Insert, overwrite, delete and replace on a root node                 | ✅ `performEdits-test`                     |
+| Insert, delete and replace on a child node                           | ✅ `performEdits-test`                     |
+| Several edits grouped under one ancestor become one text change      | ✅ `performEdits-test`                     |
+| Several edits at once, sorted last to first                          | ✅ `performEdits-test`                     |
+| Whitespace removal around a deleted node (first, middle, last, only) | ✅ `performEdits-test`                     |
+| Nodes with a leading comment, edited or deleted                      | 🟡 `comment-test`                          |
+| Focus hint per edit type                                             | ✅ `keyboard-commands-test`                |
+| Invalid result is rejected: text and AST both left unchanged         | ✅ `performEdits-test`, `edit-errors-test` |
+| Required blank filled, then deleted again                            | 🟡                                         |
 
 ## 3. Drag-and-drop matrix
 
@@ -152,7 +152,10 @@ fallback runs, and toolbar copy.
 - Undo from a block and from the text editor; undo with focus on a block that no
   longer exists.
 
-Coverage: `undo-redo-test`, `undo-state-test`, `editor-history-test`.
+Coverage: `undo-matrix-test` runs every edit type of section 1 through undo, redo,
+API undo, a new edit after undo, and focus after undo; `undo-redo-test`,
+`undo-state-test` and `editor-history-test` cover the machinery. Not covered:
+undo after a mode toggle, and the exact node chosen for focus afterwards.
 
 ## 9. Collapse, comments, other structure
 

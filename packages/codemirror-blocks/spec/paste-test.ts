@@ -8,6 +8,7 @@ import {
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
+import { act } from "@testing-library/react";
 import { installFakeClipboard } from "./helpers/clipboard";
 
 let cmb: API;
@@ -210,5 +211,34 @@ describe("cut", () => {
     keyDown("X", cmd_ctrl, x);
     expect(cmb.getValue()).toBe("(f x y)");
     expect(clipboard.text).toBe("");
+  });
+});
+
+describe("copying from the toolbar", () => {
+  const primitive = (name: string) =>
+    [...document.querySelectorAll(".Primitive")].find(
+      (el) => el.textContent === name
+    ) as HTMLElement;
+
+  it("copies a primitive, ready to paste into the document", () => {
+    cmb.setValue("(f x)");
+    const sqrt = primitive("sqrt");
+    act(() => sqrt.focus());
+    keyDown("C", cmd_ctrl, sqrt);
+    expect(clipboard.text).toContain("sqrt");
+
+    const x = argsOf(root(0))[0];
+    mouseDown(x);
+    keyDown(" ", {}, x);
+    paste(x);
+    expect(cmb.getValue()).toContain("sqrt");
+  });
+
+  it("doesn't change the document", () => {
+    cmb.setValue("(f x)");
+    const sqrt = primitive("sqrt");
+    act(() => sqrt.focus());
+    keyDown("C", cmd_ctrl, sqrt);
+    expect(cmb.getValue()).toBe("(f x)");
   });
 });

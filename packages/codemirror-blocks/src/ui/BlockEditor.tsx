@@ -16,7 +16,7 @@ import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext } from "../components/Context";
-import { CodeMirrorFacade, Pos, ReadonlyCMBEditor } from "../editor";
+import { CMBEditor, CodeMirrorFacade, Pos, ReadonlyCMBEditor } from "../editor";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
 import ToplevelBlock from "./ToplevelBlock";
@@ -79,10 +79,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
    * Given a CM Change Event, manually handle our own undo and focus stack
    * This is hooked up to CodeMirror's onChange; event
    */
-  const handleChange = (
-    editor: ReadonlyCMBEditor,
-    change: CodeMirror.EditorChange
-  ) => {
+  const handleChange = (editor: CMBEditor, change: CodeMirror.EditorChange) => {
     if (isChangeObject(change)) {
       return; // trust our own changeObjects
     }
@@ -111,14 +108,21 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         const { actionFocus } = getState();
         // actionFocus will either contain an old OR new focusId
         const nextNId = actionFocus?.oldFocusNId || actionFocus?.newFocusNId;
+        // If that node is gone (e.g. undoing an insertion), focus the node
+        // nearest the change instead of letting focus fall to the page body.
         const focusHint = (newAST: AST) =>
-          typeof nextNId === "number"
+          (typeof nextNId === "number"
             ? newAST.getNodeByNId(nextNId)
-            : undefined;
+            : undefined) ?? "fallback";
         doChange(focusHint);
         dispatch(
           actions.finishUndoOrRedo(change.origin as "undo" | "redo", editor)
         );
+        // With no node left to focus, keep keyboard focus in the editor so
+        // that redo (and typing) still work.
+        if (!selectors.getFocusedNode(getState())) {
+          editor.focus();
+        }
       } else {
         dispatch(actions.setUndoableAction(annt));
         doChange();

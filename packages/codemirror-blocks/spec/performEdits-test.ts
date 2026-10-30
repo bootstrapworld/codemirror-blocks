@@ -1,5 +1,5 @@
 import CodeMirror from "codemirror";
-import { AST } from "../src/ast";
+import { AST, ASTNode } from "../src/ast";
 import { CodeMirrorFacade } from "../src/editor";
 import {
   applyEdits,
@@ -257,5 +257,181 @@ describe("performEdits", () => {
     const result = store.dispatch(perform([edit]));
     expect(result.successful).toBe(false);
     expect(editor.getValue()).toEqual(initialCode);
+  });
+});
+
+describe("applyEdits on small documents", () => {
+  const kids = (node: ASTNode) => [...node.children()];
+  /** apply `make(ast)` to `code`; returns the resulting text */
+  const edited = (code: string, make: (ast: AST) => EditInterface[]) => {
+    setCode(code);
+    const result = apply(make(ast));
+    if (!result.successful) {
+      throw result.exception;
+    }
+    return editor.getValue();
+  };
+
+  describe("deleting a root", () => {
+    it("takes the separating space with it: first, middle, last, only", () => {
+      const del = (i: number) => (a: AST) => [edit_delete(a, a.rootNodes[i])];
+      expect(edited("a b c", del(0))).toBe("b c");
+      expect(edited("a b c", del(1))).toBe("a c");
+      expect(edited("a b c", del(2))).toBe("a b");
+      expect(edited("a", del(0))).toBe("");
+    });
+
+    it("keeps the line structure when roots are on their own lines", () => {
+      const del = (i: number) => (a: AST) => [edit_delete(a, a.rootNodes[i])];
+      expect(edited("a\nb\nc", del(0))).toBe("\nb\nc");
+      expect(edited("a\nb\nc", del(1))).toBe("a\n\nc");
+      expect(edited("a\nb\nc", del(2))).toBe("a\nb\n");
+    });
+
+    it("takes a comment above it along", () => {
+      expect(
+        edited("#| n |#\na\nb", (a) => [edit_delete(a, a.rootNodes[0])])
+      ).toBe("\nb");
+    });
+  });
+
+  describe("deleting a child", () => {
+    const child = (a: AST, i: number) => kids(a.rootNodes[0])[i];
+
+    it("removes first, last and only arguments", () => {
+      expect(edited("(f x y)", (a) => [edit_delete(a, child(a, 1))])).toBe(
+        "(f y)"
+      );
+      expect(edited("(f x y)", (a) => [edit_delete(a, child(a, 2))])).toBe(
+        "(f x)"
+      );
+      expect(edited("(f x)", (a) => [edit_delete(a, child(a, 1))])).toBe("(f)");
+    });
+
+    it("removes several siblings in one edit", () => {
+      expect(
+        edited("(f x y)", (a) => [
+          edit_delete(a, child(a, 1)),
+          edit_delete(a, child(a, 2)),
+        ])
+      ).toBe("(f)");
+    });
+
+    it("leaves a blank where a required child was", () => {
+      expect(edited("(f x y)", (a) => [edit_delete(a, child(a, 0))])).toBe(
+        "(... x y)"
+      );
+    });
+
+    it("takes the node's own trailing comment along", () => {
+      const result = edited("(f x #| c |# y)", (a) => [
+        edit_delete(a, child(a, 1)),
+      ]);
+      expect(result).not.toContain("x");
+      expect(result).toBe("(f y)");
+    });
+  });
+
+  describe("replacing", () => {
+    it("a child with several expressions", () => {
+      expect(
+        edited("(f x y)", (a) => [
+          edit_replace("1 2", a, kids(a.rootNodes[0])[1]),
+        ])
+      ).toBe("(f 1 2 y)");
+    });
+
+    it("a root with several expressions", () => {
+      expect(
+        edited("a b", (a) => [edit_replace("1 2", a, a.rootNodes[0])])
+      ).toBe("1 2 b");
+    });
+
+    it("a root with nothing", () => {
+      expect(edited("a b", (a) => [edit_replace("", a, a.rootNodes[0])])).toBe(
+        " b"
+      );
+    });
+  });
+
+  describe("inserting a child", () => {
+    const insert = (text: string, ch: number) => (a: AST) => [
+      edit_insert(text, a.rootNodes[0], "args", { line: 0, ch }),
+    ];
+    it("at the start, the end, and into an empty argument list", () => {
+      expect(edited("(f x y)", insert("z", 3))).toBe("(f z x y)");
+      expect(edited("(f x y)", insert("z", 6))).toBe("(f x y z)");
+      expect(edited("(f)", insert("z", 2))).toBe("(f z)");
+    });
+  });
+
+  describe("combining several edits", () => {
+    it("gives the same result whatever order they are listed in", () => {
+      const forward = (a: AST) => [
+        edit_replace("A", a, kids(a.rootNodes[0])[1]),
+        edit_replace("B", a, kids(a.rootNodes[0])[2]),
+      ];
+      const backward = (a: AST) => forward(a).reverse();
+      expect(edited("(f x y)", forward)).toBe("(f A B)");
+      expect(edited("(f x y)", backward)).toBe("(f A B)");
+    });
+
+    it("handles edits at different depths of the same root", () => {
+      expect(
+        edited("(f (g x) y)", (a) => {
+          const g = kids(a.rootNodes[0])[1];
+          return [
+            edit_replace("Z", a, kids(g)[1]),
+            edit_replace("Y", a, kids(a.rootNodes[0])[2]),
+          ];
+        })
+      ).toBe("(f (g Z) Y)");
+    });
+
+    it("handles edits in different roots", () => {
+      expect(
+        edited("(f x)\n(g y)", (a) => [
+          edit_replace("1", a, kids(a.rootNodes[0])[1]),
+          edit_replace("2", a, kids(a.rootNodes[1])[1]),
+        ])
+      ).toBe("(f 1)\n(g 2)");
+    });
+
+    it("handles deleting a root and a child of another root together", () => {
+      expect(
+        edited("(f x)\n(g y)", (a) => [
+          edit_delete(a, a.rootNodes[0]),
+          edit_delete(a, kids(a.rootNodes[1])[1]),
+        ])
+      ).toBe("\n(g)");
+    });
+
+    it("rejects the whole batch if any part would not parse", () => {
+      setCode("(f x y)");
+      const result = apply([
+        edit_replace("A", ast, kids(ast.rootNodes[0])[1]),
+        edit_replace("(((", ast, kids(ast.rootNodes[0])[2]),
+      ]);
+      expect(result.successful).toBe(false);
+      expect(editor.getValue()).toBe("(f x y)");
+    });
+  });
+
+  describe("overwriting a range", () => {
+    it("with nothing leaves the text alone", () => {
+      expect(
+        edited("a\n\nb", () => [
+          edit_overwrite("", { line: 1, ch: 0 }, { line: 1, ch: 0 }),
+        ])
+      ).toBe("a\n\nb");
+    });
+
+    it("across several lines", () => {
+      expect(
+        edited("a\n\n\nb", () => [
+          edit_overwrite("x", { line: 1, ch: 0 }, { line: 2, ch: 0 }),
+        ])
+      ).toBe("a\nx\nb");
+    });
   });
 });
