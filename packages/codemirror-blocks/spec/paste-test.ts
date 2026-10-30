@@ -67,6 +67,23 @@ describe("copy", () => {
     keyDown("C", cmd_ctrl, root(0));
     expect(cmb.getSelectedNodes().map((n) => n.toString())).toEqual(["a"]);
   });
+
+  it("copies a selected expression once, not again for each block inside it", () => {
+    // selecting an expression selects everything inside it, too
+    cmb.setValue("(f x y) z");
+    select(root(0));
+    expect(cmb.getSelectedNodes()).toHaveLength(4);
+    keyDown("C", cmd_ctrl, root(0));
+    expect(clipboard.text).toBe("(f x y)");
+  });
+
+  it("still copies two expressions, each once, in document order", () => {
+    cmb.setValue("(f x) (g y) (h z)");
+    select(root(2));
+    keyDown(" ", {}, root(0));
+    keyDown("C", cmd_ctrl, root(0));
+    expect(clipboard.text).toBe("(f x) (h z)");
+  });
 });
 
 describe("paste onto a selected node", () => {
@@ -191,6 +208,14 @@ describe("cut", () => {
     keyDown("X", cmd_ctrl, x);
     expect(clipboard.text).toBe("x");
     expect(cmb.getValue()).toBe("(f y)");
+  });
+
+  it("cuts a selected expression on its own, leaving its neighbours", () => {
+    cmb.setValue("(f x y) z");
+    select(root(0));
+    keyDown("X", cmd_ctrl, root(0));
+    expect(clipboard.text).toBe("(f x y)");
+    expect(cmb.getValue()).toBe("z");
   });
 
   it("cut then paste moves a node", () => {

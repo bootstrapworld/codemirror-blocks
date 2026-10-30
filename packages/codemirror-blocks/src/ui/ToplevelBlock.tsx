@@ -20,6 +20,15 @@ export const RootNodeContext = createContext<{
   marker?: BlockNodeMarker;
 }>({});
 
+// The marker each node was last drawn with.
+const markers = new WeakMap<ASTNode, BlockNodeMarker>();
+
+// CodeMirror drops a marker when the text under it is replaced, even if the new
+// text parses to the very same block (deleting a `...` placeholder, or moving a
+// block to where it already was). The AST looks unchanged then, so unless we
+// notice, the block would never be drawn again.
+const hasLiveMarker = (node: ASTNode) => Boolean(markers.get(node)?.find());
+
 const ToplevelBlock = (props: Props) => {
   const [renderPlaceholder, setRenderPlaceholder] = useState(
     props.incrementalRendering
@@ -42,6 +51,7 @@ const ToplevelBlock = (props: Props) => {
   // make a new block marker, and fill it with the portal
   const { from, to } = props.node.srcRange(); // includes the node's comment, if any
   const mark = props.editor.replaceMarkerWidget(from, to, container);
+  markers.set(props.node, mark);
 
   // set elt to a cheap placeholder, OR render the entire rootNode
   const elt = renderPlaceholder ? (
@@ -77,5 +87,6 @@ export default React.memo(
   (prevProps: Props, nextProps: Props) =>
     nextProps.incrementalRendering === prevProps.incrementalRendering &&
     nextProps.editor === prevProps.editor &&
-    areNodesEqualish(prevProps.node, nextProps.node) // didn't change
+    areNodesEqualish(prevProps.node, nextProps.node) && // didn't change
+    hasLiveMarker(prevProps.node) // and is still drawn
 );

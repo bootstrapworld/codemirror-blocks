@@ -156,10 +156,15 @@ export class FakeAstReplacement {
   findChild(newAST: AST) {
     const newParent = newAST.getNodeById(this.parent.id);
     if (!newParent) return null;
+    // Look in the *new* parent: the old one's children are not in the new AST.
+    // Reparsing can turn the parent into a different kind of node (an `if`
+    // with too many arguments is "unknown", but is a plain call once its `if`
+    // is replaced), which has no such field: then there is nothing to point at.
+    const field: unknown = this.spec.getField(newParent);
     if (this.spec instanceof List) {
-      return this.spec.getField(this.parent)[this.index];
+      return Array.isArray(field) ? (field[this.index] as ASTNode) : null;
     } else {
-      return this.spec.getField(this.parent);
+      return (field as ASTNode | null | undefined) ?? null;
     }
   }
 }

@@ -1,6 +1,7 @@
 import { AST, ASTNode } from "../../src/ast";
 import { isBlockNodeMarker } from "../../src/editor";
 import * as selectors from "../../src/state/selectors";
+import { getRoot } from "../../src/utils";
 import { getMountedCMB } from "../../src/toolkit/test-utils";
 
 /**
@@ -78,6 +79,12 @@ export function findInvariantViolations(): string[] {
   // 3. The blocks on screen match the AST: every node that isn't hidden inside
   //    a collapsed ancestor is rendered, and nothing is rendered that isn't in
   //    the AST (collapsed nodes keep their children in the DOM, hidden by css).
+  //    CodeMirror only draws the lines near the screen, so a root outside that
+  //    window (which is only a few lines tall in jsdom) isn't expected to be.
+  const viewport = cmb.getCM().getViewport();
+  const isDrawn = (root: ASTNode) =>
+    root.srcRange().from.line < viewport.to &&
+    root.srcRange().to.line >= viewport.from;
   const collapsed = new Set(state.collapsedList);
   const visibleIds = new Set<string>();
   const knownIds = new Set<string>();
@@ -102,7 +109,7 @@ export function findInvariantViolations(): string[] {
       visit(child, hidden || collapsed.has(node.id) || beingEdited);
     }
   };
-  ast.rootNodes.forEach((r) => visit(r, false));
+  ast.rootNodes.forEach((r) => visit(r, !isDrawn(r)));
   const wrapper = cmb.getCM().getWrapperElement();
   const renderedIds = new Set(
     [...wrapper.querySelectorAll('[id^="block-node-"]')].map((el) =>
@@ -120,6 +127,23 @@ export function findInvariantViolations(): string[] {
   for (const id of renderedIds) {
     if (!knownIds.has(id)) {
       violations.push(`stale block rendered for node ${id}: not in the AST`);
+    }
+  }
+
+  // 3b. A node's registered element (what focus is sent to) is the block that
+  //     is actually on the page, not a leftover from an earlier render. (While
+  //     a node is being edited, the page shows the editing box instead.)
+  for (const id of renderedIds) {
+    const node = ast.getNodeById(id);
+    const onPage = document.getElementById(`block-node-${id}`);
+    if (
+      node &&
+      node.element !== onPage &&
+      onPage?.getAttribute("contenteditable") !== "true"
+    ) {
+      violations.push(
+        `${node.type} "${node.toString()}" is registered with a block that is not the one on the page`
+      );
     }
   }
 
@@ -143,8 +167,21 @@ export function findInvariantViolations(): string[] {
   if (state.focusId && !ast.getNodeById(state.focusId)) {
     violations.push(`focused node ${state.focusId} is not in the AST`);
   }
-  if (document.activeElement?.id === "SR_fix_for_slow_dom") {
-    violations.push("keyboard focus is stranded on SR_fix_for_slow_dom");
+  const focused = state.focusId ? ast.getNodeById(state.focusId) : undefined;
+  // (A block that CodeMirror isn't drawing can't hold focus: the placeholder
+  // keeps it until the block comes back.)
+  if (
+    document.activeElement?.id === "SR_fix_for_slow_dom" &&
+    !(focused && !isDrawn(getRoot(ast, focused)))
+  ) {
+    const where = focused
+      ? `the focused node is ${focused.type} "${focused.toString()}", ` +
+        `${document.contains(focused.element) ? "in" : "not in"} the page` +
+        `, ${document.getElementById(`block-node-${focused.id}`) ? "and" : "but no"} block with its id exists`
+      : "no node is focused";
+    violations.push(
+      `keyboard focus is stranded on SR_fix_for_slow_dom (${where})`
+    );
   }
 
   // 6. Selections only contain nodes that exist.

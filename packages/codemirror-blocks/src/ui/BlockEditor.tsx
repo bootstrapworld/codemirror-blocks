@@ -125,8 +125,14 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         // The text has already changed, so the AST must follow it even if
         // the history item carries no focus information.
         const { actionFocus } = getState();
-        // actionFocus will either contain an old OR new focusId
-        const nextNId = actionFocus?.oldFocusNId || actionFocus?.newFocusNId;
+        // The history item remembers which block had focus before the edit and
+        // which after it. An undo brings the first document back, so it goes
+        // by the first; a redo brings the second back. (A block number can be
+        // 0, so don't test it for truthiness.)
+        const nextNId =
+          change.origin === "undo"
+            ? (actionFocus?.oldFocusNId ?? actionFocus?.newFocusNId)
+            : (actionFocus?.newFocusNId ?? actionFocus?.oldFocusNId);
         // If that node is gone (e.g. undoing an insertion), focus the node
         // nearest the change instead of letting focus fall to the page body.
         const focusHint = (newAST: AST) =>

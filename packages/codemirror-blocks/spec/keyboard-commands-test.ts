@@ -84,6 +84,60 @@ describe("Delete and Backspace", () => {
     keyDown("Delete", {}, g);
     expect(cmb.getValue()).toBe("(f y)");
   });
+
+  // Selecting a block also selects everything inside it, so these used to
+  // delete the block's children as separate edits as well: neighbours on the
+  // same line were deleted along with the root, and a definition could not be
+  // deleted at all.
+  describe("a selected expression with children", () => {
+    const deleteRoot = (code: string, index = 0) => {
+      cmb.setValue(code);
+      mouseDown(root(index));
+      keyDown(" ", {}, root(index));
+      keyDown("Delete", {}, root(index));
+    };
+
+    it("takes nothing but itself when another block follows on the line", () => {
+      deleteRoot("(f x y) z");
+      expect(cmb.getValue()).toBe("z");
+    });
+
+    it("takes nothing but itself when another block precedes it on the line", () => {
+      deleteRoot("z (f x y)", 1);
+      expect(cmb.getValue()).toBe("z");
+    });
+
+    it("takes nothing but itself between two other expressions", () => {
+      deleteRoot("(f x y) (g z) (h w)", 1);
+      expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual([
+        "(f x y)",
+        "(h w)",
+      ]);
+    });
+
+    it("can be a whole function definition", () => {
+      deleteRoot("(define (sq n) (* n n))\n(sq 4)");
+      expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual([
+        "(sq 4)",
+      ]);
+    });
+
+    it("can be a parameter list, which leaves a placeholder", () => {
+      cmb.setValue("(define (f a b) a)");
+      const params = [...root().children()][1];
+      mouseDown(params);
+      keyDown(" ", {}, params);
+      keyDown("Delete", {}, params);
+      expect(cmb.getValue()).toBe("(define (f ...) a)");
+    });
+
+    it("announces the expression once, not each block inside it", () => {
+      deleteRoot("(f x y) z");
+      expect(said().filter((s) => s.startsWith("deleted"))).toEqual([
+        "deleted f expression, 2 inputs",
+      ]);
+    });
+  });
 });
 
 describe("Enter and Cmd-Enter", () => {

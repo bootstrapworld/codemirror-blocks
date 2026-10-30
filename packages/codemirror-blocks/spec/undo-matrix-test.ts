@@ -1,5 +1,4 @@
 import wescheme from "../src/languages/wescheme";
-import { fireEvent } from "@testing-library/react";
 import {
   cmd_ctrl,
   keyDown,
@@ -8,10 +7,18 @@ import {
   teardown,
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
-import { ASTNode } from "../src/ast";
 import { drag, getNodeLabeled } from "./helpers/dnd";
 import { installFakeClipboard } from "./helpers/clipboard";
 import { setEditableText } from "./helpers/editing";
+import {
+  dropOnWhitespace,
+  dropTargets,
+  kids,
+  pasteAtCursor,
+  select,
+  toolbarPrimitive,
+  typeChar,
+} from "./helpers/gestures";
 
 /**
  * Every way of changing the document, each checked for the same things:
@@ -33,30 +40,6 @@ afterEach(() => {
 });
 
 const root = (i = 0) => cmb.getAst().rootNodes[i];
-const kids = (node: ASTNode) => [...node.children()];
-const select = (node: ASTNode) => {
-  mouseDown(node);
-  keyDown(" ", {}, node);
-};
-const dropTargets = (within: Element) => [
-  ...within.querySelectorAll(".blocks-drop-target"),
-];
-const toolbarPrimitive = (name: string) =>
-  [...document.querySelectorAll(".Primitive")].find(
-    (el) => el.textContent === name
-  )!;
-const typeChar = (char: string) =>
-  fireEvent.keyPress(cmb.getCM().getInputField(), {
-    key: char,
-    code: `Key${char.toUpperCase()}`,
-    charCode: char.charCodeAt(0),
-  });
-const dropOnWhitespace = (src: Element, loc: { line: number; ch: number }) => {
-  const wrapper = cmb.getCM().getWrapperElement();
-  document.elementFromPoint = jest.fn(() => wrapper);
-  jest.spyOn(cmb.getCM(), "coordsChar").mockReturnValue(loc as never);
-  drag(src).dropOnto(wrapper, { x: 20, y: 20 });
-};
 
 type Operation = { name: string; code: string; run: () => void };
 const operations: Operation[] = [
@@ -141,7 +124,7 @@ const operations: Operation[] = [
     code: "42\n11",
     run: () => {
       cmb.setCursor({ line: 0, ch: 2 });
-      typeChar("9");
+      typeChar(cmb, "9");
       keyDown("Enter");
     },
   },
@@ -150,9 +133,7 @@ const operations: Operation[] = [
     code: "42\n11",
     run: () => {
       cmb.setCursor({ line: 0, ch: 2 });
-      fireEvent.paste(cmb.getCM().getInputField(), {
-        clipboardData: { getData: () => "(f x)" },
-      });
+      pasteAtCursor(cmb, "(f x)");
       keyDown("Enter");
     },
   },
@@ -174,7 +155,7 @@ const operations: Operation[] = [
   {
     name: "dragging a node onto whitespace",
     code: "a\n\n\nb",
-    run: () => dropOnWhitespace(getNodeLabeled(/^a,/), { line: 2, ch: 0 }),
+    run: () => dropOnWhitespace(cmb, getNodeLabeled(/^a,/), { line: 2, ch: 0 }),
   },
   {
     name: "dragging from the toolbar onto a node",
@@ -186,7 +167,8 @@ const operations: Operation[] = [
   {
     name: "dragging from the toolbar onto whitespace",
     code: "a\n\n\nb",
-    run: () => dropOnWhitespace(toolbarPrimitive("sqrt"), { line: 2, ch: 0 }),
+    run: () =>
+      dropOnWhitespace(cmb, toolbarPrimitive("sqrt"), { line: 2, ch: 0 }),
   },
   {
     name: "dragging a node to the trash can",

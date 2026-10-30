@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// Set PORT to run on another port, e.g. so two runs can coexist.
+const port = Number(process.env.PORT) || 8123;
+
 /**
  * Browser tests, for what jsdom can't do: layout and scrolling (CodeMirror only
  * keeps the lines in view in the page), real focus, native drag and drop, real
@@ -19,7 +22,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
   use: {
-    baseURL: "http://localhost:8123",
+    baseURL: `http://localhost:${port}`,
     trace: "retain-on-failure",
     // the editor reads the clipboard through a hidden textarea
     permissions: ["clipboard-read", "clipboard-write"],
@@ -27,8 +30,8 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     // The example page imports the built library (lib/), so build it first.
-    command: "npm run build && npm start -- --port 8123",
-    url: "http://localhost:8123",
+    command: `npm run build && npm start -- --port ${port}`,
+    url: `http://localhost:${port}`,
     // Always start fresh: a leftover server would serve a stale build of lib/
     reuseExistingServer: false,
     timeout: 180_000,

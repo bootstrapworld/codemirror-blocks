@@ -240,13 +240,18 @@ const Node = ({ expandable = true, ...props }: Props) => {
     [normallyEditable, connectDropTarget, connectDragSource, connectDragPreview]
   );
 
+  // The element can be replaced without the id changing (editing a node swaps
+  // it for the editing box and back), so register it after every render.
   useEffect(() => {
     if (nodeElementRef.current) {
       nodeElementMap.set(props.node.id, nodeElementRef.current);
-      return () => {
-        nodeElementMap.delete(props.node.id);
-      };
     }
+  });
+  useEffect(() => {
+    const id = props.node.id;
+    return () => {
+      nodeElementMap.delete(id);
+    };
   }, [props.node.id]);
 
   // If this is the currently focused node, then focus the node element
