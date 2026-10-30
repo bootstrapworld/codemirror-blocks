@@ -98,7 +98,7 @@
     "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\"",
     "build-watch": "npm run build -- --watch",
     "build-types": "npx tsc",
-    "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit && tsc -p e2e --noEmit",
+    "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit && tsc -p spec --noEmit && tsc -p e2e --noEmit",
     "build-types-watch": "npx tsc --watch",
     "lint": "eslint .",
     "test:e2e": "playwright test"

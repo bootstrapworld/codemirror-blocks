@@ -1,4 +1,5 @@
 import example from "../../src/languages/example";
+import type { Pos } from "../../src/ast";
 import ExampleParser from "../../src/languages/example/ExampleParser";
 import { mountCMB, teardown } from "../../src/toolkit/test-utils";
 
@@ -6,7 +7,10 @@ import { mountCMB, teardown } from "../../src/toolkit/test-utils";
  * The example language: `(name arg ...)` calls of numbers and other calls,
  * which doc/language.md offers as the model for writing a new language.
  */
-const parse = (code: string) => new ExampleParser().parse(code);
+// (the fields of a node depend on its type, so look at them loosely)
+type Loose = { type: string; from: Pos; to: Pos; fields: any };
+const parse = (code: string) =>
+  new ExampleParser().parse(code) as unknown as Loose[];
 const pos = (line: number, ch: number) => ({ line, ch });
 
 describe("parsing", () => {
