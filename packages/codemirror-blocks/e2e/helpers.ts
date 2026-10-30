@@ -130,7 +130,7 @@ export async function redoAll(page: Page) {
   }
 }
 
-const center = async (l: Locator) => {
+export const center = async (l: Locator) => {
   const b = await l.boundingBox();
   if (!b) throw new Error("element is not visible");
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
