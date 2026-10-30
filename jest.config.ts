@@ -8,7 +8,7 @@ const sharedConfig = {
   moduleNameMapper: {
     "^[./a-zA-Z0-9$_-]+\\.mp3$":
       "<rootDir>/packages/codemirror-blocks/jest/MP3FileStub",
-    "^[./a-zA-Z0-9$_-]+\\.less$":
+    "^[./a-zA-Z0-9$_-]+\\.(less|css)$":
       "<rootDir>/packages/codemirror-blocks/jest/MP3FileStub",
   },
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
