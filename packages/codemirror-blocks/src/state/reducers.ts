@@ -115,6 +115,11 @@ function reduce(state = initialState(), action: AppAction): RootState {
         astData: action.ast.data,
         collapsedList: state.collapsedList.filter(exists),
         selections: state.selections.filter(exists),
+        // (marks made on blocks that are gone: a mode switch makes a new
+        // CodeMirror, so they die with the old one, and the new AST has new ids)
+        markedMap: Object.fromEntries(
+          Object.entries(state.markedMap).filter(([id]) => exists(id))
+        ),
         focusId:
           state.focusId && exists(state.focusId) ? state.focusId : undefined,
       };

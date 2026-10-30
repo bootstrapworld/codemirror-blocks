@@ -103,21 +103,65 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(mark.find()!.to.ch).toEqual(literal1.to.ch);
       });
     });
+  });
 
-    /*
-        // TODO(Emmanuel): add tests for crossing mode transitions
-        describe("should preserve marks across mode transitions,", function() {
-    
-          it("such as a red background", async function() {
-            expect(cmb.getAllMarks().length).toBe(0);
-            cmb.markText(literal1.from, literal1.to, {css:"background: red"});
-            expect(cmb.getAllMarks().length).toBe(1); 
-            expect(literal1.element.style.background).toBe('red');
-            cmb.setBlockMode(false);
-            debugLog(cmb.getAllMarks());
-            expect(cmb.getAllMarks().length).toBe(1);
-          });
-        });
-    */
+  describe("marks and mode switches,", function () {
+    let cmb!: API;
+    let store!: ReturnType<typeof mountCMB>["store"];
+    const marked = () => Object.keys(store.getState().markedMap);
+    beforeEach(function () {
+      ({ cmb, store } = mountCMB(wescheme));
+      cmb.setValue("11\n12\n(+ 3 4 5)");
+      cmb.setBlockMode(true);
+    });
+    afterEach(teardown);
+
+    it("a mark on a block shows on it, and is remembered by the block's id", function () {
+      const [first] = cmb.getAst().rootNodes;
+      cmb.markText(first.from, first.to, { className: "flagged" });
+      expect(marked()).toEqual([first.id]);
+      expect(first.element!.classList.contains("flagged")).toBe(true);
+    });
+
+    it("a mark does not outlast its block: deleting the block forgets it", function () {
+      const [first] = cmb.getAst().rootNodes;
+      cmb.markText(first.from, first.to, { className: "flagged" });
+      cmb.replaceRange("", first.from, { line: 1, ch: 0 });
+      expect(cmb.getValue()).toBe("12\n(+ 3 4 5)");
+      expect(marked()).toEqual([]);
+    });
+
+    it("a mark stays while other blocks are edited", function () {
+      const [first] = cmb.getAst().rootNodes;
+      cmb.markText(first.from, first.to, { className: "flagged" });
+      cmb.replaceRange("13", { line: 1, ch: 0 }, { line: 1, ch: 2 });
+      expect(marked()).toEqual([cmb.getAst().rootNodes[0].id]);
+    });
+
+    // The text editor is a new CodeMirror each time the mode changes, so the
+    // marks made on the old one are gone, and so are what the store remembered
+    // about them (it used to keep entries for blocks that no longer exist).
+    it("switching to text and back clears the marks, and what was remembered", function () {
+      const [first] = cmb.getAst().rootNodes;
+      cmb.markText(first.from, first.to, { className: "flagged" });
+      expect(cmb.getAllMarks()).toHaveLength(1);
+      cmb.setBlockMode(false);
+      expect(cmb.getAllMarks()).toHaveLength(0);
+      expect(marked()).toEqual([]);
+      cmb.setBlockMode(true);
+      expect(cmb.getAllMarks()).toHaveLength(0);
+      expect(marked()).toEqual([]);
+      expect(document.querySelectorAll(".flagged")).toHaveLength(0);
+    });
+
+    // KNOWN GAP (#571): marks should survive a mode switch. `it.failing`
+    // passes while they do not; when they do, remove the `.failing`.
+    it.failing("a mark survives switching to text and back", function () {
+      const [first] = cmb.getAst().rootNodes;
+      cmb.markText(first.from, first.to, { className: "flagged" });
+      cmb.setBlockMode(false);
+      cmb.setBlockMode(true);
+      expect(cmb.getAllMarks()).toHaveLength(1);
+    });
   });
 });

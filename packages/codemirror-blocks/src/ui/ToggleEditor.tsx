@@ -45,7 +45,8 @@ function ToggleEditor(props: ToggleEditorProps) {
   /**
    * When the mode is toggled, (1) parse the value of the editor,
    * (2) pretty-print and re-parse to canonicalize the text,
-   * (3) record TextMarkers and update editor state
+   * (3) update editor state. (Marks made with markText belong to the old
+   * CodeMirror, which the new mode replaces, so they are dropped: #571.)
    */
   const handleToggle = (blockMode: boolean) => {
     if (!editor) {
@@ -66,8 +67,7 @@ function ToggleEditor(props: ToggleEditorProps) {
   /**
    * This is an internal function that is passed down into mode-
    * specific components. After a mode switch, (1) rebuild the
-   * API with mode-specific versions, (2) re-assign event handlers,
-   * and (3) re-render any TextMarkers.
+   * API with mode-specific versions, and (2) re-assign event handlers.
    */
   const handleEditorMounted = (codemirror: CodeMirror.Editor) => {
     // set CM aria attributes, and mount announcer

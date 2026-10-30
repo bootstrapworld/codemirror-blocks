@@ -99,6 +99,10 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   separator), and `replaceSelection()` also inserted the new text at the
   cursor. `extendSelection()` no longer throws when the selection has more than
   one range.
+- Marks made with `markText` are dropped when the mode changes (each mode has
+  its own CodeMirror, so they always were; marks that should survive are
+  tracked in #571). The editor no longer keeps a record of marks on blocks that
+  no longer exist.
 - The beep and the wrap sound are inlined into the library as data URLs
   (`src/sounds.ts`, made from `assets/sounds` by `npm run build-sounds`), so
   importing the library no longer needs a bundler rule for `.mp3` files.
