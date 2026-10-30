@@ -1,4 +1,4 @@
-import { createEvent, fireEvent, screen } from "@testing-library/react";
+import { act, createEvent, fireEvent, screen } from "@testing-library/react";
 
 type Point = { x: number; y: number };
 
@@ -20,6 +20,33 @@ const fireDragEvent = (
 };
 
 /**
+ * What a real press does to keyboard focus, which `fireEvent.mouseDown` alone
+ * does not do in jsdom: the pressed element, or its nearest focusable ancestor,
+ * takes focus (so an open editing box loses it and closes); with no focusable
+ * element, focus goes to the page.
+ */
+export const pressFocus = (el: Element) => {
+  const focusable =
+    "a[href], button, input, textarea, select, [contenteditable='true']";
+  let target: Element | null = el;
+  while (
+    target &&
+    !target.hasAttribute("tabindex") &&
+    !target.matches(focusable)
+  ) {
+    target = target.parentElement;
+  }
+  // (focus handlers update state, as when the toolbar selects what it focuses)
+  act(() => {
+    if (target instanceof HTMLElement) {
+      target.focus();
+    } else if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  });
+};
+
+/**
  * Helper function to simulate dragging an element onto another element.
  *
  * @param srcNode the element to start dragging
@@ -27,7 +54,10 @@ const fireDragEvent = (
  * over/onto another element. Pass `point` to say where the pointer is.
  */
 export const drag = (srcNode: Element) => {
-  fireEvent.mouseDown(srcNode);
+  // (focus moves as the default action of the press, unless a handler stops it)
+  if (fireEvent.mouseDown(srcNode)) {
+    pressFocus(srcNode);
+  }
   fireEvent.dragStart(srcNode);
   const next = {
     dragOver: (overNode: Element, point?: Point) => {

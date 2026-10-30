@@ -300,6 +300,14 @@ export function drop(
     const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
     const content = srcNode ? srcNode.toString() : srcContent;
 
+    // Pressing a toolbar block to drag it gave the toolbar keyboard focus, and
+    // the block that is dropped will not take focus from another element. The
+    // user is working in the editor now: bring focus back, so that the new block
+    // (and shortcuts such as undo) get it.
+    if (!srcNode) {
+      editor.focus();
+    }
+
     // If we dropped the node _inside_ where we dragged it from, do nothing.
     if (srcNode && srcRangeIncludes(srcNode.srcRange(), target.srcRange())) {
       return;

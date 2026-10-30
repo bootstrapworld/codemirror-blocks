@@ -289,17 +289,32 @@ Found by later runs, also fixed, each with a regression spec
 - seed 11 (browser only): a press on blank space that became a drag left focus
   on CodeMirror's scroller (it has `tabindex="-1"`), where no key is handled.
   `BlockEditor` now passes focus on from the scroller to the editor's input.
+- the toolbar drop (found by making the jsdom `drag` helper realistic, not by a
+  seed): pressing a toolbar block gives the toolbar keyboard focus, and a drop
+  into the editor left it there, so Ctrl-Z was ignored. `actions.drop` now
+  returns focus to the editor when the dropped block came from the toolbar. The
+  helper (`pressFocus` in `spec/helpers/dnd.ts`) moves focus to the pressed
+  element, or to the page body if nothing focusable is under it, and the random
+  runs click back into the editor when a drag that came to nothing leaves focus
+  on the toolbar. Regression: `e2e/toolbar-drag.e2e.ts` (the random runs excuse
+  focus left on the toolbar, so only the browser spec guards the drop).
 
-Still open: longer runs on fresh seeds (`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30
-CMB_RANDOM_SEED=1000` and `...=2000`, with `NODE_OPTIONS=--max-old-space-size=8192`)
-each end with two sequences failing "Z did not undo", with keyboard focus on the
-page body (or the placeholder) while the editor still has a focused block. One,
-seed 1004, was traced as far as a test artifact again: a top-level typing box is
-left open while a toolbar drag changes the text above it, so the box commits at
-its old coordinates (`squar(g w)e`); in a browser, pressing the toolbar item
-moves focus and closes the box first. Making the jsdom `drag` helper move focus
-as a real press does would remove that whole class; what remains after that is
-likely real. The other seeds have not been looked at.
+Still open: runs on fresh seeds (`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30
+CMB_RANDOM_SEED=500`, `...=1000` and `...=2000`, with
+`NODE_OPTIONS=--max-old-space-size=8192`) now pass except for one sequence,
+seed 1004. After 15 steps, typing "7" between two blocks on a line and pressing
+Enter leaves keyboard focus on the page body while the new block is the focused
+node, so the next Ctrl-Z is ignored. What was found: the new block is drawn
+twice. The second draw moves its container into a new CodeMirror widget, which
+drops the focus, and the effects that would give it back run while that widget
+is not in the page yet (CodeMirror's drawn range starts below the block's line,
+and it is only drawn when `BlockEditor`'s effect calls `cm.refresh()`, after the
+block's own effects). Typing in the same place in a fresh editor does not do
+this, the shrinker could not remove any of the 15 steps, and 40 more seeds in
+the browser (20 to 59) pass, so this may well be jsdom's missing layout; it has not been shown
+to be, or not to be, possible in a browser. Setting `viewportMargin` to draw the
+whole document does not help in the harness (`react-codemirror2` puts the
+option back on every render).
 
 Properties to check after every operation:
 
@@ -341,6 +356,11 @@ keyboard focus, and focus falling to the page body when the last block goes.
 - `delete-undo.e2e.ts`, `trash-can.e2e.ts`, `typing.e2e.ts`: the specific
   regressions, long documents, and real typing at the top level (including
   typing over a selection).
+- `toolbar-drag.e2e.ts`: after a real-mouse drag from the toolbar into the
+  editor, keyboard focus is back in the editor and Ctrl-Z undoes the drop.
+  Pressing a toolbar block gives the toolbar keyboard focus, and the drop used
+  to leave it there, so the undo was ignored. jsdom hid this because its `drag`
+  helper did not move focus; it does now (`pressFocus` in `spec/helpers/dnd.ts`).
 
 Drags: Playwright's native drag emulation is reliable for the trash can
 (`dragWithMouse`) but not for small blocks, so those use `dragWithEvents`, which

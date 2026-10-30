@@ -1,3 +1,4 @@
+import { act } from "@testing-library/react";
 import wescheme from "../src/languages/wescheme";
 import {
   cmd_ctrl,
@@ -162,6 +163,31 @@ const stopEditing = () => {
   const box = document.querySelector('[contenteditable="true"]');
   if (box) {
     keyDown("Escape", {}, box);
+  }
+};
+
+/**
+ * What a user does before reaching for an editor shortcut when keyboard focus is
+ * somewhere it legitimately is not: on the toolbar item they pressed (a drag
+ * that came to nothing leaves it there, as a click would), or nowhere, because
+ * the block that should have it is outside the few lines jsdom draws (the editor
+ * parks focus on the screenreader placeholder, or the page). They click back
+ * into the editor. Focus lost to the page while the block it belongs to
+ * *is* drawn is a bug, and is not excused.
+ */
+const returnToEditor = (cmb: API) => {
+  const active = document.activeElement;
+  const inToolbar = Boolean(
+    document.querySelector(".Toolbar")?.contains(active)
+  );
+  const focused = cmb.getFocusedNode();
+  const undrawn =
+    focused !== undefined &&
+    !document.getElementById(`block-node-${focused.id}`);
+  const parked =
+    active === document.body || active?.id === "SR_fix_for_slow_dom";
+  if (inToolbar || (parked && undrawn)) {
+    act(() => cmb.focus());
   }
 };
 
@@ -378,6 +404,7 @@ const operations: Operation[] = [
     weight: 3,
     run: (w, r) => {
       stopEditing();
+      returnToEditor(w.cmb);
       if (r[1] % 2) {
         keyDown("Z", cmd_ctrl);
         return "undo (keyboard)";
@@ -391,6 +418,7 @@ const operations: Operation[] = [
     weight: 2,
     run: (w, r) => {
       stopEditing();
+      returnToEditor(w.cmb);
       if (r[1] % 2) {
         keyDown("Y", { ctrlKey: true });
         return "redo (keyboard)";
@@ -568,6 +596,7 @@ function runSequence(sequence: Sequence): RunResult {
       let guard = cmb.historySize()[which] + 2;
       while (cmb.historySize()[which] > 0 && guard-- > 0) {
         const size = cmb.historySize()[which];
+        returnToEditor(cmb);
         keyDown(key, props);
         trace.push(
           `${which} (walking the whole history)\n       text: ${JSON.stringify(text())}`
