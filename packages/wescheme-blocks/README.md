@@ -18,7 +18,7 @@ NOTE: your IDE will need to load CodeMirror as an external dependency. We assume
 
 ## Development
 
-This package lives in the [codemirror-blocks repository](https://github.com/bootstrapworld/codemirror-blocks), alongside the core library. To get your dev environment up and running, follow the instructions in the [repository README](../../README.md#dev-environment) (you will need Node 20 or later), then:
+This package lives in the [codemirror-blocks repository](https://github.com/bootstrapworld/codemirror-blocks), alongside the core library. To get your dev environment up and running, follow the instructions in the [repository README](../../README.md#dev-environment) (you will need Node 22.15 or later), then:
 
 1.  start the webpack development server, from this directory:
 

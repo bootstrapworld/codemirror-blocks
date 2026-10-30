@@ -9,7 +9,7 @@
     "/lib"
   ],
   "engines": {
-    "node": ">=20",
+    "node": ">=22.15",
     "npm": ">=8.x"
   },
   "dependencies": {
@@ -17,12 +17,12 @@
     "css-loader": "^7.1.5",
     "html-webpack-plugin": "^5.6.8",
     "less": "^4.9.1",
-    "less-loader": "^12.3.3",
+    "less-loader": "^13.1.0",
     "style-loader": "^4.0.0",
     "ts-loader": "^9.6.2",
     "webpack": "^5.112.0",
-    "webpack-bundle-analyzer": "^4.5.0",
-    "webpack-dev-server": "^5.2.7"
+    "webpack-bundle-analyzer": "^5.4.0",
+    "webpack-dev-server": "^6.1.0"
   },
   "devDependencies": {
     "@types/webpack-bundle-analyzer": "^4.4.1",
