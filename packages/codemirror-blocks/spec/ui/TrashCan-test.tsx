@@ -102,3 +102,35 @@ describe("dragging a node over the trashcan", () => {
     expect(selectors.getAST(store.getState()).toString()).toBe("b\nc");
   });
 });
+
+describe("when the editor changes (e.g. after toggling modes)", () => {
+  it("deletes through the current editor, not the one it first saw", () => {
+    editor.setValue("a b c");
+    store.dispatch(actions.setBlockMode(true, editor.getValue(), language));
+    const ast = selectors.getAST(store.getState());
+
+    const tree = (trashEditor: CodeMirrorFacade) => (
+      <Context store={store}>
+        <div>
+          <DragStub node={ast.rootNodes[0]} />
+          <TrashCan language={language} editor={trashEditor} />
+        </div>
+      </Context>
+    );
+    const result = render(tree(editor));
+
+    // A new editor takes over; the AST (and so the old drop deps) is unchanged.
+    const newEditor = new CodeMirrorFacade(CodeMirror(document.body));
+    newEditor.setValue("a b c");
+    result.rerender(tree(newEditor));
+
+    const trashcan = document.querySelector(".TrashCan")!;
+    fireEvent.dragStart(screen.getByText("draggable thing"));
+    fireEvent.dragEnter(trashcan);
+    fireEvent.dragOver(trashcan);
+    fireEvent.drop(trashcan);
+
+    expect(newEditor.getValue()).toBe("b c");
+    expect(editor.getValue()).toBe("a b c");
+  });
+});
