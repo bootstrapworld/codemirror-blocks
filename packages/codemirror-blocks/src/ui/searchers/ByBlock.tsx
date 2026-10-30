@@ -76,22 +76,19 @@ const ByBlock: Searcher<SearchSettings, Props> = {
   search: (cur, settings, editor, state, forward) => {
     const ast = selectors.getAST(state);
     const { collapsedList } = state;
-    let startingNode = getNodeContainingBiased(cur, ast);
-    if (!startingNode) {
-      startingNode = forward
-        ? ast.getNodeAfterCur(cur)
-        : ast.getNodeBeforeCur(cur);
-    }
-
-    // handle the cursor before first / after last block
-    if (!startingNode) {
-      // TODO(Oak)
-    }
-
-    const collapsedNodeList = collapsedList.map(ast.getNodeById);
     const next = (node: ASTNode) =>
       forward ? ast.getNodeAfter(node) : ast.getNodeBefore(node);
+    // Look for a match after the block the cursor is in. A cursor between
+    // blocks is in none, so the block after it (before it, going backwards) is
+    // the first to look at.
+    const containing = getNodeContainingBiased(cur, ast);
+    const first = containing
+      ? next(containing)
+      : forward
+        ? ast.getNodeAfterCur(cur)
+        : ast.getNodeBeforeCur(cur);
 
+    const collapsedNodeList = collapsedList.map(ast.getNodeById);
     // NOTE(Oak): if this is too slow, consider adding a
     // next/prevSibling attribute to short circuit navigation
     const result = skipWhile(
@@ -102,7 +99,7 @@ const ByBlock: Searcher<SearchSettings, Props> = {
           ) || node.type !== settings.blockType
         );
       },
-      startingNode && next(startingNode),
+      first,
       next
     );
     if (result) return { node: result, cursor: result.from };
