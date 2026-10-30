@@ -1,4 +1,10 @@
-import { expect, test, type CDPSession, type Page } from "@playwright/test";
+import {
+  expect,
+  test,
+  type CDPSession,
+  type Locator,
+  type Page,
+} from "@playwright/test";
 import {
   block,
   center,
@@ -41,23 +47,58 @@ const finger = async (page: Page) => {
   };
 };
 
+/** Wait until the element has stopped moving (blocks shift as fonts load). */
+const settled = async (l: Locator) => {
+  let last = "";
+  await expect(async () => {
+    const prev = last;
+    const b = await l.boundingBox();
+    last = JSON.stringify(b);
+    await l.page().waitForTimeout(100);
+    expect(last).toBe(prev);
+  }).toPass();
+  return center(l);
+};
+
+/**
+ * A point on the block itself, not on one of its children (the middle of a
+ * block lands on a child): just inside its left edge.
+ */
+const grip = async (l: Locator): Promise<Pt> => {
+  await settled(l);
+  const b = (await l.boundingBox())!;
+  return { x: b.x + 2, y: b.y + b.height / 2 };
+};
+
+/** Press, wait for the app to start the drag, and slide onto the target. */
+const longPressDrag = async (
+  page: Page,
+  from: Pt,
+  to: Pt,
+  steps = 10
+): Promise<() => Promise<unknown>> => {
+  const f = await finger(page);
+  await f.down(from);
+  // the app starts the drag after its long-press delay (250ms, LONG_PRESS_MS
+  // in dnd.ts); wait for it to say so rather than for a guessed time
+  await expect(page.locator("body")).toHaveClass(/cmb-dragging/);
+  await f.slide(from, to, steps);
+  return f.up;
+};
+
 const program = "(f x y)\n(g z)\n(h w)";
-const LONG_PRESS = 450; // longer than the 250ms the app waits
 
 test.describe("dragging with a finger", () => {
   test("a long press then a drag moves a block to the trash can", async ({
     page,
   }) => {
     await openInBlockMode(page, program);
-    const f = await finger(page);
-    const from = await center(block(page, /g expression/));
-    const to = await center(trashCan(page));
-    await f.down(from);
-    await page.waitForTimeout(LONG_PRESS);
-    await f.slide(from, to);
+    const from = await grip(block(page, /g expression/));
+    const to = await settled(trashCan(page));
+    const release = await longPressDrag(page, from, to);
     await expect(page.locator(".cmb-drag-preview")).toHaveCount(1);
     await expect(trashCan(page)).toHaveClass(/over/);
-    await f.up();
+    await release();
     const s = await expectConsistent(page);
     expect(s.roots).toEqual(["(f x y)", "(h w)"]);
     await expect(page.locator(".cmb-drag-preview")).toHaveCount(0);
@@ -67,20 +108,17 @@ test.describe("dragging with a finger", () => {
     page,
   }) => {
     await openInBlockMode(page, program);
-    const f = await finger(page);
-    const from = await center(block(page, /h expression/));
+    const from = await grip(block(page, /h expression/));
     const gap = page
       .locator("[id^=block-drop-target-]", { hasNot: page.locator("*") })
       .first();
-    const to = await center(gap);
-    await f.down(from);
-    await page.waitForTimeout(LONG_PRESS);
-    await f.slide(from, to, 14);
-    await f.up();
+    const to = await settled(gap);
+    const release = await longPressDrag(page, from, to, 14);
+    await expect(gap).toHaveClass(/blocks-over-target/);
+    await release();
     const s = await expectConsistent(page);
-    expect(s.roots).toContain("(h w)");
-    expect(s.roots).toHaveLength(3);
-    expect(s.text).not.toBe(program);
+    // (h w) moved into the first gap of (f x y)
+    expect(s.roots).toEqual(["(f (h w) x y)", "(g z)"]);
   });
 
   test("moving before the long press ends scrolls instead of dragging", async ({
