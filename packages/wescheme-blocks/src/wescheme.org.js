@@ -3,7 +3,10 @@
  * It is bundled using the webpack.
  */
 import { WeScheme } from "./index";
-import { CodeMirrorBlocks, setLogReporter } from "codemirror-blocks";
+import {
+  CodeMirrorBlocks,
+  setLogReporter,
+} from "@bootstrapworld/codemirror-blocks";
 import "codemirror/lib/codemirror.css";
 import "./less/example.less";
 

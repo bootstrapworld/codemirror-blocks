@@ -21,10 +21,10 @@ jobs:
         run: npm install
 
       - name: Build codemirror-blocks
-        run: npm run prepare --workspace=codemirror-blocks
+        run: npm run prepare --workspace=@bootstrapworld/codemirror-blocks
 
       - name: Build wescheme-blocks
-        run: npm run build --workspace=wescheme-blocks
+        run: npm run build --workspace=@bootstrapworld/wescheme-blocks
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4

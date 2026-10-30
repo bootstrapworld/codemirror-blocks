@@ -17,7 +17,7 @@
     "lint": "eslint .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format:check": "prettier --check .",
-    "test:e2e": "npm run test:e2e --workspace=codemirror-blocks"
+    "test:e2e": "npm run test:e2e --workspace=@bootstrapworld/codemirror-blocks"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.28.8",

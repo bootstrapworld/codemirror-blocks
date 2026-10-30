@@ -1,7 +1,11 @@
 import * as parser from "./WeschemeParser";
-import { Languages, Nodes, PrimitiveGroup } from "codemirror-blocks";
+import {
+  Languages,
+  Nodes,
+  PrimitiveGroup,
+} from "@bootstrapworld/codemirror-blocks";
 import PRIMITIVES_CONFIG from "./primitives-config";
-import type { Primitive } from "codemirror-blocks/lib/parsers/primitives";
+import type { Primitive } from "@bootstrapworld/codemirror-blocks/lib/parsers/primitives";
 import { symbolAria } from "./parseNode";
 import "./style.less";
 

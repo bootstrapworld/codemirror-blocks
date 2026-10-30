@@ -1,5 +1,5 @@
 import "./index.less";
-import CodeMirrorBlocks from "codemirror-blocks";
+import CodeMirrorBlocks from "@bootstrapworld/codemirror-blocks";
 import { WeScheme } from "../src/index";
 import bigExampleCode from "./ast-test.rkt";
 

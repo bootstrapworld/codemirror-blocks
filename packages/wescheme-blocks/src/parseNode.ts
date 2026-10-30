@@ -1,5 +1,5 @@
 import * as structures from "wescheme-js/src/structures";
-import { Nodes } from "codemirror-blocks";
+import { Nodes } from "@bootstrapworld/codemirror-blocks";
 import { LetLikeExpr, WhenUnless, Sequence } from "./ast";
 import * as types from "wescheme-js/src/runtime/types";
 const { isString, isChar, TRUE, FALSE } = types;

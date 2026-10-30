@@ -13,6 +13,20 @@ http://keepachangelog.com/
   `redux-thunk` (3), `reselect` (5), `react-tabs` (6) and `react-codemirror2`
   (9, the first version whose peer range allows React 19, so no `overrides`
   entry is needed) were raised to match.
+- **The packages are now under the `@bootstrapworld` scope**:
+  `@bootstrapworld/codemirror-blocks` and `@bootstrapworld/wescheme-blocks` (the
+  toolkit already was `@bootstrapworld/cmb-toolkit`). Change `npm install
+codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
+  every `import ... from "codemirror-blocks"` or `"codemirror-blocks/lib/..."`
+  to the scoped name. Workspace commands use the scoped names too, for example
+  `npm run build --workspace=@bootstrapworld/codemirror-blocks`.
+- **The packages are now under the `@bootstrapworld` scope**:
+  `@bootstrapworld/codemirror-blocks` and `@bootstrapworld/wescheme-blocks` (the
+  toolkit already was `@bootstrapworld/cmb-toolkit`). Change `npm install
+codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
+  every `import ... from "codemirror-blocks"` or `"codemirror-blocks/lib/..."`
+  to the scoped name. Workspace commands use the scoped names too, for example
+  `npm run build --workspace=@bootstrapworld/codemirror-blocks`.
 - The package now has `types` and `exports` fields. The root entry, every
   `codemirror-blocks/lib/<module>` path, `.less`/`.mp3` files, and the
   directory-style entry points (`lib/languages`, `lib/languages/wescheme`,

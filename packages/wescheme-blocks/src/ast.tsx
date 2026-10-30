@@ -5,9 +5,12 @@ import {
   Node,
   Nodes,
   NodeSpec as Spec,
-} from "codemirror-blocks";
-import { Pos } from "codemirror-blocks/lib/ast";
-import { CoreAST, createASTSpec } from "codemirror-blocks/lib/nodes";
+} from "@bootstrapworld/codemirror-blocks";
+import { Pos } from "@bootstrapworld/codemirror-blocks/lib/ast";
+import {
+  CoreAST,
+  createASTSpec,
+} from "@bootstrapworld/codemirror-blocks/lib/nodes";
 
 /**
  * given a noun and an array, generate a (possibly-plural)

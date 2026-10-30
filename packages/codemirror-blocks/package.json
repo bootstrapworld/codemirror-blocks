@@ -1,5 +1,5 @@
 {
-  "name": "codemirror-blocks",
+  "name": "@bootstrapworld/codemirror-blocks",
   "version": "0.9.0",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "./lib/CodeMirrorBlocks.js",

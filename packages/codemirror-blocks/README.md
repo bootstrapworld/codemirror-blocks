@@ -33,7 +33,7 @@ _NOTE: your IDE will need to load CodeMirror as an external dependency._ We assu
 
 Make a repo (e.g. - `YourFavLang-blocks`), and include CMB as a dependency:
 
-        npm install --save codemirror-blocks
+        npm install --save @bootstrapworld/codemirror-blocks
 
 Then add folders for your parser (`src/languages/YourFavLang`) and test cases (`spec/languages/YourFavLang`).
 

@@ -8,9 +8,9 @@ complete examples to read alongside it.
 
 ## Logistics
 
-A language module is a separate package that depends on `codemirror-blocks`:
+A language module is a separate package that depends on `@bootstrapworld/codemirror-blocks`:
 
-    npm install --save codemirror-blocks
+    npm install --save @bootstrapworld/codemirror-blocks
 
 Your IDE must load CodeMirror 5 itself (it is a peer dependency). Everything
 CMB exposes to language authors is exported from the package root:
@@ -25,9 +25,9 @@ CMB exposes to language authors is exported from the package root:
       Languages, // register your language
       Pretty, // the pretty-printing library
       PrimitiveGroup, // primitives shown in the toolbar
-    } from "codemirror-blocks";
+    } from "@bootstrapworld/codemirror-blocks";
 
-Types such as `Pos` live in submodules, e.g. `codemirror-blocks/lib/ast`.
+Types such as `Pos` live in submodules, e.g. `@bootstrapworld/codemirror-blocks/lib/ast`.
 
 ## Adding a Language
 
@@ -44,8 +44,8 @@ import {
   Nodes,
   NodeSpec as Spec,
   Pretty as P,
-} from "codemirror-blocks";
-import type { Pos } from "codemirror-blocks/lib/ast";
+} from "@bootstrapworld/codemirror-blocks";
+import type { Pos } from "@bootstrapworld/codemirror-blocks/lib/ast";
 
 // 1. Declare the node types of your language. Start from the core ones...
 const MyLangAST = Nodes.createASTSpec({
@@ -266,7 +266,7 @@ infix operators, calls, and blocks as examples.
 
 To learn how to write `pretty` in general, see the documentation for the
 [pretty printing library](https://github.com/brownplt/pretty-fast-pretty-printer).
-It is exported from `codemirror-blocks` as `Pretty`, so you don't need to
+It is exported from `@bootstrapworld/codemirror-blocks` as `Pretty`, so you don't need to
 declare it as a dependency.
 
 ### Rendering as a Block
@@ -332,7 +332,7 @@ That's it! We've fully defined the `When` node type.
 CMB's own tests, and those of the language packages in this repository, use the
 helpers in
 [`toolkit/test-utils.tsx`](../packages/codemirror-blocks/src/toolkit/test-utils.tsx)
-(imported as `codemirror-blocks/lib/toolkit/test-utils`). They build on the
+(imported as `@bootstrapworld/codemirror-blocks/lib/toolkit/test-utils`). They build on the
 private `@bootstrapworld/cmb-toolkit` package, so they are only available inside
 this repository's workspace. `mountCMB(language)` renders an editor into the test DOM, in block mode, and
 returns `{cmb, store}`; the API calls on `cmb` are wrapped in React's `act()`, so

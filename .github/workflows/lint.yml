@@ -24,7 +24,7 @@ jobs:
         run: npm run lint
 
       - name: Type-check
-        run: npm run typecheck --workspace=codemirror-blocks
+        run: npm run typecheck --workspace=@bootstrapworld/codemirror-blocks
 
       # Make sure prettier was run on any changes
       - name: Check Prettier

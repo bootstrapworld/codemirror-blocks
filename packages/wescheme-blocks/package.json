@@ -1,5 +1,5 @@
 {
-  "name": "wescheme-blocks",
+  "name": "@bootstrapworld/wescheme-blocks",
   "version": "0.1.2",
   "description": "WeScheme blocks language",
   "private": true,
@@ -9,7 +9,7 @@
     "npm": ">=11"
   },
   "dependencies": {
-    "codemirror-blocks": "*"
+    "@bootstrapworld/codemirror-blocks": "*"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.18.9",
