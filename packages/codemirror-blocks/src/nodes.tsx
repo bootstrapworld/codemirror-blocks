@@ -370,7 +370,7 @@ export function LambdaExpression(
     options,
     pretty: (node) =>
       P.lambdaLikeSexpr(
-        "lambda(",
+        "lambda",
         P.horz("(", node.fields.args, ")"),
         node.fields.body
       ),

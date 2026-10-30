@@ -128,9 +128,16 @@ export function WhenUnless(
     fields: { form, predicate, exprs },
     options,
     pretty(node) {
+      // The body is a sequence whose `begin` is only there so that the block
+      // shows the body as one group (see parseNode). It is not in the source:
+      // printing it would wrap the body in another `begin` each time the
+      // program went from blocks to text and back.
+      const body = node.fields.exprs;
       return P.standardSexpr(node.fields.form, [
         node.fields.predicate,
-        node.fields.exprs,
+        ...(WeSchemeAST.isNodeOfType(body, "sequence")
+          ? body.fields.exprs
+          : [body]),
       ]);
     },
     render(props) {

@@ -601,4 +601,31 @@ describe("The WeScheme Parser,", function () {
       expect(this.ast[0].fields.elts.length).toBe(1);
     });
   });
+
+  describe("when printing parsed code back as text,", function () {
+    // the editor prints a block's code each time it is edited, and again when
+    // switching from blocks to text, so the text has to come back as it went in
+    const print = (code) => parse(code).map((node) => node.toString());
+
+    // KNOWN DATA LOSS: a quoted list is dropped, so switching to blocks deletes
+    // it from the program. `it.failing` passes while that is so; remove the
+    // `.failing` when quote is kept.
+    it.failing("keeps a quoted list", function () {
+      expect(print("'(1 2)")).toEqual(["'(1 2)"]);
+    });
+
+    it("prints a lambda with its keyword", function () {
+      expect(print("(lambda (x y) (+ x y))")).toEqual([
+        "(lambda (x y) (+ x y))",
+      ]);
+    });
+
+    it("prints when and unless without a begin the source did not have", function () {
+      expect(print("(when (> 1 0) 2)")).toEqual(["(when (> 1 0) 2)"]);
+      expect(print("(unless #f 1 2)")).toEqual(["(unless #f 1 2)"]);
+      // ...so that printing and parsing again changes nothing
+      const once = print("(when 1 2)")[0];
+      expect(print(once)).toEqual([once]);
+    });
+  });
 });
