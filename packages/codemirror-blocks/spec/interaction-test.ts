@@ -228,3 +228,29 @@ describe("moving focus between the editor and the toolbar", () => {
     expect(search()).toBeDisabled();
   });
 });
+
+describe("when the last block is deleted", () => {
+  it("keyboard focus moves into the editor instead of falling to the page", () => {
+    cmb.setValue("42");
+    mouseDown(root());
+    keyDown(" ", {}, root());
+    keyDown("Delete", {}, root());
+    expect(cmb.getAst().rootNodes).toEqual([]);
+    expect(document.activeElement).not.toBe(document.body);
+    expect(cmb.getWrapperElement().contains(document.activeElement)).toBe(true);
+  });
+
+  it("typing then works straight away", () => {
+    cmb.setValue("42");
+    mouseDown(root());
+    keyDown(" ", {}, root());
+    keyDown("Delete", {}, root());
+    fireEvent.keyPress(cmb.getCM().getInputField(), {
+      key: "7",
+      code: "Digit7",
+      charCode: 55,
+    });
+    keyDown("Enter");
+    expect(cmb.getValue()).toBe("7");
+  });
+});

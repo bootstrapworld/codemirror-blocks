@@ -108,10 +108,9 @@ describe("typing at the top level", () => {
     expect(quarantine()).toBeNull();
   });
 
-  // Under jsdom the selection is collapsed to its start by the time the
-  // keypress handler runs, so the typed text is inserted instead. Check in a
-  // real browser before deciding whether that is a bug or a jsdom artifact.
-  it.todo("replaces the selected text when typing over a selection");
+  // Typing over a selected range can't be tested here: under jsdom the selection
+  // is already collapsed by the time the key handler runs. In a real browser it
+  // replaces the selection; see e2e/typing.e2e.ts.
 
   it("stays open (and flags an error) if the text can't be parsed", () => {
     allowConsoleErrors(); // a rejected edit is logged

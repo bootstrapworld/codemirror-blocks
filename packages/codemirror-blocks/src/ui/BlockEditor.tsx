@@ -43,6 +43,25 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const newASTRef = useRef<AST | undefined>(undefined);
 
+  // When the last block goes away (deleted, dragged to the trash, undone...),
+  // keyboard focus has nowhere to go and falls to the page body, so typing and
+  // shortcuts stop working. Keep it in the editor instead.
+  const hadBlocks = useRef(false);
+  useEffect(() => {
+    const hasBlocks = ast.rootNodes.length > 0;
+    if (hadBlocks.current && !hasBlocks) {
+      const active = document.activeElement;
+      if (
+        !active ||
+        active === document.body ||
+        active.id === "SR_fix_for_slow_dom"
+      ) {
+        editor?.focus();
+      }
+    }
+    hadBlocks.current = hasBlocks;
+  }, [ast, editor]);
+
   // only refresh if there is no active quarantine
   useEffect(() => {
     if (!quarantine) {

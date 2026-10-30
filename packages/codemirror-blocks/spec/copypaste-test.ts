@@ -130,6 +130,20 @@ describe("pasteFromClipboard", () => {
     expect(done).toHaveBeenCalledWith("pasted text");
   });
 
+  it("gives keyboard focus back to where it was, before handing over the text", () => {
+    const button = document.createElement("button");
+    document.body.appendChild(button);
+    button.focus();
+    let focusWhenDone: Element | null = null;
+    pasteFromClipboard(() => {
+      focusWhenDone = document.activeElement;
+    });
+    expect(document.activeElement).toBe(buffer());
+    jest.advanceTimersByTime(60);
+    expect(focusWhenDone).toBe(button);
+    button.remove();
+  });
+
   it("hands over an empty string if nothing was pasted", () => {
     const done = jest.fn();
     pasteFromClipboard(done);
