@@ -31,25 +31,25 @@ it("renders a draggable span with various aria properties", () => {
     <Node node={ast.rootNodes[0]}>This is a literal for someVar</Node>
   );
   expect(result.container).toMatchInlineSnapshot(`
-    <div>
-      <span
-        aria-expanded="true"
-        aria-label="the someVar variable,"
-        aria-labelledby="block-node-0 "
-        aria-level="1"
-        aria-posinset="1"
-        aria-selected="false"
-        aria-setsize="1"
-        class="blocks-literal blocks-node"
-        draggable="true"
-        id="block-node-0"
-        role="treeitem"
-        style=""
-        tabindex="-1"
-      >
-        This is a literal for someVar
-      </span>
-    </div>
+   <div>
+     <span
+       aria-expanded="true"
+       aria-label="the someVar variable,"
+       aria-labelledby="block-node-0 "
+       aria-level="1"
+       aria-posinset="1"
+       aria-selected="false"
+       aria-setsize="1"
+       class="blocks-literal blocks-node"
+       data-cmb-drag-source=""
+       id="block-node-0"
+       role="treeitem"
+       style=""
+       tabindex="-1"
+     >
+       This is a literal for someVar
+     </span>
+   </div>
   `);
 });
 
@@ -64,39 +64,39 @@ it("renders a comment that is associated with a node", () => {
     <Node node={ast.rootNodes[0]}>This is a literal for someVar</Node>
   );
   expect(result.container).toMatchInlineSnapshot(`
-    <div>
-      <span
-        aria-expanded="true"
-        aria-label="the someVar variable,"
-        aria-labelledby="block-node-1 block-node-1-comment"
-        aria-level="1"
-        aria-posinset="1"
-        aria-selected="false"
-        aria-setsize="1"
-        class="blocks-literal blocks-node"
-        draggable="true"
-        id="block-node-1"
-        role="treeitem"
-        style=""
-        tabindex="-1"
-      >
-        This is a literal for someVar
-        <span
-          aria-hidden="true"
-          class="blocks-comment"
-          id="block-node-1-comment"
-        >
-          <span
-            class="screenreader-only"
-          >
-            Has comment,
-          </span>
-           
-          <span>
-            hello
-          </span>
-        </span>
-      </span>
-    </div>
+   <div>
+     <span
+       aria-expanded="true"
+       aria-label="the someVar variable,"
+       aria-labelledby="block-node-1 block-node-1-comment"
+       aria-level="1"
+       aria-posinset="1"
+       aria-selected="false"
+       aria-setsize="1"
+       class="blocks-literal blocks-node"
+       data-cmb-drag-source=""
+       id="block-node-1"
+       role="treeitem"
+       style=""
+       tabindex="-1"
+     >
+       This is a literal for someVar
+       <span
+         aria-hidden="true"
+         class="blocks-comment"
+         id="block-node-1-comment"
+       >
+         <span
+           class="screenreader-only"
+         >
+           Has comment,
+         </span>
+          
+         <span>
+           hello
+         </span>
+       </span>
+     </span>
+   </div>
   `);
 });

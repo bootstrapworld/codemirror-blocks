@@ -13,8 +13,8 @@
  * - The preview is a clone of the source element that follows the pointer.
  */
 import React, {
+  use,
   useCallback,
-  useContext,
   useLayoutEffect,
   useRef,
   useState,
@@ -94,6 +94,7 @@ class DragStore {
     preview.removeAttribute("id");
     preview.querySelectorAll("[id]").forEach((e) => e.removeAttribute("id"));
     preview.classList.add("cmb-drag-preview");
+    preview.setAttribute("aria-hidden", "true"); // a picture, not a second block
     preview.removeAttribute("data-cmb-drag-source");
     document.body.appendChild(preview);
     document.body.classList.add("cmb-dragging");
@@ -255,7 +256,7 @@ class DragStore {
 const StoreContext = React.createContext<DragStore | null>(null);
 
 function useStore(): DragStore {
-  const store = useContext(StoreContext);
+  const store = use(StoreContext);
   if (!store) throw new Error("useDrag/useDrop need a DragProvider");
   return store;
 }

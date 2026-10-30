@@ -3,21 +3,33 @@ import { act, createEvent, fireEvent, screen } from "@testing-library/react";
 type Point = { x: number; y: number };
 
 /**
- * jsdom has no DragEvent, so the pointer position has to be attached by hand
- * for react-dnd to see it.
+ * Fire a pointer event the way a mouse would. jsdom has no layout, so what is
+ * under the pointer (which `document.elementFromPoint` reports to the drag
+ * layer) is whatever `under` says.
  */
-const fireDragEvent = (
-  type: "dragEnter" | "dragOver" | "drop",
+export const firePointer = (
+  type: "pointerDown" | "pointerMove" | "pointerUp" | "pointerCancel",
   el: Element,
-  point?: Point
-) => {
+  point: Point,
+  under: Element = el
+): void => {
+  document.elementFromPoint = jest.fn(() => under);
+  // jsdom has no PointerEvent, so the fields the drag layer reads are attached
+  // by hand to a plain event.
   const event = createEvent[type](el);
-  if (point) {
-    Object.defineProperty(event, "clientX", { value: point.x });
-    Object.defineProperty(event, "clientY", { value: point.y });
-  }
+  Object.defineProperties(event, {
+    clientX: { value: point.x },
+    clientY: { value: point.y },
+    pointerId: { value: 1 },
+    pointerType: { value: "mouse" },
+    button: { value: 0 },
+  });
   fireEvent(el, event);
 };
+
+const START: Point = { x: 10, y: 10 };
+/** far enough from START to begin a drag, and the default pointer position */
+const AWAY: Point = { x: 30, y: 30 };
 
 /**
  * What a real press does to keyboard focus, which `fireEvent.mouseDown` alone
@@ -55,28 +67,33 @@ export const pressFocus = (el: Element) => {
  */
 export const drag = (srcNode: Element) => {
   // (focus moves as the default action of the press, unless a handler stops it)
+  firePointer("pointerDown", srcNode, START);
   if (fireEvent.mouseDown(srcNode)) {
     pressFocus(srcNode);
   }
-  fireEvent.dragStart(srcNode);
+  // moving a few pixels is what starts the drag
+  firePointer("pointerMove", srcNode, { x: START.x + 10, y: START.y + 10 });
+  let at = AWAY;
   const next = {
     dragOver: (overNode: Element, point?: Point) => {
-      fireDragEvent("dragEnter", overNode, point);
+      at = point ?? AWAY;
+      firePointer("pointerMove", overNode, at);
       fireEvent.mouseOver(overNode);
       return {
         dragLeave: () => {
-          fireEvent.dragLeave(overNode);
+          firePointer("pointerMove", document.body, { x: 900, y: 900 });
           fireEvent.mouseOut(overNode);
         },
       };
     },
-    dropOnto: (ontoNode: Element, point?: Point) => {
+    /** `under` is what `elementFromPoint` reports, when not `ontoNode` itself */
+    dropOnto: (ontoNode: Element, point?: Point, under?: Element) => {
       next.dragOver(ontoNode, point);
-      fireDragEvent("drop", ontoNode, point);
+      firePointer("pointerUp", ontoNode, at, under);
     },
     /** release the drag without dropping on anything */
     cancel: () => {
-      fireEvent.dragEnd(srcNode);
+      firePointer("pointerCancel", srcNode, at);
     },
   };
   return next;

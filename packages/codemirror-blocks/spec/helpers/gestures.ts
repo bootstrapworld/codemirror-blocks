@@ -42,18 +42,13 @@ export const pasteAtCursor = (cmb: API, text: string) =>
     clipboardData: { getData: () => text },
   });
 
-/**
- * Drag `src` onto `target` and drop it, then end the drag like a browser does
- * (react-dnd stays "dragging" until it sees `dragend`, which also reaches it
- * when the dragged element was removed by the drop).
- */
+/** Drag `src` onto `target` and drop it. */
 export const dragOnto = (
   src: Element,
   target: Element,
   point?: { x: number; y: number }
 ) => {
   drag(src).dropOnto(target, point);
-  fireEvent.dragEnd(document.body);
 };
 
 /**

@@ -1,9 +1,9 @@
-import { cleanup, render, screen, fireEvent } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import CodeMirror from "codemirror";
 import React from "react";
-import { useDrag } from "react-dnd";
 import Context from "../../src/components/Context";
-import { ItemTypes } from "../../src/dnd";
+import { useDrag } from "../../src/dnd";
+import { drag } from "../helpers/dnd";
 import { CodeMirrorFacade } from "../../src/editor";
 import { addLanguage, Language } from "../../src/languages";
 import { AppStore, createAppStore } from "../../src/state/store";
@@ -56,16 +56,14 @@ it("should render a trashcan", () => {
 });
 
 const DragStub = ({ node }: { node: ASTNode }) => {
-  const [_, connectDragSource] = useDrag({
-    type: ItemTypes.NODE,
-    item: () => ({ id: node.id }),
-  });
-  return connectDragSource(<div>draggable thing</div>);
+  const [, connectDragSource] = useDrag({ item: () => ({ id: node.id }) });
+  return <div ref={connectDragSource}>draggable thing</div>;
 };
 
 describe("dragging a node over the trashcan", () => {
   let trashcan: HTMLElement;
   let draggable: HTMLElement;
+  let dragging: ReturnType<typeof drag>;
   beforeEach(() => {
     editor.setValue("a b c");
     store.dispatch(actions.setBlockMode(true, editor.getValue(), language));
@@ -80,9 +78,8 @@ describe("dragging a node over the trashcan", () => {
     );
     trashcan = document.querySelector(".TrashCan")!;
     draggable = screen.getByText("draggable thing");
-    fireEvent.dragStart(draggable);
-    fireEvent.dragEnter(trashcan);
-    fireEvent.dragOver(trashcan);
+    dragging = drag(draggable);
+    dragging.dragOver(trashcan);
   });
 
   it("should add an 'over' css class", () => {
@@ -98,7 +95,7 @@ describe("dragging a node over the trashcan", () => {
 
   it("should delete the node that was dropped onto it", () => {
     expect(selectors.getAST(store.getState()).toString()).toBe("a\nb\nc");
-    fireEvent.drop(trashcan);
+    dragging.dropOnto(trashcan);
     expect(selectors.getAST(store.getState()).toString()).toBe("b\nc");
   });
 });
@@ -125,10 +122,7 @@ describe("when the editor changes (e.g. after toggling modes)", () => {
     result.rerender(tree(newEditor));
 
     const trashcan = document.querySelector(".TrashCan")!;
-    fireEvent.dragStart(screen.getByText("draggable thing"));
-    fireEvent.dragEnter(trashcan);
-    fireEvent.dragOver(trashcan);
-    fireEvent.drop(trashcan);
+    drag(screen.getByText("draggable thing")).dropOnto(trashcan);
 
     expect(newEditor.getValue()).toBe("b c");
     expect(editor.getValue()).toBe("a b c");

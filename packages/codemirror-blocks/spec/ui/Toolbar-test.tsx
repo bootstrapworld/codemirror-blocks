@@ -50,22 +50,22 @@ describe("Toolbar", () => {
       <Toolbar toolbarRef={React.createRef()} primitives={primitives} />
     );
     expect(screen.getByText("star")).toMatchInlineSnapshot(`
-      <span
-        class="Primitive list-group-item"
-        draggable="true"
-        tabindex="-1"
-      >
-        star
-      </span>
+     <span
+       class="Primitive list-group-item"
+       data-cmb-drag-source=""
+       tabindex="-1"
+     >
+       star
+     </span>
     `);
     expect(screen.getByText("square")).toMatchInlineSnapshot(`
-      <span
-        class="Primitive list-group-item"
-        draggable="true"
-        tabindex="-1"
-      >
-        square
-      </span>
+     <span
+       class="Primitive list-group-item"
+       data-cmb-drag-source=""
+       tabindex="-1"
+     >
+       square
+     </span>
     `);
     ["star", "square", "sqrt", "ellipse"].forEach((text) => {
       expect(screen.queryByText(text)).toBeInTheDocument();

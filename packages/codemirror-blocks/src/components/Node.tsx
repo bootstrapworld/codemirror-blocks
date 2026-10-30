@@ -148,12 +148,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   };
 
-  const handleMouseDragRelated = (e: React.MouseEvent<HTMLSpanElement>) => {
-    if (e.type === "dragstart") {
-      const dt = new DataTransfer();
-      dt.setData("text/plain", (e.target as HTMLSpanElement).textContent || "");
-    }
-  };
   const { ...passingProps } = props;
 
   const comment = props.node.options.comment;
@@ -285,9 +279,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
         target={new ReplaceNodeTarget(props.node)}
         value={value}
         onChange={(value: string | null) => setValue(value)}
-        onDragStart={handleMouseDragRelated}
-        onDragEnd={handleMouseDragRelated}
-        onDrop={handleMouseDragRelated}
         contentEditableProps={contentEditableProps}
       >
         {props.children}
@@ -317,9 +308,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
         onMouseDown={handleMouseDown}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
-        onDragStart={handleMouseDragRelated}
-        onDragEnd={handleMouseDragRelated}
-        onDrop={handleMouseDragRelated}
         onKeyDown={handleKeyDown}
       >
         {props.children}

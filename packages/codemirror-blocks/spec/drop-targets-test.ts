@@ -73,10 +73,10 @@ describe("dropping a node onto bare editor whitespace", () => {
   it("beeps and changes nothing when the drop lands on a block", () => {
     cmb.setValue("a\n\n\nb");
     const wrapper = cmb.getCM().getWrapperElement();
-    // the point under the pointer is *inside* the block for `b`
-    const onB = getNodeLabeled(/^b,/);
-    document.elementFromPoint = jest.fn(() => onB);
-    drag(getNodeLabeled(/^a,/)).dropOnto(wrapper, { x: 20, y: 20 });
+    // the point under the pointer is inside the widget that holds `b`, but not
+    // on a drop target (that would replace `b`)
+    const onB = getNodeLabeled(/^b,/).parentElement!;
+    drag(getNodeLabeled(/^a,/)).dropOnto(wrapper, { x: 20, y: 20 }, onB);
     expect(cmb.getValue()).toBe("a\n\n\nb");
   });
 });
