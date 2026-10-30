@@ -1,4 +1,5 @@
-import type { Activity, AppAction, RootState } from "./state/reducers";
+import type { Activity } from "./state/activityLog";
+import type { AppAction, RootState } from "./state/reducers";
 import { ASTNode, Pos } from "./ast";
 import { CodeMirrorFacade, isBlockNodeMarker } from "./editor";
 import type { AppStore } from "./state/store";
@@ -105,7 +106,7 @@ const codeMirrorAPI = [
   "getGutterElement",
 ] as const;
 
-type CodeMirrorAPI = Pick<CodeMirror.Editor, typeof codeMirrorAPI[number]>;
+type CodeMirrorAPI = Pick<CodeMirror.Editor, (typeof codeMirrorAPI)[number]>;
 
 // CodeMirror APIs that we need to disallow
 const unsupportedAPIs = [
@@ -140,7 +141,7 @@ type BlockModeAPI = {
    * @internal
    */
   executeAction(activity: Activity): void;
-} & Partial<Omit<CodeMirror.Editor, typeof unsupportedAPIs[number]>>;
+} & Partial<Omit<CodeMirror.Editor, (typeof unsupportedAPIs)[number]>>;
 
 type ToggleEditorAPI = {
   getBlockMode(): boolean;
@@ -571,7 +572,7 @@ const validateSelectionRanges = (
   try {
     validateRanges(ranges, ast);
   } catch (e) {
-    throw new BlockError(e, "API Error");
+    throw new BlockError(String(e), "API Error");
   }
   // process the selection ranges into an array of ranges and nodes
   tmpCM.listSelections().forEach(({ anchor, head }) => {

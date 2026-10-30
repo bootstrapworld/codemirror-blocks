@@ -9,7 +9,7 @@ type Props = {
   primitives?: PrimitiveGroup;
   languageId?: string; // used to find the .blocks-language-{languageId} CSS class
   blockMode?: boolean;
-  toolbarRef: React.RefObject<HTMLInputElement>;
+  toolbarRef: React.RefObject<HTMLInputElement | null>;
 };
 
 const Toolbar = (props: Props) => {
@@ -41,9 +41,14 @@ const Toolbar = (props: Props) => {
   ) => {
     const keyName = CodeMirror.keyName(event);
     switch (keyName) {
-      case "Down":
-        primitiveListRef.current?.focus();
+      case "Down": {
+        // The list itself isn't focusable, so go straight to its first block
+        event.preventDefault();
+        primitiveListRef.current
+          ?.querySelector<HTMLElement>(".Primitive")
+          ?.focus();
         return;
+      }
     }
   };
 

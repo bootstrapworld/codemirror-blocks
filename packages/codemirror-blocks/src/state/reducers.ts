@@ -1,53 +1,8 @@
 import CodeMirror from "codemirror";
 import type { Action } from "redux";
 import { AST, ASTData } from "../ast";
-import { Pos, ReadonlyCMBEditor } from "../editor";
+import { Pos } from "../editor";
 import { debugLog } from "../utils";
-
-/**
- * An Activity is a shallow-clone of a reducer action, except that
- * all instances of the AST are replaced with the source code, and
- * focusIds get replaced with node ids.
- */
-export type Activity =
-  | Exclude<AppAction, { ast: AST } | Action<"SET_AST"> | Action<"SET_FOCUS">>
-  | (Action<"SET_AST"> & { code: string })
-  | (Action<"SET_FOCUS"> & { nid: number | null });
-
-const reducerActivities: Activity[] = [];
-
-/**
- * @internal
- * Get a readonly list of all reducer actions that have taken place
- * that is suitable for serialization
- */
-export const getReducerActivities = (): ReadonlyArray<Activity> =>
-  reducerActivities;
-
-function loggerDebug(action: AppAction, ast: ASTData) {
-  // Shallow-clone the action, removing the AST.
-  // Then replace the AST with the source code.
-  // We'll reconstruct it when replaying the log.
-  // Replace focusId with nid
-  let activity: Activity;
-  switch (action.type) {
-    case "SET_AST":
-      activity = { type: action.type, code: new AST(ast).toString() };
-      break;
-    case "SET_FOCUS":
-      activity = {
-        type: action.type,
-        nid: action.focusId
-          ? new AST(ast).getNodeByIdOrThrow(action.focusId).nid
-          : null,
-      };
-      break;
-    default:
-      activity = { ...action };
-  }
-
-  reducerActivities.push(activity);
-}
 
 export type Quarantine = Readonly<{ from: Pos; to: Pos; value: string }>;
 
@@ -83,9 +38,14 @@ export type RootState = {
   readonly quarantine: Quarantine | null;
   readonly markedMap: Readonly<{ [key: string]: CodeMirror.TextMarker }>;
 
-  // TODO(pcardune): make these readonly
-  undoableAction: string | undefined;
-  actionFocus: ActionFocus | undefined;
+  /**
+   * The description and focus of the undo/redo action that is about to be
+   * performed. These are copied onto CodeMirror's history item for the
+   * opposite stack once the undo/redo has happened (see
+   * {@link actions.finishUndoOrRedo}).
+   */
+  readonly undoableAction: string | undefined;
+  readonly actionFocus: ActionFocus | undefined;
 };
 
 export type AppAction =
@@ -109,8 +69,10 @@ export type AppAction =
     })
   | (Action<"ADD_MARK"> & { id: string; mark: CodeMirror.TextMarker })
   | (Action<"CLEAR_MARK"> & { id: string })
-  | (Action<"UNDO"> & { editor: ReadonlyCMBEditor })
-  | (Action<"REDO"> & { editor: ReadonlyCMBEditor })
+  | (Action<"SET_UNDOABLE_ACTION"> & { undoableAction: string | undefined })
+  | (Action<"SET_ACTION_FOCUS"> & { actionFocus: ActionFocus | undefined })
+  | Action<"UNDO">
+  | Action<"REDO">
   | Action<"RESET_STORE_FOR_TESTING">;
 
 const initialState: () => RootState = () => ({
@@ -145,12 +107,18 @@ function reduce(state = initialState(), action: AppAction): RootState {
         return { ...state, focusId: action.focusId };
       }
       return state;
-    case "SET_AST":
+    case "SET_AST": {
+      // forget everything that points at nodes the new AST no longer has
+      const exists = (id: string) => !!action.ast.getNodeById(id);
       return {
         ...state,
         astData: action.ast.data,
-        collapsedList: state.collapsedList.filter(action.ast.getNodeById),
+        collapsedList: state.collapsedList.filter(exists),
+        selections: state.selections.filter(exists),
+        focusId:
+          state.focusId && exists(state.focusId) ? state.focusId : undefined,
       };
+    }
     case "SET_SELECTIONS":
       return { ...state, selections: action.selections };
     case "SET_EDITABLE":
@@ -212,31 +180,17 @@ function reduce(state = initialState(), action: AppAction): RootState {
       delete markedMap[action.id];
       return { ...state, markedMap };
     }
-    case "UNDO": {
-      const historyItem = action.editor.getTopmostAction("redo");
-
-      historyItem.undoableAction = state.undoableAction;
-      historyItem.actionFocus = state.actionFocus;
-      return {
-        ...state,
-        undoableAction: undefined,
-        actionFocus: undefined,
-      };
-    }
-    case "REDO": {
-      const historyItem = action.editor.getTopmostAction("undo");
-      historyItem.undoableAction = state.undoableAction;
-      historyItem.actionFocus = state.actionFocus;
-      return {
-        ...state,
-        undoableAction: undefined,
-        actionFocus: undefined,
-      };
-    }
+    case "SET_UNDOABLE_ACTION":
+      return { ...state, undoableAction: action.undoableAction };
+    case "SET_ACTION_FOCUS":
+      return { ...state, actionFocus: action.actionFocus };
+    case "UNDO":
+    case "REDO":
+      return { ...state, undoableAction: undefined, actionFocus: undefined };
     case "RESET_STORE_FOR_TESTING":
       return initialState();
     default:
-      debugLog("unprocessed action type=", (action as Action<unknown>).type);
+      debugLog("unprocessed action type=", (action as Action<string>).type);
       return state;
   }
 }
@@ -246,7 +200,5 @@ export const reducer = (
   action: AppAction
 ): RootState => {
   debugLog(action);
-  const result = reduce(state, action);
-  loggerDebug(action, result.astData);
-  return result;
+  return reduce(state, action);
 };

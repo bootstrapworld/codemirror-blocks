@@ -152,7 +152,7 @@ field declared. The node was:`,
     );
   }
 
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState<string | null>("");
   const [mouseOver, setMouseOver] = useState(false);
 
   const dispatch: AppDispatch = useDispatch();
@@ -238,7 +238,7 @@ field declared. The node was:`,
   const handleMouseDragRelated = () => {
     //NOTE(ds26gte): dummy handler
   };
-  const handleChange = (value: string) => {
+  const handleChange = (value: string | null) => {
     setValue(value);
   };
 
@@ -281,8 +281,11 @@ field declared. The node was:`,
     "blocks-white-space",
     { "blocks-over-target": isOver || mouseOver },
   ];
-  return connectDropTarget(
+  return (
     <span
+      ref={(el) => {
+        connectDropTarget(el);
+      }}
       id={`block-drop-target-${id}`}
       className={classNames(classes)}
       onMouseEnter={handleMouseEnterRelated}

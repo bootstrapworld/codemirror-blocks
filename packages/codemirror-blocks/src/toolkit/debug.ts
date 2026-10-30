@@ -3,7 +3,7 @@ import "./debug-page.less";
 import type { Language } from "../CodeMirrorBlocks";
 import CodeMirrorBlocks from "../CodeMirrorBlocks";
 import { resetUniqueIdGenerator } from "../utils";
-import { getReducerActivities } from "../state/reducers";
+import { getReducerActivities } from "../state/activityLog";
 
 /**
  * Renders the codemirror blocks editor to the page along with some
@@ -35,7 +35,6 @@ export function createDebuggingInterface(language: Language, value: string) {
 </div>
   `;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const container = document.getElementById("cmb-editor")!;
   // grab the load-from-log button
   const loadLogButton = document.getElementById(

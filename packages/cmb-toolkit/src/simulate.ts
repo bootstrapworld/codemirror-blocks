@@ -1,5 +1,4 @@
 import { fireEvent } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 
 // These exported functions simulate browser events for testing.
 // They use React's test utilities whenever possible.
@@ -137,7 +136,12 @@ export function keyPress(
 export function insertText(text: string) {
   const activeEl = getActiveElementOrThrow();
   if (activeEl.tagName == "textarea" || activeEl.tagName == "input") {
-    userEvent.type(activeEl, text);
+    fireEvent.input(activeEl, {
+      target: {
+        value:
+          (activeEl as HTMLInputElement | HTMLTextAreaElement).value + text,
+      },
+    });
   } else {
     // this is some contenteditable node, so use an input event.
     // See https://github.com/testing-library/dom-testing-library/pull/235
@@ -217,6 +221,8 @@ function getKeyCode(key: string): number {
       return 221;
     case "/":
       return 191;
+    case "\\":
+      return 220;
     case "<":
       return 188;
     // If you extend this, make sure to match the official table linked above.

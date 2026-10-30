@@ -604,7 +604,7 @@ export const nodeElementMap = new Map<string, HTMLElement>();
  */
 export class ASTNode<
   Spec extends NodeSpec = NodeSpec,
-  Fields extends NodeFields<string> = NodeFields<string>
+  Fields extends NodeFields<string> = NodeFields<string>,
 > {
   /**
    * @internal
@@ -650,7 +650,10 @@ export class ASTNode<
   readonly render: ASTNodeProps["render"];
   readonly longDescription?: ASTNodeProps["longDescription"];
 
-  constructor(props: ASTNodeProps<Spec>) {
+  constructor(specificProps: ASTNodeProps<Spec>) {
+    // The node is stored with the generic NodeSpec, so the spec-specific
+    // callbacks (which are contravariant in the node) are widened here.
+    const props = specificProps as unknown as ASTNodeProps;
     validateNodeProps(props);
     this.from = props.from;
     this.to = props.to;
@@ -754,10 +757,12 @@ export class ASTNode<
   }
 }
 
-function renderASTNode(props: { node: ASTNode }) {
+function renderASTNode(props: { node: ASTNode }): React.ReactElement {
   const node = props.node;
   if (typeof node.render === "function") {
-    return node.render.bind(node)(props);
+    return node.render.bind(node)(
+      props as Parameters<typeof node.render>[0]
+    ) as React.ReactElement;
   } else {
     throw new Error("Don't know how to render node of type: " + node.type);
   }

@@ -1,70 +1,90 @@
 {
   "name": "codemirror-blocks",
-  "version": "0.8.6",
+  "version": "0.9.0",
   "description": "CodeMirror extension for using draggable blocks to write programming languages",
   "main": "./lib/CodeMirrorBlocks.js",
+  "types": "./lib/CodeMirrorBlocks.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/CodeMirrorBlocks.d.ts",
+      "default": "./lib/CodeMirrorBlocks.js"
+    },
+    "./lib/*.less": "./lib/*.less",
+    "./lib/*.mp3": "./lib/*.mp3",
+    "./lib/languages": {
+      "types": "./lib/languages/index.d.ts",
+      "default": "./lib/languages/index.js"
+    },
+    "./lib/languages/example": {
+      "types": "./lib/languages/example/index.d.ts",
+      "default": "./lib/languages/example/index.js"
+    },
+    "./lib/languages/lambda": {
+      "types": "./lib/languages/lambda/index.d.ts",
+      "default": "./lib/languages/lambda/index.js"
+    },
+    "./lib/languages/wescheme": {
+      "types": "./lib/languages/wescheme/index.d.ts",
+      "default": "./lib/languages/wescheme/index.js"
+    },
+    "./lib/*": {
+      "types": "./lib/*.d.ts",
+      "default": "./lib/*.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "/lib"
   ],
   "engines": {
-    "node": ">=10.x",
-    "npm": ">=7.x"
+    "node": ">=24",
+    "npm": ">=11"
   },
   "dependencies": {
     "classnames": "^2.3.1",
     "codemirror": "^5.65.7",
     "fast-json-stable-stringify": "^2.1.0",
     "pretty-fast-pretty-printer": "^0.10.0",
-    "react": "^17.0.2",
-    "react-codemirror2": "^7.2.1",
+    "react": "^19.2.0",
+    "react-codemirror2": "^9.0.1",
     "react-contenteditable": "^3.3.6",
     "react-dnd": "^14.0.5",
     "react-dnd-html5-backend": "^14.1.0",
-    "react-dom": "^17.0.2",
+    "react-dom": "^19.2.0",
     "react-modal": "^3.15.1",
-    "react-redux": "^7.2.8",
-    "react-tabs": "^3.2.3",
-    "redux": "^4.2.0",
-    "reselect": "^4.1.6",
-    "redux-thunk": "^2.4.1"
+    "react-redux": "^9.2.0",
+    "react-tabs": "^6.1.1",
+    "redux": "^5.0.1",
+    "redux-thunk": "^3.1.0",
+    "reselect": "^5.1.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.20.7",
     "@babel/core": "^7.20.12",
-    "@babel/eslint-parser": "^7.18.9",
     "@babel/plugin-proposal-class-properties": "^7.17.12",
     "@babel/plugin-transform-modules-commonjs": "^7.18.2",
     "@babel/preset-env": "^7.18.9",
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
     "@bootstrapworld/cmb-toolkit": "*",
-    "@testing-library/dom": "^8.14.0",
-    "@testing-library/jest-dom": "^5.16.4",
-    "@testing-library/react": "^12.1.5",
-    "@testing-library/user-event": "^13.5.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
     "@types/codemirror": "^5.60.5",
-    "@types/html-webpack-plugin": "^3.2.6",
-    "@types/jest": "^27.4.1",
-    "@types/react-dom": "^17.0.15",
+    "@types/jest": "^30.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "@types/react-modal": "^3.13.1",
-    "@types/react-tabs": "^2.3.4",
-    "@types/react": "^17.0.44",
     "@types/webpack-bundle-analyzer": "^4.4.1",
-    "@types/webpack-dev-server": "^4.7.2",
-    "@types/webpack": "^5.28.0",
-    "@typescript-eslint/eslint-plugin": "^4.33.0",
-    "@typescript-eslint/parser": "^5.30.7",
-    "babel-jest": "^27.5.1",
-    "babel-loader": "^8.2.5",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react": "^7.30.1",
-    "eslint": "^7.32.0",
-    "jest": "^27.5.1",
-    "prettier": "^2.7.1",
+    "babel-jest": "^30.5.2",
+    "babel-loader": "^10.1.1",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
+    "prettier": "^3.6.2",
     "ts-node": "^10.9.1",
-    "typescript": "^4.7.4",
-    "webpack-cli": "^4.10.0"
+    "typescript": "^6.0.3",
+    "webpack-cli": "^7.2.3"
   },
   "peerDependencies": {
     "codemirror": "^5.65.7"
@@ -78,9 +98,10 @@
     "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\"",
     "build-watch": "npm run build -- --watch",
     "build-types": "npx tsc",
+    "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit && tsc -p e2e --noEmit",
     "build-types-watch": "npx tsc --watch",
-    "lint": "eslint --ignore-path ../../.gitignore . --ext .js,.jsx,.ts,.tsx",
-    "upgrade-interactive": "npm-check --update"
+    "lint": "eslint .",
+    "test:e2e": "playwright test"
   },
   "author": "The Bootstrap Team",
   "repository": "github:bootstrapworld/codemirror-blocks",

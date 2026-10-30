@@ -54,13 +54,13 @@ describe("The primitives module", () => {
       });
 
       it("should delegate to the parsers getASTNodeForPrimitive", () => {
-        expect(() => primitive.getASTNode()).toThrowError(
+        expect(() => primitive.getASTNode()).toThrow(
           "getASTNodeForPrimitive() must be implemented if primitives are used."
         );
       });
 
       it("should delegate to the parsers getLiteralNodeForPrimitive", () => {
-        expect(() => primitive.getLiteralNode()).toThrowError(
+        expect(() => primitive.getLiteralNode()).toThrow(
           "getLiteralNodeForPrimitive() must be implemented if primitives are used."
         );
       });

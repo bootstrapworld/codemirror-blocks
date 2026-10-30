@@ -49,9 +49,10 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
  * type ObjWithMyField = {someField: ASTNode};
  * ```
  */
-type AsObj<Spec> = Spec extends BaseSpec<infer FieldName, infer FieldType>
-  ? Record<FieldName, FieldType>
-  : never;
+type AsObj<Spec> =
+  Spec extends BaseSpec<infer FieldName, infer FieldType>
+    ? Record<FieldName, FieldType>
+    : never;
 
 /**
  * This type lets you go from a NodeSpec type to an object of fields. Usage looks like:
@@ -70,11 +71,10 @@ type AsObj<Spec> = Spec extends BaseSpec<infer FieldName, infer FieldType>
  * };
  * ```
  */
-export type FieldsForSpec<NodeSpecType> = NodeSpecType extends NodeSpec<
-  infer ChildSpecType
->
-  ? UnionToIntersection<AsObj<ChildSpecType>>
-  : never;
+export type FieldsForSpec<NodeSpecType> =
+  NodeSpecType extends NodeSpec<infer ChildSpecType>
+    ? UnionToIntersection<AsObj<ChildSpecType>>
+    : never;
 
 export type ChildSpec<FieldName extends string> =
   | Required<FieldName>
@@ -118,7 +118,7 @@ type NodeLike = {
 
 export type { NodeSpec };
 class NodeSpec<Specs extends ChildSpec<string> = ChildSpec<string>> {
-  readonly childSpecs: Specs[];
+  readonly childSpecs: readonly Specs[];
   constructor(childSpecs: readonly Specs[]) {
     if (!(childSpecs instanceof Array)) {
       throw new Error(
@@ -305,7 +305,7 @@ export class List<FieldName extends string = string> extends BaseSpec<
 
 export class Value<
   FieldName extends string = string,
-  V = unknown
+  V = unknown,
 > extends BaseSpec<FieldName, V> {
   validate(node: NodeLike) {
     const value = this.getField(node);

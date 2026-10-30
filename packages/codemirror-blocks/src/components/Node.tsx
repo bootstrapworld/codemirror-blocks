@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AST, ASTNode, nodeElementMap } from "../ast";
 import { ReplaceNodeTarget, collapseNode } from "../state/actions";
@@ -216,15 +222,36 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }),
   });
 
-  const nodeElementRef = useRef<HTMLSpanElement>(null);
+  const nodeElementRef = useRef<HTMLSpanElement | null>(null);
 
+  // The node's element is a drag source (and its own drag preview), maybe a
+  // drop target, and is remembered in nodeElementRef. These callbacks are
+  // stable across renders, so that react-dnd doesn't reconnect on every one.
+  const normallyEditable = Boolean(props.normallyEditable);
+  const setNodeElement = useCallback(
+    (el: HTMLSpanElement | null) => {
+      nodeElementRef.current = el;
+      if (normallyEditable) {
+        connectDropTarget(el);
+      }
+      connectDragSource(el);
+      connectDragPreview(el, { offsetX: 1, offsetY: 1 });
+    },
+    [normallyEditable, connectDropTarget, connectDragSource, connectDragPreview]
+  );
+
+  // The element can be replaced without the id changing (editing a node swaps
+  // it for the editing box and back), so register it after every render.
   useEffect(() => {
     if (nodeElementRef.current) {
       nodeElementMap.set(props.node.id, nodeElementRef.current);
-      return () => {
-        nodeElementMap.delete(props.node.id);
-      };
     }
+  });
+  useEffect(() => {
+    const id = props.node.id;
+    return () => {
+      nodeElementMap.delete(id);
+    };
   }, [props.node.id]);
 
   // If this is the currently focused node, then focus the node element
@@ -246,6 +273,21 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   }, [editor, focusedNode?.id, props.node.id, editable]);
 
+  // An edit can re-create this node's codemirror widget without changing its
+  // id (e.g. dropping a node elsewhere). The browser then drops focus, and
+  // since the focused id didn't change, the effect above doesn't rerun. If
+  // focus is stranded on the body or the screenreader placeholder, take it back.
+  useEffect(() => {
+    const active = document.activeElement;
+    const stranded =
+      !active ||
+      active === document.body ||
+      active.id === "SR_fix_for_slow_dom";
+    if (stranded && focusedNode?.id === props.node.id) {
+      nodeElementRef.current?.focus();
+    }
+  });
+
   if (editable) {
     if (!editor) {
       throw new Error("can't edit nodes before codemirror has mounted");
@@ -260,7 +302,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
         isInsertion={false}
         target={new ReplaceNodeTarget(props.node)}
         value={value}
-        onChange={(value) => setValue(value)}
+        onChange={(value: string | null) => setValue(value)}
         onDragStart={handleMouseDragRelated}
         onDragEnd={handleMouseDragRelated}
         onDrop={handleMouseDragRelated}
@@ -274,11 +316,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
     if (textMarker?.options.className) {
       classes.push(textMarker.options.className);
     }
-    let result: React.ReactElement | null = (
+    const result = (
       <span
         {...contentEditableProps}
         className={classNames(classes)}
-        ref={nodeElementRef}
+        ref={setNodeElement}
         role={props.inToolbar ? "listitem" : "treeitem"}
         style={
           {
@@ -302,19 +344,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
         {comment && comment.reactElement({ id: commentElemId })}
       </span>
     );
-    if (props.normallyEditable) {
-      result = connectDropTarget(result);
-    }
-    result = connectDragPreview(connectDragSource(result), {
-      offsetX: 1,
-      offsetY: 1,
-    });
-    result = (
+    return (
       <NodeContext.Provider value={{ node: props.node }}>
         {result}
       </NodeContext.Provider>
     );
-    return result;
   }
 };
 

@@ -4,7 +4,7 @@ import { activateByNid } from "../state/actions";
 import patch from "./patchAst";
 import { AST, ASTNode } from "../ast";
 import type { EditorChange } from "codemirror";
-import { ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
+import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import { ChangeObject } from "./performEdits";
 import * as actions from "../state/actions";
 import * as selectors from "../state/selectors";
@@ -76,14 +76,64 @@ export const commitChanges =
       // this is what populates our undo stack.
       const newFocus = focusId ? newAST.getNodeById(focusId) : undefined;
       const topmostAction = editor.getTopmostAction("undo");
+      // CodeMirror folds quick typing-like changes into the previous history
+      // item. Undoing it reverts all of them, so it has to go back to where
+      // focus was before the first one; redo goes to where the last one left it.
+      const merged = topmostAction.actionFocus;
       topmostAction.undoableAction = annt;
       topmostAction.actionFocus = {
-        oldFocusNId: oldFocus?.nid,
+        oldFocusNId: merged ? merged.oldFocusNId : oldFocus?.nid,
         newFocusNId: newFocus?.nid,
       };
       dispatch(actions.setFocusedNode(newFocus));
     }
     return { newAST, focusId };
+  };
+
+/**
+ * Move focus once an undo or redo has finished (all of CodeMirror's changes
+ * applied and the display redrawn). One history item can hold several changes
+ * and CodeMirror reports each of them, so deciding per change would apply the
+ * saved focus to the first one and guess for the rest.
+ *
+ * The history item being undone or redone remembers which block had focus
+ * before the edit (`oldFocusNId`) and which had it after (`newFocusNId`).
+ * Those are positions in the document at those moments, so each is only
+ * meaningful in the document it was taken from: an undo restores the text from
+ * before the edit, a redo the text from after it. If that block can't be found
+ * (it was just inserted, or nothing had focus), focus goes to the block nearest
+ * the change.
+ *
+ * @param which whether the changes came from an undo or a redo
+ * @param changes every change the undo or redo made, in the order applied
+ */
+export const focusAfterUndoOrRedo =
+  (
+    which: "undo" | "redo",
+    editor: CMBEditor,
+    changes: EditorChange[]
+  ): AppThunk =>
+  (dispatch, getState) => {
+    const { actionFocus } = getState();
+    const nid =
+      which === "undo" ? actionFocus?.oldFocusNId : actionFocus?.newFocusNId;
+    const focusHint: FocusHint = (ast) =>
+      (typeof nid === "number" ? ast.getNodeByNId(nid) : undefined) ??
+      "fallback";
+    const node = computeFocusNodeFromHint(
+      editor,
+      changes,
+      focusHint,
+      getState()
+    );
+    if (node) {
+      dispatch(activateByNid(editor, node.nid));
+    }
+    // With no block left to focus, keep keyboard focus in the editor so that
+    // redo (and typing) still work.
+    if (!selectors.getFocusedNode(getState())) {
+      editor.focus();
+    }
   };
 
 // Use the focus hint to determine focus, unless:

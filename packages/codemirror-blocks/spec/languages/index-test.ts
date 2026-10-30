@@ -16,21 +16,19 @@ describe("addLanguage function,", () => {
     removeLanguage("bar");
   });
   it("should throw an error if the language has already been defined", () => {
-    expect(() => addLanguage({ id: "foo" } as any)).toThrowError(
+    expect(() => addLanguage({ id: "foo" } as any)).toThrow(
       "language foo has already been added."
     );
   });
   it("should throw an error if the language is missing a name", () => {
-    expect(() => addLanguage({ id: "bar" } as any)).toThrowError(
+    expect(() => addLanguage({ id: "bar" } as any)).toThrow(
       "language definition for bar is missing a 'name' attribute."
     );
   });
   it("should throw an error if the language is missing a parse function", () => {
     expect(() =>
       addLanguage({ id: "bar", name: "Bar Language" } as any)
-    ).toThrowError(
-      "language definition for bar is missing a 'parse' function."
-    );
+    ).toThrow("language definition for bar is missing a 'parse' function.");
   });
   it("not an error if no getExceptionMessage function provided", () => {
     expect(() =>

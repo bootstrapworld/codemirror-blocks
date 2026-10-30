@@ -11,7 +11,7 @@ beforeAll(() => {
   testLanguage = addLanguage({
     id: "some-lang-id",
     name: "some lang",
-    parse: jest.fn(),
+    parse: jest.fn().mockReturnValue([]),
   });
 });
 
@@ -25,7 +25,7 @@ afterEach(cleanup);
 const renderWithContext = (el: React.ReactElement) =>
   render(<Context store={store}>{el}</Context>);
 
-xdescribe("on first render", () => {
+describe("on first render", () => {
   const onMount = jest.fn();
 
   it("calls the onMount callback with the editor, and api that were created", () => {

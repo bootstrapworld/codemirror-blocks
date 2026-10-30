@@ -46,6 +46,20 @@ export const getSelectedNodes: (state: RootState) => ASTNode[] = createSelector(
     selections.map((selection) => ast.getNodeByIdOrThrow(selection))
 );
 /**
+ * Selecting a block selects everything inside it too, so copying, cutting or
+ * deleting "the selected nodes" must only act on the outermost ones: otherwise
+ * the contents are copied twice, and deleting a node together with its own
+ * children breaks the edit.
+ *
+ * @returns the selected nodes that are not inside another selected node
+ */
+export const getOutermostSelectedNodes: (state: RootState) => ASTNode[] =
+  createSelector([getAST, getSelectedNodes], (ast, nodes) =>
+    nodes.filter(
+      (node) => !nodes.some((other) => ast.isAncestor(other.id, node.id))
+    )
+  );
+/**
  * Returns whether or not the given node is selected.
  * @param node The node to check.
  * @returns The selection state for the given node.
@@ -99,7 +113,7 @@ export const isErrorFree: (state: RootState) => boolean = createSelector(
 export const getFocusedNode: (state: RootState) => ASTNode | null =
   createSelector(
     [getAST, (state: RootState) => state.focusId],
-    (ast, focusId) => (focusId ? ast.getNodeById(focusId) ?? null : null)
+    (ast, focusId) => (focusId ? (ast.getNodeById(focusId) ?? null) : null)
   );
 
 /**

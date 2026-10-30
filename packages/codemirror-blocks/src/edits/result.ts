@@ -5,8 +5,7 @@
 export type ErrorResult<Error> = { successful: false; exception: Error };
 export type OkResult<Value> = { successful: true; value: Value };
 export type Result<Value, Error = unknown> =
-  | OkResult<Value>
-  | ErrorResult<Error>;
+  OkResult<Value> | ErrorResult<Error>;
 
 export function ok<Value>(value: Value): OkResult<Value> {
   return { successful: true, value };

@@ -19,10 +19,18 @@ function getCopyPasteBuffer() {
 
 export function pasteFromClipboard(done: (value: string) => void) {
   const buffer = getCopyPasteBuffer();
+  const previouslyFocusedElement = document.activeElement;
   buffer.value = "";
   buffer.focus();
   setTimeout(() => {
-    done(buffer.value);
+    const value = buffer.value;
+    // Give focus back *before* handing over the text, or keyboard shortcuts
+    // (like undo) would keep going to the hidden buffer. The edit may move
+    // focus again afterwards, e.g. onto the pasted node.
+    if (previouslyFocusedElement instanceof HTMLElement) {
+      previouslyFocusedElement.focus();
+    }
+    done(value);
   }, 50);
 }
 

@@ -98,7 +98,7 @@ const ByString: Searcher<SearchSettings, Props> = {
   component: class extends Component<Props> {
     displayName = "Search by String";
 
-    inputRef: React.RefObject<HTMLInputElement>;
+    inputRef: React.RefObject<HTMLInputElement | null>;
 
     constructor(props: Props) {
       super(props);
@@ -208,7 +208,6 @@ const ByString: Searcher<SearchSettings, Props> = {
     }
     const newSearchCur = skipWhile(
       (searchCur) => {
-        if (!searchCur) return false;
         const node = getNodeContainingBiased(searchCur.from(), ast);
         return (
           !!node &&

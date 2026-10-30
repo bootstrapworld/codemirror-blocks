@@ -2,7 +2,8 @@ import wescheme from "../src/languages/wescheme";
 import { teardown, keyDown, mountCMB } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { ASTNode } from "../src/ast";
-import { fireEvent, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { drag, getNodeLabeled } from "./helpers/dnd";
 import userEvent from "@testing-library/user-event";
 
 let cmb!: API;
@@ -11,43 +12,6 @@ beforeEach(() => {
 });
 
 afterEach(teardown);
-
-/**
- * Helper function to simulate dragging an element onto another element.
- *
- * @param srcNode the element to start dragging
- * @returns additional functions you can call to simulate dragging/dropping the element
- * over/onto another element.
- */
-const drag = (srcNode: Element) => {
-  fireEvent.mouseDown(srcNode);
-  fireEvent.dragStart(srcNode);
-  const next = {
-    dragOver: (overNode: Element) => {
-      fireEvent.dragEnter(overNode);
-      fireEvent.mouseOver(overNode);
-      return {
-        dragLeave: () => {
-          fireEvent.dragLeave(overNode);
-          fireEvent.mouseOut(overNode);
-        },
-      };
-    },
-    dropOnto: (ontoNode: Element) => {
-      next.dragOver(ontoNode);
-      fireEvent.drop(ontoNode);
-    },
-  };
-  return next;
-};
-
-/**
- * Get the element for a given ast node using it's aria-label
- * @param label string or regex to match the aria label
- * @returns the node, or throws if there is none.
- */
-const getNodeLabeled = (label: string | RegExp) =>
-  screen.getByRole("treeitem", { name: label });
 
 describe("when dragging a node onto a node in a different subtree", () => {
   it("should replace the node that it's dropped onto and focus on the new node", () => {
@@ -129,10 +93,10 @@ describe("when dragging a node over a drop target", () => {
   });
 });
 
-it("saves collapsed state when dragging a root node to be the last child of the next root node", () => {
+it("saves collapsed state when dragging a root node to be the last child of the next root node", async () => {
   cmb.setValue("(collapse me)\n(add 1 2)");
   const firstRootEl = getNodeLabeled(/collapse expression/);
-  userEvent.click(firstRootEl);
+  await userEvent.click(firstRootEl);
   keyDown("ArrowLeft", {}, firstRootEl); // collapse it
   expect(firstRootEl).toHaveAttribute("aria-expanded", "false");
   drag(firstRootEl).dropOnto(
@@ -148,6 +112,9 @@ it("saves collapsed state when dragging a root node to be the last child of the 
     "aria-expanded",
     "false"
   );
+  // the dropped node's widget was re-created; keyboard focus must stay on a
+  // block, not be stranded on the body or the screenreader placeholder
+  expect(document.activeElement).toHaveAttribute("role", "treeitem");
 });
 
 describe("corner cases", () => {

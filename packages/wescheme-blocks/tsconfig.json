@@ -3,8 +3,12 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "target": "es6",
+    // (this used to come in via the automatically included @types/node)
+    "lib": ["es2019", "dom"],
     "jsx": "react",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "rootDir": "./src",
     "sourceMap": true,
     "allowSyntheticDefaultImports": true,
     // Don't typecheck stuff internal to node_modules
@@ -15,6 +19,9 @@
     // Ensure that Babel can safely transpile files in the TypeScript project
     "isolatedModules": true,
     "outDir": "lib",
+    // TypeScript 6 turns "strict" on by default; this package opts into the
+    // checks below one at a time.
+    "strict": false,
     // TODO(pcardune) turn noImplicitAny on when we're ready for it
     // "noImplicitAny": true,
     "noImplicitThis": true,

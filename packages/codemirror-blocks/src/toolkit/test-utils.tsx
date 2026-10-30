@@ -6,7 +6,7 @@ import {
 } from "../CodeMirrorBlocks";
 import { act, cleanup, render } from "@testing-library/react";
 import React from "react";
-import { createAppStore } from "../state/store";
+import { AppStore, createAppStore } from "../state/store";
 // pass along all the simulated events
 export * from "@bootstrapworld/cmb-toolkit/lib/simulate";
 
@@ -28,7 +28,15 @@ export async function wait(ms: number) {
   });
 }
 
+let mounted: { cmb: API; store: AppStore } | undefined;
+
+/**
+ * The editor most recently created by {@link mountCMB} and not yet torn down.
+ */
+export const getMountedCMB = () => mounted;
+
 export function teardown() {
+  mounted = undefined;
   cleanup();
   const rootNode = document.getElementById("root");
   if (rootNode) {
@@ -60,7 +68,7 @@ const fixture = `
  */
 export function mountCMB(language: Language) {
   document.body.insertAdjacentHTML("afterbegin", fixture);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   const container = document.getElementById("cmb-editor")!;
   const codemirrorOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
 
@@ -83,13 +91,23 @@ export function mountCMB(language: Language) {
         jest.spyOn(wrapper, "clientHeight", "get").mockReturnValue(1000);
         jest.spyOn(wrapper, "clientWidth", "get").mockReturnValue(1000);
 
-        Object.assign(cmb, newAPI, {
-          setBlockMode: (blockMode: boolean) =>
-            act(() => newAPI.setBlockMode(blockMode)),
-          setValue: (value: string) => {
-            act(() => newAPI.setValue(value));
-          },
-        });
+        Object.assign(cmb, newAPI);
+        // React 18 batches updates that happen outside of event handlers,
+        // so API calls that update the store need to be wrapped in act() for
+        // the DOM to be up to date by the time they return.
+        for (const [name, value] of Object.entries(newAPI)) {
+          if (typeof value === "function") {
+            (cmb as unknown as Record<string, unknown>)[name] = (
+              ...args: unknown[]
+            ) => {
+              let result: unknown;
+              act(() => {
+                result = value.apply(newAPI, args);
+              });
+              return result;
+            };
+          }
+        }
       }}
       options={{ collapseAll: false, value: "", incrementalRendering: false }}
       codemirrorOptions={codemirrorOptions}
@@ -97,6 +115,7 @@ export function mountCMB(language: Language) {
     { container }
   );
   cmb.setBlockMode(true);
+  mounted = { cmb, store };
   return { cmb, store };
 }
 

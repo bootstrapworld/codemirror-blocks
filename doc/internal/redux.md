@@ -72,4 +72,24 @@ able to connect to it. This is done via the
 We do not fully use Redux. A lot of CMB uses local state in React Components.
 The place we _do_ use it is to easily pass state from an ancestor to some of its
 descendants without having to pass it as a prop throughout the whole line of
-succession.
+succession, and to keep track of the AST, focus, selection, collapsed nodes and
+the in-progress edit ("quarantine").
+
+The store is created by `createAppStore()` in `src/state/store.ts`, with
+`redux-thunk` and an activity logger as middleware. A few ground rules:
+
+- **Reducers are pure.** The reducer in `src/state/reducers.ts` never mutates
+  its state, and never touches the editor. Anything that needs the editor, such
+  as undo and redo (which live in CodeMirror's history), is a thunk in
+  `src/state/actions.ts`.
+- **State is only changed by dispatching actions.** Code that reads state with
+  `getState()` must not assign to it; the fields are `readonly`.
+- **The log of actions is middleware.** `src/state/activityLog.ts` records the
+  actions that reach the reducer (with ASTs replaced by their source code), so
+  that sessions can be downloaded and replayed from the debugging page
+  (`src/toolkit/debug.ts`). Actions should therefore stay serializable: don't
+  put editors or other live objects in them. (`ADD_MARK` is the exception, since
+  it stores a CodeMirror `TextMarker`.)
+- **We don't use Redux Toolkit.** The state holds `Map`s (the AST indexes) and
+  CodeMirror objects, which don't mix well with Immer's drafts or with the
+  toolkit's serializability checks.

@@ -25,6 +25,9 @@ function suppressEvent(e: React.SyntheticEvent) {
  *        to collapse the selection to the end of the elements range.
  */
 function selectElement(element: HTMLElement, shouldCollapse: boolean) {
+  // Focus first: focusing can reset the selection in some browsers, so the
+  // selection has to be made after it.
+  element.focus();
   const range = document.createRange();
   range.selectNodeContents(element);
   if (shouldCollapse) {
@@ -37,7 +40,6 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
     selection.removeAllRanges();
     selection.addRange(range);
   }
-  element.focus();
 }
 
 type Props = Omit<ContentEditableProps, "value"> & {
@@ -66,15 +68,13 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
 
     const ast = useSelector(selectors.getAST);
 
-    const { initialValue, isErrored } = useSelector((state: RootState) => {
-      const nodeId = props.target.node ? props.target.node.id : "editing";
-      const isErrored = selectors.getErrorId(state) == nodeId;
-
-      const initialValue =
-        props.value === null ? props.target.getText(ast, props.editor) : "";
-
-      return { isErrored, initialValue };
-    });
+    // select a primitive so that react-redux can tell when it hasn't changed
+    const nodeId = props.target.node ? props.target.node.id : "editing";
+    const isErrored = useSelector(
+      (state: RootState) => selectors.getErrorId(state) == nodeId
+    );
+    const initialValue =
+      props.value === null ? props.target.getText(ast, props.editor) : "";
 
     // select and focus the element on mount
     useEffect(() => {
@@ -128,7 +128,22 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
         const annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
         const result = dispatch(insert(value, target, props.editor, annt));
         if (result.successful) {
-          dispatch(activateByNid(props.editor, null, { allowMove: false }));
+          // If this blur happened because the user moved to another block, that
+          // block (focused before the edit was saved) keeps focus rather than
+          // the node that was just edited. (A new insertion always takes focus.)
+          const newAST = selectors.getAST(getState());
+          const movedElsewhere =
+            !props.isInsertion &&
+            focusedNode &&
+            focusedNode.id !== target.node?.id &&
+            newAST.getNodeById(focusedNode.id);
+          dispatch(
+            activateByNid(
+              props.editor,
+              movedElsewhere ? movedElsewhere.nid : null,
+              { allowMove: false }
+            )
+          );
           props.onChange(null);
           props.onDisableEditable();
           dispatch(actions.clearError());
@@ -162,6 +177,14 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
           props.onDisableEditable();
           dispatch(actions.clearError());
           dispatch(activateByNid(props.editor, null, { allowMove: false }));
+          // A block normally takes focus back (above). With none to take it (an
+          // empty document), the box going away would leave focus on the page
+          // body, and keys such as undo would stop working: keep it in the editor.
+          dispatch((_, getState) => {
+            if (!selectors.getFocusedNode(getState())) {
+              props.editor.focus();
+            }
+          });
           return;
         }
       }

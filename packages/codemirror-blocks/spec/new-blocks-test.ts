@@ -1,5 +1,5 @@
 import CodeMirror from "codemirror";
-import { act } from "react-dom/test-utils";
+import { act } from "@testing-library/react";
 import { AST, ASTNode } from "../src/ast";
 import type { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
@@ -14,8 +14,10 @@ import {
   keyDown,
   mountCMB,
   isNodeEditable,
+  blur,
 } from "../src/toolkit/test-utils";
 import { Pos } from "../src/editor";
+import { setEditableText } from "./helpers/editing";
 
 describe("The CodeMirrorBlocks Class", function () {
   let cmb!: API;
@@ -46,16 +48,6 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(cmb.getBlockMode()).toBe(false);
     });
   });
-  /*
-  // Should we make the language prop accessible externally so we can run this?
-  it('should optionally take a language object', function() {
-     const b = new CodeMirrorBlocks(
-      document.getElementById('root'), 
-      {value: "", incrementalRendering: false }, 
-      example);
-     expect(b.language.id).toBe('example');
-  });
-  */
   describe("events,", function () {
     let literal!: ASTNode;
     beforeEach(async function () {
@@ -109,71 +101,49 @@ describe("The CodeMirrorBlocks Class", function () {
 
       // TODO: figure out how to fire a paste event
     });
-    /*
-    it('should begin editing a node on click', async function() {
-      click(literal);
-      await finishRender();
-      expect(document.activeElement.classList).toContain('blocks-editing');
-    });
-    
-    it('should save a valid, edited node on blur', async function() {
-      click(literal);
-      await finishRender();
-      insertText("9");
-      await finishRender();
-      keyDown("Enter");
-      await finishRender();
-      expect(cmb.getValue()).toEqual('9');
-    })
-    */
     it("should not allow required blanks to be deleted", async function () {
       cmb.setValue("()");
-      cmb.getValue("(...)"); // blank should be inserted by parser, as '...'
+      // the parser fills in the missing function name with a blank
+      expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual([
+        "(...)",
+      ]);
       const blank = (cmb.getAst().rootNodes[0] as FunctionAppNode).fields.func;
       click(blank.element!);
       expect(isNodeEditable(blank)).toBe(true);
       keyDown("Delete");
-      cmb.getValue("(...)"); // deleting the blank should be a no-op
+      // deleting the blank is a no-op
+      expect(cmb.getValue()).toBe("()");
+      expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual([
+        "(...)",
+      ]);
     });
 
     it("should return the node being edited on ESC", async function () {
       click(literal);
+      expect(isNodeEditable(literal)).toBe(true);
       const quarantine = document.activeElement;
       keyDown("Escape", {}, quarantine!);
       expect(cmb.getValue()).toEqual("11");
+      expect(isNodeEditable(literal)).toBe(false);
     });
 
-    it("should blur the node being edited on enter", async function () {
+    it("should stop editing the node on enter, leaving an unchanged value alone", async function () {
       click(literal);
+      expect(isNodeEditable(literal)).toBe(true);
       keyDown("Enter");
-      expect(document.activeElement).not.toBe(undefined);
+      expect(isNodeEditable(literal)).toBe(false);
+      expect(cmb.getValue()).toEqual("11");
+      expect(document.activeElement).toHaveAttribute("role", "treeitem");
     });
 
-    it("should blur the node being edited on top-level click", async function () {
+    // (a real click elsewhere is covered in e2e/typing.e2e.ts: jsdom doesn't
+    // move focus on a click, so here focus is taken away explicitly)
+    it("should stop editing the node when focus leaves it", async function () {
       click(literal.element!);
-      click(cmb.getWrapperElement());
-      expect(document.activeElement).not.toBe(undefined);
-    });
-
-    xdescribe('when "saving" bad inputs,', function () {
-      // beforeEach(async function () {
-      //   spyOn(cmb, "replaceRange");
-      //   click(literal.element);
-      //   let quarantine = document.activeElement;
-      //   let selection = window.getSelection();
-      //   expect(selection.rangeCount).toEqual(1);
-      //   let range = selection.getRangeAt(0);
-      //   range.deleteContents();
-      //   range.insertNode(document.createTextNode('"moo'));
-      //   blur(quarantine);
-      // });
-      /*it('should not save anything & set all error state', function() {
-        let quarantine = document.activeElement;//trackSetQuarantine.calls.mostRecent().returnValue;
-        expect(cmb.replaceRange).not.toHaveBeenCalled();
-        expect(quarantine.classList).toContain('blocks-error');
-        expect(quarantine.title).toBe('Error: parse error');
-        expect(cmb.hasInvalidEdit).toBe(quarantine);
-      });*/
+      expect(isNodeEditable(literal)).toBe(true);
+      blur(document.activeElement!);
+      expect(isNodeEditable(literal)).toBe(false);
+      expect(cmb.getValue()).toEqual("11");
     });
 
     describe("when dealing with whitespace,", function () {
@@ -208,94 +178,58 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cursor.ch).toBe(7);
       });
 
-      it("Ctrl-[ should activate a quarantine to the left", async function () {
+      /** type into whatever editable element the key or click just opened */
+      const typeAndSave = (text: string) => {
+        expect(document.activeElement).toHaveAttribute(
+          "contenteditable",
+          "true"
+        );
+        setEditableText(text);
+        keyDown("Enter");
+      };
+
+      it("Ctrl-[ should open an insertion to the left of an argument", async function () {
         mouseDown(firstArg.element!);
         keyDown("[", { ctrlKey: true });
-        //expect(cmb.setQuarantine).toHaveBeenCalled();
+        typeAndSave("9");
+        expect(cmb.getValue()).toBe("(+ 9 1 2) (+)");
       });
 
-      it("Ctrl-] should activate a quarantine to the right", async function () {
+      it("Ctrl-] should open an insertion to the right of an argument", async function () {
         mouseDown(firstArg.element!);
         keyDown("]", { ctrlKey: true }, firstArg.element!);
-        //expect(cmb.setQuarantine).toHaveBeenCalled();
+        typeAndSave("9");
+        expect(cmb.getValue()).toBe("(+ 1 9 2) (+)");
       });
 
-      it("Ctrl-] should activate a quarantine in the first arg position", async function () {
+      it("Ctrl-] should open an insertion in the first arg position", async function () {
         mouseDown(blank.fields.func.element!);
         keyDown("]", { ctrlKey: true }, blank.fields.func.element!);
-        //expect(cmb.setQuarantine).toHaveBeenCalled();
+        typeAndSave("9");
+        expect(cmb.getValue()).toBe("(+ 1 2) (+ 9)");
       });
 
-      it("should activate a quarantine on dblclick", async function () {
+      it("should open an insertion when the whitespace between arguments is clicked", async function () {
         click(whiteSpaceEl);
-        //expect(cmb.setQuarantine).toHaveBeenCalled();
+        typeAndSave("9");
+        expect(cmb.getValue()).toBe("(+ 1 9 2) (+)");
       });
 
       describe("in corner-cases with no arguments,", function () {
-        let ast!: AST;
-        let firstRoot!: ASTNode;
         let argWS!: ChildNode;
 
         beforeEach(async function () {
           cmb.setValue("(f)");
-          ast = cmb.getAst();
-          firstRoot = ast.rootNodes[0];
+          const firstRoot = cmb.getAst().rootNodes[0];
           argWS =
             firstRoot.element!.getElementsByClassName("blocks-args")[0]
               .firstChild!;
         });
 
         it("should allow editing the argument whitespace", async function () {
-          /* left off here*/
           click(argWS);
-          //expect(cmb.setQuarantine).toHaveBeenCalled();
-        });
-      });
-
-      describe("and specifically when editing it,", function () {
-        // fails nondeterministically - figure out how to avoid
-        // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
-        // it('should save whiteSpace on blur', async function() {
-        //   fireEvent(whiteSpaceEl, dblclick());
-        //   expect(trackSetQuarantine).toHaveBeenCalledWith("", whiteSpaceEl);
-        //   let quarantine = trackSetQuarantine.calls.mostRecent().returnValue;
-        //   let trackOnBlur = spyOn(quarantine, 'onblur').and.callThrough();
-        //   quarantine.appendChild(document.createTextNode('4253'));
-        //   fireEvent(quarantine, blur());
-        //   expect(trackOnBlur).toHaveBeenCalled();
-        //   expect(trackSaveEdit).toHaveBeenCalledWith(quarantine);
-        //   expect(quarantine.textContent).toBe('4253'); // confirms text=4253 inside saveEdit, blocks.js line 495
-        //   expect(trackCommitChange).toHaveBeenCalled();
-        //   expect(trackReplaceRange).toHaveBeenCalledWith(' 4253', Object({ ch: 4, line: 0 }), Object({ ch: 4, line: 0 }));
-        //   expect(cmb.getValue()).toBe('(+ 1 4253 2) (+)');
-        //   expect(cmb.hasInvalidEdit).toBe(false);
-        // });
-
-        // not sure how to handle trackChange
-        // it('should blur whitespace you are editing on enter', async function() {
-        //   fireEvent(whiteSpaceEl, dblclick());
-        //   let quarantine = trackSetQuarantine.calls.mostRecent().returnValue;
-        //   fireEvent(quarantine, keydown(ENTER));
-        //   expect(trackHandleChange).toHaveBeenCalled();
-        // });
-
-        xdescribe('when "saving" bad whitepspace inputs,', function () {
-          // beforeEach(async function () {
-          // fireEvent(whiteSpaceEl, dblclick());
-          // quarantine = trackSetQuarantine.calls.mostRecent().returnValue;
-          // quarantine.appendChild(document.createTextNode('"moo'));
-          // fireEvent(quarantine, blur());
-          // });
-          // fails nondeterministically - figure out how to avoid
-          // see https://github.com/bootstrapworld/codemirror-blocks/issues/123
-          // it('should not save anything & set all error state', async function() {
-          //   expect(trackSaveEdit).toHaveBeenCalledWith(quarantine);
-          //   expect(quarantine.textContent).toBe('"moo');
-          //   expect(cmb.replaceRange).not.toHaveBeenCalled();
-          //   expect(quarantine.classList).toContain('blocks-error');
-          //   expect(quarantine.title).toBe('Error: parse error');
-          //   expect(cmb.hasInvalidEdit).toBe(true);
-          // });
+          typeAndSave("9");
+          expect(cmb.getValue()).toBe("(f 9)");
         });
       });
     });

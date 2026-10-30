@@ -1,4 +1,4 @@
-import { minimizeChange } from "../src/utils";
+import { BEEP, minimizeChange, playSound } from "../src/utils";
 
 describe("The src/utils helper functions", function () {
   describe("the minimizeChange function", function () {
@@ -119,5 +119,30 @@ describe("The src/utils helper functions", function () {
         removed: ["c"],
       });
     });
+  });
+});
+
+describe("playSound", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it("handles playback that is interrupted or blocked, instead of leaving an unhandled rejection", () => {
+    // play() rejects when the next beep pauses this one, or when the browser
+    // blocks autoplay; the app must absorb that
+    const caught = jest.fn();
+    jest
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockReturnValue({ catch: caught } as unknown as Promise<void>);
+    playSound(BEEP);
+    expect(caught).toHaveBeenCalledTimes(1);
+    // and the handler it installed swallows the error
+    const handler = caught.mock.calls[0][0];
+    expect(() => handler(new Error("interrupted by pause()"))).not.toThrow();
+  });
+
+  it("still works where play() does not return a promise", () => {
+    jest
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockReturnValue(undefined as unknown as Promise<void>);
+    expect(() => playSound(BEEP)).not.toThrow();
   });
 });

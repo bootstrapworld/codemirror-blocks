@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 const path = require("path");
 const {
   getWebpackDevServerConfig,
@@ -11,7 +10,7 @@ const devServerConfig = getWebpackDevServerConfig({
 });
 devServerConfig.module.rules.push({
   test: /\.rkt$/,
-  use: [{ loader: "raw-loader" }],
+  type: "asset/source",
 });
 
 const baseConfig = getBaseConfig();

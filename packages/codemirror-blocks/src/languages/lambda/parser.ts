@@ -1,124 +1,53 @@
-import { AST } from "../../ast";
-import {
-  Literal,
-  FunctionApp,
-  VariableDefinition,
-  FunctionDefinition,
-} from "../../nodes";
-
-import { Prog, Assignment, Binary, Conditional } from "./ast";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Pos } from "../../ast";
 
 //adapted from http://lisperator.net/pltut/
 
+/**
+ * The intermediate AST produced by the parser. Its shape depends on `type`
+ * (see the parser below), so beyond `type` the fields are loosely typed.
+ * Nodes synthesized by the parser (e.g. for `let name(...)` sugar) may lack
+ * `from`/`to`.
+ */
+export type LambdaNode = {
+  type: string;
+  from?: Pos;
+  to?: Pos;
+  [field: string]: any;
+};
+
+type Token = {
+  from: Pos;
+  to: Pos;
+  type: "num" | "str" | "kw" | "var" | "punc" | "op";
+  value: any;
+};
+
+type InputStream = {
+  inputPos(): Pos;
+  next(): string;
+  peek(): string;
+  eof(): boolean;
+  croak(msg: string): never;
+};
+
+type TokenStream = {
+  pos(): { from: Pos; to: Pos };
+  next(): Token | null;
+  peek(): Token | null;
+  eof(): boolean;
+  croak(msg: string): never;
+};
+
 /* -----[ the parser ]----- */
 
-export default function parseString(code) {
-  return AST.from([convertAST(parse(tokenStream(inputStream(code))))]);
-}
-
-export function parseToIntermediateAST(code) {
+export function parseToIntermediateAST(code: string): LambdaNode {
   return parse(tokenStream(inputStream(code)));
 }
 
-function convertAST(lambdaNode) {
-  switch (lambdaNode.type) {
-    case "prog":
-      return new Prog(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.prog.map(convertAST)
-      );
-    case "num":
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.value,
-        "number"
-      );
-    case "str":
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.value,
-        "string"
-      );
-    case "var":
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.value,
-        "symbol"
-      );
-    case "bool":
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.value,
-        "bool"
-      );
-    case "def":
-      return new VariableDefinition(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.name,
-        lambdaNode.body.map(convertAST)
-      );
-    case "lambda":
-      return new FunctionDefinition(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.name,
-        lambdaNode.vars.map(convertAST),
-        lambdaNode.body.map(convertAST)
-      );
-    case "call":
-      return new FunctionApp(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.func,
-        lambdaNode.args.map(convertAST)
-      );
-    case "assign":
-      return new Assignment(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.operator,
-        lambdaNode.left.map(convertAST),
-        lambdaNode.right.map(convertAST)
-      );
-    case "binary":
-      return new Binary(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.operator,
-        lambdaNode.left.map(convertAST),
-        lambdaNode.right.map(convertAST)
-      );
-    case "let":
-      return new Literal(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.vars.map(convertAST),
-        lambdaNode.body.map(convertAST)
-      );
-    case "if":
-      return new Conditional(
-        lambdaNode.from,
-        lambdaNode.to,
-        lambdaNode.cond.map(convertAST),
-        lambdaNode.then.map(convertAST),
-        lambdaNode.else.map(convertAST)
-      );
-    default:
-      throw new Error(
-        "Don't know how to convert node of type " + lambdaNode.type
-      );
-  }
-}
-
-function parse(input) {
-  var fromLocation, toLocation;
-  var PRECEDENCE = {
+function parse(input: TokenStream): LambdaNode {
+  let fromLocation: Pos, toLocation: Pos;
+  const PRECEDENCE: Record<string, number> = {
     "=": 1,
     "||": 2,
     "&&": 3,
@@ -134,25 +63,31 @@ function parse(input) {
     "/": 20,
     "%": 20,
   };
-  var FALSE = { type: "bool", value: false };
+  const FALSE = { type: "bool", value: false };
+  function nextToken(): Token {
+    return input.next() ?? input.croak("Unexpected end of input");
+  }
+  function peekToken(): Token {
+    return input.peek() ?? input.croak("Unexpected end of input");
+  }
   return parseToplevel();
-  function isPunc(ch) {
-    var tok = input.peek();
+  function isPunc(ch?: string) {
+    const tok = input.peek();
     return tok && tok.type == "punc" && (!ch || tok.value == ch) && tok;
   }
-  function isKw(kw) {
-    var tok = input.peek();
+  function isKw(kw?: string) {
+    const tok = input.peek();
     return tok && tok.type == "kw" && (!kw || tok.value == kw) && tok;
   }
-  function isOp(op) {
-    var tok = input.peek();
+  function isOp(op?: string) {
+    const tok = input.peek();
     return tok && tok.type == "op" && (!op || tok.value == op) && tok;
   }
-  function skipPunc(ch) {
+  function skipPunc(ch: string) {
     if (isPunc(ch)) input.next();
     else input.croak('Expecting punctuation: "' + ch + '"');
   }
-  function skipKw(kw) {
+  function skipKw(kw: string) {
     if (isKw(kw)) input.next();
     else input.croak('Expecting keyword: "' + kw + '"');
   }
@@ -160,17 +95,17 @@ function parse(input) {
   //   if (isOp(op)) input.next();
   //   else input.croak("Expecting operator: \"" + op + "\"");
   // }
-  function unexpected() {
+  function unexpected(): never {
     input.croak("Unexpected token: " + JSON.stringify(input.peek()));
   }
-  function maybeBinary(left, myPrec) {
-    var from = fromLocation;
-    var tok = isOp();
+  function maybeBinary(left: LambdaNode, myPrec: number): LambdaNode {
+    const from = fromLocation;
+    const tok = isOp();
     if (tok) {
-      var hisPrec = PRECEDENCE[tok.value];
+      const hisPrec = PRECEDENCE[tok.value];
       if (hisPrec > myPrec) {
         input.next();
-        var right = maybeBinary(parseAtom(), hisPrec);
+        const right = maybeBinary(parseAtom(), hisPrec);
         toLocation = input.pos().to;
         return maybeBinary(
           {
@@ -187,9 +122,14 @@ function parse(input) {
     }
     return left;
   }
-  function delimited(start, stop, separator, parser) {
-    var a = [],
-      first = true;
+  function delimited(
+    start: string,
+    stop: string,
+    separator: string,
+    parser: () => LambdaNode
+  ): LambdaNode[] {
+    const a: LambdaNode[] = [];
+    let first = true;
     skipPunc(start);
     while (!input.eof()) {
       if (isPunc(stop)) break;
@@ -201,9 +141,9 @@ function parse(input) {
     skipPunc(stop);
     return a;
   }
-  function parseCall(func) {
-    var from = fromLocation;
-    var args = delimited("(", ")", ",", parseExpression);
+  function parseCall(func: LambdaNode): LambdaNode {
+    const from = fromLocation;
+    const args = delimited("(", ")", ",", parseExpression);
     toLocation = input.pos().to;
     return {
       from: from,
@@ -213,16 +153,16 @@ function parse(input) {
       args: args,
     };
   }
-  function parseVarname() {
-    var from = input.pos().from;
-    var name = input.next();
-    var to = input.pos().to;
+  function parseVarname(): LambdaNode {
+    const from = input.pos().from;
+    const name = nextToken();
+    const to = input.pos().to;
     if (name.type != "var") input.croak("Expecting variable name");
     return { from, to, type: "literal", dataType: "var", name };
   }
-  function parseVardef() {
-    var name = parseVarname(),
-      body;
+  function parseVardef(): LambdaNode {
+    const name = parseVarname();
+    let body: LambdaNode | undefined;
     if (isOp("=")) {
       input.next();
       body = parseExpression();
@@ -236,12 +176,12 @@ function parse(input) {
       body: body,
     };
   }
-  function parseLet() {
-    var from = fromLocation;
+  function parseLet(): LambdaNode {
+    const from = fromLocation;
     skipKw("let");
-    if (input.peek().type == "var") {
-      var name = input.next().value;
-      var defs = delimited("(", ")", ",", parseVardef);
+    if (peekToken().type == "var") {
+      const name = nextToken().value;
+      const defs = delimited("(", ")", ",", parseVardef);
       toLocation = input.pos().to;
       return {
         from: from,
@@ -260,7 +200,7 @@ function parse(input) {
         }),
       };
     }
-    var vars = delimited("(", ")", ",", parseVardef);
+    const vars = delimited("(", ")", ",", parseVardef);
     toLocation = input.pos().to;
     return {
       from: from,
@@ -270,14 +210,14 @@ function parse(input) {
       body: parseExpression(),
     };
   }
-  function parseIf() {
-    var from = fromLocation;
+  function parseIf(): LambdaNode {
+    const from = fromLocation;
     skipKw("if");
-    var cond = parseExpression();
+    const cond = parseExpression();
     if (!isPunc("{")) skipKw("then");
-    var then = parseExpression();
+    const then = parseExpression();
     toLocation = input.pos().to;
-    var ret = {
+    const ret: LambdaNode = {
       from: from,
       to: toLocation,
       type: "if",
@@ -292,11 +232,11 @@ function parse(input) {
     }
     return ret;
   }
-  function parseLambda() {
-    var from = fromLocation;
-    var name = input.peek().type == "var" ? input.next().value : null;
-    var vars = delimited("(", ")", ",", parseVarname);
-    var body = parseExpression();
+  function parseLambda(): LambdaNode {
+    const from = fromLocation;
+    const name = peekToken().type == "var" ? nextToken().value : null;
+    const vars = delimited("(", ")", ",", parseVarname);
+    const body = parseExpression();
     toLocation = input.pos().to;
     return {
       from: from,
@@ -307,34 +247,33 @@ function parse(input) {
       body: body,
     };
   }
-  function parseBool() {
+  function parseBool(): LambdaNode {
     toLocation = input.pos().to;
     return {
       from: fromLocation,
       to: toLocation,
       type: "bool",
-      value: input.next().value == "true",
+      value: nextToken().value == "true",
     };
   }
-  function parseRaw() {
+  function parseRaw(): LambdaNode {
     skipKw("js:raw");
-    if (input.peek().type != "str")
-      input.croak("js:raw must be a plain string");
+    if (peekToken().type != "str") input.croak("js:raw must be a plain string");
     return {
       type: "raw",
-      code: input.next().value,
+      code: nextToken().value,
     };
   }
-  function maybeCall(expr) {
-    expr = expr();
+  function maybeCall(exprFn: () => LambdaNode): LambdaNode {
+    const expr = exprFn();
     return isPunc("(") ? parseCall(expr) : expr;
   }
-  function parseAtom() {
+  function parseAtom(): LambdaNode {
     fromLocation = input.pos().from;
     return maybeCall(function () {
       if (isPunc("(")) {
         input.next();
-        var exp = parseExpression();
+        const exp = parseExpression();
         skipPunc(")");
         return exp;
       }
@@ -357,15 +296,15 @@ function parse(input) {
         input.next();
         return parseLambda();
       }
-      var tok = input.next();
+      const tok = nextToken();
       if (tok.type == "var" || tok.type == "num" || tok.type == "str") {
         return tok;
       }
       unexpected();
     });
   }
-  function parseToplevel() {
-    var prog = [];
+  function parseToplevel(): LambdaNode {
+    const prog = [];
     while (!input.eof()) {
       prog.push(parseExpression());
       if (!input.eof()) skipPunc(";");
@@ -377,15 +316,15 @@ function parse(input) {
       prog: prog,
     };
   }
-  function parseProg() {
-    var from = fromLocation;
-    var prog = delimited("{", "}", ";", parseExpression);
+  function parseProg(): LambdaNode {
+    const from = fromLocation;
+    const prog = delimited("{", "}", ";", parseExpression);
     if (prog.length == 0) return FALSE;
     if (prog.length == 1) return prog[0];
     toLocation = input.pos().to;
     return { from: from, to: toLocation, type: "prog", prog: prog }; //return { type: "prog", prog: prog };
   }
-  function parseExpression() {
+  function parseExpression(): LambdaNode {
     return maybeCall(function () {
       return maybeBinary(parseAtom(), 0);
     });
@@ -394,8 +333,8 @@ function parse(input) {
 
 /* -----[ parser utils ]----- */
 
-function inputStream(input) {
-  var pos = 0,
+function inputStream(input: string): InputStream {
+  let pos = 0,
     ln = 0,
     col = 0;
   return {
@@ -406,9 +345,13 @@ function inputStream(input) {
     croak: croak,
   };
   function next() {
-    var ch = input.charAt(pos++);
-    if (ch == "\n") ln++, (col = 0);
-    else col++;
+    const ch = input.charAt(pos++);
+    if (ch == "\n") {
+      ln++;
+      col = 0;
+    } else {
+      col++;
+    }
     return ch;
   }
   function peek() {
@@ -417,7 +360,7 @@ function inputStream(input) {
   function eof() {
     return peek() == "";
   }
-  function croak(msg) {
+  function croak(msg: string): never {
     throw new Error(msg + " (" + ln + ":" + col + ")");
   }
   function inputPos() {
@@ -425,11 +368,11 @@ function inputStream(input) {
   }
 }
 
-function tokenStream(input) {
-  var current = null;
-  var fromLocation = input.inputPos(),
+function tokenStream(input: InputStream): TokenStream {
+  let current: Token | null = null;
+  let fromLocation = input.inputPos(),
     toLocation = input.inputPos();
-  var keywords = " let if then else lambda λ true false js:raw ";
+  const keywords = " let if then else lambda λ true false js:raw ";
   return {
     pos: pos,
     next: next,
@@ -437,35 +380,35 @@ function tokenStream(input) {
     eof: eof,
     croak: input.croak,
   };
-  function isKeyword(x) {
+  function isKeyword(x: string) {
     return keywords.indexOf(" " + x + " ") >= 0;
   }
-  function isDigit(ch) {
+  function isDigit(ch: string) {
     return /[0-9]/i.test(ch);
   }
-  function isIdStart(ch) {
+  function isIdStart(ch: string) {
     return /[a-zλ_]/i.test(ch);
   }
-  function isId(ch) {
+  function isId(ch: string) {
     return isIdStart(ch) || "?!-<:>=0123456789".indexOf(ch) >= 0;
   }
-  function isOpChar(ch) {
+  function isOpChar(ch: string) {
     return "+-*/%=&|<>!".indexOf(ch) >= 0;
   }
-  function isPunc(ch) {
+  function isPunc(ch: string) {
     return ",;(){}[]:".indexOf(ch) >= 0;
   }
-  function isWhitespace(ch) {
+  function isWhitespace(ch: string) {
     return " \t\n".indexOf(ch) >= 0;
   }
-  function readWhite(predicate) {
-    var str = "";
+  function readWhite(predicate: (ch: string) => boolean) {
+    let str = "";
     while (!input.eof() && predicate(input.peek())) str += input.next();
     return str;
   }
-  function readNumber() {
-    var hasDot = false;
-    var number = readWhite(function (ch) {
+  function readNumber(): Token {
+    let hasDot = false;
+    const number = readWhite(function (ch) {
       if (ch == ".") {
         if (hasDot) return false;
         hasDot = true;
@@ -481,8 +424,8 @@ function tokenStream(input) {
       value: parseFloat(number),
     };
   }
-  function readIdent() {
-    var id = readWhite(isId);
+  function readIdent(): Token {
+    const id = readWhite(isId);
     toLocation = input.inputPos();
     return {
       from: fromLocation,
@@ -491,12 +434,12 @@ function tokenStream(input) {
       value: id,
     };
   }
-  function readEscaped(end) {
-    var escaped = false,
+  function readEscaped(end: string) {
+    let escaped = false,
       str = "";
     input.next();
     while (!input.eof()) {
-      var ch = input.next();
+      const ch = input.next();
       if (escaped) {
         str += ch;
         escaped = false;
@@ -510,8 +453,8 @@ function tokenStream(input) {
     }
     return str;
   }
-  function readString() {
-    var string = readEscaped('"');
+  function readString(): Token {
+    const string = readEscaped('"');
     toLocation = input.inputPos();
     return { from: fromLocation, to: toLocation, type: "str", value: string };
   }
@@ -521,10 +464,10 @@ function tokenStream(input) {
     });
     input.next();
   }
-  function readNext() {
+  function readNext(): Token | null {
     readWhite(isWhitespace);
     if (input.eof()) return null; //null use to be nullparseLambda
-    var ch = input.peek();
+    const ch = input.peek();
     if (ch == "#") {
       skipComment();
       return readNext();
@@ -559,7 +502,7 @@ function tokenStream(input) {
     return current || (current = readNext());
   }
   function next() {
-    var tok = current;
+    const tok = current;
     current = null;
     return tok || readNext();
   }

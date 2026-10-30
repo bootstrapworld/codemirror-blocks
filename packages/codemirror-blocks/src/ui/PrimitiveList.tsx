@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useCallback, useState, useRef } from "react";
 import classNames from "classnames";
 import {
   PrimitiveGroup as PrimitiveGroupModel,
@@ -41,22 +41,34 @@ export const Primitive = React.forwardRef<HTMLElement, BasePrimitiveProps>(
       }
     };
 
-    const elem = (
-      <span
-        tabIndex={-1}
-        onKeyDown={handleKeyDown}
-        onFocus={onFocus}
-        ref={ref}
-        className={classNames(className, "Primitive list-group-item")}
-      >
-        {primitive.name}
-      </span>
+    // The span is both the drag source and its own drag preview, and also
+    // needs to hand itself to the ref we were given.
+    const setRefs = useCallback(
+      (el: HTMLElement | null) => {
+        connectDragSource(el);
+        connectDragPreview(el, { offsetX: 1, offsetY: 1 });
+        if (typeof ref === "function") {
+          ref(el);
+        } else if (ref) {
+          ref.current = el;
+        }
+      },
+      [connectDragSource, connectDragPreview, ref]
     );
-    const draggableElem = connectDragPreview(connectDragSource(elem), {
-      offsetX: 1,
-      offsetY: 1,
-    });
-    return <li>{draggableElem}</li>;
+
+    return (
+      <li>
+        <span
+          tabIndex={-1}
+          onKeyDown={handleKeyDown}
+          onFocus={onFocus}
+          ref={setRefs}
+          className={classNames(className, "Primitive list-group-item")}
+        >
+          {primitive.name}
+        </span>
+      </li>
+    );
   }
 );
 
@@ -65,7 +77,7 @@ type PrimitiveGroupProps = {
   selectedPrimitive?: LanguagePrimitive;
   selected?: string; // to start, no primitive is selected
   group?: PrimitiveGroupModel;
-  toolbarRef: React.RefObject<HTMLInputElement>;
+  toolbarRef: React.RefObject<HTMLInputElement | null>;
 };
 
 export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
@@ -100,7 +112,7 @@ export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
 type PrimitiveListProps = {
   setSelectedPrimitive: (primitive: LanguagePrimitive) => void;
   selectedPrimitive?: LanguagePrimitive;
-  toolbarRef: React.RefObject<HTMLInputElement>;
+  toolbarRef: React.RefObject<HTMLInputElement | null>;
   selected?: string;
   primitives?: LanguagePrimitive[];
   searchString?: string;
@@ -137,7 +149,9 @@ export const PrimitiveList = React.forwardRef<
       primitive={p}
       onFocus={() => setSelectedPrimitive(p)}
       className={selected == p.name ? "selected" : ""}
-      ref={(el) => (primitiveRefs.current[i] = el)}
+      ref={(el) => {
+        primitiveRefs.current[i] = el;
+      }}
     />
   );
 

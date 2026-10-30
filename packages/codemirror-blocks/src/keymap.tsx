@@ -109,6 +109,7 @@ const macKeyMap: KeyMap = {
 };
 
 const pcKeyMap: KeyMap = {
+  "Ctrl-Enter": "Edit Anything",
   "Ctrl-Z": "Undo",
   "Ctrl-Y": "Redo",
   "Shift-Ctrl-Z": "Redo",
@@ -470,7 +471,7 @@ const commandMap: {
       return;
     }
     const state = getState();
-    const nodesToDelete = selectors.getSelectedNodes(state);
+    const nodesToDelete = selectors.getOutermostSelectedNodes(state);
     if (!nodesToDelete.length) {
       return say("Nothing selected");
     }
@@ -503,7 +504,7 @@ const commandMap: {
       return;
     }
     const state = getState();
-    const nodesToCut = selectors.getSelectedNodes(state);
+    const nodesToCut = selectors.getOutermostSelectedNodes(state);
     if (!nodesToCut.length) {
       return say("Nothing selected");
     }
@@ -517,7 +518,7 @@ const commandMap: {
     }
     // if no nodes are selected, do it on focused node's id instead
     const state = getState();
-    const selections = selectors.getSelectedNodes(state);
+    const selections = selectors.getOutermostSelectedNodes(state);
     const nodesToCopy = selections.length === 0 ? [env.node] : selections;
     copy(nodesToCopy, "copied");
   },
@@ -564,19 +565,9 @@ const commandMap: {
 
 const doTopmostAction =
   ({ editor }: Env, e: React.KeyboardEvent, which: "undo" | "redo"): AppThunk =>
-  (dispatch, getState) => {
+  (dispatch) => {
     e.preventDefault();
-    const topmostAction = editor.getTopmostAction(which);
-    const state = getState();
-    state.undoableAction = topmostAction.undoableAction;
-    state.actionFocus = topmostAction.actionFocus;
-    if (which === "undo") {
-      say(`UNDID: ${topmostAction.undoableAction}`);
-      editor.undo();
-    } else {
-      say(`REDID: ${topmostAction.undoableAction}`);
-      editor.redo();
-    }
+    dispatch(actions.undoOrRedo(which, editor));
   };
 
 // Recieves the key event, an environment (BlockEditor or Node), and the
@@ -594,7 +585,7 @@ export const keyDown =
         const env: Env = {
           ...inputEnv,
           // add convenience methods
-          fastSkip: (next: (node: ASTNode) => ASTNode) =>
+          fastSkip: (next: (node: ASTNode) => ASTNode | undefined) =>
             env.isNodeEnv ? skipCollapsed(env.node, next, state) : undefined,
           activateNoRecord: (node?: ASTNode) => {
             if (!node) {

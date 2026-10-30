@@ -20,6 +20,7 @@ import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
 import { err, ok, Result } from "../edits/result";
 import * as selectors from "./selectors";
+import type { ActionFocus } from "./reducers";
 import { pasteFromClipboard } from "../copypaste";
 
 export const setAST = (ast: AST) => ({
@@ -82,6 +83,52 @@ export const disableQuarantine = () => ({
   type: "DISABLE_QUARANTINE" as const,
 });
 
+export const setUndoableAction = (undoableAction: string | undefined) => ({
+  type: "SET_UNDOABLE_ACTION" as const,
+  undoableAction,
+});
+
+export const setActionFocus = (actionFocus: ActionFocus | undefined) => ({
+  type: "SET_ACTION_FOCUS" as const,
+  actionFocus,
+});
+
+/**
+ * Perform an undo or redo in `editor`, remembering the description and focus
+ * of the action being undone/redone so that it can be restored later.
+ */
+export const undoOrRedo =
+  (which: "undo" | "redo", editor: CMBEditor): AppThunk =>
+  (dispatch) => {
+    const topmostAction = editor.getTopmostAction(which);
+    dispatch(setUndoableAction(topmostAction.undoableAction));
+    dispatch(setActionFocus(topmostAction.actionFocus));
+    if (which === "undo") {
+      say(`UNDID: ${topmostAction.undoableAction}`);
+      editor.undo();
+    } else {
+      say(`REDID: ${topmostAction.undoableAction}`);
+      editor.redo();
+    }
+  };
+
+/**
+ * Once codemirror has finished an undo or redo, move the pending description
+ * and focus onto the history item that now sits on the opposite stack, and
+ * clear them from the store.
+ */
+export const finishUndoOrRedo =
+  (which: "undo" | "redo", editor: ReadonlyCMBEditor): AppThunk =>
+  (dispatch, getState) => {
+    const { undoableAction, actionFocus } = getState();
+    const historyItem = editor.getTopmostAction(
+      which === "undo" ? "redo" : "undo"
+    );
+    historyItem.undoableAction = undoableAction;
+    historyItem.actionFocus = actionFocus;
+    dispatch({ type: which === "undo" ? "UNDO" : "REDO" });
+  };
+
 export const setCode = (code: string) => ({ type: "SET_CODE" as const, code });
 
 export const setBlockMode =
@@ -128,7 +175,7 @@ export const deleteASTNode =
 function checkASTRoundtripConversion(
   oldCode: string,
   language: Language
-): Result<{ oldAst: AST; newAst: AST; newCode: string }, string> {
+): Result<{ oldAst: AST; newAst: AST; newCode: string }, string | Error> {
   let oldAst: AST;
   try {
     oldAst = language.buildAST(oldCode); // parse the code (WITH annotations)
@@ -229,6 +276,10 @@ export const paste =
   (dispatch, getState) => {
     checkTarget(target);
     pasteFromClipboard((text) => {
+      if (text.trim() === "") {
+        // an empty clipboard must not insert anything (not even whitespace)
+        return;
+      }
       const edits = [target.toEdit(selectors.getAST(getState()), text)];
       dispatch(performEdits(edits, editor));
       dispatch(setSelectedNodeIds([]));
@@ -248,6 +299,14 @@ export function drop(
     let ast = selectors.getAST(state); // get the AST, and which nodes are collapsed
     const srcNode = srcId ? ast.getNodeById(srcId) : null; // null if dragged from toolbar
     const content = srcNode ? srcNode.toString() : srcContent;
+
+    // Pressing a toolbar block to drag it gave the toolbar keyboard focus, and
+    // the block that is dropped will not take focus from another element. The
+    // user is working in the editor now: bring focus back, so that the new block
+    // (and shortcuts such as undo) get it.
+    if (!srcNode) {
+      editor.focus();
+    }
 
     // If we dropped the node _inside_ where we dragged it from, do nothing.
     if (srcNode && srcRangeIncludes(srcNode.srcRange(), target.srcRange())) {

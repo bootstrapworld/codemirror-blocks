@@ -106,6 +106,8 @@ declare module "codemirror" {
 export type BlockNodeMarker = {
   clear: () => void;
   changed: () => void;
+  /** Where the marker is now, or undefined once CodeMirror has dropped it */
+  find: () => CodeMirror.MarkerRange | CodeMirror.Position | undefined;
   isBlockNode: true;
   replacedWith: HTMLElement;
 };
@@ -201,10 +203,17 @@ export class CodeMirrorFacade implements CMBEditor {
     return this.codemirror.getSearchCursor(query, start, options);
   }
   getTopmostAction(which: "undo" | "redo"): CodeMirror.HistoryItem {
-    const items =
-      which === "undo"
-        ? this.codemirror.getDoc().getHistory().done
-        : this.codemirror.getDoc().getHistory().undone;
+    // `getHistory()` hands back *copies* of the change events, so anything we
+    // annotate on them would be lost. The doc's own `history` property is
+    // undocumented, but it holds the live events that undo/redo operate on.
+    const doc = this.codemirror.getDoc() as CodeMirror.Doc & {
+      history?: {
+        done: CodeMirror.HistoryItem[];
+        undone: CodeMirror.HistoryItem[];
+      };
+    };
+    const history = doc.history ?? doc.getHistory();
+    const items = which === "undo" ? history.done : history.undone;
     for (let i = items.length - 1; i >= 0; i--) {
       if (!items[i].ranges) {
         return items[i];

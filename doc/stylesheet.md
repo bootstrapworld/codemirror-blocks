@@ -1,9 +1,5 @@
 # Stylesheet Guide
 
-[TODO] This documentation was written early in the development of this
-project. Before releasing it, check it all against the code, which may
-have changed in the meantime.
-
 This is a brief overview of how to make your language's
 [less-css](http://lesscss.org/) style file.
 
@@ -114,16 +110,18 @@ are:
 - **blocks-sequence**: A vertical sequence of blocks, such as used by
   Scheme's `begin`.
 
-- **blocks-TYPE**: A block of the given (non-literal) type. What TYPE
-  can be is defined by your language.
+- **blocks-TYPE**: A block of the given type, where TYPE is the `type` of the
+  node. The core node types have the classes `blocks-functionApp`,
+  `blocks-variableDefinition`, `blocks-functionDefinition`,
+  `blocks-structDefinition`, `blocks-lambdaExpression`, `blocks-ifExpression`,
+  `blocks-condExpression`, `blocks-condClause`, `blocks-identifierList` and
+  `blocks-comment`. Your language defines the rest: a node created with
+  `type: "whenExpr"` gets the class `blocks-whenExpr`.
 
-- **blocks-hole**: This represents a part of the program that hasn't
-  been filled in yet.
+- **blocks-blank**: This represents a part of the program that hasn't been
+  filled in yet.
 
 - **blocks-unknown**: A block of unknown type.
-
-- **blocks-locked**: "Locking" allows you to make certain blocks
-  opaque to novice users. This is the css class of locked blocks.
 
 Most typical blocks have two parts: an `operator` (the black bar up
 top), and an `args` (the space below that contains its children):

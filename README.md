@@ -9,7 +9,7 @@ codemirror-blocks is a project to make programming languages editable using visu
 ## About this repository
 
 This repository contains the code for all the packages maintained by the codemirror-blocks team, including the core codemirror-blocks library, and various language modules that implement block
-editors for individual languagues using the core library. Documentation for individual packages
+editors for individual languages using the core library. Documentation for individual packages
 can be found in their respective directories:
 
 - [codemirror-blocks](packages/codemirror-blocks/) - the core library used to make block editors. Start here if you'd like to implement a new block editor for a programming language of your choice.
@@ -26,13 +26,15 @@ To get your dev environment up and running, follow these steps.
 
 1. Clone the repository onto your local machine
 
+1. Use Node 24 or later (`.nvmrc` pins the version that CI uses: with [nvm](https://github.com/nvm-sh/nvm), run `nvm use`)
+
 1. Install dependencies with `npm`
 
    ```
    npm install
    ```
 
-   _Note:_ This repository uses [npm workspaces](https://docs.npmjs.com/cli/v7/using-npm/workspaces), so you'll need to use npm v7 or later.
+   _Note:_ This repository uses [npm workspaces](https://docs.npmjs.com/cli/v7/using-npm/workspaces), so you'll need to use npm v8 or later.
 
 1. build the library and generate type declarations
 
@@ -47,12 +49,20 @@ To get your dev environment up and running, follow these steps.
    npm run test
    ```
 
+1. Before sending a change, also run the same checks that CI does, from the repository root:
+
+   ```
+   npm run lint          # ESLint (flat config in eslint.config.mjs)
+   npm run typecheck     # TypeScript, in strict mode
+   npm run format:check  # Prettier; use `npx prettier --write .` to fix
+   ```
+
 ### Development Workflow
 
 At any given time, you'll probably be working in only one of the repo's sub-packages. Each package
 provides it's own set of npm scripts to help with the build/test process. You can either run these scripts from the repository root and specify which package you are working on with `--workspace=<package-name>` or you can run the scripts from that packages directory without the `--workspace` setting. The following assumes you are doing the latter.
 
-CMB is written in a combination of typescript and javascript, with some language extensions (like jsx syntax) that are handled by babel. As such, before any code can actually be executed, it must be transpiled to javascript. The easiest way to do this during development is to run each of the following commands in their own terminal:
+CMB is written in typescript, with some language extensions (like jsx syntax) that are handled by babel. As such, before any code can actually be executed outside of the tests, it must be transpiled to javascript. The easiest way to do this during development is to run each of the following commands in their own terminal:
 
 1. Continuously transpile code from the **`src/`** directory to the **`lib/`** directory with babel:
 
@@ -72,11 +82,10 @@ CMB is written in a combination of typescript and javascript, with some language
    npm start
    ```
 
-   then open http://localhost:8080 in your browser to see CMB running on a web page. This web page just executes the example javascript from `example/ediotor-example.js`, but will automatically
-   update whenever any code is changed.
+   then open http://localhost:8080 in your browser to see CMB running on a web page. This web page just executes the example javascript from `example/editor-example.js`, which imports the transpiled code from `lib/`, so keep `build-watch` running to see your changes. The page also exposes the editor's API as `window.cmb` for use from the browser console.
 
 1. Finally, you can also run tests continuously whenever code is changed. This should always be
-   done from the repository root to make sure you don't inadvertantly break an API that another
+   done from the repository root to make sure you don't inadvertently break an API that another
    package is depending on.
 
    ```

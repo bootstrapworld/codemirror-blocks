@@ -66,7 +66,7 @@ function enumerateIdentifierList(lst: structures.Program[]) {
     return "";
   }
   lst = [...lst];
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   const last = lst.pop()!;
   return lst.length == 0
     ? last.toString()
@@ -127,7 +127,7 @@ export function parseNode(node: structures.Program, i = 0) {
       // special case for Unit Tests
     } else {
       func = parseNode(node.func);
-      if (func.value == "check-expect" && node.args[0].func) {
+      if (func.fields.value == "check-expect" && node.args[0].func) {
         label = "Unit Test for " + symbolAria(node.args[0].func.val);
       } else {
         label = expressionAria(
