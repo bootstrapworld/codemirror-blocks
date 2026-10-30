@@ -363,10 +363,11 @@ keyboard focus, and focus falling to the page body when the last block goes.
   to leave it there, so the undo was ignored. jsdom hid this because its `drag`
   helper did not move focus; it does now (`pressFocus` in `spec/helpers/dnd.ts`).
 
-Drags: Playwright's native drag emulation is reliable for the trash can
-(`dragWithMouse`) but not for small blocks, so those use `dragWithEvents`, which
-dispatches real DOM drag events in the page against the real layout. Not
-covered: Firefox and WebKit, touch input, and IME.
+Drags use pointer events, so the real mouse (`dragWithMouse`,
+`dragWithEvents`) drives them against the real layout. `touch.e2e.ts` drives a
+finger through the DevTools Protocol (long press then drag to the trash can and
+to an insertion gap; a swipe that scrolls; a tap). Not covered: Firefox and
+WebKit, real touch hardware (iOS Safari, Android), and IME.
 
 ## Suggested order
 

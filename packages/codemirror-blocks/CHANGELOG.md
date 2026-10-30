@@ -7,6 +7,10 @@ http://keepachangelog.com/
 
 ### Changed
 
+- **Dragging uses pointer events, and works on touch screens.** Blocks and
+  toolbar items are dragged with the mouse, a pen, or a finger (press and hold
+  briefly, then drag; moving sooner scrolls the page). `react-dnd` and
+  `react-dnd-html5-backend` are no longer dependencies.
 - **Requires Node 24+ and npm 11+, and React 19.** `CodeMirrorBlocks()` now
   renders with `createRoot`; the returned API object is still filled in before
   the call returns. The dependencies on `react-redux` (9), `redux` (5),

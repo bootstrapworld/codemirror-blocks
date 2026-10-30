@@ -1,6 +1,6 @@
 /**
  * A small drag-and-drop layer built on Pointer Events, so that dragging works
- * with a mouse, a pen, and a finger. It is shaped like react-dnd (a provider,
+ * with a mouse, a pen, and a finger. It has the shape of a hooks-based library (a provider,
  * `useDrag`, `useDrop`) but is much smaller, and does not use the browser's
  * native drag-and-drop (which does not work on touch screens).
  *
