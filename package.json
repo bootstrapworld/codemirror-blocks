@@ -3,7 +3,7 @@
   "description": "Workspace for codemirror-blocks related packaged",
   "private": "true",
   "engines": {
-    "node": ">=18.x",
+    "node": ">=20",
     "npm": ">=8.x"
   },
   "workspaces": [

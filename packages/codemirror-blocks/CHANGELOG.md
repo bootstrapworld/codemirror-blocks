@@ -7,7 +7,7 @@ http://keepachangelog.com/
 
 ### Changed
 
-- **Requires Node 18+ and npm 8+, and React 19.** `CodeMirrorBlocks()` now
+- **Requires Node 20+ and npm 8+, and React 19.** `CodeMirrorBlocks()` now
   renders with `createRoot`; the returned API object is still filled in before
   the call returns. The dependencies on `react-redux` (9), `redux` (5),
   `redux-thunk` (3), `reselect` (5), `react-tabs` (6) and `react-codemirror2`
