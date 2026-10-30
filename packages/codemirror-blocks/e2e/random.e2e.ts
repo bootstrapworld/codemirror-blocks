@@ -15,10 +15,13 @@ import {
  * undoing everything must give back the starting text and redoing everything
  * the final text. A failure names the seed and lists the steps so far.
  *
- * Set CMB_E2E_SEEDS (a comma-separated list) to try other seeds.
+ * Set CMB_E2E_SEEDS (a comma-separated list) to try other seeds. Seed 11 is in
+ * the default list because it once found a real bug: a press on blank space that
+ * became a drag left keyboard focus on CodeMirror's scroller, which handles no
+ * keys, so every later Ctrl-Z was ignored.
  */
 
-const SEEDS = (process.env.CMB_E2E_SEEDS ?? "1,2,3,4,5,6,7")
+const SEEDS = (process.env.CMB_E2E_SEEDS ?? "1,2,3,4,5,6,7,11")
   .split(",")
   .map((s) => Number(s.trim()));
 // (each step makes at most one undo step, and undoAll() presses undo ten times)
@@ -195,15 +198,3 @@ async function runSequence(page: Page, seed: number) {
 for (const seed of SEEDS) {
   test(`random sequence, seed ${seed}`, ({ page }) => runSequence(page, seed));
 }
-
-// KNOWN BUG, found by this seed (and present before the fixes made alongside
-// this suite): after a real-mouse drag of a block to the trash can, keyboard
-// focus is left on CodeMirror's scroller (<div role="presentation">), so every
-// later Ctrl-Z is ignored and the history can't be walked back. Playwright
-// reports this test as failing once the bug is fixed.
-test("random sequence, seed 11 (known bug: focus left on the scroller)", async ({
-  page,
-}) => {
-  test.fail();
-  await runSequence(page, 11);
-});

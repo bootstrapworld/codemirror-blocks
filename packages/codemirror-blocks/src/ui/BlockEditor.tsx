@@ -200,6 +200,17 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     wrapper.setAttribute("aria-multiselectable", "true");
     wrapper.setAttribute("tabIndex", "-1");
 
+    // CodeMirror's scroller can take focus (it has tabindex -1), for example when
+    // a press on blank space turns into a drag that ends outside the editor.
+    // Nothing there handles keys, so undo and every other shortcut would be
+    // ignored. Pass focus on to the editor's input instead.
+    const scroller = codemirror.getScrollerElement();
+    scroller.addEventListener("focus", (e) => {
+      if (e.target === scroller) {
+        codemirror.focus();
+      }
+    });
+
     // pass the block-mode CM editor, API, and current AST
     props.onMount(codemirror);
   };

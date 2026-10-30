@@ -177,6 +177,14 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
           props.onDisableEditable();
           dispatch(actions.clearError());
           dispatch(activateByNid(props.editor, null, { allowMove: false }));
+          // A block normally takes focus back (above). With none to take it (an
+          // empty document), the box going away would leave focus on the page
+          // body, and keys such as undo would stop working: keep it in the editor.
+          dispatch((_, getState) => {
+            if (!selectors.getFocusedNode(getState())) {
+              props.editor.focus();
+            }
+          });
           return;
         }
       }

@@ -157,8 +157,11 @@ const isEditing = () =>
 
 /** What a user does before reaching for a shortcut: finish typing */
 const stopEditing = () => {
-  if (isEditing()) {
-    keyDown("Escape");
+  // (an editing box can be left open without focus: a drag in jsdom doesn't
+  // take focus from it, as a real press would)
+  const box = document.querySelector('[contenteditable="true"]');
+  if (box) {
+    keyDown("Escape", {}, box);
   }
 };
 
@@ -676,6 +679,45 @@ describe("the helpers", () => {
     );
     expect([...used].sort()).toEqual(allOperations.map((o) => o.name).sort());
   });
+});
+
+// Sequences that once broke the editor, shrunk by the random runs below. Each
+// replays the exact steps, so they keep guarding what they found.
+describe("sequences that once broke the editor", () => {
+  const code = "(define (sq n) (* n n))\n(sq 4)";
+
+  it("seed 528: a toolbar block dropped on whitespace while a literal is being edited, then undo and redo (once a harness artifact: an editing box left open without focus)", () => {
+    check({
+      code,
+      steps: [
+        {
+          op: "collapse or expand",
+          r: [356990582, 526874239, 573162785, 314379581],
+        },
+        {
+          op: "drag from the toolbar onto whitespace",
+          r: [677634825, 465503431, 927214367, 319805837],
+        },
+      ],
+    });
+  }, 120_000);
+
+  it("seed 532: cut, a trash-can drag, a cancelled paste, then undo (focus lost with no block left)", () => {
+    check({
+      code,
+      steps: [
+        { op: "cut", r: [231072944, 296978715, 484121717, 903425249] },
+        {
+          op: "drag a block to the trash can",
+          r: [751373927, 678114516, 27050808, 846244032],
+        },
+        {
+          op: "paste at the top level",
+          r: [167531244, 314972969, 757373562, 710069929],
+        },
+      ],
+    });
+  }, 120_000);
 });
 
 describe("random sequences of operations", () => {

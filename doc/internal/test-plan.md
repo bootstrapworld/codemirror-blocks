@@ -268,21 +268,27 @@ replacing a block looked in the old parent and threw after the text had changed.
 The undo/redo saved-focus problem (a redo focused whatever block sat at the
 pre-edit position, `0 ||` skipped the first block, merged history items lost
 the saved focus) was found by these runs and fixed afterwards, see section 8.
-Open, pinned and not fixed: a browser-only one (`e2e/random.e2e.ts`, seed 11,
-marked as an expected failure): after a real-mouse drag of a block to the trash
-can, focus is left on CodeMirror's scroller and every later Ctrl-Z is ignored. It
-fails the same way on the code from before these fixes.
+Found by later runs, also fixed, each with a regression spec
+(`spec/focus-recovery-test.ts`, and the two shrunk sequences replayed in
+`spec/random-sequences-test.ts`; seed 11 stays in the default seeds of
+`e2e/random.e2e.ts`):
 
-Open and not yet looked into, found by a longer jsdom run
-(`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30 CMB_RANDOM_SEED=500`; both fail the same
-way on the code from before the undo/redo focus fix, so they are not caused by it,
-and neither is pinned by a spec yet):
-
-- seed 528: toggle collapse on a block, drag the toolbar's "overlay" onto the
-  whitespace, then undo everything; focus is left on the "stand by" placeholder
-  because the focused block ("sq") is not in the page.
-- seed 532: cut the first block, drag the other one to the trash can, paste
-  "zzz" at the top level and cancel it; the next Ctrl-Z does not undo anything.
+- seed 528 (`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30 CMB_RANDOM_SEED=500` found
+  it): focus stranded on the "stand by" placeholder after undoing a toolbar
+  drop. It was an artifact of the harness, not an app bug: in jsdom a drag does
+  not take focus from an editing box as a real press does, so a box was left
+  open without focus and a later undo or redo ran inside it (where Ctrl-Z and
+  Ctrl-Y are text edits). The runs now close any open box before walking the
+  history, and the sequence stays as a regression case. One quirk was found on
+  the way and left alone, since no real scenario reaches it: while a node is
+  being edited, `node.element` is still the old, detached span, not the box.
+- seed 532: cutting a block, dragging the other to the trash can, pasting at the
+  top level and cancelling left Ctrl-Z doing nothing. With no block left to
+  focus, cancelling the typing box dropped focus to the page body, so the Esc
+  handler in `NodeEditable` now keeps it in the text editor.
+- seed 11 (browser only): a press on blank space that became a drag left focus
+  on CodeMirror's scroller (it has `tabindex="-1"`), where no key is handled.
+  `BlockEditor` now passes focus on from the scroller to the editor's input.
 
 Properties to check after every operation:
 
@@ -318,7 +324,7 @@ keyboard focus, and focus falling to the page body when the last block goes.
   clicks, keys, drops and the real clipboard, each then undone and redone by
   keyboard. A failure here with a passing jsdom twin means jsdom hid a bug.
 - `random.e2e.ts`: short seeded sequences of real input (see section 12), with
-  uncaught page errors counted as failures. One seed is a pinned known bug.
+  uncaught page errors counted as failures. Seed 11 is in the default seeds.
 - `undo-focus.e2e.ts`: which block has keyboard focus after an undo and a redo
   (the DOM focus, which jsdom can't check, and no uncaught page errors).
 - `delete-undo.e2e.ts`, `trash-can.e2e.ts`, `typing.e2e.ts`: the specific
