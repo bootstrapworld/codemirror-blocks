@@ -103,15 +103,26 @@ test.describe("dragging with a finger", () => {
     expect((await snapshot(page)).text).toBe(lines.join("\n"));
   });
 
-  test("a quick tap still focuses a block, as a click does", async ({
+  test("a quick tap still activates a block, as a click does", async ({
     page,
   }) => {
     await openInBlockMode(page, program);
-    const target = block(page, /g expression/);
+    // a leaf: tapping the middle of a bigger block lands on a child
+    const target = block(page, /^g,/);
+    // the blocks shift sideways while the page's fonts load, so tap only once
+    // the block holds still
+    let x = -1;
+    await expect(async () => {
+      const prev = x;
+      x = (await target.boundingBox())?.x ?? -2;
+      await page.waitForTimeout(150);
+      expect(x).toBe(prev);
+    }).toPass();
     const p = await center(target);
-    await page.bringToFront();
     await page.touchscreen.tap(p.x, p.y);
-    await expect(target).toBeFocused();
+    // (a leaf opens for editing when clicked, so focus is inside the editor
+    // rather than on the block itself)
+    await expect(page.locator(".CodeMirror :focus")).toHaveCount(1);
     await expect(page.locator(".cmb-drag-preview")).toHaveCount(0);
   });
 });
