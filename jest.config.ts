@@ -180,7 +180,14 @@ export default {
   collectCoverage: false,
 
   // An array of glob patterns indicating a set of files for which coverage information should be collected
-  // collectCoverageFrom: undefined,
+  // Only the source of each package, so that the number does not depend on
+  // whether lib/ (which the WeScheme specs import) has been built, and so that
+  // a file no test imports still counts as uncovered.
+  collectCoverageFrom: [
+    "packages/*/src/**/*.{ts,tsx,js,jsx}",
+    "!**/*.d.ts",
+    "!**/node_modules/**",
+  ],
 
   // The directory where Jest should output its coverage files
   coverageDirectory: ".coverage",
