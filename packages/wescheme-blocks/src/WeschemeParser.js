@@ -4,7 +4,7 @@ import { lex } from "wescheme-js/src/lex";
 import * as types from "wescheme-js/src/runtime/types";
 import * as structures from "wescheme-js/src/structures";
 
-const { isVector: isNativeVector } = types;
+const { isVector: isNativeVector, isString: isNativeString } = types;
 
 export function parse(code) {
   function fallback(sexp) {
@@ -20,7 +20,7 @@ export function parse(code) {
     return isNativeVector(x.val);
   }
   function isString(x) {
-    return isString(x.val);
+    return isNativeString(x.val);
   }
   function isSymbol(x) {
     return x instanceof structures.symbolExpr;

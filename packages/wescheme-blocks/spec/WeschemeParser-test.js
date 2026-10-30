@@ -613,4 +613,52 @@ describe("The WeScheme Parser,", function () {
       expect(print(once)).toEqual([once]);
     });
   });
+
+  describe("less common forms,", function () {
+    // A form with a block of its own gets one. A form without keeps its source
+    // text in a literal, so that switching to blocks and back loses no code.
+    // Malformed forms stay as unknown blocks.
+    // [source, the types of its blocks, how it prints]
+    const forms = [
+      ["(require x)", ["functionApp"], "(require x)"],
+      // (these once crashed the parser: isString called itself)
+      ['(require "f.rkt")', ["functionApp"], '(require "f.rkt")'],
+      ['(require (lib "a" "b"))', ["functionApp"], '(require (lib "a" "b"))'],
+      ["(require (lib))", ["unknown"], "(require (lib))"],
+      ["(require (planet x))", ["unknown"], "(require (planet x))"],
+      ["(require 5)", ["unknown"], "(require 5)"],
+      ["(provide x)", ["literal"], "(provide x)"],
+      ["(provide (struct-out p))", ["literal"], "(provide (struct-out p))"],
+      ["(provide)", ["literal"], "(provide)"],
+      ["(case x [(1) 2])", ["literal"], "(case x [(1) 2])"],
+      [
+        "(case x [(1 2) 'a] [else 'b])",
+        ["unknown"],
+        "(case x ((1 2) 'a) (else 'b))",
+      ],
+      ["(case x [1 2])", ["unknown"], "(case x (1 2))"],
+      ["'x", ["literal"], "'x"],
+      ["'(a b)", ["literal"], "'(a b)"],
+      ["`(1 ,x)", ["literal"], "`(1 ,x)"],
+      ["`(1 `(2 ,(3 ,x)))", ["literal"], "`(1 `(2 ,(3 ,x)))"],
+      ["(local [(define a 1)] a)", ["literal"], "(local [(define a 1)] a)"],
+      ["(define-values (a b) (f))", ["literal"], "(define-values (a b) (f))"],
+      ["(quote a b)", ["unknown"], "(quote a b)"],
+      ["(unquote x)", ["unknown"], "(unquote x)"],
+      ["(let () 1)", ["letLikeExpr"], "(let () 1)"],
+      ["(cond)", ["unknown"], "(cond)"],
+    ];
+
+    it.each(forms)("%s makes %j and prints as %s", (code, types, text) => {
+      const nodes = parse(code);
+      expect(nodes.map((n) => n.type)).toEqual(types);
+      expect(nodes.map((n) => n.toString()).join("\n")).toBe(text);
+      // and printing it again changes nothing
+      expect(
+        parse(text)
+          .map((n) => n.toString())
+          .join("\n")
+      ).toBe(text);
+    });
+  });
 });
