@@ -258,6 +258,20 @@ export interface EditInterface {
   to: Pos;
   node?: ASTNode;
   toChangeObject?(ast: AST, text: ReadonlyRangedText): ChangeObject;
+  /**
+   * Which node should get focus once this edit has been applied.
+   *
+   * `newAST` must be the AST that results from applying the edit(s) to the
+   * AST the edit was built from, as committed by `performEdits`. Edits that
+   * look a node up by id (a delete finds the sibling before it) only find
+   * it in that AST; the throwaway AST used to validate the edit is a fresh
+   * parse with fresh ids, and given any other AST the result is meaningless.
+   *
+   * Returns "fallback" when the edit cannot name a node (e.g. a deleted root
+   * has nothing to point at), and focus is then worked out from the text
+   * changes. When several edits are performed together, only the last
+   * edit's hint is used.
+   */
   focusHint(newAST: AST): ASTNode | "fallback";
   toString(): string;
 }
