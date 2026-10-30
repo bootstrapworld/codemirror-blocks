@@ -109,6 +109,7 @@ const macKeyMap: KeyMap = {
 };
 
 const pcKeyMap: KeyMap = {
+  "Ctrl-Enter": "Edit Anything",
   "Ctrl-Z": "Undo",
   "Ctrl-Y": "Redo",
   "Shift-Ctrl-Z": "Redo",

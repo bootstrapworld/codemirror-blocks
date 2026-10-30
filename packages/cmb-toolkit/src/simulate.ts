@@ -221,6 +221,8 @@ function getKeyCode(key: string): number {
       return 221;
     case "/":
       return 191;
+    case "\\":
+      return 220;
     case "<":
       return 188;
     // If you extend this, make sure to match the official table linked above.

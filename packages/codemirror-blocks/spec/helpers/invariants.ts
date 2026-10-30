@@ -93,8 +93,13 @@ export function findInvariantViolations(): string[] {
         visibleIds.add(comment.id);
       }
     }
+    // A node being edited in place is shown as text, without its children.
+    const beingEdited =
+      document
+        .getElementById(`block-node-${node.id}`)
+        ?.getAttribute("contenteditable") === "true";
     for (const child of node.children()) {
-      visit(child, hidden || collapsed.has(node.id));
+      visit(child, hidden || collapsed.has(node.id) || beingEdited);
     }
   };
   ast.rootNodes.forEach((r) => visit(r, false));

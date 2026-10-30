@@ -10,6 +10,11 @@ type Props = {
     content: ReactElement | string;
   } | null;
   keyUp?: React.KeyboardEventHandler<HTMLDivElement>;
+  /**
+   * The content to hide from screenreaders while the dialog is open (see
+   * react-modal's `appElement`). Without it the dialog logs a warning.
+   */
+  appElement?: HTMLElement;
 };
 
 const Dialog = (props: Props) => {
@@ -24,6 +29,7 @@ const Dialog = (props: Props) => {
   return (
     <Modal
       isOpen={isOpen}
+      appElement={props.appElement}
       className={"madeUpClassToCancelDefaultStyles"}
       onRequestClose={closeFn}
       shouldCloseOnEsc={true}

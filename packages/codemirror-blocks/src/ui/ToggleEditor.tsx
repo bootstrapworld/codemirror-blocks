@@ -83,6 +83,7 @@ function ToggleEditor(props: ToggleEditorProps) {
   };
 
   const toolbarRef = useRef<HTMLInputElement>(null);
+  const editorElement = useRef<HTMLDivElement>(null);
 
   const appHelpers = useMemo(
     () => ({
@@ -96,7 +97,7 @@ function ToggleEditor(props: ToggleEditorProps) {
 
   return (
     <AppContext.Provider value={appHelpers}>
-      <div className={classes}>
+      <div className={classes} ref={editorElement}>
         {blockMode ? <BugButton /> : null}
         <ToggleButton setBlockMode={handleToggle} blockMode={blockMode} />
         {blockMode && editor ? (
@@ -154,7 +155,13 @@ function ToggleEditor(props: ToggleEditorProps) {
         ></a>
       </div>
 
-      <Dialog isOpen={!!dialog} body={dialog} closeFn={() => setDialog(null)} />
+      <Dialog
+        isOpen={!!dialog}
+        body={dialog}
+        closeFn={() => setDialog(null)}
+        // hide the editor from screenreaders while the dialog is open
+        appElement={editorElement.current ?? undefined}
+      />
     </AppContext.Provider>
   );
 }
