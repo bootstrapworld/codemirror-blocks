@@ -410,10 +410,9 @@ class CustomAudio extends Audio {
   }
 }
 
-import beepSound from "./ui/beep.mp3";
-export const BEEP = new CustomAudio(beepSound);
-import wrapSound from "./ui/wrap.mp3";
-export const WRAP = new CustomAudio(wrapSound);
+import { BEEP_URL, WRAP_URL } from "./sounds";
+export const BEEP = new CustomAudio(BEEP_URL);
+export const WRAP = new CustomAudio(WRAP_URL);
 
 export function playSound(sound: CustomAudio) {
   sound.pause();

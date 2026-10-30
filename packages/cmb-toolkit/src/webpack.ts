@@ -16,12 +16,6 @@ export function getBaseConfig(): WebpackConfiguration {
     module: {
       rules: [
         {
-          // inline small audio files as data URLs, emit the rest as files
-          test: /\.mp3$/,
-          type: "asset",
-          parser: { dataUrlCondition: { maxSize: 10000 } },
-        },
-        {
           test: /\.less$|.css$/,
           use: [
             { loader: "style-loader" },

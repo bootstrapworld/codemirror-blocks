@@ -28,7 +28,7 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   to the scoped name. Workspace commands use the scoped names too, for example
   `npm run build --workspace=@bootstrapworld/codemirror-blocks`.
 - The package now has `types` and `exports` fields. The root entry, every
-  `codemirror-blocks/lib/<module>` path, `.less`/`.mp3` files, and the
+  `codemirror-blocks/lib/<module>` path, `.less` files, and the
   directory-style entry points (`lib/languages`, `lib/languages/wescheme`,
   `lib/languages/lambda`, `lib/languages/example`) are exported; other paths
   can no longer be imported.
@@ -99,6 +99,9 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   separator), and `replaceSelection()` also inserted the new text at the
   cursor. `extendSelection()` no longer throws when the selection has more than
   one range.
+- The beep and the wrap sound are inlined into the library as data URLs
+  (`src/sounds.ts`, made from `assets/sounds` by `npm run build-sounds`), so
+  importing the library no longer needs a bundler rule for `.mp3` files.
 - Pretty-printing deeply nested code no longer takes exponential time: a
   537-byte expression in the examples took about 4 seconds to print (on every
   mode switch, edit and paste that reached it) and now takes under a

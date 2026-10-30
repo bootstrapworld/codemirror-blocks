@@ -39,14 +39,11 @@ describe("the base configuration", () => {
     expect(ruleFor(base, "thing.jsx").map(loaderName)).toEqual([
       "babel-loader",
     ]);
-    expect(ruleFor(base, "beep.mp3").map((r) => r.type)).toEqual(["asset"]);
   });
 
-  it("transpiles TypeScript without checking it, and inlines only small audio", () => {
+  it("transpiles TypeScript without checking it", () => {
     const ts = ruleFor(base, "x.ts")[0].use as { options: unknown };
     expect(ts.options).toEqual({ transpileOnly: true });
-    const mp3 = ruleFor(base, "beep.mp3")[0];
-    expect(mp3.parser).toEqual({ dataUrlCondition: { maxSize: 10000 } });
   });
 
   it("resolves TypeScript before JavaScript, and finds loaders in the workspace root", () => {
