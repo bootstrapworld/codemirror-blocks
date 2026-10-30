@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, use, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AST, ASTNode, nodeElementMap } from "../ast";
 import { ReplaceNodeTarget, collapseNode } from "../state/actions";
@@ -56,7 +50,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const textMarker = useSelector((state: RootState) =>
     selectors.getTextMarker(state, props.node)
   );
-  const rootNode = useContext(RootNodeContext);
+  const rootNode = use(RootNodeContext);
   useEffect(() => {
     // Whenever a node gets rerendered because it's collapsed state has changed,
     // make sure to notifiy
@@ -69,10 +63,10 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const [editable, setEditable] = useState(false);
 
   const [value, setValue] = useState<string | null | undefined>();
-  const editor = useContext(EditorContext);
+  const editor = use(EditorContext);
 
   const dispatch: AppDispatch = useDispatch();
-  const appHelpers = useContext(AppContext);
+  const appHelpers = use(AppContext);
   const isErrorFree = useSelector(selectors.isErrorFree);
 
   const handleMakeEditable = () => {
@@ -344,11 +338,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
         {comment && comment.reactElement({ id: commentElemId })}
       </span>
     );
-    return (
-      <NodeContext.Provider value={{ node: props.node }}>
-        {result}
-      </NodeContext.Provider>
-    );
+    return <NodeContext value={{ node: props.node }}>{result}</NodeContext>;
   }
 };
 

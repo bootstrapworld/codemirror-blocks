@@ -627,14 +627,13 @@ const KeyMapTable = (props: { keyMap: KeyMap }) => {
         {Object.entries(reverseMap).map(
           // for each command, make a row...
           (
-            kv,
-            i // for each row, list the kbd shortcuts
+            kv // for each row, list the kbd shortcuts
           ) => (
-            <tr key={i}>
+            <tr key={kv[0]}>
               <td>{kv[0]}</td>
               <td>
-                {kv[1].map((k, j) => (
-                  <kbd aria-hidden="true" key={j}>
+                {kv[1].map((k) => (
+                  <kbd aria-hidden="true" key={k}>
                     {k}
                   </kbd>
                 ))}

@@ -61,9 +61,12 @@ export type NodeEditableHandle = {
   select: () => void;
 };
 
-const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
-  (props, ref) => {
-    const element = useRef<HTMLElement>(null);
+const NodeEditable = ({
+  ref,
+  ...props
+}: Props & { ref?: React.Ref<NodeEditableHandle> }) => {
+  {
+    const elementRef = useRef<HTMLElement>(null);
     const dispatch: AppDispatch = useDispatch();
 
     const ast = useSelector(selectors.getAST);
@@ -78,7 +81,7 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
 
     // select and focus the element on mount
     useEffect(() => {
-      const currentEl = element.current;
+      const currentEl = elementRef.current;
       if (!currentEl) {
         // element has been unmounted already, nothing to do.
         return;
@@ -93,8 +96,8 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
     // until later, as is the case with TopLevelNodeEditable
     React.useImperativeHandle(ref, () => ({
       select: () => {
-        if (element.current) {
-          selectElement(element.current, props.isInsertion);
+        if (elementRef.current) {
+          selectElement(elementRef.current, props.isInsertion);
         }
       },
     }));
@@ -114,7 +117,7 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
         // we grab the value directly from the content editable element
         // to deal with this issue:
         // https://github.com/lovasoa/react-contenteditable/issues/161
-        const value = element.current?.textContent;
+        const value = elementRef.current?.textContent;
         const focusedNode = selectors.getFocusedNode(getState());
         // if there's no insertion value, or the new value is the same as the
         // old one, preserve focus on original node and return silently
@@ -153,8 +156,8 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
           dispatch(
             actions.setErrorId(target.node ? target.node.id : "editing")
           );
-          if (element.current) {
-            selectElement(element.current, false);
+          if (elementRef.current) {
+            selectElement(elementRef.current, false);
           }
         }
       });
@@ -166,7 +169,7 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
         case "Enter": {
           // blur the element to trigger handleBlur
           // which will save the edit
-          element.current?.blur();
+          elementRef.current?.blur();
           return;
         }
         case "Alt-Q":
@@ -207,7 +210,7 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
         {...contentEditableProps}
         className={classNames(classes)}
         role="textbox"
-        ref={element}
+        ref={elementRef}
         onChange={props.onChange}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
@@ -221,5 +224,5 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
       />
     );
   }
-);
+};
 export default NodeEditable;

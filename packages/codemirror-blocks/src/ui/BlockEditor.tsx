@@ -69,10 +69,10 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   // When the last block goes away (deleted, dragged to the trash, undone...),
   // keyboard focus has nowhere to go and falls to the page body, so typing and
   // shortcuts stop working. Keep it in the editor instead.
-  const hadBlocks = useRef(false);
+  const hadBlocksRef = useRef(false);
   useEffect(() => {
     const hasBlocks = ast.rootNodes.length > 0;
-    if (hadBlocks.current && !hasBlocks) {
+    if (hadBlocksRef.current && !hasBlocks) {
       const active = document.activeElement;
       if (
         !active ||
@@ -82,7 +82,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         editor?.focus();
       }
     }
-    hadBlocks.current = hasBlocks;
+    hadBlocksRef.current = hasBlocks;
   }, [ast, editor]);
 
   // only refresh if there is no active quarantine
@@ -220,7 +220,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   // react-codemirror2's UnControlled component which
   // does not update event handlers on the uncontrolled
   // codemirror instance...
-  const lastCursor = useRef<Pos | null>(null);
+  const lastCursorRef = useRef<Pos | null>(null);
 
   /**
    * When the CM instance receives focus...
@@ -231,7 +231,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     dispatch((_, getState) => {
       const ast = selectors.getAST(getState());
       const focusedNode = selectors.getFocusedNode(getState());
-      const { current: cur } = lastCursor;
+      const { current: cur } = lastCursorRef;
       if (cur != null) {
         return; // if we already have a cursor, bail
       }
@@ -281,7 +281,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const handleTopLevelCursorActivity = (editor: CodeMirrorFacade) => {
     const cur =
       editor.codemirror.getSelection().length > 0 ? null : editor.getCursor();
-    lastCursor.current = cur;
+    lastCursorRef.current = cur;
     // Only reclaim focus if the text editor already has it. Block edits also
     // move the (parked) cursor, and taking focus then would scroll the view to
     // the cursor and pull focus away from the block that should keep it.
@@ -297,13 +297,13 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     if (editor && ast) {
       // Render all the top-level nodes
       portals = [...ast.children()].map((r) => (
-        <EditorContext.Provider value={editor} key={r.id}>
+        <EditorContext value={editor} key={r.id}>
           <ToplevelBlock
             node={r}
             incrementalRendering={incrementalRendering}
             editor={editor}
           />
-        </EditorContext.Provider>
+        </EditorContext>
       ));
       if (quarantine) {
         portals.push(

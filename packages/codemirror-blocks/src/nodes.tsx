@@ -469,6 +469,8 @@ export function CondClause(
             <div className="blocks-cond-predicate">{testExpr}</div>
             <div className="blocks-cond-result">
               {props.node.fields.thenExprs.map((thenExpr, index) => (
+                // by place, not id: ids change with every parse
+                // eslint-disable-next-line @eslint-react/no-array-index-key
                 <span key={index}>
                   <DropTarget field="thenExprs" />
                   {thenExpr.reactElement()}

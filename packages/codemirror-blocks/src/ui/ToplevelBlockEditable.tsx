@@ -36,7 +36,7 @@ const ToplevelBlockEditable = (props: Props) => {
     return { container };
   }, []);
 
-  const nodeEditableHandle = useRef<NodeEditableHandle>(null);
+  const nodeEditableRef = useRef<NodeEditableHandle>(null);
 
   // after react has finished rendering, attach the container to codemirror
   // as a marker widget and select its contents.
@@ -49,7 +49,7 @@ const ToplevelBlockEditable = (props: Props) => {
   // and https://github.com/facebook/react/issues/20141 for more info.
   useEffect(() => {
     const marker = props.editor.replaceMarkerWidget(from, to, container);
-    nodeEditableHandle.current?.select();
+    nodeEditableRef.current?.select();
     // make sure to clear the marker from codemirror
     // when the component unmounts
     return () => marker.clear();
@@ -57,7 +57,7 @@ const ToplevelBlockEditable = (props: Props) => {
 
   return ReactDOM.createPortal(
     <NodeEditable
-      ref={nodeEditableHandle}
+      ref={nodeEditableRef}
       editor={props.editor}
       target={new actions.OverwriteTarget(from, to)}
       value={value}

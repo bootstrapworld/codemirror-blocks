@@ -45,16 +45,9 @@ export default tseslint.config(
       // stylesheets get pulled in (TypeScript doesn't know about .less files)
       "@typescript-eslint/no-require-imports": 0,
       "no-undef": 0,
-      // style rules of eslint-react that eslint-plugin-react never had; the
-      // code is not written to them (and some, like forwardRef and
-      // <Context.Provider>, would be React 19 cleanups of their own)
-      "@eslint-react/exhaustive-deps": 0, // react-hooks has it
-      "@eslint-react/naming-convention-ref-name": 0,
-      "@eslint-react/no-array-index-key": 0,
-      "@eslint-react/no-context-provider": 0,
-      "@eslint-react/no-forward-ref": 0,
-      "@eslint-react/no-use-context": 0,
-      "@eslint-react/no-unused-class-component-members": 0,
+      // the hooks rules come from react-hooks, which the code already has
+      // deliberate disables for: eslint-react would report them twice
+      "@eslint-react/exhaustive-deps": 0,
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
     },

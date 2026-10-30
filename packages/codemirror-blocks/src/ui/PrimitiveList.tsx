@@ -18,59 +18,60 @@ type BasePrimitiveProps = {
   onFocus: (e: React.FocusEvent) => void;
 };
 
-export const Primitive = React.forwardRef<HTMLElement, BasePrimitiveProps>(
-  (props, ref) => {
-    const { primitive, className, onFocus } = props;
-    const [_, connectDragSource, connectDragPreview] = useDrag({
-      type: ItemTypes.NODE,
-      item: { content: primitive.name },
-    });
+export const Primitive = ({
+  ref,
+  ...props
+}: BasePrimitiveProps & { ref?: React.Ref<HTMLElement> }) => {
+  const { primitive, className, onFocus } = props;
+  const [_, connectDragSource, connectDragPreview] = useDrag({
+    type: ItemTypes.NODE,
+    item: { content: primitive.name },
+  });
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      switch (defaultKeyMap[CodeMirror.keyName(e)]) {
-        case "Copy": {
-          e.preventDefault();
-          // TODO(Emmanuel): this should really just return the literal,
-          // not the whole expression
-          const node = primitive.getASTNode();
-          copy([node], "copied");
-          break;
-        }
-        default:
-          return;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (defaultKeyMap[CodeMirror.keyName(e)]) {
+      case "Copy": {
+        e.preventDefault();
+        // TODO(Emmanuel): this should really just return the literal,
+        // not the whole expression
+        const node = primitive.getASTNode();
+        copy([node], "copied");
+        break;
       }
-    };
+      default:
+        return;
+    }
+  };
 
-    // The span is both the drag source and its own drag preview, and also
-    // needs to hand itself to the ref we were given.
-    const setRefs = useCallback(
-      (el: HTMLElement | null) => {
-        connectDragSource(el);
-        connectDragPreview(el, { offsetX: 1, offsetY: 1 });
-        if (typeof ref === "function") {
-          ref(el);
-        } else if (ref) {
-          ref.current = el;
-        }
-      },
-      [connectDragSource, connectDragPreview, ref]
-    );
+  // The span is both the drag source and its own drag preview, and also
+  // needs to hand itself to the ref we were given.
+  const setRefs = useCallback(
+    (el: HTMLElement | null) => {
+      connectDragSource(el);
+      connectDragPreview(el, { offsetX: 1, offsetY: 1 });
+      if (typeof ref === "function") {
+        ref(el);
+      } else if (ref) {
+        ref.current = el;
+      }
+    },
+    [connectDragSource, connectDragPreview, ref]
+  );
 
-    return (
-      <li>
-        <span
-          tabIndex={-1}
-          onKeyDown={handleKeyDown}
-          onFocus={onFocus}
-          ref={setRefs}
-          className={classNames(className, "Primitive list-group-item")}
-        >
-          {primitive.name}
-        </span>
-      </li>
-    );
-  }
-);
+  return (
+    <li>
+      <span
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        onFocus={onFocus}
+        ref={setRefs}
+        className={classNames(className, "Primitive list-group-item")}
+      >
+        {primitive.name}
+      </span>
+    </li>
+  );
+};
 
 type PrimitiveGroupProps = {
   setSelectedPrimitive: (primitive: LanguagePrimitive) => void;
@@ -117,10 +118,10 @@ type PrimitiveListProps = {
   primitives?: LanguagePrimitive[];
   searchString?: string;
 };
-export const PrimitiveList = React.forwardRef<
-  HTMLUListElement,
-  PrimitiveListProps
->((props: PrimitiveListProps, ref) => {
+export const PrimitiveList = ({
+  ref,
+  ...props
+}: PrimitiveListProps & { ref?: React.Ref<HTMLUListElement> }) => {
   const {
     primitives = [],
     selected,
@@ -130,7 +131,7 @@ export const PrimitiveList = React.forwardRef<
     searchString,
   } = props;
 
-  const primitiveRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const primitiveElementsRef = useRef<(HTMLSpanElement | null)[]>([]);
 
   const renderGroup = (g: PrimitiveGroupModel, _i: number) => (
     <PrimitiveGroup
@@ -150,7 +151,7 @@ export const PrimitiveList = React.forwardRef<
       onFocus={() => setSelectedPrimitive(p)}
       className={selected == p.name ? "selected" : ""}
       ref={(el) => {
-        primitiveRefs.current[i] = el;
+        primitiveElementsRef.current[i] = el;
       }}
     />
   );
@@ -171,7 +172,7 @@ export const PrimitiveList = React.forwardRef<
     }
 
     // focus on the new DOM node
-    primitiveRefs.current[newIndex]?.focus();
+    primitiveElementsRef.current[newIndex]?.focus();
 
     // if the index was changed, the event is handled. Do not bubble.
     if (newIndex !== prevIndex) {
@@ -222,6 +223,6 @@ export const PrimitiveList = React.forwardRef<
       </ul>
     </div>
   );
-});
+};
 
 export default PrimitiveList;

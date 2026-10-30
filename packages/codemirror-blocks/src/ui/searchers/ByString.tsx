@@ -96,7 +96,7 @@ const ByString: Searcher<SearchSettings, Props> = {
     isIgnoreCase: false,
   },
   component: class extends Component<Props> {
-    displayName = "Search by String";
+    static displayName = "Search by String";
 
     inputRef: React.RefObject<HTMLInputElement | null>;
 

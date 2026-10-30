@@ -1,7 +1,7 @@
 import React, {
   createContext,
   useCallback,
-  useContext,
+  use,
   useMemo,
   useState,
 } from "react";
@@ -132,11 +132,11 @@ export const DropTarget = (props: { field: string }) => {
   // its corresponding DOM element.
   const id = useMemo(genUniqueId, [genUniqueId]);
 
-  const node = useContext(NodeContext).node;
+  const node = use(NodeContext).node;
   if (!node) {
     throw new Error("DropTarget can only be rendered from inside a Node");
   }
-  const editor = useContext(EditorContext);
+  const editor = use(EditorContext);
 
   const isErrorFree = useSelector(selectors.isErrorFree);
 

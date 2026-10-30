@@ -57,9 +57,9 @@ const ToplevelBlock = (props: Props) => {
   const elt = renderPlaceholder ? (
     <div />
   ) : (
-    <RootNodeContext.Provider value={{ marker: mark }}>
+    <RootNodeContext value={{ marker: mark }}>
       {props.node.reactElement()}
-    </RootNodeContext.Provider>
+    </RootNodeContext>
   );
 
   useEffect(() => {

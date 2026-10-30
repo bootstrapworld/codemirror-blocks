@@ -55,7 +55,7 @@ function insertTextAtCaret(text: string) {
 }
 
 function OneLineContentEditable(
-  props: Props & { forwardedRef: React.Ref<HTMLElement> }
+  props: Props & { forwardedRef?: React.Ref<HTMLElement> }
 ) {
   const { value, onChange, onKeyDown, forwardedRef, ...rest } = props;
 
@@ -95,6 +95,9 @@ function OneLineContentEditable(
   );
 }
 
-export default React.forwardRef<HTMLElement, Props>((props, ref) => (
-  <OneLineContentEditable {...props} forwardedRef={ref} />
-));
+export default function OneLineContentEditableWithRef({
+  ref,
+  ...props
+}: Props & { ref?: React.Ref<HTMLElement> }) {
+  return <OneLineContentEditable {...props} forwardedRef={ref} />;
+}

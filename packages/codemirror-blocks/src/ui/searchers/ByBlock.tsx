@@ -30,7 +30,7 @@ const ByBlock: Searcher<SearchSettings, Props> = {
   label: "Search by block",
   setting: { blockType: "" },
   component: class extends Component<Props> {
-    displayName = "Search by Block";
+    static displayName = "Search by Block";
 
     handleChange: React.ChangeEventHandler<
       HTMLSelectElement | HTMLInputElement

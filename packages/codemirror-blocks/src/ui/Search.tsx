@@ -61,7 +61,7 @@ export default function attachSearch(
     editor!: ReadonlyCMBEditor;
     callback!: () => void;
 
-    displayName = "Search Component";
+    static displayName = "Search Component";
 
     handleChangeSetting = (i: number) => (setting: unknown) => {
       this.setState((state) => ({
@@ -175,18 +175,20 @@ export default function attachSearch(
     }
 
     render() {
-      const tabs = searchModes.map(({ label }, i) => (
-        <Tab key={i}>{label}</Tab>
+      const tabs = searchModes.map(({ label }) => (
+        <Tab key={label}>{label}</Tab>
       ));
-      const tabPanels = searchModes.map(({ component: SearchMode }, i) => (
-        <TabPanel key={i}>
-          <SearchMode
-            setting={this.state.settings[i]}
-            firstTime={this.state.firstTime}
-            onChange={this.handleChangeSetting(i)}
-          />
-        </TabPanel>
-      ));
+      const tabPanels = searchModes.map(
+        ({ label, component: SearchMode }, i) => (
+          <TabPanel key={label}>
+            <SearchMode
+              setting={this.state.settings[i]}
+              firstTime={this.state.firstTime}
+              onChange={this.handleChangeSetting(i)}
+            />
+          </TabPanel>
+        )
+      );
 
       const content = (
         <>
