@@ -437,12 +437,23 @@ class InsertChildEdit extends AstEdit {
     this.fakeAstInsertion = new FakeAstInsertion(this.parent, field, pos);
   }
 
+  // Inserting nothing changes nothing (a blank child would only add a space)
+  private get insertsNothing() {
+    return this.text.trim() === "";
+  }
+
   makeAstEdit(clonedAncestor: ASTNode) {
+    if (this.insertsNothing) {
+      return;
+    }
     const clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
     this.fakeAstInsertion.insertChild(clonedParent, this.text);
   }
 
   focusHint(newAST: AST) {
+    if (this.insertsNothing) {
+      return "fallback";
+    }
     return this.fakeAstInsertion.findChild(newAST) || "fallback";
   }
 

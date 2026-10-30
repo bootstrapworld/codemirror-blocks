@@ -364,14 +364,11 @@ describe("applyEdits on small documents", () => {
       expect(edited("(f)", insert("z", 2))).toBe("(f z)");
     });
 
-    // Pinned, not fixed: nothing in the editor inserts an empty string (the
-    // editing box and paste both skip empty text before they get here), so
-    // this only happens to someone calling edit_insert directly. The result
-    // still parses; it just has a space where nothing was added.
-    it("inserting an empty string leaves a stray space", () => {
-      expect(edited("(f x y)", insert("", 6))).toBe("(f x y )");
-      expect(edited("(f x y)", insert("", 3))).toBe("(f  x y)");
-      expect(edited("(f)", insert("", 2))).toBe("(f )");
+    it("inserting an empty or blank string changes nothing", () => {
+      expect(edited("(f x y)", insert("", 6))).toBe("(f x y)");
+      expect(edited("(f x y)", insert("", 3))).toBe("(f x y)");
+      expect(edited("(f)", insert("", 2))).toBe("(f)");
+      expect(edited("(f x y)", insert("  ", 3))).toBe("(f x y)");
     });
   });
 
