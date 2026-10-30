@@ -110,3 +110,25 @@ it("make sure edits can be properly undone/redone from the top level", () => {
   expect(cmb.getValue()).toEqual("\nB\n");
   expect(cmb.historySize()).toEqual({ undo: 1, redo: 0 });
 });
+
+describe("the AST stays in sync with the text", () => {
+  const astText = () => cmb.getAst().toString();
+
+  it("through an undo and a redo", () => {
+    cmb.setValue(`A\nB\n`);
+    cmb.clearHistory();
+    mouseDown(currentFirstRoot());
+    keyDown(" ", {}, currentFirstRoot());
+    keyDown("X", cmd_ctrl, currentFirstRoot());
+    expect(cmb.getValue()).toEqual("\nB\n");
+    expect(astText()).toEqual("B");
+
+    undo(currentFirstRoot());
+    expect(cmb.getValue()).toEqual("A\nB\n");
+    expect(astText()).toEqual("A\nB");
+
+    redo(currentFirstRoot());
+    expect(cmb.getValue()).toEqual("\nB\n");
+    expect(astText()).toEqual("B");
+  });
+});

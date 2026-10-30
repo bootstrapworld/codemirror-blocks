@@ -106,20 +106,19 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         );
 
       if (change.origin && isUndoOrRedo) {
+        // The text has already changed, so the AST must follow it even if
+        // the history item carries no focus information.
         const { actionFocus } = getState();
-        if (actionFocus) {
-          // actionFocus will either contain an old OR new focusId
-          const { oldFocusNId, newFocusNId } = actionFocus;
-          const nextNId = oldFocusNId || newFocusNId;
-          const focusHint = (newAST: AST) =>
-            typeof nextNId === "number"
-              ? newAST.getNodeByNId(nextNId)
-              : undefined;
-          doChange(focusHint);
-          dispatch(
-            actions.finishUndoOrRedo(change.origin as "undo" | "redo", editor)
-          );
-        }
+        // actionFocus will either contain an old OR new focusId
+        const nextNId = actionFocus?.oldFocusNId || actionFocus?.newFocusNId;
+        const focusHint = (newAST: AST) =>
+          typeof nextNId === "number"
+            ? newAST.getNodeByNId(nextNId)
+            : undefined;
+        doChange(focusHint);
+        dispatch(
+          actions.finishUndoOrRedo(change.origin as "undo" | "redo", editor)
+        );
       } else {
         dispatch(actions.setUndoableAction(annt));
         doChange();
