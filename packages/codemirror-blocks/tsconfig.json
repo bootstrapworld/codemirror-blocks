@@ -4,7 +4,11 @@
     "esModuleInterop": true, // needed for fast-object-stringify
     "target": "es2019",
     "jsx": "react",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "rootDir": "./src",
+    // TypeScript 6 no longer includes every @types package automatically
+    "types": ["node", "jest"],
     "sourceMap": true,
     "allowSyntheticDefaultImports": true,
     // Don't typecheck stuff internal to node_modules

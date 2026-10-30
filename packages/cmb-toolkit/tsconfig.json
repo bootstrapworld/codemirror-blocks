@@ -3,9 +3,10 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "target": "es6",
-    "module": "commonjs",
+    "module": "node16",
     "jsx": "react",
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
+    "rootDir": "./src",
     "sourceMap": true,
     "declaration": true,
     "outDir": "lib",

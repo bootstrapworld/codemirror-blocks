@@ -2,7 +2,11 @@ import * as path from "path";
 import type { Configuration as WebpackConfiguration } from "webpack";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
-import type { Configuration as WebpackDevServerConfiguration } from "webpack-dev-server";
+// webpack-dev-server 6 is an ES module; this file is CommonJS, and only the type
+// is needed, so say which way to resolve it.
+import type { Configuration as WebpackDevServerConfiguration } from "webpack-dev-server" with {
+  "resolution-mode": "import",
+};
 
 /**
  * @internal

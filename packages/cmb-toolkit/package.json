@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "@types/webpack-bundle-analyzer": "^4.4.1",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "scripts": {
     "prepare": "npx tsc"
