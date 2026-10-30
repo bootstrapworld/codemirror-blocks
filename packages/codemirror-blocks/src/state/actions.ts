@@ -276,6 +276,10 @@ export const paste =
   (dispatch, getState) => {
     checkTarget(target);
     pasteFromClipboard((text) => {
+      if (text.trim() === "") {
+        // an empty clipboard must not insert anything (not even whitespace)
+        return;
+      }
       const edits = [target.toEdit(selectors.getAST(getState()), text)];
       dispatch(performEdits(edits, editor));
       dispatch(setSelectedNodeIds([]));

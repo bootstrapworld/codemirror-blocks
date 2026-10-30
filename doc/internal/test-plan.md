@@ -18,16 +18,16 @@ into CodeMirror.
 | --- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------ |
 | 1   | Delete/Backspace on selected nodes                                           | `edit_delete` per node, root or child                                    | 🟡 a few cases in `focus-test` |
 | 2   | Cut (Ctrl/Cmd-X)                                                             | copy, then `edit_delete`                                                 | 🟡 only "removes selected"     |
-| 3   | Paste (Ctrl/Cmd-V) on a node, three cases                                    | replace selected node; overwrite beside a root; insert into parent field | ❌                             |
-| 4   | Paste Before (Shift-Ctrl/Cmd-V)                                              | same three cases, before the node                                        | ❌                             |
+| 3   | Paste (Ctrl/Cmd-V) on a node, three cases                                    | replace selected node; overwrite beside a root; insert into parent field | ✅ `paste-test`                |
+| 4   | Paste Before (Shift-Ctrl/Cmd-V)                                              | same three cases, before the node                                        | ✅ `paste-test`                |
 | 5   | Edit an existing node (Enter, click, double-click, Cmd-Enter)                | `ReplaceNodeTarget`                                                      | 🟡                             |
 | 6   | Insert via Ctrl-[ / Ctrl-] into an adjacent drop target                      | `InsertTarget`                                                           | 🟡                             |
-| 7   | Type at top level (whitespace)                                               | quarantine, then `OverwriteTarget`                                       | 🟡                             |
-| 8   | Paste at top level (text-editor paste event)                                 | quarantine with pasted text                                              | ❌                             |
+| 7   | Type at top level (whitespace)                                               | quarantine, then `OverwriteTarget`                                       | ✅ `toplevel-input-test`       |
+| 8   | Paste at top level (text-editor paste event)                                 | quarantine with pasted text                                              | ✅ `toplevel-input-test`       |
 | 9   | Drag a node onto another node                                                | delete source plus `ReplaceNodeTarget`                                   | 🟡                             |
-| 10  | Drag a node onto a drop target                                               | delete source plus `InsertTarget`                                        | ❌                             |
-| 11  | Drag a node onto editor whitespace                                           | delete source plus `OverwriteTarget`                                     | ❌                             |
-| 12  | Drag a toolbar primitive onto the same three targets                         | insert only                                                              | ❌                             |
+| 10  | Drag a node onto a drop target                                               | delete source plus `InsertTarget`                                        | ✅ `drag-test`                 |
+| 11  | Drag a node onto editor whitespace                                           | delete source plus `OverwriteTarget`                                     | ✅ `drop-targets-test`         |
+| 12  | Drag a toolbar primitive onto the same three targets                         | insert only                                                              | ✅ `drop-targets-test`         |
 | 13  | Drag a node to the trash can                                                 | `deleteASTNode`                                                          | 🟡 `TrashCan-test`             |
 | 14  | Undo / redo                                                                  | CodeMirror history plus AST re-commit                                    | 🟡                             |
 | 15  | Public API: `setValue`, `replaceRange`, `replaceSelection(s)`, `undo`/`redo` | direct CodeMirror changes                                                | 🟡 `api-test`                  |
@@ -65,8 +65,10 @@ carried over, and undo. Also:
 - Dragging while in text mode, or while a quarantine is active.
 - `blocks-over-target` class on enter and leave.
 
-Coverage today: `drag-test` (11 tests, mostly node-onto-node) and `TrashCan-test`.
-The drop-target, whitespace and toolbar rows are untested.
+Coverage: `drag-test` (node onto node and onto drop targets), `drop-targets-test`
+(whitespace, toolbar, self and subtree drops, cancelled drags, comments) and
+`TrashCan-test`. Not covered: locked nodes, dragging while a quarantine is open,
+and multi-node selections.
 
 ## 4. Keyboard commands
 
@@ -134,7 +136,9 @@ documents ❌.
   the `execCommand` fallback runs.
 - **Toolbar copy** from `PrimitiveList`.
 
-Coverage: effectively only cut.
+Coverage: `paste-test` covers copy, cut and every paste case, including the empty
+clipboard. Not covered: `navigator.clipboard` failing so the `execCommand`
+fallback runs, and toolbar copy.
 
 ## 8. Undo and redo
 
