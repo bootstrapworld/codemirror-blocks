@@ -18,23 +18,17 @@ import { dragOnto, kids, select, typeChar } from "./helpers/gestures";
  * Each history item remembers the number (`nid`) of the block that had focus
  * before the edit and of the one that had it after. A `nid` is a position in
  * the document's list of blocks, so it only means the same block in the
- * document it was taken from. BlockEditor.handleChange looks up
- * `oldFocusNId || newFocusNId` for both an undo and a redo; if that block can't
- * be found, focus goes to the block nearest the change, and to the editor
- * itself when no block is left.
+ * document it was taken from: an undo restores the document from before the
+ * edit, so it uses the "before" number, and a redo uses the "after" one. If
+ * that block can't be found, focus goes to the block nearest the change, and to
+ * the editor itself when no block is left.
  *
- * KNOWN BUGS, pinned below as they are today:
- * - a redo uses the "before" number, which is a position in the other
- *   document, so focus lands on whatever block now sits there;
- * - `0 ||` treats the first block (position 0) as "no saved focus".
- *
- * The obvious fix (undo by the "before" number, redo by the "after" one, with
- * `??`) is not safe: it makes the redo of a top-level edit throw "IndexSizeError"
- * from inside CodeMirror's restoreSelection in a real browser (the dev server's
- * error overlay then takes keyboard focus; `matrix.e2e.ts` "typing at the top
- * level > is redone by the keyboard" catches it, jsdom does not). Focus moves
- * inside CodeMirror's own undo operation, before it redraws, so a fix needs to
- * move focus after the operation instead.
+ * Focus is moved once CodeMirror has finished the whole undo or redo
+ * (BlockEditor.handleChanges), because one history item can hold several
+ * changes and CodeMirror reports each of them. The browser specs
+ * (`e2e/undo-focus.e2e.ts`, `matrix.e2e.ts`) check what jsdom can't: real
+ * focus, and that CodeMirror doesn't throw while redrawing (see
+ * dropDomSelection in BlockEditor).
  */
 
 let cmb: API;
@@ -75,11 +69,11 @@ describe("undoing and redoing a delete", () => {
     expect(focused()).toBe("x");
   });
 
-  it("KNOWN BUG: redo focuses whatever now has x's position", () => {
+  it("redo puts focus where the delete left it, not on whatever now has x's position", () => {
     undo();
     redo();
     expect(cmb.getValue()).toBe("(f y)");
-    expect(focused()).toBe("y"); // should be "f", where the delete left focus
+    expect(focused()).toBe("f");
   });
 });
 
@@ -117,13 +111,13 @@ describe("an edit made while the first block (position 0) had focus", () => {
     expect(cmb.getValue()).toBe("(f x)\nzzz\n b");
   });
 
-  it("KNOWN BUG: undo skips that first block and focuses whatever is at the pasted block's position", () => {
+  it("undo puts focus back on that first block", () => {
     undo();
     expect(cmb.getValue()).toBe("(f x) b");
-    expect(focused()).toBe("b"); // should be "(f x)", which had focus
+    expect(focused()).toBe("(f x)");
   });
 
-  it("redo puts focus on the pasted block (by the same accident: 0 || the new position)", () => {
+  it("redo puts focus on the pasted block", () => {
     undo();
     redo();
     expect(focused()).toBe("zzz");
@@ -147,23 +141,19 @@ describe("undoing and redoing an insertion beside a block", () => {
     expect(focused()).toBe("x");
   });
 
-  it("KNOWN BUG: redo goes back to x instead of the inserted block", () => {
+  it("redo goes to the inserted block", () => {
     undo();
     redo();
     expect(cmb.getValue()).toBe("(f x zzz y)");
-    expect(focused()).toBe("x"); // should be "zzz", where the insert left focus
+    expect(focused()).toBe("zzz");
   });
 });
 
-describe("two quick edits that CodeMirror undoes as one (KNOWN BUG)", () => {
+describe("two quick edits that CodeMirror undoes as one", () => {
   // Changes whose origin starts with "+" (typing) are merged into one history
-  // item when they come close together. Undoing it reverts two changes, and
-  // each fires its own "undo" event: the first uses (and clears) the saved
-  // focus, the second has none and falls back to a guess from the change. So
-  // focus ends up by the fallback, on the block at position 0, which is not
-  // where it was ("d") before the edits. Fixing it means applying the saved
-  // focus once, after the last change of the history item, which is a bigger
-  // change to how undo and redo finish than the other focus fixes.
+  // item when they come close together. Undoing it reverts two changes, which
+  // CodeMirror reports one by one; focus has to go back to where it was before
+  // the first edit ("d"), and redo to where the last one left it.
   beforeEach(() => {
     cmb.setValue("a b c d");
     cmb.clearHistory();
@@ -174,17 +164,49 @@ describe("two quick edits that CodeMirror undoes as one (KNOWN BUG)", () => {
     expect(cmb.historySize().undo).toBe(1);
   });
 
-  it("undo restores the text, and focus lands on the first block instead of d", () => {
+  it("undo restores the text, and focus goes back to d, which had it before", () => {
     undo();
     expect(cmb.getValue()).toBe("a b c d");
-    expect(focused()).toBe("a"); // should be "d"
+    expect(focused()).toBe("d");
   });
 
-  it("redo restores the text and leaves focus on a block", () => {
+  it("redo restores the text and puts focus where the edits left it", () => {
     undo();
     redo();
     expect(cmb.getValue()).toBe("c d");
-    expect(cmb.getFocusedNode()).toBeTruthy();
+    expect(focused()).toBe("c");
+  });
+
+  it("undo and redo work again the second time round", () => {
+    undo();
+    redo();
+    undo();
+    expect(cmb.getValue()).toBe("a b c d");
+    expect(focused()).toBe("d");
+    redo();
+    expect(focused()).toBe("c");
+  });
+});
+
+describe("undoing through the API instead of the keyboard", () => {
+  // cmb.undo() is CodeMirror's own undo: nothing has told the editor which
+  // history item is coming, so there is no saved focus to use. The text and
+  // the AST still follow, and focus goes to the block that the change itself
+  // points at (computeFocusNodeFromChanges, a heuristic: here the block after
+  // the text that changed, which is not the one the keyboard path picks).
+  it("still brings the AST back and leaves focus on a block next to the change", () => {
+    cmb.setValue("(f x y)");
+    cmb.clearHistory();
+    deleteSelected(kids(root())[1]); // x
+    expect(cmb.getValue()).toBe("(f y)");
+    cmb.undo();
+    expect(cmb.getValue()).toBe("(f x y)");
+    expect(cmb.getAst().rootNodes.map(String)).toEqual(["(f x y)"]);
+    expect(focused()).toBe("y");
+    cmb.redo();
+    expect(cmb.getValue()).toBe("(f y)");
+    expect(cmb.getAst().rootNodes.map(String)).toEqual(["(f y)"]);
+    expect(focused()).toBe("y");
   });
 });
 

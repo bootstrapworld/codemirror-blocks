@@ -162,23 +162,36 @@ fallback runs, and toolbar copy.
 Coverage: `undo-matrix-test` runs every edit type of section 1 through undo, redo,
 API undo, a new edit after undo, and focus after undo; `undo-redo-test`,
 `undo-state-test` and `editor-history-test` cover the machinery.
-`undo-focus-test` pins which block gets focus afterwards (the heuristic: the
-saved block number from the history item, else the block nearest the change,
-climbing to a collapsed ancestor; the editor itself when no block is left).
+`undo-focus-test` pins which block gets focus afterwards (the saved block number
+from the history item, else the block nearest the change, climbing to a collapsed
+ancestor; the editor itself when no block is left), and `e2e/undo-focus.e2e.ts`
+checks the same in a real browser.
 `edge-cases-test` covers undo after a mode toggle (switching replaces the
 CodeMirror editor, so the history starts empty).
-**Known bugs, pinned in `undo-focus-test` and not fixed.** A block number is a
-position in one particular document, but `BlockEditor.handleChange` uses
-`oldFocusNId || newFocusNId` for both directions: a redo focuses whatever block
-now sits at the pre-edit position (redoing the delete of `x` in `(f x y)` focuses
-`y`, not `f`), and `0 ||` skips the first block. When CodeMirror merges quick
-`+`-origin changes into one history item, undo applies two changes, the first
-uses up the saved focus, and focus falls back to a guess. The obvious fix (undo
-by the "before" number, redo by the "after" one, with `??`) passes every jsdom
-spec but is **not safe**: it makes undo and redo of top-level edits throw
-`IndexSizeError` from CodeMirror's `restoreSelection` in a real browser (focus
-moves inside CodeMirror's own undo operation, before it redraws), which
-`matrix.e2e.ts` catches. A fix has to move focus after the operation.
+
+How focus is restored (`BlockEditor.handleChanges`, `focusAfterUndoOrRedo`): a
+block number is a position in one particular document, so an undo (which
+restores the document from before the edit) uses the number saved for "before"
+and a redo the one saved for "after". Quick `+`-origin changes that CodeMirror
+merges into one history item keep the first "before" and the last "after".
+Focus moves once, from CodeMirror's `changes` event, after the whole undo or
+redo; it used to move from the per-change `change` event, and one history item
+can fire several of those (the first used up the saved focus, the rest guessed).
+`cmb.undo()` (CodeMirror's own undo, which nothing announces) has no saved
+focus and uses the block-nearest-the-change heuristic.
+
+A browser-only hazard sits next to this (`dropDomSelection`, caught by
+`matrix.e2e.ts` and `e2e/undo-focus.e2e.ts`, invisible in jsdom): after a click
+or typing on a block, the page's text selection can be anchored on the
+container of CodeMirror's lines, at an offset equal to the line count. Before
+redrawing, CodeMirror saves that selection and a block in the lines as the
+active element; if the undo removes a line and that block goes, restoring the
+selection throws `IndexSizeError` half way through the undo (and the dev
+server's error overlay takes keyboard focus). The old code never hit it only
+because it happened to focus a block that survived the redraw; the first
+attempt at fixing the saved numbers (the wrong theory then was that focusing
+before the redraw was the problem) hit it at once. Blocks don't use the text
+selection, so it is dropped before an undo or redo.
 
 ## 9. Collapse, comments, other structure
 
@@ -252,11 +265,24 @@ acted on a selected block's children as well as the block (so `(f x y)` in
 same lost its block for good; `Node` kept a stale element after an in-place edit
 (focus could end up on the "stand by" placeholder); the focus hint after
 replacing a block looked in the old parent and threw after the text had changed.
-Open, pinned and not fixed: the undo/redo saved-focus problem in section 8, and
-a browser-only one (`e2e/random.e2e.ts`, seed 11, marked as an expected
-failure): after a real-mouse drag of a block to the trash can, focus is left on
-CodeMirror's scroller and every later Ctrl-Z is ignored. It fails the same way
-on the code from before these fixes.
+The undo/redo saved-focus problem (a redo focused whatever block sat at the
+pre-edit position, `0 ||` skipped the first block, merged history items lost
+the saved focus) was found by these runs and fixed afterwards, see section 8.
+Open, pinned and not fixed: a browser-only one (`e2e/random.e2e.ts`, seed 11,
+marked as an expected failure): after a real-mouse drag of a block to the trash
+can, focus is left on CodeMirror's scroller and every later Ctrl-Z is ignored. It
+fails the same way on the code from before these fixes.
+
+Open and not yet looked into, found by a longer jsdom run
+(`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30 CMB_RANDOM_SEED=500`; both fail the same
+way on the code from before the undo/redo focus fix, so they are not caused by it,
+and neither is pinned by a spec yet):
+
+- seed 528: toggle collapse on a block, drag the toolbar's "overlay" onto the
+  whitespace, then undo everything; focus is left on the "stand by" placeholder
+  because the focused block ("sq") is not in the page.
+- seed 532: cut the first block, drag the other one to the trash can, paste
+  "zzz" at the top level and cancel it; the next Ctrl-Z does not undo anything.
 
 Properties to check after every operation:
 
@@ -293,6 +319,8 @@ keyboard focus, and focus falling to the page body when the last block goes.
   keyboard. A failure here with a passing jsdom twin means jsdom hid a bug.
 - `random.e2e.ts`: short seeded sequences of real input (see section 12), with
   uncaught page errors counted as failures. One seed is a pinned known bug.
+- `undo-focus.e2e.ts`: which block has keyboard focus after an undo and a redo
+  (the DOM focus, which jsdom can't check, and no uncaught page errors).
 - `delete-undo.e2e.ts`, `trash-can.e2e.ts`, `typing.e2e.ts`: the specific
   regressions, long documents, and real typing at the top level (including
   typing over a selection).

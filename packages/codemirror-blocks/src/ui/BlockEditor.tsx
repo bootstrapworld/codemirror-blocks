@@ -3,7 +3,7 @@ import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
 import { useDispatch, useSelector } from "react-redux";
-import { commitChanges, FocusHint } from "../edits/commitChanges";
+import { commitChanges, focusAfterUndoOrRedo } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
 import { BlockError } from "../utils";
@@ -33,6 +33,29 @@ export type BlockEditorProps = {
   keyDownHelpers: AppHelpers;
   onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: (editor: CodeMirror.Editor) => void;
+};
+
+/**
+ * Forget the browser's text selection if it is inside the editor and the
+ * editor's own (hidden) input doesn't have focus.
+ *
+ * Before CodeMirror redraws it saves the DOM selection, and afterwards puts it
+ * back if the element that had focus has gone. After a click or typing on a
+ * block the selection can sit on the container of the lines (at an offset
+ * equal to the number of lines), and an undo or redo that removes a line leaves
+ * no child at that offset: the restore then throws "IndexSizeError" from inside
+ * CodeMirror, half way through the operation. Blocks never use the DOM
+ * selection (they take focus, not a caret), so it's safe to drop.
+ */
+const dropDomSelection = (codemirror: CodeMirror.Editor) => {
+  const selection = document.getSelection();
+  if (
+    selection?.anchorNode &&
+    !codemirror.hasFocus() &&
+    codemirror.getWrapperElement().contains(selection.anchorNode)
+  ) {
+    selection.removeAllRanges();
+  }
 };
 
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
@@ -106,47 +129,41 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     // This change did NOT originate from us, but it passed the
     // `handleBeforeChange` function so it must be valid.
     // Therefore we can commit it without calling speculateChanges.
-    dispatch((dispatch, getState) => {
-      const isUndoOrRedo = ["undo", "redo"].includes(change.origin as string);
-      const annt = change.origin || "change"; // Default annotation
-      const doChange = (focusHint?: FocusHint) =>
-        dispatch(
-          commitChanges(
-            [makeChangeObject(change)],
-            editor,
-            isUndoOrRedo,
-            focusHint,
-            newASTRef.current,
-            annt
-          )
-        );
+    const isUndoOrRedo = ["undo", "redo"].includes(change.origin as string);
+    const annt = change.origin || "change"; // Default annotation
+    if (!isUndoOrRedo) {
+      dispatch(actions.setUndoableAction(annt));
+    }
+    // For an undo or redo the text has already changed, so the AST must follow
+    // it; focus waits for handleChanges, which sees the whole undo or redo.
+    dispatch(
+      commitChanges(
+        [makeChangeObject(change)],
+        editor,
+        isUndoOrRedo,
+        undefined,
+        newASTRef.current,
+        annt
+      )
+    );
+  };
 
-      if (change.origin && isUndoOrRedo) {
-        // The text has already changed, so the AST must follow it even if
-        // the history item carries no focus information.
-        const { actionFocus } = getState();
-        // actionFocus will either contain an old OR new focusId
-        const nextNId = actionFocus?.oldFocusNId || actionFocus?.newFocusNId;
-        // If that node is gone (e.g. undoing an insertion), focus the node
-        // nearest the change instead of letting focus fall to the page body.
-        const focusHint = (newAST: AST) =>
-          (typeof nextNId === "number"
-            ? newAST.getNodeByNId(nextNId)
-            : undefined) ?? "fallback";
-        doChange(focusHint);
-        dispatch(
-          actions.finishUndoOrRedo(change.origin as "undo" | "redo", editor)
-        );
-        // With no node left to focus, keep keyboard focus in the editor so
-        // that redo (and typing) still work.
-        if (!selectors.getFocusedNode(getState())) {
-          editor.focus();
-        }
-      } else {
-        dispatch(actions.setUndoableAction(annt));
-        doChange();
-      }
-    });
+  /**
+   * CodeMirror reports "changes" once an operation is over and the display is
+   * redrawn. For an undo or redo that is after the last of its changes (one
+   * history item can hold several), so this is where focus is restored, and
+   * where the history item that now sits on the other stack learns what it was.
+   */
+  const handleChanges = (
+    editor: CMBEditor,
+    changes: CodeMirror.EditorChange[]
+  ) => {
+    const which = changes[0]?.origin;
+    if (which !== "undo" && which !== "redo") {
+      return;
+    }
+    dispatch(focusAfterUndoOrRedo(which, editor, changes));
+    dispatch(actions.finishUndoOrRedo(which, editor));
   };
 
   /**
@@ -157,10 +174,14 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     const editor = new CodeMirrorFacade(codemirror);
     setEditor(editor);
     // TODO(Emmanuel): Try to set them in the component constructor
-    codemirror.on("beforeChange", (ed, change) =>
-      handleBeforeChange(editor, change)
-    );
+    codemirror.on("beforeChange", (ed, change) => {
+      if (change.origin === "undo" || change.origin === "redo") {
+        dropDomSelection(ed);
+      }
+      handleBeforeChange(editor, change);
+    });
     codemirror.on("change", (ed, change) => handleChange(editor, change));
+    codemirror.on("changes", (ed, changes) => handleChanges(editor, changes));
 
     // set AST and search properties and collapse preferences
     if (options.collapseAll) {
