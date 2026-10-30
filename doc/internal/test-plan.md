@@ -290,6 +290,17 @@ Found by later runs, also fixed, each with a regression spec
   on CodeMirror's scroller (it has `tabindex="-1"`), where no key is handled.
   `BlockEditor` now passes focus on from the scroller to the editor's input.
 
+Still open: longer runs on fresh seeds (`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30
+CMB_RANDOM_SEED=1000` and `...=2000`, with `NODE_OPTIONS=--max-old-space-size=8192`)
+each end with two sequences failing "Z did not undo", with keyboard focus on the
+page body (or the placeholder) while the editor still has a focused block. One,
+seed 1004, was traced as far as a test artifact again: a top-level typing box is
+left open while a toolbar drag changes the text above it, so the box commits at
+its old coordinates (`squar(g w)e`); in a browser, pressing the toolbar item
+moves focus and closes the box first. Making the jsdom `drag` helper move focus
+as a real press does would remove that whole class; what remains after that is
+likely real. The other seeds have not been looked at.
+
 Properties to check after every operation:
 
 1. The document text re-parses to exactly the AST in the store.
