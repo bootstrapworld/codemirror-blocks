@@ -61,3 +61,17 @@ test.describe("typing at the top level", () => {
     expect(s.roots).toEqual(["7", "11"]);
   });
 });
+
+test.describe("editing a literal in place", () => {
+  test("clicking elsewhere in the editor stops the edit and keeps the text", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, "42\n11");
+    const editable = page.locator('[contenteditable="true"]');
+    await block(page, /^42,/).click();
+    await expect(editable).toHaveCount(1);
+    await clickBesideBlock(page, /^11,/);
+    await expect(editable).toHaveCount(0);
+    expect((await snapshot(page)).roots).toEqual(["42", "11"]);
+  });
+});

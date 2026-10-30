@@ -14,24 +14,24 @@ Legend: ✅ covered, 🟡 partial, ❌ none.
 Each of these is a separate path into `performEdits`/`commitChanges`, or straight
 into CodeMirror.
 
-| #   | Entry point                                                                  | Edit used                                                                | Coverage                            |
-| --- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------- |
-| 1   | Delete/Backspace on selected nodes                                           | `edit_delete` per node, root or child                                    | ✅ `keyboard-commands-test`         |
-| 2   | Cut (Ctrl/Cmd-X)                                                             | copy, then `edit_delete`                                                 | ✅ `paste-test`, `undo-matrix-test` |
-| 3   | Paste (Ctrl/Cmd-V) on a node, three cases                                    | replace selected node; overwrite beside a root; insert into parent field | ✅ `paste-test`                     |
-| 4   | Paste Before (Shift-Ctrl/Cmd-V)                                              | same three cases, before the node                                        | ✅ `paste-test`                     |
-| 5   | Edit an existing node (Enter, click, double-click, Cmd-Enter)                | `ReplaceNodeTarget`                                                      | ✅ `edit-errors-test`               |
-| 6   | Insert via Ctrl-[ / Ctrl-] into an adjacent drop target                      | `InsertTarget`                                                           | ✅ `edit-errors-test`               |
-| 7   | Type at top level (whitespace)                                               | quarantine, then `OverwriteTarget`                                       | ✅ `toplevel-input-test`            |
-| 8   | Paste at top level (text-editor paste event)                                 | quarantine with pasted text                                              | ✅ `toplevel-input-test`            |
-| 9   | Drag a node onto another node                                                | delete source plus `ReplaceNodeTarget`                                   | 🟡                                  |
-| 10  | Drag a node onto a drop target                                               | delete source plus `InsertTarget`                                        | ✅ `drag-test`                      |
-| 11  | Drag a node onto editor whitespace                                           | delete source plus `OverwriteTarget`                                     | ✅ `drop-targets-test`              |
-| 12  | Drag a toolbar primitive onto the same three targets                         | insert only                                                              | ✅ `drop-targets-test`              |
-| 13  | Drag a node to the trash can                                                 | `deleteASTNode`                                                          | 🟡 `TrashCan-test`                  |
-| 14  | Undo / redo                                                                  | CodeMirror history plus AST re-commit                                    | ✅ `undo-matrix-test`               |
-| 15  | Public API: `setValue`, `replaceRange`, `replaceSelection(s)`, `undo`/`redo` | direct CodeMirror changes                                                | 🟡 `api-test`                       |
-| 16  | Plain text edits in text mode, then toggling to blocks                       | `setBlockMode` re-parse                                                  | 🟡                                  |
+| #   | Entry point                                                                  | Edit used                                                                | Coverage                                          |
+| --- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------- |
+| 1   | Delete/Backspace on selected nodes                                           | `edit_delete` per node, root or child                                    | ✅ `keyboard-commands-test`                       |
+| 2   | Cut (Ctrl/Cmd-X)                                                             | copy, then `edit_delete`                                                 | ✅ `paste-test`, `undo-matrix-test`               |
+| 3   | Paste (Ctrl/Cmd-V) on a node, three cases                                    | replace selected node; overwrite beside a root; insert into parent field | ✅ `paste-test`                                   |
+| 4   | Paste Before (Shift-Ctrl/Cmd-V)                                              | same three cases, before the node                                        | ✅ `paste-test`                                   |
+| 5   | Edit an existing node (Enter, click, double-click, Cmd-Enter)                | `ReplaceNodeTarget`                                                      | ✅ `edit-errors-test`                             |
+| 6   | Insert via Ctrl-[ / Ctrl-] into an adjacent drop target                      | `InsertTarget`                                                           | ✅ `edit-errors-test`                             |
+| 7   | Type at top level (whitespace)                                               | quarantine, then `OverwriteTarget`                                       | ✅ `toplevel-input-test`                          |
+| 8   | Paste at top level (text-editor paste event)                                 | quarantine with pasted text                                              | ✅ `toplevel-input-test`                          |
+| 9   | Drag a node onto another node                                                | delete source plus `ReplaceNodeTarget`                                   | ✅ `drag-test`, `drop-targets-test`, `matrix.e2e` |
+| 10  | Drag a node onto a drop target                                               | delete source plus `InsertTarget`                                        | ✅ `drag-test`                                    |
+| 11  | Drag a node onto editor whitespace                                           | delete source plus `OverwriteTarget`                                     | ✅ `drop-targets-test`                            |
+| 12  | Drag a toolbar primitive onto the same three targets                         | insert only                                                              | ✅ `drop-targets-test`                            |
+| 13  | Drag a node to the trash can                                                 | `deleteASTNode`                                                          | ✅ `TrashCan-test`, `trash-can.e2e`               |
+| 14  | Undo / redo                                                                  | CodeMirror history plus AST re-commit                                    | ✅ `undo-matrix-test`                             |
+| 15  | Public API: `setValue`, `replaceRange`, `replaceSelection(s)`, `undo`/`redo` | direct CodeMirror changes                                                | 🟡 `api-test`                                     |
+| 16  | Plain text edits in text mode, then toggling to blocks                       | `setBlockMode` re-parse                                                  | ✅ `lifecycle-test`                               |
 
 ## 2. Edit primitives (`performEdits.ts`)
 
@@ -43,9 +43,9 @@ into CodeMirror.
 | Several edits at once, sorted last to first                          | ✅ `performEdits-test`                     |
 | Whitespace removal around a deleted node (first, middle, last, only) | ✅ `performEdits-test`                     |
 | Nodes with a leading comment, edited or deleted                      | 🟡 `comment-test`                          |
-| Focus hint per edit type                                             | ✅ `keyboard-commands-test`                |
+| Focus hint per edit type                                             | ✅ `focus-test`, `undo-matrix-test`        |
 | Invalid result is rejected: text and AST both left unchanged         | ✅ `performEdits-test`, `edit-errors-test` |
-| Required blank filled, then deleted again                            | 🟡                                         |
+| Required blank filled, then deleted again                            | ✅ `new-blocks-test`                       |
 
 ## 3. Drag-and-drop matrix
 
@@ -72,18 +72,18 @@ and multi-node selections.
 
 ## 4. Keyboard commands
 
-| Group         | Commands                                                                                           | Coverage                                     |
-| ------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Navigation    | Down, Up, Home, End, Left, Right, Shift-Left/Right, Shift-Alt-Left/Right, `Shift-,` (Jump to Root) | ✅ mostly                                    |
-| Reading aloud | `\` (Read Ancestors), `Shift-\` (Read Children)                                                    | ✅ `keyboard-commands-test`                  |
-| Focus         | Shift-Tab to the toolbar                                                                           | ❌                                           |
-| Editing       | Enter, Cmd-Enter (Edit Anything), Ctrl-[ / Ctrl-]                                                  | 🟡                                           |
-| Selection     | Space, Esc, Ctrl-Esc, Alt-Q                                                                        | ✅                                           |
-| Delete        | Delete, Backspace                                                                                  | ✅ `keyboard-commands-test`                  |
-| Clipboard     | Copy, Cut, Paste, Paste Before                                                                     | 🟡 only Cut                                  |
-| History       | Undo, Redo (Cmd-Y, Shift-Cmd-Z, Ctrl-Y variants)                                                   | 🟡                                           |
-| Help          | Shift-Ctrl-/                                                                                       | ✅ `keyboard-commands-test`                  |
-| Search        | PageUp/PageDown, F3, Ctrl-F                                                                        | ✅ keys are inert (`keyboard-commands-test`) |
+| Group         | Commands                                                                                           | Coverage                                        |
+| ------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Navigation    | Down, Up, Home, End, Left, Right, Shift-Left/Right, Shift-Alt-Left/Right, `Shift-,` (Jump to Root) | ✅ mostly                                       |
+| Reading aloud | `\` (Read Ancestors), `Shift-\` (Read Children)                                                    | ✅ `keyboard-commands-test`                     |
+| Focus         | Shift-Tab to the toolbar                                                                           | ✅ `keyboard-commands-test`, `interaction-test` |
+| Editing       | Enter, Cmd-Enter (Edit Anything), Ctrl-[ / Ctrl-]                                                  | ✅ `edit-errors-test`, `new-blocks-test`        |
+| Selection     | Space, Esc, Ctrl-Esc, Alt-Q                                                                        | ✅                                              |
+| Delete        | Delete, Backspace                                                                                  | ✅ `keyboard-commands-test`                     |
+| Clipboard     | Copy, Cut, Paste, Paste Before                                                                     | ✅ `paste-test`, `copypaste-test`               |
+| History       | Undo, Redo (Cmd-Y, Shift-Cmd-Z, Ctrl-Y variants)                                                   | ✅ `undo-matrix-test`                           |
+| Help          | Shift-Ctrl-/                                                                                       | ✅ `keyboard-commands-test`                     |
+| Search        | PageUp/PageDown, F3, Ctrl-F                                                                        | ✅ keys are inert (`keyboard-commands-test`)    |
 
 Each command is also tested at top level (no node focus, `isNodeEnv` false),
 where the node commands do nothing and CodeMirror's own text keys still work
@@ -105,8 +105,8 @@ where the node commands do nothing and CodeMirror's own text keys still work
 
 Coverage: `edit-errors-test` (edit in place, invalid input, Esc, insertion beside
 a child, rejected API edits, failed mode switch), `toplevel-input-test` (typing
-and pasting at the top level) and the older specs. Open: typing over a selected
-range (`it.todo`).
+and pasting at the top level) and the older specs. Typing over a selected range
+and clicking away from an edit need a real browser: `e2e/typing.e2e.ts`.
 
 ## 6. Focus and selection
 
