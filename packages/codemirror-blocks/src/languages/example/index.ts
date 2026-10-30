@@ -9,6 +9,7 @@ export default addLanguage({
   name: "Example",
   description:
     "An example language that illustrates how to add support for new languages",
-  parse: parser.parse,
-  getExceptionMessage: parser.getExceptionMessage,
+  // (call them through the parser: they use `this`)
+  parse: (code: string) => parser.parse(code),
+  getExceptionMessage: (e: unknown) => parser.getExceptionMessage(e),
 });

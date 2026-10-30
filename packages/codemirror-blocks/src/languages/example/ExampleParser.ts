@@ -99,7 +99,11 @@ export default class ExampleParser {
     } else if (this.code[this.charIndex].match(IDENTIFIER_RE)) {
       let identifier = "";
       const startIndex = this.colIndex;
-      while (this.code[this.charIndex].match(IDENTIFIER_RE)) {
+      // (stop at the end of the code, where there is no character to match)
+      while (
+        this.charIndex < this.code.length &&
+        this.code[this.charIndex].match(IDENTIFIER_RE)
+      ) {
         identifier += this.getch();
       }
       return new Token(
