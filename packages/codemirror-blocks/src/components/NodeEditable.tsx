@@ -126,7 +126,22 @@ const NodeEditable = React.forwardRef<NodeEditableHandle, Props>(
         const annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
         const result = dispatch(insert(value, target, props.editor, annt));
         if (result.successful) {
-          dispatch(activateByNid(props.editor, null, { allowMove: false }));
+          // If this blur happened because the user moved to another block, that
+          // block (focused before the edit was saved) keeps focus rather than
+          // the node that was just edited. (A new insertion always takes focus.)
+          const newAST = selectors.getAST(getState());
+          const movedElsewhere =
+            !props.isInsertion &&
+            focusedNode &&
+            focusedNode.id !== target.node?.id &&
+            newAST.getNodeById(focusedNode.id);
+          dispatch(
+            activateByNid(
+              props.editor,
+              movedElsewhere ? movedElsewhere.nid : null,
+              { allowMove: false }
+            )
+          );
           props.onChange(null);
           props.onDisableEditable();
           dispatch(actions.clearError());

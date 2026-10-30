@@ -123,8 +123,11 @@ This area has produced the most bugs.
 - Selection pruning when selected nodes are deleted, replaced or undone.
 - Toolbar focus and return.
 
-Coverage: `focus-test` (7 tests), `activation-test` (35). Virtualization and long
-documents ❌.
+Coverage: `focus-test`, `activation-test`, the invariants (focus never stranded,
+never pointing at a missing node), `undo-matrix-test` (focus after every edit and
+after undo) and `interaction-test` (clicks, click-away while editing, selection
+pruning, toolbar focus). Virtualization and long documents need a real browser
+(section 13).
 
 ## 7. Clipboard
 
@@ -167,7 +170,12 @@ undo after a mode toggle, and the exact node chosen for focus afterwards.
   moved with a drag.
 - Locked (`isNotEditable`) nodes: every edit path should refuse.
 
-Coverage: collapse is ✅ for keys and 🟡 elsewhere. Comments are 🟡 (`comment-test`).
+Coverage: collapse is covered by `activation-test` (keys) and `interaction-test`
+(double-click, kept across edits, forgotten on delete, undo). `lifecycle-test`
+covers the `collapseAll` and `incrementalRendering` options (both default to
+**on** in the React component). Comments are 🟡 (`comment-test`, drag and
+performEdits cases). The only locked (`isNotEditable`) nodes in the built-in
+languages are comments, which have no interaction to test.
 
 ## 10. Mode, lifecycle and API
 
@@ -182,10 +190,20 @@ Coverage: collapse is ✅ for keys and 🟡 elsewhere. Comments are 🟡 (`comme
 - Language hooks: `parse` errors, `getExceptionMessage`, `primitivesFn`,
   pretty-printing round-trip.
 
+Coverage: `lifecycle-test` (mode round trips, blocks and toolbar only in block
+mode, text-mode edits, repeated switching, two editors on one page, unmounting,
+stable pretty-printing of the example programs, mount options),
+`edit-errors-test` (failed mode switch) and `undo-matrix-test`, which runs every
+edit again after a mode switch. `big-expression.rkt` is skipped: 537 bytes but
+~8s to pretty-print. Not covered: unmounting with an open quarantine, re-mounting
+with a different language, and the `primitivesFn`-less toolbar beyond a render.
+
 ## 11. Toolbar
 
 Search filter, arrow-key navigation, Esc, copy, drag out, and focus handoff to
-the editor. Coverage: `Toolbar-test` 🟡; drag out ❌.
+the editor. Coverage: `Toolbar-test`, `interaction-test` (Shift-Tab, Down into
+the list, Escape back to the search box, filtering, disabled in text mode),
+`paste-test` (copy) and `drop-targets-test` (drag out).
 
 ## 12. Properties that should hold after every operation
 

@@ -208,11 +208,30 @@ const untilEmpty = (which: "undo" | "redo", step: () => void) => {
   }
 };
 
-describe.each(operations)("$name", ({ code, run }) => {
+// Every operation is run twice: on a fresh editor, and on one that has been
+// switched to text mode and back, which replaces the CodeMirror instance that
+// handlers (the trash can, drop targets, ...) must not keep using.
+const variants = [false, true].flatMap((afterModeSwitch) =>
+  operations.map((op) => ({
+    ...op,
+    name: afterModeSwitch ? `${op.name} (after switching modes)` : op.name,
+    afterModeSwitch,
+  }))
+);
+
+describe.each(variants)("$name", ({ code, run, afterModeSwitch }) => {
   let before: { text: string; roots: string[] };
   let after: { text: string; roots: string[] };
   beforeEach(() => {
-    cmb.setValue(code);
+    if (afterModeSwitch) {
+      // the document is set in text mode, so the AST is only built (once) by
+      // the switch, before the new editor has mounted
+      cmb.setBlockMode(false);
+      cmb.setValue(code);
+      cmb.setBlockMode(true);
+    } else {
+      cmb.setValue(code);
+    }
     cmb.clearHistory();
     before = { text: cmb.getValue(), roots: texts() };
     run();
