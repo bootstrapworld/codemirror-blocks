@@ -4,6 +4,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { Provider } from "react-redux";
 import { CMBEditor } from "../editor";
 import type { AppStore } from "../state/store";
+import type { SearchApi } from "../ui/Search";
 
 export const EditorContext = React.createContext<CMBEditor | null>(null);
 
@@ -20,6 +21,8 @@ export type AppHelpers = {
     contents: null | { title: string; content: React.ReactElement }
   ) => void;
   focusToolbar?: () => void;
+  /** the search dialog, and finding matches (block mode only) */
+  search?: SearchApi;
 };
 
 export const AppContext = React.createContext<AppHelpers>({});

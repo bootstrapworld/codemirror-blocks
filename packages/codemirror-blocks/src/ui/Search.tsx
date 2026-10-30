@@ -1,231 +1,206 @@
-import React, { Component } from "react";
-import Dialog from "../components/Dialog";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import * as selectors from "../state/selectors";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import "react-tabs/style/react-tabs.less";
-import { playSound, WRAP } from "../utils";
+import Dialog from "../components/Dialog";
 import { say } from "../announcer";
-import BlockEditor from "./BlockEditor";
-import { Searcher } from "./searchers/Searcher";
-import { GetProps } from "react-redux";
 import { ASTNode, Pos } from "../ast";
-import { RootState } from "../state/reducers";
-import { ReadonlyCMBEditor } from "../editor";
+import type { ReadonlyCMBEditor } from "../editor";
+import type { RootState } from "../state/reducers";
+import { playSound, WRAP } from "../utils";
+import ByBlock from "./searchers/ByBlock";
+import ByString from "./searchers/ByString";
+import type { Searcher } from "./searchers/Searcher";
 
-export type Search = {
-  search: (
+/**
+ * Search is what PageUp and PageDown do: step to the next (or previous) match
+ * of whatever the Search Settings dialog (F3, Ctrl-F or Cmd-F) was last given.
+ */
+export type SearchApi = {
+  /**
+   * Show the Search Settings dialog. When it is closed with Enter (not Escape),
+   * `thenSearch` runs, to go to the first match.
+   */
+  open: (thenSearch: () => void) => void;
+  /**
+   * The next match from `from` (the previous one if `forward` is false), going
+   * on from the other end of the document if there is none before the end. A
+   * match is never the block that already has the focus. Null if there is no
+   * match, or no search has been set up.
+   */
+  find: (
     forward: boolean,
-    cmbState: RootState,
-    overrideCur?: null | Pos
+    state: RootState,
+    from: Pos | null
   ) => ASTNode | null;
-  onSearch: (done: () => void, searchForward: () => void) => void;
-  setCursor: (cursor: Pos) => void;
-  setCM: (editor: ReadonlyCMBEditor) => void;
 };
 
-export default function attachSearch(
-  Editor: typeof BlockEditor,
-  searchModes: Searcher<
-    unknown,
-    { setting: unknown; onChange: unknown; firstTime: unknown }
-  >[]
+// each searcher is typed by its own settings, which this does not need to know
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySearcher = Searcher<any, any>;
+const searchModes: AnySearcher[] = [ByString, ByBlock];
+
+/**
+ * The state of the search, and the dialog that sets it. The dialog is returned
+ * as an element to render, and the rest as the object the keyboard commands use.
+ * Search only works once there is an editor to search in.
+ */
+export function useSearch(
+  editor: ReadonlyCMBEditor | null,
+  appElement?: HTMLElement
 ) {
-  const settings = searchModes.reduce(
-    (acc, searchMode, i) => {
-      acc[i] = searchMode.setting;
-      return acc;
-    },
-    {} as { [index: number]: unknown }
+  const ast = useSelector(selectors.getAST);
+  const [isOpen, setIsOpen] = useState(false);
+  const [firstTime, setFirstTime] = useState(true);
+  const [settings, setSettings] = useState(() =>
+    searchModes.map((mode) => mode.setting)
   );
+  // null until the user has chosen what to search for, as the dialog's tabs
+  // start out on the first mode
+  const [mode, setMode] = useState<number | null>(null);
 
-  type Props = GetProps<typeof BlockEditor> & {
-    onSearchMounted: (search: Search) => void;
-  };
+  // The commands are made once, and ask for the latest of these when they run
+  const latestRef = useRef({ editor, settings, mode });
+  latestRef.current = { editor, settings, mode };
+  const thenSearchRef = useRef<() => void>(() => undefined);
 
-  type State = {
-    showSearchDialog: boolean;
-    searchEngine: number | null;
-    cursor: null | Pos;
-    settings: typeof settings;
-    firstTime: boolean;
-    searchForward?: () => void;
-  };
-
-  return class extends Component<Props, State> {
-    state: State = {
-      showSearchDialog: false,
-      searchEngine: null,
-      cursor: null,
-      settings: settings,
-      firstTime: true,
-    };
-    editor!: ReadonlyCMBEditor;
-    callback!: () => void;
-
-    static displayName = "Search Component";
-
-    handleChangeSetting = (i: number) => (setting: unknown) => {
-      this.setState((state) => ({
-        settings: { ...state.settings, [i]: setting },
-        searchEngine: i,
-      }));
-    };
-    handleActivateSearch = (
-      done: () => void,
-      searchForward: State["searchForward"]
-    ) => {
-      this.setState({ showSearchDialog: true });
-      this.callback = done;
-      this.setState({ searchForward: searchForward });
-    };
-
-    handleCloseModal = () => {
-      this.setState({ showSearchDialog: false, firstTime: true });
-      this.callback();
-    };
-
-    handleSearch = (
-      forward: boolean,
-      cmbState: RootState,
-      overrideCur?: State["cursor"]
-    ): ASTNode | null => {
-      if (this.state.searchEngine == null) {
-        say("No search settings have been selected");
-        return null;
-      }
-      let result;
-
-      // keep searching until we find an unfocused node, or we run out of results
-      let searchFrom = overrideCur || this.state.cursor;
-      do {
-        if (!searchFrom) {
-          break;
-        }
-        result = searchModes[this.state.searchEngine].search(
-          searchFrom,
-          this.state.settings[this.state.searchEngine],
-          this.editor,
-          cmbState,
+  const find: SearchApi["find"] = useCallback((forward, state, from) => {
+    const { editor, settings, mode } = latestRef.current;
+    if (mode === null) {
+      say("No search settings have been selected");
+      return null;
+    }
+    if (!editor) {
+      return null;
+    }
+    const searcher = searchModes[mode];
+    // go from `start` to the first match that is not already focused
+    const search = (start: Pos) => {
+      let cur = start;
+      for (;;) {
+        const result = searcher.search(
+          cur,
+          settings[mode],
+          editor,
+          state,
           forward
         );
-
-        if (result) {
-          searchFrom = result.cursor;
+        if (!result) {
+          return null;
         }
-      } while (!(result && result.node.id !== cmbState.focusId));
-
-      if (result) {
-        const { node, cursor } = result;
-        this.setState({ cursor });
-        return node;
-      } else {
-        if (overrideCur) {
-          return null; // if there's no wrapped match, give up
+        if (result.node.id !== state.focusId) {
+          return result.node;
         }
-        playSound(WRAP);
-
-        const wrappedStart = forward
-          ? { line: 0, ch: 0 }
-          : this.editor.getLastPos();
-        return this.handleSearch(forward, cmbState, wrappedStart);
+        cur = result.cursor;
       }
     };
-
-    handleKeyModal = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === "Escape") {
-        // enter or escape
-        this.handleCloseModal();
-        if (e.key === "Escape") {
-          return; // don't initiate search
-        }
-        this.state.searchForward && this.state.searchForward();
-        say(
-          "Searching for next match. Use PageUp and PageDown to search forwards and backwards"
-        );
-      }
-    };
-
-    handleSetCursor = (cursor: State["cursor"]) => {
-      this.setState({ cursor });
-    };
-
-    // Override default: only allow tab switching via left/right, NOT up/down
-    handleTab = (searchEngine: number, lastTabIdx: number, event: Event) => {
-      this.setState({ firstTime: false });
-      if (["ArrowDown", "ArrowUp"].includes((event as KeyboardEvent).key))
-        return false;
-      return this.setState({ searchEngine });
-    };
-
-    handleSetCM = (editor: ReadonlyCMBEditor) => (this.editor = editor);
-
-    search: Search = {
-      onSearch: this.handleActivateSearch,
-      search: this.handleSearch,
-      setCursor: this.handleSetCursor,
-      setCM: this.handleSetCM,
-    };
-
-    componentDidMount() {
-      // TODO(pcardune): delete this onSearchMounted crud. It's only necessary
-      // because the search object isn't created until this component is mounted
-      // but is required by components higher up in the component tree
-      // (TrashCan via ToggleEditor). If search is really needed everywhere, it
-      // should be instantiated at the top level and not here.
-      this.props.onSearchMounted(this.search);
+    const found = from && search(from);
+    if (found) {
+      return found;
     }
+    // nothing after (or before) here: go on from the other end of the document
+    // (from before the first character, so that a block starting there counts)
+    const wrapped = search(forward ? { line: -1, ch: 0 } : editor.getLastPos());
+    if (wrapped) {
+      playSound(WRAP);
+    }
+    return wrapped;
+  }, []);
 
-    render() {
-      const tabs = searchModes.map(({ label }) => (
-        <Tab key={label}>{label}</Tab>
-      ));
-      const tabPanels = searchModes.map(
-        ({ label, component: SearchMode }, i) => (
-          <TabPanel key={label}>
-            <SearchMode
-              setting={this.state.settings[i]}
-              firstTime={this.state.firstTime}
-              onChange={this.handleChangeSetting(i)}
-            />
-          </TabPanel>
-        )
-      );
+  const open: SearchApi["open"] = useCallback((then) => {
+    thenSearchRef.current = then;
+    setIsOpen(true);
+  }, []);
 
-      const content = (
-        <>
-          <i>
-            What should <kbd>PgUp</kbd> and <kbd>PgDown</kbd> search for?
-          </i>
-          <Tabs onSelect={this.handleTab} defaultFocus={true}>
-            <TabList>{tabs}</TabList>
-            {tabPanels}
-          </Tabs>
-          <div className="modal-footer">
-            <small className="form-text text-muted">
-              <div>
-                <kbd>&larr;</kbd>
-                <kbd>&rarr;</kbd> to change modes; &nbsp;
-                <kbd>&crarr;</kbd>
-                <kbd>esc</kbd> to close and find next;
-              </div>
-            </small>
-          </div>
-        </>
-      );
+  const api = useMemo<SearchApi>(() => ({ open, find }), [open, find]);
 
-      const { ...editorProps } = this.props;
+  const close = () => {
+    setIsOpen(false);
+    setFirstTime(true);
+  };
 
-      return (
-        <>
-          <Editor {...editorProps} />
-
-          <Dialog
-            isOpen={this.state.showSearchDialog}
-            closeFn={this.handleCloseModal}
-            keyUp={this.handleKeyModal}
-            body={{ title: "Search Settings", content: content }}
-          ></Dialog>
-        </>
+  // Closing the dialog gives focus back to where it was, so going to the first
+  // match has to wait until that has happened
+  const searchAfterCloseRef = useRef(false);
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      close();
+    } else if (e.key === "Enter") {
+      searchAfterCloseRef.current = true;
+      close();
+      say(
+        "Searching for next match. Use PageUp and PageDown to search forwards and backwards"
       );
     }
   };
+  const handleAfterClose = () => {
+    if (searchAfterCloseRef.current) {
+      searchAfterCloseRef.current = false;
+      thenSearchRef.current();
+    }
+  };
+
+  // the dialog's tabs change the kind of search with the left and right arrows,
+  // but not with up and down, which move within a mode
+  const handleTab = (index: number, _last: number, event: Event) => {
+    setFirstTime(false);
+    if (["ArrowDown", "ArrowUp"].includes((event as KeyboardEvent).key)) {
+      return false;
+    }
+    setMode(index);
+    return undefined;
+  };
+
+  const handleChange = (index: number) => (setting: unknown) => {
+    setSettings((all) => all.map((s, i) => (i === index ? setting : s)));
+    setMode(index);
+  };
+
+  const content = (
+    <>
+      <i>
+        What should <kbd>PgUp</kbd> and <kbd>PgDown</kbd> search for?
+      </i>
+      <Tabs onSelect={handleTab} defaultFocus={true}>
+        <TabList>
+          {searchModes.map(({ label }) => (
+            <Tab key={label}>{label}</Tab>
+          ))}
+        </TabList>
+        {searchModes.map(({ label, component: SearchMode }, i) => (
+          <TabPanel key={label}>
+            <SearchMode
+              setting={settings[i]}
+              firstTime={firstTime}
+              onChange={handleChange(i)}
+              cmbState={{ ast }}
+            />
+          </TabPanel>
+        ))}
+      </Tabs>
+      <div className="modal-footer">
+        <small className="form-text text-muted">
+          <div>
+            <kbd>&larr;</kbd>
+            <kbd>&rarr;</kbd> to change modes; &nbsp;
+            <kbd>&crarr;</kbd> to close and find next, <kbd>esc</kbd> to close;
+          </div>
+        </small>
+      </div>
+    </>
+  );
+
+  const dialog = (
+    <Dialog
+      isOpen={isOpen}
+      closeFn={close}
+      keyUp={handleKey}
+      onAfterClose={handleAfterClose}
+      appElement={appElement}
+      body={{ title: "Search Settings", content }}
+    />
+  );
+
+  return { api, dialog };
 }

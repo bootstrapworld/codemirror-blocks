@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import { AppDispatch } from "../state/store";
+import { useSearch } from "./Search";
 
 const defaultCmOptions: CodeMirror.EditorConfiguration = {
   lineNumbers: true,
@@ -85,12 +86,18 @@ function ToggleEditor(props: ToggleEditorProps) {
   const toolbarRef = useRef<HTMLInputElement>(null);
   const editorElementRef = useRef<HTMLDivElement>(null);
 
+  const { api: search, dialog: searchDialog } = useSearch(
+    editor,
+    editorElementRef.current ?? undefined
+  );
+
   const appHelpers = useMemo(
     () => ({
       showDialog: (contents: typeof dialog) => setDialog(contents),
       focusToolbar: () => toolbarRef.current?.focus(),
+      search,
     }),
-    [setDialog, toolbarRef]
+    [setDialog, toolbarRef, search]
   );
 
   const classes = "Editor " + (blockMode ? "blocks" : "text");
@@ -154,6 +161,8 @@ function ToggleEditor(props: ToggleEditorProps) {
           aria-label=""
         ></a>
       </div>
+
+      {blockMode ? searchDialog : null}
 
       <Dialog
         isOpen={!!dialog}

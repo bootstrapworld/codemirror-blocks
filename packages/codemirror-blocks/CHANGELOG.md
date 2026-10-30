@@ -64,6 +64,15 @@ http://keepachangelog.com/
 
 ### Added
 
+- Search is back. F3, Ctrl-F (Cmd-F on a Mac) opens the Search Settings dialog,
+  with two ways to search: by text (case, whole word and regular expression
+  options) and by kind of block. Enter closes the dialog and goes to the first
+  match; PageDown and PageUp go to the next and previous match, on from the other
+  end of the document with a sound at the end. It was taken out in #502 and is
+  now built on the editor's own dialog (`appHelpers.search`) instead of wrapping
+  the whole editor. Searching by block no longer skips the block right after a
+  cursor between blocks.
+
 - The lambda language (`lib/languages/lambda`) works again, with its own node
   types and pretty-printers that round-trip to lambda syntax.
 - The language guide (`doc/language.md`) describes the current node API.

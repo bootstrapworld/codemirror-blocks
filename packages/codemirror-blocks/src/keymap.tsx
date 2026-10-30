@@ -26,6 +26,7 @@ import type { AST, ASTNode } from "./ast";
 import { CMBEditor } from "./editor";
 import type { AppHelpers } from "./components/Context";
 import * as selectors from "./state/selectors";
+import type { RootState } from "./state/reducers";
 import { copy } from "./copypaste";
 
 type BlockEditorEnv = {
@@ -526,25 +527,22 @@ const commandMap: {
   Paste: pasteHandler,
   "Paste Before": pasteHandler,
 
-  // Search is disabled for now. We will revisit it in https://github.com/bootstrapworld/codemirror-blocks/issues/485
-  //
-  // "Activate Search Dialog": (env, _) => (dispatch, getState) => {
-  //   env.search.onSearch(
-  //     () => {},
-  //     () =>
-  //       env.activateNoRecord(env.search.search(true, getState()) ?? undefined)
-  //   );
-  // },
+  "Activate Search Dialog": (env, e) => (dispatch, getState) => {
+    e.preventDefault(); // (not the browser's own Find)
+    env.appHelpers.search?.open(() =>
+      dispatch(goToMatch(env, true, getState()))
+    );
+  },
 
-  // "Search Previous": (env, e) => (dispatch, getState) => {
-  //   e.preventDefault();
-  //   env.activateNoRecord(env.search.search(false, getState()) ?? undefined);
-  // },
+  "Search Previous": (env, e) => (dispatch, getState) => {
+    e.preventDefault();
+    dispatch(goToMatch(env, false, getState()));
+  },
 
-  // "Search Next": (env, e) => (dispatch, getState) => {
-  //   e.preventDefault();
-  //   env.activateNoRecord(env.search.search(true, getState()) ?? undefined);
-  // },
+  "Search Next": (env, e) => (dispatch, getState) => {
+    e.preventDefault();
+    dispatch(goToMatch(env, true, getState()));
+  },
 
   Undo: (env, e) => doTopmostAction(env, e, "undo"),
 
@@ -562,6 +560,22 @@ const commandMap: {
     });
   },
 };
+
+/**
+ * Go to the next (or previous) match of the search, from the block that has the
+ * focus, or else from the cursor. Beeps if there is none.
+ */
+const goToMatch =
+  (env: Env, forward: boolean, state: RootState): AppThunk =>
+  () => {
+    const search = env.appHelpers.search;
+    if (!search) {
+      return;
+    }
+    const focused = selectors.getFocusedNode(state);
+    const from = focused ? focused.from : env.editor.getCursor();
+    env.activateNoRecord(search.find(forward, state, from) ?? undefined);
+  };
 
 const doTopmostAction =
   ({ editor }: Env, e: React.KeyboardEvent, which: "undo" | "redo"): AppThunk =>

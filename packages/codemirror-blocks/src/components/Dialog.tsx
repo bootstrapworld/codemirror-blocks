@@ -10,6 +10,8 @@ type Props = {
     content: ReactElement | string;
   } | null;
   keyUp?: React.KeyboardEventHandler<HTMLDivElement>;
+  /** Called once the dialog is closed, and has given focus back */
+  onAfterClose?: () => void;
   /**
    * The content to hide from screenreaders while the dialog is open (see
    * react-modal's `appElement`). Without it the dialog logs a warning.
@@ -37,6 +39,7 @@ const Dialog = (props: Props) => {
       shouldFocusAfterRender={true}
       shouldCloseOnOverlayClick={true}
       onAfterOpen={focusTitle}
+      onAfterClose={props.onAfterClose}
       aria={{ labelledby: "heading" }}
     >
       <div tabIndex={-1} id="DialogContents" onKeyUp={keyUp ?? onKeyUp}>

@@ -246,25 +246,7 @@ describe("Shift-Tab", () => {
 });
 
 describe("keys that are inert", () => {
-  // search is disabled for now (see keymap.tsx), so its keys must do nothing
-  ["PageUp", "PageDown", "F3"].forEach((key) => {
-    it(`${key} changes nothing`, () => {
-      cmb.setValue("(f x y)");
-      mouseDown(root());
-      const before = cmb.getFocusedNode();
-      keyDown(key, {}, root());
-      expect(cmb.getFocusedNode()).toBe(before);
-      expect(cmb.getValue()).toBe("(f x y)");
-    });
-  });
-
-  it("Ctrl-F changes nothing", () => {
-    cmb.setValue("(f x y)");
-    mouseDown(root());
-    keyDown("F", { ctrlKey: true }, root());
-    expect(cmb.getValue()).toBe("(f x y)");
-  });
-
+  // (the search keys, PageUp, PageDown, F3 and Ctrl-F, are in search-test)
   it("an unbound letter changes nothing", () => {
     cmb.setValue("(f x y)");
     mouseDown(root());
