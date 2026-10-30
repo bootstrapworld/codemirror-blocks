@@ -347,42 +347,29 @@ describe("The WeScheme Parser,", function () {
     });
   });
 
-  describe("when parsing expressions that are unsupported in the block language,", function () {
-    it("should ignore defVars", function () {
-      this.ast = parse("(define-values (a b c) (1 2 3))");
-      expect(this.ast.length).toBe(0);
+  describe("when parsing expressions that have no block of their own,", function () {
+    // each is kept as a literal holding its source text, never dropped
+    it.each([
+      "(define-values (a b c) (1 2 3))",
+      "(local [(define x 2)] x)",
+      "'(+ 4 2)",
+      "',(42 43 44)",
+      "`(1 `,(+ 1 ,(+ 2 3)) 4)",
+      "`42",
+      "`(1 ```,,@,,@(list (+ 1 2)) 4)",
+      "`#(1 ,@(list 1 '2) 4)",
+      '(case 9 [(1) "a"])',
+      "(provide nori)",
+    ])("should keep %s as text", function (code) {
+      const ast = parse(code);
+      expect(ast.length).toBe(1);
+      expect(ast[0].type).toBe("literal");
+      expect(ast[0].fields.value).toBe(code);
+      expect(ast[0].options.ariaLabel).toBe("unsupported expression");
     });
-    it("should ignore localExpr", function () {
-      this.ast = parse("(local [(define x 2)] x)");
-      expect(this.ast.length).toBe(0);
-    });
-    it("should ignore quotedExpr", function () {
-      this.ast = parse("'(+ 4 2)");
-      expect(this.ast.length).toBe(0);
-    });
-    it("should ignore unquotedExpr", function () {
-      this.ast = parse("',(42 43 44)");
-      expect(this.ast.length).toBe(0);
-      this.ast = parse("`(1 `,(+ 1 ,(+ 2 3)) 4)");
-      expect(this.ast.length).toBe(0);
-    });
-    it("should ignore quasiquotedExpr", function () {
-      this.ast = parse("`42");
-      expect(this.ast.length).toBe(0);
-      this.ast = parse("`(1 ```,,@,,@(list (+ 1 2)) 4)");
-      expect(this.ast.length).toBe(0);
-    });
-    it("should ignore unquoteSplice", function () {
-      this.ast = parse("`#(1 ,@(list 1 '2) 4)");
-      expect(this.ast.length).toBe(0);
-    });
-    it("should ignore caseExpr", function () {
-      this.ast = parse('(case 9 [(1) "a"])');
-      expect(this.ast.length).toBe(0);
-    });
-    it("should ignore provide", function () {
-      this.ast = parse("(provide nori)");
-      expect(this.ast.length).toBe(0);
+    it("should keep a multi-line form on one line", function () {
+      const ast = parse("(local [(define x 2)]\n  x)");
+      expect(ast[0].fields.value).toBe("(local [(define x 2)] x)");
     });
   });
 
@@ -607,10 +594,8 @@ describe("The WeScheme Parser,", function () {
     // switching from blocks to text, so the text has to come back as it went in
     const print = (code) => parse(code).map((node) => node.toString());
 
-    // KNOWN DATA LOSS: a quoted list is dropped, so switching to blocks deletes
-    // it from the program. `it.failing` passes while that is so; remove the
-    // `.failing` when quote is kept.
-    it.failing("keeps a quoted list", function () {
+    // A quoted list has no block of its own, so it is kept as its source text.
+    it("keeps a quoted list", function () {
       expect(print("'(1 2)")).toEqual(["'(1 2)"]);
     });
 

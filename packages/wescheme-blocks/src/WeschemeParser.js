@@ -1,4 +1,4 @@
-import { parseNode } from "./parseNode";
+import { parseNode, setSource } from "./parseNode";
 
 import { lex } from "wescheme-js/src/lex";
 import * as types from "wescheme-js/src/runtime/types";
@@ -765,6 +765,7 @@ export function parse(code) {
     return provide;
   }
 
+  setSource(code);
   let ast = parseStar(lex(code));
   return ast.map(parseNode).filter((item) => item !== null);
 }

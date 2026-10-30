@@ -1,5 +1,5 @@
 import type { ASTNode } from "../../ast";
-import { parseNodeOrNull } from "./parseNode";
+import { parseNodeOrNull, setSource } from "./parseNode";
 
 import { lex } from "wescheme-js/src/lex";
 import * as types from "wescheme-js/src/runtime/types";
@@ -775,6 +775,7 @@ export function parse(code: string) {
     return provide;
   }
 
+  setSource(code);
   const ast = parseStar(lex(code));
   const rootNodes = ast
     .map(parseNodeOrNull)

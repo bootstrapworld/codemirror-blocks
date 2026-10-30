@@ -86,6 +86,53 @@ function makeComment(node: structures.Program | structures.comment) {
   return Comment(from, to, node.comment?.txt || "");
 }
 
+// The source text being parsed. Forms with no block of their own are kept as
+// the text they were written as, so parseNode needs to be able to slice it.
+let source = "";
+export function setSource(code: string) {
+  source = code;
+}
+
+// sourceText : Location -> String
+// The source of a node on one line, as the pretty-printer requires. Newlines
+// between tokens become spaces, a newline inside a string becomes `\n`, and a
+// line comment becomes a block comment, so the meaning is unchanged.
+function sourceText(loc: structures.Program["location"]): string {
+  const lines = source.split("\n").slice(loc.startRow - 1, loc.endRow);
+  lines[lines.length - 1] = lines[lines.length - 1].slice(0, loc.endCol);
+  lines[0] = lines[0].slice(loc.startCol);
+  const text = lines.join("\n");
+  let out = "";
+  let i = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (c === '"') {
+      let j = i + 1;
+      while (j < text.length && text[j] !== '"') {
+        j += text[j] === "\\" ? 2 : 1;
+      }
+      out += text.slice(i, j + 1).replace(/\r?\n/g, "\\n");
+      i = j + 1;
+    } else if (c === ";") {
+      let j = text.indexOf("\n", i);
+      if (j < 0) j = text.length;
+      const body = text
+        .slice(i + 1, j)
+        .replace(/\|#/g, "| #")
+        .trim();
+      out += "#| " + body + " |#";
+      i = j;
+    } else if (/\s/.test(c)) {
+      while (i < text.length && /\s/.test(text[i])) i++;
+      out += " ";
+    } else {
+      out += c;
+      i++;
+    }
+  }
+  return out;
+}
+
 // parseNode : WeSchemeNode Number -> ASTNode
 export function parseNode(node: structures.Program, i = 0) {
   function locationFromNode(node: structures.Program) {
@@ -415,5 +462,10 @@ export function parseNode(node: structures.Program, i = 0) {
       comment: comment,
     });
   }
-  return null;
+  // No block exists for this form (quote, local, case, provide, ...): keep its
+  // source text, so that switching to blocks and back never loses code.
+  return Literal(from, to, sourceText(node.location), "unsupported", {
+    ariaLabel: "unsupported expression",
+    comment: comment,
+  });
 }

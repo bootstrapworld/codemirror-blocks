@@ -21,8 +21,10 @@ describe("The WeScheme parser,", () => {
   });
 
   describe("when parsing define-values,", () => {
-    it("ignores well-formed definitions, which blocks don't support", () => {
-      expect(parse("(define-values (a b) (f 1))")).toHaveLength(0);
+    it("keeps well-formed definitions as text, which blocks don't support", () => {
+      const [kept] = parse("(define-values (a b) (f 1))");
+      expect(kept.type).toBe("literal");
+      expect(kept.fields.value).toBe("(define-values (a b) (f 1))");
     });
 
     it("keeps malformed ones as unknown expressions", () => {
@@ -32,7 +34,10 @@ describe("The WeScheme parser,", () => {
 
     it("doesn't confuse them with ordinary definitions", () => {
       const nodes = parse("(define x 1)\n(define-values (a b) (f 1))");
-      expect(nodes.map((n) => n.type)).toEqual(["variableDefinition"]);
+      expect(nodes.map((n) => n.type)).toEqual([
+        "variableDefinition",
+        "literal",
+      ]);
     });
   });
 });

@@ -105,15 +105,12 @@ describe("malformed forms are kept, as unknown blocks", () => {
   });
 });
 
-describe("forms the blocks cannot show yet", () => {
-  // KNOWN DATA LOSS. These are parsed into structures that parseNode has no
-  // block for, so they are dropped (or, for `case`, printed without their
-  // clause bodies), and switching to block mode deletes them from the user's
-  // program. Each test says what should happen. `it.failing` passes while the
-  // bug is there and fails once it is fixed: then remove the `.failing`.
+describe("forms with no block of their own are kept as text", () => {
+  // These have no block of their own yet, so each becomes an opaque literal
+  // holding its source text. Nothing may be lost or changed.
   const words = (s: string) => s.match(/[^\s()[\]]+/g) ?? [];
 
-  it.failing.each([
+  it.each([
     "'(1 2)",
     "`(1 ,x ,@y)",
     "(local [(define a 1)] a)",
@@ -122,6 +119,18 @@ describe("forms the blocks cannot show yet", () => {
     "(case x [(1 2) 'a] [else 'b])",
   ])("%s is kept", (code) => {
     expect(words(printed(code))).toEqual(words(code));
+    expect(printed(code)).not.toContain("\n");
+  });
+
+  it("keeps a multi-line form on one line, with its strings and comments", () => {
+    const code = '\'(a ; note\n   "x\ny"\n   b)';
+    expect(printed(code)).toBe('\'(a #| note |# "x\\ny" b)');
+    expect(printed(printed(code))).toBe(printed(code));
+  });
+
+  it("keeps an unsupported form nested inside a supported one", () => {
+    expect(printed("(define x '(1 2))")).toBe("(define x '(1 2))");
+    expect(printed("(f (provide x) 1)")).toBe("(f (provide x) 1)");
   });
 });
 
