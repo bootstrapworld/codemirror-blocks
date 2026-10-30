@@ -168,25 +168,15 @@ const stopEditing = () => {
 
 /**
  * What a user does before reaching for an editor shortcut when keyboard focus is
- * somewhere it legitimately is not: on the toolbar item they pressed (a drag
- * that came to nothing leaves it there, as a click would), or nowhere, because
- * the block that should have it is outside the few lines jsdom draws (the editor
- * parks focus on the screenreader placeholder, or the page). They click back
- * into the editor. Focus lost to the page while the block it belongs to
- * *is* drawn is a bug, and is not excused.
+ * on the toolbar item they pressed (a drag that came to nothing leaves it there,
+ * as a click would): they click back into the editor. Focus lost to the page
+ * while a block is focused is a bug, and is not excused.
  */
 const returnToEditor = (cmb: API) => {
-  const active = document.activeElement;
   const inToolbar = Boolean(
-    document.querySelector(".Toolbar")?.contains(active)
+    document.querySelector(".Toolbar")?.contains(document.activeElement)
   );
-  const focused = cmb.getFocusedNode();
-  const undrawn =
-    focused !== undefined &&
-    !document.getElementById(`block-node-${focused.id}`);
-  const parked =
-    active === document.body || active?.id === "SR_fix_for_slow_dom";
-  if (inToolbar || (parked && undrawn)) {
+  if (inToolbar) {
     act(() => cmb.focus());
   }
 };
@@ -532,9 +522,31 @@ type Failure = {
 };
 type RunResult = { failure?: Failure; trace: string[] };
 
+/**
+ * jsdom reports every element as 0 pixels tall, so CodeMirror thinks all lines
+ * are at the same height and that only the last one is on screen: it draws the
+ * last ten lines, and cannot redraw one above them after a change. Give each
+ * line of text a height, and the (mocked) 1000 pixel wrapper shows a whole
+ * screenful. Returns the function that puts things back.
+ */
+const giveLinesHeight = () => {
+  const original = Element.prototype.getBoundingClientRect;
+  Element.prototype.getBoundingClientRect = function (this: Element) {
+    const rect = original.call(this);
+    if (!this.parentElement?.classList.contains("CodeMirror-code")) {
+      return rect;
+    }
+    return { ...rect, height: 20, bottom: rect.top + 20 };
+  };
+  return () => {
+    Element.prototype.getBoundingClientRect = original;
+  };
+};
+
 /** Run one sequence on a fresh editor, stopping at the first problem. */
 function runSequence(sequence: Sequence): RunResult {
   const { cmb, store } = mountCMB(wescheme);
+  const restoreLayout = giveLinesHeight();
   const clipboard = installFakeClipboard("zzz");
   const world: World = { cmb, store, clipboard };
   const errors = jest.spyOn(console, "error");
@@ -629,6 +641,7 @@ function runSequence(sequence: Sequence): RunResult {
     return { trace };
   } finally {
     clipboard.restore();
+    restoreLayout();
     delete (document as { elementFromPoint?: unknown }).elementFromPoint;
     teardown();
     // The spy keeps every logged error (and the DOM they refer to) alive, which
@@ -745,6 +758,57 @@ describe("sequences that once broke the editor", () => {
           r: [167531244, 314972969, 757373562, 710069929],
         },
       ],
+    });
+  }, 120_000);
+
+  it("seed 1004: toolbar drops, drags and pastes in a document taller than ten lines, then typing at the top (once a harness artifact: jsdom drew only the last ten lines)", () => {
+    const steps: [string, number[]][] = [
+      [
+        "drag from the toolbar onto whitespace",
+        [503941451, 417273881, 229797668, 363567101],
+      ],
+      [
+        "change the text through the API",
+        [707947101, 478545661, 267694682, 459274848],
+      ],
+      ["delete", [119689298, 615457887, 321493929, 307682063]],
+      [
+        "switch to text mode and back",
+        [898763887, 727522677, 286283587, 238667908],
+      ],
+      ["paste at the top level", [601698510, 819559902, 203586231, 56064530]],
+      [
+        "drag from the toolbar onto a drop target",
+        [329822487, 27058804, 330365877, 975673329],
+      ],
+      [
+        "drag from the toolbar onto whitespace",
+        [627244688, 1818273, 574587487, 963113636],
+      ],
+      [
+        "drag a block onto whitespace",
+        [562348669, 700023561, 394664304, 83593553],
+      ],
+      [
+        "drag from the toolbar onto whitespace",
+        [415560249, 493486677, 921364815, 555391405],
+      ],
+      [
+        "drag from the toolbar onto a drop target",
+        [617815379, 679945935, 567340964, 673158199],
+      ],
+      ["paste over a selection", [257644778, 153769131, 718376213, 712889752]],
+      ["paste beside a block", [910429805, 76658236, 330685378, 44777485]],
+      ["delete", [560921410, 679388851, 374350916, 171650568]],
+      [
+        "drag a block onto a block",
+        [626672414, 439262612, 391280086, 625723930],
+      ],
+      ["type at the top level", [924906978, 807525467, 258656173, 354956959]],
+    ];
+    check({
+      code: "(f x y)\n(g z)\nw",
+      steps: steps.map(([op, r]) => ({ op, r })),
     });
   }, 120_000);
 });

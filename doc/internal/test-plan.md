@@ -255,7 +255,7 @@ failure prints the seed, a shrunk sequence with the text after each step, and a
 (about 6 seconds); set `CMB_RANDOM_RUNS`, `CMB_RANDOM_STEPS` and
 `CMB_RANDOM_SEED` for more, with `NODE_OPTIONS=--max-old-space-size=8192` (each
 sequence leaves about 40 MB behind in jsdom). The invariants only expect blocks
-for roots inside CodeMirror's viewport (a 10-line window in jsdom). The browser
+for roots inside CodeMirror's viewport (a 10-line window in jsdom, except in the random runs, which give lines a height). The browser
 spec runs 9 steps of real input per seed (`CMB_E2E_SEEDS` picks the seeds).
 
 Bugs these runs found, all fixed with regression specs: Delete, Cut and Copy
@@ -299,22 +299,22 @@ Found by later runs, also fixed, each with a regression spec
   on the toolbar. Regression: `e2e/toolbar-drag.e2e.ts` (the random runs excuse
   focus left on the toolbar, so only the browser spec guards the drop).
 
-Still open: runs on fresh seeds (`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30
-CMB_RANDOM_SEED=500`, `...=1000` and `...=2000`, with
-`NODE_OPTIONS=--max-old-space-size=8192`) now pass except for one sequence,
-seed 1004. After 15 steps, typing "7" between two blocks on a line and pressing
-Enter leaves keyboard focus on the page body while the new block is the focused
-node, so the next Ctrl-Z is ignored. What was found: the new block is drawn
-twice. The second draw moves its container into a new CodeMirror widget, which
-drops the focus, and the effects that would give it back run while that widget
-is not in the page yet (CodeMirror's drawn range starts below the block's line,
-and it is only drawn when `BlockEditor`'s effect calls `cm.refresh()`, after the
-block's own effects). Typing in the same place in a fresh editor does not do
-this, the shrinker could not remove any of the 15 steps, and 40 more seeds in
-the browser (20 to 59) pass, so this may well be jsdom's missing layout; it has not been shown
-to be, or not to be, possible in a browser. Setting `viewportMargin` to draw the
-whole document does not help in the harness (`react-codemirror2` puts the
-option back on every render).
+- seed 1004 (a harness artifact): focus on the page body after typing at the top
+  of a document of more than ten lines. jsdom reports every element as 0 pixels
+  tall, so CodeMirror believes every line is at the same height and that only
+  the last line is on screen. It draws the last ten lines, and cannot redraw a
+  line above them after a change: the block's container was moved into a new
+  widget (which drops focus) that never reached the page until a later
+  `cm.refresh()`, after the effects that give focus back had run. The random
+  runs now give each text line a height (`giveLinesHeight`), so the whole
+  document is drawn as in a browser, and the excuse they used to make for
+  focus parked on the placeholder while the focused block was undrawn is gone.
+  The shrunk sequence is replayed in `spec/random-sequences-test.ts` (it fails
+  without the heights), and 40 more browser seeds (20 to 59) pass.
+
+Runs on fresh seeds (`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30
+CMB_RANDOM_SEED=500`, `...=1000`, `...=2000` and `...=3000`, with
+`NODE_OPTIONS=--max-old-space-size=8192`) all pass.
 
 Properties to check after every operation:
 
