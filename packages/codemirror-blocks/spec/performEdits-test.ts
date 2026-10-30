@@ -442,3 +442,154 @@ describe("applyEdits on small documents", () => {
     });
   });
 });
+
+/**
+ * Each Edit has a `focusHint(newAST)`, which names the node that should get
+ * focus once the edit has been applied, or "fallback" to have focus worked out
+ * from the text changes instead (see issue #468).
+ *
+ * The hint is meant to be asked of the AST that `performEdits` commits to the
+ * store: a node found by id (as a delete's "node before" is) only exists in
+ * that AST, because the AST that merely validates the edit is a fresh parse
+ * with fresh ids. So these specs spy on `focusHint` and read what it returned
+ * for the committed AST, rather than calling it with an AST of their own.
+ */
+describe("focusHint", () => {
+  const kids = (node: ASTNode) => [...node.children()];
+
+  /**
+   * perform `make(ast)` on `code`; returns what each edit's focusHint returned
+   * (as source text, or "fallback"), or undefined for an edit never asked.
+   */
+  const hints = (code: string, make: (ast: AST) => EditInterface[]) => {
+    setCode(code);
+    const store = createAppStore();
+    store.dispatch(actions.setAST(ast));
+    const edits = make(ast);
+    const spies = edits.map((edit) => jest.spyOn(edit, "focusHint"));
+    const result = store.dispatch(performEdits(edits, editor));
+    if (!result.successful) {
+      throw result.exception;
+    }
+    return spies.map((spy) => {
+      const hint = spy.mock.results[0]?.value;
+      return hint === undefined || hint === "fallback"
+        ? hint
+        : (hint as ASTNode).toString();
+    });
+  };
+
+  describe("DeleteChildEdit", () => {
+    it("points at the sibling before the deleted node", () => {
+      expect(
+        hints("(f x y)", (a) => [edit_delete(a, kids(a.rootNodes[0])[2])])
+      ).toEqual(["x"]);
+      expect(
+        hints("(f x y)", (a) => [edit_delete(a, kids(a.rootNodes[0])[1])])
+      ).toEqual(["f"]);
+    });
+
+    it("points at the parent when the first child is deleted", () => {
+      expect(
+        hints("(f x y)", (a) => [edit_delete(a, kids(a.rootNodes[0])[0])])
+      ).toEqual(["(... x y)"]);
+    });
+
+    it("is also what replacing a child with nothing gives", () => {
+      expect(
+        hints("(f x y)", (a) => [edit_replace("", a, kids(a.rootNodes[0])[2])])
+      ).toEqual(["x"]);
+    });
+  });
+
+  describe("DeleteRootEdit", () => {
+    it("falls back, since the root and its id are gone", () => {
+      for (const i of [0, 1, 2]) {
+        expect(hints("a b c", (a) => [edit_delete(a, a.rootNodes[i])])).toEqual(
+          ["fallback"]
+        );
+      }
+      expect(hints("a", (a) => [edit_delete(a, a.rootNodes[0])])).toEqual([
+        "fallback",
+      ]);
+    });
+  });
+
+  describe("ReplaceRootEdit", () => {
+    it("points at the first node of the replacement", () => {
+      expect(
+        hints("a b", (a) => [edit_replace("1 2", a, a.rootNodes[0])])
+      ).toEqual(["1"]);
+    });
+  });
+
+  describe("ReplaceChildEdit", () => {
+    it("points at the first node of the replacement", () => {
+      expect(
+        hints("(f x y)", (a) => [
+          edit_replace("1 2", a, kids(a.rootNodes[0])[1]),
+        ])
+      ).toEqual(["1"]);
+    });
+  });
+
+  describe("InsertChildEdit", () => {
+    it("points at the inserted node", () => {
+      expect(
+        hints("(f x y)", (a) => [
+          edit_insert("z", a.rootNodes[0], "args", { line: 0, ch: 3 }),
+        ])
+      ).toEqual(["z"]);
+    });
+
+    it("falls back when there was nothing to insert", () => {
+      expect(
+        hints("(f x y)", (a) => [
+          edit_insert("", a.rootNodes[0], "args", { line: 0, ch: 3 }),
+        ])
+      ).toEqual(["fallback"]);
+    });
+  });
+
+  describe("OverwriteEdit", () => {
+    it("points at the node that ends where the new text ends", () => {
+      expect(
+        hints("a\n\nb", () => [
+          edit_overwrite("foo", { line: 1, ch: 0 }, { line: 1, ch: 0 }),
+        ])
+      ).toEqual(["foo"]);
+    });
+
+    it("warns and falls back if asked before the change object exists", () => {
+      const edit = edit_overwrite(
+        "foo",
+        { line: 0, ch: 0 },
+        { line: 0, ch: 0 }
+      );
+      setCode("a");
+      jest.spyOn(console, "warn").mockImplementation(() => {});
+      expect(edit.focusHint(ast)).toBe("fallback");
+    });
+  });
+
+  describe("with several edits", () => {
+    it("only asks the last edit", () => {
+      // (y's predecessor is the replacement A, which is what the delete finds)
+      expect(
+        hints("(f x y)", (a) => [
+          edit_replace("A", a, kids(a.rootNodes[0])[1]),
+          edit_delete(a, kids(a.rootNodes[0])[2]),
+        ])
+      ).toEqual([undefined, "A"]);
+    });
+
+    it("uses the last edit's hint whatever the others are", () => {
+      expect(
+        hints("(f x y)", (a) => [
+          edit_delete(a, kids(a.rootNodes[0])[2]),
+          edit_replace("B", a, kids(a.rootNodes[0])[1]),
+        ])
+      ).toEqual([undefined, "B"]);
+    });
+  });
+});
