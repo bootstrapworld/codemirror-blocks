@@ -152,9 +152,14 @@ export async function dragWithMouse(
   await page.mouse.move(s.x, s.y);
   await page.mouse.down();
   await page.mouse.move(s.x + 6, s.y + 6, { steps: 3 });
+  // let the browser start the drag before moving on
+  await page.waitForTimeout(60);
   await page.mouse.move(d.x, d.y, { steps: 8 });
   await page.mouse.move(d.x + 1, d.y + 1);
   await page.mouse.move(d.x, d.y);
+  // Chromium reports "drag over" to the target on a timer, and a drop is only
+  // accepted after the target has seen one, so hover before releasing
+  await page.waitForTimeout(200);
   await page.mouse.up();
 }
 

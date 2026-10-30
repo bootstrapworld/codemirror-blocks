@@ -11,6 +11,10 @@ export default defineConfig({
   testDir: "./e2e",
   testMatch: "**/*.e2e.ts",
   fullyParallel: true,
+  // Native drag and drop in Chromium is timing-sensitive: with many pages open
+  // at once (the default is half the cores, 8 on a 16-core laptop) real-mouse
+  // drags are often dropped. Two workers is reliable and still quick.
+  workers: 2,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",

@@ -420,7 +420,11 @@ export function playSound(sound: CustomAudio) {
   debugLog("BEEP!");
   if (!(sound.paused && !sound.isPlaying)) return;
   if (sound.readyState > 0) sound.currentTime = 0;
-  sound.play();
+  // play() returns a promise that rejects if playback is interrupted (the next
+  // beep pauses this one) or blocked by the browser. A missing beep is harmless,
+  // and an unhandled rejection is not: it surfaces as an uncaught error (and the
+  // dev server's overlay takes keyboard focus).
+  sound.play()?.catch(() => undefined);
 }
 
 export function debugLog(...args: unknown[]) {
