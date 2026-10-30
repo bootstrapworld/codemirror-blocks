@@ -7,10 +7,13 @@ http://keepachangelog.com/
 
 ### Changed
 
-- **Requires Node 18+ and npm 8+, and React 18.** `CodeMirrorBlocks()` now
+- **Requires Node 18+ and npm 8+, and React 19.** `CodeMirrorBlocks()` now
   renders with `createRoot`; the returned API object is still filled in before
-  the call returns. The dependencies on `react-redux` (8), `react-tabs` (6) and
-  `react-codemirror2` (8) were raised to match.
+  the call returns. The dependencies on `react-redux` (9), `redux` (5),
+  `redux-thunk` (3), `reselect` (5), `react-tabs` (6) and `react-codemirror2`
+  (8) were raised to match. `react-codemirror2` declares a peer range of
+  `react <=18`, so projects that install this package need an `overrides`
+  entry for it (see the root `package.json`).
 - The package now has `types` and `exports` fields. The root entry, every
   `codemirror-blocks/lib/<module>` path, `.less`/`.mp3` files, and the
   directory-style entry points (`lib/languages`, `lib/languages/wescheme`,
