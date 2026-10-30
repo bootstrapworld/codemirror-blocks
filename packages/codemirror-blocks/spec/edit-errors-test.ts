@@ -110,6 +110,37 @@ describe("editing an existing node in place", () => {
   });
 });
 
+describe("editing a block whose parent is rebuilt as another kind of block", () => {
+  // The edit itself works; what used to go wrong was only picking the block to
+  // focus afterwards, which looked in the old parent for the replaced child.
+  // That threw, after the text had changed, so the editor showed an error for
+  // an edit that had in fact been made.
+  const replaceChild = (code: string, index: number, text: string) => {
+    cmb.setValue(code);
+    cmb.clearHistory();
+    const node = [...root().children()][index];
+    mouseDown(node);
+    keyDown("Enter", {}, node);
+    setEditableText(text);
+    keyDown("Enter");
+  };
+
+  it("takes the only block of an expression, a placeholder, for two blocks", () => {
+    replaceChild("(...)", 0, "foo bar");
+    expect(cmb.getValue()).toBe("(foo bar)");
+    expect(store.getState().errorId).toBe("");
+    expect(cmb.getFocusedNode()?.toString()).toBe("foo");
+  });
+
+  it("takes the operator of an expression that wasn't a valid call", () => {
+    // an `if` with four arguments is not an `if`; without it, it is a call
+    replaceChild("(if foo bar a b) c", 0, '"hi"');
+    expect(cmb.getValue()).toBe('("hi" foo bar a b) c');
+    expect(store.getState().errorId).toBe("");
+    expect(root().type).toBe("functionApp");
+  });
+});
+
 describe("editing in place with a value that can't be parsed", () => {
   beforeEach(() => {
     allowConsoleErrors(); // the rejected edit is logged

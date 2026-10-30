@@ -2,6 +2,8 @@ import { ASTNode } from "../src/ast";
 import { API } from "../src/CodeMirrorBlocks";
 import wescheme from "../src/languages/wescheme";
 import type { FunctionAppNode, LiteralNode } from "../src/nodes";
+import { setEditableText } from "./helpers/editing";
+import { typeChar } from "./helpers/gestures";
 
 import {
   teardown,
@@ -95,5 +97,36 @@ describe("focusing,", () => {
     expect(cmb.getValue()).toBe("(+ 1 99 88 77 2 3)");
     // TODO(Emmanuel): does getFocusedNode().value always return strings?
     expect((cmb.getFocusedNode() as LiteralNode).fields.value).toBe("77");
+  });
+});
+
+describe("after a node has been edited in place,", () => {
+  let cmb!: API;
+  beforeEach(() => {
+    cmb = mountCMB(wescheme).cmb;
+    cmb.setValue("a\nb");
+    const first = cmb.getAst().rootNodes[0];
+    mouseDown(first);
+    keyDown("Enter", { ctrlKey: true }, first); // edit anything
+    setEditableText("(f x)");
+    keyDown("Enter");
+    expect(cmb.getValue()).toBe("(f x)\nb");
+  });
+  afterEach(teardown);
+
+  it("the block that was edited is the one on the page, so focus can be sent to it", () => {
+    const edited = cmb.getAst().rootNodes[0];
+    expect(edited.element).toBe(
+      document.getElementById(`block-node-${edited.id}`)
+    );
+    expect(edited.element).not.toBeNull();
+  });
+
+  it("cancelling a top-level edit hands focus back to a block, not to the placeholder", () => {
+    cmb.setCursor({ line: 0, ch: 5 });
+    typeChar(cmb, "a");
+    keyDown("Escape");
+    expect(document.activeElement?.id).not.toBe("SR_fix_for_slow_dom");
+    expect(document.activeElement?.id).toMatch(/^block-node-/);
   });
 });

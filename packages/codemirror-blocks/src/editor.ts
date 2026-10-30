@@ -106,6 +106,8 @@ declare module "codemirror" {
 export type BlockNodeMarker = {
   clear: () => void;
   changed: () => void;
+  /** Where the marker is now, or undefined once CodeMirror has dropped it */
+  find: () => CodeMirror.MarkerRange | CodeMirror.Position | undefined;
   isBlockNode: true;
   replacedWith: HTMLElement;
 };
