@@ -1,5 +1,6 @@
 import { addLanguage, removeLanguage } from "../../src/languages";
 import { Primitive, PrimitiveGroup } from "../../src/parsers/primitives";
+import { allowConsoleWarnings } from "../globalSetup";
 
 describe("The primitives module", () => {
   const parse = (_code: string) => [];
@@ -108,9 +109,13 @@ describe("The primitives module", () => {
       });
 
       it("should still work if no primitives are given", () => {
+        const warn = allowConsoleWarnings();
         expect(() =>
           PrimitiveGroup.fromConfig("lang", { name: "foo" } as any)
         ).not.toThrow();
+        expect(warn).toHaveBeenCalledWith(
+          expect.stringContaining("doesn't have any primitives")
+        );
       });
 
       it("should throw an error if a config isn't understood", () => {

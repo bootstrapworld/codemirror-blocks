@@ -78,19 +78,43 @@ afterEach(() => {
 
 // Fail any test that makes React (or the editor) log an error. React reports
 // most misuse (bad keys, setState during render, act() warnings) this way.
-// Tests that expect errors can call `allowConsoleErrors()`.
+// Tests that expect errors can call `allowConsoleErrors()`, which also keeps
+// the expected errors off the console. It returns the spy, so a test can
+// check what was logged. Unexpected errors still print and still fail.
 let consoleErrorsAllowed = false;
-export const allowConsoleErrors = () => {
-  consoleErrorsAllowed = true;
-};
 let errorSpy: jest.SpyInstance;
+export const allowConsoleErrors = (): jest.SpyInstance => {
+  consoleErrorsAllowed = true;
+  return errorSpy.mockImplementation(() => {});
+};
+
+// The same for warnings: warnings never fail a test, but an expected one can
+// be kept off the console (and inspected) with this.
+let warnSpy: jest.SpyInstance;
+export const allowConsoleWarnings = (): jest.SpyInstance =>
+  warnSpy.mockImplementation(() => {});
+
+// The WeScheme lexer reports every syntax error it recovers from with a bare
+// console.log. Nothing can act on it, so drop that one message.
+// eslint-disable-next-line no-console
+const realLog = console.log;
+let logSpy: jest.SpyInstance;
+
 beforeEach(() => {
   consoleErrorsAllowed = false;
   errorSpy = jest.spyOn(console, "error");
+  warnSpy = jest.spyOn(console, "warn");
+  logSpy = jest
+    .spyOn(console, "log")
+    .mockImplementation((...args: unknown[]) => {
+      if (args[0] !== "LEXING ERROR") realLog(...args);
+    });
 });
 afterEach(() => {
   const calls = errorSpy.mock.calls.map((args) => args.map(String).join(" "));
   errorSpy.mockRestore();
+  warnSpy.mockRestore();
+  logSpy.mockRestore();
   if (!consoleErrorsAllowed) {
     expect(calls).toEqual([]);
   }
