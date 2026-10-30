@@ -223,11 +223,21 @@ const buildBlockModeAPI = (
   const api: BlockModeAPI &
     Pick<
       CodeMirrorAPI,
-      "listSelections" | "setSelections" | "replaceSelections"
+      "listSelections" | "setSelections" | "replaceSelections" | "undo" | "redo"
     > = {
     /*****************************************************************
      * CM APIs WE WANT TO OVERRIDE
      */
+    // Undo and redo as the keyboard does them, so that focus goes to the block
+    // that the history item remembers instead of one guessed from the change
+    undo: () =>
+      store.dispatch(
+        actions.undoOrRedo("undo", new CodeMirrorFacade(codemirror))
+      ),
+    redo: () =>
+      store.dispatch(
+        actions.undoOrRedo("redo", new CodeMirrorFacade(codemirror))
+      ),
     findMarks: (from, to) =>
       codemirror.findMarks(from, to).filter((m) => !isBlockNodeMarker(m)),
     findMarksAt: (pos) =>

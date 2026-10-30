@@ -189,12 +189,10 @@ describe("two quick edits that CodeMirror undoes as one", () => {
 });
 
 describe("undoing through the API instead of the keyboard", () => {
-  // cmb.undo() is CodeMirror's own undo: nothing has told the editor which
-  // history item is coming, so there is no saved focus to use. The text and
-  // the AST still follow, and focus goes to the block that the change itself
-  // points at (computeFocusNodeFromChanges, a heuristic: here the block after
-  // the text that changed, which is not the one the keyboard path picks).
-  it("still brings the AST back and leaves focus on a block next to the change", () => {
+  // cmb.undo() and cmb.redo() do what Ctrl-Z and Ctrl-Y do, so focus follows
+  // the same saved blocks: the deleted block comes back with focus, and a redo
+  // focuses the block before it.
+  it("brings the AST back and focuses the same blocks as the keyboard", () => {
     cmb.setValue("(f x y)");
     cmb.clearHistory();
     deleteSelected(kids(root())[1]); // x
@@ -202,11 +200,19 @@ describe("undoing through the API instead of the keyboard", () => {
     cmb.undo();
     expect(cmb.getValue()).toBe("(f x y)");
     expect(cmb.getAst().rootNodes.map(String)).toEqual(["(f x y)"]);
-    expect(focused()).toBe("y");
+    expect(focused()).toBe("x");
     cmb.redo();
     expect(cmb.getValue()).toBe("(f y)");
     expect(cmb.getAst().rootNodes.map(String)).toEqual(["(f y)"]);
-    expect(focused()).toBe("y");
+    expect(focused()).toBe("f");
+  });
+
+  it("does nothing when there is nothing to undo or redo", () => {
+    cmb.setValue("(f x y)");
+    cmb.clearHistory();
+    cmb.undo();
+    cmb.redo();
+    expect(cmb.getValue()).toBe("(f x y)");
   });
 });
 
