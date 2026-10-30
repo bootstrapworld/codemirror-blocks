@@ -227,7 +227,10 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     const cur =
       editor.codemirror.getSelection().length > 0 ? null : editor.getCursor();
     lastCursor.current = cur;
-    if (cur) {
+    // Only reclaim focus if the text editor already has it. Block edits also
+    // move the (parked) cursor, and taking focus then would scroll the view to
+    // the cursor and pull focus away from the block that should keep it.
+    if (cur && editor.hasFocus()) {
       editor.setCursor(cur);
       editor.focus();
     }
