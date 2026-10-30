@@ -1,0 +1,26 @@
+// Styles for the pointer-event drag-and-drop layer (see dnd.ts)
+
+// Blocks are not text to be selected, and a long press must not open the
+// callout or selection UI of a touch browser.
+[data-cmb-drag-source] {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body.cmb-dragging {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: grabbing;
+}
+
+.cmb-drag-preview {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  margin: 0 !important;
+  z-index: 100000;
+  pointer-events: none !important;
+  opacity: 0.85;
+  will-change: transform;
+}

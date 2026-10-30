@@ -164,13 +164,9 @@ export async function dragWithMouse(
 }
 
 /**
- * Drag by dispatching the DOM drag events (dragstart, dragenter, dragover, drop,
- * dragend) in the page. This runs the app's real handlers against a real
- * layout, real `elementFromPoint` and real CodeMirror hit-testing, without
- * relying on the browser to start a native drag.
- *
- * `at` is where the pointer is when it drops, in page coordinates; by default
- * the middle of `target`.
+ * Drag with the real mouse to `at` (page coordinates; by default the middle of
+ * `target`). The app's drag layer listens to pointer events, which the mouse
+ * produces, so this runs the real handlers against a real layout.
  */
 export async function dragWithEvents(
   page: Page,
@@ -180,36 +176,9 @@ export async function dragWithEvents(
 ) {
   const s = await center(source);
   const d = at ?? (await center(target));
-  const sourceHandle = await source.elementHandle();
-  const targetHandle = await target.elementHandle();
-  if (!sourceHandle || !targetHandle)
-    throw new Error("drag needs two elements");
-  await page.evaluate(
-    ({ src, dst, from, to }) => {
-      const dataTransfer = new DataTransfer();
-      const fire = (el: Element, type: string, p: { x: number; y: number }) =>
-        el.dispatchEvent(
-          new DragEvent(type, {
-            bubbles: true,
-            cancelable: true,
-            clientX: p.x,
-            clientY: p.y,
-            dataTransfer,
-          })
-        );
-      src.dispatchEvent(
-        new MouseEvent("mousedown", {
-          bubbles: true,
-          clientX: from.x,
-          clientY: from.y,
-        })
-      );
-      fire(src, "dragstart", from);
-      fire(dst, "dragenter", to);
-      fire(dst, "dragover", to);
-      fire(dst, "drop", to);
-      fire(src, "dragend", to);
-    },
-    { src: sourceHandle, dst: targetHandle, from: s, to: d }
-  );
+  await page.mouse.move(s.x, s.y);
+  await page.mouse.down();
+  await page.mouse.move(s.x + 6, s.y + 6, { steps: 3 });
+  await page.mouse.move(d.x, d.y, { steps: 8 });
+  await page.mouse.up();
 }

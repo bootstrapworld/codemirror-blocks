@@ -4,10 +4,9 @@ import {
   UnControlled as CodeMirror,
 } from "react-codemirror2";
 import React, { useRef } from "react";
-import { ItemTypes } from "../dnd";
 import * as actions from "../state/actions";
 import { playSound, BEEP } from "../utils";
-import { useDrop } from "react-dnd";
+import { useDrop } from "../dnd";
 import { CodeMirrorFacade } from "../editor";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../state/store";
@@ -24,18 +23,17 @@ type Props = Omit<IUnControlledCodeMirror, keyof OurProps> & OurProps;
 const DragAndDropEditor = (props: Props) => {
   const editorRef = useRef<CodeMirrorFacade | undefined>(undefined);
   const dispatch: AppDispatch = useDispatch();
-  const [_, connectDropTarget] = useDrop({
-    accept: ItemTypes.NODE,
-    drop: (_, monitor) => {
+  const [, connectDropTarget] = useDrop({
+    drop: (item, info) => {
       if (!editorRef.current) {
         // editor hasn't mounted yet, do nothing.
         return;
       }
-      if (monitor.didDrop()) {
+      if (info.didDrop) {
         return;
       }
       const rootMarks = editorRef.current.getAllBlockNodeMarkers();
-      const { x: left, y: top } = monitor.getClientOffset() || {};
+      const { x: left, y: top } = info.clientOffset;
 
       // Did we get proper coordinate information from react DND?
       if (left && top) {
@@ -54,7 +52,7 @@ const DragAndDropEditor = (props: Props) => {
           dispatch(
             actions.drop(
               editorRef.current,
-              monitor.getItem(),
+              item,
               new actions.OverwriteTarget(loc, loc)
             )
           );
@@ -64,7 +62,6 @@ const DragAndDropEditor = (props: Props) => {
         }
       }
     },
-    collect: () => null,
   });
 
   const onEditorMounted = (ed: CodeMirror.Editor) => {

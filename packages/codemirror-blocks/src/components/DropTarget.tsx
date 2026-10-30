@@ -7,14 +7,13 @@ import React, {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import NodeEditable from "./NodeEditable";
-import { useDrop } from "react-dnd";
+import { useDrop } from "../dnd";
 import classNames from "classnames";
 import { AppDispatch } from "../state/store";
 import { genUniqueId } from "../utils";
 import * as actions from "../state/actions";
 import * as selectors from "../state/selectors";
 import type { ASTNode, AST, Pos } from "../ast";
-import { ItemTypes } from "../dnd";
 import { EditorContext } from "./Context";
 import { createSelector } from "reselect";
 
@@ -197,22 +196,18 @@ field declared. The node was:`,
     dispatch({ type: "SET_EDITABLE", id: id, bool });
 
   const [{ isOver }, connectDropTarget] = useDrop({
-    accept: ItemTypes.NODE,
-    drop: (item: { id: string; content: string }, monitor) => {
+    drop: (item, info) => {
       if (!editor) {
         // codemirror hasn't mounted yet, do nothing.
         return;
       }
-      if (monitor.didDrop()) {
+      if (info.didDrop) {
         return;
       }
       return dispatch((dispatch, getState) => {
         const ast = selectors.getAST(getState());
         return dispatch(actions.drop(editor, item, createTarget(ast)));
       });
-    },
-    collect: (monitor) => {
-      return { isOver: monitor.isOver({ shallow: true }) };
     },
   });
 

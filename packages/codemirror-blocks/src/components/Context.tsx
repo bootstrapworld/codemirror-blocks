@@ -1,6 +1,5 @@
 import React from "react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { DragProvider } from "../dnd";
 import { Provider } from "react-redux";
 import { CMBEditor } from "../editor";
 import type { AppStore } from "../state/store";
@@ -32,8 +31,8 @@ export default function Context(props: {
   children: React.ReactNode;
 }) {
   return (
-    <DndProvider backend={HTML5Backend}>
+    <DragProvider>
       <Provider store={props.store}>{props.children}</Provider>
-    </DndProvider>
+    </DragProvider>
   );
 }

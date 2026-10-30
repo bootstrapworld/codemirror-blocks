@@ -4,10 +4,9 @@ import {
   PrimitiveGroup as PrimitiveGroupModel,
   Primitive as LanguagePrimitive,
 } from "../parsers/primitives";
-import { ItemTypes } from "../dnd";
 import CodeMirror from "codemirror";
 import { defaultKeyMap } from "../keymap";
-import { useDrag } from "react-dnd";
+import { useDrag } from "../dnd";
 import { copy } from "../copypaste";
 
 require("./PrimitiveList.less");
@@ -23,8 +22,7 @@ export const Primitive = ({
   ...props
 }: BasePrimitiveProps & { ref?: React.Ref<HTMLElement> }) => {
   const { primitive, className, onFocus } = props;
-  const [_, connectDragSource, connectDragPreview] = useDrag({
-    type: ItemTypes.NODE,
+  const [, connectDragSource] = useDrag({
     item: { content: primitive.name },
   });
 
@@ -48,14 +46,13 @@ export const Primitive = ({
   const setRefs = useCallback(
     (el: HTMLElement | null) => {
       connectDragSource(el);
-      connectDragPreview(el, { offsetX: 1, offsetY: 1 });
       if (typeof ref === "function") {
         ref(el);
       } else if (ref) {
         ref.current = el;
       }
     },
-    [connectDragSource, connectDragPreview, ref]
+    [connectDragSource, ref]
   );
 
   return (

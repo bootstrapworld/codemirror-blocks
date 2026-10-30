@@ -6,9 +6,8 @@ import * as actions from "../state/actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch } from "../state/store";
-import { ItemTypes } from "../dnd";
 import classNames from "classnames";
-import { useDrag, useDrop } from "react-dnd";
+import { useDrag, useDrop } from "../dnd";
 import { RootState } from "../state/reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
@@ -180,47 +179,37 @@ const Node = ({ expandable = true, ...props }: Props) => {
     `blocks-${props.node.type}`,
   ];
   const [{ isOver }, connectDropTarget] = useDrop({
-    accept: ItemTypes.NODE,
-    drop: (_item, monitor) => {
+    drop: (item, info) => {
       if (!editor) {
         // codemirror hasn't mounted yet, do nothing
         return;
       }
-      if (monitor.didDrop()) {
+      if (info.didDrop) {
         return;
       }
       return dispatch((dispatch, getState) => {
         const ast = selectors.getAST(getState());
         const node = ast.getNodeByIdOrThrow(props.node.id);
         return dispatch(
-          actions.drop(editor, monitor.getItem(), new ReplaceNodeTarget(node))
+          actions.drop(editor, item, new ReplaceNodeTarget(node))
         );
       });
     },
-    collect: (monitor) => {
-      return {
-        isOver: monitor.isOver({ shallow: true }),
-      };
-    },
   });
-  const [{ isDragging }, connectDragSource, connectDragPreview] = useDrag({
-    type: ItemTypes.NODE,
+  const [{ isDragging }, connectDragSource] = useDrag({
     item: () => {
       if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
         return { content: props.node.toString() };
       }
       return { id: props.node.id };
     },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
   });
 
   const nodeElementRef = useRef<HTMLSpanElement | null>(null);
 
   // The node's element is a drag source (and its own drag preview), maybe a
   // drop target, and is remembered in nodeElementRef. These callbacks are
-  // stable across renders, so that react-dnd doesn't reconnect on every one.
+  // stable across renders, so that the drag layer doesn't reconnect on every one.
   const normallyEditable = Boolean(props.normallyEditable);
   const setNodeElement = useCallback(
     (el: HTMLSpanElement | null) => {
@@ -229,9 +218,8 @@ const Node = ({ expandable = true, ...props }: Props) => {
         connectDropTarget(el);
       }
       connectDragSource(el);
-      connectDragPreview(el, { offsetX: 1, offsetY: 1 });
     },
-    [normallyEditable, connectDropTarget, connectDragSource, connectDragPreview]
+    [normallyEditable, connectDropTarget, connectDragSource]
   );
 
   // The element can be replaced without the id changing (editing a node swaps
