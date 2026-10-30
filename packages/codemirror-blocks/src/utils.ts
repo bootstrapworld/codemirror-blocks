@@ -90,7 +90,7 @@ export function srcRangeIncludes(outerRange: Range, innerRange: Range) {
 // Returns true iff `pos` is inside of `range`.
 // (Being on the boundary counts as inside.)
 export function srcRangeContains(range: Range, pos: Pos) {
-  return poscmp(range.from, pos) <= 0 && poscmp(pos, range.to);
+  return poscmp(range.from, pos) <= 0 && poscmp(pos, range.to) <= 0;
 }
 
 export function skipWhile<T>(
