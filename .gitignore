@@ -12,3 +12,6 @@ doc/*.html
 compilation-stats.json
 test-results
 playwright-report
+
+# soak test output (npm run soak)
+soak-results

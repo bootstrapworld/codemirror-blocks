@@ -17,6 +17,7 @@
     "lint": "eslint .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format:check": "prettier --check .",
+    "soak": "node scripts/soak.js",
     "test:e2e": "npm run test:e2e --workspace=@bootstrapworld/codemirror-blocks"
   },
   "devDependencies": {

@@ -313,6 +313,14 @@ Found by later runs, also fixed, each with a regression spec
   The shrunk sequence is replayed in `spec/random-sequences-test.ts` (it fails
   without the heights), and 40 more browser seeds (20 to 59) pass.
 
+To stress-test for hours without watching, `npm run soak` (`scripts/soak.js`) runs
+the random sequences batch after batch on fresh seeds, keeps every failure
+(`soak-results/failures.jsonl`, with the shrunk steps and a replay command), and
+writes `soak-results/summary.md` (distinct failures, most common first). A run
+that dies without a report (out of memory, a timeout, a crash) is classified and
+re-run seed by seed to find the seed that does it. `npm run soak -- --hours 8`
+for overnight, `--e2e` for the same in Chromium; it resumes where it stopped.
+
 Runs on fresh seeds (`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30
 CMB_RANDOM_SEED=500`, `...=1000`, `...=2000` and `...=3000`, with
 `NODE_OPTIONS=--max-old-space-size=8192`) all pass.
