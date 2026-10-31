@@ -2,6 +2,7 @@ import { act, fireEvent, screen } from "@testing-library/react";
 import wescheme from "../src/languages/wescheme";
 import { API } from "../src/CodeMirrorBlocks";
 import { keyDown, mountCMB, teardown } from "../src/toolkit/test-utils";
+import * as announcer from "../src/announcer";
 import * as utils from "../src/utils";
 
 /**
@@ -224,4 +225,96 @@ it("leaves the rest of the page alone while the dialog is open", () => {
   });
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(block("x")).toBeTruthy();
+});
+
+describe("the search rotor", () => {
+  let say: jest.SpyInstance;
+  const next = () => press("F3", { ctrlKey: true });
+  const previous = () => press("F3", { ctrlKey: true, shiftKey: true });
+  const said = () => say.mock.calls.map((c) => c[0]);
+  beforeEach(() => {
+    say = jest.spyOn(announcer, "say");
+  });
+
+  it("starts at the first type, and goes forwards with a wrap", () => {
+    next();
+    next();
+    next();
+    expect(said()).toEqual([
+      "Searching by function app, 1 of 2",
+      "Searching by literal, 2 of 2",
+      "Searching by function app, 1 of 2",
+    ]);
+  });
+
+  it("goes backwards with a wrap, from the last entry", () => {
+    previous();
+    previous();
+    previous();
+    expect(said()).toEqual([
+      "Searching by literal, 2 of 2",
+      "Searching by function app, 1 of 2",
+      "Searching by literal, 2 of 2",
+    ]);
+  });
+
+  it("makes PageDown go to the next block of the chosen type", () => {
+    next(); // function app
+    press("PageDown");
+    expect(focused()).toBe("(g xy x)");
+    next(); // literal
+    press("PageDown");
+    expect(cmb.getFocusedNode()?.type).toBe("literal");
+  });
+
+  it("makes a text search from the dialog the last entry, and lands on it", () => {
+    searchFor("xy");
+    say.mockClear();
+    next(); // from the text search, on to the first type
+    previous(); // and back
+    expect(said()).toEqual([
+      "Searching by function app, 1 of 3",
+      "Searching for text 'xy', 3 of 3",
+    ]);
+    previous();
+    expect(said().pop()).toBe("Searching by literal, 2 of 3");
+  });
+
+  it("is moved by choosing a block type in the dialog", () => {
+    press("F3");
+    fireEvent.click(screen.getByRole("tab", { name: "Search by block" }));
+    const select = screen.getByRole("combobox") as HTMLSelectElement;
+    fireEvent.change(select, {
+      target: { name: "blockType", value: "literal" },
+    });
+    fireEvent.keyUp(select, { key: "Enter" });
+    next();
+    expect(said().pop()).toBe("Searching by function app, 1 of 2");
+  });
+
+  it("follows the document", () => {
+    cmb.setValue("(f x)");
+    cmb.setValue("f");
+    next();
+    next();
+    expect(said()).toEqual([
+      "Searching by literal, 1 of 1",
+      "Searching by literal, 1 of 1",
+    ]);
+  });
+
+  it("says so when there is nothing to search for", () => {
+    cmb.setValue("");
+    next();
+    expect(said()).toEqual(["No search types available"]);
+    press("PageDown");
+    expect(said().pop()).toBe("No search settings have been selected");
+  });
+
+  it("does nothing in text mode", () => {
+    cmb.setBlockMode(false);
+    say.mockClear();
+    keyDown("F3", { ctrlKey: true }, document.querySelector("textarea")!);
+    expect(said()).toEqual([]);
+  });
 });

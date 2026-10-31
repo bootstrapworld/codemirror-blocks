@@ -94,6 +94,8 @@ export const defaultKeyMap: KeyMap = {
   PageDown: "Search Next",
   F3: "Activate Search Dialog",
   "Ctrl-F": "Activate Search Dialog",
+  "Ctrl-F3": "Next Search Type",
+  "Shift-Ctrl-F3": "Previous Search Type",
 };
 
 const macKeyMap: KeyMap = {
@@ -542,6 +544,16 @@ const commandMap: {
   "Search Next": (env, e) => (dispatch, getState) => {
     e.preventDefault();
     dispatch(goToMatch(env, true, getState()));
+  },
+
+  "Next Search Type": (env, e) => () => {
+    e.preventDefault();
+    env.appHelpers.search?.rotor(true);
+  },
+
+  "Previous Search Type": (env, e) => () => {
+    e.preventDefault();
+    env.appHelpers.search?.rotor(false);
   },
 
   Undo: (env, e) => doTopmostAction(env, e, "undo"),

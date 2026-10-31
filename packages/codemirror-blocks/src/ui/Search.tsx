@@ -34,12 +34,26 @@ export type SearchApi = {
     state: RootState,
     from: Pos | null
   ) => ASTNode | null;
+  /**
+   * The search rotor: make the next (or previous) search type the one that
+   * PageUp and PageDown use, and say which it is. The types are the kinds of
+   * block in the document, then the last text searched for.
+   */
+  rotor: (forward: boolean) => void;
 };
 
 // each searcher is typed by its own settings, which this does not need to know
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySearcher = Searcher<any, any>;
 const searchModes: AnySearcher[] = [ByString, ByBlock];
+const STRING = 0;
+const BLOCK = 1;
+
+type StringSetting = typeof ByString.setting;
+
+/** "functionApp" is said as "function app" */
+const words = (type: string) =>
+  type.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
 
 /**
  * The state of the search, and the dialog that sets it. The dialog is returned
@@ -60,9 +74,12 @@ export function useSearch(
   // start out on the first mode
   const [mode, setMode] = useState<number | null>(null);
 
+  // the text search the rotor ends with: the last one made in the dialog
+  const [lastText, setLastText] = useState<StringSetting | null>(null);
+
   // The commands are made once, and ask for the latest of these when they run
-  const latestRef = useRef({ editor, settings, mode });
-  latestRef.current = { editor, settings, mode };
+  const latestRef = useRef({ editor, settings, mode, ast, lastText });
+  latestRef.current = { editor, settings, mode, ast, lastText };
   const thenSearchRef = useRef<() => void>(() => undefined);
 
   const find: SearchApi["find"] = useCallback((forward, state, from) => {
@@ -113,7 +130,52 @@ export function useSearch(
     setIsOpen(true);
   }, []);
 
-  const api = useMemo<SearchApi>(() => ({ open, find }), [open, find]);
+  const rotor: SearchApi["rotor"] = useCallback((forward) => {
+    const { settings, mode, ast, lastText } = latestRef.current;
+    const types = [
+      ...new Set([...ast.getAllNodes()].map((n) => n.type)),
+    ].sort();
+    const count = types.length + (lastText ? 1 : 0);
+    if (count === 0) {
+      say("No search types available");
+      return;
+    }
+    // where the rotor is: the entry the active search is (none if it is not)
+    let at = -1;
+    if (mode === BLOCK) {
+      at = types.indexOf(settings[BLOCK].blockType);
+    } else if (mode === STRING && lastText && settings[STRING] === lastText) {
+      at = types.length;
+    }
+    const next =
+      at < 0
+        ? forward
+          ? 0
+          : count - 1
+        : (at + (forward ? 1 : count - 1)) % count;
+    const position = `${next + 1} of ${count}`;
+    if (next < types.length) {
+      const setting = { blockType: types[next] };
+      latestRef.current.mode = BLOCK;
+      latestRef.current.settings = settings.map((s, i) =>
+        i === BLOCK ? setting : s
+      );
+      say(`Searching by ${words(types[next])}, ${position}`);
+    } else {
+      latestRef.current.mode = STRING;
+      latestRef.current.settings = settings.map((s, i) =>
+        i === STRING ? lastText : s
+      );
+      say(`Searching for text '${lastText!.searchString}', ${position}`);
+    }
+    setSettings(latestRef.current.settings);
+    setMode(latestRef.current.mode);
+  }, []);
+
+  const api = useMemo<SearchApi>(
+    () => ({ open, find, rotor }),
+    [open, find, rotor]
+  );
 
   const close = () => {
     setIsOpen(false);
@@ -127,6 +189,11 @@ export function useSearch(
     if (e.key === "Escape") {
       close();
     } else if (e.key === "Enter") {
+      // a text search becomes the rotor's last entry (and the active entry)
+      const { mode, settings } = latestRef.current;
+      if (mode === STRING && settings[STRING].searchString !== "") {
+        setLastText(settings[STRING]);
+      }
       searchAfterCloseRef.current = true;
       close();
       say(

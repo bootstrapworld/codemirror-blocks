@@ -87,7 +87,7 @@ no interaction).
 | Clipboard     | Copy, Cut, Paste, Paste Before                                                                     | ✅ `paste-test`, `copypaste-test`                |
 | History       | Undo, Redo (Cmd-Y, Shift-Cmd-Z, Ctrl-Y variants)                                                   | ✅ `undo-matrix-test`                            |
 | Help          | Shift-Ctrl-/                                                                                       | ✅ `keyboard-commands-test`                      |
-| Search        | PageUp/PageDown, F3, Ctrl-F                                                                        | ✅ `search-test`, `searchers-test`, `e2e/search` |
+| Search        | PageUp/PageDown, F3, Ctrl-F, Ctrl-F3 (rotor)                                                       | ✅ `search-test`, `searchers-test`, `e2e/search` |
 
 Each command is also tested at top level (no node focus, `isNodeEnv` false),
 where the node commands do nothing and CodeMirror's own text keys still work

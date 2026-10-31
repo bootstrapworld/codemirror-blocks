@@ -99,6 +99,14 @@ test("search by block type finds the next call", async ({ page }) => {
   expect(await focusedLabel(page)).toMatch(/^f expression/);
 });
 
+test("Control+F3 picks the block type PageDown searches for", async ({
+  page,
+}) => {
+  await page.keyboard.press("Control+F3"); // the first type: function calls
+  await page.keyboard.press("PageDown");
+  expect(await focusedLabel(page)).toMatch(/^g expression/);
+});
+
 test("the editor still works after a search", async ({ page }) => {
   await searchFor(page, "xy");
   expect(await focusedLabel(page)).toBe("xy,");

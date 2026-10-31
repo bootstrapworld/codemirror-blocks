@@ -90,6 +90,9 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   now built on the editor's own dialog (`appHelpers.search`) instead of wrapping
   the whole editor. Searching by block no longer skips the block right after a
   cursor between blocks.
+- A search rotor, for changing what PageUp and PageDown search for without the
+  dialog: Ctrl-F3 and Shift-Ctrl-F3 step through the kinds of block in the
+  document, then the last text searched for, and say which one is chosen.
 
 - The lambda language (`lib/languages/lambda`) works again, with its own node
   types and pretty-printers that round-trip to lambda syntax.
