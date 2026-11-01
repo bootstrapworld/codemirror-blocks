@@ -148,7 +148,9 @@ export function Unknown(
     options,
     pretty: (node) =>
       withComment(
-        P.standardSexpr(node.fields.elts[0], node.fields.elts.slice(1)),
+        node.fields.elts.length
+          ? P.standardSexpr(node.fields.elts[0], node.fields.elts.slice(1))
+          : P.txt("()"),
         node.options.comment,
         node
       ),

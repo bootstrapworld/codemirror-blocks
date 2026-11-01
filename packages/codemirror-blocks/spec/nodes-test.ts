@@ -1,4 +1,5 @@
 import wescheme from "../src/languages/wescheme";
+import { Unknown } from "../src/nodes";
 import { mountCMB, teardown } from "../src/toolkit/test-utils";
 
 /**
@@ -143,5 +144,18 @@ describe("what a block looks like", () => {
     expect(text).toContain("else");
     expect(document.querySelectorAll(".blocks-cond-row")).toHaveLength(2);
     teardown();
+  });
+});
+
+describe("an unrecognised expression with nothing in it", () => {
+  // (random sequence, seed 11091) deleting its last part left no elements to
+  // print, and the printer threw on the missing first one
+  const pos = { line: 0, ch: 0 };
+  it("prints as empty parentheses", () => {
+    expect(Unknown(pos, pos, []).pretty().display(80)).toEqual(["()"]);
+  });
+  it("keeps its other parts when it has some", () => {
+    const [a, b] = wescheme.buildAST("a b").rootNodes;
+    expect(Unknown(pos, pos, [a, b]).pretty().display(80)).toEqual(["(a b)"]);
   });
 });
