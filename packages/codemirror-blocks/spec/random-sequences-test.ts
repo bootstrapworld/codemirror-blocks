@@ -1092,6 +1092,10 @@ function runSequence(sequence: Sequence): RunResult {
       let outcome: Outcome;
       try {
         outcome = op.run(world, step.r);
+        // A drag swallows the click that a browser sends right after it, and
+        // forgets it on the next timer tick. A synchronous sequence has no tick
+        // between its steps, so the next step's click would be the one swallowed.
+        window.dispatchEvent(new MouseEvent("click"));
       } catch (e) {
         trace.push(`${step.op}: threw`);
         return fail(at, `threw ${e instanceof Error ? e.stack : e}`);
@@ -1461,13 +1465,10 @@ describe("random sequences of operations", () => {
     }, 120_000);
     return;
   }
-  // Seeds 3, 4, 10, 20, 21, 24, 30, 36, 43, 44 and 48 are known findings (see
-  // the notes of the session that widened the generator), so the default run
-  // uses seeds that pass; asking for a seed with CMB_RANDOM_SEED runs the lot.
-  const passing = [13, 14, 15, 16, 17, 18, 19, 22, 23, 25, 26, 27];
+  // the default run uses a few consecutive seeds; CMB_RANDOM_SEED starts elsewhere
   const seeds = process.env.CMB_RANDOM_SEED
     ? Array.from({ length: RUNS }, (_, i) => FIRST_SEED + i)
-    : passing.slice(0, RUNS);
+    : Array.from({ length: Math.min(RUNS, 12) }, (_, i) => i + 1);
   it.each(seeds)(
     `seed %i (${STEPS} steps) keeps the editor consistent, and undoes and redoes cleanly`,
     (seed) => {
