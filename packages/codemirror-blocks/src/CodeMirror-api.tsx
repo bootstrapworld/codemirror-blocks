@@ -617,8 +617,12 @@ function validateRanges(ranges: { anchor: Pos; head?: Pos }[], ast: AST) {
     // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
     // (the deepest node containing a position can be a child that ends where its
     // root does, as in a lambda program: it is the root's edges that count)
+    // (a root's comment is part of it: text can go after the comment)
     const onRootEdge = (c: Pos) =>
-      ast.rootNodes.some((n) => !poscmp(c, n.from) || !poscmp(c, n.to));
+      ast.rootNodes.some((n) => {
+        const { from, to } = n.srcRange();
+        return !poscmp(c, from) || !poscmp(c, to);
+      });
     const c1IsTopLevel = !ast.getNodeContaining(c1) || onRootEdge(c1);
     const c2IsTopLevel = !ast.getNodeContaining(c2) || onRootEdge(c2);
 

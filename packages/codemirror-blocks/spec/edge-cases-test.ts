@@ -206,6 +206,15 @@ describe("mounting again with a different language", () => {
   });
 });
 
+describe("adding text through the API after a commented form", () => {
+  it("is allowed at the end of the comment", () => {
+    cmb = mountCMB(wescheme).cmb;
+    cmb.setValue("(g y) ; tail");
+    cmb.replaceRange("\n(h)", { line: 0, ch: 12 });
+    expect(cmb.getValue()).toBe("(g y) ; tail\n(h)");
+  });
+});
+
 describe("the lambda program block", () => {
   beforeEach(() => {
     cmb = mountCMB(lambda).cmb;
