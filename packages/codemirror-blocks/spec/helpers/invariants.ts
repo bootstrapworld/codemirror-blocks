@@ -93,18 +93,20 @@ export function findInvariantViolations(): string[] {
     if (!hidden) {
       visibleIds.add(node.id);
     }
-    const comment = node.options.comment;
-    if (comment) {
-      knownIds.add(comment.id);
-      if (!hidden) {
-        visibleIds.add(comment.id);
-      }
-    }
-    // A node being edited in place is shown as text, without its children.
+    // A node being edited in place is shown as an editing box with only its own
+    // text: its comment (still in the document) and its children are not drawn
+    // until the edit ends (see Node.tsx, which swaps in NodeEditable).
     const beingEdited =
       document
         .getElementById(`block-node-${node.id}`)
         ?.getAttribute("contenteditable") === "true";
+    const comment = node.options.comment;
+    if (comment) {
+      knownIds.add(comment.id);
+      if (!hidden && !beingEdited) {
+        visibleIds.add(comment.id);
+      }
+    }
     for (const child of node.children()) {
       visit(child, hidden || collapsed.has(node.id) || beingEdited);
     }
