@@ -1034,10 +1034,17 @@ function runSequence(sequence: Sequence): RunResult {
     // the text that undoing everything should lead back to
     let baseline = text();
 
+    if (process.env.CMB_RANDOM_TRACE) {
+      process.stderr.write(`document ${JSON.stringify(sequence)}\n`);
+    }
     for (const [i, step] of sequence.steps.entries()) {
       const op = allOperations.find((o) => o.name === step.op);
       if (!op) throw new Error(`no such operation: ${step.op}`);
       const at = `step ${i + 1} (${step.op})`;
+      if (process.env.CMB_RANDOM_TRACE) {
+        // (to find the step that hangs: it prints before running each)
+        process.stderr.write(`${at} ${JSON.stringify(step.r)}\n`);
+      }
       let outcome: Outcome;
       try {
         outcome = op.run(world, step.r);
