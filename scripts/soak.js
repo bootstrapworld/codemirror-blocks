@@ -15,7 +15,7 @@
  *
  * Workers: batches run in parallel on disjoint seed ranges, each in one jest
  * process (one core) at low priority (taskpolicy -b, else nice -n 19). --cores
- * MIN-MAX (default 2-8) bounds how many run at once. Every --sample-sec seconds
+ * MIN-MAX (default 2-10) bounds how many run at once. Every --sample-sec seconds
  * (default 10) the governor measures how busy the machine is apart from the
  * workers: to keep it under about 70% it pauses surplus workers at once (SIGSTOP,
  * the whole process group; never fewer than MIN run), and after two quiet
@@ -31,7 +31,8 @@
  * up to 100), --alternate with --e2e-every K (default 20; one Chromium batch at
  * a time, in one worker slot), --timeout-min N (running time after which a
  * batch is killed: default 25), --seed N, --fresh (ignore saved progress),
- * --out DIR (default soak-results). Stop it with Ctrl-C (or SIGTERM): it lets
+ * --status-min N (default 30: a status line every N minutes, also appended to
+ * status.log), --out DIR (default soak-results). Stop it with Ctrl-C (or SIGTERM): it lets
  * the running batches finish, saves, and prints the summary; a second Ctrl-C
  * ends them at once.
  *
@@ -175,7 +176,9 @@ if (opt("promote", undefined) !== undefined) {
 
 // ---- settings ----
 
-const [minCores, maxCores] = String(opt("cores", "2-8")).split("-").map(Number);
+const [minCores, maxCores] = String(opt("cores", "2-10"))
+  .split("-")
+  .map(Number);
 const hours = Number(opt("hours", 1));
 const maxBatches = Number(opt("batches", Infinity));
 const explicitSteps = opt("steps", undefined) !== undefined;
@@ -554,10 +557,40 @@ log(
     `seeds ${modeNames.map((m) => `${m} ${states[m].progress.nextSeed}`).join(", ")}, ` +
     `results in ${out}`
 );
+const startTotals = () => ({
+  sequences: modeNames.reduce((n, m) => n + states[m].progress.sequences, 0),
+  failures: modeNames.reduce((n, m) => n + states[m].progress.failures, 0),
+});
+const runStart = startTotals();
+const runStartedAt = Date.now();
+// a regular line saying how the run is going, kept in status.log too
+const status = () => {
+  const now = startTotals();
+  const distinct = modeNames.reduce(
+    (n, m) => n + Object.keys(states[m].progress.distinct).length,
+    0
+  );
+  const crashes = modeNames.reduce(
+    (n, m) => n + states[m].progress.crashes.length,
+    0
+  );
+  const hours = ((Date.now() - runStartedAt) / 3600000).toFixed(1);
+  const line =
+    `status after ${hours} h: ${now.sequences - runStart.sequences} sequences, ` +
+    `${now.failures - runStart.failures} failures this run ` +
+    `(${now.failures} in all, ${distinct} distinct), ${crashes} crashes`;
+  log(line);
+  fs.appendFileSync(
+    path.join(out, "status.log"),
+    `${new Date().toISOString()} ${line}\n`
+  );
+};
+
 new Promise((resolve) => {
   finished = resolve;
   setInterval(sample, sampleMs);
   setInterval(checkTimeouts, 1000);
+  setInterval(status, Number(opt("status-min", 30)) * 60000);
   pump();
 }).then(() => {
   save();
