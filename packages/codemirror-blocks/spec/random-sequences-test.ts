@@ -977,6 +977,11 @@ const giveLinesHeight = () => {
 function runSequence(sequence: Sequence): RunResult {
   const { cmb, store } = mountCMB(languages[sequence.language ?? "wescheme"]);
   const restoreLayout = giveLinesHeight();
+  // jsdom has no scrollIntoView, which the editor calls to keep a focused block in view
+  const hadScroll = "scrollIntoView" in Element.prototype;
+  if (!hadScroll) {
+    Element.prototype.scrollIntoView = () => {};
+  }
   const clipboard = installFakeClipboard("zzz");
   const world: World = {
     cmb,
@@ -1110,6 +1115,9 @@ function runSequence(sequence: Sequence): RunResult {
     clipboard.restore();
     sounds.mockRestore();
     restoreLayout();
+    if (!hadScroll) {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
     delete (document as { elementFromPoint?: unknown }).elementFromPoint;
     teardown();
     // The spy keeps every logged error (and the DOM they refer to) alive, which
