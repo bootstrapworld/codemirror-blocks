@@ -7,7 +7,8 @@ import {
   teardown,
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
-import { pasteAtCursor, select } from "./helpers/gestures";
+import { pasteAtCursor, select, typeChar } from "./helpers/gestures";
+import { expectInvariants } from "./helpers/invariants";
 
 /**
  * Keyboard focus must never be left where the editor can't hear it. These are
@@ -111,5 +112,18 @@ describe("changing the text through the API while a block is being edited", () =
   it("so that the block can be moved on from", () => {
     keyDown("ArrowDown", {}, root(0));
     expect(document.activeElement?.id).toBe(`block-node-${root(1).id}`);
+  });
+});
+
+describe("switching modes with a top-level edit box open", () => {
+  // (random sequence, soak seed 300079) the text is printed again, a long form
+  // on several lines, and the box was left at its old position, inside it
+  it("closes the box, so that no block loses its marker", () => {
+    cmb.setValue(`(${"long-name ".repeat(25)}end) ${"word ".repeat(10)}`);
+    cmb.setCursor({ line: 0, ch: 267 });
+    typeChar(cmb, "q");
+    cmb.setBlockMode(false);
+    cmb.setBlockMode(true);
+    expectInvariants();
   });
 });

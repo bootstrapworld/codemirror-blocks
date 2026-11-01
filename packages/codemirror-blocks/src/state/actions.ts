@@ -140,6 +140,9 @@ export const setBlockMode =
   (dispatch) => {
     const result = checkASTRoundtripConversion(code, language);
     if (result.successful) {
+      // the text is printed again, so the place a top-level edit box was
+      // opened at (which it keeps as a position) would be somewhere else
+      dispatch(disableQuarantine());
       dispatch({
         type: "SET_BLOCK_MODE" as const,
         enabled,
