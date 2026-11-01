@@ -182,6 +182,7 @@ function parse(input: TokenStream): LambdaNode {
     if (peekToken().type == "var") {
       const name = nextToken().value;
       const defs = delimited("(", ")", ",", parseVardef);
+      const body = parseExpression();
       toLocation = input.pos().to;
       return {
         from: from,
@@ -193,7 +194,7 @@ function parse(input: TokenStream): LambdaNode {
           vars: defs.map(function (def) {
             return def.name;
           }),
-          body: parseExpression(),
+          body: body,
         },
         args: defs.map(function (def) {
           return def.def || FALSE;
@@ -201,13 +202,14 @@ function parse(input: TokenStream): LambdaNode {
       };
     }
     const vars = delimited("(", ")", ",", parseVardef);
+    const body = parseExpression();
     toLocation = input.pos().to;
     return {
       from: from,
       to: toLocation,
       type: "let",
       vars: vars,
-      body: parseExpression(),
+      body: body,
     };
   }
   function parseIf(): LambdaNode {

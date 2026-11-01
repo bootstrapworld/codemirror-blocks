@@ -363,3 +363,14 @@ describe("lambda parser test suite", () => {
     });
   });
 });
+
+describe("the extent of a let", () => {
+  it("reaches the end of its body", () => {
+    const { prog } = parseToIntermediateAST("let (a = 1, b = 2) a + b");
+    expect(prog[0].to).toEqual({ line: 0, ch: 24 });
+  });
+  it("reaches the end of the body of a named let", () => {
+    const { prog } = parseToIntermediateAST("let loop (a = 1) a + 1");
+    expect(prog[0].to).toEqual({ line: 0, ch: 22 });
+  });
+});

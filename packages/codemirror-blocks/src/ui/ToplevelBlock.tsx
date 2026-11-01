@@ -27,7 +27,16 @@ const markers = new WeakMap<ASTNode, BlockNodeMarker>();
 // text parses to the very same block (deleting a `...` placeholder, or moving a
 // block to where it already was). The AST looks unchanged then, so unless we
 // notice, the block would never be drawn again.
-const hasLiveMarker = (node: ASTNode) => Boolean(markers.get(node)?.find());
+//
+// A marker whose edge was at the start or end of the replaced text can survive,
+// but shrunk (replacing the first child of a root with its own text leaves the
+// root's marker starting after it), so it must still cover the node's range.
+const hasLiveMarker = (node: ASTNode) => {
+  const range = markers.get(node)?.find();
+  if (!range || !("from" in range)) return false;
+  const { from, to } = node.srcRange();
+  return poscmp(range.from, from) === 0 && poscmp(range.to, to) === 0;
+};
 
 const ToplevelBlock = (props: Props) => {
   const [renderPlaceholder, setRenderPlaceholder] = useState(

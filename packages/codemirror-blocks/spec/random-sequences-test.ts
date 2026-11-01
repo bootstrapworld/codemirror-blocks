@@ -174,7 +174,7 @@ const isRefusal = (e: unknown) =>
 /** Things to type, paste and drop in: one block, a few blocks, or a list */
 const schemeTexts = ["zzz", "7", "(g w)", "(h 1 2)", "foo bar", '"hi"'];
 /** (lambda has no lists, and two names in a row are not a program) */
-const lambdaTexts = ["zzz", "7", "x + 1", "not x", "true", '"hi"'];
+const lambdaTexts = ["zzz", "7", "x + 1", "!x", "true", '"hi"'];
 /** the pool for the language of the sequence that is running */
 let texts = schemeTexts;
 
@@ -508,6 +508,9 @@ const operations: Operation[] = [
     name: "change the text through the API",
     run: (w, r) => {
       const text = pick(texts, r[1])!;
+      // (the new statement joins lambda's one program block, so an edit box
+      // left open at the end of the document would end up inside it)
+      if (w.cmb.getAst().language.id === "lambda") stopEditing();
       const line = w.cmb.lastLine();
       // (lambda statements are separated by `;`: without it the text is refused)
       const sep = separator(w);
@@ -1475,6 +1478,40 @@ describe("sequences that once broke the editor", () => {
         {
           op: "edit a block in place",
           r: [188323108, 570099567, 489579569, 968891330],
+        },
+      ],
+    });
+  }, 120_000);
+
+  it("seed 78904: a lambda `let` whose block stopped before its body, so the top level seemed to reach into the program (typing there, then a text change through the API)", () => {
+    check({
+      code: "let (a = 1, b = 2) a + b",
+      language: "lambda",
+      steps: [
+        {
+          op: "type at the top level",
+          r: [767286620, 21939603, 982529548, 881103949],
+        },
+        {
+          op: "change the text through the API",
+          r: [736564383, 406726763, 821664896, 272203532],
+        },
+      ],
+    });
+  }, 120_000);
+
+  it("seed 79138: pasting a statement over itself shrank the block marker of the program that holds it", () => {
+    check({
+      code: "lambda (x) x + 1",
+      language: "lambda",
+      steps: [
+        {
+          op: "switch to text mode and back",
+          r: [354887366, 798517515, 4435561, 804792238],
+        },
+        {
+          op: "paste over a selection",
+          r: [595669659, 842733167, 369410184, 617543750],
         },
       ],
     });
