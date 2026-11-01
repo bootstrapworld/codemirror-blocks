@@ -1117,6 +1117,9 @@ function runSequence(sequence: Sequence): RunResult {
         `${outcome ?? `${step.op}: not applicable`}\n       text: ${JSON.stringify(text())}`
       );
       if (op.startsHistory) {
+        // (going back to blocks sets the text again, which drops the history,
+        // unless it prints just as it was, as lambda often does: drop it here)
+        cmb.clearHistory();
         baseline = text();
       }
       const wrong = problem();
@@ -1138,7 +1141,11 @@ function runSequence(sequence: Sequence): RunResult {
         // (a search dialog left open has the keys: undo would go to its input)
         const input = screen.queryByLabelText("Search String");
         if (input) fireEvent.keyUp(input, { key: "Escape" });
+        // (and so has an edit box left open: the keys would go to its text)
+        stopEditing();
         returnToEditor(cmb);
+        // (nothing has had focus since the mode switch: the user clicks in)
+        if (document.activeElement === document.body) act(() => cmb.focus());
         keyDown(key, props);
         trace.push(
           `${which} (walking the whole history)\n       text: ${JSON.stringify(text())}`
