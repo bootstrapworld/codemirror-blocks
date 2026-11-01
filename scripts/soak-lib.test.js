@@ -234,3 +234,129 @@ describe("telling how a run died", () => {
     expect(text).toContain("timeout: seeds 1-40");
   });
 });
+
+describe("the governor", () => {
+  const base = { cores: 16, min: 2, max: 8, quietSamples: 0 };
+
+  it("pauses surplus workers at once when others use the machine", () => {
+    // 70% of 16 is 11.2; others use 9.7, so one worker fits, but never below min
+    const d = lib.decideWorkers({ ...base, others: 9.7, running: 6 });
+    expect(d).toEqual({ target: 2, quietSamples: 0 });
+    expect(lib.decideWorkers({ ...base, others: 7, running: 6 }).target).toBe(
+      4
+    );
+  });
+
+  it("adds one worker only after two quiet samples", () => {
+    const first = lib.decideWorkers({ ...base, others: 1, running: 3 });
+    expect(first).toEqual({ target: 3, quietSamples: 1 });
+    const second = lib.decideWorkers({
+      ...base,
+      others: 1,
+      running: 3,
+      quietSamples: first.quietSamples,
+    });
+    expect(second).toEqual({ target: 4, quietSamples: 0 });
+  });
+
+  it("never goes above max or below min", () => {
+    expect(
+      lib.decideWorkers({ ...base, others: 0, running: 8, quietSamples: 5 })
+        .target
+    ).toBe(8);
+    expect(lib.decideWorkers({ ...base, others: 16, running: 2 }).target).toBe(
+      2
+    );
+    expect(lib.decideWorkers({ ...base, others: 0, running: 0 }).target).toBe(
+      2
+    );
+  });
+
+  it("measures the cores busy between two samples", () => {
+    const cpu = (user, idle) => ({
+      times: { user, nice: 0, sys: 0, irq: 0, idle },
+    });
+    const busy = lib.busyCores(
+      [cpu(0, 0), cpu(0, 0)],
+      [cpu(100, 0), cpu(50, 50)]
+    );
+    expect(busy).toBeCloseTo(1.5);
+  });
+});
+
+describe("keeping a soak run bounded and readable", () => {
+  it("stores at most 20 full examples per signature", () => {
+    const distinct = { a: { count: 19 }, b: { count: 20 } };
+    expect(lib.mayStoreExample(distinct, "a")).toBe(true);
+    expect(lib.mayStoreExample(distinct, "b")).toBe(false);
+    expect(lib.mayStoreExample(distinct, "new")).toBe(true);
+  });
+
+  it("puts new signatures first and known ones in a collapsed section", () => {
+    const example = { seed: 1, shrunkTo: 2 };
+    const distinct = {
+      "cut :: old bug": { count: 9, example },
+      "paste :: new bug": { count: 1, example },
+    };
+    const split = lib.splitKnown(distinct, ["old bug"]);
+    expect(split.fresh.map((e) => e[0])).toEqual(["paste :: new bug"]);
+    expect(split.known.map((e) => e[0])).toEqual(["cut :: old bug"]);
+    const text = lib.summarize(
+      { sequences: 10, failures: 10, nextSeed: 5, mode: "jsdom" },
+      distinct,
+      ["old bug"]
+    );
+    expect(text.indexOf("new bug")).toBeLessThan(text.indexOf("<details>"));
+    expect(text).toContain("Known (1 signatures, 9 failures)");
+    expect(text).not.toContain("## 9x");
+  });
+
+  it("ramps the steps from 20 by 5 every 300 batches, up to 100", () => {
+    const f = (n) => lib.stepsFor(n, { ramp: true });
+    expect([f(0), f(299), f(300), f(900), f(100000)]).toEqual([
+      20, 20, 25, 35, 100,
+    ]);
+    expect(lib.stepsFor(5000, { steps: 12 })).toBe(12);
+  });
+});
+
+describe("promoting a failure to a regression test", () => {
+  const replay = JSON.stringify({
+    code: "(f x)\n(g)",
+    steps: [{ op: "cut", r: [1, 2, 3, 4] }],
+  });
+  const records = [
+    { seed: 7, signature: "cut :: bad", problem: "bad", shrunkTo: 3, replay },
+    { seed: 9, signature: "cut :: bad", problem: "bad", shrunkTo: 1, replay },
+    { type: "crash", seed: 7 },
+  ];
+
+  it("finds a failure by seed or by signature text (the smallest)", () => {
+    expect(lib.findForPromote(records, "7").shrunkTo).toBe(3);
+    expect(lib.findForPromote(records, "CUT").seed).toBe(9);
+    expect(lib.findForPromote(records, "nothing")).toBeNull();
+  });
+
+  it("prints an it() in the format of the once-broke block", () => {
+    expect(lib.promoteCase(records[0])).toBe(
+      [
+        '  it("seed 7: bad", () => {',
+        "    check({",
+        '      code: "(f x)\\n(g)",',
+        "      steps: [",
+        "        {",
+        '          "op": "cut",',
+        '          "r": [',
+        "            1,",
+        "            2,",
+        "            3,",
+        "            4",
+        "          ]",
+        "        }",
+        "      ],",
+        "    });",
+        "  }, 120_000);",
+      ].join("\n")
+    );
+  });
+});

@@ -313,13 +313,23 @@ Found by later runs, also fixed, each with a regression spec
   The shrunk sequence is replayed in `spec/random-sequences-test.ts` (it fails
   without the heights), and 40 more browser seeds (20 to 59) pass.
 
-To stress-test for hours without watching, `npm run soak` (`scripts/soak.js`) runs
-the random sequences batch after batch on fresh seeds, keeps every failure
-(`soak-results/failures.jsonl`, with the shrunk steps and a replay command), and
-writes `soak-results/summary.md` (distinct failures, most common first). A run
-that dies without a report (out of memory, a timeout, a crash) is classified and
-re-run seed by seed to find the seed that does it. `npm run soak -- --hours 8`
-for overnight, `--e2e` for the same in Chromium; it resumes where it stopped.
+To stress-test for hours or days without watching, `npm run soak`
+(`scripts/soak.js`) runs the random sequences batch after batch on fresh seeds,
+several batches at once on disjoint seed ranges (`--cores 2-8` by default, at low
+priority; a governor pauses workers with SIGSTOP while you use the machine and
+resumes them when it is quiet again), keeps every failure
+(`soak-results/failures.jsonl`, with the shrunk steps and a replay command; at
+most 20 full records per signature), and writes `soak-results/summary.md` (new
+failures first, most common first; those matching a substring in
+`soak-results/known.json` go into a collapsed "known" section). A run that dies
+without a report (out of memory, a timeout, a crash) is classified and re-run
+seed by seed to find the seed that does it. `--hours 0` runs until Ctrl-C,
+`--alternate` adds a Chromium batch every 20th (`--e2e` for Chromium only),
+and the sequences lengthen gently (20 steps, plus 5 every 300 batches, up to 100;
+`--steps N` or `--no-ramp` to fix it). It resumes where it stopped.
+`npm run soak -- --known "<signature text>"` marks a fixed bug as known, and
+`npm run soak -- --promote <seed or signature text>` prints a ready-to-paste
+regression `it(...)` for the "sequences that once broke the editor" block.
 
 Runs on fresh seeds (`CMB_RANDOM_RUNS=60 CMB_RANDOM_STEPS=30
 CMB_RANDOM_SEED=500`, `...=1000`, `...=2000` and `...=3000`, with
