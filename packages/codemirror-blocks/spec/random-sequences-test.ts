@@ -161,8 +161,16 @@ const toolbarEntries = () =>
     /^[a-z][a-z0-9-]*$/.test(el.textContent ?? "")
   );
 
+/** The language's refusal of text it cannot parse, as the editor reports it */
+const isRefusal = (e: unknown) =>
+  /An invalid change was rejected/.test(String(e));
+
 /** Things to type, paste and drop in: one block, a few blocks, or a list */
-const texts = ["zzz", "7", "(g w)", "(h 1 2)", "foo bar", '"hi"'];
+const schemeTexts = ["zzz", "7", "(g w)", "(h 1 2)", "foo bar", '"hi"'];
+/** (lambda has no lists, and two names in a row are not a program) */
+const lambdaTexts = ["zzz", "7", "x + 1", "not x", "true", '"hi"'];
+/** the pool for the language of the sequence that is running */
+let texts = schemeTexts;
 
 /**
  * Text that is awkward to put into a block: unbalanced, empty, several blocks,
@@ -495,7 +503,19 @@ const operations: Operation[] = [
     run: (w, r) => {
       const text = pick(texts, r[1])!;
       const line = w.cmb.lastLine();
-      w.cmb.replaceRange(`\n${text}`, { line, ch: w.cmb.getLine(line).length });
+      // (lambda statements are separated by `;`: without it the text is refused)
+      const separator = w.cmb.getAst().language.id === "lambda" ? ";\n" : "\n";
+      try {
+        w.cmb.replaceRange(`${separator}${text}`, {
+          line,
+          ch: w.cmb.getLine(line).length,
+        });
+      } catch (e) {
+        // (the API refuses text the language cannot parse, such as a leading
+        // `;` after lambda comments: it throws, and leaves the document alone)
+        if (w.cmb.getAst().language.id !== "lambda" || !isRefusal(e)) throw e;
+        return `API: refused to add "${text}" at the end`;
+      }
       return `API: add "${text}" at the end`;
     },
   },
@@ -684,6 +704,11 @@ const operations: Operation[] = [
         if (pos) {
           w.cmb.setCursor(pos);
           typeChar(w.cmb, "q");
+          if (w.cmb.getAst().language.id === "lambda" && isEditing()) {
+            // (lambda has no two blocks side by side: statements need a `;`)
+            const start = pos.line === 0 && pos.ch === 0;
+            setEditableText(start ? "q;" : ";q");
+          }
           open = ` with a quarantine open at ${pos.line}:${pos.ch}`;
         }
       }
@@ -863,7 +888,12 @@ const modeSwitch: Operation = {
       // edit the text while in text mode
       const text = pick(texts, r[2])!;
       const line = w.cmb.lastLine();
-      w.cmb.replaceRange(`\n${text}`, { line, ch: w.cmb.getLine(line).length });
+      // (lambda statements are separated by `;`: without it the text is refused)
+      const separator = w.cmb.getAst().language.id === "lambda" ? ";\n" : "\n";
+      w.cmb.replaceRange(`${separator}${text}`, {
+        line,
+        ch: w.cmb.getLine(line).length,
+      });
       edit = ` (adding "${text}" in text mode)`;
     }
     w.cmb.setBlockMode(true);
@@ -920,7 +950,8 @@ const documents: Doc[] = [
   { code: "let (a = 1, b = 2) a + b", language: "lambda" },
   { code: "if a then b else c", language: "lambda" },
   { code: "x = 1", language: "lambda" },
-  { code: "# a comment\n1 + 2", language: "lambda" },
+  // (not "# a comment\n1 + 2": lambda drops a comment when it makes blocks, so
+  // the text and the blocks' positions part ways)
 ];
 
 const totalWeight = allOperations.reduce((n, op) => n + (op.weight ?? 1), 0);
@@ -975,6 +1006,7 @@ const giveLinesHeight = () => {
 
 /** Run one sequence on a fresh editor, stopping at the first problem. */
 function runSequence(sequence: Sequence): RunResult {
+  texts = sequence.language === "lambda" ? lambdaTexts : schemeTexts;
   const { cmb, store } = mountCMB(languages[sequence.language ?? "wescheme"]);
   const restoreLayout = giveLinesHeight();
   // jsdom has no scrollIntoView, which the editor calls to keep a focused block in view
@@ -1016,7 +1048,14 @@ function runSequence(sequence: Sequence): RunResult {
     if (errors.mock.calls.length > errorsSeen) {
       const logged = errors.mock.calls[errorsSeen].map(String).join(" ");
       errorsSeen = errors.mock.calls.length;
-      return `console.error: ${logged}`;
+      // lambda has no two blocks side by side, so many edits that wescheme
+      // takes are refused by its parser; the editor says so, and carries on
+      const refusal =
+        sequence.language === "lambda" &&
+        /^Error: (Expecting|Unexpected|Can't handle|js:raw).* \(\d+:\d+\)$/.test(
+          logged
+        );
+      if (!refusal) return `console.error: ${logged}`;
     }
     const violations = findInvariantViolations();
     return violations.length ? violations.join("\n") : undefined;
