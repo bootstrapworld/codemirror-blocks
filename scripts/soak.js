@@ -14,7 +14,7 @@
  *   npm run soak -- --promote "<text>" ... or for the failure whose signature has <text>
  *
  * Workers: batches run in parallel on disjoint seed ranges, each in one jest
- * process (one core) at low priority (taskpolicy -b, else nice -n 19). --cores
+ * process (one core) at low priority (nice -n 19). --cores
  * MIN-MAX (default 2-10) bounds how many run at once. Every --sample-sec seconds
  * (default 10) the governor measures how busy the machine is apart from the
  * workers: to keep it under about 70% it pauses surplus workers at once (SIGSTOP,
@@ -216,11 +216,9 @@ for (const pid of readJson(workersFile, [])) {
 
 // ---- workers ----
 
-const lowPriority = (() => {
-  if (spawnSync("which", ["taskpolicy"]).status === 0)
-    return ["taskpolicy", "-b"];
-  return ["nice", "-n", "19"];
-})();
+// nice, not `taskpolicy -b`: background QoS keeps a process on the efficiency
+// cores of Apple silicon (4 of 16 on an M3 Max) however many workers there are
+const lowPriority = ["nice", "-n", "19"];
 
 /** A job is one batch (with its one-at-a-time reruns if it crashes): one slot */
 const jobs = new Set();
