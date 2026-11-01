@@ -615,14 +615,12 @@ function validateRanges(ranges: { anchor: Pos; head?: Pos }[], ast: AST) {
       return; // if there's a node, it's a valid range
     }
     // Top-Level if there's no node, or it's a root node with the cursor at .from or .to
-    const N1 = ast.getNodeContaining(c1); // get node containing c1
-    const N2 = ast.getNodeContaining(c2); // get node containing c2
-    const c1IsTopLevel =
-      !N1 ||
-      (!ast.getNodeParent(N1) && (!poscmp(c1, N1.from) || !poscmp(c1, N1.to)));
-    const c2IsTopLevel =
-      !N2 ||
-      (!ast.getNodeParent(N2) && (!poscmp(c2, N2.from) || !poscmp(c2, N2.to)));
+    // (the deepest node containing a position can be a child that ends where its
+    // root does, as in a lambda program: it is the root's edges that count)
+    const onRootEdge = (c: Pos) =>
+      ast.rootNodes.some((n) => !poscmp(c, n.from) || !poscmp(c, n.to));
+    const c1IsTopLevel = !ast.getNodeContaining(c1) || onRootEdge(c1);
+    const c2IsTopLevel = !ast.getNodeContaining(c2) || onRootEdge(c2);
 
     // If they're both top-level, it's a valid text range
     if (c1IsTopLevel && c2IsTopLevel) {

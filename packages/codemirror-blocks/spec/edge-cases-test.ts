@@ -219,6 +219,12 @@ describe("the lambda program block", () => {
     expect(texts()).toEqual(["lambda (x) x + 1"]);
   });
 
+  it("lets the API add text at the end, where the last child ends too", () => {
+    cmb.setValue("x = 1");
+    cmb.replaceRange(";\n2", { line: 0, ch: 5 });
+    expect(cmb.getValue()).toBe("x = 1;\n2");
+  });
+
   it("is no block at all when the program is empty", () => {
     cmb.setValue("");
     expect(cmb.getAst().rootNodes).toEqual([]);
