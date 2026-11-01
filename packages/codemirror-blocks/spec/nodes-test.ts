@@ -1,5 +1,5 @@
 import wescheme from "../src/languages/wescheme";
-import { Unknown } from "../src/nodes";
+import { Literal, Unknown } from "../src/nodes";
 import { mountCMB, teardown } from "../src/toolkit/test-utils";
 
 /**
@@ -157,5 +157,14 @@ describe("an unrecognised expression with nothing in it", () => {
   it("keeps its other parts when it has some", () => {
     const [a, b] = wescheme.buildAST("a b").rootNodes;
     expect(Unknown(pos, pos, [a, b]).pretty().display(80)).toEqual(["(a b)"]);
+  });
+});
+
+describe("a string literal with a newline in it", () => {
+  // (random sequence) the printer refuses text with a newline and threw
+  const pos = { line: 0, ch: 0 };
+  it("prints on one line, with the newline escaped", () => {
+    const string = Literal(pos, pos, '"a\nb"', "string");
+    expect(string.pretty().display(80)).toEqual(['"a\\nb"']);
   });
 });

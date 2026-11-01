@@ -14,6 +14,12 @@ import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
 import * as Spec from "./nodeSpec";
 
+/**
+ * The pretty printer refuses text with a newline in it. A string literal can
+ * hold one (`"a` newline `b"`), and `\n` in its place reads as the same string.
+ */
+const singleLine = (text: string) => text.replace(/\r?\n/g, "\\n");
+
 // Displays a comment according to specific rules.
 //
 // - `doc` is what's being commented.
@@ -595,7 +601,11 @@ export function Literal(
     fields: { value, dataType },
     options,
     pretty: (node) =>
-      withComment(P.txt(node.fields.value), node.options.comment, node),
+      withComment(
+        P.txt(singleLine(node.fields.value)),
+        node.options.comment,
+        node
+      ),
     render(props) {
       return (
         <Node {...props} normallyEditable={true} expandable={false}>
@@ -645,7 +655,7 @@ export function Blank(
     type: "blank",
     fields: { value: value || "...", dataType },
     options,
-    pretty: (node) => P.txt(node.fields.value),
+    pretty: (node) => P.txt(singleLine(node.fields.value)),
     render(props) {
       return (
         <Node {...props} normallyEditable={true} expandable={false}>
