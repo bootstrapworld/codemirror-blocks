@@ -65,12 +65,17 @@ const fixture = `
  * into a DOM tree with block mode enabled and some other helpful default settings.
  *
  * @param language the language spec to use
+ * @param options CodeMirror options to use in place of the defaults
  */
-export function mountCMB(language: Language) {
+export function mountCMB(
+  language: Language,
+  options: Record<string, unknown> = {}
+) {
   document.body.insertAdjacentHTML("afterbegin", fixture);
 
   const container = document.getElementById("cmb-editor")!;
-  const codemirrorOptions = { historyEventDelay: 50 }; // since our test harness is faster than people
+  // the default delay is short, since our test harness is faster than people
+  const codemirrorOptions = { historyEventDelay: 50, ...options };
 
   const cmb = {} as API;
   const store = createAppStore();

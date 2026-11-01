@@ -155,6 +155,9 @@ describe("two quick edits that CodeMirror undoes as one", () => {
   // CodeMirror reports one by one; focus has to go back to where it was before
   // the first edit ("d"), and redo to where the last one left it.
   beforeEach(() => {
+    // edits merge within 50 ms by default, which a slow machine can overrun
+    teardown();
+    cmb = mountCMB(wescheme, { historyEventDelay: 60000 }).cmb;
     cmb.setValue("a b c d");
     cmb.clearHistory();
     mouseDown(root(3));
