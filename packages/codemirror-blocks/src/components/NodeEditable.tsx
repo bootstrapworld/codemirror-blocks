@@ -112,15 +112,15 @@ const NodeEditable = ({
 
     // Handling a blur can focus this very box again (it is the focused node's
     // element), which blurs it again: don't handle that second blur.
-    const blurring = useRef(false);
+    const blurringRef = useRef(false);
     const onBlur = (e: React.SyntheticEvent) => {
       e.stopPropagation();
-      if (blurring.current) return;
-      blurring.current = true;
+      if (blurringRef.current) return;
+      blurringRef.current = true;
       try {
         handleBlur();
       } finally {
-        blurring.current = false;
+        blurringRef.current = false;
       }
     };
     const handleBlur = () => {
