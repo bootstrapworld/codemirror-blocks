@@ -33,8 +33,14 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
   const { from, to } = loc;
   const all = (nodes: LambdaNode[]) => nodes.map((n) => convert(n, loc));
   switch (node.type) {
-    case "prog":
-      return Prog(from, to, all(node.prog));
+    case "prog": {
+      // the parser gives a program the location of its last token: it spans
+      // what it holds, or its block would not cover its own children
+      const body = all(node.prog);
+      return body.length
+        ? Prog(body[0].from, body[body.length - 1].to, body)
+        : Prog(from, to, body);
+    }
     case "num":
       return Literal(from, to, String(node.value), "number");
     case "str":
@@ -101,5 +107,7 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
 export default function parseString(code: string): ASTNode[] {
   const root = parseToIntermediateAST(code);
   const origin = { line: 0, ch: 0 };
+  // a program of nothing (or only comments) has no block to draw
+  if (root.type === "prog" && root.prog.length === 0) return [];
   return [convert(root, { from: origin, to: origin })];
 }

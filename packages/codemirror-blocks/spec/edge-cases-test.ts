@@ -206,6 +206,25 @@ describe("mounting again with a different language", () => {
   });
 });
 
+describe("the lambda program block", () => {
+  beforeEach(() => {
+    cmb = mountCMB(lambda).cmb;
+  });
+
+  it("spans everything it holds, so that it gets a block and its children fit inside", () => {
+    cmb.setValue("lambda (x) x + 1");
+    const [prog] = cmb.getAst().rootNodes;
+    expect(prog.from).toEqual({ line: 0, ch: 0 });
+    expect(prog.to).toEqual({ line: 0, ch: 16 });
+    expect(texts()).toEqual(["lambda (x) x + 1"]);
+  });
+
+  it("is no block at all when the program is empty", () => {
+    cmb.setValue("");
+    expect(cmb.getAst().rootNodes).toEqual([]);
+  });
+});
+
 describe("a language with no primitivesFn", () => {
   beforeEach(() => {
     cmb = mountCMB(lambda).cmb;
