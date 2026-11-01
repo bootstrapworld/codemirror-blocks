@@ -161,6 +161,12 @@ const toolbarEntries = () =>
     /^[a-z][a-z0-9-]*$/.test(el.textContent ?? "")
   );
 
+/** What goes between the text of a document and a statement added after it */
+const separator = (w: World) =>
+  w.cmb.getAst().language.id === "lambda" && w.cmb.getValue().trim() !== ""
+    ? ";\n"
+    : "\n";
+
 /** The language's refusal of text it cannot parse, as the editor reports it */
 const isRefusal = (e: unknown) =>
   /An invalid change was rejected/.test(String(e));
@@ -504,9 +510,9 @@ const operations: Operation[] = [
       const text = pick(texts, r[1])!;
       const line = w.cmb.lastLine();
       // (lambda statements are separated by `;`: without it the text is refused)
-      const separator = w.cmb.getAst().language.id === "lambda" ? ";\n" : "\n";
+      const sep = separator(w);
       try {
-        w.cmb.replaceRange(`${separator}${text}`, {
+        w.cmb.replaceRange(`${sep}${text}`, {
           line,
           ch: w.cmb.getLine(line).length,
         });
@@ -625,7 +631,14 @@ const operations: Operation[] = [
           // text changed through the API inside the collapsed block
           const inner = pick([...node.descendants()].slice(1), r[3]);
           if (!inner) return `collapse ${label(node)}`;
-          w.cmb.replaceRange(pick(texts, r[0])!, inner.from, inner.to);
+          try {
+            w.cmb.replaceRange(pick(texts, r[0])!, inner.from, inner.to);
+          } catch (e) {
+            // (lambda refuses text that does not parse in that place)
+            if (w.cmb.getAst().language.id !== "lambda" || !isRefusal(e)) {
+              throw e;
+            }
+          }
           what = "replace a part of it through the API";
           break;
         }
@@ -889,8 +902,8 @@ const modeSwitch: Operation = {
       const text = pick(texts, r[2])!;
       const line = w.cmb.lastLine();
       // (lambda statements are separated by `;`: without it the text is refused)
-      const separator = w.cmb.getAst().language.id === "lambda" ? ";\n" : "\n";
-      w.cmb.replaceRange(`${separator}${text}`, {
+      const sep = separator(w);
+      w.cmb.replaceRange(`${sep}${text}`, {
         line,
         ch: w.cmb.getLine(line).length,
       });
@@ -1122,6 +1135,9 @@ function runSequence(sequence: Sequence): RunResult {
       let guard = cmb.historySize()[which] + 2;
       while (cmb.historySize()[which] > 0 && guard-- > 0) {
         const size = cmb.historySize()[which];
+        // (a search dialog left open has the keys: undo would go to its input)
+        const input = screen.queryByLabelText("Search String");
+        if (input) fireEvent.keyUp(input, { key: "Escape" });
         returnToEditor(cmb);
         keyDown(key, props);
         trace.push(
