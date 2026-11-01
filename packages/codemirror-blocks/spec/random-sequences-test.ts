@@ -906,6 +906,35 @@ describe("sequences that once broke the editor", () => {
       ],
     });
   }, 120_000);
+
+  it("seed 10096: an edit left open by an API text change, then editing again (blurring the box re-focused it, forever)", () => {
+    check({
+      code: "(define (sq n) (* n n))\n(sq 4)",
+      steps: [
+        { op: "delete", r: [425276332, 847047575, 115290901, 501611723] },
+        {
+          op: "paste beside a block",
+          r: [424724473, 571898969, 948509515, 932128352],
+        },
+        {
+          op: "change the text through the API",
+          r: [243142801, 832701041, 992931897, 906643422],
+        },
+        {
+          op: "type at the top level",
+          r: [448890938, 631538996, 244411110, 963922414],
+        },
+        {
+          op: "change the text through the API",
+          r: [79583931, 622989793, 113965123, 747364256],
+        },
+        {
+          op: "edit a block in place",
+          r: [188323108, 570099567, 489579569, 968891330],
+        },
+      ],
+    });
+  }, 120_000);
 });
 
 describe("random sequences of operations", () => {

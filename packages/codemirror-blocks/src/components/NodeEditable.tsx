@@ -110,8 +110,20 @@ const NodeEditable = ({
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Handling a blur can focus this very box again (it is the focused node's
+    // element), which blurs it again: don't handle that second blur.
+    const blurring = useRef(false);
     const onBlur = (e: React.SyntheticEvent) => {
       e.stopPropagation();
+      if (blurring.current) return;
+      blurring.current = true;
+      try {
+        handleBlur();
+      } finally {
+        blurring.current = false;
+      }
+    };
+    const handleBlur = () => {
       const { target } = props;
       dispatch((dispatch: AppDispatch, getState: () => RootState) => {
         // we grab the value directly from the content editable element
