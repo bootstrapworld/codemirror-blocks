@@ -2,7 +2,7 @@ import { fireEvent } from "@testing-library/react";
 import { keyDown, mouseDown } from "../../src/toolkit/test-utils";
 import type { API } from "../../src/CodeMirrorBlocks";
 import type { ASTNode } from "../../src/ast";
-import { drag } from "./dnd";
+import { drag, type DragMode } from "./dnd";
 
 /**
  * Small user gestures, shared by the specs that drive the whole editor
@@ -46,9 +46,10 @@ export const pasteAtCursor = (cmb: API, text: string) =>
 export const dragOnto = (
   src: Element,
   target: Element,
-  point?: { x: number; y: number }
+  point?: { x: number; y: number },
+  mode?: DragMode
 ) => {
-  drag(src).dropOnto(target, point);
+  drag(src, mode).dropOnto(target, point);
 };
 
 /**
@@ -58,10 +59,11 @@ export const dragOnto = (
 export const dropOnWhitespace = (
   cmb: API,
   src: Element,
-  loc: { line: number; ch: number }
+  loc: { line: number; ch: number },
+  mode?: DragMode
 ) => {
   const wrapper = cmb.getCM().getWrapperElement();
   document.elementFromPoint = jest.fn(() => wrapper);
   jest.spyOn(cmb.getCM(), "coordsChar").mockReturnValue(loc as never);
-  dragOnto(src, wrapper, { x: 20, y: 20 });
+  dragOnto(src, wrapper, { x: 20, y: 20 }, mode);
 };

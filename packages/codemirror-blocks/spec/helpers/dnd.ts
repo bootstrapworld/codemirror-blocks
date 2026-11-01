@@ -1,4 +1,5 @@
 import { act, createEvent, fireEvent, screen } from "@testing-library/react";
+import { LONG_PRESS_MS } from "../../src/dnd";
 
 type Point = { x: number; y: number };
 
@@ -11,7 +12,8 @@ export const firePointer = (
   type: "pointerDown" | "pointerMove" | "pointerUp" | "pointerCancel",
   el: Element,
   point: Point,
-  under: Element = el
+  under: Element = el,
+  pointerType: "mouse" | "touch" = "mouse"
 ): void => {
   document.elementFromPoint = jest.fn(() => under);
   // jsdom has no PointerEvent, so the fields the drag layer reads are attached
@@ -21,11 +23,17 @@ export const firePointer = (
     clientX: { value: point.x },
     clientY: { value: point.y },
     pointerId: { value: 1 },
-    pointerType: { value: "mouse" },
+    pointerType: { value: pointerType },
     button: { value: 0 },
   });
   fireEvent(el, event);
 };
+
+/**
+ * "touch" is a finger that pressed long enough to pick the block up;
+ * "early-touch" one that moved before the long press was over (a scroll).
+ */
+export type DragMode = "mouse" | "touch" | "early-touch";
 
 const START: Point = { x: 10, y: 10 };
 /** far enough from START to begin a drag, and the default pointer position */
@@ -65,23 +73,55 @@ export const pressFocus = (el: Element) => {
  * @returns additional functions you can call to simulate dragging/dropping the element
  * over/onto another element. Pass `point` to say where the pointer is.
  */
-export const drag = (srcNode: Element) => {
+export const drag = (srcNode: Element, mode: DragMode = "mouse") => {
+  const touch = mode !== "mouse";
+  const kind = touch ? "touch" : "mouse";
+  const fire = (
+    type: Parameters<typeof firePointer>[0],
+    el: Element,
+    point: Point,
+    under?: Element
+  ) => firePointer(type, el, point, under, kind);
+  // A touch drag starts after a long press. The press timer is held back and
+  // run by hand, so that a sequence never depends on the clock.
+  const held: (() => void)[] = [];
+  if (touch) {
+    const real = global.setTimeout;
+    jest.spyOn(global, "setTimeout").mockImplementation(((
+      fn: () => void,
+      ms?: number,
+      ...args: unknown[]
+    ) => {
+      if (ms === LONG_PRESS_MS) {
+        held.push(fn);
+        return 0;
+      }
+      return real(fn, ms, ...(args as []));
+    }) as unknown as typeof setTimeout);
+  }
   // (focus moves as the default action of the press, unless a handler stops it)
-  firePointer("pointerDown", srcNode, START);
-  if (fireEvent.mouseDown(srcNode)) {
+  fire("pointerDown", srcNode, START);
+  if (!touch && fireEvent.mouseDown(srcNode)) {
     pressFocus(srcNode);
   }
-  // moving a few pixels is what starts the drag
-  firePointer("pointerMove", srcNode, { x: START.x + 10, y: START.y + 10 });
+  if (touch) {
+    jest.mocked(global.setTimeout).mockRestore();
+    if (mode === "touch") {
+      act(() => held.forEach((fn) => fn()));
+    }
+  }
+  // moving a few pixels is what starts a mouse drag (and cancels a touch that
+  // moved before the long press was over: it was a scroll)
+  fire("pointerMove", srcNode, { x: START.x + 10, y: START.y + 10 });
   let at = AWAY;
   const next = {
     dragOver: (overNode: Element, point?: Point) => {
       at = point ?? AWAY;
-      firePointer("pointerMove", overNode, at);
+      fire("pointerMove", overNode, at);
       fireEvent.mouseOver(overNode);
       return {
         dragLeave: () => {
-          firePointer("pointerMove", document.body, { x: 900, y: 900 });
+          fire("pointerMove", document.body, { x: 900, y: 900 });
           fireEvent.mouseOut(overNode);
         },
       };
@@ -89,11 +129,11 @@ export const drag = (srcNode: Element) => {
     /** `under` is what `elementFromPoint` reports, when not `ontoNode` itself */
     dropOnto: (ontoNode: Element, point?: Point, under?: Element) => {
       next.dragOver(ontoNode, point);
-      firePointer("pointerUp", ontoNode, at, under);
+      fire("pointerUp", ontoNode, at, under);
     },
     /** release the drag without dropping on anything */
     cancel: () => {
-      firePointer("pointerCancel", srcNode, at);
+      fire("pointerCancel", srcNode, at);
     },
   };
   return next;
