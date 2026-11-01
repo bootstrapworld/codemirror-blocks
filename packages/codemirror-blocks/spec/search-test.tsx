@@ -4,6 +4,7 @@ import { API } from "../src/CodeMirrorBlocks";
 import { keyDown, mountCMB, teardown } from "../src/toolkit/test-utils";
 import * as announcer from "../src/announcer";
 import * as utils from "../src/utils";
+import ByBlock from "../src/ui/searchers/ByBlock";
 
 /**
  * Search in the editor: F3, Ctrl-F or Cmd-F opens the Search Settings dialog;
@@ -203,6 +204,32 @@ describe("searching by block type", () => {
     press("PageUp");
     expect(focused()).toBe("(g xy x)");
   });
+});
+
+describe("a searcher that does not move on", () => {
+  it("cannot make PageDown loop for ever", () => {
+    // as happened on a lambda AST whose blocks overlap: the focused block comes
+    // back again and again, with a cursor that is where the search started
+    chooseFirstBlockType();
+    const stuck = jest.spyOn(ByBlock, "search").mockImplementation((cur) => {
+      if (stuck.mock.calls.length > 100) throw new Error("searched for ever");
+      // stuck at `cur` until a search starts further on
+      if (cur.line > 0 || cur.ch > 2) return null;
+      return { node: cmb.getFocusedNode()!, cursor: cur };
+    });
+    press("PageDown");
+    expect(stuck.mock.calls.length).toBeGreaterThan(0);
+    expect(focused()).toBeDefined();
+  });
+  const chooseFirstBlockType = () => {
+    press("F3");
+    fireEvent.click(screen.getByRole("tab", { name: "Search by block" }));
+    const select = screen.getByRole("combobox") as HTMLSelectElement;
+    fireEvent.change(select, {
+      target: { name: "blockType", value: "literal" },
+    });
+    fireEvent.keyUp(select, { key: "Enter" });
+  };
 });
 
 describe("before anything is chosen", () => {

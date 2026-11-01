@@ -8,7 +8,7 @@ import { say } from "../announcer";
 import { ASTNode, Pos } from "../ast";
 import type { ReadonlyCMBEditor } from "../editor";
 import type { RootState } from "../state/reducers";
-import { playSound, WRAP } from "../utils";
+import { playSound, poscmp, WRAP } from "../utils";
 import ByBlock from "./searchers/ByBlock";
 import ByString from "./searchers/ByString";
 import type { Searcher } from "./searchers/Searcher";
@@ -48,6 +48,16 @@ type AnySearcher = Searcher<any, any>;
 const searchModes: AnySearcher[] = [ByString, ByBlock];
 const STRING = 0;
 const BLOCK = 1;
+// more passes than any document has blocks to skip over
+const MAX_PASSES = 10000;
+
+/** The position one character on from `pos`, wrapping across lines */
+const stepFrom = (pos: Pos, forward: boolean): Pos => {
+  if (forward) return { line: pos.line, ch: pos.ch + 1 };
+  if (pos.ch > 0) return { line: pos.line, ch: pos.ch - 1 };
+  if (pos.line === 0) return pos;
+  return { line: pos.line - 1, ch: Number.MAX_SAFE_INTEGER };
+};
 
 type StringSetting = typeof ByString.setting;
 
@@ -95,7 +105,9 @@ export function useSearch(
     // go from `start` to the first match that is not already focused
     const search = (start: Pos) => {
       let cur = start;
-      for (;;) {
+      // every pass must move on, or an AST that overlaps itself would loop
+      // forever: a result that does not get past `cur` moves it a character
+      for (let pass = 0; pass < MAX_PASSES; pass++) {
         const result = searcher.search(
           cur,
           settings[mode],
@@ -109,8 +121,12 @@ export function useSearch(
         if (result.node.id !== state.focusId) {
           return result.node;
         }
-        cur = result.cursor;
+        const advanced = forward
+          ? poscmp(result.cursor, cur) > 0
+          : poscmp(result.cursor, cur) < 0;
+        cur = advanced ? result.cursor : stepFrom(cur, forward);
       }
+      return null;
     };
     const found = from && search(from);
     if (found) {
