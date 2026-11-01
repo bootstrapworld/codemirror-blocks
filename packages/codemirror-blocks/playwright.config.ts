@@ -18,6 +18,9 @@ export default defineConfig({
   // at once (the default is half the cores, 8 on a 16-core laptop) real-mouse
   // drags are often dropped. Two workers is reliable and still quick.
   workers: 2,
+  // A broken build fails every test; don't spend an hour proving it.
+  maxFailures: process.env.CI ? 10 : 0,
+  globalTimeout: process.env.CI ? 20 * 60_000 : 0,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",

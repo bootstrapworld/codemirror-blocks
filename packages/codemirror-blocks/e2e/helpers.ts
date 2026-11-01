@@ -34,10 +34,22 @@ export const MOD = "ControlOrMeta";
  * way a user would (by clicking the toggle button).
  */
 export async function openInBlockMode(page: Page, code: string) {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
-  await page.waitForFunction(
-    () => !!(window as unknown as { cmb?: unknown }).cmb
-  );
+  // If the example page cannot start (a broken build, say), say so at once
+  // and show why, rather than letting every test wait out its own timeout.
+  await page
+    .waitForFunction(() => !!(window as unknown as { cmb?: unknown }).cmb, {
+      timeout: 15_000,
+    })
+    .catch(() => {
+      throw new Error(
+        `the example page never created window.cmb. Errors on the page: ${
+          errors.join("; ") || "(none)"
+        }`
+      );
+    });
   await page.evaluate((c) => {
     const api = (window as unknown as { cmb: Cmb }).cmb;
     api.setValue(c);
@@ -137,6 +149,28 @@ export const center = async (l: Locator) => {
 };
 
 /**
+ * The center of an element once it has stopped moving. The editor lays itself
+ * out for a while after the mode switch (gutters, fonts, re-rendered blocks),
+ * and on a slow machine such as a CI runner a target measured too early is
+ * somewhere else by the time the mouse gets there.
+ */
+export const settledCenter = async (l: Locator, timeout = 5000) => {
+  const deadline = Date.now() + timeout;
+  let last = await center(l);
+  for (;;) {
+    await l.page().waitForTimeout(80);
+    const now = await center(l);
+    if (now.x === last.x && now.y === last.y) {
+      return now;
+    }
+    if (Date.now() > deadline) {
+      throw new Error("element never stopped moving");
+    }
+    last = now;
+  }
+};
+
+/**
  * A native drag with the real mouse: press, move a little to start the drag,
  * then move onto the target and release. Chromium's drag emulation under
  * Playwright is reliable for large targets such as the trash can, but not for
@@ -174,11 +208,11 @@ export async function dragWithEvents(
   target: Locator,
   at?: { x: number; y: number }
 ) {
-  const s = await center(source);
-  const d = at ?? (await center(target));
+  const s = await settledCenter(source);
   await page.mouse.move(s.x, s.y);
   await page.mouse.down();
   await page.mouse.move(s.x + 6, s.y + 6, { steps: 3 });
+  const d = at ?? (await settledCenter(target));
   await page.mouse.move(d.x, d.y, { steps: 8 });
   await page.mouse.up();
 }

@@ -4,6 +4,7 @@ jobs:
   e2e:
     name: Playwright (Chromium)
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 
