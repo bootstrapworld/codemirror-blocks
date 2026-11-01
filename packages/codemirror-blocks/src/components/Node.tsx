@@ -219,8 +219,12 @@ const Node = ({ expandable = true, ...props }: Props) => {
   // The element can be replaced without the id changing (editing a node swaps
   // it for the editing box and back), so register it after every render.
   useEffect(() => {
-    if (nodeElementRef.current) {
-      nodeElementMap.set(props.node.id, nodeElementRef.current);
+    // (while it is being edited, the element is the editing box)
+    const el =
+      nodeElementRef.current ??
+      (editable ? document.getElementById(nodeElemId) : null);
+    if (el) {
+      nodeElementMap.set(props.node.id, el);
     }
   });
   useEffect(() => {
@@ -263,6 +267,17 @@ const Node = ({ expandable = true, ...props }: Props) => {
       nodeElementRef.current?.focus();
     }
   });
+
+  // Something else took focus without the box seeing a blur (the text was
+  // changed from outside while editing, and the focus moved to another node):
+  // the edit is over, so don't leave an orphaned box behind.
+  const focusedId = focusedNode?.id;
+  useEffect(() => {
+    if (!editable || !focusedId || focusedId === props.node.id) return;
+    const box = document.getElementById(nodeElemId);
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    if (box && box !== document.activeElement) setEditable(false);
+  }, [editable, focusedId, props.node.id, nodeElemId]);
 
   if (editable) {
     if (!editor) {

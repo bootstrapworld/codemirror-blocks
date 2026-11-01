@@ -3,6 +3,7 @@ import {
   cmd_ctrl,
   keyDown,
   mountCMB,
+  mouseDown,
   teardown,
 } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
@@ -71,5 +72,29 @@ describe("CodeMirror's scroller", () => {
     cmb.getCM().getScrollerElement().focus();
     keyDown("Z", cmd_ctrl);
     expect(cmb.getValue()).toBe("(f x)");
+  });
+});
+
+describe("changing the text through the API while a block is being edited", () => {
+  // (random sequences, seeds 20329, 17540, 20155) the box was left open with
+  // keyboard focus gone from it: the editor was stranded on the placeholder
+  beforeEach(() => {
+    cmb.setValue("a b c");
+    mouseDown(root(1));
+    keyDown("Enter", {}, root(1));
+    expect(document.activeElement).toHaveAttribute("contenteditable", "true");
+    cmb.replaceRange("\n(g w)", { line: 0, ch: 5 });
+  });
+
+  it("does not leave an editing box open that nothing can type into", () => {
+    expect(document.activeElement?.id).not.toBe("SR_fix_for_slow_dom");
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).not.toHaveAttribute("contenteditable");
+    expect(document.querySelectorAll("[contenteditable=true]")).toHaveLength(0);
+  });
+
+  it("so that the block can be moved on from", () => {
+    keyDown("ArrowDown", {}, root(0));
+    expect(document.activeElement?.id).toBe(`block-node-${root(1).id}`);
   });
 });

@@ -550,12 +550,21 @@ function runSequence(sequence: Sequence): RunResult {
   const clipboard = installFakeClipboard("zzz");
   const world: World = { cmb, store, clipboard };
   const errors = jest.spyOn(console, "error");
+  // An error thrown in an event handler is not thrown back at the operation:
+  // the page reports it, and jest would fail the test with no sequence to replay
+  const uncaught: string[] = [];
+  const onError = (e: ErrorEvent) => {
+    e.preventDefault();
+    uncaught.push(String(e.error?.stack ?? e.message));
+  };
+  window.addEventListener("error", onError);
   const trace: string[] = [];
   const text = () => cmb.getValue();
 
   // What is wrong with the editor right now, if anything
   let errorsSeen = errors.mock.calls.length;
   const problem = (): string | undefined => {
+    if (uncaught.length) return `threw ${uncaught.shift()}`;
     if (errors.mock.calls.length > errorsSeen) {
       const logged = errors.mock.calls[errorsSeen].map(String).join(" ");
       errorsSeen = errors.mock.calls.length;
@@ -640,6 +649,7 @@ function runSequence(sequence: Sequence): RunResult {
     if (failed) return failed;
     return { trace };
   } finally {
+    window.removeEventListener("error", onError);
     clipboard.restore();
     restoreLayout();
     delete (document as { elementFromPoint?: unknown }).elementFromPoint;
@@ -809,6 +819,91 @@ describe("sequences that once broke the editor", () => {
     check({
       code: "(f x y)\n(g z)\nw",
       steps: steps.map(([op, r]) => ({ op, r })),
+    });
+  }, 120_000);
+
+  it("seed 11091: deleting every part of an unrecognised expression (the printer threw on the empty list)", () => {
+    check({
+      code: "(f x y)\n(g z)\nw",
+      steps: [
+        {
+          op: "change the text through the API",
+          r: [847361539, 160455525, 792783203, 646824441],
+        },
+        {
+          op: "paste beside a block",
+          r: [559567038, 490967443, 990440111, 101965375],
+        },
+        { op: "undo", r: [948128637, 830180611, 585762165, 1435229] },
+        { op: "delete", r: [31388739, 282762804, 162580369, 956265754] },
+        { op: "delete", r: [116882089, 442597137, 674036963, 933230459] },
+        {
+          op: "drag from the toolbar onto a block",
+          r: [672017864, 346665341, 549369081, 994102360],
+        },
+        { op: "delete", r: [227266182, 118142998, 411797776, 345797588] },
+      ],
+    });
+  }, 120_000);
+
+  it("seed 20329: Enter on a literal, the text changed through the API, then a move (the box stayed open with the focus gone, so the keyboard was stranded)", () => {
+    check({
+      code: "a b c",
+      steps: [
+        {
+          op: "collapse or expand",
+          r: [974686041, 393099030, 159656678, 71107698],
+        },
+        {
+          op: "change the text through the API",
+          r: [563141818, 628907888, 90985575, 723781785],
+        },
+        { op: "move around", r: [927520137, 596705251, 494365265, 398110040] },
+      ],
+    });
+  }, 120_000);
+
+  it("seed 17540: Enter on a literal, the text changed through the API, then a cancelled paste", () => {
+    check({
+      code: "(f x y)\n(g z)\nw",
+      steps: [
+        {
+          op: "collapse or expand",
+          r: [598336489, 826457895, 507273010, 265504131],
+        },
+        {
+          op: "change the text through the API",
+          r: [129186773, 631025327, 466153341, 909719125],
+        },
+        {
+          op: "paste at the top level",
+          r: [481923635, 580240645, 98672362, 292911046],
+        },
+      ],
+    });
+  }, 120_000);
+
+  it("seed 20155: Enter on a literal, the text changed through the API, then typing and an insert beside a block (an orphaned editing box left a block undrawn)", () => {
+    check({
+      code: "(f x y)\n(g z)\nw",
+      steps: [
+        {
+          op: "collapse or expand",
+          r: [597559473, 410646331, 644857653, 17131297],
+        },
+        {
+          op: "change the text through the API",
+          r: [494936315, 80101048, 510348461, 824699950],
+        },
+        {
+          op: "type at the top level",
+          r: [217412442, 798088282, 13642044, 905774059],
+        },
+        {
+          op: "insert beside a block",
+          r: [522170540, 946118736, 798589169, 434503753],
+        },
+      ],
     });
   }, 120_000);
 });
