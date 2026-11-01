@@ -139,3 +139,25 @@ describe("text that is not a program", () => {
     expect(() => parsed(code)).toThrow();
   });
 });
+
+describe("a comment and the forms after it", () => {
+  const blocks = (code: string) =>
+    parsed(code).rootNodes.map((r) => ({
+      text: r.toString(),
+      at: r.srcRange(),
+    }));
+
+  it("is not given to a later form when another form comes between", () => {
+    // (the lexer kept the comment for the form on the next line, whose block
+    // then covered the `z` before it, which was left with no block)
+    const [z, hi] = blocks('#| c |# z\n"hi"');
+    expect(z.text).toBe("z");
+    expect(z.at.to).toEqual({ line: 0, ch: 9 });
+    expect(hi.text).toBe('"hi"');
+    expect(hi.at.from).toEqual({ line: 1, ch: 0 });
+  });
+
+  it("is still given to the form on the line below it", () => {
+    expect(blocks('; c\nz\n"hi"')[0].text).toBe("#| c |#\nz");
+  });
+});

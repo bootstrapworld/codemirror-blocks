@@ -14,6 +14,30 @@ type Sexp = any;
 // structures are also constructed dynamically with varying argument shapes
 const structures: Sexp = structuresModule;
 
+/**
+ * The lexer gives a form the comment on the line above it, but it forgets the
+ * comment only when a form on the next line takes it. A comment followed by
+ * another form on its own line (`#| c |# z`) stays for the form after that,
+ * which then claims a comment with a form in between: its block would swallow
+ * that form. Take back any comment that has a sibling between it and its form.
+ */
+function dropStaleComments(sexps: Sexp) {
+  if (!(sexps instanceof Array)) return;
+  sexps.forEach((sexp: Sexp, i: number) => {
+    const prev = sexps[i - 1];
+    const comment = sexp?.comment;
+    if (
+      comment?.location &&
+      prev?.location &&
+      comment.location.startChar < sexp.location.startChar &&
+      prev.location.endChar > comment.location.startChar
+    ) {
+      sexp.comment = undefined;
+    }
+    dropStaleComments(sexp);
+  });
+}
+
 export function parse(code: string) {
   function fallback(sexp: Sexp): Sexp {
     const elts =
@@ -776,7 +800,9 @@ export function parse(code: string) {
   }
 
   setSource(code);
-  const ast = parseStar(lex(code));
+  const sexps = lex(code);
+  dropStaleComments(sexps);
+  const ast = parseStar(sexps);
   const rootNodes = ast
     .map(parseNodeOrNull)
     .filter((item: ASTNode | null) => item !== null);
