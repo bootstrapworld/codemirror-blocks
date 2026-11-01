@@ -123,6 +123,15 @@ const NodeEditable = ({
         blurringRef.current = false;
       }
     };
+    // A block normally takes focus back. With none to take it (an empty
+    // document, or one of only comments), the box going away would leave focus
+    // on the page body, and keys such as undo would stop working: keep it in
+    // the editor.
+    const keepFocusInEditor = (_: AppDispatch, getState: () => RootState) => {
+      if (!selectors.getFocusedNode(getState())) {
+        props.editor.focus();
+      }
+    };
     const handleBlur = () => {
       const { target } = props;
       dispatch((dispatch: AppDispatch, getState: () => RootState) => {
@@ -137,6 +146,7 @@ const NodeEditable = ({
           props.onDisableEditable();
           const nid = focusedNode && focusedNode.nid;
           dispatch(activateByNid(props.editor, nid));
+          dispatch(keepFocusInEditor);
           return;
         }
 
@@ -162,6 +172,7 @@ const NodeEditable = ({
           props.onChange(null);
           props.onDisableEditable();
           dispatch(actions.clearError());
+          dispatch(keepFocusInEditor);
           say(annt);
         } else {
           console.error(result.exception);
@@ -192,14 +203,7 @@ const NodeEditable = ({
           props.onDisableEditable();
           dispatch(actions.clearError());
           dispatch(activateByNid(props.editor, null, { allowMove: false }));
-          // A block normally takes focus back (above). With none to take it (an
-          // empty document), the box going away would leave focus on the page
-          // body, and keys such as undo would stop working: keep it in the editor.
-          dispatch((_, getState) => {
-            if (!selectors.getFocusedNode(getState())) {
-              props.editor.focus();
-            }
-          });
+          dispatch(keepFocusInEditor);
           return;
         }
       }

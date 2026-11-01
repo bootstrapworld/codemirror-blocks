@@ -1220,6 +1220,18 @@ describe("sequences that once broke the editor", () => {
     });
   }, 120_000);
 
+  it("seeds 310005, 310037: a paste into a comment, committed in a document with no blocks (focus fell to the page, so undo did nothing)", () => {
+    check({
+      code: "; only a comment\n#| and another |#",
+      steps: [
+        {
+          op: "paste at the top level",
+          r: [641877420, 786084055, 837963356, 227470698],
+        },
+      ],
+    });
+  }, 120_000);
+
   it("seed 532: cut, a trash-can drag, a cancelled paste, then undo (focus lost with no block left)", () => {
     check({
       code,

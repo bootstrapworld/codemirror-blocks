@@ -53,6 +53,21 @@ describe("cancelling a top-level paste in an empty document", () => {
   });
 });
 
+describe("committing a top-level paste in a document with no blocks", () => {
+  // (random sequence, seeds 310005, 310037) a paste into a comment, committed
+  // with Enter, left focus on the page body, so Ctrl-Z did nothing
+  it("leaves focus in the editor, so that undo works", () => {
+    cmb.setValue("; only a comment\n#| and another |#");
+    cmb.clearHistory();
+    cmb.setCursor({ line: 0, ch: 15 });
+    pasteAtCursor(cmb, "(g w)");
+    keyDown("Enter");
+    expect(insideEditor()).toBe(true);
+    keyDown("Z", cmd_ctrl);
+    expect(cmb.getValue()).toBe("; only a comment\n#| and another |#");
+  });
+});
+
 describe("CodeMirror's scroller", () => {
   // (random sequence, seed 11, in a real browser) a press on blank space that
   // turned into a drag left focus on the scroller, where no key is handled
