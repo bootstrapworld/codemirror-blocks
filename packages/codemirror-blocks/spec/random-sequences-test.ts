@@ -630,6 +630,8 @@ const operations: Operation[] = [
   {
     name: "collapse a block, then change around it",
     run: (w, r) => {
+      // (clicking away from an edit box commits it, which parses the text anew)
+      stopEditing();
       const compounds = visibleNodes(w).filter((n) => [...n.children()].length);
       const node = pick(compounds, r[1]);
       if (!node) return;
@@ -1550,6 +1552,18 @@ describe("sequences that once broke the editor", () => {
         {
           op: "delete",
           r: [39661821, 880924322, 145395145, 598260645],
+        },
+      ],
+    });
+  }, 120_000);
+
+  it("pasting a comment into a list after a string: the string took the comment inside the list", () => {
+    check({
+      code: '"two words" "say \\"hi\\" now" "tab\\there" "" (f "x y")',
+      steps: [
+        {
+          op: "paste awkward text",
+          r: [970645690, 104790159, 206812999, 348948731],
         },
       ],
     });

@@ -157,6 +157,14 @@ describe("a comment and the forms after it", () => {
     expect(hi.at.from).toEqual({ line: 1, ch: 0 });
   });
 
+  it("is not given to the form before a list that holds it", () => {
+    // (`a` took the comment inside the list after it, and its block overlapped the list)
+    const [a, list] = blocks("a (#| c |# z y)");
+    expect(a.text).toBe("a");
+    expect(a.at.to).toEqual({ line: 0, ch: 1 });
+    expect(list.at.from).toEqual({ line: 0, ch: 2 });
+  });
+
   it("is still given to the form on the line below it", () => {
     expect(blocks('; c\nz\n"hi"')[0].text).toBe("#| c |#\nz");
   });

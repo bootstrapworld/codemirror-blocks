@@ -25,12 +25,23 @@ function dropStaleComments(sexps: Sexp) {
   if (!(sexps instanceof Array)) return;
   sexps.forEach((sexp: Sexp, i: number) => {
     const prev = sexps[i - 1];
+    const next = sexps[i + 1];
     const comment = sexp?.comment;
     if (
       comment?.location &&
       prev?.location &&
       comment.location.startChar < sexp.location.startChar &&
       prev.location.endChar > comment.location.startChar
+    ) {
+      sexp.comment = undefined;
+    }
+    // a comment after a form is its own only if nothing starts before it: in
+    // `a (#| c |# z)` the comment sits inside the list, not after `a`
+    if (
+      comment?.location &&
+      next?.location &&
+      comment.location.startChar >= sexp.location.endChar &&
+      next.location.startChar < comment.location.startChar
     ) {
       sexp.comment = undefined;
     }
