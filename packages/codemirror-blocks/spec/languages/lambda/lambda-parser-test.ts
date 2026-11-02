@@ -374,3 +374,11 @@ describe("the extent of a let", () => {
     expect(prog[0].to).toEqual({ line: 0, ch: 22 });
   });
 });
+
+describe("the extent of a not", () => {
+  it("covers the ! and its operand", () => {
+    const { prog } = parseToIntermediateAST("!x");
+    expect(prog[0].from).toEqual({ line: 0, ch: 0 });
+    expect(prog[0].to).toEqual({ line: 0, ch: 2 });
+  });
+});

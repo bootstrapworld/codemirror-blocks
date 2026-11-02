@@ -1524,6 +1524,19 @@ describe("sequences that once broke the editor", () => {
       ],
     });
   }, 120_000);
+
+  it("seed 81000: pasting `!x` over a lambda statement (a `!` block was given an empty range, so it had no marker)", () => {
+    check({
+      code: "x = 1",
+      language: "lambda",
+      steps: [
+        {
+          op: "paste over a selection",
+          r: [136615979, 629533139, 948695855, 480013035],
+        },
+      ],
+    });
+  }, 120_000);
 });
 
 describe("random sequences of operations", () => {

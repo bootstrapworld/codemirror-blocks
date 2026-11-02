@@ -281,14 +281,11 @@ function parse(input: TokenStream): LambdaNode {
       }
       if (isPunc("{")) return parseProg();
       if (isOp("!")) {
+        const from = fromLocation;
         input.next();
+        const body = parseExpression();
         toLocation = input.pos().to;
-        return {
-          from: fromLocation,
-          to: toLocation,
-          type: "not",
-          body: parseExpression(),
-        };
+        return { from: from, to: toLocation, type: "not", body: body };
       }
       if (isKw("let")) return parseLet();
       if (isKw("if")) return parseIf();
