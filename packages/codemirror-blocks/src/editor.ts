@@ -295,15 +295,21 @@ export class CodeMirrorFacade implements CMBEditor {
     if (window.event?.type === "blur" || window.event?.type === "focusout") {
       queueMicrotask(() => {
         // (the block may be gone by then)
-        if (node.element) this.scrollASTNodeIntoView(node);
+        // (and the event is still the current one in a microtask run right
+        // after its handler: asking again would defer for ever)
+        if (node.element) this.scrollToElement(node, node.element);
       });
       return;
     }
+    this.scrollToElement(node, node.element);
+  }
+
+  private scrollToElement(node: ASTNode, element: HTMLElement) {
     // a block that was just removed still has its element, but nowhere to scroll to
-    if (!node.element.isConnected) return;
+    if (!element.isConnected) return;
     this.codemirror.scrollIntoView(node.from);
     // get the *actual* bounding rect
-    let { top, bottom, left, right } = node.element.getBoundingClientRect();
+    let { top, bottom, left, right } = element.getBoundingClientRect();
     const offset = this.codemirror.getWrapperElement().getBoundingClientRect();
     const scroll = this.codemirror.getScrollInfo();
     top = top + scroll.top - offset.top;
@@ -313,7 +319,7 @@ export class CodeMirrorFacade implements CMBEditor {
     this.codemirror.scrollIntoView({ top, bottom, left, right });
     this.codemirror
       .getScrollerElement()
-      .setAttribute("aria-activedescendent", node.element.id);
+      .setAttribute("aria-activedescendent", element.id);
   }
 
   replaceMarkerWidget(
