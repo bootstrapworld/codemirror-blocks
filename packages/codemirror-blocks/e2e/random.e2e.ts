@@ -44,8 +44,14 @@ const seededRandom = (seed: number) => {
 const setClipboard = (page: Page, text: string) =>
   page.evaluate((t) => navigator.clipboard.writeText(t), text);
 
-/** The blocks a user can see and click right now */
-const blocks = (page: Page) => page.getByRole("treeitem");
+/**
+ * The blocks a user can see and click right now: not those inside a collapsed
+ * block, which stay in the page under the collapsed block that covers them
+ */
+const blocks = (page: Page) =>
+  page.locator(
+    '[role="treeitem"]:not([aria-expanded="false"] [role="treeitem"])'
+  );
 
 /** Click a block's own padding (selects it without editing its text) */
 const pick = async (page: Page, index: number) => {
