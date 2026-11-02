@@ -305,9 +305,11 @@ export class CodeMirrorFacade implements CMBEditor {
   }
 
   private scrollToElement(node: ASTNode, element: HTMLElement) {
+    // (a block CodeMirror has dropped from a long document is drawn again once
+    // its line is in view)
+    this.codemirror.scrollIntoView(node.from);
     // a block that was just removed still has its element, but nowhere to scroll to
     if (!element.isConnected) return;
-    this.codemirror.scrollIntoView(node.from);
     // get the *actual* bounding rect
     let { top, bottom, left, right } = element.getBoundingClientRect();
     const offset = this.codemirror.getWrapperElement().getBoundingClientRect();

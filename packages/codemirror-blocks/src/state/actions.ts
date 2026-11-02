@@ -405,6 +405,10 @@ export function activateByNid(
       if (sr) {
         sr.focus();
       }
+      // bring its line into view, so that CodeMirror draws the block again
+      if (options.allowMove) {
+        editor.scrollASTNodeIntoView(newNode);
+      }
     }
 
     cancelAnnouncement(); // clear any overrideable announcements
