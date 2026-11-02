@@ -353,29 +353,61 @@ the trash can using a stale editor) would each have been caught by 1, 3 or 5.
 ### Failures reported by people
 
 The bug button in the editor opens a GitHub issue whose body holds a
-` ```json cmb-report ` block: the editor version, language, mode, the
-document, the last 200 recorded actions (new document text, focus moving, mode
-switches, collapsing, undo/redo), the last reported error, and the browser's
-user agent. Nothing else is sent, and the person sees the whole body before
-they submit it. If the block is too long for the link (about 7.5k characters),
-the oldest actions are left out and the full block is copied to the clipboard.
+` ```json cmb-report ` block (`format: 2`): the editor version, language, mode,
+the document, the last 200 recorded entries, the last reported error, and the
+browser's user agent. The entries are of two kinds, in order:
+
+- **states**: new document text, focus moving, mode switches, collapsing,
+  undo/redo (what the reducer saw);
+- **events**: what the person did (`UIEvent` in `src/state/activityLog.ts`):
+  keys the editor acts on (key, modifiers, the block that had it), clicks on
+  blocks, drags (from a block or toolbar entry, to a block, the n-th gap, a
+  spot of whitespace or the trash can; mouse or touch), the string an edit box
+  was saved with (or that it was cancelled), the character typed and the text
+  pasted at the top level (with the selection), the clipboard text read by a
+  paste, the mode button, and search-dialog keys and settings. Blocks are
+  named by `nid`. **Typed and pasted text is therefore sent**; the issue text
+  says so, and the person sees the whole body before they submit it.
+
+Nothing is recorded until something happens, and the log keeps the last 200
+entries (the document just before them is kept too). If the block is too long
+for the link (about 7.5k characters) the oldest entries are left out and the
+full block is copied to the clipboard. Format 1 reports (states only) are still
+read.
 
 `node scripts/field-reports.js` (uses `gh api`, read-only) downloads issues
 labelled `bug-report` or `User Submitted`, saves each report as
 `soak-results/field/issue-N.json`, and appends a `kind: "field"` entry to
 `soak-results/failures.jsonl` (one per issue number; `--list` records nothing;
 `--file body.md` or `--file -` ingests a saved body; old issues without the
-block are skipped with a reason). Replay one with the command in its entry:
+block are skipped with a reason). The entry has `format`, `steps`, `events`
+(how many entries are things the person did) and a `replay` command:
 
     CMB_FIELD_REPLAY=soak-results/field/issue-N.json npx jest field-replay
 
-which runs the actions in jsdom, checks the invariants after each, and shrinks a
-failure. It sets the editor into the state each action left it in; it does not
-re-press the keys or re-do the drags that led there, so a bug that depends on
-the exact event sequence is only found if its result shows up in the document,
-focus, or collapsing. The report's own `error` (message, stack) is the record of
-those. Turn a confirmed one into a regression test by hand from the shrunk
-actions (`--promote` knows only the randomized sequences).
+The replayer (`spec/helpers/fieldReplay.ts`) starts from the recorded start
+document and, when the report has events, **drives them again** through the
+helpers the random sequences use (`helpers/gestures.ts`, `dnd.ts`,
+`editing.ts`, the fake clipboard), checking the invariants and `console.error`
+after each, and shrinks a failure. The state entries are not applied (they are
+what the events caused), except those before the first event, which set the
+editor up. It prints which way it ran. It **falls back to putting the editor in
+each recorded state** (the old behaviour) when there are no events (a format 1
+report), or when nothing broke but some event could not be driven, and the notes
+say which. Turn a confirmed one into a regression test by hand from the shrunk
+entries (`--promote` knows only the randomized sequences).
+
+What still cannot be replayed: the search dialog (recorded, not driven); a
+click that is not on a block (toolbar buttons other than the mode button,
+the page); keys that the editor does not act on, and anything typed into an
+edit box before it was saved (only the saved string is kept, so a key that
+misbehaves _inside_ a box is not seen); drops that landed on nothing (replayed
+as a cancelled drag); exact pointer paths and timing (a replay uses jsdom's
+synthetic events, so a bug that needs real layout, focus or the system
+clipboard is only in the Playwright suite); Ctrl/Cmd differences between the
+reporter's platform and the one replaying (swapped for letters and Enter
+only); entries older than the last 200 (the start document stands in for
+them); and anything done through the API rather than the interface.
 
 ## 13. What jsdom can't cover
 

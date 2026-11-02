@@ -22,6 +22,7 @@ import { err, ok, Result } from "../edits/result";
 import * as selectors from "./selectors";
 import type { ActionFocus } from "./reducers";
 import { pasteFromClipboard } from "../copypaste";
+import { recordEvent } from "./activityLog";
 
 export const setAST = (ast: AST) => ({
   type: "SET_AST" as const,
@@ -279,6 +280,7 @@ export const paste =
   (dispatch, getState) => {
     checkTarget(target);
     pasteFromClipboard((text) => {
+      recordEvent({ type: "CLIP", text });
       if (text.trim() === "") {
         // an empty clipboard must not insert anything (not even whitespace)
         return;

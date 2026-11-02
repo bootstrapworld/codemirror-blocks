@@ -206,6 +206,14 @@ field declared. The node was:`,
     dispatch({ type: "SET_EDITABLE", id: id, bool });
 
   const [{ isOver }, connectDropTarget] = useDrop({
+    // (the n-th gap in the editor, in document order)
+    describe: (el) => ({
+      gap: [
+        ...(el.closest(".CodeMirror") ?? document).querySelectorAll(
+          ".blocks-drop-target"
+        ),
+      ].indexOf(el),
+    }),
     drop: (item, info) => {
       if (!editor) {
         // codemirror hasn't mounted yet, do nothing.

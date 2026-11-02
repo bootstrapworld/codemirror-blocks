@@ -24,6 +24,18 @@ const DragAndDropEditor = (props: Props) => {
   const editorRef = useRef<CodeMirrorFacade | undefined>(undefined);
   const dispatch: AppDispatch = useDispatch();
   const [, connectDropTarget] = useDrop({
+    describe: (_el, info) => {
+      const { x: left, y: top } = info.clientOffset;
+      const cm = editorRef.current;
+      const droppedOn = left && top && document.elementFromPoint(left, top);
+      if (!cm || !droppedOn) return undefined;
+      const onWhitespace = !cm
+        .getAllBlockNodeMarkers()
+        .some((mark) => mark.replacedWith.contains(droppedOn as Element));
+      if (!onWhitespace) return undefined;
+      const { line, ch } = cm.codemirror.coordsChar({ left, top });
+      return { ws: { line, ch } };
+    },
     drop: (item, info) => {
       if (!editorRef.current) {
         // editor hasn't mounted yet, do nothing.

@@ -8,6 +8,7 @@ import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
 import { AppDispatch } from "../state/store";
 import classNames from "classnames";
 import { useDrag, useDrop } from "../dnd";
+import { recordEvent } from "../state/activityLog";
 import { RootState } from "../state/reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
@@ -128,6 +129,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     } else {
       // prevent ancestors from stealing focus
       e.stopPropagation();
+      recordEvent({ type: "MOUSE", nid: props.node.nid });
     }
     if (!isErrorFree) {
       // TODO(Oak): is this the best way?
@@ -173,6 +175,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     `blocks-${props.node.type}`,
   ];
   const [{ isOver }, connectDropTarget] = useDrop({
+    describe: () => ({ nid: props.node.nid }),
     drop: (item, info) => {
       if (!editor) {
         // codemirror hasn't mounted yet, do nothing
@@ -191,6 +194,10 @@ const Node = ({ expandable = true, ...props }: Props) => {
     },
   });
   const [{ isDragging }, connectDragSource] = useDrag({
+    describe: () =>
+      isDummyPos(props.node.from) && isDummyPos(props.node.to)
+        ? { tool: props.node.toString() }
+        : { nid: props.node.nid },
     item: () => {
       if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
         return { content: props.node.toString() };

@@ -11,6 +11,7 @@ const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
   const dispatch: AppDispatch = useDispatch();
   const { editor } = props;
   const [{ isOver }, drop] = useDrop({
+    describe: () => ({ trash: true as const }),
     drop: (item) => {
       if (!item.id) {
         return; // Someone dragged from the toolbar to the trash can.

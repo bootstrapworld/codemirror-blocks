@@ -29,6 +29,37 @@ const issue = (number, b) => ({
   body: b,
 });
 
+describe("format 2 (events)", () => {
+  const v2 = {
+    ...report,
+    format: 2,
+    actions: [
+      { type: "MOUSE", nid: 1 },
+      { type: "KEY", key: "Z", mods: "CS", nid: null },
+      { type: "DRAG", from: { tool: "sqrt" }, to: { gap: 2 } },
+      { type: "DRAG", from: { nid: 1 }, to: { ws: { line: 0, ch: 3 } } },
+      { type: "EDIT", text: "(f y)", how: "enter" },
+      { type: "KEY", key: 5, nid: 1 }, // malformed
+      { type: "SET_FOCUS", nid: 1 },
+    ],
+  };
+  it("keeps well-formed events and drops malformed ones", () => {
+    const p = lib.parseIssueBody(body(v2));
+    expect(p.report.actions).toHaveLength(6);
+    expect(p.warnings[0]).toMatch(/1 malformed/);
+  });
+  it("still reads format 1", () => {
+    expect(lib.parseIssueBody(body(report)).report.format).toBe(1);
+  });
+  it("says in the entry how many events there are, and describes them", () => {
+    const { report: r } = lib.parseIssueBody(body(v2));
+    const e = lib.toEntry(issue(3, ""), r);
+    expect(e).toMatchObject({ format: 2, events: 5, steps: 6 });
+    expect(e.trace).toContain("drag toolbar sqrt to gap 2");
+    expect(e.trace).toContain("key CS-Z on editor");
+  });
+});
+
 describe("reading an issue body", () => {
   it("finds the report block among the human text", () => {
     const p = lib.parseIssueBody(body(report));

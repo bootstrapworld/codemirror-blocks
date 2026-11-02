@@ -1,4 +1,5 @@
 import React, { ReactElement, useMemo, useRef, useState } from "react";
+import { recordEvent } from "../state/activityLog";
 import BlockEditor from "./BlockEditor";
 import TextEditor from "./TextEditor";
 import Dialog from "../components/Dialog";
@@ -52,6 +53,7 @@ function ToggleEditor(props: ToggleEditorProps) {
     if (!editor) {
       return; // editor hasn't mounted yet, do nothing.
     }
+    recordEvent({ type: "MODE", blocks: blockMode });
     const result = dispatch(
       actions.setBlockMode(blockMode, editor.getValue(), props.language)
     );

@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { recordEvent } from "../state/activityLog";
 import { useSelector } from "react-redux";
 import * as selectors from "../state/selectors";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
@@ -202,6 +203,9 @@ export function useSearch(
   // match has to wait until that has happened
   const searchAfterCloseRef = useRef(false);
   const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape" || e.key === "Enter") {
+      recordEvent({ type: "SEARCH", key: e.key });
+    }
     if (e.key === "Escape") {
       close();
     } else if (e.key === "Enter") {
@@ -236,6 +240,7 @@ export function useSearch(
   };
 
   const handleChange = (index: number) => (setting: unknown) => {
+    recordEvent({ type: "SEARCH", set: setting });
     setSettings((all) => all.map((s, i) => (i === index ? setting : s)));
     setMode(index);
   };

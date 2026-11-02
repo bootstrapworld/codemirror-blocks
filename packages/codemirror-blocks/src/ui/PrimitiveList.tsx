@@ -24,6 +24,7 @@ export const Primitive = ({
   const { primitive, className, onFocus } = props;
   const [, connectDragSource] = useDrag({
     item: { content: primitive.name },
+    describe: () => ({ tool: primitive.name }),
   });
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

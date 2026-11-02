@@ -28,6 +28,7 @@ import type { AppHelpers } from "./components/Context";
 import * as selectors from "./state/selectors";
 import type { RootState } from "./state/reducers";
 import { copy } from "./copypaste";
+import { recordEvent } from "./state/activityLog";
 
 type BlockEditorEnv = {
   isNodeEnv: false;
@@ -599,11 +600,38 @@ const doTopmostAction =
 // Recieves the key event, an environment (BlockEditor or Node), and the
 // editor's keyMap. If there is a handler for that event, add some utility
 // methods and call the handler with the environment.
+/** The `key` of a keyboard event as the event helpers spell it (some events have none) */
+const eventKey = (e: React.KeyboardEvent) => {
+  const key =
+    e.key ??
+    {
+      Left: "ArrowLeft",
+      Right: "ArrowRight",
+      Up: "ArrowUp",
+      Down: "ArrowDown",
+      Esc: "Escape",
+      Space: " ",
+    }[CodeMirror.keyName(e)] ??
+    CodeMirror.keyName(e).replace(/^((Ctrl|Cmd|Shift|Alt)-)+/, "");
+  return key.length === 1 ? key.toUpperCase() : key;
+};
+
 export const keyDown =
   (e: React.KeyboardEvent, inputEnv: InputEnv): AppThunk =>
   (dispatch) => {
     const handler = commandMap[defaultKeyMap[CodeMirror.keyName(e)]];
     if (handler) {
+      const mods =
+        (e.ctrlKey ? "C" : "") +
+        (e.metaKey ? "M" : "") +
+        (e.shiftKey ? "S" : "") +
+        (e.altKey ? "A" : "");
+      recordEvent({
+        type: "KEY",
+        key: eventKey(e),
+        ...(mods ? { mods } : {}),
+        nid: inputEnv.isNodeEnv ? inputEnv.node.nid : null,
+      });
       e.stopPropagation();
       dispatch((dispatch, getState) => {
         // set up the environment

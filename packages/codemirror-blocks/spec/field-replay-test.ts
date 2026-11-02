@@ -1,13 +1,29 @@
 import * as fs from "fs";
-import { act } from "@testing-library/react";
-import lambda from "../src/languages/lambda";
 import wescheme from "../src/languages/wescheme";
-import { mountCMB, teardown } from "../src/toolkit/test-utils";
-import * as actions from "../src/state/actions";
-import * as selectors from "../src/state/selectors";
-import type { BugReport, ReportAction } from "../src/ui/bugReport";
-import { findInvariantViolations } from "./helpers/invariants";
-import { minimise } from "./helpers/random";
+import * as copypaste from "../src/copypaste";
+import {
+  cmd_ctrl,
+  keyDown,
+  mountCMB,
+  mouseDown,
+  teardown,
+} from "../src/toolkit/test-utils";
+import {
+  getActivityBase,
+  getLog,
+  resetActivityLog,
+} from "../src/state/activityLog";
+import {
+  BugReport,
+  ReportAction,
+  buildIssue,
+  toReportActions,
+} from "../src/ui/bugReport";
+import { installFakeClipboard } from "./helpers/clipboard";
+import { setEditableText } from "./helpers/editing";
+import { dragOnto, dropTargets, toolbarPrimitive } from "./helpers/gestures";
+import { isEvent, replay, replayReport, shrink } from "./helpers/fieldReplay";
+const { parseIssueBody } = require("../../../scripts/field-reports");
 
 /**
  * Replays a bug report sent from the editor (src/ui/bugReport.ts), in jsdom.
@@ -15,118 +31,10 @@ import { minimise } from "./helpers/random";
  *   CMB_FIELD_REPLAY=soak-results/field/issue-123.json npx jest field-replay
  *
  * (scripts/field-reports.js saves those files and prints the command.)
- * A failing report is shrunk, like a randomized sequence.
- *
- * What can be replayed: the document after each edit (typed, dropped, pasted,
- * cut... all arrive as the new text), focus moving to a block, mode switches,
- * collapsing and expanding, undo and redo. What cannot: the keys, clicks and
- * drags that *caused* those; the editor is put in the state they left it in,
- * not driven through them. A bug that needs the exact event sequence (a
- * handler that throws on a particular key) will not show up here; the report's
- * own `error` is the record of it.
+ * A failing report is shrunk, like a randomized sequence. How it is replayed
+ * (the person's keys, clicks and drags again, or only the states they left the
+ * editor in) is described in helpers/fieldReplay.ts, and the run says which.
  */
-
-const languages: Record<string, typeof wescheme> = { wescheme, lambda };
-
-export type ReplayResult = { failedAt: number; problem: string } | undefined;
-
-/** Run the actions in a fresh editor; say which one broke it, and how. */
-export function replay(
-  report: Pick<BugReport, "language" | "startCode">,
-  list: readonly ReportAction[]
-): ReplayResult {
-  const language = languages[report.language];
-  if (!language) {
-    return { failedAt: -1, problem: `unknown language ${report.language}` };
-  }
-  const { cmb, store } = mountCMB(language);
-  const errors = jest.spyOn(console, "error").mockImplementation(() => {});
-  // (jsdom has no scrollIntoView, which the editor calls to keep a block in view)
-  const proto = Element.prototype as { scrollIntoView?: () => void };
-  proto.scrollIntoView ??= () => {};
-  try {
-    if (report.startCode) cmb.setValue(report.startCode);
-    cmb.clearHistory();
-    for (const [i, a] of list.entries()) {
-      try {
-        apply(cmb, store, a, language);
-      } catch (e) {
-        return { failedAt: i, problem: `threw ${String(e)}` };
-      }
-      if (errors.mock.calls.length) {
-        return {
-          failedAt: i,
-          problem: `console.error: ${errors.mock.calls[0].map(String).join(" ")}`,
-        };
-      }
-      const violations = findInvariantViolations();
-      if (violations.length) {
-        return { failedAt: i, problem: violations.join("\n") };
-      }
-    }
-    return undefined;
-  } finally {
-    errors.mockRestore();
-    teardown();
-  }
-}
-
-function apply(
-  cmb: ReturnType<typeof mountCMB>["cmb"],
-  store: ReturnType<typeof mountCMB>["store"],
-  a: ReportAction,
-  language: typeof wescheme
-) {
-  const node = (nid: number) =>
-    selectors.getAST(store.getState()).nodeNIdMap.get(nid);
-  switch (a.type) {
-    case "SET_AST":
-      return cmb.executeAction({ type: "SET_AST", code: a.code });
-    case "SET_FOCUS":
-      return cmb.executeAction({ type: "SET_FOCUS", nid: a.nid });
-    case "SET_BLOCK_MODE":
-      return act(() => {
-        store.dispatch(
-          actions.setBlockMode(a.enabled, cmb.getValue(), language)
-        );
-      });
-    case "COLLAPSE":
-    case "UNCOLLAPSE": {
-      const n = node(a.nid);
-      if (!n) return; // (the node is not there in this replay: nothing to do)
-      const make =
-        a.type === "COLLAPSE" ? actions.collapseNode : actions.uncollapseNode;
-      return act(() => {
-        store.dispatch(make(n));
-      });
-    }
-    case "COLLAPSE_ALL":
-      return act(() => {
-        store.dispatch(actions.collapseAll());
-      });
-    case "UNCOLLAPSE_ALL":
-      return act(() => {
-        store.dispatch(actions.uncollapseAll());
-      });
-    case "UNDO":
-      return cmb.undo();
-    case "REDO":
-      return cmb.redo();
-  }
-}
-
-/** Shrink to a shorter list that still fails the same way (by its first line). */
-export function shrink(
-  report: Pick<BugReport, "language" | "startCode">,
-  list: readonly ReportAction[],
-  first: NonNullable<ReplayResult>
-) {
-  const kind = (r: ReplayResult) => r?.problem.split("\n")[0].slice(0, 40);
-  return minimise(list.slice(0, first.failedAt + 1), (candidate) => {
-    const again = replay(report, candidate);
-    return !!again && kind(again) === kind(first);
-  });
-}
 
 const sample: BugReport = {
   format: 1,
@@ -147,9 +55,11 @@ const sample: BugReport = {
   droppedActions: 0,
 };
 
-describe("replaying a field report", () => {
+describe("replaying a field report (states)", () => {
   it("runs a healthy report to the end", () => {
-    expect(replay(sample, sample.actions)).toBeUndefined();
+    const info = replayReport(sample, sample.actions);
+    expect(info.result).toBeUndefined();
+    expect(info.mode).toBe("state");
   });
 
   it("says which action broke the editor, and shrinks to it", () => {
@@ -166,18 +76,160 @@ describe("replaying a field report", () => {
   it("reports a language it does not know", () => {
     expect(replay({ language: "cobol" }, [])?.problem).toMatch(/unknown/);
   });
+});
 
-  const file = process.env.CMB_FIELD_REPLAY;
-  if (file) {
-    it(`replays ${file}`, () => {
+/** A person at the editor, recorded for real, then sent as a report */
+function record(
+  doing: (
+    env: ReturnType<typeof mountCMB>,
+    el: (i: number) => HTMLElement
+  ) => void
+): BugReport {
+  resetActivityLog();
+  const env = mountCMB(wescheme);
+  installFakeClipboard("");
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  env.cmb.setValue("(f x)\n(g y)");
+  doing(env, (i) => {
+    const node = env.cmb.getAst().rootNodes[i];
+    return document.getElementById(`block-node-${node.id}`)!;
+  });
+  const { dropped, baseCode } = getActivityBase();
+  const report: BugReport = {
+    format: 2,
+    version: "0.9.0",
+    language: "wescheme",
+    blockMode: true,
+    userAgent: "test",
+    code: env.cmb.getValue(),
+    startCode: baseCode,
+    actions: toReportActions(getLog()),
+    droppedActions: dropped,
+  };
+  jest.restoreAllMocks();
+  teardown();
+  // through the issue and back, as it travels
+  const { url } = buildIssue(report);
+  return parseIssueBody(url.searchParams.get("body")).report;
+}
+
+describe("replaying a field report (events)", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  /**
+   * A bug that no state shows: Copy, which changes nothing in the editor but
+   * the clipboard, fails. (It is seeded here by making `copy` log an error.)
+   */
+  const seedBug = () =>
+    jest.spyOn(copypaste, "copy").mockImplementation(() => {
+      console.error("copy exploded");
+    });
+
+  const sessionWithCopy = () =>
+    record(({ cmb }, el) => {
+      mouseDown(el(0));
+      keyDown("ArrowDown", {}, el(0));
+      mouseDown(el(1));
+      keyDown(" ", {}, el(1));
+      keyDown("C", cmd_ctrl, el(1)); // <- the seeded bug is here
+      keyDown("ArrowUp", {}, el(1));
+      cmb.getValue();
+    });
+
+  it("a recorded session replays, and a seeded bug is seen again", () => {
+    const report = sessionWithCopy();
+    expect(report.format).toBe(2);
+    expect(report.actions.filter(isEvent).length).toBeGreaterThanOrEqual(5);
+
+    // without the bug, the session is healthy
+    expect(replayReport(report, report.actions)).toMatchObject({
+      mode: "events",
+      result: undefined,
+    });
+
+    // with it, the replay fails at the Copy key, as the person's session did
+    seedBug();
+    const info = replayReport(report, report.actions);
+    expect(info.mode).toBe("events");
+    expect(info.result?.problem).toMatch(/copy exploded/);
+    const failed = report.actions[info.result!.failedAt];
+    expect(failed).toMatchObject({ type: "KEY", key: "C" });
+
+    // the states alone do not show it: that is what events are for
+    const statesOnly = report.actions.filter((a) => !isEvent(a));
+    expect(replayReport(report, statesOnly).result).toBeUndefined();
+
+    // and it shrinks to the keys that matter
+    const small = shrink(report, report.actions, info.result!);
+    expect(small.length).toBeLessThan(report.actions.length);
+    expect(small[small.length - 1]).toMatchObject({ type: "KEY", key: "C" });
+  });
+
+  it("re-drives edits, drags, and top-level typing", () => {
+    const report = record(({ cmb }, el) => {
+      mouseDown(el(0));
+      keyDown("Enter", cmd_ctrl, el(0));
+      setEditableText("(f y)");
+      keyDown("Enter", {}, document.activeElement!);
+      dragOnto(
+        toolbarPrimitive("sqrt"),
+        dropTargets(cmb.getWrapperElement())[1]
+      );
+      dragOnto(el(1), document.querySelector(".TrashCan")!);
+    });
+    // the replay ends with the same document the session did
+    const info = replayReport(report, report.actions);
+    expect(info).toMatchObject({
+      mode: "events",
+      result: undefined,
+      notes: [],
+    });
+    const types = report.actions.filter(isEvent).map((a) => a.type);
+    expect(types).toEqual(
+      expect.arrayContaining(["MOUSE", "KEY", "EDIT", "DRAG"])
+    );
+  });
+
+  it("falls back to the states, and says so, when an event cannot be driven", () => {
+    const report = sessionWithCopy();
+    const withSearch: ReportAction[] = [
+      ...report.actions,
+      { type: "SEARCH", key: "Enter" },
+    ];
+    const info = replayReport(report, withSearch);
+    expect(info.mode).toBe("state");
+    expect(info.notes.join("\n")).toMatch(/search dialog cannot be driven/);
+    expect(info.notes.join("\n")).toMatch(/falling back/);
+  });
+
+  it("skips an event whose block is not there, and falls back", () => {
+    const report = sessionWithCopy();
+    const info = replayReport(report, [
+      ...report.actions,
+      { type: "MOUSE", nid: 999 },
+    ]);
+    expect(info.mode).toBe("state");
+    expect(info.notes[0]).toMatch(/block 999 is not on the page/);
+  });
+});
+
+const file = process.env.CMB_FIELD_REPLAY;
+if (file) {
+  describe(`the field report ${file}`, () => {
+    it("replays", () => {
       const report = JSON.parse(fs.readFileSync(file, "utf8")) as BugReport;
-      const failure = replay(report, report.actions);
-      if (failure) {
-        const small = shrink(report, report.actions, failure);
+      const info = replayReport(report, report.actions);
+      // eslint-disable-next-line no-console
+      console.log(
+        `replayed by ${info.mode === "events" ? "driving the events again" : "putting the editor in each recorded state"}` +
+          (info.notes.length ? `:\n  ${info.notes.join("\n  ")}` : "")
+      );
+      if (info.result) {
+        const small = shrink(report, report.actions, info.result);
         throw new Error(
-          `The field report broke the editor at action ${failure.failedAt}: ${failure.problem}\nShrunk to ${small.length} actions:\n${JSON.stringify(small)}`
+          `The field report broke the editor at action ${info.result.failedAt}: ${info.result.problem}\nShrunk to ${small.length} actions:\n${JSON.stringify(small)}`
         );
       }
     });
-  }
-});
+  });
+}

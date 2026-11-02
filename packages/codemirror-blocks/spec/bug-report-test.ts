@@ -19,7 +19,7 @@ import {
 const { parseIssueBody } = require("../../../scripts/field-reports");
 
 const report = (actions: ReportAction[], code = "(f x)"): BugReport => ({
-  format: 1,
+  format: 2,
   version: "0.9.0",
   language: "wescheme",
   blockMode: true,
@@ -114,6 +114,42 @@ describe("the bug report", () => {
     );
   });
 
+  it("trims events with the states, keeps the newest, and the report still parses", () => {
+    const many: ReportAction[] = [];
+    for (let i = 0; i < 80; i++) {
+      many.push(
+        { type: "KEY", key: "Enter", nid: i },
+        { type: "EDIT", text: `(f ${i} ${"y".repeat(50)})`, how: "enter" },
+        { type: "SET_AST", code: `(f ${i} ${"y".repeat(50)})` }
+      );
+    }
+    const { url, sent, trimmed } = buildIssue(report(many), 3000);
+    expect(trimmed).toBe(true);
+    expect(url.toString().length).toBeLessThanOrEqual(3000);
+    expect(sent.actions[sent.actions.length - 1]).toEqual(
+      many[many.length - 1]
+    );
+    expect(sent.droppedActions + sent.actions.length).toBe(many.length);
+    const parsed = parseIssueBody(bodyOf(url)).report;
+    expect(parsed.actions).toEqual(sent.actions);
+    expect(parsed.actions.some((a: ReportAction) => a.type === "EDIT")).toBe(
+      true
+    );
+  });
+
+  it("keeps events when turning activities into a report", () => {
+    const list = [
+      { type: "MOUSE", nid: 1 },
+      { type: "CLIP", text: "(a b)" },
+      { type: "SET_BLOCK_MODE", enabled: true, other: "dropped" },
+    ] as unknown as Parameters<typeof toReportActions>[0];
+    expect(toReportActions(list)).toEqual([
+      { type: "MOUSE", nid: 1 },
+      { type: "CLIP", text: "(a b)" },
+      { type: "SET_BLOCK_MODE", enabled: true },
+    ]);
+  });
+
   it("falls back to the summary alone when the document itself is too big", () => {
     const { url, sent, trimmed } = buildIssue(
       report([], "(f x) ".repeat(5000)),
@@ -127,5 +163,8 @@ describe("the bug report", () => {
   it("says what is being sent", () => {
     const body = bodyOf(buildIssue(report([])).url);
     expect(body).toMatch(/exactly what is sent/);
+    // (typed text is sent, and the person is told so)
+    expect(body).toMatch(/text you typed into a block, pasted, or searched/);
+    expect(body).toMatch(/keys you pressed/);
   });
 });

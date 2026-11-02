@@ -1,12 +1,17 @@
-import type { Activity } from "../state/activityLog";
+import type { LogEntry, UIEvent } from "../state/activityLog";
 
 /**
  * The machine-readable part of a bug report. It travels in the body of the
  * GitHub issue, in a fenced block tagged `cmb-report`, and scripts/field-reports.js
  * turns it back into a failure that can be replayed (spec/field-replay-test.ts).
- * It holds only the document and what was done to it: nothing about the person.
+ * It holds the document, what was done to it, and what the person did (keys,
+ * clicks, drags, and the text they typed or pasted): nothing else about them.
+ *
+ * Format 2 added the person's own events (`UIEvent`), which a replay can drive
+ * again; format 1 had only the resulting states.
  */
-export type ReportAction =
+export type ReportAction = StateAction | UIEvent;
+export type StateAction =
   | { type: "SET_AST"; code: string }
   | { type: "SET_FOCUS"; nid: number | null }
   | { type: "SET_BLOCK_MODE"; enabled: boolean }
@@ -14,7 +19,8 @@ export type ReportAction =
   | { type: "COLLAPSE_ALL" | "UNCOLLAPSE_ALL" | "UNDO" | "REDO" };
 
 export type BugReport = {
-  format: 1;
+  /** 2 added the person's events; 1 (states only) is still read */
+  format: 1 | 2;
   /** package version of the editor */
   version: string;
   language: string;
@@ -24,7 +30,7 @@ export type BugReport = {
   code: string;
   /** the document just before the first action in `actions` (when older ones were dropped) */
   startCode?: string;
-  /** the most recent things that happened to the editor, oldest first */
+  /** the most recent things that happened to the editor and that people did to it, oldest first */
   actions: ReportAction[];
   /** how many older actions are not included */
   droppedActions: number;
@@ -38,7 +44,7 @@ export const MAX_URL_LENGTH = 7500;
 
 /** Keep what a replay can use, in a compact form; drop marks, ids and the like. */
 export function toReportActions(
-  activities: readonly Activity[]
+  activities: readonly LogEntry[]
 ): ReportAction[] {
   const out: ReportAction[] = [];
   for (const a of activities) {
@@ -64,6 +70,18 @@ export function toReportActions(
       case "REDO":
         out.push({ type: a.type });
         break;
+      case "KEY":
+      case "MOUSE":
+      case "DRAG":
+      case "EDIT":
+      case "EDIT_CANCEL":
+      case "TYPE":
+      case "PASTE":
+      case "CLIP":
+      case "MODE":
+      case "SEARCH":
+        out.push(a);
+        break;
     }
   }
   return out;
@@ -83,7 +101,11 @@ Anything that is not in the log below: what you clicked or typed just before.
 <summary>Debug information (sent with this report)</summary>
 
 This is exactly what is sent: the program text, the recent actions in the
-editor, any error, the editor version and your browser. Nothing else.
+editor, any error, the editor version and your browser. The actions include
+the keys you pressed in the editor, which blocks you clicked or dragged, and
+the text you typed into a block, pasted, or searched for, so that we can repeat
+what you did. Look through the block below before you submit; delete anything
+you would rather not share. Nothing else is sent.
 ${trimmed ? "\nThe full log was too long for this link, so the oldest actions were left out. It was copied to your clipboard: if you can, paste it over the block below.\n" : ""}
 ${fence(report)}
 

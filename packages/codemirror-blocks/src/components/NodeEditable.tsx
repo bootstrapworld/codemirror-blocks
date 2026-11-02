@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { recordEvent } from "../state/activityLog";
 import { useDispatch, useSelector } from "react-redux";
 import ContentEditable, {
   Props as ContentEditableProps,
@@ -132,6 +133,7 @@ const NodeEditable = ({
         props.editor.focus();
       }
     };
+    const enterRef = useRef(false);
     const handleBlur = () => {
       const { target } = props;
       dispatch((dispatch: AppDispatch, getState: () => RootState) => {
@@ -139,6 +141,12 @@ const NodeEditable = ({
         // to deal with this issue:
         // https://github.com/lovasoa/react-contenteditable/issues/161
         const value = elementRef.current?.textContent;
+        recordEvent({
+          type: "EDIT",
+          text: value ?? "",
+          how: enterRef.current ? "enter" : "blur",
+        });
+        enterRef.current = false;
         const focusedNode = selectors.getFocusedNode(getState());
         // if there's no insertion value, or the new value is the same as the
         // old one, preserve focus on original node and return silently
@@ -204,11 +212,13 @@ const NodeEditable = ({
         case "Enter": {
           // blur the element to trigger handleBlur
           // which will save the edit
+          enterRef.current = true;
           elementRef.current?.blur();
           return;
         }
         case "Alt-Q":
         case "Esc": {
+          recordEvent({ type: "EDIT_CANCEL" });
           el.innerHTML = initialValue;
           e.stopPropagation();
           props.onChange(null);

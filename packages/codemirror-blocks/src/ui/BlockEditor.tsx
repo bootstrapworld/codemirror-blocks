@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { recordEvent } from "../state/activityLog";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
@@ -258,6 +259,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     e.preventDefault();
     const start = ed.getCursor("from");
     const end = ed.getCursor("to");
+    recordEvent({ type: "TYPE", char: text, sel: { from: start, to: end } });
     dispatch(actions.setQuarantine(start, end, text));
   };
 
@@ -270,6 +272,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     if (text) {
       const start = editor.codemirror.getCursor("from");
       const end = editor.codemirror.getCursor("to");
+      recordEvent({ type: "PASTE", text, sel: { from: start, to: end } });
       dispatch(actions.setQuarantine(start, end, text));
     }
   };

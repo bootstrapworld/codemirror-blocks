@@ -3,6 +3,33 @@ import { AST, ASTData } from "../ast";
 import type { AppAction, RootState } from "./reducers";
 
 /**
+ * What a person did to the editor, in a form a replay can drive again (see
+ * spec/helpers/fieldReplay.ts). Blocks are named by their `nid` (their place in
+ * the document, which survives a reload), never by an id. Text appears only
+ * where a person typed or pasted it: the string an edit box was committed with,
+ * the string pasted, a search.
+ */
+export type UIEvent =
+  | { type: "KEY"; key: string; mods?: string; nid: number | null }
+  | { type: "MOUSE"; nid: number }
+  | {
+      type: "DRAG";
+      from: { nid: number } | { tool: string };
+      /** a block, the n-th gap between blocks, a spot of whitespace, the trash can */
+      to?: { nid: number } | { gap: number } | { ws: Loc } | { trash: true };
+      touch?: true;
+    }
+  | { type: "EDIT"; text: string; how: "enter" | "blur" }
+  | { type: "EDIT_CANCEL" }
+  | { type: "TYPE"; char: string; sel: Sel }
+  | { type: "PASTE"; text: string; sel: Sel }
+  | { type: "CLIP"; text: string }
+  | { type: "MODE"; blocks: boolean }
+  | { type: "SEARCH"; key?: string; set?: unknown };
+type Loc = { line: number; ch: number };
+type Sel = { from: Loc; to: Loc };
+
+/**
  * An Activity is a shallow-clone of a reducer action, except that
  * all instances of the AST are replaced with the source code, and
  * focusIds get replaced with node ids.
@@ -13,7 +40,23 @@ export type Activity =
   | (Action<"SET_FOCUS"> & { nid: number | null })
   | (Action<"COLLAPSE" | "UNCOLLAPSE"> & { id: string; nid?: number });
 
-const reducerActivities: Activity[] = [];
+/** Everything that is kept, in order: reducer actions and what people did */
+export type LogEntry = Activity | UIEvent;
+const isEvent = (e: LogEntry): e is UIEvent =>
+  EVENT_TYPES.has(e.type as UIEvent["type"]);
+const EVENT_TYPES = new Set<UIEvent["type"]>([
+  "KEY",
+  "MOUSE",
+  "DRAG",
+  "EDIT",
+  "EDIT_CANCEL",
+  "TYPE",
+  "PASTE",
+  "CLIP",
+  "MODE",
+  "SEARCH",
+]);
+const log: LogEntry[] = [];
 
 /**
  * Only the most recent activities are kept, so that a long session neither
@@ -23,6 +66,29 @@ export const MAX_ACTIVITIES = 200;
 let dropped = 0;
 /** the document as of the last activity that was dropped (undefined if none was) */
 let baseCode: string | undefined;
+
+/** Tells the log what the document is now, so it can say where its record starts. */
+let currentCode: (() => string) | undefined;
+const noteStart = () => {
+  if (!log.length && dropped === 0 && baseCode === undefined) {
+    baseCode = currentCode?.();
+  }
+};
+
+const push = (activity: LogEntry) => {
+  log.push(activity);
+  if (log.length > MAX_ACTIVITIES) {
+    const [old] = log.splice(0, 1);
+    dropped++;
+    if (old.type === "SET_AST") baseCode = old.code;
+  }
+};
+
+/** @internal record something a person did (see UIEvent); costs nothing until they do it */
+export const recordEvent = (event: UIEvent) => {
+  noteStart();
+  push(event);
+};
 
 /**
  * @internal
@@ -44,7 +110,7 @@ export const getLastError = () => lastError;
 
 /** @internal for tests: forget everything recorded so far */
 export const resetActivityLog = () => {
-  reducerActivities.length = 0;
+  log.length = 0;
   dropped = 0;
   baseCode = undefined;
   lastError = undefined;
@@ -56,7 +122,10 @@ export const resetActivityLog = () => {
  * that is suitable for serialization
  */
 export const getReducerActivities = (): ReadonlyArray<Activity> =>
-  reducerActivities;
+  log.filter((e): e is Activity => !isEvent(e));
+
+/** @internal the reducer actions and the events, in the order they happened */
+export const getLog = (): ReadonlyArray<LogEntry> => log;
 
 function toActivity(action: AppAction, ast: ASTData): Activity {
   // Shallow-clone the action, removing the AST.
@@ -90,16 +159,12 @@ function toActivity(action: AppAction, ast: ASTData): Activity {
  * Thunks are handled before this middleware sees them, so only plain
  * actions are recorded.
  */
-export const activityLogger: Middleware<unknown, RootState> =
-  (store) => (next) => (action) => {
+export const activityLogger: Middleware<unknown, RootState> = (store) => {
+  currentCode = () => new AST(store.getState().astData).toString();
+  return (next) => (action) => {
+    noteStart();
     const result = next(action);
-    reducerActivities.push(
-      toActivity(action as AppAction, store.getState().astData)
-    );
-    if (reducerActivities.length > MAX_ACTIVITIES) {
-      const [old] = reducerActivities.splice(0, 1);
-      dropped++;
-      if (old.type === "SET_AST") baseCode = old.code;
-    }
+    push(toActivity(action as AppAction, store.getState().astData));
     return result;
   };
+};

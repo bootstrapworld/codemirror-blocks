@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  getActivityBase,
-  getLastError,
-  getReducerActivities,
-} from "../state/activityLog";
+import { getActivityBase, getLastError, getLog } from "../state/activityLog";
 import { BugReport, buildIssue, fence, toReportActions } from "./bugReport";
 
 // kept in step with package.json by hand; it only labels reports
@@ -44,14 +40,14 @@ export const BugButton = (props: BugButtonProps) => {
   const openBugWindow = () => {
     const { dropped, baseCode } = getActivityBase();
     const report: BugReport = {
-      format: 1,
+      format: 2,
       version: VERSION,
       language: props.language,
       blockMode: props.blockMode,
       userAgent: navigator.userAgent,
       code: props.code,
       startCode: baseCode,
-      actions: toReportActions(getReducerActivities()),
+      actions: toReportActions(getLog()),
       droppedActions: dropped,
       error: getLastError(),
     };

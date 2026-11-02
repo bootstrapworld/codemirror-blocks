@@ -20,6 +20,7 @@ import React, {
   useState,
   useSyncExternalStore,
 } from "react";
+import { recordEvent, type UIEvent } from "./state/activityLog";
 require("./dnd.less");
 
 export enum ItemTypes {
@@ -38,8 +39,14 @@ export const LONG_PRESS_MS = 250;
 /** Pixels a finger may drift during the long press before it is a scroll. */
 const TOUCH_SLOP = 8;
 
-type Source = { getItem: () => DragItem };
-type Target = { drop: (item: DragItem, info: DropInfo) => void };
+/** Says which block or tool this is, and where a drop landed, for bug reports. */
+type DragFrom = Extract<UIEvent, { type: "DRAG" }>["from"];
+type DragTo = NonNullable<Extract<UIEvent, { type: "DRAG" }>["to"]>;
+type Source = { getItem: () => DragItem; describe?: () => DragFrom };
+type Target = {
+  drop: (item: DragItem, info: DropInfo) => void;
+  describe?: (el: Element, info: DropInfo) => DragTo | undefined;
+};
 
 type Pending = {
   pointerId: number;
@@ -53,6 +60,7 @@ type Active = {
   pointerId: number;
   el: HTMLElement;
   item: DragItem;
+  describe?: Source["describe"];
   preview: HTMLElement;
   /** the innermost drop target under the pointer, if any */
   over: Element | null;
@@ -107,6 +115,7 @@ class DragStore {
       pointerId: p.pointerId,
       el: p.el,
       item: p.source.getItem(),
+      describe: p.source.describe,
       preview,
       over: null,
       pos,
@@ -160,9 +169,27 @@ class DragStore {
     const hits = this.targetsAt(a.pos);
     this.end();
     let didDrop = false;
+    this.record(a, hits);
     for (const { target } of hits) {
       target.drop(a.item, { didDrop, clientOffset: a.pos });
       didDrop = true;
+    }
+  }
+
+  private record(a: Active, hits: { el: Element; target: Target }[]) {
+    try {
+      const from = a.describe?.();
+      if (!from) return;
+      const info = { didDrop: false, clientOffset: a.pos };
+      const to = hits[0]?.target.describe?.(hits[0].el, info);
+      recordEvent({
+        type: "DRAG",
+        from,
+        ...(to ? { to } : {}),
+        ...(a.pointerType === "touch" ? { touch: true as const } : {}),
+      });
+    } catch (_) {
+      // describing a drag must never get in its way
     }
   }
 
@@ -299,7 +326,10 @@ export function DragProvider(props: { children?: React.ReactNode }) {
  * Returns `[{isDragging}, connectSource]`; pass `connectSource` as the ref of
  * the element, which is also its own drag preview.
  */
-export function useDrag(options: { item: DragItem | (() => DragItem) }) {
+export function useDrag(options: {
+  item: DragItem | (() => DragItem);
+  describe?: () => DragFrom;
+}) {
   const store = useStore();
   const optionsRef = useRef(options);
   optionsRef.current = options;
@@ -314,6 +344,7 @@ export function useDrag(options: { item: DragItem | (() => DragItem) }) {
       elRef.current = el;
       if (!el) return;
       const source: Source = {
+        describe: () => optionsRef.current.describe?.() as DragFrom,
         getItem: () => {
           const item = optionsRef.current.item;
           return typeof item === "function" ? item() : item;
@@ -343,6 +374,7 @@ export function useDrag(options: { item: DragItem | (() => DragItem) }) {
  * for the innermost target under the pointer.
  */
 export function useDrop(options: {
+  describe?: Target["describe"];
   drop: (
     item: DragItem & { id: string; content: string },
     info: DropInfo
@@ -360,6 +392,7 @@ export function useDrop(options: {
       elRef.current = el;
       if (el) {
         store.targets.set(el, {
+          describe: (e, info) => optionsRef.current.describe?.(e, info),
           drop: (item, info) =>
             optionsRef.current.drop(
               item as DragItem & { id: string; content: string },
