@@ -320,8 +320,16 @@ class OverwriteEdit extends Edit {
     this.text = text;
   }
 
-  toChangeObject(ast: AST) {
+  toChangeObject(ast: AST, doc?: ReadonlyRangedText) {
     let { text } = this;
+    // text that is not a block (a comment) on the same line would run into ours
+    const lineBefore = doc?.getRange(
+      { line: this.from.line, ch: 0 },
+      this.from
+    );
+    const lineAfter = doc?.getRange(this.to, { line: this.to.line, ch: 1e9 });
+    const textBefore = (lineBefore ?? "").trim() !== "";
+    const textAfter = (lineAfter ?? "").trim() !== "";
     // if this root starts or ends on the same line as another, insert a newline
     const nodeBefore = ast.rootNodes.find(
       (node) =>
@@ -333,10 +341,10 @@ class OverwriteEdit extends Edit {
         node.srcRange().from.line == this.to.line &&
         this.to.ch <= node.srcRange().from.ch
     );
-    if (nodeBefore) {
+    if (nodeBefore || textBefore) {
       text = "\n" + text;
     }
-    if (nodeAfter) {
+    if (nodeAfter || textAfter) {
       text = text + "\n";
     }
     this.changeObject = makeChangeObject({

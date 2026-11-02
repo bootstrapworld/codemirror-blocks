@@ -1583,6 +1583,58 @@ describe("sequences that once broke the editor", () => {
       ],
     });
   }, 120_000);
+
+  it("text put on the line of a comment ran into it (`7#| c |#`), so the comment was read as part of the block", () => {
+    check({
+      code: "(define (sq n) (* n n))\n(sq 4)",
+      steps: [
+        {
+          op: "select many blocks, then cut, copy, delete or paste",
+          r: [992113728, 882246221, 464174533, 333137081],
+        },
+        {
+          op: "edit a block in place",
+          r: [67005078, 571113546, 663345145, 204826563],
+        },
+        {
+          op: "change the text through the API",
+          r: [946878343, 401153872, 74332096, 382867670],
+        },
+        {
+          op: "switch to text mode and back",
+          r: [283255270, 537728117, 165396614, 612366766],
+        },
+        {
+          op: "paste awkward text",
+          r: [18718648, 695660096, 83033384, 514579255],
+        },
+        {
+          op: "change the text through the API",
+          r: [982329702, 108986847, 820589052, 563495055],
+        },
+        {
+          op: "collapse a block, then change around it",
+          r: [922056094, 393422648, 519248936, 116301828],
+        },
+        {
+          op: "delete",
+          r: [183149073, 755674715, 242156635, 313992551],
+        },
+        {
+          op: "paste beside a block",
+          r: [317773821, 952460838, 689427472, 487785590],
+        },
+        {
+          op: "drag from the toolbar onto whitespace",
+          r: [722281011, 872897241, 484287744, 845392843],
+        },
+        {
+          op: "undo",
+          r: [671136941, 642995018, 763627345, 966414113],
+        },
+      ],
+    });
+  }, 120_000);
 });
 
 describe("random sequences of operations", () => {
