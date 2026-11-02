@@ -1665,6 +1665,23 @@ describe("sequences that once broke the editor", () => {
       ],
     });
   }, 120_000);
+
+  it("seed 170133: a collapsed block with an insertion box beside it, then a selection cut (a drop target was drawn for blocks the store no longer had)", () => {
+    check({
+      code: "let (a = 1, b = 2) a + b",
+      language: "lambda",
+      steps: [
+        {
+          op: "collapse a block, then change around it",
+          r: [456052526, 629462062, 844950094, 744728816],
+        },
+        {
+          op: "select many blocks, then cut, copy, delete or paste",
+          r: [899290976, 622805916, 728295735, 404243125],
+        },
+      ],
+    });
+  }, 120_000);
 });
 
 describe("random sequences of operations", () => {

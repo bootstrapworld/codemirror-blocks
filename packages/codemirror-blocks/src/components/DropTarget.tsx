@@ -183,7 +183,17 @@ field declared. The node was:`,
       () =>
         createSelector(
           [selectors.getAST, selectors.getEditable],
-          (ast, editable) => (editable[id] ? createTarget(ast) : null)
+          (ast, editable) => {
+            if (!editable[id]) return null;
+            try {
+              return createTarget(ast);
+            } catch (e) {
+              // The store can hold a newer AST than the page this target was
+              // drawn for (it is about to be redrawn, or gone), so the blocks
+              // around it can be missing: it has no insertion point meanwhile.
+              return null;
+            }
+          }
         ),
       [id, createTarget]
     )
