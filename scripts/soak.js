@@ -420,7 +420,8 @@ const doJob = async (job, mode, from, size, steps) => {
   countFailures(state, result.failures);
   log(
     `${mode} seeds ${from}-${from + size - 1}: ${result.passed} passed, ${result.failures.length} failed` +
-      ` (total ${progress.sequences} run, ${progress.failures} failed, ` +
+      ` (total ${progress.sequences} run, ${progress.failures} failed = ` +
+      `${((100 * progress.failures) / Math.max(1, progress.sequences)).toFixed(2)}%, ` +
       `${Object.keys(progress.distinct).length} distinct, ${progress.crashes.length} crashes)`
   );
   save();
@@ -591,10 +592,14 @@ const status = () => {
     0
   );
   const hours = ((Date.now() - runStartedAt) / 3600000).toFixed(1);
+  const rate = (failed, run) =>
+    run ? `${((100 * failed) / run).toFixed(2)}%` : "n/a";
+  const runSeqs = now.sequences - runStart.sequences;
+  const runFails = now.failures - runStart.failures;
   const line =
-    `status after ${hours} h: ${now.sequences - runStart.sequences} sequences, ` +
-    `${now.failures - runStart.failures} failures this run ` +
-    `(${now.failures} in all, ${distinct} distinct), ${crashes} crashes`;
+    `status after ${hours} h: ${runSeqs} sequences, ${runFails} failures this run ` +
+    `(rate ${rate(runFails, runSeqs)}; ${now.failures} in all, ` +
+    `${rate(now.failures, now.sequences)}; ${distinct} distinct), ${crashes} crashes`;
   log(line);
   fs.appendFileSync(
     path.join(out, "status.log"),
@@ -619,7 +624,7 @@ new Promise((resolve) => {
   );
   console.log(
     `done: ${total("sequences")} sequences, ${total("failures")} failures ` +
-      `(${distinct} distinct), ${modeNames.reduce((n, m) => n + states[m].progress.crashes.length, 0)} crashes. ` +
+      `(${((100 * total("failures")) / Math.max(1, total("sequences"))).toFixed(2)}%, ${distinct} distinct), ${modeNames.reduce((n, m) => n + states[m].progress.crashes.length, 0)} crashes. ` +
       `See ${path.join(out, "summary.md")}`
   );
   process.exit(0);
