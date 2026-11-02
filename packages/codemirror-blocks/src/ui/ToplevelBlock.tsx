@@ -1,4 +1,11 @@
-import React, { createContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import ReactDOM from "react-dom";
 import { poscmp } from "../utils";
 import { ASTNode } from "../ast";
@@ -57,26 +64,34 @@ const ToplevelBlock = (props: Props) => {
     return { container };
   }, []);
 
-  // make a new block marker, and fill it with the portal
+  // The block marker is made once the portal's container is filled, not while
+  // rendering: making and clearing a marker updates CodeMirror's display, which
+  // must not happen in the middle of React's render (the display could then be
+  // patched while React is still moving the nodes it holds).
   const { from, to } = props.node.srcRange(); // includes the node's comment, if any
-  const mark = props.editor.replaceMarkerWidget(from, to, container);
-  markers.set(props.node, mark);
+  const handle = useRef<{ marker?: BlockNodeMarker }>({});
+  const { editor, node } = props;
+  useLayoutEffect(() => {
+    const mark = editor.replaceMarkerWidget(from, to, container);
+    handle.current.marker = mark;
+    markers.set(node, mark);
+    // When unmounting, clean up the TextMarker
+    return () => {
+      mark.clear();
+      if (handle.current.marker === mark) handle.current.marker = undefined;
+    };
+    // (the range is compared by value)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, node, container, from.line, from.ch, to.line, to.ch]);
 
   // set elt to a cheap placeholder, OR render the entire rootNode
   const elt = renderPlaceholder ? (
     <div />
   ) : (
-    <RootNodeContext value={{ marker: mark }}>
+    <RootNodeContext value={handle.current}>
       {props.node.reactElement()}
     </RootNodeContext>
   );
-
-  useEffect(() => {
-    // When unmounting, clean up the TextMarker
-    return () => {
-      mark.clear();
-    };
-  });
 
   return ReactDOM.createPortal(elt, container);
 };
