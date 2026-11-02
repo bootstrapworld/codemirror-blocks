@@ -321,6 +321,7 @@ const operations: Operation[] = [
     name: "paste beside a block",
     run: (w, r) => {
       stopEditing();
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const node = pick(visibleNodes(w), r[1]);
       if (!node) return;
       if (r[2] % 2) {
@@ -335,6 +336,7 @@ const operations: Operation[] = [
   {
     name: "edit a block in place",
     run: (w, r) => {
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const node = pick(visibleNodes(w), r[1]);
       if (!node) return;
       mouseDown(node);
@@ -352,6 +354,7 @@ const operations: Operation[] = [
   {
     name: "insert beside a block",
     run: (w, r) => {
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const node = pick(visibleNodes(w), r[1]);
       if (!node) return;
       mouseDown(node);
@@ -490,6 +493,7 @@ const operations: Operation[] = [
   {
     name: "collapse or expand",
     run: (w, r) => {
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const node = pick(visibleNodes(w), r[1]);
       if (!node) return;
       mouseDown(node);
@@ -510,6 +514,7 @@ const operations: Operation[] = [
   {
     name: "move around",
     run: (w, r) => {
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const node = pick(visibleNodes(w), r[1]);
       if (!node) return;
       mouseDown(node);
@@ -545,6 +550,7 @@ const operations: Operation[] = [
   {
     name: "edit a block to awkward text",
     run: (w, r) => {
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const node = pick(visibleNodes(w), r[1]);
       if (!node) return;
       mouseDown(node);
@@ -606,6 +612,7 @@ const operations: Operation[] = [
   {
     name: "walk the keyboard",
     run: (w, r) => {
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const node = pick(visibleNodes(w), r[1]);
       if (!node) return;
       mouseDown(node);
@@ -725,6 +732,7 @@ const operations: Operation[] = [
     run: (w, r) => {
       // sometimes with an editing box or a quarantine open
       let open = "";
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const node = pick(visibleNodes(w), r[1]);
       if (r[0] % 3 === 1 && node) {
         mouseDown(node);
@@ -816,6 +824,7 @@ const operations: Operation[] = [
     run: (w, r) => {
       stopEditing();
       returnToEditor(w.cmb);
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const node = pick(visibleNodes(w), r[1]);
       if (node) mouseDown(node);
       const n = 1 + (r[2] % 4);
