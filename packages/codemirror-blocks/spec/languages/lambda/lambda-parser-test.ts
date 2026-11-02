@@ -119,7 +119,7 @@ const testData: { input: string; output: any }[] = [
     input: "if foo then bar else baz",
     output: {
       from: { line: 0, ch: 0 },
-      to: { line: 0, ch: 20 },
+      to: { line: 0, ch: 24 },
       type: "if",
       cond: {
         from: { line: 0, ch: 3 },
@@ -380,5 +380,12 @@ describe("the extent of a not", () => {
     const { prog } = parseToIntermediateAST("!x");
     expect(prog[0].from).toEqual({ line: 0, ch: 0 });
     expect(prog[0].to).toEqual({ line: 0, ch: 2 });
+  });
+});
+
+describe("the extent of an if", () => {
+  it("reaches the end of its else branch", () => {
+    const { prog } = parseToIntermediateAST("if a then b else c");
+    expect(prog[0].to).toEqual({ line: 0, ch: 18 });
   });
 });

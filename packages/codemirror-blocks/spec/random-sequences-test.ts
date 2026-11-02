@@ -1537,6 +1537,23 @@ describe("sequences that once broke the editor", () => {
       ],
     });
   }, 120_000);
+
+  it("an `if` block stopped before its else branch, so typing there at the top level made a second marker (then delete)", () => {
+    check({
+      code: "if a then b else c",
+      language: "lambda",
+      steps: [
+        {
+          op: "type at the top level",
+          r: [853895366, 993281297, 992522705, 551702330],
+        },
+        {
+          op: "delete",
+          r: [39661821, 880924322, 145395145, 598260645],
+        },
+      ],
+    });
+  }, 120_000);
 });
 
 describe("random sequences of operations", () => {

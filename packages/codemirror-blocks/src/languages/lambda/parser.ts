@@ -228,9 +228,9 @@ function parse(input: TokenStream): LambdaNode {
     };
     if (isKw("else")) {
       input.next();
+      ret.else = parseExpression();
       toLocation = input.pos().to;
       ret.to = toLocation;
-      ret.else = parseExpression();
     }
     return ret;
   }
