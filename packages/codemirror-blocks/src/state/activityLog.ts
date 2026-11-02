@@ -10,9 +10,45 @@ import type { AppAction, RootState } from "./reducers";
 export type Activity =
   | Exclude<AppAction, { ast: AST } | Action<"SET_AST"> | Action<"SET_FOCUS">>
   | (Action<"SET_AST"> & { code: string })
-  | (Action<"SET_FOCUS"> & { nid: number | null });
+  | (Action<"SET_FOCUS"> & { nid: number | null })
+  | (Action<"COLLAPSE" | "UNCOLLAPSE"> & { id: string; nid?: number });
 
 const reducerActivities: Activity[] = [];
+
+/**
+ * Only the most recent activities are kept, so that a long session neither
+ * grows without bound nor makes a bug report too big to send.
+ */
+export const MAX_ACTIVITIES = 200;
+let dropped = 0;
+/** the document as of the last activity that was dropped (undefined if none was) */
+let baseCode: string | undefined;
+
+/**
+ * @internal
+ * How many of the oldest activities have been forgotten, and the document as
+ * it was just after them, which is where the remaining ones start from.
+ */
+export const getActivityBase = () => ({ dropped, baseCode });
+
+let lastError: { message: string; stack?: string } | undefined;
+/** @internal remember the latest exception that was reported, for bug reports */
+export const recordError = (exception: unknown) => {
+  lastError =
+    exception instanceof Error
+      ? { message: exception.message, stack: exception.stack }
+      : { message: String(exception) };
+};
+/** @internal */
+export const getLastError = () => lastError;
+
+/** @internal for tests: forget everything recorded so far */
+export const resetActivityLog = () => {
+  reducerActivities.length = 0;
+  dropped = 0;
+  baseCode = undefined;
+  lastError = undefined;
+};
 
 /**
  * @internal
@@ -37,6 +73,12 @@ function toActivity(action: AppAction, ast: ASTData): Activity {
           ? new AST(ast).getNodeByIdOrThrow(action.focusId).nid
           : null,
       };
+    case "COLLAPSE":
+    case "UNCOLLAPSE": {
+      // (ids belong to one session; the nid tells another session which node)
+      const node = new AST(ast).getNodeById(action.id);
+      return node ? { ...action, nid: node.nid } : { ...action };
+    }
     default:
       return { ...action };
   }
@@ -54,5 +96,10 @@ export const activityLogger: Middleware<unknown, RootState> =
     reducerActivities.push(
       toActivity(action as AppAction, store.getState().astData)
     );
+    if (reducerActivities.length > MAX_ACTIVITIES) {
+      const [old] = reducerActivities.splice(0, 1);
+      dropped++;
+      if (old.type === "SET_AST") baseCode = old.code;
+    }
     return result;
   };

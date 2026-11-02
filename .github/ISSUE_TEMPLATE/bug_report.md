@@ -6,6 +6,8 @@ labels: bug, User Submitted
 assignees: ""
 ---
 
+<!-- Reporting from the editor itself? Use its bug button (the ladybug): it fills in the debug block below for you. -->
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 

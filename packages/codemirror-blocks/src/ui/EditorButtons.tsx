@@ -1,4 +1,13 @@
 import React from "react";
+import {
+  getActivityBase,
+  getLastError,
+  getReducerActivities,
+} from "../state/activityLog";
+import { BugReport, buildIssue, fence, toReportActions } from "./bugReport";
+
+// kept in step with package.json by hand; it only labels reports
+const VERSION = "0.9.0";
 
 type ToggleButtonProps = {
   setBlockMode: (blockMode: boolean) => void;
@@ -25,53 +34,32 @@ export const ToggleButton = (props: ToggleButtonProps) => {
   );
 };
 
-export const BugButton = () => {
+type BugButtonProps = {
+  language: string;
+  blockMode: boolean;
+  /** the document, as it is now */
+  code: string;
+};
+export const BugButton = (props: BugButtonProps) => {
   const openBugWindow = () => {
-    const url = new URL(
-      "https://github.com/bootstrapworld/codemirror-blocks/issues/new"
-    );
-    url.searchParams.set("labels", "bug, User Submitted");
-    url.searchParams.set("template", "bug_report.md");
-    url.searchParams.set("title", "[BUG]");
-
-    url.searchParams.set(
-      "body",
-      `**Describe the bug**
-A clear and concise description of what the bug is.
-
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
-
-Collapsing or uncollapsing a node, changing focus, selecting and
-unselecting may not seem like actions worth reporting,
-but they all affect the state of the app and may be important when
-trying to reproduce the bug.
-Please be as detailed as you can!
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Additional context**
-Add any other context about the problem here.
-
-<details>
-
-<summary>Additional information for developers</summary>
-
-userAgent: ${navigator.userAgent}
-
-</details>
-
-`
-    );
-
+    const { dropped, baseCode } = getActivityBase();
+    const report: BugReport = {
+      format: 1,
+      version: VERSION,
+      language: props.language,
+      blockMode: props.blockMode,
+      userAgent: navigator.userAgent,
+      code: props.code,
+      startCode: baseCode,
+      actions: toReportActions(getReducerActivities()),
+      droppedActions: dropped,
+      error: getLastError(),
+    };
+    const { url, trimmed } = buildIssue(report);
+    if (trimmed) {
+      // (a failure to copy is not worth stopping for)
+      navigator.clipboard?.writeText(fence(report)).catch(() => {});
+    }
     window.open(url, "_blank");
   };
   return (

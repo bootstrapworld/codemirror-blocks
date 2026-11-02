@@ -350,6 +350,33 @@ Properties to check after every operation:
 The bugs found while modernizing (stale AST after undo, focus lost after delete,
 the trash can using a stale editor) would each have been caught by 1, 3 or 5.
 
+### Failures reported by people
+
+The bug button in the editor opens a GitHub issue whose body holds a
+` ```json cmb-report ` block: the editor version, language, mode, the
+document, the last 200 recorded actions (new document text, focus moving, mode
+switches, collapsing, undo/redo), the last reported error, and the browser's
+user agent. Nothing else is sent, and the person sees the whole body before
+they submit it. If the block is too long for the link (about 7.5k characters),
+the oldest actions are left out and the full block is copied to the clipboard.
+
+`node scripts/field-reports.js` (uses `gh api`, read-only) downloads issues
+labelled `bug-report` or `User Submitted`, saves each report as
+`soak-results/field/issue-N.json`, and appends a `kind: "field"` entry to
+`soak-results/failures.jsonl` (one per issue number; `--list` records nothing;
+`--file body.md` or `--file -` ingests a saved body; old issues without the
+block are skipped with a reason). Replay one with the command in its entry:
+
+    CMB_FIELD_REPLAY=soak-results/field/issue-N.json npx jest field-replay
+
+which runs the actions in jsdom, checks the invariants after each, and shrinks a
+failure. It sets the editor into the state each action left it in; it does not
+re-press the keys or re-do the drags that led there, so a bug that depends on
+the exact event sequence is only found if its result shows up in the document,
+focus, or collapsing. The report's own `error` (message, stack) is the record of
+those. Turn a confirmed one into a regression test by hand from the shrunk
+actions (`--promote` knows only the randomized sequences).
+
 ## 13. What jsdom can't cover
 
 **Status:** implemented as a Playwright suite in `packages/codemirror-blocks/e2e`

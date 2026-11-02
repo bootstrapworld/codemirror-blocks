@@ -1,6 +1,10 @@
 import objToStableString from "fast-json-stable-stringify";
 import { EditorChange } from "codemirror";
-import { Activity, getReducerActivities } from "./state/activityLog";
+import {
+  Activity,
+  getReducerActivities,
+  recordError,
+} from "./state/activityLog";
 import type { RootState } from "./state/reducers";
 import * as selectors from "./state/selectors";
 import type { AST, ASTNode, Pos, Range } from "./ast";
@@ -362,6 +366,7 @@ export function setLogReporter(reporter: typeof logReporter) {
 // display the actual exception, and try to log it
 export function logResults(exception: unknown, description = "Crash Log") {
   const history = getReducerActivities();
+  recordError(exception);
   try {
     logReporter(history, exception, description);
   } catch (e) {

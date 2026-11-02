@@ -105,7 +105,13 @@ function ToggleEditor(props: ToggleEditorProps) {
   return (
     <AppContext value={appHelpers}>
       <div className={classes} ref={editorElementRef}>
-        {blockMode ? <BugButton /> : null}
+        {blockMode ? (
+          <BugButton
+            language={props.language.id}
+            blockMode={blockMode}
+            code={code}
+          />
+        ) : null}
         <ToggleButton setBlockMode={handleToggle} blockMode={blockMode} />
         {blockMode && editor ? (
           <TrashCan language={props.language} editor={editor} />
