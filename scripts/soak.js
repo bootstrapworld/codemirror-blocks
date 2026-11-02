@@ -15,7 +15,7 @@
  *
  * Workers: batches run in parallel on disjoint seed ranges, each in one jest
  * process (one core) at low priority (nice -n 19). --cores
- * MIN-MAX (default 2-10) bounds how many run at once. Every --sample-sec seconds
+ * MIN-MAX (default 2-14) bounds how many run at once. Every --sample-sec seconds
  * (default 10) the governor measures how busy the machine is apart from the
  * workers: to keep it under about 70% it pauses surplus workers at once (SIGSTOP,
  * the whole process group; never fewer than MIN run), and after two quiet
@@ -31,7 +31,8 @@
  * up to 100), --alternate with --e2e-every K (default 20; one Chromium batch at
  * a time, in one worker slot), --timeout-min N (running time after which a
  * batch is killed: default 25), --seed N, --fresh (ignore saved progress),
- * --status-min N (default 30: a status line every N minutes, also appended to
+ * --e2e-cores N (default 6: at most N workers run at once while a Chromium
+ * batch does; the others are paused, then resumed), --status-min N (default 30: a status line every N minutes, also appended to
  * status.log), --out DIR (default soak-results). Stop it with Ctrl-C (or SIGTERM): it lets
  * the running batches finish, saves, and prints the summary; a second Ctrl-C
  * ends them at once.
@@ -176,7 +177,7 @@ if (opt("promote", undefined) !== undefined) {
 
 // ---- settings ----
 
-const [minCores, maxCores] = String(opt("cores", "2-10"))
+const [minCores, maxCores] = String(opt("cores", "2-14"))
   .split("-")
   .map(Number);
 const hours = Number(opt("hours", 1));
@@ -185,6 +186,9 @@ const explicitSteps = opt("steps", undefined) !== undefined;
 const ramp = flag("ramp") || (!flag("no-ramp") && !explicitSteps);
 const fixedSteps = Number(opt("steps", 30));
 const e2eEvery = Number(opt("e2e-every", 20));
+// while a Chromium batch runs, at most this many workers run at once: browsers
+// flake when the machine is crowded
+const e2eCores = Number(opt("e2e-cores", 6));
 const batchTimeoutMs = Number(opt("timeout-min", 25)) * 60 * 1000;
 const singleTimeoutMs = Math.min(batchTimeoutMs, 10 * 60 * 1000);
 const sampleMs = Number(opt("sample-sec", 10)) * 1000;
@@ -428,6 +432,20 @@ const started = Date.now();
 let startedBatches = 0;
 let lastE2e = 0;
 let target = Math.max(1, minCores);
+/** The most workers to run now: fewer while a Chromium batch is running */
+const ceiling = () =>
+  [...jobs].some((j) => j.mode === "e2e")
+    ? Math.max(1, Math.min(maxCores, e2eCores))
+    : maxCores;
+/** The workers to have running: the governor's target, within the ceiling */
+const limit = () => Math.min(target, ceiling());
+/** Pause the workers beyond the limit, Chromium batches last of all */
+const pauseSurplus = () => {
+  const running = [...jobs]
+    .filter((j) => !j.paused)
+    .sort((a, b) => (a.mode === "e2e") - (b.mode === "e2e"));
+  for (const job of running.slice(limit())) pause(job);
+};
 let quiet = 0;
 let lastReport = "";
 let finished;
@@ -457,13 +475,13 @@ const pump = () => {
   // room first for paused workers, then for new ones
   let { running } = counts();
   for (const job of jobs) {
-    if (running >= target) break;
+    if (running >= limit()) break;
     if (job.paused) {
       resume(job);
       running++;
     }
   }
-  while (running < target && mayStart()) {
+  while (running < limit() && mayStart()) {
     const e2eBusy = [...jobs].some((j) => j.mode === "e2e");
     const wantE2e =
       modeNames.length === 1
@@ -498,6 +516,7 @@ const pump = () => {
         pump();
       });
   }
+  pauseSurplus(); // a Chromium batch that has just started lowers the ceiling
   report();
   if (!jobs.size && !mayStart()) finished();
 };
@@ -516,13 +535,12 @@ const sample = () => {
     others,
     running,
     min: minCores,
-    max: maxCores,
+    max: ceiling(),
     quietSamples: quiet,
   });
   target = d.target;
   quiet = d.quietSamples;
-  const surplus = [...jobs].filter((j) => !j.paused).slice(target);
-  for (const job of surplus) pause(job);
+  pauseSurplus();
   report(`, others using ${others.toFixed(1)} of ${ncpu} cores`);
   pump();
 };
