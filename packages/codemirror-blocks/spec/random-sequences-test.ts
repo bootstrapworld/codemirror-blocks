@@ -251,6 +251,7 @@ const clearSelection = (w: World) => {
 
 /** Select some blocks (replacing any earlier selection), return them */
 const selectSome = (w: World, r: number[]) => {
+  stopEditing(); // (clicking away commits an edit box, and parses anew)
   const nodes = pickMany(visibleNodes(w), 1 + (r[1] % 3), r[2]);
   clearSelection(w);
   nodes.forEach(select);
@@ -315,6 +316,7 @@ const operations: Operation[] = [
   {
     name: "paste beside a block",
     run: (w, r) => {
+      stopEditing();
       const node = pick(visibleNodes(w), r[1]);
       if (!node) return;
       if (r[2] % 2) {
