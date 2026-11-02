@@ -140,14 +140,18 @@ const visibleDropTargets = (w: World) =>
 /** Everywhere in the document that is not inside a root: where whitespace is */
 const whitespacePositions = (w: World) => {
   const roots = w.cmb.getAst().rootNodes.map((n) => n.srcRange());
-  // (a block comment is plain text: typing in the middle of `#| c |#` makes a
-  // comment that never ends, and the language reports that, as it should)
-  const comments = [...w.cmb.getValue().matchAll(/#\|[\s\S]*?\|#/g)].map(
-    (m) => ({
-      from: w.cmb.getCM().posFromIndex(m.index!),
-      to: w.cmb.getCM().posFromIndex(m.index! + m[0].length),
-    })
-  );
+  // (a comment is plain text: typing in the middle of `#| c |#` makes a
+  // comment that never ends, and the language reports that, as it should; a
+  // block or text put after the text of a `;` comment becomes part of it)
+  const text = w.cmb.getValue();
+  const comments = [...text.matchAll(/#\|[\s\S]*?\|#|;[^\n]*/g)].map((m) => {
+    const from = w.cmb.getCM().posFromIndex(m.index!);
+    const to = w.cmb.getCM().posFromIndex(m.index! + m[0].length);
+    // (the end of a `;` comment is still inside it)
+    return m[0].startsWith(";")
+      ? { from, to: { ...to, ch: to.ch + 1 } }
+      : { from, to };
+  });
   const positions: Pos[] = [];
   for (let line = 0; line <= w.cmb.lastLine(); line++) {
     for (let ch = 0; ch <= w.cmb.getLine(line).length; ch++) {
