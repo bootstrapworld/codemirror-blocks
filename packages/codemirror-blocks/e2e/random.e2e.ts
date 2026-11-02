@@ -23,11 +23,12 @@ import {
  * removed from the page asked to be scrolled to as it lost focus (935). Seed
  * 2596 is there because an edit box was committed as its block was removed, and
  * 1613 because the wait to scroll to a block lost to a blur never ended, and
- * 3277 because a block lost its marker to a box that took its place.
+ * 3277 because a block lost its marker to a box that took its place, and
+ * 3463 because keyboard focus was left on the hidden clipboard buffer.
  */
 
 const SEEDS = (
-  process.env.CMB_E2E_SEEDS ?? "1,2,3,4,5,6,7,11,915,935,2596,1613,3277"
+  process.env.CMB_E2E_SEEDS ?? "1,2,3,4,5,6,7,11,915,935,2596,1613,3277,3463"
 )
   .split(",")
   .map((s) => Number(s.trim()));
