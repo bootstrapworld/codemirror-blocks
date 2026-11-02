@@ -169,7 +169,7 @@ function parse(input: TokenStream): LambdaNode {
     }
     toLocation = input.pos().to;
     return {
-      from: fromLocation,
+      from: name.from,
       to: toLocation,
       name: name,
       type: "def",

@@ -369,6 +369,14 @@ describe("the extent of a let", () => {
     const { prog } = parseToIntermediateAST("let (a = 1, b = 2) a + b");
     expect(prog[0].to).toEqual({ line: 0, ch: 24 });
   });
+  it("starts each binding at its name", () => {
+    const { prog } = parseToIntermediateAST("let (a = 1, zzz, b = 2) a + b");
+    expect(prog[0].vars.map((v: any) => [v.from.ch, v.to.ch])).toEqual([
+      [5, 10],
+      [12, 15],
+      [17, 22],
+    ]);
+  });
   it("reaches the end of the body of a named let", () => {
     const { prog } = parseToIntermediateAST("let loop (a = 1) a + 1");
     expect(prog[0].to).toEqual({ line: 0, ch: 22 });

@@ -1682,6 +1682,33 @@ describe("sequences that once broke the editor", () => {
       ],
     });
   }, 120_000);
+
+  it("seeds 177269, 168796, 211036: cutting bindings of a let that has a bare name among them (a binding was taken to start where the last expression did)", () => {
+    check({
+      code: "let (a = 1, b = 2) a + b",
+      language: "lambda",
+      steps: [
+        {
+          op: "paste beside a block",
+          r: [401215749, 68809416, 622804288, 536433777],
+        },
+        {
+          op: "switch to text mode and back",
+          r: [686464834, 500912157, 46471605, 1686995],
+        },
+        {
+          op: "drag a block onto a drop target",
+          r: [597083949, 346602181, 998012738, 962286662],
+        },
+        { op: "cut", r: [974838319, 614306977, 783603330, 348928615] },
+        { op: "redo", r: [661967801, 640923994, 400402850, 746829502] },
+        {
+          op: "drag a block onto a drop target",
+          r: [330947279, 756246413, 113768830, 423376327],
+        },
+      ],
+    });
+  }, 120_000);
 });
 
 describe("random sequences of operations", () => {
