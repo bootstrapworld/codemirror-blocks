@@ -150,6 +150,18 @@ const NodeEditable = ({
           return;
         }
 
+        // the block being edited can be gone by now (something removed it, and
+        // this box is only being closed because of that): there is nothing to
+        // change
+        if (
+          target.node &&
+          !selectors.getAST(getState()).getNodeById(target.node.id)
+        ) {
+          props.onDisableEditable();
+          dispatch(keepFocusInEditor);
+          return;
+        }
+
         const annt = `${props.isInsertion ? "inserted" : "changed"} ${value}`;
         const result = dispatch(insert(value, target, props.editor, annt));
         if (result.successful) {
