@@ -1635,6 +1635,28 @@ describe("sequences that once broke the editor", () => {
       ],
     });
   }, 120_000);
+
+  it("seed 153187: editing a block to text with a comment, undone, then edited again (an empty list of removed lines reached minimizeChange)", () => {
+    check({
+      code: "x = 1",
+      language: "lambda",
+      steps: [
+        {
+          op: "edit a block to awkward text",
+          r: [972256570, 667665605, 414397923, 896262159],
+        },
+        {
+          op: "paste over a selection",
+          r: [986125248, 383701194, 758787577, 256325095],
+        },
+        { op: "undo", r: [201808779, 79368167, 210051377, 954587190] },
+        {
+          op: "edit a block to awkward text",
+          r: [367076642, 960208487, 410101624, 975278730],
+        },
+      ],
+    });
+  }, 120_000);
 });
 
 describe("random sequences of operations", () => {

@@ -305,7 +305,13 @@ export function minimizeChange({
   origin = undefined,
 }: EditorChange & { removed: string[] }) {
   // Remove shared lines
-  while (text.length >= 2 && text[0] && removed[0] && text[0] === removed[0]) {
+  while (
+    text.length >= 2 &&
+    removed.length >= 2 &&
+    text[0] &&
+    removed[0] &&
+    text[0] === removed[0]
+  ) {
     text.shift();
     removed.shift();
     from.line += 1;
