@@ -18,10 +18,12 @@ import {
  * Set CMB_E2E_SEEDS (a comma-separated list) to try other seeds. Seed 11 is in
  * the default list because it once found a real bug: a press on blank space that
  * became a drag left keyboard focus on CodeMirror's scroller, which handles no
- * keys, so every later Ctrl-Z was ignored.
+ * keys, so every later Ctrl-Z was ignored. Seeds 915 and 935 are there because
+ * CodeMirror's display was updated while React rendered (915), and a block
+ * removed from the page asked to be scrolled to as it lost focus (935).
  */
 
-const SEEDS = (process.env.CMB_E2E_SEEDS ?? "1,2,3,4,5,6,7,11")
+const SEEDS = (process.env.CMB_E2E_SEEDS ?? "1,2,3,4,5,6,7,11,915,935")
   .split(",")
   .map((s) => Number(s.trim()));
 // (each step makes at most one undo step, and undoAll() presses undo ten times)

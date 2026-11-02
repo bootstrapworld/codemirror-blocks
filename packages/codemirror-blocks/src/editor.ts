@@ -289,6 +289,18 @@ export class CodeMirrorFacade implements CMBEditor {
         "can't scroll an ast node into view if it doesn't have an element set"
       );
     }
+    // Removing the focused block while CodeMirror patches its display fires the
+    // block's blur handlers right then, and one of them can ask to scroll:
+    // CodeMirror cannot measure in the middle of its own update, so wait.
+    if (window.event?.type === "blur" || window.event?.type === "focusout") {
+      queueMicrotask(() => {
+        // (the block may be gone by then)
+        if (node.element) this.scrollASTNodeIntoView(node);
+      });
+      return;
+    }
+    // a block that was just removed still has its element, but nowhere to scroll to
+    if (!node.element.isConnected) return;
     this.codemirror.scrollIntoView(node.from);
     // get the *actual* bounding rect
     let { top, bottom, left, right } = node.element.getBoundingClientRect();
