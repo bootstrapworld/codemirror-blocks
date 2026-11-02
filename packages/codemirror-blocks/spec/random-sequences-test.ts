@@ -372,6 +372,7 @@ const operations: Operation[] = [
   {
     name: "type at the top level",
     run: (w, r) => {
+      stopEditing(); // (a box left open with an error keeps the focus off a new one)
       const pos = pick(whitespacePositions(w), r[1]);
       if (!pos) return;
       w.cmb.setCursor(pos);
@@ -384,6 +385,7 @@ const operations: Operation[] = [
   {
     name: "paste at the top level",
     run: (w, r) => {
+      stopEditing();
       const pos = pick(whitespacePositions(w), r[1]);
       if (!pos) return;
       w.cmb.setCursor(pos);
@@ -529,7 +531,13 @@ const operations: Operation[] = [
       const text = pick(texts, r[1])!;
       // (the new statement joins lambda's one program block, so an edit box
       // left open at the end of the document would end up inside it)
-      if (w.cmb.getAst().language.id === "lambda") stopEditing();
+      // (and a root that takes in the comments before it also takes in a box
+      // left open among them: only a program change can do that, not a user)
+      if (
+        w.cmb.getAst().language.id === "lambda" ||
+        /;|#\|/.test(w.cmb.getValue())
+      )
+        stopEditing();
       const line = w.cmb.lastLine();
       // (lambda statements are separated by `;`: without it the text is refused)
       const sep = separator(w);
