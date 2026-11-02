@@ -600,6 +600,7 @@ const operations: Operation[] = [
   {
     name: "select many blocks, then cut, copy, delete or paste",
     run: (w, r) => {
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
       const nodes = visibleNodes(w);
       const chosen =
         r[1] % 4 === 0 ? nodes : pickMany(nodes, 2 + (r[1] % 5), r[2]);
