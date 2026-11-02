@@ -22,11 +22,12 @@ import {
  * CodeMirror's display was updated while React rendered (915), and a block
  * removed from the page asked to be scrolled to as it lost focus (935). Seed
  * 2596 is there because an edit box was committed as its block was removed, and
- * 1613 because the wait to scroll to a block lost to a blur never ended.
+ * 1613 because the wait to scroll to a block lost to a blur never ended, and
+ * 3277 because a block lost its marker to a box that took its place.
  */
 
 const SEEDS = (
-  process.env.CMB_E2E_SEEDS ?? "1,2,3,4,5,6,7,11,915,935,2596,1613"
+  process.env.CMB_E2E_SEEDS ?? "1,2,3,4,5,6,7,11,915,935,2596,1613,3277"
 )
   .split(",")
   .map((s) => Number(s.trim()));

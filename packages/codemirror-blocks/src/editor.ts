@@ -329,7 +329,15 @@ export class CodeMirrorFacade implements CMBEditor {
   ): BlockNodeMarker {
     // clear any existing block node markers
     for (const m of this.codemirror.findMarks(from, to)) {
-      if (m.isBlockNode) {
+      if (!m.isBlockNode) continue;
+      // (findMarks also gives the markers that only touch the range: a new
+      // marker beside a block must leave it alone)
+      const range = m.find();
+      if (
+        !range ||
+        "line" in range ||
+        (poscmp(range.from, to) < 0 && poscmp(range.to, from) > 0)
+      ) {
         m.clear();
       }
     }

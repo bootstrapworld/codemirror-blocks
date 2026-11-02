@@ -72,17 +72,22 @@ const ToplevelBlock = (props: Props) => {
   const handle = useRef<{ marker?: BlockNodeMarker }>({});
   const { editor, node } = props;
   useLayoutEffect(() => {
+    // (a marker that was cleared from outside, such as by a box that took its
+    // place for a while, is made again: this runs after every render)
+    if (handle.current.marker && hasLiveMarker(node)) return;
+    handle.current.marker?.clear();
     const mark = editor.replaceMarkerWidget(from, to, container);
     handle.current.marker = mark;
     markers.set(node, mark);
-    // When unmounting, clean up the TextMarker
+  });
+  // When unmounting, clean up the TextMarker
+  useLayoutEffect(() => {
+    const current = handle.current;
     return () => {
-      mark.clear();
-      if (handle.current.marker === mark) handle.current.marker = undefined;
+      current.marker?.clear();
+      current.marker = undefined;
     };
-    // (the range is compared by value)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, node, container, from.line, from.ch, to.line, to.ch]);
+  }, []);
 
   // set elt to a cheap placeholder, OR render the entire rootNode
   const elt = renderPlaceholder ? (
