@@ -1182,7 +1182,14 @@ function runSequence(sequence: Sequence): RunResult {
         stopEditing();
         returnToEditor(cmb);
         // (nothing has had focus since the mode switch: the user clicks in)
-        if (document.activeElement === document.body) act(() => cmb.focus());
+        // (nor has a block CodeMirror dropped from a long document: focus waits
+        // on the placeholder for the block to come back, and the user, who sees
+        // nothing there, clicks in)
+        if (
+          document.activeElement === document.body ||
+          document.activeElement?.id === "SR_fix_for_slow_dom"
+        )
+          act(() => cmb.focus());
         keyDown(key, props);
         trace.push(
           `${which} (walking the whole history)\n       text: ${JSON.stringify(text())}`
