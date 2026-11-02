@@ -13,6 +13,7 @@
 // is the command that runs it (spec/field-replay-test.ts). Reads GitHub with
 // `gh api` only; it never files or changes an issue.
 
+/* eslint-disable no-console */
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
