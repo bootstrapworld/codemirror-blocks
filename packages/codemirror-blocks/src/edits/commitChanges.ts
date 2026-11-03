@@ -46,13 +46,15 @@ export const commitChanges =
     const oldFocus = selectors.getFocusedNode(getState());
 
     // If we haven't already parsed the AST during speculateChanges, parse it now.
+    const sourceText = astHint ? astHint.sourceText : editor.getValue();
     const newNodes: ASTNode[] = astHint
       ? [...astHint.rootNodes]
-      : oldAST.language.parse(editor.getValue());
+      : oldAST.language.parse(sourceText!);
     // Patch the tree and set the state
     const newAST = AST.from(
       oldAST.language.id,
-      patch([...oldAST.rootNodes], newNodes)
+      patch([...oldAST.rootNodes], newNodes),
+      sourceText
     );
     dispatch(actions.setAST(newAST));
 

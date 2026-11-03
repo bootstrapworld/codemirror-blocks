@@ -130,6 +130,13 @@ export type ASTData = Readonly<{
    * {@link getNodeParent}
    */
   readonly edgeIdMap: Readonly<{ [id: string]: Readonly<Edges> }>;
+
+  /**
+   * The text this AST was built from, when known (an edit that touches little
+   * of it is then parsed without reading all of it again, see
+   * {@link incrementalBuildAST}; it is only used if it is the editor's text)
+   */
+  readonly sourceText?: string;
 }>;
 
 /**
@@ -210,10 +217,19 @@ export class AST {
     this.data = data;
   }
 
-  static from(languageId: string, rootNodes: Readonly<ASTNode[]>) {
+  get sourceText() {
+    return this.data.sourceText;
+  }
+
+  static from(
+    languageId: string,
+    rootNodes: Readonly<ASTNode[]>,
+    sourceText?: string
+  ) {
     return new AST({
       languageId,
       ...annotateNodes(rootNodes),
+      sourceText,
     });
   }
 

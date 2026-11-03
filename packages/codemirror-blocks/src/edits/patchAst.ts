@@ -29,8 +29,25 @@ export default function patchAst(oldTree: ASTNode[], newTree: ASTNode[]) {
     if (newTree instanceof ASTNode && oldTree instanceof ASTNode) {
       newTree.id = oldTree.id;
     }
+    const oldChildren = children(oldTree);
+    const processed = new Set<string>();
+
+    // A node that was moved rather than parsed again already has its old id and
+    // is its own match. (Matching these first keeps another new node with the
+    // same hash from being given the id they already have.)
+    const oldById = new Map(oldChildren.map((n) => [n.id, n]));
+    const unmatched = children(newTree).filter((newNode) => {
+      const oldNode = oldById.get(newNode.id);
+      if (oldNode && oldNode.hash === newNode.hash) {
+        processed.add(oldNode.id);
+        return false;
+      }
+      return true;
+    });
+
     const index: { [key: string]: ASTNode[] } = {};
-    for (const oldNode of children(oldTree)) {
+    for (const oldNode of oldChildren) {
+      if (processed.has(oldNode.id)) continue;
       if (index[oldNode.hash]) {
         index[oldNode.hash].push(oldNode);
       } else {
@@ -38,10 +55,8 @@ export default function patchAst(oldTree: ASTNode[], newTree: ASTNode[]) {
       }
     }
 
-    const processed = new Set();
-
-    let partiallySuccess = false;
-    const newLeftover = children(newTree).filter((newNode) => {
+    let partiallySuccess = processed.size > 0;
+    const newLeftover = unmatched.filter((newNode) => {
       if (index[newNode.hash]?.length > 0) {
         const oldNode = index[newNode.hash].shift();
         if (oldNode) {
@@ -53,7 +68,7 @@ export default function patchAst(oldTree: ASTNode[], newTree: ASTNode[]) {
       }
       return true;
     });
-    const oldLeftover = children(oldTree).filter((oldNode) => {
+    const oldLeftover = oldChildren.filter((oldNode) => {
       return !processed.has(oldNode.id);
     });
     if (partiallySuccess || newLeftover.length <= 1) {

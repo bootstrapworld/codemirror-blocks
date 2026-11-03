@@ -188,7 +188,8 @@ export function applyEdits(
   const result = speculateChanges(
     changeObjects,
     ast.language,
-    editor.getValue()
+    editor.getValue(),
+    ast
   );
   if (result.successful) {
     editor.applyChanges(changeObjects);

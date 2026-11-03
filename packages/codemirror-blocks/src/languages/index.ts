@@ -39,6 +39,14 @@ export type LanguageConfig = {
   parse(code: string): ASTNode[];
 
   /**
+   * True if `parse` reads the top-level forms one after another, each starting
+   * where the last ended (and, given blank lines and spaces in front of a piece
+   * of the program, gives positions as if it were in the whole program). An edit
+   * then only needs the forms around it parsed again.
+   */
+  incrementalParse?: boolean;
+
+  /**
    * A function for generating a human readable error message
    * from any exceptions that are thrown by a call to parse()
    */
@@ -86,7 +94,7 @@ export function addLanguage(languageDefinition: LanguageConfig) {
     getExceptionMessage: (e: unknown) => String(e) || "Parser error",
     ...languageDefinition,
     buildAST: (code: string) => {
-      return AST.from(id, languageDefinition.parse(code));
+      return AST.from(id, languageDefinition.parse(code), code);
     },
   };
   LANGUAGES[id] = language;

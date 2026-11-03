@@ -3,7 +3,8 @@ import { recordEvent } from "../state/activityLog";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "./Editor.less";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
+import type { RootState } from "../state/reducers";
 import { commitChanges, focusAfterUndoOrRedo } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
@@ -62,6 +63,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language } = props;
   const dispatch: AppDispatch = useDispatch();
   const ast = useSelector(selectors.getAST);
+  const store = useStore<RootState>();
   const quarantine = useSelector(selectors.getQuarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const newASTRef = useRef<AST | undefined>(undefined);
@@ -109,7 +111,12 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     change: CodeMirror.EditorChangeCancellable
   ) => {
     if (!isChangeObject(change)) {
-      const result = speculateChanges([change], language, editor.getValue());
+      const result = speculateChanges(
+        [change],
+        language,
+        editor.getValue(),
+        selectors.getAST(store.getState())
+      );
       // Success! Save the parsed AST for handleChange
       if (result.successful) {
         newASTRef.current = result.value;

@@ -46,6 +46,7 @@ export default addLanguage({
   name: "WeScheme",
   description: "The WeScheme language",
   parse,
+  incrementalParse: true,
   getExceptionMessage,
   getASTNodeForPrimitive,
   getLiteralNodeForPrimitive,
