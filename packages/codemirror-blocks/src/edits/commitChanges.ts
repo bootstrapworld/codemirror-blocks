@@ -140,7 +140,7 @@ export const focusAfterUndoOrRedo =
 // 1. There is no focus hint, or
 // 2. There is a focus hint, but when you call it it returns "fallback".
 // In those cases, use `computeFocusNodeFromChanges` instead.
-const computeFocusNodeFromHint = (
+export const computeFocusNodeFromHint = (
   editor: ReadonlyCMBEditor,
   changes: EditorChange[],
   focusHint: FocusHint,
@@ -182,7 +182,7 @@ const computeFocusNodeFromHint = (
 // NOTE(Justin): This is a set of _heuristics_ that are likely but not
 // guaranteed to work, because textual edits may obscure what's really going on.
 // Whenever possible, a `focusHint` should be given.
-function computeFocusNodeFromChanges(
+export function computeFocusNodeFromChanges(
   text: ReadonlyRangedText,
   changes: EditorChange[],
   newAST: AST
