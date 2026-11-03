@@ -86,6 +86,13 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     hadBlocksRef.current = hasBlocks;
   }, [ast, editor]);
 
+  // CodeMirror draws a block that was scrolled out of view again without React
+  // rendering it, so nothing refocuses it. If focus was parked on the
+  // placeholder meanwhile (see activateByNid), hand it to the block now.
+  const focusedId = useSelector(selectors.getFocusedNode)?.id;
+  const focusedIdRef = useRef(focusedId);
+  focusedIdRef.current = focusedId;
+
   // only refresh if there is no active quarantine
   useEffect(() => {
     if (!quarantine) {
@@ -183,6 +190,11 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     });
     codemirror.on("change", (ed, change) => handleChange(editor, change));
     codemirror.on("changes", (ed, changes) => handleChanges(editor, changes));
+    codemirror.on("update", () => {
+      if (document.activeElement?.id !== "SR_fix_for_slow_dom") return;
+      const id = focusedIdRef.current;
+      if (id) document.getElementById(`block-node-${id}`)?.focus();
+    });
 
     // set AST and search properties and collapse preferences
     if (options.collapseAll) {

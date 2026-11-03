@@ -1,3 +1,4 @@
+import CodeMirror from "codemirror";
 import wescheme from "../src/languages/wescheme";
 import {
   cmd_ctrl,
@@ -125,5 +126,27 @@ describe("switching modes with a top-level edit box open", () => {
     cmb.setBlockMode(false);
     cmb.setBlockMode(true);
     expectInvariants();
+  });
+});
+
+describe("moving to a block that CodeMirror isn't drawing right now", () => {
+  // (random sequences, seeds 280328 and 319752) focus waits on the placeholder
+  // for the block; CodeMirror then draws it again without React rendering it,
+  // so nothing handed focus over and typing and shortcuts went nowhere
+  it("hands focus to the block when it is drawn again", () => {
+    cmb.setValue("a b c");
+    mouseDown(root(0));
+    const elt = document.getElementById(`block-node-${root(1).id}`)!;
+    const parent = elt.parentElement!;
+    const next = elt.nextSibling;
+    elt.remove();
+    keyDown("ArrowDown", {}, root(0));
+    expect(document.activeElement?.id).toBe("SR_fix_for_slow_dom");
+    parent.insertBefore(elt, next);
+    const cm = (
+      cmb.getWrapperElement() as HTMLElement & { CodeMirror: CodeMirror.Editor }
+    ).CodeMirror;
+    CodeMirror.signal(cm, "update", cm);
+    expect(document.activeElement).toBe(elt);
   });
 });
