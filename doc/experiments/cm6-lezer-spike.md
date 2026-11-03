@@ -50,3 +50,14 @@ Always-available incremental tree (0.6 ms/edit at 5k lines), invariant enforceme
 ## Biggest remaining risk
 
 Focus/selection management across block widgets (disposable DOM, restore-on-update) with real assistive tech and mobile/IME, which this spike could not test. Second: public API break for embedders.
+
+## Side question: is React the right renderer?
+
+Not measured yet (a profile is planned); this is reasoning from the code.
+
+- **The diff is the cheap part.** The AST is immutable, edits are explicit insert/delete/replace operations, `patchAst` keeps unchanged nodes identical and the `ToplevelBlock` memo compares ranges and hashes, so React mostly gets "nothing changed". If large documents are slow, suspect CodeMirror marker churn, layout, or a Redux selector in every node before the reconciler.
+- **Four operations are not the whole update.** Inserting or deleting a node changes its siblings' `aria-posinset`/`aria-setsize`; `aria-level` depends on position; focus, selection, collapsed and error state change classes and attributes. React derives all of that from state. A hand-built renderer must decide which nodes to touch for each change, which is where stale-marker style bugs come from (the soak would catch them).
+- **Dropping React costs:** every component (edit box, dialogs, toolbar, search UI), `react-redux`, `react-modal`, `react-tabs`, our delegated keyboard events, and most of the ~1500 Testing Library tests.
+- **It would gain:** a smaller bundle, stable DOM identity (focus is not lost on a re-render), and predictable moves.
+- **Cheaper options first:** profile a large document; render only visible top-level blocks; try Preact (there is a `preact` branch: find out why it stopped).
+- **Link to CM6:** CM6 widgets are `toDOM`/`updateDOM`/`destroy` objects, and the spike showed focus survives only when the DOM is reused. If the CM6 rewrite happens, an imperative in-house renderer fits it better than React portals, which would need a registry keyed by node id plus a focus-restore step. So decide this together with CM6, not before.
