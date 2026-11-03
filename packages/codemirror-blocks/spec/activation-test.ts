@@ -203,6 +203,9 @@ describe("Editing a node", () => {
     await userEvent.click(
       screen.getByRole("treeitem", { name: /secondLiteral/ })
     );
+    // the box opens with the old text selected, so typing replaces it
+    expect(document.activeElement?.textContent).toBe("secondLiteral");
+    (document.activeElement as HTMLElement).innerHTML = "";
     insertText("newLiteral");
     keyDown("Enter");
     expect(cmb.getValue()).toBe("firstLiteral newLiteral thirdLiteral");

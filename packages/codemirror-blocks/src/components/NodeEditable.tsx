@@ -77,8 +77,11 @@ const NodeEditable = ({
     const isErrored = useSelector(
       (state: RootState) => selectors.getErrorId(state) == nodeId
     );
+    // (no value yet, as in a block nobody has edited, means "the node's own text")
     const initialValue =
-      props.value === null ? props.target.getText(ast, props.editor) : "";
+      props.value === null || props.value === undefined
+        ? props.target.getText(ast, props.editor)
+        : "";
 
     // select and focus the element on mount
     useEffect(() => {
