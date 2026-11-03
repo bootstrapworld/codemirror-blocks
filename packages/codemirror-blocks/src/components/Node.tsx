@@ -7,7 +7,13 @@ import React, {
   useState,
 } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
-import { AST, ASTNode, nodeElementMap } from "../ast";
+import {
+  AST,
+  ASTNode,
+  DrawnNode,
+  currentNode as currentNodeIn,
+  nodeElementMap,
+} from "../ast";
 import { ReplaceNodeTarget, collapseNode } from "../state/actions";
 import * as actions from "../state/actions";
 import NodeEditable from "./NodeEditable";
@@ -29,7 +35,8 @@ import * as selectors from "../state/selectors";
 // EVEN BETTER: is it possible to just pass an id?
 
 export type Props = {
-  node: ASTNode;
+  /** (a node that may be older than the document: see {@link DrawnNode}) */
+  node: DrawnNode;
   inToolbar?: boolean;
   normallyEditable?: boolean;
   expandable?: boolean;
@@ -44,7 +51,7 @@ export type Props = {
  * to be unique across multiple instances of CodeMirrorBlocks because
  * the ast node ids are generated with {@link genUniqueId}.
  */
-function getNodeElementId(node: ASTNode) {
+function getNodeElementId(node: { id: string }) {
   return `block-node-${node.id}`;
 }
 
@@ -93,7 +100,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
   // starts from the current one.
   const store = useStore<RootState>();
   const currentNode = () =>
-    selectors.getAST(store.getState()).getNodeById(props.node.id) ?? props.node;
+    currentNodeIn(selectors.getAST(store.getState()), props.node);
   const appHelpers = use(AppContext);
   const isErrorFree = useSelector(selectors.isErrorFree);
 
@@ -231,11 +238,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
   });
   const [{ isDragging }, connectDragSource] = useDrag({
     describe: () =>
-      isDummyPos(props.node.from) && isDummyPos(props.node.to)
+      isDummyPos(currentNode().from) && isDummyPos(currentNode().to)
         ? { tool: props.node.toString() }
         : { nid: currentNode().nid },
     item: () => {
-      if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
+      if (isDummyPos(currentNode().from) && isDummyPos(currentNode().to)) {
         return { content: props.node.toString() };
       }
       return { id: props.node.id };
@@ -393,5 +400,9 @@ export default React.memo(Node, (prev: Props, next: Props) => {
   for (const key of keys) {
     if (prev[key as keyof Props] !== next[key as keyof Props]) return false;
   }
-  return prev.node === next.node || areNodesEqualish(prev.node, next.node);
+  // (the one place that compares positions: both nodes really are ASTNodes)
+  return (
+    prev.node === next.node ||
+    areNodesEqualish(prev.node as ASTNode, next.node as ASTNode)
+  );
 });

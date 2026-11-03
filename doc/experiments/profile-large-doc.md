@@ -280,23 +280,55 @@ its old `ASTNode` in props, which edit handlers (`ReplaceNodeTarget(props.node)`
 read positions from; doing it safely means resolving the node by id from the
 store at the point of use. That is a larger, riskier change than the two above.
 
+## Adopted, part 3: blocks that only moved are not drawn again
+
+`Node` is `React.memo`'d and `areNodesEqualish` compares content hash, place among
+siblings, level and _shape_ (lines spanned, end column), not absolute position, so
+an insert or delete above a block no longer redraws it. A block that bails out keeps
+an older node object, with older positions. To make that hard to get wrong:
+
+- `Node`'s `node` prop and the node context are typed `DrawnNode` (`ast.ts`): an
+  `ASTNode` without `from`, `to`, `nid`, `srcRange`, `fields`, `children` and
+  `descendants`. Reading a position from it does not compile. `id`, `type`,
+  `hash`, `options`, `level`, `ariaSetSize` and `ariaPosInset` are as current as
+  the block (ids are kept by `patchAst`; the others are in the comparison).
+- Code that acts on the node's place in the document calls `currentNode()`, which
+  looks it up by id in the present AST (`Node.tsx`, `DropTarget.tsx`, and the root
+  block's marker code in `ToplevelBlock.tsx`).
+- The root block hands focus back after it remakes its marker, since the blocks
+  inside no longer run the effect that did.
+- `e2e/moved-blocks.e2e.ts` edits, deletes, collapses and focuses blocks after
+  inserts above them. (Replacing `currentNode()` with the stale node does not fail
+  it: edits, deletes and activation turn out to go by id. The type guard, not the
+  test, is what protects the position-dependent paths.)
+
+| 3000 lines (ms, settled) | before    | after                    |
+| ------------------------ | --------- | ------------------------ |
+| insert at top (paste)    | 1535      | 954 (63k → 5.5k renders) |
+| arrow down ×50           | 3492      | 2033                     |
+| undo / redo              | 484 / 857 | 361 / 696                |
+| delete                   | 775       | 706                      |
+| edit literal             | 475       | 431                      |
+
+Raw results: `profile-large-doc/after-memo/`.
+
 ## Not adopted: further options, kept on the branch `perf-experiments`
 
 The first four changes above (two commits touching `Node.tsx` and `selectors.ts`,
-about 70 lines) got most of the gain for little complexity. These four others went
+about 70 lines) got most of the gain for little complexity, and the memoization
+below was adopted after them (see "Adopted, part 3"). These three others went
 further and were measured, but add machinery, so they are left out for now. The
 code is on the local branch `perf-experiments` (commits named below), with its raw
 results in `profile-large-doc/after3`…`after7`, `noplaceholder`. Each section
 below says what it does and what it costs. Numbers are 3000 lines, settled ms, and
 cumulative on top of the adopted changes.
 
-| option                                           | commit     | arrow ×50 | edit | insert at top                                                                   | text → blocks | expand all | cost                                                                                                                                                                  |
-| ------------------------------------------------ | ---------- | --------- | ---- | ------------------------------------------------------------------------------- | ------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| adopted state                                    |            | 3492      | 475  | 1535                                                                            | 933           | 767        |                                                                                                                                                                       |
-| blocks that only moved are not redrawn           | `b44f4767` | 2050      | 450  | 954                                                                             | 880           | 679        | `Node` is memoized, so `props.node` can be an older node with older positions: handlers must call `currentNode()`; root block returns focus after remaking its marker |
-| keyed subscription hub                           | `03ee95f1` | 99        | 342  | 984                                                                             | 1237          | 478        | `state/nodeSubscriptions.ts` (110 lines): per-id state is no longer `useSelector`, and must be wired into the hub or the UI goes stale                                |
-| parse only the forms an edit touches (WeScheme)  | `ac9136c6` | 112       | 268  | 1381 (slower than the row above, not investigated; 478 again with the next row) | 818           | 496        | `edits/incrementalParse.ts` (150 lines), `ASTData.sourceText`, a lexical guard, a differential spec; edit's first visible change 145 → 70 ms                          |
-| draw only blocks near the viewport (> 300 forms) | `1faa42c3` | 125       | 271  | 478                                                                             | 724           | 88         | scroll position in a long program is approximate until blocks arrive; threshold and option; only e2e covers it                                                        |
+| option                                           | commit     | arrow ×50 | edit | insert at top                                                                   | text → blocks | expand all | cost                                                                                                                                         |
+| ------------------------------------------------ | ---------- | --------- | ---- | ------------------------------------------------------------------------------- | ------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| adopted state                                    |            | 3492      | 475  | 1535                                                                            | 933           | 767        |                                                                                                                                              |
+| keyed subscription hub                           | `03ee95f1` | 99        | 342  | 984                                                                             | 1237          | 478        | `state/nodeSubscriptions.ts` (110 lines): per-id state is no longer `useSelector`, and must be wired into the hub or the UI goes stale       |
+| parse only the forms an edit touches (WeScheme)  | `ac9136c6` | 112       | 268  | 1381 (slower than the row above, not investigated; 478 again with the next row) | 818           | 496        | `edits/incrementalParse.ts` (150 lines), `ASTData.sourceText`, a lexical guard, a differential spec; edit's first visible change 145 → 70 ms |
+| draw only blocks near the viewport (> 300 forms) | `1faa42c3` | 125       | 271  | 478                                                                             | 724           | 88         | scroll position in a long program is approximate until blocks arrive; threshold and option; only e2e covers it                               |
 
 Reading it: the hub is what makes arrow keys instant (3.5 s → 0.1 s for 50 keys
 at 3000 lines, 1000 lines 2.0 → 0.07 s); the rest matter mainly above ~1000 lines.

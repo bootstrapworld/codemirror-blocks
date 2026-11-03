@@ -9,7 +9,8 @@ import React, {
 import ReactDOM from "react-dom";
 import { useStore } from "react-redux";
 import { poscmp } from "../utils";
-import { ASTNode, nodeElementMap } from "../ast";
+import { ASTNode, Pos, currentNode, nodeElementMap } from "../ast";
+import * as selectors from "../state/selectors";
 import type { RootState } from "../state/reducers";
 import { BlockNodeMarker, CMBEditor } from "../editor";
 
@@ -40,10 +41,10 @@ const markers = new WeakMap<ASTNode, BlockNodeMarker>();
 // A marker whose edge was at the start or end of the replaced text can survive,
 // but shrunk (replacing the first child of a root with its own text leaves the
 // root's marker starting after it), so it must still cover the node's range.
-const hasLiveMarker = (node: ASTNode) => {
+const hasLiveMarker = (node: ASTNode, wanted: { from: Pos; to: Pos }) => {
   const range = markers.get(node)?.find();
   if (!range || !("from" in range)) return false;
-  const { from, to } = node.srcRange();
+  const { from, to } = wanted;
   return poscmp(range.from, from) === 0 && poscmp(range.to, to) === 0;
 };
 
@@ -70,13 +71,18 @@ const ToplevelBlock = (props: Props) => {
   // rendering: making and clearing a marker updates CodeMirror's display, which
   // must not happen in the middle of React's render (the display could then be
   // patched while React is still moving the nodes it holds).
-  const { from, to } = props.node.srcRange(); // includes the node's comment, if any
+  const store = useStore<RootState>();
   const markerRef = useRef<{ marker?: BlockNodeMarker }>({});
   const { editor, node } = props;
   useLayoutEffect(() => {
     // (a marker that was cleared from outside, such as by a box that took its
     // place for a while, is made again: this runs after every render)
-    if (markerRef.current.marker && hasLiveMarker(node)) return;
+    // (where the node is now: this block was not drawn again if it only moved)
+    const { from, to } = currentNode(
+      selectors.getAST(store.getState()),
+      node
+    ).srcRange(); // includes the node's comment, if any
+    if (markerRef.current.marker && hasLiveMarker(node, { from, to })) return;
     markerRef.current.marker?.clear();
     const mark = editor.replaceMarkerWidget(from, to, container);
     markerRef.current.marker = mark;
@@ -85,7 +91,6 @@ const ToplevelBlock = (props: Props) => {
   // Remaking the marker moves the block's elements, and the browser drops focus
   // that was on one of them. The blocks inside don't notice (they are not drawn
   // again when only their place changed), so give focus back to the focused one.
-  const store = useStore<RootState>();
   useEffect(() => {
     const active = document.activeElement;
     if (
@@ -157,5 +162,5 @@ export default React.memo(
     nextProps.incrementalRendering === prevProps.incrementalRendering &&
     nextProps.editor === prevProps.editor &&
     areNodesEqualish(prevProps.node, nextProps.node) && // didn't change
-    hasLiveMarker(prevProps.node) // and is still drawn
+    hasLiveMarker(prevProps.node, nextProps.node.srcRange()) // and is still drawn where it is now
 );
