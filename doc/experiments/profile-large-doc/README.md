@@ -25,13 +25,13 @@ Close other heavy work first (the soak runner, say): timings are wall-clock.
 
 ## Options (`profile.mjs`)
 
-| flag | default | meaning |
-|---|---|---|
-| `--mode` | `time` | `time`: no profiler attached (numbers to quote). `profile`: CDP CPU profile + trace per operation, bucketed. `render`: counts component renders through a stub React DevTools hook. |
-| `--sizes` | `200,1000,3000` | document length in lines (`gen.js`: deterministic nested define/cond/let with comments, ~11 lines per form) |
-| `--reps` | `5` | repetitions, each in a fresh browser context; results are appended to the output file |
-| `--url` | `http://localhost:8201/` | the dev server |
-| `--out` | `results-<mode>.json` | raw results (delete it to start over) |
+| flag      | default                  | meaning                                                                                                                                                                             |
+| --------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--mode`  | `time`                   | `time`: no profiler attached (numbers to quote). `profile`: CDP CPU profile + trace per operation, bucketed. `render`: counts component renders through a stub React DevTools hook. |
+| `--sizes` | `200,1000,3000`          | document length in lines (`gen.js`: deterministic nested define/cond/let with comments, ~11 lines per form)                                                                         |
+| `--reps`  | `5`                      | repetitions, each in a fresh browser context; results are appended to the output file                                                                                               |
+| `--url`   | `http://localhost:8201/` | the dev server                                                                                                                                                                      |
+| `--out`   | `results-<mode>.json`    | raw results (delete it to start over)                                                                                                                                               |
 
 Operations (the list is in `runOnce`; each is one `m(name, action)` call, so add
 or drop one there): a. load + first blocks render, b. text → blocks (warm),
