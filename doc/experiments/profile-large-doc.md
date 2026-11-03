@@ -228,3 +228,198 @@ Caveat: with #1 and #2 done, the remaining per-edit cost would be `speculateChan
 
 - `patchAst` + parse (≈170–280 ms at 3000 lines) and undo history work; worth a
   second profile after.
+
+## Adopted, part 1: per-node focus booleans, stable `NodeContext`, set lookups
+
+Raw results: `profile-large-doc/after/`. Medians of 3 reps (settled ms); unit
+tests (1491) and the e2e suite (90) pass.
+
+| operation          | 200 before → after | 1000 before → after | 3000 before → after | renders @3000 |
+| ------------------ | ------------------ | ------------------- | ------------------- | ------------- |
+| arrow down ×50     | 3161 → 451         | 17688 → 2065        | 54836 → 3864        | 2.7M → 260    |
+| edit literal       | 246 → 243          | 458 → 385           | 1462 → 915          | 54k → 224     |
+| delete             | 202 → 208          | 735 → 358           | 1623 → 979          | 54k → 52      |
+| undo               | 219 → 218          | 685 → 294           | 2249 → 617          | 54k → 54      |
+| redo               | 223 → 215          | 602 → 432           | 2102 → 1166         | 54k → 52      |
+| insert at top      | 441 → 437          | 938 → 944           | 1986 → 2089         | 63k → 63k     |
+| collapse all       | 224 → 222          | 978 → 967           | 4900 → 4767         | 54k → 32k     |
+| expand all         | 92 → 156           | 795 → 807           | 4232 → 4494         | 54k → 32k     |
+| load / text→blocks | unchanged          | unchanged           | ~2.2 s              | 64k           |
+
+Still open, in order of payoff: insert/delete near the top re-renders every
+later root because `areNodesEqualish` compares absolute positions (compare
+relative to the previous root); collapse/expand all spends half its time in
+CodeMirror (`marker.changed()` per node: batch in one `operation()`); load and
+mode switch (marker creation for 1092 roots, the 250 ms placeholder step);
+arrow keys still cost ~78 ms at 3000 lines from every block's selectors running
+on each store update.
+
+## Adopted, part 2: one `marker.changed()` per block per commit
+
+Raw results: `profile-large-doc/after2/`. Medians of 3 reps, settled ms; 1491
+unit tests and 90 e2e tests pass. (Skipping the call on mount was faster still
+but broke an e2e test that clicks beside a just-drawn block: CodeMirror needs the
+measure at mount.)
+
+| operation                  | 3000 lines, original | after fix 1 | after fix 2 |
+| -------------------------- | -------------------- | ----------- | ----------- |
+| load + first blocks render | 2233                 | 2476        | **1014**    |
+| text → blocks (warm)       | 2093                 | 2153        | **933**     |
+| edit literal               | 1462                 | 915         | **475**     |
+| undo                       | 2249                 | 617         | **484**     |
+| redo                       | 2102                 | 1166        | **857**     |
+| insert at top              | 1986                 | 2089        | 1535        |
+| delete                     | 1623                 | 979         | 775         |
+| arrow down ×50             | 54836                | 3864        | **3492**    |
+| collapse all               | 4900                 | 4767        | **851**     |
+| expand all                 | 4232                 | 4494        | **767**     |
+
+Not done: skipping unchanged later roots after an insert/delete near the top.
+`areNodesEqualish` compares absolute positions, and a block that bails out keeps
+its old `ASTNode` in props, which edit handlers (`ReplaceNodeTarget(props.node)`)
+read positions from; doing it safely means resolving the node by id from the
+store at the point of use. That is a larger, riskier change than the two above.
+
+## Not adopted: further options, kept on the branch `perf-experiments`
+
+The first four changes above (two commits touching `Node.tsx` and `selectors.ts`,
+about 70 lines) got most of the gain for little complexity. These four others went
+further and were measured, but add machinery, so they are left out for now. The
+code is on the local branch `perf-experiments` (commits named below), with its raw
+results in `profile-large-doc/after3`…`after7`, `noplaceholder`. Each section
+below says what it does and what it costs. Numbers are 3000 lines, settled ms, and
+cumulative on top of the adopted changes.
+
+| option                                           | commit     | arrow ×50 | edit | insert at top                                                                   | text → blocks | expand all | cost                                                                                                                                                                  |
+| ------------------------------------------------ | ---------- | --------- | ---- | ------------------------------------------------------------------------------- | ------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| adopted state                                    |            | 3492      | 475  | 1535                                                                            | 933           | 767        |                                                                                                                                                                       |
+| blocks that only moved are not redrawn           | `b44f4767` | 2050      | 450  | 954                                                                             | 880           | 679        | `Node` is memoized, so `props.node` can be an older node with older positions: handlers must call `currentNode()`; root block returns focus after remaking its marker |
+| keyed subscription hub                           | `03ee95f1` | 99        | 342  | 984                                                                             | 1237          | 478        | `state/nodeSubscriptions.ts` (110 lines): per-id state is no longer `useSelector`, and must be wired into the hub or the UI goes stale                                |
+| parse only the forms an edit touches (WeScheme)  | `ac9136c6` | 112       | 268  | 1381 (slower than the row above, not investigated; 478 again with the next row) | 818           | 496        | `edits/incrementalParse.ts` (150 lines), `ASTData.sourceText`, a lexical guard, a differential spec; edit's first visible change 145 → 70 ms                          |
+| draw only blocks near the viewport (> 300 forms) | `1faa42c3` | 125       | 271  | 478                                                                             | 724           | 88         | scroll position in a long program is approximate until blocks arrive; threshold and option; only e2e covers it                                                        |
+
+Reading it: the hub is what makes arrow keys instant (3.5 s → 0.1 s for 50 keys
+at 3000 lines, 1000 lines 2.0 → 0.07 s); the rest matter mainly above ~1000 lines.
+At 200 lines none of them changes anything. Reconsider the hub first if arrow-key
+navigation in big programs is a complaint; viewport rendering if opening or
+switching to blocks mode in very large programs is.
+
+### Blocks that only moved; keyed subscriptions
+
+Raw results: `profile-large-doc/after3/` (moved blocks) and `after4/` (keyed
+subscriptions; includes a 3-rep CPU profile at 3000 lines). 1491 unit tests and
+90 e2e tests (run twice) pass.
+
+- **Blocks that only moved are not drawn again.** `areNodesEqualish` compares
+  content hash, place among siblings, level and _shape_ (lines spanned, end
+  column) instead of absolute positions, and `Node` is `React.memo`'d with it.
+  Handlers start from the current node found by id (`currentNode()` in
+  `Node.tsx`, the parent in `DropTarget`), and the root block gives focus back
+  after remaking its marker (the blocks inside no longer run the effect that
+  did). Insert at the top of 3000 lines: 63k renders → 5.5k.
+- **Keyed store subscriptions** (`state/nodeSubscriptions.ts`). `useSelector`
+  runs every selector on every store update: with 64k blocks, one arrow key was
+  ~300k selector calls. `useIdState` subscribes by node id, and a hub, watching
+  the store once, wakes only the ids whose focus/collapsed/selected/marked/
+  editable state changed.
+
+| operation (ms, settled)    | 3000 lines, original | now    | 1000, original | now    |
+| -------------------------- | -------------------- | ------ | -------------- | ------ |
+| load + first blocks render | 2233                 | 1234   | 1237           | 969    |
+| text → blocks (warm)       | 2093                 | 1237   | 509            | 606    |
+| edit literal               | 1462                 | 342    | 458            | 260    |
+| insert at top              | 1986                 | 984    | 938            | 462    |
+| delete                     | 1623                 | 203    | 735            | 202    |
+| undo                       | 2249                 | 201    | 685            | 204    |
+| redo                       | 2102                 | 203    | 602            | 204    |
+| **arrow down ×50**         | **54836**            | **99** | **17688**      | **67** |
+| collapse all               | 4900                 | 501    | 978            | 529    |
+| expand all                 | 4232                 | 478    | 795            | 147    |
+| type 30 chars              | ~960 (timer-bound)   | ~996   | ~960           | ~994   |
+
+The 200 ms floor on delete/undo/redo and the ~1 s on typing are timers in the
+editor and in the measurement (400 ms quiet window), not work. Component
+renders at 3000 lines: arrow ×50 2.7M → 260; edit 54k → 72; undo 54k → 58;
+collapse/expand all 54k → 32k (every node really changes).
+
+What is left at 3000 lines, from the CPU profile: load and mode switch ≈ 1 s
+(React 19%, parse+patchAst 15%, GC 10%, CodeMirror 7%; creating 1092 portals and
+markers); an edit ≈ 340 ms, a quarter of it parse + `patchAst` + `speculateChanges`;
+collapse/expand all ≈ 0.5 s (31k real re-renders). Ideas: virtualise root blocks
+(render only those near the viewport), parse only the changed root on an edit,
+and drop the 250 ms placeholder step once the first paint is cheap.
+
+### The placeholder step (incremental rendering)
+
+Each top-level block first renders an empty `<div/>`, then after a 250 ms timer
+the real content (`ToplevelBlock`, `incrementalRendering`, on by default in block
+mode). Measured with it switched off (`noplaceholder/`, medians of 5; 3 for the
+profile):
+
+| text → blocks, settled ms            | 200 lines | 1000 lines | 3000 lines |
+| ------------------------------------ | --------- | ---------- | ---------- |
+| with the placeholder (default)       | 594       | 606        | 1237       |
+| without                              | **94**    | 595        | 858        |
+| first visible change, with → without | 67 → 90   | 126 → 280  | 277 → 768  |
+
+- CPU time is the same (3000 lines: 1230 ms busy with, 1325 without; the busy
+  split is the same too). The placeholder saves no work; it adds the 250 ms wait
+  and a second render pass (commits for a 3000-line load: ~160–290 → 2).
+- It does make the page react sooner for big programs: without it, 3000 lines
+  block the main thread for ~770 ms before anything changes, with it ~280 ms.
+- So for programs under a few hundred forms it is pure delay (200 lines:
+  594 → 94 ms).
+
+**Not adopted: switching it off below 300 top-level forms.** The mouse-drag e2e
+tests (`matrix`, `toolbar-drag`, `touch`; 9 tests) then fail, and pass again
+with a 600 ms wait after the mode switch. So something is not ready for a drag
+for a while after the first full render, and the placeholder delay was hiding it
+(re-measuring the markers in a `requestAnimationFrame` did not fix it). Find
+that first (probably drop targets or the drag layer being set up on the first
+commit), then drop the delay for small programs, then replace the placeholder
+with real chunking for large ones.
+
+### Parse only what an edit touches; draw only what is in view
+
+Raw results: `profile-large-doc/after6/` (incremental parse) and `after7/` (both,
+with a 3-rep CPU profile and render counts at 3000 lines). 1492 unit tests and 95
+e2e tests (five of them new, for a 400-form program) pass.
+
+- **Incremental parse** (`edits/incrementalParse.ts`, WeScheme only, opt-in with
+  `incrementalParse: true` on the language). For a single change, only the
+  top-level forms it touches, one on each side, and whatever lies between them are
+  parsed (the text is padded with blank lines and spaces so that positions come out
+  right); the other forms are copied with their ids and shifted positions. It is
+  used only when the stored AST is the editor's text (`ASTData.sourceText`), and
+  not for an edit that contains or removes `" | ; \ #` (the parser does not
+  complain about a string or block comment left open at the end of the window), or
+  one that joins lines of a line comment. `patchAst` now matches nodes that already
+  have their id first, so a moved form is not given another form's id. A
+  differential spec compares the result with a full parse over 1200 random edits
+  of three documents (and a longer run of 6000 passed too).
+- **Viewport rendering** (`ToplevelBlock`, `BlockEditor`, option
+  `virtualRendering`, on by default above 300 top-level forms). A block's content
+  is drawn when it is within 30 lines of what CodeMirror shows, or holds the
+  focus or a selection, and then stays drawn; until then it is a spacer as tall as
+  its source (22 px a line). Blocks scrolled to are drawn as the viewport changes;
+  since the spacer's height is an estimate, a scroll position in the unseen part
+  of a long program is approximate until the blocks arrive.
+
+| 3000 lines (ms, settled; first change in brackets) | original    | now                                     |
+| -------------------------------------------------- | ----------- | --------------------------------------- |
+| load + first blocks render                         | 2233        | 970 (a ~950 ms floor of timers remains) |
+| text → blocks (warm)                               | 2093        | 724 (291)                               |
+| edit literal                                       | 1462        | 271 (70)                                |
+| insert at top                                      | 1986        | 478                                     |
+| delete                                             | 1623        | 203 (77)                                |
+| undo / redo                                        | 2249 / 2102 | 211 / 214 (80 / 84)                     |
+| arrow down ×50                                     | 54836       | 125                                     |
+| collapse all                                       | 4900        | 462                                     |
+| expand all                                         | 4232        | 88                                      |
+
+CPU work (busy ms) at 3000 lines, from the profile: first blocks render
+1030 → 486 (component renders 96k → 6.7k; the rest is parsing the whole text once,
+33%, and layout, 16%); text → blocks 1230 → 449; edit ≈ 280. What remains is
+mostly timers (200 ms after an edit, ~950 ms around a mode switch, that are not
+work), the one full parse on load, and collapse all (≈ 0.46 s: CodeMirror
+measuring 1092 widgets whose height changed).
