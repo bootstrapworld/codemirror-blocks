@@ -1070,6 +1070,13 @@ function runSequence(sequence: Sequence): RunResult {
     store,
     clipboard,
     forgiveRefusal: () => {
+      // (a plain Enter that lambda refuses, say a newline between a comment
+      // and the statement after it, is reported as an uncaught error)
+      if (sequence.language === "lambda") {
+        const kept = uncaught.filter((u) => !isRefusal(u));
+        uncaught.length = 0;
+        uncaught.push(...kept);
+      }
       // (the user reads the message, and cancels)
       if (document.querySelector('[contenteditable="true"]')) {
         errorsSeen = errors.mock.calls.length;
