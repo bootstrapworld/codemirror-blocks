@@ -41,3 +41,25 @@ describe("The WeScheme parser,", () => {
     });
   });
 });
+
+describe("a |symbol| that spans lines", () => {
+  it("does not move the forms after it, or swallow a later comment", () => {
+    const roots = parse("|a\nb|\n(f x)\nq #| note |#\n(h 1 2)");
+    const ranges = roots.map((r) => {
+      const { from, to } = r.srcRange();
+      return `${from.line}:${from.ch}-${to.line}:${to.ch}`;
+    });
+    expect(ranges).toEqual([
+      "0:0-0:2",
+      "1:0-1:2",
+      "2:0-2:5",
+      "3:0-3:12",
+      "4:0-4:7",
+    ]);
+  });
+
+  it("does not swallow a later comment when it is on one line", () => {
+    const roots = parse("|ab|\nq #| note |#");
+    expect(roots.map((r) => r.toString())).toHaveLength(2);
+  });
+});

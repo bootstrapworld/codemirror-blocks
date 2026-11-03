@@ -49,6 +49,46 @@ function dropStaleComments(sexps: Sexp) {
   });
 }
 
+/**
+ * The lexer reads a |bar symbol| up to the last | in the rest of the text (a
+ * later comment's #| |# included), and doesn't count the lines it spans, so what
+ * follows gets the wrong position. Such a symbol is lexed as separate symbols
+ * instead: its bars become underscores, which keeps every position in the text.
+ */
+export function maskMultilineBarSymbols(code: string): string {
+  let out = code;
+  let i = 0;
+  while (i < code.length) {
+    const c = code[i];
+    if (c === '"') {
+      for (i++; i < code.length && code[i] !== '"'; i++) {
+        if (code[i] === "\\") i++;
+      }
+    } else if (c === ";") {
+      while (i < code.length && code[i] !== "\n") i++;
+    } else if (c === "#" && code[i + 1] === "|") {
+      const end = code.indexOf("|#", i + 2);
+      i = end < 0 ? code.length : end + 1;
+    } else if (c === "#" && code[i + 1] === "\\") {
+      i += 2;
+    } else if (c === "|") {
+      const end = code.indexOf("|", i + 1);
+      if (end < 0) break;
+      if (code.slice(i, end).includes("\n") || code.includes("|", end + 1)) {
+        out =
+          out.slice(0, i) +
+          "_" +
+          out.slice(i + 1, end) +
+          "_" +
+          out.slice(end + 1);
+      }
+      i = end;
+    }
+    i++;
+  }
+  return out;
+}
+
 export function parse(code: string) {
   function fallback(sexp: Sexp): Sexp {
     const elts =
@@ -811,7 +851,7 @@ export function parse(code: string) {
   }
 
   setSource(code);
-  const sexps = lex(code);
+  const sexps = lex(maskMultilineBarSymbols(code));
   dropStaleComments(sexps);
   const ast = parseStar(sexps);
   const rootNodes = ast
