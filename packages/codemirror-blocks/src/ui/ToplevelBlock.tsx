@@ -7,11 +7,8 @@ import React, {
   useState,
 } from "react";
 import ReactDOM from "react-dom";
-import { useStore } from "react-redux";
 import { poscmp } from "../utils";
-import { ASTNode, Pos, currentNode, nodeElementMap } from "../ast";
-import * as selectors from "../state/selectors";
-import type { RootState } from "../state/reducers";
+import { ASTNode } from "../ast";
 import { BlockNodeMarker, CMBEditor } from "../editor";
 
 type Props = {
@@ -41,10 +38,10 @@ const markers = new WeakMap<ASTNode, BlockNodeMarker>();
 // A marker whose edge was at the start or end of the replaced text can survive,
 // but shrunk (replacing the first child of a root with its own text leaves the
 // root's marker starting after it), so it must still cover the node's range.
-const hasLiveMarker = (node: ASTNode, wanted: { from: Pos; to: Pos }) => {
+const hasLiveMarker = (node: ASTNode) => {
   const range = markers.get(node)?.find();
   if (!range || !("from" in range)) return false;
-  const { from, to } = wanted;
+  const { from, to } = node.srcRange();
   return poscmp(range.from, from) === 0 && poscmp(range.to, to) === 0;
 };
 
@@ -71,38 +68,17 @@ const ToplevelBlock = (props: Props) => {
   // rendering: making and clearing a marker updates CodeMirror's display, which
   // must not happen in the middle of React's render (the display could then be
   // patched while React is still moving the nodes it holds).
-  const store = useStore<RootState>();
+  const { from, to } = props.node.srcRange(); // includes the node's comment, if any
   const markerRef = useRef<{ marker?: BlockNodeMarker }>({});
   const { editor, node } = props;
   useLayoutEffect(() => {
     // (a marker that was cleared from outside, such as by a box that took its
     // place for a while, is made again: this runs after every render)
-    // (where the node is now: this block was not drawn again if it only moved)
-    const { from, to } = currentNode(
-      selectors.getAST(store.getState()),
-      node
-    ).srcRange(); // includes the node's comment, if any
-    if (markerRef.current.marker && hasLiveMarker(node, { from, to })) return;
+    if (markerRef.current.marker && hasLiveMarker(node)) return;
     markerRef.current.marker?.clear();
     const mark = editor.replaceMarkerWidget(from, to, container);
     markerRef.current.marker = mark;
     markers.set(node, mark);
-  });
-  // Remaking the marker moves the block's elements, and the browser drops focus
-  // that was on one of them. The blocks inside don't notice (they are not drawn
-  // again when only their place changed), so give focus back to the focused one.
-  useEffect(() => {
-    const active = document.activeElement;
-    if (
-      active &&
-      active !== document.body &&
-      active.id !== "SR_fix_for_slow_dom"
-    ) {
-      return;
-    }
-    const { focusId } = store.getState();
-    const el = focusId ? nodeElementMap.get(focusId) : undefined;
-    if (el && container.contains(el)) el.focus();
   });
   // When unmounting, clean up the TextMarker
   useLayoutEffect(() => {
@@ -125,34 +101,19 @@ const ToplevelBlock = (props: Props) => {
   return ReactDOM.createPortal(elt, container);
 };
 
-/**
- * Whether drawing `nextNode` would give the same result as `prevNode`: same
- * text, same place among its siblings, and the same shape (the number of lines
- * and where it ends on its last one). Where it starts doesn't count: inserting
- * or deleting above a block moves it, and that's not a reason to draw it again
- * (CodeMirror's marker moves with the text). The block's own handlers look up
- * the current node by id.
- */
 export function areNodesEqualish(prevNode: ASTNode, nextNode: ASTNode) {
   // (the marker covers the node's comment too, which the hash and the node's
   // own range don't say anything about)
-  const shape = (n: ASTNode) => {
-    const { from, to } = n.srcRange();
-    const own = n.to.line - n.from.line;
-    return [
-      to.line - from.line,
-      to.line === from.line ? to.ch - from.ch : to.ch,
-      from.line === n.from.line ? n.from.ch - from.ch : n.from.ch,
-      own,
-      own === 0 ? n.to.ch - n.from.ch : n.to.ch,
-    ].join();
-  };
+  const prevRange = prevNode.srcRange();
+  const nextRange = nextNode.srcRange();
   return (
+    poscmp(prevRange.from, nextRange.from) === 0 &&
+    poscmp(prevRange.to, nextRange.to) === 0 &&
     nextNode.hash === prevNode.hash &&
     nextNode.ariaSetSize === prevNode.ariaSetSize &&
     nextNode.ariaPosInset === prevNode.ariaPosInset &&
-    nextNode.level === prevNode.level &&
-    shape(prevNode) === shape(nextNode)
+    poscmp(prevNode.from, nextNode.from) === 0 && // didn't move
+    poscmp(prevNode.to, nextNode.to) === 0 // didn't resize
   );
 }
 
@@ -162,5 +123,5 @@ export default React.memo(
     nextProps.incrementalRendering === prevProps.incrementalRendering &&
     nextProps.editor === prevProps.editor &&
     areNodesEqualish(prevProps.node, nextProps.node) && // didn't change
-    hasLiveMarker(prevProps.node, nextProps.node.srcRange()) // and is still drawn where it is now
+    hasLiveMarker(prevProps.node) // and is still drawn
 );

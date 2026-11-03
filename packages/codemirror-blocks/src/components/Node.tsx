@@ -6,14 +6,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
-import {
-  AST,
-  ASTNode,
-  DrawnNode,
-  currentNode as currentNodeIn,
-  nodeElementMap,
-} from "../ast";
+import { useDispatch, useSelector } from "react-redux";
+import { AST, ASTNode, nodeElementMap } from "../ast";
 import { ReplaceNodeTarget, collapseNode } from "../state/actions";
 import * as actions from "../state/actions";
 import NodeEditable from "./NodeEditable";
@@ -27,7 +21,7 @@ import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
 import { AppContext, EditorContext } from "./Context";
 import type { BlockNodeMarker } from "../editor";
-import { RootNodeContext, areNodesEqualish } from "../ui/ToplevelBlock";
+import { RootNodeContext } from "../ui/ToplevelBlock";
 import * as selectors from "../state/selectors";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
@@ -35,8 +29,7 @@ import * as selectors from "../state/selectors";
 // EVEN BETTER: is it possible to just pass an id?
 
 export type Props = {
-  /** (a node that may be older than the document: see {@link DrawnNode}) */
-  node: DrawnNode;
+  node: ASTNode;
   inToolbar?: boolean;
   normallyEditable?: boolean;
   expandable?: boolean;
@@ -51,7 +44,7 @@ export type Props = {
  * to be unique across multiple instances of CodeMirrorBlocks because
  * the ast node ids are generated with {@link genUniqueId}.
  */
-function getNodeElementId(node: { id: string }) {
+function getNodeElementId(node: ASTNode) {
   return `block-node-${node.id}`;
 }
 
@@ -94,13 +87,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const editor = use(EditorContext);
 
   const dispatch: AppDispatch = useDispatch();
-  // A block whose text didn't change is not drawn again when it only moves
-  // (see areNodesEqualish), so props.node can be an older node object, with
-  // older positions. Anything that acts on the node's place in the document
-  // starts from the current one.
-  const store = useStore<RootState>();
-  const currentNode = () =>
-    currentNodeIn(selectors.getAST(store.getState()), props.node);
   const appHelpers = use(AppContext);
   const isErrorFree = useSelector(selectors.isErrorFree);
 
@@ -119,27 +105,19 @@ const Node = ({ expandable = true, ...props }: Props) => {
     dispatch(
       keyDown(e, {
         isNodeEnv: true,
-        node: currentNode(),
+        node: props.node,
         editor: editor,
         appHelpers: appHelpers,
         handleMakeEditable,
         setLeft: (ast: AST) => {
-          const dropTargetId = findAdjacentDropTargetId(
-            ast,
-            currentNode(),
-            true
-          );
+          const dropTargetId = findAdjacentDropTargetId(ast, props.node, true);
           if (dropTargetId) {
             dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
           }
           return !!dropTargetId;
         },
         setRight: (ast: AST) => {
-          const dropTargetId = findAdjacentDropTargetId(
-            ast,
-            currentNode(),
-            false
-          );
+          const dropTargetId = findAdjacentDropTargetId(ast, props.node, false);
           if (dropTargetId) {
             dispatch({ type: "SET_EDITABLE", id: dropTargetId, bool: true });
           }
@@ -172,13 +150,13 @@ const Node = ({ expandable = true, ...props }: Props) => {
     } else {
       // prevent ancestors from stealing focus
       e.stopPropagation();
-      recordEvent({ type: "MOUSE", nid: currentNode().nid });
+      recordEvent({ type: "MOUSE", nid: props.node.nid });
     }
     if (!isErrorFree) {
       // TODO(Oak): is this the best way?
       return;
     }
-    dispatch(actions.activateNode(editor, currentNode(), { allowMove: false }));
+    dispatch(actions.activateNode(editor, props.node, { allowMove: false }));
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -187,9 +165,9 @@ const Node = ({ expandable = true, ...props }: Props) => {
       return;
     }
     if (isCollapsed) {
-      dispatch(actions.uncollapseNode(currentNode()));
+      dispatch(actions.uncollapseNode(props.node));
     } else {
-      dispatch(collapseNode(currentNode()));
+      dispatch(collapseNode(props.node));
     }
   };
 
@@ -218,7 +196,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     `blocks-${props.node.type}`,
   ];
   const [{ isOver }, connectDropTarget] = useDrop({
-    describe: () => ({ nid: currentNode().nid }),
+    describe: () => ({ nid: props.node.nid }),
     drop: (item, info) => {
       if (!editor) {
         // codemirror hasn't mounted yet, do nothing
@@ -238,11 +216,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
   });
   const [{ isDragging }, connectDragSource] = useDrag({
     describe: () =>
-      isDummyPos(currentNode().from) && isDummyPos(currentNode().to)
+      isDummyPos(props.node.from) && isDummyPos(props.node.to)
         ? { tool: props.node.toString() }
-        : { nid: currentNode().nid },
+        : { nid: props.node.nid },
     item: () => {
-      if (isDummyPos(currentNode().from) && isDummyPos(currentNode().to)) {
+      if (isDummyPos(props.node.from) && isDummyPos(props.node.to)) {
         return { content: props.node.toString() };
       }
       return { id: props.node.id };
@@ -348,7 +326,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
         onDisableEditable={() => setEditable(false)}
         extraClasses={classes}
         isInsertion={false}
-        target={new ReplaceNodeTarget(currentNode())}
+        target={new ReplaceNodeTarget(props.node)}
         value={value}
         onChange={(value: string | null) => setValue(value)}
         contentEditableProps={contentEditableProps}
@@ -390,19 +368,4 @@ const Node = ({ expandable = true, ...props }: Props) => {
   }
 };
 
-// Drawing a node again gives the same result when it is the same code in the
-// same place among its siblings (children are made from the node, so they
-// don't need comparing); only the position in the document may have moved.
-export default React.memo(Node, (prev: Props, next: Props) => {
-  const keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
-  keys.delete("node");
-  keys.delete("children");
-  for (const key of keys) {
-    if (prev[key as keyof Props] !== next[key as keyof Props]) return false;
-  }
-  // (the one place that compares positions: both nodes really are ASTNodes)
-  return (
-    prev.node === next.node ||
-    areNodesEqualish(prev.node as ASTNode, next.node as ASTNode)
-  );
-});
+export default Node;
