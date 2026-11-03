@@ -76,6 +76,17 @@ same on all platforms.
 The bindings are defined in
 [`packages/codemirror-blocks/src/keymap.tsx`](packages/codemirror-blocks/src/keymap.tsx).
 
+### Screen readers
+
+Whether a block is expanded or collapsed is exposed as `aria-expanded` on its
+tree item, and NVDA and JAWS announce a change in it on their own, so the editor
+does not speak "expanded" or "collapsed" itself. VoiceOver does not reliably
+announce it, and we have chosen not to add our own announcement for that
+platform: it is a minority for our users, and a second announcement would
+repeat what NVDA and JAWS already say. (We tried it and reverted it; see the
+commit "feat(a11y): say collapsed or expanded" and its revert in the history if
+this is worth revisiting.)
+
 ## Contributing Changes
 
 To contribute changes to any of the packages in this repository, you'll need to setup a development
