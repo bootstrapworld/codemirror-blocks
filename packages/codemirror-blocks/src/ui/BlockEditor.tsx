@@ -334,20 +334,46 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     }
   };
 
+  // the lines CodeMirror has drawn (with a margin), for big programs
+  const [viewport, setViewport] = useState(() =>
+    props.codemirror.getViewport()
+  );
+  useEffect(() => {
+    const cm = props.codemirror;
+    const onViewport = (_cm: CodeMirror.Editor, from: number, to: number) =>
+      setViewport({ from, to });
+    cm.on("viewportChange", onViewport);
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setViewport(cm.getViewport());
+    return () => cm.off("viewportChange", onViewport);
+  }, [props.codemirror]);
+
   const renderPortals = () => {
     const incrementalRendering = options.incrementalRendering ?? false;
     let portals;
     if (editor && ast) {
-      // Render all the top-level nodes
-      portals = [...ast.children()].map((r) => (
-        <EditorContext value={editor} key={r.id}>
-          <ToplevelBlock
-            node={r}
-            incrementalRendering={incrementalRendering}
-            editor={editor}
-          />
-        </EditorContext>
-      ));
+      const virtual =
+        options.virtualRendering ??
+        ast.rootNodes.length > VIRTUAL_RENDERING_MIN_ROOTS;
+      // Render the top-level nodes (all of them, or the ones in view)
+      portals = [...ast.children()].map((r) => {
+        const { from, to } = r.srcRange();
+        return (
+          <EditorContext value={editor} key={r.id}>
+            <ToplevelBlock
+              node={r}
+              incrementalRendering={incrementalRendering}
+              virtual={virtual}
+              inView={
+                !virtual ||
+                (from.line <= viewport.to + VIEW_MARGIN_LINES &&
+                  to.line >= viewport.from - VIEW_MARGIN_LINES)
+              }
+              editor={editor}
+            />
+          </EditorContext>
+        );
+      });
       if (quarantine) {
         portals.push(
           <ToplevelBlockEditable
@@ -386,4 +412,10 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     </>
   );
 };
+// Above this many top-level forms (about 800 lines), only the blocks near the
+// visible part of the editor are drawn at first.
+const VIRTUAL_RENDERING_MIN_ROOTS = 300;
+// (and this many lines of source above and below it)
+const VIEW_MARGIN_LINES = 30;
+
 export default BlockEditor;

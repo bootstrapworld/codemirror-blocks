@@ -7,7 +7,8 @@ import React, {
   useState,
 } from "react";
 import ReactDOM from "react-dom";
-import { useStore } from "react-redux";
+import { useSelector, useStore } from "react-redux";
+import * as selectors from "../state/selectors";
 import { poscmp } from "../utils";
 import { ASTNode, nodeElementMap } from "../ast";
 import type { RootState } from "../state/reducers";
@@ -15,6 +16,10 @@ import { BlockNodeMarker, CMBEditor } from "../editor";
 
 type Props = {
   incrementalRendering: boolean;
+  /** the program is big: draw this block's content only once it is needed */
+  virtual: boolean;
+  /** the block is in, or near, the visible part of the editor */
+  inView: boolean;
   node: ASTNode;
   editor: CMBEditor;
 };
@@ -47,6 +52,8 @@ const hasLiveMarker = (node: ASTNode) => {
   return poscmp(range.from, from) === 0 && poscmp(range.to, to) === 0;
 };
 
+const ESTIMATED_LINE_HEIGHT = 22;
+
 const ToplevelBlock = (props: Props) => {
   const [renderPlaceholder, setRenderPlaceholder] = useState(
     props.incrementalRendering
@@ -59,6 +66,20 @@ const ToplevelBlock = (props: Props) => {
       return () => clearTimeout(timeout);
     }
   }, [renderPlaceholder]);
+
+  // In a big program a block is drawn when it comes into view, or has focus or
+  // a selection, and then stays drawn (CodeMirror keeps the elements of a
+  // widget that scrolled away, and draws them again as they are).
+  const inUse = useSelector((state: RootState) =>
+    selectors.getRootIdsInUse(state).has(props.node.id)
+  );
+  const wanted = !props.virtual || props.inView || inUse;
+  const [drawn, setDrawn] = useState(wanted);
+  useEffect(() => {
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    if (wanted && !drawn) setDrawn(true);
+  }, [wanted, drawn]);
+  const showContent = wanted || drawn;
 
   const { container } = useMemo(() => {
     const container = document.createElement("span");
@@ -109,7 +130,11 @@ const ToplevelBlock = (props: Props) => {
   }, []);
 
   // set elt to a cheap placeholder, OR render the entire rootNode
-  const elt = renderPlaceholder ? (
+  const sourceLines = to.line - from.line + 1;
+  const elt = !showContent ? (
+    // (as tall as the source is long, so that the scrollbar is about right)
+    <div style={{ height: sourceLines * ESTIMATED_LINE_HEIGHT }} />
+  ) : renderPlaceholder ? (
     <div />
   ) : (
     <RootNodeContext value={markerRef.current}>
@@ -155,6 +180,8 @@ export default React.memo(
   ToplevelBlock,
   (prevProps: Props, nextProps: Props) =>
     nextProps.incrementalRendering === prevProps.incrementalRendering &&
+    nextProps.virtual === prevProps.virtual &&
+    nextProps.inView === prevProps.inView &&
     nextProps.editor === prevProps.editor &&
     areNodesEqualish(prevProps.node, nextProps.node) && // didn't change
     hasLiveMarker(prevProps.node) // and is still drawn

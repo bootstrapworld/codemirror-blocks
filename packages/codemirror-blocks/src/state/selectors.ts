@@ -143,3 +143,25 @@ export const isBlockModeEnabled = (state: RootState) => state.blockMode;
 export const getCode = (state: RootState) => state.code;
 
 export const getEditable = (state: RootState) => state.editable;
+
+/**
+ * @returns the ids of the top-level blocks that hold the focused or a selected
+ * node: these have to be drawn, whether or not they are in view
+ */
+export const getRootIdsInUse: (state: RootState) => ReadonlySet<string> =
+  createSelector(
+    [getAST, (state: RootState) => state.focusId, getSelectedNodeIds],
+    (ast, focusId, selections) => {
+      const roots = new Set<string>();
+      for (const id of focusId ? [focusId, ...selections] : selections) {
+        let current: string | undefined = id;
+        while (current !== undefined) {
+          const parent: string | undefined = ast.edgeIdMap[current]?.parentId;
+          if (parent === undefined) break;
+          current = parent;
+        }
+        if (current !== undefined) roots.add(current);
+      }
+      return roots;
+    }
+  );

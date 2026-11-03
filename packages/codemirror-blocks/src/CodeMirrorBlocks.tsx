@@ -28,6 +28,12 @@ export type Options = {
   value?: string;
   collapseAll?: boolean;
   incrementalRendering?: boolean;
+  /**
+   * Draw only the top-level blocks near the visible part of the editor (and the
+   * ones that have focus or are selected), the others when they come into view.
+   * By default this is done for programs of more than 300 top-level forms.
+   */
+  virtualRendering?: boolean;
 };
 
 import type { Language } from "./languages";

@@ -45,7 +45,6 @@ const random = (seed: number) => () => {
   return seed / 4294967296;
 };
 
- 
 const generated: (
   lines: number
 ) => string = require("../../../doc/experiments/profile-large-doc/gen.js");
