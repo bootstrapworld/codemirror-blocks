@@ -25,6 +25,7 @@ import { recordEvent } from "../state/activityLog";
 import { RootState } from "../state/reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
+import { say } from "../announcer";
 import { AppContext, EditorContext } from "./Context";
 import type { BlockNodeMarker } from "../editor";
 import { RootNodeContext, areNodesEqualish } from "../ui/ToplevelBlock";
@@ -188,8 +189,10 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
     if (isCollapsed) {
       dispatch(actions.uncollapseNode(currentNode()));
+      say("expanded");
     } else {
       dispatch(collapseNode(currentNode()));
+      say("collapsed");
     }
   };
 

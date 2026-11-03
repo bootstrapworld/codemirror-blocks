@@ -140,6 +140,41 @@ describe("Delete and Backspace", () => {
   });
 });
 
+describe("Saying what collapsing and expanding did", () => {
+  beforeEach(() => {
+    cmb.setValue("(f x y)");
+    mouseDown(root());
+    say.mockClear();
+  });
+
+  it("Left says collapsed, and Right says expanded", () => {
+    keyDown("ArrowLeft");
+    expect(said()).toEqual(["collapsed"]);
+    keyDown("ArrowRight");
+    expect(said()).toEqual(["collapsed", "expanded"]);
+  });
+
+  it("Enter says collapsed, then expanded", () => {
+    keyDown("Enter");
+    keyDown("Enter");
+    expect(said()).toEqual(["collapsed", "expanded"]);
+  });
+
+  it("Shift-Left and Shift-Right say it for every block", () => {
+    keyDown("ArrowLeft", { shiftKey: true });
+    expect(said()).toContain("collapsed all");
+    keyDown("ArrowRight", { shiftKey: true });
+    expect(said()).toContain("expanded all");
+  });
+
+  it("says nothing when Left only moves to the parent", () => {
+    keyDown("ArrowRight"); // onto the first child
+    say.mockClear();
+    keyDown("ArrowLeft");
+    expect(said()).not.toContain("collapsed");
+  });
+});
+
 describe("Enter and Cmd-Enter", () => {
   it("Enter edits a literal in place", () => {
     cmb.setValue("42");
