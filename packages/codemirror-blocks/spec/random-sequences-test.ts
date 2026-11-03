@@ -1084,7 +1084,9 @@ function runSequence(sequence: Sequence): RunResult {
       }
     },
   };
-  const errors = jest.spyOn(console, "error");
+  // (kept quiet: a refused edit is logged on purpose, and a real problem is
+  // reported in the failure message, so a clean run prints nothing)
+  const errors = jest.spyOn(console, "error").mockImplementation(() => {});
   // (search beeps; no sound in jsdom)
   const sounds = jest.spyOn(utils, "playSound").mockImplementation(() => {});
   // An error thrown in an event handler is not thrown back at the operation:
@@ -1231,6 +1233,7 @@ function runSequence(sequence: Sequence): RunResult {
     window.removeEventListener("error", onError);
     clipboard.restore();
     sounds.mockRestore();
+    errors.mockRestore();
     restoreLayout();
     if (!hadScroll) {
       delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
