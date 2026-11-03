@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useStore } from "react-redux";
 import { AST, ASTNode, nodeElementMap } from "../ast";
 import { ReplaceNodeTarget, collapseNode } from "../state/actions";
 import * as actions from "../state/actions";
@@ -23,6 +23,7 @@ import { AppContext, EditorContext } from "./Context";
 import type { BlockNodeMarker } from "../editor";
 import { RootNodeContext, areNodesEqualish } from "../ui/ToplevelBlock";
 import * as selectors from "../state/selectors";
+import { useIdState } from "../state/nodeSubscriptions";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -52,13 +53,15 @@ function getNodeElementId(node: ASTNode) {
 const pendingChanged = new Set<BlockNodeMarker>();
 
 const Node = ({ expandable = true, ...props }: Props) => {
-  const isCollapsed = useSelector((state: RootState) =>
+  // (useIdState wakes this block only when the store changes something about
+  // this node, instead of running the selector on every update)
+  const isCollapsed = useIdState(props.node.id, (state) =>
     selectors.isCollapsed(state, props.node)
   );
-  const isSelected = useSelector((state: RootState) =>
+  const isSelected = useIdState(props.node.id, (state) =>
     selectors.isSelected(state, props.node)
   );
-  const textMarker = useSelector((state: RootState) =>
+  const textMarker = useIdState(props.node.id, (state) =>
     selectors.getTextMarker(state, props.node)
   );
   const rootNode = use(RootNodeContext);
@@ -95,7 +98,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const currentNode = () =>
     selectors.getAST(store.getState()).getNodeById(props.node.id) ?? props.node;
   const appHelpers = use(AppContext);
-  const isErrorFree = useSelector(selectors.isErrorFree);
+  const isErrorFree = useIdState(props.node.id, selectors.isErrorFree);
 
   const handleMakeEditable = () => {
     if (!isErrorFree || props.inToolbar) {
@@ -282,11 +285,8 @@ const Node = ({ expandable = true, ...props }: Props) => {
   // (a boolean for this node, not the focused node itself: a new AST makes new
   // node objects, and a selector returning those would re-render every block
   // on every edit and every arrow key)
-  const isFocused = useSelector((state: RootState) =>
+  const isFocused = useIdState(props.node.id, (state) =>
     selectors.isFocused(state, props.node)
-  );
-  const focusedElsewhere = useSelector((state: RootState) =>
-    selectors.isFocusedElsewhere(state, props.node)
   );
   useEffect(() => {
     if (
@@ -323,11 +323,23 @@ const Node = ({ expandable = true, ...props }: Props) => {
   // changed from outside while editing, and the focus moved to another node):
   // the edit is over, so don't leave an orphaned box behind.
   useEffect(() => {
-    if (!editable || !focusedElsewhere) return;
-    const box = document.getElementById(nodeElemId);
-    // eslint-disable-next-line @eslint-react/set-state-in-effect
-    if (box && box !== document.activeElement) setEditable(false);
-  }, [editable, focusedElsewhere, nodeElemId]);
+    if (!editable) return;
+    const check = () => {
+      const { focusId } = store.getState();
+      if (!focusId || focusId === props.node.id) return;
+      const box = document.getElementById(nodeElemId);
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
+      if (box && box !== document.activeElement) setEditable(false);
+    };
+    check();
+    // (the focus itself moves a moment after the store says where it goes)
+    document.addEventListener("focusin", check);
+    const unsubscribe = store.subscribe(check);
+    return () => {
+      document.removeEventListener("focusin", check);
+      unsubscribe();
+    };
+  }, [editable, store, props.node.id, nodeElemId]);
 
   if (editable) {
     if (!editor) {

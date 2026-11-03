@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useStore } from "react-redux";
 import NodeEditable from "./NodeEditable";
 import { useDrop } from "../dnd";
 import classNames from "classnames";
@@ -15,7 +15,8 @@ import * as actions from "../state/actions";
 import * as selectors from "../state/selectors";
 import type { ASTNode, AST, Pos } from "../ast";
 import { EditorContext } from "./Context";
-import { createSelector } from "reselect";
+import { useIdState } from "../state/nodeSubscriptions";
+import type { RootState } from "../state/reducers";
 
 // Provided by `Node`
 export const NodeContext = createContext<{ node: ASTNode | null }>({
@@ -137,7 +138,7 @@ export const DropTarget = (props: { field: string }) => {
   }
   const editor = use(EditorContext);
 
-  const isErrorFree = useSelector(selectors.isErrorFree);
+  const isErrorFree = useIdState(id, selectors.isErrorFree);
 
   // ensure that the field property is set
   if (!props.field) {
@@ -173,31 +174,23 @@ field declared. The node was:`,
     [id, node, props.field]
   );
 
-  // create and use a new insertTarget selector for evey
-  // DropTarget instance to avoid re-rerendering every
-  // drop target when any other drop target's editable
-  // state changes. The insertTarget will be null if
-  // the node is not editable.
-  const insertTarget = useSelector(
-    useMemo(
-      () =>
-        createSelector(
-          [selectors.getAST, selectors.getEditable],
-          (ast, editable) => {
-            if (!editable[id]) return null;
-            try {
-              return createTarget(ast);
-            } catch (e) {
-              // The store can hold a newer AST than the page this target was
-              // drawn for (it is about to be redrawn, or gone), so the blocks
-              // around it can be missing: it has no insertion point meanwhile.
-              return null;
-            }
-          }
-        ),
-      [id, createTarget]
-    )
+  // The insertTarget is null if the gap is not editable. (Only an editable gap
+  // looks at the AST, and then it is woken when the AST changes.)
+  const store = useStore<RootState>();
+  const editableAst = useIdState(id, (state) =>
+    state.editable[id] ? state.astData : null
   );
+  const insertTarget = useMemo(() => {
+    if (!editableAst) return null;
+    try {
+      return createTarget(selectors.getAST(store.getState()));
+    } catch (e) {
+      // The store can hold a newer AST than the page this target was
+      // drawn for (it is about to be redrawn, or gone), so the blocks
+      // around it can be missing: it has no insertion point meanwhile.
+      return null;
+    }
+  }, [editableAst, createTarget, store]);
   // These `isEditable` and `setEditable` methods allow DropTargetSiblings to
   // check to see whether an adjacent DropTarget is being edited, or, for when the
   // insert-left or insert-right shortcut is pressed, _set_ an adjacent DropTarget
