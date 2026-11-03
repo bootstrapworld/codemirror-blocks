@@ -1,5 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
 import React from "react";
+import CodeMirror from "codemirror";
 import { Language } from "../../src/CodeMirrorBlocks";
 import Context from "../../src/components/Context";
 import { addLanguage } from "../../src/languages";
@@ -31,6 +32,7 @@ describe("on first render", () => {
   it("calls the onMount callback with the editor, and api that were created", () => {
     renderWithContext(
       <BlockEditor
+        codemirror={CodeMirror(() => undefined)}
         value=""
         onMount={onMount}
         keyDownHelpers={{}}

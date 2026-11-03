@@ -15,7 +15,6 @@ import type { Options, Language } from "../CodeMirrorBlocks";
 import type { AppDispatch } from "../state/store";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
-import type { IUnControlledCodeMirror } from "react-codemirror2";
 import { EditorContext } from "../components/Context";
 import { CMBEditor, CodeMirrorFacade, Pos, ReadonlyCMBEditor } from "../editor";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
@@ -26,13 +25,13 @@ import { AppHelpers } from "../components/Context";
 export type BlockEditorProps = {
   value: string;
   options?: Options;
-  codemirrorOptions?: CodeMirror.EditorConfiguration;
+  /** The one CodeMirror instance, shared with the text editor. */
+  codemirror: CodeMirror.Editor;
   /**
    * language being used
    */
   language: Language;
   keyDownHelpers: AppHelpers;
-  onBeforeChange?: IUnControlledCodeMirror["onBeforeChange"];
   onMount: (editor: CodeMirror.Editor) => void;
 };
 
@@ -182,19 +181,31 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     const editor = new CodeMirrorFacade(codemirror);
     setEditor(editor);
     // TODO(Emmanuel): Try to set them in the component constructor
-    codemirror.on("beforeChange", (ed, change) => {
+    // (the CodeMirror outlives block mode, so these are taken off again)
+    const onBeforeChange = (
+      ed: CodeMirror.Editor,
+      change: CodeMirror.EditorChangeCancellable
+    ) => {
       if (change.origin === "undo" || change.origin === "redo") {
         dropDomSelection(ed);
       }
       handleBeforeChange(editor, change);
-    });
-    codemirror.on("change", (ed, change) => handleChange(editor, change));
-    codemirror.on("changes", (ed, changes) => handleChanges(editor, changes));
-    codemirror.on("update", () => {
+    };
+    const onChange = (ed: CodeMirror.Editor, change: CodeMirror.EditorChange) =>
+      handleChange(editor, change);
+    const onChanges = (
+      ed: CodeMirror.Editor,
+      changes: CodeMirror.EditorChange[]
+    ) => handleChanges(editor, changes);
+    const onUpdate = () => {
       if (document.activeElement?.id !== "SR_fix_for_slow_dom") return;
       const id = focusedIdRef.current;
       if (id) document.getElementById(`block-node-${id}`)?.focus();
-    });
+    };
+    codemirror.on("beforeChange", onBeforeChange);
+    codemirror.on("change", onChange);
+    codemirror.on("changes", onChanges);
+    codemirror.on("update", onUpdate);
 
     // set AST and search properties and collapse preferences
     if (options.collapseAll) {
@@ -218,14 +229,24 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     // Nothing there handles keys, so undo and every other shortcut would be
     // ignored. Pass focus on to the editor's input instead.
     const scroller = codemirror.getScrollerElement();
-    scroller.addEventListener("focus", (e) => {
+    const onScrollerFocus = (e: FocusEvent) => {
       if (e.target === scroller) {
         codemirror.focus();
       }
-    });
+    };
+    scroller.addEventListener("focus", onScrollerFocus);
 
     // pass the block-mode CM editor, API, and current AST
     props.onMount(codemirror);
+
+    return () => {
+      codemirror.off("beforeChange", onBeforeChange);
+      codemirror.off("change", onChange);
+      codemirror.off("changes", onChanges);
+      codemirror.off("update", onUpdate);
+      scroller.removeEventListener("focus", onScrollerFocus);
+      setEditor(null);
+    };
   };
 
   // we have use a ref here instead of useState
@@ -336,7 +357,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   return (
     <>
       <DragAndDropEditor
-        options={props.codemirrorOptions}
+        codemirror={props.codemirror}
         className={`blocks-language-${language.id}`}
         value={props.value}
         onKeyPress={handleTopLevelKeyPress}

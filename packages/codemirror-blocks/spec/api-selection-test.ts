@@ -19,9 +19,11 @@ const selected = (cmb: API) => cmb.getSelectedNodes().map(String);
 let cmb: API;
 beforeEach(() => {
   cmb = mountCMB(wescheme).cmb;
-  // loaded in text mode and then switched to blocks, which leaves the cursor
-  // at the end of the document
+  // loaded in text mode, with the cursor at the end of the document (the
+  // cursor goes with the one CodeMirror into block mode), and then switched
+  cmb.setBlockMode(false);
   cmb.setValue("(+ 1 2)\n\n(- 3 4)\nx");
+  cmb.setCursor(pos(3, 1));
   cmb.setBlockMode(true);
 });
 afterEach(teardown);

@@ -1,9 +1,6 @@
-import {
-  DomEvent,
-  IUnControlledCodeMirror,
-  UnControlled as CodeMirror,
-} from "react-codemirror2";
+import CodeMirror from "codemirror";
 import React, { useRef } from "react";
+import CodeMirrorHost from "./CodeMirrorHost";
 import * as actions from "../state/actions";
 import { playSound, BEEP } from "../utils";
 import { useDrop } from "../dnd";
@@ -11,14 +8,17 @@ import { CodeMirrorFacade } from "../editor";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../state/store";
 
-type OurProps = {
-  editorDidMount?: (ed: CodeMirror.Editor) => void;
+type Props = {
+  codemirror: CodeMirror.Editor;
+  value: string;
+  className?: string;
+  editorDidMount?: (ed: CodeMirror.Editor) => void | (() => void);
+  onKeyPress?: (ed: CodeMirror.Editor, e: React.KeyboardEvent) => void;
   onFocus?: (ed: CodeMirrorFacade) => void;
   onPaste?: (ed: CodeMirrorFacade, e: ClipboardEvent) => void;
   onKeyDown?: (ed: CodeMirrorFacade, e: React.KeyboardEvent) => void;
   onCursorActivity?: (ed: CodeMirrorFacade) => void;
 };
-type Props = Omit<IUnControlledCodeMirror, keyof OurProps> & OurProps;
 
 const DragAndDropEditor = (props: Props) => {
   const editorRef = useRef<CodeMirrorFacade | undefined>(undefined);
@@ -78,11 +78,12 @@ const DragAndDropEditor = (props: Props) => {
 
   const onEditorMounted = (ed: CodeMirror.Editor) => {
     const editor = new CodeMirrorFacade(ed);
-    props.editorDidMount && props.editorDidMount(ed);
     editorRef.current = editor;
+    return props.editorDidMount && props.editorDidMount(ed);
   };
 
-  const handleDragOver: DomEvent = (ed, e) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleDragOver = (_ed: CodeMirror.Editor, e: any) => {
     if (!e.target.classList.contains("CodeMirror-line")) {
       e.preventDefault();
     }
@@ -99,10 +100,13 @@ const DragAndDropEditor = (props: Props) => {
         connectDropTarget(el);
       }}
     >
-      <CodeMirror
+      <CodeMirrorHost
+        codemirror={props.codemirror}
+        value={props.value}
+        className={props.className}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
-        {...props}
+        onKeyPress={props.onKeyPress}
         editorDidMount={onEditorMounted}
         onCursorActivity={() =>
           editorRef.current &&

@@ -264,17 +264,8 @@ const buildBlockModeAPI = (
           );
       }
       const mark = codemirror.markText(from, to, opts); // keep CM in sync
-      const _clear = mark.clear.bind(mark);
-      mark.clear = () => {
-        _clear();
-        store.dispatch({ type: "CLEAR_MARK", id: node.id });
-      };
-      mark.find = () => {
-        const { from, to } = ast.getNodeByIdOrThrow(node.id);
-        return { from, to };
-      };
       mark.options = opts;
-      store.dispatch({ type: "ADD_MARK", id: node.id, mark: mark });
+      store.dispatch(actions.showMarkOnBlock(mark, node.id));
       return mark;
     },
     // Something is selected if CM has a selection OR a block is selected

@@ -102,30 +102,44 @@ describe("undo after switching modes", () => {
     expect(cmb.historySize().undo).toBe(1);
   });
 
-  it("finds the history empty: switching replaces the CodeMirror editor", () => {
+  it("keeps the history: it belongs to the one CodeMirror", () => {
     cmb.setBlockMode(false);
-    expect(cmb.historySize()).toEqual({ undo: 0, redo: 0 });
+    expect(cmb.historySize()).toEqual({ undo: 1, redo: 0 });
     cmb.setBlockMode(true);
-    expect(cmb.historySize()).toEqual({ undo: 0, redo: 0 });
+    expect(cmb.historySize()).toEqual({ undo: 1, redo: 0 });
   });
 
-  it("does nothing, harmlessly, when asked to undo what happened before", () => {
+  it("undoes, after switching back, what was done before switching", () => {
     cmb.setBlockMode(false);
     cmb.setBlockMode(true);
     undo();
-    cmb.undo();
-    expect(cmb.getValue()).toBe("(f y)\n(g z)");
-    expect(texts()).toEqual(["(f y)", "(g z)"]);
+    expect(cmb.getValue()).toBe("(f x y)\n(g z)");
+    expect(texts()).toEqual(["(f x y)", "(g z)"]);
   });
 
-  it("undoes in text mode only what was typed in text mode", () => {
+  it("undoes in text mode what was done in block mode", () => {
+    cmb.setBlockMode(false);
+    cmb.undo();
+    expect(cmb.getValue()).toBe("(f x y)\n(g z)");
+    cmb.setBlockMode(true);
+    expect(texts()).toEqual(["(f x y)", "(g z)"]);
+  });
+
+  // Text typed between two blocks can pass through text that is not a program,
+  // which block mode could not undo to, so editing as text starts the history
+  // over on the way back to blocks.
+  it("starts the history over when the text was edited in text mode", () => {
     cmb.setBlockMode(false);
     cmb.replaceRange("\n42", { line: 1, ch: 5 });
     expect(cmb.getValue()).toBe("(f y)\n(g z)\n42");
+    cmb.undo(); // (in text mode, the text edit is undone like any other)
+    cmb.redo();
+    cmb.setBlockMode(true);
+    expect(cmb.historySize()).toEqual({ undo: 0, redo: 0 });
+    undo();
     cmb.undo();
-    expect(cmb.getValue()).toBe("(f y)\n(g z)");
-    cmb.undo(); // nothing left, and the delete is not undone
-    expect(cmb.getValue()).toBe("(f y)\n(g z)");
+    expect(cmb.getValue()).toBe("(f y)\n(g z)\n42");
+    expect(texts()).toEqual(["(f y)", "(g z)", "42"]);
   });
 
   it("still undoes what is done after switching back", () => {
@@ -137,8 +151,8 @@ describe("undo after switching modes", () => {
     expect(cmb.getValue()).toBe("(f y)\n");
     undo();
     expect(cmb.getValue()).toBe("(f y)\n(g z)");
-    undo();
-    expect(cmb.getValue()).toBe("(f y)\n(g z)");
+    undo(); // and then, the history being kept, what was done before
+    expect(cmb.getValue()).toBe("(f x y)\n(g z)");
   });
 });
 

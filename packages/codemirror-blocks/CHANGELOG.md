@@ -106,10 +106,15 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   separator), and `replaceSelection()` also inserted the new text at the
   cursor. `extendSelection()` no longer throws when the selection has more than
   one range.
-- Marks made with `markText` are dropped when the mode changes (each mode has
-  its own CodeMirror, so they always were; marks that should survive are
-  tracked in #571). The editor no longer keeps a record of marks on blocks that
-  no longer exist.
+- **One CodeMirror for both modes (#571).** `ToggleEditor` creates the
+  CodeMirror once and hands it to whichever mode is showing, so a mode switch
+  keeps marks made with `markText` (shown on their blocks again when blocks come
+  back), the selection, the scroll position and the undo history: Ctrl-Z after
+  switching back undoes the last edit made before the switch. If the text was
+  edited in text mode the history starts over on the way back to blocks, since
+  it may pass through text that is not a program. `react-codemirror2` is no
+  longer used; the editor no longer keeps a record of marks on blocks that no
+  longer exist.
 - The beep and the wrap sound are inlined into the library as data URLs
   (`src/sounds.ts`, made from `assets/sounds` by `npm run build-sounds`), so
   importing the library no longer needs a bundler rule for `.mp3` files.

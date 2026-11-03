@@ -24,6 +24,7 @@ const searchInput = () => screen.getByLabelText("Search String");
 
 beforeEach(() => {
   ({ cmb } = mountCMB(wescheme));
+  cmb.setBlockMode(false); // (mountCMB starts in blocks) load as text, then switch
   cmb.setValue("(f x)\n(g xy x)\nx");
   cmb.setBlockMode(true);
   sounds = [];

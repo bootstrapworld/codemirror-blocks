@@ -138,30 +138,45 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(marked()).toEqual([cmb.getAst().rootNodes[0].id]);
     });
 
-    // The text editor is a new CodeMirror each time the mode changes, so the
-    // marks made on the old one are gone, and so are what the store remembered
-    // about them (it used to keep entries for blocks that no longer exist).
-    it("switching to text and back clears the marks, and what was remembered", function () {
+    // The one CodeMirror is kept across modes, so its marks are too. A mark
+    // made on a block is a real mark in text mode (on the text, with no block
+    // to show it on), and is on the block again when blocks come back.
+    it("a mark survives switching to text and back", function () {
       const [first] = cmb.getAst().rootNodes;
       cmb.markText(first.from, first.to, { className: "flagged" });
-      expect(cmb.getAllMarks()).toHaveLength(1);
       cmb.setBlockMode(false);
-      expect(cmb.getAllMarks()).toHaveLength(0);
-      expect(marked()).toEqual([]);
+      expect(cmb.getAllMarks()).toHaveLength(1);
+      expect(document.querySelectorAll(".flagged")).toHaveLength(1);
       cmb.setBlockMode(true);
-      expect(cmb.getAllMarks()).toHaveLength(0);
-      expect(marked()).toEqual([]);
-      expect(document.querySelectorAll(".flagged")).toHaveLength(0);
+      expect(cmb.getAllMarks()).toHaveLength(1);
+      expect(cmb.getAllMarks()[0].find()).toMatchObject({
+        from: { line: 0, ch: 0 },
+        to: { line: 0, ch: 2 },
+      });
+      expect(document.querySelectorAll(".flagged")).toHaveLength(1);
     });
 
-    // KNOWN GAP (#571): marks should survive a mode switch. `it.failing`
-    // passes while they do not; when they do, remove the `.failing`.
-    it.failing("a mark survives switching to text and back", function () {
-      const [first] = cmb.getAst().rootNodes;
-      cmb.markText(first.from, first.to, { className: "flagged" });
+    it("a mark moves with the text edited in text mode", function () {
+      const [, second] = cmb.getAst().rootNodes;
+      cmb.markText(second.from, second.to, { className: "flagged" });
       cmb.setBlockMode(false);
+      cmb.replaceRange("99\n", { line: 0, ch: 0 });
       cmb.setBlockMode(true);
-      expect(cmb.getAllMarks()).toHaveLength(1);
+      expect(cmb.getValue()).toBe("99\n11\n12\n(+ 3 4 5)");
+      const [mark] = cmb.getAllMarks();
+      expect(mark.find()).toMatchObject({
+        from: { line: 2, ch: 0 },
+        to: { line: 2, ch: 2 },
+      });
+      expect(document.querySelectorAll(".flagged")).toHaveLength(1);
+    });
+
+    it("the selection survives too", function () {
+      cmb.setBlockMode(false);
+      cmb.setSelection({ line: 1, ch: 0 }, { line: 1, ch: 2 });
+      cmb.setBlockMode(true);
+      cmb.setBlockMode(false);
+      expect(cmb.getSelection()).toBe("12");
     });
   });
 });

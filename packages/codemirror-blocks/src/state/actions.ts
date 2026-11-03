@@ -16,7 +16,13 @@ import {
   PerformEditsResult,
 } from "../edits/performEdits";
 import { AST, ASTNode, Pos } from "../ast";
-import { CMBEditor, ReadonlyCMBEditor, ReadonlyRangedText } from "../editor";
+import {
+  CMBEditor,
+  isBlockNodeMarker,
+  ReadonlyCMBEditor,
+  ReadonlyRangedText,
+} from "../editor";
+import type CodeMirror from "codemirror";
 import type { Language } from "../CodeMirrorBlocks";
 import { err, ok, Result } from "../edits/result";
 import * as selectors from "./selectors";
@@ -128,6 +134,50 @@ export const finishUndoOrRedo =
     historyItem.undoableAction = undoableAction;
     historyItem.actionFocus = actionFocus;
     dispatch({ type: which === "undo" ? "UNDO" : "REDO" });
+  };
+
+/**
+ * Show a CodeMirror mark on the block `id`: the block draws its className, css
+ * and title, and forgets the mark when it is cleared.
+ */
+export const showMarkOnBlock =
+  (mark: CodeMirror.TextMarker, id: string): AppThunk =>
+  (dispatch, getState) => {
+    const clear = mark.clear.bind(mark);
+    if (!("shownOnBlocks" in mark)) {
+      Object.assign(mark, { shownOnBlocks: true });
+      mark.clear = () => {
+        clear();
+        for (const [key, m] of Object.entries(getState().markedMap)) {
+          if (m === mark) dispatch({ type: "CLEAR_MARK", id: key });
+        }
+      };
+    }
+    dispatch({ type: "ADD_MARK", id, mark });
+  };
+
+/**
+ * The CodeMirror outlives a mode switch, and so do its marks, but the blocks
+ * are new (and have new ids) each time block mode comes back: show each mark
+ * that is on exactly the text of a block on that block again. (Marks that are
+ * not on a block stay marks of the text only.)
+ */
+export const showMarksOnBlocks =
+  (codemirror: CodeMirror.Editor): AppThunk =>
+  (dispatch, getState) => {
+    const ast = selectors.getAST(getState());
+    for (const mark of codemirror.getAllMarks()) {
+      const range = isBlockNodeMarker(mark) ? undefined : mark.find();
+      if (!range || "line" in range) continue;
+      const node = ast.getNodeAt(range.from, range.to);
+      if (!node) continue;
+      if (!mark.options) {
+        // a mark made as text: its options were copied onto the mark itself
+        const { className, css, title } = mark as CodeMirror.TextMarkerOptions;
+        mark.options = JSON.parse(JSON.stringify({ className, css, title }));
+      }
+      dispatch(showMarkOnBlock(mark, node.id));
+    }
   };
 
 export const setCode = (code: string) => ({ type: "SET_CODE" as const, code });
