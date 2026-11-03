@@ -23,6 +23,7 @@ import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import { AppDispatch } from "../state/store";
 import { useSearch } from "./Search";
+import { summarizeProgram } from "../summary";
 
 const defaultCmOptions: CodeMirror.EditorConfiguration = {
   lineNumbers: true,
@@ -44,6 +45,7 @@ function ToggleEditor(props: ToggleEditorProps) {
   const blockMode = useSelector(selectors.isBlockModeEnabled);
   const dispatch: AppDispatch = useDispatch();
   const code = useSelector(selectors.getCode);
+  const rootNodes = useSelector(selectors.getAST).rootNodes;
   // The one CodeMirror, made here and handed to whichever mode is showing:
   // keeping it across switches keeps its marks, selection, scroll position and
   // undo history (#571).
@@ -57,6 +59,18 @@ function ToggleEditor(props: ToggleEditorProps) {
     return cm;
   });
   const [editor] = useState(() => new CodeMirrorFacade(codemirror));
+
+  // The first time a program is shown as blocks, say what is at its top level.
+  // (Only once: after that the user knows their way around it.)
+  const summarizedRef = useRef(false);
+  useEffect(() => {
+    if (!blockMode || summarizedRef.current) return;
+    const summary = summarizeProgram(rootNodes);
+    if (summary) {
+      summarizedRef.current = true;
+      say(summary);
+    }
+  }, [blockMode, rootNodes]);
 
   // Edits made in text mode may leave the history at text that is not a
   // program, which block mode could not undo to. So when text was edited,
