@@ -280,3 +280,48 @@ Not done: skipping unchanged later roots after an insert/delete near the top.
 its old `ASTNode` in props, which edit handlers (`ReplaceNodeTarget(props.node)`)
 read positions from; doing it safely means resolving the node by id from the
 store at the point of use. That is a larger, riskier change than the two above.
+
+## After the third and fourth fixes (blocks that only moved; keyed subscriptions)
+
+Raw results: `profile-large-doc/after3/` (moved blocks) and `after4/` (keyed
+subscriptions; includes a 3-rep CPU profile at 3000 lines). 1491 unit tests and
+90 e2e tests (run twice) pass.
+
+- **Blocks that only moved are not drawn again.** `areNodesEqualish` compares
+  content hash, place among siblings, level and *shape* (lines spanned, end
+  column) instead of absolute positions, and `Node` is `React.memo`'d with it.
+  Handlers start from the current node found by id (`currentNode()` in
+  `Node.tsx`, the parent in `DropTarget`), and the root block gives focus back
+  after remaking its marker (the blocks inside no longer run the effect that
+  did). Insert at the top of 3000 lines: 63k renders → 5.5k.
+- **Keyed store subscriptions** (`state/nodeSubscriptions.ts`). `useSelector`
+  runs every selector on every store update: with 64k blocks, one arrow key was
+  ~300k selector calls. `useIdState` subscribes by node id, and a hub, watching
+  the store once, wakes only the ids whose focus/collapsed/selected/marked/
+  editable state changed.
+
+| operation (ms, settled) | 3000 lines, original | now | 1000, original | now |
+|---|---|---|---|---|
+| load + first blocks render | 2233 | 1234 | 1237 | 969 |
+| text → blocks (warm) | 2093 | 1237 | 509 | 606 |
+| edit literal | 1462 | 342 | 458 | 260 |
+| insert at top | 1986 | 984 | 938 | 462 |
+| delete | 1623 | 203 | 735 | 202 |
+| undo | 2249 | 201 | 685 | 204 |
+| redo | 2102 | 203 | 602 | 204 |
+| **arrow down ×50** | **54836** | **99** | **17688** | **67** |
+| collapse all | 4900 | 501 | 978 | 529 |
+| expand all | 4232 | 478 | 795 | 147 |
+| type 30 chars | ~960 (timer-bound) | ~996 | ~960 | ~994 |
+
+The 200 ms floor on delete/undo/redo and the ~1 s on typing are timers in the
+editor and in the measurement (400 ms quiet window), not work. Component
+renders at 3000 lines: arrow ×50 2.7M → 260; edit 54k → 72; undo 54k → 58;
+collapse/expand all 54k → 32k (every node really changes).
+
+What is left at 3000 lines, from the CPU profile: load and mode switch ≈ 1 s
+(React 19%, parse+patchAst 15%, GC 10%, CodeMirror 7%; creating 1092 portals and
+markers); an edit ≈ 340 ms, a quarter of it parse + `patchAst` + `speculateChanges`;
+collapse/expand all ≈ 0.5 s (31k real re-renders). Ideas: virtualise root blocks
+(render only those near the viewport), parse only the changed root on an edit,
+and drop the 250 ms placeholder step once the first paint is cheap.

@@ -307,7 +307,10 @@ async function runOnce(browser, lines) {
 
   // (f) keyboard navigation and collapse/expand
   await page.getByRole("treeitem").first().click();
+  const focusLabel = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+  const label0 = await focusLabel();
   await m("f. arrow down x50", press(page, "ArrowDown", 50));
+  if ((await focusLabel()) === label0) errors.push("arrow down did not move focus");
   await m("f. collapse all", press(page, "Shift+ArrowLeft"));
   const nCollapsed = () => page.evaluate(() => document.querySelectorAll('[aria-expanded="false"]').length);
   const collapsedAfter = await nCollapsed();
