@@ -1,0 +1,27 @@
+/* plain mode: strip every block decoration; text in the editor's font */
+.cmb-plain .blocks-node, .cmb-plain .blocks-node *,
+.cmb-plain .react-container, .cmb-plain .react-container * {
+  display: inline !important;
+  float: none !important;
+  position: static !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  font: inherit !important;
+  line-height: inherit !important;
+  white-space: pre !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  min-width: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  vertical-align: baseline !important;
+}
+.cmb-plain .blocks-node::before, .cmb-plain .blocks-node::after { content: none !important; }
+.cmb-plain .blocks-drop-target, .cmb-plain .blocks-node .glyphicon { display: none !important; }
+.cmb-plain .blocks-node:focus { outline: 1px dotted #888; }

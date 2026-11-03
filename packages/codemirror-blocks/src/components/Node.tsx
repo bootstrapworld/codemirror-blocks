@@ -40,6 +40,33 @@ function getNodeElementId(node: ASTNode) {
   return `block-node-${node.id}`;
 }
 
+/**
+ * SPIKE (plain mode): the node's children, taken from the source text instead
+ * of from the language's `render`. The text between the child nodes is kept
+ * as it was typed, so a node looks as it did in text mode.
+ */
+function plainBody(node: ASTNode, editor: NonNullable<React.ContextType<typeof EditorContext>>): React.ReactNode {
+  const { from, to } = node.srcRange();
+  const cmp = (a: { line: number; ch: number }, b: { line: number; ch: number }) => a.line - b.line || a.ch - b.ch;
+  const kids = [...node.children()]
+    .filter((k) => {
+      const r = k.srcRange();
+      return cmp(r.from, from) >= 0 && cmp(r.to, to) <= 0 && cmp(r.from, r.to) < 0;
+    })
+    .sort((a, b) => cmp(a.srcRange().from, b.srcRange().from));
+  const out: React.ReactNode[] = [];
+  let at = from;
+  for (const k of kids) {
+    const r = k.srcRange();
+    if (cmp(r.from, at) < 0) continue; // overlaps (synthetic) child
+    if (cmp(at, r.from) < 0) out.push(editor.getRange(at, r.from));
+    out.push(k.reactElement());
+    at = r.to;
+  }
+  if (cmp(at, to) < 0) out.push(editor.getRange(at, to));
+  return out.map((o, i) => (typeof o === "string" ? <span key={"t" + i}>{o}</span> : o));
+}
+
 const Node = ({ expandable = true, ...props }: Props) => {
   const isCollapsed = useSelector((state: RootState) =>
     selectors.isCollapsed(state, props.node)
@@ -311,6 +338,8 @@ const Node = ({ expandable = true, ...props }: Props) => {
     if (textMarker?.options.className) {
       classes.push(textMarker.options.className);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const plain = !!(window as any).__cmbPlain;
     const result = (
       <span
         {...contentEditableProps}
@@ -332,8 +361,8 @@ const Node = ({ expandable = true, ...props }: Props) => {
         onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDown}
       >
-        {props.children}
-        {comment && comment.reactElement({ id: commentElemId })}
+        {plain ? plainBody(props.node, editor!) : props.children}
+        {!plain && comment && comment.reactElement({ id: commentElemId })}
       </span>
     );
     return <NodeContext value={{ node: props.node }}>{result}</NodeContext>;
