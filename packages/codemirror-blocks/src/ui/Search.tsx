@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { recordEvent } from "../state/activityLog";
-import { useSelector } from "react-redux";
+import { useSelector, useStore } from "react-redux";
 import * as selectors from "../state/selectors";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import "react-tabs/style/react-tabs.less";
@@ -221,7 +221,15 @@ export function useSearch(
       );
     }
   };
+  const store = useStore<RootState>();
   const handleAfterClose = () => {
+    // The dialog gives focus back to whatever had it when it opened. If that
+    // was the screenreader placeholder (a block CodeMirror wasn't drawing),
+    // the block may be drawn by now, so hand focus to it.
+    if (document.activeElement?.id === "SR_fix_for_slow_dom") {
+      const id = selectors.getFocusedNode(store.getState())?.id;
+      if (id) document.getElementById(`block-node-${id}`)?.focus();
+    }
     if (searchAfterCloseRef.current) {
       searchAfterCloseRef.current = false;
       thenSearchRef.current();

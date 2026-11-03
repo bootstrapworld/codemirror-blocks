@@ -1,4 +1,5 @@
 import CodeMirror from "codemirror";
+import { fireEvent, screen } from "@testing-library/react";
 import wescheme from "../src/languages/wescheme";
 import {
   cmd_ctrl,
@@ -147,6 +148,27 @@ describe("moving to a block that CodeMirror isn't drawing right now", () => {
       cmb.getWrapperElement() as HTMLElement & { CodeMirror: CodeMirror.Editor }
     ).CodeMirror;
     CodeMirror.signal(cm, "update", cm);
+    expect(document.activeElement).toBe(elt);
+  });
+});
+
+describe("closing the search dialog that was opened while focus waited on the placeholder", () => {
+  // (random sequence, seed 319752) the dialog gave focus back to the
+  // placeholder, though the block it was waiting for had been drawn since
+  it("focuses the block", () => {
+    cmb.setValue("a b c");
+    mouseDown(root(0));
+    const elt = document.getElementById(`block-node-${root(1).id}`)!;
+    const parent = elt.parentElement!;
+    const next = elt.nextSibling;
+    elt.remove();
+    keyDown("ArrowDown", {}, root(0));
+    expect(document.activeElement?.id).toBe("SR_fix_for_slow_dom");
+    keyDown("F3", {}, root(0));
+    parent.insertBefore(elt, next);
+    fireEvent.keyUp(screen.getByLabelText("Search String"), {
+      key: "Escape",
+    });
     expect(document.activeElement).toBe(elt);
   });
 });
