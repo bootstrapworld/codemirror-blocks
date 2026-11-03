@@ -132,12 +132,6 @@ export const isFocused: IdSelector<boolean> = (state, node) =>
   state.focusId === node.id;
 
 /**
- * @returns whether some other node than the given one is focused
- */
-export const isFocusedElsewhere: IdSelector<boolean> = (state, node) =>
-  !!state.focusId && state.focusId !== node.id;
-
-/**
  * @returns the current quarantine if there is one.
  */
 export const getQuarantine = (state: RootState) => state.quarantine;
