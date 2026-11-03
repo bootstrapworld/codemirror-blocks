@@ -22,6 +22,60 @@ Ideas we have tried or are considering, with what we learned. None of these are 
 - [Plain mode](doc/experiments/plain-mode.md): structured editing that looks like plain text (issue #106). Looks viable; the obstacle is that block mode re-prints the program on every edit.
 - [Profiling large documents](doc/experiments/profile-large-doc.md): where the time goes (React renders the whole tree on every edit), with a reusable [profiler](doc/experiments/profile-large-doc/README.md).
 
+## Keyboard shortcuts
+
+These work when a block has focus (press **Shift-Ctrl-/** in the editor to show
+the same list in a dialog). On a Mac, **Cmd** takes the place of **Ctrl** for
+undo, redo, the clipboard, search and "edit anything"; every other key is the
+same on all platforms.
+
+**Moving around**
+
+| Key                              | Action                                                                 |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| Down / Up                        | Next / previous visible block                                          |
+| Home / End                       | First / last visible block                                             |
+| Left                             | Collapse the block, or move to its parent if it is already collapsed   |
+| Right                            | Expand the block, or move to its first child if it is already expanded |
+| Shift-Left / Shift-Right         | Collapse / expand all blocks                                           |
+| Shift-Alt-Left / Shift-Alt-Right | Collapse / expand the whole top-level expression you are in            |
+| Shift-,                          | Jump to the top-level expression you are in                            |
+| \\                               | Read the block's ancestors aloud                                       |
+| Shift-\\                         | Read the block's children aloud                                        |
+| Shift-Tab                        | Move focus to the toolbar                                              |
+
+**Editing**
+
+| Key                                           | Action                                                                                                   |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Enter                                         | Edit a literal (the box opens with its text selected). On a block with children, collapses or expands it |
+| Ctrl-Enter (Cmd-Enter)                        | Edit any block as text                                                                                   |
+| Enter, while editing                          | Save the edit                                                                                            |
+| Esc or Alt-Q, while editing                   | Cancel the edit                                                                                          |
+| Ctrl-[ / Ctrl-]                               | Insert a new block before / after the focused block                                                      |
+| Delete or Backspace                           | Delete the selected blocks                                                                               |
+| Ctrl-Z / Ctrl-Y (Cmd-Z / Cmd-Y), Shift-Ctrl-Z | Undo / redo                                                                                              |
+
+**Selecting and the clipboard**
+
+| Key                                              | Action                                               |
+| ------------------------------------------------ | ---------------------------------------------------- |
+| Space                                            | Add the focused block to the selection, or remove it |
+| Esc, Ctrl-Esc or Alt-Q                           | Clear the selection                                  |
+| Ctrl-X / Ctrl-C / Ctrl-V (Cmd-X / Cmd-C / Cmd-V) | Cut, copy, paste                                     |
+| Shift-Ctrl-V (Shift-Cmd-V)                       | Paste before the focused block, instead of after     |
+
+**Search**
+
+| Key                        | Action                      |
+| -------------------------- | --------------------------- |
+| Ctrl-F or F3 (Cmd-F or F3) | Open the search dialog      |
+| PageDown / PageUp          | Next / previous match       |
+| Ctrl-F3 / Shift-Ctrl-F3    | Next / previous search type |
+
+The bindings are defined in
+[`packages/codemirror-blocks/src/keymap.tsx`](packages/codemirror-blocks/src/keymap.tsx).
+
 ## Contributing Changes
 
 To contribute changes to any of the packages in this repository, you'll need to setup a development
