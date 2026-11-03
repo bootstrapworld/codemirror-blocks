@@ -229,3 +229,28 @@ nothing.
 Caveat: with #1 and #2 done, the remaining per-edit cost would be `speculateChanges`
 + `patchAst` + parse (≈170–280 ms at 3000 lines) and undo history work; worth a
 second profile after.
+
+## After the first fix (per-node focus booleans, stable `NodeContext`, set lookups)
+
+Raw results: `profile-large-doc/after/`. Medians of 3 reps (settled ms); unit
+tests (1491) and the e2e suite (90) pass.
+
+| operation | 200 before → after | 1000 before → after | 3000 before → after | renders @3000 |
+|---|---|---|---|---|
+| arrow down ×50 | 3161 → 451 | 17688 → 2065 | 54836 → 3864 | 2.7M → 260 |
+| edit literal | 246 → 243 | 458 → 385 | 1462 → 915 | 54k → 224 |
+| delete | 202 → 208 | 735 → 358 | 1623 → 979 | 54k → 52 |
+| undo | 219 → 218 | 685 → 294 | 2249 → 617 | 54k → 54 |
+| redo | 223 → 215 | 602 → 432 | 2102 → 1166 | 54k → 52 |
+| insert at top | 441 → 437 | 938 → 944 | 1986 → 2089 | 63k → 63k |
+| collapse all | 224 → 222 | 978 → 967 | 4900 → 4767 | 54k → 32k |
+| expand all | 92 → 156 | 795 → 807 | 4232 → 4494 | 54k → 32k |
+| load / text→blocks | unchanged | unchanged | ~2.2 s | 64k |
+
+Still open, in order of payoff: insert/delete near the top re-renders every
+later root because `areNodesEqualish` compares absolute positions (compare
+relative to the previous root); collapse/expand all spends half its time in
+CodeMirror (`marker.changed()` per node: batch in one `operation()`); load and
+mode switch (marker creation for 1092 roots, the 250 ms placeholder step);
+arrow keys still cost ~78 ms at 3000 lines from every block's selectors running
+on each store update.
