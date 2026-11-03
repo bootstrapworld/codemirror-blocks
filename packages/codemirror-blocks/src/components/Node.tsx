@@ -20,6 +20,7 @@ import { RootState } from "../state/reducers";
 import { isDummyPos } from "../utils";
 import { keyDown } from "../keymap";
 import { AppContext, EditorContext } from "./Context";
+import type { BlockNodeMarker } from "../editor";
 import { RootNodeContext } from "../ui/ToplevelBlock";
 import * as selectors from "../state/selectors";
 
@@ -47,6 +48,9 @@ function getNodeElementId(node: ASTNode) {
   return `block-node-${node.id}`;
 }
 
+// markers whose widget has a changed() call waiting
+const pendingChanged = new Set<BlockNodeMarker>();
+
 const Node = ({ expandable = true, ...props }: Props) => {
   const isCollapsed = useSelector((state: RootState) =>
     selectors.isCollapsed(state, props.node)
@@ -62,8 +66,16 @@ const Node = ({ expandable = true, ...props }: Props) => {
     // Whenever a node gets rerendered because it's collapsed state has changed,
     // make sure to notifiy
     // codemirror by calling marker.changed() on the rootNode
-    // marker object, in case the widget's height has changed.
-    rootNode.marker?.changed();
+    // marker object, in case the widget's height has changed. (Once per marker, however
+    // many of its nodes changed: collapsing everything changes tens of
+    // thousands.)
+    const marker = rootNode.marker;
+    if (!marker || pendingChanged.has(marker)) return;
+    pendingChanged.add(marker);
+    queueMicrotask(() => {
+      pendingChanged.delete(marker);
+      marker.changed();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCollapsed]);
 
