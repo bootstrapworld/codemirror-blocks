@@ -141,6 +141,11 @@ export interface ReadonlyCMBEditor extends ReadonlyRangedText {
    * Whether or not the editor currently has focus
    */
   hasFocus(): boolean;
+  /**
+   * Is CodeMirror in the middle of redrawing lines? (Moving their nodes then
+   * makes it fail.)
+   */
+  isRedrawing(): boolean;
 }
 
 export interface RangedText extends ReadonlyRangedText {
@@ -177,8 +182,19 @@ export function isBlockNodeMarker(
 
 export class CodeMirrorFacade implements CMBEditor {
   readonly codemirror: CodeMirror.Editor;
+  private redrawing = false;
   constructor(codemirror: CodeMirror.Editor) {
     this.codemirror = codemirror;
+    // (CodeMirror says a line is redrawn just before it swaps the line in)
+    codemirror.on("renderLine", () => {
+      this.redrawing = true;
+      queueMicrotask(() => (this.redrawing = false));
+    });
+    codemirror.on("update", () => (this.redrawing = false));
+  }
+
+  isRedrawing() {
+    return this.redrawing;
   }
 
   getValue() {

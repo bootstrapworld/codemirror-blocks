@@ -114,9 +114,21 @@ const NodeEditable = ({
     // Handling a blur can focus this very box again (it is the focused node's
     // element), which blurs it again: don't handle that second blur.
     const blurringRef = useRef(false);
+    const deferredRef = useRef(false);
     const onBlur = (e: React.SyntheticEvent) => {
       e.stopPropagation();
       if (blurringRef.current) return;
+      // Removing a box while CodeMirror patches its display blurs it right
+      // then, and handling that moves nodes CodeMirror is in the middle of
+      // replacing: wait until it is done.
+      if (props.editor.isRedrawing() && !deferredRef.current) {
+        deferredRef.current = true;
+        queueMicrotask(() => {
+          onBlur(e);
+          deferredRef.current = false;
+        });
+        return;
+      }
       blurringRef.current = true;
       try {
         handleBlur();
