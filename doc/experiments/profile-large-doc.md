@@ -325,3 +325,33 @@ markers); an edit ≈ 340 ms, a quarter of it parse + `patchAst` + `speculateCha
 collapse/expand all ≈ 0.5 s (31k real re-renders). Ideas: virtualise root blocks
 (render only those near the viewport), parse only the changed root on an edit,
 and drop the 250 ms placeholder step once the first paint is cheap.
+
+## The placeholder step (incremental rendering)
+
+Each top-level block first renders an empty `<div/>`, then after a 250 ms timer
+the real content (`ToplevelBlock`, `incrementalRendering`, on by default in block
+mode). Measured with it switched off (`noplaceholder/`, medians of 5; 3 for the
+profile):
+
+| text → blocks, settled ms | 200 lines | 1000 lines | 3000 lines |
+|---|---|---|---|
+| with the placeholder (default) | 594 | 606 | 1237 |
+| without | **94** | 595 | 858 |
+| first visible change, with → without | 67 → 90 | 126 → 280 | 277 → 768 |
+
+- CPU time is the same (3000 lines: 1230 ms busy with, 1325 without; the busy
+  split is the same too). The placeholder saves no work; it adds the 250 ms wait
+  and a second render pass (commits for a 3000-line load: ~160–290 → 2).
+- It does make the page react sooner for big programs: without it, 3000 lines
+  block the main thread for ~770 ms before anything changes, with it ~280 ms.
+- So for programs under a few hundred forms it is pure delay (200 lines:
+  594 → 94 ms).
+
+**Not adopted: switching it off below 300 top-level forms.** The mouse-drag e2e
+tests (`matrix`, `toolbar-drag`, `touch`; 9 tests) then fail, and pass again
+with a 600 ms wait after the mode switch. So something is not ready for a drag
+for a while after the first full render, and the placeholder delay was hiding it
+(re-measuring the markers in a `requestAnimationFrame` did not fix it). Find
+that first (probably drop targets or the drag layer being set up on the first
+commit), then drop the delay for small programs, then replace the placeholder
+with real chunking for large ones.
