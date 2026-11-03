@@ -29,6 +29,9 @@ import {
  * 9874 because a block dragged to the trash was edited away mid-drag.
  */
 
+// The soak runs many browsers at once, so it allows a click longer
+const ACTION_TIMEOUT = Number(process.env.CMB_E2E_ACTION_TIMEOUT) || 5000;
+
 const SEEDS = (
   process.env.CMB_E2E_SEEDS ??
   "1,2,3,4,5,6,7,11,915,935,2596,1613,3277,3463,8442,9874"
@@ -69,8 +72,9 @@ const pick = async (page: Page, index: number) => {
   const b = blocks(page).nth(index);
   // (the label has to be read first: the click can change the blocks)
   const label =
-    (await b.getAttribute("aria-label", { timeout: 5000 })) ?? "a block";
-  await b.click({ position: { x: 4, y: 4 }, timeout: 5000 });
+    (await b.getAttribute("aria-label", { timeout: ACTION_TIMEOUT })) ??
+    "a block";
+  await b.click({ position: { x: 4, y: 4 }, timeout: ACTION_TIMEOUT });
   return label;
 };
 
@@ -145,7 +149,8 @@ const steps: Record<string, Step> = {
     const index = n[0] % (await blocks(page).count());
     const b = blocks(page).nth(index);
     const label =
-      (await b.getAttribute("aria-label", { timeout: 5000 })) ?? "a block";
+      (await b.getAttribute("aria-label", { timeout: ACTION_TIMEOUT })) ??
+      "a block";
     await dragWithMouse(page, b, trashCan(page));
     return `drag ${label} to the trash can`;
   },

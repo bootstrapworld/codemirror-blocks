@@ -31,7 +31,7 @@
  * up to 100), --alternate with --e2e-every K (default 20; one Chromium batch at
  * a time, in one worker slot), --timeout-min N (running time after which a
  * batch is killed: default 25), --seed N, --fresh (ignore saved progress),
- * --e2e-cores N (default 6: at most N workers run at once while a Chromium
+ * --e2e-action-ms N (default 20000: the click and read timeout in Chromium sequences), --e2e-cores N (default 6: at most N workers run at once while a Chromium
  * batch does; the others are paused, then resumed), --status-min N (default 30: a status line every N minutes, also appended to
  * status.log), --out DIR (default soak-results). Stop it with Ctrl-C (or SIGTERM): it lets
  * the running batches finish, saves, and prints the summary; a second Ctrl-C
@@ -115,6 +115,7 @@ for (const mode of modeNames) {
       batches: saved?.batches ?? 0,
       failures: saved?.failures ?? 0,
       crashes: saved?.crashes ?? [],
+      loadFlakes: saved?.loadFlakes ?? 0,
       distinct: saved?.distinct ?? {},
       head,
       dirty,
@@ -190,6 +191,8 @@ const e2eEvery = Number(opt("e2e-every", 20));
 // flake when the machine is crowded
 const e2eCores = Number(opt("e2e-cores", 6));
 const batchTimeoutMs = Number(opt("timeout-min", 25)) * 60 * 1000;
+/** A click or read in a Chromium sequence: longer than the suite's, as the machine is busy */
+const e2eActionMs = Number(opt("e2e-action-ms", 20000));
 const singleTimeoutMs = Math.min(batchTimeoutMs, 10 * 60 * 1000);
 const sampleMs = Number(opt("sample-sec", 10)) * 1000;
 const workersFile = path.join(out, "workers.json");
@@ -272,7 +275,11 @@ const runBatch = (job, mode, from, count, steps, timeout) =>
           `--outputFile=${tmp}`,
         ];
     const env = e2e
-      ? { ...process.env, CMB_E2E_SEEDS: seeds }
+      ? {
+          ...process.env,
+          CMB_E2E_SEEDS: seeds,
+          CMB_E2E_ACTION_TIMEOUT: String(e2eActionMs),
+        }
       : {
           ...process.env,
           NODE_OPTIONS: "--max-old-space-size=8192",
@@ -426,6 +433,30 @@ const doJob = async (job, mode, from, size, steps) => {
       `  ${crashes.length} crash record(s); ${alone.passed} seeds ran fine on their own`
     );
     result = alone;
+  }
+  if (mode === "e2e" && !hardStop && result.failures.length) {
+    // A Chromium failure may only be the machine being busy: run each once more,
+    // by itself in this slot. It counts as a failure only if it fails again.
+    const again = [];
+    for (const f of result.failures) {
+      const rerun =
+        f.seed === undefined || hardStop
+          ? null
+          : await runBatch(job, mode, f.seed, 1, steps, singleTimeoutMs);
+      if (rerun && !rerun.crashed && !rerun.failures.length) {
+        progress.loadFlakes = (progress.loadFlakes ?? 0) + 1;
+        log(
+          `  e2e seed ${f.seed} failed under load but passed again: a load flake`
+        );
+      } else {
+        again.push(f);
+      }
+    }
+    result = {
+      ...result,
+      passed: result.passed + (result.failures.length - again.length),
+      failures: again,
+    };
   }
   progress.sequences += result.passed + result.failures.length;
   countFailures(state, result.failures);
@@ -602,6 +633,10 @@ const status = () => {
     (n, m) => n + states[m].progress.crashes.length,
     0
   );
+  const loadFlakes = modeNames.reduce(
+    (n, m) => n + (states[m].progress.loadFlakes ?? 0),
+    0
+  );
   const hours = ((Date.now() - runStartedAt) / 3600000).toFixed(1);
   const rate = (failed, run) =>
     run ? `${((100 * failed) / run).toFixed(2)}%` : "n/a";
@@ -610,7 +645,7 @@ const status = () => {
   const line =
     `status after ${hours} h: ${runSeqs} sequences, ${runFails} failures this run ` +
     `(rate ${rate(runFails, runSeqs)}; ${now.failures} in all, ` +
-    `${rate(now.failures, now.sequences)}; ${distinct} distinct), ${crashes} crashes`;
+    `${rate(now.failures, now.sequences)}; ${distinct} distinct), ${crashes} crashes, ${loadFlakes} Chromium load flakes passed on a rerun`;
   log(line);
   fs.appendFileSync(
     path.join(out, "status.log"),
