@@ -1,0 +1,12 @@
+import {chromium} from '/Users/schanzer/Documents/Bootstrap/Development/codemirror-blocks/node_modules/playwright/index.mjs'
+const b=await chromium.launch(),p=await b.newPage()
+await p.goto('file://'+process.cwd()+'/dist/nested.html')
+const ae=()=>p.evaluate(()=>{const a=document.activeElement;return a===document.body?'BODY':(a.getAttribute('aria-label')+' L'+a.getAttribute('aria-level'))})
+console.log(await p.locator('.cm-content').ariaSnapshot())
+await p.locator('[aria-level="3"]').first().focus(); console.log('focus level3 ->',await ae())
+await p.locator('[aria-level="3"]').first().click(); console.log('click level3 ->',await ae())
+await p.evaluate(()=>view.dispatch({changes:{from:view.state.doc.length,insert:'(z)'}}))
+console.log('edit later in doc (other block) ->',await ae())
+await p.evaluate(()=>view.dispatch({changes:{from:1,insert:'q '}}))
+console.log('edit inside the focused block\'s ancestor ->',await ae(),'(widget recreated: eq false, no updateDOM)')
+await b.close()

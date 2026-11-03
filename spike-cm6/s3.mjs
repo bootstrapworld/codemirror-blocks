@@ -1,0 +1,36 @@
+import {chromium} from '/Users/schanzer/Documents/Bootstrap/Development/codemirror-blocks/node_modules/playwright/index.mjs'
+const b=await chromium.launch(),p=await b.newPage()
+await p.goto('file://'+process.cwd()+'/dist/index.html')
+const ae=()=>p.evaluate(()=>{const a=document.activeElement;return a.className+' '+(a.dataset.from||'')+' '+a.getAttribute('role')})
+const out=(k,v)=>console.log(k.padEnd(40),v)
+out('blocks rendered',await p.locator('.blk').count())
+await p.locator('.blk').first().focus(); out('focus() widget -> active',await ae())
+await p.keyboard.press('ArrowRight'); out('ArrowRight -> active',await ae())
+await p.locator('.blk').nth(0).click(); out('mouse click first block -> active',await ae())
+// edit elsewhere (insert text at doc end via dispatch) while block 2 focused
+await p.locator('.blk').nth(1).focus()
+await p.evaluate(()=>view.dispatch({changes:{from:view.state.doc.length,insert:'(k)'}}))
+out('after unrelated edit -> active',await ae())
+// edit INSIDE focused block's range (decoration rebuild -> widget eq false)
+await p.evaluate(()=>view.dispatch({changes:{from:view.state.doc.length-2,insert:'z'}}))
+out('after edit inside OTHER block -> active',await ae())
+// edit before the focused block (positions shift; eq compares from)
+await p.locator('.blk').nth(1).focus()
+await p.evaluate(()=>view.dispatch({changes:{from:0,insert:' '}}))
+out('after edit BEFORE focused block -> active',await ae())
+// edit focused block itself
+await p.locator('.blk').nth(1).focus()
+await p.evaluate(()=>{const e=document.activeElement;const f=+e.dataset.from;view.dispatch({changes:{from:f+1,insert:'q'}})})
+out('after edit INSIDE focused block -> active',await ae())
+// Delete key through widget handler
+await p.locator('.blk').nth(2).focus(); await p.keyboard.press('Delete')
+out('Delete key on block -> blocks left / active',(await p.locator('.blk').count())+' / '+await ae())
+// native keyboard Tab / typing in content
+await p.locator('.cm-content').focus(); await p.keyboard.type('(n)')
+out('typing text -> blocks',await p.locator('.blk').count())
+out('role tree/treeitem aria snapshot',''); console.log(await p.locator('.cm-content').ariaSnapshot())
+// atomic ranges: cursor arrow across a block
+await p.evaluate(()=>view.dispatch({selection:{anchor:0}}));await p.locator('.cm-content').focus()
+const pos=async()=>p.evaluate(()=>view.state.selection.main.head)
+await p.keyboard.press('ArrowRight');const a=await pos();await p.keyboard.press('ArrowRight');out('ArrowRight x2 head positions',a+' -> '+await pos()+' (first block spans '+await p.evaluate(()=>document.querySelector('.blk').dataset.from)+'..+'+await p.evaluate(()=>document.querySelector('.blk').textContent.length)+')')
+await b.close()

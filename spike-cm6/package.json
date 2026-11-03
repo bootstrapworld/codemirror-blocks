@@ -1,0 +1,1 @@
+{"name":"spike-cm6","private":true,"type":"module","version":"0.0.0","dependencies":{"@codemirror/commands":"^6.11.1","@codemirror/language":"^6.13.1","@codemirror/state":"^6.7.6","@codemirror/view":"^6.43.15","@lezer/generator":"^1.8.1","@lezer/highlight":"^1.2.5","@lezer/lr":"^1.4.12","jsdom":"^29.1.1"},"devDependencies":{"esbuild":"^0.28.2"}}
