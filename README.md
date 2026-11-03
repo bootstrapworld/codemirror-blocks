@@ -19,7 +19,8 @@ can be found in their respective directories:
 Ideas we have tried or are considering, with what we learned. None of these are in the released editor.
 
 - [CodeMirror 6 + Lezer](doc/experiments/cm6-lezer-spike.md): a feasibility spike for rebuilding on CodeMirror 6. Conditional go; months of work and a major API break.
-- [Plain mode](doc/experiments/plain-mode.md): structured editing that looks like plain text (issue #106).
+- [Plain mode](doc/experiments/plain-mode.md): structured editing that looks like plain text (issue #106). Looks viable; the obstacle is that block mode re-prints the program on every edit.
+- [Profiling large documents](doc/experiments/profile-large-doc.md): where the time goes (React renders the whole tree on every edit), with a reusable [profiler](doc/experiments/profile-large-doc/README.md).
 
 ## Contributing Changes
 
