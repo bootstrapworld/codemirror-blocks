@@ -1,4 +1,11 @@
-import React, { useCallback, use, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  use,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AST, ASTNode, nodeElementMap } from "../ast";
 import { ReplaceNodeTarget, collapseNode } from "../state/actions";
@@ -61,6 +68,8 @@ const Node = ({ expandable = true, ...props }: Props) => {
   }, [isCollapsed]);
 
   const [editable, setEditable] = useState(false);
+  // (a stable value, so the drop targets inside don't render whenever this does)
+  const nodeContext = useMemo(() => ({ node: props.node }), [props.node]);
 
   const [value, setValue] = useState<string | null | undefined>();
   const editor = use(EditorContext);
@@ -243,7 +252,15 @@ const Node = ({ expandable = true, ...props }: Props) => {
 
   // If this is the currently focused node, then focus the node element
   // as soon as we finish rendering.
-  const focusedNode = useSelector(selectors.getFocusedNode);
+  // (a boolean for this node, not the focused node itself: a new AST makes new
+  // node objects, and a selector returning those would re-render every block
+  // on every edit and every arrow key)
+  const isFocused = useSelector((state: RootState) =>
+    selectors.isFocused(state, props.node)
+  );
+  const focusedElsewhere = useSelector((state: RootState) =>
+    selectors.isFocusedElsewhere(state, props.node)
+  );
   useEffect(() => {
     if (
       !editor?.hasFocus() &&
@@ -255,10 +272,10 @@ const Node = ({ expandable = true, ...props }: Props) => {
       // focus from something else.
       return;
     }
-    if (nodeElementRef.current && focusedNode?.id === props.node.id) {
+    if (nodeElementRef.current && isFocused) {
       nodeElementRef.current?.focus();
     }
-  }, [editor, focusedNode?.id, props.node.id, editable]);
+  }, [editor, isFocused, editable]);
 
   // An edit can re-create this node's codemirror widget without changing its
   // id (e.g. dropping a node elsewhere). The browser then drops focus, and
@@ -270,7 +287,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       !active ||
       active === document.body ||
       active.id === "SR_fix_for_slow_dom";
-    if (stranded && focusedNode?.id === props.node.id) {
+    if (stranded && isFocused) {
       nodeElementRef.current?.focus();
     }
   });
@@ -278,13 +295,12 @@ const Node = ({ expandable = true, ...props }: Props) => {
   // Something else took focus without the box seeing a blur (the text was
   // changed from outside while editing, and the focus moved to another node):
   // the edit is over, so don't leave an orphaned box behind.
-  const focusedId = focusedNode?.id;
   useEffect(() => {
-    if (!editable || !focusedId || focusedId === props.node.id) return;
+    if (!editable || !focusedElsewhere) return;
     const box = document.getElementById(nodeElemId);
     // eslint-disable-next-line @eslint-react/set-state-in-effect
     if (box && box !== document.activeElement) setEditable(false);
-  }, [editable, focusedId, props.node.id, nodeElemId]);
+  }, [editable, focusedElsewhere, nodeElemId]);
 
   if (editable) {
     if (!editor) {
@@ -336,7 +352,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
         {comment && comment.reactElement({ id: commentElemId })}
       </span>
     );
-    return <NodeContext value={{ node: props.node }}>{result}</NodeContext>;
+    return <NodeContext value={nodeContext}>{result}</NodeContext>;
   }
 };
 
