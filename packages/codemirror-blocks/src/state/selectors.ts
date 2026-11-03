@@ -24,10 +24,17 @@ type NodeSelector<T> = (state: RootState, node: ASTNode) => T;
  * @param node The node to check.
  * @returns Whether or not the given node is collapsed.
  */
-export const isCollapsed: NodeSelector<boolean> = createSelector(
-  [getCollapsedList, getNode],
-  (collapsedList, node) => collapsedList.includes(node.id)
-);
+export const isCollapsed: NodeSelector<boolean> = (state, node) =>
+  asSet(getCollapsedList(state)).has(node.id);
+
+// The lists change rarely and every block asks about them on every dispatch, so
+// look them up in a set (made once per list) rather than scanning them.
+const sets = new WeakMap<readonly string[], Set<string>>();
+const asSet = (list: readonly string[]) => {
+  let set = sets.get(list);
+  if (!set) sets.set(list, (set = new Set(list)));
+  return set;
+};
 
 /**
  * @returns all selected node ids
@@ -64,20 +71,16 @@ export const getOutermostSelectedNodes: (state: RootState) => ASTNode[] =
  * @param node The node to check.
  * @returns The selection state for the given node.
  */
-export const isSelected: NodeSelector<boolean> = createSelector(
-  [getSelectedNodeIds, getNode],
-  (selections, node) => selections.includes(node.id)
-);
+export const isSelected: NodeSelector<boolean> = (state, node) =>
+  asSet(getSelectedNodeIds(state)).has(node.id);
 
 const getMarkedMap = (state: RootState) => state.markedMap;
 
 /**
  * Get the codemirror TextMarker for the given node.
  */
-export const getTextMarker: NodeSelector<TextMarker> = createSelector(
-  [getMarkedMap, getNode],
-  (markedMap, node) => markedMap[node.id]
-);
+export const getTextMarker: NodeSelector<TextMarker> = (state, node) =>
+  getMarkedMap(state)[node.id];
 
 /**
  * Returns the parent node for the given node
@@ -115,6 +118,20 @@ export const getFocusedNode: (state: RootState) => ASTNode | null =
     [getAST, (state: RootState) => state.focusId],
     (ast, focusId) => (focusId ? (ast.getNodeById(focusId) ?? null) : null)
   );
+
+/**
+ * @returns whether the given node is the focused one. (Unlike
+ * {@link getFocusedNode} this is a boolean, so a block that uses it renders
+ * only when its own answer changes.)
+ */
+export const isFocused: NodeSelector<boolean> = (state, node) =>
+  state.focusId === node.id;
+
+/**
+ * @returns whether some other node than the given one is focused
+ */
+export const isFocusedElsewhere: NodeSelector<boolean> = (state, node) =>
+  !!state.focusId && state.focusId !== node.id;
 
 /**
  * @returns the current quarantine if there is one.
