@@ -77,7 +77,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       if (
         !active ||
         active === document.body ||
-        active.id === "SR_fix_for_slow_dom"
+        active.id === "cmb-focus-placeholder"
       ) {
         editor?.focus();
       }
@@ -198,7 +198,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       changes: CodeMirror.EditorChange[]
     ) => handleChanges(editor, changes);
     const onUpdate = () => {
-      if (document.activeElement?.id !== "SR_fix_for_slow_dom") return;
+      if (document.activeElement?.id !== "cmb-focus-placeholder") return;
       const id = focusedIdRef.current;
       if (id) document.getElementById(`block-node-${id}`)?.focus();
     };

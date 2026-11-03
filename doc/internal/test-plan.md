@@ -120,7 +120,7 @@ This area has produced the most bugs.
   drop; undo; redo.
 - Focus when the focused block is virtualized out of view by CodeMirror, then
   comes back.
-- Focus is never left on `SR_fix_for_slow_dom`; keys always reach a handler.
+- Focus is never left on `cmb-focus-placeholder`; keys always reach a handler.
 - Cursor and scroll don't jump after an edit made from a block.
 - Mouse click on a block, a literal (enters edit mode), the editor whitespace,
   and a collapsed block.

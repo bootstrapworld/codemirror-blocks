@@ -1196,7 +1196,7 @@ function runSequence(sequence: Sequence): RunResult {
         // nothing there, clicks in)
         if (
           document.activeElement === document.body ||
-          document.activeElement?.id === "SR_fix_for_slow_dom"
+          document.activeElement?.id === "cmb-focus-placeholder"
         )
           act(() => cmb.focus());
         keyDown(key, props);

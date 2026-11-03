@@ -49,7 +49,7 @@ it("notices keyboard focus stranded on the screenreader placeholder", () => {
   const { cmb } = mountCMB(wescheme);
   cmb.setValue("(+ 1 2) 99");
   const placeholder = document.createElement("a");
-  placeholder.id = "SR_fix_for_slow_dom";
+  placeholder.id = "cmb-focus-placeholder";
   placeholder.href = "#";
   document.body.appendChild(placeholder);
   placeholder.focus();

@@ -105,7 +105,7 @@ describe("changing the text through the API while a block is being edited", () =
   });
 
   it("does not leave an editing box open that nothing can type into", () => {
-    expect(document.activeElement?.id).not.toBe("SR_fix_for_slow_dom");
+    expect(document.activeElement?.id).not.toBe("cmb-focus-placeholder");
     expect(document.activeElement).not.toBe(document.body);
     expect(document.activeElement).not.toHaveAttribute("contenteditable");
     expect(document.querySelectorAll("[contenteditable=true]")).toHaveLength(0);
@@ -142,7 +142,7 @@ describe("moving to a block that CodeMirror isn't drawing right now", () => {
     const next = elt.nextSibling;
     elt.remove();
     keyDown("ArrowDown", {}, root(0));
-    expect(document.activeElement?.id).toBe("SR_fix_for_slow_dom");
+    expect(document.activeElement?.id).toBe("cmb-focus-placeholder");
     parent.insertBefore(elt, next);
     const cm = (
       cmb.getWrapperElement() as HTMLElement & { CodeMirror: CodeMirror.Editor }
@@ -163,7 +163,7 @@ describe("closing the search dialog that was opened while focus waited on the pl
     const next = elt.nextSibling;
     elt.remove();
     keyDown("ArrowDown", {}, root(0));
-    expect(document.activeElement?.id).toBe("SR_fix_for_slow_dom");
+    expect(document.activeElement?.id).toBe("cmb-focus-placeholder");
     keyDown("F3", {}, root(0));
     parent.insertBefore(elt, next);
     fireEvent.keyUp(screen.getByLabelText("Search String"), {

@@ -107,8 +107,8 @@ const problem = (s: Snapshot): string | null => {
   if (JSON.stringify(s.reparsed) !== JSON.stringify(s.roots)) {
     return `the text parses to ${JSON.stringify(s.reparsed)} but the AST is ${JSON.stringify(s.roots)}`;
   }
-  if (s.focus.id === "SR_fix_for_slow_dom") {
-    return "keyboard focus is stranded on SR_fix_for_slow_dom";
+  if (s.focus.id === "cmb-focus-placeholder") {
+    return "keyboard focus is stranded on cmb-focus-placeholder";
   }
   if (s.focus.tag === "BODY") {
     return "keyboard focus fell to the page body";

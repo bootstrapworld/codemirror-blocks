@@ -452,13 +452,13 @@ export function activateByNid(
     // If the element has been ellided by CM, it won't be in the DOM. This
     // can lead to situations where CM ellides the *currently-focused* elt,
     // which confuses the screenreader. In these situations, we focus on
-    // a dummy element that just says "stand by" (see ToggleEditor.js).
+    // a dummy element that just says "stand by" (see ToggleEditor.tsx).
     // When the new node is available, focus will shift automatically.
     if (newNode.element && !document.contains(newNode.element)) {
-      const sr = document.getElementById("SR_fix_for_slow_dom");
+      const sr = document.getElementById("cmb-focus-placeholder");
       // In the event that everything has been unmounted,
       // for example in a unit test, then neither newNode.element nor
-      // SR_fix_for_slow_down will exist. So check to see if it's still
+      // cmb-focus-placeholder will exist. So check to see if it's still
       // there before attempting to focus it.
       if (sr) {
         sr.focus();

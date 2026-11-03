@@ -126,7 +126,7 @@ describe("after a node has been edited in place,", () => {
     cmb.setCursor({ line: 0, ch: 5 });
     typeChar(cmb, "a");
     keyDown("Escape");
-    expect(document.activeElement?.id).not.toBe("SR_fix_for_slow_dom");
+    expect(document.activeElement?.id).not.toBe("cmb-focus-placeholder");
     expect(document.activeElement?.id).toMatch(/^block-node-/);
   });
 });

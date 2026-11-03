@@ -199,9 +199,12 @@ function ToggleEditor(props: ToggleEditorProps) {
         </div>
       </div>
 
+      {/* Somewhere for keyboard focus to wait while CodeMirror draws a block
+          that was scrolled out of the DOM (see activateByNid). Without it the
+          browser drops focus to <body> and screenreaders leave the editor. */}
       <div role="application" aria-roledescription="Stand by">
         <a
-          id="SR_fix_for_slow_dom"
+          id="cmb-focus-placeholder"
           href="#"
           aria-roledescription=":"
           aria-label=""

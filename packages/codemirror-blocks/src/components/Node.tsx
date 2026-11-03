@@ -300,7 +300,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       !editor?.hasFocus() &&
       document.activeElement !== document.body &&
       document.activeElement !== null &&
-      document.activeElement.id !== "SR_fix_for_slow_dom"
+      document.activeElement.id !== "cmb-focus-placeholder"
     ) {
       // If the editor doesn't have focus, then we don't want to steal
       // focus from something else.
@@ -320,7 +320,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     const stranded =
       !active ||
       active === document.body ||
-      active.id === "SR_fix_for_slow_dom";
+      active.id === "cmb-focus-placeholder";
     if (stranded && isFocused) {
       nodeElementRef.current?.focus();
     }

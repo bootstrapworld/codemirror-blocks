@@ -96,7 +96,7 @@ const ToplevelBlock = (props: Props) => {
     if (
       active &&
       active !== document.body &&
-      active.id !== "SR_fix_for_slow_dom"
+      active.id !== "cmb-focus-placeholder"
     ) {
       return;
     }

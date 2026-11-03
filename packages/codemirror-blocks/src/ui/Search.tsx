@@ -226,7 +226,7 @@ export function useSearch(
     // The dialog gives focus back to whatever had it when it opened. If that
     // was the screenreader placeholder (a block CodeMirror wasn't drawing),
     // the block may be drawn by now, so hand focus to it.
-    if (document.activeElement?.id === "SR_fix_for_slow_dom") {
+    if (document.activeElement?.id === "cmb-focus-placeholder") {
       const id = selectors.getFocusedNode(store.getState())?.id;
       if (id) document.getElementById(`block-node-${id}`)?.focus();
     }

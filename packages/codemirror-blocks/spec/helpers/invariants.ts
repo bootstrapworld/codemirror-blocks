@@ -173,7 +173,7 @@ export function findInvariantViolations(): string[] {
   // (A block that CodeMirror isn't drawing can't hold focus: the placeholder
   // keeps it until the block comes back.)
   if (
-    document.activeElement?.id === "SR_fix_for_slow_dom" &&
+    document.activeElement?.id === "cmb-focus-placeholder" &&
     !(focused && !isDrawn(getRoot(ast, focused)))
   ) {
     const where = focused
@@ -182,7 +182,7 @@ export function findInvariantViolations(): string[] {
         `, ${document.getElementById(`block-node-${focused.id}`) ? "and" : "but no"} block with its id exists`
       : "no node is focused";
     violations.push(
-      `keyboard focus is stranded on SR_fix_for_slow_dom (${where})`
+      `keyboard focus is stranded on cmb-focus-placeholder (${where})`
     );
   }
 
