@@ -101,8 +101,14 @@ const ToplevelBlock = (props: Props) => {
   return ReactDOM.createPortal(elt, container);
 };
 
-function areNodesEqualish(prevNode: ASTNode, nextNode: ASTNode) {
+export function areNodesEqualish(prevNode: ASTNode, nextNode: ASTNode) {
+  // (the marker covers the node's comment too, which the hash and the node's
+  // own range don't say anything about)
+  const prevRange = prevNode.srcRange();
+  const nextRange = nextNode.srcRange();
   return (
+    poscmp(prevRange.from, nextRange.from) === 0 &&
+    poscmp(prevRange.to, nextRange.to) === 0 &&
     nextNode.hash === prevNode.hash &&
     nextNode.ariaSetSize === prevNode.ariaSetSize &&
     nextNode.ariaPosInset === prevNode.ariaPosInset &&
