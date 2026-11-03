@@ -345,8 +345,19 @@ const resume = (job) => {
     group(job.child.pid, "SIGCONT");
   }
 };
-/** Running time only: a paused batch's clock stands still */
+/**
+ * Running time only: a paused batch's clock stands still, and so does it while
+ * the computer sleeps (a long gap between two ticks is the machine being
+ * asleep, not a batch that hangs)
+ */
+let lastTick = Date.now();
 const checkTimeouts = () => {
+  const now = Date.now();
+  const gap = now - lastTick;
+  lastTick = now;
+  if (gap > 10000) {
+    for (const job of jobs) if (job.child && !job.paused) job.since += gap;
+  }
   for (const job of jobs) {
     if (!job.child || job.paused || job.timedOut) continue;
     if (job.ranMs + (Date.now() - job.since) > job.timeout) {
