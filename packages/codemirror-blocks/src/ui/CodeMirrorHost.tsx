@@ -30,12 +30,6 @@ export type CodeMirrorHostProps = {
   editorDidMount?: (ed: CodeMirror.Editor) => void | (() => void);
 } & { [K in keyof typeof events]?: Handler };
 
-// where each editor was scrolled to when it was taken out of the page
-const scrolled = new WeakMap<
-  CodeMirror.Editor,
-  { left: number; top: number }
->();
-
 /**
  * Make the document say `value`, changing only the part between the longest
  * common prefix and suffix, so that marks, the selection and the undo history
@@ -83,9 +77,7 @@ const CodeMirrorHost = (props: CodeMirrorHostProps) => {
     const wrapper = codemirror.getWrapperElement();
     host.appendChild(wrapper);
     syncValue(codemirror, propsRef.current.value);
-    const where = scrolled.get(codemirror);
     codemirror.refresh();
-    if (where) codemirror.scrollTo(where.left, where.top);
 
     // the handlers are read from the latest props when an event fires
     const listeners = (Object.keys(events) as (keyof typeof events)[]).map(
@@ -103,8 +95,6 @@ const CodeMirrorHost = (props: CodeMirrorHostProps) => {
       for (const [name, listener] of listeners) {
         codemirror.off(name as any, listener as any);
       }
-      const { left, top } = codemirror.getScrollInfo();
-      scrolled.set(codemirror, { left, top });
       wrapper.remove();
     };
   }, [codemirror]);
