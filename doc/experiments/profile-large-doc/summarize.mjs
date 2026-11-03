@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- command-line tool */
 // Turn results-{time,profile,render}.json into the markdown tables in the report.
 //   node summarize.mjs
 import fs from "fs";

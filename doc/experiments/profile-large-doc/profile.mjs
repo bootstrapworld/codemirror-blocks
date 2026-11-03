@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- command-line tool */
 // Profile the editor on large generated documents. See ../profile-large-doc.md.
 //
 //   node profile.mjs [--mode time|profile|render] [--sizes 200,1000,3000]
@@ -373,7 +374,6 @@ async function runOnce(browser, lines) {
   await page.keyboard.press("Enter");
   await page.keyboard.press(`${MOD}+a`);
   await page.keyboard.type("12345");
-  const before = await page.evaluate(() => window.cmb.getValue().length);
   await m("c. edit literal mid-doc (commit)", press(page, "Enter"));
   const after = await page.evaluate(() => window.cmb.getValue());
   if (!after.includes("12345")) errors.push("edit did not apply");
