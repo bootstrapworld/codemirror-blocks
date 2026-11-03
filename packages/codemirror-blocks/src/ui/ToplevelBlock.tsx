@@ -69,20 +69,20 @@ const ToplevelBlock = (props: Props) => {
   // must not happen in the middle of React's render (the display could then be
   // patched while React is still moving the nodes it holds).
   const { from, to } = props.node.srcRange(); // includes the node's comment, if any
-  const handle = useRef<{ marker?: BlockNodeMarker }>({});
+  const markerRef = useRef<{ marker?: BlockNodeMarker }>({});
   const { editor, node } = props;
   useLayoutEffect(() => {
     // (a marker that was cleared from outside, such as by a box that took its
     // place for a while, is made again: this runs after every render)
-    if (handle.current.marker && hasLiveMarker(node)) return;
-    handle.current.marker?.clear();
+    if (markerRef.current.marker && hasLiveMarker(node)) return;
+    markerRef.current.marker?.clear();
     const mark = editor.replaceMarkerWidget(from, to, container);
-    handle.current.marker = mark;
+    markerRef.current.marker = mark;
     markers.set(node, mark);
   });
   // When unmounting, clean up the TextMarker
   useLayoutEffect(() => {
-    const current = handle.current;
+    const current = markerRef.current;
     return () => {
       current.marker?.clear();
       current.marker = undefined;
@@ -93,7 +93,7 @@ const ToplevelBlock = (props: Props) => {
   const elt = renderPlaceholder ? (
     <div />
   ) : (
-    <RootNodeContext value={handle.current}>
+    <RootNodeContext value={markerRef.current}>
       {props.node.reactElement()}
     </RootNodeContext>
   );

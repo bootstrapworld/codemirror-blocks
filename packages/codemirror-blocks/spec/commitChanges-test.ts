@@ -118,7 +118,7 @@ describe("computeFocusNodeFromHint", () => {
 
   it("asks the hint for the AST in the store", () => {
     const { state, ast } = stateFor();
-    const hint = jest.fn(() => "fallback" as const);
+    const hint = jest.fn((_ast: AST) => "fallback" as const);
     computeFocusNodeFromHint(
       editor,
       [change([0, 0], [0, 0], "", "(h)")],
