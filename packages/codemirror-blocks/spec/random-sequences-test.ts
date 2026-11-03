@@ -1701,6 +1701,18 @@ describe("sequences that once broke the editor", () => {
     });
   }, 120_000);
 
+  it("seed 550300: deleting blocks from nested sequences (a block with the same code but new ids was not drawn again, so the page kept the old ids)", () => {
+    check({
+      code: "(n0 (n1 (n2 (n3 (n4 (n5 (n6 (n7 x))))))))",
+      steps: [
+        {
+          op: "select many blocks, then cut, copy, delete or paste",
+          r: [31294003, 683757380, 543014453, 982646365],
+        },
+      ],
+    });
+  }, 120_000);
+
   it("seeds 177269, 168796, 211036: cutting bindings of a let that has a bare name among them (a binding was taken to start where the last expression did)", () => {
     check({
       code: "let (a = 1, b = 2) a + b",

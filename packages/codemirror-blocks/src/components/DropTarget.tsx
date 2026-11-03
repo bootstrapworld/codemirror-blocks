@@ -13,12 +13,13 @@ import { AppDispatch } from "../state/store";
 import { genUniqueId } from "../utils";
 import * as actions from "../state/actions";
 import * as selectors from "../state/selectors";
-import type { ASTNode, AST, Pos } from "../ast";
+import { currentNode } from "../ast";
+import type { ASTNode, AST, DrawnNode, Pos } from "../ast";
 import { EditorContext } from "./Context";
 import { createSelector } from "reselect";
 
 // Provided by `Node`
-export const NodeContext = createContext<{ node: ASTNode | null }>({
+export const NodeContext = createContext<{ node: DrawnNode | null }>({
   node: null,
 });
 
@@ -75,7 +76,7 @@ const getLocation = ({
 }: {
   ast: AST;
   id: string;
-  context: { node: ASTNode; field: string };
+  context: { node: DrawnNode; field: string };
 }) => {
   let prevNodeId: string | null = null;
   const targetId = `block-drop-target-${id}`;
@@ -159,7 +160,7 @@ field declared. The node was:`,
   const createTarget = useCallback(
     (ast: AST) =>
       new actions.InsertTarget(
-        node,
+        currentNode(ast, node),
         props.field,
         getLocation({
           id,

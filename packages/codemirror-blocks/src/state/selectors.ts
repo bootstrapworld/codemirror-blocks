@@ -20,11 +20,15 @@ export const getCollapsedList = (state: RootState) => state.collapsedList;
 
 type NodeSelector<T> = (state: RootState, node: ASTNode) => T;
 
+// (for a block's own state: it only needs the id, so it can ask with a node that
+// may be older than the document, see DrawnNode)
+type IdSelector<T> = (state: RootState, node: { id: string }) => T;
+
 /**
  * @param node The node to check.
  * @returns Whether or not the given node is collapsed.
  */
-export const isCollapsed: NodeSelector<boolean> = (state, node) =>
+export const isCollapsed: IdSelector<boolean> = (state, node) =>
   asSet(getCollapsedList(state)).has(node.id);
 
 // The lists change rarely and every block asks about them on every dispatch, so
@@ -71,7 +75,7 @@ export const getOutermostSelectedNodes: (state: RootState) => ASTNode[] =
  * @param node The node to check.
  * @returns The selection state for the given node.
  */
-export const isSelected: NodeSelector<boolean> = (state, node) =>
+export const isSelected: IdSelector<boolean> = (state, node) =>
   asSet(getSelectedNodeIds(state)).has(node.id);
 
 const getMarkedMap = (state: RootState) => state.markedMap;
@@ -79,7 +83,7 @@ const getMarkedMap = (state: RootState) => state.markedMap;
 /**
  * Get the codemirror TextMarker for the given node.
  */
-export const getTextMarker: NodeSelector<TextMarker> = (state, node) =>
+export const getTextMarker: IdSelector<TextMarker> = (state, node) =>
   getMarkedMap(state)[node.id];
 
 /**
@@ -124,13 +128,13 @@ export const getFocusedNode: (state: RootState) => ASTNode | null =
  * {@link getFocusedNode} this is a boolean, so a block that uses it renders
  * only when its own answer changes.)
  */
-export const isFocused: NodeSelector<boolean> = (state, node) =>
+export const isFocused: IdSelector<boolean> = (state, node) =>
   state.focusId === node.id;
 
 /**
  * @returns whether some other node than the given one is focused
  */
-export const isFocusedElsewhere: NodeSelector<boolean> = (state, node) =>
+export const isFocusedElsewhere: IdSelector<boolean> = (state, node) =>
   !!state.focusId && state.focusId !== node.id;
 
 /**

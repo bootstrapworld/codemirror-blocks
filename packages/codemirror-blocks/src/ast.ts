@@ -606,6 +606,28 @@ export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
 export const nodeElementMap = new Map<string, HTMLElement>();
 
 /**
+ * A node as a drawn block knows it. A block is not drawn again when it only
+ * moved (a line was inserted above it, say), so the node it was drawn from can
+ * be an older one, with its old position: what a node says about where it is
+ * (`from`, `to`, `srcRange()`, `nid`, and the same for the nodes inside it) is
+ * left out of this type. Its id, type, hash, options, level and place among its
+ * siblings are as current as the block. To act on the node in the document, use
+ * {@link currentNode}.
+ */
+export type DrawnNode = Omit<
+  ASTNode,
+  "from" | "to" | "nid" | "srcRange" | "fields" | "children" | "descendants"
+>;
+
+/**
+ * The node in `ast` that `node` was drawn from, with its present position. (A
+ * node that is not in the AST, such as a toolbar's, has never moved.)
+ */
+export function currentNode(ast: AST, node: DrawnNode): ASTNode {
+  return ast.getNodeById(node.id) ?? (node as ASTNode);
+}
+
+/**
  * Every node in the AST must inherit from the `ASTNode` class, which is used
  * to house some common attributes.
  */
