@@ -25,12 +25,13 @@ import {
  * 1613 because the wait to scroll to a block lost to a blur never ended, and
  * 3277 because a block lost its marker to a box that took its place, and
  * 3463 because keyboard focus was left on the hidden clipboard buffer, and
- * 8442 because an edit box blurred while CodeMirror swapped its line in.
+ * 8442 because an edit box blurred while CodeMirror swapped its line in, and
+ * 9874 because a block dragged to the trash was edited away mid-drag.
  */
 
 const SEEDS = (
   process.env.CMB_E2E_SEEDS ??
-  "1,2,3,4,5,6,7,11,915,935,2596,1613,3277,3463,8442"
+  "1,2,3,4,5,6,7,11,915,935,2596,1613,3277,3463,8442,9874"
 )
   .split(",")
   .map((s) => Number(s.trim()));

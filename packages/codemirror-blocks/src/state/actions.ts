@@ -161,7 +161,13 @@ export const deleteASTNode =
   (editor: CMBEditor, srcNodeId: string): AppThunk<PerformEditsResult> =>
   (dispatch, getState) => {
     const ast = selectors.getAST(getState());
-    const edits = [edit_delete(ast, ast.getNodeByIdOrThrow(srcNodeId))];
+    const node = ast.getNodeById(srcNodeId);
+    if (!node) {
+      // the block was edited away (or given a new id, as the edit of an
+      // identical sibling does) while it was being dragged
+      return err(new Error(`Node with id ${srcNodeId} not found`));
+    }
+    const edits = [edit_delete(ast, node)];
     return dispatch(performEdits(edits, editor));
   };
 

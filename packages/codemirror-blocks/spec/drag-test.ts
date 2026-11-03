@@ -137,3 +137,17 @@ describe("corner cases", () => {
     drag(source.element!).dropOnto(target2); // drag to the last droptarget
   });
 });
+
+describe("when the block being dragged goes away before the drop", () => {
+  it("drops it on the trash can without an error", () => {
+    cmb.setValue(`(add firstVar secondVar)`);
+    const el = getNodeLabeled(/firstVar/);
+    const trash = document.querySelector(".TrashCan")!;
+    const dragging = drag(el);
+    dragging.dragOver(trash);
+    // (editing an identical sibling can give the survivor another id)
+    cmb.setValue(`(add secondVar)`);
+    expect(() => dragging.dropOnto(trash)).not.toThrow();
+    expect(cmb.getValue()).toEqual("(add secondVar)");
+  });
+});
