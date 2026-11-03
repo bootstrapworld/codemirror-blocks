@@ -1,32 +1,31 @@
 import type { ASTNode } from "./ast";
 
-/** The kinds of top-level form that get their own count, in the order said */
-const KINDS: { types: string[]; one: string; many: string }[] = [
-  {
-    types: ["functionDefinition"],
-    one: "function definition",
-    many: "function definitions",
-  },
-  {
-    types: ["variableDefinition"],
-    one: "variable definition",
-    many: "variable definitions",
-  },
-  {
-    types: ["structDefinition"],
-    one: "structure definition",
-    many: "structure definitions",
-  },
-];
+/** Type names are camelCase and some abbreviate: "functionApp", "letLikeExpr" */
+const EXPANDED: Record<string, string> = {
+  app: "application",
+  expr: "expression",
+  def: "definition",
+  struct: "structure",
+};
 
-const KIND_OF_TYPE = new Map(
-  KINDS.flatMap((kind, i) => kind.types.map((t) => [t, i] as const))
-);
+/** "functionApp" -> "function application" */
+const nameOfType = (type: string) =>
+  type
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .split(" ")
+    .map((word) => EXPANDED[word] ?? word)
+    .join(" ");
 
-const EXPRESSION = { one: "expression", many: "expressions" };
+const plural = (name: string) =>
+  /[^aeiou]y$/.test(name)
+    ? name.slice(0, -1) + "ies"
+    : /(s|x|ch|sh)$/.test(name)
+      ? name + "es"
+      : name + "s";
 
-const countOf = (n: number, { one, many }: { one: string; many: string }) =>
-  `${n} ${n === 1 ? one : many}`;
+const countOf = (n: number, name: string) =>
+  `${n} ${n === 1 ? name : plural(name)}`;
 
 const joinList = (items: string[]) =>
   items.length <= 2
@@ -36,28 +35,18 @@ const joinList = (items: string[]) =>
 /**
  * Say what is at the top level of a program, e.g. "At the top level, this
  * program contains 10 function definitions, 2 variable definitions, and 3
- * expressions." Anything that is not a definition counts as an expression.
- * (Comments belong to the form they are next to, so they are not counted.) Returns null for a program with nothing in it.
+ * function applications." The kinds are the types of the nodes that are there,
+ * in the order they first appear; nothing is assumed about the language.
+ * Returns null for a program with nothing in it.
  */
 export function summarizeProgram(rootNodes: readonly ASTNode[]) {
   if (!rootNodes.length) {
     return null;
   }
-  const counts = KINDS.map(() => 0);
-  let expressions = 0;
+  const counts = new Map<string, number>();
   for (const node of rootNodes) {
-    const kind = KIND_OF_TYPE.get(node.type);
-    if (kind === undefined) {
-      expressions++;
-    } else {
-      counts[kind]++;
-    }
+    counts.set(node.type, (counts.get(node.type) ?? 0) + 1);
   }
-  const parts = KINDS.flatMap((kind, i) =>
-    counts[i] ? [countOf(counts[i], kind)] : []
-  );
-  if (expressions) {
-    parts.push(countOf(expressions, EXPRESSION));
-  }
+  const parts = [...counts].map(([type, n]) => countOf(n, nameOfType(type)));
   return `At the top level, this program contains ${joinList(parts)}.`;
 }

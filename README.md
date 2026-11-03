@@ -80,7 +80,7 @@ The bindings are defined in
 
 The first time a program is shown as blocks, the editor says what is at its top
 level, for example "At the top level, this program contains 10 function
-definitions, 2 variable definitions, and 3 expressions." It is said once per
+definitions, 2 variable definitions, and 3 function applications." It is said once per
 editor, not on every switch between modes.
 
 Whether a block is expanded or collapsed is exposed as `aria-expanded` on its
