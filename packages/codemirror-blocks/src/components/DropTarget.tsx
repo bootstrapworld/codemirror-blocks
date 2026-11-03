@@ -159,7 +159,7 @@ field declared. The node was:`,
   const createTarget = useCallback(
     (ast: AST) =>
       new actions.InsertTarget(
-        node,
+        ast.getNodeById(node.id) ?? node,
         props.field,
         getLocation({
           id,
