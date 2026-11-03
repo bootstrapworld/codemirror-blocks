@@ -355,3 +355,48 @@ for a while after the first full render, and the placeholder delay was hiding it
 that first (probably drop targets or the drag layer being set up on the first
 commit), then drop the delay for small programs, then replace the placeholder
 with real chunking for large ones.
+
+## Fifth and sixth changes: parse only what an edit touches; draw only what is in view
+
+Raw results: `profile-large-doc/after6/` (incremental parse) and `after7/` (both,
+with a 3-rep CPU profile and render counts at 3000 lines). 1492 unit tests and 95
+e2e tests (five of them new, for a 400-form program) pass.
+
+- **Incremental parse** (`edits/incrementalParse.ts`, WeScheme only, opt-in with
+  `incrementalParse: true` on the language). For a single change, only the
+  top-level forms it touches, one on each side, and whatever lies between them are
+  parsed (the text is padded with blank lines and spaces so that positions come out
+  right); the other forms are copied with their ids and shifted positions. It is
+  used only when the stored AST is the editor's text (`ASTData.sourceText`), and
+  not for an edit that contains or removes `" | ; \ #` (the parser does not
+  complain about a string or block comment left open at the end of the window), or
+  one that joins lines of a line comment. `patchAst` now matches nodes that already
+  have their id first, so a moved form is not given another form's id. A
+  differential spec compares the result with a full parse over 1200 random edits
+  of three documents (and a longer run of 6000 passed too).
+- **Viewport rendering** (`ToplevelBlock`, `BlockEditor`, option
+  `virtualRendering`, on by default above 300 top-level forms). A block's content
+  is drawn when it is within 30 lines of what CodeMirror shows, or holds the
+  focus or a selection, and then stays drawn; until then it is a spacer as tall as
+  its source (22 px a line). Blocks scrolled to are drawn as the viewport changes;
+  since the spacer's height is an estimate, a scroll position in the unseen part
+  of a long program is approximate until the blocks arrive.
+
+| 3000 lines (ms, settled; first change in brackets) | original | now |
+|---|---|---|
+| load + first blocks render | 2233 | 970 (a ~950 ms floor of timers remains) |
+| text → blocks (warm) | 2093 | 724 (291) |
+| edit literal | 1462 | 271 (70) |
+| insert at top | 1986 | 478 |
+| delete | 1623 | 203 (77) |
+| undo / redo | 2249 / 2102 | 211 / 214 (80 / 84) |
+| arrow down ×50 | 54836 | 125 |
+| collapse all | 4900 | 462 |
+| expand all | 4232 | 88 |
+
+CPU work (busy ms) at 3000 lines, from the profile: first blocks render
+1030 → 486 (component renders 96k → 6.7k; the rest is parsing the whole text once,
+33%, and layout, 16%); text → blocks 1230 → 449; edit ≈ 280. What remains is
+mostly timers (200 ms after an edit, ~950 ms around a mode switch, that are not
+work), the one full parse on load, and collapse all (≈ 0.46 s: CodeMirror
+measuring 1092 widgets whose height changed).

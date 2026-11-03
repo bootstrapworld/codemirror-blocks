@@ -142,6 +142,12 @@ function bucketProfile(profile) {
     "react:renderRootSync", "react:renderRootConcurrent", "react:flushPassiveEffects",
   ];
   const incl = {};
+  if (process.env.INCL_TOP) {
+    // (all of the top N by inclusive time, to look for what to optimise)
+    for (const [k, v] of Object.entries(inclusive).sort((a, b) => b[1] - a[1]).slice(0, Number(process.env.INCL_TOP))) incl[k] = +v.toFixed(1);
+    for (const k of Object.keys(buckets)) buckets[k] = +buckets[k].toFixed(1);
+    return { buckets, incl };
+  }
   for (const [k, v] of Object.entries(inclusive)) {
     if (keep.includes(k) || /patchAst|replaceMarkerWidget|markText|^codemirror:(clear|refresh|updateDisplay|setValue|replaceRange|makeChange)|:parse$|speculateChanges|commitChanges|performEdits|reactElement/i.test(k))
       incl[k] = +v.toFixed(1);
