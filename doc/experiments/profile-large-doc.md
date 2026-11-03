@@ -254,3 +254,29 @@ CodeMirror (`marker.changed()` per node: batch in one `operation()`); load and
 mode switch (marker creation for 1092 roots, the 250 ms placeholder step);
 arrow keys still cost ~78 ms at 3000 lines from every block's selectors running
 on each store update.
+
+## After the second fix (one `marker.changed()` per block per commit)
+
+Raw results: `profile-large-doc/after2/`. Medians of 3 reps, settled ms; 1491
+unit tests and 90 e2e tests pass. (Skipping the call on mount was faster still
+but broke an e2e test that clicks beside a just-drawn block: CodeMirror needs the
+measure at mount.)
+
+| operation | 3000 lines, original | after fix 1 | after fix 2 |
+|---|---|---|---|
+| load + first blocks render | 2233 | 2476 | **1014** |
+| text → blocks (warm) | 2093 | 2153 | **933** |
+| edit literal | 1462 | 915 | **475** |
+| undo | 2249 | 617 | **484** |
+| redo | 2102 | 1166 | **857** |
+| insert at top | 1986 | 2089 | 1535 |
+| delete | 1623 | 979 | 775 |
+| arrow down ×50 | 54836 | 3864 | **3492** |
+| collapse all | 4900 | 4767 | **851** |
+| expand all | 4232 | 4494 | **767** |
+
+Not done: skipping unchanged later roots after an insert/delete near the top.
+`areNodesEqualish` compares absolute positions, and a block that bails out keeps
+its old `ASTNode` in props, which edit handlers (`ReplaceNodeTarget(props.node)`)
+read positions from; doing it safely means resolving the node by id from the
+store at the point of use. That is a larger, riskier change than the two above.
