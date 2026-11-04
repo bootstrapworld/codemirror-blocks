@@ -96,46 +96,60 @@ export function createASTSpec<NodeSpecs extends ASTSpecConfig>(
 }
 
 const specs = {
-  unknown: Spec.nodeSpec([Spec.list("elts")]),
-  functionApp: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
-  identifierList: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")]),
-  structDefinition: Spec.nodeSpec([
-    Spec.required("name"),
-    Spec.required("fields"),
-  ]),
-  variableDefinition: Spec.nodeSpec([
-    Spec.required("name"),
-    Spec.required("body"),
-  ]),
-  lambdaExpression: Spec.nodeSpec([
-    Spec.required("args"),
-    Spec.required("body"),
-  ]),
-  functionDefinition: Spec.nodeSpec([
-    Spec.required("name"),
-    Spec.required("params"),
-    Spec.required("body"),
-  ]),
-  condClause: Spec.nodeSpec([
-    Spec.required("testExpr"),
-    Spec.list("thenExprs"),
-  ]),
-  condExpression: Spec.nodeSpec([Spec.list("clauses")]),
-  ifExpression: Spec.nodeSpec([
-    Spec.required("testExpr"),
-    Spec.required("thenExpr"),
-    Spec.required("elseExpr"),
-  ]),
-  literal: Spec.nodeSpec([
-    Spec.value<string, "value">("value"),
-    Spec.value("dataType"),
-  ]),
-  comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")]),
-  blank: Spec.nodeSpec([
-    Spec.value<string, "value">("value"),
-    Spec.value("dataType"),
-  ]),
-  sequence: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")]),
+  unknown: Spec.nodeSpec([Spec.list("elts")], {
+    label: "unknown expression",
+  }),
+  functionApp: Spec.nodeSpec([Spec.required("func"), Spec.list("args")], {
+    label: "function application",
+  }),
+  identifierList: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")], {
+    label: "identifier list",
+  }),
+  structDefinition: Spec.nodeSpec(
+    [Spec.required("name"), Spec.required("fields")],
+    { label: "structure definition" }
+  ),
+  variableDefinition: Spec.nodeSpec(
+    [Spec.required("name"), Spec.required("body")],
+    { label: "variable definition" }
+  ),
+  lambdaExpression: Spec.nodeSpec(
+    [Spec.required("args"), Spec.required("body")],
+    { label: "lambda expression" }
+  ),
+  functionDefinition: Spec.nodeSpec(
+    [Spec.required("name"), Spec.required("params"), Spec.required("body")],
+    { label: "function definition" }
+  ),
+  condClause: Spec.nodeSpec(
+    [Spec.required("testExpr"), Spec.list("thenExprs")],
+    { label: "conditional clause" }
+  ),
+  condExpression: Spec.nodeSpec([Spec.list("clauses")], {
+    label: "conditional expression",
+  }),
+  ifExpression: Spec.nodeSpec(
+    [
+      Spec.required("testExpr"),
+      Spec.required("thenExpr"),
+      Spec.required("elseExpr"),
+    ],
+    { label: "if expression" }
+  ),
+  literal: Spec.nodeSpec(
+    [Spec.value<string, "value">("value"), Spec.value("dataType")],
+    { label: "literal" }
+  ),
+  comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")], {
+    label: "comment",
+  }),
+  blank: Spec.nodeSpec(
+    [Spec.value<string, "value">("value"), Spec.value("dataType")],
+    { label: "blank" }
+  ),
+  sequence: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")], {
+    label: "sequence",
+  }),
 };
 
 export const CoreAST = createASTSpec(specs);

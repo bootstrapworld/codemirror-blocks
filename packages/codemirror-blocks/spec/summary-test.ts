@@ -33,23 +33,30 @@ describe("summarizeProgram", () => {
     );
   });
 
-  it("makes a name of any node type, with no list of them", () => {
-    const nodes = (...types: string[]) =>
-      types.map((type) => ({ type })) as unknown as Parameters<
-        typeof summarizeProgram
-      >[0];
-    expect(summarizeProgram(nodes("letLikeExpr", "letLikeExpr", "cond"))).toBe(
-      "At the top level, this program contains 2 let like expressions and 1 cond."
+  it("names each kind by what its type declares, with no list of them here", () => {
+    const nodes = (...kinds: [string, string, string?][]) =>
+      kinds.map(([type, label, pluralLabel]) => ({
+        type,
+        label,
+        pluralLabel: pluralLabel ?? label + "s",
+      })) as unknown as Parameters<typeof summarizeProgram>[0];
+    expect(
+      summarizeProgram(
+        nodes(
+          ["a", "gizmo"],
+          ["b", "thing"],
+          ["a", "gizmo"],
+          ["c", "child", "children"]
+        )
+      )
+    ).toBe(
+      "At the top level, this program contains 2 gizmos, 1 thing, and 1 child."
     );
-    expect(summarizeProgram(nodes("category", "match"))).toBe(
-      "At the top level, this program contains 1 category and 1 match."
-    );
-    expect(summarizeProgram(nodes("category", "category", "box"))).toBe(
-      "At the top level, this program contains 2 categories and 1 box."
-    );
-    expect(summarizeProgram(nodes("box", "box"))).toBe(
-      "At the top level, this program contains 2 boxes."
-    );
+    expect(
+      summarizeProgram(
+        nodes(["c", "child", "children"], ["c", "child", "children"])
+      )
+    ).toBe("At the top level, this program contains 2 children.");
   });
 
   it("says nothing about an empty program", () => {

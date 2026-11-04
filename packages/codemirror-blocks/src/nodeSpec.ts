@@ -1,5 +1,6 @@
 import { ASTNode, NodeFields } from "./ast";
 import { hashObject } from "./utils";
+import type { NodeNaming } from "./naming";
 
 // A NodeSpec declares the types of the fields of an ASTNode.
 // It is used to compute hashes, to validate nodes (to prevent the construction
@@ -84,9 +85,10 @@ export type ChildSpec<FieldName extends string> =
 
 // nodeSpec :: Array<ChildSpec> -> NodeSpec
 export function nodeSpec<S extends ChildSpec<string>>(
-  childSpecs: readonly S[]
+  childSpecs: readonly S[],
+  naming?: NodeNaming
 ) {
-  return new NodeSpec(childSpecs);
+  return new NodeSpec(childSpecs, naming);
 }
 
 // required :: String -> ChildSpec
@@ -119,7 +121,9 @@ type NodeLike = {
 export type { NodeSpec };
 class NodeSpec<Specs extends ChildSpec<string> = ChildSpec<string>> {
   readonly childSpecs: readonly Specs[];
-  constructor(childSpecs: readonly Specs[]) {
+  /** What this kind of node is called (see {@link ASTNode.label}) */
+  readonly naming?: NodeNaming;
+  constructor(childSpecs: readonly Specs[], naming?: NodeNaming) {
     if (!(childSpecs instanceof Array)) {
       throw new Error(
         "NodeSpec: expected to receive an array of required/optional/list specs."
@@ -133,6 +137,7 @@ class NodeSpec<Specs extends ChildSpec<string> = ChildSpec<string>> {
       }
     }
     this.childSpecs = childSpecs;
+    this.naming = naming;
   }
 
   validate(node: NodeLike) {

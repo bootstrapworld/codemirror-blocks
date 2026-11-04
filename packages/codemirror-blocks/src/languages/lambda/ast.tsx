@@ -14,23 +14,27 @@ const operatorSpec = [
 
 export const LambdaAST = createASTSpec({
   ...CoreAST.config,
-  prog: Spec.nodeSpec([Spec.list("exprs")]),
-  call: Spec.nodeSpec([Spec.required("func"), Spec.list("args")]),
-  lambda: Spec.nodeSpec([
-    Spec.optional("name"),
-    Spec.list("vars"),
-    Spec.required("body"),
-  ]),
-  vardef: Spec.nodeSpec([Spec.required("name"), Spec.optional("body")]),
-  letExpr: Spec.nodeSpec([Spec.list("vars"), Spec.required("body")]),
-  conditional: Spec.nodeSpec([
-    Spec.required("cond"),
-    Spec.required("then"),
-    Spec.optional("else"),
-  ]),
-  not: Spec.nodeSpec([Spec.required("body")]),
-  binary: Spec.nodeSpec(operatorSpec),
-  assignment: Spec.nodeSpec(operatorSpec),
+  prog: Spec.nodeSpec([Spec.list("exprs")], { label: "program" }),
+  call: Spec.nodeSpec([Spec.required("func"), Spec.list("args")], {
+    label: "function call",
+  }),
+  lambda: Spec.nodeSpec(
+    [Spec.optional("name"), Spec.list("vars"), Spec.required("body")],
+    { label: "lambda expression" }
+  ),
+  vardef: Spec.nodeSpec([Spec.required("name"), Spec.optional("body")], {
+    label: "variable definition",
+  }),
+  letExpr: Spec.nodeSpec([Spec.list("vars"), Spec.required("body")], {
+    label: "let expression",
+  }),
+  conditional: Spec.nodeSpec(
+    [Spec.required("cond"), Spec.required("then"), Spec.optional("else")],
+    { label: "conditional expression" }
+  ),
+  not: Spec.nodeSpec([Spec.required("body")], { label: "not expression" }),
+  binary: Spec.nodeSpec(operatorSpec, { label: "binary operation" }),
+  assignment: Spec.nodeSpec(operatorSpec, { label: "assignment" }),
 });
 
 /**

@@ -15,18 +15,24 @@ function pluralize(noun: string, set: unknown[]) {
   return set.length + " " + noun + (set.length != 1 ? "s" : "");
 }
 
-const WeSchemeAST = createASTSpec({
+export const WeSchemeAST = createASTSpec({
   ...CoreAST.config,
-  letLikeExpr: Spec.nodeSpec([
-    Spec.value<string, "form">("form"),
-    Spec.required("bindings"),
-    Spec.required("expr"),
-  ]),
-  whenUnlessExpr: Spec.nodeSpec([
-    Spec.value<string, "form">("form"),
-    Spec.required("predicate"),
-    Spec.required("exprs"),
-  ]),
+  letLikeExpr: Spec.nodeSpec(
+    [
+      Spec.value<string, "form">("form"),
+      Spec.required("bindings"),
+      Spec.required("expr"),
+    ],
+    { label: "let expression" }
+  ),
+  whenUnlessExpr: Spec.nodeSpec(
+    [
+      Spec.value<string, "form">("form"),
+      Spec.required("predicate"),
+      Spec.required("exprs"),
+    ],
+    { label: "when or unless expression" }
+  ),
 });
 
 /* Override the default pretty printer for Sequences,

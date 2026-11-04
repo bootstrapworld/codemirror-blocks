@@ -8,6 +8,7 @@ import {
 } from "./utils";
 import * as P from "pretty-fast-pretty-printer";
 import type { FieldsForSpec, NodeSpec } from "./nodeSpec";
+import { labelFromType, pluralOf } from "./naming";
 import type React from "react";
 import type { Props as NodeProps } from "./components/Node";
 import { getLanguage } from "./languages";
@@ -577,6 +578,8 @@ export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
   readonly _pretty: ASTNodeProps["pretty"];
   readonly render: ASTNodeProps["render"];
   readonly longDescription?: ASTNodeProps["longDescription"];
+  readonly label: string;
+  readonly pluralLabel: string;
 
   _hash: number | undefined;
   readonly hash: number;
@@ -754,9 +757,21 @@ export class ASTNode<
         : this.shortDescription();
     }
   }
-  // the short description is literally the ARIA label
+  /**
+   * What this kind of node is called, e.g. "function definition": declared
+   * with the node's spec, or else made from its type.
+   */
+  get label(): string {
+    return this.spec.naming?.label ?? labelFromType(this.type);
+  }
+  get pluralLabel(): string {
+    return this.spec.naming?.pluralLabel ?? pluralOf(this.label);
+  }
+
+  // the short description is literally the ARIA label: the node's own, if
+  // it has one, or else what its kind is called
   shortDescription(): string {
-    return this.options["ariaLabel"] || "";
+    return this.options["ariaLabel"] || this.label;
   }
 
   // Pretty-print the node and its children, based on the pp-width
