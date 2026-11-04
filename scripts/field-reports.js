@@ -228,6 +228,33 @@ function ingest(issues, existing, outDir) {
   };
 }
 
+/**
+ * The values in `text`, which is what `gh api --paginate` prints: one JSON array
+ * per page, one after another (`--slurp` would wrap them, but older gh has none).
+ */
+function jsonValues(text) {
+  const values = [];
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (c === "\\") escaped = true;
+      else if (c === '"') inString = false;
+    } else if (c === '"') {
+      inString = true;
+    } else if (c === "[" || c === "{") {
+      if (depth++ === 0) start = i;
+    } else if (c === "]" || c === "}") {
+      if (--depth === 0) values.push(JSON.parse(text.slice(start, i + 1)));
+    }
+  }
+  return values;
+}
+
 function fetchIssues(repo) {
   const byNumber = new Map();
   for (const label of ["bug-report", "User Submitted"]) {
@@ -236,12 +263,11 @@ function fetchIssues(repo) {
       [
         "api",
         "--paginate",
-        "--slurp",
         `repos/${repo}/issues?state=all&per_page=100&labels=${encodeURIComponent(label)}`,
       ],
       { encoding: "utf8", maxBuffer: 1 << 28 }
     );
-    for (const page of JSON.parse(out)) {
+    for (const page of jsonValues(out)) {
       for (const issue of page) byNumber.set(issue.number, issue);
     }
   }
@@ -313,6 +339,13 @@ function main(argv) {
   );
 }
 
-module.exports = { parseIssueBody, signature, toEntry, newEntries, ingest };
+module.exports = {
+  jsonValues,
+  parseIssueBody,
+  signature,
+  toEntry,
+  newEntries,
+  ingest,
+};
 
 if (require.main === module) main(process.argv.slice(2));

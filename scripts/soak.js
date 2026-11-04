@@ -33,7 +33,8 @@
  * batch is killed: default 25), --seed N, --fresh (ignore saved progress),
  * --e2e-action-ms N (default 20000: the click and read timeout in Chromium sequences), --e2e-cores N (default 6: at most N workers run at once while a Chromium
  * batch does; the others are paused, then resumed), --status-min N (default 30: a status line every N minutes, also appended to
- * status.log), --out DIR (default soak-results). Stop it with Ctrl-C (or SIGTERM): it lets
+ * status.log), --field-min N (default 60; 0 = never: every N minutes, and at the start, new bug reports
+ * from GitHub are recorded in failures.jsonl by scripts/field-reports.js), --out DIR (default soak-results). Stop it with Ctrl-C (or SIGTERM): it lets
  * the running batches finish, saves, and prints the summary; a second Ctrl-C
  * ends them at once.
  *
@@ -54,7 +55,7 @@
  * Run it on a tree that is not being edited: a half-saved file looks like a bug.
  */
 /* eslint-disable no-console */
-const { spawn, spawnSync } = require("child_process");
+const { spawn, spawnSync, execFile } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -653,8 +654,34 @@ const status = () => {
   );
 };
 
+// New bug reports from the editor's bug button (and its error notice) go into
+// failures.jsonl as kind "field", to be triaged with the soak's own failures.
+const fieldReports = () => {
+  execFile(
+    process.execPath,
+    [path.join(__dirname, "field-reports.js"), "--out", out],
+    { cwd: root, timeout: 120000 },
+    (error, stdout, stderr) => {
+      if (error) {
+        log(
+          `field reports: could not read GitHub (${String(stderr || error.message).split("\n")[0]})`
+        );
+      } else if (/recorded #/.test(stdout)) {
+        log(`field reports: ${stdout.trim().split("\n").pop()}`);
+        for (const l of stdout.split("\n"))
+          if (l.startsWith("recorded #")) log(`  ${l}`);
+      }
+    }
+  );
+};
+
 new Promise((resolve) => {
   finished = resolve;
+  const fieldMin = Number(opt("field-min", 60));
+  if (fieldMin > 0) {
+    fieldReports();
+    setInterval(fieldReports, fieldMin * 60000);
+  }
   setInterval(sample, sampleMs);
   setInterval(checkTimeouts, 1000);
   setInterval(status, Number(opt("status-min", 30)) * 60000);

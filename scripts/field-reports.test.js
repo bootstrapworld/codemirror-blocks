@@ -152,3 +152,18 @@ describe("recording reports", () => {
     expect(again.known).toHaveLength(2);
   });
 });
+
+describe("jsonValues", () => {
+  it("reads the pages gh prints one after another", () => {
+    expect(lib.jsonValues('[{"a":1}]\n[{"a":2},{"a":3}]\n[]')).toEqual([
+      [{ a: 1 }],
+      [{ a: 2 }, { a: 3 }],
+      [],
+    ]);
+  });
+  it("is not fooled by brackets and quotes inside a string", () => {
+    const body = 'a ] [ " \\ } { b';
+    const text = JSON.stringify([{ body }]) + "\n" + JSON.stringify([{ body }]);
+    expect(lib.jsonValues(text)).toEqual([[{ body }], [{ body }]]);
+  });
+});
