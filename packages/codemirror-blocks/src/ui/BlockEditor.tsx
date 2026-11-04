@@ -197,8 +197,23 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       ed: CodeMirror.Editor,
       changes: CodeMirror.EditorChange[]
     ) => handleChanges(editor, changes);
+    // The block that had keyboard focus may be taken off the page (CodeMirror
+    // redrew its line) before the block that should have it next is on the
+    // page, and the browser then drops focus to the body without any React
+    // render to notice. Remember who had focus, so that a dropped one (as
+    // opposed to the user clicking away) can be told apart.
+    let lastFocused: EventTarget | null = null;
+    const onFocusIn = (e: FocusEvent) => {
+      lastFocused = e.target;
+    };
     const onUpdate = () => {
-      if (document.activeElement?.id !== "cmb-focus-placeholder") return;
+      const active = document.activeElement;
+      const parked = active?.id === "cmb-focus-placeholder";
+      const dropped =
+        (!active || active === document.body) &&
+        lastFocused instanceof Node &&
+        !document.contains(lastFocused);
+      if (!parked && !dropped) return;
       const id = focusedIdRef.current;
       if (id) document.getElementById(`block-node-${id}`)?.focus();
     };
@@ -223,6 +238,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     wrapper.setAttribute("role", "tree");
     wrapper.setAttribute("aria-multiselectable", "true");
     wrapper.setAttribute("tabIndex", "-1");
+    wrapper.addEventListener("focusin", onFocusIn);
 
     // CodeMirror's scroller can take focus (it has tabindex -1), for example when
     // a press on blank space turns into a drag that ends outside the editor.
@@ -245,6 +261,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       codemirror.off("changes", onChanges);
       codemirror.off("update", onUpdate);
       scroller.removeEventListener("focus", onScrollerFocus);
+      wrapper.removeEventListener("focusin", onFocusIn);
       setEditor(null);
     };
   };
