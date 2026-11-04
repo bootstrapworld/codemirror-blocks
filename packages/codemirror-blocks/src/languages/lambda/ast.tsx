@@ -6,6 +6,9 @@ import Node from "../../components/Node";
 import * as Spec from "../../nodeSpec";
 import { CoreAST, createASTSpec } from "../../nodes";
 
+/** How the language writes a comment, when it writes one back out */
+export const LAMBDA_BLOCK_COMMENT = { open: "#|", close: "|#" };
+
 const operatorSpec = [
   Spec.value<string, "operator">("operator"),
   Spec.required("left"),
@@ -25,9 +28,10 @@ export const LambdaAST = createASTSpec({
   vardef: Spec.nodeSpec([Spec.required("name"), Spec.optional("body")], {
     label: "variable definition",
   }),
-  letExpr: Spec.nodeSpec([Spec.list("vars"), Spec.required("body")], {
-    label: "let expression",
-  }),
+  letExpr: Spec.nodeSpec(
+    [Spec.optional("name"), Spec.list("vars"), Spec.required("body")],
+    { label: "let expression" }
+  ),
   conditional: Spec.nodeSpec(
     [Spec.required("cond"), Spec.required("then"), Spec.optional("else")],
     { label: "conditional expression" }
@@ -36,6 +40,23 @@ export const LambdaAST = createASTSpec({
   binary: Spec.nodeSpec(operatorSpec, { label: "binary operation" }),
   assignment: Spec.nodeSpec(operatorSpec, { label: "assignment" }),
 });
+
+/**
+ * Makes a node of the language, printed with the comment that goes with it:
+ * always above it, because a comment belongs to what comes after it
+ */
+function makeLambdaNode<T extends keyof typeof LambdaAST.config>(
+  props: Parameters<typeof LambdaAST.makeNode<T>>[0]
+) {
+  const { pretty } = props;
+  return LambdaAST.makeNode<T>({
+    ...props,
+    pretty: (node) =>
+      node.options.comment
+        ? P.vert(node.options.comment, pretty(node))
+        : pretty(node),
+  });
+}
 
 /**
  * Operands of operators, the function of a call, and the body of `!` are
@@ -53,7 +74,7 @@ function commaSeparated(nodes: ASTNode[]) {
 }
 
 export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
-  return LambdaAST.makeNode({
+  return makeLambdaNode({
     from,
     to,
     type: "prog",
@@ -89,7 +110,7 @@ export function Call(
   args: ASTNode[],
   options = {}
 ) {
-  return LambdaAST.makeNode({
+  return makeLambdaNode({
     from,
     to,
     type: "call",
@@ -122,7 +143,7 @@ export function Lambda(
   body: ASTNode,
   options = {}
 ) {
-  return LambdaAST.makeNode({
+  return makeLambdaNode({
     from,
     to,
     type: "lambda",
@@ -158,7 +179,7 @@ export function VarDef(
   body: ASTNode | null,
   options = {}
 ) {
-  return LambdaAST.makeNode({
+  return makeLambdaNode({
     from,
     to,
     type: "vardef",
@@ -189,29 +210,37 @@ export function VarDef(
 export function Let(
   from: Pos,
   to: Pos,
+  name: ASTNode | null,
   vars: ASTNode[],
   body: ASTNode,
   options = {}
 ) {
-  return LambdaAST.makeNode({
+  return makeLambdaNode({
     from,
     to,
     type: "letExpr",
-    fields: { vars, body },
+    fields: { name, vars, body },
     options,
     pretty: (node) =>
-      P.horz("let ", commaSeparated(node.fields.vars), " ", node.fields.body),
+      P.horz(
+        "let ",
+        node.fields.name ? P.horz(node.fields.name, " ") : "",
+        commaSeparated(node.fields.vars),
+        " ",
+        node.fields.body
+      ),
     render(props) {
       return (
         <Node {...props}>
           <span className="blocks-operator">let</span>
+          {props.node.fields.name?.reactElement()}
           <Args field="vars">{props.node.fields.vars}</Args>
           {props.node.fields.body.reactElement()}
         </Node>
       );
     },
     longDescription: (node) =>
-      `a let expression with ${node.fields.vars.length} variables`,
+      `a let ${node.fields.name ? "loop" : "expression"} with ${node.fields.vars.length} variables`,
   });
 }
 
@@ -223,7 +252,7 @@ export function Conditional(
   else_: ASTNode | null,
   options = {}
 ) {
-  return LambdaAST.makeNode({
+  return makeLambdaNode({
     from,
     to,
     type: "conditional",
@@ -265,7 +294,7 @@ export function Conditional(
 }
 
 export function Not(from: Pos, to: Pos, body: ASTNode, options = {}) {
-  return LambdaAST.makeNode({
+  return makeLambdaNode({
     from,
     to,
     type: "not",
@@ -294,7 +323,7 @@ function operatorNode(type: "binary" | "assignment") {
     right: ASTNode,
     options = {}
   ) =>
-    LambdaAST.makeNode({
+    makeLambdaNode({
       from,
       to,
       type,

@@ -1,5 +1,6 @@
 import wescheme from "../src/languages/wescheme";
 import lambda from "../src/languages/lambda";
+import example from "../src/languages/example";
 import { Comment } from "../src/nodes";
 import {
   isNodeEditable,
@@ -21,7 +22,8 @@ afterEach(() => {
 describe("how a language writes comments", () => {
   it("is declared by the language, if it has block comments", () => {
     expect(wescheme.blockComment).toEqual({ open: "#|", close: "|#" });
-    expect(lambda.blockComment).toBeUndefined();
+    expect(lambda.blockComment).toEqual({ open: "#|", close: "|#" });
+    expect(example.blockComment).toBeUndefined();
   });
 
   it("is what a comment is printed with", () => {
@@ -47,8 +49,8 @@ describe("Edit Comment", () => {
 
   it("says so, and opens nothing, in a language without them", () => {
     const say = jest.spyOn(announcer, "say");
-    const { cmb } = mountCMB(lambda);
-    cmb.setValue("f(x)");
+    const { cmb } = mountCMB(example);
+    cmb.setValue("(+ 1 2)");
     const root = cmb.getAst().rootNodes[0];
     mouseDown(root);
     keyDown("]", editComment, root);

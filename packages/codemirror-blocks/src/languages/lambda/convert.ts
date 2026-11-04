@@ -1,5 +1,5 @@
 import type { ASTNode, Pos } from "../../ast";
-import { Literal } from "../../nodes";
+import { Comment, Literal } from "../../nodes";
 import { parseToIntermediateAST } from "./parser";
 import type { LambdaNode } from "./parser";
 import {
@@ -8,6 +8,7 @@ import {
   Call,
   Conditional,
   Lambda,
+  LAMBDA_BLOCK_COMMENT,
   Let,
   Not,
   Prog,
@@ -16,8 +17,14 @@ import {
 
 type Loc = { from: Pos; to: Pos };
 
+/** A string as it is written: the parser's escapes, undone */
 function quote(str: string) {
-  return '"' + str.replace(/[\\"]/g, "\\$&") + '"';
+  const escaped = str
+    .replace(/[\\"]/g, "\\$&")
+    .replace(/\n/g, "\\n")
+    .replace(/\t/g, "\\t")
+    .replace(/\r/g, "\\r");
+  return '"' + escaped + '"';
 }
 
 /**
@@ -32,6 +39,17 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
   };
   const { from, to } = loc;
   const all = (nodes: LambdaNode[]) => nodes.map((n) => convert(n, loc));
+  // (whatever comment came before the node goes with it)
+  const options = node.comment
+    ? {
+        comment: Comment(
+          node.comment.from,
+          node.comment.to,
+          node.comment.text,
+          { blockComment: LAMBDA_BLOCK_COMMENT }
+        ),
+      }
+    : {};
   switch (node.type) {
     case "prog": {
       // the parser gives a program the location of its last token: it spans
@@ -42,24 +60,25 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         : Prog(from, to, body);
     }
     case "num":
-      return Literal(from, to, String(node.value), "number");
+      return Literal(from, to, String(node.value), "number", options);
     case "str":
-      return Literal(from, to, quote(node.value), "string");
+      return Literal(from, to, quote(node.value), "string", options);
     case "bool":
-      return Literal(from, to, String(node.value), "bool");
+      return Literal(from, to, String(node.value), "bool", options);
     case "var":
-      return Literal(from, to, node.value, "symbol");
+      return Literal(from, to, node.value, "symbol", options);
     case "literal":
       // variable names, as read by `parseVarname`
-      return Literal(from, to, node.name.value, "symbol");
+      return Literal(from, to, node.name.value, "symbol", options);
     case "raw":
-      return Literal(from, to, "js:raw " + quote(node.code), "raw");
+      return Literal(from, to, "js:raw " + quote(node.code), "raw", options);
     case "def":
       return VarDef(
         from,
         to,
         convert(node.name, loc),
-        node.body ? convert(node.body, loc) : null
+        node.body ? convert(node.body, loc) : null,
+        options
       );
     case "lambda":
       return Lambda(
@@ -67,17 +86,19 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         to,
         node.name ? Literal(from, from, node.name, "symbol") : null,
         all(node.vars),
-        convert(node.body, loc)
+        convert(node.body, loc),
+        options
       );
     case "call":
-      return Call(from, to, convert(node.func, loc), all(node.args));
+      return Call(from, to, convert(node.func, loc), all(node.args), options);
     case "assign":
       return Assignment(
         from,
         to,
         node.operator,
         convert(node.left, loc),
-        convert(node.right, loc)
+        convert(node.right, loc),
+        options
       );
     case "binary":
       return Binary(
@@ -85,20 +106,29 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         to,
         node.operator,
         convert(node.left, loc),
-        convert(node.right, loc)
+        convert(node.right, loc),
+        options
       );
     case "let":
-      return Let(from, to, all(node.vars), convert(node.body, loc));
+      return Let(
+        from,
+        to,
+        node.name ? convert(node.name, loc) : null,
+        all(node.vars),
+        convert(node.body, loc),
+        options
+      );
     case "if":
       return Conditional(
         from,
         to,
         convert(node.cond, loc),
         convert(node.then, loc),
-        node.else ? convert(node.else, loc) : null
+        node.else ? convert(node.else, loc) : null,
+        options
       );
     case "not":
-      return Not(from, to, convert(node.body, loc));
+      return Not(from, to, convert(node.body, loc), options);
     default:
       throw new Error("Don't know how to convert node of type " + node.type);
   }

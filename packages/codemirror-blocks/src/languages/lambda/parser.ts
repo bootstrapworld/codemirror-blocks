@@ -13,14 +13,21 @@ export type LambdaNode = {
   type: string;
   from?: Pos;
   to?: Pos;
+  /** the comments just before the node */
+  comment?: LambdaComment;
   [field: string]: any;
 };
+
+/** A comment: `# to the end of the line`, or `#| ... |#` */
+export type LambdaComment = { text: string; from: Pos; to: Pos };
 
 type Token = {
   from: Pos;
   to: Pos;
   type: "num" | "str" | "kw" | "var" | "punc" | "op";
   value: any;
+  /** the comments between the token before this one and it */
+  comments?: LambdaComment[];
 };
 
 type InputStream = {
@@ -161,6 +168,9 @@ function parse(input: TokenStream): LambdaNode {
     return { from, to, type: "literal", dataType: "var", name };
   }
   function parseVardef(): LambdaNode {
+    return withLeadingComments(parseVardefNode);
+  }
+  function parseVardefNode(): LambdaNode {
     const name = parseVarname();
     let body: LambdaNode | undefined;
     if (isOp("=")) {
@@ -179,28 +189,8 @@ function parse(input: TokenStream): LambdaNode {
   function parseLet(): LambdaNode {
     const from = fromLocation;
     skipKw("let");
-    if (peekToken().type == "var") {
-      const name = nextToken().value;
-      const defs = delimited("(", ")", ",", parseVardef);
-      const body = parseExpression();
-      toLocation = input.pos().to;
-      return {
-        from: from,
-        to: toLocation,
-        type: "call",
-        func: {
-          type: "lambda",
-          name: name,
-          vars: defs.map(function (def) {
-            return def.name;
-          }),
-          body: body,
-        },
-        args: defs.map(function (def) {
-          return def.def || FALSE;
-        }),
-      };
-    }
+    // (`let name (a = 1) body` is a loop in the language: keep it as written)
+    const name = peekToken().type == "var" ? parseVarname() : undefined;
     const vars = delimited("(", ")", ",", parseVardef);
     const body = parseExpression();
     toLocation = input.pos().to;
@@ -208,6 +198,7 @@ function parse(input: TokenStream): LambdaNode {
       from: from,
       to: toLocation,
       type: "let",
+      name: name,
       vars: vars,
       body: body,
     };
@@ -324,13 +315,34 @@ function parse(input: TokenStream): LambdaNode {
     return { from: from, to: toLocation, type: "prog", prog: prog }; //return { type: "prog", prog: prog };
   }
   function parseExpression(): LambdaNode {
-    return maybeCall(function () {
-      return maybeBinary(parseAtom(), 0);
-    });
+    return withLeadingComments(() =>
+      maybeCall(function () {
+        return maybeBinary(parseAtom(), 0);
+      })
+    );
+  }
+  // the comments before a node go with it
+  function withLeadingComments(parseNode: () => LambdaNode): LambdaNode {
+    const first = input.peek();
+    const comments = first?.comments;
+    if (first) first.comments = undefined;
+    let node = parseNode();
+    if (comments?.length) {
+      if (node === FALSE) node = { ...FALSE }; // (FALSE is shared)
+      node.comment = {
+        text: comments.map((c) => c.text).join(" "),
+        from: comments[0].from,
+        to: comments[comments.length - 1].to,
+      };
+    }
+    return node;
   }
 }
 
 /* -----[ parser utils ]----- */
+
+/** What a backslash and one of these letters stand for in a string */
+const ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r" };
 
 function inputStream(input: string): InputStream {
   let pos = 0,
@@ -371,6 +383,7 @@ function tokenStream(input: InputStream): TokenStream {
   let current: Token | null = null;
   let fromLocation = input.inputPos(),
     toLocation = input.inputPos();
+  const pending: LambdaComment[] = [];
   const keywords = " let if then else lambda λ true false js:raw ";
   return {
     pos: pos,
@@ -440,7 +453,7 @@ function tokenStream(input: InputStream): TokenStream {
     while (!input.eof()) {
       const ch = input.next();
       if (escaped) {
-        str += ch;
+        str += ESCAPES[ch] ?? ch;
         escaped = false;
       } else if (ch == "\\") {
         escaped = true;
@@ -457,19 +470,45 @@ function tokenStream(input: InputStream): TokenStream {
     toLocation = input.inputPos();
     return { from: fromLocation, to: toLocation, type: "str", value: string };
   }
-  function skipComment() {
-    readWhite(function (ch) {
-      return ch != "\n";
+  function readComment() {
+    const from = input.inputPos();
+    input.next(); // (the #)
+    let text = "";
+    if (input.peek() == "|") {
+      input.next();
+      let closed = false;
+      while (!input.eof()) {
+        const ch = input.next();
+        if (ch == "|" && input.peek() == "#") {
+          input.next();
+          closed = true;
+          break;
+        }
+        text += ch;
+      }
+      if (!closed) input.croak("Unterminated comment");
+    } else {
+      text = readWhite((ch) => ch != "\n");
+    }
+    pending.push({
+      text: text.trim().replace(/\s+/g, " "),
+      from,
+      to: input.inputPos(),
     });
-    input.next();
   }
+  // a token carries the comments that came before it
   function readNext(): Token | null {
+    const token = readToken();
+    if (token && pending.length) token.comments = pending.splice(0);
+    return token;
+  }
+  function readToken(): Token | null {
     readWhite(isWhitespace);
     if (input.eof()) return null; //null use to be nullparseLambda
     const ch = input.peek();
     if (ch == "#") {
-      skipComment();
-      return readNext();
+      readComment();
+      return readToken();
     }
     fromLocation = input.inputPos();
     if (ch == '"') {
