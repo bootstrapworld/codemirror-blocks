@@ -321,9 +321,29 @@ const Node = ({ expandable = true, ...props }: Props) => {
       !active ||
       active === document.body ||
       active.id === "cmb-focus-placeholder";
-    if (stranded && isFocused) {
-      nodeElementRef.current?.focus();
+    if (!stranded || !isFocused) return;
+    nodeElementRef.current?.focus();
+    // CodeMirror may not have put this block's widget on the page yet (an undo
+    // that brings a block back, on a busy machine); focusing it then does
+    // nothing, and no render follows to try again. So keep trying until it is on
+    // the page, or something else has focus.
+    let frame = 0;
+    let tries = 0;
+    const retry = () => {
+      const el = nodeElementRef.current;
+      const nowActive = document.activeElement;
+      const stillStranded =
+        !nowActive ||
+        nowActive === document.body ||
+        nowActive.id === "cmb-focus-placeholder";
+      if (!el || !stillStranded || ++tries > 120) return;
+      el.focus();
+      frame = requestAnimationFrame(retry);
+    };
+    if (document.activeElement === document.body) {
+      frame = requestAnimationFrame(retry);
     }
+    return () => cancelAnimationFrame(frame);
   });
 
   // Something else took focus without the box seeing a blur (the text was
