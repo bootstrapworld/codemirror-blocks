@@ -43,6 +43,7 @@ type NodeEnv = {
 
   editor: CMBEditor;
   handleMakeEditable: (e?: React.KeyboardEvent) => void;
+  handleEditComment: () => void;
   setRight: (ast: AST) => boolean;
   setLeft: (ast: AST) => boolean;
 
@@ -83,6 +84,7 @@ export const defaultKeyMap: KeyMap = {
   Enter: "Edit",
   "Ctrl-[": "Insert Left",
   "Ctrl-]": "Insert Right",
+  "Shift-Ctrl-]": "Edit Comment",
 
   // SEARCH, SELECTION & CLIPBOARD
   Space: "Toggle Selection",
@@ -453,6 +455,14 @@ const commandMap: {
     } else {
       playSound(BEEP);
     }
+  },
+
+  "Edit Comment": (env, e) => {
+    if (!env.isNodeEnv) {
+      return;
+    }
+    e.preventDefault();
+    env.handleEditComment();
   },
 
   "Edit Anything": (env, e) => {

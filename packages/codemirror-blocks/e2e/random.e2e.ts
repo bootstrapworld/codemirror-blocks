@@ -127,6 +127,15 @@ const steps: Record<string, Step> = {
     await page.keyboard.press("Enter");
     return `edit ${label} to "${text}"`;
   },
+  "edit a comment": async (page, n) => {
+    const label = await pick(page, n[0] % (await blocks(page).count()));
+    await page.keyboard.press("Shift+Control+]");
+    if (!(await isEditing(page))) return `Shift-Ctrl-] on ${label} (no box)`;
+    const text = TEXTS[n[1] % TEXTS.length];
+    await page.keyboard.type(text);
+    await page.keyboard.press("Enter");
+    return `comment ${label}: "${text}"`;
+  },
   "insert beside": async (page, n) => {
     const label = await pick(page, n[0] % (await blocks(page).count()));
     await page.keyboard.press("Control+]");

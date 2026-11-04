@@ -352,6 +352,23 @@ const operations: Operation[] = [
     },
   },
   {
+    name: "edit a comment",
+    run: (w, r) => {
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
+      const node = pick(visibleNodes(w), r[1]);
+      if (!node) return;
+      mouseDown(node);
+      keyDown("]", { ctrlKey: true, shiftKey: true }, node);
+      if (!isEditing())
+        return `Shift-Ctrl-] on ${label(node)} (no comment box)`;
+      const text = pick(texts, r[2])!;
+      setEditableText(text);
+      keyDown("Enter");
+      w.forgiveRefusal(); // (comments are written for wescheme: lambda refuses them)
+      return `comment ${label(node)}: "${text}"`;
+    },
+  },
+  {
     name: "insert beside a block",
     run: (w, r) => {
       stopEditing(); // (clicking away commits an edit box: pick the blocks after)

@@ -511,6 +511,9 @@ export type Range = {
   to: Pos;
 };
 
+/** How a language writes a block comment: `{ open: "#|", close: "|#" }` */
+export type BlockComment = { open: string; close: string };
+
 export type NodeOptions = {
   comment?: ASTNode;
 
@@ -527,6 +530,12 @@ export type NodeOptions = {
    */
   label?: string;
   pluralLabel?: string;
+
+  /**
+   * For a comment: how its language writes it (Scheme's `#| |#` if it does
+   * not say)
+   */
+  blockComment?: BlockComment;
 
   /**
    * A predicate, which prevents the node from being edited

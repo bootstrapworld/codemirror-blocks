@@ -14,7 +14,11 @@ import {
   currentNode as currentNodeIn,
   nodeElementMap,
 } from "../ast";
-import { ReplaceNodeTarget, collapseNode } from "../state/actions";
+import {
+  CommentTarget,
+  ReplaceNodeTarget,
+  collapseNode,
+} from "../state/actions";
 import * as actions from "../state/actions";
 import NodeEditable from "./NodeEditable";
 import { NodeContext, findAdjacentDropTargetId } from "./DropTarget";
@@ -23,7 +27,8 @@ import classNames from "classnames";
 import { useDrag, useDrop } from "../dnd";
 import { recordEvent } from "../state/activityLog";
 import { RootState } from "../state/reducers";
-import { isDummyPos } from "../utils";
+import { isDummyPos, playSound, BEEP } from "../utils";
+import { say } from "../announcer";
 import { keyDown } from "../keymap";
 import { AppContext, EditorContext } from "./Context";
 import type { BlockNodeMarker } from "../editor";
@@ -87,6 +92,14 @@ const Node = ({ expandable = true, ...props }: Props) => {
   }, [isCollapsed]);
 
   const [editable, setEditable] = useState(false);
+  // The box for the node's comment is open, with the text of the node it would
+  // go with (taken when the box is opened)
+  const [commentEditor, setCommentEditor] = useState<CommentTarget | null>(
+    null
+  );
+  const [commentValue, setCommentValue] = useState<string | null | undefined>(
+    null
+  );
   // (a stable value, so the drop targets inside don't render whenever this does)
   const nodeContext = useMemo(() => ({ node: props.node }), [props.node]);
 
@@ -111,6 +124,21 @@ const Node = ({ expandable = true, ...props }: Props) => {
     setEditable(true);
     editor?.refresh(); // is this needed?
   };
+  const handleEditComment = () => {
+    if (!isErrorFree || props.inToolbar || !editor) {
+      return;
+    }
+    const node = currentNode();
+    if (!selectors.getAST(store.getState()).language.blockComment) {
+      say("This language has no comments");
+      playSound(BEEP);
+      return;
+    }
+    setCommentValue(null);
+    setCommentEditor(
+      new CommentTarget(node, editor.getRange(node.from, node.to))
+    );
+  };
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!editor) {
       // codemirror hasn't mounted yet, do nothing.
@@ -123,6 +151,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
         editor: editor,
         appHelpers: appHelpers,
         handleMakeEditable,
+        handleEditComment,
         setLeft: (ast: AST) => {
           const dropTargetId = findAdjacentDropTargetId(
             ast,
@@ -403,7 +432,26 @@ const Node = ({ expandable = true, ...props }: Props) => {
         onKeyDown={handleKeyDown}
       >
         {props.children}
-        {comment && comment.reactElement({ id: commentElemId })}
+        {commentEditor && editor ? (
+          // (keys in the box are not commands for the block around it)
+          <span onKeyDown={(e) => e.stopPropagation()}>
+            <NodeEditable
+              editor={editor}
+              onDisableEditable={() => setCommentEditor(null)}
+              extraClasses={["blocks-comment", "blocks-comment-editing"]}
+              isInsertion={false}
+              target={commentEditor}
+              value={commentValue}
+              onChange={setCommentValue}
+              contentEditableProps={{
+                id: `comment-edit-for-${nodeElemId}`,
+                tabIndex: -1,
+              }}
+            />
+          </span>
+        ) : (
+          comment && comment.reactElement({ id: commentElemId })
+        )}
       </span>
     );
     return <NodeContext value={nodeContext}>{result}</NodeContext>;

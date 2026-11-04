@@ -632,7 +632,15 @@ export function Literal(
   });
 }
 
-export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
+/** Scheme's block comment, for a comment whose language does not say */
+const SCHEME_COMMENT = { open: "#|", close: "|#" };
+
+export function Comment(
+  from: Pos,
+  to: Pos,
+  comment: string,
+  options: NodeOptions = {}
+) {
   return CoreAST.makeNode({
     from,
     to,
@@ -643,7 +651,8 @@ export function Comment(from: Pos, to: Pos, comment: string, options = {}) {
       const words = node.fields.comment.trim().split(/\s+/);
       const wrapped = P.wrap(words);
       // Normalize all comments to block comments
-      return P.concat("#| ", wrapped, " |#");
+      const { open, close } = node.options.blockComment ?? SCHEME_COMMENT;
+      return P.concat(open + " ", wrapped, " " + close);
     },
     render({ node, ...props }) {
       return (

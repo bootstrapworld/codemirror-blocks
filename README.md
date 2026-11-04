@@ -53,6 +53,7 @@ same on all platforms.
 | Enter, while editing                          | Save the edit                                                                                            |
 | Esc or Alt-Q, while editing                   | Cancel the edit                                                                                          |
 | Ctrl-[ / Ctrl-]                               | Insert a new block before / after the focused block                                                      |
+| Shift-Ctrl-]                                  | Add a comment to the focused block, or edit the one it has                                               |
 | Delete or Backspace                           | Delete the selected blocks                                                                               |
 | Ctrl-Z / Ctrl-Y (Cmd-Z / Cmd-Y), Shift-Ctrl-Z | Undo / redo                                                                                              |
 

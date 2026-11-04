@@ -1,4 +1,5 @@
 import { AST, ASTNode } from "../ast";
+import type { BlockComment } from "../ast";
 import type { PrimitiveGroup } from "../CodeMirrorBlocks";
 import { Literal } from "../nodes";
 import { Primitive } from "../parsers/primitives";
@@ -37,6 +38,14 @@ export type LanguageConfig = {
    * @returns The ast that codemirror-blocks will render
    */
   parse(code: string): ASTNode[];
+
+  /**
+   * How the language writes a block comment, e.g. `{ open: "#|", close: "|#" }`.
+   * A language that has them can have its blocks commented from the keyboard
+   * (the comment is written this way, and so it has to be something the
+   * language's parser reads back as a comment); one that does not, cannot.
+   */
+  blockComment?: BlockComment;
 
   /**
    * A function for generating a human readable error message

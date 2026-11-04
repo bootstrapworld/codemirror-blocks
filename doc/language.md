@@ -108,6 +108,13 @@ export default Languages.addLanguage({
 - `description` is optional, and describes the language.
 - `parse(code: string): ASTNode[]` is the parser, described in the next
   section.
+- `blockComment: { open, close }` is optional. It says how the language writes
+  a block comment (`{ open: "#|", close: "|#" }` for Scheme). If it is given,
+  Shift-Ctrl-] adds or edits a comment on the focused block, and the comment
+  is written this way, so the language's `parse` has to read it back as a
+  comment and attach it to the block after it (`Comment(from, to, text,
+{ blockComment })` makes the node). Without it the command says that the
+  language has no comments.
 - `getExceptionMessage(e: unknown): string | Error` is optional. It turns
   whatever `parse` threw into something to show the user. The default is
   `String(e)`.

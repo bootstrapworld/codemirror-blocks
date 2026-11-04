@@ -28,6 +28,7 @@ import { err, ok, Result } from "../edits/result";
 import * as selectors from "./selectors";
 import type { ActionFocus } from "./reducers";
 import { pasteFromClipboard } from "../copypaste";
+import { Comment } from "../nodes";
 import { recordEvent } from "./activityLog";
 
 export const setAST = (ast: AST) => ({
@@ -553,6 +554,46 @@ export class ReplaceNodeTarget extends Target {
 
   toEdit(ast: AST, text: string): EditInterface {
     return edit_replace(text, ast, this.node);
+  }
+}
+
+// Target the comment of a node, or the place for one: the node is replaced,
+// comment and all, by the new comment followed by the node's own text (which
+// is the text of the node without its comment, taken before the edit starts).
+export class CommentTarget extends Target {
+  node: ASTNode;
+  ownText: string;
+
+  constructor(node: ASTNode, ownText: string) {
+    const range = node.srcRange();
+    super(range.from, range.to);
+    this.node = node;
+    this.ownText = ownText;
+  }
+
+  getText() {
+    const comment = this.node.options.comment;
+    return comment ? String(comment.fields.comment).trim() : "";
+  }
+
+  toEdit(ast: AST, text: string): EditInterface {
+    const dummy = { line: -1, ch: 0 };
+    const blockComment = ast.language.blockComment;
+    if (!blockComment) {
+      throw new Error(`${ast.language.name} has no comments`);
+    }
+    // (a comment cannot hold its own closing mark)
+    const { close } = blockComment;
+    const words = text
+      .split(close)
+      .join(close[0] + " " + close.slice(1))
+      .trim();
+    const comment = Comment(dummy, dummy, words, { blockComment }).toString();
+    return edit_replace(
+      `${comment}\n${this.ownText}`,
+      ast,
+      ast.getNodeByIdOrThrow(this.node.id)
+    );
   }
 }
 

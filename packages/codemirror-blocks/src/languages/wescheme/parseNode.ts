@@ -82,6 +82,9 @@ function enumerateIdentifierList(lst: structures.Program[]) {
     : lst.join(", ") + " and " + last.toString();
 }
 
+/** How WeScheme writes a comment that it did not read as one (see Comment) */
+export const WESCHEME_BLOCK_COMMENT = { open: "#|", close: "|#" };
+
 // makeComment : WeSchemeComment -> ASTNodeComment
 function makeComment(node: structures.Program | structures.comment) {
   const from = {
@@ -92,7 +95,9 @@ function makeComment(node: structures.Program | structures.comment) {
     line: (node.comment || node).location.endRow - 1,
     ch: (node.comment || node).location.endCol,
   };
-  return Comment(from, to, node.comment?.txt || "");
+  return Comment(from, to, node.comment?.txt || "", {
+    blockComment: WESCHEME_BLOCK_COMMENT,
+  });
 }
 
 // The source text being parsed. Forms with no block of their own are kept as
@@ -406,7 +411,9 @@ export function parseNodeOrNull(
       comment: comment,
     });
   } else if (node instanceof structures.comment) {
-    return Comment(from, to, node.txt);
+    return Comment(from, to, node.txt, {
+      blockComment: WESCHEME_BLOCK_COMMENT,
+    });
   } else if (node instanceof structures.beginExpr) {
     return Sequence(
       from,

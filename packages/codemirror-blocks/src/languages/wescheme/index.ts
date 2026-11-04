@@ -4,7 +4,7 @@ import { BlockError } from "../../utils";
 import { PrimitiveGroup } from "../../parsers/primitives";
 import type { Primitive } from "../../parsers/primitives";
 import PRIMITIVES_CONFIG from "./primitives-config";
-import { symbolAria } from "./parseNode";
+import { symbolAria, WESCHEME_BLOCK_COMMENT } from "./parseNode";
 import { parse } from "./sexpParser";
 require("./style.less");
 
@@ -45,6 +45,7 @@ export default addLanguage({
   id: "wescheme",
   name: "WeScheme",
   description: "The WeScheme language",
+  blockComment: WESCHEME_BLOCK_COMMENT,
   parse,
   getExceptionMessage,
   getASTNodeForPrimitive,

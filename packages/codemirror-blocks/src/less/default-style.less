@@ -366,8 +366,18 @@
   bottom: 15%;
   border-right: 10px solid @comment-background-color;
 }
-.blocks-node:focus > .blocks-comment {
+.blocks-node:focus > .blocks-comment,
+.blocks-comment.blocks-comment-editing {
   visibility: visible;
+}
+
+// (the block around it cannot be selected, but its comment has to be typed in)
+.blocks-comment.blocks-comment-editing {
+  user-select: text;
+  -webkit-user-select: text;
+  // (a table cannot hold the caret while it is empty)
+  display: inline-block !important;
+  min-width: 2em;
 }
 
 .blocks-dragging {
