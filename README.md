@@ -92,6 +92,17 @@ repeat what NVDA and JAWS already say. (We tried it and reverted it; see the
 commit "feat(a11y): say collapsed or expanded" and its revert in the history if
 this is worth revisiting.)
 
+### What blocks are called
+
+Each kind of node declares a human-readable `label` (and a `pluralLabel` when
+adding an "s" is wrong) in its `nodeSpec`, for example "function definition".
+It is what a screenreader reads for a block that has no `ariaLabel` of its own,
+and what the program summary calls that kind of node. A language can give a
+node its own `ariaLabel` (a string, or a function of the node, so it can use
+`node.label`), and can call a core kind of node something else by passing
+`label` in the node's options: WeScheme calls variable definitions "value
+definitions", for instance.
+
 ## Contributing Changes
 
 To contribute changes to any of the packages in this repository, you'll need to setup a development

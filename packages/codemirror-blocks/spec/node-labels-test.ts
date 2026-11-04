@@ -1,5 +1,6 @@
 import { CoreAST } from "../src/nodes";
 import { LambdaAST } from "../src/languages/lambda/ast";
+import wescheme from "../src/languages/wescheme";
 import { WeSchemeAST } from "../src/languages/wescheme/ast";
 import { nodeSpec } from "../src/nodeSpec";
 import { ASTNode } from "../src/ast";
@@ -55,10 +56,43 @@ describe("node labels", () => {
     expect(node.pluralLabel).toBe("children");
   });
 
+  it("can be made from the node, so it can use the node's own label", () => {
+    const node = make(nodeSpec([], { label: "gizmo" }), {
+      ariaLabel: (n: ASTNode) => `big ${n.label} with 3 knobs`,
+    });
+    expect(node.shortDescription()).toBe("big gizmo with 3 knobs");
+  });
+
   it("is made from the type for a spec that declares none", () => {
     const node = make(nodeSpec([]));
     expect(node.label).toBe("some kind of thing");
     expect(node.shortDescription()).toBe("some kind of thing");
+  });
+});
+
+describe("a language's own names", () => {
+  const parse = (code: string) => wescheme.parse(code) as ASTNode[];
+  it("WeScheme says what it always has, now from the labels", () => {
+    expect(parse("(define x 1)")[0].shortDescription()).toBe(
+      "x: value definition"
+    );
+    expect(parse("(define (f a b) a)")[0].shortDescription()).toBe(
+      "f: function definition with 2 arguments: a and b"
+    );
+    expect(parse("(lambda (a) a)")[0].shortDescription()).toBe(
+      "anonymous function with 1 argument: a"
+    );
+    expect(parse("(cond [a b])")[0].shortDescription()).toBe(
+      "conditional expression with 1 clause"
+    );
+    expect(parse("(if a b c)")[0].shortDescription()).toBe(
+      "if-then-else expression"
+    );
+  });
+  it("keeps the core's name for a kind it does not rename", () => {
+    expect(CoreAST.config.variableDefinition.naming?.label).toBe(
+      "variable definition"
+    );
   });
 });
 

@@ -515,9 +515,18 @@ export type NodeOptions = {
   comment?: ASTNode;
 
   /**
-   * The aria label for the node
+   * The aria label for the node: the text itself, or a function that makes it
+   * from the node (so that it can use the node's own {@link ASTNode.label}).
+   * Without one, a node reads as its label.
    */
-  ariaLabel?: string;
+  ariaLabel?: string | ((node: ASTNode) => string);
+
+  /**
+   * What this node is called, when the language calls this kind of node
+   * something other than the default (see {@link ASTNode.label})
+   */
+  label?: string;
+  pluralLabel?: string;
 
   /**
    * A predicate, which prevents the node from being edited
@@ -762,16 +771,26 @@ export class ASTNode<
    * with the node's spec, or else made from its type.
    */
   get label(): string {
-    return this.spec.naming?.label ?? labelFromType(this.type);
+    return (
+      this.options.label ?? this.spec.naming?.label ?? labelFromType(this.type)
+    );
   }
   get pluralLabel(): string {
-    return this.spec.naming?.pluralLabel ?? pluralOf(this.label);
+    return (
+      this.options.pluralLabel ??
+      (this.options.label ? undefined : this.spec.naming?.pluralLabel) ??
+      pluralOf(this.label)
+    );
   }
 
   // the short description is literally the ARIA label: the node's own, if
   // it has one, or else what its kind is called
   shortDescription(): string {
-    return this.options["ariaLabel"] || this.label;
+    const { ariaLabel } = this.options;
+    return (
+      (typeof ariaLabel === "function" ? ariaLabel(this) : ariaLabel) ||
+      this.label
+    );
   }
 
   // Pretty-print the node and its children, based on the pp-width

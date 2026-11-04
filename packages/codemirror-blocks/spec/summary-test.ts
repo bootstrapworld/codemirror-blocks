@@ -20,16 +20,16 @@ describe("summarizeProgram", () => {
       "42",
     ].join("\n");
     expect(summary(code)).toBe(
-      "At the top level, this program contains 2 function definitions, 1 variable definition, 1 structure definition, 2 function applications, and 1 literal."
+      "At the top level, this program contains 2 function definitions, 1 value definition, 1 structure definition, 2 function applications, and 1 literal."
     );
   });
 
   it("only names the kinds that are there", () => {
     expect(summary("(define y 1) (define z 2)")).toBe(
-      "At the top level, this program contains 2 variable definitions."
+      "At the top level, this program contains 2 value definitions."
     );
     expect(summary("(define y 1) (f y)")).toBe(
-      "At the top level, this program contains 1 variable definition and 1 function application."
+      "At the top level, this program contains 1 value definition and 1 function application."
     );
   });
 
@@ -78,7 +78,7 @@ describe("the summary on first opening a program as blocks", () => {
     const said = () => say.mock.calls.map((c) => String(c[0]));
     const summaries = () => said().filter((t) => t.startsWith("At the top"));
     expect(summaries()).toEqual([
-      "At the top level, this program contains 1 variable definition and 1 function application.",
+      "At the top level, this program contains 1 value definition and 1 function application.",
     ]);
     cmb.setValue("(define z 2)");
     await new Promise((r) => setTimeout(r, 0));

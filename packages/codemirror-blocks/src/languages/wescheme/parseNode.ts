@@ -3,6 +3,14 @@ import type { ASTNode } from "../../ast";
 import * as Nodes from "../../nodes";
 import { LetLikeExpr, WhenUnless, Sequence } from "./ast";
 import * as types from "wescheme-js/src/runtime/types";
+/** WeScheme's own names for some of the core kinds of node */
+const NAMED = {
+  valueDefinition: { label: "value definition" },
+  anonymousFunction: { label: "anonymous function" },
+  ifThenElse: { label: "if-then-else expression" },
+  invalid: { label: "invalid expression" },
+};
+
 const { isString, isChar, TRUE, FALSE } = types;
 
 const {
@@ -178,7 +186,8 @@ export function parseNodeOrNull(
     const name = parseNode(b.first);
     const val = parseNode(b.second);
     return VariableDefinition(loc.from, loc.to, name, val, {
-      ariaLabel: symbolAria(b.first.val) + " bound to " + val.options.ariaLabel,
+      ariaLabel:
+        symbolAria(b.first.val) + " bound to " + val.shortDescription(),
       comment: comment,
     });
   }
@@ -250,7 +259,8 @@ export function parseNodeOrNull(
       parseNode(node.name),
       parseNode(node.expr),
       {
-        ariaLabel: symbolAria(node.name.val) + ": value definition",
+        ...NAMED.valueDefinition,
+        ariaLabel: (n: ASTNode) => `${symbolAria(node.name.val)}: ${n.label}`,
         comment: comment,
       }
     );
@@ -270,9 +280,8 @@ export function parseNodeOrNull(
       }
     );
     return StructDefinition(from, to, parseNode(node.name), fields, {
-      ariaLabel:
-        symbolAria(node.name.val) +
-        ": structure definition with " +
+      ariaLabel: (n: ASTNode) =>
+        `${symbolAria(node.name.val)}: ${n.label} with ` +
         pluralize("field", node.fields) +
         ": " +
         enumerateIdentifierList(node.fields),
@@ -300,9 +309,8 @@ export function parseNodeOrNull(
       args,
       parseNode(node.body),
       {
-        ariaLabel:
-          symbolAria(node.name.val) +
-          ": function definition with " +
+        ariaLabel: (n: ASTNode) =>
+          `${symbolAria(node.name.val)}: ${n.label} with ` +
           pluralize("argument", node.args) +
           ": " +
           enumerateIdentifierList(node.args),
@@ -325,16 +333,17 @@ export function parseNodeOrNull(
       }
     );
     return LambdaExpression(from, to, args, parseNode(node.body), {
-      ariaLabel:
-        "anonymous function with " +
+      ...NAMED.anonymousFunction,
+      ariaLabel: (n: ASTNode) =>
+        `${n.label} with ` +
         pluralize("argument", node.args) +
         ": " +
         enumerateIdentifierList(node.args),
     });
   } else if (node instanceof structures.condExpr) {
     return CondExpression(from, to, node.clauses.map(parseNode), {
-      ariaLabel:
-        "conditional expression with " + pluralize("clause", node.clauses),
+      ariaLabel: (n: ASTNode) =>
+        `${n.label} with ` + pluralize("clause", node.clauses),
     });
   } else if (node instanceof structures.couple) {
     return CondClause(
@@ -348,14 +357,14 @@ export function parseNodeOrNull(
     const predicate = parseNode(node.predicate);
     const consequence = parseNode(node.consequence);
     const alternative = parseNode(node.alternative);
-    const predLabel = predicate.options.ariaLabel;
-    const conLabel = consequence.options.ariaLabel;
-    const altLabel = alternative.options.ariaLabel;
+    const predLabel = predicate.shortDescription();
+    const conLabel = consequence.shortDescription();
+    const altLabel = alternative.shortDescription();
     predicate.options.ariaLabel = "if, " + predLabel;
     consequence.options.ariaLabel = "then, " + conLabel;
     alternative.options.ariaLabel = "else, " + altLabel;
     return IfExpression(from, to, predicate, consequence, alternative, {
-      ariaLabel: "if-then-else expression",
+      ...NAMED.ifThenElse,
       comment: comment,
     });
   } else if (node instanceof structures.symbolExpr) {
@@ -411,7 +420,8 @@ export function parseNodeOrNull(
         { ariaLabel: "begin" }
       ),
       {
-        ariaLabel: `sequence containing ${pluralize("expression", node.exprs)}`,
+        ariaLabel: (n: ASTNode) =>
+          `${n.label} containing ${pluralize("expression", node.exprs)}`,
       }
     );
   } else if (
@@ -479,7 +489,7 @@ export function parseNodeOrNull(
       to,
       (node.val as structures.Program[]).map(parseNodeOrNull).filter(notNull),
       {
-        ariaLabel: "invalid expression",
+        ...NAMED.invalid,
         comment: comment,
       }
     );
